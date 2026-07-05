@@ -58,6 +58,16 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
 
     private static readonly string[] CefrLevels = ["A1", "A2", "B1", "B2"];
 
+    private static readonly Dictionary<string, string> SkillLabels = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["grammar"] = "Grammar",
+        ["vocabulary"] = "Vocabulary",
+        ["listening"] = "Listening",
+        ["reading"] = "Reading",
+        ["writing"] = "Writing",
+        ["speaking"] = "Speaking",
+    };
+
     // ── Confidence model ────────────────────────────────────────────────────────
 
     private record SkillConfidenceState(
@@ -497,7 +507,7 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
 
     // Phase 13B — Real response submission
     public async Task<SubmitResponseResult> SubmitResponseAsync(
-        Guid assessmentId, Guid itemId, string response, int? durationSeconds, CancellationToken ct = default)
+        Guid assessmentId, Guid itemId, string response, int? durationSeconds, string? skillFilter = null, CancellationToken ct = default)
     {
         var assessment = await _db.PlacementAssessments
             .Include(a => a.Items)
@@ -521,7 +531,7 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
 
             PlacementNextItemDto? existingNext = null;
             if (!isAlreadyComplete)
-                existingNext = BuildNextItemDto(assessment.Items, existingStates, assessment.Items.Count);
+                existingNext = ToNextItemDto(FindUnansweredItem(assessment.Items, skillFilter), assessment.Items, existingStates);
 
             return new SubmitResponseResult(
                 item.Id, item.IsCorrect!.Value, item.Score!.Value,
@@ -551,18 +561,11 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
                 scoreResult.EvaluationNotes, true, completionReason, null, summary);
         }
 
-        // Not complete — add next adaptive item and return pointer
-        var nextItem = await AddNextAdaptiveItemAsync(assessment, skillStates, ct);
-        var nextDto = nextItem is not null
-            ? new PlacementNextItemDto(
-                nextItem.Id, nextItem.Skill, nextItem.TargetCefrLevel, nextItem.ItemType,
-                nextItem.Prompt, nextItem.ItemOrder,
-                assessment.Items.Count(i => i.IsCorrect.HasValue),
-                EstimateRemaining(assessment.Items, skillStates),
-                nextItem.ReadingPassage,
-                !string.IsNullOrWhiteSpace(nextItem.ListeningAudioScript),
-                nextItem.Content is not null ? QuestionContentRedactor.RedactCorrectAnswers(nextItem.Content) : null)
-            : null;
+        // Not complete — add next adaptive item (globally or scoped to skillFilter) and return pointer
+        var nextItem = skillFilter is null
+            ? await AddNextAdaptiveItemAsync(assessment, skillStates, ct)
+            : await AddNextItemForSkillAsync(assessment, skillFilter, skillStates, ct);
+        var nextDto = ToNextItemDto(nextItem, assessment.Items, skillStates);
 
         return new SubmitResponseResult(
             item.Id, scoreResult.IsCorrect, scoreResult.Score,
@@ -583,8 +586,31 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
             : new SkillConfidenceState(_opts.StartingLevelFallback, 0, 0, 0, 0);
 
         var template = SelectNextTemplate(assessment.Items, nextSkill, state, itemBank);
-        if (template is null) return null;
+        return template is null ? null : await CreateItemAsync(assessment, template, ct);
+    }
 
+    /// <summary>Same as <see cref="AddNextAdaptiveItemAsync"/> but restricted to one skill —
+    /// used by the placement-cards flow so a card never silently hands back a different
+    /// skill's question. Returns null when the skill is already confident or its item bank
+    /// is exhausted, which the caller treats as "this card is done".</summary>
+    private async Task<PlacementAssessmentItem?> AddNextItemForSkillAsync(
+        PlacementAssessment assessment,
+        string skill,
+        Dictionary<string, SkillConfidenceState> skillStates,
+        CancellationToken ct)
+    {
+        var state = skillStates.TryGetValue(skill, out var s) ? s
+            : new SkillConfidenceState(_opts.StartingLevelFallback, 0, 0, 0, 0);
+        if (state.Confidence >= _opts.ConfidenceThreshold) return null;
+
+        var itemBank = await LoadItemBankAsync(ct);
+        var template = SelectNextTemplate(assessment.Items, skill, state, itemBank);
+        return template is null ? null : await CreateItemAsync(assessment, template, ct);
+    }
+
+    private async Task<PlacementAssessmentItem> CreateItemAsync(
+        PlacementAssessment assessment, PlacementItemTemplate template, CancellationToken ct)
+    {
         var newOrder = assessment.Items.Count;
         var newItem = PlacementAssessmentItem.Create(
             assessment.Id, template.Skill, template.CefrLevel,
@@ -597,26 +623,29 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
         return newItem;
     }
 
-    private PlacementNextItemDto? BuildNextItemDto(
-        IReadOnlyCollection<PlacementAssessmentItem> items,
-        Dictionary<string, SkillConfidenceState> states,
-        int totalItemCount)
+    private static PlacementAssessmentItem? FindUnansweredItem(
+        IReadOnlyCollection<PlacementAssessmentItem> items, string? skillFilter)
     {
-        var nextUnanswered = items
-            .Where(i => !i.IsCorrect.HasValue)
+        return items
+            .Where(i => !i.IsCorrect.HasValue && (skillFilter is null || i.Skill == skillFilter))
             .OrderBy(i => i.ItemOrder)
             .FirstOrDefault();
+    }
 
-        if (nextUnanswered is null) return null;
+    private PlacementNextItemDto? ToNextItemDto(
+        PlacementAssessmentItem? item,
+        IReadOnlyCollection<PlacementAssessmentItem> items,
+        Dictionary<string, SkillConfidenceState> states)
+    {
+        if (item is null) return null;
 
         return new PlacementNextItemDto(
-            nextUnanswered.Id, nextUnanswered.Skill, nextUnanswered.TargetCefrLevel,
-            nextUnanswered.ItemType, nextUnanswered.Prompt, nextUnanswered.ItemOrder,
+            item.Id, item.Skill, item.TargetCefrLevel, item.ItemType, item.Prompt, item.ItemOrder,
             items.Count(i => i.IsCorrect.HasValue),
             EstimateRemaining(items, states),
-            nextUnanswered.ReadingPassage,
-            !string.IsNullOrWhiteSpace(nextUnanswered.ListeningAudioScript),
-            nextUnanswered.Content is not null ? QuestionContentRedactor.RedactCorrectAnswers(nextUnanswered.Content) : null);
+            item.ReadingPassage,
+            !string.IsNullOrWhiteSpace(item.ListeningAudioScript),
+            item.Content is not null ? QuestionContentRedactor.RedactCorrectAnswers(item.Content) : null);
     }
 
     private int EstimateRemaining(
@@ -731,7 +760,7 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
     }
 
     // Phase 13B — Get next unanswered item
-    public async Task<PlacementNextItemDto?> GetNextItemAsync(Guid assessmentId, CancellationToken ct = default)
+    public async Task<PlacementNextItemDto?> GetNextItemAsync(Guid assessmentId, string? skillFilter = null, CancellationToken ct = default)
     {
         var assessment = await _db.PlacementAssessments
             .Include(a => a.Items)
@@ -744,7 +773,53 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
             .Distinct()
             .ToDictionary(s => s, s => ComputeSkillConfidence(assessment.Items, s, _opts.StartingLevelFallback));
 
-        return BuildNextItemDto(assessment.Items, skillStates, assessment.Items.Count);
+        var existing = FindUnansweredItem(assessment.Items, skillFilter);
+        if (existing is not null) return ToNextItemDto(existing, assessment.Items, skillStates);
+
+        // No queued item for this skill yet (e.g. opening a placement card for the first
+        // time) — generate one scoped to it instead of falling back to another skill.
+        if (skillFilter is not null)
+        {
+            var generated = await AddNextItemForSkillAsync(assessment, skillFilter, skillStates, ct);
+            return ToNextItemDto(generated, assessment.Items, skillStates);
+        }
+
+        return null;
+    }
+
+    /// <summary>Per-skill status for the placement cards page (one card per configured skill).</summary>
+    public async Task<IReadOnlyList<PlacementSkillStatusDto>> GetSkillStatusAsync(
+        Guid studentProfileId, CancellationToken ct = default)
+    {
+        var assessment = await _db.PlacementAssessments
+            .Include(a => a.Items)
+            .Where(a => a.StudentProfileId == studentProfileId)
+            .OrderByDescending(a => a.Status == PlacementStatus.Completed)
+            .ThenByDescending(a => a.CreatedAt)
+            .FirstOrDefaultAsync(ct);
+
+        var items = (IReadOnlyCollection<PlacementAssessmentItem>?)assessment?.Items ?? Array.Empty<PlacementAssessmentItem>();
+        var wholeAssessmentDone = assessment?.Status == PlacementStatus.Completed;
+        var itemBank = await LoadItemBankAsync(ct);
+        var usedPrompts = items.Select(i => i.Prompt).ToHashSet(StringComparer.Ordinal);
+
+        var results = new List<PlacementSkillStatusDto>();
+        foreach (var skill in _opts.SkillsToAssess.Distinct())
+        {
+            var state = ComputeSkillConfidence(items, skill, _opts.StartingLevelFallback);
+            var exhausted = !itemBank.Any(t => t.Skill == skill && !usedPrompts.Contains(t.Prompt));
+            var completed = wholeAssessmentDone
+                || state.Confidence >= _opts.ConfidenceThreshold
+                || (exhausted && state.EvidenceCount > 0);
+            var percent = completed
+                ? 100.0
+                : Math.Round(Math.Min(state.Confidence / _opts.ConfidenceThreshold, 0.95) * 100, 0);
+
+            results.Add(new PlacementSkillStatusDto(
+                skill, SkillLabels.GetValueOrDefault(skill, skill), percent, completed, state.EvidenceCount));
+        }
+
+        return results;
     }
 
     // Phase 13B — Detailed admin progress view

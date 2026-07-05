@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, signal, computed } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { OnboardingV2Step } from '../../../../../core/models/onboarding-v2.models';
 import { QuestionRendererComponent } from '../../../../../shared/question/question-renderer.component';
@@ -43,7 +43,12 @@ export class OnboardingV2QuestionStepComponent implements OnChanges {
   answers = signal<QuestionAnswerItem[]>([]);
   error: string | null = null;
 
-  allowSkip = computed(() => this.step?.requirementType === 'AdminConfigured');
+  // Plain method, not computed(): allowSkip derives from a regular @Input (this.step), which
+  // Angular signals don't track — a computed() here would cache its first-ever result and
+  // never update as steps change, since it has no signal dependency to invalidate it.
+  allowSkip(): boolean {
+    return this.step?.requirementType === 'AdminConfigured';
+  }
 
   // Two consecutive steps of the same shape reuse this same component instance — reset state on
   // every step change or the next step would inherit the previous one's answer.

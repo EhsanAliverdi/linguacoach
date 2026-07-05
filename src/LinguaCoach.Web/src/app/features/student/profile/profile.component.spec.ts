@@ -26,9 +26,9 @@ const MOCK_PROFILE: StudentProfileResponse = {
   preferredName: null,
   email: 'jane@example.com',
   cefrLevel: 'B1',
-  learningGoals: ['Day-to-day English'],
+  learningGoals: ['day_to_day'],
   customLearningGoal: null,
-  focusAreas: ['Speaking'],
+  focusAreas: ['speaking'],
   customFocusArea: null,
   supportLanguageCode: 'fa',
   supportLanguageName: 'Persian',
@@ -165,8 +165,8 @@ describe('ProfileComponent', () => {
     fixture.detectChanges();
     const component = fixture.componentInstance;
     const initialCount = component.form.learningGoals.length;
-    component.toggleGoal('Travel English');
-    expect(component.form.learningGoals).toContain('Travel English');
+    component.toggleGoal('travel');
+    expect(component.form.learningGoals).toContain('travel');
     expect(component.form.learningGoals.length).toBe(initialCount + 1);
   }));
 
@@ -175,10 +175,10 @@ describe('ProfileComponent', () => {
     tick();
     fixture.detectChanges();
     const component = fixture.componentInstance;
-    // 'Day-to-day English' is already in MOCK_PROFILE.learningGoals
+    // 'day_to_day' is already in MOCK_PROFILE.learningGoals
     const initialCount = component.form.learningGoals.length;
-    component.toggleGoal('Day-to-day English');
-    expect(component.form.learningGoals).not.toContain('Day-to-day English');
+    component.toggleGoal('day_to_day');
+    expect(component.form.learningGoals).not.toContain('day_to_day');
     expect(component.form.learningGoals.length).toBe(initialCount - 1);
   }));
 
@@ -226,13 +226,13 @@ describe('ProfileComponent', () => {
     fixture.detectChanges();
     const component = fixture.componentInstance;
     component.form.preferredName = 'Janie';
-    component.form.learningGoals = ['Day-to-day English', 'Travel English'];
+    component.form.learningGoals = ['day_to_day', 'travel'];
     component.save();
     tick();
     expect(profileService.updatePreferences).toHaveBeenCalledWith(
       jasmine.objectContaining({
         preferredName: 'Janie',
-        learningGoals: ['Day-to-day English', 'Travel English'],
+        learningGoals: ['day_to_day', 'travel'],
       })
     );
   }));
@@ -418,7 +418,7 @@ describe('ProfileComponent', () => {
     const fixture = create();
     tick();
     fixture.detectChanges();
-    const chip = fixture.nativeElement.querySelector('[data-testid="goal-chip-Workplace English"]');
+    const chip = fixture.nativeElement.querySelector('[data-testid="goal-chip-work"]');
     expect(chip).toBeTruthy();
   }));
 
@@ -426,7 +426,7 @@ describe('ProfileComponent', () => {
     const fixture = create();
     tick();
     fixture.detectChanges();
-    const chip = fixture.nativeElement.querySelector('[data-testid="goal-chip-Workplace English"]');
+    const chip = fixture.nativeElement.querySelector('[data-testid="goal-chip-work"]');
     expect(chip.getAttribute('aria-pressed')).toBe('false');
   }));
 

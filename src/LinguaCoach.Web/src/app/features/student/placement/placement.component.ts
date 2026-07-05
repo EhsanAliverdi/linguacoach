@@ -1,30 +1,25 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { PlacementService } from '../../../core/services/placement.service';
-import {
-  AdaptivePlacementSummary,
-  AdaptivePlacementNextItem,
-  PlacementConfig,
-} from '../../../core/models/placement.models';
+import { AdaptivePlacementNextItem } from '../../../core/models/placement.models';
 import { QuestionRendererComponent } from '../../../shared/question/question-renderer.component';
 import { QuestionAnswerItem, flattenLeafQuestions } from '../../../shared/question/question-content.models';
 
-export type PlacementPageState =
-  | 'loading'
-  | 'welcome'
-  | 'question'
-  | 'submitting'
-  | 'completing'
-  | 'done'
-  | 'error';
+export type PlacementPageState = 'loading' | 'question' | 'submitting' | 'error';
 
 interface ParsedChoice {
   letter: string;
   text: string;
 }
 
+/**
+ * Runs the adaptive placement engine scoped to a single skill (the placement-cards flow —
+ * see PlacementCardsComponent, the actual landing page). Once this skill's card is finished
+ * (no more items for it) or the whole assessment completes, navigates back to /placement,
+ * which owns all "what's left" / "you're done" UI.
+ */
 @Component({
   selector: 'app-placement',
   standalone: true,
@@ -35,18 +30,16 @@ export class PlacementComponent implements OnInit {
   state = signal<PlacementPageState>('loading');
   error = signal('');
 
-  assessment = signal<AdaptivePlacementSummary | null>(null);
   currentItem = signal<AdaptivePlacementNextItem | null>(null);
-  config = signal<PlacementConfig | null>(null);
 
   selectedAnswer = signal('');
   gapFillAnswer = signal('');
   audioUrl = signal<string | null>(null);
   audioLoading = signal(false);
-  /** Unified Question-Schema (Phase 3) — structured per-sub-question answers, addressed by
-   * QuestionContent.id, collected by the shared QuestionRendererComponent. */
   answers = signal<QuestionAnswerItem[]>([]);
   private itemStartTime = 0;
+  private assessmentId = '';
+  private skill = '';
 
   questionText = computed(() => this.parseQuestionText(this.currentItem()?.prompt ?? ''));
   choices = computed(() => this.parseChoices(this.currentItem()?.prompt ?? ''));
@@ -79,52 +72,49 @@ export class PlacementComponent implements OnInit {
     return !!this.gapFillAnswer().trim();
   });
 
-  constructor(private placement: PlacementService, private router: Router) {}
+  constructor(
+    private placement: PlacementService,
+    private router: Router,
+    private route: ActivatedRoute,
+  ) {}
 
   ngOnInit(): void {
-    // Load config and current assessment in parallel
-    this.placement.getPlacementConfig().subscribe({
-      next: cfg => this.config.set(cfg),
-      error: () => { /* non-fatal — config stays null, defaults apply */ },
-    });
+    this.skill = this.route.snapshot.paramMap.get('skill') ?? '';
+    if (!this.skill) {
+      this.router.navigate(['/placement']);
+      return;
+    }
+    this.load();
+  }
 
+  private load(): void {
+    this.state.set('loading');
     this.placement.getAdaptiveCurrent().subscribe({
       next: result => {
         if (!result || !result.hasPlacement) {
-          // No assessment yet — show welcome
-          this.state.set('welcome');
+          this.startThenLoadItem();
           return;
         }
         if (result.status === 'Completed') {
-          this.assessment.set(result);
-          this.state.set('done');
-        } else if (result.status === 'InProgress') {
-          this.assessment.set(result);
-          this.loadNextItem(result.assessmentId);
-        } else {
-          // Abandoned / Expired / other — allow starting fresh
-          this.state.set('welcome');
+          this.router.navigate(['/placement']);
+          return;
         }
+        this.assessmentId = result.assessmentId;
+        this.loadNextItem();
       },
-      error: () => this.state.set('welcome'),
+      error: () => this.startThenLoadItem(),
     });
   }
 
-  begin(): void {
-    this.state.set('loading');
-    const cfg = this.config();
-    const start$ = cfg?.autoStartPlacement
-      ? this.placement.resumeAdaptive()
-      : this.placement.startAdaptive();
-
-    start$.subscribe({
+  private startThenLoadItem(): void {
+    this.placement.startAdaptive().subscribe({
       next: result => {
-        this.assessment.set(result);
         if (result.status === 'Completed') {
-          this.state.set('done');
-        } else {
-          this.loadNextItem(result.assessmentId);
+          this.router.navigate(['/placement']);
+          return;
         }
+        this.assessmentId = result.assessmentId;
+        this.loadNextItem();
       },
       error: err => {
         this.error.set(err?.error?.error ?? 'Could not start your placement. Please try again.');
@@ -133,14 +123,14 @@ export class PlacementComponent implements OnInit {
     });
   }
 
-  private loadNextItem(assessmentId: string): void {
-    this.placement.getAdaptiveNextItem(assessmentId).subscribe({
+  private loadNextItem(): void {
+    this.placement.getAdaptiveNextItem(this.assessmentId, this.skill).subscribe({
       next: item => {
         if (!item) {
-          // No more items — trigger completion
-          this.triggerCompletion(assessmentId);
+          // No more items for this skill — the card is done, hand back to the cards page.
+          this.router.navigate(['/placement']);
         } else {
-          this.setCurrentItem(assessmentId, item);
+          this.setCurrentItem(item);
         }
       },
       error: () => {
@@ -150,7 +140,7 @@ export class PlacementComponent implements OnInit {
     });
   }
 
-  private setCurrentItem(assessmentId: string, item: AdaptivePlacementNextItem): void {
+  private setCurrentItem(item: AdaptivePlacementNextItem): void {
     this.revokeAudioUrl();
     this.currentItem.set(item);
     this.selectedAnswer.set('');
@@ -161,9 +151,9 @@ export class PlacementComponent implements OnInit {
 
     if (item.hasAudio) {
       this.audioLoading.set(true);
-      this.placement.getAdaptiveItemAudioBlobUrl(assessmentId, item.itemId).subscribe({
+      this.placement.getAdaptiveItemAudioBlobUrl(this.assessmentId, item.itemId).subscribe({
         next: url => { this.audioUrl.set(url); this.audioLoading.set(false); },
-        error: () => { this.audioUrl.set(null); this.audioLoading.set(false); }, // audio failed to generate — text remains usable
+        error: () => { this.audioUrl.set(null); this.audioLoading.set(false); },
       });
     }
   }
@@ -194,51 +184,31 @@ export class PlacementComponent implements OnInit {
 
   submitAnswer(): void {
     const item = this.currentItem();
-    const assessment = this.assessment();
-    if (!item || !assessment || !this.canSubmit() || this.state() === 'submitting') return;
+    if (!item || !this.assessmentId || !this.canSubmit() || this.state() === 'submitting') return;
 
     const response = this.buildLegacyResponse(item);
     const durationSeconds = Math.max(1, Math.round((Date.now() - this.itemStartTime) / 1000));
 
     this.state.set('submitting');
     this.placement.respondToItem({
-      assessmentId: assessment.assessmentId,
+      assessmentId: this.assessmentId,
       itemId: item.itemId,
       response,
       durationSeconds,
+      skill: this.skill,
     }).subscribe({
       next: result => {
-        if (result.assessmentComplete) {
-          if (result.summary) {
-            this.assessment.set(result.summary);
-            this.state.set('done');
-          } else {
-            this.triggerCompletion(assessment.assessmentId);
-          }
-        } else if (result.nextItem) {
-          this.setCurrentItem(assessment.assessmentId, result.nextItem);
+        if (result.assessmentComplete || !result.nextItem) {
+          // Either the whole assessment just finished, or this skill's card is done —
+          // either way, the cards page owns what happens next.
+          this.router.navigate(['/placement']);
         } else {
-          this.triggerCompletion(assessment.assessmentId);
+          this.setCurrentItem(result.nextItem);
         }
       },
       error: err => {
         this.error.set(err?.error?.error ?? 'Could not submit your answer. Please try again.');
-        // Stay on question state so student can retry
         this.state.set('question');
-      },
-    });
-  }
-
-  private triggerCompletion(assessmentId: string): void {
-    this.state.set('completing');
-    this.placement.completeAdaptive(assessmentId).subscribe({
-      next: result => {
-        this.assessment.set(result);
-        this.state.set('done');
-      },
-      error: () => {
-        this.error.set('Could not finalise your placement. Please try again.');
-        this.state.set('error');
       },
     });
   }
@@ -247,20 +217,15 @@ export class PlacementComponent implements OnInit {
     this.selectedAnswer.set(letter);
   }
 
-  continueToDashboard(): void {
-    this.router.navigate(['/dashboard']);
-  }
-
   retry(): void {
     this.error.set('');
-    this.ngOnInit();
+    this.load();
   }
 
   // ── Prompt parsing ──────────────────────────────────────────────────────────
 
   parseQuestionText(prompt: string): string {
     if (!prompt) return '';
-    // Remove the choices block — everything before the first (A)
     const choiceIdx = prompt.search(/\(A\)/i);
     if (choiceIdx > 0) return prompt.slice(0, choiceIdx).trim();
     return prompt.trim();
@@ -272,7 +237,6 @@ export class PlacementComponent implements OnInit {
     return matches.map(m => ({ letter: m[1].toUpperCase(), text: m[2].trim() }));
   }
 
-  // Skill label for display
   skillLabel(skill: string | null | undefined): string {
     if (!skill) return '';
     return skill.charAt(0).toUpperCase() + skill.slice(1);

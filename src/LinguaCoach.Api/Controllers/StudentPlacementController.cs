@@ -60,9 +60,11 @@ public sealed class StudentPlacementController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>Returns the next unanswered adaptive item for an in-progress assessment.</summary>
+    /// <summary>Returns the next unanswered adaptive item for an in-progress assessment.
+    /// When <paramref name="skill"/> is supplied (placement-cards flow), selection is scoped
+    /// to that one skill only.</summary>
     [HttpGet("next")]
-    public async Task<IActionResult> GetNext([FromQuery] Guid assessmentId, CancellationToken ct)
+    public async Task<IActionResult> GetNext([FromQuery] Guid assessmentId, [FromQuery] string? skill, CancellationToken ct)
     {
         var profile = await GetStudentProfileAsync(ct);
         if (profile is null) return NotFound(new { error = "Student profile not found." });
@@ -72,13 +74,25 @@ public sealed class StudentPlacementController : ControllerBase
 
         try
         {
-            var item = await _placement.GetNextItemAsync(assessmentId, ct);
+            var item = await _placement.GetNextItemAsync(assessmentId, skill, ct);
             return Ok(item);
         }
         catch (InvalidOperationException ex)
         {
             return NotFound(new { error = ex.Message });
         }
+    }
+
+    /// <summary>Returns per-skill status (percent complete / completed) for the placement
+    /// cards page — one entry per configured skill.</summary>
+    [HttpGet("skills")]
+    public async Task<IActionResult> GetSkills(CancellationToken ct)
+    {
+        var profile = await GetStudentProfileAsync(ct);
+        if (profile is null) return NotFound(new { error = "Student profile not found." });
+
+        var statuses = await _placement.GetSkillStatusAsync(profile.Id, ct);
+        return Ok(statuses);
     }
 
     /// <summary>
@@ -164,7 +178,7 @@ public sealed class StudentPlacementController : ControllerBase
         try
         {
             var result = await _placement.SubmitResponseAsync(
-                request.AssessmentId, request.ItemId, request.Response, request.DurationSeconds, ct);
+                request.AssessmentId, request.ItemId, request.Response, request.DurationSeconds, request.Skill, ct);
             return Ok(result);
         }
         catch (InvalidOperationException ex)
@@ -245,6 +259,7 @@ public sealed record StudentPlacementRespondRequest(
     Guid AssessmentId,
     Guid ItemId,
     string Response,
-    int? DurationSeconds);
+    int? DurationSeconds,
+    string? Skill = null);
 
 public sealed record StudentPlacementCompleteRequest(Guid AssessmentId);

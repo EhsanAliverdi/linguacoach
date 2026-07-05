@@ -5,7 +5,7 @@ import { environment } from '../../../environments/environment';
 import {
   PlacementStatus, PlacementCurrentSection, SavePlacementAnswers, PlacementResult,
   AdaptivePlacementSummary, AdaptivePlacementNextItem, AdaptivePlacementRespondRequest,
-  AdaptivePlacementSubmitResult, PlacementConfig,
+  AdaptivePlacementSubmitResult, PlacementConfig, PlacementSkillStatus,
 } from '../models/placement.models';
 import { map } from 'rxjs/operators';
 
@@ -59,9 +59,15 @@ export class PlacementService {
     return this.http.get<AdaptivePlacementSummary | null>(`${this.api}/student/placement/current`);
   }
 
-  getAdaptiveNextItem(assessmentId: string): Observable<AdaptivePlacementNextItem | null> {
+  getAdaptiveNextItem(assessmentId: string, skill?: string): Observable<AdaptivePlacementNextItem | null> {
+    const params: Record<string, string> = { assessmentId };
+    if (skill) params['skill'] = skill;
     return this.http.get<AdaptivePlacementNextItem | null>(
-      `${this.api}/student/placement/next`, { params: { assessmentId } });
+      `${this.api}/student/placement/next`, { params });
+  }
+
+  getSkillStatus(): Observable<PlacementSkillStatus[]> {
+    return this.http.get<PlacementSkillStatus[]>(`${this.api}/student/placement/skills`);
   }
 
   startAdaptive(): Observable<AdaptivePlacementSummary> {

@@ -56,4 +56,27 @@ export class QuestionRendererComponent {
   trackChoice(_: number, choice: ChoiceOption): string {
     return choice.key;
   }
+
+  // ── Yes/No + dropdown UX for single_choice questions sourced from "languages" ──────────
+  // (e.g. onboarding's "support in another language?" step) — an empty or "none" answer
+  // means No; any other selected key means Yes with that language chosen.
+
+  isLanguageSupportYes(questionId: string): boolean {
+    const value = this.getSingleValue(questionId);
+    return !!value && value !== 'none';
+  }
+
+  nonNoneChoices(choices: ChoiceOption[]): ChoiceOption[] {
+    return choices.filter(c => c.key !== 'none');
+  }
+
+  selectNoLanguageSupport(questionId: string): void {
+    this.setSingleValue(questionId, 'none');
+  }
+
+  selectYesLanguageSupport(questionId: string, choices: ChoiceOption[]): void {
+    if (this.isLanguageSupportYes(questionId)) return;
+    const first = this.nonNoneChoices(choices)[0];
+    this.setSingleValue(questionId, first?.key ?? '');
+  }
 }

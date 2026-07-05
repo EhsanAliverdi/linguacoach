@@ -8,54 +8,6 @@
     </div>
   }
 
-  <!-- Welcome -->
-  @if (state() === 'welcome') {
-    <div class="sp-card" data-testid="placement-welcome">
-      <p class="sp-eyebrow mb-2">Placement assessment</p>
-      <h1 class="text-2xl font-bold text-slate-950">Find your English level</h1>
-      <p class="mt-3 text-sm leading-6 text-slate-600">
-        Before we build your course, we need to understand your English level.
-        This short adaptive assessment picks the right questions for you as you go — so it
-        stays relevant and finishes quickly.
-      </p>
-
-      <ul class="mt-5 space-y-3 text-sm text-slate-600">
-        <li class="flex gap-2">
-          <span class="mt-0.5 text-indigo-500">&#10003;</span>
-          <span>Covers reading, writing, listening, speaking, vocabulary, and grammar</span>
-        </li>
-        <li class="flex gap-2">
-          <span class="mt-0.5 text-indigo-500">&#10003;</span>
-          <span>8 to 15 questions — takes about 5 to 10 minutes</span>
-        </li>
-        <li class="flex gap-2">
-          <span class="mt-0.5 text-indigo-500">&#10003;</span>
-          <span>Adaptive — questions adjust to your level in real time</span>
-        </li>
-        <li class="flex gap-2">
-          <span class="mt-0.5 text-indigo-500">&#10003;</span>
-          <span>No pass or fail — this sets the starting point for your course</span>
-        </li>
-      </ul>
-
-      <button
-        (click)="begin()"
-        class="sp-button-primary mt-8 w-full"
-        data-testid="placement-begin">
-        Start placement
-      </button>
-
-      @if (config()?.allowSkipPlacement) {
-        <button
-          (click)="continueToDashboard()"
-          class="mt-3 w-full text-center text-sm text-slate-500 underline hover:text-slate-700"
-          data-testid="placement-skip">
-          Skip for now
-        </button>
-      }
-    </div>
-  }
-
   <!-- Question -->
   @if (state() === 'question' || state() === 'submitting') {
     @if (currentItem(); as item) {
@@ -177,77 +129,6 @@
             </button>
           }
         </div>
-
-      </div>
-    }
-  }
-
-  <!-- Completing / building learning plan -->
-  @if (state() === 'completing') {
-    <div class="sp-card py-14 text-center" data-testid="placement-completing">
-      <div class="mx-auto mb-5 h-10 w-10 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"></div>
-      <p class="text-base font-semibold text-slate-900">Building your personalised learning plan…</p>
-      <p class="mt-2 text-sm text-slate-500">This takes just a moment.</p>
-    </div>
-  }
-
-  <!-- Done -->
-  @if (state() === 'done') {
-    @if (assessment(); as result) {
-      <div class="sp-card" data-testid="placement-done">
-
-        <!-- Header -->
-        <div class="mb-6 text-center">
-          <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
-            <svg class="h-7 w-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <p class="sp-eyebrow mb-1">Assessment complete</p>
-          <h1 class="text-2xl font-bold text-slate-950">Your level has been set</h1>
-        </div>
-
-        <!-- Overall level -->
-        @if (result.overallCefrLevel) {
-          <div class="mb-5 rounded-xl bg-indigo-50 px-6 py-4 text-center" data-testid="placement-result-level">
-            <p class="text-xs font-semibold uppercase tracking-wide text-indigo-500 mb-1">Your level</p>
-            <p class="text-4xl font-extrabold text-indigo-700">{{ result.overallCefrLevel }}</p>
-            @if (result.isProvisional) {
-              <p class="mt-2 text-xs text-amber-600">
-                Provisional — more evidence is needed to confirm this level.
-                Your course will adjust as you learn.
-              </p>
-            }
-          </div>
-        }
-
-        <!-- Skill breakdown -->
-        @if (result.skillResults?.length) {
-          <div class="mb-5" data-testid="placement-skill-results">
-            <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Skill breakdown</p>
-            <div class="grid grid-cols-2 gap-2">
-              @for (skill of result.skillResults; track skill.skill) {
-                <div class="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
-                  <p class="text-xs font-medium text-slate-500">{{ skillLabel(skill.skill) }}</p>
-                  <p class="mt-0.5 text-lg font-bold text-slate-900">{{ skill.estimatedCefrLevel }}</p>
-                </div>
-              }
-            </div>
-          </div>
-        }
-
-        @if (result.learningPlanRegenerated) {
-          <p class="mb-4 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-700" data-testid="placement-plan-ready">
-            Your personalised course is ready.
-          </p>
-        }
-
-        <button
-          (click)="continueToDashboard()"
-          class="sp-button-primary w-full"
-          data-testid="placement-go-to-dashboard">
-          Go to Today's lesson
-        </button>
 
       </div>
     }

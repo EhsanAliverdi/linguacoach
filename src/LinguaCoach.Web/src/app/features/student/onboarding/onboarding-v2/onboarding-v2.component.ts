@@ -23,60 +23,48 @@ import { OnboardingV2QuestionStepComponent } from './steps/onboarding-v2-questio
     OnboardingV2QuestionStepComponent,
   ],
   template: `
-    <div class="sp-page">
-      <div class="sp-narrow-shell">
-        <!-- Brand header -->
-        <div class="mb-8 text-center">
-          <div class="sp-brand justify-center">
-            <span class="sp-brand-mark">S</span>
-            <span>SpeakPath</span>
-          </div>
+    <div *ngIf="loading" class="text-center py-12 text-slate-500">Loading...</div>
+    <div *ngIf="error" class="sp-alert-error mb-4">{{ error }}</div>
+
+    <ng-container *ngIf="!loading && status">
+      <!-- Progress bar -->
+      <div class="mb-6" *ngIf="!status.isComplete">
+        <div class="flex justify-between text-xs text-slate-500 mb-1">
+          <span>{{ currentStep?.categoryName ?? 'Progress' }}</span>
+          <span>{{ status.percentageComplete }}%</span>
         </div>
-
-        <div *ngIf="loading" class="text-center py-12 text-slate-500">Loading...</div>
-        <div *ngIf="error" class="sp-alert-error mb-4">{{ error }}</div>
-
-        <ng-container *ngIf="!loading && status">
-          <!-- Progress bar -->
-          <div class="mb-6" *ngIf="!status.isComplete">
-            <div class="flex justify-between text-xs text-slate-500 mb-1">
-              <span>{{ currentStep?.categoryName ?? 'Progress' }}</span>
-              <span>{{ status.percentageComplete }}%</span>
-            </div>
-            <div class="w-full bg-slate-200 rounded-full h-2">
-              <div
-                class="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                [style.width.%]="status.percentageComplete"
-                data-testid="onboarding-progress-bar"
-                [attr.aria-valuenow]="status.percentageComplete"
-              ></div>
-            </div>
-          </div>
-
-          <!-- Step renderer -->
-          <ng-container *ngIf="currentStep">
-            <app-onboarding-v2-welcome
-              *ngIf="currentStep.stepType === 'Welcome'"
-              [step]="currentStep"
-              (submitted)="onStepSubmitted($event)"
-            />
-            <app-onboarding-v2-summary
-              *ngIf="currentStep.stepType === 'Summary'"
-              [step]="currentStep"
-              [status]="status"
-              (completed)="onCompleted()"
-            />
-            <app-onboarding-v2-question
-              *ngIf="currentStep.stepType !== 'Welcome' && currentStep.stepType !== 'Summary'"
-              [step]="currentStep"
-              (submitted)="onStepSubmitted($event)"
-            />
-          </ng-container>
-        </ng-container>
-
-        <div *ngIf="submitError" class="sp-alert-error mt-4">{{ submitError }}</div>
+        <div class="w-full bg-slate-200 rounded-full h-2">
+          <div
+            class="bg-blue-600 h-2 rounded-full transition-all duration-300"
+            [style.width.%]="status.percentageComplete"
+            data-testid="onboarding-progress-bar"
+            [attr.aria-valuenow]="status.percentageComplete"
+          ></div>
+        </div>
       </div>
-    </div>
+
+      <!-- Step renderer -->
+      <ng-container *ngIf="currentStep">
+        <app-onboarding-v2-welcome
+          *ngIf="currentStep.stepType === 'Welcome'"
+          [step]="currentStep"
+          (submitted)="onStepSubmitted($event)"
+        />
+        <app-onboarding-v2-summary
+          *ngIf="currentStep.stepType === 'Summary'"
+          [step]="currentStep"
+          [status]="status"
+          (completed)="onCompleted()"
+        />
+        <app-onboarding-v2-question
+          *ngIf="currentStep.stepType !== 'Welcome' && currentStep.stepType !== 'Summary'"
+          [step]="currentStep"
+          (submitted)="onStepSubmitted($event)"
+        />
+      </ng-container>
+    </ng-container>
+
+    <div *ngIf="submitError" class="sp-alert-error mt-4">{{ submitError }}</div>
   `,
 })
 export class OnboardingV2Component implements OnInit {
@@ -163,7 +151,10 @@ export class OnboardingV2Component implements OnInit {
 
   private triggerComplete(): void {
     this.svc.complete().subscribe({
-      next: () => this.router.navigate(['/dashboard']),
+      // Route through /placement (not /dashboard) — placementAccessGuard sends
+      // already-placed students onward, but a freshly-onboarded student needs to land
+      // on the placement cards page, which the dashboard route does not redirect to.
+      next: () => this.router.navigate(['/placement']),
       error: (err) => {
         this.submitError = err?.error?.error ?? 'Could not complete onboarding. Please try again.';
       },

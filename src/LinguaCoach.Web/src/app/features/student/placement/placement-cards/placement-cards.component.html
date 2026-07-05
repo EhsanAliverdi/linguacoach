@@ -1,0 +1,137 @@
+<div class="mx-auto max-w-2xl" data-testid="placement-cards-page">
+
+  <!-- Loading -->
+  @if (state() === 'loading' || state() === 'finishing') {
+    <div class="sp-card py-12 text-center" data-testid="placement-cards-loading">
+      <div class="mx-auto mb-4 h-8 w-8 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"></div>
+      <p class="text-sm text-slate-500">
+        {{ state() === 'finishing' ? 'Building your personalised learning plan…' : 'Loading your placement…' }}
+      </p>
+    </div>
+  }
+
+  <!-- Cards -->
+  @if (state() === 'cards') {
+    <div class="sp-card" data-testid="placement-cards">
+      <p class="sp-eyebrow mb-2">Placement assessment</p>
+      <h1 class="text-2xl font-bold text-slate-950">Find your English level</h1>
+      <p class="mt-3 text-sm leading-6 text-slate-600">
+        Complete each area below at your own pace. Each one adapts to your level as you answer —
+        there's no pass or fail, this just sets the starting point for your course.
+      </p>
+
+      <div class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        @for (skill of skills(); track skill.skill) {
+          <button
+            type="button"
+            [disabled]="skill.completed"
+            (click)="openCard(skill)"
+            [attr.data-testid]="'placement-card-' + skill.skill"
+            [class]="'flex flex-col items-start gap-2 rounded-xl border-2 px-4 py-4 text-left transition-all ' +
+              (skill.completed
+                ? 'cursor-default border-green-200 bg-green-50'
+                : 'border-slate-200 bg-white hover:border-indigo-300 hover:bg-indigo-50/40')">
+            <div class="flex w-full items-center justify-between">
+              <span class="text-sm font-semibold text-slate-900">{{ skill.label }}</span>
+              @if (skill.completed) {
+                <span class="flex h-5 w-5 items-center justify-center rounded-full bg-green-500 text-white" data-testid="placement-card-complete-icon">
+                  <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                  </svg>
+                </span>
+              }
+            </div>
+            <div class="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+              <div
+                class="h-full rounded-full transition-all duration-300"
+                [class]="skill.completed ? 'bg-green-500' : 'bg-indigo-500'"
+                [style.width.%]="skill.percentComplete">
+              </div>
+            </div>
+            <span class="text-xs text-slate-500" data-testid="placement-card-percent">{{ skill.percentComplete }}% complete</span>
+          </button>
+        }
+      </div>
+
+      @if (allCompleted()) {
+        <button
+          (click)="finish()"
+          class="sp-button-primary mt-6 w-full"
+          data-testid="placement-finish">
+          Finish placement
+        </button>
+      }
+    </div>
+  }
+
+  <!-- Done -->
+  @if (state() === 'done') {
+    @if (result(); as r) {
+      <div class="sp-card" data-testid="placement-done">
+
+        <div class="mb-6 text-center">
+          <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
+            <svg class="h-7 w-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <p class="sp-eyebrow mb-1">Assessment complete</p>
+          <h1 class="text-2xl font-bold text-slate-950">Your level has been set</h1>
+        </div>
+
+        @if (r.overallCefrLevel) {
+          <div class="mb-5 rounded-xl bg-indigo-50 px-6 py-4 text-center" data-testid="placement-result-level">
+            <p class="text-xs font-semibold uppercase tracking-wide text-indigo-500 mb-1">Your level</p>
+            <p class="text-4xl font-extrabold text-indigo-700">{{ r.overallCefrLevel }}</p>
+            @if (r.isProvisional) {
+              <p class="mt-2 text-xs text-amber-600">
+                Provisional — more evidence is needed to confirm this level.
+                Your course will adjust as you learn.
+              </p>
+            }
+          </div>
+        }
+
+        @if (r.skillResults?.length) {
+          <div class="mb-5" data-testid="placement-skill-results">
+            <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-500">Skill breakdown</p>
+            <div class="grid grid-cols-2 gap-2">
+              @for (skill of r.skillResults; track skill.skill) {
+                <div class="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
+                  <p class="text-xs font-medium text-slate-500">{{ skillLabel(skill.skill) }}</p>
+                  <p class="mt-0.5 text-lg font-bold text-slate-900">{{ skill.estimatedCefrLevel }}</p>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        @if (r.learningPlanRegenerated) {
+          <p class="mb-4 rounded-xl bg-green-50 px-4 py-3 text-sm text-green-700" data-testid="placement-plan-ready">
+            Your personalised course is ready.
+          </p>
+        }
+
+        <button
+          (click)="continueToDashboard()"
+          class="sp-button-primary w-full"
+          data-testid="placement-go-to-dashboard">
+          Go to Today's lesson
+        </button>
+
+      </div>
+    }
+  }
+
+  <!-- Error -->
+  @if (state() === 'error') {
+    <div class="sp-card text-center" data-testid="placement-cards-error">
+      <p class="text-base font-semibold text-slate-900">Something went wrong</p>
+      <p class="mt-2 text-sm text-slate-500">{{ error() }}</p>
+      <button (click)="retry()" class="sp-button-primary mt-6 w-full" data-testid="placement-cards-retry">
+        Try again
+      </button>
+    </div>
+  }
+
+</div>

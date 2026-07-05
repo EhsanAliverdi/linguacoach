@@ -171,7 +171,7 @@ public sealed class AdminPlacementController : ControllerBase
         try
         {
             var result = await _placement.SubmitResponseAsync(
-                assessmentId, itemId, request.Response, request.DurationSeconds, ct);
+                assessmentId, itemId, request.Response, request.DurationSeconds, ct: ct);
             return Ok(result);
         }
         catch (InvalidOperationException ex)

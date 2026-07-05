@@ -7,6 +7,7 @@ import { moduleRedirectGuard } from './core/guards/module-redirect.guard';
 import { AuthService } from './core/services/auth.service';
 import { PublicLayoutComponent } from './design-system/public/layouts/public-layout/public-layout.component';
 import { StudentAppLayoutComponent } from './design-system/student/layouts/student-app-layout/student-app-layout.component';
+import { OnboardingLayoutComponent } from './design-system/student/layouts/onboarding-layout/onboarding-layout.component';
 import { AdminAppLayoutComponent } from './design-system/admin/layouts/admin-app-layout/admin-app-layout.component';
 
 export const routes: Routes = [
@@ -144,7 +145,7 @@ export const routes: Routes = [
   // ── Onboarding (student, authenticated) ──────────────────────────────
   {
     path: 'onboarding',
-    component: StudentAppLayoutComponent,
+    component: OnboardingLayoutComponent,
     canActivate: [authGuard],
     children: [
       { path: '', redirectTo: 'resume', pathMatch: 'full' },
@@ -156,11 +157,15 @@ export const routes: Routes = [
   // ── Placement (authenticated, not yet completed) ──────────────────────
   {
     path: 'placement',
-    component: StudentAppLayoutComponent,
+    component: OnboardingLayoutComponent,
     canActivate: [authGuard, placementAccessGuard],
     children: [
       {
         path: '',
+        loadComponent: () => import('./features/student/placement/placement-cards/placement-cards.component').then(m => m.PlacementCardsComponent),
+      },
+      {
+        path: ':skill',
         loadComponent: () => import('./features/student/placement/placement.component').then(m => m.PlacementComponent),
       },
     ],
@@ -174,6 +179,7 @@ export const routes: Routes = [
     children: [
       {
         path: 'dashboard',
+        canActivate: [placementRequiredRedirectGuard],
         loadComponent: () => import('./features/student/dashboard/dashboard/dashboard.component').then(m => m.DashboardComponent),
       },
       {
@@ -207,18 +213,22 @@ export const routes: Routes = [
       },
       {
         path: 'assessment',
+        canActivate: [placementRequiredRedirectGuard],
         loadComponent: () => import('./features/student/assessment/cefr-assessment/cefr-assessment.component').then(m => m.CefrAssessmentComponent),
       },
       {
         path: 'speaking',
+        canActivate: [placementRequiredRedirectGuard],
         loadComponent: () => import('./features/student/speaking/speaking-session/speaking-session.component').then(m => m.SpeakingSessionComponent),
       },
       {
         path: 'progress',
+        canActivate: [placementRequiredRedirectGuard],
         loadComponent: () => import('./features/student/progress/progress.component').then(m => m.ProgressComponent),
       },
       {
         path: 'vocabulary',
+        canActivate: [placementRequiredRedirectGuard],
         loadComponent: () => import('./features/student/vocabulary/vocabulary.component').then(m => m.VocabularyComponent),
       },
       {

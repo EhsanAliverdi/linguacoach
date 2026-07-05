@@ -95,6 +95,14 @@ public sealed record PlacementAssessmentSummaryDto(
     string? LearningPlanRegenerationWarning,
     int ItemCount);
 
+/// <summary>Per-skill status for the placement cards page — one card per skill.</summary>
+public sealed record PlacementSkillStatusDto(
+    string Skill,
+    string Label,
+    double PercentComplete,
+    bool Completed,
+    int EvidenceCount);
+
 public sealed record PlacementHistoryItemDto(
     Guid AssessmentId,
     string Status,

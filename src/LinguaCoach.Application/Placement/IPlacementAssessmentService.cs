@@ -9,7 +9,12 @@ public interface IPlacementAssessmentService
     Task AbandonAssessmentAsync(Guid assessmentId, CancellationToken ct = default);
 
     // Phase 13B — Real response submission and adaptive progression
-    Task<SubmitResponseResult> SubmitResponseAsync(Guid assessmentId, Guid itemId, string response, int? durationSeconds, CancellationToken ct = default);
-    Task<PlacementNextItemDto?> GetNextItemAsync(Guid assessmentId, CancellationToken ct = default);
+    // skillFilter (added for per-skill placement cards): when supplied, item selection is
+    // scoped to that one skill instead of the globally least-evidenced skill.
+    Task<SubmitResponseResult> SubmitResponseAsync(Guid assessmentId, Guid itemId, string response, int? durationSeconds, string? skillFilter = null, CancellationToken ct = default);
+    Task<PlacementNextItemDto?> GetNextItemAsync(Guid assessmentId, string? skillFilter = null, CancellationToken ct = default);
     Task<PlacementAssessmentProgressDto> GetProgressAsync(Guid assessmentId, CancellationToken ct = default);
+
+    /// <summary>Per-skill status (percent complete / completed) for the placement cards page.</summary>
+    Task<IReadOnlyList<PlacementSkillStatusDto>> GetSkillStatusAsync(Guid studentProfileId, CancellationToken ct = default);
 }

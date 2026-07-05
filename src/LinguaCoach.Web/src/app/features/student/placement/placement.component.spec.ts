@@ -1,20 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { PlacementComponent } from './placement.component';
 import { PlacementService } from '../../../core/services/placement.service';
-import {
-  AdaptivePlacementSummary,
-  AdaptivePlacementNextItem,
-  PlacementConfig,
-} from '../../../core/models/placement.models';
-
-const defaultConfig: PlacementConfig = {
-  placementRequiredBeforeLearning: true,
-  allowSkipPlacement: false,
-  allowPlacementRetake: false,
-  autoStartPlacement: false,
-};
+import { AdaptivePlacementSummary, AdaptivePlacementNextItem } from '../../../core/models/placement.models';
 
 function makeSummary(partial: Partial<AdaptivePlacementSummary> = {}): AdaptivePlacementSummary {
   return {
@@ -50,12 +39,10 @@ const mockItem: AdaptivePlacementNextItem = {
 };
 
 describe('PlacementComponent', () => {
-  function setup(overrides: Partial<PlacementService> = {}) {
+  function setup(overrides: Partial<PlacementService> = {}, skillParam: string | null = 'grammar') {
     const svc: Partial<PlacementService> = {
-      getPlacementConfig: () => of(defaultConfig),
       getAdaptiveCurrent: () => of({ hasPlacement: false } as any),
       startAdaptive: jasmine.createSpy('startAdaptive').and.returnValue(of(makeSummary())),
-      resumeAdaptive: jasmine.createSpy('resumeAdaptive').and.returnValue(of(makeSummary())),
       getAdaptiveNextItem: jasmine.createSpy('getAdaptiveNextItem').and.returnValue(of(mockItem)),
       respondToItem: jasmine.createSpy('respondToItem'),
       completeAdaptive: jasmine.createSpy('completeAdaptive'),
@@ -68,6 +55,10 @@ describe('PlacementComponent', () => {
       providers: [
         { provide: PlacementService, useValue: svc },
         { provide: Router, useValue: { navigate: jasmine.createSpy('navigate') } },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { paramMap: { get: () => skillParam } } },
+        },
       ],
     });
 
@@ -75,105 +66,55 @@ describe('PlacementComponent', () => {
     return { fixture, svc: TestBed.inject(PlacementService) as any, router: TestBed.inject(Router) as any };
   }
 
-  // ── Init: no assessment ───────────────────────────────────────────────────
+  // ── Init ──────────────────────────────────────────────────────────────────
 
-  it('shows welcome when no assessment exists', () => {
+  it('redirects to /placement when no :skill route param is present', () => {
+    const { fixture, router } = setup({}, null);
+    fixture.detectChanges();
+    expect(router.navigate).toHaveBeenCalledWith(['/placement']);
+  });
+
+  it('starts a new assessment when none exists, then loads the first scoped item', () => {
+    const inProgress = makeSummary({ status: 'InProgress' });
+    const startAdaptive = jasmine.createSpy('startAdaptive').and.returnValue(of(inProgress));
+    const getAdaptiveNextItem = jasmine.createSpy('getAdaptiveNextItem').and.returnValue(of(mockItem));
     const { fixture } = setup({
       getAdaptiveCurrent: () => of({ hasPlacement: false } as any),
+      startAdaptive,
+      getAdaptiveNextItem,
     });
     fixture.detectChanges();
-    expect(fixture.componentInstance.state()).toBe('welcome');
+
+    expect(startAdaptive).toHaveBeenCalled();
+    expect(getAdaptiveNextItem).toHaveBeenCalledWith('assess-1', 'grammar');
+    expect(fixture.componentInstance.state()).toBe('question');
   });
 
-  it('shows welcome when getAdaptiveCurrent returns null', () => {
-    const { fixture } = setup({
-      getAdaptiveCurrent: () => of(null as any),
+  it('redirects to /placement when the whole assessment is already Completed', () => {
+    const { fixture, router } = setup({
+      getAdaptiveCurrent: () => of(makeSummary({ status: 'Completed' })),
     });
     fixture.detectChanges();
-    expect(fixture.componentInstance.state()).toBe('welcome');
+    expect(router.navigate).toHaveBeenCalledWith(['/placement']);
   });
 
-  it('shows welcome on getAdaptiveCurrent error', () => {
-    const { fixture } = setup({
-      getAdaptiveCurrent: () => throwError(() => new Error('network')),
+  it('redirects to /placement when this skill has no next item (card already done)', () => {
+    const { fixture, router } = setup({
+      getAdaptiveCurrent: () => of(makeSummary()),
+      getAdaptiveNextItem: () => of(null),
     });
     fixture.detectChanges();
-    expect(fixture.componentInstance.state()).toBe('welcome');
+    expect(router.navigate).toHaveBeenCalledWith(['/placement']);
   });
 
-  // ── Init: existing assessment ─────────────────────────────────────────────
-
-  it('transitions to question when existing InProgress assessment', () => {
-    const inProgress = makeSummary({ status: 'InProgress' });
+  it('loads the scoped item for an existing in-progress assessment', () => {
     const { fixture } = setup({
-      getAdaptiveCurrent: () => of(inProgress),
+      getAdaptiveCurrent: () => of(makeSummary()),
       getAdaptiveNextItem: () => of(mockItem),
     });
     fixture.detectChanges();
     expect(fixture.componentInstance.state()).toBe('question');
     expect(fixture.componentInstance.currentItem()?.itemId).toBe('item-1');
-  });
-
-  it('shows done state when existing assessment is Completed', () => {
-    const completed = makeSummary({ status: 'Completed', overallCefrLevel: 'B1' });
-    const { fixture } = setup({
-      getAdaptiveCurrent: () => of(completed),
-    });
-    fixture.detectChanges();
-    expect(fixture.componentInstance.state()).toBe('done');
-    expect(fixture.componentInstance.assessment()?.overallCefrLevel).toBe('B1');
-  });
-
-  it('shows welcome for Abandoned assessment', () => {
-    const { fixture } = setup({
-      getAdaptiveCurrent: () => of(makeSummary({ status: 'Abandoned' })),
-    });
-    fixture.detectChanges();
-    expect(fixture.componentInstance.state()).toBe('welcome');
-  });
-
-  // ── begin() ───────────────────────────────────────────────────────────────
-
-  it('begin() calls startAdaptive and loads first question', () => {
-    const inProgress = makeSummary({ status: 'InProgress' });
-    const startAdaptive = jasmine.createSpy('startAdaptive').and.returnValue(of(inProgress));
-    const getAdaptiveNextItem = jasmine.createSpy('getAdaptiveNextItem').and.returnValue(of(mockItem));
-    const { fixture } = setup({ startAdaptive, getAdaptiveNextItem });
-
-    fixture.detectChanges();
-    fixture.componentInstance.begin();
-
-    expect(startAdaptive).toHaveBeenCalled();
-    expect(getAdaptiveNextItem).toHaveBeenCalledWith('assess-1');
-    expect(fixture.componentInstance.state()).toBe('question');
-  });
-
-  it('begin() calls resumeAdaptive when autoStartPlacement is true', () => {
-    const autoConfig = { ...defaultConfig, autoStartPlacement: true };
-    const inProgress = makeSummary({ status: 'InProgress' });
-    const resumeAdaptive = jasmine.createSpy('resumeAdaptive').and.returnValue(of(inProgress));
-    const getAdaptiveNextItem = jasmine.createSpy('getAdaptiveNextItem').and.returnValue(of(mockItem));
-    const { fixture } = setup({
-      getPlacementConfig: () => of(autoConfig),
-      resumeAdaptive,
-      getAdaptiveNextItem,
-    });
-
-    fixture.detectChanges();
-    fixture.componentInstance.begin();
-
-    expect(resumeAdaptive).toHaveBeenCalled();
-    expect(fixture.componentInstance.state()).toBe('question');
-  });
-
-  it('begin() transitions to error state on startAdaptive failure', () => {
-    const { fixture } = setup({
-      startAdaptive: () => throwError(() => ({ error: { error: 'Server error' } })),
-    });
-    fixture.detectChanges();
-    fixture.componentInstance.begin();
-    expect(fixture.componentInstance.state()).toBe('error');
-    expect(fixture.componentInstance.error()).toBeTruthy();
   });
 
   // ── selectChoice() / canSubmit ────────────────────────────────────────────
@@ -193,19 +134,12 @@ describe('PlacementComponent', () => {
 
   // ── submitAnswer() ────────────────────────────────────────────────────────
 
-  it('submitAnswer() transitions to done when assessmentComplete with summary', () => {
-    const completedSummary = makeSummary({ status: 'Completed', overallCefrLevel: 'B2' });
+  it('submitAnswer() sends the skill and returns to /placement when assessmentComplete', () => {
     const respondToItem = jasmine.createSpy('respondToItem').and.returnValue(of({
-      itemId: 'item-1',
-      isCorrect: true,
-      score: 1,
-      evaluationNotes: '',
-      assessmentComplete: true,
-      completionReason: 'max_items',
-      nextItem: null,
-      summary: completedSummary,
+      itemId: 'item-1', isCorrect: true, score: 1, evaluationNotes: '',
+      assessmentComplete: true, completionReason: 'max_items', nextItem: null, summary: null,
     }));
-    const { fixture } = setup({
+    const { fixture, router } = setup({
       getAdaptiveCurrent: () => of(makeSummary()),
       getAdaptiveNextItem: () => of(mockItem),
       respondToItem,
@@ -214,49 +148,32 @@ describe('PlacementComponent', () => {
     fixture.componentInstance.selectChoice('A');
     fixture.componentInstance.submitAnswer();
 
-    expect(respondToItem).toHaveBeenCalled();
-    expect(fixture.componentInstance.state()).toBe('done');
-    expect(fixture.componentInstance.assessment()?.overallCefrLevel).toBe('B2');
+    expect(respondToItem).toHaveBeenCalledWith(jasmine.objectContaining({ skill: 'grammar' }));
+    expect(router.navigate).toHaveBeenCalledWith(['/placement']);
   });
 
-  it('submitAnswer() triggers completion when assessmentComplete without summary', () => {
-    const completedSummary = makeSummary({ status: 'Completed' });
+  it('submitAnswer() returns to /placement when this skill card is done (no next item, not complete)', () => {
     const respondToItem = jasmine.createSpy('respondToItem').and.returnValue(of({
-      itemId: 'item-1',
-      isCorrect: true,
-      score: 1,
-      evaluationNotes: '',
-      assessmentComplete: true,
-      completionReason: 'max_items',
-      nextItem: null,
-      summary: null,
+      itemId: 'item-1', isCorrect: true, score: 1, evaluationNotes: '',
+      assessmentComplete: false, completionReason: null, nextItem: null, summary: null,
     }));
-    const completeAdaptive = jasmine.createSpy('completeAdaptive').and.returnValue(of(completedSummary));
-    const { fixture } = setup({
+    const { fixture, router } = setup({
       getAdaptiveCurrent: () => of(makeSummary()),
       getAdaptiveNextItem: () => of(mockItem),
       respondToItem,
-      completeAdaptive,
     });
     fixture.detectChanges();
     fixture.componentInstance.selectChoice('B');
     fixture.componentInstance.submitAnswer();
 
-    expect(completeAdaptive).toHaveBeenCalledWith('assess-1');
-    expect(fixture.componentInstance.state()).toBe('done');
+    expect(router.navigate).toHaveBeenCalledWith(['/placement']);
   });
 
   it('submitAnswer() loads next question when nextItem provided', () => {
     const nextItem: AdaptivePlacementNextItem = { ...mockItem, itemId: 'item-2', answeredCount: 1 };
     const respondToItem = jasmine.createSpy('respondToItem').and.returnValue(of({
-      itemId: 'item-1',
-      isCorrect: false,
-      score: 0,
-      evaluationNotes: '',
-      assessmentComplete: false,
-      completionReason: null,
-      nextItem,
-      summary: null,
+      itemId: 'item-1', isCorrect: false, score: 0, evaluationNotes: '',
+      assessmentComplete: false, completionReason: null, nextItem, summary: null,
     }));
     const { fixture } = setup({
       getAdaptiveCurrent: () => of(makeSummary()),
@@ -287,22 +204,14 @@ describe('PlacementComponent', () => {
     expect(fixture.componentInstance.error()).toBeTruthy();
   });
 
-  // ── continueToDashboard() ─────────────────────────────────────────────────
-
-  it('continueToDashboard() navigates to /dashboard', () => {
-    const { fixture, router } = setup();
-    fixture.detectChanges();
-    fixture.componentInstance.continueToDashboard();
-    expect(router.navigate).toHaveBeenCalledWith(['/dashboard']);
-  });
-
   // ── parseQuestionText() ───────────────────────────────────────────────────
 
   it('parseQuestionText() strips choices block', () => {
     const comp = TestBed.runInInjectionContext(() =>
       new PlacementComponent(
-        { getPlacementConfig: () => of(defaultConfig), getAdaptiveCurrent: () => of(null as any) } as any,
+        { getAdaptiveCurrent: () => of(null as any) } as any,
         { navigate: jasmine.createSpy() } as any,
+        { snapshot: { paramMap: { get: () => 'grammar' } } } as any,
       ));
     expect(comp.parseQuestionText('Fill in the blank. (A) is (B) are')).toBe('Fill in the blank.');
     expect(comp.parseQuestionText('What is this?')).toBe('What is this?');
@@ -314,8 +223,9 @@ describe('PlacementComponent', () => {
   it('parseChoices() extracts A/B/C choices', () => {
     const comp = TestBed.runInInjectionContext(() =>
       new PlacementComponent(
-        { getPlacementConfig: () => of(defaultConfig), getAdaptiveCurrent: () => of(null as any) } as any,
+        { getAdaptiveCurrent: () => of(null as any) } as any,
         { navigate: jasmine.createSpy() } as any,
+        { snapshot: { paramMap: { get: () => 'grammar' } } } as any,
       ));
     const choices = comp.parseChoices('Q text (A) First option (B) Second option (C) Third option');
     expect(choices.length).toBe(3);
@@ -327,8 +237,9 @@ describe('PlacementComponent', () => {
   it('parseChoices() returns empty for gap_fill prompts', () => {
     const comp = TestBed.runInInjectionContext(() =>
       new PlacementComponent(
-        { getPlacementConfig: () => of(defaultConfig), getAdaptiveCurrent: () => of(null as any) } as any,
+        { getAdaptiveCurrent: () => of(null as any) } as any,
         { navigate: jasmine.createSpy() } as any,
+        { snapshot: { paramMap: { get: () => 'grammar' } } } as any,
       ));
     expect(comp.parseChoices('Complete the sentence: She ___ to school.')).toEqual([]);
   });
@@ -377,21 +288,14 @@ describe('PlacementComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.audioUrl()).toBeNull();
-    // Question still renders — text remains usable without audio.
     expect(fixture.componentInstance.state()).toBe('question');
   });
 
   it('resets audioUrl when moving to the next question', () => {
     const nextItem: AdaptivePlacementNextItem = { ...mockItem, itemId: 'item-2', hasAudio: false };
     const respondToItem = jasmine.createSpy('respondToItem').and.returnValue(of({
-      itemId: 'item-listening',
-      isCorrect: true,
-      score: 1,
-      evaluationNotes: '',
-      assessmentComplete: false,
-      completionReason: null,
-      nextItem,
-      summary: null,
+      itemId: 'item-listening', isCorrect: true, score: 1, evaluationNotes: '',
+      assessmentComplete: false, completionReason: null, nextItem, summary: null,
     }));
     const { fixture } = setup({
       getAdaptiveCurrent: () => of(makeSummary()),
@@ -442,14 +346,8 @@ describe('PlacementComponent', () => {
       },
     };
     const respondToItem = jasmine.createSpy('respondToItem').and.returnValue(of({
-      itemId: 'item-1',
-      isCorrect: true,
-      score: 1,
-      evaluationNotes: '',
-      assessmentComplete: true,
-      completionReason: 'max_items',
-      nextItem: null,
-      summary: makeSummary({ status: 'Completed' }),
+      itemId: 'item-1', isCorrect: true, score: 1, evaluationNotes: '',
+      assessmentComplete: true, completionReason: 'max_items', nextItem: null, summary: null,
     }));
     const { fixture } = setup({
       getAdaptiveCurrent: () => of(makeSummary()),
@@ -466,22 +364,12 @@ describe('PlacementComponent', () => {
   it('resets structured answers when moving to the next question', () => {
     const contentItem: AdaptivePlacementNextItem = {
       ...mockItem,
-      content: {
-        type: 'gap_fill',
-        id: 'q1',
-        questionText: 'Complete the sentence.',
-      },
+      content: { type: 'gap_fill', id: 'q1', questionText: 'Complete the sentence.' },
     };
     const nextItem: AdaptivePlacementNextItem = { ...mockItem, itemId: 'item-2' };
     const respondToItem = jasmine.createSpy('respondToItem').and.returnValue(of({
-      itemId: 'item-1',
-      isCorrect: true,
-      score: 1,
-      evaluationNotes: '',
-      assessmentComplete: false,
-      completionReason: null,
-      nextItem,
-      summary: null,
+      itemId: 'item-1', isCorrect: true, score: 1, evaluationNotes: '',
+      assessmentComplete: false, completionReason: null, nextItem, summary: null,
     }));
     const { fixture } = setup({
       getAdaptiveCurrent: () => of(makeSummary()),
@@ -501,8 +389,9 @@ describe('PlacementComponent', () => {
   it('skillLabel() capitalises first letter', () => {
     const comp = TestBed.runInInjectionContext(() =>
       new PlacementComponent(
-        { getPlacementConfig: () => of(defaultConfig), getAdaptiveCurrent: () => of(null as any) } as any,
+        { getAdaptiveCurrent: () => of(null as any) } as any,
         { navigate: jasmine.createSpy() } as any,
+        { snapshot: { paramMap: { get: () => 'grammar' } } } as any,
       ));
     expect(comp.skillLabel('grammar')).toBe('Grammar');
     expect(comp.skillLabel('vocabulary')).toBe('Vocabulary');

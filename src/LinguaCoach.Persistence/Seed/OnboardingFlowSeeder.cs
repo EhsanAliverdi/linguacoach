@@ -30,9 +30,9 @@ public static class OnboardingFlowSeeder
         {
             var (placeholderSteps, _) = BuildDefaultFlow(existingActive.Id);
             var currentSignatures = existingActive.Steps
-                .Select(s => (s.StepKey, s.OptionsJson)).ToHashSet();
+                .Select(s => (s.StepKey, s.OptionsJson, s.RequirementType, s.IsEnabled)).ToHashSet();
             var targetSignatures = placeholderSteps
-                .Select(s => (s.StepKey, s.OptionsJson)).ToHashSet();
+                .Select(s => (s.StepKey, s.OptionsJson, s.RequirementType, s.IsEnabled)).ToHashSet();
             if (targetSignatures.SetEquals(currentSignatures)) return; // already up to date
 
             var newFlow = new OnboardingFlowDefinition("Default Flow", version: existingActive.Version + 1);
@@ -110,13 +110,13 @@ public static class OnboardingFlowSeeder
                 content: new FreeTextQuestion { QuestionText = "What should we call you?", MaxLength = 100 }),
 
             BuildStep(flowId, aboutYou.Id, "support_language", "Would you like support in another language?",
-                OnboardingStepTypeV2.SingleChoice, OnboardingStepRequirementType.SystemRequired, 3,
+                OnboardingStepTypeV2.SingleChoice, OnboardingStepRequirementType.AdminConfigured, 3,
                 description: "If you'd like explanations in your first language when something is unclear, select it here. This is optional — SpeakPath teaches in English.",
                 answerMapping: OnboardingAnswerMapping.SupportLanguage,
                 content: new SingleChoiceQuestion { QuestionText = "Would you like support in another language?", Choices = [], OptionsSource = "languages" }),
 
             BuildStep(flowId, goals.Id, "learning_goals", "What do you want to use English for?",
-                OnboardingStepTypeV2.MultipleChoice, OnboardingStepRequirementType.SystemRequired, 4,
+                OnboardingStepTypeV2.MultipleChoice, OnboardingStepRequirementType.AdminConfigured, 4,
                 description: "Select all that apply. This helps SpeakPath personalise your practice.",
                 answerMapping: OnboardingAnswerMapping.LearningGoals,
                 content: new MultipleChoiceQuestion
@@ -144,7 +144,7 @@ public static class OnboardingFlowSeeder
                 content: new FreeTextQuestion { QuestionText = "Anything else you'd like to use English for?", MaxLength = 200 }),
 
             BuildStep(flowId, goals.Id, "focus_areas", "Where would you like the most practice?",
-                OnboardingStepTypeV2.MultipleChoice, OnboardingStepRequirementType.SystemRequired, 6,
+                OnboardingStepTypeV2.MultipleChoice, OnboardingStepRequirementType.AdminConfigured, 6,
                 description: "Select your top areas. SpeakPath will prioritise these in your lessons.",
                 answerMapping: OnboardingAnswerMapping.FocusAreas,
                 content: new MultipleChoiceQuestion
@@ -174,7 +174,7 @@ public static class OnboardingFlowSeeder
                 content: new FreeTextQuestion { QuestionText = "Anything else you'd like to tell us?", MaxLength = 1000, IsMultiline = true }),
 
             BuildStep(flowId, preferences.Id, "difficulty_preference", "How challenging should your practice feel?",
-                OnboardingStepTypeV2.SingleChoice, OnboardingStepRequirementType.SystemRequired, 9,
+                OnboardingStepTypeV2.SingleChoice, OnboardingStepRequirementType.AdminConfigured, 9,
                 description: "You can change this at any time from your profile.",
                 answerMapping: OnboardingAnswerMapping.DifficultyPreference,
                 // Option keys must match DifficultyPreference enum member names exactly.
@@ -190,7 +190,7 @@ public static class OnboardingFlowSeeder
                 }),
 
             BuildStep(flowId, preferences.Id, "session_duration", "How much time do you want to spend in each lesson?",
-                OnboardingStepTypeV2.SingleChoice, OnboardingStepRequirementType.SystemRequired, 10,
+                OnboardingStepTypeV2.SingleChoice, OnboardingStepRequirementType.AdminConfigured, 10,
                 description: "We'll use this to build lessons that fit your schedule.",
                 answerMapping: OnboardingAnswerMapping.SessionDuration,
                 content: new SingleChoiceQuestion

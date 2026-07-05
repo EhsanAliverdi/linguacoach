@@ -124,6 +124,17 @@ export interface AdaptivePlacementRespondRequest {
   itemId: string;
   response: string;
   durationSeconds?: number | null;
+  /** Placement-cards flow: scopes adaptive item selection to this one skill. */
+  skill?: string | null;
+}
+
+/** One card's status on the placement-cards landing page. */
+export interface PlacementSkillStatus {
+  skill: string;
+  label: string;
+  percentComplete: number;
+  completed: boolean;
+  evidenceCount: number;
 }
 
 export interface AdaptivePlacementSubmitResult {

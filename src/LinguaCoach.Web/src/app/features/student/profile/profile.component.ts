@@ -25,33 +25,39 @@ import {
   PlacementConfig,
 } from '../../../core/models/placement.models';
 
-const PREDEFINED_LEARNING_GOALS = [
-  'Day-to-day English',
-  'Travel English',
-  'Workplace English',
-  'Academic English',
-  'Migration & settlement',
-  'Job interviews',
-  'Social conversation',
-  'Pronunciation',
-  'Listening confidence',
-  'Writing confidence',
-  'Exam-inspired practice',
+/** Keys must match the onboarding "learning_goals" MultipleChoiceQuestion choices
+ * (OnboardingFlowSeeder.cs) exactly — StudentProfile.LearningGoals stores raw choice keys,
+ * and this page must recognise them as selected, not just goals picked here. Extra
+ * profile-only options (not offered during onboarding) get their own keys. */
+const PREDEFINED_LEARNING_GOALS: ReadonlyArray<{ key: string; label: string }> = [
+  { key: 'day_to_day', label: 'Day-to-day English' },
+  { key: 'travel', label: 'Travel English' },
+  { key: 'work', label: 'Workplace English' },
+  { key: 'study', label: 'Academic English' },
+  { key: 'migration', label: 'Migration & settlement' },
+  { key: 'job_interview', label: 'Job interviews' },
+  { key: 'social', label: 'Social conversation' },
+  { key: 'pronunciation', label: 'Pronunciation' },
+  { key: 'listening_confidence', label: 'Listening confidence' },
+  { key: 'writing_confidence', label: 'Writing confidence' },
+  { key: 'exam_inspired_practice', label: 'Exam-inspired practice' },
 ];
 
-const PREDEFINED_FOCUS_AREAS = [
-  'Speaking',
-  'Listening',
-  'Writing',
-  'Reading',
-  'Vocabulary',
-  'Grammar',
-  'Pronunciation',
-  'Fluency',
-  'Confidence',
-  'Interviews',
-  'Travel conversations',
-  'Social conversation',
+/** Keys must match the onboarding "focus_areas" MultipleChoiceQuestion choices
+ * (OnboardingFlowSeeder.cs) exactly — see note on PREDEFINED_LEARNING_GOALS above. */
+const PREDEFINED_FOCUS_AREAS: ReadonlyArray<{ key: string; label: string }> = [
+  { key: 'speaking', label: 'Speaking' },
+  { key: 'listening', label: 'Listening' },
+  { key: 'writing', label: 'Writing' },
+  { key: 'reading', label: 'Reading' },
+  { key: 'vocabulary', label: 'Vocabulary' },
+  { key: 'grammar', label: 'Grammar' },
+  { key: 'pronunciation', label: 'Pronunciation' },
+  { key: 'fluency', label: 'Fluency' },
+  { key: 'confidence', label: 'Confidence' },
+  { key: 'interviews', label: 'Interviews' },
+  { key: 'travel_conversations', label: 'Travel conversations' },
+  { key: 'social_conversation', label: 'Social conversation' },
 ];
 
 const CEFR_EXPLANATIONS: Record<string, string> = {
@@ -202,15 +208,15 @@ const SUPPORT_LANGUAGES = [
       <div class="sp-card" style="padding:18px;margin-bottom:16px">
         <div style="font-size:12px;color:var(--sp-muted);margin-bottom:10px">Select what you want to achieve</div>
         <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px" data-testid="learning-goals-chips">
-          @for (goal of predefinedGoals; track goal) {
+          @for (goal of predefinedGoals; track goal.key) {
             <button
               type="button"
-              (click)="toggleGoal(goal)"
+              (click)="toggleGoal(goal.key)"
               class="sp-pref-chip"
-              [class.sp-pref-chip--on]="isGoalSelected(goal)"
-              [attr.aria-pressed]="isGoalSelected(goal)"
-              [attr.data-testid]="'goal-chip-' + goal"
-            >{{ goal }}</button>
+              [class.sp-pref-chip--on]="isGoalSelected(goal.key)"
+              [attr.aria-pressed]="isGoalSelected(goal.key)"
+              [attr.data-testid]="'goal-chip-' + goal.key"
+            >{{ goal.label }}</button>
           }
         </div>
         <div>
@@ -230,15 +236,15 @@ const SUPPORT_LANGUAGES = [
       <div class="sp-card" style="padding:18px;margin-bottom:16px">
         <div style="font-size:12px;color:var(--sp-muted);margin-bottom:10px">Select skills to focus on</div>
         <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
-          @for (area of predefinedFocusAreas; track area) {
+          @for (area of predefinedFocusAreas; track area.key) {
             <button
               type="button"
-              (click)="toggleFocusArea(area)"
+              (click)="toggleFocusArea(area.key)"
               class="sp-pref-chip"
-              [class.sp-pref-chip--on]="isFocusAreaSelected(area)"
-              [attr.aria-pressed]="isFocusAreaSelected(area)"
-              [attr.data-testid]="'focus-chip-' + area"
-            >{{ area }}</button>
+              [class.sp-pref-chip--on]="isFocusAreaSelected(area.key)"
+              [attr.aria-pressed]="isFocusAreaSelected(area.key)"
+              [attr.data-testid]="'focus-chip-' + area.key"
+            >{{ area.label }}</button>
           }
         </div>
         <div>

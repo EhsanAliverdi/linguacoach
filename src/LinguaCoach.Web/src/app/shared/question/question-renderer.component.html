@@ -44,25 +44,64 @@
   }
   @case ('single_choice') {
     <p class="text-base font-semibold leading-7 text-slate-900" data-testid="question-text">{{ c.questionText }}</p>
-    <div class="mt-4 space-y-2" data-testid="question-single-choice">
-      @for (choice of c.choices; track trackChoice($index, choice)) {
+    @if (c.optionsSource === 'languages') {
+      <div class="mt-4 flex gap-3" data-testid="question-language-support-toggle">
         <button
           type="button"
           [disabled]="disabled()"
-          (click)="setSingleValue(c.id, choice.key)"
-          [attr.data-testid]="'question-choice-' + choice.key"
-          [class]="'flex w-full items-start gap-3 rounded-xl border-2 px-4 py-3 text-left text-sm transition-all ' +
-            (isSelected(c.id, choice.key)
+          (click)="selectYesLanguageSupport(c.id, c.choices)"
+          data-testid="question-language-support-yes"
+          [class]="'flex-1 rounded-xl border-2 px-4 py-3 text-sm font-medium transition-all ' +
+            (isLanguageSupportYes(c.id)
               ? 'border-indigo-500 bg-indigo-50 text-indigo-900'
               : 'border-slate-200 bg-white text-slate-700 hover:border-indigo-300 hover:bg-indigo-50/40')">
-          <span class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold"
-            [class]="isSelected(c.id, choice.key) ? 'border-indigo-500 text-indigo-600' : 'border-slate-300 text-slate-400'">
-            {{ choice.key }}
-          </span>
-          <span class="leading-5">{{ choice.label }}</span>
+          Yes
         </button>
+        <button
+          type="button"
+          [disabled]="disabled()"
+          (click)="selectNoLanguageSupport(c.id)"
+          data-testid="question-language-support-no"
+          [class]="'flex-1 rounded-xl border-2 px-4 py-3 text-sm font-medium transition-all ' +
+            (!isLanguageSupportYes(c.id)
+              ? 'border-indigo-500 bg-indigo-50 text-indigo-900'
+              : 'border-slate-200 bg-white text-slate-700 hover:border-indigo-300 hover:bg-indigo-50/40')">
+          No
+        </button>
+      </div>
+      @if (isLanguageSupportYes(c.id)) {
+        <select
+          [ngModel]="getSingleValue(c.id)"
+          (ngModelChange)="setSingleValue(c.id, $event)"
+          [disabled]="disabled()"
+          class="sp-input mt-3 w-full"
+          data-testid="question-language-support-select">
+          @for (choice of nonNoneChoices(c.choices); track trackChoice($index, choice)) {
+            <option [value]="choice.key">{{ choice.label }}</option>
+          }
+        </select>
       }
-    </div>
+    } @else {
+      <div class="mt-4 space-y-2" data-testid="question-single-choice">
+        @for (choice of c.choices; track trackChoice($index, choice)) {
+          <button
+            type="button"
+            [disabled]="disabled()"
+            (click)="setSingleValue(c.id, choice.key)"
+            [attr.data-testid]="'question-choice-' + choice.key"
+            [class]="'flex w-full items-start gap-3 rounded-xl border-2 px-4 py-3 text-left text-sm transition-all ' +
+              (isSelected(c.id, choice.key)
+                ? 'border-indigo-500 bg-indigo-50 text-indigo-900'
+                : 'border-slate-200 bg-white text-slate-700 hover:border-indigo-300 hover:bg-indigo-50/40')">
+            <span class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold"
+              [class]="isSelected(c.id, choice.key) ? 'border-indigo-500 text-indigo-600' : 'border-slate-300 text-slate-400'">
+              {{ choice.key }}
+            </span>
+            <span class="leading-5">{{ choice.label }}</span>
+          </button>
+        }
+      </div>
+    }
   }
   @case ('multiple_choice') {
     <p class="text-base font-semibold leading-7 text-slate-900" data-testid="question-text">{{ c.questionText }}</p>
@@ -102,14 +141,26 @@
   }
   @case ('free_text') {
     <p class="text-base font-semibold leading-7 text-slate-900" data-testid="question-text">{{ c.questionText }}</p>
-    <textarea
-      [ngModel]="getSingleValue(c.id)"
-      (ngModelChange)="setSingleValue(c.id, $event)"
-      [disabled]="disabled()"
-      [placeholder]="c.placeholder ?? ''"
-      [attr.maxlength]="c.maxLength ?? null"
-      rows="4"
-      class="sp-input mt-4 w-full"
-      data-testid="question-free-text-input"></textarea>
+    @if (c.isMultiline) {
+      <textarea
+        [ngModel]="getSingleValue(c.id)"
+        (ngModelChange)="setSingleValue(c.id, $event)"
+        [disabled]="disabled()"
+        [placeholder]="c.placeholder ?? ''"
+        [attr.maxlength]="c.maxLength ?? null"
+        rows="4"
+        class="sp-input mt-4 w-full"
+        data-testid="question-free-text-input"></textarea>
+    } @else {
+      <input
+        type="text"
+        [ngModel]="getSingleValue(c.id)"
+        (ngModelChange)="setSingleValue(c.id, $event)"
+        [disabled]="disabled()"
+        [placeholder]="c.placeholder ?? ''"
+        [attr.maxlength]="c.maxLength ?? null"
+        class="sp-input mt-4 w-full"
+        data-testid="question-free-text-input" />
+    }
   }
 }

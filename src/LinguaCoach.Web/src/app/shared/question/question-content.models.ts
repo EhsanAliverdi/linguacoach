@@ -13,6 +13,7 @@ export interface SingleChoiceQuestion {
   questionText: string;
   choices: ChoiceOption[];
   correctAnswerKey?: string | null;
+  optionsSource?: string | null;
 }
 
 export interface MultipleChoiceQuestion {
@@ -36,6 +37,7 @@ export interface FreeTextQuestion {
   questionText: string;
   placeholder?: string | null;
   maxLength?: number | null;
+  isMultiline?: boolean;
 }
 
 export type LeafQuestionContent =
