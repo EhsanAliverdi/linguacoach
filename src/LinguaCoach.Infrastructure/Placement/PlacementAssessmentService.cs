@@ -40,8 +40,8 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
     // ── Item bank (Phase 20I-4: admin-configurable, loaded from PlacementItemDefinition) ───
 
     private record PlacementItemTemplate(
-        string Skill, string CefrLevel, string ItemType, string Prompt, string CorrectAnswer,
-        string? ReadingPassage, string? ListeningAudioScript, QuestionContent? Content);
+        Guid DefinitionId, string Skill, string CefrLevel, string ItemType, string Prompt, string CorrectAnswer,
+        string? ReadingPassage, string? ListeningAudioScript, QuestionContent? Content, string? FormIoSchemaJson);
 
     /// <summary>Loads the enabled item bank once per outer call — replaces the old hardcoded static list.</summary>
     private async Task<List<PlacementItemTemplate>> LoadItemBankAsync(CancellationToken ct)
@@ -52,8 +52,27 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
             .ToListAsync(ct);
 
         return rows.Select(i => new PlacementItemTemplate(
-            i.Skill, i.CefrLevel, i.ItemType, i.Prompt, i.CorrectAnswer,
-            i.ReadingPassage, i.ListeningAudioScript, i.Content)).ToList();
+            i.Id, i.Skill, i.CefrLevel, i.ItemType, i.Prompt, i.CorrectAnswer,
+            i.ReadingPassage, i.ListeningAudioScript, i.Content, i.FormIoSchemaJson)).ToList();
+    }
+
+    /// <summary>Dedup identity for "has this item already been issued in this assessment" — prefers
+    /// the stable PlacementItemDefinition FK (SourceItemDefinitionId) added for Form.io-authored
+    /// items, falling back to Prompt-text matching for items issued before that field existed.</summary>
+    private static bool IsUsed(PlacementItemTemplate template, IReadOnlyCollection<PlacementAssessmentItem> issuedItems)
+    {
+        foreach (var issued in issuedItems)
+        {
+            if (issued.SourceItemDefinitionId.HasValue)
+            {
+                if (issued.SourceItemDefinitionId.Value == template.DefinitionId) return true;
+            }
+            else if (string.Equals(issued.Prompt, template.Prompt, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static readonly string[] CefrLevels = ["A1", "A2", "B1", "B2"];
@@ -141,8 +160,6 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
         SkillConfidenceState state,
         IReadOnlyList<PlacementItemTemplate> itemBank)
     {
-        var usedPrompts = allItems.Select(i => i.Prompt).ToHashSet(StringComparer.Ordinal);
-
         // Determine target level from last answered item for this skill
         var lastForSkill = allItems
             .Where(i => i.Skill == skill && i.IsCorrect.HasValue)
@@ -178,7 +195,7 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
         foreach (var level in levelsToTry)
         {
             var candidate = itemBank.FirstOrDefault(
-                t => t.Skill == skill && t.CefrLevel == level && !usedPrompts.Contains(t.Prompt));
+                t => t.Skill == skill && t.CefrLevel == level && !IsUsed(t, allItems));
             if (candidate is not null) return candidate;
         }
 
@@ -211,10 +228,9 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
         }
 
         // Check whether all item bank slots are exhausted for pending skills
-        var usedPrompts = items.Select(i => i.Prompt).ToHashSet(StringComparer.Ordinal);
         var allExhausted = _opts.SkillsToAssess
             .Where(skill => !states.TryGetValue(skill, out var s) || s.Confidence < _opts.ConfidenceThreshold)
-            .All(skill => !itemBank.Any(t => t.Skill == skill && !usedPrompts.Contains(t.Prompt)));
+            .All(skill => !itemBank.Any(t => t.Skill == skill && !IsUsed(t, items)));
 
         if (allExhausted)
         {
@@ -233,14 +249,12 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
         Dictionary<string, SkillConfidenceState> states,
         IReadOnlyList<PlacementItemTemplate> itemBank)
     {
-        var usedPrompts = items.Select(i => i.Prompt).ToHashSet(StringComparer.Ordinal);
-
         return _opts.SkillsToAssess
             .Where(skill =>
             {
                 if (states.TryGetValue(skill, out var s) && s.Confidence >= _opts.ConfidenceThreshold)
                     return false; // already confident enough
-                return itemBank.Any(t => t.Skill == skill && !usedPrompts.Contains(t.Prompt));
+                return itemBank.Any(t => t.Skill == skill && !IsUsed(t, items));
             })
             .OrderBy(skill => states.TryGetValue(skill, out var s) ? s.EvidenceCount : 0)
             .FirstOrDefault();
@@ -441,7 +455,8 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
                 items.Add(PlacementAssessmentItem.Create(
                     assessmentId, template.Skill, template.CefrLevel,
                     template.ItemType, template.Prompt, template.CorrectAnswer, order++,
-                    template.ReadingPassage, template.ListeningAudioScript, template.Content));
+                    template.ReadingPassage, template.ListeningAudioScript, template.Content,
+                    template.DefinitionId, template.FormIoSchemaJson));
             }
 
             if (startIdx + 1 < CefrLevels.Length)
@@ -455,7 +470,8 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
                     items.Add(PlacementAssessmentItem.Create(
                         assessmentId, template.Skill, template.CefrLevel,
                         template.ItemType, template.Prompt, template.CorrectAnswer, order++,
-                        template.ReadingPassage, template.ListeningAudioScript, template.Content));
+                        template.ReadingPassage, template.ListeningAudioScript, template.Content,
+                        template.DefinitionId, template.FormIoSchemaJson));
                 }
             }
         }
@@ -615,7 +631,8 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
         var newItem = PlacementAssessmentItem.Create(
             assessment.Id, template.Skill, template.CefrLevel,
             template.ItemType, template.Prompt, template.CorrectAnswer, newOrder,
-            template.ReadingPassage, template.ListeningAudioScript, template.Content);
+            template.ReadingPassage, template.ListeningAudioScript, template.Content,
+            template.DefinitionId, template.FormIoSchemaJson);
 
         _db.PlacementAssessmentItems.Add(newItem);
         await _db.SaveChangesAsync(ct);
@@ -639,13 +656,19 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
     {
         if (item is null) return null;
 
+        var redactedContent = item.Content is not null ? QuestionContentRedactor.RedactCorrectAnswers(item.Content) : null;
+        var formIoSchema = item.FormIoSchemaJson
+            ?? (redactedContent is not null ? QuestionContentToFormIoMapper.Map(redactedContent) : null);
+
         return new PlacementNextItemDto(
             item.Id, item.Skill, item.TargetCefrLevel, item.ItemType, item.Prompt, item.ItemOrder,
             items.Count(i => i.IsCorrect.HasValue),
             EstimateRemaining(items, states),
             item.ReadingPassage,
             !string.IsNullOrWhiteSpace(item.ListeningAudioScript),
-            item.Content is not null ? QuestionContentRedactor.RedactCorrectAnswers(item.Content) : null);
+            redactedContent,
+            formIoSchema,
+            RendererKind: nameof(FormRendererKind.FormIo));
     }
 
     private int EstimateRemaining(
@@ -801,13 +824,12 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
         var items = (IReadOnlyCollection<PlacementAssessmentItem>?)assessment?.Items ?? Array.Empty<PlacementAssessmentItem>();
         var wholeAssessmentDone = assessment?.Status == PlacementStatus.Completed;
         var itemBank = await LoadItemBankAsync(ct);
-        var usedPrompts = items.Select(i => i.Prompt).ToHashSet(StringComparer.Ordinal);
 
         var results = new List<PlacementSkillStatusDto>();
         foreach (var skill in _opts.SkillsToAssess.Distinct())
         {
             var state = ComputeSkillConfidence(items, skill, _opts.StartingLevelFallback);
-            var exhausted = !itemBank.Any(t => t.Skill == skill && !usedPrompts.Contains(t.Prompt));
+            var exhausted = !itemBank.Any(t => t.Skill == skill && !IsUsed(t, items));
             var completed = wholeAssessmentDone
                 || state.Confidence >= _opts.ConfidenceThreshold
                 || (exhausted && state.EvidenceCount > 0);

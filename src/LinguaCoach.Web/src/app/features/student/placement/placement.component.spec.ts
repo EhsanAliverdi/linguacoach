@@ -27,15 +27,21 @@ function makeSummary(partial: Partial<AdaptivePlacementSummary> = {}): AdaptiveP
   };
 }
 
+const SCHEMA_JSON = JSON.stringify({
+  display: 'form',
+  components: [{ type: 'radio', key: 'q1', values: [{ label: 'was', value: 'A' }, { label: 'were', value: 'B' }] }],
+});
+
 const mockItem: AdaptivePlacementNextItem = {
   itemId: 'item-1',
   skill: 'grammar',
   targetCefrLevel: 'B1',
   itemType: 'multiple_choice',
-  prompt: 'Choose the correct verb form. (A) was (B) were (C) is',
+  prompt: 'Choose the correct verb form.',
   itemOrder: 1,
   answeredCount: 0,
   estimatedRemainingItems: 9,
+  formIoSchemaJson: SCHEMA_JSON,
 };
 
 describe('PlacementComponent', () => {
@@ -117,24 +123,71 @@ describe('PlacementComponent', () => {
     expect(fixture.componentInstance.currentItem()?.itemId).toBe('item-1');
   });
 
-  // ── selectChoice() / canSubmit ────────────────────────────────────────────
+  // ── parsedSchema / canSubmit ──────────────────────────────────────────────
 
-  it('selectChoice() sets selectedAnswer and enables submit', () => {
+  it('parsedSchema parses the item formIoSchemaJson', () => {
     const { fixture } = setup({
       getAdaptiveCurrent: () => of(makeSummary()),
       getAdaptiveNextItem: () => of(mockItem),
     });
     fixture.detectChanges();
+    expect(fixture.componentInstance.parsedSchema()).toEqual(JSON.parse(SCHEMA_JSON));
+  });
 
+  it('canSubmit is false without a valid schema, true once schema is present', () => {
+    const noSchemaItem: AdaptivePlacementNextItem = { ...mockItem, formIoSchemaJson: null };
+    const { fixture } = setup({
+      getAdaptiveCurrent: () => of(makeSummary()),
+      getAdaptiveNextItem: () => of(noSchemaItem),
+    });
+    fixture.detectChanges();
     expect(fixture.componentInstance.canSubmit()).toBeFalse();
-    fixture.componentInstance.selectChoice('A');
-    expect(fixture.componentInstance.selectedAnswer()).toBe('A');
+  });
+
+  it('canSubmit is true once a schema is loaded and not submitting', () => {
+    const { fixture } = setup({
+      getAdaptiveCurrent: () => of(makeSummary()),
+      getAdaptiveNextItem: () => of(mockItem),
+    });
+    fixture.detectChanges();
     expect(fixture.componentInstance.canSubmit()).toBeTrue();
   });
 
-  // ── submitAnswer() ────────────────────────────────────────────────────────
+  // ── onFormSubmit() ────────────────────────────────────────────────────────
 
-  it('submitAnswer() sends the skill and returns to /placement when assessmentComplete', () => {
+  it('onFormSubmit() extracts the single component value as response', () => {
+    const respondToItem = jasmine.createSpy('respondToItem').and.returnValue(of({
+      itemId: 'item-1', isCorrect: true, score: 1, evaluationNotes: '',
+      assessmentComplete: true, completionReason: 'max_items', nextItem: null, summary: null,
+    }));
+    const { fixture } = setup({
+      getAdaptiveCurrent: () => of(makeSummary()),
+      getAdaptiveNextItem: () => of(mockItem),
+      respondToItem,
+    });
+    fixture.detectChanges();
+    fixture.componentInstance.onFormSubmit({ q1: 'B' });
+
+    expect(respondToItem).toHaveBeenCalledWith(jasmine.objectContaining({ skill: 'grammar', response: 'B' }));
+  });
+
+  it('onFormSubmit() falls back to the first key for a multi-component submission', () => {
+    const respondToItem = jasmine.createSpy('respondToItem').and.returnValue(of({
+      itemId: 'item-1', isCorrect: true, score: 1, evaluationNotes: '',
+      assessmentComplete: true, completionReason: 'max_items', nextItem: null, summary: null,
+    }));
+    const { fixture } = setup({
+      getAdaptiveCurrent: () => of(makeSummary()),
+      getAdaptiveNextItem: () => of(mockItem),
+      respondToItem,
+    });
+    fixture.detectChanges();
+    fixture.componentInstance.onFormSubmit({ q1: 'A', q2: 'C' });
+
+    expect(respondToItem).toHaveBeenCalledWith(jasmine.objectContaining({ response: 'A' }));
+  });
+
+  it('onFormSubmit() returns to /placement when assessmentComplete', () => {
     const respondToItem = jasmine.createSpy('respondToItem').and.returnValue(of({
       itemId: 'item-1', isCorrect: true, score: 1, evaluationNotes: '',
       assessmentComplete: true, completionReason: 'max_items', nextItem: null, summary: null,
@@ -145,14 +198,12 @@ describe('PlacementComponent', () => {
       respondToItem,
     });
     fixture.detectChanges();
-    fixture.componentInstance.selectChoice('A');
-    fixture.componentInstance.submitAnswer();
+    fixture.componentInstance.onFormSubmit({ q1: 'A' });
 
-    expect(respondToItem).toHaveBeenCalledWith(jasmine.objectContaining({ skill: 'grammar' }));
     expect(router.navigate).toHaveBeenCalledWith(['/placement']);
   });
 
-  it('submitAnswer() returns to /placement when this skill card is done (no next item, not complete)', () => {
+  it('onFormSubmit() returns to /placement when this skill card is done (no next item, not complete)', () => {
     const respondToItem = jasmine.createSpy('respondToItem').and.returnValue(of({
       itemId: 'item-1', isCorrect: true, score: 1, evaluationNotes: '',
       assessmentComplete: false, completionReason: null, nextItem: null, summary: null,
@@ -163,13 +214,12 @@ describe('PlacementComponent', () => {
       respondToItem,
     });
     fixture.detectChanges();
-    fixture.componentInstance.selectChoice('B');
-    fixture.componentInstance.submitAnswer();
+    fixture.componentInstance.onFormSubmit({ q1: 'B' });
 
     expect(router.navigate).toHaveBeenCalledWith(['/placement']);
   });
 
-  it('submitAnswer() loads next question when nextItem provided', () => {
+  it('onFormSubmit() loads next question when nextItem provided', () => {
     const nextItem: AdaptivePlacementNextItem = { ...mockItem, itemId: 'item-2', answeredCount: 1 };
     const respondToItem = jasmine.createSpy('respondToItem').and.returnValue(of({
       itemId: 'item-1', isCorrect: false, score: 0, evaluationNotes: '',
@@ -181,14 +231,13 @@ describe('PlacementComponent', () => {
       respondToItem,
     });
     fixture.detectChanges();
-    fixture.componentInstance.selectChoice('C');
-    fixture.componentInstance.submitAnswer();
+    fixture.componentInstance.onFormSubmit({ q1: 'C' });
 
     expect(fixture.componentInstance.state()).toBe('question');
     expect(fixture.componentInstance.currentItem()?.itemId).toBe('item-2');
   });
 
-  it('submitAnswer() shows question with error on respondToItem failure', () => {
+  it('onFormSubmit() shows question with error on respondToItem failure', () => {
     const respondToItem = jasmine.createSpy('respondToItem').and.returnValue(
       throwError(() => ({ error: { error: 'Timeout' } })));
     const { fixture } = setup({
@@ -197,54 +246,13 @@ describe('PlacementComponent', () => {
       respondToItem,
     });
     fixture.detectChanges();
-    fixture.componentInstance.selectChoice('A');
-    fixture.componentInstance.submitAnswer();
+    fixture.componentInstance.onFormSubmit({ q1: 'A' });
 
     expect(fixture.componentInstance.state()).toBe('question');
     expect(fixture.componentInstance.error()).toBeTruthy();
   });
 
-  // ── parseQuestionText() ───────────────────────────────────────────────────
-
-  it('parseQuestionText() strips choices block', () => {
-    const comp = TestBed.runInInjectionContext(() =>
-      new PlacementComponent(
-        { getAdaptiveCurrent: () => of(null as any) } as any,
-        { navigate: jasmine.createSpy() } as any,
-        { snapshot: { paramMap: { get: () => 'grammar' } } } as any,
-      ));
-    expect(comp.parseQuestionText('Fill in the blank. (A) is (B) are')).toBe('Fill in the blank.');
-    expect(comp.parseQuestionText('What is this?')).toBe('What is this?');
-    expect(comp.parseQuestionText('')).toBe('');
-  });
-
-  // ── parseChoices() ────────────────────────────────────────────────────────
-
-  it('parseChoices() extracts A/B/C choices', () => {
-    const comp = TestBed.runInInjectionContext(() =>
-      new PlacementComponent(
-        { getAdaptiveCurrent: () => of(null as any) } as any,
-        { navigate: jasmine.createSpy() } as any,
-        { snapshot: { paramMap: { get: () => 'grammar' } } } as any,
-      ));
-    const choices = comp.parseChoices('Q text (A) First option (B) Second option (C) Third option');
-    expect(choices.length).toBe(3);
-    expect(choices[0]).toEqual({ letter: 'A', text: 'First option' });
-    expect(choices[1]).toEqual({ letter: 'B', text: 'Second option' });
-    expect(choices[2]).toEqual({ letter: 'C', text: 'Third option' });
-  });
-
-  it('parseChoices() returns empty for gap_fill prompts', () => {
-    const comp = TestBed.runInInjectionContext(() =>
-      new PlacementComponent(
-        { getAdaptiveCurrent: () => of(null as any) } as any,
-        { navigate: jasmine.createSpy() } as any,
-        { snapshot: { paramMap: { get: () => 'grammar' } } } as any,
-      ));
-    expect(comp.parseChoices('Complete the sentence: She ___ to school.')).toEqual([]);
-  });
-
-  // ── Listening audio (Phase 20I-5) ────────────────────────────────────────
+  // ── Listening audio ───────────────────────────────────────────────────────
 
   const listeningItem: AdaptivePlacementNextItem = {
     ...mockItem,
@@ -305,83 +313,10 @@ describe('PlacementComponent', () => {
     fixture.detectChanges();
     expect(fixture.componentInstance.audioUrl()).toBe('blob:fake-url');
 
-    fixture.componentInstance.selectChoice('A');
-    fixture.componentInstance.submitAnswer();
+    fixture.componentInstance.onFormSubmit({ q1: 'A' });
 
     expect(fixture.componentInstance.currentItem()?.itemId).toBe('item-2');
     expect(fixture.componentInstance.audioUrl()).toBeNull();
-  });
-
-  // ── Unified Question-Schema (Phase 3): content-driven answers ───────────
-
-  it('canSubmit is false until the structured content answer is complete', () => {
-    const contentItem: AdaptivePlacementNextItem = {
-      ...mockItem,
-      content: {
-        type: 'single_choice',
-        id: 'q1',
-        questionText: 'Choose the correct verb form.',
-        choices: [{ key: 'A', label: 'was' }, { key: 'B', label: 'were' }],
-      },
-    };
-    const { fixture } = setup({
-      getAdaptiveCurrent: () => of(makeSummary()),
-      getAdaptiveNextItem: () => of(contentItem),
-    });
-    fixture.detectChanges();
-
-    expect(fixture.componentInstance.canSubmit()).toBeFalse();
-    fixture.componentInstance.answers.set([{ questionId: 'q1', values: ['A'] }]);
-    expect(fixture.componentInstance.canSubmit()).toBeTrue();
-  });
-
-  it('submitAnswer() sends the first leaf answer as the legacy response string', () => {
-    const contentItem: AdaptivePlacementNextItem = {
-      ...mockItem,
-      content: {
-        type: 'single_choice',
-        id: 'q1',
-        questionText: 'Choose the correct verb form.',
-        choices: [{ key: 'A', label: 'was' }, { key: 'B', label: 'were' }],
-      },
-    };
-    const respondToItem = jasmine.createSpy('respondToItem').and.returnValue(of({
-      itemId: 'item-1', isCorrect: true, score: 1, evaluationNotes: '',
-      assessmentComplete: true, completionReason: 'max_items', nextItem: null, summary: null,
-    }));
-    const { fixture } = setup({
-      getAdaptiveCurrent: () => of(makeSummary()),
-      getAdaptiveNextItem: () => of(contentItem),
-      respondToItem,
-    });
-    fixture.detectChanges();
-    fixture.componentInstance.answers.set([{ questionId: 'q1', values: ['B'] }]);
-    fixture.componentInstance.submitAnswer();
-
-    expect(respondToItem).toHaveBeenCalledWith(jasmine.objectContaining({ response: 'B' }));
-  });
-
-  it('resets structured answers when moving to the next question', () => {
-    const contentItem: AdaptivePlacementNextItem = {
-      ...mockItem,
-      content: { type: 'gap_fill', id: 'q1', questionText: 'Complete the sentence.' },
-    };
-    const nextItem: AdaptivePlacementNextItem = { ...mockItem, itemId: 'item-2' };
-    const respondToItem = jasmine.createSpy('respondToItem').and.returnValue(of({
-      itemId: 'item-1', isCorrect: true, score: 1, evaluationNotes: '',
-      assessmentComplete: false, completionReason: null, nextItem, summary: null,
-    }));
-    const { fixture } = setup({
-      getAdaptiveCurrent: () => of(makeSummary()),
-      getAdaptiveNextItem: () => of(contentItem),
-      respondToItem,
-    });
-    fixture.detectChanges();
-    fixture.componentInstance.answers.set([{ questionId: 'q1', values: ['answer'] }]);
-    fixture.componentInstance.submitAnswer();
-
-    expect(fixture.componentInstance.currentItem()?.itemId).toBe('item-2');
-    expect(fixture.componentInstance.answers()).toEqual([]);
   });
 
   // ── skillLabel() ──────────────────────────────────────────────────────────

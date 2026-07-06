@@ -42,7 +42,8 @@ public sealed class AdminPlacementItemController : ControllerBase
         try
         {
             var result = await _addItem.HandleAsync(new AddPlacementItemCommand(
-                request.Skill, request.CefrLevel, request.Content, request.ItemOrder, request.IsEnabled), ct);
+                request.Skill, request.CefrLevel, request.Content, request.ItemOrder, request.IsEnabled,
+                request.FormIoSchemaJson, request.ScoringRulesJson, request.RendererKind ?? "FormIo"), ct);
             return Ok(result);
         }
         catch (PlacementItemValidationException ex)
@@ -58,7 +59,8 @@ public sealed class AdminPlacementItemController : ControllerBase
         try
         {
             var result = await _updateItem.HandleAsync(new UpdatePlacementItemCommand(
-                itemId, request.Skill, request.CefrLevel, request.Content, request.ItemOrder, request.IsEnabled), ct);
+                itemId, request.Skill, request.CefrLevel, request.Content, request.ItemOrder, request.IsEnabled,
+                request.FormIoSchemaJson, request.ScoringRulesJson, request.RendererKind ?? "FormIo"), ct);
             return Ok(result);
         }
         catch (PlacementItemValidationException ex)
@@ -89,5 +91,8 @@ public sealed class AdminPlacementItemController : ControllerBase
         string CefrLevel,
         QuestionContent Content,
         int ItemOrder,
-        bool IsEnabled);
+        bool IsEnabled,
+        string? FormIoSchemaJson = null,
+        string? ScoringRulesJson = null,
+        string? RendererKind = null);
 }

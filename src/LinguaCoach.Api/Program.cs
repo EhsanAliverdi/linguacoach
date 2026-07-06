@@ -285,13 +285,12 @@ if (!app.Environment.IsEnvironment("Testing"))
     await LearningActivitySeeder.SeedAsync(db, seederLogger);
     await ExercisePatternSeeder.SeedAsync(db, seederLogger);
     await ExerciseTypeDefinitionSeeder.SeedAsync(db, seederLogger);
-    await OnboardingFlowSeeder.SeedAsync(db);
-    await LinguaCoach.Persistence.Seed.OnboardingStepDefinitionContentBackfiller.BackfillAsync(db);
     await PlacementItemBankSeeder.SeedAsync(db);
     await LinguaCoach.Persistence.Seed.PlacementAssessmentItemContentBackfiller.BackfillAsync(db);
     await LinguaCoach.Persistence.Seed.CurriculumObjectiveSeeder.SeedAsync(db, seederLogger);
     await LinguaCoach.Persistence.Seed.UsageGovernanceSeeder.SeedAsync(db);
     await LinguaCoach.Persistence.Seed.NotificationTemplateSeeder.SeedAsync(db, seederLogger);
+    await LinguaCoach.Persistence.Seed.OnboardingTemplateSeeder.SeedAsync(db, seederLogger);
 
     // Storage + Quartz startup health checks (warn-only — do not block startup).
     var storage = scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.Storage.IFileStorageService>();

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using LinguaCoach.Domain.Common;
+using LinguaCoach.Domain.Enums;
 using LinguaCoach.Domain.Questions;
 
 namespace LinguaCoach.Domain.Entities;
@@ -33,6 +34,28 @@ public sealed class PlacementItemDefinition : BaseEntity
 
     public void SetContent(QuestionContent content) =>
         ContentJson = JsonSerializer.Serialize<QuestionContent>(content);
+
+    /// <summary>Student-safe Form.io schema for this item (Form.io item-bank authoring) — never
+    /// contains a correct answer or scoring data. Null for items not yet re-authored via the
+    /// Form.io builder; the adaptive engine falls back to mapping Content -> Form.io schema
+    /// server-side for those.</summary>
+    public string? FormIoSchemaJson { get; private set; }
+
+    /// <summary>Backend-only: correct answer(s)/rubric for this item, keyed by Form.io component
+    /// key. Never returned to students.</summary>
+    public string? ScoringRulesJson { get; private set; }
+
+    /// <summary>Which rendering engine FormIoSchemaJson is authored for. Only FormIo exists
+    /// today; kept alongside the schema so a future alternate renderer doesn't need a further
+    /// migration to distinguish items.</summary>
+    public FormRendererKind RendererKind { get; private set; } = FormRendererKind.FormIo;
+
+    public void SetFormIoAuthoring(string? formIoSchemaJson, string? scoringRulesJson, FormRendererKind rendererKind = FormRendererKind.FormIo)
+    {
+        FormIoSchemaJson = formIoSchemaJson;
+        ScoringRulesJson = scoringRulesJson;
+        RendererKind = rendererKind;
+    }
 
     private PlacementItemDefinition() { }
 

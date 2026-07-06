@@ -2381,176 +2381,6 @@ namespace LinguaCoach.Persistence.Migrations
                     b.ToTable("notification_templates", (string)null);
                 });
 
-            modelBuilder.Entity("LinguaCoach.Domain.Entities.OnboardingCategoryDefinition", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<int>("CategoryOrder")
-                        .HasColumnType("integer")
-                        .HasColumnName("category_order");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("description");
-
-                    b.Property<Guid>("FlowDefinitionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("flow_definition_id");
-
-                    b.Property<bool>("IsEnabled")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_enabled");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)")
-                        .HasColumnName("name");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FlowDefinitionId", "CategoryOrder")
-                        .HasDatabaseName("ix_onboarding_category_definitions_flow_order");
-
-                    b.ToTable("onboarding_category_definitions", (string)null);
-                });
-
-            modelBuilder.Entity("LinguaCoach.Domain.Entities.OnboardingFlowDefinition", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_active");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("name");
-
-                    b.Property<int>("Version")
-                        .HasColumnType("integer")
-                        .HasColumnName("version");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("IsActive")
-                        .IsUnique()
-                        .HasDatabaseName("ix_onboarding_flow_definitions_single_active")
-                        .HasFilter("is_active = true");
-
-                    b.ToTable("onboarding_flow_definitions", (string)null);
-                });
-
-            modelBuilder.Entity("LinguaCoach.Domain.Entities.OnboardingStepDefinition", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("AnswerMapping")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("answer_mapping");
-
-                    b.Property<string>("AssessmentMetadataJson")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("assessment_metadata_json");
-
-                    b.Property<Guid?>("CategoryId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("category_id");
-
-                    b.Property<string>("ContentJson")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("content_json");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)")
-                        .HasColumnName("description");
-
-                    b.Property<Guid>("FlowDefinitionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("flow_definition_id");
-
-                    b.Property<bool>("IsEnabled")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_enabled");
-
-                    b.Property<string>("OptionsJson")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("options_json");
-
-                    b.Property<string>("RequirementType")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("requirement_type");
-
-                    b.Property<string>("StepKey")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("step_key");
-
-                    b.Property<int>("StepOrder")
-                        .HasColumnType("integer")
-                        .HasColumnName("step_order");
-
-                    b.Property<string>("StepType")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("step_type");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("title");
-
-                    b.Property<string>("ValidationMetadataJson")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("validation_metadata_json");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FlowDefinitionId", "StepKey")
-                        .IsUnique()
-                        .HasDatabaseName("ix_onboarding_step_definitions_flow_step_key");
-
-                    b.HasIndex("FlowDefinitionId", "StepOrder")
-                        .HasDatabaseName("ix_onboarding_step_definitions_flow_step_order");
-
-                    b.ToTable("onboarding_step_definitions", (string)null);
-                });
-
             modelBuilder.Entity("LinguaCoach.Domain.Entities.PlacementAnswer", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2734,6 +2564,10 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasColumnType("character varying(1000)")
                         .HasColumnName("evaluation_notes");
 
+                    b.Property<string>("FormIoSchemaJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("form_io_schema_json");
+
                     b.Property<bool?>("IsCorrect")
                         .HasColumnType("boolean")
                         .HasColumnName("is_correct");
@@ -2783,6 +2617,10 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("skill");
 
+                    b.Property<Guid?>("SourceItemDefinitionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_item_definition_id");
+
                     b.Property<string>("TargetCefrLevel")
                         .IsRequired()
                         .HasMaxLength(10)
@@ -2826,6 +2664,10 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("now()");
 
+                    b.Property<string>("FormIoSchemaJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("form_io_schema_json");
+
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("boolean")
                         .HasColumnName("is_enabled");
@@ -2855,6 +2697,18 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasMaxLength(4000)
                         .HasColumnType("character varying(4000)")
                         .HasColumnName("reading_passage");
+
+                    b.Property<string>("RendererKind")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("FormIo")
+                        .HasColumnName("renderer_kind");
+
+                    b.Property<string>("ScoringRulesJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("scoring_rules_json");
 
                     b.Property<string>("Skill")
                         .IsRequired()
@@ -3801,6 +3655,188 @@ namespace LinguaCoach.Persistence.Migrations
                     b.ToTable("student_activity_readiness_items", (string)null);
                 });
 
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.StudentFlowSubmission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<DateTimeOffset?>("EvaluatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("evaluated_at");
+
+                    b.Property<string>("FlowKind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("flow_kind");
+
+                    b.Property<string>("NormalizedAnswersJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("normalized_answers_json");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("StudentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("student_id");
+
+                    b.Property<string>("SubmissionJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("submission_json");
+
+                    b.Property<DateTimeOffset?>("SubmittedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("submitted_at");
+
+                    b.Property<Guid>("TemplateVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("template_version_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StudentId", "FlowKind")
+                        .HasDatabaseName("ix_student_flow_submissions_student_flow");
+
+                    b.ToTable("student_flow_submissions", (string)null);
+                });
+
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.StudentFlowTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("ActiveVersionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("active_version_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("FlowKind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("flow_kind");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FlowKind")
+                        .HasDatabaseName("ix_student_flow_templates_flow_kind");
+
+                    b.ToTable("student_flow_templates", (string)null);
+                });
+
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.StudentFlowTemplateVersion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid>("CreatedByAdminId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_admin_id");
+
+                    b.Property<string>("FormIoSchemaJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("form_io_schema_json");
+
+                    b.Property<DateTimeOffset?>("PublishedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("published_at");
+
+                    b.Property<string>("RendererKind")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("FormIo")
+                        .HasColumnName("renderer_kind");
+
+                    b.Property<string>("ScoringRulesJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("scoring_rules_json");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TemplateId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("template_id");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<int>("VersionNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("version_number");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TemplateId", "Status")
+                        .HasDatabaseName("ix_student_flow_template_versions_template_status");
+
+                    b.HasIndex("TemplateId", "VersionNumber")
+                        .IsUnique()
+                        .HasDatabaseName("ix_student_flow_template_versions_template_version");
+
+                    b.ToTable("student_flow_template_versions", (string)null);
+                });
+
             modelBuilder.Entity("LinguaCoach.Domain.Entities.StudentLearningEvent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -4077,119 +4113,6 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasDatabaseName("ix_plan_objectives_plan_status");
 
                     b.ToTable("student_learning_plan_objectives", (string)null);
-                });
-
-            modelBuilder.Entity("LinguaCoach.Domain.Entities.StudentOnboardingProgress", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTimeOffset?>("CompletedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("completed_at");
-
-                    b.Property<string>("CompletedStepKeys")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("completed_step_keys");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<string>("CurrentStepKey")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("current_step_key");
-
-                    b.Property<Guid>("FlowDefinitionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("flow_definition_id");
-
-                    b.Property<bool>("IsComplete")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_complete");
-
-                    b.Property<int>("PercentageComplete")
-                        .HasColumnType("integer")
-                        .HasColumnName("percentage_complete");
-
-                    b.Property<string>("PreliminaryCefrLevel")
-                        .HasMaxLength(2)
-                        .HasColumnType("character varying(2)")
-                        .HasColumnName("preliminary_cefr_level");
-
-                    b.Property<DateTimeOffset>("StartedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("started_at");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
-
-                    b.Property<uint>("xmin")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FlowDefinitionId");
-
-                    b.HasIndex("UserId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_student_onboarding_progress_user_id");
-
-                    b.ToTable("student_onboarding_progress", (string)null);
-                });
-
-            modelBuilder.Entity("LinguaCoach.Domain.Entities.StudentOnboardingResponse", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("AnswerJson")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("answer_json");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<Guid>("ProgressId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("progress_id");
-
-                    b.Property<string>("StepKey")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("step_key");
-
-                    b.Property<DateTimeOffset>("SubmittedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("submitted_at");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProgressId")
-                        .HasDatabaseName("ix_student_onboarding_responses_progress_id");
-
-                    b.HasIndex("ProgressId", "StepKey")
-                        .IsUnique()
-                        .HasDatabaseName("ix_student_onboarding_responses_progress_step_key");
-
-                    b.ToTable("student_onboarding_responses", (string)null);
                 });
 
             modelBuilder.Entity("LinguaCoach.Domain.Entities.StudentPolicyAssignment", b =>
@@ -5782,26 +5705,6 @@ namespace LinguaCoach.Persistence.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("LinguaCoach.Domain.Entities.OnboardingCategoryDefinition", b =>
-                {
-                    b.HasOne("LinguaCoach.Domain.Entities.OnboardingFlowDefinition", null)
-                        .WithMany("Categories")
-                        .HasForeignKey("FlowDefinitionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("LinguaCoach.Domain.Entities.OnboardingStepDefinition", b =>
-                {
-                    b.HasOne("LinguaCoach.Domain.Entities.OnboardingFlowDefinition", "FlowDefinition")
-                        .WithMany("Steps")
-                        .HasForeignKey("FlowDefinitionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("FlowDefinition");
-                });
-
             modelBuilder.Entity("LinguaCoach.Domain.Entities.PlacementAnswer", b =>
                 {
                     b.HasOne("LinguaCoach.Domain.Entities.PlacementAssessment", null)
@@ -5891,6 +5794,17 @@ namespace LinguaCoach.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.StudentFlowTemplateVersion", b =>
+                {
+                    b.HasOne("LinguaCoach.Domain.Entities.StudentFlowTemplate", "Template")
+                        .WithMany("Versions")
+                        .HasForeignKey("TemplateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Template");
+                });
+
             modelBuilder.Entity("LinguaCoach.Domain.Entities.StudentLearningEvent", b =>
                 {
                     b.HasOne("LinguaCoach.Domain.Entities.StudentProfile", null)
@@ -5907,28 +5821,6 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasForeignKey("StudentLearningPlanId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("LinguaCoach.Domain.Entities.StudentOnboardingProgress", b =>
-                {
-                    b.HasOne("LinguaCoach.Domain.Entities.OnboardingFlowDefinition", "FlowDefinition")
-                        .WithMany()
-                        .HasForeignKey("FlowDefinitionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("FlowDefinition");
-                });
-
-            modelBuilder.Entity("LinguaCoach.Domain.Entities.StudentOnboardingResponse", b =>
-                {
-                    b.HasOne("LinguaCoach.Domain.Entities.StudentOnboardingProgress", "Progress")
-                        .WithMany("Responses")
-                        .HasForeignKey("ProgressId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Progress");
                 });
 
             modelBuilder.Entity("LinguaCoach.Domain.Entities.StudentPolicyAssignment", b =>
@@ -6157,13 +6049,6 @@ namespace LinguaCoach.Persistence.Migrations
                     b.Navigation("Exercises");
                 });
 
-            modelBuilder.Entity("LinguaCoach.Domain.Entities.OnboardingFlowDefinition", b =>
-                {
-                    b.Navigation("Categories");
-
-                    b.Navigation("Steps");
-                });
-
             modelBuilder.Entity("LinguaCoach.Domain.Entities.PlacementAssessment", b =>
                 {
                     b.Navigation("Answers");
@@ -6171,14 +6056,14 @@ namespace LinguaCoach.Persistence.Migrations
                     b.Navigation("Items");
                 });
 
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.StudentFlowTemplate", b =>
+                {
+                    b.Navigation("Versions");
+                });
+
             modelBuilder.Entity("LinguaCoach.Domain.Entities.StudentLearningPlan", b =>
                 {
                     b.Navigation("Objectives");
-                });
-
-            modelBuilder.Entity("LinguaCoach.Domain.Entities.StudentOnboardingProgress", b =>
-                {
-                    b.Navigation("Responses");
                 });
 
             modelBuilder.Entity("LinguaCoach.Domain.Entities.UsagePolicy", b =>

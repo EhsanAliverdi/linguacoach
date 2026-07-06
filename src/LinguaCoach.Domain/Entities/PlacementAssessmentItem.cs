@@ -10,6 +10,12 @@ namespace LinguaCoach.Domain.Entities;
 public sealed class PlacementAssessmentItem : BaseEntity
 {
     public Guid PlacementAssessmentId { get; private set; }
+
+    /// <summary>FK to the PlacementItemDefinition this item was issued from — sturdier dedup
+    /// identity than Prompt-text matching once items are Form.io-authored. Null for items issued
+    /// before this field existed; SelectNextTemplate falls back to Prompt matching for those.</summary>
+    public Guid? SourceItemDefinitionId { get; private set; }
+
     public string Skill { get; private set; } = string.Empty;
     public string TargetCefrLevel { get; private set; } = string.Empty;
     public string ItemType { get; private set; } = string.Empty;
@@ -51,6 +57,11 @@ public sealed class PlacementAssessmentItem : BaseEntity
 
     public QuestionAnswer? Answer => QuestionContentJson.TryDeserializeAnswer(AnswerJson);
 
+    /// <summary>Student-safe Form.io schema for this item, copied from PlacementItemDefinition at
+    /// issuance — null if the source item hasn't been re-authored via the Form.io builder yet
+    /// (the caller falls back to mapping Content -> Form.io schema in that case).</summary>
+    public string? FormIoSchemaJson { get; private set; }
+
     private PlacementAssessmentItem() { }
 
     public static PlacementAssessmentItem Create(
@@ -63,7 +74,9 @@ public sealed class PlacementAssessmentItem : BaseEntity
         int itemOrder,
         string? readingPassage = null,
         string? listeningAudioScript = null,
-        QuestionContent? content = null)
+        QuestionContent? content = null,
+        Guid? sourceItemDefinitionId = null,
+        string? formIoSchemaJson = null)
     {
         if (assessmentId == Guid.Empty)
             throw new ArgumentException("AssessmentId required.", nameof(assessmentId));
@@ -75,6 +88,7 @@ public sealed class PlacementAssessmentItem : BaseEntity
         return new PlacementAssessmentItem
         {
             PlacementAssessmentId = assessmentId,
+            SourceItemDefinitionId = sourceItemDefinitionId,
             Skill = skill,
             TargetCefrLevel = targetCefrLevel,
             ItemType = itemType,
@@ -84,6 +98,7 @@ public sealed class PlacementAssessmentItem : BaseEntity
             ReadingPassage = readingPassage,
             ListeningAudioScript = listeningAudioScript,
             ContentJson = content is null ? null : JsonSerializer.Serialize<QuestionContent>(content),
+            FormIoSchemaJson = formIoSchemaJson,
         };
     }
 

@@ -118,6 +118,24 @@
 
   <app-question-editor [content]="itemForm.content" (contentChange)="updateContent($event)" />
 
+  <!-- ── Form.io authoring (additive) ────────────────────────────────────────── -->
+  <div class="sp-admin-form-stack" style="margin-top:16px;">
+    <sp-admin-form-field label="Form.io authoring">
+      <sp-admin-checkbox [ngModel]="formioEnabled()" (ngModelChange)="formioEnabled.set($event)"
+        label="Also author this item as a Form.io form" />
+    </sp-admin-form-field>
+  </div>
+
+  @if (formioEnabled()) {
+    <app-formio-builder [schema]="formioSchema()" (schemaChange)="onFormioSchemaChange($event)" />
+
+    <sp-admin-form-field
+      label="Scoring rules (JSON)"
+      hint="Backend-only correct-answer data for the Form.io schema above.">
+      <sp-admin-textarea [ngModel]="scoringRulesJson()" (ngModelChange)="scoringRulesJson.set($event)" [rows]="6" />
+    </sp-admin-form-field>
+  }
+
   @if (actionError()) {
     <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert>
   }

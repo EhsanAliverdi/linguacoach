@@ -1,5 +1,5 @@
+using System.Security.Claims;
 using LinguaCoach.Application.Onboarding;
-using LinguaCoach.Domain.Questions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,80 +10,68 @@ namespace LinguaCoach.Api.Controllers;
 [Authorize(Roles = "Admin")]
 public sealed class AdminOnboardingController : ControllerBase
 {
-    private readonly IAdminOnboardingFlowQuery _flowQuery;
-    private readonly IAdminOnboardingFlowListQuery _flowListQuery;
-    private readonly IAdminCreateOnboardingFlowHandler _createFlow;
-    private readonly IAdminActivateOnboardingFlowHandler _activateFlow;
-    private readonly IAdminAddOnboardingStepHandler _addStep;
-    private readonly IAdminUpdateOnboardingStepHandler _updateStep;
-    private readonly IAdminRemoveOnboardingStepHandler _removeStep;
-    private readonly IAdminReorderOnboardingStepsHandler _reorderSteps;
-    private readonly IAdminAddOnboardingCategoryHandler _addCategory;
-    private readonly IAdminUpdateOnboardingCategoryHandler _updateCategory;
-    private readonly IAdminRemoveOnboardingCategoryHandler _removeCategory;
+    private readonly IAdminListOnboardingTemplatesQuery _listQuery;
+    private readonly IAdminGetOnboardingTemplateQuery _getQuery;
+    private readonly IAdminGetActiveOnboardingTemplateQuery _getActiveQuery;
+    private readonly IAdminCreateOnboardingTemplateHandler _createHandler;
+    private readonly IAdminSaveOnboardingTemplateDraftHandler _saveDraftHandler;
+    private readonly IAdminPublishOnboardingTemplateHandler _publishHandler;
+    private readonly IAdminArchiveOnboardingTemplateHandler _archiveHandler;
 
     public AdminOnboardingController(
-        IAdminOnboardingFlowQuery flowQuery,
-        IAdminOnboardingFlowListQuery flowListQuery,
-        IAdminCreateOnboardingFlowHandler createFlow,
-        IAdminActivateOnboardingFlowHandler activateFlow,
-        IAdminAddOnboardingStepHandler addStep,
-        IAdminUpdateOnboardingStepHandler updateStep,
-        IAdminRemoveOnboardingStepHandler removeStep,
-        IAdminReorderOnboardingStepsHandler reorderSteps,
-        IAdminAddOnboardingCategoryHandler addCategory,
-        IAdminUpdateOnboardingCategoryHandler updateCategory,
-        IAdminRemoveOnboardingCategoryHandler removeCategory)
+        IAdminListOnboardingTemplatesQuery listQuery,
+        IAdminGetOnboardingTemplateQuery getQuery,
+        IAdminGetActiveOnboardingTemplateQuery getActiveQuery,
+        IAdminCreateOnboardingTemplateHandler createHandler,
+        IAdminSaveOnboardingTemplateDraftHandler saveDraftHandler,
+        IAdminPublishOnboardingTemplateHandler publishHandler,
+        IAdminArchiveOnboardingTemplateHandler archiveHandler)
     {
-        _flowQuery = flowQuery;
-        _flowListQuery = flowListQuery;
-        _createFlow = createFlow;
-        _activateFlow = activateFlow;
-        _addStep = addStep;
-        _updateStep = updateStep;
-        _removeStep = removeStep;
-        _reorderSteps = reorderSteps;
-        _addCategory = addCategory;
-        _updateCategory = updateCategory;
-        _removeCategory = removeCategory;
+        _listQuery = listQuery;
+        _getQuery = getQuery;
+        _getActiveQuery = getActiveQuery;
+        _createHandler = createHandler;
+        _saveDraftHandler = saveDraftHandler;
+        _publishHandler = publishHandler;
+        _archiveHandler = archiveHandler;
     }
 
-    // GET api/admin/onboarding/flows
-    [HttpGet("flows")]
-    public async Task<IActionResult> ListFlows(CancellationToken ct)
+    // GET api/admin/onboarding/templates
+    [HttpGet("templates")]
+    public async Task<IActionResult> ListTemplates(CancellationToken ct)
     {
-        var result = await _flowListQuery.HandleAsync(new ListAdminOnboardingFlowsQuery(), ct);
+        var result = await _listQuery.HandleAsync(new ListOnboardingTemplatesQuery(), ct);
         return Ok(result);
     }
 
-    // GET api/admin/onboarding/flow  (active flow detail)
-    [HttpGet("flow")]
-    public async Task<IActionResult> GetFlow(CancellationToken ct)
+    // GET api/admin/onboarding/templates/active
+    [HttpGet("templates/active")]
+    public async Task<IActionResult> GetActiveTemplate(CancellationToken ct)
     {
-        var result = await _flowQuery.HandleAsync(new GetAdminOnboardingFlowQuery(), ct);
-        if (result is null) return NotFound(new { error = "No active onboarding flow found." });
+        var result = await _getActiveQuery.HandleAsync(new GetActiveOnboardingTemplateQuery(), ct);
+        if (result is null) return NotFound(new { error = "No published onboarding template found." });
         return Ok(result);
     }
 
-    // GET api/admin/onboarding/flows/{flowId}
-    [HttpGet("flows/{flowId:guid}")]
-    public async Task<IActionResult> GetFlowById(Guid flowId, CancellationToken ct)
+    // GET api/admin/onboarding/templates/{templateId}
+    [HttpGet("templates/{templateId:guid}")]
+    public async Task<IActionResult> GetTemplate(Guid templateId, CancellationToken ct)
     {
-        var all = await _flowListQuery.HandleAsync(new ListAdminOnboardingFlowsQuery(), ct);
-        var summary = all.FirstOrDefault(f => f.FlowId == flowId);
-        if (summary is null) return NotFound(new { error = $"Flow {flowId} not found." });
-        return Ok(summary);
+        var result = await _getQuery.HandleAsync(new GetOnboardingTemplateQuery(templateId), ct);
+        if (result is null) return NotFound(new { error = $"Template {templateId} not found." });
+        return Ok(result);
     }
 
-    // POST api/admin/onboarding/flows
-    [HttpPost("flows")]
-    public async Task<IActionResult> CreateFlow([FromBody] CreateFlowRequest request, CancellationToken ct)
+    // POST api/admin/onboarding/templates
+    [HttpPost("templates")]
+    public async Task<IActionResult> CreateTemplate([FromBody] CreateTemplateRequest request, CancellationToken ct)
     {
+        var adminId = GetCurrentUserId();
         try
         {
-            var result = await _createFlow.HandleAsync(
-                new CreateOnboardingFlowCommand(request.Name, request.Version), ct);
-            return CreatedAtAction(nameof(GetFlowById), new { flowId = result.FlowId }, result);
+            var result = await _createHandler.HandleAsync(
+                new CreateOnboardingTemplateCommand(request.Name, request.Description, adminId), ct);
+            return CreatedAtAction(nameof(GetTemplate), new { templateId = result.TemplateId }, result);
         }
         catch (OnboardingV2ValidationException ex)
         {
@@ -91,55 +79,15 @@ public sealed class AdminOnboardingController : ControllerBase
         }
     }
 
-    // POST api/admin/onboarding/flows/{flowId}/activate
-    [HttpPost("flows/{flowId:guid}/activate")]
-    public async Task<IActionResult> ActivateFlow(Guid flowId, CancellationToken ct)
+    // PUT api/admin/onboarding/templates/{templateId}/draft
+    [HttpPut("templates/{templateId:guid}/draft")]
+    public async Task<IActionResult> SaveDraft(Guid templateId, [FromBody] SaveDraftRequest request, CancellationToken ct)
     {
+        var adminId = GetCurrentUserId();
         try
         {
-            await _activateFlow.HandleAsync(new ActivateOnboardingFlowCommand(flowId), ct);
-            return NoContent();
-        }
-        catch (OnboardingV2ValidationException ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
-    }
-
-    // POST api/admin/onboarding/flows/{flowId}/steps
-    [HttpPost("flows/{flowId:guid}/steps")]
-    public async Task<IActionResult> AddStep(Guid flowId, [FromBody] StepRequest request, CancellationToken ct)
-    {
-        try
-        {
-            var result = await _addStep.HandleAsync(new AddOnboardingStepCommand(
-                flowId, request.StepKey, request.Title, request.Description,
-                request.StepType, request.RequirementType, request.AnswerMapping,
-                request.StepOrder, request.IsEnabled, request.Options,
-                request.CategoryId, request.Content), ct);
-            return Ok(result);
-        }
-        catch (OnboardingV2ValidationException ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Conflict(new { error = ex.Message });
-        }
-    }
-
-    // PUT api/admin/onboarding/flows/{flowId}/steps/{stepKey}
-    [HttpPut("flows/{flowId:guid}/steps/{stepKey}")]
-    public async Task<IActionResult> UpdateStep(Guid flowId, string stepKey, [FromBody] StepRequest request, CancellationToken ct)
-    {
-        try
-        {
-            var result = await _updateStep.HandleAsync(new UpdateOnboardingStepCommand(
-                flowId, stepKey, request.Title, request.Description,
-                request.StepType, request.RequirementType, request.AnswerMapping,
-                request.StepOrder, request.IsEnabled, request.Options,
-                request.CategoryId, request.Content), ct);
+            var result = await _saveDraftHandler.HandleAsync(
+                new SaveOnboardingTemplateDraftCommand(templateId, request.FormIoSchemaJson, request.ScoringRulesJson, adminId, request.RendererKind ?? "FormIo"), ct);
             return Ok(result);
         }
         catch (OnboardingV2ValidationException ex)
@@ -148,54 +96,13 @@ public sealed class AdminOnboardingController : ControllerBase
         }
     }
 
-    // DELETE api/admin/onboarding/flows/{flowId}/steps/{stepKey}
-    [HttpDelete("flows/{flowId:guid}/steps/{stepKey}")]
-    public async Task<IActionResult> RemoveStep(Guid flowId, string stepKey, CancellationToken ct)
+    // POST api/admin/onboarding/templates/{templateId}/publish
+    [HttpPost("templates/{templateId:guid}/publish")]
+    public async Task<IActionResult> Publish(Guid templateId, CancellationToken ct)
     {
         try
         {
-            await _removeStep.HandleAsync(new RemoveOnboardingStepCommand(flowId, stepKey), ct);
-            return NoContent();
-        }
-        catch (OnboardingV2ValidationException ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
-    }
-
-    // PUT api/admin/onboarding/flows/{flowId}/steps/reorder
-    [HttpPut("flows/{flowId:guid}/steps/reorder")]
-    public async Task<IActionResult> ReorderSteps(Guid flowId, [FromBody] ReorderStepsRequest request, CancellationToken ct)
-    {
-        try
-        {
-            await _reorderSteps.HandleAsync(new ReorderOnboardingStepsCommand(flowId, request.StepKeyOrder), ct);
-            return NoContent();
-        }
-        catch (OnboardingV2ValidationException ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
-    }
-
-    // ── Categories (Phase 6b) ────────────────────────────────────────────────
-
-    // POST api/admin/onboarding/flows/{flowId}/categories
-    [HttpPost("flows/{flowId:guid}/categories")]
-    public async Task<IActionResult> AddCategory(Guid flowId, [FromBody] CategoryRequest request, CancellationToken ct)
-    {
-        try
-        {
-            var result = await _addCategory.HandleAsync(
-                new AddOnboardingCategoryCommand(flowId, request.Name, request.Description, request.CategoryOrder, request.IsEnabled), ct);
+            var result = await _publishHandler.HandleAsync(new PublishOnboardingTemplateCommand(templateId), ct);
             return Ok(result);
         }
         catch (OnboardingV2ValidationException ex)
@@ -204,29 +111,13 @@ public sealed class AdminOnboardingController : ControllerBase
         }
     }
 
-    // PUT api/admin/onboarding/flows/{flowId}/categories/{categoryId}
-    [HttpPut("flows/{flowId:guid}/categories/{categoryId:guid}")]
-    public async Task<IActionResult> UpdateCategory(Guid flowId, Guid categoryId, [FromBody] CategoryRequest request, CancellationToken ct)
+    // POST api/admin/onboarding/templates/{templateId}/archive
+    [HttpPost("templates/{templateId:guid}/archive")]
+    public async Task<IActionResult> Archive(Guid templateId, CancellationToken ct)
     {
         try
         {
-            var result = await _updateCategory.HandleAsync(
-                new UpdateOnboardingCategoryCommand(flowId, categoryId, request.Name, request.Description, request.CategoryOrder, request.IsEnabled), ct);
-            return Ok(result);
-        }
-        catch (OnboardingV2ValidationException ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
-    }
-
-    // DELETE api/admin/onboarding/flows/{flowId}/categories/{categoryId}
-    [HttpDelete("flows/{flowId:guid}/categories/{categoryId:guid}")]
-    public async Task<IActionResult> RemoveCategory(Guid flowId, Guid categoryId, CancellationToken ct)
-    {
-        try
-        {
-            await _removeCategory.HandleAsync(new RemoveOnboardingCategoryCommand(flowId, categoryId), ct);
+            await _archiveHandler.HandleAsync(new ArchiveOnboardingTemplateCommand(templateId), ct);
             return NoContent();
         }
         catch (OnboardingV2ValidationException ex)
@@ -235,24 +126,10 @@ public sealed class AdminOnboardingController : ControllerBase
         }
     }
 
-    // ── Request models ────────────────────────────────────────────────────────
+    private Guid GetCurrentUserId()
+        => Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub"), out var id) ? id : Guid.Empty;
 
-    public sealed record CreateFlowRequest(string Name, int Version);
-
-    public sealed record StepRequest(
-        string StepKey,
-        string Title,
-        string? Description,
-        string StepType,
-        string RequirementType,
-        string AnswerMapping,
-        int StepOrder,
-        bool IsEnabled,
-        IReadOnlyList<OnboardingOptionDto>? Options,
-        Guid? CategoryId = null,
-        QuestionContent? Content = null);
-
-    public sealed record ReorderStepsRequest(IReadOnlyList<string> StepKeyOrder);
-
-    public sealed record CategoryRequest(string Name, string? Description, int CategoryOrder, bool IsEnabled);
+    public sealed record CreateTemplateRequest(string Name, string? Description);
+    public sealed record SaveDraftRequest(string FormIoSchemaJson, string? ScoringRulesJson, string? RendererKind = null);
 }

@@ -10,6 +10,7 @@ import {
 } from '../../../core/models/admin-placement-item.models';
 import { QuestionContent, SingleChoiceQuestion } from '../../../shared/question/question-content.models';
 import { QuestionEditorComponent } from '../../../shared/question/question-editor.component';
+import { FormioBuilderComponent } from '../../../shared/formio/formio-builder.component';
 import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
@@ -27,6 +28,7 @@ import {
   SpAdminSelectComponent,
   SpAdminSlideOverComponent,
   SpAdminTableComponent,
+  SpAdminTextareaComponent,
 } from '../../../design-system/admin';
 
 function emptyQuestionContent(): SingleChoiceQuestion {
@@ -61,7 +63,9 @@ function emptyQuestionContent(): SingleChoiceQuestion {
     SpAdminSelectComponent,
     SpAdminSlideOverComponent,
     SpAdminTableComponent,
+    SpAdminTextareaComponent,
     QuestionEditorComponent,
+    FormioBuilderComponent,
   ],
   templateUrl: './admin-placement-items.component.html',
 })
@@ -76,6 +80,12 @@ export class AdminPlacementItemsComponent implements OnInit {
   editingItem = signal<AdminPlacementItemDto | null>(null);
 
   itemForm: PlacementItemRequest = this.emptyItemForm();
+
+  /** Form.io authoring — additive alongside the existing QuestionEditorComponent flow, not a
+   * replacement. `formioEnabled` toggles whether a schema is included in the save payload at all. */
+  formioEnabled = signal(false);
+  formioSchema = signal<any>({ display: 'form', components: [] });
+  scoringRulesJson = signal('');
 
   skillFilter = signal<string>('all');
 
@@ -119,6 +129,9 @@ export class AdminPlacementItemsComponent implements OnInit {
   openAddItem(): void {
     this.editingItem.set(null);
     this.itemForm = this.emptyItemForm();
+    this.formioEnabled.set(false);
+    this.formioSchema.set({ display: 'form', components: [] });
+    this.scoringRulesJson.set('');
     this.actionError.set('');
     this.actionSuccess.set('');
     this.slideOverOpen.set(true);
@@ -132,10 +145,27 @@ export class AdminPlacementItemsComponent implements OnInit {
       content: item.content,
       itemOrder: item.itemOrder,
       isEnabled: item.isEnabled,
+      formIoSchemaJson: item.formIoSchemaJson ?? undefined,
+      scoringRulesJson: item.scoringRulesJson ?? undefined,
     };
+    this.formioEnabled.set(!!item.formIoSchemaJson);
+    this.formioSchema.set(item.formIoSchemaJson ? this.tryParse(item.formIoSchemaJson) : { display: 'form', components: [] });
+    this.scoringRulesJson.set(item.scoringRulesJson ?? '');
     this.actionError.set('');
     this.actionSuccess.set('');
     this.slideOverOpen.set(true);
+  }
+
+  private tryParse(json: string): any {
+    try {
+      return JSON.parse(json) ?? { display: 'form', components: [] };
+    } catch {
+      return { display: 'form', components: [] };
+    }
+  }
+
+  onFormioSchemaChange(schema: any): void {
+    this.formioSchema.set(schema);
   }
 
   closeSlideOver(): void {
@@ -149,10 +179,15 @@ export class AdminPlacementItemsComponent implements OnInit {
 
   saveItem(): void {
     this.actionError.set('');
+    const request: PlacementItemRequest = {
+      ...this.itemForm,
+      formIoSchemaJson: this.formioEnabled() ? JSON.stringify(this.formioSchema()) : undefined,
+      scoringRulesJson: this.formioEnabled() ? (this.scoringRulesJson().trim() || undefined) : undefined,
+    };
     const editing = this.editingItem();
     const obs = editing
-      ? this.svc.update(editing.itemId, this.itemForm)
-      : this.svc.add(this.itemForm);
+      ? this.svc.update(editing.itemId, request)
+      : this.svc.add(request);
 
     obs.subscribe({
       next: () => {

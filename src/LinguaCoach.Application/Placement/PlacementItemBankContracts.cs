@@ -21,7 +21,12 @@ public sealed record AdminPlacementItemDto(
     string? ListeningAudioScript,
     int ItemOrder,
     bool IsEnabled,
-    QuestionContent Content
+    QuestionContent Content,
+    // Form.io item-bank authoring (additive) — null until an item is (re-)authored via the
+    // Form.io builder. FormIoSchemaJson is student-safe; ScoringRulesJson is backend-only.
+    string? FormIoSchemaJson = null,
+    string? ScoringRulesJson = null,
+    string RendererKind = "FormIo"
 );
 
 // ── List all items ────────────────────────────────────────────────────────────
@@ -40,7 +45,10 @@ public sealed record AddPlacementItemCommand(
     string CefrLevel,
     QuestionContent Content,
     int ItemOrder,
-    bool IsEnabled
+    bool IsEnabled,
+    string? FormIoSchemaJson = null,
+    string? ScoringRulesJson = null,
+    string RendererKind = "FormIo"
 );
 
 public interface IAdminAddPlacementItemHandler
@@ -56,7 +64,10 @@ public sealed record UpdatePlacementItemCommand(
     string CefrLevel,
     QuestionContent Content,
     int ItemOrder,
-    bool IsEnabled
+    bool IsEnabled,
+    string? FormIoSchemaJson = null,
+    string? ScoringRulesJson = null,
+    string RendererKind = "FormIo"
 );
 
 public interface IAdminUpdatePlacementItemHandler

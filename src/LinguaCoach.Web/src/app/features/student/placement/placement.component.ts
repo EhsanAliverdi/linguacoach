@@ -1,29 +1,27 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, ViewChild, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PlacementService } from '../../../core/services/placement.service';
 import { AdaptivePlacementNextItem } from '../../../core/models/placement.models';
-import { QuestionRendererComponent } from '../../../shared/question/question-renderer.component';
-import { QuestionAnswerItem, flattenLeafQuestions } from '../../../shared/question/question-content.models';
+import { FormioRendererComponent } from '../../../shared/formio/formio-renderer.component';
 
 export type PlacementPageState = 'loading' | 'question' | 'submitting' | 'error';
-
-interface ParsedChoice {
-  letter: string;
-  text: string;
-}
 
 /**
  * Runs the adaptive placement engine scoped to a single skill (the placement-cards flow —
  * see PlacementCardsComponent, the actual landing page). Once this skill's card is finished
  * (no more items for it) or the whole assessment completes, navigates back to /placement,
  * which owns all "what's left" / "you're done" UI.
+ *
+ * Form.io migration: each served item now always carries a `formIoSchemaJson` (backend-derived
+ * or item-bank-authored) rendered via the shared FormioRendererComponent, replacing the old
+ * QuestionRendererComponent/regex-parsed-prompt UI entirely.
  */
 @Component({
   selector: 'app-placement',
   standalone: true,
-  imports: [CommonModule, FormsModule, QuestionRendererComponent],
+  imports: [CommonModule, FormsModule, FormioRendererComponent],
   templateUrl: './placement.component.html',
 })
 export class PlacementComponent implements OnInit {
@@ -31,18 +29,24 @@ export class PlacementComponent implements OnInit {
   error = signal('');
 
   currentItem = signal<AdaptivePlacementNextItem | null>(null);
+  parsedSchema = computed(() => {
+    const json = this.currentItem()?.formIoSchemaJson;
+    if (!json) return null;
+    try {
+      return JSON.parse(json);
+    } catch {
+      return null;
+    }
+  });
 
-  selectedAnswer = signal('');
-  gapFillAnswer = signal('');
   audioUrl = signal<string | null>(null);
   audioLoading = signal(false);
-  answers = signal<QuestionAnswerItem[]>([]);
+  private latestSubmissionData: Record<string, any> = {};
   private itemStartTime = 0;
   private assessmentId = '';
   private skill = '';
 
-  questionText = computed(() => this.parseQuestionText(this.currentItem()?.prompt ?? ''));
-  choices = computed(() => this.parseChoices(this.currentItem()?.prompt ?? ''));
+  @ViewChild(FormioRendererComponent) rendererRef?: FormioRendererComponent;
 
   progressPercent = computed(() => {
     const item = this.currentItem();
@@ -56,21 +60,7 @@ export class PlacementComponent implements OnInit {
 
   questionNumber = computed(() => (this.currentItem()?.answeredCount ?? 0) + 1);
 
-  canSubmit = computed(() => {
-    const item = this.currentItem();
-    if (!item) return false;
-
-    if (item.content) {
-      const leaves = flattenLeafQuestions(item.content);
-      return leaves.every(leaf => {
-        const values = this.answers().find(a => a.questionId === leaf.id)?.values ?? [];
-        return values.length > 0 && values.every(v => v.trim().length > 0);
-      });
-    }
-
-    if (item.itemType === 'multiple_choice') return !!this.selectedAnswer();
-    return !!this.gapFillAnswer().trim();
-  });
+  canSubmit = computed(() => !!this.currentItem() && !!this.parsedSchema() && this.state() !== 'submitting');
 
   constructor(
     private placement: PlacementService,
@@ -143,9 +133,7 @@ export class PlacementComponent implements OnInit {
   private setCurrentItem(item: AdaptivePlacementNextItem): void {
     this.revokeAudioUrl();
     this.currentItem.set(item);
-    this.selectedAnswer.set('');
-    this.gapFillAnswer.set('');
-    this.answers.set([]);
+    this.latestSubmissionData = {};
     this.itemStartTime = Date.now();
     this.state.set('question');
 
@@ -164,29 +152,33 @@ export class PlacementComponent implements OnInit {
     this.audioUrl.set(null);
   }
 
-  /** The backend's respond endpoint still scores a single legacy response string per item —
-   * true multi-sub-question submission needs a backend change not yet made. Every item today
-   * has exactly one leaf sub-question (no admin editor for multi-question groups exists yet —
-   * that's Phase 4), so taking the first leaf's first value is lossless for all content that
-   * can currently be authored. */
-  private buildLegacyResponse(item: AdaptivePlacementNextItem): string {
-    if (item.content) {
-      const leaves = flattenLeafQuestions(item.content);
-      const firstLeaf = leaves[0];
-      const values = this.answers().find(a => a.questionId === firstLeaf?.id)?.values ?? [];
-      return (values[0] ?? '').trim();
-    }
-
-    return item.itemType === 'multiple_choice'
-      ? this.selectedAnswer()
-      : this.gapFillAnswer().trim();
+  onFormChange(data: any): void {
+    this.latestSubmissionData = data ?? {};
   }
 
-  submitAnswer(): void {
-    const item = this.currentItem();
-    if (!item || !this.assessmentId || !this.canSubmit() || this.state() === 'submitting') return;
+  /** Single value if there's exactly one component key; otherwise (multi-component
+   * listening/reading group item) take the first sub-answer — a known pre-existing limitation
+   * of the single-string `respond` endpoint, out of scope to fix here. */
+  private extractResponse(data: Record<string, any>): string {
+    const keys = Object.keys(data ?? {});
+    if (keys.length === 0) return '';
+    const value = data[keys[0]];
+    if (value == null) return '';
+    return typeof value === 'string' ? value.trim() : JSON.stringify(value);
+  }
 
-    const response = this.buildLegacyResponse(item);
+  /** Triggers Form.io's own validation/submit pipeline; the actual answer submission happens
+   * in onFormSubmit() once Form.io confirms the submission is valid. */
+  submitAnswer(): void {
+    if (!this.canSubmit()) return;
+    this.rendererRef?.submitForm();
+  }
+
+  onFormSubmit(data: any): void {
+    const item = this.currentItem();
+    if (!item || !this.assessmentId || this.state() === 'submitting') return;
+
+    const response = this.extractResponse(data ?? this.latestSubmissionData);
     const durationSeconds = Math.max(1, Math.round((Date.now() - this.itemStartTime) / 1000));
 
     this.state.set('submitting');
@@ -213,28 +205,9 @@ export class PlacementComponent implements OnInit {
     });
   }
 
-  selectChoice(letter: string): void {
-    this.selectedAnswer.set(letter);
-  }
-
   retry(): void {
     this.error.set('');
     this.load();
-  }
-
-  // ── Prompt parsing ──────────────────────────────────────────────────────────
-
-  parseQuestionText(prompt: string): string {
-    if (!prompt) return '';
-    const choiceIdx = prompt.search(/\(A\)/i);
-    if (choiceIdx > 0) return prompt.slice(0, choiceIdx).trim();
-    return prompt.trim();
-  }
-
-  parseChoices(prompt: string): ParsedChoice[] {
-    if (!prompt) return [];
-    const matches = [...prompt.matchAll(/\(([A-Z])\)\s*([^(]+?)(?=\s*\([A-Z]\)|$)/gi)];
-    return matches.map(m => ({ letter: m[1].toUpperCase(), text: m[2].trim() }));
   }
 
   skillLabel(skill: string | null | undefined): string {

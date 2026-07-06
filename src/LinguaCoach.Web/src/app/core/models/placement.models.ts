@@ -1,4 +1,5 @@
 import { QuestionContent } from '../../shared/question/question-content.models';
+import { FormRendererKind } from '../../shared/formio/form-renderer-kind.model';
 
 export type PlacementStatusValue = 'NotStarted' | 'InProgress' | 'Completed';
 
@@ -117,6 +118,10 @@ export interface AdaptivePlacementNextItem {
    * item. Present for every item once the backend backfill has run; the legacy flat fields
    * above are kept only as a defensive fallback. */
   content?: QuestionContent | null;
+  /** Form.io migration — always populated by the backend now (either item-bank-authored or
+   * server-derived from `content`). A JSON string; parse before feeding to FormioRendererComponent. */
+  formIoSchemaJson?: string | null;
+  rendererKind?: FormRendererKind;
 }
 
 export interface AdaptivePlacementRespondRequest {

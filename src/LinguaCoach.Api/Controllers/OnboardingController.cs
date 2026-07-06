@@ -15,24 +15,24 @@ public sealed class OnboardingController : ControllerBase
     private readonly IOnboardingHandler _handler;
     private readonly IOnboardingStatusQuery _statusQuery;
     private readonly IOnboardingExperienceHandler _experienceHandler;
-    private readonly IOnboardingV2Query _v2Query;
-    private readonly IOnboardingV2StepHandler _v2StepHandler;
-    private readonly IOnboardingV2CompleteHandler _v2CompleteHandler;
+    private readonly IStudentOnboardingActiveQuery _activeQuery;
+    private readonly IStudentOnboardingSaveDraftHandler _saveDraftHandler;
+    private readonly IStudentOnboardingSubmitHandler _submitHandler;
 
     public OnboardingController(
         IOnboardingHandler handler,
         IOnboardingStatusQuery statusQuery,
         IOnboardingExperienceHandler experienceHandler,
-        IOnboardingV2Query v2Query,
-        IOnboardingV2StepHandler v2StepHandler,
-        IOnboardingV2CompleteHandler v2CompleteHandler)
+        IStudentOnboardingActiveQuery activeQuery,
+        IStudentOnboardingSaveDraftHandler saveDraftHandler,
+        IStudentOnboardingSubmitHandler submitHandler)
     {
         _handler = handler;
         _statusQuery = statusQuery;
         _experienceHandler = experienceHandler;
-        _v2Query = v2Query;
-        _v2StepHandler = v2StepHandler;
-        _v2CompleteHandler = v2CompleteHandler;
+        _activeQuery = activeQuery;
+        _saveDraftHandler = saveDraftHandler;
+        _submitHandler = submitHandler;
     }
 
     [HttpPatch]
@@ -118,17 +118,17 @@ public sealed class OnboardingController : ControllerBase
         return Ok(new { currentStep = result.CurrentStep, isComplete = result.IsComplete, languagePairId = result.LanguagePairId });
     }
 
-    // ── Onboarding v2 endpoints ───────────────────────────────────────────────
+    // ── Form.io onboarding flow endpoints ─────────────────────────────────────
 
-    [HttpGet]
-    public async Task<IActionResult> GetV2(CancellationToken ct)
+    [HttpGet("active")]
+    public async Task<IActionResult> GetActive(CancellationToken ct)
     {
         var userId = GetCurrentUserId();
         if (userId == Guid.Empty) return Unauthorized();
 
         try
         {
-            var result = await _v2Query.HandleAsync(new GetOnboardingV2Query(userId), ct);
+            var result = await _activeQuery.HandleAsync(new GetStudentOnboardingActiveQuery(userId), ct);
             return Ok(result);
         }
         catch (InvalidOperationException ex)
@@ -137,27 +137,19 @@ public sealed class OnboardingController : ControllerBase
         }
     }
 
-    [HttpPost("steps/{stepKey}")]
-    public async Task<IActionResult> SubmitStep(string stepKey, [FromBody] OnboardingV2StepRequestDto dto, CancellationToken ct)
+    [HttpPost("save-draft")]
+    public async Task<IActionResult> SaveDraft([FromBody] OnboardingSubmissionDto dto, CancellationToken ct)
     {
         var userId = GetCurrentUserId();
         if (userId == Guid.Empty) return Unauthorized();
 
-        if (string.IsNullOrWhiteSpace(stepKey))
-            return BadRequest(new { error = "stepKey is required." });
-
-        if (string.IsNullOrWhiteSpace(dto.AnswerJson))
-            return BadRequest(new { error = "answerJson is required." });
+        if (string.IsNullOrWhiteSpace(dto.SubmissionJson))
+            return BadRequest(new { error = "submissionJson is required." });
 
         try
         {
-            var result = await _v2StepHandler.HandleAsync(
-                new SubmitOnboardingStepCommand(userId, stepKey, dto.AnswerJson), ct);
-            return Ok(result);
-        }
-        catch (OnboardingV2ValidationException ex)
-        {
-            return BadRequest(new { error = ex.Message });
+            await _saveDraftHandler.HandleAsync(new SaveOnboardingDraftCommand(userId, dto.SubmissionJson), ct);
+            return NoContent();
         }
         catch (InvalidOperationException ex)
         {
@@ -165,15 +157,18 @@ public sealed class OnboardingController : ControllerBase
         }
     }
 
-    [HttpPost("complete")]
-    public async Task<IActionResult> Complete(CancellationToken ct)
+    [HttpPost("submit")]
+    public async Task<IActionResult> Submit([FromBody] OnboardingSubmissionDto dto, CancellationToken ct)
     {
         var userId = GetCurrentUserId();
         if (userId == Guid.Empty) return Unauthorized();
 
+        if (string.IsNullOrWhiteSpace(dto.SubmissionJson))
+            return BadRequest(new { error = "submissionJson is required." });
+
         try
         {
-            var result = await _v2CompleteHandler.HandleAsync(new CompleteOnboardingV2Command(userId), ct);
+            var result = await _submitHandler.HandleAsync(new SubmitOnboardingCommand(userId, dto.SubmissionJson), ct);
             return Ok(result);
         }
         catch (OnboardingV2ValidationException ex)
@@ -197,9 +192,9 @@ public sealed class ExperienceStepDto
     public RoleFamiliarity RoleFamiliarity { get; set; }
 }
 
-public sealed class OnboardingV2StepRequestDto
+public sealed class OnboardingSubmissionDto
 {
-    public string? AnswerJson { get; set; }
+    public string? SubmissionJson { get; set; }
 }
 
 public sealed class OnboardingStepDto

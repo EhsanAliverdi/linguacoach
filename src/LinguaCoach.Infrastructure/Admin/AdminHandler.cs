@@ -172,21 +172,24 @@ public sealed class AdminHandler :
         if (user is null)
             return null;
 
-        // There is a unique index on UserId so at most one row exists.
-        // Avoid OrderBy on DateTimeOffset — SQLite does not support it.
-        var progress = await _db.Set<StudentOnboardingProgress>()
+        // Onboarding is now a one-shot Form.io submission (StudentFlowTemplate model) rather than
+        // a per-step progress row — surface the latest submission's coarse status instead.
+        // Avoid OrderBy on DateTimeOffset — SQLite (integration tests) does not support it.
+        var submission = await _db.StudentFlowSubmissions
             .AsNoTracking()
-            .Where(p => p.UserId == profile.UserId)
+            .Where(s => s.StudentId == profile.UserId && s.FlowKind == StudentFlowKind.Onboarding)
+            .OrderByDescending(s => s.CreatedAt)
             .FirstOrDefaultAsync(ct);
 
-        StudentOnboardingProgressInfo? progressInfo = progress is null ? null : new StudentOnboardingProgressInfo(
-            progress.CurrentStepKey,
-            progress.CompletedStepKeys,
-            progress.PercentageComplete,
-            progress.StartedAt,
-            progress.CompletedAt,
-            progress.IsComplete,
-            progress.PreliminaryCefrLevel);
+        var submissionComplete = submission?.Status == StudentFlowSubmissionStatus.Evaluated;
+        StudentOnboardingProgressInfo? progressInfo = submission is null ? null : new StudentOnboardingProgressInfo(
+            null,
+            Array.Empty<string>(),
+            submissionComplete ? 100 : 0,
+            submission.StartedAt,
+            submission.EvaluatedAt,
+            submissionComplete,
+            profile.CefrLevel);
 
         // Phase 14B — learning readiness fields
         var learningReadyStages = new[]

@@ -1,0 +1,69 @@
+/* Big animated title shown on its own between pages, before that page's fields appear. Duration
+   must match TITLE_SPLASH_MS in onboarding-wizard.component.ts. */
+.wizard-title-splash {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 260px;
+}
+
+.wizard-title-splash-text {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-align: center;
+  color: var(--sp-ink);
+  animation: wizardTitleSplash 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes wizardTitleSplash {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.94);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  75% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.96);
+  }
+}
+
+/* The page card fades in once the title splash hands off to it. */
+.wizard-page-anim {
+  animation: wizardPageIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes wizardPageIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* A conditionally-revealed field (e.g. the language picker after answering "Yes") fades/slides in
+   when it first appears; already-visible fields aren't touched (tracked by field.key). */
+.wizard-field-anim {
+  animation: wizardFieldIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes wizardFieldIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

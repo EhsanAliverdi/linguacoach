@@ -1,0 +1,131 @@
+<sp-admin-page-header
+  [title]="template()?.name ?? 'Onboarding template'"
+  subtitle="Design the Form.io wizard, save a draft, preview, and publish.">
+  <a routerLink="/admin/onboarding">
+    <sp-admin-button variant="neutral" appearance="outline" size="sm">
+      ← Back to templates
+    </sp-admin-button>
+  </a>
+</sp-admin-page-header>
+
+<sp-admin-page-body>
+
+  @if (loading()) {
+    <sp-admin-loading-state message="Loading onboarding template" />
+  } @else if (error()) {
+    <sp-admin-error-state title="Could not load onboarding template" [message]="error()" />
+  } @else if (template()) {
+    @let t = template()!;
+
+    @if (actionSuccess()) {
+      <sp-admin-alert variant="success">{{ actionSuccess() }}</sp-admin-alert>
+    }
+    @if (actionError()) {
+      <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert>
+    }
+
+    <!-- ── Toolbar: template identity + actions (own card, above the builder) ─── -->
+    <sp-admin-card>
+      <div class="sp-admin-card-header">
+        <div>
+          <div class="sp-admin-card-title">
+            {{ t.name }}
+            <sp-admin-badge [tone]="statusTone(t.status)">{{ t.status }}</sp-admin-badge>
+          </div>
+          @if (draftVersion(); as dv) {
+            <div class="sp-admin-card-subtitle">Version {{ dv.versionNumber }} ({{ dv.status }})</div>
+          }
+        </div>
+        <div style="display:flex; gap:8px;">
+          <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="openPreview()">
+            Preview
+          </sp-admin-button>
+          <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="saveDraft()">
+            Save draft
+          </sp-admin-button>
+          <sp-admin-button variant="primary" size="sm" (clicked)="publish()">
+            Publish
+          </sp-admin-button>
+          @if (t.status !== 'Archived') {
+            <sp-admin-button variant="danger" appearance="ghost" size="sm" (clicked)="archive()">
+              Archive
+            </sp-admin-button>
+          }
+        </div>
+      </div>
+    </sp-admin-card>
+
+    <!-- ── Form Builder (its own card, full width) ─────────────────────────── -->
+    <sp-admin-card>
+      <div class="sp-admin-card-header">
+        <div class="sp-admin-card-title">Form Builder</div>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:16px; padding: 0 4px 16px;">
+        <span style="font-size:14px; font-weight:500; color:#374151;">Form type:</span>
+        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+          <input type="radio" name="formDisplay" value="form" [(ngModel)]="formDisplay" (ngModelChange)="onDisplayChange($event)" />
+          <span style="font-size:14px;">Single page</span>
+        </label>
+        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+          <input type="radio" name="formDisplay" value="wizard" [(ngModel)]="formDisplay" (ngModelChange)="onDisplayChange($event)" />
+          <span style="font-size:14px;">Multi-step wizard</span>
+        </label>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:16px; padding: 0 4px 16px;">
+        <span style="font-size:14px; font-weight:500; color:#374151;">Renderer:</span>
+        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+          <input type="radio" name="rendererKind" value="Custom" [ngModel]="rendererKind()" (ngModelChange)="rendererKind.set($event)" />
+          <span style="font-size:14px;">Custom (purpose-built UI)</span>
+        </label>
+        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+          <input type="radio" name="rendererKind" value="FormIo" [ngModel]="rendererKind()" (ngModelChange)="rendererKind.set($event)" />
+          <span style="font-size:14px;">Form.io (generic)</span>
+        </label>
+      </div>
+
+      <app-formio-builder [schema]="draftSchema()" (schemaChange)="onBuilderSchemaChange($event)" />
+    </sp-admin-card>
+
+    <!-- ── Scoring rules (own card) ─────────────────────────────────────────── -->
+    <sp-admin-card>
+      <div class="sp-admin-card-header">
+        <div class="sp-admin-card-title">Scoring rules</div>
+      </div>
+      <sp-admin-form-field
+        label="Scoring rules (JSON)"
+        hint='Correct answers for assessment_q1 / assessment_q2, kept out of the schema. Example: {"assessment_q1":{"correctAnswerKey":"b"},"assessment_q2":{"correctAnswerKey":"a"}}'>
+        <sp-admin-textarea [ngModel]="scoringRulesJson()" (ngModelChange)="scoringRulesJson.set($event)" [rows]="6" />
+      </sp-admin-form-field>
+    </sp-admin-card>
+
+  }
+
+</sp-admin-page-body>
+
+<!-- ── Preview modal ─────────────────────────────────────────────────────────── -->
+<sp-admin-modal
+  [open]="previewOpen()"
+  title="Preview"
+  subtitle="This is a read-only preview of the current draft — submitting here does not save anything."
+  size="lg"
+  (closed)="closePreview()">
+
+  @if (previewOpen()) {
+    <div style="max-width:480px; margin:0 auto;">
+      @if (rendererKind() === 'Custom') {
+        <app-onboarding-wizard [schema]="draftSchema()" [submissionData]="{}" />
+      } @else {
+        <app-formio-renderer [schema]="draftSchema()" />
+      }
+    </div>
+  }
+
+  <div slot="footer">
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closePreview()">
+      Close
+    </sp-admin-button>
+  </div>
+
+</sp-admin-modal>

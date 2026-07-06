@@ -1,7 +1,7 @@
 <sp-admin-page-header
   title="Onboarding"
-  subtitle="Configure onboarding steps, step order, completion rules, and profile mappings.">
-  <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="loadAll()">
+  subtitle="Author the student onboarding wizard as a Form.io form: draft, preview, and publish.">
+  <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="loadTemplates()">
     Refresh
   </sp-admin-button>
 </sp-admin-page-header>
@@ -9,9 +9,9 @@
 <sp-admin-page-body>
 
   @if (loading()) {
-    <sp-admin-loading-state message="Loading onboarding configuration" />
+    <sp-admin-loading-state message="Loading onboarding templates" />
   } @else if (error()) {
-    <sp-admin-error-state title="Could not load onboarding configuration" [message]="error()" />
+    <sp-admin-error-state title="Could not load onboarding templates" [message]="error()" />
   } @else {
 
     @if (actionSuccess()) {
@@ -21,275 +21,91 @@
       <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert>
     }
 
-    <!-- ── KPI strip ───────────────────────────────────────────────────────── -->
-    <div class="sp-admin-kpi-row" aria-label="Onboarding summary">
+    <div class="sp-admin-kpi-row" aria-label="Onboarding templates summary">
       <sp-admin-kpi-card
-        label="Active configuration"
-        [variant]="activeFlowSummary() ? 'green' : 'slate'"
-        layout="tile"
-        icon="shield"
-        [value]="activeFlowSummary() ? activeFlowSummary()!.name + ' v' + activeFlowSummary()!.version : 'None'" />
-      <sp-admin-kpi-card
-        label="Total steps"
+        label="Templates"
         variant="indigo"
         layout="tile"
-        icon="activity"
-        [value]="totalSteps().toString()" />
+        icon="layers"
+        [value]="templates().length.toString()" />
       <sp-admin-kpi-card
-        label="Enabled steps"
+        label="Published"
         variant="indigo"
         layout="tile"
         icon="check"
-        [value]="enabledSteps().toString()" />
-      <sp-admin-kpi-card
-        label="All flows"
-        variant="slate"
-        layout="tile"
-        icon="layers"
-        [value]="flows().length.toString()" />
+        [value]="publishedCount().toString()" />
     </div>
 
-    <!-- ── Categories ──────────────────────────────────────────────────────── -->
-    @if (activeFlow()) {
-      <sp-admin-card>
-        <div class="sp-admin-card-header">
-          <div class="sp-admin-card-title">Categories</div>
-          <sp-admin-button variant="primary" appearance="outline" size="sm" (clicked)="openAddCategory()">
-            Add category
-          </sp-admin-button>
-        </div>
+    <!-- ── Templates list ──────────────────────────────────────────────────── -->
+    <sp-admin-card>
+      <div class="sp-admin-card-header">
+        <div class="sp-admin-card-title">Onboarding templates</div>
+        <sp-admin-button variant="primary" size="sm" (clicked)="openCreateForm()">
+          Create onboarding template
+        </sp-admin-button>
+      </div>
 
-        @if (categories().length === 0) {
-          <sp-admin-empty-state
-            title="No categories configured"
-            message="Add categories to group onboarding steps into sections (e.g. Welcome, About you, Goals)." />
-        } @else {
-          <sp-admin-table [columns]="categoryColumns" [rows]="$any(categories())">
-            <ng-template #cell let-row let-col="col">
-              @switch (col.key) {
-                @case ('categoryOrder') { <span>{{ row.categoryOrder }}</span> }
-                @case ('name') { <span>{{ row.name }}</span> }
-                @case ('description') { <span>{{ row.description || '—' }}</span> }
-                @case ('isEnabled') {
-                  <sp-admin-badge [tone]="categoryTone(row)">{{ row.isEnabled ? 'Yes' : 'No' }}</sp-admin-badge>
-                }
-                @case ('_actions') {
-                  <div class="sp-admin-row-actions">
-                    <sp-admin-button variant="neutral" appearance="ghost" size="xs" (clicked)="openEditCategory(row)">
-                      Edit
-                    </sp-admin-button>
-                    <sp-admin-button variant="danger" appearance="ghost" size="xs" (clicked)="removeCategory(row)">
-                      Remove
-                    </sp-admin-button>
-                  </div>
-                }
-              }
-            </ng-template>
-          </sp-admin-table>
-        }
-      </sp-admin-card>
-    }
-
-    <!-- ── Active flow steps ───────────────────────────────────────────────── -->
-    @if (activeFlow()) {
-      <sp-admin-card>
-        <div class="sp-admin-card-header">
-          <div>
-            <div class="sp-admin-card-title">
-              {{ activeFlow()!.name }}
-              <sp-admin-badge tone="success">Active</sp-admin-badge>
-            </div>
-            <div class="sp-admin-card-subtitle">Version {{ activeFlow()!.version }}</div>
-          </div>
-          <sp-admin-button variant="primary" size="sm" (clicked)="openAddStep()">
-            Add step
-          </sp-admin-button>
-        </div>
-
-        @if (activeFlow()!.steps.length === 0) {
-          <sp-admin-empty-state
-            title="No steps configured"
-            message="Add steps to define the student onboarding flow." />
-        } @else {
-          <sp-admin-table [columns]="stepColumns" [rows]="$any(activeFlow()!.steps)">
-            <ng-template #cell let-row let-col="col">
-              @switch (col.key) {
-                @case ('stepOrder') { <span>{{ row.stepOrder }}</span> }
-                @case ('stepKey') { <code class="sp-admin-code-pill">{{ row.stepKey }}</code> }
-                @case ('title') { <span>{{ row.title }}</span> }
-                @case ('category') { <span>{{ categoryName(row.categoryId) }}</span> }
-                @case ('stepType') { <sp-admin-badge tone="neutral">{{ row.stepType }}</sp-admin-badge> }
-                @case ('requirementType') {
-                  <sp-admin-badge [tone]="row.requirementType === 'SystemRequired' ? 'warning' : 'neutral'">
-                    {{ row.requirementType === 'SystemRequired' ? 'System' : 'Admin' }}
-                  </sp-admin-badge>
-                }
-                @case ('answerMapping') { <span>{{ row.answerMapping }}</span> }
-                @case ('isEnabled') {
-                  <sp-admin-badge [tone]="stepTone(row)">{{ row.isEnabled ? 'Yes' : 'No' }}</sp-admin-badge>
-                }
-                @case ('_actions') {
-                  <div class="sp-admin-row-actions">
-                    <sp-admin-button variant="neutral" appearance="ghost" size="xs" (clicked)="openEditStep(row)">
-                      Edit
-                    </sp-admin-button>
-                    <sp-admin-button variant="danger" appearance="ghost" size="xs" (clicked)="removeStep(row)">
-                      Remove
-                    </sp-admin-button>
-                  </div>
-                }
-              }
-            </ng-template>
-          </sp-admin-table>
-        }
-      </sp-admin-card>
-    } @else {
-      <sp-admin-empty-state
-        title="No active onboarding flow"
-        message="Create a flow and activate it to configure student onboarding." />
-    }
-
-    <!-- ── All flows list ──────────────────────────────────────────────────── -->
-    @if (flows().length > 0 && !activeFlow()) {
-      <sp-admin-card>
-        <div class="sp-admin-card-header">
-          <div class="sp-admin-card-title">All flows</div>
-        </div>
-        <sp-admin-table
-          [columns]="[{key:'name',label:'Name'},{key:'version',label:'Version'},{key:'isActive',label:'Status'},{key:'totalSteps',label:'Steps'},{key:'_activate',label:''}]"
-          [rows]="$any(flows())">
+      @if (templates().length === 0) {
+        <sp-admin-empty-state
+          title="No onboarding templates yet"
+          message="Create a template to start authoring the student onboarding wizard." />
+      } @else {
+        <sp-admin-table [columns]="templateColumns" [rows]="$any(templates())">
           <ng-template #cell let-row let-col="col">
             @switch (col.key) {
-              @case ('name') { <span>{{ row.name }}</span> }
-              @case ('version') { <span>v{{ row.version }}</span> }
-              @case ('isActive') {
-                <sp-admin-badge [tone]="row.isActive ? 'success' : 'neutral'">{{ row.isActive ? 'Active' : 'Inactive' }}</sp-admin-badge>
-              }
-              @case ('totalSteps') { <span>{{ row.totalSteps }}</span> }
-              @case ('_activate') {
-                @if (!row.isActive) {
-                  <sp-admin-button variant="primary" appearance="outline" size="xs" (clicked)="activateFlow(row.flowId)">
-                    Activate
+              @case ('name') { <span class="font-medium">{{ row.name }}</span> }
+              @case ('status') { <sp-admin-badge [tone]="statusTone(row.status)">{{ row.status }}</sp-admin-badge> }
+              @case ('versionCount') { <span>{{ row.versionCount }}</span> }
+              @case ('updatedAt') { <span>{{ row.updatedAt | date:'short' }}</span> }
+              @case ('_actions') {
+                <div class="sp-admin-row-actions">
+                  <sp-admin-button variant="neutral" appearance="ghost" size="xs" (clicked)="editTemplate(row.templateId)">
+                    Edit
                   </sp-admin-button>
-                }
+                  @if (row.status !== 'Archived') {
+                    <sp-admin-button variant="danger" appearance="ghost" size="xs" (clicked)="archive(row.templateId)">
+                      Archive
+                    </sp-admin-button>
+                  }
+                </div>
               }
             }
           </ng-template>
         </sp-admin-table>
-      </sp-admin-card>
-    }
+      }
+    </sp-admin-card>
 
   }
 
 </sp-admin-page-body>
 
-<!-- ── Add / Edit step slide-over ─────────────────────────────────────────── -->
-<sp-admin-slide-over
-  [open]="slideOverOpen()"
-  [title]="editingStep() ? 'Edit step' : 'Add step'"
-  (closed)="closeSlideOver()">
+<!-- ── Create template modal ────────────────────────────────────────────────── -->
+<sp-admin-modal
+  [open]="createFormOpen()"
+  title="Create onboarding template"
+  variant="form"
+  (closed)="closeCreateForm()">
 
   <div class="sp-admin-form-stack">
-
-    @if (!editingStep()) {
-      <sp-admin-form-field label="Step key" [required]="true" hint="Unique identifier, e.g. welcome or support-language">
-        <sp-admin-input [(ngModel)]="stepForm.stepKey" placeholder="step-key" />
-      </sp-admin-form-field>
-    }
-
-    <sp-admin-form-field label="Title" [required]="true">
-      <sp-admin-input [(ngModel)]="stepForm.title" placeholder="Step title" />
-    </sp-admin-form-field>
-
-    <sp-admin-form-field label="Description">
-      <sp-admin-textarea [(ngModel)]="stepForm.description" placeholder="Optional help text shown to students" />
-    </sp-admin-form-field>
-
-    <sp-admin-form-field label="Category" hint="Groups this step into a visual section for students">
-      <sp-admin-select [(ngModel)]="stepForm.categoryId" [options]="categoryOptions()" />
-    </sp-admin-form-field>
-
-    <sp-admin-form-field label="Step type" [required]="true">
-      <sp-admin-select [ngModel]="stepForm.stepType" (ngModelChange)="onStepTypeChange($event)" [options]="stepTypeOptions" />
-    </sp-admin-form-field>
-
-    <sp-admin-form-field label="Requirement type" [required]="true" hint="SystemRequired: cannot be skipped. AdminConfigured: set by admin.">
-      <sp-admin-select [(ngModel)]="stepForm.requirementType" [options]="requirementTypeOptions" />
-    </sp-admin-form-field>
-
-    <sp-admin-form-field label="Answer mapping" hint="Which student profile field this step populates">
-      <sp-admin-select [(ngModel)]="stepForm.answerMapping" [options]="answerMappingOptions" />
-    </sp-admin-form-field>
-
-    <sp-admin-form-field label="Step order" [required]="true" hint="Lower number = shown earlier">
-      <sp-admin-input type="number" [(ngModel)]="stepForm.stepOrder" />
-    </sp-admin-form-field>
-
-    <sp-admin-form-field label="Enabled">
-      <sp-admin-checkbox [(ngModel)]="stepForm.isEnabled" label="This step is active and shown to students" />
-    </sp-admin-form-field>
-
-  </div>
-
-  @if (isGenericQuestionType(stepForm.stepType)) {
-    <app-question-editor
-      [content]="questionContent()"
-      (contentChange)="onQuestionContentChange($event)"
-      [availableTypes]="questionEditorTypes" />
-  }
-
-  @if (actionError()) {
-    <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert>
-  }
-
-  <div class="sp-admin-slide-over-footer" slot="footer">
-    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeSlideOver()">
-      Cancel
-    </sp-admin-button>
-    <sp-admin-button variant="primary" (clicked)="saveStep()">
-      {{ editingStep() ? 'Save changes' : 'Add step' }}
-    </sp-admin-button>
-  </div>
-
-</sp-admin-slide-over>
-
-<!-- ── Add / Edit category slide-over ─────────────────────────────────────── -->
-<sp-admin-slide-over
-  [open]="categorySlideOverOpen()"
-  [title]="editingCategory() ? 'Edit category' : 'Add category'"
-  (closed)="closeCategorySlideOver()">
-
-  <div class="sp-admin-form-stack">
-
     <sp-admin-form-field label="Name" [required]="true">
-      <sp-admin-input [(ngModel)]="categoryForm.name" placeholder="e.g. About you" />
+      <sp-admin-input [(ngModel)]="newTemplateName" placeholder="e.g. Default onboarding" />
     </sp-admin-form-field>
-
     <sp-admin-form-field label="Description">
-      <sp-admin-textarea [(ngModel)]="categoryForm.description" placeholder="Optional note shown only to admins" />
+      <sp-admin-textarea [(ngModel)]="newTemplateDescription" placeholder="Optional note shown only to admins" />
     </sp-admin-form-field>
-
-    <sp-admin-form-field label="Category order" [required]="true" hint="Lower number = shown earlier">
-      <sp-admin-input type="number" [(ngModel)]="categoryForm.categoryOrder" />
-    </sp-admin-form-field>
-
-    <sp-admin-form-field label="Enabled">
-      <sp-admin-checkbox [(ngModel)]="categoryForm.isEnabled" label="This category is active" />
-    </sp-admin-form-field>
-
   </div>
 
   @if (actionError()) {
     <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert>
   }
 
-  <div class="sp-admin-slide-over-footer" slot="footer">
-    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeCategorySlideOver()">
+  <div slot="footer">
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeCreateForm()">
       Cancel
     </sp-admin-button>
-    <sp-admin-button variant="primary" (clicked)="saveCategory()">
-      {{ editingCategory() ? 'Save changes' : 'Add category' }}
+    <sp-admin-button variant="primary" (clicked)="createTemplate()">
+      Create
     </sp-admin-button>
   </div>
 
-</sp-admin-slide-over>
+</sp-admin-modal>

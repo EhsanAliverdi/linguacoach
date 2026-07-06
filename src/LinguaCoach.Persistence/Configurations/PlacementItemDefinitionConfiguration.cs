@@ -26,6 +26,10 @@ internal sealed class PlacementItemDefinitionConfiguration : IEntityTypeConfigur
         builder.Property(i => i.IsEnabled).HasColumnName("is_enabled").IsRequired();
         builder.Property(i => i.ContentJson).HasColumnName("content_json").HasColumnType("jsonb");
         builder.Ignore(i => i.Content);
+        builder.Property(i => i.FormIoSchemaJson).HasColumnName("form_io_schema_json").HasColumnType("jsonb");
+        builder.Property(i => i.ScoringRulesJson).HasColumnName("scoring_rules_json").HasColumnType("jsonb");
+        builder.Property(i => i.RendererKind).HasColumnName("renderer_kind").HasConversion<string>().HasMaxLength(20).IsRequired()
+            .HasDefaultValue(LinguaCoach.Domain.Enums.FormRendererKind.FormIo);
 
         // Prompt uniqueness is the de-facto item identity used by the adaptive selection
         // logic's "used prompts" dedup — enforce it at the DB level too.

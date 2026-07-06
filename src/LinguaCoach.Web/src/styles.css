@@ -846,4 +846,255 @@ button.sp-admin-link{background:none;border:none;padding:0;cursor:pointer;font-f
 .sp-skill-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:11px;}
 @media(min-width:900px){.sp-skill-grid{grid-template-columns:repeat(5,1fr);}}
 .sp-grid-2col{display:grid;gap:18px;}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Form.io builder + form overrides
+   Ported from a reference Angular+Tailwind+Form.io project
+   (formio-react-no-server-monorepo / HPA.SurveyFlow.Web) that already solved
+   Form.io's Bootstrap-flavoured default theme colliding with a Tailwind app.
+   Loaded globally (not per-component styleUrls) — Formio.builder()/createForm()
+   inject raw DOM outside Angular's compiler, so scoped/emulated component
+   styles never match it; only global CSS reaches it reliably.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.formio-scope .formio-error-wrapper,
+.formio-scope .has-message,
+.formio-scope .has-feedback { background: none !important; }
+.formio-scope .formio-errors,
+.formio-scope .invalid-feedback,
+.formio-scope .form-text.error { @apply text-red-600 bg-transparent; }
+.formio-scope input.is-invalid,
+.formio-scope select.is-invalid,
+.formio-scope textarea.is-invalid { @apply border-red-500; }
+.formio-scope input,
+.formio-scope select,
+.formio-scope textarea { border-color: #c3c3c3 !important; }
+
+.formio-scope .row { @apply flex flex-wrap -mx-2; }
+.formio-scope [class*="col-"] { @apply px-2; }
+.formio-scope .col-xs-12,.formio-scope .col-sm-12,.formio-scope .col-md-12,.formio-scope .col-lg-12 { @apply w-full; }
+.formio-scope .col-xs-6,.formio-scope .col-sm-6,.formio-scope .col-md-6,.formio-scope .col-lg-6 { @apply w-full md:w-1/2; }
+.formio-scope .col-xs-4,.formio-scope .col-sm-4,.formio-scope .col-md-4,.formio-scope .col-lg-4 { @apply w-full md:w-1/3; }
+.formio-scope .col-xs-3,.formio-scope .col-sm-3,.formio-scope .col-md-3,.formio-scope .col-lg-3 { @apply w-full md:w-1/4; }
+.formio-scope .col-xs-8,.formio-scope .col-sm-8,.formio-scope .col-md-8,.formio-scope .col-lg-8 { @apply w-full md:w-2/3; }
+.formio-scope .col-xs-9,.formio-scope .col-sm-9,.formio-scope .col-md-9,.formio-scope .col-lg-9 { @apply w-full md:w-3/4; }
+
+.formio-scope .form-group { @apply mb-4; }
+.formio-scope .control-label,
+.formio-scope label { @apply block text-sm font-medium text-gray-700 mb-1; }
+.formio-scope .help-block { @apply mt-1.5 text-xs text-gray-500; }
+
+.formio-scope .form-control,
+.formio-scope input.form-control,
+.formio-scope select.form-control,
+.formio-scope textarea.form-control {
+  @apply w-full rounded-lg appearance-none px-4 py-2.5 text-sm shadow-sm bg-transparent text-gray-800;
+  @apply placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:border-blue-300 focus:ring-blue-500/20;
+  border: 1px solid #c3c3c3;
+}
+
+.formio-scope .btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-lg transition shadow-sm px-5 py-3.5 text-sm font-medium;
+}
+.formio-scope .btn-primary,.formio-scope .btn-info { @apply bg-blue-600 text-white hover:bg-blue-700; }
+.formio-scope .btn-default,.formio-scope .btn-secondary { @apply bg-white text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50; }
+.formio-scope .btn-success { @apply bg-green-600 text-white hover:bg-green-700; }
+.formio-scope .btn-danger { @apply bg-red-600 text-white hover:bg-red-700; }
+
+.formio-scope .form-check { @apply flex items-start gap-2; }
+.formio-scope .form-check-label { @apply inline-flex items-start gap-2 text-sm text-gray-800; }
+.formio-scope .form-check-input { @apply mt-1 h-4 w-4 rounded border border-gray-300 text-blue-600; }
+
+/* ── Form.io Builder layout (formio-builder-shell) ───────────────────── */
+.formio-builder-shell { position: relative; }
+.formio-builder-shell .formbuilder { @apply w-full; }
+.formio-builder-shell .formbuilder.row {
+  @apply flex flex-nowrap gap-4;
+  margin-left: 0; margin-right: 0;
+}
+.formio-builder-shell .formbuilder.row > [class*="col-"] { padding-left: 0; padding-right: 0; }
+.formio-builder-shell .formbuilder .formcomponents {
+  @apply w-72 shrink-0 rounded-lg border border-gray-200 bg-white p-4;
+}
+.formio-builder-shell .formbuilder .formarea {
+  @apply flex flex-1 min-w-0 flex-col rounded-lg border border-gray-200 bg-white p-4;
+  align-self: stretch;
+}
+/* The actual drop target (.drag-container, holding the "Drag and Drop a form component" hint and
+   dropped components) only wraps its own content by default, leaving unused white space below it
+   inside the taller .formarea card once the palette (sidebar) grows tall with multiple expanded
+   groups. Stretch every nested wrapper down to the drag-container so the whole card height is a
+   valid, visibly-bordered drop target. */
+.formio-builder-shell .formbuilder .formarea > .formio-component,
+.formio-builder-shell .formbuilder .formarea .formio-form,
+.formio-builder-shell .formbuilder .formarea .drag-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 100%;
+}
+/* Form.io always renders the "Drag and Drop a form component" hint as the FIRST child of the
+   drop container, ahead of any already-dropped components — reorder it to the end (via flexbox
+   `order`, not DOM position) so it reads as a trailing instruction/empty-state hint instead of a
+   banner sitting above existing content. */
+.formio-builder-shell .formbuilder .formarea .drag-container > .drag-and-drop-alert {
+  order: 1;
+}
+.formio-builder-shell .formbuilder .formarea .drag-container > .builder-component {
+  order: 0;
+}
+.formio-builder-shell .builder-sidebar { @apply w-full p-3; }
+/* Tailwind ships its own unrelated ".collapse" utility (visibility: collapse, for table
+   rows) that collides by name with Bootstrap/Form.io's ".collapse" accordion class — the
+   builder's palette groups stay invisible without an explicit override restoring both
+   display and visibility here. */
+.builder-sidebar .collapse:not(.show) { display: none !important; }
+.builder-sidebar .collapse.show { display: block !important; height: auto !important; visibility: visible !important; }
+.builder-sidebar_scroll { @apply sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto; }
+.builder-sidebar_search { @apply w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 mb-3; }
+.builder-sidebar_search:focus { @apply outline-none ring-2 ring-blue-500 border-blue-500; }
+.form-builder-panel { @apply mb-2 overflow-hidden rounded-lg border border-gray-200 bg-white; }
+.form-builder-group-header { @apply border-b border-gray-200 bg-gray-50 px-4 py-3; }
+/* Higher specificity than ".formio-scope .btn" (which sets padding/shadow/border-radius for all
+   buttons including this one) so the group-title button can override it back to a plain,
+   borderless header row. */
+.formio-scope .builder-group-button.btn {
+  @apply w-full text-left text-sm font-semibold text-gray-900 border-0 bg-transparent shadow-none p-0;
+}
+/* The group's item list wrapper is Bootstrap's ".p-2" (0.5rem padding) — Bootstrap's own CSS
+   isn't loaded, so that class does nothing on its own; give it explicit left/right breathing
+   room here so draggable items don't sit flush against the card edges. */
+.builder-sidebar .collapse .d-grid.no-drop {
+  @apply px-3 py-2;
+}
+.formcomponents .formcomponent {
+  @apply mt-1 w-full cursor-grab select-none rounded-md border border-gray-200 bg-white px-3 py-2 text-left text-sm text-gray-800 hover:bg-gray-50;
+}
+.builder-component {
+  @apply relative mb-4 rounded-lg border border-dashed border-gray-300 bg-white p-3;
+}
+/* Component toolbar (remove/copy/paste/edit-json/move/edit) — hidden until the admin hovers or
+   focuses the specific component, matching Form.io's default (non-cluttered) canvas behavior.
+   Positioned to float above the component instead of pushing content down. */
+.builder-component > .component-btn-group {
+  @apply absolute -top-3 right-2 z-10 hidden gap-1 rounded-md bg-white p-1 shadow-md border border-gray-200;
+}
+.builder-component:hover > .component-btn-group,
+.builder-component:focus-within > .component-btn-group {
+  @apply flex;
+}
+.component-btn-group .btn,
+.component-btn-group .component-settings-button {
+  @apply inline-flex h-7 w-7 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50;
+}
+
+/* Builder component editor (the "settings" modal for a single dropped component).
+   Form.io doesn't wrap this top-level container in its own card/padding — without this the
+   title, tabs, and Save/Cancel/Remove row sit flush against the modal's edges. */
+.component-edit-container { @apply text-sm p-6; }
+.component-edit-container > .lead { @apply mb-4; }
+.formio-dialog-close { @apply absolute top-3 right-3 text-gray-400 hover:text-gray-700 z-10; }
+.component-edit-container input,
+.component-edit-container select,
+.component-edit-container textarea { border-color: #c3c3c3 !important; }
+.component-edit-container .row { @apply flex flex-wrap -mx-2; }
+.component-edit-container [class*="col-"] { @apply px-2; }
+.component-edit-container .col-sm-6 { @apply w-full md:w-1/2; }
+.component-edit-container .col-sm-12 { @apply w-full; }
+.component-edit-container .lead { @apply text-lg font-semibold text-gray-900 mb-2; }
+.component-edit-container .float-right { float: none !important; @apply flex justify-end; }
+.component-edit-container .card { @apply rounded-lg border border-gray-200 bg-white shadow-sm; }
+.component-edit-container .card-header { @apply border-b border-gray-200 px-4 py-3 font-semibold text-gray-900 bg-gray-50; }
+.component-edit-container .card-body { @apply px-4 py-4; }
+.component-edit-container .form-control {
+  @apply w-full rounded-lg border appearance-none px-4 py-2.5 text-sm shadow-sm bg-transparent text-gray-800;
+  @apply placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:border-blue-300 focus:ring-blue-500/20;
+}
+.component-edit-container .form-group { @apply mb-4; }
+.component-edit-container .help-block { @apply mt-1.5 text-xs text-gray-500; }
+.component-edit-container .btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-lg transition shadow-sm px-5 py-2.5 text-sm font-medium;
+}
+.component-edit-container .btn-success { @apply bg-green-600 text-white hover:bg-green-700; }
+.component-edit-container .btn-secondary { @apply bg-white text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50; }
+.component-edit-container .btn-danger { @apply bg-red-600 text-white hover:bg-red-700; }
+.component-edit-container .nav.nav-tabs {
+  display: flex !important; flex-direction: row !important;
+  @apply flex-wrap items-center text-center text-sm font-medium bg-gray-50 border-b border-gray-200;
+  list-style: none; padding-left: 0; margin: 0;
+}
+.component-edit-container .nav.nav-tabs .nav-item { @apply mr-2; width: auto !important; }
+.component-edit-container .nav.nav-tabs .nav-link {
+  @apply inline-block px-4 py-3 border-b-2 border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100;
+}
+.component-edit-container .nav.nav-tabs .nav-link.active {
+  @apply font-semibold text-blue-600 border-blue-600 bg-white;
+}
+.component-edit-container .table { @apply w-full border-collapse; }
+.component-edit-container .table th { @apply text-left text-sm font-semibold text-gray-900 border-b border-gray-200 px-3 py-2; }
+.component-edit-container .table td { @apply text-sm text-gray-900 border-b border-gray-100 px-3 py-2; }
+.component-edit-container .list-group { @apply overflow-hidden rounded border border-gray-200 bg-white; }
+.component-edit-container .list-group-item { @apply border-b border-gray-200 px-4 py-3 text-sm text-gray-900; }
+
+/* Form.io builder dialogs — formiojs appends .formio-dialog directly to <body>. */
+:root { --sidebar-width: 290px; }
+
+.formio-dialog {
+  position: fixed !important;
+  inset: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  z-index: 10000 !important;
+  pointer-events: all !important;
+  /* @formio/js v5 doesn't always render a separate .formio-dialog-overlay backdrop element —
+     give the dialog itself a dim backdrop so it doesn't float with no visual separation from
+     the page behind it. */
+  background: rgba(15, 23, 42, 0.5) !important;
+}
+.formio-dialog.formio-dialog-theme-default { padding: 0 !important; }
+.formio-dialog-overlay { position: fixed !important; inset: 0 !important; margin-right: 0 !important; pointer-events: all !important; }
+.formio-dialog.formio-dialog-theme-default .formio-dialog-content {
+  /* Fixed size (not max-width/max-height) so switching between Display/Data/Validation/API/... tabs
+     never resizes the modal itself — only the scrollable content inside it changes. */
+  width: 80vw !important;
+  height: 80vh !important;
+  max-width: 80vw !important;
+  max-height: 80vh !important;
+  overflow-y: auto !important;
+  margin: 0 !important;
+  position: relative !important;
+  @apply bg-white rounded-lg border border-gray-200 shadow-xl;
+}
+.formio-dialog .nav-tabs { @apply border-b border-gray-200; }
+.formio-dialog .nav-tabs > li > a,
+.formio-dialog .nav-tabs .nav-link { @apply inline-flex items-center rounded-t px-3 py-2 text-sm font-medium text-gray-600; }
+.formio-dialog .nav-tabs > li > a.active,
+.formio-dialog .nav-tabs .nav-link.active { @apply bg-white text-gray-900 border border-gray-200; }
+.formio-dialog .nav-tabs-vertical { @apply border-r border-gray-200 pr-2 mr-4; }
+.formio-dialog .nav-tabs-vertical > li > a,
+.formio-dialog .nav-link-vertical { @apply block rounded px-3 py-2 text-sm font-medium text-gray-600; }
+.formio-dialog .nav-tabs-vertical > li > a.active,
+.formio-dialog .nav-link-vertical.active { @apply bg-gray-100 text-gray-900; }
+
+/* Wizard page tabs (multi-step forms) — Form.io renders these as .wizard-pages/.wizard-page-label;
+   the rename/delete/move-left/move-right icon buttons are injected into each label by
+   FormioBuilderComponent (installWizardHeaderEditing) and styled here. */
+.wizard-pages { @apply mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2; }
+.wizard-page-label { @apply cursor-pointer rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 inline-flex items-center; }
+.wizard-page-label.active,
+li.active .wizard-page-label { @apply bg-brand-500 text-white border-brand-500; }
+.wizard-page-label .sf-wizard-page-actions { @apply ml-2 inline-flex items-center gap-1 align-middle; }
+.wizard-page-label .sf-wizard-page-actions button {
+  @apply inline-flex items-center justify-center rounded border border-gray-200 bg-white p-1 text-gray-500 hover:bg-gray-50 hover:text-gray-800 transition-colors;
+}
+.wizard-page-label .sf-wizard-page-actions button i { font-size: 10px; }
+.wizard-add-page { @apply list-none; }
+.wizard-add-page a,
+.wizard-add-page button {
+  @apply inline-flex items-center justify-center rounded-full border border-dashed border-gray-300 bg-white px-3 py-1 text-xs font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-800;
+}
+
 @media(min-width:900px){.sp-grid-2col{grid-template-columns:1.55fr 1fr;align-items:start;}}

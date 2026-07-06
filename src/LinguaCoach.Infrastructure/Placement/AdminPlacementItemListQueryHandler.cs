@@ -22,6 +22,7 @@ public sealed class AdminPlacementItemListQueryHandler : IAdminPlacementItemList
             i.Id, i.Skill, i.CefrLevel, i.ItemType, i.Prompt, i.CorrectAnswer,
             i.ReadingPassage, i.ListeningAudioScript, i.ItemOrder, i.IsEnabled,
             i.Content ?? LegacyPlacementContentConverter.FromLegacyItem(
-                i.ItemType, i.Prompt, i.CorrectAnswer, i.ReadingPassage, i.ListeningAudioScript))).ToList();
+                i.ItemType, i.Prompt, i.CorrectAnswer, i.ReadingPassage, i.ListeningAudioScript),
+            i.FormIoSchemaJson, i.ScoringRulesJson, i.RendererKind.ToString())).ToList();
     }
 }

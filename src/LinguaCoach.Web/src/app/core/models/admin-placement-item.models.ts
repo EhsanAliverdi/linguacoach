@@ -1,4 +1,5 @@
 import { QuestionContent } from '../../shared/question/question-content.models';
+import { FormRendererKind } from '../../shared/formio/form-renderer-kind.model';
 
 export interface AdminPlacementItemDto {
   itemId: string;
@@ -14,6 +15,11 @@ export interface AdminPlacementItemDto {
   /** Unified Question-Schema (Phase 4) — the authoritative, admin-authored content. The flat
    * fields above are derived from it for display/legacy continuity only. */
   content: QuestionContent;
+  /** Form.io migration — additive, optional Form.io authoring alongside `content`. */
+  formIoSchemaJson: string | null;
+  /** Backend-only correct-answer data for the Form.io schema (admin-visible). */
+  scoringRulesJson: string | null;
+  rendererKind: FormRendererKind;
 }
 
 export interface PlacementItemRequest {
@@ -22,6 +28,9 @@ export interface PlacementItemRequest {
   content: QuestionContent;
   itemOrder: number;
   isEnabled: boolean;
+  formIoSchemaJson?: string;
+  scoringRulesJson?: string;
+  rendererKind?: FormRendererKind;
 }
 
 export const PLACEMENT_SKILLS = ['grammar', 'vocabulary', 'reading', 'listening', 'writing', 'speaking'] as const;

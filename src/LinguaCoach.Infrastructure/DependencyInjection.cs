@@ -237,21 +237,21 @@ public static class DependencyInjection
         services.AddScoped<IOnboardingStatusQuery, OnboardingHandler>();
         services.AddScoped<IOnboardingExperienceHandler, OnboardingHandler>();
 
-        // Onboarding v2
-        services.AddScoped<IOnboardingV2Query, OnboardingV2QueryHandler>();
-        services.AddScoped<IOnboardingV2StepHandler, OnboardingV2StepHandler>();
-        services.AddScoped<IOnboardingV2CompleteHandler, OnboardingV2CompleteHandler>();
-        services.AddScoped<IAdminOnboardingFlowQuery, AdminOnboardingFlowQueryHandler>();
-        services.AddScoped<IAdminOnboardingFlowListQuery, AdminOnboardingFlowListQueryHandler>();
-        services.AddScoped<IAdminCreateOnboardingFlowHandler, AdminCreateOnboardingFlowHandler>();
-        services.AddScoped<IAdminActivateOnboardingFlowHandler, AdminActivateOnboardingFlowHandler>();
-        services.AddScoped<IAdminAddOnboardingStepHandler, AdminAddOnboardingStepHandler>();
-        services.AddScoped<IAdminUpdateOnboardingStepHandler, AdminUpdateOnboardingStepHandler>();
-        services.AddScoped<IAdminRemoveOnboardingStepHandler, AdminRemoveOnboardingStepHandler>();
-        services.AddScoped<IAdminReorderOnboardingStepsHandler, AdminReorderOnboardingStepsHandler>();
-        services.AddScoped<IAdminAddOnboardingCategoryHandler, AdminAddOnboardingCategoryHandler>();
-        services.AddScoped<IAdminUpdateOnboardingCategoryHandler, AdminUpdateOnboardingCategoryHandler>();
-        services.AddScoped<IAdminRemoveOnboardingCategoryHandler, AdminRemoveOnboardingCategoryHandler>();
+        // Onboarding — Form.io template model (replaces old OnboardingV2/AdminOnboardingFlow*)
+        services.AddScoped<IFormIoSchemaValidationService, FormIoSchemaValidationService>();
+        services.AddScoped<AdminOnboardingTemplateService>();
+        services.AddScoped<IAdminListOnboardingTemplatesQuery>(sp => sp.GetRequiredService<AdminOnboardingTemplateService>());
+        services.AddScoped<IAdminGetOnboardingTemplateQuery>(sp => sp.GetRequiredService<AdminOnboardingTemplateService>());
+        services.AddScoped<IAdminGetActiveOnboardingTemplateQuery>(sp => sp.GetRequiredService<AdminOnboardingTemplateService>());
+        services.AddScoped<IAdminCreateOnboardingTemplateHandler>(sp => sp.GetRequiredService<AdminOnboardingTemplateService>());
+        services.AddScoped<IAdminSaveOnboardingTemplateDraftHandler>(sp => sp.GetRequiredService<AdminOnboardingTemplateService>());
+        services.AddScoped<IAdminPublishOnboardingTemplateHandler>(sp => sp.GetRequiredService<AdminOnboardingTemplateService>());
+        services.AddScoped<IAdminArchiveOnboardingTemplateHandler>(sp => sp.GetRequiredService<AdminOnboardingTemplateService>());
+
+        services.AddScoped<StudentOnboardingFlowService>();
+        services.AddScoped<IStudentOnboardingActiveQuery>(sp => sp.GetRequiredService<StudentOnboardingFlowService>());
+        services.AddScoped<IStudentOnboardingSaveDraftHandler>(sp => sp.GetRequiredService<StudentOnboardingFlowService>());
+        services.AddScoped<IStudentOnboardingSubmitHandler>(sp => sp.GetRequiredService<StudentOnboardingFlowService>());
 
         services.AddScoped<IAdminStudentPracticeQuery, AdminStudentPracticeQueryHandler>();
         services.AddScoped<IAdminStudentSpeakingAttemptsQuery, AdminStudentSpeakingAttemptsHandler>();

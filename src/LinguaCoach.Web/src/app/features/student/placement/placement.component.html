@@ -34,82 +34,40 @@
           <div class="sp-alert-error mb-4" data-testid="placement-inline-error">{{ error() }}</div>
         }
 
-        @if (item.content) {
-          <!-- Unified Question-Schema (Phase 3): shared renderer, replaces the regex-parsed
-               choices/gap-fill/audio/passage blocks below (kept only as a defensive fallback
-               for the rare item without a backfilled Content). -->
-          <app-question-renderer
-            [content]="item.content"
-            [(answers)]="answers"
-            [audioUrl]="audioUrl()"
-            [audioLoading]="audioLoading()"
-            [disabled]="state() === 'submitting'" />
+        <!-- Listening audio player -->
+        @if (item.hasAudio) {
+          <div class="mb-4 rounded-xl bg-slate-50 px-4 py-3" data-testid="placement-audio">
+            @if (audioUrl()) {
+              <audio [src]="audioUrl()" controls class="w-full" data-testid="placement-audio-player"></audio>
+            } @else {
+              <div class="flex items-center gap-2 text-sm text-slate-500">
+                <div class="h-4 w-4 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"></div>
+                <span>Loading audio…</span>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Reading passage -->
+        @if (item.readingPassage) {
+          <div class="mb-4 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700" data-testid="placement-reading-passage">
+            {{ item.readingPassage }}
+          </div>
+        }
+
+        <!-- Form.io-rendered item -->
+        @if (parsedSchema()) {
+          <div data-testid="placement-formio-form">
+            <app-formio-renderer
+              [schema]="parsedSchema()"
+              [disabled]="state() === 'submitting'"
+              (change)="onFormChange($event)"
+              (submit)="onFormSubmit($event)" />
+          </div>
         } @else {
-          <!-- Listening audio player -->
-          @if (item.hasAudio) {
-            <div class="mb-4 rounded-xl bg-slate-50 px-4 py-3" data-testid="placement-audio">
-              @if (audioUrl()) {
-                <audio [src]="audioUrl()" controls class="w-full" data-testid="placement-audio-player"></audio>
-              } @else {
-                <div class="flex items-center gap-2 text-sm text-slate-500">
-                  <div class="h-4 w-4 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"></div>
-                  <span>Loading audio…</span>
-                </div>
-              }
-            </div>
-          }
-
-          <!-- Reading passage -->
-          @if (item.readingPassage) {
-            <div class="mb-4 rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700" data-testid="placement-reading-passage">
-              {{ item.readingPassage }}
-            </div>
-          }
-
-          <!-- Question text -->
-          <p class="text-base font-semibold leading-7 text-slate-900" data-testid="placement-question-text">
-            {{ questionText() }}
-          </p>
-
-          <!-- Multiple choice -->
-          @if (item.itemType === 'multiple_choice') {
-            <div class="mt-5 space-y-2" data-testid="placement-choices">
-              @for (choice of choices(); track choice.letter) {
-                <button
-                  type="button"
-                  (click)="selectChoice(choice.letter)"
-                  [attr.data-testid]="'placement-choice-' + choice.letter"
-                  [class]="'flex w-full items-start gap-3 rounded-xl border-2 px-4 py-3 text-left text-sm transition-all ' +
-                    (selectedAnswer() === choice.letter
-                      ? 'border-indigo-500 bg-indigo-50 text-indigo-900'
-                      : 'border-slate-200 bg-white text-slate-700 hover:border-indigo-300 hover:bg-indigo-50/40')">
-                  <span class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold"
-                    [class]="selectedAnswer() === choice.letter ? 'border-indigo-500 text-indigo-600' : 'border-slate-300 text-slate-400'">
-                    {{ choice.letter }}
-                  </span>
-                  <span class="leading-5">{{ choice.text }}</span>
-                </button>
-              }
-            </div>
-          }
-
-          <!-- Gap fill -->
-          @if (item.itemType === 'gap_fill') {
-            <div class="mt-5" data-testid="placement-gap-fill">
-              <input
-                type="text"
-                [ngModel]="gapFillAnswer()"
-                (ngModelChange)="gapFillAnswer.set($event)"
-                placeholder="Type your answer…"
-                autocomplete="off"
-                autocorrect="off"
-                spellcheck="false"
-                class="sp-input w-full"
-                data-testid="placement-gap-fill-input"
-                (keydown.enter)="canSubmit() && submitAnswer()" />
-              <p class="mt-2 text-xs text-slate-400">Type a single word or short phrase to complete the sentence.</p>
-            </div>
-          }
+          <div class="sp-alert-error" data-testid="placement-no-schema">
+            This question could not be rendered. Please try again.
+          </div>
         }
 
         <!-- Submit -->

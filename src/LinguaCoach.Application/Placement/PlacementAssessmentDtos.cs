@@ -28,7 +28,12 @@ public sealed record PlacementNextItemDto(
     // Unified Question-Schema (Phase 2) — the shared, polymorphic representation of this item,
     // additive alongside the legacy flat fields above until the frontend renderer (Phase 3)
     // switches to consuming it and the flat fields are dropped (Phase 7).
-    QuestionContent? Content = null);
+    QuestionContent? Content = null,
+    // Form.io onboarding/placement redesign — student-safe Form.io schema for this item, either
+    // authored directly (PlacementItemDefinition.FormIoSchemaJson) or derived server-side from
+    // the redacted Content above. Never contains a correct answer.
+    string? FormIoSchemaJson = null,
+    string RendererKind = "FormIo");
 
 public sealed record PlacementSkillProgressDto(
     string Skill,

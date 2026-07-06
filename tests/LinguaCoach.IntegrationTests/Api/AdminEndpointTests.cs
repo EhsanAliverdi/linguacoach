@@ -284,13 +284,19 @@ public sealed class AdminEndpointTests : IClassFixture<ApiTestFactory>
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
-            var flowId = await db.OnboardingFlowDefinitions
-                .Where(f => f.IsActive)
-                .Select(f => f.Id)
-                .FirstAsync();
-            var progress = LinguaCoach.Domain.Entities.StudentOnboardingProgress.CreateCompleted(userId, flowId);
-            progress.RecordStepCompleted("step-intro");
-            db.Set<LinguaCoach.Domain.Entities.StudentOnboardingProgress>().Add(progress);
+            var template = new LinguaCoach.Domain.Entities.StudentFlowTemplate(
+                LinguaCoach.Domain.Enums.StudentFlowKind.Onboarding, $"test-template-{Guid.NewGuid():N}");
+            var version = new LinguaCoach.Domain.Entities.StudentFlowTemplateVersion(
+                template.Id, 1, "{\"components\":[]}", Guid.NewGuid());
+            template.AddVersion(version);
+            db.StudentFlowTemplates.Add(template);
+            db.StudentFlowTemplateVersions.Add(version);
+
+            var submission = new LinguaCoach.Domain.Entities.StudentFlowSubmission(
+                userId, LinguaCoach.Domain.Enums.StudentFlowKind.Onboarding, version.Id, "{}");
+            submission.MarkSubmitted("{}");
+            submission.MarkEvaluated("{}");
+            db.StudentFlowSubmissions.Add(submission);
             await db.SaveChangesAsync();
         }
 

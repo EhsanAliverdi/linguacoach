@@ -52,11 +52,9 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<StudentLearningEvent> StudentLearningEvents => Set<StudentLearningEvent>();
 
     // T47 — Onboarding v2
-    public DbSet<OnboardingFlowDefinition> OnboardingFlowDefinitions => Set<OnboardingFlowDefinition>();
-    public DbSet<OnboardingStepDefinition> OnboardingStepDefinitions => Set<OnboardingStepDefinition>();
-    public DbSet<OnboardingCategoryDefinition> OnboardingCategoryDefinitions => Set<OnboardingCategoryDefinition>();
-    public DbSet<StudentOnboardingProgress> StudentOnboardingProgress => Set<StudentOnboardingProgress>();
-    public DbSet<StudentOnboardingResponse> StudentOnboardingResponses => Set<StudentOnboardingResponse>();
+    public DbSet<StudentFlowTemplate> StudentFlowTemplates => Set<StudentFlowTemplate>();
+    public DbSet<StudentFlowTemplateVersion> StudentFlowTemplateVersions => Set<StudentFlowTemplateVersion>();
+    public DbSet<StudentFlowSubmission> StudentFlowSubmissions => Set<StudentFlowSubmission>();
 
     // Phase 10K — Curriculum syllabus foundation
     public DbSet<CurriculumObjective> CurriculumObjectives => Set<CurriculumObjective>();
@@ -123,13 +121,6 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
                 .IsConcurrencyToken();
 
             modelBuilder.Entity<PracticeActivityCache>()
-                .Property<uint>("xmin")
-                .HasColumnName("xmin")
-                .HasColumnType("xid")
-                .ValueGeneratedOnAddOrUpdate()
-                .IsConcurrencyToken();
-
-            modelBuilder.Entity<StudentOnboardingProgress>()
                 .Property<uint>("xmin")
                 .HasColumnName("xmin")
                 .HasColumnType("xid")

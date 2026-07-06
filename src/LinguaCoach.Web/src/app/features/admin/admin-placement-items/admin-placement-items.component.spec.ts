@@ -22,6 +22,8 @@ const ITEM_A: AdminPlacementItemDto = {
     choices: [{ key: 'A', label: 'am' }, { key: 'B', label: 'is' }],
     correctAnswerKey: 'A',
   },
+  formIoSchemaJson: null,
+  scoringRulesJson: null,
 };
 
 const ITEM_B: AdminPlacementItemDto = {
@@ -41,6 +43,8 @@ const ITEM_B: AdminPlacementItemDto = {
     audioScript: 'The deadline has been extended.',
     questions: [{ type: 'gap_fill', id: 'q1', questionText: 'You hear: complete the sentence.', correctAnswer: 'extended' }],
   },
+  formIoSchemaJson: null,
+  scoringRulesJson: null,
 };
 
 function makeService(items: AdminPlacementItemDto[] = [ITEM_A, ITEM_B]) {
@@ -200,7 +204,11 @@ describe('AdminPlacementItemsComponent', () => {
     component.updateContent({ ...component.itemForm.content, questionText: 'New prompt' } as any);
     component.saveItem();
     tick();
-    expect(svc.add).toHaveBeenCalledWith(component.itemForm);
+    expect(svc.add).toHaveBeenCalledWith(jasmine.objectContaining({
+      skill: component.itemForm.skill,
+      cefrLevel: component.itemForm.cefrLevel,
+      content: component.itemForm.content,
+    }));
   }));
 
   it('saveItem calls update when editingItem is set', fakeAsync(async () => {
@@ -208,7 +216,25 @@ describe('AdminPlacementItemsComponent', () => {
     component.openEditItem(ITEM_B);
     component.saveItem();
     tick();
-    expect(svc.update).toHaveBeenCalledWith('item-2', component.itemForm);
+    expect(svc.update).toHaveBeenCalledWith('item-2', jasmine.objectContaining({
+      skill: component.itemForm.skill,
+      cefrLevel: component.itemForm.cefrLevel,
+      content: component.itemForm.content,
+    }));
+  }));
+
+  it('saveItem includes formIoSchemaJson and scoringRulesJson when Form.io authoring is enabled', fakeAsync(async () => {
+    await setup();
+    component.openAddItem();
+    component.formioEnabled.set(true);
+    component.formioSchema.set({ display: 'form', components: [] });
+    component.scoringRulesJson.set('{"assessment_q1":{"correctAnswerKey":"b"}}');
+    component.saveItem();
+    tick();
+    expect(svc.add).toHaveBeenCalledWith(jasmine.objectContaining({
+      formIoSchemaJson: jasmine.any(String),
+      scoringRulesJson: '{"assessment_q1":{"correctAnswerKey":"b"}}',
+    }));
   }));
 
   it('saveItem closes slide-over on success', fakeAsync(async () => {

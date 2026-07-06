@@ -2,11 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import {
-  OnboardingV2Status,
-  SubmitStepResult,
-  CompleteOnboardingResult,
-} from '../models/onboarding-v2.models';
+import { StudentOnboardingActiveDto, SubmitOnboardingResult } from '../models/onboarding-v2.models';
 
 @Injectable({ providedIn: 'root' })
 export class OnboardingV2Service {
@@ -14,18 +10,15 @@ export class OnboardingV2Service {
 
   constructor(private http: HttpClient) {}
 
-  getStatus(): Observable<OnboardingV2Status> {
-    return this.http.get<OnboardingV2Status>(`${this.api}/onboarding`);
+  getActive(): Observable<StudentOnboardingActiveDto> {
+    return this.http.get<StudentOnboardingActiveDto>(`${this.api}/onboarding/active`);
   }
 
-  submitStep(stepKey: string, answerJson: string): Observable<SubmitStepResult> {
-    return this.http.post<SubmitStepResult>(
-      `${this.api}/onboarding/steps/${encodeURIComponent(stepKey)}`,
-      { answerJson }
-    );
+  saveDraft(submissionJson: string): Observable<void> {
+    return this.http.post<void>(`${this.api}/onboarding/save-draft`, { submissionJson });
   }
 
-  complete(): Observable<CompleteOnboardingResult> {
-    return this.http.post<CompleteOnboardingResult>(`${this.api}/onboarding/complete`, {});
+  submit(submissionJson: string): Observable<SubmitOnboardingResult> {
+    return this.http.post<SubmitOnboardingResult>(`${this.api}/onboarding/submit`, { submissionJson });
   }
 }

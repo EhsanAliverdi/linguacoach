@@ -755,6 +755,8 @@ These are planning estimates, not exact metrics. Provided to guide sequencing de
 | 2026-06-30 | Speaking mastery signals: review-only, no CEFR update, no objective completion | Conservative integration path; AI evaluation not yet validated for hard state changes |
 | 2026-06-30 | CEFR update from AI evaluation: permanently disabled in current design | Overclaiming risk; CEFR is a high-value signal that must come from validated sources |
 | 2026-07-03 | Phase 20I QA used a freshly created QA student for all student-side UI testing, not `pilot.student.20e`'s real credentials | Avoids disrupting the real pilot student's account (forced password reset); admin/DB views used for `pilot.student.20e`-specific checks instead |
+| 2026-07-06 | Onboarding/placement migrated to Form.io (frontend-only, `@formio/js`, MIT) | Custom question designer/renderer had grown into more machinery than needed; Form.io gives admin-authorable forms for free. Old onboarding tables dropped cleanly (confirmed UAT-only, no production student data at risk); placement's adaptive engine kept fully intact, Form.io used only for per-item rendering/authoring |
+| 2026-07-06 | Placement stays adaptive — no static per-skill Form.io wizard | The adaptive engine picks each next item live from per-skill CEFR confidence; a pre-authored static form can't replicate that. Form.io only renders one already-selected item at a time |
 
 ---
 

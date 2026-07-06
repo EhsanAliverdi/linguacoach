@@ -1,10 +1,16 @@
 ---
 status: current
-lastUpdated: 2026-06-09 14:30
+lastUpdated: 2026-07-06 00:00
 owner: architecture
 supersedes:
 supersededBy:
 ---
+
+> **2026-07-06 addendum**: per-item student-facing rendering now goes through Form.io
+> (`formIoSchema` field on `GET /student/placement/next`), and the admin item bank optionally
+> supports Form.io-authored items alongside the existing editor. The adaptive engine described
+> below (selection, confidence, completion, CEFR finalization) is entirely unchanged. See
+> [formio-onboarding-placement-model.md](formio-onboarding-placement-model.md).
 
 # Placement Assessment Model
 

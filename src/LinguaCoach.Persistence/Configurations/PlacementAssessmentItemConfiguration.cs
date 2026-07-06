@@ -15,6 +15,7 @@ internal sealed class PlacementAssessmentItemConfiguration : IEntityTypeConfigur
         builder.Property(e => e.CreatedAt).HasColumnName("created_at").IsRequired();
 
         builder.Property(e => e.PlacementAssessmentId).HasColumnName("placement_assessment_id").IsRequired();
+        builder.Property(e => e.SourceItemDefinitionId).HasColumnName("source_item_definition_id");
         builder.Property(e => e.Skill).HasColumnName("skill").HasMaxLength(100).IsRequired();
         builder.Property(e => e.TargetCefrLevel).HasColumnName("target_cefr_level").HasMaxLength(10).IsRequired();
         builder.Property(e => e.ItemType).HasColumnName("item_type").HasMaxLength(50).IsRequired();
@@ -33,6 +34,7 @@ internal sealed class PlacementAssessmentItemConfiguration : IEntityTypeConfigur
         builder.Property(e => e.AudioContentType).HasColumnName("audio_content_type").HasMaxLength(100);
         builder.Property(e => e.ContentJson).HasColumnName("content_json").HasColumnType("jsonb");
         builder.Property(e => e.AnswerJson).HasColumnName("answer_json").HasColumnType("jsonb");
+        builder.Property(e => e.FormIoSchemaJson).HasColumnName("form_io_schema_json").HasColumnType("jsonb");
         builder.Ignore(e => e.Content);
         builder.Ignore(e => e.Answer);
 
