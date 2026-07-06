@@ -18,9 +18,11 @@ import {
   SpAdminModalComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
+  SpAdminTableActionsComponent,
   SpAdminTableComponent,
   SpAdminTextareaComponent,
 } from '../../../design-system/admin';
+import type { SpAdminRowAction } from '../../../design-system/admin';
 
 /**
  * Onboarding templates list page. Authoring (the Form.io builder) lives on its own page
@@ -46,6 +48,7 @@ import {
     SpAdminModalComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
+    SpAdminTableActionsComponent,
     SpAdminTableComponent,
     SpAdminTextareaComponent,
   ],
@@ -118,6 +121,21 @@ export class AdminOnboardingComponent implements OnInit {
 
   editTemplate(templateId: string): void {
     this.router.navigate(['/admin/onboarding', templateId]);
+  }
+
+  rowActions(row: StudentFlowTemplateSummaryDto): SpAdminRowAction[] {
+    const actions: SpAdminRowAction[] = [{ id: 'edit', label: 'Edit', icon: 'edit' }];
+    if (row.status !== 'Archived') {
+      actions.push({ id: 'archive', label: 'Archive', icon: 'archive', tone: 'danger' });
+    }
+    return actions;
+  }
+
+  onRowAction(actionId: string, row: StudentFlowTemplateSummaryDto): void {
+    switch (actionId) {
+      case 'edit': this.editTemplate(row.templateId); break;
+      case 'archive': this.archive(row.templateId); break;
+    }
   }
 
   archive(templateId: string): void {

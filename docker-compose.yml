@@ -97,9 +97,16 @@ services:
       retries: 5
       start_period: 15s
 
-  # TODO (T6-docker): add an Angular frontend container (nginx serving dist/)
-  # once the production build has been verified and a Dockerfile for the frontend
-  # is written. For local development, run `npm start` inside src/LinguaCoach.Web.
+  web:
+    build:
+      context: ./src/LinguaCoach.Web
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "4200:80"
+    depends_on:
+      api:
+        condition: service_healthy
 
 volumes:
   postgres_data:

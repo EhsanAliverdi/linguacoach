@@ -5,13 +5,35 @@
       "label": "Start: All (Docker + Frontend)",
       "dependsOn": ["Start: Docker (DB + API)", "Start: Frontend"],
       "dependsOrder": "parallel",
-      "group": { "kind": "build", "isDefault": true },
+      "group": "build",
       "problemMatcher": []
+    },
+    {
+      "label": "Start: Full Stack (Docker)",
+      "type": "shell",
+      "command": "docker compose up --build",
+      "options": { "cwd": "${workspaceFolder}" },
+      "isBackground": true,
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": {
+        "pattern": { "regexp": "^$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Starting",
+          "endsPattern": "Attaching to"
+        }
+      },
+      "presentation": {
+        "label": "Full Stack",
+        "group": "linguacoach",
+        "reveal": "always",
+        "panel": "dedicated"
+      }
     },
     {
       "label": "Start: Docker (DB + API)",
       "type": "shell",
-      "command": "docker compose up --build",
+      "command": "docker compose up --build db minio api",
       "options": { "cwd": "${workspaceFolder}" },
       "isBackground": true,
       "problemMatcher": {

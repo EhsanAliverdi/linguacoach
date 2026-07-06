@@ -58,16 +58,10 @@
               @case ('versionCount') { <span>{{ row.versionCount }}</span> }
               @case ('updatedAt') { <span>{{ row.updatedAt | date:'short' }}</span> }
               @case ('_actions') {
-                <div class="sp-admin-row-actions">
-                  <sp-admin-button variant="neutral" appearance="ghost" size="xs" (clicked)="editTemplate(row.templateId)">
-                    Edit
-                  </sp-admin-button>
-                  @if (row.status !== 'Archived') {
-                    <sp-admin-button variant="danger" appearance="ghost" size="xs" (clicked)="archive(row.templateId)">
-                      Archive
-                    </sp-admin-button>
-                  }
-                </div>
+                <sp-admin-table-actions
+                  mode="buttons"
+                  [richActions]="rowActions(row)"
+                  (actionSelected)="onRowAction($event, row)" />
               }
             }
           </ng-template>
