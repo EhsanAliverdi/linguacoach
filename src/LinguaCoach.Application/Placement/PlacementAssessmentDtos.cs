@@ -1,8 +1,14 @@
-using LinguaCoach.Domain.Questions;
+using System.Text.Json;
 
 namespace LinguaCoach.Application.Placement;
 
 // ── Phase 13B — Response Submission + Progress DTOs ─────────────────────────
+// Form.io-native (post-migration): submissions carry the full Form.io submission.data
+// dictionary instead of a single string response; ScoringRulesJson is never included in any
+// of these student-facing DTOs.
+
+/// <summary>Wire shape for a Form.io submission: { data: { <componentKey>: <value>, ... } }.</summary>
+public sealed record PlacementSubmissionPayload(Dictionary<string, JsonElement> Data);
 
 public sealed record SubmitResponseResult(
     Guid ItemId,
@@ -23,16 +29,10 @@ public sealed record PlacementNextItemDto(
     int ItemOrder,
     int AnsweredCount,
     int EstimatedRemainingItems,
-    string? ReadingPassage = null,
-    bool HasAudio = false,
-    // Unified Question-Schema (Phase 2) — the shared, polymorphic representation of this item,
-    // additive alongside the legacy flat fields above until the frontend renderer (Phase 3)
-    // switches to consuming it and the flat fields are dropped (Phase 7).
-    QuestionContent? Content = null,
-    // Form.io onboarding/placement redesign — student-safe Form.io schema for this item, either
-    // authored directly (PlacementItemDefinition.FormIoSchemaJson) or derived server-side from
-    // the redacted Content above. Never contains a correct answer.
-    string? FormIoSchemaJson = null,
+    bool HasAudio,
+    // Student-safe Form.io schema for this item — never contains a correct answer or any
+    // scoring data. ScoringRulesJson is deliberately never surfaced anywhere in this DTO.
+    string? FormIoSchemaJson,
     string RendererKind = "FormIo");
 
 public sealed record PlacementSkillProgressDto(
@@ -49,15 +49,13 @@ public sealed record PlacementItemHistoryDto(
     string TargetCefrLevel,
     string ItemType,
     string Prompt,
-    string? Response,
+    Dictionary<string, JsonElement>? SubmissionData,
+    Dictionary<string, string?>? NormalizedAnswer,
     bool? IsCorrect,
     double? Score,
     DateTime? EvaluatedAtUtc,
-    string? EvaluationNotes,
     int? DurationSeconds,
-    int ItemOrder,
-    QuestionContent? Content = null,
-    QuestionAnswer? Answer = null);
+    int ItemOrder);
 
 public sealed record PlacementAssessmentProgressDto(
     Guid AssessmentId,

@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { map, catchError, of } from 'rxjs';
-import { PlacementService } from '../services/placement.service';
+import { DashboardSummaryService } from '../services/dashboard-summary.service';
 
 /**
  * Guards the main student app (dashboard, activities, etc.).
@@ -11,13 +11,13 @@ import { PlacementService } from '../services/placement.service';
  * guards / pages handle it.
  */
 export const placementRequiredRedirectGuard: CanActivateFn = () => {
-  const placement = inject(PlacementService);
+  const summaryService = inject(DashboardSummaryService);
   const router = inject(Router);
 
-  return placement.getStatus().pipe(
-    map(status => {
-      const stage = status.lifecycleStage;
-      if (stage === 'PlacementRequired' || stage === 'PlacementInProgress' || status.status === 'InProgress') {
+  return summaryService.getSummary().pipe(
+    map(summary => {
+      const stage = summary.courseReadiness.lifecycleStatus;
+      if (stage === 'PlacementRequired' || stage === 'PlacementInProgress') {
         return router.createUrlTree(['/placement']);
       }
       return true;
@@ -32,12 +32,12 @@ export const placementRequiredRedirectGuard: CanActivateFn = () => {
  * Students who have passed placement cannot re-enter /placement (unless retake is enabled).
  */
 export const placementAccessGuard: CanActivateFn = () => {
-  const placement = inject(PlacementService);
+  const summaryService = inject(DashboardSummaryService);
   const router = inject(Router);
 
-  return placement.getStatus().pipe(
-    map(status => {
-      const stage = status.lifecycleStage;
+  return summaryService.getSummary().pipe(
+    map(summary => {
+      const stage = summary.courseReadiness.lifecycleStatus;
 
       // Block pre-onboarding — redirect to onboarding instead of /dashboard
       // to avoid a redirect loop with placementRequiredRedirectGuard.

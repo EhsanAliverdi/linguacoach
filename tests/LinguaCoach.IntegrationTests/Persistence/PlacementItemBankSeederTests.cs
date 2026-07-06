@@ -1,6 +1,5 @@
-using LinguaCoach.Domain.Questions;
+using System.Text.Json;
 using LinguaCoach.Infrastructure.Placement;
-using LinguaCoach.Infrastructure.Questions;
 using LinguaCoach.Persistence;
 using LinguaCoach.Persistence.Seed;
 using Microsoft.EntityFrameworkCore;
@@ -65,137 +64,111 @@ public sealed class PlacementItemBankSeederTests : IDisposable
         await PlacementItemBankSeeder.SeedAsync(_db);
 
         var item = await _db.PlacementItemDefinitions.FirstAsync(i => i.Skill == "grammar");
-        item.Update(item.Skill, item.CefrLevel, item.ItemType, item.Prompt, "AdminEditedAnswer",
-            item.ItemOrder, item.IsEnabled, item.ReadingPassage, item.ListeningAudioScript);
+        item.Update(item.Skill, "B2", item.ItemType, item.Prompt, item.ItemOrder, item.IsEnabled);
         await _db.SaveChangesAsync();
 
         await PlacementItemBankSeeder.SeedAsync(_db);
 
         var reloaded = await _db.PlacementItemDefinitions.FirstAsync(i => i.Id == item.Id);
-        Assert.Equal("AdminEditedAnswer", reloaded.CorrectAnswer);
+        Assert.Equal("B2", reloaded.CefrLevel);
         Assert.Equal(72, await _db.PlacementItemDefinitions.CountAsync());
     }
 
-    // ── Phase 20I-5: listening audio script derivation ──────────────────────
+    // ── Form.io-native authoring ──────────────────────────────────────────────
 
     [Fact]
-    public async Task SeedAsync_DerivesListeningAudioScriptFromQuotedPromptText()
-    {
-        await PlacementItemBankSeeder.SeedAsync(_db);
-
-        var item = await _db.PlacementItemDefinitions.FirstAsync(
-            i => i.Prompt == "You hear: 'Turn left at the traffic lights.' Where do you turn? (A) right (B) left (C) straight");
-
-        Assert.Equal("Turn left at the traffic lights.", item.ListeningAudioScript);
-    }
-
-    [Fact]
-    public async Task SeedAsync_SubstitutesGapFillBlankWithCorrectAnswerInAudioScript()
-    {
-        await PlacementItemBankSeeder.SeedAsync(_db);
-
-        var item = await _db.PlacementItemDefinitions.FirstAsync(
-            i => i.Prompt == "You hear: 'My name is ___.' (Maria/Monday/Morning)");
-
-        Assert.Equal("My name is Maria.", item.ListeningAudioScript);
-    }
-
-    [Fact]
-    public async Task SeedAsync_LeavesAudioScriptNullWhenPromptHasNoQuotedLine()
-    {
-        await PlacementItemBankSeeder.SeedAsync(_db);
-
-        var item = await _db.PlacementItemDefinitions.FirstAsync(
-            i => i.Prompt == "You hear a complaint about slow service. What is the caller's main concern? (A) price (B) quality (C) speed");
-
-        Assert.Null(item.ListeningAudioScript);
-    }
-
-    [Fact]
-    public async Task SeedAsync_NonListeningItemsHaveNoAudioScript()
-    {
-        await PlacementItemBankSeeder.SeedAsync(_db);
-
-        var grammarItems = await _db.PlacementItemDefinitions.Where(i => i.Skill == "grammar").ToListAsync();
-        Assert.All(grammarItems, i => Assert.Null(i.ListeningAudioScript));
-    }
-
-    [Fact]
-    public async Task SeedAsync_BackfillsAudioScriptOntoRowsSeededBeforeThisFieldExisted()
-    {
-        // Simulates the real production state after the Phase 20I-4 deploy: rows already
-        // exist with ListeningAudioScript null, since that deploy predates this field.
-        await PlacementItemBankSeeder.SeedAsync(_db);
-        var item = await _db.PlacementItemDefinitions.FirstAsync(
-            i => i.Prompt == "You hear: 'Turn left at the traffic lights.' Where do you turn? (A) right (B) left (C) straight");
-        item.Update(item.Skill, item.CefrLevel, item.ItemType, item.Prompt, item.CorrectAnswer,
-            item.ItemOrder, item.IsEnabled, item.ReadingPassage, listeningAudioScript: null);
-        await _db.SaveChangesAsync();
-
-        await PlacementItemBankSeeder.SeedAsync(_db);
-
-        var reloaded = await _db.PlacementItemDefinitions.FirstAsync(i => i.Id == item.Id);
-        Assert.Equal("Turn left at the traffic lights.", reloaded.ListeningAudioScript);
-    }
-
-    // ── Unified Question-Schema Phase 2: ContentJson shadow ─────────────────
-
-    [Fact]
-    public async Task SeedAsync_PopulatesContentJsonForEveryItem()
+    public async Task SeedAsync_EveryItemHasFormIoSchemaAndScoringRules()
     {
         await PlacementItemBankSeeder.SeedAsync(_db);
 
         var items = await _db.PlacementItemDefinitions.ToListAsync();
-        Assert.All(items, i => Assert.NotNull(i.ContentJson));
-        Assert.All(items, i => Assert.NotNull(i.Content));
+        Assert.All(items, i => Assert.False(string.IsNullOrWhiteSpace(i.FormIoSchemaJson)));
+        Assert.All(items, i => Assert.False(string.IsNullOrWhiteSpace(i.ScoringRulesJson)));
+        Assert.All(items, i => Assert.True(i.ScoringRulesVersion >= 1));
     }
 
     [Fact]
-    public async Task SeedAsync_ListeningItem_ProducesListeningGroupContent()
+    public async Task SeedAsync_MultipleChoiceItem_ProducesRadioComponentWithChoices()
     {
         await PlacementItemBankSeeder.SeedAsync(_db);
 
         var item = await _db.PlacementItemDefinitions.FirstAsync(
-            i => i.Prompt == "You hear: 'Turn left at the traffic lights.' Where do you turn? (A) right (B) left (C) straight");
+            i => i.Skill == "grammar" && i.ItemType == "multiple_choice");
 
-        var group = Assert.IsType<ListeningGroupQuestion>(item.Content);
-        Assert.Equal("Turn left at the traffic lights.", group.AudioScript);
-        var leaf = Assert.IsType<SingleChoiceQuestion>(Assert.Single(group.Questions));
-        Assert.Equal("B", leaf.CorrectAnswerKey);
+        using var doc = JsonDocument.Parse(item.FormIoSchemaJson!);
+        var component = doc.RootElement.GetProperty("components")[0];
+        Assert.Equal("radio", component.GetProperty("type").GetString());
+        Assert.Equal("answer", component.GetProperty("key").GetString());
+        Assert.True(component.GetProperty("values").GetArrayLength() >= 2);
     }
 
     [Fact]
-    public async Task SeedAsync_GapFillItem_ProducesGapFillContentWithSameCorrectAnswer()
+    public async Task SeedAsync_GapFillItem_ProducesTextfieldWithTextNormalizedScoring()
     {
         await PlacementItemBankSeeder.SeedAsync(_db);
 
         var item = await _db.PlacementItemDefinitions.FirstAsync(
             i => i.Skill == "grammar" && i.ItemType == "gap_fill");
 
-        var leaf = Assert.IsType<GapFillQuestion>(item.Content);
-        Assert.Equal(item.CorrectAnswer, leaf.CorrectAnswer);
+        using var schemaDoc = JsonDocument.Parse(item.FormIoSchemaJson!);
+        var component = schemaDoc.RootElement.GetProperty("components")[0];
+        Assert.Equal("textfield", component.GetProperty("type").GetString());
+
+        using var rulesDoc = JsonDocument.Parse(item.ScoringRulesJson!);
+        var rule = rulesDoc.RootElement.GetProperty("components").GetProperty("answer");
+        Assert.Equal("text_normalized", rule.GetProperty("kind").GetString());
     }
 
     [Fact]
-    public async Task Content_ScoredWithSharedScorer_MatchesLegacyPlacementScoringService()
+    public async Task SeedAsync_ListeningItem_EmbedsAudioScriptInScoringRulesOnly()
     {
-        // Proves the new shared IQuestionScorer produces identical correctness to the legacy
-        // PlacementScoringService for every seeded item, de-risking the future cutover where
-        // PlacementAssessmentService switches from flat-field scoring to Content-based scoring.
         await PlacementItemBankSeeder.SeedAsync(_db);
-        var legacyScorer = new PlacementScoringService();
-        var sharedScorer = new QuestionScorer();
+
+        var item = await _db.PlacementItemDefinitions.FirstAsync(
+            i => i.Prompt == "You hear: 'Turn left at the traffic lights.' Where do you turn? (A) right (B) left (C) straight");
+
+        using var rulesDoc = JsonDocument.Parse(item.ScoringRulesJson!);
+        Assert.Equal("Turn left at the traffic lights.",
+            rulesDoc.RootElement.GetProperty("listeningAudioScript").GetString());
+
+        // The script must never appear in the student-safe Form.io schema.
+        Assert.DoesNotContain("listeningAudioScript", item.FormIoSchemaJson);
+    }
+
+    [Fact]
+    public async Task SeedAsync_NonListeningItems_HaveNoAudioScript()
+    {
+        await PlacementItemBankSeeder.SeedAsync(_db);
+
+        var grammarItems = await _db.PlacementItemDefinitions.Where(i => i.Skill == "grammar").ToListAsync();
+        foreach (var item in grammarItems)
+        {
+            using var rulesDoc = JsonDocument.Parse(item.ScoringRulesJson!);
+            var scriptEl = rulesDoc.RootElement.GetProperty("listeningAudioScript");
+            Assert.Equal(JsonValueKind.Null, scriptEl.ValueKind);
+        }
+    }
+
+    [Fact]
+    public async Task Content_ScoredWithSharedScorer_MatchesCorrectAnswerForEverySeededItem()
+    {
+        // Proves the new scoring service correctly scores every seeded item's own correct answer —
+        // de-risking the seed conversion from legacy flat CorrectAnswer to native scoring rules.
+        await PlacementItemBankSeeder.SeedAsync(_db);
+        var scorer = new PlacementScoringService();
 
         var items = await _db.PlacementItemDefinitions.ToListAsync();
         foreach (var item in items)
         {
-            var legacyResult = legacyScorer.Score(item.CorrectAnswer, item.CorrectAnswer, item.ItemType);
+            using var rulesDoc = JsonDocument.Parse(item.ScoringRulesJson!);
+            var correctAnswer = rulesDoc.RootElement.GetProperty("components").GetProperty("answer").GetProperty("correctAnswer").GetString()!;
 
-            var answer = new QuestionAnswer([new QuestionAnswerItem("q1", [item.CorrectAnswer])]);
-            var sharedResult = sharedScorer.Score(item.Content!, answer);
+            var submissionJson = JsonSerializer.Serialize(new { answer = correctAnswer });
+            var submission = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(submissionJson)!;
 
-            Assert.True(legacyResult.IsCorrect, $"Legacy scorer disagreed with itself for item {item.Id}.");
-            Assert.True(sharedResult.IsCorrect, $"Shared scorer marked correct answer wrong for item {item.Id} ({item.Prompt}).");
+            var result = scorer.ScoreSubmission(item.ScoringRulesJson, submission);
+
+            Assert.True(result.IsCorrect, $"Shared scorer marked correct answer wrong for item {item.Id} ({item.Prompt}).");
         }
     }
 }

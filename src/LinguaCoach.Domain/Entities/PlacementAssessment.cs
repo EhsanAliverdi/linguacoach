@@ -38,10 +38,6 @@ public sealed class PlacementAssessment : BaseEntity
     public string? Source { get; private set; }
     public bool IsAdaptive { get; private set; }
 
-    // Navigation — answers collected across all sections.
-    private readonly List<PlacementAnswer> _answers = new();
-    public IReadOnlyCollection<PlacementAnswer> Answers => _answers.AsReadOnly();
-
     // Navigation — adaptive assessment items (Phase 13A).
     private readonly List<PlacementAssessmentItem> _items = new();
     public IReadOnlyCollection<PlacementAssessmentItem> Items => _items.AsReadOnly();
@@ -97,8 +93,7 @@ public sealed class PlacementAssessment : BaseEntity
 
     /// <summary>
     /// Advances the current section pointer after a section's answers have been saved.
-    /// Persistence of <see cref="PlacementAnswer"/> rows is handled by the application layer
-    /// (so EF tracks inserts/deletes correctly). Idempotent per section.
+    /// Idempotent per section.
     /// </summary>
     public void AdvanceSection(string sectionKey, string? nextSectionKey)
     {

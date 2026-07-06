@@ -1,66 +1,56 @@
-using System.Text.Json;
 using LinguaCoach.Domain.Common;
-using LinguaCoach.Domain.Questions;
 
 namespace LinguaCoach.Domain.Entities;
 
 /// <summary>
 /// A single question/item within an adaptive placement assessment (Phase 13A).
+/// Form.io-native: the item's schema/scoring are snapshotted from its source
+/// PlacementItemDefinition at issuance and the student's raw Form.io submission is stored
+/// verbatim (SubmissionDataJson) alongside a per-component normalized view (NormalizedAnswerJson).
 /// </summary>
 public sealed class PlacementAssessmentItem : BaseEntity
 {
     public Guid PlacementAssessmentId { get; private set; }
 
-    /// <summary>FK to the PlacementItemDefinition this item was issued from — sturdier dedup
-    /// identity than Prompt-text matching once items are Form.io-authored. Null for items issued
-    /// before this field existed; SelectNextTemplate falls back to Prompt matching for those.</summary>
+    /// <summary>FK to the PlacementItemDefinition this item was issued from — stable dedup
+    /// identity for "has this item already been issued in this assessment".</summary>
     public Guid? SourceItemDefinitionId { get; private set; }
 
     public string Skill { get; private set; } = string.Empty;
     public string TargetCefrLevel { get; private set; } = string.Empty;
     public string ItemType { get; private set; } = string.Empty;
     public string Prompt { get; private set; } = string.Empty;
-    public string? Response { get; private set; }
     public double? Score { get; private set; }
     public bool? IsCorrect { get; private set; }
     public DateTime? EvaluatedAtUtc { get; private set; }
     public int ItemOrder { get; private set; }
 
-    /// <summary>Correct answer stored for deterministic evaluation.</summary>
-    public string? CorrectAnswer { get; private set; }
-
-    /// <summary>Human-readable scoring note (e.g. "Expected: 'A'. Received: 'B'.").</summary>
-    public string? EvaluationNotes { get; private set; }
-
     /// <summary>Seconds the candidate spent on this item, if captured by the client.</summary>
     public int? DurationSeconds { get; private set; }
-
-    /// <summary>Full passage a reading-skill item's prompt refers to (Phase 20I-5), copied from PlacementItemDefinition at issuance.</summary>
-    public string? ReadingPassage { get; private set; }
-
-    /// <summary>Script to convert to speech for a listening-skill item (Phase 20I-5), copied from PlacementItemDefinition at issuance.</summary>
-    public string? ListeningAudioScript { get; private set; }
 
     /// <summary>Storage key for the generated listening audio, once EnsureAudioAsync has run — null until then.</summary>
     public string? AudioStorageKey { get; private set; }
     public string? AudioContentType { get; private set; }
 
-    /// <summary>Unified question schema (Phase 2) snapshot of this item's content, copied from the
-    /// PlacementItemDefinition at issuance and kept in sync with the legacy flat fields above until
-    /// they're dropped (Phase 7).</summary>
-    public string? ContentJson { get; private set; }
-
-    /// <summary>The submitted answer in the shared QuestionAnswer shape, set when RecordResponse runs.</summary>
-    public string? AnswerJson { get; private set; }
-
-    public QuestionContent? Content => QuestionContentJson.TryDeserializeContent(ContentJson);
-
-    public QuestionAnswer? Answer => QuestionContentJson.TryDeserializeAnswer(AnswerJson);
-
-    /// <summary>Student-safe Form.io schema for this item, copied from PlacementItemDefinition at
-    /// issuance — null if the source item hasn't been re-authored via the Form.io builder yet
-    /// (the caller falls back to mapping Content -> Form.io schema in that case).</summary>
+    /// <summary>Student-safe Form.io schema for this item, copied from PlacementItemDefinition at issuance.</summary>
     public string? FormIoSchemaJson { get; private set; }
+
+    /// <summary>Backend-only: the scoring rules snapshot copied from the source
+    /// PlacementItemDefinition at issuance, so a later edit to the live item's scoring rules
+    /// never reinterprets this already-issued item's correctness. Never returned to students.</summary>
+    public string? ScoringRulesJsonSnapshot { get; private set; }
+
+    /// <summary>The ScoringRulesVersion of the source definition at the moment this item was issued.</summary>
+    public int? ScoringRulesVersionSnapshot { get; private set; }
+
+    /// <summary>Raw Form.io submission.data the student submitted, keyed by component key.
+    /// Backend-only in the sense that it isn't shown back to the student redacted, but it is the
+    /// student's own answer so there's no leak concern.</summary>
+    public string? SubmissionDataJson { get; private set; }
+
+    /// <summary>Per-component normalized value used for scoring (trimmed/case-folded text, or the
+    /// normalized choice key(s)), set when RecordResponse runs.</summary>
+    public string? NormalizedAnswerJson { get; private set; }
 
     private PlacementAssessmentItem() { }
 
@@ -70,13 +60,11 @@ public sealed class PlacementAssessmentItem : BaseEntity
         string targetCefrLevel,
         string itemType,
         string prompt,
-        string? correctAnswer,
         int itemOrder,
-        string? readingPassage = null,
-        string? listeningAudioScript = null,
-        QuestionContent? content = null,
         Guid? sourceItemDefinitionId = null,
-        string? formIoSchemaJson = null)
+        string? formIoSchemaJson = null,
+        string? scoringRulesJsonSnapshot = null,
+        int? scoringRulesVersionSnapshot = null)
     {
         if (assessmentId == Guid.Empty)
             throw new ArgumentException("AssessmentId required.", nameof(assessmentId));
@@ -93,23 +81,11 @@ public sealed class PlacementAssessmentItem : BaseEntity
             TargetCefrLevel = targetCefrLevel,
             ItemType = itemType,
             Prompt = prompt,
-            CorrectAnswer = correctAnswer,
             ItemOrder = itemOrder,
-            ReadingPassage = readingPassage,
-            ListeningAudioScript = listeningAudioScript,
-            ContentJson = content is null ? null : JsonSerializer.Serialize<QuestionContent>(content),
             FormIoSchemaJson = formIoSchemaJson,
+            ScoringRulesJsonSnapshot = scoringRulesJsonSnapshot,
+            ScoringRulesVersionSnapshot = scoringRulesVersionSnapshot,
         };
-    }
-
-    /// <summary>One-time backfill of ContentJson/AnswerJson onto a row created before those fields
-    /// existed (Unified Question-Schema Phase 2). Unlike RecordResponse, this does not re-score —
-    /// it only shadows the already-recorded legacy response in the shared answer shape.</summary>
-    public void BackfillContent(QuestionContent content, string? response)
-    {
-        ContentJson = JsonSerializer.Serialize<QuestionContent>(content);
-        if (response is not null)
-            AnswerJson = JsonSerializer.Serialize(new QuestionAnswer([new QuestionAnswerItem("q1", [response])]));
     }
 
     public void RecordAudio(string storageKey, string contentType)
@@ -118,20 +94,17 @@ public sealed class PlacementAssessmentItem : BaseEntity
         AudioContentType = contentType;
     }
 
-    public void RecordResponse(string response, bool isCorrect, double score,
-        string? evaluationNotes = null, int? durationSeconds = null)
+    public void RecordResponse(
+        string submissionDataJson, string? normalizedAnswerJson, bool isCorrect, double score, int? durationSeconds = null)
     {
         if (IsCorrect.HasValue)
             throw new InvalidOperationException("Response already recorded for this item.");
-        Response = response;
+
+        SubmissionDataJson = submissionDataJson;
+        NormalizedAnswerJson = normalizedAnswerJson;
         IsCorrect = isCorrect;
         Score = score;
-        EvaluationNotes = evaluationNotes;
         DurationSeconds = durationSeconds;
         EvaluatedAtUtc = DateTime.UtcNow;
-
-        // Shadow the answer in the shared QuestionAnswer shape (Unified Question-Schema Phase 2) —
-        // a standalone leaf question's single response, addressed by its default "q1" id.
-        AnswerJson = JsonSerializer.Serialize(new QuestionAnswer([new QuestionAnswerItem("q1", [response])]));
     }
 }

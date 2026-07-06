@@ -156,17 +156,6 @@ export class PlacementComponent implements OnInit {
     this.latestSubmissionData = data ?? {};
   }
 
-  /** Single value if there's exactly one component key; otherwise (multi-component
-   * listening/reading group item) take the first sub-answer — a known pre-existing limitation
-   * of the single-string `respond` endpoint, out of scope to fix here. */
-  private extractResponse(data: Record<string, any>): string {
-    const keys = Object.keys(data ?? {});
-    if (keys.length === 0) return '';
-    const value = data[keys[0]];
-    if (value == null) return '';
-    return typeof value === 'string' ? value.trim() : JSON.stringify(value);
-  }
-
   /** Triggers Form.io's own validation/submit pipeline; the actual answer submission happens
    * in onFormSubmit() once Form.io confirms the submission is valid. */
   submitAnswer(): void {
@@ -178,14 +167,14 @@ export class PlacementComponent implements OnInit {
     const item = this.currentItem();
     if (!item || !this.assessmentId || this.state() === 'submitting') return;
 
-    const response = this.extractResponse(data ?? this.latestSubmissionData);
+    const submissionData = (data ?? this.latestSubmissionData) as Record<string, unknown>;
     const durationSeconds = Math.max(1, Math.round((Date.now() - this.itemStartTime) / 1000));
 
     this.state.set('submitting');
     this.placement.respondToItem({
       assessmentId: this.assessmentId,
       itemId: item.itemId,
-      response,
+      submission: { data: submissionData },
       durationSeconds,
       skill: this.skill,
     }).subscribe({

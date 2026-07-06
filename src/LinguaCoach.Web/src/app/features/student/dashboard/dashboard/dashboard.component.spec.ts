@@ -168,7 +168,7 @@ function makeServices(overrides: {
 
   return {
     summaryService,
-    placementService: { getResult: () => throwError(() => ({})) },
+    placementService: { getAdaptiveCurrent: () => throwError(() => ({})) },
     authNotice: { consume: () => null },
   };
 }

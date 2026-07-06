@@ -196,7 +196,7 @@ public sealed class StudentPlacementCourseReadyFailingPlanTests : IClassFixture<
 /// <summary>
 /// Test factory where ILearningPlanService.RegeneratePlanAsync always throws.
 /// Extends ActivityTestFactory (not the sealed PlacementTestFactory) and registers
-/// both FakePlacementEvaluator and ThrowingLearningPlanService.
+/// ThrowingLearningPlanService.
 /// </summary>
 public sealed class FailingLearningPlanFactory : ActivityTestFactory
 {
@@ -205,11 +205,6 @@ public sealed class FailingLearningPlanFactory : ActivityTestFactory
         base.ConfigureWebHost(builder);
         builder.ConfigureServices(services =>
         {
-            // Replace the AI placement evaluator with the deterministic fake.
-            var existingEval = services.Where(d => d.ServiceType == typeof(IPlacementEvaluator)).ToList();
-            foreach (var d in existingEval) services.Remove(d);
-            services.AddScoped<IPlacementEvaluator, FakePlacementEvaluator>();
-
             // Replace the real learning plan service with one that always throws.
             var existingPlan = services.Where(d => d.ServiceType == typeof(ILearningPlanService)).ToList();
             foreach (var d in existingPlan) services.Remove(d);

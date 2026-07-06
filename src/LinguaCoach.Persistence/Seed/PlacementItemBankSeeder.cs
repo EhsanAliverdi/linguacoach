@@ -1,6 +1,6 @@
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using LinguaCoach.Domain.Entities;
-using LinguaCoach.Domain.Questions;
 using Microsoft.EntityFrameworkCore;
 
 namespace LinguaCoach.Persistence.Seed;
@@ -10,6 +10,10 @@ namespace LinguaCoach.Persistence.Seed;
 // each hardcoded item's Prompt text is its stable identity (also enforced as a unique DB
 // index), so items already present (including any an admin has since edited) are skipped.
 // Items an admin adds/removes via /admin/placement-items are never touched by this seeder.
+//
+// Form.io-native migration: every seeded item is authored with a native FormIoSchemaJson
+// (single "answer" component) plus a matching backend-only ScoringRulesJson, generated
+// programmatically from the same flat SeedItem data that used to populate the legacy fields.
 public static class PlacementItemBankSeeder
 {
     public static async Task SeedAsync(LinguaCoachDbContext db)
@@ -27,39 +31,21 @@ public static class PlacementItemBankSeeder
 
             if (existingByPrompt.TryGetValue(t.Prompt, out var existingItem))
             {
-                // Phase 20I-5: backfill ListeningAudioScript onto rows the seeder already created
-                // before this field existed (Phase 20I-4 deployed with it always null). Only
-                // touches rows whose CorrectAnswer still matches the seed default — an admin who
-                // has since edited the item's answer keeps their content untouched.
-                if (audioScript is not null
-                    && existingItem.ListeningAudioScript is null
-                    && existingItem.CorrectAnswer == t.CorrectAnswer)
+                // Backfill FormIoSchemaJson/ScoringRulesJson onto rows seeded before this native
+                // authoring model existed — never touches a row an admin has since re-authored.
+                if (string.IsNullOrWhiteSpace(existingItem.FormIoSchemaJson))
                 {
-                    existingItem.Update(
-                        existingItem.Skill, existingItem.CefrLevel, existingItem.ItemType,
-                        existingItem.Prompt, existingItem.CorrectAnswer, existingItem.ItemOrder,
-                        existingItem.IsEnabled, existingItem.ReadingPassage, audioScript);
-                    dirty = true;
-                }
-
-                // Unified Question-Schema Phase 2: backfill ContentJson onto rows created before
-                // this field existed. Same "hasn't been admin-edited" guard as the audio backfill above.
-                if (existingItem.ContentJson is null && existingItem.CorrectAnswer == t.CorrectAnswer)
-                {
-                    existingItem.SetContent(LegacyPlacementContentConverter.FromLegacyItem(
-                        existingItem.ItemType, existingItem.Prompt, existingItem.CorrectAnswer,
-                        existingItem.ReadingPassage, existingItem.ListeningAudioScript ?? audioScript));
+                    var (schema, rules) = BuildFormIoAuthoring(t, audioScript);
+                    existingItem.SetFormIoAuthoring(schema, rules);
                     dirty = true;
                 }
 
                 continue;
             }
 
-            var newItem = new PlacementItemDefinition(
-                t.Skill, t.CefrLevel, t.ItemType, t.Prompt, t.CorrectAnswer, order,
-                listeningAudioScript: audioScript);
-            newItem.SetContent(LegacyPlacementContentConverter.FromLegacyItem(
-                t.ItemType, t.Prompt, t.CorrectAnswer, null, audioScript));
+            var (formIoSchemaJson, scoringRulesJson) = BuildFormIoAuthoring(t, audioScript);
+            var newItem = new PlacementItemDefinition(t.Skill, t.CefrLevel, t.ItemType, t.Prompt, order);
+            newItem.SetFormIoAuthoring(formIoSchemaJson, scoringRulesJson);
             toAdd.Add(newItem);
         }
 
@@ -67,7 +53,55 @@ public static class PlacementItemBankSeeder
         if (toAdd.Count > 0 || dirty) await db.SaveChangesAsync();
     }
 
-    private static readonly Regex QuotedTextPattern = new("'([^']+)'", RegexOptions.Compiled);
+    private static readonly Regex ChoicePattern = new(@"\(([A-Z])\)\s*([^(]+?)(?=\s*\([A-Z]\)|$)", RegexOptions.Compiled);
+    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
+    /// <summary>Builds the native Form.io schema + matching scoring rules for one seed item.
+    /// multiple_choice items become a "radio" component scored as single_choice; gap_fill items
+    /// become a "textfield" component scored as text_normalized (case-insensitive trim compare,
+    /// matching the legacy PlacementScoringService's comparison semantics).</summary>
+    private static (string FormIoSchemaJson, string ScoringRulesJson) BuildFormIoAuthoring(SeedItem t, string? audioScript)
+    {
+        object component;
+        object rule;
+
+        if (t.ItemType == "multiple_choice")
+        {
+            var choiceIdx = t.Prompt.IndexOf("(A)", StringComparison.OrdinalIgnoreCase);
+            var label = choiceIdx > 0 ? t.Prompt[..choiceIdx].Trim() : t.Prompt.Trim();
+            var choices = ChoicePattern.Matches(t.Prompt)
+                .Select(m => new { key = m.Groups[1].Value.ToUpperInvariant(), label = m.Groups[2].Value.Trim() })
+                .ToList();
+
+            component = new
+            {
+                type = "radio",
+                key = "answer",
+                label,
+                values = choices.Select(c => new { label = c.label, value = c.key }).ToArray(),
+            };
+            rule = new { kind = "single_choice", correctAnswer = t.CorrectAnswer, points = 1.0 };
+        }
+        else
+        {
+            component = new
+            {
+                type = "textfield",
+                key = "answer",
+                label = t.Prompt,
+            };
+            rule = new { kind = "text_normalized", correctAnswer = t.CorrectAnswer, points = 1.0 };
+        }
+
+        var schema = new { components = new[] { component } };
+        var scoringRules = new Dictionary<string, object?>
+        {
+            ["components"] = new Dictionary<string, object> { ["answer"] = rule },
+            ["listeningAudioScript"] = audioScript,
+        };
+
+        return (JsonSerializer.Serialize(schema, JsonOptions), JsonSerializer.Serialize(scoringRules, JsonOptions));
+    }
 
     /// <summary>
     /// Best-effort derivation of a TTS-ready script from a listening prompt's quoted "You hear: '...'"
@@ -84,6 +118,8 @@ public static class PlacementItemBankSeeder
         var script = match.Groups[1].Value;
         return script.Contains("___") ? script.Replace("___", correctAnswer) : script;
     }
+
+    private static readonly Regex QuotedTextPattern = new("'([^']+)'", RegexOptions.Compiled);
 
     private sealed record SeedItem(string Skill, string CefrLevel, string ItemType, string Prompt, string CorrectAnswer);
 

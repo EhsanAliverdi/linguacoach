@@ -36,6 +36,12 @@ public sealed class AdminPlacement13BEndpointTests : IClassFixture<ApiTestFactor
         return Guid.Parse(body.GetProperty("studentProfileId").GetString()!);
     }
 
+    private static object SubmitBody(string answer, int? durationSeconds = null) => new
+    {
+        submission = new { data = new Dictionary<string, object> { ["answer"] = answer } },
+        durationSeconds,
+    };
+
     private async Task<(string adminToken, Guid studentId, string assessmentId)> StartedAssessmentAsync()
     {
         var adminToken = await _factory.CreateAdminAndGetTokenAsync();
@@ -130,7 +136,7 @@ public sealed class AdminPlacement13BEndpointTests : IClassFixture<ApiTestFactor
         // We just test the submission mechanism works and returns a result
         var submitResp = await client.PostAsJsonAsync(
             $"/api/admin/students/{studentId}/placement/{assessmentId}/items/{itemId}/submit",
-            new { response = "A", durationSeconds = 10 });
+            SubmitBody("A", 10));
 
         Assert.Equal(HttpStatusCode.OK, submitResp.StatusCode);
         var result = await submitResp.Content.ReadFromJsonAsync<JsonElement>();
@@ -155,7 +161,7 @@ public sealed class AdminPlacement13BEndpointTests : IClassFixture<ApiTestFactor
         // Submit
         await client.PostAsJsonAsync(
             $"/api/admin/students/{studentId}/placement/{assessmentId}/items/{itemId}/submit",
-            new { response = "A" });
+            SubmitBody("A"));
 
         // Check progress
         var progResp = await client.GetAsync(
@@ -179,10 +185,10 @@ public sealed class AdminPlacement13BEndpointTests : IClassFixture<ApiTestFactor
         // Submit twice
         var first = await client.PostAsJsonAsync(
             $"/api/admin/students/{studentId}/placement/{assessmentId}/items/{itemId}/submit",
-            new { response = "A" });
+            SubmitBody("A"));
         var second = await client.PostAsJsonAsync(
             $"/api/admin/students/{studentId}/placement/{assessmentId}/items/{itemId}/submit",
-            new { response = "B" });
+            SubmitBody("B"));
 
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
         Assert.Equal(HttpStatusCode.OK, second.StatusCode);
@@ -195,7 +201,7 @@ public sealed class AdminPlacement13BEndpointTests : IClassFixture<ApiTestFactor
     }
 
     [Fact]
-    public async Task SubmitResponse_EmptyResponse_Returns400()
+    public async Task SubmitResponse_EmptySubmissionData_Returns400()
     {
         var (adminToken, studentId, assessmentId) = await StartedAssessmentAsync();
         var client = CreateAdminClient(adminToken);
@@ -207,9 +213,31 @@ public sealed class AdminPlacement13BEndpointTests : IClassFixture<ApiTestFactor
 
         var resp = await client.PostAsJsonAsync(
             $"/api/admin/students/{studentId}/placement/{assessmentId}/items/{itemId}/submit",
-            new { response = "", durationSeconds = (int?)null });
+            new { submission = new { data = new Dictionary<string, object>() } });
 
         Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task SubmitResponse_EmptyStringAnswer_ScoresIncorrectRatherThanRejecting()
+    {
+        // An empty text value for a present component key is a valid (wrong) Form.io submission,
+        // not a missing one — only an empty submission.data dict is rejected (see test above).
+        var (adminToken, studentId, assessmentId) = await StartedAssessmentAsync();
+        var client = CreateAdminClient(adminToken);
+
+        var itemsResp = await client.GetAsync(
+            $"/api/admin/students/{studentId}/placement/{assessmentId}/items");
+        var items = await itemsResp.Content.ReadFromJsonAsync<JsonElement>();
+        var itemId = items[0].GetProperty("itemId").GetString()!;
+
+        var resp = await client.PostAsJsonAsync(
+            $"/api/admin/students/{studentId}/placement/{assessmentId}/items/{itemId}/submit",
+            SubmitBody("", null));
+
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.False(body.GetProperty("isCorrect").GetBoolean());
     }
 
     [Fact]
@@ -233,7 +261,7 @@ public sealed class AdminPlacement13BEndpointTests : IClassFixture<ApiTestFactor
 
         var submitResp = await client.PostAsJsonAsync(
             $"/api/admin/students/{studentId}/placement/{assessmentId}/items/{itemId}/submit",
-            new { response = "A" });
+            SubmitBody("A"));
 
         Assert.Equal(HttpStatusCode.Conflict, submitResp.StatusCode);
     }
@@ -254,7 +282,7 @@ public sealed class AdminPlacement13BEndpointTests : IClassFixture<ApiTestFactor
             var itemId = items[i].GetProperty("itemId").GetString()!;
             await client.PostAsJsonAsync(
                 $"/api/admin/students/{studentId}/placement/{assessmentId}/items/{itemId}/submit",
-                new { response = "A" });
+                SubmitBody("A"));
         }
 
         // Force complete
@@ -283,7 +311,7 @@ public sealed class AdminPlacement13BEndpointTests : IClassFixture<ApiTestFactor
 
         await client.PostAsJsonAsync(
             $"/api/admin/students/{studentId}/placement/{assessmentId}/items/{itemId}/submit",
-            new { response = "A" });
+            SubmitBody("A"));
 
         var progResp = await client.GetAsync(
             $"/api/admin/students/{studentId}/placement/{assessmentId}/progress");
@@ -324,7 +352,7 @@ public sealed class AdminPlacement13BEndpointTests : IClassFixture<ApiTestFactor
         // Submit under wrong student
         var resp = await client.PostAsJsonAsync(
             $"/api/admin/students/{otherStudentId}/placement/{assessmentId}/items/{itemId}/submit",
-            new { response = "A" });
+            SubmitBody("A"));
 
         Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
     }

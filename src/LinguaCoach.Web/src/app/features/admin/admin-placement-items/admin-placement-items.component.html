@@ -1,6 +1,6 @@
 <sp-admin-page-header
   title="Placement items"
-  subtitle="Configure the adaptive placement assessment item bank: prompts, correct answers, reading passages, and listening scripts.">
+  subtitle="Configure the adaptive placement assessment item bank: Form.io-authored forms and their backend-only scoring rules.">
   <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="loadAll()">
     Refresh
   </sp-admin-button>
@@ -106,6 +106,14 @@
       <sp-admin-select [(ngModel)]="itemForm.cefrLevel" [options]="cefrLevelOptions" />
     </sp-admin-form-field>
 
+    <sp-admin-form-field label="Item type" [required]="true" hint="Display/grouping label only — the Form.io schema below defines the actual components.">
+      <sp-admin-select [(ngModel)]="itemForm.itemType" [options]="itemTypeOptions" />
+    </sp-admin-form-field>
+
+    <sp-admin-form-field label="Prompt" [required]="true" hint="Short admin-facing label shown in the item bank list.">
+      <sp-admin-input [(ngModel)]="itemForm.prompt" />
+    </sp-admin-form-field>
+
     <sp-admin-form-field label="Item order" hint="Used for admin list ordering only">
       <sp-admin-input type="number" [(ngModel)]="itemForm.itemOrder" />
     </sp-admin-form-field>
@@ -116,25 +124,37 @@
 
   </div>
 
-  <app-question-editor [content]="itemForm.content" (contentChange)="updateContent($event)" />
-
-  <!-- ── Form.io authoring (additive) ────────────────────────────────────────── -->
+  <!-- ── Form.io authoring (the only, always-visible schema editor) ─────────── -->
   <div class="sp-admin-form-stack" style="margin-top:16px;">
-    <sp-admin-form-field label="Form.io authoring">
-      <sp-admin-checkbox [ngModel]="formioEnabled()" (ngModelChange)="formioEnabled.set($event)"
-        label="Also author this item as a Form.io form" />
-    </sp-admin-form-field>
+    <p style="font-size:13px; color:var(--sp-admin-text-secondary, #64748b); margin:0 0 8px;" data-testid="formio-schema-copy">Form schema controls what the student sees.</p>
+    <app-formio-builder [schema]="formioSchema()" (schemaChange)="onFormioSchemaChange($event)" />
   </div>
 
-  @if (formioEnabled()) {
-    <app-formio-builder [schema]="formioSchema()" (schemaChange)="onFormioSchemaChange($event)" />
+  <!-- ── Scoring rules (backend-only) ────────────────────────────────────────── -->
+  <div class="sp-admin-form-stack" style="margin-top:16px;">
+    <p style="font-size:13px; color:var(--sp-admin-text-secondary, #64748b); margin:0 0 8px;" data-testid="scoring-rules-copy">Scoring rules are private and never sent to students.</p>
+
+    @if (schemaComponentKeys().length > 0) {
+      <div data-testid="scoring-rules-component-keys" style="font-size:12px; color:var(--sp-admin-text-secondary, #64748b);">
+        Scorable component keys in this schema: {{ schemaComponentKeys().join(', ') }}
+      </div>
+    } @else {
+      <div data-testid="scoring-rules-component-keys" style="font-size:12px; color:var(--sp-admin-text-secondary, #64748b);">
+        No answer components in this schema yet — add one in the Form.io builder above.
+      </div>
+    }
 
     <sp-admin-form-field
       label="Scoring rules (JSON)"
-      hint="Backend-only correct-answer data for the Form.io schema above.">
+      [required]="true"
+      hint="Backend-only correct-answer data for the Form.io schema above, keyed by component key.">
       <sp-admin-textarea [ngModel]="scoringRulesJson()" (ngModelChange)="scoringRulesJson.set($event)" [rows]="6" />
     </sp-admin-form-field>
-  }
+
+    @if (scoringRulesError()) {
+      <sp-admin-alert variant="error" data-testid="scoring-rules-error">{{ scoringRulesError() }}</sp-admin-alert>
+    }
+  </div>
 
   @if (actionError()) {
     <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert>

@@ -1,4 +1,6 @@
+using System.Text.Json;
 using LinguaCoach.Application.Ai;
+using LinguaCoach.Application.Placement;
 using LinguaCoach.Application.Speaking;
 using LinguaCoach.Application.Storage;
 using LinguaCoach.Domain.Entities;
@@ -34,11 +36,15 @@ public sealed class AdaptivePlacementAudioService
         _logger = logger;
     }
 
-    /// <summary>Generates audio for the item's ListeningAudioScript if not already generated. No-op if there's no script.</summary>
+    /// <summary>Generates audio for the item's listening script (backend-only, sourced from the
+    /// scoring rules snapshot — never rendered to the student as text) if not already generated.
+    /// No-op if there's no script.</summary>
     public async Task EnsureAudioAsync(PlacementAssessmentItem item, string targetLanguageCode, CancellationToken ct)
     {
         if (!string.IsNullOrWhiteSpace(item.AudioStorageKey)) return;
-        if (string.IsNullOrWhiteSpace(item.ListeningAudioScript)) return;
+
+        var script = ExtractListeningScript(item.ScoringRulesJsonSnapshot);
+        if (string.IsNullOrWhiteSpace(script)) return;
 
         ITextToSpeechService tts;
         TextToSpeechOptions ttsOptions;
@@ -53,7 +59,7 @@ public sealed class AdaptivePlacementAudioService
         }
 
         var started = DateTime.UtcNow;
-        var result = await tts.GenerateSpeechAsync(item.ListeningAudioScript!, ttsOptions, ct);
+        var result = await tts.GenerateSpeechAsync(script, ttsOptions, ct);
         var durationMs = (long)(DateTime.UtcNow - started).TotalMilliseconds;
 
         await LogTtsUsageAsync("tts.placement", ttsOptions.Model ?? result.Voice, result, durationMs, ct);
@@ -87,6 +93,21 @@ public sealed class AdaptivePlacementAudioService
         using var ms = new MemoryStream();
         await stream.CopyToAsync(ms, ct);
         return new PlacementItemAudioFile(ms.ToArray(), item.AudioContentType ?? "audio/wav");
+    }
+
+    private static string? ExtractListeningScript(string? scoringRulesJsonSnapshot)
+    {
+        if (string.IsNullOrWhiteSpace(scoringRulesJsonSnapshot)) return null;
+        try
+        {
+            var doc = JsonSerializer.Deserialize<ScoringRulesDocument>(
+                scoringRulesJsonSnapshot, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            return doc?.ListeningAudioScript;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 
     private async Task LogTtsUsageAsync(

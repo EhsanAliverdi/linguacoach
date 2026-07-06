@@ -155,7 +155,7 @@ describe('PlacementComponent', () => {
 
   // ── onFormSubmit() ────────────────────────────────────────────────────────
 
-  it('onFormSubmit() extracts the single component value as response', () => {
+  it('onFormSubmit() sends the full submission data object', () => {
     const respondToItem = jasmine.createSpy('respondToItem').and.returnValue(of({
       itemId: 'item-1', isCorrect: true, score: 1, evaluationNotes: '',
       assessmentComplete: true, completionReason: 'max_items', nextItem: null, summary: null,
@@ -168,10 +168,13 @@ describe('PlacementComponent', () => {
     fixture.detectChanges();
     fixture.componentInstance.onFormSubmit({ q1: 'B' });
 
-    expect(respondToItem).toHaveBeenCalledWith(jasmine.objectContaining({ skill: 'grammar', response: 'B' }));
+    expect(respondToItem).toHaveBeenCalledWith(jasmine.objectContaining({
+      skill: 'grammar',
+      submission: { data: { q1: 'B' } },
+    }));
   });
 
-  it('onFormSubmit() falls back to the first key for a multi-component submission', () => {
+  it('onFormSubmit() sends every component key from a multi-component submission', () => {
     const respondToItem = jasmine.createSpy('respondToItem').and.returnValue(of({
       itemId: 'item-1', isCorrect: true, score: 1, evaluationNotes: '',
       assessmentComplete: true, completionReason: 'max_items', nextItem: null, summary: null,
@@ -184,7 +187,9 @@ describe('PlacementComponent', () => {
     fixture.detectChanges();
     fixture.componentInstance.onFormSubmit({ q1: 'A', q2: 'C' });
 
-    expect(respondToItem).toHaveBeenCalledWith(jasmine.objectContaining({ response: 'A' }));
+    expect(respondToItem).toHaveBeenCalledWith(jasmine.objectContaining({
+      submission: { data: { q1: 'A', q2: 'C' } },
+    }));
   });
 
   it('onFormSubmit() returns to /placement when assessmentComplete', () => {

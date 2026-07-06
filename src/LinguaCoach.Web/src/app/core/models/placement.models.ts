@@ -1,60 +1,4 @@
-import { QuestionContent } from '../../shared/question/question-content.models';
 import { FormRendererKind } from '../../shared/formio/form-renderer-kind.model';
-
-export type PlacementStatusValue = 'NotStarted' | 'InProgress' | 'Completed';
-
-export interface PlacementQuestion {
-  key: string;
-  prompt: string;
-  type: 'rating' | 'choice' | 'text';
-  options?: string[];
-}
-
-export interface PlacementSection {
-  key: string;
-  order: number;
-  title: string;
-  instructions: string;
-  sectionType: 'self_check' | 'mcq' | 'reading' | 'listening' | 'writing' | 'speaking';
-  scored: boolean;
-  questions: PlacementQuestion[];
-  passage?: string | null;
-  audioScript?: string | null;
-  writingPrompt?: string | null;
-  speakingPrompt?: string | null;
-}
-
-export interface PlacementStatus {
-  status: PlacementStatusValue;
-  currentSectionKey: string;
-  currentSectionOrder: number;
-  totalSections: number;
-  lifecycleStage: string;
-  isCompleted: boolean;
-}
-
-export interface PlacementCurrentSection {
-  status: PlacementStatusValue;
-  section: PlacementSection | null;
-  currentSectionOrder: number;
-  totalSections: number;
-  isCompleted: boolean;
-  /** Relative API URL for server-side listening audio. Only set for the listening section. */
-  audioUrl?: string | null;
-  /** True when server-side TTS audio is available and ready to play. */
-  audioAvailable?: boolean;
-}
-
-export interface PlacementAnswerInput {
-  questionKey: string;
-  responseText?: string | null;
-  selectedOption?: string | null;
-}
-
-export interface SavePlacementAnswers {
-  sectionKey: string;
-  answers: PlacementAnswerInput[];
-}
 
 export interface PlacementSkillLevel {
   skill: string;
@@ -112,14 +56,9 @@ export interface AdaptivePlacementNextItem {
   itemOrder: number;
   answeredCount: number;
   estimatedRemainingItems: number;
-  readingPassage?: string | null;
   hasAudio?: boolean;
-  /** Unified Question-Schema (Phase 2/3) — the shared, polymorphic representation of this
-   * item. Present for every item once the backend backfill has run; the legacy flat fields
-   * above are kept only as a defensive fallback. */
-  content?: QuestionContent | null;
-  /** Form.io migration — always populated by the backend now (either item-bank-authored or
-   * server-derived from `content`). A JSON string; parse before feeding to FormioRendererComponent. */
+  /** Native Form.io authoring — always populated by the backend now. A JSON string; parse
+   * before feeding to FormioRendererComponent. */
   formIoSchemaJson?: string | null;
   rendererKind?: FormRendererKind;
 }
@@ -127,7 +66,8 @@ export interface AdaptivePlacementNextItem {
 export interface AdaptivePlacementRespondRequest {
   assessmentId: string;
   itemId: string;
-  response: string;
+  /** Full Form.io submission payload — the raw `.data` dictionary from the rendered form. */
+  submission: { data: Record<string, unknown> };
   durationSeconds?: number | null;
   /** Placement-cards flow: scopes adaptive item selection to this one skill. */
   skill?: string | null;

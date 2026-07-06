@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace LinguaCoach.Application.Placement;
 
 public interface IPlacementAssessmentService
@@ -11,7 +13,9 @@ public interface IPlacementAssessmentService
     // Phase 13B — Real response submission and adaptive progression
     // skillFilter (added for per-skill placement cards): when supplied, item selection is
     // scoped to that one skill instead of the globally least-evidenced skill.
-    Task<SubmitResponseResult> SubmitResponseAsync(Guid assessmentId, Guid itemId, string response, int? durationSeconds, string? skillFilter = null, CancellationToken ct = default);
+    // submissionData is the raw Form.io submission.data dictionary (Form.io-native migration) —
+    // replaces the old single-string response.
+    Task<SubmitResponseResult> SubmitResponseAsync(Guid assessmentId, Guid itemId, IReadOnlyDictionary<string, JsonElement> submissionData, int? durationSeconds, string? skillFilter = null, CancellationToken ct = default);
     Task<PlacementNextItemDto?> GetNextItemAsync(Guid assessmentId, string? skillFilter = null, CancellationToken ct = default);
     Task<PlacementAssessmentProgressDto> GetProgressAsync(Guid assessmentId, CancellationToken ct = default);
 

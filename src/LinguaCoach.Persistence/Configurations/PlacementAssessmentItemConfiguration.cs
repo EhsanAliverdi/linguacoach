@@ -20,23 +20,18 @@ internal sealed class PlacementAssessmentItemConfiguration : IEntityTypeConfigur
         builder.Property(e => e.TargetCefrLevel).HasColumnName("target_cefr_level").HasMaxLength(10).IsRequired();
         builder.Property(e => e.ItemType).HasColumnName("item_type").HasMaxLength(50).IsRequired();
         builder.Property(e => e.Prompt).HasColumnName("prompt").HasMaxLength(2000).IsRequired();
-        builder.Property(e => e.Response).HasColumnName("response").HasMaxLength(2000);
         builder.Property(e => e.Score).HasColumnName("score");
         builder.Property(e => e.IsCorrect).HasColumnName("is_correct");
         builder.Property(e => e.EvaluatedAtUtc).HasColumnName("evaluated_at_utc");
         builder.Property(e => e.ItemOrder).HasColumnName("item_order").IsRequired();
-        builder.Property(e => e.CorrectAnswer).HasColumnName("correct_answer").HasMaxLength(500);
-        builder.Property(e => e.EvaluationNotes).HasColumnName("evaluation_notes").HasMaxLength(1000);
         builder.Property(e => e.DurationSeconds).HasColumnName("duration_seconds");
-        builder.Property(e => e.ReadingPassage).HasColumnName("reading_passage").HasMaxLength(4000);
-        builder.Property(e => e.ListeningAudioScript).HasColumnName("listening_audio_script").HasMaxLength(4000);
         builder.Property(e => e.AudioStorageKey).HasColumnName("audio_storage_key").HasMaxLength(500);
         builder.Property(e => e.AudioContentType).HasColumnName("audio_content_type").HasMaxLength(100);
-        builder.Property(e => e.ContentJson).HasColumnName("content_json").HasColumnType("jsonb");
-        builder.Property(e => e.AnswerJson).HasColumnName("answer_json").HasColumnType("jsonb");
         builder.Property(e => e.FormIoSchemaJson).HasColumnName("form_io_schema_json").HasColumnType("jsonb");
-        builder.Ignore(e => e.Content);
-        builder.Ignore(e => e.Answer);
+        builder.Property(e => e.ScoringRulesJsonSnapshot).HasColumnName("scoring_rules_json_snapshot").HasColumnType("jsonb");
+        builder.Property(e => e.ScoringRulesVersionSnapshot).HasColumnName("scoring_rules_version_snapshot");
+        builder.Property(e => e.SubmissionDataJson).HasColumnName("submission_data_json").HasColumnType("jsonb");
+        builder.Property(e => e.NormalizedAnswerJson).HasColumnName("normalized_answer_json").HasColumnType("jsonb");
 
         builder.HasOne<PlacementAssessment>()
             .WithMany(a => a.Items)

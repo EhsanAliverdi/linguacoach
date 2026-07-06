@@ -160,14 +160,15 @@ public sealed class StudentPlacementController : ControllerBase
         }
     }
 
-    /// <summary>Submits a student's response to an adaptive placement item.</summary>
+    /// <summary>Submits a student's response to an adaptive placement item. Body carries the full
+    /// Form.io submission.data dictionary (Form.io-native migration) rather than a single string.</summary>
     [HttpPost("respond")]
     public async Task<IActionResult> Respond(
         [FromBody] StudentPlacementRespondRequest request,
         CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(request?.Response))
-            return BadRequest(new { error = "Response is required." });
+        if (request?.Submission?.Data is null || request.Submission.Data.Count == 0)
+            return BadRequest(new { error = "Submission data is required." });
 
         var profile = await GetStudentProfileAsync(ct);
         if (profile is null) return NotFound(new { error = "Student profile not found." });
@@ -178,7 +179,7 @@ public sealed class StudentPlacementController : ControllerBase
         try
         {
             var result = await _placement.SubmitResponseAsync(
-                request.AssessmentId, request.ItemId, request.Response, request.DurationSeconds, request.Skill, ct);
+                request.AssessmentId, request.ItemId, request.Submission.Data, request.DurationSeconds, request.Skill, ct);
             return Ok(result);
         }
         catch (InvalidOperationException ex)
@@ -258,7 +259,7 @@ public sealed class StudentPlacementController : ControllerBase
 public sealed record StudentPlacementRespondRequest(
     Guid AssessmentId,
     Guid ItemId,
-    string Response,
+    PlacementSubmissionPayload Submission,
     int? DurationSeconds,
     string? Skill = null);
 

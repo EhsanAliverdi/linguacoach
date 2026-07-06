@@ -630,9 +630,9 @@ public sealed class AdminHandler :
             if (assessments.Count > 0)
             {
                 var assessmentIds = assessments.Select(a => a.Id).ToList();
-                await _db.PlacementAnswers
-                    .Where(a => assessmentIds.Contains(a.PlacementAssessmentId))
-                    .ExecuteDeleteAsync(ct);
+                // PlacementAssessmentItems cascade-delete with their parent PlacementAssessment
+                // (see PlacementAssessmentItemConfiguration's OnDelete(Cascade)), so deleting the
+                // assessments is sufficient.
                 await _db.PlacementAssessments
                     .Where(a => assessmentIds.Contains(a.Id))
                     .ExecuteDeleteAsync(ct);

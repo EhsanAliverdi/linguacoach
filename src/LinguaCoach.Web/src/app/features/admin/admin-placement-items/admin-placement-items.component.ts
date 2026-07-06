@@ -7,9 +7,8 @@ import {
   PlacementItemRequest,
   PLACEMENT_SKILLS,
   PLACEMENT_CEFR_LEVELS,
+  PLACEMENT_ITEM_TYPES,
 } from '../../../core/models/admin-placement-item.models';
-import { QuestionContent, SingleChoiceQuestion } from '../../../shared/question/question-content.models';
-import { QuestionEditorComponent } from '../../../shared/question/question-editor.component';
 import { FormioBuilderComponent } from '../../../shared/formio/formio-builder.component';
 import {
   SpAdminAlertComponent,
@@ -31,14 +30,32 @@ import {
   SpAdminTextareaComponent,
 } from '../../../design-system/admin';
 
-function emptyQuestionContent(): SingleChoiceQuestion {
-  return {
-    type: 'single_choice',
-    id: 'q1',
-    questionText: '',
-    choices: [{ key: 'A', label: '' }, { key: 'B', label: '' }],
-    correctAnswerKey: 'A',
+const EMPTY_SCHEMA = { display: 'form', components: [] };
+
+/** Component types that never carry a scorable answer of their own (containers/decoration). */
+const NON_ANSWER_TYPES = new Set(['button', 'content', 'panel', 'columns', 'table', 'wizard', 'form']);
+
+/** Recursively flattens a Form.io schema's `components` tree, collecting the `.key` of every
+ * leaf input component — mirrors the backend's PlacementFormIoScoringValidator key-extraction so
+ * the admin sees the same set of scorable keys the server will validate scoring rules against. */
+function flattenComponentKeys(schema: any): string[] {
+  const keys: string[] = [];
+  const walk = (node: any): void => {
+    if (Array.isArray(node)) {
+      node.forEach(walk);
+      return;
+    }
+    if (!node || typeof node !== 'object') return;
+
+    if (typeof node.type === 'string' && !NON_ANSWER_TYPES.has(node.type) && typeof node.key === 'string') {
+      keys.push(node.key);
+    }
+    for (const value of Object.values(node)) {
+      if (value && typeof value === 'object') walk(value);
+    }
   };
+  walk(schema?.components ?? []);
+  return keys;
 }
 
 @Component({
@@ -64,7 +81,6 @@ function emptyQuestionContent(): SingleChoiceQuestion {
     SpAdminSlideOverComponent,
     SpAdminTableComponent,
     SpAdminTextareaComponent,
-    QuestionEditorComponent,
     FormioBuilderComponent,
   ],
   templateUrl: './admin-placement-items.component.html',
@@ -81,17 +97,21 @@ export class AdminPlacementItemsComponent implements OnInit {
 
   itemForm: PlacementItemRequest = this.emptyItemForm();
 
-  /** Form.io authoring — additive alongside the existing QuestionEditorComponent flow, not a
-   * replacement. `formioEnabled` toggles whether a schema is included in the save payload at all. */
-  formioEnabled = signal(false);
-  formioSchema = signal<any>({ display: 'form', components: [] });
+  /** Form.io is the only, always-visible schema editor now — no legacy QuestionEditor toggle. */
+  formioSchema = signal<any>({ ...EMPTY_SCHEMA });
   scoringRulesJson = signal('');
+  scoringRulesError = signal('');
+
+  /** Component keys read from the current Form.io schema, shown next to the scoring-rules
+   * textarea so the admin knows which keys are scorable. */
+  readonly schemaComponentKeys = computed(() => flattenComponentKeys(this.formioSchema()));
 
   skillFilter = signal<string>('all');
 
   readonly skillOptions = [{ value: 'all', label: 'All skills' }, ...PLACEMENT_SKILLS.map(s => ({ value: s, label: s }))];
   readonly formSkillOptions = PLACEMENT_SKILLS.map(s => ({ value: s, label: s }));
   readonly cefrLevelOptions = PLACEMENT_CEFR_LEVELS.map(l => ({ value: l, label: l }));
+  readonly itemTypeOptions = PLACEMENT_ITEM_TYPES.map(t => ({ value: t, label: t }));
 
   readonly filteredItems = computed(() => {
     const filter = this.skillFilter();
@@ -129,9 +149,9 @@ export class AdminPlacementItemsComponent implements OnInit {
   openAddItem(): void {
     this.editingItem.set(null);
     this.itemForm = this.emptyItemForm();
-    this.formioEnabled.set(false);
-    this.formioSchema.set({ display: 'form', components: [] });
+    this.formioSchema.set({ ...EMPTY_SCHEMA });
     this.scoringRulesJson.set('');
+    this.scoringRulesError.set('');
     this.actionError.set('');
     this.actionSuccess.set('');
     this.slideOverOpen.set(true);
@@ -142,15 +162,16 @@ export class AdminPlacementItemsComponent implements OnInit {
     this.itemForm = {
       skill: item.skill,
       cefrLevel: item.cefrLevel,
-      content: item.content,
+      itemType: item.itemType,
+      prompt: item.prompt,
       itemOrder: item.itemOrder,
       isEnabled: item.isEnabled,
-      formIoSchemaJson: item.formIoSchemaJson ?? undefined,
-      scoringRulesJson: item.scoringRulesJson ?? undefined,
+      formIoSchemaJson: item.formIoSchemaJson ?? JSON.stringify(EMPTY_SCHEMA),
+      scoringRulesJson: item.scoringRulesJson ?? '',
     };
-    this.formioEnabled.set(!!item.formIoSchemaJson);
-    this.formioSchema.set(item.formIoSchemaJson ? this.tryParse(item.formIoSchemaJson) : { display: 'form', components: [] });
+    this.formioSchema.set(item.formIoSchemaJson ? this.tryParse(item.formIoSchemaJson) : { ...EMPTY_SCHEMA });
     this.scoringRulesJson.set(item.scoringRulesJson ?? '');
+    this.scoringRulesError.set('');
     this.actionError.set('');
     this.actionSuccess.set('');
     this.slideOverOpen.set(true);
@@ -158,9 +179,9 @@ export class AdminPlacementItemsComponent implements OnInit {
 
   private tryParse(json: string): any {
     try {
-      return JSON.parse(json) ?? { display: 'form', components: [] };
+      return JSON.parse(json) ?? { ...EMPTY_SCHEMA };
     } catch {
-      return { display: 'form', components: [] };
+      return { ...EMPTY_SCHEMA };
     }
   }
 
@@ -173,16 +194,48 @@ export class AdminPlacementItemsComponent implements OnInit {
     this.editingItem.set(null);
   }
 
-  updateContent(content: QuestionContent): void {
-    this.itemForm = { ...this.itemForm, content };
+  /** Client-side mirror of the backend's PlacementFormIoScoringValidator: the scoring rules JSON
+   * must parse and declare at least one component, and every referenced component key must exist
+   * in the current Form.io schema. This is a UX nicety only — the backend remains the real gate. */
+  private validateScoringRules(): string | null {
+    const raw = this.scoringRulesJson().trim();
+    if (!raw) return 'Scoring rules are required.';
+
+    let parsed: any;
+    try {
+      parsed = JSON.parse(raw);
+    } catch (e) {
+      return `Scoring rules JSON is invalid: ${(e as Error).message}`;
+    }
+
+    const components = parsed?.components;
+    if (!components || typeof components !== 'object' || Array.isArray(components) || Object.keys(components).length === 0) {
+      return 'Scoring rules must declare at least one component under "components".';
+    }
+
+    const schemaKeys = new Set(this.schemaComponentKeys());
+    const orphaned = Object.keys(components).filter(k => !schemaKeys.has(k));
+    if (orphaned.length > 0) {
+      return `Scoring rules reference component key(s) not present in the Form.io schema: ${orphaned.join(', ')}`;
+    }
+
+    return null;
   }
 
   saveItem(): void {
     this.actionError.set('');
+    this.scoringRulesError.set('');
+
+    const scoringError = this.validateScoringRules();
+    if (scoringError) {
+      this.scoringRulesError.set(scoringError);
+      return;
+    }
+
     const request: PlacementItemRequest = {
       ...this.itemForm,
-      formIoSchemaJson: this.formioEnabled() ? JSON.stringify(this.formioSchema()) : undefined,
-      scoringRulesJson: this.formioEnabled() ? (this.scoringRulesJson().trim() || undefined) : undefined,
+      formIoSchemaJson: JSON.stringify(this.formioSchema()),
+      scoringRulesJson: this.scoringRulesJson().trim(),
     };
     const editing = this.editingItem();
     const obs = editing
@@ -215,9 +268,12 @@ export class AdminPlacementItemsComponent implements OnInit {
     return {
       skill: 'grammar',
       cefrLevel: 'A1',
-      content: emptyQuestionContent(),
+      itemType: 'multiple_choice',
+      prompt: '',
       itemOrder: 1,
       isEnabled: true,
+      formIoSchemaJson: JSON.stringify(EMPTY_SCHEMA),
+      scoringRulesJson: '',
     };
   }
 }

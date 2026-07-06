@@ -226,11 +226,6 @@ public sealed class ThrowingPracticeTestFactory : ActivityTestFactory
         base.ConfigureWebHost(builder);
         builder.ConfigureServices(services =>
         {
-            // Fake placement evaluator (mirrors PlacementTestFactory).
-            var existingEval = services.Where(d => d.ServiceType == typeof(IPlacementEvaluator)).ToList();
-            foreach (var d in existingEval) services.Remove(d);
-            services.AddScoped<IPlacementEvaluator, FakePlacementEvaluator>();
-
             // Throwing practice service.
             var existingPractice = services.Where(d => d.ServiceType == typeof(IPracticeGymSuggestionService)).ToList();
             foreach (var d in existingPractice) services.Remove(d);

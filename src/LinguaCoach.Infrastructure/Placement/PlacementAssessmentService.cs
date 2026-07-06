@@ -1,8 +1,8 @@
+using System.Text.Json;
 using LinguaCoach.Application.LearningPlan;
 using LinguaCoach.Application.Placement;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
-using LinguaCoach.Domain.Questions;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -14,9 +14,15 @@ namespace LinguaCoach.Infrastructure.Placement;
 /// Deterministic adaptive placement assessment service (Phase 13B).
 /// Real response submission, deterministic scoring, adaptive item selection,
 /// confidence-based completion. No AI calls, no simulation.
+///
+/// Form.io-native migration: every item is authored via FormIoSchemaJson/ScoringRulesJson.
+/// The adaptive selection/confidence/completion algorithm below is unchanged from the prior
+/// QuestionContent-based phase — only the schema/scoring/submission seam changed.
 /// </summary>
 public sealed class PlacementAssessmentService : IPlacementAssessmentService
 {
+    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
+
     private readonly LinguaCoachDbContext _db;
     private readonly ILearningPlanService _learningPlan;
     private readonly IPlacementScoringService _scoring;
@@ -40,8 +46,8 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
     // ── Item bank (Phase 20I-4: admin-configurable, loaded from PlacementItemDefinition) ───
 
     private record PlacementItemTemplate(
-        Guid DefinitionId, string Skill, string CefrLevel, string ItemType, string Prompt, string CorrectAnswer,
-        string? ReadingPassage, string? ListeningAudioScript, QuestionContent? Content, string? FormIoSchemaJson);
+        Guid DefinitionId, string Skill, string CefrLevel, string ItemType, string Prompt,
+        string? FormIoSchemaJson, string? ScoringRulesJson, int ScoringRulesVersion);
 
     /// <summary>Loads the enabled item bank once per outer call — replaces the old hardcoded static list.</summary>
     private async Task<List<PlacementItemTemplate>> LoadItemBankAsync(CancellationToken ct)
@@ -52,8 +58,8 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
             .ToListAsync(ct);
 
         return rows.Select(i => new PlacementItemTemplate(
-            i.Id, i.Skill, i.CefrLevel, i.ItemType, i.Prompt, i.CorrectAnswer,
-            i.ReadingPassage, i.ListeningAudioScript, i.Content, i.FormIoSchemaJson)).ToList();
+            i.Id, i.Skill, i.CefrLevel, i.ItemType, i.Prompt,
+            i.FormIoSchemaJson, i.ScoringRulesJson, i.ScoringRulesVersion)).ToList();
     }
 
     /// <summary>Dedup identity for "has this item already been issued in this assessment" — prefers
@@ -356,11 +362,32 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
         new(a.Id, a.Status.ToString(), a.StartedAtUtc, a.CompletedAtUtc,
             a.OverallEstimatedLevel, a.OverallConfidence, a.IsProvisional, a.Items.Count);
 
-    private static PlacementItemHistoryDto ToItemHistoryDto(PlacementAssessmentItem i) =>
-        new(i.Id, i.Skill, i.TargetCefrLevel, i.ItemType, i.Prompt,
-            i.Response, i.IsCorrect, i.Score, i.EvaluatedAtUtc,
-            i.EvaluationNotes, i.DurationSeconds, i.ItemOrder,
-            i.Content, i.Answer);
+    private static PlacementItemHistoryDto ToItemHistoryDto(PlacementAssessmentItem i)
+    {
+        var submissionData = i.SubmissionDataJson is null
+            ? null
+            : JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(i.SubmissionDataJson, JsonOptions);
+        var normalizedAnswer = i.NormalizedAnswerJson is null
+            ? null
+            : JsonSerializer.Deserialize<Dictionary<string, string?>>(i.NormalizedAnswerJson, JsonOptions);
+
+        return new(i.Id, i.Skill, i.TargetCefrLevel, i.ItemType, i.Prompt,
+            submissionData, normalizedAnswer, i.IsCorrect, i.Score, i.EvaluatedAtUtc,
+            i.DurationSeconds, i.ItemOrder);
+    }
+
+    private static ScoringRulesDocument? TryParseScoringDoc(string? scoringRulesJson)
+    {
+        if (string.IsNullOrWhiteSpace(scoringRulesJson)) return null;
+        try
+        {
+            return JsonSerializer.Deserialize<ScoringRulesDocument>(scoringRulesJson, JsonOptions);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
 
     // ── IPlacementAssessmentService ──────────────────────────────────────────────
 
@@ -454,9 +481,9 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
             {
                 items.Add(PlacementAssessmentItem.Create(
                     assessmentId, template.Skill, template.CefrLevel,
-                    template.ItemType, template.Prompt, template.CorrectAnswer, order++,
-                    template.ReadingPassage, template.ListeningAudioScript, template.Content,
-                    template.DefinitionId, template.FormIoSchemaJson));
+                    template.ItemType, template.Prompt, order++,
+                    template.DefinitionId, template.FormIoSchemaJson,
+                    template.ScoringRulesJson, template.ScoringRulesVersion));
             }
 
             if (startIdx + 1 < CefrLevels.Length)
@@ -469,9 +496,9 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
                 {
                     items.Add(PlacementAssessmentItem.Create(
                         assessmentId, template.Skill, template.CefrLevel,
-                        template.ItemType, template.Prompt, template.CorrectAnswer, order++,
-                        template.ReadingPassage, template.ListeningAudioScript, template.Content,
-                        template.DefinitionId, template.FormIoSchemaJson));
+                        template.ItemType, template.Prompt, order++,
+                        template.DefinitionId, template.FormIoSchemaJson,
+                        template.ScoringRulesJson, template.ScoringRulesVersion));
                 }
             }
         }
@@ -523,7 +550,8 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
 
     // Phase 13B — Real response submission
     public async Task<SubmitResponseResult> SubmitResponseAsync(
-        Guid assessmentId, Guid itemId, string response, int? durationSeconds, string? skillFilter = null, CancellationToken ct = default)
+        Guid assessmentId, Guid itemId, IReadOnlyDictionary<string, JsonElement> submissionData,
+        int? durationSeconds, string? skillFilter = null, CancellationToken ct = default)
     {
         var assessment = await _db.PlacementAssessments
             .Include(a => a.Items)
@@ -551,15 +579,17 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
 
             return new SubmitResponseResult(
                 item.Id, item.IsCorrect!.Value, item.Score!.Value,
-                item.EvaluationNotes ?? string.Empty,
+                "Response already recorded for this item.",
                 assessment.Status == PlacementStatus.Completed,
                 null, existingNext, null);
         }
 
         // Score the response deterministically
-        var scoreResult = _scoring.Score(response, item.CorrectAnswer, item.ItemType);
-        item.RecordResponse(response, scoreResult.IsCorrect, scoreResult.Score,
-            scoreResult.EvaluationNotes, durationSeconds);
+        var scoreResult = _scoring.ScoreSubmission(item.ScoringRulesJsonSnapshot, submissionData);
+        var submissionJson = JsonSerializer.Serialize(submissionData.ToDictionary(kv => kv.Key, kv => kv.Value));
+        var normalizedJson = JsonSerializer.Serialize(
+            scoreResult.Components.ToDictionary(c => c.ComponentKey, c => c.NormalizedValue));
+        item.RecordResponse(submissionJson, normalizedJson, scoreResult.IsCorrect, scoreResult.Score, durationSeconds);
 
         await _db.SaveChangesAsync(ct);
 
@@ -630,9 +660,9 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
         var newOrder = assessment.Items.Count;
         var newItem = PlacementAssessmentItem.Create(
             assessment.Id, template.Skill, template.CefrLevel,
-            template.ItemType, template.Prompt, template.CorrectAnswer, newOrder,
-            template.ReadingPassage, template.ListeningAudioScript, template.Content,
-            template.DefinitionId, template.FormIoSchemaJson);
+            template.ItemType, template.Prompt, newOrder,
+            template.DefinitionId, template.FormIoSchemaJson,
+            template.ScoringRulesJson, template.ScoringRulesVersion);
 
         _db.PlacementAssessmentItems.Add(newItem);
         await _db.SaveChangesAsync(ct);
@@ -656,18 +686,15 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
     {
         if (item is null) return null;
 
-        var redactedContent = item.Content is not null ? QuestionContentRedactor.RedactCorrectAnswers(item.Content) : null;
-        var formIoSchema = item.FormIoSchemaJson
-            ?? (redactedContent is not null ? QuestionContentToFormIoMapper.Map(redactedContent) : null);
+        var scoringDoc = TryParseScoringDoc(item.ScoringRulesJsonSnapshot);
+        var hasAudio = !string.IsNullOrWhiteSpace(scoringDoc?.ListeningAudioScript);
 
         return new PlacementNextItemDto(
             item.Id, item.Skill, item.TargetCefrLevel, item.ItemType, item.Prompt, item.ItemOrder,
             items.Count(i => i.IsCorrect.HasValue),
             EstimateRemaining(items, states),
-            item.ReadingPassage,
-            !string.IsNullOrWhiteSpace(item.ListeningAudioScript),
-            redactedContent,
-            formIoSchema,
+            hasAudio,
+            item.FormIoSchemaJson,
             RendererKind: nameof(FormRendererKind.FormIo));
     }
 

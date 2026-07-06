@@ -409,18 +409,6 @@ public static class DependencyInjection
         services.AddScoped<LinguaCoach.Application.Admin.StudentReadiness.IStudentPilotReadinessRepairService,
             LinguaCoach.Infrastructure.Admin.StudentPilotReadinessRepairService>();
 
-        // Placement assessment
-        services.AddScoped<PlacementAudioService>();
-        services.AddScoped<FakePlacementEvaluator>();
-        services.AddScoped<IPlacementEvaluator, AiPlacementEvaluator>();
-        services.AddScoped<PlacementService>();
-        services.AddScoped<IStartPlacementHandler>(sp => sp.GetRequiredService<PlacementService>());
-        services.AddScoped<ISavePlacementAnswersHandler>(sp => sp.GetRequiredService<PlacementService>());
-        services.AddScoped<ICompletePlacementHandler>(sp => sp.GetRequiredService<PlacementService>());
-        services.AddScoped<IGetPlacementStatusHandler>(sp => sp.GetRequiredService<PlacementService>());
-        services.AddScoped<IGetPlacementCurrentSectionHandler>(sp => sp.GetRequiredService<PlacementService>());
-        services.AddScoped<IGetPlacementResultHandler>(sp => sp.GetRequiredService<PlacementService>());
-
         // Usage governance, token tracking & quota enforcement (Phase 10R)
         services.AddScoped<LinguaCoach.Application.UsageGovernance.IUsageQuotaService,
             LinguaCoach.Infrastructure.UsageGovernance.UsageQuotaService>();
@@ -467,12 +455,6 @@ public static class DependencyInjection
 
         // Phase 20I-5 — Adaptive placement listening audio
         services.AddScoped<LinguaCoach.Infrastructure.Placement.AdaptivePlacementAudioService>();
-
-        // Unified question schema — shared answer validation/scoring for onboarding + placement
-        services.AddScoped<LinguaCoach.Application.Questions.IQuestionAnswerValidator,
-            LinguaCoach.Infrastructure.Questions.QuestionAnswerValidator>();
-        services.AddScoped<LinguaCoach.Application.Questions.IQuestionScorer,
-            LinguaCoach.Infrastructure.Questions.QuestionScorer>();
 
         // Phase 20I-4 — Admin-configurable placement item bank
         services.AddScoped<LinguaCoach.Application.Placement.IAdminPlacementItemListQuery,

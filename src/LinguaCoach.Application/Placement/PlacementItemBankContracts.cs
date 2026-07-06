@@ -1,14 +1,7 @@
-using LinguaCoach.Domain.Questions;
-
 namespace LinguaCoach.Application.Placement;
 
-// ── Admin-facing placement item DTO — includes CorrectAnswer (admin-only, unlike the
-// student-facing PlacementNextItemDto which deliberately excludes it) ────────────────
-//
-// The legacy flat fields (ItemType/Prompt/CorrectAnswer/ReadingPassage/ListeningAudioScript)
-// are now *derived* from Content (Unified Question-Schema Phase 4) rather than admin-authored
-// directly — kept only for display continuity and PlacementAssessmentService's still flat-field-
-// driven adaptive algorithm, dropped once that's cut over (Phase 7).
+// ── Admin-facing placement item DTO — Form.io-native authoring. FormIoSchemaJson is
+// student-safe; ScoringRulesJson is backend-only and never appears in any student-facing DTO. ──
 
 public sealed record AdminPlacementItemDto(
     Guid ItemId,
@@ -16,16 +9,11 @@ public sealed record AdminPlacementItemDto(
     string CefrLevel,
     string ItemType,
     string Prompt,
-    string CorrectAnswer,
-    string? ReadingPassage,
-    string? ListeningAudioScript,
     int ItemOrder,
     bool IsEnabled,
-    QuestionContent Content,
-    // Form.io item-bank authoring (additive) — null until an item is (re-)authored via the
-    // Form.io builder. FormIoSchemaJson is student-safe; ScoringRulesJson is backend-only.
-    string? FormIoSchemaJson = null,
-    string? ScoringRulesJson = null,
+    string? FormIoSchemaJson,
+    string? ScoringRulesJson,
+    int ScoringRulesVersion,
     string RendererKind = "FormIo"
 );
 
@@ -43,11 +31,12 @@ public interface IAdminPlacementItemListQuery
 public sealed record AddPlacementItemCommand(
     string Skill,
     string CefrLevel,
-    QuestionContent Content,
+    string ItemType,
+    string Prompt,
     int ItemOrder,
     bool IsEnabled,
-    string? FormIoSchemaJson = null,
-    string? ScoringRulesJson = null,
+    string FormIoSchemaJson,
+    string ScoringRulesJson,
     string RendererKind = "FormIo"
 );
 
@@ -62,11 +51,12 @@ public sealed record UpdatePlacementItemCommand(
     Guid ItemId,
     string Skill,
     string CefrLevel,
-    QuestionContent Content,
+    string ItemType,
+    string Prompt,
     int ItemOrder,
     bool IsEnabled,
-    string? FormIoSchemaJson = null,
-    string? ScoringRulesJson = null,
+    string FormIoSchemaJson,
+    string ScoringRulesJson,
     string RendererKind = "FormIo"
 );
 

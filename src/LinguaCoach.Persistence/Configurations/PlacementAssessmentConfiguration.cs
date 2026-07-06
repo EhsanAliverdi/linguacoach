@@ -34,13 +34,6 @@ internal sealed class PlacementAssessmentConfiguration : IEntityTypeConfiguratio
         builder.Property(e => e.Source).HasColumnName("source").HasMaxLength(50);
         builder.Property(e => e.IsAdaptive).HasColumnName("is_adaptive").IsRequired();
 
-        builder.HasMany(e => e.Answers)
-            .WithOne()
-            .HasForeignKey(a => a.PlacementAssessmentId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        builder.Navigation(e => e.Answers).UsePropertyAccessMode(PropertyAccessMode.Field);
-
         builder.HasMany(e => e.Items)
             .WithOne()
             .HasForeignKey(i => i.PlacementAssessmentId)

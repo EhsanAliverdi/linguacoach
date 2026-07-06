@@ -19,15 +19,12 @@ internal sealed class PlacementItemDefinitionConfiguration : IEntityTypeConfigur
         builder.Property(i => i.CefrLevel).HasColumnName("cefr_level").IsRequired().HasMaxLength(10);
         builder.Property(i => i.ItemType).HasColumnName("item_type").IsRequired().HasMaxLength(50);
         builder.Property(i => i.Prompt).HasColumnName("prompt").IsRequired().HasMaxLength(2000);
-        builder.Property(i => i.CorrectAnswer).HasColumnName("correct_answer").IsRequired().HasMaxLength(500);
-        builder.Property(i => i.ReadingPassage).HasColumnName("reading_passage").HasMaxLength(4000);
-        builder.Property(i => i.ListeningAudioScript).HasColumnName("listening_audio_script").HasMaxLength(4000);
         builder.Property(i => i.ItemOrder).HasColumnName("item_order").IsRequired();
         builder.Property(i => i.IsEnabled).HasColumnName("is_enabled").IsRequired();
-        builder.Property(i => i.ContentJson).HasColumnName("content_json").HasColumnType("jsonb");
-        builder.Ignore(i => i.Content);
         builder.Property(i => i.FormIoSchemaJson).HasColumnName("form_io_schema_json").HasColumnType("jsonb");
         builder.Property(i => i.ScoringRulesJson).HasColumnName("scoring_rules_json").HasColumnType("jsonb");
+        builder.Property(i => i.ScoringRulesVersion).HasColumnName("scoring_rules_version").IsRequired()
+            .HasDefaultValue(0);
         builder.Property(i => i.RendererKind).HasColumnName("renderer_kind").HasConversion<string>().HasMaxLength(20).IsRequired()
             .HasDefaultValue(LinguaCoach.Domain.Enums.FormRendererKind.FormIo);
 

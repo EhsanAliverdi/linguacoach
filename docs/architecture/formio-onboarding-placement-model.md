@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-06 00:00
+lastUpdated: 2026-07-07 00:00
 owner: architecture
 supersedes: (onboarding designer/renderer portions of prior OnboardingV2 model)
 supersededBy:
@@ -60,36 +60,59 @@ onboarding flow (`OnboardingHandler.cs`, `IOnboardingHandler`/`IOnboardingStatus
 
 ## Placement
 
+**Update (2026-07-07): placement is now natively Form.io-authored end to end.** The sections
+below describe the current, completed state; see `docs/reviews/2026-07-07-placement-formio-migration-engineering-review.md`
+for the migration record.
+
 **Architecture unchanged**: `PlacementAssessmentService.cs`'s adaptive engine (item selection,
 per-skill CEFR confidence, completion, CEFR finalization, learning-plan regeneration) is
-untouched. Form.io is only ever asked to render one already-selected item; it never drives
-selection or scoring.
+byte-for-byte untouched by this migration. Form.io is only ever asked to render one
+already-selected item; it never drives selection or scoring.
 
-**Additive fields**:
-- `PlacementItemDefinition` gained `FormIoSchemaJson` (student-safe) and `ScoringRulesJson`
-  (backend-only correct-answer/rubric data). Existing flat fields (`Prompt`, `CorrectAnswer`,
-  `ContentJson`, etc.) are unchanged and remain the item's uniqueness/dedup identity and legacy
-  authoring path — both authoring styles coexist.
-- `PlacementAssessmentItem` gained `SourceItemDefinitionId` (FK to `PlacementItemDefinition`),
-  used by the adaptive engine's dedup check (`PlacementAssessmentService.IsUsed`) in place of
-  fragile `Prompt`-string matching, with a fallback to `Prompt` matching for items issued before
-  this field existed.
-- A server-side fallback mapper (`QuestionContentToFormIoMapper`,
-  `LinguaCoach.Infrastructure/Placement/`) converts the redacted `QuestionContent` to a minimal
-  Form.io schema for any item that hasn't been re-authored with a native `FormIoSchemaJson` yet
-  — this always runs against already-redacted content
-  (`QuestionContentRedactor.RedactCorrectAnswers`), so it cannot leak an answer.
+**Native fields (no more legacy fallback)**:
+- `PlacementItemDefinition` — `FormIoSchemaJson` (student-safe) and `ScoringRulesJson`
+  (backend-only correct-answer/rubric data, keyed by Form.io component key) are now the *only*
+  authoring representation, plus `ScoringRulesVersion` (bumped on every scoring-rule edit). The
+  legacy flat fields (`CorrectAnswer`, `ReadingPassage`, `ListeningAudioScript`, `ContentJson`)
+  and the entire `QuestionContent`/`QuestionEditorComponent` authoring path have been removed —
+  all 72 seeded items and all admin-authored items use native Form.io schemas.
+- `PlacementAssessmentItem` — `SourceItemDefinitionId` (FK) plus an immutable snapshot taken at
+  issuance: `FormIoSchemaJson`, `ScoringRulesJsonSnapshot`, `ScoringRulesVersionSnapshot`. This
+  means editing an item definition later never changes how an already-issued, already-answered
+  item is scored/audited. `SubmissionDataJson` (the raw Form.io `submission.data`) and
+  `NormalizedAnswerJson` (per-component normalized values) replace the old single-string
+  `Response`/`AnswerJson` fields.
+- `QuestionContentToFormIoMapper` (the server-side fallback mapper) has been deleted — there is
+  no fallback path anymore; every enabled item is required to carry a native `FormIoSchemaJson`.
 
-**API**: `GET /student/placement/next` now returns a `formIoSchema` field alongside the existing
-`content` field (never a correct answer). `POST /student/placement/respond` is unchanged — the
-frontend extracts a single response value from the Form.io submission before posting (a
-deliberate risk-reduction choice: the battle-tested adaptive scoring/selection code path was not
-touched to accommodate structured multi-question Form.io payloads; this is a known limitation
-for multi-question group items, same as the pre-existing `buildLegacyResponse()` gap).
+**Scoring**: `PlacementScoringService.ScoreSubmission` reads the item's `ScoringRulesJsonSnapshot`
+(a `ScoringRulesDocument` of per-component `ComponentScoringRule`s — kinds: `single_choice`,
+`multiple_choice`, `text_exact`, `text_normalized`, plus a `requiresManualOrAiEvaluation`
+placeholder for future AI-scored speaking/writing items) and scores **every component
+independently**, not just the first — this closes the previous multi-question-group limitation.
+`PlacementFormIoScoringValidator` rejects scoring rules that reference a component key absent
+from the paired Form.io schema, at both create and update time.
 
-Admin item-bank authoring (`AdminPlacementItemController`) now optionally accepts
-`FormIoSchemaJson`/`ScoringRulesJson` alongside the existing required `Content` field — additive,
-not a replacement of the existing `QuestionEditorComponent`-based authoring flow.
+**API**:
+- `GET /student/placement/next` → `PlacementNextItemDto` carries `formIoSchema` only — no
+  `content`/`readingPassage`/`correctAnswer` fields exist on this DTO anymore.
+  `ScoringRulesJson` is never included in any student-facing DTO (enforced by an integration test
+  that asserts on the raw JSON response body, not just the DTO shape).
+- `POST /student/placement/respond` now takes the full Form.io submission:
+  `{ assessmentId, itemId, submission: { data: { <componentKey>: <value>, ... } }, durationSeconds, skill }`
+  — replacing the old single-string `response` field. The backend verifies the item belongs to
+  the caller's active assessment before scoring.
+
+Admin item-bank authoring (`AdminPlacementItemController`) requires `FormIoSchemaJson` and
+`ScoringRulesJson` on every create/update — the admin UI's `FormioBuilderComponent` is the only
+schema editor (the old `QuestionEditorComponent` was deleted, along with the shared
+`QuestionContent`/`QuestionAnswer` domain model and its onboarding-era `Questions` namespace,
+since nothing outside placement referenced them).
+
+**Also removed in this migration** (confirmed dead, zero remaining callers): the separate legacy
+`/api/placement/*` controller stack (`PlacementController`, `PlacementHandlers`, `PlacementAnswer`
+entity, `AiPlacementEvaluator`/`FakePlacementEvaluator`, legacy `PlacementService`/`PlacementAudioService`)
+— this predated the adaptive `/api/student/placement/*` path and had no frontend callers left.
 
 ## Schema validation (shared)
 
@@ -122,8 +145,10 @@ schema ever reaches Form.io's own servers.
 
 ## Known limitations
 
-- Placement's multi-question group items (listening/reading groups) still collapse to a single
-  response value on submit, same pre-existing limitation as before this migration.
 - The admin Form.io builder's component-restriction is best-effort (Form.io's builder
   customization API), enforced authoritatively server-side by
   `FormIoSchemaValidationService` regardless of what the client-side builder allows through.
+- Speaking/writing placement items that need AI evaluation are not yet scored automatically;
+  `requiresManualOrAiEvaluation` scoring rules are supported as a placeholder but excluded from
+  adaptive selection until an evaluator is wired up (same functional gap as before this
+  migration — no new limitation introduced).

@@ -1,9 +1,9 @@
 ---
-status: current
-lastUpdated: 2026-07-06 00:00
+status: historical
+lastUpdated: 2026-07-07 00:00
 owner: architecture
 supersedes:
-supersededBy:
+supersededBy: formio-onboarding-placement-model.md (Placement section)
 ---
 
 > **2026-07-06 addendum**: per-item student-facing rendering now goes through Form.io
@@ -11,6 +11,17 @@ supersededBy:
 > supports Form.io-authored items alongside the existing editor. The adaptive engine described
 > below (selection, confidence, completion, CEFR finalization) is entirely unchanged. See
 > [formio-onboarding-placement-model.md](formio-onboarding-placement-model.md).
+>
+> **2026-07-07 update**: placement item authoring/rendering is now natively Form.io-only — the
+> `QuestionEditorComponent`/`QuestionContent` authoring path described as "existing editor" above
+> has been removed, along with the legacy fixed-section `/api/placement/*` controller, its
+> `PlacementAnswer` entity, and the "Placement Listening Audio" section below (server-side TTS now
+> lives under the adaptive `/api/student/placement/audio/...` route instead). The pedagogy/skill
+> content below (sections, teaching principles, out-of-scope notes) remains a useful historical
+> reference for *why* placement is structured the way it is, but the concrete API/data-model
+> details in this file describe a removed implementation. Current, accurate architecture is in
+> [formio-onboarding-placement-model.md](formio-onboarding-placement-model.md) and
+> [2026-07-07-placement-formio-migration-engineering-review.md](../reviews/2026-07-07-placement-formio-migration-engineering-review.md).
 
 # Placement Assessment Model
 

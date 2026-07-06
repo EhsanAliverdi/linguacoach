@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { AuthNoticeService } from '../../../../core/services/auth-notice.service';
 import { DashboardSummaryService } from '../../../../core/services/dashboard-summary.service';
 import { PlacementService } from '../../../../core/services/placement.service';
-import { PlacementResult } from '../../../../core/models/placement.models';
+import { PlacementResult, AdaptivePlacementSummary } from '../../../../core/models/placement.models';
 import { StudentDashboardSummary } from '../../../../core/models/dashboard-summary.models';
 import { DashboardResponse } from '../../../../core/models/dashboard.models';
 import { StudentLearningMemory } from '../../../../core/models/learning-path.models';
@@ -70,8 +70,8 @@ export class DashboardComponent implements OnInit {
         this.loading.set(false);
         this.applyFromSummary(summary);
         if (this.hasPlacementResultState(summary.courseReadiness.lifecycleStatus)) {
-          this.placementService.getResult().subscribe({
-            next: result => this.placementResult.set(result),
+          this.placementService.getAdaptiveCurrent().subscribe({
+            next: adaptive => this.placementResult.set(this.toPlacementResult(adaptive)),
             error: () => this.placementResult.set(null),
           });
         }
@@ -263,5 +263,20 @@ export class DashboardComponent implements OnInit {
 
   private hasPlacementResultState(stage: string): boolean {
     return stage === 'CourseReady' || stage === 'PlacementCompleted';
+  }
+
+  /** Maps the adaptive placement summary onto the dashboard's PlacementResult display shape. */
+  private toPlacementResult(adaptive: AdaptivePlacementSummary | null): PlacementResult | null {
+    if (!adaptive) return null;
+    return {
+      estimatedOverallLevel: adaptive.overallCefrLevel ?? '',
+      skillLevels: adaptive.skillResults.map(r => ({ skill: r.skill, level: r.estimatedCefrLevel })),
+      strengths: adaptive.skillResults.map(r => r.strengths).filter((s): s is string => !!s),
+      weaknesses: adaptive.skillResults.map(r => r.weaknesses).filter((w): w is string => !!w),
+      recommendedStartingCourse: null,
+      recommendedSessionDuration: null,
+      placementNotes: adaptive.resultSummary,
+      isCompleted: adaptive.status === 'Completed',
+    };
   }
 }

@@ -36,7 +36,6 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<ActivityAttempt> ActivityAttempts => Set<ActivityAttempt>();
     public DbSet<StudentVocabularyItem> StudentVocabularyItems => Set<StudentVocabularyItem>();
     public DbSet<PlacementAssessment> PlacementAssessments => Set<PlacementAssessment>();
-    public DbSet<PlacementAnswer> PlacementAnswers => Set<PlacementAnswer>();
     public DbSet<LearningSession> LearningSessions => Set<LearningSession>();
     public DbSet<SessionExercise> SessionExercises => Set<SessionExercise>();
     public DbSet<ExercisePatternDefinition> ExercisePatterns => Set<ExercisePatternDefinition>();

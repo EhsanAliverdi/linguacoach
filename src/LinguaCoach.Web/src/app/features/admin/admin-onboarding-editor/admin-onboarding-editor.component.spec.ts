@@ -14,6 +14,7 @@ const DRAFT_VERSION: StudentFlowTemplateVersionDto = {
   versionNumber: 1,
   formIoSchemaJson: '{"display":"form","components":[]}',
   scoringRulesJson: null,
+  rendererKind: 'FormIo',
   status: 'Draft',
   publishedAt: null,
   updatedAt: '2026-01-01T00:00:00Z',

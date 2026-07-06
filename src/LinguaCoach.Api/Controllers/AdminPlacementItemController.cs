@@ -1,5 +1,4 @@
 using LinguaCoach.Application.Placement;
-using LinguaCoach.Domain.Questions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -42,7 +41,7 @@ public sealed class AdminPlacementItemController : ControllerBase
         try
         {
             var result = await _addItem.HandleAsync(new AddPlacementItemCommand(
-                request.Skill, request.CefrLevel, request.Content, request.ItemOrder, request.IsEnabled,
+                request.Skill, request.CefrLevel, request.ItemType, request.Prompt, request.ItemOrder, request.IsEnabled,
                 request.FormIoSchemaJson, request.ScoringRulesJson, request.RendererKind ?? "FormIo"), ct);
             return Ok(result);
         }
@@ -59,7 +58,7 @@ public sealed class AdminPlacementItemController : ControllerBase
         try
         {
             var result = await _updateItem.HandleAsync(new UpdatePlacementItemCommand(
-                itemId, request.Skill, request.CefrLevel, request.Content, request.ItemOrder, request.IsEnabled,
+                itemId, request.Skill, request.CefrLevel, request.ItemType, request.Prompt, request.ItemOrder, request.IsEnabled,
                 request.FormIoSchemaJson, request.ScoringRulesJson, request.RendererKind ?? "FormIo"), ct);
             return Ok(result);
         }
@@ -89,10 +88,11 @@ public sealed class AdminPlacementItemController : ControllerBase
     public sealed record PlacementItemRequest(
         string Skill,
         string CefrLevel,
-        QuestionContent Content,
+        string ItemType,
+        string Prompt,
         int ItemOrder,
         bool IsEnabled,
-        string? FormIoSchemaJson = null,
-        string? ScoringRulesJson = null,
+        string FormIoSchemaJson,
+        string ScoringRulesJson,
         string? RendererKind = null);
 }

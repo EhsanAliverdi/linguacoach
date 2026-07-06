@@ -1,3 +1,4 @@
+using System.Text.Json;
 using LinguaCoach.Application.Placement;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
@@ -165,13 +166,13 @@ public sealed class AdminPlacementController : ControllerBase
         if (!await AssessmentBelongsAsync(studentId, assessmentId, ct))
             return NotFound(new { error = $"Assessment {assessmentId} not found for student {studentId}." });
 
-        if (string.IsNullOrWhiteSpace(request?.Response))
-            return BadRequest(new { error = "Response is required." });
+        if (request?.Submission?.Data is null || request.Submission.Data.Count == 0)
+            return BadRequest(new { error = "Submission data is required." });
 
         try
         {
             var result = await _placement.SubmitResponseAsync(
-                assessmentId, itemId, request.Response, request.DurationSeconds, ct: ct);
+                assessmentId, itemId, request.Submission.Data, request.DurationSeconds, ct: ct);
             return Ok(result);
         }
         catch (InvalidOperationException ex)
@@ -238,4 +239,4 @@ public sealed class AdminPlacementController : ControllerBase
         _db.PlacementAssessments.AnyAsync(a => a.Id == assessmentId && a.StudentProfileId == studentId, ct);
 }
 
-public sealed record SubmitPlacementResponseRequest(string Response, int? DurationSeconds);
+public sealed record SubmitPlacementResponseRequest(PlacementSubmissionPayload Submission, int? DurationSeconds);

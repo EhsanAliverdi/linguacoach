@@ -1,9 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using LinguaCoach.Persistence;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace LinguaCoach.IntegrationTests.Api;
 
@@ -32,7 +29,7 @@ public sealed class AdminPlacementItemEndpointTests : IClassFixture<ApiTestFacto
     }
 
     [Fact]
-    public async Task List_AsAdmin_EachItemHasStructuredContent()
+    public async Task List_AsAdmin_EachItemHasFormIoSchemaAndScoringRules()
     {
         var token = await _factory.CreateAdminAndGetTokenAsync();
         var client = ClientWithToken(token);
@@ -42,34 +39,11 @@ public sealed class AdminPlacementItemEndpointTests : IClassFixture<ApiTestFacto
 
         foreach (var item in body.EnumerateArray())
         {
-            Assert.True(item.TryGetProperty("content", out var content));
-            Assert.True(content.TryGetProperty("type", out _));
+            Assert.True(item.TryGetProperty("formIoSchemaJson", out var schema));
+            Assert.False(string.IsNullOrWhiteSpace(schema.GetString()));
+            Assert.True(item.TryGetProperty("scoringRulesJson", out var rules));
+            Assert.False(string.IsNullOrWhiteSpace(rules.GetString()));
         }
-    }
-
-    [Fact]
-    public async Task List_WithMalformedContentJsonOnOneRow_StillReturns200ForAllOtherRows()
-    {
-        // Regression: a single row with unparseable content_json (e.g. from a schema in flux
-        // across phases, or hand-edited data) must not 500 the whole list endpoint — the
-        // defensive QuestionContentJson.TryDeserializeContent should swallow the parse failure
-        // and fall back to deriving Content from the legacy flat fields for that row only.
-        using (var scope = _factory.Services.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
-            var item = await db.PlacementItemDefinitions.FirstAsync();
-            await db.Database.ExecuteSqlInterpolatedAsync(
-                $"UPDATE placement_item_definitions SET content_json = 'not valid json' WHERE id = {item.Id}");
-        }
-
-        var token = await _factory.CreateAdminAndGetTokenAsync();
-        var client = ClientWithToken(token);
-
-        var response = await client.GetAsync("/api/admin/placement-items");
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.True(body.GetArrayLength() >= 72);
     }
 
     [Fact]
@@ -82,6 +56,26 @@ public sealed class AdminPlacementItemEndpointTests : IClassFixture<ApiTestFacto
 
     // ── POST / PUT / DELETE round trip ───────────────────────────────────────
 
+    private static object Schema(string questionText) => new
+    {
+        components = new object[]
+        {
+            new
+            {
+                type = "radio", key = "answer", label = questionText,
+                values = new[] { new { label = "am", value = "A" }, new { label = "is", value = "B" } }
+            }
+        }
+    };
+
+    private static object ScoringRules(string correctAnswer) => new
+    {
+        components = new Dictionary<string, object>
+        {
+            ["answer"] = new { kind = "single_choice", correctAnswer, points = 1.0 }
+        }
+    };
+
     [Fact]
     public async Task AddItem_ThenUpdateItem_ThenDeleteItem_Succeeds()
     {
@@ -93,14 +87,10 @@ public sealed class AdminPlacementItemEndpointTests : IClassFixture<ApiTestFacto
         {
             skill = "grammar",
             cefrLevel = "A1",
-            content = new
-            {
-                type = "single_choice",
-                id = "q1",
-                questionText,
-                choices = new[] { new { key = "A", label = "am" }, new { key = "B", label = "is" } },
-                correctAnswerKey = "A",
-            },
+            itemType = "multiple_choice",
+            prompt = questionText,
+            formIoSchemaJson = JsonSerializer.Serialize(Schema(questionText)),
+            scoringRulesJson = JsonSerializer.Serialize(ScoringRules("A")),
             itemOrder = 999,
             isEnabled = true,
         });
@@ -112,14 +102,10 @@ public sealed class AdminPlacementItemEndpointTests : IClassFixture<ApiTestFacto
         {
             skill = "grammar",
             cefrLevel = "A2",
-            content = new
-            {
-                type = "single_choice",
-                id = "q1",
-                questionText,
-                choices = new[] { new { key = "A", label = "am" }, new { key = "B", label = "is" } },
-                correctAnswerKey = "B",
-            },
+            itemType = "multiple_choice",
+            prompt = questionText,
+            formIoSchemaJson = JsonSerializer.Serialize(Schema(questionText)),
+            scoringRulesJson = JsonSerializer.Serialize(ScoringRules("B")),
             itemOrder = 999,
             isEnabled = false,
         });
@@ -127,45 +113,10 @@ public sealed class AdminPlacementItemEndpointTests : IClassFixture<ApiTestFacto
         var updateBody = await updateResp.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal("A2", updateBody.GetProperty("cefrLevel").GetString());
         Assert.False(updateBody.GetProperty("isEnabled").GetBoolean());
-        Assert.Equal("B", updateBody.GetProperty("correctAnswer").GetString());
+        Assert.Equal(2, updateBody.GetProperty("scoringRulesVersion").GetInt32());
 
         var deleteResp = await client.DeleteAsync($"/api/admin/placement-items/{itemId}");
         Assert.Equal(HttpStatusCode.NoContent, deleteResp.StatusCode);
-    }
-
-    [Fact]
-    public async Task AddItem_ReadingGroupWithTwoSubQuestions_Succeeds()
-    {
-        var token = await _factory.CreateAdminAndGetTokenAsync();
-        var client = ClientWithToken(token);
-        var passage = $"The cat sat on the mat. {Guid.NewGuid():N}";
-
-        var addResp = await client.PostAsJsonAsync("/api/admin/placement-items", new
-        {
-            skill = "reading",
-            cefrLevel = "A1",
-            content = new
-            {
-                type = "reading_group",
-                id = "g1",
-                passage,
-                questions = new object[]
-                {
-                    new { type = "single_choice", id = "q1", questionText = "Where did the cat sit?", choices = new[] { new { key = "A", label = "mat" } }, correctAnswerKey = "A" },
-                    new { type = "gap_fill", id = "q2", questionText = "The ___ sat on the mat.", correctAnswer = "cat" },
-                },
-            },
-            itemOrder = 998,
-            isEnabled = true,
-        });
-
-        Assert.Equal(HttpStatusCode.OK, addResp.StatusCode);
-        var body = await addResp.Content.ReadFromJsonAsync<JsonElement>();
-        var content = body.GetProperty("content");
-        Assert.Equal("reading_group", content.GetProperty("type").GetString());
-        Assert.Equal(2, content.GetProperty("questions").GetArrayLength());
-
-        await client.DeleteAsync($"/api/admin/placement-items/{GetItemId(body)}");
     }
 
     [Fact]
@@ -175,26 +126,63 @@ public sealed class AdminPlacementItemEndpointTests : IClassFixture<ApiTestFacto
         var client = ClientWithToken(token);
         var questionText = $"Duplicate prompt {Guid.NewGuid():N}";
 
-        object Content(string correctAnswerKey) => new
+        object Body(string correctAnswer) => new
         {
-            type = "single_choice",
-            id = "q1",
-            questionText,
-            choices = new[] { new { key = "A", label = "am" }, new { key = "B", label = "is" } },
-            correctAnswerKey,
+            skill = "grammar", cefrLevel = "A1", itemType = "multiple_choice", prompt = questionText,
+            formIoSchemaJson = JsonSerializer.Serialize(Schema(questionText)),
+            scoringRulesJson = JsonSerializer.Serialize(ScoringRules(correctAnswer)),
+            itemOrder = 1000, isEnabled = true,
         };
 
-        var first = await client.PostAsJsonAsync("/api/admin/placement-items", new
-        {
-            skill = "grammar", cefrLevel = "A1", content = Content("A"), itemOrder = 1000, isEnabled = true,
-        });
+        var first = await client.PostAsJsonAsync("/api/admin/placement-items", Body("A"));
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
 
-        var second = await client.PostAsJsonAsync("/api/admin/placement-items", new
-        {
-            skill = "grammar", cefrLevel = "A1", content = Content("B"), itemOrder = 1001, isEnabled = true,
-        });
+        var second = await client.PostAsJsonAsync("/api/admin/placement-items", Body("B"));
         Assert.Equal(HttpStatusCode.BadRequest, second.StatusCode);
+    }
+
+    [Fact]
+    public async Task AddItem_InvalidFormIoSchema_Returns400()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(token);
+        var questionText = $"Bad schema {Guid.NewGuid():N}";
+
+        var resp = await client.PostAsJsonAsync("/api/admin/placement-items", new
+        {
+            skill = "grammar", cefrLevel = "A1", itemType = "multiple_choice", prompt = questionText,
+            formIoSchemaJson = JsonSerializer.Serialize(new { components = new object[] { new { type = "script_eval", key = "answer" } } }),
+            scoringRulesJson = JsonSerializer.Serialize(ScoringRules("A")),
+            itemOrder = 1001, isEnabled = true,
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task AddItem_ScoringRulesReferenceOrphanedComponentKey_Returns400()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(token);
+        var questionText = $"Orphaned key {Guid.NewGuid():N}";
+
+        var resp = await client.PostAsJsonAsync("/api/admin/placement-items", new
+        {
+            skill = "grammar", cefrLevel = "A1", itemType = "multiple_choice", prompt = questionText,
+            formIoSchemaJson = JsonSerializer.Serialize(Schema(questionText)),
+            scoringRulesJson = JsonSerializer.Serialize(new
+            {
+                components = new Dictionary<string, object>
+                {
+                    ["not_a_real_component"] = new { kind = "single_choice", correctAnswer = "A", points = 1.0 }
+                }
+            }),
+            itemOrder = 1002, isEnabled = true,
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Contains("not present in the Form.io schema", body.GetProperty("error").GetString());
     }
 
     [Fact]
