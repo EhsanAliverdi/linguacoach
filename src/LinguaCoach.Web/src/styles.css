@@ -943,6 +943,23 @@ button.sp-admin-link{background:none;border:none;padding:0;cursor:pointer;font-f
 .formio-builder-shell .formbuilder .formarea .drag-container > .builder-component {
   order: 0;
 }
+/* Each wizard page is authored as a `panel` component — Form.io renders the currently-open page
+   as a bootstrap card whose header repeats the page title, which the wizard-pages tab bar above
+   the canvas (and its "active" highlight, see .wizard-page-label.bg-primary) already shows.
+   Strip the duplicate header and the surrounding card border/box so only the page's own fields
+   are visible in the canvas. */
+.formio-builder-shell .formarea .card.border {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  margin: 0 !important;
+}
+.formio-builder-shell .formarea .card.border > .card-header {
+  display: none !important;
+}
+.formio-builder-shell .formarea .card.border > .card-body {
+  padding: 0 !important;
+}
 .formio-builder-shell .builder-sidebar { @apply w-full p-3; }
 /* Tailwind ships its own unrelated ".collapse" utility (visibility: collapse, for table
    rows) that collides by name with Bootstrap/Form.io's ".collapse" accordion class — the
@@ -1085,7 +1102,10 @@ button.sp-admin-link{background:none;border:none;padding:0;cursor:pointer;font-f
 .wizard-pages { @apply mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2; }
 .wizard-page-label { @apply cursor-pointer rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 inline-flex items-center; }
 .wizard-page-label.active,
-li.active .wizard-page-label { @apply bg-brand-500 text-white border-brand-500; }
+li.active .wizard-page-label,
+/* Form.io's own builder marks the currently-open page's tab with .bg-primary (others get
+   .bg-info) — style that as the highlighted/active tab instead of leaving it unstyled. */
+.wizard-page-label.bg-primary { @apply bg-brand-500 text-white border-brand-500; }
 .wizard-page-label .sf-wizard-page-actions { @apply ml-2 inline-flex items-center gap-1 align-middle; }
 .wizard-page-label .sf-wizard-page-actions button {
   @apply inline-flex items-center justify-center rounded border border-gray-200 bg-white p-1 text-gray-500 hover:bg-gray-50 hover:text-gray-800 transition-colors;
