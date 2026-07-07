@@ -46,6 +46,19 @@ export interface CreateTemplateRequest {
   description?: string;
 }
 
+/** Mirrors LinguaCoach.Application.Onboarding.OnboardingProfileFieldMapping.FieldMapping — the
+ * single source of truth for which component `key` StudentOnboardingFlowService.ApplyToProfileAsync
+ * reads out of a submission, and what StudentProfile field/shape it expects. Served by
+ * GET /admin/onboarding/profile-field-mapping so the editor's "Field mapping" panel never drifts
+ * out of sync with the backend's hardcoded key list. */
+export interface OnboardingFieldMappingDto {
+  key: string;
+  profileField: string;
+  description: string;
+  required: boolean;
+  expectedShape: string;
+}
+
 export interface SaveDraftRequest {
   /** Placeholder — ignored by the server whenever authoringSchemaJson is present (Quiz-tab path). */
   formIoSchemaJson: string;

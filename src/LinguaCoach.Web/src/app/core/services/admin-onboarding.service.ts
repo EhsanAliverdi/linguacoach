@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   CreateTemplateRequest,
+  OnboardingFieldMappingDto,
   SaveDraftRequest,
   StudentFlowTemplateDetailDto,
   StudentFlowTemplateSummaryDto,
@@ -42,5 +43,9 @@ export class AdminOnboardingService {
 
   archive(templateId: string): Observable<void> {
     return this.http.post<void>(`${this.base}/templates/${templateId}/archive`, {});
+  }
+
+  getProfileFieldMapping(): Observable<OnboardingFieldMappingDto[]> {
+    return this.http.get<OnboardingFieldMappingDto[]>(`${this.base}/profile-field-mapping`);
   }
 }

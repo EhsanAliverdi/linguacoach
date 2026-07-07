@@ -36,6 +36,15 @@ public sealed class AdminOnboardingController : ControllerBase
         _archiveHandler = archiveHandler;
     }
 
+    // GET api/admin/onboarding/profile-field-mapping
+    // Static, DB-free: the canonical list of component keys StudentOnboardingFlowService reads
+    // out of a submission by string match, so the admin editor's "Field mapping" panel and the
+    // publish-time hard-required-key check (AdminOnboardingTemplateService) both read from one
+    // source of truth (OnboardingProfileFieldMapping) instead of drifting independently.
+    [HttpGet("profile-field-mapping")]
+    public IActionResult GetProfileFieldMapping()
+        => Ok(OnboardingProfileFieldMapping.Fields);
+
     // GET api/admin/onboarding/templates
     [HttpGet("templates")]
     public async Task<IActionResult> ListTemplates(CancellationToken ct)

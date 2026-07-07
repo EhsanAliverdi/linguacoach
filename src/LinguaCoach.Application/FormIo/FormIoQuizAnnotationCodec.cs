@@ -102,6 +102,31 @@ public static class FormIoQuizAnnotationCodec
         }
     }
 
+    /// <summary>Walks every component in a Form.io schema (recursing into nested
+    /// panel/columns/table/wizard containers, same as <see cref="Split"/>/<see cref="Embed"/>) and
+    /// returns the set of every component <c>key</c> found. Used to check which
+    /// backend-recognized profile-mapped keys
+    /// (<see cref="LinguaCoach.Application.Onboarding.OnboardingProfileFieldMapping"/>) a given
+    /// onboarding schema actually contains.</summary>
+    public static IReadOnlySet<string> CollectComponentKeys(string schemaJson)
+    {
+        var keys = new HashSet<string>(StringComparer.Ordinal);
+        var root = JsonNode.Parse(schemaJson);
+
+        void Collect(JsonObject component, HashSet<string> state)
+        {
+            if (component["key"] is JsonValue keyVal && keyVal.TryGetValue<string>(out var key))
+                state.Add(key);
+        }
+
+        if (root is JsonObject rootObj && rootObj["components"] is JsonArray topComponents)
+            WalkArray(topComponents, Collect, keys);
+        else if (root is JsonArray bareArray)
+            WalkArray(bareArray, Collect, keys);
+
+        return keys;
+    }
+
     private static void WalkArray<TState>(JsonArray array, Action<JsonObject, TState> visit, TState state)
     {
         foreach (var node in array)

@@ -76,6 +76,34 @@ function walkComponent(component: any): void {
   }
 }
 
+/** Every component `key` present anywhere in the schema (recursing into nested
+ * panel/columns/table/wizard containers, same shape as the backend's
+ * FormIoQuizAnnotationCodec.CollectComponentKeys). Used by the onboarding editor's "Field
+ * mapping" panel to show which backend-recognized keys the current draft schema actually has,
+ * live as the admin edits — before ever saving. */
+export function collectComponentKeys(schema: any): Set<string> {
+  const keys = new Set<string>();
+  walkKeys(schema?.components);
+  return keys;
+
+  function walkKeys(nodes: any): void {
+    if (!Array.isArray(nodes)) return;
+    for (const node of nodes) {
+      if (!node || typeof node !== 'object') continue;
+      if (typeof node.key === 'string') keys.add(node.key);
+      for (const prop of CONTAINER_ARRAY_PROPS) {
+        const arr = node[prop];
+        if (!Array.isArray(arr)) continue;
+        for (const child of arr) {
+          if (!child || typeof child !== 'object') continue;
+          if (Array.isArray(child.components)) walkKeys(child.components);
+          else if (child.type) walkKeys([child]);
+        }
+      }
+    }
+  }
+}
+
 /** True if any component in the schema has quiz scoring enabled — for the editor's
  * "X of Y questions scored" summary line. */
 export function countScoredComponents(schema: any): { scored: number; total: number } {

@@ -30,6 +30,23 @@ public sealed class QuizAnnotationLeakRegressionTests : IClassFixture<ApiTestFac
         },
     };
 
+    // Onboarding publish requires the "preferred_name" component (OnboardingProfileFieldMapping's
+    // only Required key) — placement has no such requirement, so only the onboarding fixture below
+    // needs it alongside the quiz-annotated question.
+    private static object QuizAnnotatedOnboardingSchema(string questionText, string correctAnswer) => new
+    {
+        components = new object[]
+        {
+            new { type = "textfield", key = "preferred_name", label = "Name" },
+            new
+            {
+                type = "radio", key = "answer", label = questionText,
+                values = new[] { new { label = "am", value = "A" }, new { label = "is", value = "B" } },
+                quiz = new { enabled = true, rule = new { kind = "single_choice", correctAnswer } },
+            },
+        },
+    };
+
     // ── Placement: admin add via AuthoringSchemaJson never leaks quiz/correctAnswer into FormIoSchemaJson ──
 
     [Fact]
@@ -74,7 +91,7 @@ public sealed class QuizAnnotationLeakRegressionTests : IClassFixture<ApiTestFac
         var adminToken = await _factory.CreateAdminAndGetTokenAsync();
         var adminClient = ClientWithToken(adminToken);
         var questionText = $"Which is correct {Guid.NewGuid():N}";
-        var authoringSchema = JsonSerializer.Serialize(QuizAnnotatedSchema(questionText, "B"));
+        var authoringSchema = JsonSerializer.Serialize(QuizAnnotatedOnboardingSchema(questionText, "B"));
 
         var createResp = await adminClient.PostAsJsonAsync("/api/admin/onboarding/templates", new
         {

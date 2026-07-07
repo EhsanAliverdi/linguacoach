@@ -4,9 +4,15 @@ import { of, throwError } from 'rxjs';
 import { AdminOnboardingEditorComponent } from './admin-onboarding-editor.component';
 import { AdminOnboardingService } from '../../../core/services/admin-onboarding.service';
 import {
+  OnboardingFieldMappingDto,
   StudentFlowTemplateDetailDto,
   StudentFlowTemplateVersionDto,
 } from '../../../core/models/admin-onboarding.models';
+
+const FIELD_MAPPING: OnboardingFieldMappingDto[] = [
+  { key: 'preferred_name', profileField: 'PreferredName', description: 'name', required: true, expectedShape: 'Text' },
+  { key: 'session_duration', profileField: 'PreferredSessionDurationMinutes', description: 'duration', required: false, expectedShape: 'Number' },
+];
 
 const DRAFT_VERSION: StudentFlowTemplateVersionDto = {
   versionId: 'v1',
@@ -46,6 +52,7 @@ function makeService() {
     saveDraft: jasmine.createSpy('saveDraft').and.returnValue(of(DRAFT_VERSION)),
     publish: jasmine.createSpy('publish').and.returnValue(of({ ...DRAFT_VERSION, status: 'Published' })),
     archive: jasmine.createSpy('archive').and.returnValue(of(void 0)),
+    getProfileFieldMapping: jasmine.createSpy('getProfileFieldMapping').and.returnValue(of(FIELD_MAPPING)),
   };
 }
 
@@ -208,4 +215,53 @@ describe('AdminOnboardingEditorComponent', () => {
     await setup();
     expect(component.statusTone('Archived')).toBe('neutral');
   });
+
+  it('openFieldMapping loads the mapping list and opens the panel', fakeAsync(async () => {
+    await setup();
+    component.openFieldMapping();
+    tick();
+    expect(svc.getProfileFieldMapping).toHaveBeenCalledTimes(1);
+    expect(component.fieldMappingOpen()).toBeTrue();
+    expect(component.fieldMapping().length).toBe(2);
+  }));
+
+  it('openFieldMapping does not refetch on a second open', fakeAsync(async () => {
+    await setup();
+    component.openFieldMapping();
+    tick();
+    component.closeFieldMapping();
+    component.openFieldMapping();
+    tick();
+    expect(svc.getProfileFieldMapping).toHaveBeenCalledTimes(1);
+  }));
+
+  it('fieldMappingRows marks a key missing when the schema does not contain it', fakeAsync(async () => {
+    await setup();
+    component.builderRef = undefined; // openFieldMapping would otherwise resync draftSchema from the live builder
+    component.draftSchema.set({ components: [] });
+    component.openFieldMapping();
+    tick();
+    const rows = component.fieldMappingRows();
+    expect(rows.every(r => !r.present)).toBeTrue();
+    expect(component.missingRequiredCount()).toBe(1); // only preferred_name is required
+  }));
+
+  it('fieldMappingRows marks a key present when the schema contains a matching component key', fakeAsync(async () => {
+    await setup();
+    component.builderRef = undefined; // openFieldMapping would otherwise resync draftSchema from the live builder
+    component.draftSchema.set({ components: [{ type: 'textfield', key: 'preferred_name' }] });
+    component.openFieldMapping();
+    tick();
+    const rows = component.fieldMappingRows();
+    expect(rows.find(r => r.key === 'preferred_name')?.present).toBeTrue();
+    expect(component.missingRequiredCount()).toBe(0);
+  }));
+
+  it('closeFieldMapping closes the panel', fakeAsync(async () => {
+    await setup();
+    component.openFieldMapping();
+    tick();
+    component.closeFieldMapping();
+    expect(component.fieldMappingOpen()).toBeFalse();
+  }));
 });

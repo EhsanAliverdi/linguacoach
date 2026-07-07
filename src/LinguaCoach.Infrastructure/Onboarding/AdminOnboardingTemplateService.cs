@@ -137,6 +137,19 @@ public sealed class AdminOnboardingTemplateService :
         if (!schemaResult.IsValid)
             throw new OnboardingV2ValidationException(schemaResult.Error ?? "Invalid Form.io schema.");
 
+        // Hardening: StudentOnboardingFlowService.ApplyToProfileAsync maps submitted data onto
+        // StudentProfile purely by component-key string match — there is no other enforcement
+        // that a key it depends on actually exists in the schema. A template missing a required
+        // key would silently produce students with that profile field always null, forever, with
+        // no error surfaced anywhere. Block publish (not draft save, so admins can iterate freely)
+        // if any required key is missing.
+        var presentKeys = FormIoQuizAnnotationCodec.CollectComponentKeys(draft.FormIoSchemaJson);
+        var missingRequired = OnboardingProfileFieldMapping.RequiredKeys.Where(k => !presentKeys.Contains(k)).ToList();
+        if (missingRequired.Count > 0)
+            throw new OnboardingV2ValidationException(
+                $"Cannot publish: the schema is missing required field(s): {string.Join(", ", missingRequired)}. " +
+                "See the Field mapping panel in the builder for what each key must contain.");
+
         // Archive any previously-published version of this same template.
         foreach (var v in template.Versions.Where(v => v.Status == StudentFlowTemplateStatus.Published))
             v.Archive();

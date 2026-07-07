@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { AdminOnboardingService } from '../../../core/services/admin-onboarding.service';
 import {
+  OnboardingFieldMappingDto,
   StudentFlowTemplateDetailDto,
   StudentFlowTemplateVersionDto,
 } from '../../../core/models/admin-onboarding.models';
@@ -11,7 +12,7 @@ import { FormioBuilderComponent } from '../../../shared/formio/formio-builder.co
 import { FormioRendererComponent } from '../../../shared/formio/formio-renderer.component';
 import { OnboardingWizardComponent } from '../../student/onboarding/onboarding-wizard/onboarding-wizard.component';
 import { FormRendererKind } from '../../../shared/formio/form-renderer-kind.model';
-import { countScoredComponents, finalizeQuizAnnotations } from '../../../shared/formio/quiz-scoring-rule.model';
+import { collectComponentKeys, countScoredComponents, finalizeQuizAnnotations } from '../../../shared/formio/quiz-scoring-rule.model';
 import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
@@ -23,6 +24,7 @@ import {
   SpAdminModalComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
+  SpAdminSlideOverComponent,
 } from '../../../design-system/admin';
 
 const EMPTY_SCHEMA = { display: 'form', components: [] };
@@ -48,6 +50,7 @@ const EMPTY_SCHEMA = { display: 'form', components: [] };
     SpAdminModalComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
+    SpAdminSlideOverComponent,
     FormioBuilderComponent,
     FormioRendererComponent,
     OnboardingWizardComponent,
@@ -80,6 +83,22 @@ export class AdminOnboardingEditorComponent implements OnInit {
   rendererKind = signal<FormRendererKind>('FormIo');
 
   previewOpen = signal(false);
+
+  /** "Field mapping" help panel: shows which backend-recognized component keys
+   * (OnboardingProfileFieldMapping) the current draft schema has vs. is missing. Loaded once,
+   * lazily, on first open — it's a static list, no need to refetch. */
+  fieldMappingOpen = signal(false);
+  fieldMapping = signal<OnboardingFieldMappingDto[]>([]);
+  fieldMappingLoading = signal(false);
+  fieldMappingError = signal('');
+
+  private readonly presentKeys = computed(() => collectComponentKeys(this.draftSchema()));
+
+  readonly fieldMappingRows = computed(() =>
+    this.fieldMapping().map(f => ({ ...f, present: this.presentKeys().has(f.key) })));
+
+  readonly missingRequiredCount = computed(() =>
+    this.fieldMappingRows().filter(f => f.required && !f.present).length);
 
   readonly draftVersion = computed<StudentFlowTemplateVersionDto | null>(() => {
     const t = this.template();
@@ -181,6 +200,28 @@ export class AdminOnboardingEditorComponent implements OnInit {
 
   closePreview(): void {
     this.previewOpen.set(false);
+  }
+
+  openFieldMapping(): void {
+    if (this.builderRef) this.draftSchema.set(this.builderRef.getSchema());
+    this.fieldMappingOpen.set(true);
+    if (this.fieldMapping().length > 0) return;
+    this.fieldMappingLoading.set(true);
+    this.fieldMappingError.set('');
+    this.svc.getProfileFieldMapping().subscribe({
+      next: fields => {
+        this.fieldMapping.set(fields);
+        this.fieldMappingLoading.set(false);
+      },
+      error: err => {
+        this.fieldMappingLoading.set(false);
+        this.fieldMappingError.set(err.error?.error ?? 'Could not load field mapping.');
+      },
+    });
+  }
+
+  closeFieldMapping(): void {
+    this.fieldMappingOpen.set(false);
   }
 
   statusTone(status: string): 'success' | 'neutral' | 'warning' {

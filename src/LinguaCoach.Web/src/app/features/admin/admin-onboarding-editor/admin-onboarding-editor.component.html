@@ -42,6 +42,12 @@
           }
         </div>
         <div style="display:flex; gap:8px;">
+          <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="openFieldMapping()">
+            Field mapping
+            @if (missingRequiredCount() > 0) {
+              <sp-admin-badge tone="danger">{{ missingRequiredCount() }}</sp-admin-badge>
+            }
+          </sp-admin-button>
           <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="openPreview()">
             Preview
           </sp-admin-button>
@@ -118,3 +124,54 @@
   </div>
 
 </sp-admin-modal>
+
+<!-- ── Field mapping help panel ─────────────────────────────────────────────── -->
+<sp-admin-slide-over
+  [open]="fieldMappingOpen()"
+  title="Field mapping"
+  subtitle="How component keys map onto the student's profile"
+  [loading]="fieldMappingLoading()"
+  [error]="fieldMappingError()"
+  (closed)="closeFieldMapping()">
+
+  <p style="font-size:13px; color:var(--sp-admin-text-secondary, #64748b); margin:0 0 16px;">
+    The backend reads a submitted answer's <strong>component key</strong> — not its label — to
+    decide which student profile field it fills in. This mapping is hardcoded on the backend; the
+    builder itself does not enforce it. If you rename or remove one of these keys, that field will
+    silently stop being saved for students — no error is shown anywhere else. A key marked
+    <strong>Required</strong> must be present to publish.
+  </p>
+
+  <div style="display:flex; flex-direction:column; gap:10px;">
+    @for (field of fieldMappingRows(); track field.key) {
+      <div style="border:1px solid var(--sp-admin-border,#ECE9F5); border-radius:10px; padding:12px 14px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
+          <code style="font-size:12.5px; font-weight:700; color:var(--sp-admin-text,#0F172A);">{{ field.key }}</code>
+          <div style="display:flex; gap:6px; align-items:center;">
+            @if (field.required) {
+              <sp-admin-badge tone="neutral">Required</sp-admin-badge>
+            }
+            @if (field.present) {
+              <sp-admin-badge tone="success">Present</sp-admin-badge>
+            } @else {
+              <sp-admin-badge [tone]="field.required ? 'danger' : 'warning'">Missing</sp-admin-badge>
+            }
+          </div>
+        </div>
+        <div style="font-size:12.5px; color:var(--sp-admin-text-secondary,#334155); margin-top:6px;">
+          Maps to <strong>StudentProfile.{{ field.profileField }}</strong> — {{ field.description }}
+        </div>
+        <div style="font-size:12px; color:var(--sp-admin-text-muted,#64748B); margin-top:4px;">
+          Expects: {{ field.expectedShape }}
+        </div>
+      </div>
+    }
+  </div>
+
+  <div slot="footer">
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeFieldMapping()">
+      Close
+    </sp-admin-button>
+  </div>
+
+</sp-admin-slide-over>
