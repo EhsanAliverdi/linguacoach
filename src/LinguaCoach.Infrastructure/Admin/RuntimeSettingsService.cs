@@ -346,6 +346,8 @@ public sealed class RuntimeSettingsService : IRuntimeSettingsService
         "ReadinessPool.PracticeGymPilotLabel" => JsonSerializer.Serialize(_readinessPool.PracticeGymPilotLabel),
         "ReadinessPool.PracticeGymPilotReason" => JsonSerializer.Serialize(_readinessPool.PracticeGymPilotReason),
         "ReadinessPool.MaxStudentVisibleScaffoldSuggestions" => _readinessPool.MaxStudentVisibleScaffoldSuggestions.ToString(),
+        // AI Bank-First Teaching Architecture pilot — no typed options class, generic RuntimeSettingOverride only.
+        "PracticeGymFormIoPilot.Enabled" => Bool(false),
         _ => throw new KeyNotFoundException($"Unknown ReadinessPool key '{key}'."),
     };
 

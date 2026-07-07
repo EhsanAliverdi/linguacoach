@@ -77,6 +77,12 @@ export class AdminPlacementItemEditorComponent implements OnInit {
    * carries no quiz annotations yet, so every question shows as "not scored" until re-saved. */
   needsReauthoring = signal(false);
 
+  // ── Calibration (Phase 7) ──────────────────────────────────────────────────
+  reviewStatus = signal<string>('NotRequired');
+  itemVersion = signal(1);
+  discriminationIndex = signal<number | null>(null);
+  calibrationSampleSize = signal<number | null>(null);
+
   itemForm: PlacementItemRequest = this.emptyItemForm();
 
   formioSchema = signal<any>({ ...EMPTY_SCHEMA });
@@ -122,10 +128,16 @@ export class AdminPlacementItemEditorComponent implements OnInit {
       isEnabled: item.isEnabled,
       formIoSchemaJson: item.formIoSchemaJson ?? JSON.stringify(EMPTY_SCHEMA),
       scoringRulesJson: item.scoringRulesJson ?? '',
+      difficultyBand: item.difficultyBand,
+      evidenceWeight: item.evidenceWeight,
     };
     this.needsReauthoring.set(!item.authoringSchemaJson && !!item.scoringRulesJson);
     const seedSchema = item.authoringSchemaJson ?? item.formIoSchemaJson;
     this.formioSchema.set(seedSchema ? this.tryParse(seedSchema) : { ...EMPTY_SCHEMA });
+    this.reviewStatus.set(item.reviewStatus);
+    this.itemVersion.set(item.itemVersion);
+    this.discriminationIndex.set(item.discriminationIndex);
+    this.calibrationSampleSize.set(item.calibrationSampleSize);
   }
 
   private tryParse(json: string): any {
@@ -172,6 +184,45 @@ export class AdminPlacementItemEditorComponent implements OnInit {
       isEnabled: true,
       formIoSchemaJson: JSON.stringify(EMPTY_SCHEMA),
       scoringRulesJson: '',
+      difficultyBand: 1,
+      evidenceWeight: 1.0,
     };
+  }
+
+  approve(): void {
+    this.runReviewAction({ action: 'approve' });
+  }
+
+  reject(): void {
+    const reason = window.prompt('Reason for rejecting this item:');
+    if (!reason) return;
+    this.runReviewAction({ action: 'reject', reason });
+  }
+
+  resetToPendingReview(): void {
+    this.runReviewAction({ action: 'reset' });
+  }
+
+  private runReviewAction(request: { action: 'approve' | 'reject' | 'reset'; reason?: string }): void {
+    this.actionError.set('');
+    this.svc.setReviewStatus(this.itemId, request).subscribe({
+      next: item => this.reviewStatus.set(item.reviewStatus),
+      error: err => this.actionError.set(err.error?.error ?? 'Could not update review status.'),
+    });
+  }
+
+  saveCalibrationStats(): void {
+    this.actionError.set('');
+    this.svc.setCalibrationStats(this.itemId, {
+      discriminationIndex: this.discriminationIndex(),
+      calibrationSampleSize: this.calibrationSampleSize(),
+    }).subscribe({
+      next: item => {
+        this.discriminationIndex.set(item.discriminationIndex);
+        this.calibrationSampleSize.set(item.calibrationSampleSize);
+        this.actionSuccess.set('Calibration stats saved.');
+      },
+      error: err => this.actionError.set(err.error?.error ?? 'Could not save calibration stats.'),
+    });
   }
 }

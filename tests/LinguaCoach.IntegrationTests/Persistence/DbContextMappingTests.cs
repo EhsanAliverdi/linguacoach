@@ -192,4 +192,50 @@ public sealed class DbContextMappingTests : IDisposable
             PlacementSkillResult.Create(assessment.Id, "listening", "A2", 0.35, 4));
         Assert.Throws<DbUpdateException>(() => _db.SaveChanges());
     }
+
+    // ── CEFR Resource Bank (Phase 3 — schema only) ─────────────────────────────
+
+    [Fact]
+    public void CefrDescriptor_CanBeSavedAndLoaded_WithSourceReference()
+    {
+        var source = new CefrResourceSource("CEFR-J Test Source", "unknown-pending-review");
+        _db.CefrResourceSources.Add(source);
+        _db.SaveChanges();
+
+        var descriptor = new CefrDescriptor(source.Id, "B1", "speaking", "Can describe experiences and events.");
+        _db.CefrDescriptors.Add(descriptor);
+        _db.SaveChanges();
+        _db.ChangeTracker.Clear();
+
+        var loaded = _db.CefrDescriptors.Single(d => d.Id == descriptor.Id);
+        Assert.Equal(source.Id, loaded.SourceId);
+        Assert.Equal("B1", loaded.CefrLevel);
+        Assert.Equal("speaking", loaded.Skill);
+    }
+
+    [Fact]
+    public void CefrResourceSource_DuplicateNameThrows()
+    {
+        _db.CefrResourceSources.Add(new CefrResourceSource("CEFR-J", "cc-by"));
+        _db.SaveChanges();
+
+        _db.CefrResourceSources.Add(new CefrResourceSource("CEFR-J", "cc-by-nc"));
+        Assert.Throws<DbUpdateException>(() => _db.SaveChanges());
+    }
+
+    [Fact]
+    public void CefrVocabularyEntry_DeletingReferencedSourceThrows()
+    {
+        var source = new CefrResourceSource("CEFR-J Vocab Source", "cc-by");
+        _db.CefrResourceSources.Add(source);
+        _db.SaveChanges();
+
+        _db.CefrVocabularyEntries.Add(new CefrVocabularyEntry(source.Id, "greeting", "A1"));
+        _db.SaveChanges();
+        _db.ChangeTracker.Clear();
+
+        var reloadedSource = _db.CefrResourceSources.Single(s => s.Id == source.Id);
+        _db.CefrResourceSources.Remove(reloadedSource);
+        Assert.Throws<DbUpdateException>(() => _db.SaveChanges());
+    }
 }

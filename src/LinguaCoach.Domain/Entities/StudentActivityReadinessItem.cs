@@ -1,4 +1,5 @@
 using LinguaCoach.Domain.Common;
+using LinguaCoach.Domain.Constants;
 using LinguaCoach.Domain.Enums;
 
 namespace LinguaCoach.Domain.Entities;
@@ -47,6 +48,10 @@ public sealed class StudentActivityReadinessItem : BaseEntity
 
     public string? PrimarySkill { get; private set; }
 
+    /// <summary>Optional finer-grained classification beneath PrimarySkill. Null means unclassified.
+    /// When PrimarySkill is known, must be a CurriculumSubskillConstants value belonging to it.</summary>
+    public string? Subskill { get; private set; }
+
     /// <summary>JSON array of secondary skill strings.</summary>
     public string SecondarySkillsJson { get; private set; }
 
@@ -91,6 +96,35 @@ public sealed class StudentActivityReadinessItem : BaseEntity
 
     // --- Generation provenance ---
     public string? GeneratedBy { get; private set; }
+
+    // --- Bank-first template provenance (Phase 6 — AI Bank-First Teaching Architecture) ---
+    /// <summary>ActivityTemplate this instance was personalized from, if any. Null for
+    /// free-form-generated items (the pre-Phase-6 default).</summary>
+    public Guid? SourceTemplateId { get; private set; }
+
+    /// <summary>PlacementItemDefinition this instance was derived from, if bank-sourced but not
+    /// via an ActivityTemplate. Null otherwise.</summary>
+    public Guid? SourceBankItemId { get; private set; }
+
+    /// <summary>Student-safe Form.io schema snapshot for this specific instance, once activity
+    /// rendering supports Form.io (Practice Gym pilot — see docs/reviews/2026-07-07-ai-bank-assessment-architecture-plan.md).
+    /// Null for ModuleStageSchema-rendered activities.</summary>
+    public string? FormIoSchemaSnapshotJson { get; private set; }
+
+    /// <summary>Backend-only scoring rules snapshot paired with FormIoSchemaSnapshotJson. Never
+    /// returned to students.</summary>
+    public string? ScoringRulesSnapshotJson { get; private set; }
+
+    /// <summary>Free-text note on why/how the AI varied this instance from its source template
+    /// (e.g. topic substitution, level adjustment). Null when not template-sourced.</summary>
+    public string? PersonalizationReason { get; private set; }
+
+    public string? GeneratedByModel { get; private set; }
+    public string? GeneratedByProvider { get; private set; }
+
+    /// <summary>Automated-validation outcome for a template-generated instance. Null means "not
+    /// applicable" (free-form-generated items don't run through this gate).</summary>
+    public ActivityValidationStatus? ValidationStatus { get; private set; }
 
     // --- Error info ---
     public string? ErrorCode { get; private set; }
@@ -139,7 +173,8 @@ public sealed class StudentActivityReadinessItem : BaseEntity
         string? generatedBy = null,
         int priority = 0,
         DateTime? expiresAt = null,
-        bool requiresAdminReview = false)
+        bool requiresAdminReview = false,
+        string? subskill = null)
     {
         if (studentId == Guid.Empty)
             throw new ArgumentException("StudentId is required.", nameof(studentId));
@@ -149,6 +184,11 @@ public sealed class StudentActivityReadinessItem : BaseEntity
             throw new ArgumentException(
                 "IsLowerLevelContent=true requires a non-Normal RoutingReason (review/scaffold/remediation/fallback).",
                 nameof(routingReason));
+        var subskillValid = primarySkill is not null
+            ? CurriculumSubskillConstants.IsValidForSkill(primarySkill, subskill)
+            : subskill is null || CurriculumSubskillConstants.IsValid(subskill);
+        if (!subskillValid)
+            throw new ArgumentException($"Subskill '{subskill}' does not belong to skill '{primarySkill}'.", nameof(subskill));
 
         StudentId = studentId;
         Source = source;
@@ -162,6 +202,7 @@ public sealed class StudentActivityReadinessItem : BaseEntity
         CurriculumObjectiveKey = curriculumObjectiveKey?.Trim();
         CurriculumObjectiveTitle = curriculumObjectiveTitle?.Trim();
         PrimarySkill = primarySkill?.ToLowerInvariant().Trim();
+        Subskill = subskill?.Trim().ToLowerInvariant();
         SecondarySkillsJson = string.IsNullOrWhiteSpace(secondarySkillsJson) ? "[]" : secondarySkillsJson;
         ContextTagsJson = string.IsNullOrWhiteSpace(contextTagsJson) ? "[]" : contextTagsJson;
         FocusTagsJson = string.IsNullOrWhiteSpace(focusTagsJson) ? "[]" : focusTagsJson;
@@ -296,6 +337,43 @@ public sealed class StudentActivityReadinessItem : BaseEntity
         LearningSessionId = learningSessionId ?? LearningSessionId;
         LearningActivityId = learningActivityId ?? LearningActivityId;
         SessionExerciseId = sessionExerciseId ?? SessionExerciseId;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>Records that this instance was personalized from an ActivityTemplate — set
+    /// independently of the lifecycle/materialization transitions above, once generation
+    /// succeeds. See docs/reviews/2026-07-07-ai-bank-assessment-architecture-plan.md, Phase 6.</summary>
+    public void SetTemplateProvenance(
+        Guid sourceTemplateId,
+        string? formIoSchemaSnapshotJson,
+        string? scoringRulesSnapshotJson,
+        string? personalizationReason,
+        string? generatedByModel,
+        string? generatedByProvider,
+        ActivityValidationStatus validationStatus)
+    {
+        if (sourceTemplateId == Guid.Empty)
+            throw new ArgumentException("SourceTemplateId is required.", nameof(sourceTemplateId));
+
+        SourceTemplateId = sourceTemplateId;
+        FormIoSchemaSnapshotJson = formIoSchemaSnapshotJson;
+        ScoringRulesSnapshotJson = scoringRulesSnapshotJson;
+        PersonalizationReason = personalizationReason?.Trim();
+        GeneratedByModel = generatedByModel?.Trim();
+        GeneratedByProvider = generatedByProvider?.Trim();
+        ValidationStatus = validationStatus;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>Records that this instance was derived from a PlacementItemDefinition bank row
+    /// without going through an ActivityTemplate. Reserved for future bank-sourced non-placement
+    /// activity flows.</summary>
+    public void SetBankItemProvenance(Guid sourceBankItemId)
+    {
+        if (sourceBankItemId == Guid.Empty)
+            throw new ArgumentException("SourceBankItemId is required.", nameof(sourceBankItemId));
+
+        SourceBankItemId = sourceBankItemId;
         UpdatedAt = DateTime.UtcNow;
     }
 

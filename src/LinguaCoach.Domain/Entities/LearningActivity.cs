@@ -43,6 +43,15 @@ public sealed class LearningActivity : BaseEntity
     /// </summary>
     public string? ExercisePatternKey { get; private set; }
 
+    /// <summary>Student-safe Form.io schema for a Form.io-rendered activity instance (Practice
+    /// Gym Form.io pilot — docs/reviews/2026-07-07-ai-bank-assessment-architecture-plan.md).
+    /// Null for all legacy/ModuleStageSchema activities. Never contains a correct answer.</summary>
+    public string? FormIoSchemaJson { get; private set; }
+
+    /// <summary>Backend-only: scoring rules for FormIoSchemaJson, keyed by Form.io component
+    /// key (same shape as PlacementItemDefinition.ScoringRulesJson). Never returned to students.</summary>
+    public string? ScoringRulesJson { get; private set; }
+
     public bool IsActive { get; private set; }
 
     public IReadOnlyList<ActivityAttempt> Attempts => _attempts.AsReadOnly();
@@ -88,4 +97,15 @@ public sealed class LearningActivity : BaseEntity
     }
 
     public void Deactivate() => IsActive = false;
+
+    /// <summary>Sets the Form.io student-safe schema and backend-only scoring rules for this
+    /// activity — used only by the Practice Gym Form.io pilot generation path.</summary>
+    public void SetFormIoContent(string formIoSchemaJson, string? scoringRulesJson)
+    {
+        if (string.IsNullOrWhiteSpace(formIoSchemaJson))
+            throw new ArgumentException("FormIoSchemaJson is required.", nameof(formIoSchemaJson));
+
+        FormIoSchemaJson = formIoSchemaJson;
+        ScoringRulesJson = scoringRulesJson;
+    }
 }

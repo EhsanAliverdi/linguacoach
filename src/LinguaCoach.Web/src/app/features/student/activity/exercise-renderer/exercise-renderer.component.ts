@@ -27,6 +27,7 @@ import { DescribeImageComponent, DescribeImageContent } from '../renderers/descr
 import { RetellLectureComponent, RetellLectureContent } from '../renderers/retell-lecture/retell-lecture.component';
 import { SummarizeGroupDiscussionComponent, SummarizeGroupDiscussionContent } from '../renderers/summarize-group-discussion/summarize-group-discussion.component';
 import { AudioResponseComponent, AudioResponseContent } from '../renderers/audio-response/audio-response.component';
+import { FormioRendererComponent } from '../../../../shared/formio/formio-renderer.component';
 
 export type ExerciseAnswerPayload =
   | { kind: 'freeText'; text: string }
@@ -53,7 +54,8 @@ export type ExerciseAnswerPayload =
   | { kind: 'describeImage'; items: { itemId: string; answerText: string }[] }
   | { kind: 'retellLecture'; items: { itemId: string; answerText: string }[] }
   | { kind: 'summarizeGroupDiscussion'; items: { itemId: string; answerText: string }[] }
-  | { kind: 'audioResponse'; blob: Blob; mimeType: string; durationSeconds: number };
+  | { kind: 'audioResponse'; blob: Blob; mimeType: string; durationSeconds: number }
+  | { kind: 'formIo'; submissionData: Record<string, unknown> };
 
 @Component({
   selector: 'app-exercise-renderer',
@@ -86,6 +88,7 @@ export type ExerciseAnswerPayload =
     RetellLectureComponent,
     SummarizeGroupDiscussionComponent,
     AudioResponseComponent,
+    FormioRendererComponent,
   ],
   templateUrl: './exercise-renderer.component.html',
 })
@@ -98,6 +101,21 @@ export class ExerciseRendererComponent {
 
   get mode(): InteractionMode {
     return this.activity.interactionMode ?? 'freeTextEntry';
+  }
+
+  /** Form.io Practice Gym pilot — parsed student-safe schema, or null for all other activities. */
+  get formIoSchema(): any {
+    const json = this.activity.formIoSchemaJson;
+    if (!json) return null;
+    try {
+      return JSON.parse(json);
+    } catch {
+      return null;
+    }
+  }
+
+  onFormIoSubmitted(submissionData: Record<string, unknown>): void {
+    this.answerSubmitted.emit({ kind: 'formIo', submissionData });
   }
 
   get raw(): Record<string, unknown> {

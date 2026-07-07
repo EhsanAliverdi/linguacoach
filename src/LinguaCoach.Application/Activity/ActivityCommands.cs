@@ -61,7 +61,10 @@ public sealed record ActivityDto(
     string? ContentJson = null,
     // Staged learning content (module_stage_v1) — populated for activity types
     // that have been migrated; null for types not yet migrated.
-    StageContentDto? StageContent = null);
+    StageContentDto? StageContent = null,
+    // Form.io Practice Gym pilot — student-safe schema only, never scoring rules.
+    // When present, the client renders via the Form.io renderer instead of ContentJson/StageContent.
+    string? FormIoSchemaJson = null);
 
 /// <summary>A single fill-blank item for a VocabularyPractice activity.</summary>
 public sealed record VocabPracticeItemDto(

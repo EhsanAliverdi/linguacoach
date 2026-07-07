@@ -1,4 +1,5 @@
 using LinguaCoach.Domain.Common;
+using LinguaCoach.Domain.Constants;
 using LinguaCoach.Domain.Enums;
 
 namespace LinguaCoach.Domain.Entities;
@@ -27,6 +28,17 @@ public sealed class StudentLearningEvent : BaseEntity
     // Skills
     public string? PrimarySkill { get; private set; }
     public string? SecondarySkillsJson { get; private set; }
+
+    /// <summary>Optional finer-grained classification beneath PrimarySkill. Null means unclassified.
+    /// When PrimarySkill is known, must be a CurriculumSubskillConstants value belonging to it.</summary>
+    public string? Subskill { get; private set; }
+
+    /// <summary>CurriculumObjective.Key this event provides evidence for, when known. Null for
+    /// events not routed through curriculum-objective selection (mastery grouping falls back to
+    /// PatternKey/PrimarySkill in that case — see LearningEventExtensions.CurriculumObjectiveKey()
+    /// in StudentMasteryEvaluationService.cs). See
+    /// docs/reviews/2026-07-07-ai-bank-assessment-architecture-plan.md, Phase 8.</summary>
+    public string? CurriculumObjectiveKey { get; private set; }
 
     // Context — no workplace default; null means unknown/not collected yet
     public string? LearningGoalContext { get; private set; }
@@ -69,7 +81,9 @@ public sealed class StudentLearningEvent : BaseEntity
         string? mistakeTagsJson = null,
         double? score = null,
         double? normalizedScore = null,
-        string? metadataJson = null)
+        string? metadataJson = null,
+        string? subskill = null,
+        string? curriculumObjectiveKey = null)
     {
         if (studentProfileId == Guid.Empty)
             throw new ArgumentException("StudentProfileId must not be empty.", nameof(studentProfileId));
@@ -77,6 +91,11 @@ public sealed class StudentLearningEvent : BaseEntity
             throw new ArgumentOutOfRangeException(nameof(score), "Score must be 0-100.");
         if (normalizedScore is < 0 or > 1)
             throw new ArgumentOutOfRangeException(nameof(normalizedScore), "NormalizedScore must be 0-1.");
+        var subskillValid = primarySkill is not null
+            ? CurriculumSubskillConstants.IsValidForSkill(primarySkill, subskill)
+            : subskill is null || CurriculumSubskillConstants.IsValid(subskill);
+        if (!subskillValid)
+            throw new ArgumentException($"Subskill '{subskill}' does not belong to skill '{primarySkill}'.", nameof(subskill));
 
         StudentProfileId = studentProfileId;
         Source = source;
@@ -89,6 +108,8 @@ public sealed class StudentLearningEvent : BaseEntity
         PatternKey = patternKey?.Trim();
         PrimarySkill = primarySkill?.Trim();
         SecondarySkillsJson = secondarySkillsJson;
+        Subskill = subskill?.Trim().ToLowerInvariant();
+        CurriculumObjectiveKey = curriculumObjectiveKey?.Trim();
         LearningGoalContext = learningGoalContext?.Trim();
         CefrLevelAtEvent = cefrLevelAtEvent?.Trim();
         ConceptsTaughtJson = conceptsTaughtJson;

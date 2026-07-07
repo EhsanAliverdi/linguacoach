@@ -1,3 +1,10 @@
+@if (formIoSchema) {
+  <app-formio-renderer
+    [schema]="formIoSchema"
+    [disabled]="disabled"
+    (submit)="onFormIoSubmitted($event)"
+  />
+} @else {
 @switch (mode) {
   @case ('readOnly') {
     <app-read-only-step
@@ -190,4 +197,5 @@
       <p data-testid="unsupported-activity-mode" style="font-size:12px;color:var(--sp-dim);margin:0;font-family:monospace">Type: {{ mode }}</p>
     </div>
   }
+}
 }

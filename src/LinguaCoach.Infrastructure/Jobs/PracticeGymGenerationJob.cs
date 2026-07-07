@@ -1,10 +1,13 @@
 using LinguaCoach.Application.Activity;
+using LinguaCoach.Application.ActivityTemplates;
 using LinguaCoach.Application.Curriculum;
 using LinguaCoach.Application.LearningPlan;
 using LinguaCoach.Application.Learning;
 using LinguaCoach.Application.Mastery;
+using LinguaCoach.Application.PracticeGym;
 using LinguaCoach.Application.ReadinessPool;
 using LinguaCoach.Application.Sessions;
+using LinguaCoach.Domain;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.Ai;
@@ -38,6 +41,8 @@ public sealed class PracticeGymGenerationJob : IJob
     private readonly IStudentMasteryEvaluationService _mastery;
     private readonly IStudentActivityReadinessPoolService _readinessPool;
     private readonly ILearningPlanService _learningPlan;
+    private readonly IPracticeGymFormIoTemplatePilotSettingsProvider _formIoPilotSettings;
+    private readonly IActivityTemplateInstanceGenerator _templateGenerator;
     private readonly ILogger<PracticeGymGenerationJob> _logger;
 
     public PracticeGymGenerationJob(
@@ -51,6 +56,8 @@ public sealed class PracticeGymGenerationJob : IJob
         IStudentMasteryEvaluationService mastery,
         IStudentActivityReadinessPoolService readinessPool,
         ILearningPlanService learningPlan,
+        IPracticeGymFormIoTemplatePilotSettingsProvider formIoPilotSettings,
+        IActivityTemplateInstanceGenerator templateGenerator,
         ILogger<PracticeGymGenerationJob> logger)
     {
         _db = db;
@@ -63,6 +70,8 @@ public sealed class PracticeGymGenerationJob : IJob
         _mastery = mastery;
         _readinessPool = readinessPool;
         _learningPlan = learningPlan;
+        _formIoPilotSettings = formIoPilotSettings;
+        _templateGenerator = templateGenerator;
         _logger = logger;
     }
 
@@ -217,6 +226,23 @@ public sealed class PracticeGymGenerationJob : IJob
             RoutingReason: routing.RoutingReason.ToString().ToLowerInvariant(),
             IsReviewOrScaffold: routing.IsLowerLevelContent);
 
+        // AI Bank-First Teaching Architecture pilot (feature-flagged, inert unless the exercise
+        // type is also promoted from "planned" to "ready") — personalize from a published,
+        // approved ActivityTemplate instead of free-form AI generation. Falls back to the
+        // standard path below on any failure or when no matching template exists.
+        if (pattern.Key == ExercisePatternKey.FormIoPracticeGymPilot
+            && await _formIoPilotSettings.IsEnabledAsync(ct))
+        {
+            var pilotActivity = await TryMaterializeFromTemplateAsync(cache, pattern, routing, poolItemId, ct);
+            if (pilotActivity is not null)
+            {
+                _logger.LogInformation(
+                    "PracticeGymGenerationJob: cache row {CacheId} ready (Form.io template pilot) with ActivityId={ActivityId}.",
+                    cache.Id, pilotActivity.Id);
+                return;
+            }
+        }
+
         var contentJson = await _aiGenerator.GenerateActivityContentAsync(generationContext, ct);
         var title = ExtractTitle(contentJson) ?? pattern.Name;
 
@@ -250,6 +276,76 @@ public sealed class PracticeGymGenerationJob : IJob
             "PracticeGymGenerationJob: cache row {CacheId} ready with ActivityId={ActivityId}.",
             cache.Id,
             activity.Id);
+    }
+
+    /// <summary>
+    /// Attempts to materialize the activity from a published, approved ActivityTemplate matching
+    /// this pattern via the Phase 5 generation pipeline. Returns null (never throws) if no
+    /// matching template exists or generation/validation fails — the caller falls back to
+    /// standard free-form AI generation in that case.
+    /// </summary>
+    private async Task<LearningActivity?> TryMaterializeFromTemplateAsync(
+        PracticeActivityCache cache,
+        ExercisePatternDefinition pattern,
+        CurriculumRoutingRecommendation routing,
+        Guid poolItemId,
+        CancellationToken ct)
+    {
+        var template = await _db.ActivityTemplates
+            .Where(t => t.PatternKey == pattern.Key && t.IsPublished && t.ReviewStatus == AdminReviewStatus.Approved)
+            .OrderByDescending(t => t.VersionNumber)
+            .FirstOrDefaultAsync(ct);
+
+        if (template is null)
+            return null;
+
+        try
+        {
+            var genResult = await _templateGenerator.GenerateInstanceAsync(
+                template.Id,
+                new ActivityTemplateInstanceGenerationContext(
+                    CefrLevelOverride: routing.TargetCefrLevel,
+                    TopicHint: cache.SkillFocus,
+                    GenerationSource: "PracticeGymFormIoPilot"),
+                ct);
+
+            var activity = new LearningActivity(
+                pattern.ActivityType,
+                ActivitySource.AiGenerated,
+                template.Key,
+                cache.CefrLevel,
+                aiGeneratedContentJson: "{}",
+                learningModuleId: null,
+                exercisePatternKey: pattern.Key);
+            activity.SetFormIoContent(genResult.GeneratedSchemaJson, template.ScoringModelJson);
+
+            _db.LearningActivities.Add(activity);
+            await _db.SaveChangesAsync(ct);
+
+            cache.MarkReady(activity.Id);
+            await _db.SaveChangesAsync(ct);
+
+            await _readinessPool.MarkReadyAsync(poolItemId, learningActivityId: activity.Id, ct: ct);
+            await _readinessPool.SetTemplateProvenanceAsync(
+                poolItemId,
+                sourceTemplateId: template.Id,
+                formIoSchemaSnapshotJson: genResult.GeneratedSchemaJson,
+                scoringRulesSnapshotJson: template.ScoringModelJson,
+                personalizationReason: $"Personalized from template '{template.Key}' v{template.VersionNumber} for topic hint '{cache.SkillFocus ?? "none"}' at level {routing.TargetCefrLevel}.",
+                generatedByModel: genResult.ModelName,
+                generatedByProvider: genResult.ProviderName,
+                validationStatus: ActivityValidationStatus.Passed,
+                ct: ct);
+
+            return activity;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "PracticeGymGenerationJob: Form.io template pilot generation failed for cache row {CacheId} TemplateId={TemplateId} — falling back to standard generation.",
+                cache.Id, template.Id);
+            return null;
+        }
     }
 
     private static string? ExtractTitle(string contentJson)

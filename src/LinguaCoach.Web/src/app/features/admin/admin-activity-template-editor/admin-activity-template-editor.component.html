@@ -1,0 +1,185 @@
+<sp-admin-page-header
+  [title]="isNew ? 'Add activity template' : 'Edit activity template'"
+  subtitle="Author the reusable template pattern, its student-safe Form.io base schema, and backend-only scoring/generation constraints.">
+  <a routerLink="/admin/activity-templates">
+    <sp-admin-button variant="neutral" appearance="outline" size="sm">
+      ← Back to template bank
+    </sp-admin-button>
+  </a>
+</sp-admin-page-header>
+
+<sp-admin-page-body>
+
+  @if (loading()) {
+    <sp-admin-loading-state message="Loading activity template" />
+  } @else if (error()) {
+    <sp-admin-error-state title="Could not load activity template" [message]="error()" />
+  } @else {
+
+    @if (actionSuccess()) {
+      <sp-admin-alert variant="success">{{ actionSuccess() }}</sp-admin-alert>
+    }
+    @if (actionError()) {
+      <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert>
+    }
+
+    @if (!isNew) {
+      <sp-admin-card>
+        <div class="sp-admin-card-header">
+          <div class="sp-admin-card-title">Review &amp; publish — version {{ versionNumber() }}</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+          <span>Review status: <strong>{{ reviewStatus() }}</strong></span>
+          <span>Published: <strong>{{ isPublished() ? 'Yes' : 'No' }}</strong></span>
+          <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="approve()">Approve</sp-admin-button>
+          <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="reject()">Reject</sp-admin-button>
+          <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="resetToPendingReview()">Reset to pending</sp-admin-button>
+          <sp-admin-button variant="primary" size="sm" (clicked)="togglePublished()">
+            {{ isPublished() ? 'Unpublish' : 'Publish' }}
+          </sp-admin-button>
+          <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="generateAiPreview()">
+            Generate AI preview
+          </sp-admin-button>
+        </div>
+      </sp-admin-card>
+    }
+
+    <sp-admin-card>
+      <div class="sp-admin-form-stack">
+
+        <sp-admin-form-field label="Key" hint="Stable identifier, e.g. b1.speaking.roleplay_ordering" [required]="true">
+          <sp-admin-input [(ngModel)]="templateForm.key" [disabled]="!isNew" />
+        </sp-admin-form-field>
+
+        <sp-admin-form-field label="Skill" [required]="true">
+          <sp-admin-select [(ngModel)]="templateForm.skill" [options]="formSkillOptions" />
+        </sp-admin-form-field>
+
+        <sp-admin-form-field label="CEFR level" [required]="true">
+          <sp-admin-select [(ngModel)]="templateForm.cefrLevel" [options]="cefrLevelOptions" />
+        </sp-admin-form-field>
+
+        <sp-admin-form-field label="Activity type" hint="e.g. roleplay, email_reply, choose_summary" [required]="true">
+          <sp-admin-input [(ngModel)]="templateForm.activityType" />
+        </sp-admin-form-field>
+
+        <sp-admin-form-field label="Subskill" hint="Optional — must belong to the selected skill">
+          <sp-admin-input [(ngModel)]="templateForm.subskill" />
+        </sp-admin-form-field>
+
+        <sp-admin-form-field label="Pattern key" hint="Optional exercise pattern reference">
+          <sp-admin-input [(ngModel)]="templateForm.patternKey" />
+        </sp-admin-form-field>
+
+        <sp-admin-form-field label="Curriculum objective key" hint="Optional">
+          <sp-admin-input [(ngModel)]="templateForm.curriculumObjectiveKey" />
+        </sp-admin-form-field>
+
+        <sp-admin-form-field label="Estimated duration (seconds)" hint="Optional">
+          <sp-admin-input type="number" [(ngModel)]="templateForm.estimatedDurationSeconds" />
+        </sp-admin-form-field>
+
+      </div>
+    </sp-admin-card>
+
+    <!-- ── Form.io authoring (student-safe base schema) ─────────────────────── -->
+    <sp-admin-card>
+      <div class="sp-admin-card-header">
+        <div class="sp-admin-card-title">Base schema (student-safe)</div>
+        <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="openPreview()">
+          Preview
+        </sp-admin-button>
+      </div>
+      <p style="font-size:13px; color:var(--sp-admin-text-secondary, #64748b); margin:0 0 8px;">
+        This schema is what students eventually see once this template is used. It must never contain a correct answer or scoring data — those live in the backend-only fields below.
+      </p>
+      <app-formio-builder [schema]="formioSchema()" (schemaChange)="onFormioSchemaChange($event)" />
+    </sp-admin-card>
+
+    <!-- ── Backend-only fields ───────────────────────────────────────────────── -->
+    <sp-admin-card>
+      <div class="sp-admin-card-header">
+        <div class="sp-admin-card-title">Backend-only (never sent to students)</div>
+      </div>
+      <div class="sp-admin-form-stack">
+        <sp-admin-form-field label="Scoring model (JSON)" hint="Keyed by Form.io component key">
+          <sp-admin-textarea [(ngModel)]="templateForm.scoringModelJson" [rows]="6" placeholder="{ &quot;components&quot;: {} }" />
+        </sp-admin-form-field>
+
+        <sp-admin-form-field label="Validation rules (JSON)" hint="Constraints an AI-personalized instance must satisfy">
+          <sp-admin-textarea [(ngModel)]="templateForm.validationRulesJson" [rows]="4" />
+        </sp-admin-form-field>
+
+        <sp-admin-form-field label="Generation instructions" hint="Prompt fragment for future AI personalization (Phase 5+)">
+          <sp-admin-textarea [(ngModel)]="templateForm.generationInstructions" [rows]="4" />
+        </sp-admin-form-field>
+
+        <sp-admin-form-field label="Asset requirements (JSON)" hint='e.g. ["tts_audio"]'>
+          <sp-admin-input [(ngModel)]="templateForm.assetRequirementsJson" />
+        </sp-admin-form-field>
+      </div>
+    </sp-admin-card>
+
+    <div style="display:flex; gap:8px; justify-content:flex-end;">
+      <a routerLink="/admin/activity-templates">
+        <sp-admin-button variant="neutral" appearance="outline">Cancel</sp-admin-button>
+      </a>
+      <sp-admin-button variant="primary" (clicked)="saveTemplate()">
+        {{ isNew ? 'Add template' : 'Save changes' }}
+      </sp-admin-button>
+    </div>
+
+  }
+
+</sp-admin-page-body>
+
+<!-- ── Preview modal (renders the base schema exactly as a student would see it) ── -->
+<sp-admin-modal
+  [open]="previewOpen()"
+  title="Preview"
+  subtitle="This is a read-only preview of the current base schema — submitting here does not save anything."
+  size="lg"
+  (closed)="closePreview()">
+
+  @if (previewOpen()) {
+    <div style="max-width:480px; margin:0 auto;">
+      <app-formio-renderer [schema]="formioSchema()" />
+    </div>
+  }
+
+  <div slot="footer">
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closePreview()">
+      Close
+    </sp-admin-button>
+  </div>
+
+</sp-admin-modal>
+
+<!-- ── AI-generated instance preview (Phase 5 — proves the generation pipeline) ─── -->
+<sp-admin-modal
+  [open]="aiPreviewOpen()"
+  title="AI-generated instance preview"
+  subtitle="Personalized from this template's base schema and generation instructions — never persisted."
+  size="lg"
+  (closed)="closeAiPreview()">
+
+  @if (aiPreviewLoading()) {
+    <sp-admin-loading-state message="Generating with AI..." />
+  } @else if (aiPreviewError()) {
+    <sp-admin-error-state title="Could not generate AI preview" [message]="aiPreviewError()" />
+  } @else if (aiPreviewSchema()) {
+    <p style="font-size:13px; color:var(--sp-admin-text-secondary, #64748b); margin:0 0 8px;">
+      Generated by {{ aiPreviewMeta()?.providerName }} / {{ aiPreviewMeta()?.modelName }}
+    </p>
+    <div style="max-width:480px; margin:0 auto;">
+      <app-formio-renderer [schema]="aiPreviewSchema()" />
+    </div>
+  }
+
+  <div slot="footer">
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeAiPreview()">
+      Close
+    </sp-admin-button>
+  </div>
+
+</sp-admin-modal>

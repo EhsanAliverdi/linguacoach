@@ -57,7 +57,9 @@ public sealed class AdminUpdatePlacementItemHandler : IAdminUpdatePlacementItemH
 
         try
         {
-            item.Update(command.Skill, command.CefrLevel, command.ItemOrder, command.IsEnabled);
+            item.Update(
+                command.Skill, command.CefrLevel, command.ItemOrder, command.IsEnabled,
+                difficultyBand: command.DifficultyBand, evidenceWeight: command.EvidenceWeight);
         }
         catch (ArgumentException ex)
         {
@@ -71,9 +73,6 @@ public sealed class AdminUpdatePlacementItemHandler : IAdminUpdatePlacementItemH
 
         await _db.SaveChangesAsync(ct);
 
-        return new AdminPlacementItemDto(
-            item.Id, item.Skill, item.CefrLevel, item.ItemOrder, item.IsEnabled,
-            item.FormIoSchemaJson, item.ScoringRulesJson, item.ScoringRulesVersion, item.RendererKind.ToString(),
-            PlacementItemSchemaLabel.ExtractLabel(item.FormIoSchemaJson), item.AuthoringSchemaJson);
+        return PlacementItemMapper.ToDto(item);
     }
 }

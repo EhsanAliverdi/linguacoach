@@ -212,4 +212,67 @@ public sealed class CurriculumObjectiveTests
     {
         Assert.Equal(expected, CurriculumContextTagConstants.IsValid(tag));
     }
+
+    // ── Subskill ──────────────────────────────────────────────────────────
+
+    [Fact]
+    public void Constructor_NullSubskill_Accepted()
+    {
+        var obj = new CurriculumObjective("k", "T", "D", "A1", "speaking");
+        Assert.Null(obj.Subskill);
+    }
+
+    [Fact]
+    public void Constructor_ValidSubskillMatchingSkill_Accepted()
+    {
+        var obj = new CurriculumObjective("k", "T", "D", "A1", "speaking",
+            subskill: CurriculumSubskillConstants.SpeakingRoleplay);
+        Assert.Equal(CurriculumSubskillConstants.SpeakingRoleplay, obj.Subskill);
+    }
+
+    [Fact]
+    public void Constructor_SubskillNotBelongingToSkill_Throws()
+    {
+        var ex = Assert.Throws<ArgumentException>(() =>
+            new CurriculumObjective("k", "T", "D", "A1", "speaking",
+                subskill: CurriculumSubskillConstants.WritingEmailMessage));
+        Assert.Contains("subskill", ex.ParamName, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void SetSubskill_ValidValue_Updates()
+    {
+        var obj = new CurriculumObjective("k", "T", "D", "A1", "speaking");
+        obj.SetSubskill(CurriculumSubskillConstants.SpeakingFluency);
+        Assert.Equal(CurriculumSubskillConstants.SpeakingFluency, obj.Subskill);
+    }
+
+    [Fact]
+    public void SetSubskill_Null_ClearsSubskill()
+    {
+        var obj = new CurriculumObjective("k", "T", "D", "A1", "speaking",
+            subskill: CurriculumSubskillConstants.SpeakingFluency);
+        obj.SetSubskill(null);
+        Assert.Null(obj.Subskill);
+    }
+
+    [Fact]
+    public void SetSubskill_MismatchedSkill_Throws()
+    {
+        var obj = new CurriculumObjective("k", "T", "D", "A1", "speaking");
+        Assert.Throws<ArgumentException>(() =>
+            obj.SetSubskill(CurriculumSubskillConstants.GrammarPrepositions));
+    }
+
+    [Fact]
+    public void AdminUpdate_DoesNotResetPreviouslySetSubskill()
+    {
+        var obj = new CurriculumObjective("k", "T", "D", "A1", "speaking",
+            subskill: CurriculumSubskillConstants.SpeakingFluency);
+
+        obj.AdminUpdate("New Title", "New Desc", "A1", "speaking", "[]", "[]", "[]", "[]",
+            0, 1, false, false, null, null);
+
+        Assert.Equal(CurriculumSubskillConstants.SpeakingFluency, obj.Subskill);
+    }
 }

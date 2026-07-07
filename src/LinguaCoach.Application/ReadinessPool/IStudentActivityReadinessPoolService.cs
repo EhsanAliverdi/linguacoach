@@ -64,6 +64,20 @@ public interface IStudentActivityReadinessPoolService
         Guid? sessionExerciseId,
         CancellationToken ct = default);
 
+    /// <summary>Records that this item's instance was personalized from an ActivityTemplate —
+    /// independent of the lifecycle transitions above, called once template-based generation
+    /// succeeds. See docs/reviews/2026-07-07-ai-bank-assessment-architecture-plan.md, Phase 6.</summary>
+    Task SetTemplateProvenanceAsync(
+        Guid itemId,
+        Guid sourceTemplateId,
+        string? formIoSchemaSnapshotJson,
+        string? scoringRulesSnapshotJson,
+        string? personalizationReason,
+        string? generatedByModel,
+        string? generatedByProvider,
+        ActivityValidationStatus validationStatus,
+        CancellationToken ct = default);
+
     /// <summary>Returns ready items for a student (excludes stale/review_only/expired/failed).</summary>
     Task<IReadOnlyList<StudentActivityReadinessItem>> GetReadyForStudentAsync(
         Guid studentId,

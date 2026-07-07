@@ -98,6 +98,9 @@ export interface ActivityDto {
   // Staged learning content (module_stage_v1) — populated for activity types
   // that have been migrated; null for types not yet migrated.
   stageContent: StageContentDto | null;
+  // Form.io Practice Gym pilot — student-safe schema only, never scoring rules.
+  // When present, render via the Form.io renderer instead of contentJson/stageContent.
+  formIoSchemaJson?: string | null;
 }
 
 // ── Staged learning content (module_stage_v1) ─────────────────────────────────

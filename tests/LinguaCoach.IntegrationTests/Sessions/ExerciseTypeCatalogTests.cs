@@ -1,4 +1,5 @@
 using System.Text.Json;
+using LinguaCoach.Domain;
 using LinguaCoach.Infrastructure.Admin;
 using LinguaCoach.Persistence;
 using LinguaCoach.Persistence.Seed;
@@ -36,7 +37,9 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     {
         var keys = await _db.ExerciseTypeDefinitions.Select(e => e.Key).ToListAsync();
 
-        Assert.Equal(36, keys.Count);
+        // 36 required exercise types + 1 Form.io Practice Gym pilot (ImplementationStatus="planned",
+        // inert by default — see docs/reviews/2026-07-07-ai-bank-assessment-architecture-plan.md).
+        Assert.Equal(37, keys.Count);
         Assert.Contains("listening_comprehension", keys);
         Assert.Contains("writing_scenario", keys);
         Assert.Contains("write_essay", keys);
@@ -376,9 +379,12 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     public async Task AllPlannedSpeakingListeningFormats_AreNowReady()
     {
         // Phases 9A–9I promoted all planned speaking/listening formats to Ready.
+        // Exception: formio_practice_gym_pilot is intentionally kept "planned" — an inert,
+        // admin-gated pilot pattern (see docs/reviews/2026-07-07-ai-bank-assessment-architecture-plan.md).
         var speakingTypes = await _db.ExerciseTypeDefinitions
             .Where(e => e.PrimarySkill == "listening" || e.PrimarySkill == "speaking")
             .Where(e => e.ImplementationStatus == "planned")
+            .Where(e => e.Key != ExercisePatternKey.FormIoPracticeGymPilot)
             .ToListAsync();
 
         Assert.Empty(speakingTypes);
@@ -401,9 +407,11 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     public async Task AllSpeakingAndListeningTypes_AreNowReady_NoPlannedRemain()
     {
         // Phase 9I: summarize_group_discussion was the last planned speaking/listening format.
-        // All exercise types in the catalog are now Ready.
+        // Exception: formio_practice_gym_pilot is intentionally kept "planned" — an inert,
+        // admin-gated pilot pattern (see docs/reviews/2026-07-07-ai-bank-assessment-architecture-plan.md).
         var planned = await _db.ExerciseTypeDefinitions
             .Where(e => e.ImplementationStatus == "planned")
+            .Where(e => e.Key != ExercisePatternKey.FormIoPracticeGymPilot)
             .ToListAsync();
 
         Assert.Empty(planned);

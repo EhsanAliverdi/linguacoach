@@ -380,7 +380,10 @@ public sealed class StudentMasteryEvaluationService : IStudentMasteryEvaluationS
 /// <summary>Extension to extract the curriculum objective key from a learning event.</summary>
 file static class LearningEventExtensions
 {
-    // StudentLearningEvent does not expose CurriculumObjectiveKey directly.
-    // We use PatternKey as the objective proxy when set; fall back to null.
-    public static string? CurriculumObjectiveKey(this StudentLearningEvent e) => e.PatternKey;
+    // Phase 8 (AI Bank-First Teaching Architecture): StudentLearningEvent.CurriculumObjectiveKey
+    // is now a real field, populated where the writer knows it (see ActivitySubmitHandler).
+    // PatternKey remains the fallback proxy for events written before this field existed, or by
+    // callers that don't yet resolve a real objective key — backward compatible, no threshold
+    // logic below this method changes.
+    public static string? CurriculumObjectiveKey(this StudentLearningEvent e) => e.CurriculumObjectiveKey ?? e.PatternKey;
 }

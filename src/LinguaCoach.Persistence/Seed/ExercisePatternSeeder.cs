@@ -533,6 +533,30 @@ public static class ExercisePatternSeeder
             teachingPurpose: "Practise listening comprehension and communication by summarizing the main points, speaker views, agreements, and outcomes of a short group discussion",
             requiresAudio: false,
             workplaceContext: false),
+
+        // ── Form.io Practice Gym pilot (inert by default) ────────────────────
+        // ExerciseTypeDefinitionSeeder registers this pattern with ImplementationStatus
+        // "planned" (not "ready"), which blocks both PracticeGymBufferRefillJob queueing and
+        // PracticeGymGenerationJob materialization regardless of this row's IsActive state —
+        // see docs/reviews/2026-07-07-ai-bank-assessment-architecture-plan.md.
+        // AiGeneratePromptKey is a safe existing fallback — never actually invoked while the
+        // exercise type stays "planned"; the live path (feature-flagged) uses
+        // ActivityTemplateInstanceGenerator instead of IAiActivityGenerator entirely.
+        new(
+            key: ExercisePatternKey.FormIoPracticeGymPilot,
+            name: "Form.io Practice Gym Pilot",
+            primarySkill: "Speaking",
+            secondarySkillsJson: """[]""",
+            compatibleKindsJson: """[5]""",           // SpeakingTask
+            activityType: ActivityType.VocabularyPractice,
+            interactionMode: InteractionMode.FreeTextEntry,
+            markingMode: MarkingMode.FormIoScored,
+            estimatedMinutes: 3,
+            aiGeneratePromptKey: "activity_generate_writing",
+            aiEvaluatePromptKey: "activity_evaluate_writing",
+            teachingPurpose: "Pilot: renders an ActivityTemplate-personalized Form.io schema directly in Practice Gym, scored deterministically — proves the bank-first content pipeline end-to-end before any broader Form.io Practice Gym rollout",
+            requiresAudio: false,
+            workplaceContext: false),
     ];
 
     /// <summary>

@@ -47,8 +47,47 @@
           <sp-admin-checkbox [(ngModel)]="itemForm.isEnabled" label="This item is active and eligible for selection" />
         </sp-admin-form-field>
 
+        <sp-admin-form-field label="Difficulty band" hint="1 (easiest) to 5 (hardest) within this CEFR level">
+          <sp-admin-input type="number" [(ngModel)]="itemForm.difficultyBand" />
+        </sp-admin-form-field>
+
+        <sp-admin-form-field label="Evidence weight" hint="Multiplier applied when this item's result feeds a skill's confidence score (default 1.0)">
+          <sp-admin-input type="number" [(ngModel)]="itemForm.evidenceWeight" />
+        </sp-admin-form-field>
+
       </div>
     </sp-admin-card>
+
+    @if (!isNew) {
+      <sp-admin-card>
+        <div class="sp-admin-card-header">
+          <div class="sp-admin-card-title">Review &amp; calibration — version {{ itemVersion() }}</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
+          <span>Review status: <strong>{{ reviewStatus() }}</strong></span>
+          <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="approve()">Approve</sp-admin-button>
+          <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="reject()">Reject</sp-admin-button>
+          <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="resetToPendingReview()">Reset to pending</sp-admin-button>
+        </div>
+        <div class="sp-admin-form-stack">
+          <sp-admin-form-field label="Discrimination index" hint="Populated later from real attempt statistics — null means not yet calibrated">
+            <sp-admin-input
+              type="number"
+              [ngModel]="discriminationIndex()"
+              (ngModelChange)="discriminationIndex.set($event)" />
+          </sp-admin-form-field>
+          <sp-admin-form-field label="Calibration sample size">
+            <sp-admin-input
+              type="number"
+              [ngModel]="calibrationSampleSize()"
+              (ngModelChange)="calibrationSampleSize.set($event)" />
+          </sp-admin-form-field>
+          <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="saveCalibrationStats()">
+            Save calibration stats
+          </sp-admin-button>
+        </div>
+      </sp-admin-card>
+    }
 
     <!-- ── Form.io authoring (the only, always-visible schema editor) ─────────── -->
     <sp-admin-card>

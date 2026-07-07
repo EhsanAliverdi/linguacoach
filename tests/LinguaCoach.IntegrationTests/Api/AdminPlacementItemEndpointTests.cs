@@ -237,6 +237,108 @@ public sealed class AdminPlacementItemEndpointTests : IClassFixture<ApiTestFacto
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
+    // ── Calibration fields (Phase 7) ─────────────────────────────────────────
+
+    [Fact]
+    public async Task AddItem_WithDifficultyBandAndEvidenceWeight_PersistsThem()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(token);
+        var questionText = $"Calibration prompt {Guid.NewGuid():N}";
+
+        var addResp = await client.PostAsJsonAsync("/api/admin/placement-items", new
+        {
+            skill = "grammar",
+            cefrLevel = "A1",
+            formIoSchemaJson = JsonSerializer.Serialize(Schema(questionText)),
+            scoringRulesJson = JsonSerializer.Serialize(ScoringRules("A")),
+            itemOrder = 2000,
+            isEnabled = true,
+            difficultyBand = 4,
+            evidenceWeight = 2.5,
+        });
+
+        Assert.Equal(HttpStatusCode.OK, addResp.StatusCode);
+        var body = await addResp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(4, body.GetProperty("difficultyBand").GetInt32());
+        Assert.Equal(2.5, body.GetProperty("evidenceWeight").GetDouble());
+        Assert.Equal("NotRequired", body.GetProperty("reviewStatus").GetString());
+        Assert.Equal(1, body.GetProperty("itemVersion").GetInt32());
+    }
+
+    [Fact]
+    public async Task Review_ApproveThenReject_UpdatesReviewStatus()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(token);
+        var questionText = $"Review prompt {Guid.NewGuid():N}";
+
+        var addResp = await client.PostAsJsonAsync("/api/admin/placement-items", new
+        {
+            skill = "grammar", cefrLevel = "A1", itemOrder = 2001, isEnabled = true,
+            formIoSchemaJson = JsonSerializer.Serialize(Schema(questionText)),
+            scoringRulesJson = JsonSerializer.Serialize(ScoringRules("A")),
+        });
+        var itemId = GetItemId(await addResp.Content.ReadFromJsonAsync<JsonElement>());
+
+        var approveResp = await client.PostAsJsonAsync($"/api/admin/placement-items/{itemId}/review", new { action = "approve" });
+        Assert.Equal(HttpStatusCode.OK, approveResp.StatusCode);
+        var approveBody = await approveResp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("Approved", approveBody.GetProperty("reviewStatus").GetString());
+
+        var rejectResp = await client.PostAsJsonAsync($"/api/admin/placement-items/{itemId}/review", new { action = "reject", reason = "Outdated content." });
+        Assert.Equal(HttpStatusCode.OK, rejectResp.StatusCode);
+        var rejectBody = await rejectResp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("Rejected", rejectBody.GetProperty("reviewStatus").GetString());
+        Assert.False(rejectBody.GetProperty("isEnabled").GetBoolean());
+    }
+
+    [Fact]
+    public async Task Review_RejectWithoutReason_Returns400()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(token);
+        var questionText = $"Reject prompt {Guid.NewGuid():N}";
+
+        var addResp = await client.PostAsJsonAsync("/api/admin/placement-items", new
+        {
+            skill = "grammar", cefrLevel = "A1", itemOrder = 2002, isEnabled = true,
+            formIoSchemaJson = JsonSerializer.Serialize(Schema(questionText)),
+            scoringRulesJson = JsonSerializer.Serialize(ScoringRules("A")),
+        });
+        var itemId = GetItemId(await addResp.Content.ReadFromJsonAsync<JsonElement>());
+
+        var rejectResp = await client.PostAsJsonAsync($"/api/admin/placement-items/{itemId}/review", new { action = "reject" });
+        Assert.Equal(HttpStatusCode.BadRequest, rejectResp.StatusCode);
+    }
+
+    [Fact]
+    public async Task SetCalibrationStats_PersistsValues()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(token);
+        var questionText = $"Calib stats prompt {Guid.NewGuid():N}";
+
+        var addResp = await client.PostAsJsonAsync("/api/admin/placement-items", new
+        {
+            skill = "grammar", cefrLevel = "A1", itemOrder = 2003, isEnabled = true,
+            formIoSchemaJson = JsonSerializer.Serialize(Schema(questionText)),
+            scoringRulesJson = JsonSerializer.Serialize(ScoringRules("A")),
+        });
+        var itemId = GetItemId(await addResp.Content.ReadFromJsonAsync<JsonElement>());
+
+        var calibResp = await client.PostAsJsonAsync($"/api/admin/placement-items/{itemId}/calibration", new
+        {
+            discriminationIndex = 0.35,
+            calibrationSampleSize = 120,
+        });
+
+        Assert.Equal(HttpStatusCode.OK, calibResp.StatusCode);
+        var body = await calibResp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(0.35, body.GetProperty("discriminationIndex").GetDouble());
+        Assert.Equal(120, body.GetProperty("calibrationSampleSize").GetInt32());
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private System.Net.Http.HttpClient ClientWithToken(string token)

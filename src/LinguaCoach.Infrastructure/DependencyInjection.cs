@@ -336,6 +336,7 @@ public static class DependencyInjection
         services.AddScoped<IPatternEvaluator, NoMarkingEvaluator>();
         services.AddScoped<IPatternEvaluator, AiStructuredEvaluator>();
         services.AddScoped<IPatternEvaluator, AiOpenEndedEvaluator>();
+        services.AddScoped<IPatternEvaluator, FormIoPatternEvaluator>();
         services.AddScoped<IPatternEvaluationRouter, PatternEvaluationRouter>();
 
         // STT: use FakeSpeechToTextService for MVP; swap in a real provider later
@@ -393,6 +394,8 @@ public static class DependencyInjection
             services.Configure<ReadinessPoolReplenishmentOptions>(_ => { });
         services.AddScoped<LinguaCoach.Application.ReadinessPool.IEffectiveReadinessPoolSettingsProvider,
             LinguaCoach.Infrastructure.ReadinessPool.EffectiveReadinessPoolSettingsProvider>();
+        services.AddScoped<LinguaCoach.Application.PracticeGym.IPracticeGymFormIoTemplatePilotSettingsProvider,
+            LinguaCoach.Infrastructure.PracticeGym.PracticeGymFormIoTemplatePilotSettingsProvider>();
         services.AddScoped<IReadinessPoolReplenishmentService, ReadinessPoolReplenishmentService>();
         services.AddScoped<Jobs.ReadinessPoolReplenishmentJob>();
         services.AddScoped<Jobs.NotificationDispatchJob>();
@@ -470,6 +473,32 @@ public static class DependencyInjection
             LinguaCoach.Infrastructure.Placement.AdminUpdatePlacementItemHandler>();
         services.AddScoped<LinguaCoach.Application.Placement.IAdminRemovePlacementItemHandler,
             LinguaCoach.Infrastructure.Placement.AdminRemovePlacementItemHandler>();
+        services.AddScoped<LinguaCoach.Application.Placement.IAdminPlacementItemReviewHandler,
+            LinguaCoach.Infrastructure.Placement.AdminPlacementItemReviewHandler>();
+        services.AddScoped<LinguaCoach.Application.Placement.IAdminPlacementItemCalibrationHandler,
+            LinguaCoach.Infrastructure.Placement.AdminPlacementItemCalibrationHandler>();
+
+        // AI Bank-First Teaching Architecture Phase 4 — Admin-configurable ActivityTemplate bank
+        services.AddScoped<LinguaCoach.Application.ActivityTemplates.IAdminActivityTemplateListQuery,
+            LinguaCoach.Infrastructure.ActivityTemplates.AdminActivityTemplateListQueryHandler>();
+        services.AddScoped<LinguaCoach.Application.ActivityTemplates.IAdminActivityTemplateGetQuery,
+            LinguaCoach.Infrastructure.ActivityTemplates.AdminActivityTemplateGetQueryHandler>();
+        services.AddScoped<LinguaCoach.Application.ActivityTemplates.IAdminAddActivityTemplateHandler,
+            LinguaCoach.Infrastructure.ActivityTemplates.AdminAddActivityTemplateHandler>();
+        services.AddScoped<LinguaCoach.Application.ActivityTemplates.IAdminUpdateActivityTemplateHandler,
+            LinguaCoach.Infrastructure.ActivityTemplates.AdminUpdateActivityTemplateHandler>();
+        services.AddScoped<LinguaCoach.Application.ActivityTemplates.IAdminRemoveActivityTemplateHandler,
+            LinguaCoach.Infrastructure.ActivityTemplates.AdminRemoveActivityTemplateHandler>();
+        services.AddScoped<LinguaCoach.Application.ActivityTemplates.IAdminActivityTemplateReviewHandler,
+            LinguaCoach.Infrastructure.ActivityTemplates.AdminActivityTemplateReviewHandler>();
+        services.AddScoped<LinguaCoach.Application.ActivityTemplates.IAdminActivityTemplatePublishHandler,
+            LinguaCoach.Infrastructure.ActivityTemplates.AdminActivityTemplatePublishHandler>();
+        services.AddScoped<LinguaCoach.Application.ActivityTemplates.IActivityTemplateInstanceGenerator,
+            LinguaCoach.Infrastructure.ActivityTemplates.ActivityTemplateInstanceGenerator>();
+
+        // AI Bank-First Teaching Architecture Phase 9 — cross-entity admin review queue
+        services.AddScoped<LinguaCoach.Application.Admin.ReviewQueue.IAdminReviewQueueQuery,
+            LinguaCoach.Infrastructure.Admin.ReviewQueue.AdminReviewQueueQueryHandler>();
 
         // Phase 16F/16G — Speaking Evaluation Foundation + Provider-Backed Evaluation
         if (configuration is not null)

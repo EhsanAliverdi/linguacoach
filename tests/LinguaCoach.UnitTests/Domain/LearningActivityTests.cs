@@ -90,4 +90,31 @@ public sealed class LearningActivityTests
         act.Deactivate();
         act.IsActive.Should().BeFalse();
     }
+
+    [Fact]
+    public void SetFormIoContent_SetsSchemaAndScoringRules()
+    {
+        var act = Valid();
+        act.SetFormIoContent("""{"components":[]}""", """{"components":{}}""");
+
+        act.FormIoSchemaJson.Should().Be("""{"components":[]}""");
+        act.ScoringRulesJson.Should().Be("""{"components":{}}""");
+    }
+
+    [Fact]
+    public void SetFormIoContent_NullScoringRules_Accepted()
+    {
+        var act = Valid();
+        act.SetFormIoContent("""{"components":[]}""", null);
+
+        act.ScoringRulesJson.Should().BeNull();
+    }
+
+    [Fact]
+    public void SetFormIoContent_BlankSchema_Throws()
+    {
+        var act = Valid();
+        var fn = () => act.SetFormIoContent("  ", null);
+        fn.Should().Throw<ArgumentException>().WithMessage("*FormIoSchemaJson*");
+    }
 }

@@ -1,3 +1,4 @@
+using LinguaCoach.Domain.Constants;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 
@@ -134,5 +135,80 @@ public sealed class StudentLearningEventTests
             learningGoalContext: null);
 
         Assert.Null(evt.LearningGoalContext);
+    }
+
+    // ── Subskill ──────────────────────────────────────────────────────────
+
+    [Fact]
+    public void Constructor_SubskillMatchingPrimarySkill_Accepted()
+    {
+        var evt = new StudentLearningEvent(
+            studentProfileId: ValidProfileId,
+            source: LearningEventSource.TodayLesson,
+            outcome: LearningEventOutcome.Practised,
+            primarySkill: "writing",
+            subskill: CurriculumSubskillConstants.WritingEmailMessage);
+
+        Assert.Equal(CurriculumSubskillConstants.WritingEmailMessage, evt.Subskill);
+    }
+
+    [Fact]
+    public void Constructor_SubskillNotMatchingPrimarySkill_Throws()
+    {
+        Assert.Throws<ArgumentException>(() =>
+            new StudentLearningEvent(
+                studentProfileId: ValidProfileId,
+                source: LearningEventSource.TodayLesson,
+                outcome: LearningEventOutcome.Practised,
+                primarySkill: "writing",
+                subskill: CurriculumSubskillConstants.SpeakingRoleplay));
+    }
+
+    [Fact]
+    public void Constructor_SubskillWithoutPrimarySkill_ValidatesAgainstFullTaxonomy()
+    {
+        var evt = new StudentLearningEvent(
+            studentProfileId: ValidProfileId,
+            source: LearningEventSource.TodayLesson,
+            outcome: LearningEventOutcome.Practised,
+            subskill: CurriculumSubskillConstants.ListeningGist);
+
+        Assert.Equal(CurriculumSubskillConstants.ListeningGist, evt.Subskill);
+    }
+
+    [Fact]
+    public void Constructor_UnknownSubskillWithoutPrimarySkill_Throws()
+    {
+        Assert.Throws<ArgumentException>(() =>
+            new StudentLearningEvent(
+                studentProfileId: ValidProfileId,
+                source: LearningEventSource.TodayLesson,
+                outcome: LearningEventOutcome.Practised,
+                subskill: "not_a_real_subskill"));
+    }
+
+    // ── CurriculumObjectiveKey (Phase 8) ──────────────────────────────────────
+
+    [Fact]
+    public void Constructor_CurriculumObjectiveKey_IsStoredAndTrimmed()
+    {
+        var evt = new StudentLearningEvent(
+            studentProfileId: ValidProfileId,
+            source: LearningEventSource.PracticeGym,
+            outcome: LearningEventOutcome.Practised,
+            curriculumObjectiveKey: "  b1.speaking.roleplay_ordering  ");
+
+        Assert.Equal("b1.speaking.roleplay_ordering", evt.CurriculumObjectiveKey);
+    }
+
+    [Fact]
+    public void Constructor_NullCurriculumObjectiveKey_DoesNotThrow()
+    {
+        var evt = new StudentLearningEvent(
+            studentProfileId: ValidProfileId,
+            source: LearningEventSource.PracticeGym,
+            outcome: LearningEventOutcome.Practised);
+
+        Assert.Null(evt.CurriculumObjectiveKey);
     }
 }

@@ -38,10 +38,7 @@ public sealed class AdminPlacementItemListQueryHandler : IAdminPlacementItemList
         var enabledCount = await _db.PlacementItemDefinitions.CountAsync(i => i.IsEnabled, ct);
         var skillCount = await _db.PlacementItemDefinitions.Select(i => i.Skill).Distinct().CountAsync(ct);
 
-        var dtos = items.Select(i => new AdminPlacementItemDto(
-            i.Id, i.Skill, i.CefrLevel, i.ItemOrder, i.IsEnabled,
-            i.FormIoSchemaJson, i.ScoringRulesJson, i.ScoringRulesVersion, i.RendererKind.ToString(),
-            PlacementItemSchemaLabel.ExtractLabel(i.FormIoSchemaJson))).ToList();
+        var dtos = items.Select(PlacementItemMapper.ToDto).ToList();
 
         return new AdminPlacementItemListResult(dtos, totalCount, overallTotalCount, enabledCount, skillCount);
     }

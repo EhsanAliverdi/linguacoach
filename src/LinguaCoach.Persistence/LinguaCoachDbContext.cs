@@ -57,6 +57,12 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
 
     // Phase 10K — Curriculum syllabus foundation
     public DbSet<CurriculumObjective> CurriculumObjectives => Set<CurriculumObjective>();
+    public DbSet<ActivityTemplate> ActivityTemplates => Set<ActivityTemplate>();
+    public DbSet<CefrResourceSource> CefrResourceSources => Set<CefrResourceSource>();
+    public DbSet<CefrDescriptor> CefrDescriptors => Set<CefrDescriptor>();
+    public DbSet<CefrVocabularyEntry> CefrVocabularyEntries => Set<CefrVocabularyEntry>();
+    public DbSet<CefrGrammarProfileEntry> CefrGrammarProfileEntries => Set<CefrGrammarProfileEntry>();
+    public DbSet<CefrReadingReference> CefrReadingReferences => Set<CefrReadingReference>();
 
     // Phase 10M — Student activity readiness pool
     public DbSet<StudentActivityReadinessItem> StudentActivityReadinessItems => Set<StudentActivityReadinessItem>();

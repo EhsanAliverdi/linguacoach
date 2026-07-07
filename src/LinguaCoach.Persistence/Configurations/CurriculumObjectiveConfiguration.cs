@@ -20,6 +20,7 @@ internal sealed class CurriculumObjectiveConfiguration : IEntityTypeConfiguratio
         builder.Property(e => e.Description).HasColumnName("description").IsRequired();
         builder.Property(e => e.CefrLevel).HasColumnName("cefr_level").HasMaxLength(10).IsRequired();
         builder.Property(e => e.PrimarySkill).HasColumnName("primary_skill").HasMaxLength(100).IsRequired();
+        builder.Property(e => e.Subskill).HasColumnName("subskill").HasMaxLength(128);
         builder.Property(e => e.SecondarySkillsJson).HasColumnName("secondary_skills_json").IsRequired()
             .HasDefaultValue("[]");
         builder.Property(e => e.ContextTagsJson).HasColumnName("context_tags_json").IsRequired()

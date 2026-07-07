@@ -45,5 +45,6 @@ public sealed class InteractionModeMarkingModeTests
     [Fact] public void MarkingMode_ExactMatch_IsTwo()      => Assert.Equal(2, (int)MarkingMode.ExactMatch);
     [Fact] public void MarkingMode_KeyedSelection_IsThree()=> Assert.Equal(3, (int)MarkingMode.KeyedSelection);
     [Fact] public void MarkingMode_NoMarking_IsFour()      => Assert.Equal(4, (int)MarkingMode.NoMarking);
-    [Fact] public void MarkingMode_HasExactlyFiveValues()  => Assert.Equal(5, Enum.GetValues<MarkingMode>().Length);
+    [Fact] public void MarkingMode_FormIoScored_IsFive()   => Assert.Equal(5, (int)MarkingMode.FormIoScored);
+    [Fact] public void MarkingMode_HasExactlySixValues()   => Assert.Equal(6, Enum.GetValues<MarkingMode>().Length);
 }

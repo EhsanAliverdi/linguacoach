@@ -57,4 +57,10 @@ public static class ExercisePatternKey
     public const string DescribeImage                  = "describe_image";
     public const string RetellLecture                  = "retell_lecture";
     public const string SummarizeGroupDiscussion       = "summarize_group_discussion";
+
+    // ── Form.io Practice Gym pilot (AI Bank-First Teaching Architecture) ─────
+    // Inert by default — see docs/reviews/2026-07-07-ai-bank-assessment-architecture-plan.md.
+    // Seeded ExerciseTypeDefinition.ImplementationStatus="planned" blocks both buffer-refill
+    // queueing and materialization until an admin explicitly flips it to "ready".
+    public const string FormIoPracticeGymPilot         = "formio_practice_gym_pilot";
 }

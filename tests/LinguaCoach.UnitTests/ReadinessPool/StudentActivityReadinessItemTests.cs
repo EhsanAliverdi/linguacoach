@@ -659,4 +659,94 @@ public sealed class StudentActivityReadinessItemTests
         item.Status.Should().Be(statusBefore);
         item.TargetCefrLevel.Should().Be(cefrBefore);
     }
+
+    // 41. Subskill matching PrimarySkill is accepted.
+    [Fact]
+    public void Create_SubskillMatchingPrimarySkill_Accepted()
+    {
+        var item = new StudentActivityReadinessItem(
+            studentId: StudentId,
+            source: ReadinessPoolSource.PracticeGym,
+            targetCefrLevel: "B2",
+            routingReason: RoutingReason.Normal,
+            isLowerLevelContent: false,
+            primarySkill: "speaking",
+            subskill: LinguaCoach.Domain.Constants.CurriculumSubskillConstants.SpeakingRoleplay);
+
+        item.Subskill.Should().Be(LinguaCoach.Domain.Constants.CurriculumSubskillConstants.SpeakingRoleplay);
+    }
+
+    // 42. Subskill not belonging to PrimarySkill throws.
+    [Fact]
+    public void Create_SubskillNotMatchingPrimarySkill_Throws()
+    {
+        var act = () => new StudentActivityReadinessItem(
+            studentId: StudentId,
+            source: ReadinessPoolSource.PracticeGym,
+            targetCefrLevel: "B2",
+            routingReason: RoutingReason.Normal,
+            isLowerLevelContent: false,
+            primarySkill: "speaking",
+            subskill: LinguaCoach.Domain.Constants.CurriculumSubskillConstants.WritingEmailMessage);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    // 43. SetTemplateProvenance sets all provenance fields.
+    [Fact]
+    public void SetTemplateProvenance_SetsAllFields()
+    {
+        var item = MakeQueued();
+        var templateId = Guid.NewGuid();
+
+        item.SetTemplateProvenance(
+            sourceTemplateId: templateId,
+            formIoSchemaSnapshotJson: "{\"components\":[]}",
+            scoringRulesSnapshotJson: "{\"components\":{}}",
+            personalizationReason: "Personalized for topic X",
+            generatedByModel: "gemini-1.5-pro",
+            generatedByProvider: "gemini",
+            validationStatus: ActivityValidationStatus.Passed);
+
+        item.SourceTemplateId.Should().Be(templateId);
+        item.FormIoSchemaSnapshotJson.Should().Be("{\"components\":[]}");
+        item.ScoringRulesSnapshotJson.Should().Be("{\"components\":{}}");
+        item.PersonalizationReason.Should().Be("Personalized for topic X");
+        item.GeneratedByModel.Should().Be("gemini-1.5-pro");
+        item.GeneratedByProvider.Should().Be("gemini");
+        item.ValidationStatus.Should().Be(ActivityValidationStatus.Passed);
+    }
+
+    // 44. SetTemplateProvenance with empty templateId throws.
+    [Fact]
+    public void SetTemplateProvenance_EmptyTemplateId_Throws()
+    {
+        var item = MakeQueued();
+        var act = () => item.SetTemplateProvenance(
+            Guid.Empty, null, null, null, null, null, ActivityValidationStatus.Passed);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    // 45. SetBankItemProvenance sets SourceBankItemId.
+    [Fact]
+    public void SetBankItemProvenance_SetsSourceBankItemId()
+    {
+        var item = MakeQueued();
+        var bankItemId = Guid.NewGuid();
+
+        item.SetBankItemProvenance(bankItemId);
+
+        item.SourceBankItemId.Should().Be(bankItemId);
+    }
+
+    // 46. SetBankItemProvenance with empty id throws.
+    [Fact]
+    public void SetBankItemProvenance_EmptyId_Throws()
+    {
+        var item = MakeQueued();
+        var act = () => item.SetBankItemProvenance(Guid.Empty);
+
+        act.Should().Throw<ArgumentException>();
+    }
 }

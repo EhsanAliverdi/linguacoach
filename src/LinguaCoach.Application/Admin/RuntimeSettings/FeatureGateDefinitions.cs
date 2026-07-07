@@ -16,6 +16,7 @@ public static class FeatureGateDefinitions
     [
         ReviewScaffoldGeneration,
         PracticeGymReviewScaffoldPilot,
+        PracticeGymFormIoTemplatePilot,
         LessonGenerationBuffer,
         TtsGeneration,
         PracticeGymGenerationPerType,
@@ -173,6 +174,35 @@ public static class FeatureGateDefinitions
                 RiskLevel = FeatureGateRiskLevel.Low,
                 MinValue = 0,
                 MaxValue = 4,
+            },
+        ],
+    };
+
+    public static readonly FeatureGateGroupDefinition PracticeGymFormIoTemplatePilot = new()
+    {
+        GroupKey = "practice-gym-formio-template-pilot",
+        DisplayName = "Practice Gym Form.io template pilot",
+        Description = "AI Bank-First Teaching Architecture pilot: when on, PracticeGymGenerationJob personalizes the dedicated 'formio_practice_gym_pilot' pattern from a published, approved ActivityTemplate instead of free-form AI generation, and renders it via Form.io. Inert unless the pattern's ExerciseTypeDefinition is also promoted from 'planned' to 'ready' by an admin — this flag alone does not make it live.",
+        Category = FeatureGateCategory.PracticeGymFormIoTemplatePilot,
+        BackingStore = FeatureGateBackingStore.ReadinessPoolOverride,
+        Dependencies =
+        [
+            "ExerciseTypeDefinition for 'formio_practice_gym_pilot' must be promoted to ImplementationStatus=ready",
+            "At least one published, Approved ActivityTemplate with PatternKey='formio_practice_gym_pilot' must exist",
+        ],
+        WarningText = "Turning this off is the fastest rollback — generation immediately falls back to the pattern being inert (planned exercise type), no student-facing content is affected.",
+        Settings =
+        [
+            new FeatureGateSettingDefinition
+            {
+                Key = "PracticeGymFormIoPilot.Enabled",
+                DisplayName = "Pilot enabled",
+                Description = "When on, the Form.io template pilot pattern personalizes from ActivityTemplate instead of free-form AI generation.",
+                DataType = FeatureGateDataType.Boolean,
+                DefaultValueJson = "false",
+                IsEditableAtRuntime = true,
+                RiskLevel = FeatureGateRiskLevel.High,
+                RequiresConfirmation = true,
             },
         ],
     };

@@ -35,6 +35,7 @@ internal sealed class StudentActivityReadinessItemConfiguration
         builder.Property(e => e.CurriculumObjectiveKey).HasColumnName("curriculum_objective_key").HasMaxLength(200);
         builder.Property(e => e.CurriculumObjectiveTitle).HasColumnName("curriculum_objective_title").HasMaxLength(300);
         builder.Property(e => e.PrimarySkill).HasColumnName("primary_skill").HasMaxLength(100);
+        builder.Property(e => e.Subskill).HasColumnName("subskill").HasMaxLength(128);
         builder.Property(e => e.SecondarySkillsJson).HasColumnName("secondary_skills_json").IsRequired()
             .HasDefaultValue("[]");
         builder.Property(e => e.ContextTagsJson).HasColumnName("context_tags_json").IsRequired()
@@ -69,6 +70,27 @@ internal sealed class StudentActivityReadinessItemConfiguration
 
         // Generation provenance
         builder.Property(e => e.GeneratedBy).HasColumnName("generated_by").HasMaxLength(100);
+
+        // Bank-first template provenance (Phase 6 — AI Bank-First Teaching Architecture)
+        builder.Property(e => e.SourceTemplateId).HasColumnName("source_template_id");
+        builder.Property(e => e.SourceBankItemId).HasColumnName("source_bank_item_id");
+        builder.Property(e => e.FormIoSchemaSnapshotJson).HasColumnName("form_io_schema_snapshot_json").HasColumnType("jsonb");
+        builder.Property(e => e.ScoringRulesSnapshotJson).HasColumnName("scoring_rules_snapshot_json").HasColumnType("jsonb");
+        builder.Property(e => e.PersonalizationReason).HasColumnName("personalization_reason").HasMaxLength(500);
+        builder.Property(e => e.GeneratedByModel).HasColumnName("generated_by_model").HasMaxLength(100);
+        builder.Property(e => e.GeneratedByProvider).HasColumnName("generated_by_provider").HasMaxLength(100);
+        builder.Property(e => e.ValidationStatus).HasColumnName("validation_status")
+            .HasConversion<string>().HasMaxLength(50);
+
+        builder.HasOne<ActivityTemplate>()
+            .WithMany()
+            .HasForeignKey(e => e.SourceTemplateId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<PlacementItemDefinition>()
+            .WithMany()
+            .HasForeignKey(e => e.SourceBankItemId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // Error info
         builder.Property(e => e.ErrorCode).HasColumnName("error_code").HasMaxLength(100);

@@ -18,7 +18,14 @@ public sealed record AdminPlacementItemDto(
     string QuestionPreview = "",
     /// <summary>Admin-only: the Form.io schema as authored (with inline "quiz" annotations),
     /// null for items authored before the Quiz tab existed. Never sent to students.</summary>
-    string? AuthoringSchemaJson = null
+    string? AuthoringSchemaJson = null,
+    // ── Calibration (Phase 7) ──────────────────────────────────────────────────
+    int DifficultyBand = 1,
+    double? DiscriminationIndex = null,
+    int? CalibrationSampleSize = null,
+    double EvidenceWeight = 1.0,
+    string ReviewStatus = "NotRequired",
+    int ItemVersion = 1
 );
 
 // ── List items (server-side paged, optionally filtered by skill) ──────────────
@@ -65,7 +72,9 @@ public sealed record AddPlacementItemCommand(
     /// the client's FormIoSchemaJson/ScoringRulesJson above in that case) and uses the split
     /// result instead. Null means the legacy "hand-typed scoring rules textarea" path, where
     /// FormIoSchemaJson/ScoringRulesJson above are used as-is.</summary>
-    string? AuthoringSchemaJson = null
+    string? AuthoringSchemaJson = null,
+    int DifficultyBand = 1,
+    double EvidenceWeight = 1.0
 );
 
 public interface IAdminAddPlacementItemHandler
@@ -85,7 +94,9 @@ public sealed record UpdatePlacementItemCommand(
     string ScoringRulesJson,
     string RendererKind = "FormIo",
     /// <summary>See <see cref="AddPlacementItemCommand.AuthoringSchemaJson"/>.</summary>
-    string? AuthoringSchemaJson = null
+    string? AuthoringSchemaJson = null,
+    int? DifficultyBand = null,
+    double? EvidenceWeight = null
 );
 
 public interface IAdminUpdatePlacementItemHandler
@@ -100,6 +111,24 @@ public sealed record RemovePlacementItemCommand(Guid ItemId);
 public interface IAdminRemovePlacementItemHandler
 {
     Task HandleAsync(RemovePlacementItemCommand command, CancellationToken ct = default);
+}
+
+// ── Review status transitions (Phase 7) ─────────────────────────────────────────
+
+public sealed record SetPlacementItemReviewStatusCommand(Guid ItemId, string Action, string? Reason = null);
+
+public interface IAdminPlacementItemReviewHandler
+{
+    Task<AdminPlacementItemDto> HandleAsync(SetPlacementItemReviewStatusCommand command, CancellationToken ct = default);
+}
+
+// ── Calibration stats (Phase 7 — populated later from attempt statistics) ──────
+
+public sealed record SetPlacementItemCalibrationStatsCommand(Guid ItemId, double? DiscriminationIndex, int? CalibrationSampleSize);
+
+public interface IAdminPlacementItemCalibrationHandler
+{
+    Task<AdminPlacementItemDto> HandleAsync(SetPlacementItemCalibrationStatsCommand command, CancellationToken ct = default);
 }
 
 // ── Validation error ─────────────────────────────────────────────────────────

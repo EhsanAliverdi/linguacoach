@@ -261,6 +261,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
                 : LearningEventOutcome.Practised;
 
         var legacyGoalContext = _goalContextResolver.Resolve(profile, new LearningGoalResolutionContext { Source = "ActivitySubmitHandler.Legacy" });
+        var legacyObjectiveKey = await TryGetReadinessObjectiveKeyAsync(profile.Id, activity.Id, ct);
         var legacyEvent = new StudentLearningEvent(
             studentProfileId: profile.Id,
             source: legacySource,
@@ -274,7 +275,8 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             learningGoalContext: legacyGoalContext.ContextSummary,
             cefrLevelAtEvent: profile.CefrLevel,
             score: score.HasValue ? Math.Round(score.Value, 1) : null,
-            normalizedScore: score.HasValue ? Math.Round(score.Value / 100.0, 4) : null);
+            normalizedScore: score.HasValue ? Math.Round(score.Value / 100.0, 4) : null,
+            curriculumObjectiveKey: legacyObjectiveKey);
 
         await _learningLedger.RecordAsync(legacyEvent, ct);
         await TryUpdateLearningPlanProgressAsync(profile.Id, activity.ExercisePatternKey, ct);
@@ -334,6 +336,11 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         var studentSkillContext = await BuildStudentSkillContextAsync(
             profile.Id, activity.ExercisePatternKey, pattern.MarkingMode, ct);
 
+        // Form.io Practice Gym pilot: ContentJson carries the student-safe schema (never the
+        // legacy AiGeneratedContentJson placeholder), and ScoringRulesJson is sourced
+        // server-side only — never derived from anything sent to the client.
+        var isFormIoScored = pattern.MarkingMode == MarkingMode.FormIoScored;
+
         var evalRequest = new PatternEvaluationRequest(
             ActivityId: activity.Id,
             StudentProfileId: profile.Id,
@@ -341,13 +348,14 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             MarkingMode: pattern.MarkingMode,
             InteractionMode: pattern.InteractionMode,
             ActivityType: activity.ActivityType,
-            ContentJson: activity.AiGeneratedContentJson,
+            ContentJson: isFormIoScored ? (activity.FormIoSchemaJson ?? "{}") : activity.AiGeneratedContentJson,
             SubmittedAnswerJson: submittedAnswerJson,
             CefrLevel: profile.CefrLevel,
             DomainComplexity: profile.CareerProfile?.Name,
             StudentSkillContext: studentSkillContext,
             SourceLanguageName: LanguageSupportResolver.ResolveSourceLanguageName(profile),
-            TargetLanguageName: LanguageSupportResolver.ResolveTargetLanguageName(profile));
+            TargetLanguageName: LanguageSupportResolver.ResolveTargetLanguageName(profile),
+            ScoringRulesJson: isFormIoScored ? activity.ScoringRulesJson : null);
 
         var evalResult = await _patternRouter.EvaluateAsync(evalRequest, ct);
 
@@ -430,6 +438,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             : null;
 
         var patternGoalContext = _goalContextResolver.Resolve(profile, new LearningGoalResolutionContext { Source = "ActivitySubmitHandler.Pattern" });
+        var patternObjectiveKey = await TryGetReadinessObjectiveKeyAsync(profile.Id, activity.Id, ct);
         var learningEvent = new StudentLearningEvent(
             studentProfileId: profile.Id,
             source: ledgerSource,
@@ -443,6 +452,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             primarySkill: primarySkillKey,
             learningGoalContext: patternGoalContext.ContextSummary,
             cefrLevelAtEvent: profile.CefrLevel,
+            curriculumObjectiveKey: patternObjectiveKey,
             score: Math.Round(evalResult.Percentage, 1),
             normalizedScore: Math.Round(evalResult.Percentage / 100.0, 4),
             mistakeTagsJson: mistakeTags);
@@ -504,6 +514,33 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             NextPracticeSuggestion: null,
             FeedbackInSourceLanguage: null,
             PatternEvaluation: patternDto);
+    }
+
+    /// <summary>
+    /// Best-effort lookup of the CurriculumObjectiveKey snapshot on the readiness item linked to
+    /// this activity, if any — read before consumption (item must still be Reserved). Returns
+    /// null on any failure or when no linked item exists; never throws. See
+    /// docs/reviews/2026-07-07-ai-bank-assessment-architecture-plan.md, Phase 8.
+    /// </summary>
+    private async Task<string?> TryGetReadinessObjectiveKeyAsync(Guid profileId, Guid activityId, CancellationToken ct)
+    {
+        try
+        {
+            return await _db.StudentActivityReadinessItems
+                .AsNoTracking()
+                .Where(i => i.StudentId == profileId
+                         && i.LearningActivityId == activityId
+                         && i.Status == Domain.Enums.ReadinessPoolStatus.Reserved)
+                .Select(i => i.CurriculumObjectiveKey)
+                .FirstOrDefaultAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "Best-effort readiness objective key lookup failed ActivityId={ActivityId} — event recorded without it",
+                activityId);
+            return null;
+        }
     }
 
     /// <summary>

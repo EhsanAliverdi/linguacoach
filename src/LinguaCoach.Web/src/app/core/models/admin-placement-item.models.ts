@@ -18,6 +18,13 @@ export interface AdminPlacementItemDto {
   /** Admin-only: the Form.io schema as authored (with inline "quiz" annotations), null for items
    * authored before the Quiz tab existed. Never sent to students. */
   authoringSchemaJson: string | null;
+  // ── Calibration (Phase 7) ──────────────────────────────────────────────────
+  difficultyBand: number;
+  discriminationIndex: number | null;
+  calibrationSampleSize: number | null;
+  evidenceWeight: number;
+  reviewStatus: string;
+  itemVersion: number;
 }
 
 /** Server-side paged response. Items is the current page only; totalCount reflects the current
@@ -44,6 +51,18 @@ export interface PlacementItemRequest {
   /** The Form.io builder's live schema, with inline per-component "quiz" annotations. The server
    * splits this into the student-safe schema + backend-only scoring rules. */
   authoringSchemaJson?: string;
+  difficultyBand?: number;
+  evidenceWeight?: number;
+}
+
+export interface PlacementItemReviewRequest {
+  action: 'approve' | 'reject' | 'reset';
+  reason?: string | null;
+}
+
+export interface PlacementItemCalibrationRequest {
+  discriminationIndex: number | null;
+  calibrationSampleSize: number | null;
 }
 
 export const PLACEMENT_SKILLS = ['grammar', 'vocabulary', 'reading', 'listening', 'writing', 'speaking'] as const;

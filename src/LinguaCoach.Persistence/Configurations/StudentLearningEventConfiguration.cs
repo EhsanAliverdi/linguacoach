@@ -27,6 +27,8 @@ internal sealed class StudentLearningEventConfiguration : IEntityTypeConfigurati
         builder.Property(e => e.ExerciseType).HasColumnName("exercise_type").HasMaxLength(100);
         builder.Property(e => e.PatternKey).HasColumnName("pattern_key").HasMaxLength(100);
         builder.Property(e => e.PrimarySkill).HasColumnName("primary_skill").HasMaxLength(100);
+        builder.Property(e => e.Subskill).HasColumnName("subskill").HasMaxLength(128);
+        builder.Property(e => e.CurriculumObjectiveKey).HasColumnName("curriculum_objective_key").HasMaxLength(200);
         builder.Property(e => e.SecondarySkillsJson).HasColumnName("secondary_skills_json");
         builder.Property(e => e.LearningGoalContext).HasColumnName("learning_goal_context").HasMaxLength(200);
         builder.Property(e => e.CefrLevelAtEvent).HasColumnName("cefr_level_at_event").HasMaxLength(10);
@@ -46,6 +48,8 @@ internal sealed class StudentLearningEventConfiguration : IEntityTypeConfigurati
             .HasDatabaseName("ix_student_learning_events_student_time");
         builder.HasIndex(e => new { e.StudentProfileId, e.PatternKey })
             .HasDatabaseName("ix_student_learning_events_student_pattern");
+        builder.HasIndex(e => new { e.StudentProfileId, e.CurriculumObjectiveKey })
+            .HasDatabaseName("ix_student_learning_events_student_objective");
 
         builder.HasOne<StudentProfile>()
             .WithMany()

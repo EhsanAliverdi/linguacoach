@@ -14,6 +14,7 @@ public static class DefaultAiSeeder
     public const string DefaultModel = "gpt-4o-mini";
 
     public const string ActivityGenerateWritingKey = "activity_generate_writing";
+    public const string ActivityTemplateGenerateInstanceKey = "activity_template_generate_instance";
     public const string ActivityGenerateListeningKey = "activity_generate_listening";
     public const string ActivityGenerateSpeakingRolePlayKey = "activity_generate_speaking_roleplay";
     public const string ActivityEvaluateWritingKey = "activity_evaluate_writing";
@@ -4473,6 +4474,25 @@ Rules:
 - Do not include any text outside the JSON object.
 """;
 
+    private const string ActivityTemplateGenerateInstanceContent = """
+You are personalizing ONE reusable activity template into a specific instance for a language learner.
+
+Skill: {{skill}}
+Subskill: {{subskill}}
+Student level: {{cefrLevel}}
+Activity type: {{activityType}}
+Topic hint: {{topicHint}}
+Learner preferences: {{learnerPreferences}}
+
+Author-written generation instructions for this template (follow these closely):
+{{generationInstructions}}
+
+The template's base Form.io schema (student-safe — contains no correct answers or scoring data). Personalize the wording/scenario/content of this schema for the topic hint and level above, but you MUST preserve every component's "key" and "type" exactly as given — only change label/content/text-like properties:
+{{baseSchema}}
+
+Return ONLY a valid Form.io schema JSON object, in the exact same shape as the base schema above (same top-level "display"/"components" structure, same component keys and types). No markdown. No text outside JSON. Never include a correct answer, "score", "rubric", or any scoring-related property anywhere in the output — this schema is shown directly to the student.
+""";
+
     public static async Task SeedAsync(
         LinguaCoachDbContext db,
         ILogger logger,
@@ -4534,6 +4554,11 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityGenerateSpeakingRolePlayKey, ActivityGenerateSpeakingRolePlayContent,
             maxInputTokens: 1900, maxOutputTokens: 2000, ct);
+
+        // AI Bank-First Teaching Architecture Phase 5 — ActivityTemplate instance generation
+        await SeedOrUpgradePromptAsync(db, logger,
+            ActivityTemplateGenerateInstanceKey, ActivityTemplateGenerateInstanceContent,
+            maxInputTokens: 2400, maxOutputTokens: 2200, ct);
 
         // Activity evaluation prompts
         await SeedOrUpgradePromptAsync(db, logger,

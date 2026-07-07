@@ -12,4 +12,5 @@ public enum MarkingMode
     ExactMatch     = 2,  // Answer checked against acceptedAnswers list (deterministic, no AI call)
     KeyedSelection = 3,  // Selection checked against correctIndex/correctId (deterministic)
     NoMarking      = 4,  // Read-only step — no submission required, no evaluation
+    FormIoScored   = 5,  // Deterministic Form.io component scoring via IPlacementScoringService (no AI call)
 }

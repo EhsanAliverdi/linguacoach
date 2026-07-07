@@ -258,8 +258,42 @@ public sealed class StudentMasteryEvaluationServiceTests : IDisposable
     }
 
     // -------------------------------------------------------------------------
+    // 12. Phase 8: mastery grouping prefers CurriculumObjectiveKey over PatternKey when both
+    //     are set — events from two different patterns sharing one objective key accumulate
+    //     into a single objective's evidence instead of being split.
+    // -------------------------------------------------------------------------
+    [Fact]
+    public async Task EvaluateStudent_GroupsByCurriculumObjectiveKey_AcrossDifferentPatternKeys()
+    {
+        const string objectiveKey = "b1.speaking.roleplay_ordering";
+        _ledger.SetEvents(_studentId,
+        [
+            MakeEventWithObjective("pattern_a", objectiveKey, LearningEventOutcome.Mastered, 90),
+            MakeEventWithObjective("pattern_b", objectiveKey, LearningEventOutcome.Practised, 85),
+            MakeEventWithObjective("pattern_a", objectiveKey, LearningEventOutcome.Practised, 88),
+            MakeEventWithObjective("pattern_b", objectiveKey, LearningEventOutcome.Practised, 82),
+            MakeEventWithObjective("pattern_a", objectiveKey, LearningEventOutcome.Practised, 84),
+        ]);
+
+        var report = await _sut.EvaluateStudentAsync(_studentId, MasteryEvaluationReason.Manual);
+
+        report.MasteredObjectiveKeys.Should().Contain(objectiveKey);
+    }
+
+    // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
+
+    private StudentLearningEvent MakeEventWithObjective(
+        string patternKey, string curriculumObjectiveKey, LearningEventOutcome outcome, double score) =>
+        new(
+            studentProfileId: _studentId,
+            source: LearningEventSource.PracticeGym,
+            outcome: outcome,
+            patternKey: patternKey,
+            curriculumObjectiveKey: curriculumObjectiveKey,
+            score: score,
+            normalizedScore: score / 100.0);
 
     private StudentLearningEvent MakeEvent(string skill, LearningEventOutcome outcome, double score) =>
         new(

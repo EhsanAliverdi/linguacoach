@@ -203,6 +203,27 @@ public sealed class StudentActivityReadinessPoolService : IStudentActivityReadin
         await _db.SaveChangesAsync(ct);
     }
 
+    public async Task SetTemplateProvenanceAsync(
+        Guid itemId,
+        Guid sourceTemplateId,
+        string? formIoSchemaSnapshotJson,
+        string? scoringRulesSnapshotJson,
+        string? personalizationReason,
+        string? generatedByModel,
+        string? generatedByProvider,
+        ActivityValidationStatus validationStatus,
+        CancellationToken ct = default)
+    {
+        var item = await RequireItemAsync(itemId, ct);
+        item.SetTemplateProvenance(
+            sourceTemplateId, formIoSchemaSnapshotJson, scoringRulesSnapshotJson,
+            personalizationReason, generatedByModel, generatedByProvider, validationStatus);
+        await _db.SaveChangesAsync(ct);
+        _logger.LogDebug(
+            "ReadinessPool: {ItemId} template provenance set TemplateId={TemplateId} ValidationStatus={ValidationStatus}",
+            itemId, sourceTemplateId, validationStatus);
+    }
+
     public async Task<IReadOnlyList<StudentActivityReadinessItem>> GetReadyForStudentAsync(
         Guid studentId,
         ReadinessPoolSource? source = null,

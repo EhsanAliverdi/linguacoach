@@ -6,6 +6,8 @@ import {
   AdminPlacementItemDto,
   AdminPlacementItemListResult,
   PlacementItemRequest,
+  PlacementItemReviewRequest,
+  PlacementItemCalibrationRequest,
 } from '../models/admin-placement-item.models';
 
 @Injectable({ providedIn: 'root' })
@@ -35,5 +37,13 @@ export class AdminPlacementItemService {
 
   remove(itemId: string): Observable<void> {
     return this.http.delete<void>(`${this.base}/${itemId}`);
+  }
+
+  setReviewStatus(itemId: string, request: PlacementItemReviewRequest): Observable<AdminPlacementItemDto> {
+    return this.http.post<AdminPlacementItemDto>(`${this.base}/${itemId}/review`, request);
+  }
+
+  setCalibrationStats(itemId: string, request: PlacementItemCalibrationRequest): Observable<AdminPlacementItemDto> {
+    return this.http.post<AdminPlacementItemDto>(`${this.base}/${itemId}/calibration`, request);
   }
 }

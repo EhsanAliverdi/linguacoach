@@ -16,9 +16,6 @@ public sealed class AdminPlacementItemGetQueryHandler : IAdminPlacementItemGetQu
         var item = await _db.PlacementItemDefinitions.FirstOrDefaultAsync(i => i.Id == query.ItemId, ct);
         if (item is null) return null;
 
-        return new AdminPlacementItemDto(
-            item.Id, item.Skill, item.CefrLevel, item.ItemOrder, item.IsEnabled,
-            item.FormIoSchemaJson, item.ScoringRulesJson, item.ScoringRulesVersion, item.RendererKind.ToString(),
-            PlacementItemSchemaLabel.ExtractLabel(item.FormIoSchemaJson), item.AuthoringSchemaJson);
+        return PlacementItemMapper.ToDto(item);
     }
 }

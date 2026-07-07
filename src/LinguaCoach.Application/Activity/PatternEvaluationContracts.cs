@@ -16,7 +16,11 @@ public sealed record PatternEvaluationRequest(
     string? SessionContextJson = null,
     string? StudentSkillContext = null,
     string? SourceLanguageName = null,
-    string? TargetLanguageName = null);
+    string? TargetLanguageName = null,
+    /// <summary>Backend-only Form.io scoring rules (FormIoScored marking mode only). Sourced
+    /// server-side from LearningActivity.ScoringRulesJson — never derived from student-visible
+    /// content, never returned in any client-facing response.</summary>
+    string? ScoringRulesJson = null);
 
 public sealed class PatternEvaluationResult
 {

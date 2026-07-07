@@ -519,6 +519,10 @@ export class ActivityLessonComponent implements OnInit, OnDestroy {
       submittedContent = JSON.stringify({ items: payload.items });
     } else if (payload.kind === 'multipleChoiceMulti') {
       submittedContent = JSON.stringify({ selectedOptionIds: payload.selectedOptionIds });
+    } else if (payload.kind === 'formIo') {
+      // Form.io Practice Gym pilot — raw submission.data, matched server-side by
+      // FormIoPatternEvaluator's ScoringRulesJson (never sent to the client).
+      submittedContent = JSON.stringify(payload.submissionData);
     } else {
       submittedContent = JSON.stringify(payload);
     }

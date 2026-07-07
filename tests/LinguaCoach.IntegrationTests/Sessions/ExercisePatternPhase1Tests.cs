@@ -50,7 +50,9 @@ public sealed class ExercisePatternPhase1Tests : IDisposable
     public async Task Seeder_Seeds_AllTenMvpPatterns()
     {
         var count = await _db.ExercisePatterns.CountAsync();
-        Assert.Equal(32, count);
+        // 32 MVP patterns + 1 Form.io Practice Gym pilot pattern (inert by default —
+        // see docs/reviews/2026-07-07-ai-bank-assessment-architecture-plan.md).
+        Assert.Equal(33, count);
     }
 
     [Fact]
@@ -58,7 +60,7 @@ public sealed class ExercisePatternPhase1Tests : IDisposable
     {
         await ExercisePatternSeeder.SeedAsync(_db, NullLogger.Instance);
         var count = await _db.ExercisePatterns.CountAsync();
-        Assert.Equal(32, count);
+        Assert.Equal(33, count);
     }
 
     [Fact]
@@ -153,7 +155,7 @@ public sealed class ExercisePatternPhase1Tests : IDisposable
     {
         var repo = new ExercisePatternRepository(_db);
         var all = await repo.GetAllActiveAsync();
-        Assert.Equal(32, all.Count);
+        Assert.Equal(33, all.Count);
     }
 
     [Fact]
@@ -165,7 +167,7 @@ public sealed class ExercisePatternPhase1Tests : IDisposable
 
         var repo = new ExercisePatternRepository(_db);
         var all = await repo.GetAllActiveAsync();
-        Assert.Equal(31, all.Count);
+        Assert.Equal(32, all.Count);
         Assert.DoesNotContain(all, p => p.Key == ExercisePatternKey.PhraseMatch);
     }
 
@@ -206,7 +208,7 @@ public sealed class ExercisePatternPhase1Tests : IDisposable
         var repo = new ExercisePatternRepository(_db);
         var results = await repo.GetByKindAsync(ExerciseKind.SpeakingTask);
 
-        Assert.Equal(9, results.Count);
+        Assert.Equal(10, results.Count);
         Assert.Contains(results, p => p.Key == ExercisePatternKey.SpokenResponseFromPrompt);
         Assert.Contains(results, p => p.Key == ExercisePatternKey.SpeakingRoleplayTurn);
         Assert.Contains(results, p => p.Key == ExercisePatternKey.AnswerShortQuestion);
@@ -216,6 +218,9 @@ public sealed class ExercisePatternPhase1Tests : IDisposable
         Assert.Contains(results, p => p.Key == ExercisePatternKey.DescribeImage);
         Assert.Contains(results, p => p.Key == ExercisePatternKey.RetellLecture);
         Assert.Contains(results, p => p.Key == ExercisePatternKey.SummarizeGroupDiscussion);
+        // Form.io Practice Gym pilot pattern (compatibleKinds includes SpeakingTask) — inert by
+        // default (ExerciseTypeDefinition.ImplementationStatus="planned").
+        Assert.Contains(results, p => p.Key == ExercisePatternKey.FormIoPracticeGymPilot);
     }
 
     // ── LearningActivity.ExercisePatternKey persistence ───────────────────────

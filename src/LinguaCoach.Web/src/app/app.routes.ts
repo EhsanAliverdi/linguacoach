@@ -147,6 +147,18 @@ export const routes: Routes = [
         path: 'placement-items/:itemId',
         loadComponent: () => import('./features/admin/admin-placement-item-editor/admin-placement-item-editor.component').then(m => m.AdminPlacementItemEditorComponent),
       },
+      {
+        path: 'activity-templates',
+        loadComponent: () => import('./features/admin/admin-activity-templates/admin-activity-templates.component').then(m => m.AdminActivityTemplatesComponent),
+      },
+      {
+        path: 'activity-templates/:templateId',
+        loadComponent: () => import('./features/admin/admin-activity-template-editor/admin-activity-template-editor.component').then(m => m.AdminActivityTemplateEditorComponent),
+      },
+      {
+        path: 'review-queue',
+        loadComponent: () => import('./features/admin/admin-review-queue/admin-review-queue.component').then(m => m.AdminReviewQueueComponent),
+      },
     ],
   },
 

@@ -717,6 +717,31 @@ public sealed class ActivityGetHandler : IGetNextActivityHandler, IGetActivityBy
     private static ActivityDto MapToDto(Domain.Entities.LearningActivity activity, InteractionMode? interactionMode)
     {
         var patternKey = string.IsNullOrWhiteSpace(activity.ExercisePatternKey) ? null : activity.ExercisePatternKey;
+
+        // Form.io Practice Gym pilot — short-circuit before any AiGeneratedContentJson parsing
+        // (that field is a harmless "{}" placeholder for Form.io-rendered activities, not
+        // ModuleStageSchema content). FormIoSchemaJson is student-safe; nothing else is needed
+        // for the client to render this activity.
+        if (!string.IsNullOrWhiteSpace(activity.FormIoSchemaJson))
+        {
+            return new ActivityDto(
+                ActivityId: activity.Id,
+                ActivityType: activity.ActivityType,
+                Source: activity.Source,
+                Title: activity.Title,
+                Difficulty: activity.Difficulty,
+                Situation: null,
+                LearningGoal: null,
+                TargetPhrases: [],
+                TargetVocabulary: [],
+                ExampleText: null,
+                CommonMistakeToAvoid: null,
+                InstructionInSourceLanguage: null,
+                InteractionMode: interactionMode,
+                ExercisePatternKey: patternKey,
+                FormIoSchemaJson: activity.FormIoSchemaJson);
+        }
+
         var contentJson = string.IsNullOrWhiteSpace(activity.AiGeneratedContentJson) ? null : activity.AiGeneratedContentJson;
         var rendererContentJson = patternKey is null ? null : StripAudioFromContentJson(contentJson);
 

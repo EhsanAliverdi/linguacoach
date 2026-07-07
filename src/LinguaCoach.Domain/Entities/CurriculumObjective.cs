@@ -44,6 +44,10 @@ public sealed class CurriculumObjective : BaseEntity
     /// <summary>JSON array of secondary skill strings from CurriculumSkillConstants.</summary>
     public string SecondarySkillsJson { get; private set; }
 
+    /// <summary>Optional finer-grained classification beneath PrimarySkill. Null means unclassified.
+    /// Must be a value from CurriculumSubskillConstants belonging to PrimarySkill when set.</summary>
+    public string? Subskill { get; private set; }
+
     /// <summary>JSON array of CurriculumContextTagConstants values this objective suits.</summary>
     public string ContextTagsJson { get; private set; }
 
@@ -108,7 +112,8 @@ public sealed class CurriculumObjective : BaseEntity
         bool isReviewable = false,
         bool isExamInspired = false,
         string? teachingNotes = null,
-        string? examplePrompts = null)
+        string? examplePrompts = null,
+        string? subskill = null)
     {
         if (string.IsNullOrWhiteSpace(key))
             throw new ArgumentException("Key is required.", nameof(key));
@@ -124,6 +129,8 @@ public sealed class CurriculumObjective : BaseEntity
             throw new ArgumentOutOfRangeException(nameof(difficultyBand), "DifficultyBand must be between 1 and 5.");
         if (recommendedOrder < 0)
             throw new ArgumentOutOfRangeException(nameof(recommendedOrder), "RecommendedOrder must be >= 0.");
+        if (!CurriculumSubskillConstants.IsValidForSkill(primarySkill, subskill))
+            throw new ArgumentException($"Subskill '{subskill}' does not belong to skill '{primarySkill}'.", nameof(subskill));
 
         // Self-prerequisite guard (key-level; cross-ref integrity done by seeder)
         ValidateNoSelfPrerequisite(key, prerequisiteKeysJson);
@@ -134,6 +141,7 @@ public sealed class CurriculumObjective : BaseEntity
         CefrLevel = cefrLevel.ToUpperInvariant();
         PrimarySkill = primarySkill.ToLowerInvariant();
         SecondarySkillsJson = secondarySkillsJson;
+        Subskill = subskill?.Trim().ToLowerInvariant();
         ContextTagsJson = contextTagsJson;
         FocusTagsJson = focusTagsJson;
         PrerequisiteKeysJson = prerequisiteKeysJson;
@@ -220,6 +228,16 @@ public sealed class CurriculumObjective : BaseEntity
         TeachingNotes = teachingNotes?.Trim();
         ExamplePrompts = examplePrompts?.Trim();
         AdminUpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    /// <summary>Sets or clears the subskill independently of AdminUpdate, so an admin edit that
+    /// doesn't touch subskill never silently resets it.</summary>
+    public void SetSubskill(string? subskill)
+    {
+        if (!CurriculumSubskillConstants.IsValidForSkill(PrimarySkill, subskill))
+            throw new ArgumentException($"Subskill '{subskill}' does not belong to skill '{PrimarySkill}'.", nameof(subskill));
+
+        Subskill = subskill?.Trim().ToLowerInvariant();
     }
 
     private static void ValidateNoSelfPrerequisite(string key, string prerequisiteKeysJson)

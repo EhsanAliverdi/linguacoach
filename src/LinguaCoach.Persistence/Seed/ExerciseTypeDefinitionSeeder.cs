@@ -117,8 +117,13 @@ public static class ExerciseTypeDefinitionSeeder
         // select_missing_word promoted to Ready above
         Ready(ExercisePatternKey.HighlightIncorrectWords, "Highlight Incorrect Words", "Listen to a short audio script and select the transcript words that differ from it.", "listening", "[\"reading\"]", "Pattern", "highlight_incorrect_words", "keyed_selection", "activity_generate_highlight_incorrect_words", ActivityType.ListeningComprehension, ExercisePatternKey.HighlightIncorrectWords, 5, false, false, true, false),
         // highlight_incorrect_words promoted to Ready above
-        Ready(ExercisePatternKey.WriteFromDictation, "Write From Dictation", "Listen to short audio clips and type exactly what you hear.", "listening", "[\"writing\"]", "Pattern", "write_from_dictation", "exact_match", "activity_generate_write_from_dictation", ActivityType.ListeningComprehension, ExercisePatternKey.WriteFromDictation, 5, false, false, true, false)
+        Ready(ExercisePatternKey.WriteFromDictation, "Write From Dictation", "Listen to short audio clips and type exactly what you hear.", "listening", "[\"writing\"]", "Pattern", "write_from_dictation", "exact_match", "activity_generate_write_from_dictation", ActivityType.ListeningComprehension, ExercisePatternKey.WriteFromDictation, 5, false, false, true, false),
         // write_from_dictation promoted to Ready above
+
+        // Form.io Practice Gym pilot — "planned" (not "ready") so it is never queued or
+        // materialized until an admin explicitly promotes it. See
+        // docs/reviews/2026-07-07-ai-bank-assessment-architecture-plan.md.
+        Planned(ExercisePatternKey.FormIoPracticeGymPilot, "Form.io Practice Gym Pilot", "Pilot: ActivityTemplate-personalized Form.io schema rendered and scored deterministically in Practice Gym.", "speaking", "[]", "Pilot", true, false),
     ];
 
     public static async Task SeedAsync(LinguaCoachDbContext db, ILogger logger, CancellationToken ct = default)
