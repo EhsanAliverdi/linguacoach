@@ -8,10 +8,28 @@
 
 <sp-admin-page-body>
 
+  @if (error()) {
+    <sp-admin-error-state title="Could not load onboarding templates" [message]="error()" />
+  }
+
+  <!-- ── KPI strip ───────────────────────────────────────────────────────── -->
+  <div class="sp-admin-kpi-row" aria-label="Onboarding templates summary">
+    <sp-admin-kpi-card
+      label="Templates"
+      variant="indigo"
+      layout="tile"
+      icon="layers"
+      [value]="templates().length.toString()" />
+    <sp-admin-kpi-card
+      label="Published"
+      variant="indigo"
+      layout="tile"
+      icon="check"
+      [value]="publishedCount().toString()" />
+  </div>
+
   @if (loading()) {
     <sp-admin-loading-state message="Loading onboarding templates" />
-  } @else if (error()) {
-    <sp-admin-error-state title="Could not load onboarding templates" [message]="error()" />
   } @else {
 
     @if (actionSuccess()) {
@@ -21,54 +39,59 @@
       <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert>
     }
 
-    <div class="sp-admin-kpi-row" aria-label="Onboarding templates summary">
-      <sp-admin-kpi-card
-        label="Templates"
-        variant="indigo"
-        layout="tile"
-        icon="layers"
-        [value]="templates().length.toString()" />
-      <sp-admin-kpi-card
-        label="Published"
-        variant="indigo"
-        layout="tile"
-        icon="check"
-        [value]="publishedCount().toString()" />
-    </div>
+    <sp-admin-filter-bar>
+      <sp-admin-input
+        search
+        size="sm"
+        placeholder="Search templates..."
+        [value]="searchQuery()"
+        (input)="onSearch($event)"
+        aria-label="Search onboarding templates" />
+      <span class="sp-admin-filter-count">{{ filteredTemplates().length }} template{{ filteredTemplates().length !== 1 ? 's' : '' }}</span>
+      <sp-admin-button actions variant="primary" size="sm" (clicked)="openCreateForm()">
+        Create onboarding template
+      </sp-admin-button>
+    </sp-admin-filter-bar>
 
-    <!-- ── Templates list ──────────────────────────────────────────────────── -->
-    <sp-admin-card>
-      <div class="sp-admin-card-header">
-        <div class="sp-admin-card-title">Onboarding templates</div>
-        <sp-admin-button variant="primary" size="sm" (clicked)="openCreateForm()">
-          Create onboarding template
-        </sp-admin-button>
-      </div>
-
+    @if (filteredTemplates().length === 0) {
       @if (templates().length === 0) {
         <sp-admin-empty-state
           title="No onboarding templates yet"
           message="Create a template to start authoring the student onboarding wizard." />
       } @else {
-        <sp-admin-table [columns]="templateColumns" [rows]="$any(templates())">
-          <ng-template #cell let-row let-col="col">
-            @switch (col.key) {
-              @case ('name') { <span class="font-medium">{{ row.name }}</span> }
-              @case ('status') { <sp-admin-badge [tone]="statusTone(row.status)">{{ row.status }}</sp-admin-badge> }
-              @case ('versionCount') { <span>{{ row.versionCount }}</span> }
-              @case ('updatedAt') { <span>{{ row.updatedAt | date:'short' }}</span> }
-              @case ('_actions') {
-                <sp-admin-table-actions
-                  mode="buttons"
-                  [richActions]="rowActions(row)"
-                  (actionSelected)="onRowAction($event, row)" />
-              }
-            }
-          </ng-template>
-        </sp-admin-table>
+        <sp-admin-empty-state message="No templates match your search." />
       }
-    </sp-admin-card>
-
+    } @else {
+      <sp-admin-table layout="first-column-fluid">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Status</th>
+              <th>Versions</th>
+              <th>Updated</th>
+              <th class="sp-admin-th-actions"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of filteredTemplates(); track row.templateId) {
+              <tr>
+                <td><span class="sp-admin-cell-title">{{ row.name }}</span></td>
+                <td><sp-admin-badge [tone]="statusTone(row.status)">{{ row.status }}</sp-admin-badge></td>
+                <td>{{ row.versionCount }}</td>
+                <td>{{ row.updatedAt | date:'short' }}</td>
+                <td>
+                  <sp-admin-table-actions
+                    mode="dropdown"
+                    [richActions]="rowActions(row)"
+                    (actionSelected)="onRowAction($event, row)" />
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </sp-admin-table>
+    }
   }
 
 </sp-admin-page-body>

@@ -8,9 +8,9 @@ import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
   SpAdminButtonComponent,
-  SpAdminCardComponent,
   SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
+  SpAdminFilterBarComponent,
   SpAdminFormFieldComponent,
   SpAdminInputComponent,
   SpAdminKpiCardComponent,
@@ -38,9 +38,9 @@ import type { SpAdminRowAction } from '../../../design-system/admin';
     SpAdminAlertComponent,
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
-    SpAdminCardComponent,
     SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
+    SpAdminFilterBarComponent,
     SpAdminFormFieldComponent,
     SpAdminInputComponent,
     SpAdminKpiCardComponent,
@@ -65,15 +65,15 @@ export class AdminOnboardingComponent implements OnInit {
   newTemplateName = '';
   newTemplateDescription = '';
 
-  readonly templateColumns = [
-    { key: 'name', label: 'Name' },
-    { key: 'status', label: 'Status' },
-    { key: 'versionCount', label: 'Versions' },
-    { key: 'updatedAt', label: 'Updated' },
-    { key: '_actions', label: '' },
-  ];
+  searchQuery = signal('');
 
   readonly publishedCount = computed(() => this.templates().filter(t => t.status === 'Published').length);
+
+  readonly filteredTemplates = computed(() => {
+    const query = this.searchQuery().trim().toLowerCase();
+    if (!query) return this.templates();
+    return this.templates().filter(t => t.name.toLowerCase().includes(query));
+  });
 
   constructor(private svc: AdminOnboardingService, private router: Router) {}
 
@@ -94,6 +94,10 @@ export class AdminOnboardingComponent implements OnInit {
         this.error.set(err.error?.error ?? 'Could not load onboarding templates.');
       },
     });
+  }
+
+  onSearch(event: Event): void {
+    this.searchQuery.set((event.target as HTMLInputElement).value);
   }
 
   openCreateForm(): void {
