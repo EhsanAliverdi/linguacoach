@@ -1,5 +1,7 @@
 using System.Text.Json;
+using LinguaCoach.Application.FormIo;
 using LinguaCoach.Application.Onboarding;
+using LinguaCoach.Application.Placement;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Domain.Services;
@@ -10,19 +12,17 @@ namespace LinguaCoach.Infrastructure.Onboarding;
 
 /// <summary>Student-facing onboarding flow driven by the published Form.io
 /// StudentFlowTemplateVersion. Normalizes a one-shot Form.io submission into StudentProfile
-/// updates using the same component-key convention as the legacy OnboardingAnswerMapping enum,
-/// scores the ten CEFR quick-check questions (assessment_q1..assessment_q10) against the
-/// template's backend-only ScoringRulesJson, and advances StudentLifecycleStage exactly as the
-/// old V2 completion handler did.</summary>
+/// updates using the same component-key convention as the legacy OnboardingAnswerMapping enum.
+/// Scores any admin-authored Quiz-tab component found in the template's backend-only
+/// ScoringRulesJson (generically, by whatever keys are present — the seeded default template
+/// carries none, since CEFR level is determined by the placement assessment instead), and
+/// advances StudentLifecycleStage exactly as the old V2 completion handler did.</summary>
 public sealed class StudentOnboardingFlowService :
     IStudentOnboardingActiveQuery,
     IStudentOnboardingSaveDraftHandler,
     IStudentOnboardingSubmitHandler
 {
     private readonly LinguaCoachDbContext _db;
-
-    private static readonly string[] QuickCheckKeys =
-        Enumerable.Range(1, 10).Select(n => $"assessment_q{n}").ToArray();
 
     public StudentOnboardingFlowService(LinguaCoachDbContext db)
     {
@@ -83,11 +83,11 @@ public sealed class StudentOnboardingFlowService :
         if (string.IsNullOrWhiteSpace(GetString(data, "preferred_name")))
             throw new OnboardingV2ValidationException("preferred_name is required.");
 
-        var scoringRules = ParseScoringRules(version.ScoringRulesJson);
-        foreach (var quickCheckKey in QuickCheckKeys)
+        var scoringRules = FormIoQuizAnnotationCodec.ParseScoringRules(version.ScoringRulesJson);
+        foreach (var key in scoringRules.Keys)
         {
-            if (scoringRules.ContainsKey(quickCheckKey) && string.IsNullOrWhiteSpace(GetString(data, quickCheckKey)))
-                throw new OnboardingV2ValidationException($"{quickCheckKey} is required.");
+            if (string.IsNullOrWhiteSpace(GetString(data, key)))
+                throw new OnboardingV2ValidationException($"{key} is required.");
         }
 
         var submission = await _db.StudentFlowSubmissions
@@ -107,13 +107,11 @@ public sealed class StudentOnboardingFlowService :
             await ApplyToProfileAsync(profile, data, ct);
 
         var scores = new List<AssessmentScore>();
-        foreach (var key in QuickCheckKeys)
+        foreach (var (key, rule) in scoringRules)
         {
-            if (!scoringRules.TryGetValue(key, out var rule)) continue;
-            var submitted = GetString(data, key);
-            var isCorrect = submitted is not null &&
-                string.Equals(submitted, rule.CorrectAnswerKey, StringComparison.OrdinalIgnoreCase);
-            scores.Add(new AssessmentScore(IsCorrect: isCorrect, Weight: 1));
+            var value = data.RootElement.TryGetProperty(key, out var el) ? el : default;
+            var result = ComponentAnswerScorer.Score(key, rule, value);
+            scores.Add(new AssessmentScore(IsCorrect: result.IsCorrect, Weight: 1));
         }
 
         var preliminaryCefr = PreliminaryCefrCalculator.Calculate(scores);
@@ -218,32 +216,6 @@ public sealed class StudentOnboardingFlowService :
         catch (JsonException ex)
         {
             throw new OnboardingV2ValidationException($"submissionJson is not valid JSON: {ex.Message}");
-        }
-    }
-
-    private sealed record QuickCheckScoringRule(string? CorrectAnswerKey);
-
-    private static Dictionary<string, QuickCheckScoringRule> ParseScoringRules(string? scoringRulesJson)
-    {
-        if (string.IsNullOrWhiteSpace(scoringRulesJson))
-            return new Dictionary<string, QuickCheckScoringRule>();
-
-        try
-        {
-            using var doc = JsonDocument.Parse(scoringRulesJson);
-            var result = new Dictionary<string, QuickCheckScoringRule>(StringComparer.OrdinalIgnoreCase);
-            foreach (var prop in doc.RootElement.EnumerateObject())
-            {
-                var key = prop.Value.TryGetProperty("correctAnswerKey", out var cak) && cak.ValueKind == JsonValueKind.String
-                    ? cak.GetString()
-                    : null;
-                result[prop.Name] = new QuickCheckScoringRule(key);
-            }
-            return result;
-        }
-        catch (JsonException)
-        {
-            return new Dictionary<string, QuickCheckScoringRule>();
         }
     }
 

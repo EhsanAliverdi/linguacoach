@@ -1,9 +1,11 @@
 using LinguaCoach.Application.Auth;
 using LinguaCoach.Application.Notifications;
 using LinguaCoach.Domain.Enums;
+using LinguaCoach.Persistence;
 using LinguaCoach.Persistence.Identity;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -17,6 +19,7 @@ public sealed class ChangePasswordHandler : IChangePasswordHandler
     private readonly IAuthSecurityAuditService _audit;
     private readonly IHttpContextAccessor _httpContext;
     private readonly IConfiguration _configuration;
+    private readonly LinguaCoachDbContext _db;
     private readonly ILogger<ChangePasswordHandler> _logger;
 
     public ChangePasswordHandler(
@@ -26,6 +29,7 @@ public sealed class ChangePasswordHandler : IChangePasswordHandler
         IAuthSecurityAuditService audit,
         IHttpContextAccessor httpContext,
         IConfiguration configuration,
+        LinguaCoachDbContext db,
         ILogger<ChangePasswordHandler> logger)
     {
         _userManager = userManager;
@@ -34,6 +38,7 @@ public sealed class ChangePasswordHandler : IChangePasswordHandler
         _audit = audit;
         _httpContext = httpContext;
         _configuration = configuration;
+        _db = db;
         _logger = logger;
     }
 
@@ -66,6 +71,16 @@ public sealed class ChangePasswordHandler : IChangePasswordHandler
         var wasForcedChange = user.MustChangePassword;
         user.MustChangePassword = false;
         await _userManager.UpdateAsync(user);
+
+        if (wasForcedChange)
+        {
+            var profile = await _db.StudentProfiles.FirstOrDefaultAsync(sp => sp.UserId == command.UserId, ct);
+            if (profile is not null && profile.LifecycleStage == StudentLifecycleStage.PasswordChangeRequired)
+            {
+                profile.SetLifecycleStage(StudentLifecycleStage.OnboardingRequired);
+                await _db.SaveChangesAsync(ct);
+            }
+        }
 
         var eventType = wasForcedChange
             ? AuthEventType.ForcePasswordChangeCompleted

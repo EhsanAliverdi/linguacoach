@@ -5,6 +5,7 @@ using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
 using LinguaCoach.Persistence.Identity;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LinguaCoach.IntegrationTests.Api;
@@ -71,6 +72,35 @@ public sealed class AuthEndpointTests : IClassFixture<ApiTestFactory>
         var response = await _client.SendAsync(request);
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ChangePassword_ForcedChange_AdvancesLifecycleStageFromPasswordChangeRequiredToOnboardingRequired()
+    {
+        var (token, userId) = await CreateTempStudentAsync($"cp_lifecycle_{Guid.NewGuid():N}@test.com", "Temp@12345");
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var profile = await db.StudentProfiles.SingleAsync(p => p.UserId == userId);
+            profile.SetLifecycleStage(StudentLifecycleStage.PasswordChangeRequired);
+            await db.SaveChangesAsync();
+        }
+
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/auth/change-password")
+        {
+            Headers = { Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token) },
+            Content = JsonContent.Create(new { currentPassword = "Temp@12345", newPassword = "NewPass@5678" })
+        };
+        var response = await _client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var profile = await db.StudentProfiles.SingleAsync(p => p.UserId == userId);
+            Assert.Equal(StudentLifecycleStage.OnboardingRequired, profile.LifecycleStage);
+        }
     }
 
     [Fact]

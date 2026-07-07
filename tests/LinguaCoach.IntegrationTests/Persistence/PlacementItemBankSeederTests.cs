@@ -118,6 +118,65 @@ public sealed class PlacementItemBankSeederTests : IDisposable
     }
 
     [Fact]
+    public async Task SeedAsync_EveryItemHasAuthoringSchemaWithQuizAnnotation()
+    {
+        await PlacementItemBankSeeder.SeedAsync(_db);
+
+        var items = await _db.PlacementItemDefinitions.ToListAsync();
+        Assert.All(items, i => Assert.False(string.IsNullOrWhiteSpace(i.AuthoringSchemaJson)));
+        Assert.All(items, i =>
+        {
+            using var doc = JsonDocument.Parse(i.AuthoringSchemaJson!);
+            // Reading items carry a leading read-only "content" passage component before the
+            // scored "answer" component — find by key rather than assuming index 0.
+            var answerComponent = doc.RootElement.GetProperty("components")
+                .EnumerateArray()
+                .First(c => c.GetProperty("key").GetString() == "answer");
+            var quiz = answerComponent.GetProperty("quiz");
+            Assert.True(quiz.GetProperty("enabled").GetBoolean());
+        });
+    }
+
+    [Fact]
+    public async Task SeedAsync_BackfillsMissingAuthoringSchemaOnExistingRow_WithoutTouchingScoringData()
+    {
+        // Simulates rows seeded before the Quiz tab existed: FormIoSchemaJson/ScoringRulesJson
+        // present, AuthoringSchemaJson still null.
+        await PlacementItemBankSeeder.SeedAsync(_db);
+
+        var item = await _db.PlacementItemDefinitions.FirstAsync(i => i.Skill == "grammar" && i.CefrLevel == "A1");
+        var originalFormIoSchema = item.FormIoSchemaJson;
+        var originalScoringRules = item.ScoringRulesJson;
+        _db.Entry(item).Property("AuthoringSchemaJson").CurrentValue = null;
+        await _db.SaveChangesAsync();
+
+        await PlacementItemBankSeeder.SeedAsync(_db);
+
+        var reloaded = await _db.PlacementItemDefinitions.FirstAsync(i => i.Id == item.Id);
+        Assert.False(string.IsNullOrWhiteSpace(reloaded.AuthoringSchemaJson));
+        Assert.Equal(originalFormIoSchema, reloaded.FormIoSchemaJson);
+        Assert.Equal(originalScoringRules, reloaded.ScoringRulesJson);
+
+        using var doc = JsonDocument.Parse(reloaded.AuthoringSchemaJson!);
+        Assert.True(doc.RootElement.GetProperty("components")[0].GetProperty("quiz").GetProperty("enabled").GetBoolean());
+    }
+
+    [Fact]
+    public async Task SeedAsync_NeverOverwritesAlreadyPresentAuthoringSchema()
+    {
+        await PlacementItemBankSeeder.SeedAsync(_db);
+
+        var item = await _db.PlacementItemDefinitions.FirstAsync(i => i.Skill == "grammar" && i.CefrLevel == "A1");
+        item.SetAuthoringSchema("""{"components":[{"type":"radio","key":"answer","admin":"customized"}]}""");
+        await _db.SaveChangesAsync();
+
+        await PlacementItemBankSeeder.SeedAsync(_db);
+
+        var reloaded = await _db.PlacementItemDefinitions.FirstAsync(i => i.Id == item.Id);
+        Assert.Contains("customized", reloaded.AuthoringSchemaJson);
+    }
+
+    [Fact]
     public async Task SeedAsync_MultipleChoiceItem_ProducesRadioComponentWithChoices()
     {
         await PlacementItemBankSeeder.SeedAsync(_db);

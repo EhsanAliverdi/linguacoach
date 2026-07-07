@@ -1,4 +1,5 @@
 using System.Text.Json;
+using LinguaCoach.Application.FormIo;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -8,47 +9,63 @@ namespace LinguaCoach.Persistence.Seed;
 
 /// <summary>
 /// Seeds the default onboarding wizard: preferred name, support language, learning goals, focus
-/// areas, practice preferences, and a 10-question CEFR quick check (assessment_q1..assessment_q10,
-/// scored by StudentOnboardingFlowService against ScoringRulesJson). Idempotent: only runs if no
-/// onboarding template exists yet — never overwrites an admin-authored template.
+/// areas, and practice preferences. CEFR level is determined solely by the placement assessment
+/// (StudentOnboardingFlowService still supports scoring admin-authored Quiz-tab components on
+/// onboarding generically, but the seeded default no longer includes any). Idempotent: only
+/// inserts a brand-new template if no onboarding template exists yet — never overwrites an
+/// admin-authored template. Separately, any existing onboarding template version that has scoring but no
+/// quiz-annotated AuthoringSchemaJson yet (seeded/saved before the Quiz tab existed) is backfilled
+/// in place by re-embedding its existing ScoringRulesJson as quiz annotations
+/// (FormIoQuizAnnotationCodec.Embed) — never touching FormIoSchemaJson/ScoringRulesJson, and never
+/// touching a version an admin has since re-saved through the Quiz tab UI (which always sets
+/// AuthoringSchemaJson non-null).
 /// </summary>
 public static class OnboardingTemplateSeeder
 {
     public static async Task SeedAsync(LinguaCoachDbContext db, ILogger logger, CancellationToken ct = default)
     {
-        var exists = await db.StudentFlowTemplates.AnyAsync(t => t.FlowKind == StudentFlowKind.Onboarding, ct);
-        if (exists) return;
+        var existingTemplates = await db.StudentFlowTemplates
+            .Include(t => t.Versions)
+            .Where(t => t.FlowKind == StudentFlowKind.Onboarding)
+            .ToListAsync(ct);
 
-        var template = new StudentFlowTemplate(
-            StudentFlowKind.Onboarding,
-            "Default Onboarding",
-            "System-seeded onboarding wizard: profile basics, learning goals, practice preferences, and a 10-question CEFR quick check.");
+        if (existingTemplates.Count == 0)
+        {
+            var schemaJson = BuildSchemaJson();
+            var authoringSchemaJson = schemaJson;
 
-        var version = new StudentFlowTemplateVersion(
-            template.Id, 1, BuildSchemaJson(), Guid.Empty, BuildScoringRulesJson());
+            var template = new StudentFlowTemplate(
+                StudentFlowKind.Onboarding,
+                "Default Onboarding",
+                "System-seeded onboarding wizard: profile basics, learning goals, and practice preferences. CEFR level is determined by the placement assessment, not onboarding.");
 
-        template.AddVersion(version);
-        version.Publish();
-        template.SetActiveVersion(version.Id);
+            var version = new StudentFlowTemplateVersion(template.Id, 1, schemaJson, Guid.Empty, scoringRulesJson: null);
+            version.SetAuthoringSchema(authoringSchemaJson);
 
-        db.StudentFlowTemplates.Add(template);
-        db.StudentFlowTemplateVersions.Add(version);
-        await db.SaveChangesAsync(ct);
+            template.AddVersion(version);
+            version.Publish();
+            template.SetActiveVersion(version.Id);
 
-        logger.LogInformation("Seeded default onboarding template {TemplateId} (published version {VersionId}).",
-            template.Id, version.Id);
+            db.StudentFlowTemplates.Add(template);
+            db.StudentFlowTemplateVersions.Add(version);
+            await db.SaveChangesAsync(ct);
+
+            logger.LogInformation("Seeded default onboarding template {TemplateId} (published version {VersionId}).",
+                template.Id, version.Id);
+            return;
+        }
+
+        var dirty = false;
+        foreach (var version in existingTemplates.SelectMany(t => t.Versions))
+        {
+            if (!string.IsNullOrWhiteSpace(version.AuthoringSchemaJson)) continue;
+            if (string.IsNullOrWhiteSpace(version.ScoringRulesJson)) continue;
+
+            version.SetAuthoringSchema(FormIoQuizAnnotationCodec.Embed(version.FormIoSchemaJson, version.ScoringRulesJson));
+            dirty = true;
+        }
+        if (dirty) await db.SaveChangesAsync(ct);
     }
-
-    private static object Radio(string key, string label, (string value, string label)[] options) => new
-    {
-        type = "radio",
-        key,
-        label,
-        input = true,
-        tableView = true,
-        values = options.Select(o => new { label = o.label, value = o.value }).ToArray(),
-        validate = new { required = true }
-    };
 
     private static string BuildSchemaJson()
     {
@@ -202,82 +219,15 @@ public static class OnboardingTemplateSeeder
             }
         };
 
-        var quickCheckPart1 = new
-        {
-            type = "panel",
-            key = "page_quick_check_1",
-            title = "Quick Check — Part 1",
-            label = "Quick Check — Part 1",
-            breadcrumb = "Quick Check 1",
-            components = new object[]
-            {
-                Radio("assessment_q1", "'They ___ from Canada.'",
-                    new[] { ("a", "is"), ("b", "are"), ("c", "am") }),
-                Radio("assessment_q2", "'He ___ to work every day.'",
-                    new[] { ("a", "go"), ("b", "goes"), ("c", "going") }),
-                Radio("assessment_q3", "What does 'purchase' mean?",
-                    new[] { ("a", "to buy"), ("b", "to sell"), ("c", "to break") }),
-                Radio("assessment_q4", "Which word is closest in meaning to 'assist'?",
-                    new[] { ("a", "help"), ("b", "stop"), ("c", "avoid") }),
-                Radio("assessment_q5", "'Yesterday, we ___ to the market.'",
-                    new[] { ("a", "go"), ("b", "went"), ("c", "gone") })
-            }
-        };
-
-        var quickCheckPart2 = new
-        {
-            type = "panel",
-            key = "page_quick_check_2",
-            title = "Quick Check — Part 2",
-            label = "Quick Check — Part 2",
-            breadcrumb = "Quick Check 2",
-            components = new object[]
-            {
-                Radio("assessment_q6", "Read: 'The train leaves at 9 and arrives at 11.' How long is the journey?",
-                    new[] { ("a", "1 hour"), ("b", "2 hours"), ("c", "3 hours") }),
-                Radio("assessment_q7", "'If I ___ more time, I would travel more.'",
-                    new[] { ("a", "have"), ("b", "had"), ("c", "has") }),
-                Radio("assessment_q8", "What does 'reluctant' mean?",
-                    new[] { ("a", "eager"), ("b", "unwilling"), ("c", "certain") }),
-                Radio("assessment_q9", "'The report ___ by the manager before the meeting.'",
-                    new[] { ("a", "will review"), ("b", "will be reviewed"), ("c", "reviewed") }),
-                Radio("assessment_q10", "What is the best synonym for 'meticulous'?",
-                    new[] { ("a", "careless"), ("b", "thorough"), ("c", "quick") })
-            }
-        };
-
         var schema = new
         {
             display = "wizard",
             components = new object[]
             {
-                aboutYouPage, goalsPage, practicePrefsPage, quickCheckPart1, quickCheckPart2
+                aboutYouPage, goalsPage, practicePrefsPage
             }
         };
 
         return JsonSerializer.Serialize(schema);
-    }
-
-    private static string BuildScoringRulesJson()
-    {
-        var answers = new Dictionary<string, string>
-        {
-            ["assessment_q1"] = "b",
-            ["assessment_q2"] = "b",
-            ["assessment_q3"] = "a",
-            ["assessment_q4"] = "a",
-            ["assessment_q5"] = "b",
-            ["assessment_q6"] = "b",
-            ["assessment_q7"] = "b",
-            ["assessment_q8"] = "b",
-            ["assessment_q9"] = "b",
-            ["assessment_q10"] = "b"
-        };
-
-        var rules = answers.ToDictionary(
-            kv => kv.Key,
-            kv => new { correctAnswerKey = kv.Value });
-
-        return JsonSerializer.Serialize(rules);
     }
 }

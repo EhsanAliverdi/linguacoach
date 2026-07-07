@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using LinguaCoach.Application.FormIo;
 using LinguaCoach.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,7 +13,11 @@ namespace LinguaCoach.Persistence.Seed;
 // an item's Form.io schema). Separately, any existing row within an already-seeded pair that is
 // still missing FormIoSchemaJson (e.g. rows created before the Form.io-native migration ran
 // against this database) is backfilled in place, matched to its corresponding SeedItem by
-// position within the pair — never touching a row that already has a schema.
+// position within the pair — never touching a row that already has a schema. Rows that already
+// have FormIoSchemaJson/ScoringRulesJson but no AuthoringSchemaJson (seeded before the Quiz tab
+// existed) are similarly backfilled by re-embedding their existing scoring rules as quiz
+// annotations (FormIoQuizAnnotationCodec.Embed) — never touching a row an admin has since
+// re-authored through the Quiz tab UI (which always sets AuthoringSchemaJson non-null).
 //
 // Form.io-native migration: every seeded item is authored with a native FormIoSchemaJson
 // (single "answer" component) plus a matching backend-only ScoringRulesJson, generated
@@ -40,29 +45,37 @@ public static class PlacementItemBankSeeder
             if (existingByPair.TryGetValue(pair, out var existingRows))
             {
                 // Pair already seeded — never insert new rows for it. Only repair rows still
-                // missing a schema (pre-Form.io-migration backfill), matched by position.
+                // missing a schema (pre-Form.io-migration backfill) or missing a quiz-annotated
+                // authoring schema (pre-Quiz-tab backfill), matched by position.
                 var matchCount = Math.Min(existingRows.Count, seedEntries.Count);
                 for (var i = 0; i < matchCount; i++)
                 {
                     var row = existingRows[i];
-                    if (!string.IsNullOrWhiteSpace(row.FormIoSchemaJson)) continue;
-
                     var t = seedEntries[i].t;
-                    var audioScript = t.Skill == "listening" ? DeriveListeningAudioScript(t.Prompt, t.CorrectAnswer) : null;
-                    var (schema, rules) = BuildFormIoAuthoring(t, audioScript);
-                    row.SetFormIoAuthoring(schema, rules);
-                    dirty = true;
+
+                    if (string.IsNullOrWhiteSpace(row.FormIoSchemaJson))
+                    {
+                        var (schema, rules) = BuildFormIoAuthoring(t);
+                        row.SetFormIoAuthoring(schema, rules);
+                        dirty = true;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(row.AuthoringSchemaJson) && !string.IsNullOrWhiteSpace(row.FormIoSchemaJson))
+                    {
+                        row.SetAuthoringSchema(FormIoQuizAnnotationCodec.Embed(row.FormIoSchemaJson!, row.ScoringRulesJson));
+                        dirty = true;
+                    }
                 }
                 continue;
             }
 
             foreach (var (t, order) in seedEntries)
             {
-                var audioScript = t.Skill == "listening" ? DeriveListeningAudioScript(t.Prompt, t.CorrectAnswer) : null;
-                var (formIoSchemaJson, scoringRulesJson) = BuildFormIoAuthoring(t, audioScript);
+                var (formIoSchemaJson, scoringRulesJson) = BuildFormIoAuthoring(t);
 
                 var newItem = new PlacementItemDefinition(t.Skill, t.CefrLevel, order);
                 newItem.SetFormIoAuthoring(formIoSchemaJson, scoringRulesJson);
+                newItem.SetAuthoringSchema(FormIoQuizAnnotationCodec.Embed(formIoSchemaJson, scoringRulesJson));
                 toAdd.Add(newItem);
             }
         }
@@ -77,10 +90,15 @@ public static class PlacementItemBankSeeder
     /// <summary>Builds the native Form.io schema + matching scoring rules for one seed item.
     /// multiple_choice items become a "radio" component scored as single_choice; gap_fill items
     /// become a "textfield" component scored as text_normalized (case-insensitive trim compare,
-    /// matching the legacy PlacementScoringService's comparison semantics).</summary>
-    private static (string FormIoSchemaJson, string ScoringRulesJson) BuildFormIoAuthoring(SeedItem t, string? audioScript)
+    /// matching the legacy PlacementScoringService's comparison semantics). Reading items with a
+    /// Passage get a read-only "content" component rendered before the question, so the passage is
+    /// always visible while answering (never crammed into the question's own label). Listening
+    /// items carry their spoken content only in ListeningScript (backend-only, synthesized to audio
+    /// by AdaptivePlacementAudioService) — the visible question/label never repeats the transcript,
+    /// otherwise the "listening" skill would be answerable by reading alone.</summary>
+    private static (string FormIoSchemaJson, string ScoringRulesJson) BuildFormIoAuthoring(SeedItem t)
     {
-        object component;
+        object questionComponent;
         object rule;
 
         if (t.ItemType == "multiple_choice")
@@ -91,7 +109,7 @@ public static class PlacementItemBankSeeder
                 .Select(m => new { key = m.Groups[1].Value.ToUpperInvariant(), label = m.Groups[2].Value.Trim() })
                 .ToList();
 
-            component = new
+            questionComponent = new
             {
                 type = "radio",
                 key = "answer",
@@ -102,7 +120,7 @@ public static class PlacementItemBankSeeder
         }
         else
         {
-            component = new
+            questionComponent = new
             {
                 type = "textfield",
                 key = "answer",
@@ -111,35 +129,32 @@ public static class PlacementItemBankSeeder
             rule = new { kind = "text_normalized", correctAnswer = t.CorrectAnswer, points = 1.0 };
         }
 
-        var schema = new { components = new[] { component } };
+        var components = new List<object>();
+        if (!string.IsNullOrWhiteSpace(t.Passage))
+        {
+            components.Add(new
+            {
+                type = "content",
+                key = "reading_passage",
+                input = false,
+                html = $"<p>{System.Net.WebUtility.HtmlEncode(t.Passage)}</p>",
+            });
+        }
+        components.Add(questionComponent);
+
+        var schema = new { components = components.ToArray() };
         var scoringRules = new Dictionary<string, object?>
         {
             ["components"] = new Dictionary<string, object> { ["answer"] = rule },
-            ["listeningAudioScript"] = audioScript,
+            ["listeningAudioScript"] = t.Skill == "listening" ? t.ListeningScript : null,
         };
 
         return (JsonSerializer.Serialize(schema, JsonOptions), JsonSerializer.Serialize(scoringRules, JsonOptions));
     }
 
-    /// <summary>
-    /// Best-effort derivation of a TTS-ready script from a listening prompt's quoted "You hear: '...'"
-    /// text (Phase 20I-5). Substitutes a "___" gap with the correct answer so the spoken sentence
-    /// reads naturally. Returns null when the prompt has no quoted text to extract (a few listening
-    /// items describe a scenario in prose rather than quoting a line, e.g. "You hear a complaint about
-    /// slow service...") — those items keep showing as text-only, same as before this phase.
-    /// </summary>
-    private static string? DeriveListeningAudioScript(string prompt, string correctAnswer)
-    {
-        var match = QuotedTextPattern.Match(prompt);
-        if (!match.Success) return null;
-
-        var script = match.Groups[1].Value;
-        return script.Contains("___") ? script.Replace("___", correctAnswer) : script;
-    }
-
-    private static readonly Regex QuotedTextPattern = new("'([^']+)'", RegexOptions.Compiled);
-
-    private sealed record SeedItem(string Skill, string CefrLevel, string ItemType, string Prompt, string CorrectAnswer);
+    private sealed record SeedItem(
+        string Skill, string CefrLevel, string ItemType, string Prompt, string CorrectAnswer,
+        string? Passage = null, string? ListeningScript = null);
 
     // Verbatim backfill of the 72 items previously hardcoded as PlacementAssessmentService.ItemBank.
     private static readonly List<SeedItem> DefaultItems =
@@ -178,39 +193,53 @@ public static class PlacementItemBankSeeder
         new("vocabulary", "B2", "multiple_choice", "Select the most formal: (A) get (B) obtain (C) grab", "B"),
         new("vocabulary", "B2", "gap_fill", "Complete: 'The new policy was met with widespread ___.' (resistance/resist/resistant)", "resistance"),
 
-        // Reading
-        new("reading", "A1", "multiple_choice", "Read: 'The cat sat on the mat.' What did the cat do? (A) stand (B) sit (C) run", "B"),
-        new("reading", "A1", "multiple_choice", "Read: 'John likes apples.' What fruit does John like? (A) oranges (B) apples (C) bananas", "B"),
-        new("reading", "A1", "gap_fill", "Read: 'The dog is ___.' Complete with: (big/run/eat)", "big"),
+        // Reading — the passage is shown as a read-only block before the question (never crammed
+        // into the question's own label). B2 items reference "the passage"/"the text" explicitly,
+        // so they carry a real short passage rather than an implied one.
+        new("reading", "A1", "multiple_choice", "What did the cat do? (A) stand (B) sit (C) run", "B", Passage: "The cat sat on the mat."),
+        new("reading", "A1", "multiple_choice", "What fruit does John like? (A) oranges (B) apples (C) bananas", "B", Passage: "John likes apples."),
+        new("reading", "A1", "gap_fill", "Complete: 'The dog is ___.' (big/run/eat)", "big"),
 
-        new("reading", "A2", "multiple_choice", "Read: 'She works in a hospital as a nurse.' Where does she work? (A) school (B) hospital (C) office", "B"),
-        new("reading", "A2", "multiple_choice", "Read: 'The store opens at 9am and closes at 6pm.' When does it close? (A) 9am (B) 12pm (C) 6pm", "C"),
-        new("reading", "A2", "gap_fill", "Read: 'He ___ a book every week.' (reads/eat/drives)", "reads"),
+        new("reading", "A2", "multiple_choice", "Where does she work? (A) school (B) hospital (C) office", "B", Passage: "She works in a hospital as a nurse."),
+        new("reading", "A2", "multiple_choice", "When does it close? (A) 9am (B) 12pm (C) 6pm", "C", Passage: "The store opens at 9am and closes at 6pm."),
+        new("reading", "A2", "gap_fill", "Complete: 'He ___ a book every week.' (reads/eat/drives)", "reads"),
 
-        new("reading", "B1", "multiple_choice", "Read: 'Despite the rain, the event was a success.' What happened? (A) cancelled (B) successful (C) postponed", "B"),
-        new("reading", "B1", "multiple_choice", "Read: 'The study concluded that exercise improves mood.' What does the study show? (A) diet affects sleep (B) exercise improves mood (C) rest reduces stress", "B"),
-        new("reading", "B1", "gap_fill", "Read: 'The report highlights several ___.' (concerns/concerned/concern)", "concerns"),
+        new("reading", "B1", "multiple_choice", "What happened? (A) cancelled (B) successful (C) postponed", "B", Passage: "Despite the rain, the event was a success."),
+        new("reading", "B1", "multiple_choice", "What does the study show? (A) diet affects sleep (B) exercise improves mood (C) rest reduces stress", "B", Passage: "The study concluded that exercise improves mood."),
+        new("reading", "B1", "gap_fill", "Complete: 'The report highlights several ___.' (concerns/concerned/concern)", "concerns"),
 
-        new("reading", "B2", "multiple_choice", "The passage implies that the author: (A) supports the policy (B) questions its effectiveness (C) ignores the data", "B"),
-        new("reading", "B2", "multiple_choice", "The word 'mitigate' in the text most closely means: (A) worsen (B) reduce (C) ignore", "B"),
-        new("reading", "B2", "gap_fill", "Complete the inference: 'The author suggests that the problem is ___.' (systemic/individual/minor)", "systemic"),
+        new("reading", "B2", "multiple_choice",
+            "The passage implies that the author: (A) supports the policy (B) questions its effectiveness (C) ignores the data", "B",
+            Passage: "The new policy was introduced amid much fanfare, promising to reduce costs within a year. Yet six months in, the data tells a different story: costs have barely moved, and several departments report increased administrative burden. Officials continue to praise the policy publicly, but internal memos suggest growing unease about its actual impact."),
+        new("reading", "B2", "multiple_choice",
+            "The word 'mitigate' in the passage most closely means: (A) worsen (B) reduce (C) ignore", "B",
+            Passage: "Engineers proposed several measures to mitigate the flooding risk, including raised embankments and improved drainage. While these steps would not eliminate the danger entirely, officials argued they would meaningfully reduce the likelihood of future damage."),
+        new("reading", "B2", "gap_fill",
+            "Complete the inference: 'The author suggests that the problem is ___.' (systemic/individual/minor)", "systemic",
+            Passage: "After the third factory recall this year, executives blamed a single supplier for the defects. But industry analysts point out that similar failures have occurred across multiple suppliers and product lines, suggesting the root cause lies deeper than any one vendor."),
 
-        // Listening (simulated with text descriptions)
-        new("listening", "A1", "multiple_choice", "You hear: 'Turn left at the traffic lights.' Where do you turn? (A) right (B) left (C) straight", "B"),
-        new("listening", "A1", "multiple_choice", "You hear: 'The price is five euros.' How much is it? (A) 3 euros (B) 15 euros (C) 5 euros", "C"),
-        new("listening", "A1", "gap_fill", "You hear: 'My name is ___.' (Maria/Monday/Morning)", "Maria"),
+        // Listening — the visible question never repeats the spoken transcript verbatim (that
+        // would make the "listening" skill answerable by reading alone). ListeningScript is
+        // backend-only and synthesized to audio by AdaptivePlacementAudioService.
+        new("listening", "A1", "multiple_choice", "Where do you turn? (A) right (B) left (C) straight", "B", ListeningScript: "Turn left at the traffic lights."),
+        new("listening", "A1", "multiple_choice", "How much is it? (A) 3 euros (B) 15 euros (C) 5 euros", "C", ListeningScript: "The price is five euros."),
+        new("listening", "A1", "gap_fill", "Complete what you hear: 'My name is ___.' (Maria/Monday/Morning)", "Maria", ListeningScript: "My name is Maria."),
 
-        new("listening", "A2", "multiple_choice", "You hear: 'The meeting is on Friday at 3pm.' When is the meeting? (A) Thursday 3pm (B) Friday 3pm (C) Friday 5pm", "B"),
-        new("listening", "A2", "multiple_choice", "You hear a weather report: 'Expect rain in the afternoon.' When will it rain? (A) morning (B) afternoon (C) evening", "B"),
-        new("listening", "A2", "gap_fill", "You hear: 'Please ___ at reception.' (arrive/register/leave)", "register"),
+        new("listening", "A2", "multiple_choice", "When is the meeting? (A) Thursday 3pm (B) Friday 3pm (C) Friday 5pm", "B", ListeningScript: "The meeting is on Friday at 3pm."),
+        new("listening", "A2", "multiple_choice", "When will it rain? (A) morning (B) afternoon (C) evening", "B", ListeningScript: "Expect rain in the afternoon."),
+        new("listening", "A2", "gap_fill", "Complete what you hear: 'Please ___ at reception.' (arrive/register/leave)", "register", ListeningScript: "Please register at reception."),
 
-        new("listening", "B1", "multiple_choice", "You hear a complaint about slow service. What is the caller's main concern? (A) price (B) quality (C) speed", "C"),
-        new("listening", "B1", "multiple_choice", "You hear: 'We need to consider both sides before deciding.' What does the speaker suggest? (A) decide quickly (B) consider both sides (C) avoid the decision", "B"),
-        new("listening", "B1", "gap_fill", "You hear: 'The deadline has been ___.' (extended/shortened/cancelled)", "extended"),
+        new("listening", "B1", "multiple_choice", "What is the caller's main concern? (A) price (B) quality (C) speed", "C",
+            ListeningScript: "I've been waiting for over an hour and no one has come to help me. This is unacceptable — everything here is far too slow."),
+        new("listening", "B1", "multiple_choice", "What does the speaker suggest? (A) decide quickly (B) consider both sides (C) avoid the decision", "B",
+            ListeningScript: "We need to consider both sides before deciding."),
+        new("listening", "B1", "gap_fill", "Complete what you hear: 'The deadline has been ___.' (extended/shortened/cancelled)", "extended", ListeningScript: "The deadline has been extended."),
 
-        new("listening", "B2", "multiple_choice", "You hear a debate. The second speaker's tone is: (A) dismissive (B) conciliatory (C) aggressive", "B"),
-        new("listening", "B2", "multiple_choice", "The speaker implies the proposal: (A) is fully funded (B) needs revision (C) has been rejected", "B"),
-        new("listening", "B2", "gap_fill", "You hear: 'The analysis was ___.' (inconclusive/concluded/conclusive)", "inconclusive"),
+        new("listening", "B2", "multiple_choice", "The second speaker's tone is: (A) dismissive (B) conciliatory (C) aggressive", "B",
+            ListeningScript: "I understand your concerns, and I think we can find a solution that works for everyone if we keep talking this through calmly."),
+        new("listening", "B2", "multiple_choice", "The speaker implies the proposal: (A) is fully funded (B) needs revision (C) has been rejected", "B",
+            ListeningScript: "The proposal has some promising ideas, but honestly, it still needs quite a bit of work before it's ready to move forward."),
+        new("listening", "B2", "gap_fill", "Complete what you hear: 'The analysis was ___.' (inconclusive/concluded/conclusive)", "inconclusive", ListeningScript: "The analysis was inconclusive."),
 
         // Writing (self-assessment proxy - deterministic)
         new("writing", "A1", "multiple_choice", "Which sentence is correct? (A) 'I writed a letter.' (B) 'I wrote a letter.' (C) 'I writing a letter.'", "B"),
