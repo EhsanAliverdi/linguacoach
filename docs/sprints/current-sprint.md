@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Clean-A2)
+lastUpdated: 2026-07-08 (Phase B)
 owner: engineering
 supersedes:
 supersededBy:
@@ -14,32 +14,28 @@ Last updated: 2026-07-08
 
 ## Active sprint
 
-**Cleanup closure — Clean-A / Clean-A2 (2026-07-08)** — in progress
+**Phase B — Repetition/Novelty Foundation (2026-07-08)** — complete, uncommitted
 
-Last completed feature phase: **2026-07-07 bank-first AI teaching architecture (Phases 1-10)**
-— Subskill taxonomy, CEFR Resource Bank schema (no data imported yet), `ActivityTemplate` bank
-+ admin CRUD + review/publish workflow, template-bound AI generation + validation pipeline,
-`StudentActivityReadinessItem` template provenance, `PlacementItemDefinition` calibration/review
-fields, `StudentLearningEvent.CurriculumObjectiveKey`, cross-entity admin review queue, and one
-feature-flagged Form.io Practice Gym pilot pattern (`formio_practice_gym_pilot`). See
-`docs/reviews/2026-07-07-ai-bank-assessment-architecture-plan.md`.
+Last completed: Clean-A/Clean-A2 cleanup (dead code removal, doc-root remediation,
+`LearningTrack`/`WritingSubmission` deletion) — see "Previous sprint" below. Before that,
+the 2026-07-07 bank-first architecture (Phases 1-10).
 
-**Cleanup status:**
-- **Clean-A (2026-07-08)** — complete, uncommitted. Removed dead onboarding enums
-  (`OnboardingAnswerMapping`, `OnboardingStepRequirementType`, `OnboardingStepTypeV2`), an
-  orphaned `OnboardingShellComponent`, dead route aliases (`admin/careers`, `admin/ai-usage`,
-  `students/new`, `students/create`), and the fully-orphaned admin career/word authoring
-  API/UI chain (`AdminCareersComponent` + service methods + `IAdminCurriculumHandler` +
-  controller actions/DTOs). Fixed `PracticeActivityCache.ContentFingerprint` so it is no longer
-  misleadingly `Guid`-salted (still a queue-slot key only, not content-level dedup).
-- **Clean-A2 (2026-07-08)** — doc-root remediation (this update), plus targeted investigation
-  of `LearningTrack`, `WritingSubmission`, the Karma placement-item fixture blocker, and the
-  broken `core-flow-smoke.spec.ts` onboarding section. See
-  `docs/reviews/2026-07-08-bank-first-ai-teaching-clean-architecture-plan.md` for full detail.
+**This sprint added the real content-usage/cooldown layer Clean-A explicitly did not build:**
+new `StudentActivityUsageLog` entity (migration `T_PhaseB_StudentActivityUsageLog`, applied to
+local dev DB), `IActivityContentFingerprintService` (deterministic content fingerprint —
+exact-match only, no embeddings), `IActivityNoveltyPolicy` (fingerprint/template/topic/scenario
+cooldowns with an intentional-review bypass). Wired into `ActivitySubmitHandler` (usage logging
+on every completion), `PracticeGymGenerationJob`'s Form.io pilot (template + content cooldown
+checks, bounded retry, safe fallback), and `ActivityMaterializationJob` (avoid-repeating prompt
+hint + content cooldown check, bounded retry, never blocks Today lessons). Full design:
+**docs/architecture/repetition-and-novelty.md**.
+
+**Known gaps, deliberately deferred:** `TopicKey`/`ScenarioKey`/`PassageKey` are not yet
+populated from content (fields + cooldown logic exist, no populator yet); no job-level
+integration test for the two jobs' retry loops (matches existing project convention for this
+job); no admin UI for cooldown-window configuration.
 
 **Next planned (none started yet):**
-- **Phase B** — repetition/novelty foundation (real content-level dedup; today only
-  pattern-key/session-topic-level soft guidance exists)
 - **Phase C** — generalize the Form.io template path from the one Practice Gym pilot pattern to
   more of the exercise-pattern catalog
 - **Phase D** — bank-first Today lesson composer (highest-risk phase; Today lessons currently
@@ -48,6 +44,33 @@ feature-flagged Form.io Practice Gym pilot pattern (`formio_practice_gym_pilot`)
 Today lessons and all non-migrated Practice Gym patterns continue to use the legacy
 `IAiActivityGenerator` freeform generation path unchanged and un-deprecated — this is the active
 fallback, not dead code, and must not be bulk-deleted before Phases C/D replace it pattern-by-pattern.
+
+---
+
+## Previous sprint
+
+**Cleanup closure — Clean-A / Clean-A2 (2026-07-08)** — complete
+
+Last completed feature phase before this: **2026-07-07 bank-first AI teaching architecture
+(Phases 1-10)** — Subskill taxonomy, CEFR Resource Bank schema (no data imported yet),
+`ActivityTemplate` bank + admin CRUD + review/publish workflow, template-bound AI generation +
+validation pipeline, `StudentActivityReadinessItem` template provenance, `PlacementItemDefinition`
+calibration/review fields, `StudentLearningEvent.CurriculumObjectiveKey`, cross-entity admin
+review queue, and one feature-flagged Form.io Practice Gym pilot pattern
+(`formio_practice_gym_pilot`). See `docs/reviews/2026-07-07-ai-bank-assessment-architecture-plan.md`.
+
+**Cleanup status:**
+- **Clean-A (2026-07-08)** — complete. Removed dead onboarding enums
+  (`OnboardingAnswerMapping`, `OnboardingStepRequirementType`, `OnboardingStepTypeV2`), an
+  orphaned `OnboardingShellComponent`, dead route aliases (`admin/careers`, `admin/ai-usage`,
+  `students/new`, `students/create`), and the fully-orphaned admin career/word authoring
+  API/UI chain (`AdminCareersComponent` + service methods + `IAdminCurriculumHandler` +
+  controller actions/DTOs). Fixed `PracticeActivityCache.ContentFingerprint` so it is no longer
+  misleadingly `Guid`-salted (still a queue-slot key only, not content-level dedup).
+- **Clean-A2 (2026-07-08)** — complete. Doc-root remediation, Karma fixture fix, e2e onboarding
+  smoke test skipped with a documented reason, and deleted `LearningTrack`/`WritingSubmission`
+  (entities, config, DbSets, dead API surface) after confirming zero live dependents. See
+  `docs/reviews/2026-07-08-bank-first-ai-teaching-clean-architecture-plan.md` for full detail.
 
 ---
 

@@ -34,6 +34,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
     private readonly ILearningGoalContextResolver _goalContextResolver;
     private readonly IPracticeGymSuggestionService _practiceGymSuggestions;
     private readonly IWritingEvaluationService _writingEvaluation;
+    private readonly IActivityContentFingerprintService _fingerprintService;
     private readonly ILogger<ActivitySubmitHandler> _logger;
 
     public ActivitySubmitHandler(
@@ -52,6 +53,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         ILearningGoalContextResolver goalContextResolver,
         IPracticeGymSuggestionService practiceGymSuggestions,
         IWritingEvaluationService writingEvaluation,
+        IActivityContentFingerprintService fingerprintService,
         ILogger<ActivitySubmitHandler> logger)
     {
         _db = db;
@@ -69,6 +71,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         _goalContextResolver = goalContextResolver;
         _practiceGymSuggestions = practiceGymSuggestions;
         _writingEvaluation = writingEvaluation;
+        _fingerprintService = fingerprintService;
         _logger = logger;
     }
 
@@ -316,6 +319,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
 
         // Best-effort readiness consumption — must not block or fail the response.
         await TryConsumeReadinessItemAsync(command.UserId, profile.Id, activity.Id, ct);
+        await TryWriteUsageLogAsync(profile, activity, primarySkill: null, curriculumObjectiveKey: legacyObjectiveKey, ct);
 
         return ParseFeedback(attempt.Id, feedbackJson, score);
     }
@@ -495,7 +499,10 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
 
         // Best-effort readiness consumption — must not block or fail the response.
         if (evalResult.Completed)
+        {
             await TryConsumeReadinessItemAsync(command.UserId, profile.Id, activity.Id, ct);
+            await TryWriteUsageLogAsync(profile, activity, primarySkillKey, patternObjectiveKey, ct);
+        }
 
         var patternDto = BuildPatternEvaluationDto(activity.ExercisePatternKey, pattern.MarkingMode, evalResult);
 
@@ -581,6 +588,86 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             _logger.LogWarning(ex,
                 "Best-effort readiness consumption failed ActivityId={ActivityId} — completion not affected",
                 activityId);
+        }
+    }
+
+    /// <summary>
+    /// Writes a StudentActivityUsageLog for a completed activity — the real content-usage
+    /// history the Phase B repetition/novelty foundation relies on (see
+    /// docs/architecture/repetition-and-novelty.md). Best-effort: logs and swallows any
+    /// exception so activity completion is never blocked or failed by this. Idempotent per
+    /// (StudentProfileId, LearningActivityId) — a retried/duplicate completion for the same
+    /// activity does not create a second log row (checked here, and enforced by a partial
+    /// unique DB index as a second line of defense against races).
+    /// </summary>
+    private async Task TryWriteUsageLogAsync(
+        Domain.Entities.StudentProfile profile,
+        Domain.Entities.LearningActivity activity,
+        string? primarySkill,
+        string? curriculumObjectiveKey,
+        CancellationToken ct)
+    {
+        try
+        {
+            var alreadyLogged = await _db.StudentActivityUsageLogs
+                .AsNoTracking()
+                .AnyAsync(l => l.StudentProfileId == profile.Id && l.LearningActivityId == activity.Id, ct);
+            if (alreadyLogged) return;
+
+            var isFormIoContent = !string.IsNullOrWhiteSpace(activity.FormIoSchemaJson);
+            var contentShape = isFormIoContent
+                ? ActivityContentShape.FormIoSchema
+                : ActivityContentShape.ModuleStageSchema;
+            var contentJson = isFormIoContent ? activity.FormIoSchemaJson : activity.AiGeneratedContentJson;
+
+            var item = await _db.StudentActivityReadinessItems
+                .AsNoTracking()
+                .Where(i => i.StudentId == profile.Id && i.LearningActivityId == activity.Id)
+                .OrderByDescending(i => i.UpdatedAt)
+                .FirstOrDefaultAsync(ct);
+
+            var isIntentionalReview = item?.RoutingReason is
+                RoutingReason.Review or RoutingReason.Scaffold or RoutingReason.Remediation;
+
+            var fingerprint = _fingerprintService.ComputeFingerprint(new ActivityContentFingerprintRequest(
+                ContentJson: contentJson,
+                ContentShape: contentShape,
+                PatternKey: activity.ExercisePatternKey,
+                Skill: primarySkill,
+                Subskill: item?.Subskill,
+                CefrLevel: profile.CefrLevel));
+
+            var usageLog = new Domain.Entities.StudentActivityUsageLog(
+                studentProfileId: profile.Id,
+                contentFingerprint: fingerprint,
+                consumedAtUtc: DateTime.UtcNow,
+                learningActivityId: activity.Id,
+                studentActivityReadinessItemId: item?.Id,
+                sourceTemplateId: item?.SourceTemplateId,
+                sourceBankItemId: item?.SourceBankItemId,
+                patternKey: activity.ExercisePatternKey,
+                activityType: activity.ActivityType.ToString(),
+                skill: primarySkill,
+                subskill: item?.Subskill,
+                cefrLevel: profile.CefrLevel,
+                curriculumObjectiveKey: curriculumObjectiveKey,
+                contextTagsJson: item?.ContextTagsJson,
+                focusTagsJson: item?.FocusTagsJson,
+                isIntentionalReview: isIntentionalReview,
+                reviewReason: isIntentionalReview ? item?.RoutingExplanation : null);
+
+            _db.StudentActivityUsageLogs.Add(usageLog);
+            await _db.SaveChangesAsync(ct);
+
+            _logger.LogInformation(
+                "UsageLog written ActivityId={ActivityId} Fingerprint={Fingerprint} IsIntentionalReview={IsIntentionalReview}",
+                activity.Id, fingerprint, isIntentionalReview);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "Best-effort usage-log write failed ActivityId={ActivityId} — completion not affected",
+                activity.Id);
         }
     }
 

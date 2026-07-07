@@ -102,6 +102,7 @@ Key methods:
 | `LessonBatchGenerationJob` | Creates Queued→Generating→Ready pool item per session, with routing snapshot from batch routing recommendation. |
 | `ActivityMaterializationJob` | Links `LearningActivityId` and `SessionExerciseId` to matching pool item by `LearningSessionId`. |
 | `GET /api/admin/students/{id}/readiness-pool` | Read-only admin inspection endpoint. |
+| `ActivitySubmitHandler.TryWriteUsageLogAsync` (Phase B, 2026-07-08) | Reads the Reserved/consumed readiness item for a completed activity to snapshot `SourceTemplateId`/`SourceBankItemId`/`Subskill`/`RoutingReason`/context tags onto the new `StudentActivityUsageLog` row — read-only, does not mutate the readiness item. See docs/architecture/repetition-and-novelty.md. |
 
 ## Replenishment Engine (Phase 10N)
 

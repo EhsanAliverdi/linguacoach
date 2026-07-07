@@ -316,6 +316,14 @@ public static class DependencyInjection
 
         // Activity (AI-first learning flow)
         services.AddScoped<IAiActivityGenerator, AiActivityGeneratorHandler>();
+
+        // Phase B — Repetition/novelty foundation
+        if (configuration is not null)
+            services.Configure<NoveltyPolicySettings>(configuration.GetSection("Novelty"));
+        else
+            services.Configure<NoveltyPolicySettings>(_ => { });
+        services.AddSingleton<IActivityContentFingerprintService, ActivityContentFingerprintService>();
+        services.AddScoped<IActivityNoveltyPolicy, ActivityNoveltyPolicy>();
         services.AddScoped<VocabularyPracticeGenerator>();
         services.AddScoped<VocabularyPracticeEvaluator>();
         services.AddScoped<ListeningComprehensionEvaluator>();

@@ -43,7 +43,11 @@ public sealed class PracticeGymGenerationJob : IJob
     private readonly ILearningPlanService _learningPlan;
     private readonly IPracticeGymFormIoTemplatePilotSettingsProvider _formIoPilotSettings;
     private readonly IActivityTemplateInstanceGenerator _templateGenerator;
+    private readonly IActivityNoveltyPolicy _noveltyPolicy;
+    private readonly IActivityContentFingerprintService _fingerprintService;
     private readonly ILogger<PracticeGymGenerationJob> _logger;
+
+    private const int MaxTemplateGenerationAttempts = 2; // bounded retry on duplicate content — never unbounded
 
     public PracticeGymGenerationJob(
         LinguaCoachDbContext db,
@@ -58,6 +62,8 @@ public sealed class PracticeGymGenerationJob : IJob
         ILearningPlanService learningPlan,
         IPracticeGymFormIoTemplatePilotSettingsProvider formIoPilotSettings,
         IActivityTemplateInstanceGenerator templateGenerator,
+        IActivityNoveltyPolicy noveltyPolicy,
+        IActivityContentFingerprintService fingerprintService,
         ILogger<PracticeGymGenerationJob> logger)
     {
         _db = db;
@@ -72,6 +78,8 @@ public sealed class PracticeGymGenerationJob : IJob
         _learningPlan = learningPlan;
         _formIoPilotSettings = formIoPilotSettings;
         _templateGenerator = templateGenerator;
+        _noveltyPolicy = noveltyPolicy;
+        _fingerprintService = fingerprintService;
         _logger = logger;
     }
 
@@ -299,53 +307,107 @@ public sealed class PracticeGymGenerationJob : IJob
         if (template is null)
             return null;
 
-        try
+        // Intentional review/remediation is allowed to bypass the template cooldown; everything
+        // else (Normal/Fallback/LearningPlan) must respect it.
+        var isIntentionalReview = routing.RoutingReason is
+            RoutingReason.Review or RoutingReason.Scaffold or RoutingReason.Remediation;
+
+        // Template-cooldown pre-check, before spending an AI call. ContentFingerprint is a
+        // synthetic per-template marker here (never a real SHA-256 hex fingerprint), so only the
+        // SourceTemplateId branch of the novelty policy can ever match it — this call is not
+        // asking "has this exact content been seen", only "has this template been seen recently".
+        var templatePreCheck = await _noveltyPolicy.CheckAsync(new ActivityNoveltyCheckRequest(
+            StudentProfileId: cache.StudentProfileId,
+            ContentFingerprint: $"template-precheck:{template.Id}",
+            SourceTemplateId: template.Id,
+            IsIntentionalReview: isIntentionalReview), ct);
+
+        if (!templatePreCheck.Allowed)
         {
-            var genResult = await _templateGenerator.GenerateInstanceAsync(
-                template.Id,
-                new ActivityTemplateInstanceGenerationContext(
-                    CefrLevelOverride: routing.TargetCefrLevel,
-                    TopicHint: cache.SkillFocus,
-                    GenerationSource: "PracticeGymFormIoPilot"),
-                ct);
-
-            var activity = new LearningActivity(
-                pattern.ActivityType,
-                ActivitySource.AiGenerated,
-                template.Key,
-                cache.CefrLevel,
-                aiGeneratedContentJson: "{}",
-                learningModuleId: null,
-                exercisePatternKey: pattern.Key);
-            activity.SetFormIoContent(genResult.GeneratedSchemaJson, template.ScoringModelJson);
-
-            _db.LearningActivities.Add(activity);
-            await _db.SaveChangesAsync(ct);
-
-            cache.MarkReady(activity.Id);
-            await _db.SaveChangesAsync(ct);
-
-            await _readinessPool.MarkReadyAsync(poolItemId, learningActivityId: activity.Id, ct: ct);
-            await _readinessPool.SetTemplateProvenanceAsync(
-                poolItemId,
-                sourceTemplateId: template.Id,
-                formIoSchemaSnapshotJson: genResult.GeneratedSchemaJson,
-                scoringRulesSnapshotJson: template.ScoringModelJson,
-                personalizationReason: $"Personalized from template '{template.Key}' v{template.VersionNumber} for topic hint '{cache.SkillFocus ?? "none"}' at level {routing.TargetCefrLevel}.",
-                generatedByModel: genResult.ModelName,
-                generatedByProvider: genResult.ProviderName,
-                validationStatus: ActivityValidationStatus.Passed,
-                ct: ct);
-
-            return activity;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex,
-                "PracticeGymGenerationJob: Form.io template pilot generation failed for cache row {CacheId} TemplateId={TemplateId} — falling back to standard generation.",
-                cache.Id, template.Id);
+            _logger.LogWarning(
+                "PracticeGymGenerationJob: template {TemplateId} blocked by novelty policy ({Reason}) for cache row {CacheId} — falling back to standard generation.",
+                template.Id, templatePreCheck.Reason, cache.Id);
             return null;
         }
+
+        for (var attempt = 1; attempt <= MaxTemplateGenerationAttempts; attempt++)
+        {
+            try
+            {
+                var genResult = await _templateGenerator.GenerateInstanceAsync(
+                    template.Id,
+                    new ActivityTemplateInstanceGenerationContext(
+                        CefrLevelOverride: routing.TargetCefrLevel,
+                        TopicHint: cache.SkillFocus,
+                        GenerationSource: "PracticeGymFormIoPilot"),
+                    ct);
+
+                var contentFingerprint = _fingerprintService.ComputeFingerprint(new ActivityContentFingerprintRequest(
+                    ContentJson: genResult.GeneratedSchemaJson,
+                    ContentShape: ActivityContentShape.FormIoSchema,
+                    PatternKey: pattern.Key,
+                    Skill: pattern.PrimarySkill,
+                    CefrLevel: routing.TargetCefrLevel));
+
+                var contentCheck = await _noveltyPolicy.CheckAsync(new ActivityNoveltyCheckRequest(
+                    StudentProfileId: cache.StudentProfileId,
+                    ContentFingerprint: contentFingerprint,
+                    IsIntentionalReview: isIntentionalReview), ct);
+
+                if (!contentCheck.Allowed)
+                {
+                    _logger.LogWarning(
+                        "PracticeGymGenerationJob: generated content for template {TemplateId} duplicated recent content ({Reason}), attempt {Attempt}/{Max} for cache row {CacheId}.",
+                        template.Id, contentCheck.Reason, attempt, MaxTemplateGenerationAttempts, cache.Id);
+                    if (attempt < MaxTemplateGenerationAttempts)
+                        continue;
+
+                    _logger.LogWarning(
+                        "PracticeGymGenerationJob: exhausted {Max} generation attempts for template {TemplateId} without novel content — falling back to standard generation for cache row {CacheId}.",
+                        MaxTemplateGenerationAttempts, template.Id, cache.Id);
+                    return null;
+                }
+
+                var activity = new LearningActivity(
+                    pattern.ActivityType,
+                    ActivitySource.AiGenerated,
+                    template.Key,
+                    cache.CefrLevel,
+                    aiGeneratedContentJson: "{}",
+                    learningModuleId: null,
+                    exercisePatternKey: pattern.Key);
+                activity.SetFormIoContent(genResult.GeneratedSchemaJson, template.ScoringModelJson);
+
+                _db.LearningActivities.Add(activity);
+                await _db.SaveChangesAsync(ct);
+
+                cache.MarkReady(activity.Id);
+                await _db.SaveChangesAsync(ct);
+
+                await _readinessPool.MarkReadyAsync(poolItemId, learningActivityId: activity.Id, ct: ct);
+                await _readinessPool.SetTemplateProvenanceAsync(
+                    poolItemId,
+                    sourceTemplateId: template.Id,
+                    formIoSchemaSnapshotJson: genResult.GeneratedSchemaJson,
+                    scoringRulesSnapshotJson: template.ScoringModelJson,
+                    personalizationReason: $"Personalized from template '{template.Key}' v{template.VersionNumber} for topic hint '{cache.SkillFocus ?? "none"}' at level {routing.TargetCefrLevel}.",
+                    generatedByModel: genResult.ModelName,
+                    generatedByProvider: genResult.ProviderName,
+                    validationStatus: ActivityValidationStatus.Passed,
+                    ct: ct);
+
+                return activity;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex,
+                    "PracticeGymGenerationJob: Form.io template pilot generation failed for cache row {CacheId} TemplateId={TemplateId} — falling back to standard generation.",
+                    cache.Id, template.Id);
+                return null;
+            }
+        }
+
+        return null;
     }
 
     private static string? ExtractTitle(string contentJson)

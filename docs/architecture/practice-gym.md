@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-09 13:11
+lastUpdated: 2026-07-08 (Phase B)
 owner: architecture
 supersedes:
 supersededBy:
@@ -105,18 +105,21 @@ The same content format and evaluation logic is reused in both contexts.
 
 ---
 
-## Content repetition (as of 2026-07-08)
+## Content repetition (as of 2026-07-08, Phase B)
 
 `PracticeGymBufferRefillJob` queues `PracticeActivityCache` rows with a `ContentFingerprint`
 that is a **queue-slot uniqueness key only** (deterministic from student/pattern/level/domain/
 run-timestamp/slot-index) — it satisfies the DB's unique index and makes queuing reproducible,
 but it is **not** a content-level dedup signal, since no activity content exists yet at queue
-time. Real content-level repetition/novelty avoidance (comparing actual generated topics/
-scenarios across a student's history) does not exist anywhere in the Practice Gym or Today
-pipelines today. This is tracked as Phase B of
-`docs/reviews/2026-07-08-bank-first-ai-teaching-clean-architecture-plan.md` and is not yet
-implemented — do not assume repetition prevention exists when reading this doc or the entity's
-prior doc comments.
+time. Do not confuse it with the real content fingerprint below.
+
+Real content-level repetition/novelty avoidance now exists — see
+**docs/architecture/repetition-and-novelty.md** for the full design. In summary:
+`StudentActivityUsageLog` records every real content consumption; `IActivityNoveltyPolicy`
+enforces exact-fingerprint/same-template/same-topic cooldowns; the Form.io Practice Gym pilot's
+`TryMaterializeFromTemplateAsync` checks the template cooldown before generating and the content
+fingerprint after, with a small bounded retry before falling back to standard generation. This is
+**deterministic/exact-match only** — no embeddings, no semantic near-duplicate detection.
 
 Almost all Practice Gym exercise patterns still use the legacy per-student, always-fresh
 `IAiActivityGenerator` content-generation path (§1.2/§3.2 of the bank-first plan docs). Exactly

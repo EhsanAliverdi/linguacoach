@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Clean-A2)
+lastUpdated: 2026-07-08 (Phase B)
 owner: architecture
 supersedes:
 supersededBy:
@@ -86,12 +86,14 @@ Key facts about where this stands today (2026-07-08):
   always-fresh `IAiActivityGenerator` generation path with zero bank involvement.** This is
   intentional and not yet migrated — see Phases C/D of the 2026-07-08 plan doc. Do not delete
   this path; it is the active fallback for everything not yet migrated to the bank.
-- **Real content-level repetition/novelty avoidance does not exist yet.** The 2026-07-08
-  cleanup pass (Clean-A/Clean-A2) fixed `PracticeActivityCache.ContentFingerprint` so it is no
-  longer a misleading `Guid`-salted value, but it remains a queue-slot uniqueness key only, not
-  a content-dedup signal. Real repetition avoidance is planned Phase B, not started.
+- **Real content-level repetition/novelty avoidance exists as of 2026-07-08 (Phase B)** —
+  `StudentActivityUsageLog` + `IActivityContentFingerprintService` + `IActivityNoveltyPolicy`,
+  deterministic/exact-match only (no embeddings/semantic near-duplicate detection). See
+  docs/architecture/repetition-and-novelty.md. `PracticeActivityCache.ContentFingerprint`
+  (fixed in Clean-A) remains a separate queue-slot uniqueness key, not this content-dedup signal.
 
-Current recommended next phase: **Phase B (repetition/novelty foundation)** per
+Current recommended next phase: **Phase C (generalize the Form.io template path across more
+Practice Gym patterns)** per
 `docs/reviews/2026-07-08-bank-first-ai-teaching-clean-architecture-plan.md` §17 — not started.
 
 ---
@@ -115,6 +117,7 @@ Current recommended next phase: **Phase B (repetition/novelty foundation)** per
 | [student-readiness-and-backfill.md](student-readiness-and-backfill.md) | `IStudentReadinessAuditService` / `IStudentPilotReadinessRepairService`; read-only per-student pilot-readiness audit (~20 checks); explicit, idempotent, audited repair actions; implemented vs deferred repair actions (Phase 20D) |
 | [cefr-resource-licensing-review.md](cefr-resource-licensing-review.md) | CEFR Resource Bank schema (`CefrResourceSource`/`CefrDescriptor`/`CefrVocabularyEntry`/`CefrGrammarProfileEntry`/`CefrReadingReference`, added 2026-07-07, no data imported yet); licensing gate for CEFR-J/UniversalCEFR import |
 | [formio-onboarding-placement-model.md](formio-onboarding-placement-model.md) | Form.io-native onboarding (`StudentFlowTemplate`/`Version`/`Submission`) and placement (`PlacementItemDefinition` with `FormIoSchemaJson`/`ScoringRulesJson`, backend-only scoring); the strongest current bank-first example |
+| [repetition-and-novelty.md](repetition-and-novelty.md) | `StudentActivityUsageLog`; `IActivityContentFingerprintService`/`IActivityNoveltyPolicy`; deterministic/exact-match cooldown foundation (Phase B, 2026-07-08) — not embeddings/semantic near-duplicate detection |
 
 ### Planned / Deferred (not implemented yet)
 
@@ -198,7 +201,7 @@ Archived
 | `StudentLearningEvent.CurriculumObjectiveKey` | ✅ Done (2026-07-07) — closes the mastery-grouping proxy gap (`PatternKey` fallback retained for historical events) |
 | Admin review queue (cross-entity) | ✅ Done (2026-07-07) — `ActivityTemplate` + `PlacementItemDefinition`, read-only triage list |
 | Form.io Practice Gym pilot | ✅ Done (2026-07-07), **one pattern only** (`formio_practice_gym_pilot`), triple safety-gated (feature flag off by default + `ImplementationStatus="planned"` + requires an approved template); all other Practice Gym patterns and all Today lessons still use the legacy freeform `IAiActivityGenerator` path |
-| Content-level repetition/novelty avoidance | ⬜ **Not implemented** — only pattern-key/session-topic-level soft guidance exists; `PracticeActivityCache.ContentFingerprint` is a queue-slot uniqueness key only (fixed 2026-07-08 to be honest about this, not to add real dedup). Planned as Phase B |
+| Content-level repetition/novelty avoidance | ✅ Done (2026-07-08, Phase B) — `StudentActivityUsageLog`, `IActivityContentFingerprintService` (deterministic, exact-match only, no embeddings), `IActivityNoveltyPolicy` (fingerprint/template/topic/scenario cooldowns). Wired into `ActivitySubmitHandler`, `PracticeGymGenerationJob`'s Form.io pilot, and `ActivityMaterializationJob`. `TopicKey`/`ScenarioKey` extraction from content not yet built. See docs/architecture/repetition-and-novelty.md |
 | Clean-A / Clean-A2 dead-code cleanup | ✅ Done (2026-07-08) — removed dead onboarding enums, an orphaned onboarding component, dead route aliases, and a fully-orphaned admin career/word authoring API/UI chain; see `docs/reviews/2026-07-08-bank-first-ai-teaching-clean-architecture-plan.md` |
 | Session reflection | ⬜ Deferred — needs AI prompt `session_reflection` and stable session completion signal |
 | Bank-first Today lesson composer | ⬜ Deferred — planned Phase D of the 2026-07-08 plan, not started |

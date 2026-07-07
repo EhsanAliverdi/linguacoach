@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-15 13:10
+lastUpdated: 2026-07-08 (Phase B)
 owner: architecture
 supersedes:
 supersededBy:
@@ -103,6 +103,15 @@ ActivityGetHandler.HandleAsync(query)
 Examples: `activity_generate_writing`, `activity_evaluate_writing`, `activity_generate_phrase_match`, `activity_evaluate_teams_chat_simulation`.
 
 Each prompt template is versioned in the `ai_prompts` table and managed by the Admin UI.
+
+**Repetition/novelty check (Phase B, 2026-07-08):** `ActivityMaterializationJob` (Today lessons)
+and `PracticeGymGenerationJob`'s Form.io template pilot both wrap their generation call with a
+content-fingerprint novelty check (`IActivityNoveltyPolicy`) — bounded retry on an exact-content
+duplicate, then a safe fallback (serve anyway + warn for Today; fall back to standard generation
+for the pilot). This is deterministic/exact-match only, not semantic similarity. Every completed
+activity also now writes a `StudentActivityUsageLog` row (real content-usage history) via
+`ActivitySubmitHandler`. See **docs/architecture/repetition-and-novelty.md** for the full design
+— this diagram above does not yet show that wrapping step.
 
 ---
 

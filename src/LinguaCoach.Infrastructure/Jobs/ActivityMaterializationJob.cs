@@ -39,7 +39,11 @@ public sealed class ActivityMaterializationJob : IJob
     private readonly ILearningGoalContextResolver _goalContextResolver;
     private readonly ICurriculumRoutingService _routing;
     private readonly IStudentActivityReadinessPoolService _readinessPool;
+    private readonly IActivityNoveltyPolicy _noveltyPolicy;
+    private readonly IActivityContentFingerprintService _fingerprintService;
     private readonly ILogger<ActivityMaterializationJob> _logger;
+
+    private const int MaxGenerationAttempts = 2; // bounded retry on duplicate content — never unbounded
 
     public ActivityMaterializationJob(
         LinguaCoachDbContext db,
@@ -50,6 +54,8 @@ public sealed class ActivityMaterializationJob : IJob
         ILearningGoalContextResolver goalContextResolver,
         ICurriculumRoutingService routing,
         IStudentActivityReadinessPoolService readinessPool,
+        IActivityNoveltyPolicy noveltyPolicy,
+        IActivityContentFingerprintService fingerprintService,
         ILogger<ActivityMaterializationJob> logger)
     {
         _db = db;
@@ -60,6 +66,8 @@ public sealed class ActivityMaterializationJob : IJob
         _goalContextResolver = goalContextResolver;
         _routing = routing;
         _readinessPool = readinessPool;
+        _noveltyPolicy = noveltyPolicy;
+        _fingerprintService = fingerprintService;
         _logger = logger;
     }
 
@@ -182,6 +190,12 @@ public sealed class ActivityMaterializationJob : IJob
             allowReviewOrScaffold: false);
         var routing = await _routing.RecommendAsync(routingRequest, ct);
 
+        var avoidRepeatingHint = await BuildAvoidRepeatingHintAsync(profile.Id, patternKey, ct);
+        var baseTopicHint = $"{session.Title}: {exercise.Instructions}";
+        var topicHint = string.IsNullOrWhiteSpace(avoidRepeatingHint)
+            ? baseTopicHint
+            : $"{baseTopicHint} (Avoid repeating: {avoidRepeatingHint})";
+
         var pair = profile.LanguagePair;
         var context = new ActivityGenerationContext(
             ActivityType: activityType,
@@ -190,7 +204,7 @@ public sealed class ActivityMaterializationJob : IJob
             LanguagePairCode: $"{pair?.SourceLanguage?.Code ?? "en"}-{pair?.TargetLanguage?.Code ?? "en"}",
             SourceLanguageName: LanguageSupportResolver.ResolveSourceLanguageName(profile),
             TargetLanguageName: pair?.TargetLanguage?.Name ?? "English",
-            TopicHint: $"{session.Title}: {exercise.Instructions}",
+            TopicHint: topicHint,
             RecentMistakesSummary: recentMistakes,
             OverridePromptKey: overridePromptKey,
             ExercisePatternKey: patternKey,
@@ -201,7 +215,58 @@ public sealed class ActivityMaterializationJob : IJob
             RoutingReason: routing.RoutingReason.ToString().ToLowerInvariant(),
             IsReviewOrScaffold: routing.IsLowerLevelContent);
 
-        var contentJson = await _aiGenerator.GenerateActivityContentAsync(context, ct);
+        var isIntentionalReview = routing.RoutingReason is
+            RoutingReason.Review or RoutingReason.Scaffold or RoutingReason.Remediation;
+
+        string contentJson = "{}";
+        for (var attempt = 1; attempt <= MaxGenerationAttempts; attempt++)
+        {
+            contentJson = await _aiGenerator.GenerateActivityContentAsync(context, ct);
+
+            // Never break Today lesson generation on a novelty-check failure — a thrown
+            // exception here would fail the whole exercise/session; swallow and serve the
+            // content as-is if the check itself misbehaves.
+            bool allowed;
+            NoveltyBlockReason reason = NoveltyBlockReason.None;
+            try
+            {
+                var fingerprint = _fingerprintService.ComputeFingerprint(new ActivityContentFingerprintRequest(
+                    ContentJson: contentJson,
+                    ContentShape: ActivityContentShape.ModuleStageSchema,
+                    PatternKey: patternKey,
+                    CefrLevel: routing.TargetCefrLevel));
+
+                var check = await _noveltyPolicy.CheckAsync(new ActivityNoveltyCheckRequest(
+                    StudentProfileId: profile.Id,
+                    ContentFingerprint: fingerprint,
+                    IsIntentionalReview: isIntentionalReview), ct);
+
+                allowed = check.Allowed;
+                reason = check.Reason;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex,
+                    "ActivityMaterializationJob: novelty check failed for exercise {ExerciseId} — serving generated content without a repetition check.",
+                    exercise.Id);
+                allowed = true;
+            }
+
+            if (allowed)
+                break;
+
+            if (attempt < MaxGenerationAttempts)
+            {
+                _logger.LogWarning(
+                    "ActivityMaterializationJob: generated content for exercise {ExerciseId} duplicated recent content ({Reason}), retrying (attempt {Attempt}/{Max}).",
+                    exercise.Id, reason, attempt, MaxGenerationAttempts);
+                continue;
+            }
+
+            _logger.LogWarning(
+                "ActivityMaterializationJob: exhausted {Max} generation attempts for exercise {ExerciseId} without novel content ({Reason}) — serving the last generated content anyway; Today lesson generation must not be blocked.",
+                MaxGenerationAttempts, exercise.Id, reason);
+        }
 
         var activity = new LearningActivity(
             activityType, ActivitySource.AiGenerated,
@@ -228,6 +293,42 @@ public sealed class ActivityMaterializationJob : IJob
                 learningActivityId: activity.Id,
                 sessionExerciseId: exercise.Id,
                 ct);
+        }
+    }
+
+    /// <summary>
+    /// Best-effort recent-use hint for this student + pattern, built from real
+    /// StudentActivityUsageLog history (Phase B) rather than session titles — a stronger signal
+    /// than LessonBatchGenerationJob's session-topic-only avoidRepeating. Returns null/empty on
+    /// any failure or when no recent history exists; never throws (generation must not break).
+    /// </summary>
+    private async Task<string?> BuildAvoidRepeatingHintAsync(Guid studentProfileId, string? patternKey, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(patternKey)) return null;
+
+        try
+        {
+            var cutoff = DateTime.UtcNow.AddDays(-14);
+            var recentTopics = await _db.StudentActivityUsageLogs
+                .AsNoTracking()
+                .Where(l => l.StudentProfileId == studentProfileId
+                         && l.PatternKey == patternKey
+                         && l.ConsumedAtUtc >= cutoff
+                         && l.TopicKey != null)
+                .OrderByDescending(l => l.ConsumedAtUtc)
+                .Select(l => l.TopicKey!)
+                .Distinct()
+                .Take(5)
+                .ToListAsync(ct);
+
+            return recentTopics.Count > 0 ? string.Join(", ", recentTopics) : null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "ActivityMaterializationJob: avoid-repeating hint lookup failed for pattern {PatternKey} — generation continues without it.",
+                patternKey);
+            return null;
         }
     }
 
