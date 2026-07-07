@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using LinguaCoach.Application.Placement;
 using LinguaCoach.Domain.Enums;
+using LinguaCoach.Infrastructure.Activity;
 using LinguaCoach.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -22,19 +23,24 @@ public sealed class StudentPlacementController : ControllerBase
     private readonly LinguaCoachDbContext _db;
     private readonly PlacementAssessmentOptions _opts;
     private readonly LinguaCoach.Infrastructure.Placement.AdaptivePlacementAudioService _audio;
+    private readonly SpeakingAudioService _speakingAudio;
     private readonly ILogger<StudentPlacementController> _logger;
+
+    private const string SpeakingCategory = "placement-speaking";
 
     public StudentPlacementController(
         IPlacementAssessmentService placement,
         LinguaCoachDbContext db,
         IOptions<PlacementAssessmentOptions> opts,
         LinguaCoach.Infrastructure.Placement.AdaptivePlacementAudioService audio,
+        SpeakingAudioService speakingAudio,
         ILogger<StudentPlacementController> logger)
     {
         _placement = placement;
         _db = db;
         _opts = opts.Value;
         _audio = audio;
+        _speakingAudio = speakingAudio;
         _logger = logger;
     }
 
@@ -236,6 +242,44 @@ public sealed class StudentPlacementController : ControllerBase
         if (file is null) return NotFound(new { error = "Audio is not available for this item." });
 
         return File(file.Bytes, file.ContentType);
+    }
+
+    /// <summary>
+    /// Uploads a recorded speaking response for an adaptive placement item (Form.io
+    /// "speakingResponse" component). Stores the audio and returns a storage-key reference the
+    /// client embeds in its Form.io submission.data — scoring happens later, in SubmitResponseAsync,
+    /// against the already-committed key (no temp/commit two-phase step needed here).
+    /// </summary>
+    [HttpPost("audio/{assessmentId:guid}/items/{itemId:guid}/speaking")]
+    [RequestSizeLimit(20 * 1024 * 1024)]
+    public async Task<IActionResult> UploadSpeakingAudio(
+        Guid assessmentId, Guid itemId, IFormFile? audioFile, [FromForm] double? durationSeconds, CancellationToken ct)
+    {
+        var profile = await GetStudentProfileAsync(ct);
+        if (profile is null) return NotFound(new { error = "Student profile not found." });
+
+        if (!await AssessmentBelongsAsync(profile.Id, assessmentId, ct))
+            return NotFound(new { error = "Assessment not found." });
+
+        var item = await _db.PlacementAssessmentItems
+            .FirstOrDefaultAsync(i => i.Id == itemId && i.PlacementAssessmentId == assessmentId, ct);
+        if (item is null) return NotFound(new { error = "Item not found." });
+
+        if (audioFile is null || audioFile.Length == 0)
+            return BadRequest(new { error = "An audio file is required." });
+
+        var mimeType = audioFile.ContentType;
+        if (!_speakingAudio.IsAllowedMimeType(mimeType))
+            return BadRequest(new { error = $"Unsupported audio type '{mimeType}'." });
+
+        if (audioFile.Length > _speakingAudio.GetMaxAudioBytes())
+            return BadRequest(new { error = "Audio file is too large." });
+
+        await using var stream = audioFile.OpenReadStream();
+        var storageKey = await _speakingAudio.StoreDirectAsync(
+            stream, mimeType, SpeakingCategory, $"{assessmentId:N}/{itemId:N}/", ct);
+
+        return Ok(new { storageKey, mimeType, durationSeconds });
     }
 
     // ── Private helpers ──────────────────────────────────────────────────────

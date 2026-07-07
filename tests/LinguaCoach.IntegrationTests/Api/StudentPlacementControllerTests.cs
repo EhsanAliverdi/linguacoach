@@ -449,4 +449,80 @@ public sealed class StudentPlacementControllerTests : IClassFixture<PlacementTes
         if (resp.StatusCode == HttpStatusCode.OK)
             Assert.True(resp.Content.Headers.ContentType?.MediaType?.StartsWith("audio/"));
     }
+
+    // ── Speaking response upload endpoint ────────────────────────────────────
+
+    private static MultipartFormDataContent SpeakingUploadContent(string mimeType = "audio/webm", double? durationSeconds = 4.2)
+    {
+        var content = new MultipartFormDataContent();
+        var fileContent = new ByteArrayContent(new byte[] { 1, 2, 3, 4, 5 });
+        fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(mimeType);
+        content.Add(fileContent, "audioFile", "recording.webm");
+        if (durationSeconds is not null)
+            content.Add(new StringContent(durationSeconds.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)), "durationSeconds");
+        return content;
+    }
+
+    [Fact]
+    public async Task UploadSpeakingAudio_WithoutToken_Returns401()
+    {
+        var client = _factory.CreateClient();
+        var resp = await client.PostAsync(
+            $"/api/student/placement/audio/{Guid.NewGuid()}/items/{Guid.NewGuid()}/speaking", SpeakingUploadContent());
+        Assert.Equal(HttpStatusCode.Unauthorized, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task UploadSpeakingAudio_AssessmentNotOwnedByStudent_Returns404()
+    {
+        var (tokenA, _) = await _factory.CreateOnboardedStudentAsync($"sp_speak_a_{Guid.NewGuid():N}@test.com");
+        var (_, _, assessmentIdB, itemIdB) = await StartedAssessmentAsync($"sp_speak_b_{Guid.NewGuid():N}@test.com");
+
+        var client = ClientWithToken(tokenA);
+        var resp = await client.PostAsync(
+            $"/api/student/placement/audio/{assessmentIdB}/items/{itemIdB}/speaking", SpeakingUploadContent());
+
+        Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task UploadSpeakingAudio_UnknownItemId_Returns404()
+    {
+        var (token, _, assessmentId, _) = await StartedAssessmentAsync($"sp_speak_unknown_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(token);
+
+        var resp = await client.PostAsync(
+            $"/api/student/placement/audio/{assessmentId}/items/{Guid.NewGuid()}/speaking", SpeakingUploadContent());
+
+        Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task UploadSpeakingAudio_UnsupportedMimeType_Returns400()
+    {
+        var (token, _, assessmentId, itemId) = await StartedAssessmentAsync($"sp_speak_badmime_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(token);
+
+        var resp = await client.PostAsync(
+            $"/api/student/placement/audio/{assessmentId}/items/{itemId}/speaking",
+            SpeakingUploadContent(mimeType: "text/plain"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task UploadSpeakingAudio_ValidAudio_ReturnsStorageKey()
+    {
+        var (token, _, assessmentId, itemId) = await StartedAssessmentAsync($"sp_speak_ok_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(token);
+
+        var resp = await client.PostAsync(
+            $"/api/student/placement/audio/{assessmentId}/items/{itemId}/speaking", SpeakingUploadContent());
+
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.False(string.IsNullOrWhiteSpace(body.GetProperty("storageKey").GetString()));
+        Assert.Equal("audio/webm", body.GetProperty("mimeType").GetString());
+        Assert.Equal(4.2, body.GetProperty("durationSeconds").GetDouble(), precision: 3);
+    }
 }

@@ -2,9 +2,11 @@ import { Component, OnInit, ViewChild, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { PlacementService } from '../../../core/services/placement.service';
 import { AdaptivePlacementNextItem } from '../../../core/models/placement.models';
 import { FormioRendererComponent } from '../../../shared/formio/formio-renderer.component';
+import { PlacementFormioContext } from '../../../shared/formio/placement-context.model';
 
 export type PlacementPageState = 'loading' | 'question' | 'submitting' | 'error';
 
@@ -41,6 +43,18 @@ export class PlacementComponent implements OnInit {
 
   audioUrl = signal<string | null>(null);
   audioLoading = signal(false);
+
+  /** Lets the schema's "speakingResponse" Form.io component upload its recording without any
+   *  direct dependency on Angular's HttpClient/auth — see PlacementFormioContext. */
+  placementContext = computed<PlacementFormioContext | null>(() => {
+    const item = this.currentItem();
+    if (!item || !this.assessmentId) return null;
+    return {
+      uploadSpeakingAudio: (blob, mimeType, durationSeconds) =>
+        firstValueFrom(this.placement.uploadAdaptiveSpeakingAudio(
+          this.assessmentId, item.itemId, blob, mimeType, durationSeconds)),
+    };
+  });
   private latestSubmissionData: Record<string, any> = {};
   private itemStartTime = 0;
   private assessmentId = '';

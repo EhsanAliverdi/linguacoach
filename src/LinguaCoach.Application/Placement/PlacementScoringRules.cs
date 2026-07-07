@@ -20,6 +20,10 @@ public static class ScoringRuleKinds
     public const string MultipleChoice = "multiple_choice";
     public const string TextExact = "text_exact";
     public const string TextNormalized = "text_normalized";
+    /// <summary>Not deterministically scored — the submitted value is an audio storage-key
+    /// reference (from a Form.io "speakingResponse" component), routed to
+    /// IPlacementSpeakingScorer/ISpeakingEvaluationProvider instead of PlacementScoringService.</summary>
+    public const string Speaking = "speaking";
 }
 
 public sealed record ComponentScoringRule(

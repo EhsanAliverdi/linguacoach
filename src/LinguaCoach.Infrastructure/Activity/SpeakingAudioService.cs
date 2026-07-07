@@ -19,7 +19,7 @@ namespace LinguaCoach.Infrastructure.Activity;
 public sealed class SpeakingAudioService
 {
     private const int MaxFilesPerStudent = 50;
-    private const string Category = "speaking-recordings";
+    private const string DefaultCategory = "speaking-recordings";
 
     private static readonly HashSet<string> AllowedMimeTypes = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -72,20 +72,38 @@ public sealed class SpeakingAudioService
     public async Task<string> StoreTemporaryAsync(
         Stream audioStream,
         string mimeType,
-        CancellationToken ct)
+        CancellationToken ct,
+        string category = DefaultCategory)
     {
         var ext = MimeTypeToExtension(mimeType);
-        var tempKey = $"{Category}/tmp/{Guid.NewGuid():N}{ext}";
+        var tempKey = $"{category}/tmp/{Guid.NewGuid():N}{ext}";
         await _storage.SaveAsync(tempKey, audioStream, mimeType, ct);
         _logger.LogInformation("Speaking audio stored TempKey={TempKey}", tempKey);
         return tempKey;
+    }
+
+    /// <summary>Writes uploaded audio directly to its final storage key (no temp/commit step) —
+    /// used by callers that don't have a two-phase attempt-save flow, e.g. placement speaking
+    /// items, where scoring happens later against the already-committed key.</summary>
+    public async Task<string> StoreDirectAsync(
+        Stream audioStream,
+        string mimeType,
+        string category,
+        string keyPrefix,
+        CancellationToken ct)
+    {
+        var ext = MimeTypeToExtension(mimeType);
+        var finalKey = $"{category}/{keyPrefix}{Guid.NewGuid():N}{ext}";
+        await _storage.SaveAsync(finalKey, audioStream, mimeType, ct);
+        _logger.LogInformation("Speaking audio stored FinalKey={FinalKey}", finalKey);
+        return finalKey;
     }
 
     /// <summary>Moves the temp key to the final attemptId-based key after successful attempt save.</summary>
     public async Task<string> CommitAudioAsync(string tempKey, Guid attemptId, string mimeType, CancellationToken ct = default)
     {
         var ext = MimeTypeToExtension(mimeType);
-        var finalKey = $"{Category}/{attemptId:N}{ext}";
+        var finalKey = $"{DefaultCategory}/{attemptId:N}{ext}";
 
         if (await _storage.ExistsAsync(tempKey, ct))
         {

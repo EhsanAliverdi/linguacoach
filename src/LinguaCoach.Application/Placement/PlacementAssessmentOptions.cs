@@ -16,4 +16,8 @@ public sealed class PlacementAssessmentOptions
     public bool AllowPlacementRetake { get; set; } = false;
     public bool ResumeInterruptedPlacement { get; set; } = true;
     public bool AutoStartPlacement { get; set; } = false;
+
+    /// <summary>Minimum ISpeakingEvaluationProvider OverallScore (0..1) for a speaking placement
+    /// item to count as correct/passed.</summary>
+    public double SpeakingPassThreshold { get; set; } = 0.6;
 }

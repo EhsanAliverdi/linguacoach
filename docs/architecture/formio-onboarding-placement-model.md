@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-07 15:00
+lastUpdated: 2026-07-07 20:00
 owner: architecture
 supersedes: (onboarding designer/renderer portions of prior OnboardingV2 model)
 supersededBy:
@@ -244,6 +244,57 @@ the entire output JSON tree asserting no `quiz` key survives, for arbitrarily ne
 input) and `QuizAnnotationLeakRegressionTests` (integration — real HTTP admin-save + student-read
 endpoints for both flows, asserting the raw response body never contains `quiz`/`correctAnswer`).
 
+## Audio & Speaking components (2026-07-07)
+
+Two genuine Form.io SDK components — not schema-level workarounds — registered once via
+`Formio.Components.addComponent` (`shared/formio/register-custom-components.ts`, imported from
+`main.ts` before any `Formio.builder()`/`Formio.createForm()` call runs) so both the shared builder
+palette and the shared renderer pick them up automatically for every consumer (onboarding +
+placement — whichever template/item chooses `rendererKind: FormIo`):
+
+- **`audioPlayer`** (`shared/formio/components/audio-player.component.ts`) — presentational,
+  non-input. Carries no audio source in its own authored schema (there is none to author: listening
+  audio is generated per-assessment server-side from a backend-only script, see
+  `AdaptivePlacementAudioService`). The host page (`PlacementComponent`, via
+  `FormioRendererComponent`'s new `audioSrc` input) calls the component's `setAudioSrc(url)` once
+  the real per-assessment audio URL is resolved, the same fetch/blob-URL logic that previously
+  rendered a sibling `<audio>` element outside the Form.io form — only *where* the element renders
+  changed, not how the audio is fetched. In the admin builder canvas (no real assessment) it just
+  shows a placeholder, the same way the existing `content` component shows static authored text.
+- **`speakingResponse`** (`shared/formio/components/speaking-response.component.ts`) — a real
+  input component (`key: "answer"`, participates in `submission.data` like any other component).
+  Records via `getUserMedia`/`MediaRecorder` through a framework-agnostic `MicRecorder` helper
+  (`shared/formio/mic-recorder.ts` — mirrors, but does not share code with, the Activity feature's
+  `VoiceRecorderComponent`, which is untouched). On stop, uploads immediately through
+  `POST /student/placement/audio/{assessmentId}/items/{itemId}/speaking` (multipart; reuses
+  `SpeakingAudioService`'s mime/size checks via a new `category` parameter) and stores the returned
+  `{ storageKey, mimeType, durationSeconds }` as its own component value — no direct dependency on
+  Angular's `HttpClient`/auth interceptor from inside the vanilla component; the host
+  (`PlacementComponent`) supplies a single `placementContext.uploadSpeakingAudio(...)` function via
+  `Formio.createForm(host, schema, { placementContext })`, itself backed by
+  `PlacementService.uploadAdaptiveSpeakingAudio` (ordinary `HttpClient`, so the existing auth
+  interceptor attaches the JWT as normal).
+
+**Scoring**: a new `ScoringRuleKinds.Speaking` (`"speaking"`) marks a component as AI-scored rather
+than deterministically compared. `PlacementAssessmentService.SubmitResponseAsync` routes any item
+whose scoring rules contain a `speaking`-kind component to `IPlacementSpeakingScorer`
+(`PlacementSpeakingScorer`, `LinguaCoach.Infrastructure/Placement/`) instead of
+`IPlacementScoringService.ScoreSubmission` — the deterministic scorer is untouched, this is purely
+an additive branch at the one call site. `PlacementSpeakingScorer` extracts the submitted
+`storageKey` and calls the existing `ISpeakingEvaluationProvider`/`OpenAiSpeakingEvaluationProvider`
+(the same provider the Activity/Practice feature already uses for `SpeakingRolePlay` — reused as-is;
+`AttemptId`/`ActivityId` on the request are correlation metadata for the placement item, not a real
+`ActivityAttempt`/`Activity` foreign key). `OverallScore` is 0..100 (same convention as
+`WritingEvaluation`/`SpeakingEvaluation` elsewhere) and is normalized to 0..1 before comparing
+against `PlacementAssessmentOptions.SpeakingPassThreshold` (default `0.6`) to decide `IsCorrect`.
+Provider failure/unsupported degrades gracefully to a 0 score with an explanatory
+`EvaluationNotes`, never a 500.
+
+The seeded placement item bank's 12 "speaking" items (previously self-assessment multiple-choice
+questions about spoken-language etiquette — never actually recorded audio) were rewritten to use
+`speakingResponse` with real prompts (e.g. "Introduce yourself in a few sentences", B2 "Describe a
+challenge you overcame at work and what you learned").
+
 ## Schema validation (shared)
 
 `IFormIoSchemaValidationService` / `FormIoSchemaValidationService`
@@ -252,7 +303,8 @@ onboarding template drafts/publishes and placement item authoring:
 
 - Approved component types only: `textfield`, `textarea`, `radio`, `select`, `selectboxes`,
   `checkbox`, `number`, `email`, `content`, `panel`, `columns`, `table`, `wizard`, `form`,
-  `button` (Form.io auto-adds a submit button to every form).
+  `button` (Form.io auto-adds a submit button to every form), plus the custom `audioPlayer` and
+  `speakingResponse` components described above (see "Audio & Speaking components").
 - Rejects script/eval-style properties (`customConditional`, `calculateValue`,
   `customDefaultValue`, `validate.custom`) **only when they carry a non-empty/meaningful
   value** — Form.io's builder stamps every component with these keys defaulted to `""`, so a
@@ -288,7 +340,8 @@ validator remains the real security boundary regardless.
   above) — it is not a 1:1 mirror of the backend's allow-list, which remains the actual
   enforcement point (`FormIoSchemaValidationService`) regardless of what the client-side builder
   allows through.
-- Speaking/writing placement items that need AI evaluation are not yet scored automatically;
-  `requiresManualOrAiEvaluation` scoring rules are supported as a placeholder but excluded from
-  adaptive selection until an evaluator is wired up (same functional gap as before this
-  migration — no new limitation introduced).
+- **Update (2026-07-07): speaking placement items are now scored automatically** — see "Audio &
+  Speaking components" above. Writing placement items (self-assessment multiple-choice/gap-fill
+  proxies, not free-text) still don't need an AI evaluator; `requiresManualOrAiEvaluation` remains
+  available on `ComponentScoringRule` as a general escape hatch for any future component whose
+  answer isn't deterministically comparable.

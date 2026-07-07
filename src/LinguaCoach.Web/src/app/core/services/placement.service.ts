@@ -59,4 +59,16 @@ export class PlacementService {
       map(blob => URL.createObjectURL(blob))
     );
   }
+
+  /** Uploads a recorded speaking response for an adaptive placement item (used by the
+   *  "speakingResponse" Form.io component's placementContext.uploadSpeakingAudio). */
+  uploadAdaptiveSpeakingAudio(
+    assessmentId: string, itemId: string, blob: Blob, mimeType: string, durationSeconds: number,
+  ): Observable<{ storageKey: string; mimeType: string; durationSeconds: number | null }> {
+    const url = `${this.api}/student/placement/audio/${assessmentId}/items/${itemId}/speaking`;
+    const form = new FormData();
+    form.append('audioFile', blob, `recording.${mimeType.includes('webm') ? 'webm' : 'audio'}`);
+    form.append('durationSeconds', String(durationSeconds));
+    return this.http.post<{ storageKey: string; mimeType: string; durationSeconds: number | null }>(url, form);
+  }
 }

@@ -16,7 +16,11 @@ public sealed class FormIoSchemaValidationService : IFormIoSchemaValidationServi
         "number", "email", "content", "panel", "columns", "table", "wizard", "form",
         // Form.io always auto-adds a submit button component to a new form/wizard page —
         // a plain submit button carries no script/data risk, so it's allowed.
-        "button"
+        "button",
+        // Custom components (registered client-side in shared/formio/components) — audioPlayer is
+        // presentational-only (no answer data), speakingResponse carries only an uploaded audio
+        // storage-key reference, never an authored correct answer.
+        "audioPlayer", "speakingResponse"
     };
 
     private static readonly string[] ForbiddenScriptProperties =

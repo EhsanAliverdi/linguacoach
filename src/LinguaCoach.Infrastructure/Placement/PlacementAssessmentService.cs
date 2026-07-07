@@ -26,6 +26,7 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
     private readonly LinguaCoachDbContext _db;
     private readonly ILearningPlanService _learningPlan;
     private readonly IPlacementScoringService _scoring;
+    private readonly IPlacementSpeakingScorer _speakingScorer;
     private readonly PlacementAssessmentOptions _opts;
     private readonly ILogger<PlacementAssessmentService> _logger;
 
@@ -33,12 +34,14 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
         LinguaCoachDbContext db,
         ILearningPlanService learningPlan,
         IPlacementScoringService scoring,
+        IPlacementSpeakingScorer speakingScorer,
         IOptions<PlacementAssessmentOptions> opts,
         ILogger<PlacementAssessmentService> logger)
     {
         _db = db;
         _learningPlan = learningPlan;
         _scoring = scoring;
+        _speakingScorer = speakingScorer;
         _opts = opts.Value;
         _logger = logger;
     }
@@ -573,8 +576,14 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
                 null, existingNext, null);
         }
 
-        // Score the response deterministically
-        var scoreResult = _scoring.ScoreSubmission(item.ScoringRulesJsonSnapshot, submissionData);
+        // Score the response — deterministically, unless this item has a "speaking" component,
+        // in which case it's routed to the AI speaking evaluator instead.
+        var scoringDoc = TryParseScoringDoc(item.ScoringRulesJsonSnapshot);
+        var scoreResult = scoringDoc is not null && _speakingScorer.CanScore(scoringDoc)
+            ? await _speakingScorer.ScoreAsync(
+                item.Id, assessment.StudentProfileId, item.Prompt, item.TargetCefrLevel,
+                scoringDoc, submissionData, ct)
+            : _scoring.ScoreSubmission(item.ScoringRulesJsonSnapshot, submissionData);
         var submissionJson = JsonSerializer.Serialize(submissionData.ToDictionary(kv => kv.Key, kv => kv.Value));
         var normalizedJson = JsonSerializer.Serialize(
             scoreResult.Components.ToDictionary(c => c.ComponentKey, c => c.NormalizedValue));

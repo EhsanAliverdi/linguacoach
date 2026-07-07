@@ -245,6 +245,29 @@ public sealed class PlacementItemBankSeederTests : IDisposable
     }
 
     [Fact]
+    public async Task SeedAsync_SpeakingItems_UseSpeakingResponseComponentAndSpeakingKind()
+    {
+        await PlacementItemBankSeeder.SeedAsync(_db);
+
+        var speakingItems = await _db.PlacementItemDefinitions.Where(i => i.Skill == "speaking").ToListAsync();
+        Assert.NotEmpty(speakingItems);
+
+        foreach (var item in speakingItems)
+        {
+            using var schemaDoc = JsonDocument.Parse(item.FormIoSchemaJson!);
+            var component = schemaDoc.RootElement.GetProperty("components")[0];
+            Assert.Equal("speakingResponse", component.GetProperty("type").GetString());
+            Assert.Equal("answer", component.GetProperty("key").GetString());
+
+            using var rulesDoc = JsonDocument.Parse(item.ScoringRulesJson!);
+            var rule = rulesDoc.RootElement.GetProperty("components").GetProperty("answer");
+            Assert.Equal("speaking", rule.GetProperty("kind").GetString());
+            Assert.True(rule.GetProperty("requiresManualOrAiEvaluation").GetBoolean());
+            Assert.False(rule.TryGetProperty("correctAnswer", out _));
+        }
+    }
+
+    [Fact]
     public async Task Content_ScoredWithSharedScorer_MatchesCorrectAnswerForEverySeededItem()
     {
         // Proves the new scoring service correctly scores every seeded item's own correct answer —
@@ -252,7 +275,10 @@ public sealed class PlacementItemBankSeederTests : IDisposable
         await PlacementItemBankSeeder.SeedAsync(_db);
         var scorer = new PlacementScoringService();
 
-        var items = await _db.PlacementItemDefinitions.ToListAsync();
+        // "speaking" items have no authored correctAnswer — they're scored by
+        // IPlacementSpeakingScorer/ISpeakingEvaluationProvider against an uploaded recording, not
+        // by deterministic comparison, so they're out of scope for this test.
+        var items = await _db.PlacementItemDefinitions.Where(i => i.Skill != "speaking").ToListAsync();
         foreach (var item in items)
         {
             using var rulesDoc = JsonDocument.Parse(item.ScoringRulesJson!);

@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Formio } from '@formio/js';
+import { PlacementFormioContext } from './placement-context.model';
 
 /**
  * Thin standalone wrapper around @formio/js's plain Formio.createForm() API — used to render
@@ -34,6 +35,13 @@ export class FormioRendererComponent implements OnChanges, OnDestroy {
   submissionData = input<any>(null);
   /** Disables the rendered form (e.g. while a submit request is in flight). */
   disabled = input<boolean>(false);
+  /** Resolved audio URL for a schema-embedded "audioPlayer" component (placement listening
+   *  items) — pushed into the live component via its setAudioSrc() method rather than authored
+   *  in the schema, since the real audio is generated per-assessment server-side. */
+  audioSrc = input<string | null>(null);
+  /** Supplies the vanilla "speakingResponse" Form.io component with a way to upload its
+   *  recording — see PlacementFormioContext for why this can't just be Angular's HttpClient. */
+  placementContext = input<PlacementFormioContext | null>(null);
 
   /** Emits the Form.io submission's `.data` object whenever the form is submitted. */
   submit = output<any>();
@@ -57,6 +65,9 @@ export class FormioRendererComponent implements OnChanges, OnDestroy {
     if (changes['disabled'] && this.formInstance) {
       this.formInstance.disabled = this.disabled();
     }
+    if (changes['audioSrc'] && !schemaChanged) {
+      this.applyAudioSrc();
+    }
   }
 
   ngOnDestroy(): void {
@@ -78,6 +89,7 @@ export class FormioRendererComponent implements OnChanges, OnDestroy {
     Formio.createForm(this.host.nativeElement, schema, {
       submission: { data: this.submissionData() ?? {} },
       noAlerts: false,
+      placementContext: this.placementContext(),
     }).then((instance: any) => {
       this.formInstance = instance;
       if (this.disabled()) instance.disabled = true;
@@ -90,6 +102,17 @@ export class FormioRendererComponent implements OnChanges, OnDestroy {
       });
 
       this.formReady.emit(instance);
+      this.applyAudioSrc();
+    });
+  }
+
+  /** Finds the schema's "audioPlayer" component (if any) and pushes the resolved URL into it. */
+  private applyAudioSrc(): void {
+    if (!this.formInstance?.everyComponent) return;
+    this.formInstance.everyComponent((component: any) => {
+      if (component?.component?.type === 'audioPlayer' && typeof component.setAudioSrc === 'function') {
+        component.setAudioSrc(this.audioSrc());
+      }
     });
   }
 

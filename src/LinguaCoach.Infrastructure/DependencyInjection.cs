@@ -451,6 +451,8 @@ public static class DependencyInjection
             o.SkillsToAssess = o.SkillsToAssess.Distinct().ToArray());
         services.AddScoped<LinguaCoach.Application.Placement.IPlacementScoringService,
             LinguaCoach.Infrastructure.Placement.PlacementScoringService>();
+        services.AddScoped<LinguaCoach.Application.Placement.IPlacementSpeakingScorer,
+            LinguaCoach.Infrastructure.Placement.PlacementSpeakingScorer>();
         services.AddScoped<LinguaCoach.Application.Placement.IPlacementAssessmentService,
             LinguaCoach.Infrastructure.Placement.PlacementAssessmentService>();
 

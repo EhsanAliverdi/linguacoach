@@ -34,17 +34,14 @@
           <div class="sp-alert-error mb-4" data-testid="placement-inline-error">{{ error() }}</div>
         }
 
-        <!-- Listening audio player -->
-        @if (item.hasAudio) {
+        <!-- Listening audio loading indicator — the actual <audio> element renders inline with
+             the question via the schema's "audioPlayer" Form.io component (audioSrc below). -->
+        @if (item.hasAudio && audioLoading()) {
           <div class="mb-4 rounded-xl bg-slate-50 px-4 py-3" data-testid="placement-audio">
-            @if (audioUrl()) {
-              <audio [src]="audioUrl()" controls class="w-full" data-testid="placement-audio-player"></audio>
-            } @else {
-              <div class="flex items-center gap-2 text-sm text-slate-500">
-                <div class="h-4 w-4 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"></div>
-                <span>Loading audio…</span>
-              </div>
-            }
+            <div class="flex items-center gap-2 text-sm text-slate-500">
+              <div class="h-4 w-4 rounded-full border-2 border-indigo-500 border-t-transparent animate-spin"></div>
+              <span>Loading audio…</span>
+            </div>
           </div>
         }
 
@@ -54,6 +51,8 @@
             <app-formio-renderer
               [schema]="parsedSchema()"
               [disabled]="state() === 'submitting'"
+              [audioSrc]="audioUrl()"
+              [placementContext]="placementContext()"
               (change)="onFormChange($event)"
               (submit)="onFormSubmit($event)" />
           </div>

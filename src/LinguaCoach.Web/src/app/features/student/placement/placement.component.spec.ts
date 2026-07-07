@@ -324,6 +324,32 @@ describe('PlacementComponent', () => {
     expect(fixture.componentInstance.audioUrl()).toBeNull();
   });
 
+  // ── placementContext (speakingResponse Form.io component upload bridge) ───
+
+  it('placementContext is null before an item has loaded', () => {
+    const { fixture } = setup({ getAdaptiveCurrent: () => of({ hasPlacement: false } as any) });
+    expect(fixture.componentInstance.placementContext()).toBeNull();
+  });
+
+  it('placementContext.uploadSpeakingAudio delegates to PlacementService with the current assessment/item ids', async () => {
+    const uploadAdaptiveSpeakingAudio = jasmine.createSpy('uploadAdaptiveSpeakingAudio')
+      .and.returnValue(of({ storageKey: 'k', mimeType: 'audio/webm', durationSeconds: 3 }));
+    const { fixture } = setup({
+      getAdaptiveCurrent: () => of(makeSummary()),
+      getAdaptiveNextItem: () => of(mockItem),
+      uploadAdaptiveSpeakingAudio,
+    });
+    fixture.detectChanges();
+
+    const ctx = fixture.componentInstance.placementContext();
+    expect(ctx).not.toBeNull();
+    const blob = new Blob(['x'], { type: 'audio/webm' });
+    const result = await ctx!.uploadSpeakingAudio(blob, 'audio/webm', 2.5);
+
+    expect(uploadAdaptiveSpeakingAudio).toHaveBeenCalledWith('assess-1', 'item-1', blob, 'audio/webm', 2.5);
+    expect(result).toEqual({ storageKey: 'k', mimeType: 'audio/webm', durationSeconds: 3 });
+  });
+
   // ── skillLabel() ──────────────────────────────────────────────────────────
 
   it('skillLabel() capitalises first letter', () => {

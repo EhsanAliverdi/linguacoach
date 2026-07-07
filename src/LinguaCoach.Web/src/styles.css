@@ -1118,3 +1118,21 @@ li.active .wizard-page-label,
 }
 
 @media(min-width:900px){.sp-grid-2col{grid-template-columns:1.55fr 1fr;align-items:start;}}
+
+/* ── Custom Form.io components (audioPlayer / speakingResponse) ─────────────
+   shared/formio/components/*.component.ts — rendered via raw HTML (not Form.io's own template
+   system), so styled directly by class name rather than through the .formio-scope Bootstrap-shim
+   rules above. */
+.sf-audio-player { @apply rounded-xl bg-slate-50 px-4 py-3; }
+.sf-audio-placeholder { @apply text-sm text-slate-500; }
+
+.sf-speaking-response { @apply rounded-xl bg-slate-50 px-4 py-3; }
+.sf-speaking-label { @apply mb-2 text-sm font-medium text-slate-800; }
+.sf-speaking-status { @apply mb-2 text-sm text-slate-600; }
+.sf-speaking-actions { @apply flex gap-2; }
+.sf-speaking-btn {
+  @apply rounded-lg px-4 py-2 text-sm font-medium transition-colors;
+}
+.sf-speaking-btn-record { @apply bg-indigo-600 text-white hover:bg-indigo-700; }
+.sf-speaking-btn-stop { @apply bg-red-600 text-white hover:bg-red-700; }
+.sf-speaking-btn-rerecord { @apply bg-white text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50; }

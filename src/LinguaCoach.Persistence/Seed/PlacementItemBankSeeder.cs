@@ -118,6 +118,18 @@ public static class PlacementItemBankSeeder
             };
             rule = new { kind = "single_choice", correctAnswer = t.CorrectAnswer, points = 1.0 };
         }
+        else if (t.ItemType == "speaking_response")
+        {
+            // No correct answer to author — scored later by IPlacementSpeakingScorer/
+            // ISpeakingEvaluationProvider against the uploaded recording, not by comparison here.
+            questionComponent = new
+            {
+                type = "speakingResponse",
+                key = "answer",
+                label = t.Prompt,
+            };
+            rule = new { kind = "speaking", requiresManualOrAiEvaluation = true, points = 1.0 };
+        }
         else
         {
             questionComponent = new
@@ -138,6 +150,19 @@ public static class PlacementItemBankSeeder
                 key = "reading_passage",
                 input = false,
                 html = $"<p>{System.Net.WebUtility.HtmlEncode(t.Passage)}</p>",
+            });
+        }
+        if (t.Skill == "listening" && !string.IsNullOrWhiteSpace(t.ListeningScript))
+        {
+            // Audio itself has no schema-authored source (see AdaptivePlacementAudioService) —
+            // the host page pushes the resolved URL into this component via setAudioSrc() once
+            // generated, keyed only by assessmentId/itemId, never anything in this schema.
+            components.Add(new
+            {
+                type = "audioPlayer",
+                key = "listening_audio",
+                input = false,
+                label = "Listen",
             });
         }
         components.Add(questionComponent);
@@ -258,21 +283,22 @@ public static class PlacementItemBankSeeder
         new("writing", "B2", "multiple_choice", "Which shows strongest cohesion? (A) 'And also too' (B) 'Moreover' (C) 'Plus also'", "B"),
         new("writing", "B2", "gap_fill", "Complete: 'The findings ___ that further research is needed.' (indicate/indicates/indicating)", "indicate"),
 
-        // Speaking (self-assessment proxy)
-        new("speaking", "A1", "multiple_choice", "How would you greet someone in the morning? (A) 'Good morning!' (B) 'Good night!' (C) 'Goodbye!'", "A"),
-        new("speaking", "A1", "multiple_choice", "How do you ask for a price? (A) 'How much is it?' (B) 'Where is it?' (C) 'When is it?'", "A"),
-        new("speaking", "A1", "gap_fill", "Complete: '___ me to your manager, please.' (Take/Introduce/Tell)", "Introduce"),
+        // Speaking — recorded via the "speakingResponse" Form.io component and scored by
+        // IPlacementSpeakingScorer/ISpeakingEvaluationProvider (AI evaluation), not by comparison.
+        new("speaking", "A1", "speaking_response", "Introduce yourself in a few sentences: your name, where you're from, and what you do.", ""),
+        new("speaking", "A1", "speaking_response", "Describe your morning routine — what do you usually do before you start work?", ""),
+        new("speaking", "A1", "speaking_response", "Talk about your family. How many people are in it, and what are they like?", ""),
 
-        new("speaking", "A2", "multiple_choice", "How do you politely decline an invitation? (A) 'No way!' (B) 'I'm afraid I can't make it.' (C) 'That's boring.'", "B"),
-        new("speaking", "A2", "multiple_choice", "Which is more polite? (A) 'Give me water.' (B) 'Could I have some water, please?' (C) 'Water now.'", "B"),
-        new("speaking", "A2", "gap_fill", "Complete: 'I ___ if you could help me.' (wonder/wondering/wondered)", "wonder"),
+        new("speaking", "A2", "speaking_response", "Describe a typical day at your job or school, from start to finish.", ""),
+        new("speaking", "A2", "speaking_response", "Talk about a place you've visited that you enjoyed. What did you do there?", ""),
+        new("speaking", "A2", "speaking_response", "Explain how you usually get to work or school, and how long it takes.", ""),
 
-        new("speaking", "B1", "multiple_choice", "How do you interrupt politely in a meeting? (A) 'Stop talking!' (B) 'Sorry to interrupt, but...' (C) 'Be quiet!'", "B"),
-        new("speaking", "B1", "multiple_choice", "Which phrase shows you're listening actively? (A) 'Whatever.' (B) 'I see what you mean.' (C) 'That's wrong.'", "B"),
-        new("speaking", "B1", "gap_fill", "Complete: 'To ___ what you said...' (clarify/summarise/confirm)", "summarise"),
+        new("speaking", "B1", "speaking_response", "Describe a challenge you overcame at work and what you learned from it.", ""),
+        new("speaking", "B1", "speaking_response", "Talk about a recent change at your workplace and how it affected your team.", ""),
+        new("speaking", "B1", "speaking_response", "Describe a goal you're currently working toward and your plan to reach it.", ""),
 
-        new("speaking", "B2", "multiple_choice", "Which phrase best introduces a nuanced point? (A) 'Actually, it's complicated because...' (B) 'You're wrong.' (C) 'That's simple.'", "A"),
-        new("speaking", "B2", "multiple_choice", "How do you diplomatically disagree? (A) 'That's completely wrong.' (B) 'I see your point, but I would argue that...' (C) 'I disagree.'", "B"),
-        new("speaking", "B2", "gap_fill", "Complete: 'To ___ the discussion, I would like to add...' (build on/ignore/dismiss)", "build on"),
+        new("speaking", "B2", "speaking_response", "Explain a decision you disagreed with at work, and how you handled it professionally.", ""),
+        new("speaking", "B2", "speaking_response", "Describe a complex project you worked on and the trade-offs you had to consider.", ""),
+        new("speaking", "B2", "speaking_response", "Discuss a trend in your industry and explain why you think it matters.", ""),
     ];
 }
