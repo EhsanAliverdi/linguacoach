@@ -308,7 +308,7 @@ public sealed class StudentMemoryService : IStudentMemoryService, IStudentMemory
             var root = doc.RootElement;
             return new
             {
-                overallScore = root.TryGetProperty("overallScore", out var score) ? score.Clone() : default,
+                overallScore = root.TryGetProperty("overallScore", out var score) ? (object?)score.Clone() : null,
                 coachSummary = root.TryGetProperty("coachSummary", out var summary) ? summary.GetString() : null,
                 changes = root.TryGetProperty("changes", out var changes) && changes.ValueKind == JsonValueKind.Array
                     ? changes.EnumerateArray().Take(5).Select(c => new

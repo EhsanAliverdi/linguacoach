@@ -137,16 +137,14 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
             case ActivityType.SpeakingRolePlay:
             case ActivityType.ReadingTask:
             {
-                ValidateIsJson(cleaned);
-                var check = ValidateStagedContent(cleaned, context.ActivityType, context.ExercisePatternKey, countSettings);
+                var check = TryValidateStagedContent(cleaned, context.ActivityType, context.ExercisePatternKey, countSettings);
                 if (!check.IsValid)
                 {
                     await LogValidationFailureAsync(context, check.Errors, attemptNumber: 1, correlationId, result, ct);
                     var retryResult = await _aiExecution.ExecuteWithMetaAsync(
                         promptKey, aiRequest, studentProfileId: context.StudentProfileId, correlationId: correlationId, ct);
                     cleaned = CleanJson(retryResult.ResponseJson);
-                    ValidateIsJson(cleaned);
-                    var retryCheck = ValidateStagedContent(cleaned, context.ActivityType, context.ExercisePatternKey, countSettings);
+                    var retryCheck = TryValidateStagedContent(cleaned, context.ActivityType, context.ExercisePatternKey, countSettings);
                     if (!retryCheck.IsValid)
                     {
                         await LogValidationFailureAsync(context, retryCheck.Errors, attemptNumber: 2, correlationId, retryResult, ct);
@@ -157,27 +155,29 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
                 break;
             }
             case ActivityType.VocabularyPractice when isPatternDriven:
-                ValidateIsJson(cleaned);
-                if (StagedPatternKeys.Contains(context.ExercisePatternKey ?? string.Empty))
+            {
+                var isStaged = StagedPatternKeys.Contains(context.ExercisePatternKey ?? string.Empty);
+                var check = isStaged
+                    ? TryValidateStagedContent(cleaned, context.ActivityType, context.ExercisePatternKey, countSettings)
+                    : TryValidateJsonOnly(cleaned);
+                if (!check.IsValid)
                 {
-                    var check = ValidateStagedContent(cleaned, context.ActivityType, context.ExercisePatternKey, countSettings);
-                    if (!check.IsValid)
+                    await LogValidationFailureAsync(context, check.Errors, attemptNumber: 1, correlationId, result, ct);
+                    var retryResult = await _aiExecution.ExecuteWithMetaAsync(
+                        promptKey, aiRequest, studentProfileId: context.StudentProfileId, correlationId: correlationId, ct);
+                    cleaned = CleanJson(retryResult.ResponseJson);
+                    var retryCheck = isStaged
+                        ? TryValidateStagedContent(cleaned, context.ActivityType, context.ExercisePatternKey, countSettings)
+                        : TryValidateJsonOnly(cleaned);
+                    if (!retryCheck.IsValid)
                     {
-                        await LogValidationFailureAsync(context, check.Errors, attemptNumber: 1, correlationId, result, ct);
-                        var retryResult = await _aiExecution.ExecuteWithMetaAsync(
-                            promptKey, aiRequest, studentProfileId: context.StudentProfileId, correlationId: correlationId, ct);
-                        cleaned = CleanJson(retryResult.ResponseJson);
-                        ValidateIsJson(cleaned);
-                        var retryCheck = ValidateStagedContent(cleaned, context.ActivityType, context.ExercisePatternKey, countSettings);
-                        if (!retryCheck.IsValid)
-                        {
-                            await LogValidationFailureAsync(context, retryCheck.Errors, attemptNumber: 2, correlationId, retryResult, ct);
-                            throw new AiResponseValidationException(
-                                $"AI staged activity failed validation after retry: {string.Join("; ", retryCheck.Errors)}");
-                        }
+                        await LogValidationFailureAsync(context, retryCheck.Errors, attemptNumber: 2, correlationId, retryResult, ct);
+                        throw new AiResponseValidationException(
+                            $"AI staged activity failed validation after retry: {string.Join("; ", retryCheck.Errors)}");
                     }
                 }
                 break;
+            }
             default:
                 ValidateWritingActivityJson(cleaned);
                 break;
@@ -344,6 +344,41 @@ public sealed class AiActivityGeneratorHandler : IAiActivityGenerator
             ? null
             : new PracticeCountSettings(counts.Value.MinItems, counts.Value.MaxItems, counts.Value.MinOpts, counts.Value.MaxOpts);
         return ModuleStageContentValidator.Validate(doc.RootElement, activityType, exercisePatternKey, countSettings);
+    }
+
+    /// <summary>Same as <see cref="ValidateStagedContent"/> but folds a malformed-JSON response into
+    /// the returned ValidationResult instead of throwing — LLMs occasionally emit invalid JSON (e.g. a
+    /// trailing comma), and that failure needs to flow through the same retry-once path as a semantic
+    /// content-validation failure rather than aborting the request on the first attempt.</summary>
+    private static ValidationResult TryValidateStagedContent(
+        string json,
+        ActivityType activityType,
+        string? exercisePatternKey,
+        (int MinItems, int DefItems, int MaxItems, int MinOpts, int DefOpts, int MaxOpts)? counts)
+    {
+        try
+        {
+            return ValidateStagedContent(json, activityType, exercisePatternKey, counts);
+        }
+        catch (JsonException ex)
+        {
+            return new ValidationResult(false, new[] { $"AI response is not valid JSON: {ex.Message}" });
+        }
+    }
+
+    /// <summary>JSON-only counterpart of <see cref="TryValidateStagedContent"/>, for activity types that
+    /// don't run staged-content validation but still need a malformed-JSON response to retry rather than throw.</summary>
+    private static ValidationResult TryValidateJsonOnly(string json)
+    {
+        try
+        {
+            ValidateIsJson(json);
+            return new ValidationResult(true, Array.Empty<string>());
+        }
+        catch (AiResponseValidationException ex)
+        {
+            return new ValidationResult(false, new[] { ex.Message });
+        }
     }
 
     private async Task LogValidationFailureAsync(

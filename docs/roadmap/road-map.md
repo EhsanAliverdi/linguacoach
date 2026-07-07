@@ -615,6 +615,26 @@ Plan: `docs/architecture/view-as-user-impersonation.md`.
 
 ---
 
+### Phase 22B — Full-App QA Bug Bash — complete (2026-07-08)
+
+**Purpose:** Post-Phase-10 regression pass — full browser-driven QA of the entire student journey (onboarding → placement → Today lesson → Practice Gym, all 6 skills → vocabulary → progress → profile), cross-checked against the admin panel.
+
+**Report:** `docs/testing/2026-07-08-full-app-qa-bug-bash-report.md`
+
+**Bugs found and fixed (7):**
+- Placement `MaxItems=20` made it mathematically impossible to test all 6 configured skills (needed ≥30) — raised to 48. Untested skills were previously silently marked "100% complete" with a fabricated fallback CEFR level.
+- Activity-content JSON validation had zero retry tolerance for a malformed-JSON LLM response — added retry-once coverage (`AiActivityGeneratorHandler`).
+- Free-text Practice Gym/lesson answers crashed with a Postgres `22P02` error (raw text written into a `jsonb` column) — now JSON-encoded before persistence, 100% reproducible before the fix (`ActivitySubmitHandler`).
+- Student memory/learning-path personalization silently failed on every pattern-evaluated activity submission (a `default(JsonElement)` serialization bug) — fixed (`StudentMemoryService`).
+- Fixing the above uncovered a second gap the fix exposed: memory update wasn't gated by marking mode, so deterministic patterns (phrase_match etc.) started making an unwanted AI call once the crash was fixed — caught by `dotnet test` (not manual QA), fixed with a marking-mode guard consistent with the existing vocab-extraction guard (`ActivitySubmitHandler`). Full suite (5 architecture + 1917 unit + 1410 integration) passes.
+- Two unstyled-CSS-class bugs (missing `skill-badge` styles; 5 components using undefined Bootstrap-style `.btn` classes) — added the missing CSS.
+
+**Bugs found, documented, deferred (2 — tracked as TODO-11/TODO-12 in `docs/backlog/deferred-work.md`):**
+- "Answer Short Question" speaking pattern loses all answers when the mic-denied typed fallback is used (likely wrong renderer dispatch for multi-item speaking patterns).
+- CEFR level shown inconsistently between Admin ("Not set") and student Progress page ("A1 current level") for the same provisional-confidence student.
+
+---
+
 ## 14. Longer-Term Product Roadmap
 
 | Order | Epic | Status | Description |
@@ -757,6 +777,8 @@ These are planning estimates, not exact metrics. Provided to guide sequencing de
 | 2026-07-03 | Phase 20I QA used a freshly created QA student for all student-side UI testing, not `pilot.student.20e`'s real credentials | Avoids disrupting the real pilot student's account (forced password reset); admin/DB views used for `pilot.student.20e`-specific checks instead |
 | 2026-07-06 | Onboarding/placement migrated to Form.io (frontend-only, `@formio/js`, MIT) | Custom question designer/renderer had grown into more machinery than needed; Form.io gives admin-authorable forms for free. Old onboarding tables dropped cleanly (confirmed UAT-only, no production student data at risk); placement's adaptive engine kept fully intact, Form.io used only for per-item rendering/authoring |
 | 2026-07-06 | Placement stays adaptive — no static per-skill Form.io wizard | The adaptive engine picks each next item live from per-skill CEFR confidence; a pre-authored static form can't replicate that. Form.io only renders one already-selected item at a time |
+| 2026-07-08 | Placement `MaxItems` raised from 20 to 48 | 20 made it mathematically impossible to give all 6 configured skills even their `MinItems=5` floor (needs ≥30); real convergence runs ~6-7 items/skill (~42 total), so 48 gives headroom. Discovered via full-app QA bug bash — see `docs/testing/2026-07-08-full-app-qa-bug-bash-report.md` |
+| 2026-07-08 | Left the pre-fix `qastudent1` placement assessment data untouched rather than repairing it | Serves as a live before/after example of the MaxItems bug for future reference; a second fresh student account should be used to verify the fix end-to-end instead of mutating this one |
 
 ---
 

@@ -371,7 +371,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             feedbackJson: evalResultJson,
             promptKey: $"pattern_evaluate_{pattern.Key}",
             score: legacyScore,
-            submittedAnswerJson: submittedAnswerJson,
+            submittedAnswerJson: EnsureJsonEncoded(submittedAnswerJson),
             evaluationResultJson: evalResultJson,
             maxScore: evalResult.MaxScore,
             percentage: evalResult.Percentage,
@@ -460,8 +460,15 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         await _learningLedger.RecordAsync(learningEvent, ct);
         await TryUpdateLearningPlanProgressAsync(profile.Id, activity.ExercisePatternKey, ct);
 
-        var memoryRequest = BuildPatternMemoryUpdateRequest(profile, activity, module, attempt, evalResult);
-        await _memoryService.UpdateMemoryAsync(memoryRequest, ct);
+        // Memory update calls AI (student_memory_update) — only run it for marking modes that
+        // already involve AI evaluation, matching the "no AI call for deterministic patterns"
+        // guarantee enforced below for vocabulary extraction. Deterministic evaluators
+        // (ExactMatch, KeyedSelection, NoMarking, FormIoScored) must never trigger an AI call.
+        if (pattern.MarkingMode is MarkingMode.AiOpenEnded or MarkingMode.AiStructured)
+        {
+            var memoryRequest = BuildPatternMemoryUpdateRequest(profile, activity, module, attempt, evalResult);
+            await _memoryService.UpdateMemoryAsync(memoryRequest, ct);
+        }
 
         // Best-effort vocabulary extraction — only when the evaluator produced AI corrections
         // (AiStructured/AiOpenEnded patterns). Deterministic evaluators (ExactMatch,
@@ -869,6 +876,25 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         catch
         {
             return [];
+        }
+    }
+
+    /// <summary>ActivityAttempt.SubmittedAnswerJson maps to a Postgres jsonb column, but not every
+    /// pattern's submission is already JSON — free-text patterns (e.g. listen_and_answer's response
+    /// task) send the student's plain-text answer straight through as SubmittedContent. Postgres
+    /// rejects non-JSON text with a 22P02 error, so wrap it as a JSON string literal when it isn't
+    /// already valid JSON. The unwrapped raw value is still what evaluators/prompts see — only the
+    /// persisted copy is affected.</summary>
+    private static string EnsureJsonEncoded(string raw)
+    {
+        try
+        {
+            using var _ = JsonDocument.Parse(raw);
+            return raw;
+        }
+        catch (JsonException)
+        {
+            return JsonSerializer.Serialize(raw);
         }
     }
 }

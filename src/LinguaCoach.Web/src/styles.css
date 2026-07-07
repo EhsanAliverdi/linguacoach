@@ -372,6 +372,29 @@ button,a,input,textarea{touch-action:manipulation;font-family:inherit;}
 }
 .sp-button-secondary:hover{background:var(--sp-canvas);}
 
+/* Generic .btn* classes used by some activity feedback/renderer components
+   (feedback-next-steps, feedback-support-lang, reading/reorder renderers) —
+   these were written against Bootstrap-style names with no matching CSS in this
+   project's sp-* design system, so buttons rendered unstyled. Styled here with
+   the same tokens as the sp-button-* family rather than renaming every template. */
+.btn{
+  display:inline-flex;min-height:44px;align-items:center;justify-content:center;gap:8px;
+  border-radius:var(--sp-r-sm);padding:10px 20px;font-size:14px;font-weight:700;
+  cursor:pointer;font-family:inherit;text-decoration:none;white-space:nowrap;
+  border:none;background:var(--sp-canvas2);color:var(--sp-ink);
+  transition:transform .15s,box-shadow .2s,opacity .15s,background .15s,border-color .15s,color .15s;
+}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+.btn.btn-sm{min-height:36px;padding:7px 14px;font-size:13px;}
+.btn.btn-primary{color:#fff;background:var(--sp-grad-brand);box-shadow:var(--sp-sh-glow);}
+.btn.btn-primary:hover:not(:disabled){opacity:.92;transform:translateY(-1px);}
+.btn.btn-secondary{background:var(--sp-canvas2);color:var(--sp-ink);}
+.btn.btn-secondary:hover:not(:disabled){background:var(--sp-canvas);}
+.btn.btn-outline,.btn.btn-outline-secondary{background:var(--sp-surface);border:1.5px solid var(--sp-border2);color:var(--sp-ink);}
+.btn.btn-outline:hover:not(:disabled),.btn.btn-outline-secondary:hover:not(:disabled){border-color:var(--sp-writing);color:var(--sp-writing);}
+.btn.btn-ghost{background:transparent;border:1.5px solid transparent;color:var(--sp-muted);}
+.btn.btn-ghost:hover:not(:disabled){border-color:var(--sp-writing);color:var(--sp-writing);}
+
 /* == Brand ================================================================= */
 .sp-brand{display:inline-flex;align-items:center;gap:10px;font-weight:800;color:var(--sp-ink);letter-spacing:-.01em;text-decoration:none;}
 .sp-wordmark-speak{color:var(--sp-ink);}
@@ -424,6 +447,12 @@ button,a,input,textarea{touch-action:manipulation;font-family:inherit;}
 .sp-skill-badge-vocabulary{background:var(--sp-vocabulary-soft);color:var(--sp-vocabulary-ink);}
 .sp-skill-badge-pronunciation{background:var(--sp-pronunciation-soft);color:var(--sp-pronunciation-ink);}
 .sp-eyebrow{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--sp-muted);}
+
+/* Feedback page skill/exercise-type/difficulty context badges (app-feedback-skill-context) */
+.feedback-skill-context{display:flex;flex-wrap:wrap;align-items:center;gap:8px;}
+.skill-badge{display:inline-flex;align-items:center;font-weight:700;font-size:12px;padding:5px 11px;border-radius:99px;background:var(--sp-vocabulary-soft);color:var(--sp-vocabulary-ink);}
+.skill-badge--secondary{background:var(--sp-canvas2);color:var(--sp-muted);}
+.skill-badge--difficulty{background:var(--sp-warn-soft);color:#B26410;}
 
 /* == Progress ============================================================== */
 .sp-prog{height:9px;border-radius:99px;background:var(--sp-canvas2);overflow:hidden;}

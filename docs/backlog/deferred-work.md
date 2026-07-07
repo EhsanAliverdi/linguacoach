@@ -195,3 +195,31 @@ ALTER DEFAULT PRIVILEGES FOR ROLE linguacoach
 Must be run by the `linguacoach` owner role or a Postgres superuser.
 
 **Depends on:** User supplying owner/superuser DB credentials, or running the SQL directly via their own DB console.
+
+---
+
+## TODO-11: "Answer Short Question" speaking pattern loses all answers via typed fallback
+
+**Added:** 2026-07-08
+**Related:** `docs/testing/2026-07-08-full-app-qa-bug-bash-report.md` (finding D1)
+
+**What:** When microphone access is unavailable (denied, non-HTTPS, no hardware — a common real-world case), the "Answer Short Question" 5-item speaking practice falls back to a single "Type what you would say…" textbox instead of the per-item `AnswerShortQuestionComponent` (which properly tracks one response per question and emits `{itemId, answerText}[]`). The single typed answer never reaches the 5 expected answer slots, so feedback shows all 5 questions as "(no answer)" / 0% correct regardless of what was typed.
+
+**Why:** Two parallel implementations of the same speaking-pattern concept appear to exist — the legacy single-response voice-recorder/teach-page flow (`activity-teach-page.component.html`'s `case('speakingScenario')`) and the newer per-item pattern-engine renderer (`exercise-renderer.component.ts` + `AnswerShortQuestionComponent`). This activity instance resolved to the legacy flow instead of the correct multi-item one.
+
+**Fix (needs investigation before implementing):** Trace the routing/dispatch decision that picks `activity-teach-page`'s `speakingScenario` case vs. `exercise-renderer`'s pattern-engine path for `answer_short_question`-keyed activities, and correct it so multi-item speaking patterns always resolve to the per-item renderer (with its own working mic-denied fallback, if one exists, or add one).
+
+**Depends on:** Nothing blocking — can be picked up directly.
+
+---
+
+## TODO-12: CEFR level shown inconsistently between admin and student Progress page
+
+**Added:** 2026-07-08
+**Related:** `docs/testing/2026-07-08-full-app-qa-bug-bash-report.md` (finding D2)
+
+**What:** Admin's Student Detail page correctly shows "CEFR Level: Not set" for a student whose placement assessment is provisional (low confidence) — `StudentProfile.CefrLevel` is genuinely null. The student-facing Progress page for the same student simultaneously shows a concrete "A1 current level" with no indication it's provisional or unset.
+
+**Why:** Misleads the student into thinking they have a confirmed level when the system itself hasn't committed to one. Need to find where the Progress page's "current level" figure is computed/sourced and reconcile it with the canonical `StudentProfile.CefrLevel` field the admin panel reads.
+
+**Depends on:** Nothing blocking — can be picked up directly.
