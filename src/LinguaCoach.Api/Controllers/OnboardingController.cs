@@ -50,11 +50,6 @@ public sealed class OnboardingController : ControllerBase
                     new SetLanguageRequest(userId, dto.LanguagePairId.Value),
                 "preference" when dto.PreferredDurationMinutes.HasValue =>
                     new SetSessionPreferenceRequest(userId, dto.PreferredDurationMinutes.Value),
-                // backward compat: old track step (tests / existing students)
-                "track" when dto.LearningTrackId.HasValue =>
-#pragma warning disable CS0618
-                    new SetTrackRequest(userId, dto.LearningTrackId.Value),
-#pragma warning restore CS0618
                 // Free-text career path takes priority when CareerContext is provided.
                 "career" when dto.CareerContext is { Length: > 0 } =>
                     new SetCareerContextTextRequest(userId, dto.CareerContext),
@@ -201,7 +196,6 @@ public sealed class OnboardingStepDto
 {
     public string? Step { get; set; }
     public Guid? LanguagePairId { get; set; }
-    public Guid? LearningTrackId { get; set; }
     public int? PreferredDurationMinutes { get; set; }
     public Guid? CareerProfileId { get; set; }
     public string? CareerContext { get; set; }

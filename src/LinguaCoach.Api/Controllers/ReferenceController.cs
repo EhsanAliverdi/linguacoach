@@ -23,13 +23,6 @@ public sealed class ReferenceController : ControllerBase
         return Ok(pairs);
     }
 
-    [HttpGet("tracks")]
-    public async Task<IActionResult> GetTracks([FromQuery] Guid languagePairId, CancellationToken ct)
-    {
-        var tracks = await _referenceService.GetTracksByLanguagePairAsync(languagePairId, ct);
-        return Ok(tracks);
-    }
-
     [HttpGet("career-profiles")]
     public async Task<IActionResult> GetCareerProfiles([FromQuery] Guid languagePairId, CancellationToken ct)
     {

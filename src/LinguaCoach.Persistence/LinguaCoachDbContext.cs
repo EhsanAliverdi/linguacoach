@@ -12,7 +12,6 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
 
     public DbSet<Language> Languages => Set<Language>();
     public DbSet<LanguagePair> LanguagePairs => Set<LanguagePair>();
-    public DbSet<LearningTrack> LearningTracks => Set<LearningTrack>();
     public DbSet<CareerProfile> CareerProfiles => Set<CareerProfile>();
     public DbSet<StudentProfile> StudentProfiles => Set<StudentProfile>();
     public DbSet<AiPrompt> AiPrompts => Set<AiPrompt>();
@@ -28,7 +27,6 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<SpeakingSession> SpeakingSessions => Set<SpeakingSession>();
     public DbSet<SpeakingTurn> SpeakingTurns => Set<SpeakingTurn>();
     public DbSet<WritingScenario> WritingScenarios => Set<WritingScenario>();
-    public DbSet<WritingSubmission> WritingSubmissions => Set<WritingSubmission>();
     public DbSet<LessonVocabularyLog> LessonVocabularyLogs => Set<LessonVocabularyLog>();
     public DbSet<LearningPath> LearningPaths => Set<LearningPath>();
     public DbSet<LearningModule> LearningModules => Set<LearningModule>();

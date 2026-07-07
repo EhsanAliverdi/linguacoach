@@ -218,7 +218,6 @@ public static class DependencyInjection
         services.AddScoped<ICreateStudentHandler, CreateStudentHandler>();
         services.AddScoped<IAdminStudentQuery, AdminHandler>();
         services.AddScoped<IAdminPromptHandler, AdminHandler>();
-        services.AddScoped<IAdminCurriculumHandler, AdminHandler>();
         services.AddScoped<IAdminAiConfigHandler, AdminHandler>();
         services.AddScoped<IAdminGenerationQualityHandler, AdminGenerationQualityHandler>();
         services.AddScoped<IAdminNotificationHandler, AdminNotificationHandler>();

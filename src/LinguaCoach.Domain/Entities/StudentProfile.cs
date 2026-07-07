@@ -31,9 +31,6 @@ public sealed class StudentProfile : BaseEntity
     public Guid? LanguagePairId { get; private set; }
     public LanguagePair? LanguagePair { get; private set; }
 
-    public Guid? LearningTrackId { get; private set; }
-    public LearningTrack? LearningTrack { get; private set; }
-
     public Guid? CareerProfileId { get; private set; }
     public CareerProfile? CareerProfile { get; private set; }
 
@@ -104,17 +101,6 @@ public sealed class StudentProfile : BaseEntity
         EnsureStepIsNext(OnboardingStep.Preference);
 
         PreferredSessionDurationMinutes = preferredDurationMinutes;
-        AdvanceTo(OnboardingStep.Preference);
-    }
-
-    [Obsolete("Use SetSessionPreference. Kept for migration compatibility only.")]
-    public void SetLearningTrack(LearningTrack track)
-    {
-        ArgumentNullException.ThrowIfNull(track);
-        EnsureStepIsNext(OnboardingStep.Preference);
-
-        LearningTrackId = track.Id;
-        LearningTrack = track;
         AdvanceTo(OnboardingStep.Preference);
     }
 
@@ -301,8 +287,6 @@ public sealed class StudentProfile : BaseEntity
         LastCompletedStep = OnboardingStep.None;
         LanguagePairId = null;
         LanguagePair = null;
-        LearningTrackId = null;
-        LearningTrack = null;
         CareerProfileId = null;
         CareerProfile = null;
         SkillFocus = null;
@@ -428,7 +412,7 @@ public sealed class StudentProfile : BaseEntity
             throw new DomainException("Onboarding is already complete and cannot be modified.");
 
         // Steps must advance in order. Backward re-application would corrupt
-        // cross-pair consistency (e.g. LanguagePairId diverging from LearningTrack).
+        // cross-pair consistency (e.g. LanguagePairId diverging from CareerProfile).
         var expectedNext = (OnboardingStep)((int)LastCompletedStep + 1);
         if (requestedStep > expectedNext)
             throw new OnboardingStepOutOfOrderException(requestedStep, expectedNext);

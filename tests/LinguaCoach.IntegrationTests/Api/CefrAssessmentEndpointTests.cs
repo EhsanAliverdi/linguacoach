@@ -135,12 +135,11 @@ public sealed class CefrAssessmentTestFactory : ApiTestFactory
             .Include(lp => lp.SourceLanguage)
             .Include(lp => lp.TargetLanguage)
             .First();
-        var track = db.LearningTracks.First();
         var career = db.CareerProfiles.First();
 
         var profile = new LinguaCoach.Domain.Entities.StudentProfile(user.Id);
         profile.SetLanguagePair(pair);
-        profile.SetLearningTrack(track);
+        profile.SetSessionPreference(30);
         profile.SetCareerProfile(career);
         profile.SetSkillFocus(LinguaCoach.Domain.Enums.SkillFocus.Writing);
         db.StudentProfiles.Add(profile);

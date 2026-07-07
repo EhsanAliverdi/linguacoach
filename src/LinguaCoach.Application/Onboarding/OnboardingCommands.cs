@@ -13,10 +13,6 @@ public sealed record SetLanguageRequest(Guid UserId, Guid LanguagePairId)
 public sealed record SetSessionPreferenceRequest(Guid UserId, int PreferredDurationMinutes)
     : OnboardingStepRequest(UserId);
 
-[Obsolete("Use SetSessionPreferenceRequest. Kept for test backward compatibility.")]
-public sealed record SetTrackRequest(Guid UserId, Guid LearningTrackId)
-    : OnboardingStepRequest(UserId);
-
 public sealed record SetCareerRequest(Guid UserId, Guid CareerProfileId)
     : OnboardingStepRequest(UserId);
 

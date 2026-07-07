@@ -19,9 +19,6 @@ public sealed class StudentProfileTests
         return new LanguagePair(fa, en);
     }
 
-    private static LearningTrack WorkplaceEnglish(LanguagePair pair) =>
-        new("Workplace English", "English for professional workplace settings.", pair);
-
     private static CareerProfile DocumentController(LanguagePair pair) =>
         new("Document Controller", "English for document control workflows.", pair);
 
@@ -35,7 +32,6 @@ public sealed class StudentProfileTests
         student.OnboardingStatus.Should().Be(OnboardingStatus.NotStarted);
         student.LastCompletedStep.Should().Be(OnboardingStep.None);
         student.LanguagePairId.Should().BeNull();
-        student.LearningTrackId.Should().BeNull();
         student.CareerProfileId.Should().BeNull();
         student.SkillFocus.Should().BeNull();
     }

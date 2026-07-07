@@ -157,20 +157,6 @@ export interface PromptTemplateDetail extends PromptTemplateItem {
   content: string;
 }
 
-export interface CareerProfileItem {
-  id: string;
-  name: string;
-}
-
-export interface CurriculumWordItem {
-  id: string;
-  word: string;
-  definition: string;
-  exampleSentence: string;
-  priority: number;
-  tags: string;
-}
-
 export interface ModelTestStatus {
   modelName: string;
   ok: boolean;

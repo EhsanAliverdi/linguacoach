@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-06-10 22:00
+lastUpdated: 2026-07-08 (Clean-A2)
 owner: architecture
 supersedes:
 supersededBy:
@@ -54,13 +54,45 @@ When any two docs disagree, prefer the source higher in this list:
 
 ## Current Product Direction
 
-SpeakPath is an **AI-powered workplace English class platform**.
+SpeakPath is a **bank-first AI teaching app** for workplace English.
 
 Not: a random exercise generator, a writing correction app, or a card-based practice tool.
 
-Current implemented activity types: `WritingScenario`, `ListeningComprehension`, `VocabularyPractice`, `SpeakingRolePlay`.
+AI still teaches, composes Today lessons, personalizes activities, evaluates student answers,
+explains mistakes, and generates feedback. But AI is not an uncontrolled generator invoked fresh
+for every activity: **banks** (Placement Item Bank, Activity Template Bank, CEFR Resource Bank)
+define what is correct, reusable, and level-appropriate. A selector/composer looks for a
+suitable bank item before generating anything new; AI generates only when the bank cannot
+satisfy the need; and the backend validates every AI output (schema, CEFR/skill/subskill
+consistency, no answer/scoring leakage) before a student ever sees it.
 
-Current recommended next sprint: **Dynamic Pattern Selection** or **Practice Gym Expansion**.
+Full rationale, current-state audit, and phased roadmap:
+`docs/reviews/2026-07-07-ai-bank-assessment-architecture-plan.md` and
+`docs/reviews/2026-07-08-bank-first-ai-teaching-clean-architecture-plan.md`.
+
+Key facts about where this stands today (2026-07-08):
+
+- **Placement** is Form.io-native, backend-scored, and the strongest current example of the
+  bank-first pattern — see `formio-onboarding-placement-model.md`.
+- **Onboarding** is also Form.io-native (`StudentFlowTemplate`/`Version`/`Submission`).
+- The **Activity Template Bank** (`ActivityTemplate` entity + admin CRUD + review/publish
+  workflow) exists and is proven end-to-end by exactly **one** feature-flagged Practice Gym
+  pilot pattern (`formio_practice_gym_pilot`).
+- The **CEFR Resource Bank** schema exists (`CefrResourceSource`, `CefrDescriptor`,
+  `CefrVocabularyEntry`, `CefrGrammarProfileEntry`, `CefrReadingReference`) but holds **no
+  imported data** — import is gated on licensing review
+  (`cefr-resource-licensing-review.md`).
+- **Today lessons and most Practice Gym exercise patterns still use the legacy, per-student,
+  always-fresh `IAiActivityGenerator` generation path with zero bank involvement.** This is
+  intentional and not yet migrated — see Phases C/D of the 2026-07-08 plan doc. Do not delete
+  this path; it is the active fallback for everything not yet migrated to the bank.
+- **Real content-level repetition/novelty avoidance does not exist yet.** The 2026-07-08
+  cleanup pass (Clean-A/Clean-A2) fixed `PracticeActivityCache.ContentFingerprint` so it is no
+  longer a misleading `Guid`-salted value, but it remains a queue-slot uniqueness key only, not
+  a content-dedup signal. Real repetition avoidance is planned Phase B, not started.
+
+Current recommended next phase: **Phase B (repetition/novelty foundation)** per
+`docs/reviews/2026-07-08-bank-first-ai-teaching-clean-architecture-plan.md` §17 — not started.
 
 ---
 
@@ -76,12 +108,13 @@ Current recommended next sprint: **Dynamic Pattern Selection** or **Practice Gym
 | [file-storage-minio.md](file-storage-minio.md) | `IFileStorageService` interface; `LocalFileStorageService` and `MinioFileStorageService`; authenticated streaming pattern |
 | [student-lifecycle-reset-tools.md](student-lifecycle-reset-tools.md) | 12 lifecycle stages (canonical enum); admin reset endpoint; `StudentResetLog`; soft vs hard delete rules |
 | [student-learning-memory.md](student-learning-memory.md) | `UserLearningSummary` / `StudentSkillProfile`; memory write/read paths; best-effort update rules |
-| [learning-activity-engine.md](learning-activity-engine.md) | `LearningActivity` / `ActivityAttempt` entity relationships; AI generation flow; how activity types share infrastructure |
-| [curriculum-syllabus-model.md](curriculum-syllabus-model.md) | `CurriculumObjective` entity; CEFR level constants; context tag / focus area taxonomy; seeder pattern; `ICurriculumSyllabusQuery` candidate query interface (Phase 10K) |
-| [readiness-pool.md](readiness-pool.md) | `StudentActivityReadinessItem` entity; `ReadinessPoolStatus` / `ReadinessPoolSource` enums; lifecycle transitions; routing snapshot; `IStudentActivityReadinessPoolService`; concurrency model (Phase 10M) |
-| [curriculum-routing.md](curriculum-routing.md) | `ICurriculumRoutingService`; `CurriculumRoutingRequest/Recommendation`; CEFR normalization; level/context/skill/difficulty routing rules; RoutingReason enum; integration points (Phase 10L) |
-| [runtime-settings-and-feature-gates.md](runtime-settings-and-feature-gates.md) | `IFeatureGateRegistry` / `IRuntimeSettingsService`; `FeatureGateGroupDefinition` registry; `RuntimeSettingOverride` table; effective-value resolution order; audit via `AdminAuditLog`; what's runtime-editable vs read-only (Phase 20B) |
+| [learning-activity-engine.md](learning-activity-engine.md) | `LearningActivity` / `ActivityAttempt` entity relationships; legacy always-fresh AI generation flow (still the active path for Today lessons and most Practice Gym patterns); how activity types share infrastructure |
+| [readiness-pool.md](readiness-pool.md) | `StudentActivityReadinessItem` entity; `ReadinessPoolStatus` / `ReadinessPoolSource` enums; lifecycle transitions; routing snapshot; `IStudentActivityReadinessPoolService`; concurrency model (Phase 10M); template-provenance fields added 2026-07-07 |
+| [curriculum-routing.md](curriculum-routing.md) | `ICurriculumRoutingService`; `CurriculumRoutingRequest/Recommendation`; CEFR normalization; level/context/skill/difficulty routing rules; RoutingReason enum; integration points (Phase 10L). `CurriculumObjective` entity, CEFR level constants, and subskill taxonomy (`CurriculumSubskillConstants`, added 2026-07-07) are defined in Domain but do not yet have a dedicated architecture doc — the `curriculum-syllabus-model.md` doc referenced here previously no longer exists in the repo; see `docs/reviews/2026-07-07-ai-bank-assessment-architecture-plan.md` §4.4 for the subskill taxonomy design instead |
+| [runtime-settings-and-feature-gates.md](runtime-settings-and-feature-gates.md) | `IFeatureGateRegistry` / `IRuntimeSettingsService`; `FeatureGateGroupDefinition` registry; `RuntimeSettingOverride` table; effective-value resolution order; audit via `AdminAuditLog`; what's runtime-editable vs read-only (Phase 20B). Backs the `PracticeGymFormIoPilot.Enabled` gate added 2026-07-07 |
 | [student-readiness-and-backfill.md](student-readiness-and-backfill.md) | `IStudentReadinessAuditService` / `IStudentPilotReadinessRepairService`; read-only per-student pilot-readiness audit (~20 checks); explicit, idempotent, audited repair actions; implemented vs deferred repair actions (Phase 20D) |
+| [cefr-resource-licensing-review.md](cefr-resource-licensing-review.md) | CEFR Resource Bank schema (`CefrResourceSource`/`CefrDescriptor`/`CefrVocabularyEntry`/`CefrGrammarProfileEntry`/`CefrReadingReference`, added 2026-07-07, no data imported yet); licensing gate for CEFR-J/UniversalCEFR import |
+| [formio-onboarding-placement-model.md](formio-onboarding-placement-model.md) | Form.io-native onboarding (`StudentFlowTemplate`/`Version`/`Submission`) and placement (`PlacementItemDefinition` with `FormIoSchemaJson`/`ScoringRulesJson`, backend-only scoring); the strongest current bank-first example |
 
 ### Planned / Deferred (not implemented yet)
 
@@ -138,7 +171,7 @@ Archived
 
 ---
 
-## Implementation State (as of 2026-06-10)
+## Implementation State (as of 2026-07-08)
 
 | Feature | Status |
 |---|---|
@@ -152,12 +185,26 @@ Archived
 | Exercise Pattern Engine | ✅ Done — seeded pattern definitions, pattern-aware prepare/generation, `InteractionMode` renderer dispatch, 8 MVP renderers, 97 e2e + 762 dotnet tests pass |
 | Pattern Evaluation Engine | ✅ Done — deterministic `ExactMatch` / `KeyedSelection` / `NoMarking` evaluators, structured `AiStructured` / `AiOpenEnded` evaluators, pattern router, `StudentSkillProfile` upserts, compact memory signals, pattern-aware result UI, 865 dotnet tests + 111 Playwright tests pass |
 | Student UX Alignment / Writing-Assumption Cleanup | ✅ Done — Today/Journey/Practice/Progress/Profile nav model; Practice Gym MVP at `/practice`; mixed-skill copy; 165 Playwright tests pass |
-| Curriculum Syllabus Foundation | ✅ Done — Phase 10K: `CurriculumObjective`, `ICurriculumSyllabusQuery`, seeder |
+| Curriculum Syllabus Foundation | ✅ Done — Phase 10K: `CurriculumObjective`, seeder |
 | CEFR-Aware Activity Routing | ✅ Done — Phase 10L: `ICurriculumRoutingService`, routing wired into all 5 generation handlers |
+| Form.io onboarding | ✅ Done (2026-07-06) — `StudentFlowTemplate`/`Version`/`Submission`, custom question designer/renderer removed, V1 hardcoded 5-step handler intentionally kept as a documented dead-but-harmless backward-compat branch |
+| Form.io placement | ✅ Done (2026-07-06/07) — `PlacementItemDefinition.FormIoSchemaJson`/`ScoringRulesJson`, legacy `ItemType`/`Prompt`/`CorrectAnswer`/`ReadingPassage`/`ListeningAudioScript`/`ContentJson` columns dropped cleanly; backend-only scoring confirmed by tests; adaptive engine unchanged |
+| Subskill taxonomy | ✅ Done (2026-07-07) — `CurriculumSubskillConstants` (36 subskills), nullable `Subskill` on `CurriculumObjective`/`PlacementItemDefinition`/`StudentLearningEvent`/`StudentActivityReadinessItem` |
+| CEFR Resource Bank schema | ✅ Schema done (2026-07-07) — `CefrResourceSource`/`CefrDescriptor`/`CefrVocabularyEntry`/`CefrGrammarProfileEntry`/`CefrReadingReference`; ⬜ **no data imported** — gated on licensing review |
+| ActivityTemplate bank | ✅ Done (2026-07-07) — entity + full admin CRUD + review/publish workflow, reuses `IFormIoSchemaValidationService` |
+| Template-bound AI generation + validation | ✅ Done (2026-07-07) — `IActivityTemplateInstanceGenerator`, schema/CEFR/required-key/forbidden-word validation, `/generate-preview` endpoint |
+| Readiness-pool template provenance | ✅ Done (2026-07-07) — `StudentActivityReadinessItem.SourceTemplateId`/`SourceBankItemId`/Form.io snapshots/`ValidationStatus`/`PersonalizationReason` |
+| Placement calibration/review fields | ✅ Done (2026-07-07) — `DifficultyBand`, `ReviewStatus`, `DiscriminationIndex`/`CalibrationSampleSize`; ⬜ `EvidenceWeight` recorded but **not yet consumed** by `PlacementAssessmentService`'s confidence calc |
+| `StudentLearningEvent.CurriculumObjectiveKey` | ✅ Done (2026-07-07) — closes the mastery-grouping proxy gap (`PatternKey` fallback retained for historical events) |
+| Admin review queue (cross-entity) | ✅ Done (2026-07-07) — `ActivityTemplate` + `PlacementItemDefinition`, read-only triage list |
+| Form.io Practice Gym pilot | ✅ Done (2026-07-07), **one pattern only** (`formio_practice_gym_pilot`), triple safety-gated (feature flag off by default + `ImplementationStatus="planned"` + requires an approved template); all other Practice Gym patterns and all Today lessons still use the legacy freeform `IAiActivityGenerator` path |
+| Content-level repetition/novelty avoidance | ⬜ **Not implemented** — only pattern-key/session-topic-level soft guidance exists; `PracticeActivityCache.ContentFingerprint` is a queue-slot uniqueness key only (fixed 2026-07-08 to be honest about this, not to add real dedup). Planned as Phase B |
+| Clean-A / Clean-A2 dead-code cleanup | ✅ Done (2026-07-08) — removed dead onboarding enums, an orphaned onboarding component, dead route aliases, and a fully-orphaned admin career/word authoring API/UI chain; see `docs/reviews/2026-07-08-bank-first-ai-teaching-clean-architecture-plan.md` |
 | Session reflection | ⬜ Deferred — needs AI prompt `session_reflection` and stable session completion signal |
-| Practice Gym expansion | ⬜ Deferred — Workplace Chat, Email, Gap Fill, Phrase Match unlock; dynamic session templates |
-| IFileStorageService / MinIO | ⬜ Deferred — not blocking deployment at current scale |
-| Admin lifecycle reset tools | ⬜ Deferred |
+| Bank-first Today lesson composer | ⬜ Deferred — planned Phase D of the 2026-07-08 plan, not started |
+| Generalize Form.io template path across Practice Gym | ⬜ Deferred — planned Phase C, not started |
+| IFileStorageService / MinIO | ✅ Done — audio (TTS + speaking uploads) fully on object storage; not blocking deployment at current scale |
+| Admin lifecycle reset tools | ✅ Done |
 
 ---
 

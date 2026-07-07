@@ -249,42 +249,6 @@ public interface IAdminPromptHandler
     Task DeactivateAsync(DeactivatePromptCommand command, CancellationToken ct = default);
 }
 
-// ── Career profiles + curriculum words ───────────────────────────────────────
-
-public sealed record CareerProfileItem(Guid Id, string Name);
-
-public sealed record CurriculumWordItem(
-    Guid Id,
-    string Word,
-    string Definition,
-    string ExampleSentence,
-    int Priority,
-    string Tags);
-
-public sealed record AddCurriculumWordCommand(
-    Guid CareerProfileId,
-    Guid LanguagePairId,
-    string Word,
-    string Definition,
-    string ExampleSentence,
-    int Priority,
-    string Tags = "");
-
-public sealed record UpdateCurriculumWordCommand(
-    Guid WordId,
-    string Definition,
-    string ExampleSentence,
-    int Priority,
-    string Tags);
-
-public interface IAdminCurriculumHandler
-{
-    Task<IReadOnlyList<CareerProfileItem>> ListCareerProfilesAsync(CancellationToken ct = default);
-    Task<IReadOnlyList<CurriculumWordItem>> ListWordsAsync(Guid careerProfileId, Guid languagePairId, CancellationToken ct = default);
-    Task<CurriculumWordItem> AddWordAsync(AddCurriculumWordCommand command, CancellationToken ct = default);
-    Task<CurriculumWordItem> UpdateWordAsync(UpdateCurriculumWordCommand command, CancellationToken ct = default);
-}
-
 // ── AI provider config ────────────────────────────────────────────────────────
 
 public sealed record ModelTestStatus(string ModelName, bool Ok, int LatencyMs, string? Error, DateTime TestedAt);

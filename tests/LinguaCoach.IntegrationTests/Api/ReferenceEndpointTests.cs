@@ -33,21 +33,6 @@ public sealed class ReferenceEndpointTests : IClassFixture<ApiTestFactory>
     }
 
     [Fact]
-    public async Task GetTracks_ByFaEnPairId_ReturnsWorkplaceEnglish()
-    {
-        var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"track_{Guid.NewGuid():N}@test.com");
-        var langPairId = GetFaEnPairId();
-        var client = ClientWithToken(token);
-
-        var response = await client.GetAsync($"/api/reference/tracks?languagePairId={langPairId}");
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var tracks = await response.Content.ReadFromJsonAsync<JsonElement[]>();
-        Assert.NotNull(tracks);
-        Assert.Contains(tracks, t => t.GetProperty("name").GetString() == "Workplace English");
-    }
-
-    [Fact]
     public async Task GetCareerProfiles_ByFaEnPairId_ReturnsDocumentController()
     {
         var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"career_{Guid.NewGuid():N}@test.com");
@@ -60,20 +45,6 @@ public sealed class ReferenceEndpointTests : IClassFixture<ApiTestFactory>
         var profiles = await response.Content.ReadFromJsonAsync<JsonElement[]>();
         Assert.NotNull(profiles);
         Assert.Contains(profiles, p => p.GetProperty("name").GetString() == "Document Controller");
-    }
-
-    [Fact]
-    public async Task GetTracks_UnknownLanguagePairId_ReturnsEmptyArray()
-    {
-        var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"empty_{Guid.NewGuid():N}@test.com");
-        var client = ClientWithToken(token);
-
-        var response = await client.GetAsync($"/api/reference/tracks?languagePairId={Guid.NewGuid()}");
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var tracks = await response.Content.ReadFromJsonAsync<JsonElement[]>();
-        Assert.NotNull(tracks);
-        Assert.Empty(tracks);
     }
 
     [Fact]

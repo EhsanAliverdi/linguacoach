@@ -160,10 +160,9 @@ public class ActivityTestFactory : ApiTestFactory
             .Include(lp => lp.SourceLanguage)
             .Include(lp => lp.TargetLanguage)
             .First();
-        var track = db.LearningTracks.First();
         var career = db.CareerProfiles.First();
         profile.SetLanguagePair(pair);
-        profile.SetLearningTrack(track);
+        profile.SetSessionPreference(30);
         profile.SetCareerProfile(career);
         profile.SetSkillFocus(LinguaCoach.Domain.Enums.SkillFocus.Writing);
         profile.SetLifecycleStage(LinguaCoach.Domain.Enums.StudentLifecycleStage.PlacementRequired);

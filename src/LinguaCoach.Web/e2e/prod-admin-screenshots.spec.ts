@@ -65,7 +65,7 @@ test('prod: capture all admin pages', async ({ page }) => {
   await page.screenshot({ path: shot('05-prompts'), fullPage: true });
 
   // 6 — AI Usage (detail)
-  await nav(page, '/admin/ai-usage');
+  await nav(page, '/admin/usage');
   await page.screenshot({ path: shot('06-ai-usage'), fullPage: true });
 
   // 7 — Usage Policies

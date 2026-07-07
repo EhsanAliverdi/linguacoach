@@ -237,12 +237,11 @@ public sealed class LearningPlannerTestFactory : Api.ApiTestFactory
             .Include(lp => lp.SourceLanguage)
             .Include(lp => lp.TargetLanguage)
             .First();
-        var track = db.LearningTracks.First();
         var career = db.CareerProfiles.First();
 
         var profile = new StudentProfile(user.Id);
         profile.SetLanguagePair(pair);
-        profile.SetLearningTrack(track);
+        profile.SetSessionPreference(30);
         profile.SetCareerProfile(career);
         profile.SetSkillFocus(SkillFocus.Writing);
         db.StudentProfiles.Add(profile);

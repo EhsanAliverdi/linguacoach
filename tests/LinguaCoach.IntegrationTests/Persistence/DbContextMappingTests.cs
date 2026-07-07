@@ -72,13 +72,6 @@ public sealed class DbContextMappingTests : IDisposable
     }
 
     [Fact]
-    public void Seed_WorkplaceEnglishTrackExists()
-    {
-        var track = _db.LearningTracks.Single();
-        Assert.Equal("Workplace English", track.Name);
-    }
-
-    [Fact]
     public void Seed_DocumentControllerCareerProfileExists()
     {
         var profile = _db.CareerProfiles.Single();
@@ -107,12 +100,11 @@ public sealed class DbContextMappingTests : IDisposable
     public void StudentProfile_OnboardingStepsPersistedCorrectly()
     {
         var pair = _db.LanguagePairs.Include(lp => lp.SourceLanguage).Include(lp => lp.TargetLanguage).First();
-        var track = _db.LearningTracks.First();
         var career = _db.CareerProfiles.First();
 
         var student = new StudentProfile(Guid.NewGuid());
         student.SetLanguagePair(pair);
-        student.SetLearningTrack(track);
+        student.SetSessionPreference(30);
         student.SetCareerProfile(career);
         student.SetSkillFocus(SkillFocus.Writing);
 

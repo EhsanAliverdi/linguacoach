@@ -16,7 +16,6 @@ public sealed class AdminController : ControllerBase
     private readonly ICreateStudentHandler _createStudentHandler;
     private readonly IAdminStudentQuery _studentQuery;
     private readonly IAdminPromptHandler _promptHandler;
-    private readonly IAdminCurriculumHandler _curriculumHandler;
     private readonly IAdminAiConfigHandler _aiConfigHandler;
     private readonly IExerciseTypeCatalogService _exerciseTypes;
     private readonly LinguaCoach.Application.LearningPath.IStudentMemoryQuery _memoryQuery;
@@ -30,7 +29,6 @@ public sealed class AdminController : ControllerBase
         ICreateStudentHandler createStudentHandler,
         IAdminStudentQuery studentQuery,
         IAdminPromptHandler promptHandler,
-        IAdminCurriculumHandler curriculumHandler,
         IAdminAiConfigHandler aiConfigHandler,
         IExerciseTypeCatalogService exerciseTypes,
         LinguaCoach.Application.LearningPath.IStudentMemoryQuery memoryQuery,
@@ -43,7 +41,6 @@ public sealed class AdminController : ControllerBase
         _createStudentHandler = createStudentHandler;
         _studentQuery = studentQuery;
         _promptHandler = promptHandler;
-        _curriculumHandler = curriculumHandler;
         _aiConfigHandler = aiConfigHandler;
         _exerciseTypes = exerciseTypes;
         _memoryQuery = memoryQuery;
@@ -373,46 +370,6 @@ public sealed class AdminController : ControllerBase
     {
         try { await _promptHandler.DeactivateAsync(new DeactivatePromptCommand(promptId), ct); return NoContent(); }
         catch (InvalidOperationException ex) { return NotFound(new { error = ex.Message }); }
-    }
-
-    // ── Career profiles + curriculum words ───────────────────────────────────
-
-    [HttpGet("careers")]
-    public async Task<IActionResult> ListCareers(CancellationToken ct)
-        => Ok(await _curriculumHandler.ListCareerProfilesAsync(ct));
-
-    [HttpGet("careers/{careerId:guid}/words")]
-    public async Task<IActionResult> ListWords(Guid careerId, [FromQuery] Guid languagePairId, CancellationToken ct)
-        => Ok(await _curriculumHandler.ListWordsAsync(careerId, languagePairId, ct));
-
-    [HttpPost("careers/{careerId:guid}/words")]
-    public async Task<IActionResult> AddWord(Guid careerId, [FromBody] AddWordRequest request, CancellationToken ct)
-    {
-        try
-        {
-            var result = await _curriculumHandler.AddWordAsync(
-                new AddCurriculumWordCommand(careerId, request.LanguagePairId, request.Word,
-                    request.Definition, request.ExampleSentence, request.Priority, request.Tags ?? ""), ct);
-            return Created($"/api/admin/careers/{careerId}/words/{result.Id}", result);
-        }
-        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
-    }
-
-    [HttpPut("careers/words/{wordId:guid}")]
-    public async Task<IActionResult> UpdateWord(Guid wordId, [FromBody] UpdateWordRequest request, CancellationToken ct)
-    {
-        try
-        {
-            var result = await _curriculumHandler.UpdateWordAsync(
-                new UpdateCurriculumWordCommand(wordId, request.Definition,
-                    request.ExampleSentence, request.Priority, request.Tags ?? ""), ct);
-            return Ok(result);
-        }
-        catch (InvalidOperationException ex) { return NotFound(new { error = ex.Message }); }
-        catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
     }
 
     // ── AI provider config ────────────────────────────────────────────────────
@@ -920,8 +877,6 @@ public sealed record ResetStudentRequest(
     bool ClearProgressData,
     string Reason);
 public sealed record CreatePromptVersionRequest(string Key, string Content, int? MaxInputTokens, int? MaxOutputTokens);
-public sealed record AddWordRequest(Guid LanguagePairId, string Word, string Definition, string ExampleSentence, int Priority, string? Tags);
-public sealed record UpdateWordRequest(string Definition, string ExampleSentence, int Priority, string? Tags);
 public sealed record SetProviderApiKeyRequest(string? ApiKey);
 public sealed record SetProviderEndpointRequest(string? ApiEndpoint);
 public sealed record AddProviderModelRequest(string ModelName);

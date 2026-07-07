@@ -102,3 +102,24 @@ The same content format and evaluation logic is reused in both contexts.
 - Practice Gym recommendations or scheduling (ad-hoc only)
 - Pronunciation in Practice Gym (still not started)
 - Reading in Practice Gym (not started)
+
+---
+
+## Content repetition (as of 2026-07-08)
+
+`PracticeGymBufferRefillJob` queues `PracticeActivityCache` rows with a `ContentFingerprint`
+that is a **queue-slot uniqueness key only** (deterministic from student/pattern/level/domain/
+run-timestamp/slot-index) — it satisfies the DB's unique index and makes queuing reproducible,
+but it is **not** a content-level dedup signal, since no activity content exists yet at queue
+time. Real content-level repetition/novelty avoidance (comparing actual generated topics/
+scenarios across a student's history) does not exist anywhere in the Practice Gym or Today
+pipelines today. This is tracked as Phase B of
+`docs/reviews/2026-07-08-bank-first-ai-teaching-clean-architecture-plan.md` and is not yet
+implemented — do not assume repetition prevention exists when reading this doc or the entity's
+prior doc comments.
+
+Almost all Practice Gym exercise patterns still use the legacy per-student, always-fresh
+`IAiActivityGenerator` content-generation path (§1.2/§3.2 of the bank-first plan docs). Exactly
+one pattern (`formio_practice_gym_pilot`) sources content from the `ActivityTemplate` bank, and
+it is feature-flagged off by default. Generalizing the bank-first pattern to the rest of the
+catalog is Phase C of the same plan and is intentionally not attempted in this cleanup pass.

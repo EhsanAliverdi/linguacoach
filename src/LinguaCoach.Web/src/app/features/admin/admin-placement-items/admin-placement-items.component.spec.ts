@@ -22,6 +22,12 @@ const ITEM_A: AdminPlacementItemDto = {
   rendererKind: 'FormIo',
   questionPreview: 'Which is correct?',
   authoringSchemaJson: null,
+  difficultyBand: 1,
+  discriminationIndex: null,
+  calibrationSampleSize: null,
+  evidenceWeight: 1,
+  reviewStatus: 'NotRequired',
+  itemVersion: 1,
 };
 
 const ITEM_B: AdminPlacementItemDto = {
@@ -36,6 +42,12 @@ const ITEM_B: AdminPlacementItemDto = {
   rendererKind: 'FormIo',
   questionPreview: 'Answer',
   authoringSchemaJson: null,
+  difficultyBand: 1,
+  discriminationIndex: null,
+  calibrationSampleSize: null,
+  evidenceWeight: 1,
+  reviewStatus: 'NotRequired',
+  itemVersion: 1,
 };
 
 function makeResult(items: AdminPlacementItemDto[]): AdminPlacementItemListResult {

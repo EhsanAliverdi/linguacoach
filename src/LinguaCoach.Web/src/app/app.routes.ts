@@ -60,14 +60,6 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/create-student/create-student.component').then(m => m.CreateStudentComponent),
       },
       {
-        path: 'students/new',
-        redirectTo: 'create-student',
-      },
-      {
-        path: 'students/create',
-        redirectTo: 'create-student',
-      },
-      {
         path: 'ai-config',
         loadComponent: () => import('./features/admin/admin-ai-config/admin-ai-config.component').then(m => m.AdminAiConfigComponent),
       },
@@ -80,16 +72,8 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/admin-exercise-types/admin-exercise-types.component').then(m => m.AdminExerciseTypesComponent),
       },
       {
-        path: 'careers',
-        redirectTo: 'curriculum',
-      },
-      {
         path: 'usage',
         loadComponent: () => import('./features/admin/admin-ai-usage/admin-ai-usage.component').then(m => m.AdminAiUsageComponent),
-      },
-      {
-        path: 'ai-usage',
-        redirectTo: 'usage',
       },
       {
         path: 'diagnostics',

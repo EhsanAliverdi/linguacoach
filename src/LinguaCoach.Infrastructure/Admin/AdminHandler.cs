@@ -20,7 +20,6 @@ namespace LinguaCoach.Infrastructure.Admin;
 public sealed class AdminHandler :
     IAdminStudentQuery,
     IAdminPromptHandler,
-    IAdminCurriculumHandler,
     IAdminAiConfigHandler
 {
     private readonly LinguaCoachDbContext _db;
@@ -677,10 +676,6 @@ public sealed class AdminHandler :
                     .ExecuteDeleteAsync(ct);
             }
 
-            await _db.WritingSubmissions
-                .Where(w => w.StudentProfileId == command.StudentProfileId)
-                .ExecuteDeleteAsync(ct);
-
             await _db.AiUsageLogs
                 .Where(l => l.StudentProfileId == command.StudentProfileId)
                 .ExecuteDeleteAsync(ct);
@@ -823,57 +818,6 @@ public sealed class AdminHandler :
             ?? throw new InvalidOperationException("Prompt template not found.");
         prompt.Deactivate();
         await _db.SaveChangesAsync(ct);
-    }
-
-    // ── Curriculum ────────────────────────────────────────────────────────────
-
-    public async Task<IReadOnlyList<CareerProfileItem>> ListCareerProfilesAsync(CancellationToken ct = default)
-    {
-        var profiles = await _db.CareerProfiles.OrderBy(c => c.Name).ToListAsync(ct);
-        return profiles.Select(c => new CareerProfileItem(c.Id, c.Name)).ToList();
-    }
-
-    public async Task<IReadOnlyList<CurriculumWordItem>> ListWordsAsync(
-        Guid careerProfileId, Guid languagePairId, CancellationToken ct = default)
-    {
-        var words = await _db.CurriculumWordLists
-            .Where(w => w.CareerProfileId == careerProfileId && w.LanguagePairId == languagePairId)
-            .OrderBy(w => w.Priority)
-            .ToListAsync(ct);
-
-        return words.Select(w => new CurriculumWordItem(
-            w.Id, w.Word, w.Definition, w.ExampleSentence, w.Priority, w.Tags)).ToList();
-    }
-
-    public async Task<CurriculumWordItem> AddWordAsync(AddCurriculumWordCommand command, CancellationToken ct = default)
-    {
-        var word = new CurriculumWordList(
-            command.CareerProfileId,
-            command.LanguagePairId,
-            command.Word,
-            command.Definition,
-            command.ExampleSentence,
-            command.Priority,
-            command.Tags);
-
-        _db.CurriculumWordLists.Add(word);
-        await _db.SaveChangesAsync(ct);
-
-        return new CurriculumWordItem(word.Id, word.Word, word.Definition, word.ExampleSentence, word.Priority, word.Tags);
-    }
-
-    public async Task<CurriculumWordItem> UpdateWordAsync(UpdateCurriculumWordCommand command, CancellationToken ct = default)
-    {
-        var word = await _db.CurriculumWordLists.FirstOrDefaultAsync(w => w.Id == command.WordId, ct)
-            ?? throw new InvalidOperationException("Curriculum word not found.");
-
-        // CurriculumWordList is an append-only entity; use a new instance approach
-        // by updating via EF shadow setters isn't available — call an Update method.
-        // We'll add an Update method to the domain entity.
-        word.UpdateDetails(command.Definition, command.ExampleSentence, command.Priority, command.Tags);
-        await _db.SaveChangesAsync(ct);
-
-        return new CurriculumWordItem(word.Id, word.Word, word.Definition, word.ExampleSentence, word.Priority, word.Tags);
     }
 
     // ── AI provider config ────────────────────────────────────────────────────

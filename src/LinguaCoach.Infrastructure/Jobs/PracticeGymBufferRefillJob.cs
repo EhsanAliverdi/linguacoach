@@ -74,6 +74,14 @@ public sealed class PracticeGymBufferRefillJob : IJob
             .Distinct()
             .ToListAsync(ct);
 
+        // Captured once per job run so every slot fingerprint in this run is reproducible
+        // from real queue-time identity data (who/what/when/slot) instead of a random value.
+        // NOTE: this is a queue-slot uniqueness key, not a content-level dedup signal — no
+        // actual activity content exists yet at queue time (PracticeGymGenerationJob fills
+        // it in later). Real content-level repetition/novelty avoidance is tracked as a
+        // follow-up (see docs/reviews/2026-07-08-bank-first-ai-teaching-clean-architecture-plan.md, Phase B).
+        var queuedAtUtc = DateTime.UtcNow;
+
         var queued = 0;
         foreach (var studentProfileId in students)
         {
@@ -86,7 +94,8 @@ public sealed class PracticeGymBufferRefillJob : IJob
                 var toCreate = settings.PracticeGymRefillCountPerType;
                 for (var i = 0; i < toCreate; i++)
                 {
-                    var fingerprint = GenerationHashing.Sha256($"{studentProfileId}:{pattern}:{Guid.NewGuid():N}")[..32];
+                    var fingerprint = BuildQueueSlotFingerprint(
+                        studentProfileId, pattern, "B1", "intermediate_workplace", queuedAtUtc, i);
                     _db.PracticeActivityCache.Add(new Domain.Entities.PracticeActivityCache(
                         studentProfileId, pattern, "B1", "intermediate_workplace", fingerprint));
                     queued++;
@@ -100,4 +109,16 @@ public sealed class PracticeGymBufferRefillJob : IJob
             _logger.LogInformation("PracticeGymBufferRefillJob: queued {Count} practice activities for generation.", queued);
         }
     }
+
+    /// <summary>
+    /// Deterministic queue-slot uniqueness key — same (student, pattern, level, domain, run
+    /// timestamp, slot index) always yields the same value. This satisfies the DB's unique
+    /// index and makes queuing reproducible/debuggable; it is NOT a content fingerprint and
+    /// must not be used to detect or prevent repeated activity content.
+    /// </summary>
+    internal static string BuildQueueSlotFingerprint(
+        Guid studentProfileId, string pattern, string cefrLevel, string domainComplexity,
+        DateTime queuedAtUtc, int slotIndex)
+        => GenerationHashing.Sha256(
+            $"{studentProfileId}:{pattern}:{cefrLevel}:{domainComplexity}:{queuedAtUtc:O}:{slotIndex}")[..32];
 }

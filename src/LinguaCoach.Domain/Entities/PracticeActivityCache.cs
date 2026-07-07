@@ -15,7 +15,13 @@ public sealed class PracticeActivityCache : BaseEntity
     public string DomainComplexity { get; private set; }
     public string? SkillFocus { get; private set; }
 
-    /// <summary>Duplicate-prevention fingerprint for generated content.</summary>
+    /// <summary>
+    /// Queue-slot uniqueness key (backs a unique DB index so concurrent refill runs don't
+    /// collide). This is NOT a content-level dedup/repetition signal — no activity content
+    /// exists yet when this is assigned (materialization happens later). Real content-level
+    /// repetition/novelty avoidance does not exist yet; see
+    /// docs/reviews/2026-07-08-bank-first-ai-teaching-clean-architecture-plan.md (Phase B).
+    /// </summary>
     public string ContentFingerprint { get; private set; }
 
     public Guid? LearningActivityId { get; private set; }

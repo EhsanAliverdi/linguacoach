@@ -22,6 +22,12 @@ const ITEM_A: AdminPlacementItemDto = {
   rendererKind: 'FormIo',
   questionPreview: 'Which is correct?',
   authoringSchemaJson: null,
+  difficultyBand: 1,
+  discriminationIndex: null,
+  calibrationSampleSize: null,
+  evidenceWeight: 1,
+  reviewStatus: 'NotRequired',
+  itemVersion: 1,
 };
 
 const ITEM_B: AdminPlacementItemDto = {
@@ -42,6 +48,12 @@ const ITEM_B: AdminPlacementItemDto = {
       quiz: { enabled: true, rule: { kind: 'text_normalized', correctAnswer: 'extended', points: 1 } },
     }],
   }),
+  difficultyBand: 2,
+  discriminationIndex: 0.35,
+  calibrationSampleSize: 40,
+  evidenceWeight: 1,
+  reviewStatus: 'NotRequired',
+  itemVersion: 1,
 };
 
 function makeService(items: AdminPlacementItemDto[] = [ITEM_A, ITEM_B]) {

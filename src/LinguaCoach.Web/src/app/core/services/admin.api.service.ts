@@ -5,7 +5,6 @@ import {
   AdminTemplateItem, AdminTemplateListQuery,
   AdminCreateTemplateRequest, AdminUpdateTemplateRequest, AdminTemplatePreviewResult,
   StudentListItem, PromptTemplateItem, PromptTemplateDetail,
-  CareerProfileItem, CurriculumWordItem,
   AiProviderCatalogItem, AdminStudentLearningMemory, UpdateStudentProfileRequest,
   AiConfigCategoryItem, UpdateAiCategoryRequest, CategoryTestResult,
   ResetStudentRequest, ResetStudentResponse, AdminStats, AdminActivityHistoryItem,
@@ -229,20 +228,6 @@ export class AdminApiService {
   }
   deactivatePrompt(id: string): Observable<void> {
     return this.http.post<void>(`${this.api}/prompts/${id}/deactivate`, null);
-  }
-
-  // Careers + words
-  listCareers(): Observable<CareerProfileItem[]> {
-    return this.http.get<CareerProfileItem[]>(`${this.api}/careers`);
-  }
-  listWords(careerId: string, languagePairId: string): Observable<CurriculumWordItem[]> {
-    return this.http.get<CurriculumWordItem[]>(`${this.api}/careers/${careerId}/words?languagePairId=${languagePairId}`);
-  }
-  addWord(careerId: string, data: object): Observable<CurriculumWordItem> {
-    return this.http.post<CurriculumWordItem>(`${this.api}/careers/${careerId}/words`, data);
-  }
-  updateWord(wordId: string, data: object): Observable<CurriculumWordItem> {
-    return this.http.put<CurriculumWordItem>(`${this.api}/careers/words/${wordId}`, data);
   }
 
   // AI provider credentials

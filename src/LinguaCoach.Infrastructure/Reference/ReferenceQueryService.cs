@@ -28,14 +28,6 @@ public sealed class ReferenceQueryService : IReferenceQueryService
             .ToListAsync(ct);
     }
 
-    public async Task<IReadOnlyList<LearningTrackDto>> GetTracksByLanguagePairAsync(Guid languagePairId, CancellationToken ct = default)
-    {
-        return await _db.LearningTracks
-            .Where(t => t.LanguagePairId == languagePairId)
-            .Select(t => new LearningTrackDto(t.Id, t.Name, t.Description))
-            .ToListAsync(ct);
-    }
-
     public async Task<IReadOnlyList<CareerProfileDto>> GetCareerProfilesByLanguagePairAsync(Guid languagePairId, CancellationToken ct = default)
     {
         return await _db.CareerProfiles

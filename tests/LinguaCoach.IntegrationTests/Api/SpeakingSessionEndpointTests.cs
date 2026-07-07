@@ -224,12 +224,11 @@ public sealed class SpeakingTestFactory : ApiTestFactory
         await userManager.CreateAsync(user, "Student@1234");
 
         var pair = db.LanguagePairs.Include(lp => lp.SourceLanguage).Include(lp => lp.TargetLanguage).First();
-        var track = db.LearningTracks.First();
         var career = db.CareerProfiles.First();
 
         var profile = new LinguaCoach.Domain.Entities.StudentProfile(user.Id);
         profile.SetLanguagePair(pair);
-        profile.SetLearningTrack(track);
+        profile.SetSessionPreference(30);
         profile.SetCareerProfile(career);
         profile.SetSkillFocus(SkillFocus.Writing);
         db.StudentProfiles.Add(profile);

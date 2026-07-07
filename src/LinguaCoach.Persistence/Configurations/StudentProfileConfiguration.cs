@@ -21,7 +21,6 @@ internal sealed class StudentProfileConfiguration : IEntityTypeConfiguration<Stu
         builder.Property(sp => sp.OnboardingStatus).HasColumnName("onboarding_status").IsRequired();
         builder.Property(sp => sp.LastCompletedStep).HasColumnName("last_completed_step").IsRequired();
         builder.Property(sp => sp.LanguagePairId).HasColumnName("language_pair_id");
-        builder.Property(sp => sp.LearningTrackId).HasColumnName("learning_track_id");
         builder.Property(sp => sp.CareerProfileId).HasColumnName("career_profile_id");
         builder.Property(sp => sp.SkillFocus).HasColumnName("skill_focus");
         builder.Property(sp => sp.CefrLevel).HasColumnName("cefr_level").HasMaxLength(2);
@@ -84,11 +83,6 @@ internal sealed class StudentProfileConfiguration : IEntityTypeConfiguration<Stu
             .HasForeignKey(sp => sp.LanguagePairId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(sp => sp.LearningTrack)
-            .WithMany()
-            .HasForeignKey(sp => sp.LearningTrackId)
-            .OnDelete(DeleteBehavior.Restrict);
-
         builder.HasOne(sp => sp.CareerProfile)
             .WithMany()
             .HasForeignKey(sp => sp.CareerProfileId)
@@ -96,9 +90,6 @@ internal sealed class StudentProfileConfiguration : IEntityTypeConfiguration<Stu
 
         builder.HasIndex(sp => sp.LanguagePairId)
             .HasDatabaseName("ix_student_profiles_language_pair_id");
-
-        builder.HasIndex(sp => sp.LearningTrackId)
-            .HasDatabaseName("ix_student_profiles_learning_track_id");
 
         builder.HasIndex(sp => sp.CareerProfileId)
             .HasDatabaseName("ix_student_profiles_career_profile_id");
