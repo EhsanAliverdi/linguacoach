@@ -18,6 +18,7 @@ internal sealed class StudentFlowTemplateVersionConfiguration : IEntityTypeConfi
         builder.Property(v => v.VersionNumber).HasColumnName("version_number").IsRequired();
         builder.Property(v => v.FormIoSchemaJson).HasColumnName("form_io_schema_json").HasColumnType("jsonb").IsRequired();
         builder.Property(v => v.ScoringRulesJson).HasColumnName("scoring_rules_json").HasColumnType("jsonb");
+        builder.Property(v => v.AuthoringSchemaJson).HasColumnName("authoring_schema_json").HasColumnType("jsonb");
         builder.Property(v => v.RendererKind).HasColumnName("renderer_kind").HasConversion<string>().HasMaxLength(20).IsRequired()
             .HasDefaultValue(LinguaCoach.Domain.Enums.FormRendererKind.FormIo);
         builder.Property(v => v.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(20).IsRequired();

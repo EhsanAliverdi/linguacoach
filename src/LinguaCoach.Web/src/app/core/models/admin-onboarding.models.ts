@@ -27,6 +27,9 @@ export interface StudentFlowTemplateVersionDto {
   status: StudentFlowTemplateStatus;
   publishedAt: string | null;
   updatedAt: string;
+  /** Admin-only: the Form.io schema as authored (with inline "quiz" annotations), null for
+   * versions authored before the Quiz tab existed. Never sent to students. */
+  authoringSchemaJson: string | null;
 }
 
 export interface StudentFlowTemplateDetailDto {
@@ -44,7 +47,12 @@ export interface CreateTemplateRequest {
 }
 
 export interface SaveDraftRequest {
+  /** Placeholder — ignored by the server whenever authoringSchemaJson is present (Quiz-tab path). */
   formIoSchemaJson: string;
+  /** Placeholder — ignored by the server whenever authoringSchemaJson is present (Quiz-tab path). */
   scoringRulesJson?: string;
   rendererKind?: FormRendererKind;
+  /** The Form.io builder's live schema, with inline per-component "quiz" annotations. The server
+   * splits this into the student-safe schema + backend-only scoring rules. */
+  authoringSchemaJson?: string;
 }

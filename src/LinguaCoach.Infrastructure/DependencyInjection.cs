@@ -239,6 +239,7 @@ public static class DependencyInjection
 
         // Onboarding — Form.io template model (replaces old OnboardingV2/AdminOnboardingFlow*)
         services.AddScoped<IFormIoSchemaValidationService, FormIoSchemaValidationService>();
+        services.AddScoped<LinguaCoach.Application.FormIo.IFormIoQuizSchemaSplitter, LinguaCoach.Infrastructure.FormIo.FormIoQuizSchemaSplitter>();
         services.AddScoped<AdminOnboardingTemplateService>();
         services.AddScoped<IAdminListOnboardingTemplatesQuery>(sp => sp.GetRequiredService<AdminOnboardingTemplateService>());
         services.AddScoped<IAdminGetOnboardingTemplateQuery>(sp => sp.GetRequiredService<AdminOnboardingTemplateService>());

@@ -1,3 +1,4 @@
+using LinguaCoach.Application.FormIo;
 using LinguaCoach.Application.Onboarding;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
@@ -20,11 +21,13 @@ public sealed class AdminOnboardingTemplateService :
 {
     private readonly LinguaCoachDbContext _db;
     private readonly IFormIoSchemaValidationService _validator;
+    private readonly IFormIoQuizSchemaSplitter _splitter;
 
-    public AdminOnboardingTemplateService(LinguaCoachDbContext db, IFormIoSchemaValidationService validator)
+    public AdminOnboardingTemplateService(LinguaCoachDbContext db, IFormIoSchemaValidationService validator, IFormIoQuizSchemaSplitter splitter)
     {
         _db = db;
         _validator = validator;
+        _splitter = splitter;
     }
 
     public async Task<IReadOnlyList<StudentFlowTemplateSummaryDto>> HandleAsync(ListOnboardingTemplatesQuery query, CancellationToken ct = default)
@@ -73,7 +76,20 @@ public sealed class AdminOnboardingTemplateService :
 
     public async Task<StudentFlowTemplateVersionDto> HandleAsync(SaveOnboardingTemplateDraftCommand command, CancellationToken ct = default)
     {
-        var schemaResult = _validator.ValidateSchema(command.FormIoSchemaJson);
+        string formIoSchemaJson, scoringRulesJson;
+        if (command.AuthoringSchemaJson is not null)
+        {
+            var split = _splitter.Split(command.AuthoringSchemaJson);
+            formIoSchemaJson = split.StudentSchemaJson;
+            scoringRulesJson = split.ScoringRulesJson;
+        }
+        else
+        {
+            formIoSchemaJson = command.FormIoSchemaJson;
+            scoringRulesJson = command.ScoringRulesJson ?? "";
+        }
+
+        var schemaResult = _validator.ValidateSchema(formIoSchemaJson);
         if (!schemaResult.IsValid)
             throw new OnboardingV2ValidationException(schemaResult.Error ?? "Invalid Form.io schema.");
 
@@ -89,14 +105,17 @@ public sealed class AdminOnboardingTemplateService :
         if (draft is null)
         {
             var nextVersion = template.Versions.Count == 0 ? 1 : template.Versions.Max(v => v.VersionNumber) + 1;
-            draft = new StudentFlowTemplateVersion(template.Id, nextVersion, command.FormIoSchemaJson, command.AdminId, command.ScoringRulesJson, ParseRendererKind(command.RendererKind));
+            draft = new StudentFlowTemplateVersion(template.Id, nextVersion, formIoSchemaJson, command.AdminId, scoringRulesJson, ParseRendererKind(command.RendererKind));
             template.AddVersion(draft);
             _db.StudentFlowTemplateVersions.Add(draft);
         }
         else
         {
-            draft.UpdateDraft(command.FormIoSchemaJson, command.ScoringRulesJson, ParseRendererKind(command.RendererKind));
+            draft.UpdateDraft(formIoSchemaJson, scoringRulesJson, ParseRendererKind(command.RendererKind));
         }
+
+        if (command.AuthoringSchemaJson is not null)
+            draft.SetAuthoringSchema(command.AuthoringSchemaJson);
 
         await _db.SaveChangesAsync(ct);
         return ToVersionDto(draft);
@@ -147,7 +166,8 @@ public sealed class AdminOnboardingTemplateService :
         t.Versions.OrderByDescending(v => v.VersionNumber).Select(ToVersionDto).ToList());
 
     private static StudentFlowTemplateVersionDto ToVersionDto(StudentFlowTemplateVersion v) => new(
-        v.Id, v.TemplateId, v.VersionNumber, v.FormIoSchemaJson, v.ScoringRulesJson, v.RendererKind.ToString(), v.Status.ToString(), v.PublishedAt, v.UpdatedAt);
+        v.Id, v.TemplateId, v.VersionNumber, v.FormIoSchemaJson, v.ScoringRulesJson, v.RendererKind.ToString(), v.Status.ToString(), v.PublishedAt, v.UpdatedAt,
+        v.AuthoringSchemaJson);
 
     private static FormRendererKind ParseRendererKind(string rendererKind) =>
         Enum.TryParse<FormRendererKind>(rendererKind, ignoreCase: true, out var parsed) ? parsed : FormRendererKind.FormIo;

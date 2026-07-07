@@ -15,7 +15,10 @@ public sealed record AdminPlacementItemDto(
     string RendererKind = "FormIo",
     /// <summary>Read-only preview of the schema's first component label, for the admin list only
     /// — never persisted, always derived fresh from FormIoSchemaJson.</summary>
-    string QuestionPreview = ""
+    string QuestionPreview = "",
+    /// <summary>Admin-only: the Form.io schema as authored (with inline "quiz" annotations),
+    /// null for items authored before the Quiz tab existed. Never sent to students.</summary>
+    string? AuthoringSchemaJson = null
 );
 
 // ── List items (server-side paged, optionally filtered by skill) ──────────────
@@ -56,7 +59,13 @@ public sealed record AddPlacementItemCommand(
     bool IsEnabled,
     string FormIoSchemaJson,
     string ScoringRulesJson,
-    string RendererKind = "FormIo"
+    string RendererKind = "FormIo",
+    /// <summary>When present, the admin authored via the Form.io builder's Quiz tab: this is the
+    /// raw schema with inline per-component quiz annotations. The server splits it (never trusts
+    /// the client's FormIoSchemaJson/ScoringRulesJson above in that case) and uses the split
+    /// result instead. Null means the legacy "hand-typed scoring rules textarea" path, where
+    /// FormIoSchemaJson/ScoringRulesJson above are used as-is.</summary>
+    string? AuthoringSchemaJson = null
 );
 
 public interface IAdminAddPlacementItemHandler
@@ -74,7 +83,9 @@ public sealed record UpdatePlacementItemCommand(
     bool IsEnabled,
     string FormIoSchemaJson,
     string ScoringRulesJson,
-    string RendererKind = "FormIo"
+    string RendererKind = "FormIo",
+    /// <summary>See <see cref="AddPlacementItemCommand.AuthoringSchemaJson"/>.</summary>
+    string? AuthoringSchemaJson = null
 );
 
 public interface IAdminUpdatePlacementItemHandler

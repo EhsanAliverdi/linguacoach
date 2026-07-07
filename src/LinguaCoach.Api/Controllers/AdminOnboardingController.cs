@@ -87,7 +87,7 @@ public sealed class AdminOnboardingController : ControllerBase
         try
         {
             var result = await _saveDraftHandler.HandleAsync(
-                new SaveOnboardingTemplateDraftCommand(templateId, request.FormIoSchemaJson, request.ScoringRulesJson, adminId, request.RendererKind ?? "FormIo"), ct);
+                new SaveOnboardingTemplateDraftCommand(templateId, request.FormIoSchemaJson, request.ScoringRulesJson, adminId, request.RendererKind ?? "FormIo", request.AuthoringSchemaJson), ct);
             return Ok(result);
         }
         catch (OnboardingV2ValidationException ex)
@@ -131,5 +131,5 @@ public sealed class AdminOnboardingController : ControllerBase
             ?? User.FindFirstValue("sub"), out var id) ? id : Guid.Empty;
 
     public sealed record CreateTemplateRequest(string Name, string? Description);
-    public sealed record SaveDraftRequest(string FormIoSchemaJson, string? ScoringRulesJson, string? RendererKind = null);
+    public sealed record SaveDraftRequest(string FormIoSchemaJson, string? ScoringRulesJson, string? RendererKind = null, string? AuthoringSchemaJson = null);
 }

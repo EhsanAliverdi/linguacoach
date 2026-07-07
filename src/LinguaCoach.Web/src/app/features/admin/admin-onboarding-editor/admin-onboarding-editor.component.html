@@ -23,6 +23,11 @@
     @if (actionError()) {
       <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert>
     }
+    @if (needsReauthoring()) {
+      <sp-admin-alert variant="warning">
+        This draft's answers were authored before the Quiz tab existed — re-check/re-enable scoring for each question before saving.
+      </sp-admin-alert>
+    }
 
     <!-- ── Toolbar: template identity + actions (own card, above the builder) ─── -->
     <sp-admin-card>
@@ -62,18 +67,6 @@
       </div>
 
       <div style="display:flex; align-items:center; gap:16px; padding: 0 4px 16px;">
-        <span style="font-size:14px; font-weight:500; color:#374151;">Form type:</span>
-        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
-          <input type="radio" name="formDisplay" value="form" [(ngModel)]="formDisplay" (ngModelChange)="onDisplayChange($event)" />
-          <span style="font-size:14px;">Single page</span>
-        </label>
-        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
-          <input type="radio" name="formDisplay" value="wizard" [(ngModel)]="formDisplay" (ngModelChange)="onDisplayChange($event)" />
-          <span style="font-size:14px;">Multi-step wizard</span>
-        </label>
-      </div>
-
-      <div style="display:flex; align-items:center; gap:16px; padding: 0 4px 16px;">
         <span style="font-size:14px; font-weight:500; color:#374151;">Renderer:</span>
         <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
           <input type="radio" name="rendererKind" value="Custom" [ngModel]="rendererKind()" (ngModelChange)="rendererKind.set($event)" />
@@ -85,19 +78,15 @@
         </label>
       </div>
 
-      <app-formio-builder [schema]="draftSchema()" (schemaChange)="onBuilderSchemaChange($event)" />
-    </sp-admin-card>
+      <p data-testid="scored-summary" style="font-size:13px; color:var(--sp-admin-text-secondary, #64748b); margin:8px 0 0;">
+        {{ scoredSummary().scored }} of {{ scoredSummary().total }} question{{ scoredSummary().total !== 1 ? 's' : '' }} have scoring enabled —
+        open a question's settings and use its "Quiz" tab to enable scoring and set the correct answer.
+      </p>
 
-    <!-- ── Scoring rules (own card) ─────────────────────────────────────────── -->
-    <sp-admin-card>
-      <div class="sp-admin-card-header">
-        <div class="sp-admin-card-title">Scoring rules</div>
-      </div>
-      <sp-admin-form-field
-        label="Scoring rules (JSON)"
-        hint='Correct answers for assessment_q1 / assessment_q2, kept out of the schema. Example: {"assessment_q1":{"correctAnswerKey":"b"},"assessment_q2":{"correctAnswerKey":"a"}}'>
-        <sp-admin-textarea [ngModel]="scoringRulesJson()" (ngModelChange)="scoringRulesJson.set($event)" [rows]="6" />
-      </sp-admin-form-field>
+      <app-formio-builder
+        [schema]="draftSchema()"
+        [showDisplayModeToggle]="true"
+        (schemaChange)="onBuilderSchemaChange($event)" />
     </sp-admin-card>
 
   }

@@ -15,6 +15,9 @@ export interface AdminPlacementItemDto {
   /** Read-only preview of the schema's first component label, for the admin list only —
    * never persisted, always derived fresh from formIoSchemaJson. */
   questionPreview: string;
+  /** Admin-only: the Form.io schema as authored (with inline "quiz" annotations), null for items
+   * authored before the Quiz tab existed. Never sent to students. */
+  authoringSchemaJson: string | null;
 }
 
 /** Server-side paged response. Items is the current page only; totalCount reflects the current
@@ -33,9 +36,14 @@ export interface PlacementItemRequest {
   cefrLevel: string;
   itemOrder: number;
   isEnabled: boolean;
+  /** Placeholder — ignored by the server whenever authoringSchemaJson is present (Quiz-tab path). */
   formIoSchemaJson: string;
+  /** Placeholder — ignored by the server whenever authoringSchemaJson is present (Quiz-tab path). */
   scoringRulesJson: string;
   rendererKind?: FormRendererKind;
+  /** The Form.io builder's live schema, with inline per-component "quiz" annotations. The server
+   * splits this into the student-safe schema + backend-only scoring rules. */
+  authoringSchemaJson?: string;
 }
 
 export const PLACEMENT_SKILLS = ['grammar', 'vocabulary', 'reading', 'listening', 'writing', 'speaking'] as const;

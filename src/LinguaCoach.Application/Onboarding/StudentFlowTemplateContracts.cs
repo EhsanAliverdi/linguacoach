@@ -36,7 +36,10 @@ public sealed record StudentFlowTemplateVersionDto(
     string RendererKind,
     string Status,
     DateTimeOffset? PublishedAt,
-    DateTimeOffset UpdatedAt);
+    DateTimeOffset UpdatedAt,
+    /// <summary>Admin-only: the Form.io schema as authored (with inline "quiz" annotations),
+    /// null for versions authored before the Quiz tab existed. Never sent to students.</summary>
+    string? AuthoringSchemaJson = null);
 
 public sealed record StudentFlowTemplateDetailDto(
     Guid TemplateId,
@@ -68,7 +71,10 @@ public interface IAdminCreateOnboardingTemplateHandler
 }
 
 public sealed record SaveOnboardingTemplateDraftCommand(
-    Guid TemplateId, string FormIoSchemaJson, string? ScoringRulesJson, Guid AdminId, string RendererKind = "FormIo");
+    Guid TemplateId, string FormIoSchemaJson, string? ScoringRulesJson, Guid AdminId, string RendererKind = "FormIo",
+    /// <summary>See <see cref="LinguaCoach.Application.Placement.AddPlacementItemCommand.AuthoringSchemaJson"/> —
+    /// same Quiz-tab authoring/server-side-split contract, shared with placement.</summary>
+    string? AuthoringSchemaJson = null);
 
 public interface IAdminSaveOnboardingTemplateDraftHandler
 {

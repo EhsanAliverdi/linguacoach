@@ -21,6 +21,7 @@ internal sealed class PlacementItemDefinitionConfiguration : IEntityTypeConfigur
         builder.Property(i => i.IsEnabled).HasColumnName("is_enabled").IsRequired();
         builder.Property(i => i.FormIoSchemaJson).HasColumnName("form_io_schema_json").HasColumnType("jsonb");
         builder.Property(i => i.ScoringRulesJson).HasColumnName("scoring_rules_json").HasColumnType("jsonb");
+        builder.Property(i => i.AuthoringSchemaJson).HasColumnName("authoring_schema_json").HasColumnType("jsonb");
         builder.Property(i => i.ScoringRulesVersion).HasColumnName("scoring_rules_version").IsRequired()
             .HasDefaultValue(0);
         builder.Property(i => i.RendererKind).HasColumnName("renderer_kind").HasConversion<string>().HasMaxLength(20).IsRequired()

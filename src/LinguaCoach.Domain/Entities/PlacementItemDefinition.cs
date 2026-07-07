@@ -40,6 +40,15 @@ public sealed class PlacementItemDefinition : BaseEntity
     /// migration to distinguish items.</summary>
     public FormRendererKind RendererKind { get; private set; } = FormRendererKind.FormIo;
 
+    /// <summary>Admin-only: the Form.io schema as authored in the builder, including inline
+    /// per-component "quiz" annotations (enabled + correct answer) — never returned to students.
+    /// The server-side <c>IFormIoQuizSchemaSplitter</c> is the sole authority that derives the
+    /// student-safe <see cref="FormIoSchemaJson"/> and backend-only <see cref="ScoringRulesJson"/>
+    /// from this field; the Angular client never constructs the split itself. Null for items
+    /// authored before the Quiz tab existed — they keep scoring via their existing
+    /// ScoringRulesJson until an admin re-saves through the new UI.</summary>
+    public string? AuthoringSchemaJson { get; private set; }
+
     public void SetFormIoAuthoring(string? formIoSchemaJson, string? scoringRulesJson, FormRendererKind rendererKind = FormRendererKind.FormIo)
     {
         FormIoSchemaJson = formIoSchemaJson;
@@ -47,6 +56,11 @@ public sealed class PlacementItemDefinition : BaseEntity
             ScoringRulesVersion++;
         ScoringRulesJson = scoringRulesJson;
         RendererKind = rendererKind;
+    }
+
+    public void SetAuthoringSchema(string? authoringSchemaJson)
+    {
+        AuthoringSchemaJson = authoringSchemaJson;
     }
 
     private PlacementItemDefinition() { }

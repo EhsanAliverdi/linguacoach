@@ -21,6 +21,7 @@ const ITEM_A: AdminPlacementItemDto = {
   scoringRulesVersion: 1,
   rendererKind: 'FormIo',
   questionPreview: 'Which is correct?',
+  authoringSchemaJson: null,
 };
 
 const ITEM_B: AdminPlacementItemDto = {
@@ -34,6 +35,13 @@ const ITEM_B: AdminPlacementItemDto = {
   scoringRulesVersion: 1,
   rendererKind: 'FormIo',
   questionPreview: 'Answer',
+  authoringSchemaJson: JSON.stringify({
+    display: 'form',
+    components: [{
+      type: 'textfield', key: 'answer', label: 'Answer',
+      quiz: { enabled: true, rule: { kind: 'text_normalized', correctAnswer: 'extended', points: 1 } },
+    }],
+  }),
 };
 
 function makeService(items: AdminPlacementItemDto[] = [ITEM_A, ITEM_B]) {
@@ -91,67 +99,38 @@ describe('AdminPlacementItemEditorComponent', () => {
     expect(component.itemForm.skill).toBe('grammar');
   });
 
-  it('saveItem calls add with formIoSchemaJson and scoringRulesJson, no legacy fields', fakeAsync(async () => {
+  it('saveItem calls add with authoringSchemaJson, no legacy fields', fakeAsync(async () => {
     await setup('new');
-    component.formioSchema.set({ display: 'form', components: [{ type: 'radio', key: 'answer', label: 'Q' }] });
-    component.scoringRulesJson.set('{"components":{"answer":{"kind":"single_choice","correctAnswer":"A"}}}');
+    component.formioSchema.set({
+      display: 'form',
+      components: [{ type: 'radio', key: 'answer', label: 'Q', quiz: { enabled: true, rule: { correctAnswer: 'A' } } }],
+    });
     component.saveItem();
     tick();
     expect(svc.add).toHaveBeenCalledWith(jasmine.objectContaining({
       skill: component.itemForm.skill,
       cefrLevel: component.itemForm.cefrLevel,
-      formIoSchemaJson: jasmine.any(String),
-      scoringRulesJson: '{"components":{"answer":{"kind":"single_choice","correctAnswer":"A"}}}',
+      authoringSchemaJson: jasmine.any(String),
     }));
     const savedArgs = svc.add.calls.mostRecent().args[0];
     expect(savedArgs.itemType).toBeUndefined();
     expect(savedArgs.prompt).toBeUndefined();
+
+    // finalizeQuizAnnotations derives the "kind" from the component type before save.
+    const authoringSchema = JSON.parse(savedArgs.authoringSchemaJson);
+    expect(authoringSchema.components[0].quiz.rule.kind).toBe('single_choice');
   }));
 
   it('saveItem navigates back to the item list on success', fakeAsync(async () => {
     await setup('new');
-    component.formioSchema.set({ display: 'form', components: [{ type: 'radio', key: 'answer', label: 'Q' }] });
-    component.scoringRulesJson.set('{"components":{"answer":{"kind":"single_choice","correctAnswer":"A"}}}');
     component.saveItem();
     tick();
     expect(navigateSpy).toHaveBeenCalledWith(['/admin/placement-items']);
   }));
 
-  it('saveItem rejects invalid scoring rules JSON and does not call add', fakeAsync(async () => {
-    await setup('new');
-    component.formioSchema.set({ display: 'form', components: [{ type: 'radio', key: 'answer', label: 'Q' }] });
-    component.scoringRulesJson.set('{not valid json');
-    component.saveItem();
-    tick();
-    expect(svc.add).not.toHaveBeenCalled();
-    expect(component.scoringRulesError()).toContain('invalid');
-  }));
-
-  it('saveItem rejects scoring rules referencing a component key not present in the schema', fakeAsync(async () => {
-    await setup('new');
-    component.formioSchema.set({ display: 'form', components: [{ type: 'radio', key: 'answer', label: 'Q' }] });
-    component.scoringRulesJson.set('{"components":{"orphanKey":{"kind":"single_choice","correctAnswer":"A"}}}');
-    component.saveItem();
-    tick();
-    expect(svc.add).not.toHaveBeenCalled();
-    expect(component.scoringRulesError()).toContain('orphanKey');
-  }));
-
-  it('saveItem rejects empty scoring rules', fakeAsync(async () => {
-    await setup('new');
-    component.formioSchema.set({ display: 'form', components: [{ type: 'radio', key: 'answer', label: 'Q' }] });
-    component.scoringRulesJson.set('');
-    component.saveItem();
-    tick();
-    expect(svc.add).not.toHaveBeenCalled();
-    expect(component.scoringRulesError()).toBeTruthy();
-  }));
-
   it('saveItem sets actionError on failure', fakeAsync(async () => {
     await setup('new');
     svc.add.and.returnValue(throwError(() => ({ error: { error: 'Validation failed' } })));
-    component.formioSchema.set({ display: 'form', components: [{ type: 'radio', key: 'answer', label: 'Q' }] });
-    component.scoringRulesJson.set('{"components":{"answer":{"kind":"single_choice","correctAnswer":"A"}}}');
     component.saveItem();
     tick();
     expect(component.actionError()).toContain('Validation failed');
@@ -168,7 +147,17 @@ describe('AdminPlacementItemEditorComponent', () => {
     // button), so assert on the authored component rather than deep-equality of the whole tree.
     expect(component.formioSchema().components[0].type).toBe('textfield');
     expect(component.formioSchema().components[0].key).toBe('answer');
-    expect(component.scoringRulesJson()).toBe(ITEM_B.scoringRulesJson!);
+  });
+
+  it('seeds from authoringSchemaJson (quiz-annotated) when present, not formIoSchemaJson', async () => {
+    await setup('item-2');
+    expect(component.formioSchema().components[0].quiz?.enabled).toBeTrue();
+    expect(component.needsReauthoring()).toBeFalse();
+  });
+
+  it('sets needsReauthoring when scoringRulesJson exists but authoringSchemaJson does not (legacy item)', async () => {
+    await setup('item-1');
+    expect(component.needsReauthoring()).toBeTrue();
   });
 
   it('sets an error when the itemId is not found (404)', async () => {
@@ -186,16 +175,16 @@ describe('AdminPlacementItemEditorComponent', () => {
     }));
   }));
 
-  // ── schemaComponentKeys ──────────────────────────────────────────────────
+  // ── scoredSummary ──────────────────────────────────────────────────────────
 
-  it('schemaComponentKeys flattens leaf component keys from the current schema', async () => {
-    await setup('item-1');
-    expect(component.schemaComponentKeys()).toEqual(['answer']);
+  it('scoredSummary counts scorable components with quiz enabled', async () => {
+    await setup('item-2');
+    expect(component.scoredSummary()).toEqual({ scored: 1, total: 1 });
   });
 
-  it('schemaComponentKeys is empty for a schema with no components', async () => {
+  it('scoredSummary is 0 of 0 for a schema with no scorable components', async () => {
     await setup('new');
     component.formioSchema.set({ display: 'form', components: [] });
-    expect(component.schemaComponentKeys()).toEqual([]);
+    expect(component.scoredSummary()).toEqual({ scored: 0, total: 0 });
   });
 });

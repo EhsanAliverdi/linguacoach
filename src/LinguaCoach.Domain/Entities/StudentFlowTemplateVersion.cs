@@ -13,6 +13,14 @@ public sealed class StudentFlowTemplateVersion : BaseEntity
     public int VersionNumber { get; private set; }
     public string FormIoSchemaJson { get; private set; } = "{}";
     public string? ScoringRulesJson { get; private set; }
+
+    /// <summary>Admin-only: the Form.io schema as authored in the builder, including inline
+    /// per-component "quiz" annotations (enabled + correct answer) — never returned to students.
+    /// The server-side <c>IFormIoQuizSchemaSplitter</c> is the sole authority that derives the
+    /// student-safe <see cref="FormIoSchemaJson"/> and backend-only <see cref="ScoringRulesJson"/>
+    /// from this field. Null for versions authored before the Quiz tab existed.</summary>
+    public string? AuthoringSchemaJson { get; private set; }
+
     public FormRendererKind RendererKind { get; private set; } = FormRendererKind.FormIo;
     public StudentFlowTemplateStatus Status { get; private set; }
     public Guid CreatedByAdminId { get; private set; }
@@ -52,6 +60,12 @@ public sealed class StudentFlowTemplateVersion : BaseEntity
         FormIoSchemaJson = formIoSchemaJson;
         ScoringRulesJson = scoringRulesJson;
         RendererKind = rendererKind;
+        UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void SetAuthoringSchema(string? authoringSchemaJson)
+    {
+        AuthoringSchemaJson = authoringSchemaJson;
         UpdatedAt = DateTimeOffset.UtcNow;
     }
 

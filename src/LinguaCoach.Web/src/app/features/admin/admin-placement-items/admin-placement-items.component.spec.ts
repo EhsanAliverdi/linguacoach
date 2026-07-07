@@ -21,6 +21,7 @@ const ITEM_A: AdminPlacementItemDto = {
   scoringRulesVersion: 1,
   rendererKind: 'FormIo',
   questionPreview: 'Which is correct?',
+  authoringSchemaJson: null,
 };
 
 const ITEM_B: AdminPlacementItemDto = {
@@ -34,6 +35,7 @@ const ITEM_B: AdminPlacementItemDto = {
   scoringRulesVersion: 1,
   rendererKind: 'FormIo',
   questionPreview: 'Answer',
+  authoringSchemaJson: null,
 };
 
 function makeResult(items: AdminPlacementItemDto[]): AdminPlacementItemListResult {

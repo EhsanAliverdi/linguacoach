@@ -1,18 +1,46 @@
-import { Component, ElementRef, OnChanges, OnDestroy, SimpleChanges, ViewChild, input, output } from '@angular/core';
+import { Component, ElementRef, OnChanges, OnDestroy, SimpleChanges, ViewChild, computed, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Formio } from '@formio/js';
+import { QUIZ_EDIT_FORM_OVERRIDES } from './quiz-edit-tab';
 
 /**
- * Matches the reference project's builder config: show every default Form.io group
- * (Basic/Advanced/Layout/Data/Premium), no palette restriction. The backend
- * (IFormIoSchemaValidationService) is the actual security boundary — it rejects script/eval
- * properties, external data sources, and answer-leak keys regardless of what the builder lets an
- * admin drag onto the canvas, so a draft using a disallowed component still gets a clear 400 on
- * save rather than silently succeeding.
+ * The "Premium" Form.io palette group (signature, datamap, and other components requiring a
+ * Form.io Enterprise/hosted-project license) is hidden — none of its components are in the
+ * backend's (IFormIoSchemaValidationService) approved allow-list, and they'd need a licensed
+ * Form.io project to even render correctly, which this app deliberately never configures (schemas
+ * render fully client-side, no Form.io project URL is ever set). Basic/Advanced/Layout/Data stay
+ * fully shown — restricting individual component keys within those groups down to the exact
+ * backend allow-list would need per-key verification against Form.io's own group membership this
+ * hasn't been done for, so this is a narrower, verified-safe restriction, not a 1:1 mirror of the
+ * backend list. The backend remains the actual security boundary regardless — it rejects
+ * script/eval properties, external data sources, and answer-leak keys regardless of what the
+ * builder lets an admin drag onto the canvas, so a draft using a disallowed component still gets a
+ * clear 400 on save rather than silently succeeding.
+ *
+ * `editForm` adds the "Quiz" tab to the six basic input types' own component-settings modal —
+ * shared identically by every consumer of this component (onboarding + placement), since it's a
+ * single module-level option object, not per-caller configuration.
  */
 const BUILDER_OPTIONS = {
   noDefaultSubmitButton: false,
+  editForm: QUIZ_EDIT_FORM_OVERRIDES,
+  builder: { premium: false },
 };
+
+/** Wraps any existing flat components in a single wizard page when switching from single-page
+ *  to multi-step display, so no authored fields are lost. */
+function ensureWizardHasPage(schema: any): any {
+  const comps: any[] = Array.isArray(schema?.components) ? schema.components : [];
+  const hasPanel = comps.some((c: any) => c?.type === 'panel');
+  if (hasPanel) return schema;
+  return {
+    ...schema,
+    components: [{
+      type: 'panel', breadcrumb: 'Page 1', title: 'Page 1',
+      label: 'Page 1', key: 'page1', components: comps,
+    }],
+  };
+}
 
 /**
  * @formio/js v5 (unlike the older v4 "formiojs" package a reference Form.io+Tailwind project was
@@ -47,6 +75,21 @@ function initSidebarAccordion(root: HTMLElement): () => void {
   standalone: true,
   imports: [CommonModule],
   template: `
+    @if (showDisplayModeToggle()) {
+      <div class="sf-formio-display-toggle" style="display:flex; align-items:center; gap:16px; padding: 0 4px 12px;">
+        <span style="font-size:14px; font-weight:500; color:#374151;">Form type:</span>
+        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+          <input type="radio" name="formioDisplayMode" value="form"
+            [checked]="displayMode() === 'form'" (change)="setDisplayMode('form')" />
+          <span style="font-size:14px;">Single page</span>
+        </label>
+        <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+          <input type="radio" name="formioDisplayMode" value="wizard"
+            [checked]="displayMode() === 'wizard'" (change)="setDisplayMode('wizard')" />
+          <span style="font-size:14px;">Multi-step wizard</span>
+        </label>
+      </div>
+    }
     <div class="formio-builder-shell formio-scope">
       <div #host></div>
     </div>
@@ -59,6 +102,15 @@ export class FormioBuilderComponent implements OnChanges, OnDestroy {
   /** Emits the updated schema object on every builder change. */
   schemaChange = output<any>();
 
+  /** Opt-in: shows a single-page/multi-step-wizard toggle above the builder canvas. Off by
+   *  default — placement items are always single-schema and never pass this input. */
+  showDisplayModeToggle = input(false);
+
+  /** Emitted whenever the admin switches display mode via the toggle above. */
+  displayModeChange = output<'form' | 'wizard'>();
+
+  displayMode = computed<'form' | 'wizard'>(() => this.schema()?.display === 'wizard' ? 'wizard' : 'form');
+
   @ViewChild('host', { static: true }) host!: ElementRef<HTMLDivElement>;
 
   private builder: any = null;
@@ -66,6 +118,17 @@ export class FormioBuilderComponent implements OnChanges, OnDestroy {
   private sidebarCleanup: (() => void) | null = null;
   private dialogObserver: MutationObserver | null = null;
   private wizardHeaderObserver: MutationObserver | null = null;
+
+  /** Switches between single-page and multi-step wizard display — requires a full builder
+   *  teardown+recreate, since Form.io's builder can't do this in-place via setForm(). */
+  setDisplayMode(mode: 'form' | 'wizard'): void {
+    let schema = this.getSchema();
+    schema = { ...schema, display: mode };
+    if (mode === 'wizard') schema = ensureWizardHasPage(schema);
+    this.rebuild(schema);
+    this.schemaChange.emit(schema);
+    this.displayModeChange.emit(mode);
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     // Only (re)build once per host — Form.io's builder owns its own internal editing state after

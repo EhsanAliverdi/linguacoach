@@ -26,7 +26,12 @@ public sealed class FormIoSchemaValidationService : IFormIoSchemaValidationServi
 
     private static readonly string[] ForbiddenAnswerLeakKeys =
     {
-        "correctAnswerKey", "correctAnswer", "correctAnswers", "score", "rubric", "scoringWeight"
+        "correctAnswerKey", "correctAnswer", "correctAnswers", "score", "rubric", "scoringWeight",
+        // Defense in depth for the Form.io builder's Quiz tab: IFormIoQuizSchemaSplitter is the
+        // sole authority that strips "quiz" annotations before a schema is treated as
+        // student-safe. This key should never survive that split — if it does (a splitter bug),
+        // this independent check rejects the schema outright rather than silently serving it.
+        "quiz"
     };
 
     private static readonly string[] ContainerComponentArrayProps = { "components", "columns", "rows" };

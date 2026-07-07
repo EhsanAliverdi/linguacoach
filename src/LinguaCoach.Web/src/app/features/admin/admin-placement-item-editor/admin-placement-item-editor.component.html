@@ -22,6 +22,11 @@
     @if (actionError()) {
       <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert>
     }
+    @if (needsReauthoring()) {
+      <sp-admin-alert variant="warning">
+        This item's answers were authored before the Quiz tab existed — re-check/re-enable scoring for each question before saving.
+      </sp-admin-alert>
+    }
 
     <sp-admin-card>
       <div class="sp-admin-form-stack">
@@ -53,37 +58,11 @@
           Preview
         </sp-admin-button>
       </div>
-      <p style="font-size:13px; color:var(--sp-admin-text-secondary, #64748b); margin:0 0 8px;" data-testid="formio-schema-copy">Form schema controls what the student sees.</p>
+      <p style="font-size:13px; color:var(--sp-admin-text-secondary, #64748b); margin:0 0 8px;" data-testid="formio-schema-copy">Form schema controls what the student sees. Open a question's settings and use its "Quiz" tab to enable scoring and set the correct answer.</p>
+      <p data-testid="scored-summary" style="font-size:13px; color:var(--sp-admin-text-secondary, #64748b); margin:0 0 8px;">
+        {{ scoredSummary().scored }} of {{ scoredSummary().total }} question{{ scoredSummary().total !== 1 ? 's' : '' }} have scoring enabled
+      </p>
       <app-formio-builder [schema]="formioSchema()" (schemaChange)="onFormioSchemaChange($event)" />
-    </sp-admin-card>
-
-    <!-- ── Scoring rules (backend-only) ────────────────────────────────────────── -->
-    <sp-admin-card>
-      <div class="sp-admin-card-header">
-        <div class="sp-admin-card-title">Scoring rules</div>
-      </div>
-      <p style="font-size:13px; color:var(--sp-admin-text-secondary, #64748b); margin:0 0 8px;" data-testid="scoring-rules-copy">Scoring rules are private and never sent to students.</p>
-
-      @if (schemaComponentKeys().length > 0) {
-        <div data-testid="scoring-rules-component-keys" style="font-size:12px; color:var(--sp-admin-text-secondary, #64748b);">
-          Scorable component keys in this schema: {{ schemaComponentKeys().join(', ') }}
-        </div>
-      } @else {
-        <div data-testid="scoring-rules-component-keys" style="font-size:12px; color:var(--sp-admin-text-secondary, #64748b);">
-          No answer components in this schema yet — add one in the Form.io builder above.
-        </div>
-      }
-
-      <sp-admin-form-field
-        label="Scoring rules (JSON)"
-        [required]="true"
-        hint="Backend-only correct-answer data for the Form.io schema above, keyed by component key.">
-        <sp-admin-textarea [ngModel]="scoringRulesJson()" (ngModelChange)="scoringRulesJson.set($event)" [rows]="6" />
-      </sp-admin-form-field>
-
-      @if (scoringRulesError()) {
-        <sp-admin-alert variant="error" data-testid="scoring-rules-error">{{ scoringRulesError() }}</sp-admin-alert>
-      }
     </sp-admin-card>
 
     <div style="display:flex; gap:8px; justify-content:flex-end;">

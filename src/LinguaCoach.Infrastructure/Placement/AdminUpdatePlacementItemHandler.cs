@@ -1,3 +1,4 @@
+using LinguaCoach.Application.FormIo;
 using LinguaCoach.Application.Onboarding;
 using LinguaCoach.Application.Placement;
 using LinguaCoach.Domain.Enums;
@@ -10,11 +11,13 @@ public sealed class AdminUpdatePlacementItemHandler : IAdminUpdatePlacementItemH
 {
     private readonly LinguaCoachDbContext _db;
     private readonly IFormIoSchemaValidationService _validator;
+    private readonly IFormIoQuizSchemaSplitter _splitter;
 
-    public AdminUpdatePlacementItemHandler(LinguaCoachDbContext db, IFormIoSchemaValidationService validator)
+    public AdminUpdatePlacementItemHandler(LinguaCoachDbContext db, IFormIoSchemaValidationService validator, IFormIoQuizSchemaSplitter splitter)
     {
         _db = db;
         _validator = validator;
+        _splitter = splitter;
     }
 
     public async Task<AdminPlacementItemDto> HandleAsync(
@@ -23,13 +26,26 @@ public sealed class AdminUpdatePlacementItemHandler : IAdminUpdatePlacementItemH
         var item = await _db.PlacementItemDefinitions.FirstOrDefaultAsync(i => i.Id == command.ItemId, ct)
             ?? throw new PlacementItemValidationException($"Placement item {command.ItemId} not found.");
 
-        var schemaResult = _validator.ValidateSchema(command.FormIoSchemaJson);
+        string formIoSchemaJson, scoringRulesJson;
+        if (command.AuthoringSchemaJson is not null)
+        {
+            var split = _splitter.Split(command.AuthoringSchemaJson);
+            formIoSchemaJson = split.StudentSchemaJson;
+            scoringRulesJson = split.ScoringRulesJson;
+        }
+        else
+        {
+            formIoSchemaJson = command.FormIoSchemaJson;
+            scoringRulesJson = command.ScoringRulesJson;
+        }
+
+        var schemaResult = _validator.ValidateSchema(formIoSchemaJson);
         if (!schemaResult.IsValid)
             throw new PlacementItemValidationException(schemaResult.Error ?? "Invalid Form.io schema.");
 
-        PlacementFormIoScoringValidator.ValidateAndParse(command.FormIoSchemaJson, command.ScoringRulesJson);
+        PlacementFormIoScoringValidator.ValidateAndParse(formIoSchemaJson, scoringRulesJson);
 
-        var identityHash = PlacementItemSchemaLabel.ComputeIdentityHash(command.Skill, command.CefrLevel, command.FormIoSchemaJson);
+        var identityHash = PlacementItemSchemaLabel.ComputeIdentityHash(command.Skill, command.CefrLevel, formIoSchemaJson);
         var existingSameLevel = await _db.PlacementItemDefinitions
             .Where(i => i.Id != command.ItemId && i.Skill == command.Skill && i.CefrLevel == command.CefrLevel)
             .Select(i => i.FormIoSchemaJson)
@@ -49,13 +65,15 @@ public sealed class AdminUpdatePlacementItemHandler : IAdminUpdatePlacementItemH
         }
 
         var rendererKind = Enum.TryParse<FormRendererKind>(command.RendererKind, ignoreCase: true, out var parsedKind) ? parsedKind : FormRendererKind.FormIo;
-        item.SetFormIoAuthoring(command.FormIoSchemaJson, command.ScoringRulesJson, rendererKind);
+        item.SetFormIoAuthoring(formIoSchemaJson, scoringRulesJson, rendererKind);
+        if (command.AuthoringSchemaJson is not null)
+            item.SetAuthoringSchema(command.AuthoringSchemaJson);
 
         await _db.SaveChangesAsync(ct);
 
         return new AdminPlacementItemDto(
             item.Id, item.Skill, item.CefrLevel, item.ItemOrder, item.IsEnabled,
             item.FormIoSchemaJson, item.ScoringRulesJson, item.ScoringRulesVersion, item.RendererKind.ToString(),
-            PlacementItemSchemaLabel.ExtractLabel(item.FormIoSchemaJson));
+            PlacementItemSchemaLabel.ExtractLabel(item.FormIoSchemaJson), item.AuthoringSchemaJson);
     }
 }

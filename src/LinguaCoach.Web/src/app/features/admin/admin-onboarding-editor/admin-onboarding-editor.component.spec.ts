@@ -18,6 +18,17 @@ const DRAFT_VERSION: StudentFlowTemplateVersionDto = {
   status: 'Draft',
   publishedAt: null,
   updatedAt: '2026-01-01T00:00:00Z',
+  authoringSchemaJson: null,
+};
+
+const LEGACY_DRAFT_VERSION: StudentFlowTemplateVersionDto = {
+  ...DRAFT_VERSION,
+  formIoSchemaJson: JSON.stringify({
+    display: 'form',
+    components: [{ type: 'radio', key: 'assessment_q1', label: 'Pick one', values: [{ label: 'a', value: 'a' }, { label: 'b', value: 'b' }] }],
+  }),
+  scoringRulesJson: '{"assessment_q1":{"correctAnswerKey":"b"}}',
+  authoringSchemaJson: null,
 };
 
 const TEMPLATE_DETAIL: StudentFlowTemplateDetailDto = {
@@ -73,7 +84,10 @@ describe('AdminOnboardingEditorComponent', () => {
 
   it('seeds draftSchema from the current draft version', async () => {
     await setup();
-    expect(component.draftSchema()).toEqual({ display: 'form', components: [] });
+    // The live Form.io builder normalizes the schema on render (adds a submit button component),
+    // so assert on the authored shape rather than deep-equality of the whole tree.
+    expect(component.draftSchema().display).toBe('form');
+    expect((component.draftSchema().components ?? []).every((c: any) => c.type === 'button' || c.key)).toBeTrue();
   });
 
   it('draftVersion computed returns the Draft-status version', async () => {
@@ -103,16 +117,43 @@ describe('AdminOnboardingEditorComponent', () => {
     expect(component.error()).toBeTruthy();
   });
 
-  it('saveDraft calls service with stringified schema and scoring rules', fakeAsync(async () => {
+  it('saveDraft calls service with stringified schema and authoringSchemaJson', fakeAsync(async () => {
     await setup();
-    component.scoringRulesJson.set('{"assessment_q1":{"correctAnswerKey":"b"}}');
     component.saveDraft();
     tick();
     expect(svc.saveDraft).toHaveBeenCalledWith('template-1', jasmine.objectContaining({
       formIoSchemaJson: jasmine.any(String),
-      scoringRulesJson: '{"assessment_q1":{"correctAnswerKey":"b"}}',
+      authoringSchemaJson: jasmine.any(String),
     }));
   }));
+
+  it('needsReauthoring is set when scoringRulesJson exists but authoringSchemaJson does not (legacy draft)', async () => {
+    svc = makeService();
+    svc.getTemplate.and.returnValue(of({ ...TEMPLATE_DETAIL, versions: [LEGACY_DRAFT_VERSION] }));
+    await TestBed.configureTestingModule({
+      imports: [AdminOnboardingEditorComponent],
+      providers: [
+        provideRouter([]),
+        { provide: AdminOnboardingService, useValue: svc },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { paramMap: convertToParamMap({ templateId: 'template-1' }) } },
+        },
+      ],
+    }).compileComponents();
+    fixture = TestBed.createComponent(AdminOnboardingEditorComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(component.needsReauthoring()).toBeTrue();
+  });
+
+  it('scoredSummary is 0 of 0 for an empty schema', async () => {
+    await setup();
+    expect(component.scoredSummary()).toEqual({ scored: 0, total: 0 });
+  });
 
   it('saveDraft sets actionSuccess on success', fakeAsync(async () => {
     await setup();

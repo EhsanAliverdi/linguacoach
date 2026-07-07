@@ -19,6 +19,6 @@ public sealed class AdminPlacementItemGetQueryHandler : IAdminPlacementItemGetQu
         return new AdminPlacementItemDto(
             item.Id, item.Skill, item.CefrLevel, item.ItemOrder, item.IsEnabled,
             item.FormIoSchemaJson, item.ScoringRulesJson, item.ScoringRulesVersion, item.RendererKind.ToString(),
-            PlacementItemSchemaLabel.ExtractLabel(item.FormIoSchemaJson));
+            PlacementItemSchemaLabel.ExtractLabel(item.FormIoSchemaJson), item.AuthoringSchemaJson);
     }
 }

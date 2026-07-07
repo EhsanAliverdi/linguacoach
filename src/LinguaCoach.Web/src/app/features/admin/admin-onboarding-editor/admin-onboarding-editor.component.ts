@@ -11,6 +11,7 @@ import { FormioBuilderComponent } from '../../../shared/formio/formio-builder.co
 import { FormioRendererComponent } from '../../../shared/formio/formio-renderer.component';
 import { OnboardingWizardComponent } from '../../student/onboarding/onboarding-wizard/onboarding-wizard.component';
 import { FormRendererKind } from '../../../shared/formio/form-renderer-kind.model';
+import { countScoredComponents, finalizeQuizAnnotations } from '../../../shared/formio/quiz-scoring-rule.model';
 import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
@@ -22,25 +23,9 @@ import {
   SpAdminModalComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
-  SpAdminTextareaComponent,
 } from '../../../design-system/admin';
 
 const EMPTY_SCHEMA = { display: 'form', components: [] };
-
-/** Wraps any existing flat components in a single wizard page when switching from single-page
- *  to multi-step display, so no authored fields are lost. */
-function ensureWizardHasPage(schema: any): any {
-  const comps: any[] = Array.isArray(schema?.components) ? schema.components : [];
-  const hasPanel = comps.some((c: any) => c?.type === 'panel');
-  if (hasPanel) return schema;
-  return {
-    ...schema,
-    components: [{
-      type: 'panel', breadcrumb: 'Page 1', title: 'Page 1',
-      label: 'Page 1', key: 'page1', components: comps,
-    }],
-  };
-}
 
 /**
  * Dedicated onboarding template designer page (own route, own full-width canvas) —
@@ -63,7 +48,6 @@ function ensureWizardHasPage(schema: any): any {
     SpAdminModalComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
-    SpAdminTextareaComponent,
     FormioBuilderComponent,
     FormioRendererComponent,
     OnboardingWizardComponent,
@@ -84,10 +68,12 @@ export class AdminOnboardingEditorComponent implements OnInit {
   /** Current working schema object bound to the builder — seeded from the current draft version,
    * updated live on every builder change event. */
   draftSchema = signal<any>(EMPTY_SCHEMA);
-  scoringRulesJson = signal('');
 
-  /** Single page vs multi-step wizard — switching requires a full builder rebuild. */
-  formDisplay: 'form' | 'wizard' = 'form';
+  /** True when this draft has scoring but was authored before the Quiz tab existed — its schema
+   * carries no quiz annotations yet, so every question shows as "not scored" until re-saved. */
+  needsReauthoring = signal(false);
+
+  readonly scoredSummary = computed(() => countScoredComponents(this.draftSchema()));
 
   /** Which engine renders this template for students — kept in sync with the loaded draft and
    * included on every save, so Preview shows exactly what the student will see. */
@@ -133,11 +119,11 @@ export class AdminOnboardingEditorComponent implements OnInit {
     this.template.set(detail);
     // `versions` is always sorted newest-first by the backend — versions[0] is the latest.
     const draft = detail.versions.find(v => v.status === 'Draft') ?? detail.versions[0] ?? null;
-    const schema = draft ? this.tryParse(draft.formIoSchemaJson) : EMPTY_SCHEMA;
+    this.needsReauthoring.set(!!draft && !draft.authoringSchemaJson && !!draft.scoringRulesJson);
+    const seedJson = draft?.authoringSchemaJson ?? draft?.formIoSchemaJson;
+    const schema = seedJson ? this.tryParse(seedJson) : EMPTY_SCHEMA;
     this.draftSchema.set(schema);
-    this.formDisplay = schema?.display === 'wizard' ? 'wizard' : 'form';
     this.rendererKind.set(draft?.rendererKind ?? 'FormIo');
-    this.scoringRulesJson.set(draft?.scoringRulesJson ?? '');
   }
 
   private tryParse(json: string): any {
@@ -152,20 +138,13 @@ export class AdminOnboardingEditorComponent implements OnInit {
     this.draftSchema.set(schema);
   }
 
-  onDisplayChange(display: 'form' | 'wizard'): void {
-    let schema = this.builderRef ? this.builderRef.getSchema() : this.draftSchema();
-    schema = { ...schema, display };
-    if (display === 'wizard') schema = ensureWizardHasPage(schema);
-    this.draftSchema.set(schema);
-    this.builderRef?.rebuild(schema);
-  }
-
   saveDraft(): void {
     this.actionError.set('');
     const schema = this.builderRef ? this.builderRef.getSchema() : this.draftSchema();
+    const authoringSchema = finalizeQuizAnnotations(schema);
     this.svc.saveDraft(this.templateId, {
       formIoSchemaJson: JSON.stringify(schema),
-      scoringRulesJson: this.scoringRulesJson().trim() || undefined,
+      authoringSchemaJson: JSON.stringify(authoringSchema),
       rendererKind: this.rendererKind(),
     }).subscribe({
       next: () => {
