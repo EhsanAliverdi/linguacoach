@@ -13,19 +13,21 @@ public sealed class AdminPlacementItemEndpointTests : IClassFixture<ApiTestFacto
     // ── GET /api/admin/placement-items ───────────────────────────────────────
 
     [Fact]
-    public async Task List_AsAdmin_ReturnsAtLeastSeeded72Items()
+    public async Task List_AsAdmin_ReturnsAtLeastSeeded72ItemsAcrossPages()
     {
         // Other tests in this fixture add items of their own (some intentionally left behind,
         // e.g. AddItem_DuplicatePrompt_Returns400), so this asserts a floor, not an exact count.
         var token = await _factory.CreateAdminAndGetTokenAsync();
         var client = ClientWithToken(token);
 
-        var response = await client.GetAsync("/api/admin/placement-items");
+        var response = await client.GetAsync("/api/admin/placement-items?page=1&pageSize=1");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.Equal(JsonValueKind.Array, body.ValueKind);
-        Assert.True(body.GetArrayLength() >= 72, $"Expected at least 72 items, got {body.GetArrayLength()}");
+        Assert.Equal(1, body.GetProperty("items").GetArrayLength());
+        Assert.True(body.GetProperty("totalCount").GetInt32() >= 72,
+            $"Expected at least 72 items, got {body.GetProperty("totalCount").GetInt32()}");
+        Assert.True(body.GetProperty("overallTotalCount").GetInt32() >= 72);
     }
 
     [Fact]
@@ -34,16 +36,56 @@ public sealed class AdminPlacementItemEndpointTests : IClassFixture<ApiTestFacto
         var token = await _factory.CreateAdminAndGetTokenAsync();
         var client = ClientWithToken(token);
 
-        var response = await client.GetAsync("/api/admin/placement-items");
+        var response = await client.GetAsync("/api/admin/placement-items?page=1&pageSize=200");
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
 
-        foreach (var item in body.EnumerateArray())
+        foreach (var item in body.GetProperty("items").EnumerateArray())
         {
             Assert.True(item.TryGetProperty("formIoSchemaJson", out var schema));
             Assert.False(string.IsNullOrWhiteSpace(schema.GetString()));
             Assert.True(item.TryGetProperty("scoringRulesJson", out var rules));
             Assert.False(string.IsNullOrWhiteSpace(rules.GetString()));
         }
+    }
+
+    [Fact]
+    public async Task List_AsAdmin_FilterBySkill_ReturnsOnlyThatSkill()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(token);
+
+        var response = await client.GetAsync("/api/admin/placement-items?page=1&pageSize=200&skill=listening");
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        var items = body.GetProperty("items").EnumerateArray().ToList();
+        Assert.True(items.Count > 0);
+        Assert.All(items, i => Assert.Equal("listening", i.GetProperty("skill").GetString()));
+    }
+
+    [Fact]
+    public async Task GetItem_ById_ReturnsThatItem()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(token);
+
+        var listResp = await client.GetAsync("/api/admin/placement-items?page=1&pageSize=1");
+        var listBody = await listResp.Content.ReadFromJsonAsync<JsonElement>();
+        var itemId = listBody.GetProperty("items")[0].GetProperty("itemId").GetGuid();
+
+        var getResp = await client.GetAsync($"/api/admin/placement-items/{itemId}");
+        Assert.Equal(HttpStatusCode.OK, getResp.StatusCode);
+        var getBody = await getResp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(itemId, getBody.GetProperty("itemId").GetGuid());
+    }
+
+    [Fact]
+    public async Task GetItem_NotFound_Returns404()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(token);
+
+        var response = await client.GetAsync($"/api/admin/placement-items/{Guid.NewGuid()}");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]

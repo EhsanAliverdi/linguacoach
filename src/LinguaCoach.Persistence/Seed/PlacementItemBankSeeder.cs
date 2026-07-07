@@ -6,47 +6,65 @@ using Microsoft.EntityFrameworkCore;
 namespace LinguaCoach.Persistence.Seed;
 
 // Backfills the placement item bank that was previously hardcoded in
-// PlacementAssessmentService.cs into admin-editable rows. Idempotent: re-runs are safe —
-// each hardcoded item's Prompt text is its stable identity (also enforced as a unique DB
-// index), so items already present (including any an admin has since edited) are skipped.
-// Items an admin adds/removes via /admin/placement-items are never touched by this seeder.
+// PlacementAssessmentService.cs into admin-editable rows. Idempotent: re-runs are safe — a
+// (skill, CEFR level) pair that already has any rows is assumed fully seeded and is skipped for
+// *insertion* (never duplicated on the next app restart, never clobbers an admin's later edit to
+// an item's Form.io schema). Separately, any existing row within an already-seeded pair that is
+// still missing FormIoSchemaJson (e.g. rows created before the Form.io-native migration ran
+// against this database) is backfilled in place, matched to its corresponding SeedItem by
+// position within the pair — never touching a row that already has a schema.
 //
 // Form.io-native migration: every seeded item is authored with a native FormIoSchemaJson
 // (single "answer" component) plus a matching backend-only ScoringRulesJson, generated
-// programmatically from the same flat SeedItem data that used to populate the legacy fields.
+// programmatically from the same flat SeedItem data (ItemType/Prompt are seed-fixture inputs
+// only now — PlacementItemDefinition itself no longer stores them).
 public static class PlacementItemBankSeeder
 {
     public static async Task SeedAsync(LinguaCoachDbContext db)
     {
         var existing = await db.PlacementItemDefinitions.ToListAsync();
-        var existingByPrompt = existing.ToDictionary(i => i.Prompt, StringComparer.Ordinal);
+        var existingByPair = existing
+            .GroupBy(i => (i.Skill, i.CefrLevel))
+            .ToDictionary(g => g.Key, g => g.OrderBy(i => i.ItemOrder).ToList());
 
-        var order = 0;
+        var defaultsByPair = DefaultItems
+            .Select((t, idx) => (t, order: idx + 1))
+            .GroupBy(x => (x.t.Skill, x.t.CefrLevel))
+            .ToDictionary(g => g.Key, g => g.ToList());
+
         var toAdd = new List<PlacementItemDefinition>();
         var dirty = false;
-        foreach (var t in DefaultItems)
-        {
-            order++;
-            var audioScript = t.Skill == "listening" ? DeriveListeningAudioScript(t.Prompt, t.CorrectAnswer) : null;
 
-            if (existingByPrompt.TryGetValue(t.Prompt, out var existingItem))
+        foreach (var (pair, seedEntries) in defaultsByPair)
+        {
+            if (existingByPair.TryGetValue(pair, out var existingRows))
             {
-                // Backfill FormIoSchemaJson/ScoringRulesJson onto rows seeded before this native
-                // authoring model existed — never touches a row an admin has since re-authored.
-                if (string.IsNullOrWhiteSpace(existingItem.FormIoSchemaJson))
+                // Pair already seeded — never insert new rows for it. Only repair rows still
+                // missing a schema (pre-Form.io-migration backfill), matched by position.
+                var matchCount = Math.Min(existingRows.Count, seedEntries.Count);
+                for (var i = 0; i < matchCount; i++)
                 {
+                    var row = existingRows[i];
+                    if (!string.IsNullOrWhiteSpace(row.FormIoSchemaJson)) continue;
+
+                    var t = seedEntries[i].t;
+                    var audioScript = t.Skill == "listening" ? DeriveListeningAudioScript(t.Prompt, t.CorrectAnswer) : null;
                     var (schema, rules) = BuildFormIoAuthoring(t, audioScript);
-                    existingItem.SetFormIoAuthoring(schema, rules);
+                    row.SetFormIoAuthoring(schema, rules);
                     dirty = true;
                 }
-
                 continue;
             }
 
-            var (formIoSchemaJson, scoringRulesJson) = BuildFormIoAuthoring(t, audioScript);
-            var newItem = new PlacementItemDefinition(t.Skill, t.CefrLevel, t.ItemType, t.Prompt, order);
-            newItem.SetFormIoAuthoring(formIoSchemaJson, scoringRulesJson);
-            toAdd.Add(newItem);
+            foreach (var (t, order) in seedEntries)
+            {
+                var audioScript = t.Skill == "listening" ? DeriveListeningAudioScript(t.Prompt, t.CorrectAnswer) : null;
+                var (formIoSchemaJson, scoringRulesJson) = BuildFormIoAuthoring(t, audioScript);
+
+                var newItem = new PlacementItemDefinition(t.Skill, t.CefrLevel, order);
+                newItem.SetFormIoAuthoring(formIoSchemaJson, scoringRulesJson);
+                toAdd.Add(newItem);
+            }
         }
 
         if (toAdd.Count > 0) db.PlacementItemDefinitions.AddRange(toAdd);

@@ -1,8 +1,9 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { AdminPlacementItemsComponent } from './admin-placement-items.component';
 import { AdminPlacementItemService } from '../../../core/services/admin-placement-item.service';
-import { AdminPlacementItemDto } from '../../../core/models/admin-placement-item.models';
+import { AdminPlacementItemDto, AdminPlacementItemListResult } from '../../../core/models/admin-placement-item.models';
 
 const SCHEMA_WITH_ANSWER = JSON.stringify({
   display: 'form',
@@ -13,35 +14,41 @@ const ITEM_A: AdminPlacementItemDto = {
   itemId: 'item-1',
   skill: 'grammar',
   cefrLevel: 'A1',
-  itemType: 'multiple_choice',
-  prompt: 'Which is correct?',
   itemOrder: 1,
   isEnabled: true,
   formIoSchemaJson: SCHEMA_WITH_ANSWER,
   scoringRulesJson: '{"components":{"answer":{"kind":"single_choice","correctAnswer":"A"}}}',
   scoringRulesVersion: 1,
   rendererKind: 'FormIo',
+  questionPreview: 'Which is correct?',
 };
 
 const ITEM_B: AdminPlacementItemDto = {
   itemId: 'item-2',
   skill: 'listening',
   cefrLevel: 'B1',
-  itemType: 'gap_fill',
-  prompt: 'You hear: complete the sentence.',
   itemOrder: 2,
   isEnabled: false,
   formIoSchemaJson: JSON.stringify({ display: 'form', components: [{ type: 'textfield', key: 'answer', label: 'Answer' }] }),
   scoringRulesJson: '{"components":{"answer":{"kind":"text_normalized","correctAnswer":"extended"}}}',
   scoringRulesVersion: 1,
   rendererKind: 'FormIo',
+  questionPreview: 'Answer',
 };
 
-function makeService(items: AdminPlacementItemDto[] = [ITEM_A, ITEM_B]) {
+function makeResult(items: AdminPlacementItemDto[]): AdminPlacementItemListResult {
   return {
-    list: jasmine.createSpy('list').and.returnValue(of(items)),
-    add: jasmine.createSpy('add').and.returnValue(of(ITEM_A)),
-    update: jasmine.createSpy('update').and.returnValue(of(ITEM_A)),
+    items,
+    totalCount: items.length,
+    overallTotalCount: items.length,
+    enabledCount: items.filter(i => i.isEnabled).length,
+    skillCount: new Set(items.map(i => i.skill)).size,
+  };
+}
+
+function makeService(result: AdminPlacementItemListResult = makeResult([ITEM_A, ITEM_B])) {
+  return {
+    list: jasmine.createSpy('list').and.returnValue(of(result)),
     remove: jasmine.createSpy('remove').and.returnValue(of(void 0)),
   };
 }
@@ -51,11 +58,11 @@ describe('AdminPlacementItemsComponent', () => {
   let component: AdminPlacementItemsComponent;
   let svc: ReturnType<typeof makeService>;
 
-  async function setup(items: AdminPlacementItemDto[] = [ITEM_A, ITEM_B]) {
-    svc = makeService(items);
+  async function setup(result: AdminPlacementItemListResult = makeResult([ITEM_A, ITEM_B])) {
+    svc = makeService(result);
     await TestBed.configureTestingModule({
       imports: [AdminPlacementItemsComponent],
-      providers: [{ provide: AdminPlacementItemService, useValue: svc }],
+      providers: [provideRouter([]), { provide: AdminPlacementItemService, useValue: svc }],
     }).compileComponents();
     fixture = TestBed.createComponent(AdminPlacementItemsComponent);
     component = fixture.componentInstance;
@@ -73,16 +80,16 @@ describe('AdminPlacementItemsComponent', () => {
     svc = makeService();
     TestBed.configureTestingModule({
       imports: [AdminPlacementItemsComponent],
-      providers: [{ provide: AdminPlacementItemService, useValue: svc }],
+      providers: [provideRouter([]), { provide: AdminPlacementItemService, useValue: svc }],
     });
     fixture = TestBed.createComponent(AdminPlacementItemsComponent);
     component = fixture.componentInstance;
     expect(component.loading()).toBeTrue();
   });
 
-  it('calls list on init', async () => {
+  it('calls list with page 1, default page size, and "all" skill on init', async () => {
     await setup();
-    expect(svc.list).toHaveBeenCalledTimes(1);
+    expect(svc.list).toHaveBeenCalledWith(1, component.pageSize, 'all', '');
   });
 
   it('populates items signal after load', async () => {
@@ -100,7 +107,7 @@ describe('AdminPlacementItemsComponent', () => {
     svc.list.and.returnValue(throwError(() => ({ error: { error: 'Server error' } })));
     await TestBed.configureTestingModule({
       imports: [AdminPlacementItemsComponent],
-      providers: [{ provide: AdminPlacementItemService, useValue: svc }],
+      providers: [provideRouter([]), { provide: AdminPlacementItemService, useValue: svc }],
     }).compileComponents();
     fixture = TestBed.createComponent(AdminPlacementItemsComponent);
     component = fixture.componentInstance;
@@ -110,201 +117,59 @@ describe('AdminPlacementItemsComponent', () => {
     expect(component.error()).toBeTruthy();
   });
 
-  // ── KPI computed signals ──────────────────────────────────────────────────
+  // ── KPI signals (global, unfiltered) ──────────────────────────────────────
 
-  it('totalItems computed reflects item count', async () => {
+  it('overallTotalCount reflects the server-reported unfiltered total', async () => {
     await setup();
-    expect(component.totalItems()).toBe(2);
+    expect(component.overallTotalCount()).toBe(2);
   });
 
-  it('enabledItems computed counts only enabled items', async () => {
+  it('enabledCount reflects the server-reported unfiltered enabled count', async () => {
     await setup();
-    expect(component.enabledItems()).toBe(1);
+    expect(component.enabledCount()).toBe(1);
   });
 
-  it('skillCount computed counts distinct skills', async () => {
+  it('skillCount reflects the server-reported distinct skill count', async () => {
     await setup();
     expect(component.skillCount()).toBe(2);
   });
 
-  // ── Skill filter ───────────────────────────────────────────────────────────
+  // ── Skill filter (server-side) ────────────────────────────────────────────
 
-  it('filteredItems returns all items when filter is "all"', async () => {
+  it('onSkillFilterChange resets to page 1 and re-fetches with the new skill', async () => {
     await setup();
-    expect(component.filteredItems().length).toBe(2);
+    component.page.set(3);
+    component.onSkillFilterChange('grammar');
+    expect(component.page()).toBe(1);
+    expect(svc.list).toHaveBeenCalledWith(1, component.pageSize, 'grammar', '');
   });
 
-  it('filteredItems filters by selected skill', async () => {
+  // ── Search (server-side, debounced) ───────────────────────────────────────
+
+  it('onSearch resets to page 1 immediately but debounces the re-fetch', fakeAsync(async () => {
     await setup();
-    component.skillFilter.set('grammar');
-    expect(component.filteredItems().length).toBe(1);
-    expect(component.filteredItems()[0].itemId).toBe('item-1');
-  });
-
-  // ── Slide-over ──────────────────────────────────────────────────────────────
-
-  it('slideOverOpen is false initially', async () => {
-    await setup();
-    expect(component.slideOverOpen()).toBeFalse();
-  });
-
-  it('openAddItem opens slide-over with null editingItem', async () => {
-    await setup();
-    component.openAddItem();
-    expect(component.slideOverOpen()).toBeTrue();
-    expect(component.editingItem()).toBeNull();
-  });
-
-  it('openAddItem resets itemForm to defaults', async () => {
-    await setup();
-    component.openAddItem();
-    expect(component.itemForm.itemType).toBe('multiple_choice');
-    expect(component.itemForm.isEnabled).toBeTrue();
-    expect(component.itemForm.skill).toBe('grammar');
-  });
-
-  it('openEditItem opens slide-over with selected item', async () => {
-    await setup();
-    component.openEditItem(ITEM_B);
-    expect(component.slideOverOpen()).toBeTrue();
-    expect(component.editingItem()).toBe(ITEM_B);
-  });
-
-  it('openEditItem populates itemForm and formioSchema from selected item', async () => {
-    await setup();
-    component.openEditItem(ITEM_B);
-    expect(component.itemForm.skill).toBe('listening');
-    expect(component.itemForm.prompt).toBe(ITEM_B.prompt);
-    expect(component.itemForm.isEnabled).toBeFalse();
-    expect(component.formioSchema()).toEqual(JSON.parse(ITEM_B.formIoSchemaJson!));
-    expect(component.scoringRulesJson()).toBe(ITEM_B.scoringRulesJson!);
-  });
-
-  it('closeSlideOver closes slide-over and clears editingItem', async () => {
-    await setup();
-    component.openEditItem(ITEM_A);
-    component.closeSlideOver();
-    expect(component.slideOverOpen()).toBeFalse();
-    expect(component.editingItem()).toBeNull();
-  });
-
-  // ── Form.io builder is always rendered (no more formioEnabled toggle) ──────
-
-  it('FormioBuilderComponent has no conditional toggle — the component no longer exposes formioEnabled', async () => {
-    await setup();
-    expect((component as any).formioEnabled).toBeUndefined();
-  });
-
-  // ── schemaComponentKeys ──────────────────────────────────────────────────
-
-  it('schemaComponentKeys flattens leaf component keys from the current schema', async () => {
-    await setup();
-    component.openEditItem(ITEM_A);
-    expect(component.schemaComponentKeys()).toEqual(['answer']);
-  });
-
-  it('schemaComponentKeys is empty for a schema with no components', async () => {
-    await setup();
-    component.openAddItem();
-    component.formioSchema.set({ display: 'form', components: [] });
-    expect(component.schemaComponentKeys()).toEqual([]);
-  });
-
-  // ── Save item ──────────────────────────────────────────────────────────────
-
-  it('saveItem calls add with formIoSchemaJson and scoringRulesJson, no content field', fakeAsync(async () => {
-    await setup();
-    component.openAddItem();
-    component.formioSchema.set({ display: 'form', components: [{ type: 'radio', key: 'answer', label: 'Q' }] });
-    component.scoringRulesJson.set('{"components":{"answer":{"kind":"single_choice","correctAnswer":"A"}}}');
-    component.itemForm.prompt = 'New prompt';
-    component.saveItem();
-    tick();
-    expect(svc.add).toHaveBeenCalledWith(jasmine.objectContaining({
-      skill: component.itemForm.skill,
-      cefrLevel: component.itemForm.cefrLevel,
-      prompt: 'New prompt',
-      formIoSchemaJson: jasmine.any(String),
-      scoringRulesJson: '{"components":{"answer":{"kind":"single_choice","correctAnswer":"A"}}}',
-    }));
-    const savedArgs = svc.add.calls.mostRecent().args[0];
-    expect(savedArgs.content).toBeUndefined();
+    component.page.set(3);
+    component.onSearch({ target: { value: 'turn left' } } as unknown as Event);
+    expect(component.page()).toBe(1);
+    expect(svc.list).toHaveBeenCalledTimes(1); // only the initial load so far
+    tick(300);
+    expect(svc.list).toHaveBeenCalledWith(1, component.pageSize, 'all', 'turn left');
   }));
 
-  it('saveItem calls update when editingItem is set', fakeAsync(async () => {
-    await setup();
-    component.openEditItem(ITEM_B);
-    component.saveItem();
-    tick();
-    expect(svc.update).toHaveBeenCalledWith('item-2', jasmine.objectContaining({
-      skill: component.itemForm.skill,
-      cefrLevel: component.itemForm.cefrLevel,
-    }));
-  }));
+  // ── Pagination ─────────────────────────────────────────────────────────────
 
-  it('saveItem rejects invalid scoring rules JSON and does not call add', fakeAsync(async () => {
-    await setup();
-    component.openAddItem();
-    component.formioSchema.set({ display: 'form', components: [{ type: 'radio', key: 'answer', label: 'Q' }] });
-    component.scoringRulesJson.set('{not valid json');
-    component.saveItem();
-    tick();
-    expect(svc.add).not.toHaveBeenCalled();
-    expect(component.scoringRulesError()).toContain('invalid');
-  }));
+  it('totalPages computed from totalCount and pageSize', async () => {
+    await setup(makeResult([ITEM_A, ITEM_B]));
+    component.totalCount.set(45);
+    expect(component.totalPages()).toBe(Math.ceil(45 / component.pageSize));
+  });
 
-  it('saveItem rejects scoring rules referencing a component key not present in the schema', fakeAsync(async () => {
+  it('onPageChange updates page and re-fetches', async () => {
     await setup();
-    component.openAddItem();
-    component.formioSchema.set({ display: 'form', components: [{ type: 'radio', key: 'answer', label: 'Q' }] });
-    component.scoringRulesJson.set('{"components":{"orphanKey":{"kind":"single_choice","correctAnswer":"A"}}}');
-    component.saveItem();
-    tick();
-    expect(svc.add).not.toHaveBeenCalled();
-    expect(component.scoringRulesError()).toContain('orphanKey');
-  }));
-
-  it('saveItem rejects empty scoring rules', fakeAsync(async () => {
-    await setup();
-    component.openAddItem();
-    component.formioSchema.set({ display: 'form', components: [{ type: 'radio', key: 'answer', label: 'Q' }] });
-    component.scoringRulesJson.set('');
-    component.saveItem();
-    tick();
-    expect(svc.add).not.toHaveBeenCalled();
-    expect(component.scoringRulesError()).toBeTruthy();
-  }));
-
-  it('saveItem closes slide-over on success', fakeAsync(async () => {
-    await setup();
-    component.openAddItem();
-    component.formioSchema.set({ display: 'form', components: [{ type: 'radio', key: 'answer', label: 'Q' }] });
-    component.scoringRulesJson.set('{"components":{"answer":{"kind":"single_choice","correctAnswer":"A"}}}');
-    component.saveItem();
-    tick();
-    expect(component.slideOverOpen()).toBeFalse();
-  }));
-
-  it('saveItem sets actionSuccess on success', fakeAsync(async () => {
-    await setup();
-    component.openAddItem();
-    component.formioSchema.set({ display: 'form', components: [{ type: 'radio', key: 'answer', label: 'Q' }] });
-    component.scoringRulesJson.set('{"components":{"answer":{"kind":"single_choice","correctAnswer":"A"}}}');
-    component.saveItem();
-    tick();
-    expect(component.actionSuccess()).toBe('Item added.');
-  }));
-
-  it('saveItem sets actionError on failure', fakeAsync(async () => {
-    await setup();
-    svc.add.and.returnValue(throwError(() => ({ error: { error: 'Validation failed' } })));
-    component.openAddItem();
-    component.formioSchema.set({ display: 'form', components: [{ type: 'radio', key: 'answer', label: 'Q' }] });
-    component.scoringRulesJson.set('{"components":{"answer":{"kind":"single_choice","correctAnswer":"A"}}}');
-    component.saveItem();
-    tick();
-    expect(component.actionError()).toContain('Validation failed');
-  }));
+    component.onPageChange(2);
+    expect(component.page()).toBe(2);
+    expect(svc.list).toHaveBeenCalledWith(2, component.pageSize, 'all', '');
+  });
 
   // ── Remove item ────────────────────────────────────────────────────────────
 
@@ -320,6 +185,15 @@ describe('AdminPlacementItemsComponent', () => {
     component.removeItem(ITEM_A);
     tick();
     expect(component.actionSuccess()).toBe('Item removed.');
+  }));
+
+  // ── Row actions ────────────────────────────────────────────────────────────
+
+  it('onRowAction "remove" calls removeItem', fakeAsync(async () => {
+    await setup();
+    component.onRowAction('remove', ITEM_A);
+    tick();
+    expect(svc.remove).toHaveBeenCalledWith('item-1');
   }));
 
   // ── itemTone helper ────────────────────────────────────────────────────────

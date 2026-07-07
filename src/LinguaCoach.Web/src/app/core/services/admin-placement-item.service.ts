@@ -1,8 +1,12 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { AdminPlacementItemDto, PlacementItemRequest } from '../models/admin-placement-item.models';
+import {
+  AdminPlacementItemDto,
+  AdminPlacementItemListResult,
+  PlacementItemRequest,
+} from '../models/admin-placement-item.models';
 
 @Injectable({ providedIn: 'root' })
 export class AdminPlacementItemService {
@@ -10,8 +14,15 @@ export class AdminPlacementItemService {
 
   constructor(private http: HttpClient) {}
 
-  list(): Observable<AdminPlacementItemDto[]> {
-    return this.http.get<AdminPlacementItemDto[]>(this.base);
+  list(page: number, pageSize: number, skill?: string, search?: string): Observable<AdminPlacementItemListResult> {
+    let params = new HttpParams().set('page', page).set('pageSize', pageSize);
+    if (skill && skill !== 'all') params = params.set('skill', skill);
+    if (search) params = params.set('search', search);
+    return this.http.get<AdminPlacementItemListResult>(this.base, { params });
+  }
+
+  get(itemId: string): Observable<AdminPlacementItemDto> {
+    return this.http.get<AdminPlacementItemDto>(`${this.base}/${itemId}`);
   }
 
   add(request: PlacementItemRequest): Observable<AdminPlacementItemDto> {

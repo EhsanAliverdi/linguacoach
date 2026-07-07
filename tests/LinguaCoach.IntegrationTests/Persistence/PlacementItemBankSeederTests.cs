@@ -64,13 +64,43 @@ public sealed class PlacementItemBankSeederTests : IDisposable
         await PlacementItemBankSeeder.SeedAsync(_db);
 
         var item = await _db.PlacementItemDefinitions.FirstAsync(i => i.Skill == "grammar");
-        item.Update(item.Skill, "B2", item.ItemType, item.Prompt, item.ItemOrder, item.IsEnabled);
+        item.Update(item.Skill, "B2", item.ItemOrder, item.IsEnabled);
         await _db.SaveChangesAsync();
 
         await PlacementItemBankSeeder.SeedAsync(_db);
 
         var reloaded = await _db.PlacementItemDefinitions.FirstAsync(i => i.Id == item.Id);
         Assert.Equal("B2", reloaded.CefrLevel);
+        Assert.Equal(72, await _db.PlacementItemDefinitions.CountAsync());
+    }
+
+    [Fact]
+    public async Task SeedAsync_BackfillsNullSchemaOnExistingRow_WithoutDuplicating()
+    {
+        // Simulates rows that exist in the DB from before the Form.io-native migration ran —
+        // present, but FormIoSchemaJson/ScoringRulesJson still null. A prior regression made the
+        // seeder's idempotency check skip these rows entirely once their (skill, level) pair
+        // existed, leaving them permanently blank.
+        await PlacementItemBankSeeder.SeedAsync(_db);
+
+        var grammarA1Items = await _db.PlacementItemDefinitions
+            .Where(i => i.Skill == "grammar" && i.CefrLevel == "A1")
+            .ToListAsync();
+        foreach (var item in grammarA1Items)
+        {
+            _db.Entry(item).Property("FormIoSchemaJson").CurrentValue = null;
+            _db.Entry(item).Property("ScoringRulesJson").CurrentValue = null;
+        }
+        await _db.SaveChangesAsync();
+
+        await PlacementItemBankSeeder.SeedAsync(_db);
+
+        var reloaded = await _db.PlacementItemDefinitions
+            .Where(i => i.Skill == "grammar" && i.CefrLevel == "A1")
+            .ToListAsync();
+        Assert.Equal(3, reloaded.Count);
+        Assert.All(reloaded, i => Assert.False(string.IsNullOrWhiteSpace(i.FormIoSchemaJson)));
+        Assert.All(reloaded, i => Assert.False(string.IsNullOrWhiteSpace(i.ScoringRulesJson)));
         Assert.Equal(72, await _db.PlacementItemDefinitions.CountAsync());
     }
 
@@ -92,8 +122,10 @@ public sealed class PlacementItemBankSeederTests : IDisposable
     {
         await PlacementItemBankSeeder.SeedAsync(_db);
 
-        var item = await _db.PlacementItemDefinitions.FirstAsync(
-            i => i.Skill == "grammar" && i.ItemType == "multiple_choice");
+        var grammarItems = await _db.PlacementItemDefinitions.Where(i => i.Skill == "grammar").ToListAsync();
+        var item = grammarItems.First(i =>
+            JsonDocument.Parse(i.FormIoSchemaJson!).RootElement.GetProperty("components")[0]
+                .GetProperty("type").GetString() == "radio");
 
         using var doc = JsonDocument.Parse(item.FormIoSchemaJson!);
         var component = doc.RootElement.GetProperty("components")[0];
@@ -107,8 +139,10 @@ public sealed class PlacementItemBankSeederTests : IDisposable
     {
         await PlacementItemBankSeeder.SeedAsync(_db);
 
-        var item = await _db.PlacementItemDefinitions.FirstAsync(
-            i => i.Skill == "grammar" && i.ItemType == "gap_fill");
+        var grammarItems = await _db.PlacementItemDefinitions.Where(i => i.Skill == "grammar").ToListAsync();
+        var item = grammarItems.First(i =>
+            JsonDocument.Parse(i.FormIoSchemaJson!).RootElement.GetProperty("components")[0]
+                .GetProperty("type").GetString() == "textfield");
 
         using var schemaDoc = JsonDocument.Parse(item.FormIoSchemaJson!);
         var component = schemaDoc.RootElement.GetProperty("components")[0];
@@ -124,8 +158,10 @@ public sealed class PlacementItemBankSeederTests : IDisposable
     {
         await PlacementItemBankSeeder.SeedAsync(_db);
 
-        var item = await _db.PlacementItemDefinitions.FirstAsync(
-            i => i.Prompt == "You hear: 'Turn left at the traffic lights.' Where do you turn? (A) right (B) left (C) straight");
+        var listeningItems = await _db.PlacementItemDefinitions.Where(i => i.Skill == "listening").ToListAsync();
+        var item = listeningItems.First(i =>
+            JsonDocument.Parse(i.ScoringRulesJson!).RootElement.TryGetProperty("listeningAudioScript", out var script)
+            && script.GetString() == "Turn left at the traffic lights.");
 
         using var rulesDoc = JsonDocument.Parse(item.ScoringRulesJson!);
         Assert.Equal("Turn left at the traffic lights.",
@@ -168,7 +204,7 @@ public sealed class PlacementItemBankSeederTests : IDisposable
 
             var result = scorer.ScoreSubmission(item.ScoringRulesJson, submission);
 
-            Assert.True(result.IsCorrect, $"Shared scorer marked correct answer wrong for item {item.Id} ({item.Prompt}).");
+            Assert.True(result.IsCorrect, $"Shared scorer marked correct answer wrong for item {item.Id}.");
         }
     }
 }

@@ -7,23 +7,44 @@ public sealed record AdminPlacementItemDto(
     Guid ItemId,
     string Skill,
     string CefrLevel,
-    string ItemType,
-    string Prompt,
     int ItemOrder,
     bool IsEnabled,
     string? FormIoSchemaJson,
     string? ScoringRulesJson,
     int ScoringRulesVersion,
-    string RendererKind = "FormIo"
+    string RendererKind = "FormIo",
+    /// <summary>Read-only preview of the schema's first component label, for the admin list only
+    /// — never persisted, always derived fresh from FormIoSchemaJson.</summary>
+    string QuestionPreview = ""
 );
 
-// ── List all items ────────────────────────────────────────────────────────────
+// ── List items (server-side paged, optionally filtered by skill) ──────────────
 
-public sealed record ListAdminPlacementItemsQuery();
+public sealed record ListAdminPlacementItemsQuery(int Page = 1, int PageSize = 20, string? Skill = null, string? Search = null);
+
+/// <summary>Items is the current page only. TotalCount reflects the Skill filter (drives
+/// pagination); OverallTotalCount/EnabledCount/SkillCount are always unfiltered, global bank
+/// stats for the admin list's KPI strip.</summary>
+public sealed record AdminPlacementItemListResult(
+    IReadOnlyList<AdminPlacementItemDto> Items,
+    int TotalCount,
+    int OverallTotalCount,
+    int EnabledCount,
+    int SkillCount
+);
 
 public interface IAdminPlacementItemListQuery
 {
-    Task<IReadOnlyList<AdminPlacementItemDto>> HandleAsync(ListAdminPlacementItemsQuery query, CancellationToken ct = default);
+    Task<AdminPlacementItemListResult> HandleAsync(ListAdminPlacementItemsQuery query, CancellationToken ct = default);
+}
+
+// ── Get a single item ──────────────────────────────────────────────────────────
+
+public sealed record GetAdminPlacementItemQuery(Guid ItemId);
+
+public interface IAdminPlacementItemGetQuery
+{
+    Task<AdminPlacementItemDto?> HandleAsync(GetAdminPlacementItemQuery query, CancellationToken ct = default);
 }
 
 // ── Add item ───────────────────────────────────────────────────────────────────
@@ -31,8 +52,6 @@ public interface IAdminPlacementItemListQuery
 public sealed record AddPlacementItemCommand(
     string Skill,
     string CefrLevel,
-    string ItemType,
-    string Prompt,
     int ItemOrder,
     bool IsEnabled,
     string FormIoSchemaJson,
@@ -51,8 +70,6 @@ public sealed record UpdatePlacementItemCommand(
     Guid ItemId,
     string Skill,
     string CefrLevel,
-    string ItemType,
-    string Prompt,
     int ItemOrder,
     bool IsEnabled,
     string FormIoSchemaJson,

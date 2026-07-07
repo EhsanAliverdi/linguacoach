@@ -11,14 +11,13 @@ namespace LinguaCoach.Domain.Entities;
 /// Form.io builder (<see cref="FormIoSchemaJson"/>) with a backend-only scoring artifact
 /// (<see cref="ScoringRulesJson"/>) keyed by Form.io component key. The legacy
 /// QuestionContent-based authoring path (CorrectAnswer/ReadingPassage/ListeningAudioScript/
-/// ContentJson) has been retired.
+/// ContentJson) has been retired, as have the ItemType/Prompt admin-authored fields — the
+/// Form.io schema is now the only source of what the student sees.
 /// </summary>
 public sealed class PlacementItemDefinition : BaseEntity
 {
     public string Skill { get; private set; } = string.Empty;
     public string CefrLevel { get; private set; } = string.Empty;
-    public string ItemType { get; private set; } = string.Empty;
-    public string Prompt { get; private set; } = string.Empty;
 
     public int ItemOrder { get; private set; }
     public bool IsEnabled { get; private set; }
@@ -55,20 +54,14 @@ public sealed class PlacementItemDefinition : BaseEntity
     public PlacementItemDefinition(
         string skill,
         string cefrLevel,
-        string itemType,
-        string prompt,
         int itemOrder,
         bool isEnabled = true)
     {
         if (string.IsNullOrWhiteSpace(skill)) throw new ArgumentException("Skill is required.", nameof(skill));
         if (string.IsNullOrWhiteSpace(cefrLevel)) throw new ArgumentException("CefrLevel is required.", nameof(cefrLevel));
-        if (string.IsNullOrWhiteSpace(itemType)) throw new ArgumentException("ItemType is required.", nameof(itemType));
-        if (string.IsNullOrWhiteSpace(prompt)) throw new ArgumentException("Prompt is required.", nameof(prompt));
 
         Skill = skill.Trim();
         CefrLevel = cefrLevel.Trim();
-        ItemType = itemType.Trim();
-        Prompt = prompt.Trim();
         ItemOrder = itemOrder;
         IsEnabled = isEnabled;
     }
@@ -76,20 +69,14 @@ public sealed class PlacementItemDefinition : BaseEntity
     public void Update(
         string skill,
         string cefrLevel,
-        string itemType,
-        string prompt,
         int itemOrder,
         bool isEnabled)
     {
         if (string.IsNullOrWhiteSpace(skill)) throw new ArgumentException("Skill is required.", nameof(skill));
         if (string.IsNullOrWhiteSpace(cefrLevel)) throw new ArgumentException("CefrLevel is required.", nameof(cefrLevel));
-        if (string.IsNullOrWhiteSpace(itemType)) throw new ArgumentException("ItemType is required.", nameof(itemType));
-        if (string.IsNullOrWhiteSpace(prompt)) throw new ArgumentException("Prompt is required.", nameof(prompt));
 
         Skill = skill.Trim();
         CefrLevel = cefrLevel.Trim();
-        ItemType = itemType.Trim();
-        Prompt = prompt.Trim();
         ItemOrder = itemOrder;
         IsEnabled = isEnabled;
     }

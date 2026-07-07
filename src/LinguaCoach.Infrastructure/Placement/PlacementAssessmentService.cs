@@ -46,7 +46,7 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
     // ── Item bank (Phase 20I-4: admin-configurable, loaded from PlacementItemDefinition) ───
 
     private record PlacementItemTemplate(
-        Guid DefinitionId, string Skill, string CefrLevel, string ItemType, string Prompt,
+        Guid DefinitionId, string Skill, string CefrLevel,
         string? FormIoSchemaJson, string? ScoringRulesJson, int ScoringRulesVersion);
 
     /// <summary>Loads the enabled item bank once per outer call — replaces the old hardcoded static list.</summary>
@@ -58,28 +58,15 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
             .ToListAsync(ct);
 
         return rows.Select(i => new PlacementItemTemplate(
-            i.Id, i.Skill, i.CefrLevel, i.ItemType, i.Prompt,
+            i.Id, i.Skill, i.CefrLevel,
             i.FormIoSchemaJson, i.ScoringRulesJson, i.ScoringRulesVersion)).ToList();
     }
 
-    /// <summary>Dedup identity for "has this item already been issued in this assessment" — prefers
-    /// the stable PlacementItemDefinition FK (SourceItemDefinitionId) added for Form.io-authored
-    /// items, falling back to Prompt-text matching for items issued before that field existed.</summary>
-    private static bool IsUsed(PlacementItemTemplate template, IReadOnlyCollection<PlacementAssessmentItem> issuedItems)
-    {
-        foreach (var issued in issuedItems)
-        {
-            if (issued.SourceItemDefinitionId.HasValue)
-            {
-                if (issued.SourceItemDefinitionId.Value == template.DefinitionId) return true;
-            }
-            else if (string.Equals(issued.Prompt, template.Prompt, StringComparison.Ordinal))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
+    /// <summary>Dedup identity for "has this item already been issued in this assessment" — the
+    /// stable PlacementItemDefinition FK (SourceItemDefinitionId), populated for every Form.io-authored
+    /// item since the template side no longer carries a Prompt to fall back to.</summary>
+    private static bool IsUsed(PlacementItemTemplate template, IReadOnlyCollection<PlacementAssessmentItem> issuedItems) =>
+        issuedItems.Any(issued => issued.SourceItemDefinitionId == template.DefinitionId);
 
     private static readonly string[] CefrLevels = ["A1", "A2", "B1", "B2"];
 
@@ -481,7 +468,8 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
             {
                 items.Add(PlacementAssessmentItem.Create(
                     assessmentId, template.Skill, template.CefrLevel,
-                    template.ItemType, template.Prompt, order++,
+                    PlacementItemSchemaLabel.ExtractComponentType(template.FormIoSchemaJson),
+                    PlacementItemSchemaLabel.ExtractLabel(template.FormIoSchemaJson), order++,
                     template.DefinitionId, template.FormIoSchemaJson,
                     template.ScoringRulesJson, template.ScoringRulesVersion));
             }
@@ -496,7 +484,8 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
                 {
                     items.Add(PlacementAssessmentItem.Create(
                         assessmentId, template.Skill, template.CefrLevel,
-                        template.ItemType, template.Prompt, order++,
+                        PlacementItemSchemaLabel.ExtractComponentType(template.FormIoSchemaJson),
+                        PlacementItemSchemaLabel.ExtractLabel(template.FormIoSchemaJson), order++,
                         template.DefinitionId, template.FormIoSchemaJson,
                         template.ScoringRulesJson, template.ScoringRulesVersion));
                 }
@@ -660,7 +649,8 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
         var newOrder = assessment.Items.Count;
         var newItem = PlacementAssessmentItem.Create(
             assessment.Id, template.Skill, template.CefrLevel,
-            template.ItemType, template.Prompt, newOrder,
+            PlacementItemSchemaLabel.ExtractComponentType(template.FormIoSchemaJson),
+            PlacementItemSchemaLabel.ExtractLabel(template.FormIoSchemaJson), newOrder,
             template.DefinitionId, template.FormIoSchemaJson,
             template.ScoringRulesJson, template.ScoringRulesVersion);
 

@@ -29,16 +29,19 @@ public sealed class AdminUpdatePlacementItemHandler : IAdminUpdatePlacementItemH
 
         PlacementFormIoScoringValidator.ValidateAndParse(command.FormIoSchemaJson, command.ScoringRulesJson);
 
-        var duplicate = await _db.PlacementItemDefinitions
-            .AnyAsync(i => i.Id != command.ItemId && i.Prompt == command.Prompt, ct);
+        var identityHash = PlacementItemSchemaLabel.ComputeIdentityHash(command.Skill, command.CefrLevel, command.FormIoSchemaJson);
+        var existingSameLevel = await _db.PlacementItemDefinitions
+            .Where(i => i.Id != command.ItemId && i.Skill == command.Skill && i.CefrLevel == command.CefrLevel)
+            .Select(i => i.FormIoSchemaJson)
+            .ToListAsync(ct);
+        var duplicate = existingSameLevel.Any(schema =>
+            PlacementItemSchemaLabel.ComputeIdentityHash(command.Skill, command.CefrLevel, schema) == identityHash);
         if (duplicate)
-            throw new PlacementItemValidationException("An item with this exact prompt already exists.");
+            throw new PlacementItemValidationException("An item with this exact skill, level, and Form.io schema already exists.");
 
         try
         {
-            item.Update(
-                command.Skill, command.CefrLevel, command.ItemType, command.Prompt,
-                command.ItemOrder, command.IsEnabled);
+            item.Update(command.Skill, command.CefrLevel, command.ItemOrder, command.IsEnabled);
         }
         catch (ArgumentException ex)
         {
@@ -51,7 +54,8 @@ public sealed class AdminUpdatePlacementItemHandler : IAdminUpdatePlacementItemH
         await _db.SaveChangesAsync(ct);
 
         return new AdminPlacementItemDto(
-            item.Id, item.Skill, item.CefrLevel, item.ItemType, item.Prompt, item.ItemOrder, item.IsEnabled,
-            item.FormIoSchemaJson, item.ScoringRulesJson, item.ScoringRulesVersion, item.RendererKind.ToString());
+            item.Id, item.Skill, item.CefrLevel, item.ItemOrder, item.IsEnabled,
+            item.FormIoSchemaJson, item.ScoringRulesJson, item.ScoringRulesVersion, item.RendererKind.ToString(),
+            PlacementItemSchemaLabel.ExtractLabel(item.FormIoSchemaJson));
     }
 }

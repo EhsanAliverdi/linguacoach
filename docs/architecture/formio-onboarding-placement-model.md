@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-07 00:00
+lastUpdated: 2026-07-07 10:30
 owner: architecture
 supersedes: (onboarding designer/renderer portions of prior OnboardingV2 model)
 supersededBy:
@@ -62,7 +62,8 @@ onboarding flow (`OnboardingHandler.cs`, `IOnboardingHandler`/`IOnboardingStatus
 
 **Update (2026-07-07): placement is now natively Form.io-authored end to end.** The sections
 below describe the current, completed state; see `docs/reviews/2026-07-07-placement-formio-migration-engineering-review.md`
-for the migration record.
+for the migration record, and `docs/reviews/2026-07-07-placement-item-metadata-cleanup-and-pagination.md`
+for the follow-up that removed `ItemType`/`Prompt` and added the routed admin editor + paged list.
 
 **Architecture unchanged**: `PlacementAssessmentService.cs`'s adaptive engine (item selection,
 per-skill CEFR confidence, completion, CEFR finalization, learning-plan regeneration) is
@@ -76,6 +77,20 @@ already-selected item; it never drives selection or scoring.
   legacy flat fields (`CorrectAnswer`, `ReadingPassage`, `ListeningAudioScript`, `ContentJson`)
   and the entire `QuestionContent`/`QuestionEditorComponent` authoring path have been removed —
   all 72 seeded items and all admin-authored items use native Form.io schemas.
+- **Update (2026-07-07): `ItemType`/`Prompt` also removed from `PlacementItemDefinition`.** Once
+  the Form.io schema is the only thing a student ever sees, these two admin-typed fields were pure
+  duplication of what the schema's first component already says — and could silently drift out of
+  sync with it. `Skill`, `CefrLevel`, `ItemOrder`, and `IsEnabled` are the only remaining authored
+  metadata; a question's display label/type for the admin list is now derived on read from
+  `FormIoSchemaJson` (`PlacementItemSchemaLabel.ExtractLabel`/`ExtractComponentType` in
+  `LinguaCoach.Infrastructure/Placement/`), never persisted separately. `PlacementItemBankSeeder`'s
+  idempotency check changed accordingly: it now skips seeding a (skill, CEFR level) pair if *any*
+  row already exists for it (schema-independent), rather than matching on `Prompt` text, so an
+  admin's later edit to a seeded item's schema is never overwritten or duplicated on the next app
+  restart. `PlacementAssessmentItem` (the per-assessment issued-item snapshot) is unaffected — it
+  still carries its own `ItemType`/`Prompt` for historical audit/review screens, now populated at
+  issuance time from the same schema-label helper instead of copied from the definition's
+  (now-removed) fields.
 - `PlacementAssessmentItem` — `SourceItemDefinitionId` (FK) plus an immutable snapshot taken at
   issuance: `FormIoSchemaJson`, `ScoringRulesJsonSnapshot`, `ScoringRulesVersionSnapshot`. This
   means editing an item definition later never changes how an already-issued, already-answered
@@ -108,6 +123,24 @@ Admin item-bank authoring (`AdminPlacementItemController`) requires `FormIoSchem
 schema editor (the old `QuestionEditorComponent` was deleted, along with the shared
 `QuestionContent`/`QuestionAnswer` domain model and its onboarding-era `Questions` namespace,
 since nothing outside placement referenced them).
+
+**Admin item-bank list/edit UI (2026-07-07)**: item editing is a dedicated routed page
+(`/admin/placement-items/new` and `/admin/placement-items/{itemId}`,
+`AdminPlacementItemEditorComponent`) rather than a slide-over drawer, mirroring the onboarding
+template designer's own-route pattern — the Form.io builder gets a full-width canvas instead of
+being squeezed into a panel. The list page (`AdminPlacementItemsComponent`) follows the
+exercise-types admin page's styling: `sp-admin-filter-bar` for the skill filter, `sp-admin-table`
+in `layout="first-column-fluid"` projection mode with a raw `<table>` (no extra `sp-admin-card`
+shell), `sp-admin-table-actions` dropdown for row actions, and `sp-admin-table-footer` +
+`sp-admin-pagination` for pagination.
+
+`GET /api/admin/placement-items` is server-side paged and filterable
+(`?page=1&pageSize=20&skill=grammar`), returning `{ items, totalCount, overallTotalCount,
+enabledCount, skillCount }` — `totalCount` reflects the skill filter (drives the pager);
+`overallTotalCount`/`enabledCount`/`skillCount` are always unfiltered global bank stats for the
+KPI strip. `GET /api/admin/placement-items/{itemId}` was added alongside this (previously the
+list-then-find-by-id was fine when the list returned everything; once it's paged the editor page
+needs a direct lookup).
 
 **Also removed in this migration** (confirmed dead, zero remaining callers): the separate legacy
 `/api/placement/*` controller stack (`PlacementController`, `PlacementHandlers`, `PlacementAnswer`

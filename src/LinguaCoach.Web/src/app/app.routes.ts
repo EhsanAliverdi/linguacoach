@@ -143,6 +143,10 @@ export const routes: Routes = [
         path: 'placement-items',
         loadComponent: () => import('./features/admin/admin-placement-items/admin-placement-items.component').then(m => m.AdminPlacementItemsComponent),
       },
+      {
+        path: 'placement-items/:itemId',
+        loadComponent: () => import('./features/admin/admin-placement-item-editor/admin-placement-item-editor.component').then(m => m.AdminPlacementItemEditorComponent),
+      },
     ],
   },
 

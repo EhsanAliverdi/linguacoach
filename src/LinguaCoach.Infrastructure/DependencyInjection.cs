@@ -459,6 +459,8 @@ public static class DependencyInjection
         // Phase 20I-4 — Admin-configurable placement item bank
         services.AddScoped<LinguaCoach.Application.Placement.IAdminPlacementItemListQuery,
             LinguaCoach.Infrastructure.Placement.AdminPlacementItemListQueryHandler>();
+        services.AddScoped<LinguaCoach.Application.Placement.IAdminPlacementItemGetQuery,
+            LinguaCoach.Infrastructure.Placement.AdminPlacementItemGetQueryHandler>();
         services.AddScoped<LinguaCoach.Application.Placement.IAdminAddPlacementItemHandler,
             LinguaCoach.Infrastructure.Placement.AdminAddPlacementItemHandler>();
         services.AddScoped<LinguaCoach.Application.Placement.IAdminUpdatePlacementItemHandler,

@@ -1,0 +1,122 @@
+<sp-admin-page-header
+  [title]="isNew ? 'Add placement item' : 'Edit placement item'"
+  subtitle="Author the Form.io schema the student sees and its backend-only scoring rules.">
+  <a routerLink="/admin/placement-items">
+    <sp-admin-button variant="neutral" appearance="outline" size="sm">
+      ← Back to item bank
+    </sp-admin-button>
+  </a>
+</sp-admin-page-header>
+
+<sp-admin-page-body>
+
+  @if (loading()) {
+    <sp-admin-loading-state message="Loading placement item" />
+  } @else if (error()) {
+    <sp-admin-error-state title="Could not load placement item" [message]="error()" />
+  } @else {
+
+    @if (actionSuccess()) {
+      <sp-admin-alert variant="success">{{ actionSuccess() }}</sp-admin-alert>
+    }
+    @if (actionError()) {
+      <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert>
+    }
+
+    <sp-admin-card>
+      <div class="sp-admin-form-stack">
+
+        <sp-admin-form-field label="Skill" [required]="true">
+          <sp-admin-select [(ngModel)]="itemForm.skill" [options]="formSkillOptions" />
+        </sp-admin-form-field>
+
+        <sp-admin-form-field label="CEFR level" [required]="true">
+          <sp-admin-select [(ngModel)]="itemForm.cefrLevel" [options]="cefrLevelOptions" />
+        </sp-admin-form-field>
+
+        <sp-admin-form-field label="Item order" hint="Used for admin list ordering only">
+          <sp-admin-input type="number" [(ngModel)]="itemForm.itemOrder" />
+        </sp-admin-form-field>
+
+        <sp-admin-form-field label="Enabled">
+          <sp-admin-checkbox [(ngModel)]="itemForm.isEnabled" label="This item is active and eligible for selection" />
+        </sp-admin-form-field>
+
+      </div>
+    </sp-admin-card>
+
+    <!-- ── Form.io authoring (the only, always-visible schema editor) ─────────── -->
+    <sp-admin-card>
+      <div class="sp-admin-card-header">
+        <div class="sp-admin-card-title">Question</div>
+        <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="openPreview()">
+          Preview
+        </sp-admin-button>
+      </div>
+      <p style="font-size:13px; color:var(--sp-admin-text-secondary, #64748b); margin:0 0 8px;" data-testid="formio-schema-copy">Form schema controls what the student sees.</p>
+      <app-formio-builder [schema]="formioSchema()" (schemaChange)="onFormioSchemaChange($event)" />
+    </sp-admin-card>
+
+    <!-- ── Scoring rules (backend-only) ────────────────────────────────────────── -->
+    <sp-admin-card>
+      <div class="sp-admin-card-header">
+        <div class="sp-admin-card-title">Scoring rules</div>
+      </div>
+      <p style="font-size:13px; color:var(--sp-admin-text-secondary, #64748b); margin:0 0 8px;" data-testid="scoring-rules-copy">Scoring rules are private and never sent to students.</p>
+
+      @if (schemaComponentKeys().length > 0) {
+        <div data-testid="scoring-rules-component-keys" style="font-size:12px; color:var(--sp-admin-text-secondary, #64748b);">
+          Scorable component keys in this schema: {{ schemaComponentKeys().join(', ') }}
+        </div>
+      } @else {
+        <div data-testid="scoring-rules-component-keys" style="font-size:12px; color:var(--sp-admin-text-secondary, #64748b);">
+          No answer components in this schema yet — add one in the Form.io builder above.
+        </div>
+      }
+
+      <sp-admin-form-field
+        label="Scoring rules (JSON)"
+        [required]="true"
+        hint="Backend-only correct-answer data for the Form.io schema above, keyed by component key.">
+        <sp-admin-textarea [ngModel]="scoringRulesJson()" (ngModelChange)="scoringRulesJson.set($event)" [rows]="6" />
+      </sp-admin-form-field>
+
+      @if (scoringRulesError()) {
+        <sp-admin-alert variant="error" data-testid="scoring-rules-error">{{ scoringRulesError() }}</sp-admin-alert>
+      }
+    </sp-admin-card>
+
+    <div style="display:flex; gap:8px; justify-content:flex-end;">
+      <a routerLink="/admin/placement-items">
+        <sp-admin-button variant="neutral" appearance="outline">Cancel</sp-admin-button>
+      </a>
+      <sp-admin-button variant="primary" (clicked)="saveItem()">
+        {{ isNew ? 'Add item' : 'Save changes' }}
+      </sp-admin-button>
+    </div>
+
+  }
+
+</sp-admin-page-body>
+
+<!-- ── Preview modal (renders the schema exactly as the student will see it) ──── -->
+<sp-admin-modal
+  [open]="previewOpen()"
+  title="Preview"
+  subtitle="This is a read-only preview of the current schema — submitting here does not save anything."
+  size="lg"
+  (closed)="closePreview()">
+
+  @if (previewOpen()) {
+    <div style="max-width:480px; margin:0 auto;">
+      <app-formio-renderer [schema]="formioSchema()" />
+    </div>
+  }
+
+  <div slot="footer">
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closePreview()">
+      Close
+    </sp-admin-button>
+  </div>
+
+</sp-admin-modal>

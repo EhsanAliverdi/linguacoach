@@ -4,8 +4,6 @@ export interface AdminPlacementItemDto {
   itemId: string;
   skill: string;
   cefrLevel: string;
-  itemType: string;
-  prompt: string;
   itemOrder: number;
   isEnabled: boolean;
   /** Native Form.io schema — what the student sees. */
@@ -14,13 +12,25 @@ export interface AdminPlacementItemDto {
   scoringRulesJson: string | null;
   scoringRulesVersion: number;
   rendererKind: FormRendererKind;
+  /** Read-only preview of the schema's first component label, for the admin list only —
+   * never persisted, always derived fresh from formIoSchemaJson. */
+  questionPreview: string;
+}
+
+/** Server-side paged response. Items is the current page only; totalCount reflects the current
+ * skill filter (drives pagination); overallTotalCount/enabledCount/skillCount are always
+ * unfiltered, global bank stats for the KPI strip. */
+export interface AdminPlacementItemListResult {
+  items: AdminPlacementItemDto[];
+  totalCount: number;
+  overallTotalCount: number;
+  enabledCount: number;
+  skillCount: number;
 }
 
 export interface PlacementItemRequest {
   skill: string;
   cefrLevel: string;
-  itemType: string;
-  prompt: string;
   itemOrder: number;
   isEnabled: boolean;
   formIoSchemaJson: string;
@@ -31,7 +41,3 @@ export interface PlacementItemRequest {
 export const PLACEMENT_SKILLS = ['grammar', 'vocabulary', 'reading', 'listening', 'writing', 'speaking'] as const;
 
 export const PLACEMENT_CEFR_LEVELS = ['A1', 'A2', 'B1', 'B2'] as const;
-
-/** Item-type label used for admin list display and grouping — not a rendering constraint;
- * the Form.io schema itself defines the actual component(s) shown to the student. */
-export const PLACEMENT_ITEM_TYPES = ['multiple_choice', 'gap_fill'] as const;
