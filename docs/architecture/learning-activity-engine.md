@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase B)
+lastUpdated: 2026-07-08 (Phase D1)
 owner: architecture
 supersedes:
 supersededBy:
@@ -112,6 +112,32 @@ for the pilot). This is deterministic/exact-match only, not semantic similarity.
 activity also now writes a `StudentActivityUsageLog` row (real content-usage history) via
 `ActivitySubmitHandler`. See **docs/architecture/repetition-and-novelty.md** for the full design
 — this diagram above does not yet show that wrapping step.
+
+**Bank-first Today slice (Phase D1, 2026-07-08):** `ActivityMaterializationJob` now tries
+`ITodayBankResourceSelector`/`TodayBankResourceSelector` before generation, for Today
+exercises whose `ExercisePatternDefinition.PrimarySkill` is `"Vocabulary"` (`phrase_match`,
+`gap_fill_workplace_phrase`) or `"Reading"` (`reading_multiple_choice_single`,
+`reading_fill_in_blanks`, `reorder_paragraphs`) — grammar bank content
+(`CefrGrammarProfileEntry`) is pulled in only opportunistically for
+`gap_fill_workplace_phrase` (its `Grammar` secondary skill), never as its own pattern gate,
+since Today has no dedicated grammar-focused pattern yet. The selector queries the published
+Resource Bank (`IResourceBankQueryService`, Phase E5) at the routing-recommended CEFR level,
+runs each candidate through a synthetic-fingerprint novelty precheck
+(`"bank-vocab-precheck:{id}"` etc., mirroring `PracticeGymGenerationJob`'s per-template
+precheck), and returns up to 3 resources plus a short ready-to-append prompt sentence. This
+supplement text is appended to the same free-text `TopicHint` that `avoidRepeatingHint`
+already uses — **no prompt template changes were needed**. All other patterns
+(Writing/Speaking/Listening/Reflection) are unaffected (`SkippedUnsupportedPattern`); when no
+bank rows exist at the CEFR level, generation proceeds exactly as before
+(`NoSuitableResources`). Provenance is best-effort only: the single "primary" selected resource
+id is recorded via `StudentActivityReadinessItem.SetBankItemProvenance(...)` (pre-existing,
+previously unused method) when a readiness-pool item is linked, flowing automatically into
+`StudentActivityUsageLog.SourceBankItemId` at attempt-submit time; the full selected-resource
+list is only in the structured log line, not a new column. See
+`docs/architecture/english-resource-bank-import-platform.md`'s "Relationship to Today lesson
+composer" section for the decision-checkpoint history that led to this phase, and
+`docs/backlog/product-backlog.md` for what remains explicitly deferred (Speaking/Listening/
+image/open-ended patterns, CEFR-level widening, full provenance of every selected resource).
 
 ---
 

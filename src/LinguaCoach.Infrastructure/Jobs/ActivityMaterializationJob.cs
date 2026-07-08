@@ -41,6 +41,7 @@ public sealed class ActivityMaterializationJob : IJob
     private readonly IStudentActivityReadinessPoolService _readinessPool;
     private readonly IActivityNoveltyPolicy _noveltyPolicy;
     private readonly IActivityContentFingerprintService _fingerprintService;
+    private readonly ITodayBankResourceSelector _bankResourceSelector;
     private readonly ILogger<ActivityMaterializationJob> _logger;
 
     private const int MaxGenerationAttempts = 2; // bounded retry on duplicate content — never unbounded
@@ -56,6 +57,7 @@ public sealed class ActivityMaterializationJob : IJob
         IStudentActivityReadinessPoolService readinessPool,
         IActivityNoveltyPolicy noveltyPolicy,
         IActivityContentFingerprintService fingerprintService,
+        ITodayBankResourceSelector bankResourceSelector,
         ILogger<ActivityMaterializationJob> logger)
     {
         _db = db;
@@ -68,6 +70,7 @@ public sealed class ActivityMaterializationJob : IJob
         _readinessPool = readinessPool;
         _noveltyPolicy = noveltyPolicy;
         _fingerprintService = fingerprintService;
+        _bankResourceSelector = bankResourceSelector;
         _logger = logger;
     }
 
@@ -196,6 +199,42 @@ public sealed class ActivityMaterializationJob : IJob
             ? baseTopicHint
             : $"{baseTopicHint} (Avoid repeating: {avoidRepeatingHint})";
 
+        // Phase D1 — bank-first Today slice: for vocabulary/reading patterns only, try to pull in
+        // a small set of published resource-bank entries as supporting prompt material. Never
+        // blocks or alters generation on failure — a selector error just means no bank supplement.
+        var bankSelection = TodayBankSelectionResult.NoResources;
+        if (pattern is not null)
+        {
+            try
+            {
+                var secondarySkills = ParseSecondarySkills(pattern.SecondarySkillsJson);
+                bankSelection = await _bankResourceSelector.SelectAsync(
+                    new TodayBankSelectionRequest(
+                        StudentProfileId: profile.Id,
+                        CefrLevel: routing.TargetCefrLevel,
+                        PatternPrimarySkill: pattern.PrimarySkill,
+                        PatternSecondarySkills: secondarySkills), ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex,
+                    "ActivityMaterializationJob: bank resource selection failed for exercise {ExerciseId} — continuing without bank resources.",
+                    exercise.Id);
+            }
+        }
+
+        if (bankSelection.Resources.Count > 0 && !string.IsNullOrWhiteSpace(bankSelection.PromptSupplementText))
+        {
+            topicHint = $"{topicHint} (Bank resources: {bankSelection.PromptSupplementText})";
+        }
+
+        _logger.LogInformation(
+            "ActivityMaterializationJob: bank resource selection for exercise {ExerciseId} (pattern {PatternKey}, CEFR {Cefr}) => {Outcome}, {Count} resource(s){Ids}.",
+            exercise.Id, patternKey, routing.TargetCefrLevel, bankSelection.Outcome, bankSelection.Resources.Count,
+            bankSelection.Resources.Count > 0
+                ? $" [{string.Join(", ", bankSelection.Resources.Select(r => $"{r.ResourceType}:{r.Id}"))}]"
+                : string.Empty);
+
         var pair = profile.LanguagePair;
         var context = new ActivityGenerationContext(
             ActivityType: activityType,
@@ -293,6 +332,38 @@ public sealed class ActivityMaterializationJob : IJob
                 learningActivityId: activity.Id,
                 sessionExerciseId: exercise.Id,
                 ct);
+
+            // Phase D1 provenance — record only the single "primary" bank resource used (the
+            // full selected list lives only in the log line above); best-effort, never blocks.
+            if (bankSelection.Resources.Count > 0)
+            {
+                try
+                {
+                    poolItem.SetBankItemProvenance(bankSelection.Resources[0].Id);
+                    await _db.SaveChangesAsync(ct);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex,
+                        "ActivityMaterializationJob: failed to record bank provenance for exercise {ExerciseId} — continuing without it.",
+                        exercise.Id);
+                }
+            }
+        }
+    }
+
+    /// <summary>Parses ExercisePatternDefinition.SecondarySkillsJson (a JSON string array); returns
+    /// an empty list on any malformed/missing input rather than throwing.</summary>
+    private static IReadOnlyList<string> ParseSecondarySkills(string? secondarySkillsJson)
+    {
+        if (string.IsNullOrWhiteSpace(secondarySkillsJson)) return Array.Empty<string>();
+        try
+        {
+            return System.Text.Json.JsonSerializer.Deserialize<string[]>(secondarySkillsJson) ?? Array.Empty<string>();
+        }
+        catch
+        {
+            return Array.Empty<string>();
         }
     }
 

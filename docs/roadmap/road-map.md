@@ -1,18 +1,18 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase E6)
+lastUpdated: 2026-07-08 (Phase D1)
 owner: product / engineering
 ---
 
 # SpeakPath / LinguaCoach Roadmap
 
-**Accurate as of: 2026-07-08 (Phase E6 — see §19a for the current phase sequence).
+**Accurate as of: 2026-07-08 (Phase D1 — see §19a for the current phase sequence).
 The 2026-07-03 "Phase 20H" line below is the last entry confirmed live against speakpath.app;
 everything since then (Clean-A/A2, Phase B, Phase C1, Plan-Sync-After-C1, Phase C2, Plan-Sync-B2,
 Phase B2, Phase C3, Phase C-Final, Phase E0, Plan-Sync-PG-v2, Phase E1, Phase E2, Phase E3,
-Phase E4, Plan-Sync-After-E4, Phase E5, Plan-Sync-E6-Decision, Phase E6) has been developed and
-tested locally but not yet deployed — see the "Current Project Status" and Decision Log sections
-below for what's actually landed.**
+Phase E4, Plan-Sync-After-E4, Phase E5, Plan-Sync-E6-Decision, Phase E6, Phase D1) has been
+developed and tested locally but not yet deployed — see the "Current Project Status" and
+Decision Log sections below for what's actually landed.**
 
 This is the canonical project memory document. It captures completed work, current state, known gaps, deferred items, and the recommended order of future phases.
 
@@ -24,31 +24,43 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest phase completed (local, not yet deployed):** Phase E6 — First Real English Resource
-Depth (2026-07-08). Added an original, internally-authored, English-only seed pack — 32
-vocabulary entries (A1-B2), 12 grammar profile entries (spanning the grammar subskill taxonomy),
-10 short reading excerpts (150-225 characters, under the 500-character publish limit) — routed
-through the full staging→analysis/validation→approval→publish pipeline via a new
-`InternalResourceSeedPackSeeder`, exactly the same code path an admin's UI actions would exercise
-(no direct final-table seeding). **Key design fix**: `ResourceImportService` gained
-`ApplyDeterministicRowMetadata`, which copies an already-known `cefrLevel`/`skill`/`subskill`
-straight onto a candidate (via the existing `ApplyAnalysis` mutator, `cefrConfidence=1.0`, marked
-`"import-row-deterministic-mapping"`) instead of routing internally-authored content through
-AI-advisory analysis for metadata the content author already asserts — no AI provider is invoked
-anywhere in this path, and rows without these columns are unaffected. **Judgment call**: the
-seeder itself calls `ResourceCandidate.Approve(...)` on behalf of the reviewing admin, consistent
-with `ActivityTemplateSeeder`'s existing precedent — content is pre-reviewed by virtue of being
-codebase-authored, and every deterministic validation gate still runs for real. A dedicated test
-proves every published bank row resolves back to a `ResourceCandidate` marked published by the
-real publish workflow (no direct-final-table-bypass). Idempotent — a full seeder rerun creates no
-duplicates. +14 backend tests (3,500 total: 5 architecture + 2,033 unit + 1,462 integration).
-**No external dataset imported, no Persian/bilingual/support-language content added.** **A third
-Phase D1 decision checkpoint now applies and is not resolved by this phase**: start Phase D1
-using this first real content slice, or continue Phase E7/E8 for more resource depth/search
-first. Full detail: `docs/architecture/english-resource-bank-import-platform.md`. **Phase D and
-PG-v2 implementation remain not started.**
+**Latest phase completed (local, not yet deployed):** Phase D1 — First Bank-First Today
+Composer Slice (2026-07-08). Resolved the third Phase D1 decision checkpoint by starting D1
+itself, using Phase E6's first real content slice. New `ITodayBankResourceSelector`/
+`TodayBankResourceSelector` (Application/Infrastructure) queries the published Resource Bank
+(`IResourceBankQueryService`, unchanged) at the routing-recommended CEFR level for Today
+exercises whose pattern's `PrimarySkill` is `"Vocabulary"` (`phrase_match`,
+`gap_fill_workplace_phrase`) or `"Reading"` (`reading_multiple_choice_single`,
+`reading_fill_in_blanks`, `reorder_paragraphs`) — grammar bank content is pulled in only
+opportunistically for `gap_fill_workplace_phrase`'s `Grammar` secondary skill, never as its own
+pattern gate (Today has no dedicated grammar pattern yet). `ActivityMaterializationJob` appends
+the selector's short prompt supplement onto the existing free-text `TopicHint`
+(`avoidRepeatingHint`'s established injection mechanism) — **no AI prompt template changes were
+needed**. Candidates are novelty-prechecked via a synthetic fingerprint
+(`"bank-vocab-precheck:{id}"`, mirroring `PracticeGymGenerationJob`'s per-template precheck).
+Every other pattern (Writing/Speaking/Listening/Reflection) and every case with no matching bank
+rows falls back to today's unchanged legacy freeform generation — **no fallback removed, no
+prompt template touched, no migration required**. Provenance is best-effort: the primary
+selected resource id is recorded via `StudentActivityReadinessItem.SetBankItemProvenance(...)`
+(a pre-existing, previously-unused method) when a readiness-pool item exists, flowing into
+`StudentActivityUsageLog.SourceBankItemId` at submit time; the full selected list is logged only.
++13 backend tests (3,513 total: 5 architecture + 2,044 unit + 1,464 integration). **Discovered
+(not fixed, out of scope): `LearningSession.GenerationStatus`'s EF `HasDefaultValue(Ready)`
+silently overrides an explicit `MarkGenerationPending()` call made before a new session's first
+save, since `Pending=0` is also the enum's CLR default — the same pattern
+`LessonBatchGenerationJob` itself already uses. Flagged as a backlog item, not fixed this phase.**
+**No external dataset imported, no Persian/bilingual/support-language content added, PG-v2
+implementation not started, Practice Gym untouched.** Full detail:
+`docs/architecture/learning-activity-engine.md`.
 
-**Latest phase completed before this:** Plan-Sync-E6-Decision — Choose E6 before
+**Latest phase completed before this:** Phase E6 — First Real English Resource
+Depth (2026-07-08, `0c46519d`). Added an original, internally-authored, English-only seed pack —
+32 vocabulary entries (A1-B2), 12 grammar profile entries, 10 short reading excerpts — routed
+through the full staging→analysis/validation→approval→publish pipeline via
+`InternalResourceSeedPackSeeder`, no direct final-table seeding. +14 backend tests (3,500 total).
+Full detail: `docs/architecture/english-resource-bank-import-platform.md`.
+
+**Before that:** Plan-Sync-E6-Decision — Choose E6 before
 Today composer (2026-07-08, `97c4d35e`, docs-only — no app code, migrations, or config
 changed). Resolved the Phase D1 decision checkpoint opened by Phase E5: continue with Phase
 E6 before Phase D1. Full detail: `docs/architecture/english-resource-bank-import-platform.md`.
@@ -173,6 +185,12 @@ unmodified throughout.
 (2026-07-03) — see the entry below; everything after this line is developed/tested locally only.
 
 **Branch:** main
+
+**Test totals (as of Phase D1, 2026-07-08, local only):**
+- Backend: 3,513 passed (5 architecture + 2,044 unit + 1,464 integration), 0 failed — net +13 vs Phase E6 (3,500): new `TodayBankResourceSelectorTests` (11 tests: matching vocabulary/opportunistic-grammar/reading selection by CEFR, unsupported-pattern skip, empty-bank graceful result, novelty-blocked exclusion, English-only regression guard, discovers E6 seed-pack content — all under `UnitTests`) and `ActivityMaterializationJobBankFirstTests` (2 tests: bank context injected into `TopicHint` when matching bank rows exist at the routed CEFR level, unchanged legacy fallback when none exist — under `IntegrationTests`).
+- Angular unit (Karma): not run this phase — no frontend files touched (D1 is backend-only); baseline unchanged at 120 pre-existing failures.
+- Angular production build (`ng build --configuration production`): still fails on the pre-existing `initial` bundle-size budget (1.56MB over the 1MB threshold) — confirmed not a new regression, no frontend files changed in D1.
+- Playwright E2E: not run this phase — no UI changed; `e2e/core-flow-smoke.spec.ts` remains `test.skip`'d (see Clean-A2 decision log entry).
 
 **Test totals (as of Phase E6, 2026-07-08, local only):**
 - Backend: 3,500 passed (5 architecture + 2,033 unit + 1,462 integration), 0 failed — net +14 vs Phase E5 (3,486): new `InternalResourceSeedPackSeederTests` (source idempotency, import-run/raw-record/candidate creation, deterministic CEFR/skill/subskill mapping distinct from AI output, validation without AI, publish to all 3 target tables, traceability, full-rerun idempotency, no-direct-final-table-bypass guarantee) — all under `UnitTests`, no new `IntegrationTests`.
@@ -978,10 +996,11 @@ These are planning estimates, not exact metrics. Provided to guide sequencing de
 | 2026-07-08 | **Phase E5 implemented — published bank browsing/search/admin management**: `ResourceBankQueryService` — list + detail queries for all 3 published bank types, filters (search text, CEFR level, source id), pagination capped at 200, sort newest-first by `CreatedAt` (documented fallback — none of the 3 entities has its own "published at" field). **Key finding**: no published bank entity carries a forward reference to its originating `ResourceCandidate` — traceability is implemented as a **reverse lookup** (`ResourceCandidate.PublishedEntityType`/`PublishedEntityId` matched against the bank row), returning an explicit "unavailable" result rather than throwing when no match exists; no new columns were added to any bank entity. A dedicated test confirms the pre-existing invariant that unpublished/rejected candidates can never appear in a bank-browse list. New `GET /api/admin/resource-banks/{vocabulary,grammar,reading-references}` list+detail endpoints; 3 new read-only admin pages (search/CEFR/source filters, paginated table, detail drawer with source/license/provenance/traceability) — **no edit or delete actions**, all mutation remains on Resource Candidates. +31 backend tests | The "no forward reference" finding confirms E0's original hybrid-entity decision was sound — a reverse query against `ResourceCandidate` is sufficient for E5's read-only browsing needs, so no schema change was needed on the already-live `Cefr*` tables just to support browsing. Keeping E5 strictly read-only (no edit/delete) was a deliberate scope discipline choice, not an oversight — Resource Candidates remains the single place mutation happens, avoiding two parallel edit surfaces for the same underlying data |
 | 2026-07-08 | **Plan-Sync-E6-Decision**: resolved the Phase D1 decision checkpoint (opened by Phase E5) — **continue with Phase E6 before Phase D1**. Phase E5 built the published-bank browsing/search/admin-management surface, but the banks themselves still hold only small synthetic/test data — not enough real English content depth for Today's bank-first composer to produce useful lessons from. Phase E6 (deepen real English resource/content support — reading/listening resources per the original E0-E8 plan, still English-only, still no Persian/bilingual/support-language seed content, still no direct import-to-final-table bypass) is now the next recommended implementation phase. **Phase D1 remains deferred until after Phase E6, or until a later explicit product decision.** Docs-only; no app code, migrations, or config changed; does not start E6 implementation, Phase D, or PG-v2 | The Phase D1 decision checkpoint exists precisely to force this kind of explicit choice rather than let a technical gate ("the pipeline exists") silently stand in for a product judgment ("the pipeline has produced something worth composing from"). Phase E5 closed the *visibility* gap (an admin can now see what's published) but did not — and was never scoped to — close the *content depth* gap. Choosing E6 next keeps the same discipline the project has followed throughout Phase E: don't start the next consumer (Phase D) until the producer side (Phase E) has given it something real to consume |
 | 2026-07-08 | **Phase E6 implemented — first real English content depth**: E6 was deliberately scoped narrower than its original E0-sketch ("reading/listening resource expansion") — a **controlled first content-depth slice** instead: 32 vocabulary entries (A1-B2), 12 grammar profile entries, 10 short reading excerpts (150-225 chars, under the 500-char publish limit), 100% original/internally-authored, English-only. Routed through the real staging→analysis/validation→approval→publish pipeline via a new `InternalResourceSeedPackSeeder`, not direct final-table seeding. New `ResourceImportService.ApplyDeterministicRowMetadata` copies an already-known `cefrLevel`/`skill`/`subskill` straight onto a candidate (reusing the existing `ApplyAnalysis` mutator, `cefrConfidence=1.0`, marked `"import-row-deterministic-mapping"`) instead of routing internally-authored content through AI-advisory analysis for metadata the author already asserts — no AI provider is invoked anywhere in this path; rows without these columns are unaffected. The seeder itself calls `ResourceCandidate.Approve(...)` on behalf of the reviewing admin, consistent with `ActivityTemplateSeeder`'s existing precedent for its own hand-authored, pre-reviewed content — every deterministic validation gate still runs for real. A dedicated test proves every published bank row resolves back to a `ResourceCandidate` marked published by the real publish workflow (no direct-final-table-bypass). Idempotent (source-name existence check; full rerun creates no duplicates). +14 backend tests (3,500 total). **No external dataset imported, no Persian/bilingual/support-language content added.** **A third Phase D1 decision checkpoint now applies, not resolved by this phase.** | Proving the E1-E5 pipeline could carry real, useful, original content end to end — not just synthetic test fixtures — was the actual goal, and doing it as a small slice (rather than a large import) kept the phase reviewable and low-risk. The deterministic-mapping fix avoids a backwards design (asking AI to "discover" metadata the content author already knows) and keeps the seeder's tests free of any live-AI dependency, matching this codebase's established testing convention. The seeder-performs-approval judgment call was made explicit and code-documented rather than silently assumed, following the exact precedent `ActivityTemplateSeeder` already set |
+| 2026-07-08 | **Phase D1 implemented — first bank-first Today composer slice**: resolved the third Phase D1 decision checkpoint by starting D1 itself rather than deferring further. New `ITodayBankResourceSelector`/`TodayBankResourceSelector` queries the published Resource Bank (`IResourceBankQueryService`, unchanged) at the routing-recommended CEFR level, scoped to Today patterns whose `PrimarySkill` is `"Vocabulary"` or `"Reading"` only (grammar bank content included only opportunistically for `gap_fill_workplace_phrase`'s `Grammar` secondary skill — Today has no dedicated grammar pattern). `ActivityMaterializationJob` appends the selector's short supplement text onto the existing free-text `TopicHint` (the same mechanism `avoidRepeatingHint` already used) — **no AI prompt template changes needed**. Candidates are novelty-prechecked via a synthetic fingerprint (`"bank-vocab-precheck:{id}"` etc.), mirroring `PracticeGymGenerationJob`'s per-template precheck. Every unsupported pattern and every case with no matching bank rows falls back to legacy freeform generation completely unchanged — verified by a dedicated integration test asserting the `TopicHint` carries no bank marker in that case. Provenance is best-effort only: the single "primary" selected resource id is recorded via the pre-existing, previously-unused `StudentActivityReadinessItem.SetBankItemProvenance(...)` method when a readiness-pool item exists, flowing automatically into `StudentActivityUsageLog.SourceBankItemId` at attempt-submit time (no schema change); the full selected-resource list lives only in a structured log line. +13 backend tests (3,513 total: 5 architecture + 2,044 unit + 1,464 integration) — no migration required. **Discovered but explicitly not fixed this phase (out of scope, pre-existing, unrelated to D1's own code)**: `LearningSession.GenerationStatus` is configured with EF `HasDefaultValue(GenerationStatus.Ready)`, and since `Pending=0` is also the enum's CLR default, EF's "skip sending CLR-default values on insert" convention silently persists `Ready` instead of an explicit `MarkGenerationPending()` call made before a new session's first `SaveChangesAsync` — `LessonBatchGenerationJob` itself already uses this exact pattern (line 238) when creating background-generated sessions. Flagged as a new backlog item; a dedicated test writer had to route around it with a raw SQL fix-up to exercise `ActivityMaterializationJob`'s actual pending-session code path. **No external dataset imported, no Persian/bilingual/support-language content added, Today/Practice Gym legacy fallback not removed, PG-v2 implementation not started.** | The bank platform (E0-E6) had proven it could carry real content, but nothing consumed it yet — D1's job was to prove the *other* half: that Today's generator could actually use that content safely. Scoping to only Vocabulary/Reading patterns (rather than attempting all patterns) kept the first slice narrow and matched what the bank already has real content for; appending to the existing `TopicHint` field rather than adding new prompt-template variables avoided touching any AI prompt content, the highest-blast-radius surface in the whole system per the 2026-07-08 clean-architecture plan's own risk assessment. The discovered `GenerationStatus` default-value bug was flagged rather than silently fixed, since fixing it would touch `LessonBatchGenerationJob`'s tested, unrelated production behavior — outside this phase's narrow scope |
 
 ---
 
-## 19a. Phase Sequence (as of 2026-07-08, Phase E6)
+## 19a. Phase Sequence (as of 2026-07-08, Phase D1)
 
 Preferred order, each phase gated on the previous one's completion review:
 
@@ -1000,8 +1019,9 @@ Preferred order, each phase gated on the previous one's completion review:
 13. ~~**Phase E5**~~ — done (2026-07-08): published bank browsing/search/admin management — `ResourceBankQueryService` (list/detail, search/CEFR/source filters, reverse-lookup candidate traceability, no forward reference needed on the bank entities themselves), read-only admin pages for vocabulary/grammar/reading-references, no edit/delete actions. See `docs/architecture/english-resource-bank-import-platform.md`.
 14. ~~**Phase D1 decision checkpoint**~~ — **resolved (2026-07-08, Plan-Sync-E6-Decision)**: continue with **Phase E6 before Phase D1**. The published-bank browsing/search surface exists (E5), but real English content depth is still too thin (small synthetic/test data only) for Today's composer to produce anything useful. See the Decision Log entry above.
 15. ~~**Phase E6**~~ — done (2026-07-08): first real English content depth — 32 vocabulary / 12 grammar / 10 reading-excerpt rows, original/internally-authored/English-only, flowed through the full staging→validation→approval→publish pipeline via `InternalResourceSeedPackSeeder`. See `docs/architecture/english-resource-bank-import-platform.md` and the Decision Log entry above.
-16. **Phase D1 decision checkpoint (third instance)** — **live now, not resolved by Phase E6 itself**: start Phase D1 using this first real content slice, or continue further with Phase E7/E8 (larger import support, RAG/search enrichment) first. Not reached yet.
-17. **Phase E7-E8** — larger import support, RAG/search enrichment — proceed depending on the third Phase D1 decision checkpoint's outcome. Not started.
+16. ~~**Phase D1 decision checkpoint (third instance)**~~ — **resolved (2026-07-08)**: started **Phase D1** itself rather than deferring further. See the Decision Log entry above.
+16a. ~~**Phase D1**~~ — done (2026-07-08): first bank-first Today composer slice — `ITodayBankResourceSelector`/`TodayBankResourceSelector` inject published vocabulary/grammar/reading bank content into `ActivityMaterializationJob`'s AI prompt (`TopicHint`) for Vocabulary/Reading-primary-skill Today patterns only; legacy freeform generation is the unchanged fallback for every other pattern and every no-bank-match case. See `docs/architecture/learning-activity-engine.md` and the Decision Log entry above. **A follow-on decision point now applies**: expand Today bank-first support to more patterns/skills (Phase D2), continue Phase E7/E8 for more resource depth/search, or plan a larger Today composer migration — not resolved by this phase.
+17. **Phase E7-E8** — larger import support, RAG/search enrichment — available as a next step alongside Phase D2, per the follow-on decision above. Not started.
 18. **Phase PG-v2A** — backend skill/objective-first Practice Gym selector (planned, not started; see `docs/backlog/product-backlog.md`). Sequenced after Phase E5-E8, not immediately after C-Final — a good skill-first selector needs enough published bank/resource content and search/selector coverage to have real options to choose from.
 19. **Phase PG-v2B** — student Practice Gym UI simplified around skills, weak areas, review, challenge, recommended practice (planned, not started).
 20. **Phase PG-v2C** — admin capability-registry cleanup / internal pattern management, reframing `ExerciseTypeDefinition`/`ExercisePatternDefinition` as internal capability config rather than the student-facing model (planned, not started; these entities are **not deleted** at any point in this sequence).
@@ -1009,16 +1029,20 @@ Preferred order, each phase gated on the previous one's completion review:
 22. **Phase F** — legacy freeform-generation retirement, **per-pattern only, destructive only after each pattern's replacement is proven** — not a bulk deletion, and not started until Phase C-Final (done) and Phase D have each individually proven their replacement paths. Not started.
 23. **Phase G** — admin bank/content navigation cleanup (consolidate the "Content" vs "AI System" nav split flagged in the 2026-07-08 clean-architecture plan) — deferred until enough new bank-first admin pages exist (Phase C-Final done + Phase E's admin pages, now started) to make a single consolidated redesign worthwhile rather than premature. Not started.
 
-**Phase E has now reached E6 — the original "E0-E4 before D1" gate, the Plan-Sync-After-E4 "E5
-closes the browsing/search gap" gate, and the Plan-Sync-E6-Decision "add real content depth" gate
-are all met.** The published banks now hold real, original, English-only content (32 vocabulary /
-12 grammar / 10 reading-excerpt rows — still no external dataset imported, that step remains
-ahead, gated on real licensing approval per `docs/architecture/cefr-resource-licensing-review.md`)
-and can be browsed, filtered, searched, and traced back to their source candidates by an admin.
-**Phase E6 is complete.** **A third Phase D1 decision checkpoint is now live and not resolved by
-this phase** (item 16 above): start Phase D1 using this first real content slice, or continue
-Phase E7/E8 for more resource depth/search first. **Phase D implementation has not started. PG-v2
-implementation has not started.**
+**Phase E has now reached E6, and Phase D1 has started and is complete.** The original
+"E0-E4 before D1" gate, the Plan-Sync-After-E4 "E5 closes the browsing/search gap" gate, and the
+Plan-Sync-E6-Decision "add real content depth" gate are all met, and the third Phase D1 decision
+checkpoint they fed into was resolved by starting D1 itself. The published banks hold real,
+original, English-only content (32 vocabulary / 12 grammar / 10 reading-excerpt rows — still no
+external dataset imported, gated on real licensing approval per
+`docs/architecture/cefr-resource-licensing-review.md`), can be browsed/filtered/searched by an
+admin (Phase E5), and are now also consumed by Today's generator for a narrow first slice (Phase
+D1: Vocabulary/Reading-primary-skill patterns only, legacy fallback unchanged everywhere else).
+**Phase E6 is complete. Phase D1 is complete.** A follow-on decision point now applies (item 16a
+above, not resolved by this phase): expand Today bank-first support (Phase D2), continue Phase
+E7/E8 for more resource depth/search, or plan a larger Today composer migration. **Full Phase D
+implementation (beyond D1's narrow slice) has not started. PG-v2 implementation has not
+started.**
 
 **Practice Gym v2 (PG-v2A-D) is planned, not started**, and is sequenced deliberately late — after
 Phase E5-E8, before Phase F/G — because a skill/objective-first selector needs mature bank/resource

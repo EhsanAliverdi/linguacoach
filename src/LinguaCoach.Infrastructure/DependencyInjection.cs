@@ -324,6 +324,9 @@ public static class DependencyInjection
             services.Configure<NoveltyPolicySettings>(_ => { });
         services.AddSingleton<IActivityContentFingerprintService, ActivityContentFingerprintService>();
         services.AddScoped<IActivityNoveltyPolicy, ActivityNoveltyPolicy>();
+
+        // Phase D1 — bank-first Today slice (vocabulary/reading patterns only; see docs/architecture)
+        services.AddScoped<ITodayBankResourceSelector, TodayBankResourceSelector>();
         services.AddScoped<VocabularyPracticeGenerator>();
         services.AddScoped<VocabularyPracticeEvaluator>();
         services.AddScoped<ListeningComprehensionEvaluator>();

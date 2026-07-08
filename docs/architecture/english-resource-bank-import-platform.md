@@ -22,6 +22,11 @@ end to end: every published row resolves back to its originating `ResourceCandid
 run/source. **A new Phase D1 decision checkpoint follows E6**: start Phase D1 using this first
 real content slice, or continue Phase E7/E8 for more resource depth/search first — not resolved
 by this phase, see the Decision Log.
+**Phase D1 (2026-07-08, separate doc: docs/architecture/learning-activity-engine.md) has now
+consumed this bank** — `ActivityMaterializationJob` queries the published vocabulary/grammar/
+reading banks (via `IResourceBankQueryService`, unchanged by D1) as supporting material for a
+narrow first slice of Today activities. This platform's own read-only query surface required no
+changes to support that consumption.
 **Some rows have now been published — but only `VocabularyEntry`/`GrammarProfileEntry`/short-
 excerpt `ReadingPassage` candidates that passed validation AND were explicitly admin-approved.**
 `ActivityTemplateCandidate` publishing is **deferred** (see "E4 — Publish to first banks" below
@@ -623,12 +628,16 @@ candidates — but **did not** close the content-depth gap. **Plan-Sync-E6-Decis
 resolved that follow-on decision checkpoint: continue with Phase E6 before Phase D1.** **Phase E6
 (2026-07-08) closed the content-depth gap for a first slice** — the published banks now hold 32
 vocabulary / 12 grammar / 10 reading-excerpt rows of real, original, English-only content, added
-through the full staging/review/publish pipeline with no bypass. **A third Phase D1 decision
-checkpoint now applies and is not resolved by this phase**: start Phase D1 using this first
-real content slice, or continue Phase E7/E8 for more resource depth/search before D1. See
-`docs/roadmap/road-map.md` Decision Log (2026-07-08, Plan-Sync-After-C1, Plan-Sync-After-E4,
-Phase E5, Plan-Sync-E6-Decision, and Phase E6 entries) for the full reasoning and current
-preferred phase order.
+through the full staging/review/publish pipeline with no bypass. **The third Phase D1 decision
+checkpoint was resolved by starting Phase D1 (2026-07-08)** — see
+`docs/architecture/learning-activity-engine.md` for the full D1 design (a narrow,
+fallback-safe first slice: `ActivityMaterializationJob` + `TodayBankResourceSelector` inject
+bank content into the AI prompt for vocabulary/reading-focused patterns only; legacy generation
+is untouched and remains the fallback whenever no matching bank content exists). D1 does not
+change anything in this platform's own pipeline (E0-E6) — it is a pure read-only consumer of
+`IResourceBankQueryService`. See `docs/roadmap/road-map.md` Decision Log (2026-07-08,
+Plan-Sync-After-C1, Plan-Sync-After-E4, Phase E5, Plan-Sync-E6-Decision, Phase E6, and Phase D1
+entries) for the full reasoning and current preferred phase order.
 
 ---
 
@@ -674,6 +683,13 @@ preferred phase order.
   unresolved Phase D1 decision checkpoint); `docs/roadmap/road-map.md` (Current Project Status,
   Test Totals, Decision Log, §19a phase sequence); `docs/sprints/current-sprint.md`;
   `docs/architecture/README.md`; `docs/backlog/product-backlog.md`.
+- Docs updated (Phase D1, this section): this file ("Relationship to Phase D" section updated —
+  D1 started and resolves the third checkpoint; a status paragraph noting D1 has consumed the
+  bank); `docs/architecture/learning-activity-engine.md` (new D1 section — the actual technical
+  home for this phase's design); `docs/roadmap/road-map.md` (Current Project Status, Test
+  Totals, Decision Log, §19a phase sequence); `docs/sprints/current-sprint.md`;
+  `docs/architecture/README.md`; `docs/backlog/product-backlog.md` (new discovered-bug entry —
+  see below).
 - Docs intentionally not updated: `docs/architecture/cefr-resource-licensing-review.md` — its
   licensing findings are unchanged by this phase; no new sources were browsed or licensing
   conclusions revisited in E0. `docs/architecture/practice-gym.md`/`repetition-and-novelty.md` —

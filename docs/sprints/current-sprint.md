@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase E6)
+lastUpdated: 2026-07-08 (Phase D1)
 owner: engineering
 supersedes:
 supersededBy:
@@ -14,28 +14,48 @@ Last updated: 2026-07-08
 
 ## Active sprint
 
+**Phase D1 — First Bank-First Today Composer Slice (2026-07-08)** — complete
+
+Resolved the third Phase D1 decision checkpoint by starting D1 itself. New
+`ITodayBankResourceSelector`/`TodayBankResourceSelector` queries the published Resource Bank
+(`IResourceBankQueryService`, unchanged) at the routing-recommended CEFR level, scoped to Today
+patterns whose `PrimarySkill` is `"Vocabulary"` or `"Reading"` only — grammar bank content is
+included only opportunistically for `gap_fill_workplace_phrase`'s `Grammar` secondary skill
+(Today has no dedicated grammar pattern yet). `ActivityMaterializationJob` appends the
+selector's short supplement text onto the existing free-text `TopicHint`
+(`avoidRepeatingHint`'s established mechanism) — **no AI prompt template changes needed**.
+Candidates are novelty-prechecked via a synthetic fingerprint (`"bank-vocab-precheck:{id}"`
+etc.), mirroring `PracticeGymGenerationJob`'s per-template precheck. Every unsupported pattern
+and every no-bank-match case falls back to legacy freeform generation completely unchanged —
+verified by a dedicated integration test. Provenance is best-effort: the primary selected
+resource id is recorded via the pre-existing, previously-unused
+`StudentActivityReadinessItem.SetBankItemProvenance(...)` when a readiness-pool item exists,
+flowing into `StudentActivityUsageLog.SourceBankItemId` at submit time (no schema change); the
+full selected list is logged only. +13 backend tests (3,500 → 3,513 passed: 5 architecture +
+2,044 unit + 1,464 integration). **No external dataset imported, no Persian/bilingual/
+support-language content added, no fallback removed.**
+
+**Discovered, not fixed (out of scope this phase)**: `LearningSession.GenerationStatus`'s EF
+`HasDefaultValue(Ready)` silently overrides an explicit `MarkGenerationPending()` call made
+before a new session's first save, since `Pending=0` is also the enum's CLR default —
+`LessonBatchGenerationJob` itself already uses this exact pattern. Flagged as a new backlog item.
+
+**Next: a follow-on decision point now applies, not resolved by this phase** — expand Today
+bank-first support to more patterns/skills (Phase D2), continue Phase E7/E8 for more resource
+depth/search, or plan a larger Today composer migration. See `docs/roadmap/road-map.md` §19a for
+the full phase order.
+
+---
+
+## Previous sprint
+
 **Phase E6 — First Real English Resource Depth (2026-07-08)** — complete
 
 Added an original, internally-authored, English-only seed pack — 32 vocabulary entries (A1-B2),
-12 grammar profile entries, 10 short reading excerpts (150-225 chars, under the 500-char publish
-limit) — routed through the real staging→analysis/validation→approval→publish pipeline via a new
-`InternalResourceSeedPackSeeder`, not direct final-table seeding. New
-`ResourceImportService.ApplyDeterministicRowMetadata` maps an already-known `cefrLevel`/`skill`/
-`subskill` straight onto a candidate (reusing the existing `ApplyAnalysis` mutator, confidence
-1.0, marked `"import-row-deterministic-mapping"`) instead of routing internally-authored content
-through AI-advisory analysis — no AI provider is invoked anywhere in this path. The seeder itself
-calls `ResourceCandidate.Approve(...)` on behalf of the reviewing admin, consistent with
-`ActivityTemplateSeeder`'s existing precedent; every deterministic validation gate still runs for
-real. A dedicated test proves every published bank row resolves back to a `ResourceCandidate`
-marked published by the real publish workflow (no direct-final-table-bypass). Idempotent. +14
-backend tests (3,486 → 3,500 passed: 5 architecture + 2,033 unit + 1,462 integration). **No
-external dataset imported, no Persian/bilingual/support-language content added.**
-
-**Next: a third Phase D1 decision checkpoint is now live, not resolved by this phase** — start
-Phase D1 using this first real content slice, or continue Phase E7/E8 for more resource depth/
-search first. Phase D remains not started; PG-v2 implementation remains not started. Today lesson
-generation remains 100% legacy `IAiActivityGenerator` freeform generation. See
-`docs/roadmap/road-map.md` §19a for the full phase order.
+12 grammar profile entries, 10 short reading excerpts — routed through the real staging→
+analysis/validation→approval→publish pipeline via `InternalResourceSeedPackSeeder`, not direct
+final-table seeding. +14 backend tests (3,486 → 3,500 passed). No external dataset imported, no
+Persian/bilingual/support-language content added.
 
 ---
 
