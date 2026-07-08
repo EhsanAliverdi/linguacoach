@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase G0)
+lastUpdated: 2026-07-09 (Plan-Sync-After-G0)
 owner: architecture
 supersedes:
 supersededBy:
@@ -165,8 +165,17 @@ Key facts about where this stands today (2026-07-08):
   and diagnostics under a "readiness pool health" subtitle; the Phase E7 reading-passages admin
   page is routable but missing from the sidebar nav (P1, G1 safe quick win, not fixed in G0); the
   "Content" nav section is overloaded (P1). Cleanup implementation (G1/G2/G3) has not started.
+- **Phase G1 chosen next (Plan-Sync-After-G0, 2026-07-09, docs-only)**: G0's audit is done, and
+  its highest-value/lowest-risk findings are all admin-IA quick wins, so **Phase G1 (Admin
+  Information Architecture Cleanup) comes before Phase E8 and Phase D3**. G1 acts on G0's quick
+  wins only — split the P0 `/admin/lessons` page, add the missing reading-passages nav item,
+  relabel readiness→delivery language, regroup the "Content" nav, reframe (labels/nav only)
+  Exercise Types as a capability registry. **G1 is admin IA cleanup only — not a visual redesign,
+  and it must not delete the readiness pool, remove legacy generation, or touch backend
+  namespaces/entities/routes (G2's deferred, prove-safe-first scope).** E8/D3/PG-v2 remain
+  deferred until after G1 or a later decision. See `docs/roadmap/road-map.md` §1 and Decision Log.
 
-Current state (as of 2026-07-09, Phase E7): **Practice Gym bank-first migration (content
+Current state (as of 2026-07-09, Plan-Sync-After-G0): **Practice Gym bank-first migration (content
 layer) is closed at Phase C-Final** — generalized the Form.io template path from 1 pilot pattern
 to 8 total (C1's `phrase_match`, `gap_fill_workplace_phrase`, `reading_multiple_choice_single`;
 C2's `reading_multiple_choice_multi`, `reading_fill_in_blanks`, `reading_writing_fill_in_blanks`;
@@ -258,10 +267,17 @@ classification of 31 admin routes, ~20 controllers, 8 jobs + ~6 services, and 11
 terms; confirmed the readiness/delivery lifecycle is load-bearing (kept, reframed, never
 deleted); flagged the `/admin/lessons` page (P0) and the E7 reading-passages page missing from
 the nav (P1 safe quick win, not fixed in G0); deferred all renames/moves/removals to
-G1/G2/G3/F/PG-v2. No cleanup was implemented. **A new Phase D3 decision checkpoint now applies:
-Phase G1 (act on the audit), Phase D3, Phase E8, or a further docs-only plan sync. Full Phase D
-implementation (beyond D1/D2's narrow slice), Phase G1/G2/G3 cleanup, and PG-v2 implementation
-remain not started.**
+G1/G2/G3/F/PG-v2. No cleanup was implemented. **Plan-Sync-After-G0 (2026-07-09, docs-only) then
+chose Phase G1 next**: G0's highest-value/lowest-risk findings are all admin-IA quick wins, so
+**Phase G1 (Admin Information Architecture Cleanup) comes before Phase E8 and Phase D3** — split
+the P0 `/admin/lessons` page, add the missing reading-passages nav item, relabel readiness→
+delivery, regroup the "Content" nav, reframe (labels/nav only) Exercise Types as a capability
+registry. **G1 is admin IA cleanup only — not a visual redesign; must not delete the readiness
+pool, remove legacy generation, or touch backend namespaces/entities/routes (G2's deferred
+scope).** After G1, a Phase E8/D3 decision checkpoint applies (not resolved in advance). **Phase
+G1 is the next recommended implementation phase; it has not started. Full Phase D implementation
+(beyond D1/D2's narrow slice), Phase E8, Phase G2/G3 cleanup, and PG-v2 implementation remain not
+started.**
 
 ---
 
@@ -381,7 +397,7 @@ Archived
 | English Resource Bank Import/Review/Preview/Publishing Platform (Phase E0-E8) | 🟡 **E1-E7 all implemented** (2026-07-09) — see docs/architecture/english-resource-bank-import-platform.md. `CefrResourceSource` extended (source registry, no duplicate entity); `ResourceImportRun`/`ResourceRawRecord`/`ResourceCandidate` staging entities; gates 1-3 + gates 4-6 + `ResourceCandidatePreviewService` (rendered admin preview, read-only) + `ResourceCandidatePublishService` (every gate re-checked live, idempotent; `VocabularyEntry`/`GrammarProfileEntry`/short-excerpt `ReadingPassage`→`CefrReadingReference`, full-length `ReadingPassage`→**`CefrReadingPassage` (E7)**, `ActivityTemplateCandidate` deferred) + `ResourceBankQueryService` (published-bank browsing/search for all 4 bank types, reverse candidate traceability, no forward reference needed on bank entities, read-only) + first real content depth (32/12/10 rows, E6) + **10 full-length original reading passages (E7)**. Admin CRUD/API/UI with analyze/re-validate/preview/approve/reject/publish/browse actions including a new reading-passages admin page. Still no external dataset imported. **Phase D1+D2 (2026-07-08) are real consumers** (see the "Bank-first Today lesson composer" row) — `TodayBankResourceSelector` is not yet wired to the new E7 passage bank. **A new Phase D3 decision checkpoint applies, not resolved by E7.** English-only; no Persian/bilingual seed data at any phase |
 | IFileStorageService / MinIO | ✅ Done — audio (TTS + speaking uploads) fully on object storage; not blocking deployment at current scale |
 | Admin lifecycle reset tools | ✅ Done |
-| Bank-First Admin/Backend Surface Cleanup (Phase G0/G1/G2/G3) | 🟡 **G0 audit done; G1/G2/G3 planned** (2026-07-09, docs/audit-only) — Plan-Sync-G0 set the framework (Resource Banks/Candidates/Activity Templates = primary content model; AI generation = fallback/evaluation/composition/cost-diagnostics; readiness lifecycle **kept**, reframed "Student Activity Assignment / Delivery Queue"). **Phase G0 (done)** executed the audit → `docs/architecture/bank-first-admin-backend-surface-audit.md`: 31 admin routes, ~20 controllers, 8 jobs + ~6 services, 11 terminology terms, each classified keep/rename-reframe/move-to-diagnostics/merge/remove-later with P0/P1/P2 priority + target phase. Findings: P0 `/admin/lessons` conflates delivery health + manual generation + buffer settings + diagnostics; P1 E7 reading-passages admin page missing from nav (G1 safe quick win, not fixed in G0); P1 "Content" nav overloaded. **No cleanup implemented — docs only.** Phase G1 (admin IA cleanup)/G2 (backend legacy cleanup)/G3 (diagnostics consolidation) act on these findings — **not started**. See docs/roadmap/road-map.md §1, Decision Log, §19a |
+| Bank-First Admin/Backend Surface Cleanup (Phase G0/G1/G2/G3) | 🟡 **G0 audit done; G1/G2/G3 planned** (2026-07-09, docs/audit-only) — Plan-Sync-G0 set the framework (Resource Banks/Candidates/Activity Templates = primary content model; AI generation = fallback/evaluation/composition/cost-diagnostics; readiness lifecycle **kept**, reframed "Student Activity Assignment / Delivery Queue"). **Phase G0 (done)** executed the audit → `docs/architecture/bank-first-admin-backend-surface-audit.md`: 31 admin routes, ~20 controllers, 8 jobs + ~6 services, 11 terminology terms, each classified keep/rename-reframe/move-to-diagnostics/merge/remove-later with P0/P1/P2 priority + target phase. Findings: P0 `/admin/lessons` conflates delivery health + manual generation + buffer settings + diagnostics; P1 E7 reading-passages admin page missing from nav (G1 safe quick win, not fixed in G0); P1 "Content" nav overloaded. **No cleanup implemented — docs only.** **Plan-Sync-After-G0 (2026-07-09) chose Phase G1 next** — admin IA cleanup (quick wins: split `/admin/lessons`, add reading-passages nav item, relabel readiness→delivery, regroup "Content" nav, reframe Exercise Types labels), before Phase E8/D3; G1 is labels/nav/page-structure only, must not delete the readiness pool or legacy generation or touch backend namespaces/entities/routes. Phase G1 (next, admin IA cleanup)/G2 (backend legacy cleanup, sequenced late)/G3 (diagnostics consolidation, sequenced late) — **all not started**. See docs/roadmap/road-map.md §1, Decision Log, §19a |
 
 ---
 

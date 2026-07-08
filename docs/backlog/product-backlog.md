@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase G0)
+lastUpdated: 2026-07-09 (Plan-Sync-After-G0)
 owner: product
 supersedes:
 supersededBy:
@@ -26,6 +26,12 @@ the full phase order and Decision Log for the full rationale. **Phase G0 (the au
 now done (2026-07-09, docs/audit-only)** — the full surface-by-surface inventory and
 classification lives in `docs/architecture/bank-first-admin-backend-surface-audit.md`; G1/G2/G3
 below are the implementation phases that act on its findings and have **not** started.
+**Plan-Sync-After-G0 (2026-07-09, docs-only) then selected Phase G1 (admin IA cleanup) as the
+next implementation phase, ahead of Phase E8 and Phase D3** — G0's highest-value/lowest-risk
+findings are all admin-IA quick wins, so making the bank-first model legible in the admin surface
+comes first. G2/G3 stay sequenced late (after Phase F); G1 is labels/nav/page-structure only and
+must not delete the readiness pool, remove legacy generation, or touch backend
+namespaces/entities/routes.
 
 - [x] **Phase G0 — Bank-First Admin/Backend Surface Audit** `Done` (2026-07-09, docs/audit-only)
   - **Delivered**: `docs/architecture/bank-first-admin-backend-surface-audit.md` — inventory +
@@ -42,12 +48,12 @@ below are the implementation phases that act on its findings and have **not** st
     reading-passages admin page (`/admin/resource-banks/reading-passages`) is routable but
     missing from the sidebar nav (a G1 safe quick win, deliberately not fixed in G0); P1 the
     "Content" nav section is overloaded.
-- [ ] **Phase G1 — Admin Information Architecture Cleanup** `Not started`
+- [ ] **Phase G1 — Admin Information Architecture Cleanup** `Not started` — **next recommended implementation phase (Plan-Sync-After-G0, 2026-07-09)**
   - Acts on Phase G0's classifications: split the P0 "Lessons" page; add the missing
     reading-passages nav item (safe quick win); regroup the overloaded "Content" nav section;
     relabel readiness/pool-health surfaces to assignment/delivery-queue language; reframe
     "Exercise Types" as a capability registry (label only). Labels/nav/page-composition only —
-    no route or DTO renames.
+    no route or DTO renames, no readiness-pool deletion, no legacy-generation removal.
 - [ ] **Phase G2 — Backend Legacy Surface Cleanup** `Not started`
   - Acts on Phase G0's "remove-later"/"merge" classifications for backend code (jobs, services,
     dead admin API routes); completes the endpoint-by-endpoint sweep G0 flagged as its own

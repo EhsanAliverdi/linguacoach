@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase G0)
+lastUpdated: 2026-07-09 (Plan-Sync-After-G0)
 owner: engineering
 supersedes:
 supersededBy:
@@ -14,35 +14,53 @@ Last updated: 2026-07-09
 
 ## Active sprint
 
-**Phase G0 — Bank-First Admin/Backend Surface Audit (2026-07-09)** — complete (docs/audit-only)
+**Plan-Sync-After-G0 — Choose G1 Admin IA Cleanup Before E8/D3 (2026-07-09)** — complete (docs-only)
 
-Executed the audit Plan-Sync-G0 planned: a read-only inventory + classification of every admin
-page, backend API/controller, background job, and backend lifecycle concept after the bank-first
-migration, saved as a new architecture doc
-`docs/architecture/bank-first-admin-backend-surface-audit.md`. **This is an audit phase, not a
-cleanup or visual-redesign phase — no routes renamed, no code surfaces moved, no pages deleted,
-no migrations written; only markdown docs changed.** Scope: 31 admin routes (6 nav sections),
-~20 controllers, 8 background jobs + ~6 core services, 11 terminology terms — each tagged keep /
-rename-reframe / move-to-diagnostics / merge / remove-later, with a P0/P1/P2 priority and a
-target phase (G1 admin IA / G2 backend legacy / G3 diagnostics / Phase F retirement / PG-v2).
-**Confirmed the readiness/assignment/delivery lifecycle is load-bearing** (three jobs +
-`IStudentActivityReadinessPoolService` + the student Practice Gym suggestions surface + admin
-readiness/repair tooling all depend on it) → `StudentActivityReadinessItem` classified **keep,
-reframe as "Student Activity Assignment / Delivery Queue"**, never delete. **Key findings**: (P0)
-`/admin/lessons` ("Lessons") conflates delivery-queue health, a manual generate-lessons control,
-buffer settings, and review-scaffold/mastery diagnostics under a page whose own subtitle says
-"readiness pool health"; (P1) the Phase E7 reading-passages admin page
-(`/admin/resource-banks/reading-passages`) is routable but **missing from the sidebar nav** —
-logged as a G1 safe quick win, deliberately not fixed in G0; (P1) the "Content" nav section is
-overloaded. AI-generation admin surfaces classified keep-but-reframed (fallback/composition/
-evaluation/cost, not primary content); `PracticeActivityCache` classified defer-to-PG-v2; legacy
-freeform `IAiActivityGenerator` retirement stays Phase F scope, unchanged.
+**Last completed: Phase G0** (`9dda2d9d`) — the read-only admin/backend surface audit, saved as
+`docs/architecture/bank-first-admin-backend-surface-audit.md`. It classified 31 admin routes, ~20
+controllers, 8 jobs + ~6 services, and 11 terminology terms (keep / rename-reframe /
+move-to-diagnostics / merge / remove-later), confirmed the readiness/delivery lifecycle is
+load-bearing (kept, reframed as "Student Activity Assignment / Delivery Queue," never deleted),
+and flagged the P0 `/admin/lessons` page and the P1 reading-passages-page-missing-from-nav gap.
+No cleanup was implemented — docs only.
 
-**Next: cleanup implementation (G1/G2/G3) has not started** — start Phase G1 (admin IA cleanup)
-acting on the audit's classifications, start Phase D3 using the deepened bank content, continue
-Phase E8, or a further docs-only plan sync. See
+**Current immediate task (this docs sync): Plan-Sync-After-G0.** Resolved the post-G0 decision:
+**Phase G1 (Admin Information Architecture Cleanup) comes before Phase E8 and Phase D3.** G0's
+highest-value, lowest-risk findings are all admin-IA quick wins, and doing G1 first makes the
+bank-first model legible in the admin surface before E8 (more resource depth) or D3 (broader
+Today composer) build more on top of the current misleading AI-cache/readiness-pool framing. E7
+already deepened the resource bank with full internal reading passages and D2 already matured the
+Today bank-first hook, so neither E8 nor D3 is currently blocked by the other. Updated roadmap
+phase sequence: Phase E7 → Plan-Sync-G0 → Phase G0 → **Plan-Sync-After-G0 → Phase G1** → Phase
+E8/D3 decision checkpoint → Phase E8 or D3 → PG-v2A/B/C/D later → Phase F → Phase G2/G3 as
+appropriate. Docs-only; no app code, migrations, or config changed; does not start any
+implementation.
+
+**Next implementation phase: Phase G1** — admin information architecture cleanup acting on G0's
+low-risk quick wins: split the overloaded `/admin/lessons` page, add the missing reading-passages
+sidebar nav item, relabel readiness→delivery language, regroup the "Content" nav, reframe
+(labels/nav only) Exercise Types as an internal capability registry. **Admin IA cleanup only — not
+a visual redesign; must not delete the readiness pool, must not remove legacy generation, must not
+touch backend namespaces/entities/routes (G2's deferred scope).** **Not started.** Phase E8, Phase
+D3, Phase G2/G3, and PG-v2 implementation all remain not started. See
 `docs/architecture/bank-first-admin-backend-surface-audit.md` for the full inventory and
 `docs/roadmap/road-map.md` §19a for the phase order.
+
+---
+
+## Previous sprint
+
+**Phase G0 — Bank-First Admin/Backend Surface Audit (2026-07-09)** — complete (docs/audit-only)
+
+Executed the audit Plan-Sync-G0 planned: a read-only inventory + classification of 31 admin
+routes (6 nav sections), ~20 controllers, 8 background jobs + ~6 core services, and 11
+terminology terms, saved as `docs/architecture/bank-first-admin-backend-surface-audit.md` — each
+surface tagged keep / rename-reframe / move-to-diagnostics / merge / remove-later with a P0/P1/P2
+priority and a target phase. Confirmed the readiness/assignment/delivery lifecycle is
+load-bearing → `StudentActivityReadinessItem` kept, reframed as "Student Activity Assignment /
+Delivery Queue," never deleted. Flagged the P0 `/admin/lessons` overloaded page and the P1
+E7-reading-passages-page-missing-from-nav gap (a G1 safe quick win). **No cleanup implemented —
+docs only.** Committed as `9dda2d9d`.
 
 ---
 

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase G0)
+lastUpdated: 2026-07-09 (Plan-Sync-After-G0)
 owner: architecture
 supersedes:
 supersededBy:
@@ -9,7 +9,12 @@ supersededBy:
 # Bank-First Admin/Backend Surface Audit (Phase G0)
 
 Related roadmap: `docs/roadmap/road-map.md` §1, §19 Decision Log, §19a Phase Sequence.
-Related decision: Plan-Sync-G0 (2026-07-09, `7be2c326`).
+Related decisions: Plan-Sync-G0 (2026-07-09, `7be2c326`), Phase G0 (2026-07-09, `9dda2d9d`),
+Plan-Sync-After-G0 (2026-07-09) — which selected **Phase G1 (Admin Information Architecture
+Cleanup) as the next implementation phase**, acting on §7/§9 below, ahead of Phase E8 and Phase
+D3. G1 is labels/nav/page-structure only — it must not delete the readiness pool, remove legacy
+generation, or touch backend namespaces/entities/routes (those are G2's deferred, prove-safe-first
+scope; see §10).
 Related architecture: `docs/architecture/readiness-pool.md`,
 `docs/architecture/learning-activity-engine.md`,
 `docs/architecture/english-resource-bank-import-platform.md`.
