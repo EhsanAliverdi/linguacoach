@@ -10,6 +10,7 @@ import { FeedbackWritingEvalComponent } from '../feedback/feedback-writing-eval.
 import { FeedbackNextStepsComponent } from '../feedback/feedback-next-steps.component';
 import { FeedbackSkillContextComponent } from '../feedback/feedback-skill-context.component';
 import { FeedbackSupportLangComponent } from '../feedback/feedback-support-lang.component';
+import { ActivityFeedbackPromptComponent } from '../activity-feedback-prompt/activity-feedback-prompt.component';
 
 @Component({
   selector: 'app-activity-feedback-page',
@@ -22,6 +23,7 @@ import { FeedbackSupportLangComponent } from '../feedback/feedback-support-lang.
     FeedbackNextStepsComponent,
     FeedbackSkillContextComponent,
     FeedbackSupportLangComponent,
+    ActivityFeedbackPromptComponent,
   ],
   templateUrl: './activity-feedback-page.component.html',
 })
@@ -175,6 +177,13 @@ export class ActivityFeedbackPageComponent implements OnChanges, OnDestroy {
 
   trackChange(_index: number, change: FeedbackChangeDto): FeedbackChangeDto {
     return change;
+  }
+
+  get showFeedbackPrompt(): boolean {
+    return !!this.feedback.feedbackPolicy
+      && this.feedback.feedbackPolicy.policy !== 'off'
+      && !!this.activityId
+      && !!this.attemptId;
   }
 
   get hasFeedbackContent(): boolean {

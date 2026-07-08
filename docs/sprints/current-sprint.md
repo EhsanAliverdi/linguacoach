@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Plan-Sync-B2)
+lastUpdated: 2026-07-08 (Phase B2)
 owner: engineering
 supersedes:
 supersededBy:
@@ -14,29 +14,45 @@ Last updated: 2026-07-08
 
 ## Active sprint
 
+**Phase B2 — Activity Feedback, Repeat Policy, and Calibration Signals (2026-07-08)** — complete (foundation)
+
+**Last completed implementation phase: Phase B2.** Implemented the persistence/API/minimal-UI
+foundation for explicit student feedback on completed activities, across both Today and Practice
+Gym: new `ActivityFeedbackSignal` entity + migration (`AddActivityFeedbackSignal`), admin
+Off/Optional/Required policy per surface via the existing feature-gate/runtime-settings system
+(new group `activity-feedback-policy`, keys `ActivityFeedback.TodayPolicy`/
+`ActivityFeedback.PracticeGymPolicy`, default `Optional`, no new admin UI needed),
+`ISubmitActivityFeedbackHandler`/`ActivityFeedbackHandler` (upsert by attempt or activity,
+ownership check, comment-length validation, provenance backfill from `StudentActivityUsageLog`),
+new endpoint `POST /api/activity/attempt/{attemptId}/feedback`, `FeedbackPolicy` added to the
+existing attempt-submission response DTO, and a minimal `activity-feedback-prompt` Angular
+component shown from the existing student result screen only when policy is not Off (Skip shown
+only when Optional). +14 backend tests (3,357 → 3,371 passed). **This is a foundation, not a
+calibration engine** — nothing yet automatically consumes this data for CEFR/difficulty-band
+calibration, template/resource quality scoring, novelty/cooldown adjustment, or admin review; see
+`docs/architecture/activity-feedback-and-calibration.md` for full detail and explicit
+deferred-scope list.
+
+**Before this: Phase C2** (7 of ~28 Practice Gym pattern keys template-enabled — see the
+"Previous sprint" entry below for detail).
+
+**Next implementation phase: Phase C3** — migrate a third small batch of Practice Gym patterns.
+**Not started.** Phase D and Phase E implementation remain not started. Today lesson generation
+remains 100% legacy `IAiActivityGenerator` freeform generation; the `/speaking-attempt` and
+`/audio-attempt` endpoints remain outside Phase B2's feedback wiring (they don't go through
+`ActivitySubmitHandler`). See `docs/roadmap/road-map.md` §19a for the full phase order.
+
+---
+
+## Previous sprint
+
 **Plan-Sync-B2 — Add Activity Feedback / Repeat / Calibration phase to roadmap (2026-07-08)** — complete (docs-only)
 
-**Last completed implementation phase: Phase C2** (7 of ~28 Practice Gym pattern keys now
-template-enabled — see the "Previous sprint" entry below for detail).
-
-**Current immediate task:** this Plan-Sync-B2 docs update, inserting a new **Phase B2 — Activity
-Feedback, Repeat Policy, and Calibration Signals** into the phase sequence between Phase C2 and
-Phase C3. New doc: `docs/architecture/activity-feedback-and-calibration.md` (purpose, scope,
-admin policy off/optional/required, per-surface policy, student feedback fields, data flow,
-calibration uses, out-of-scope). Updated `docs/roadmap/road-map.md` §19a phase sequence and
-Decision Log, `docs/architecture/README.md`, and `docs/architecture/repetition-and-novelty.md`
-(new "Relationship to Phase B2" section, explicit that nothing is implemented yet). No app code,
-migrations, or config changed.
-
-**Next implementation phase: Phase B2 — Activity Feedback, Repeat Policy, and Calibration
-Signals** (not started). Phase B2 was inserted ahead of Phase C3 because explicit
-student-reported difficulty/clarity/usefulness/repeat-preference feedback should start
-accumulating before Practice Gym migration continues further.
-
-**After Phase B2: continue with Phase C3** (a third small Practice Gym batch) — **Phase C3 has
-not started.** Phase D and Phase E implementation remain not started. Today lesson generation
-remains 100% legacy `IAiActivityGenerator` freeform generation. See `docs/roadmap/road-map.md`
-§19a for the full phase order.
+Docs-only phase inserting Phase B2 into the sequence between Phase C2 and Phase C3: created
+`docs/architecture/activity-feedback-and-calibration.md`; updated `docs/roadmap/road-map.md`
+§19a phase sequence and Decision Log, `docs/architecture/README.md`, and
+`docs/architecture/repetition-and-novelty.md`. No app code, migrations, or config changed.
+Committed as `5536ad07`.
 
 ---
 

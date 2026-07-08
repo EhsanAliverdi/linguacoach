@@ -35,6 +35,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
     private readonly IPracticeGymSuggestionService _practiceGymSuggestions;
     private readonly IWritingEvaluationService _writingEvaluation;
     private readonly IActivityContentFingerprintService _fingerprintService;
+    private readonly IActivityFeedbackPolicyProvider _feedbackPolicyProvider;
     private readonly ILogger<ActivitySubmitHandler> _logger;
 
     public ActivitySubmitHandler(
@@ -54,6 +55,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         IPracticeGymSuggestionService practiceGymSuggestions,
         IWritingEvaluationService writingEvaluation,
         IActivityContentFingerprintService fingerprintService,
+        IActivityFeedbackPolicyProvider feedbackPolicyProvider,
         ILogger<ActivitySubmitHandler> logger)
     {
         _db = db;
@@ -72,6 +74,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         _practiceGymSuggestions = practiceGymSuggestions;
         _writingEvaluation = writingEvaluation;
         _fingerprintService = fingerprintService;
+        _feedbackPolicyProvider = feedbackPolicyProvider;
         _logger = logger;
     }
 
@@ -321,7 +324,8 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         await TryConsumeReadinessItemAsync(command.UserId, profile.Id, activity.Id, ct);
         await TryWriteUsageLogAsync(profile, activity, primarySkill: null, curriculumObjectiveKey: legacyObjectiveKey, ct);
 
-        return ParseFeedback(attempt.Id, feedbackJson, score);
+        var legacyFeedback = ParseFeedback(attempt.Id, feedbackJson, score);
+        return await WithFeedbackPolicyAsync(legacyFeedback, legacySource, ct);
     }
 
     private async Task<ActivityFeedbackDto> HandlePatternEvaluationAsync(
@@ -515,7 +519,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
 
         var patternDto = BuildPatternEvaluationDto(activity.ExercisePatternKey, pattern.MarkingMode, evalResult);
 
-        return new ActivityFeedbackDto(
+        var patternFeedback = new ActivityFeedbackDto(
             AttemptId: attempt.Id,
             Score: legacyScore,
             CoachSummary: evalResult.CoachSummary,
@@ -537,6 +541,33 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             NextPracticeSuggestion: null,
             FeedbackInSourceLanguage: null,
             PatternEvaluation: patternDto);
+
+        return await WithFeedbackPolicyAsync(patternFeedback, ledgerSource, ct);
+    }
+
+    /// <summary>
+    /// Best-effort: attaches the effective ActivityFeedback policy (Off/Optional/Required) for
+    /// the surface this attempt came from, so the client learns whether/how to prompt for
+    /// feedback in the same round trip. Never fails or blocks the submission response — a
+    /// resolution failure simply leaves FeedbackPolicy null.
+    /// </summary>
+    private async Task<ActivityFeedbackDto> WithFeedbackPolicyAsync(
+        ActivityFeedbackDto dto, LearningEventSource source, CancellationToken ct)
+    {
+        try
+        {
+            var surface = source == LearningEventSource.TodayLesson
+                ? ActivityFeedbackSurface.Today
+                : ActivityFeedbackSurface.PracticeGym;
+            var policy = await _feedbackPolicyProvider.GetEffectivePolicyAsync(surface, ct);
+            return dto with { FeedbackPolicy = policy };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "Best-effort feedback-policy resolution failed — response returned without FeedbackPolicy");
+            return dto;
+        }
     }
 
     /// <summary>

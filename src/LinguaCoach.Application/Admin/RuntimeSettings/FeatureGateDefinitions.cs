@@ -23,6 +23,7 @@ public static class FeatureGateDefinitions
         AiSignalSafetySpeaking,
         AiSignalSafetyWriting,
         LearningPlanRegeneration,
+        ActivityFeedbackPolicy,
     ];
 
     public static readonly FeatureGateGroupDefinition ReviewScaffoldGeneration = new()
@@ -337,6 +338,41 @@ public static class FeatureGateDefinitions
         BackingStore = FeatureGateBackingStore.Informational,
         IsReadOnly = true,
         Settings = [],
+    };
+
+    public static readonly FeatureGateGroupDefinition ActivityFeedbackPolicy = new()
+    {
+        GroupKey = "activity-feedback-policy",
+        DisplayName = "Activity feedback policy",
+        Description = "Controls whether students are prompted for difficulty/clarity/usefulness/repeat feedback after completing an activity, per surface (Today lesson vs Practice Gym). See docs/reviews/2026-07-08-bank-first-ai-teaching-clean-architecture-plan.md (Phase B2).",
+        Category = FeatureGateCategory.ActivityFeedback,
+        BackingStore = FeatureGateBackingStore.ReadinessPoolOverride,
+        WarningText = "Setting a surface to 'Required' means the client will not let the student skip the feedback prompt for that surface.",
+        Settings =
+        [
+            new FeatureGateSettingDefinition
+            {
+                Key = "ActivityFeedback.TodayPolicy",
+                DisplayName = "Today lesson feedback policy",
+                Description = "Whether Today-lesson activity completions prompt the student for feedback: Off, Optional (skippable), or Required.",
+                DataType = FeatureGateDataType.String,
+                DefaultValueJson = "\"Optional\"",
+                IsEditableAtRuntime = true,
+                RiskLevel = FeatureGateRiskLevel.Low,
+                AllowedValues = ["Off", "Optional", "Required"],
+            },
+            new FeatureGateSettingDefinition
+            {
+                Key = "ActivityFeedback.PracticeGymPolicy",
+                DisplayName = "Practice Gym feedback policy",
+                Description = "Whether Practice Gym activity completions prompt the student for feedback: Off, Optional (skippable), or Required.",
+                DataType = FeatureGateDataType.String,
+                DefaultValueJson = "\"Optional\"",
+                IsEditableAtRuntime = true,
+                RiskLevel = FeatureGateRiskLevel.Low,
+                AllowedValues = ["Off", "Optional", "Required"],
+            },
+        ],
     };
 
     private static FeatureGateSettingDefinition Int(string key, string displayName, string description, int defaultValue, int? min = null, int? max = null, bool isRuntimeEffective = true) => new()

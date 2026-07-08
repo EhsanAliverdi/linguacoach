@@ -6,6 +6,7 @@ public enum FeatureGateCategory
     ReadinessPoolLessonGeneration,
     AiSignalSafety,
     PracticeGymFormIoTemplatePilot,
+    ActivityFeedback,
 }
 
 public enum FeatureGateDataType

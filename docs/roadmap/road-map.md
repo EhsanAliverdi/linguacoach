@@ -1,16 +1,16 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Plan-Sync-B2)
+lastUpdated: 2026-07-08 (Phase B2)
 owner: product / engineering
 ---
 
 # SpeakPath / LinguaCoach Roadmap
 
-**Accurate as of: 2026-07-08 (Plan-Sync-B2 — see §19a for the current phase sequence).
+**Accurate as of: 2026-07-08 (Phase B2 — see §19a for the current phase sequence).
 The 2026-07-03 "Phase 20H" line below is the last entry confirmed live against speakpath.app;
-everything since then (Clean-A/A2, Phase B, Phase C1, Plan-Sync-After-C1, Phase C2) has been
-developed and tested locally but not yet deployed — see the "Current Project Status" and
-Decision Log sections below for what's actually landed.**
+everything since then (Clean-A/A2, Phase B, Phase C1, Plan-Sync-After-C1, Phase C2, Plan-Sync-B2,
+Phase B2) has been developed and tested locally but not yet deployed — see the "Current Project
+Status" and Decision Log sections below for what's actually landed.**
 
 This is the canonical project memory document. It captures completed work, current state, known gaps, deferred items, and the recommended order of future phases.
 
@@ -22,31 +22,38 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest phase completed (local, not yet deployed):** Plan-Sync-B2 — Add Activity Feedback /
-Repeat / Calibration phase to roadmap (2026-07-08, this commit, docs-only). Inserted a new
-**Phase B2 — Activity Feedback, Repeat Policy, and Calibration Signals** into the phase sequence,
-between the just-completed **Phase C2 — Expand Practice Gym bank-first template coverage to the
-next safe batch** (`c84279a0`, 7 of ~28 pattern keys now template-enabled) and the not-yet-started
-**Phase C3**. Phase B2 was inserted here — rather than after Phase C3 or later — because explicit
-student feedback/rating/calibration signals should start accumulating before Practice Gym
-migration continues further, so later batches (C3/C4/C-Final) can eventually be informed by real
-quality/difficulty signal instead of only structural criteria. Preceded by Phase C2 (`c84279a0`),
-Plan-Sync-After-C1 (`2b099e5b`), Phase C1 — Generalize the Form.io Practice Gym pilot to a small
-first batch of patterns (`fd996acc`), Phase B — Repetition/Novelty Foundation (`7b425f02`),
-Clean-A/Clean-A2 cleanup (`1bada3c1`), and the 2026-07-07 bank-first architecture (Phases 1-10,
-`ac68677d`). See §19/§19a for the full decision log and current phase sequence. Today lesson
-generation is unmodified throughout. **Phase C3 has not started.**
+**Latest phase completed (local, not yet deployed):** Phase B2 — Activity Feedback, Repeat
+Policy, and Calibration Signals (2026-07-08, this commit). Implemented the **persistence/API/
+minimal-UI foundation** for explicit student feedback on completed activities — difficulty,
+clarity, usefulness, repeat preference, optional comment — across both Today and Practice Gym.
+New `ActivityFeedbackSignal` entity + migration, admin-configurable Off/Optional/Required policy
+per surface (via the existing feature-gate/runtime-settings system, no new admin UI needed),
+`POST /api/activity/attempt/{attemptId}/feedback` submit/upsert endpoint, `FeedbackPolicy` added
+to the existing attempt-submission response, and a minimal student-facing feedback prompt. **This
+is a foundation, not a calibration engine** — nothing yet automatically consumes this data for
+CEFR/difficulty-band calibration, template/resource quality scoring, novelty/cooldown adjustment,
+or admin review; it is collected and queryable for future phases. Full detail:
+`docs/architecture/activity-feedback-and-calibration.md`.
+
+Preceded by Plan-Sync-B2 — docs-only roadmap update inserting Phase B2 ahead of Phase C3
+(2026-07-08, `5536ad07`), Phase C2 — Expand Practice Gym bank-first template coverage to the next
+safe batch (`c84279a0`, 7 of ~28 pattern keys now template-enabled), Plan-Sync-After-C1
+(`2b099e5b`), Phase C1 — Generalize the Form.io Practice Gym pilot to a small first batch of
+patterns (`fd996acc`), Phase B — Repetition/Novelty Foundation (`7b425f02`), Clean-A/Clean-A2
+cleanup (`1bada3c1`), and the 2026-07-07 bank-first architecture (Phases 1-10, `ac68677d`). See
+§19/§19a for the full decision log and current phase sequence. Today lesson generation is
+unmodified throughout. **Phase C3 has not started.**
 
 **Latest phase confirmed live against `speakpath.app`:** Phase 20H — Live Pilot Stabilization
 (2026-07-03) — see the entry below; everything after this line is developed/tested locally only.
 
 **Branch:** main
 
-**Test totals (as of Plan-Sync-B2, 2026-07-08, local only — unchanged from Phase C2 since this phase is docs-only):**
-- Backend: 3,357 passed (5 architecture + 1,935 unit + 1,417 integration), 0 failed.
-- Angular unit (Karma): not run this phase — no frontend files touched; baseline unchanged at 120 pre-existing failures (`AdminStudentDetailComponent`/`AdminAiConfigComponent`/`VoiceRecorderComponent`).
-- Angular production build (`ng build --configuration production`): fails on the pre-existing `initial` bundle-size budget (2.55MB vs 1MB error threshold in `angular.json`, predating this phase at commit `246daead`) — not a regression, no frontend files were touched in Phase C1, Plan-Sync-After-C1, or Phase C2.
-- Playwright E2E: `e2e/core-flow-smoke.spec.ts` remains `test.skip`'d (see Clean-A2 decision log entry); not run this phase (no routed UI behavior changed).
+**Test totals (as of Phase B2, 2026-07-08, local only):**
+- Backend: 3,371 passed (5 architecture + 1,946 unit + 1,420 integration), 0 failed — net +14 vs Phase C2 (3,357), all new (`ActivityFeedbackHandlerTests`, `ActivityFeedbackPolicyProviderTests`, `ActivityFeedbackWiringTests`).
+- Angular unit (Karma): not run this phase (no dedicated frontend test suite for the new component per task scope); baseline unchanged at 120 pre-existing failures (`AdminStudentDetailComponent`/`AdminAiConfigComponent`/`VoiceRecorderComponent`) — not touched by this phase's frontend changes.
+- Angular production build (`ng build --configuration production`): still fails on the pre-existing `initial` bundle-size budget (1.55MB over the 1MB threshold in `angular.json`, predating this phase at commit `246daead`) — confirmed not a regression (identical failure on `main` via `git stash` comparison); no new TypeScript/template errors from the Phase B2 frontend changes (new `activity-feedback-prompt` component, `activity-feedback-page` wiring, `activity.service.ts`/`activity.models.ts` additions).
+- Playwright E2E: `e2e/core-flow-smoke.spec.ts` remains `test.skip`'d (see Clean-A2 decision log entry); not run this phase per task scope (targeted Playwright only requested if environment stable and time-permitting — deferred, low risk given the new UI is additive and hidden behind a default-`Optional` policy).
 
 **Test totals (as of 20D, last live-confirmed baseline):**
 - Backend unit: 1,750 (+20 from Phase 20D: `StudentReadinessAuditServiceTests`, `StudentPilotReadinessRepairServiceTests`)
@@ -826,16 +833,17 @@ These are planning estimates, not exact metrics. Provided to guide sequencing de
 | 2026-07-08 | Phase C2 — migrated a second small batch of 3 reading-family patterns (`reading_multiple_choice_multi`, `reading_fill_in_blanks`, `reading_writing_fill_in_blanks`) to the Form.io template path, bringing the total to 7 of ~28 pattern keys. Seeded 3 more approved/published `ActivityTemplate` rows (`reading_mcq_multi_workplace_seed_v1`, `reading_fill_in_blanks_workplace_seed_v1`, `reading_writing_fill_in_blanks_workplace_seed_v1`) | Continues C1's small-batch discipline; all 3 reuse existing `ComponentAnswerScorer` kinds (`single_choice`, `multiple_choice` via a Form.io `selectboxes` component, `text_normalized`) with no new scorer or frontend component needed |
 | 2026-07-08 | Phase C2 deliberately excluded all "listening" patterns despite their catalog `RequiresAudio=false` flag, and excluded `ReorderParagraphs` | The listening patterns' content DTOs/generation flow are still built around an audio script/URL (e.g. `ListeningFillInBlanksContent.AudioUrl`), so the `RequiresAudio` flag alone isn't "strong evidence" of audio-free compatibility per the migration rule; `ReorderParagraphs` needs a new sequencing/reorder scorer kind that doesn't exist yet. Both are flagged as candidates for a future phase after a dedicated review/scorer addition, not silently dropped |
 | 2026-07-08 | **Plan-Sync-B2**: inserted a new **Phase B2 — Activity Feedback, Repeat Policy, and Calibration Signals** into the phase sequence, between the just-completed Phase C2 and the not-yet-started Phase C3. Docs-only change: `docs/architecture/activity-feedback-and-calibration.md` created; `road-map.md`, `current-sprint.md`, `architecture/README.md`, `repetition-and-novelty.md` updated. No app code, migrations, or config changed | Phase B (repetition/novelty) implemented deterministic usage logging and cooldowns, but never collected explicit student-reported difficulty/clarity/usefulness/repeat-preference feedback. As more Practice Gym patterns get template-migrated (7 of ~28 after C2), it is safer to start building the feedback/calibration signal now — informing CEFR calibration, difficulty-band calibration, `ActivityTemplate`/resource quality, AI-generation quality, novelty/cooldown tuning, and admin review triggers — before committing to further large-scale migration batches in C3/C4/C-Final |
+| 2026-07-08 | **Phase B2 implemented**: new `ActivityFeedbackSignal` entity (migration `AddActivityFeedbackSignal`) capturing difficulty/clarity/usefulness/repeat-preference/optional-comment, idempotent per `(StudentProfileId, ActivityAttemptId)` (fallback `(StudentProfileId, LearningActivityId)` when no attempt) via two partial unique indexes; `IActivityFeedbackPolicyProvider`/`ActivityFeedbackPolicyProvider` (Off/Optional/Required per surface, reusing the existing feature-gate/`RuntimeSettingOverride` system — new group `activity-feedback-policy`, keys `ActivityFeedback.TodayPolicy`/`ActivityFeedback.PracticeGymPolicy`, default `Optional`, no new admin UI needed); `ISubmitActivityFeedbackHandler`/`ActivityFeedbackHandler` (upsert, ownership check, comment-length validation, provenance backfill from `StudentActivityUsageLog`); new endpoint `POST /api/activity/attempt/{attemptId}/feedback`; `FeedbackPolicy` added to the existing `ActivityFeedbackDto` attempt-submission response, populated by `ActivitySubmitHandler` in both its pattern-eval and legacy dispatch paths; minimal `activity-feedback-prompt` Angular component shown from the existing student result screen only when policy is not Off, with Skip shown only when Optional. +14 backend tests (3,357 → 3,371). Did not wire the collected signal into any automated calibration/novelty/admin-review logic — that remains future work | This is a foundation/collection layer, not a calibration engine, per the explicit scope given for this phase: build persistence + policy + API + minimal UI now so signal starts accumulating, defer automated consumption to a later phase. `ActivitySubmitHandler` was the correct single insertion point since it audited as the shared completion path for both Today and Practice Gym (confirmed via `SessionExercise`-link surface detection, the same mechanism already used for `StudentLearningEvent.Source`) |
 
 ---
 
-## 19a. Phase Sequence (as of 2026-07-08, Plan-Sync-B2)
+## 19a. Phase Sequence (as of 2026-07-08, Phase B2)
 
 Preferred order, each phase gated on the previous one's completion review:
 
 1. ~~**Plan-Sync-B2**~~ — done (2026-07-08, docs-only): inserted Phase B2 into the sequence below, ahead of Phase C3.
-2. **Phase B2** — Activity Feedback, Repeat Policy, and Calibration Signals (not started). See `docs/architecture/activity-feedback-and-calibration.md` for full scope. Cross-surface (Today + Practice Gym); admin-configurable per-surface feedback policy (off/optional/required).
-3. **Phase C3** — migrate a third small batch of Practice Gym patterns; `ReorderParagraphs` is the next deterministic candidate but needs a new sequencing/reorder `ComponentAnswerScorer` kind first. By this point, also revisit whether patterns needing light AI evaluation (not full open-ended) can safely join. **Not started.**
+2. ~~**Phase B2**~~ — done (2026-07-08): Activity Feedback, Repeat Policy, and Calibration Signals — **foundation only** (entity/migration, policy, API, minimal UI). See `docs/architecture/activity-feedback-and-calibration.md` for full scope and status. Cross-surface (Today + Practice Gym); admin-configurable per-surface feedback policy (off/optional/required). Automated calibration consumption of this signal is deferred to a future phase, not part of B2.
+3. **Phase C3** — migrate a third small batch of Practice Gym patterns; `ReorderParagraphs` is the next deterministic candidate but needs a new sequencing/reorder `ComponentAnswerScorer` kind first. By this point, also revisit whether patterns needing light AI evaluation (not full open-ended) can safely join. **Not started — this is the next recommended phase.**
 4. **Phase C4** — continue in small batches; complex speaking/listening/open-writing patterns are explicitly deferred until renderer/evaluator support for those interaction types is proven safe (see `docs/architecture/practice-gym.md`). Not started.
 5. **Phase C-Final** — close out remaining safe-to-migrate Practice Gym patterns; document which ones are permanently excluded (if any) and why. Not started.
 6. **Phase E0** — finalize the resource-import-platform model/plan (planning only). Not started.
@@ -851,6 +859,8 @@ Preferred order, each phase gated on the previous one's completion review:
 **Phase C2 is complete** (7 of ~28 Practice Gym pattern keys template-enabled: `formio_practice_gym_pilot`,
 `phrase_match`, `gap_fill_workplace_phrase`, `reading_multiple_choice_single`,
 `reading_multiple_choice_multi`, `reading_fill_in_blanks`, `reading_writing_fill_in_blanks`).
+**Phase B2 is complete as a foundation** (persistence/API/minimal UI; no automated calibration
+consumption yet — see `docs/architecture/activity-feedback-and-calibration.md`).
 **Phase C3, Phase D, and Phase E implementation have not started.**
 
 **Today lesson generation and all non-migrated Practice Gym patterns remain on the legacy

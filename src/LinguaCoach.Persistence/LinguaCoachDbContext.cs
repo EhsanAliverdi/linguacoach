@@ -68,6 +68,9 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     // Phase B — Repetition/novelty foundation (real content-usage history)
     public DbSet<StudentActivityUsageLog> StudentActivityUsageLogs => Set<StudentActivityUsageLog>();
 
+    // Phase B2 — Activity feedback / repeat policy / calibration signals
+    public DbSet<ActivityFeedbackSignal> ActivityFeedbackSignals => Set<ActivityFeedbackSignal>();
+
     // Phase 12D — Learning Plan orchestrator
     public DbSet<StudentLearningPlan> StudentLearningPlans => Set<StudentLearningPlan>();
     public DbSet<StudentLearningPlanObjective> StudentLearningPlanObjectives => Set<StudentLearningPlanObjective>();

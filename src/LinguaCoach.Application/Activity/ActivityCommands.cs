@@ -158,7 +158,10 @@ public sealed record ActivityFeedbackDto(
     IReadOnlyList<string>? SpeakingImprovements = null,
     IReadOnlyList<string>? MissingExpectedPoints = null,
     string? SuggestedImprovedResponse = null,
-    PatternEvaluationDto? PatternEvaluation = null);
+    PatternEvaluationDto? PatternEvaluation = null,
+    // Phase B2 — effective feedback policy for the surface this attempt came from (Today vs
+    // Practice Gym). Null when not resolved (best-effort; never blocks submission).
+    ActivityFeedbackPolicyDto? FeedbackPolicy = null);
 
 public sealed record PatternEvaluationDto(
     string? ExercisePatternKey,

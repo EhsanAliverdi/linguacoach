@@ -372,6 +372,15 @@
 
   } <!-- end @if (!patternEvaluation) legacy sections -->
 
+  <!-- Student feedback prompt (Phase B2) — shown when the surface's policy is not 'off' -->
+  @if (showFeedbackPrompt) {
+    <app-activity-feedback-prompt
+      [policy]="feedback.feedbackPolicy!"
+      [learningActivityId]="activityId!"
+      [attemptId]="attemptId!">
+    </app-activity-feedback-prompt>
+  }
+
   <!-- Context-aware action buttons -->
   <app-feedback-next-steps
     data-testid="feedback-next-steps"

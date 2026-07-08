@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Plan-Sync-B2)
+lastUpdated: 2026-07-08 (Phase B2)
 owner: architecture
 supersedes:
 supersededBy:
@@ -160,22 +160,23 @@ treated as "allowed," so a bug in this new code cannot break existing generation
 - Any change to Phase C (generalizing the Form.io template path across Practice Gym) or Phase D
   (bank-first Today lesson composer) — both remain not started.
 
-## Relationship to Phase B2 (planned, not started)
+## Relationship to Phase B2 (foundation implemented 2026-07-08, not yet wired into cooldowns)
 
 Phase B implements **implicit, deterministic** repetition avoidance — content fingerprints and
 cooldown windows computed automatically from usage history, with no student input. It does not
 collect any explicit student-reported signal.
 
-A separate, planned **Phase B2 — Activity Feedback, Repeat Policy, and Calibration Signals** (see
-`docs/architecture/activity-feedback-and-calibration.md`) will add **explicit** student feedback
-after an activity: difficulty (too easy / right level / too hard), clarity (clear / okay /
-confusing), usefulness (useful / not useful), and a repeat/recommendation preference ("more like
-this" / "I need to repeat this" / "don't show similar soon"), plus an optional comment.
+**Phase B2 — Activity Feedback, Repeat Policy, and Calibration Signals** (see
+`docs/architecture/activity-feedback-and-calibration.md`) implemented the **collection** of
+explicit student feedback after an activity: difficulty (too easy / right level / too hard),
+clarity (clear / okay / confusing), usefulness (useful / not useful), and a repeat/recommendation
+preference (`MoreLikeThis` / `NeedRepeat` / `DoNotShowSimilarSoon` / `Neutral`), plus an optional
+comment — persisted as `ActivityFeedbackSignal`, queryable by student/activity/template/pattern.
 
 Phase B2's repeat/recommendation signal is designed to eventually **feed into** this phase's
-cooldown policy — e.g. "more like this" could shorten a topic/scenario cooldown, "don't show
-similar soon" could lengthen one, and "I need to repeat this" could deliberately bypass a cooldown
-as an intentional review request. **None of this is implemented yet.** This section documents the
-intended relationship only; `ActivityNoveltyPolicy` today reacts solely to
-`ContentFingerprint`/`SourceTemplateId`/`TopicKey`/`ScenarioKey` cooldowns as described above, with
-no feedback-driven adjustment of any kind.
+cooldown policy — e.g. `MoreLikeThis` could shorten a topic/scenario cooldown, `DoNotShowSimilarSoon`
+could lengthen one, and `NeedRepeat` could deliberately bypass a cooldown as an intentional review
+request. **This wiring is NOT implemented yet** — `ActivityNoveltyPolicy` today still reacts
+solely to `ContentFingerprint`/`SourceTemplateId`/`TopicKey`/`ScenarioKey` cooldowns as described
+above, with no feedback-driven adjustment of any kind. Phase B2 stored the signal; consuming it to
+adjust cooldown behavior is deferred to a future phase.

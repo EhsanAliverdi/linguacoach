@@ -246,6 +246,48 @@ export interface ActivityFeedbackDto {
   suggestedImprovedResponse: string | null;
   // Pattern Evaluation Engine result (Phase 6) — null for legacy activities
   patternEvaluation: PatternEvaluationDto | null;
+  // Phase B2 — effective feedback policy for the surface this attempt came from. Null when
+  // not resolved (best-effort; the client should treat that the same as 'off').
+  feedbackPolicy: ActivityFeedbackPolicyDto | null;
+}
+
+// ── Activity feedback (Phase B2) ──────────────────────────────────────────────
+
+export type ActivityFeedbackDifficultyRating = 'tooEasy' | 'rightLevel' | 'tooHard';
+export type ActivityFeedbackClarityRating = 'clear' | 'okay' | 'confusing';
+export type ActivityFeedbackUsefulnessRating = 'useful' | 'notUseful';
+export type ActivityFeedbackRepeatPreference =
+  | 'moreLikeThis'
+  | 'needRepeat'
+  | 'doNotShowSimilarSoon'
+  | 'neutral';
+export type ActivityFeedbackPolicyValue = 'off' | 'optional' | 'required';
+export type ActivityFeedbackSurface = 'today' | 'practiceGym';
+
+export interface ActivityFeedbackPolicyDto {
+  policy: ActivityFeedbackPolicyValue;
+  surface: ActivityFeedbackSurface;
+}
+
+export interface SubmitActivityFeedbackRequest {
+  learningActivityId: string;
+  difficultyRating: ActivityFeedbackDifficultyRating;
+  clarityRating: ActivityFeedbackClarityRating;
+  usefulnessRating: ActivityFeedbackUsefulnessRating;
+  repeatPreference: ActivityFeedbackRepeatPreference;
+  optionalComment?: string | null;
+}
+
+export interface ActivityFeedbackSignalDto {
+  id: string;
+  learningActivityId: string;
+  activityAttemptId: string | null;
+  difficultyRating: ActivityFeedbackDifficultyRating;
+  clarityRating: ActivityFeedbackClarityRating;
+  usefulnessRating: ActivityFeedbackUsefulnessRating;
+  repeatPreference: ActivityFeedbackRepeatPreference;
+  optionalComment: string | null;
+  updatedAt: string;
 }
 
 export interface ListeningQuestionFeedback {

@@ -335,6 +335,10 @@ public static class DependencyInjection
         services.AddScoped<IGetActivityByIdHandler>(sp => sp.GetRequiredService<ActivityGetHandler>());
         services.AddScoped<ISubmitActivityAttemptHandler, ActivitySubmitHandler>();
 
+        // Phase B2 — Activity feedback / repeat policy / calibration signals
+        services.AddScoped<ISubmitActivityFeedbackHandler, ActivityFeedbackHandler>();
+        services.AddScoped<IActivityFeedbackPolicyProvider, ActivityFeedbackPolicyProvider>();
+
         // Pattern Evaluation Engine — skill update (Phase 5), evaluators (Phases 2 & 4) + router (Phase 3)
         services.AddScoped<PatternSkillUpdateService>();
         services.AddScoped<IMultiSkillProgressService, MultiSkillProgressService>();

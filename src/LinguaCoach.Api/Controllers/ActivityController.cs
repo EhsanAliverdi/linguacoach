@@ -25,6 +25,7 @@ public sealed class ActivityController : ControllerBase
     private readonly IGetNextActivityHandler _getNextActivity;
     private readonly IGetActivityByIdHandler _getActivityById;
     private readonly ISubmitActivityAttemptHandler _submitAttempt;
+    private readonly ISubmitActivityFeedbackHandler _submitFeedback;
     private readonly LinguaCoachDbContext _db;
     private readonly ListeningAudioService _listeningAudio;
     private readonly SpeakingAudioService _speakingAudio;
@@ -45,6 +46,7 @@ public sealed class ActivityController : ControllerBase
         IGetNextActivityHandler getNextActivity,
         IGetActivityByIdHandler getActivityById,
         ISubmitActivityAttemptHandler submitAttempt,
+        ISubmitActivityFeedbackHandler submitFeedback,
         LinguaCoachDbContext db,
         ListeningAudioService listeningAudio,
         SpeakingAudioService speakingAudio,
@@ -62,6 +64,7 @@ public sealed class ActivityController : ControllerBase
         _getNextActivity = getNextActivity;
         _getActivityById = getActivityById;
         _submitAttempt = submitAttempt;
+        _submitFeedback = submitFeedback;
         _db = db;
         _listeningAudio = listeningAudio;
         _speakingAudio = speakingAudio;
@@ -385,6 +388,49 @@ public sealed class ActivityController : ControllerBase
                     request.ResponseText),
                 ct);
             return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Submits (or updates) student feedback — difficulty/clarity/usefulness/repeat preference —
+    /// for a completed activity attempt. Idempotent: resubmitting for the same attempt updates
+    /// the existing signal rather than creating a duplicate.
+    /// </summary>
+    [HttpPost("attempt/{attemptId:guid}/feedback")]
+    public async Task<IActionResult> SubmitAttemptFeedback(
+        Guid attemptId,
+        [FromBody] SubmitActivityFeedbackRequest request,
+        CancellationToken ct = default)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty) return Unauthorized();
+
+        try
+        {
+            var result = await _submitFeedback.HandleAsync(
+                new SubmitActivityFeedbackCommand(
+                    UserId: userId,
+                    LearningActivityId: request.LearningActivityId,
+                    DifficultyRating: request.DifficultyRating,
+                    ClarityRating: request.ClarityRating,
+                    UsefulnessRating: request.UsefulnessRating,
+                    RepeatPreference: request.RepeatPreference,
+                    ActivityAttemptId: attemptId,
+                    OptionalComment: request.OptionalComment),
+                ct);
+            return Ok(result);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
         }
         catch (ArgumentException ex)
         {
@@ -932,5 +978,13 @@ public sealed record SubmitAttemptRequest(
     string? AudioUrl = null,
     IReadOnlyList<AnswerRequest>? Answers = null,
     string? ResponseText = null);
+
+public sealed record SubmitActivityFeedbackRequest(
+    Guid LearningActivityId,
+    ActivityFeedbackDifficultyRating DifficultyRating,
+    ActivityFeedbackClarityRating ClarityRating,
+    ActivityFeedbackUsefulnessRating UsefulnessRating,
+    ActivityFeedbackRepeatPreference RepeatPreference,
+    string? OptionalComment = null);
 
 public sealed record AnswerRequest(Guid? VocabularyItemId, string? QuestionId, string? Answer);

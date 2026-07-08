@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { ActivityDto, ActivityFeedbackDto, ActivityType, ListeningAnswer, SpeakingEvaluationDto, VocabAnswer, WritingEvaluationDto } from '../models/activity.models';
+import { ActivityDto, ActivityFeedbackDto, ActivityFeedbackSignalDto, ActivityType, ListeningAnswer, SpeakingEvaluationDto, SubmitActivityFeedbackRequest, VocabAnswer, WritingEvaluationDto } from '../models/activity.models';
 import { environment } from '../../../environments/environment';
 import { ExerciseTypeDefinition } from '../models/admin.models';
 
@@ -145,6 +145,14 @@ export class ActivityService {
   /** Returns the writing evaluation status and scores for a submitted written attempt. Returns 404 when no record exists. */
   getWritingEvaluation(activityId: string, attemptId: string): Observable<WritingEvaluationDto> {
     return this.http.get<WritingEvaluationDto>(`${this.base}/${activityId}/attempts/${attemptId}/writing-evaluation`);
+  }
+
+  /** Submits (or updates) student feedback for a completed activity attempt. Idempotent —
+   * resubmitting for the same attempt updates the existing signal. */
+  submitAttemptFeedback(
+    attemptId: string, request: SubmitActivityFeedbackRequest
+  ): Observable<ActivityFeedbackSignalDto> {
+    return this.http.post<ActivityFeedbackSignalDto>(`${this.base}/attempt/${attemptId}/feedback`, request);
   }
 
   private mimeTypeToExtension(mimeType: string): string {

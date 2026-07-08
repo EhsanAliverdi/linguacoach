@@ -1,19 +1,19 @@
 ---
-status: draft
-lastUpdated: 2026-07-08 (Plan-Sync-B2)
+status: current
+lastUpdated: 2026-07-08 (Phase B2)
 owner: architecture
 supersedes:
 supersededBy:
 ---
 
-# Activity Feedback and Calibration (Phase B2 — planned, not started)
+# Activity Feedback and Calibration (Phase B2 — persistence/API/minimal UI foundation implemented)
 
-This document is a **plan**, written during Plan-Sync-B2 (2026-07-08, docs-only). No app code,
-migrations, or config for this phase exist yet. It is inserted into the phase sequence directly
-after Phase C2 and before Phase C3 — see `docs/roadmap/road-map.md` §19a — because explicit
-student feedback/rating/calibration signals should start accumulating before Practice Gym
-migration continues further, so later Practice Gym batches (C3/C4/C-Final) and eventually Phase D
-can be informed by real quality/difficulty signal instead of only structural selection criteria.
+Phase B2 (2026-07-08) implemented the **foundation** for this system: entity, migration, admin
+policy, API endpoints, and a minimal student-facing prompt. It is **not** a full calibration
+engine — no automated CEFR/difficulty/template-quality recalculation runs on this data yet; it is
+collected and queryable, ready for that future work. It is inserted into the phase sequence
+directly after Phase C2 and before Phase C3 — see `docs/roadmap/road-map.md` §19a. **Phase C3
+remains next and has not started.**
 
 ---
 
@@ -67,16 +67,35 @@ The policy is expected to be settable independently per surface once implemented
 - **Production** — optional by default, to avoid friction for real students until the feedback UX
   is proven.
 
-No admin UI or config schema for this exists yet — this is the intended shape, not a built
-feature.
+**Implemented (2026-07-08):** a single policy dimension per surface (Today, Practice Gym),
+admin-configurable via the existing generic feature-gate/runtime-settings system — group
+`activity-feedback-policy`, keys `ActivityFeedback.TodayPolicy` / `ActivityFeedback.PracticeGymPolicy`,
+each a string constrained to `Off|Optional|Required`, default `Optional`. This reuses
+`RuntimeSettingOverride` (the same mechanism as `ReadinessPool.*` and
+`PracticeGymFormIoPilot.Enabled`) via a new `IActivityFeedbackPolicyProvider` /
+`ActivityFeedbackPolicyProvider` (mirrors `EffectiveReadinessPoolSettingsProvider`). No dedicated
+admin UI was built — the existing `/admin/settings/feature-gates` page picks up the new group
+automatically since it is data-driven from the backend registry.
 
 ## Student feedback fields
 
-- **Difficulty**: too easy / right level / too hard.
-- **Clarity/structure**: clear / okay / confusing.
-- **Usefulness**: useful / not useful.
-- **Repeat/recommendation**: more like this / repeat this / don't show similar soon.
-- **Optional comment**: free text, always optional even under a "Required" policy.
+- **Difficulty**: too easy / right level / too hard (`ActivityFeedbackDifficultyRating`).
+- **Clarity/structure**: clear / okay / confusing (`ActivityFeedbackClarityRating`).
+- **Usefulness**: useful / not useful (`ActivityFeedbackUsefulnessRating`).
+- **Repeat/recommendation**: more like this / repeat this / don't show similar soon / neutral
+  (`ActivityFeedbackRepeatPreference`).
+- **Optional comment**: free text, max 500 chars, always optional even under a "Required" policy.
+
+**Implemented (2026-07-08):** `ActivityFeedbackSignal` entity (`src/LinguaCoach.Domain/Entities/`)
+persists exactly these fields, plus provenance (`StudentProfileId`, `LearningActivityId`,
+`ActivityAttemptId?`, `StudentActivityUsageLogId?`, `StudentActivityReadinessItemId?`,
+`SourceTemplateId?`, `SourceBankItemId?`, `PatternKey?`, `Skill?`, `Subskill?`, `CefrLevel?`,
+`CurriculumObjectiveKey?`) backfilled best-effort from the matching `StudentActivityUsageLog` row.
+Idempotent: one row per `(StudentProfileId, ActivityAttemptId)` when an attempt is known, else one
+per `(StudentProfileId, LearningActivityId)` — enforced by two partial unique indexes
+(`ux_feedback_signals_student_attempt`, `ux_feedback_signals_student_activity_no_attempt`).
+Resubmitting updates the existing row (`ActivityFeedbackSignal.UpdateRatings`) rather than
+duplicating it.
 
 ## Data flow (planned)
 
@@ -93,6 +112,16 @@ Student answer
 
 Feedback attaches to the same submission event as scoring and usage logging — it does not
 introduce a separate, disconnected flow.
+
+**Implemented (2026-07-08):** `ActivitySubmitHandler` (both the pattern-evaluation and legacy/AI
+paths) now populates a `FeedbackPolicy` field on the existing `ActivityFeedbackDto` response
+(the same response returned by `POST /api/activity/{activityId}/attempt`), determined via
+`IActivityFeedbackPolicyProvider` using the same Today-vs-Practice-Gym surface detection already
+used for `StudentLearningEvent.Source` (presence/absence of a linked `SessionExercise`). This is
+best-effort/non-blocking, matching the handler's existing defensive style. The student submits
+feedback via a separate call: `POST /api/activity/attempt/{attemptId}/feedback`
+(`ActivityController.SubmitAttemptFeedback`), which the client makes only when the returned
+policy is not `Off`.
 
 ## How it will help
 
@@ -122,8 +151,35 @@ Once implemented, aggregated feedback signal is intended to inform:
 - Phase D Today composer.
 - Phase E resource import platform.
 
-## Status
+## Status (updated 2026-07-08, Phase B2 implemented)
 
-Planned only. No entities, endpoints, migrations, jobs, or UI exist for this phase. See
-`docs/roadmap/road-map.md` §19a for where Phase B2 sits in the overall phase sequence, and
-`docs/sprints/current-sprint.md` for current-sprint status.
+**Foundation implemented, not a calibration engine.** What exists:
+
+- `ActivityFeedbackSignal` entity + EF configuration + migration `AddActivityFeedbackSignal`.
+- `IActivityFeedbackPolicyProvider` / `ActivityFeedbackPolicyProvider` (Off/Optional/Required per
+  surface, via the existing feature-gate/runtime-settings system — no new admin UI needed).
+- `ISubmitActivityFeedbackHandler` / `ActivityFeedbackHandler` (upsert, ownership validation,
+  comment-length validation, provenance backfill from `StudentActivityUsageLog`).
+- API: `POST /api/activity/attempt/{attemptId}/feedback` (submit/update); `FeedbackPolicy` added
+  to the existing attempt-submission response DTO.
+- Minimal student UI: `activity-feedback-prompt` component, shown from the existing
+  `activity-feedback-page` only when policy is not `Off`, with a Skip button shown only when
+  `Optional`.
+- Backend tests: policy resolution, submit/upsert, ownership rejection, comment-length validation,
+  provenance backfill, wiring into `ActivitySubmitHandler`'s two dispatch paths.
+
+**What does NOT exist yet (deferred, not this phase's scope):**
+
+- Any automated consumption of the collected feedback — no CEFR/difficulty-band recalculation, no
+  automatic `ActivityTemplate`/resource quality scoring, no automatic novelty/cooldown adjustment
+  (`docs/architecture/repetition-and-novelty.md`'s "Relationship to Phase B2" section still
+  describes this as not implemented — that remains true).
+  This phase collects and stores signal; a human or a future phase must still act on it.
+- Admin analytics dashboard or review-queue automation beyond what already existed — deferred, per
+  scope.
+- Any wiring into the `/speaking-attempt` or `/audio-attempt` endpoints (they do not go through
+  `ActivitySubmitHandler`) — out of scope for this phase.
+
+See `docs/roadmap/road-map.md` §19a for where Phase B2 sits in the overall phase sequence
+(**Phase C3 is next and has not started**), and `docs/sprints/current-sprint.md` for
+current-sprint status.

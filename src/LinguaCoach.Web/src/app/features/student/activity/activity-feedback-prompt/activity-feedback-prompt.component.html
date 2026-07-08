@@ -1,0 +1,116 @@
+<div class="sp-card" style="padding:18px" data-testid="activity-feedback-prompt">
+
+  @if (skipped()) {
+    <!-- Skipped: collapse to nothing, no confirmation needed -->
+  } @else if (submitted()) {
+    <div data-testid="feedback-submitted" style="text-align:center;padding:8px 0">
+      <p style="font-size:13.5px;font-weight:700;color:var(--sp-ink);margin:0">Thanks for the feedback!</p>
+    </div>
+  } @else {
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <p style="font-size:12px;font-weight:800;color:var(--sp-ink);letter-spacing:.04em;text-transform:uppercase;margin:0">
+        How was this activity?
+      </p>
+      @if (isRequired) {
+        <span class="sp-pill" style="background:var(--sp-warn-soft);color:var(--sp-warn);font-size:11px">Required</span>
+      }
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+
+      <!-- Difficulty -->
+      <div>
+        <p style="font-size:12px;font-weight:700;color:var(--sp-muted);margin-bottom:6px">Difficulty</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          @for (opt of difficultyOptions; track opt.value) {
+            <button type="button" class="btn"
+              [class.btn-primary]="difficulty() === opt.value"
+              [class.btn-outline]="difficulty() !== opt.value"
+              [attr.data-testid]="'feedback-difficulty-' + opt.value"
+              (click)="difficulty.set(opt.value)">
+              {{ opt.label }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Clarity -->
+      <div>
+        <p style="font-size:12px;font-weight:700;color:var(--sp-muted);margin-bottom:6px">Clarity</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          @for (opt of clarityOptions; track opt.value) {
+            <button type="button" class="btn"
+              [class.btn-primary]="clarity() === opt.value"
+              [class.btn-outline]="clarity() !== opt.value"
+              [attr.data-testid]="'feedback-clarity-' + opt.value"
+              (click)="clarity.set(opt.value)">
+              {{ opt.label }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Usefulness -->
+      <div>
+        <p style="font-size:12px;font-weight:700;color:var(--sp-muted);margin-bottom:6px">Usefulness</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          @for (opt of usefulnessOptions; track opt.value) {
+            <button type="button" class="btn"
+              [class.btn-primary]="usefulness() === opt.value"
+              [class.btn-outline]="usefulness() !== opt.value"
+              [attr.data-testid]="'feedback-usefulness-' + opt.value"
+              (click)="usefulness.set(opt.value)">
+              {{ opt.label }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Repeat preference -->
+      <div>
+        <p style="font-size:12px;font-weight:700;color:var(--sp-muted);margin-bottom:6px">Repeat preference</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          @for (opt of repeatOptions; track opt.value) {
+            <button type="button" class="btn"
+              [class.btn-primary]="repeatPreference() === opt.value"
+              [class.btn-outline]="repeatPreference() !== opt.value"
+              [attr.data-testid]="'feedback-repeat-' + opt.value"
+              (click)="repeatPreference.set(opt.value)">
+              {{ opt.label }}
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Optional comment -->
+      <div>
+        <p style="font-size:12px;font-weight:700;color:var(--sp-muted);margin-bottom:6px">Comment (optional)</p>
+        <textarea
+          data-testid="feedback-comment"
+          rows="2"
+          maxlength="500"
+          style="width:100%;border-radius:var(--sp-r);border:1.5px solid var(--sp-border2);padding:8px 10px;font:inherit;resize:vertical"
+          [value]="comment()"
+          (input)="comment.set($any($event.target).value)">
+        </textarea>
+      </div>
+
+      @if (errorMessage()) {
+        <p style="font-size:12.5px;color:var(--sp-warn);margin:0">{{ errorMessage() }}</p>
+      }
+
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        @if (canSkip) {
+          <button type="button" class="btn btn-ghost" data-testid="feedback-skip" (click)="skip()">
+            Skip
+          </button>
+        }
+        <button type="button" class="btn btn-primary" data-testid="feedback-submit"
+          [disabled]="!canSubmit || submitting()"
+          (click)="submit()">
+          {{ submitting() ? 'Saving…' : 'Submit feedback' }}
+        </button>
+      </div>
+    </div>
+  }
+</div>
