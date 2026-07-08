@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-01
+lastUpdated: 2026-07-08 (Phase C-Final)
 owner: product
 supersedes:
 supersededBy:
@@ -11,6 +11,70 @@ supersededBy:
 Status labels: `Not started` Â· `Planned` Â· `Blocked` Â· `Done`
 
 Items are grouped by theme. Each item is a discrete unit of work; sub-bullets are acceptance criteria or notes.
+
+---
+
+## Practice Gym — Deferred Pattern Families (Post Phase C-Final) `Not started`
+
+Phase C1→C2→C3 migrated 8 of 33 Practice Gym pattern rows to the bank-first Form.io template
+path (deterministic, audio-free, image-free patterns only). Phase C-Final (2026-07-08) closed
+that track without forcing further migration — the remaining 25 legacy keys need genuinely new
+scope, not another small batch. See `docs/architecture/practice-gym.md` for the full audit and
+per-pattern classification. Tracked here as future backlog items, not started:
+
+- [ ] **A. Listening/audio family** (`listen_and_answer`, `listen_and_gap_fill`,
+  `listening_multiple_choice_single/multi`, `listening_fill_in_blanks`, `select_missing_word`,
+  `highlight_correct_summary`, `highlight_incorrect_words`, `write_from_dictation`,
+  `summarize_spoken_text`) `Not started`
+  - Needs a dedicated audio-DTO compatibility review — every one of these carries `AudioUrl`/
+    `AudioScript` in its content DTO despite a catalog `RequiresAudio=false` flag.
+  - Needs audio asset/transcript preview or rendering support in the Form.io path (none exists
+    today — Form.io templates are currently text/schema-only).
+  - Deterministic scoring (`ComponentAnswerScorer`) is only relevant for the KeyedSelection/
+    ExactMatch subset (6 of the 9); the `AiStructured` ones (`listen_and_answer`,
+    `summarize_spoken_text`) need the open-ended AI-evaluated support in item C below.
+  - No migration until the audio path is confirmed safe end-to-end (upload/storage, playback,
+    no leaked transcript in the student-safe schema).
+
+- [ ] **B. Speaking/audio family** (`answer_short_question`, `read_aloud`, `repeat_sentence`,
+  `spoken_response_from_prompt`, `speaking_roleplay_turn`, `respond_to_situation`,
+  `describe_image`, `retell_lecture`, `summarize_group_discussion`) `Not started`
+  - Needs speaking-response renderer/evaluator support beyond the existing `speakingResponse`
+    Form.io component (which only carries an audio storage-key reference, not a scoring path).
+  - Needs microphone/upload flow compatibility confirmed for the Form.io rendering path
+    specifically (currently only proven in the legacy exercise-renderer flow).
+  - Needs an AI or rubric evaluation path — `answer_short_question`/`read_aloud`/
+    `repeat_sentence` currently use fuzzy/word-overlap scoring (see item D); the rest are
+    `AiOpenEnded` (see item C).
+  - Not part of the deterministic template-migration track; do not attempt without dedicated
+    renderer/evaluator work first.
+
+- [ ] **C. Open-ended writing/chat/roleplay family** (`email_reply`,
+  `teams_chat_simulation`, `open_writing_task`, `summarize_written_text`, `write_essay`,
+  `spoken_response_from_prompt`, `speaking_roleplay_turn`, `respond_to_situation`,
+  `describe_image`, `retell_lecture`, `summarize_group_discussion`, `listen_and_answer`,
+  `summarize_spoken_text`) `Not started`
+  - Needs dedicated Form.io + AI-evaluated support — the current Form.io path
+    (`FormIoPatternEvaluator`/`ComponentAnswerScorer`) only has a working story for
+    deterministic single/multi-component scoring, not AI-graded open-ended text or speech.
+  - Needs rubric/feedback-plan integration (mirroring the legacy `AiStructured`/`AiOpenEnded`
+    evaluation flow) so a template-sourced instance gets equivalent coaching feedback quality.
+  - No deterministic-scorer assumption should be made for this family — do not attempt to force
+    a binary `ComponentAnswerScorer` kind onto genuinely open-ended content.
+
+- [ ] **D. Fuzzy/short-answer family** (`answer_short_question`, `read_aloud`,
+  `repeat_sentence`) `Not started`
+  - Needs a partial-credit/fuzzy `ComponentAnswerScorer` kind — these currently use
+    substring-"contains" matching (`answer_short_question`) or word-overlap percentage scoring
+    with a 0.60 threshold (`read_aloud`/`repeat_sentence`) in `ExactMatchEvaluator`, neither of
+    which fits the existing binary single_choice/multiple_choice/text_exact/text_normalized/
+    ordered_sequence kinds.
+  - Needs an answer-normalization policy (stemming/synonym tolerance, or an explicit
+    alternate-answer list) rather than exact/positional matching.
+  - Needs confidence/alternate-answer support in the scoring rule shape if partial credit is to
+    be backend-only and leak-safe like the existing kinds.
+  - Also audio-referencing (see item B) — this family sits at the intersection of B and D and
+    should be scoped as one combined review, not two separate ones.
 
 ---
 

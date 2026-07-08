@@ -113,7 +113,7 @@ generalized the Form.io template path from 1 pilot pattern to 8 total (C1's `phr
 `reading_multiple_choice_multi`, `reading_fill_in_blanks`, `reading_writing_fill_in_blanks`; C3's
 `reorder_paragraphs`, using a new `ordered_sequence` scorer kind and a stock Form.io `datagrid`
 component with no new custom component or frontend code); see docs/architecture/practice-gym.md.
-A full C3 re-audit of the remaining ~26 legacy pattern keys found no further safe deterministic
+A full C3 re-audit of the remaining ~25 legacy pattern keys found no further safe deterministic
 candidates — everything else is open-ended-AI-evaluated or has an audio-referencing/fuzzy-scored
 content DTO; **recommend Phase C-Final over a forced Phase C4** (see practice-gym.md's "Migration
 plan" section). **Phase B2 — Activity Feedback, Repeat Policy, and Calibration Signals** has

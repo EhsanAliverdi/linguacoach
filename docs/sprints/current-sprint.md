@@ -17,7 +17,7 @@ Last updated: 2026-07-08
 **Phase C3 — Continue Practice Gym bank-first migration (2026-07-08)** — complete
 
 **Last completed implementation phase: Phase C3.** Migrated exactly one additional pattern,
-`reorder_paragraphs`, to the bank-first Form.io template path — a full re-audit of the ~26
+`reorder_paragraphs`, to the bank-first Form.io template path — a full re-audit of the ~25
 remaining legacy pattern keys against their actual content DTOs found no other safe deterministic
 candidate (everything else is open-ended-AI-evaluated, audio-referencing despite misleading
 catalog flags, or fuzzy/partial-credit scored). Built a new generic `ordered_sequence`
@@ -37,7 +37,7 @@ review or dedicated AI-evaluated-pattern Form.io support, neither a small batch)
 `docs/architecture/activity-feedback-and-calibration.md`).
 
 **Next recommended phase: Phase C-Final** — formally close out the deterministic-pattern
-migration track at 8/~33 and document the remaining ~26 legacy keys as staying on legacy
+migration track at 8/~33 and document the remaining ~25 legacy keys as staying on legacy
 generation pending a dedicated audio-compatibility or AI-evaluated-pattern review. **Not
 started.** Phase D and Phase E implementation remain not started. Today lesson generation remains
 100% legacy `IAiActivityGenerator` freeform generation; the `/speaking-attempt` and

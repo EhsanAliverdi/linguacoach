@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase C2)
+lastUpdated: 2026-07-08 (Phase C-Final)
 owner: architecture
 supersedes:
 supersededBy:
@@ -139,7 +139,7 @@ patterns; Phase C3 added exactly one pattern, `reorder_paragraphs`. All eight ke
 | `reading_writing_fill_in_blanks` | reading | ExactMatch (native), FormIoScored when template-sourced | Migrated in C2 |
 | `reorder_paragraphs` | reading | ExactMatch (native), FormIoScored when template-sourced | **Migrated in C3** |
 
-**Everything else in the ~33-row pattern catalog (26 legacy after C3, corrected from the earlier
+**Everything else in the ~33-row pattern catalog (25 legacy after C3, corrected from the earlier
 ~28/~21 estimate against the actual `ExercisePatternSeeder` count) remains fully legacy** — the
 freeform `IAiActivityGenerator` content-generation path, completely unchanged. This is deliberate,
 small-batch migration: each batch is chosen for being deterministic, audio-free, image-free, and
@@ -147,7 +147,7 @@ already `SupportsPracticeGym=true`.
 
 ## Phase C3 — `reorder_paragraphs` (2026-07-08)
 
-A full re-audit of the remaining 26 legacy pattern keys against their actual content DTOs (not
+A full re-audit of the remaining 25 legacy pattern keys against their actual content DTOs (not
 just catalog flags) found **exactly one** additional safe candidate: `reorder_paragraphs`. Every
 other remaining key is excluded for a concrete, code-grounded reason — see "Excluded patterns"
 below, which extends the C2 audit with three newly-identified exclusions
@@ -256,29 +256,108 @@ is no automated check that the AI didn't shift which answer is correct while kee
 key. This is not a new risk introduced by Phase C1, C2, or C3; it is the same constraint the
 original pilot template design already accepted.
 
-## Migration plan for the rest of the catalog (Phase C4+)
+## Phase C-Final — closure and full pattern audit (2026-07-08)
 
-Phase C is a **sequence** (C1 → C2 → C3 → C4 → C-Final), not one large "migrate everything"
-phase — each increment is small enough to review and roll back independently. C1, C2, and C3 are
-all complete (8 of ~33 pattern rows template-enabled — 26 legacy remain). See
-`docs/roadmap/road-map.md` §19a for the phase order relative to Phase D and Phase E.
+Phase C-Final does not migrate any further patterns. It verifies the 8 template-enabled keys are
+complete/stable, confirms every remaining key is correctly and intentionally classified as
+legacy, and closes Phase C as a track. **Definitive audit table — all 33 pattern rows:**
 
-**No further deterministic/simple candidates remain** after the C3 audit — see "Excluded
-patterns" above. **Phase C4, if pursued, must therefore either:**
-1. Do a dedicated audio-compatibility review of the "listening" family (6 keys) and the 3
-   fuzzy-scored speaking keys (`answer_short_question`, `read_aloud`, `repeat_sentence`) to
-   determine whether a text-only or word-overlap-scorer variant can be authored safely — this is
-   real new scope (a new scorer kind for partial/fuzzy matching, and a decision on whether
-   audio-referencing content can be migrated at all), not a small batch like C1-C3; or
-2. Build dedicated Form.io renderer + evaluator support for `AiStructured`/`AiOpenEnded` marking
-   modes (open-ended AI-graded text, audio submission scoring, multi-turn speaking evaluation) —
-   also real new scope, not a small batch.
+| Pattern key | Skill | Marking mode | Audio/image/speaking/open-ended | Template-enabled | Reason if legacy | Future phase |
+|---|---|---|---|---|---|---|
+| `formio_practice_gym_pilot` | Speaking (nominal) | FormIoScored | none | **Yes** (original pilot) | — | — |
+| `phrase_match` | Vocabulary | KeyedSelection | none | **Yes** (C1) | — | — |
+| `gap_fill_workplace_phrase` | Vocabulary | ExactMatch | none | **Yes** (C1) | — | — |
+| `reading_multiple_choice_single` | Reading | KeyedSelection | none | **Yes** (C1) | — | — |
+| `reading_multiple_choice_multi` | Reading | KeyedSelection | none | **Yes** (C2) | — | — |
+| `reading_fill_in_blanks` | Reading | ExactMatch | none | **Yes** (C2) | — | — |
+| `reading_writing_fill_in_blanks` | Reading | ExactMatch | none | **Yes** (C2) | — | — |
+| `reorder_paragraphs` | Reading | ExactMatch | none | **Yes** (C3) | — | — |
+| `listen_and_answer` | Listening | AiStructured | audio (honestly flagged `RequiresAudio=true`) | No | open-ended AI + genuine audio | Backlog A + C |
+| `listen_and_gap_fill` | Listening | ExactMatch | audio (honestly flagged `RequiresAudio=true`) | No | deterministic marking, but genuinely needs audio rendering support — not a "flag lies" case like the rows below | Backlog A |
+| `email_reply` | Writing | AiStructured | none | No | open-ended AI | Backlog C |
+| `teams_chat_simulation` | Writing | AiStructured | none | No | open-ended AI | Backlog C |
+| `spoken_response_from_prompt` | Speaking | AiOpenEnded | speaking response | No | open-ended AI + speaking | Backlog B + C |
+| `open_writing_task` | Writing | AiOpenEnded | none | No | open-ended AI | Backlog C |
+| `speaking_roleplay_turn` | Speaking | AiOpenEnded | speaking response | No | open-ended AI + speaking | Backlog B + C |
+| `lesson_reflection` | Reflection | NoMarking | none | No | `SupportsPracticeGym=false` — not Practice-Gym-eligible at all | N/A (out of Practice Gym scope) |
+| `summarize_written_text` | Writing | AiStructured | none | No | open-ended AI | Backlog C |
+| `write_essay` | Writing | AiStructured | none | No | open-ended AI | Backlog C |
+| `listening_multiple_choice_single` | Listening | KeyedSelection | audio-referencing content DTO despite `RequiresAudio=false` | No | catalog flag "lies" — DTO carries `AudioUrl`/`AudioScript` | Backlog A |
+| `listening_multiple_choice_multi` | Listening | KeyedSelection | same "flag lies" issue | No | same | Backlog A |
+| `listening_fill_in_blanks` | Listening | ExactMatch | same "flag lies" issue | No | same | Backlog A |
+| `select_missing_word` | Listening | KeyedSelection | same "flag lies" issue | No | same | Backlog A |
+| `highlight_correct_summary` | Listening | KeyedSelection | same "flag lies" issue | No | same | Backlog A |
+| `highlight_incorrect_words` | Listening | KeyedSelection | same "flag lies" issue | No | same | Backlog A |
+| `write_from_dictation` | Listening | ExactMatch | same "flag lies" issue | No | same | Backlog A |
+| `summarize_spoken_text` | Listening | AiStructured | audio-referencing | No | open-ended AI + audio | Backlog A + C |
+| `answer_short_question` | Speaking | ExactMatch | audio-referencing + fuzzy "contains" scoring | No | audio AND non-binary scoring — doubly excluded | Backlog B + D |
+| `read_aloud` | Speaking | ExactMatch | audio-referencing + word-overlap scoring | No | audio AND non-binary scoring — doubly excluded | Backlog B + D |
+| `repeat_sentence` | Speaking | ExactMatch | audio-referencing + word-overlap scoring | No | audio AND non-binary scoring — doubly excluded | Backlog B + D |
+| `respond_to_situation` | Speaking | AiOpenEnded | speaking response | No | open-ended AI + speaking | Backlog B + C |
+| `describe_image` | Speaking | AiOpenEnded | image + speaking response | No | open-ended AI + speaking + image | Backlog B + C |
+| `retell_lecture` | Listening | AiOpenEnded | audio | No | open-ended AI + audio | Backlog A + C |
+| `summarize_group_discussion` | Listening | AiOpenEnded | audio | No | open-ended AI + audio | Backlog A + C |
 
-Given this, **Phase C-Final (closing out the deterministic-pattern migration track at 8/~33, and
-formally documenting the remaining 26 as staying on legacy generation pending the above dedicated
-reviews) is a legitimate, and arguably preferable, next step over forcing a C4 that isn't a small,
-low-risk batch.** See `docs/roadmap/road-map.md` §19a and the Decision Log for the actual
-phase-sequence decision.
+**8 template-enabled, 25 legacy** (8 + 25 = 33, confirmed against `ExercisePatternSeeder`'s actual
+row count and the passing `ExercisePatternPhase1Tests` count assertions — corrects an off-by-one
+"26 legacy" figure that had propagated through earlier C3 documentation). "Backlog A/B/C/D" refers
+to the four deferred pattern-family items in `docs/backlog/product-backlog.md`'s "Practice Gym —
+Deferred Pattern Families" section (A: listening/audio, B: speaking/audio, C: open-ended
+AI-evaluated, D: fuzzy/short-answer — several rows above map to more than one family, since e.g.
+`answer_short_question` is both audio-referencing and fuzzy-scored).
+
+**One classification correction from the C3 audit**: `listen_and_gap_fill` is deterministic
+(`ExactMatch`) but has its `RequiresAudio` flag honestly set to `true` — unlike the seven
+"flag lies" listening rows above, this one was never miscategorized; it has simply always been
+correctly excluded pending real audio-rendering support in the Form.io path (Backlog item A).
+
+## Phase C-Final verification results (2026-07-08)
+
+All 8 template-enabled keys verified:
+- Each has at least one approved (`ReviewStatus.Approved`) + published (`IsPublished`)
+  `ActivityTemplate` (7 seeded rows in `ActivityTemplateSeeder`, one per non-pilot key; the pilot
+  predates the seeder and has its own dedicated template authored directly).
+- `ActivityTemplateSeeder` remains idempotent (`AnyAsync(t => t.Key == seed.Key)` guard,
+  confirmed by the existing re-run test).
+- Every seeded schema passes `IFormIoSchemaValidationService.ValidateSchema` (existing test
+  coverage, unchanged).
+- Scoring rules remain backend-only (`ScoringModelJson`, never serialized into
+  `FormIoBaseSchemaJson`) — confirmed for all 7 seeds, including `reorder_paragraphs`'s
+  `ordered_sequence`/`correctOrder` (Phase C3's dedicated no-leak test).
+- Template path gating (allow-list membership, `PracticeGymFormIoPilot.Enabled`, approved+
+  published template existence, novelty/cooldown check, legacy fallback on any failure) verified
+  end-to-end in `PracticeGymGenerationJob` — all 5 checks present and correctly ordered; exact
+  `HashSet<string>` membership test, no fuzzy/prefix matching, no risk of a non-migrated key
+  (spot-checked `email_reply`, `listening_fill_in_blanks`) accidentally routing through the
+  template path.
+- `ActivityFeedbackDto.FeedbackPolicy` wiring (Phase B2) confirmed still intact and populated in
+  both `ActivitySubmitHandler` dispatch paths — unaffected by C1/C2/C3.
+- No gaps found requiring new tests or code changes — this closure pass is docs/backlog only.
+
+## Migration plan for the rest of the catalog (deferred, tracked as backlog — not a numbered Phase C4)
+
+Phase C is a **sequence** (C1 → C2 → C3 → C-Final), not one large "migrate everything" phase —
+each increment was small enough to review and roll back independently. C1, C2, and C3 are all
+complete (8 of 33 pattern rows template-enabled — 25 legacy remain, see the audit table above).
+**Phase C-Final closes this track.** See `docs/roadmap/road-map.md` §19a for the phase order
+relative to Phase D and Phase E, and `docs/backlog/product-backlog.md` for the 4 deferred pattern
+families tracked as future backlog items (not started, not scheduled as a numbered Phase C4).
+
+**No further deterministic/simple candidates remain** — see the audit table above. If a future
+phase ever revisits Practice Gym pattern migration, it must open genuinely new scope, not another
+small batch:
+1. A dedicated audio-compatibility review of the listening family (8 keys total: 7 "flag lies" +
+   `listen_and_gap_fill`) and the 3 fuzzy-scored speaking keys, including a new scorer kind for
+   partial/fuzzy matching and a decision on whether audio-referencing content can be migrated at
+   all (Backlog items A and D); or
+2. Dedicated Form.io renderer + evaluator support for `AiStructured`/`AiOpenEnded` marking modes
+   (open-ended AI-graded text, audio submission scoring, multi-turn speaking evaluation) —
+   Backlog items B and C.
+
+**Phase C-Final (closing out the deterministic-pattern migration track at 8/33, with the
+remaining 25 formally documented above and tracked as backlog items, not left as an implicit
+gap) is complete.** See `docs/roadmap/road-map.md` §19a and the Decision Log for the actual
+phase-sequence decision and next-phase recommendation.
 
 **Do not migrate complex speaking, listening, or open writing/AI-evaluated patterns
 (`AiStructured`/`AiOpenEnded` marking modes, or any pattern requiring audio recording/playback)
