@@ -1928,11 +1928,11 @@ describe('AdminStudentDetailComponent — readiness pool health section', () => 
     });
   }
 
-  it('renders Readiness pool health section heading', () => {
+  it('renders Assignment / Delivery Queue health section heading', () => {
     setup();
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Readiness pool health');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Assignment / Delivery Queue health');
   });
 
   it('shows today lesson ready count', () => {
@@ -1977,7 +1977,7 @@ describe('AdminStudentDetailComponent — readiness pool health section', () => 
     setup('error');
     const fixture = TestBed.createComponent(AdminStudentDetailComponent);
     fixture.detectChanges();
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Could not load pool health.');
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Could not load delivery queue health.');
   });
 
   it('calls getStudentReadinessPoolHealth on init', () => {

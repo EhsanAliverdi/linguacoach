@@ -362,7 +362,7 @@ export class AdminStudentDetailComponent implements OnInit {
     this.poolHealthError.set('');
     this.adminApi.getStudentReadinessPoolHealth(id).subscribe({
       next: ph => { this.poolHealth.set(ph); this.poolHealthLoading.set(false); },
-      error: () => { this.poolHealthError.set('Could not load pool health.'); this.poolHealthLoading.set(false); },
+      error: () => { this.poolHealthError.set('Could not load delivery queue health.'); this.poolHealthLoading.set(false); },
     });
 
     this.adminApi.getStudentPracticeSummary(id).subscribe({

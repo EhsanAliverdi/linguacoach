@@ -226,12 +226,12 @@
         </sp-admin-card>
       </div>
 
-      <!-- Pool health — full width -->
-      <sp-admin-card title="Readiness pool health">
+      <!-- Assignment / delivery queue health — full width -->
+      <sp-admin-card title="Assignment / Delivery Queue health">
         @if (poolHealthLoading()) {
-          <sp-admin-loading-state message="Loading pool health" />
+          <sp-admin-loading-state message="Loading delivery queue health" />
         } @else if (poolHealthError()) {
-          <sp-admin-error-state title="Pool health unavailable" [message]="poolHealthError()" />
+          <sp-admin-error-state title="Delivery queue health unavailable" [message]="poolHealthError()" />
         } @else if (poolHealth()) {
           @let ph = poolHealth()!;
           <div class="sp-admin-card-grid-2">
@@ -281,7 +281,7 @@
             </div>
           </div>
         } @else {
-          <sp-admin-empty-state message="Pool health data not available." />
+          <sp-admin-empty-state message="Delivery queue health data not available." />
         }
       </sp-admin-card>
 

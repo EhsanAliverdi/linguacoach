@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Plan-Sync-After-G0)
+lastUpdated: 2026-07-09 (Phase G1)
 owner: product
 supersedes:
 supersededBy:
@@ -48,12 +48,24 @@ namespaces/entities/routes.
     reading-passages admin page (`/admin/resource-banks/reading-passages`) is routable but
     missing from the sidebar nav (a G1 safe quick win, deliberately not fixed in G0); P1 the
     "Content" nav section is overloaded.
-- [ ] **Phase G1 — Admin Information Architecture Cleanup** `Not started` — **next recommended implementation phase (Plan-Sync-After-G0, 2026-07-09)**
-  - Acts on Phase G0's classifications: split the P0 "Lessons" page; add the missing
-    reading-passages nav item (safe quick win); regroup the overloaded "Content" nav section;
-    relabel readiness/pool-health surfaces to assignment/delivery-queue language; reframe
-    "Exercise Types" as a capability registry (label only). Labels/nav/page-composition only —
-    no route or DTO renames, no readiness-pool deletion, no legacy-generation removal.
+- [x] **Phase G1 — Admin Information Architecture Cleanup** `Done` (2026-07-09)
+  - **Delivered** (labels/nav/page-composition only, nothing deleted): split the overloaded
+    "Content" nav into **Content Banks / Delivery / Learning Setup** in both the desktop sidebar
+    and the mobile drawer; added the missing E7 reading-passages nav item
+    (`/admin/resource-banks/reading-passages`, previously routable but unreachable); reframed
+    `/admin/lessons` **in place** (route kept — "Today Delivery Health"; readiness/pool →
+    delivery-queue/assignment language; manual generation reframed as AI **fallback** generation;
+    new info banner pointing admins to the Content Banks); relabeled the student-detail readiness
+    panel ("Readiness pool health" → "Assignment / Delivery Queue health") and the AI Operations
+    card; updated 3 spec assertions to match.
+  - **Kept, not deleted**: `StudentActivityReadinessItem`, the pool/buffer/materialization jobs,
+    `PracticeActivityCache`, and the legacy `IAiActivityGenerator` path. No route/DTO/namespace
+    renamed, no backend `.cs` changed. The full `/admin/lessons` **route split** remains deferred
+    to G2 (see audit §10).
+  - **Validated** by production `ng build` (no new errors; only the pre-existing bundle-size
+    budget failure + pre-existing NG8107 warnings in untouched files). Karma not run — a
+    pre-existing unrelated TS error in `student/activity/presenters/test-helpers.ts` blocks the
+    spec-bundle compile; not fixed here per the phase's no-unrelated-test-debt rule.
 - [ ] **Phase G2 — Backend Legacy Surface Cleanup** `Not started`
   - Acts on Phase G0's "remove-later"/"merge" classifications for backend code (jobs, services,
     dead admin API routes); completes the endpoint-by-endpoint sweep G0 flagged as its own
@@ -72,10 +84,12 @@ findings — G0 applies these, it does not re-decide them):
   — kept, not deleted; reframed as "Student Activity Assignment / Delivery Queue" rather than
   "AI-generated activity cache." The lifecycle state machine (selected → assigned → ready →
   reserved → completed → expired/stale/failed) is unchanged.
-- [ ] **Readiness Pool admin UI** `Not started` — rework/rename/move to diagnostics; should not
-  remain framed as a "content generation cache" concept.
-- [ ] **"Pool Health" / "Lesson readiness" admin pages** `Not started` — rename/reframe as "Today
-  Delivery Health" / "Assignment Health" / "Delivery Queue Health."
+- [x] **Readiness Pool admin UI** `Relabeled in G1 (2026-07-09)` — admin labels reframed away from
+  the "content generation cache" framing (delivery-queue/assignment language on `/admin/lessons`,
+  student-detail, and AI Operations). A deeper rework/move to diagnostics remains a G3 concern.
+- [x] **"Pool Health" / "Lesson readiness" admin pages** `Relabeled in G1 (2026-07-09)` —
+  `/admin/lessons` reframed in place as "Today Delivery Health" with delivery-queue/assignment
+  wording; route kept, full route split deferred to G2.
 - [ ] **`PracticeActivityCache` and related practice-cache logic** `Not started, deferred` —
   audited in a future phase; may shrink or be removed after PG-v2, but not deleted now.
 - [x] **AI generation admin pages** `Scope confirmed` — kept only for fallback generation,

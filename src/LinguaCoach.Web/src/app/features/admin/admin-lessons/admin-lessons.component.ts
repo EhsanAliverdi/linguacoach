@@ -359,7 +359,7 @@ export class AdminLessonsComponent implements OnInit {
     this.adminApi.getAggregatePoolHealth().subscribe({
       next: h => { this.poolHealth.set(h); this.poolHealthLoading.set(false); },
       error: err => {
-        this.poolHealthError.set(err?.error?.error ?? err?.message ?? 'Failed to load aggregate pool health.');
+        this.poolHealthError.set(err?.error?.error ?? err?.message ?? 'Failed to load aggregate delivery queue health.');
         this.poolHealthLoading.set(false);
       },
     });

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-02 (19C)
+lastUpdated: 2026-07-09 (Phase G1)
 owner: architecture
 supersedes:
 supersededBy:
@@ -15,6 +15,8 @@ The readiness pool is a student-specific queue of pre-generated or in-progress l
 > **Forward reference (Plan-Sync-G0, 2026-07-09, docs-only):** this pool is **kept, not deleted**. The bank-first migration (Resource Banks/Candidates/Activity Templates) is now the primary content model, so this doc's own framing — and any admin UI ("Pool Health"/"Lesson readiness" pages) built around it — will eventually be reframed from "AI-generated activity cache" language to **"Student Activity Assignment / Delivery Queue"** language. The entity, lifecycle, and concurrency model documented below are unchanged by this decision.
 >
 > **Phase G0 audit done (2026-07-09, docs/audit-only):** the audit confirmed this lifecycle is **load-bearing** — `ReadinessPoolReplenishmentJob`, `LessonBufferRefillJob`, `PracticeGymBufferRefillJob`, `IStudentActivityReadinessPoolService`, the student Practice Gym suggestions surface, and the admin readiness/repair tooling all depend on it — and classified `StudentActivityReadinessItem` **keep, reframe as Student Activity Assignment / Delivery Queue** (never delete). The concrete rename/rework of this doc's admin surfaces (esp. the `/admin/lessons` "readiness pool health" page, P0) and any code-name changes are deferred to the implementation phases G1 (admin IA) / G2 (backend) / G3 (diagnostics). See `docs/architecture/bank-first-admin-backend-surface-audit.md` for the full classification and `docs/roadmap/road-map.md` §19a / Decision Log for the phase order.
+>
+> **Phase G1 done (2026-07-09):** the **admin labels** for this lifecycle were reframed (no backend/entity/lifecycle change). `/admin/lessons` is now "Today Delivery Health" (readiness/pool → delivery-queue/assignment wording, manual generation reframed as AI **fallback** generation, plus an info banner pointing admins to the Content Banks); the student-detail readiness panel reads "Assignment / Delivery Queue health"; the AI Operations card was relabeled. The `/admin/lessons` route is kept (full route split deferred to G2). The entity name `StudentActivityReadinessItem`, the jobs/services, and `PracticeActivityCache` are **all unchanged** — G1 touched labels/nav only.
 
 ## Entity: StudentActivityReadinessItem
 

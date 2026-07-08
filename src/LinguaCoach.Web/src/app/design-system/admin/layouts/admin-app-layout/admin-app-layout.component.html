@@ -86,29 +86,8 @@
       </ul>
     </div>
     <div class="mb-2">
-      <sp-admin-sidebar-section label="Content" [collapsed]="false" />
+      <sp-admin-sidebar-section label="Content Banks" [collapsed]="false" />
       <ul class="flex flex-col gap-1">
-        <li><sp-admin-sidebar-nav-item label="Lessons" route="/admin/lessons" [collapsed]="false" (itemClick)="closeDrawer()">
-          <sp-admin-icon name="book-open" />
-        </sp-admin-sidebar-nav-item></li>
-        <li><sp-admin-sidebar-nav-item label="Curriculum" route="/admin/curriculum" [collapsed]="false" (itemClick)="closeDrawer()">
-          <sp-admin-icon name="book" />
-        </sp-admin-sidebar-nav-item></li>
-        <li><sp-admin-sidebar-nav-item label="Exercise Types" route="/admin/exercise-types" [collapsed]="false" (itemClick)="closeDrawer()">
-          <sp-admin-icon name="zap" />
-        </sp-admin-sidebar-nav-item></li>
-        <li><sp-admin-sidebar-nav-item label="Onboarding" route="/admin/onboarding" [collapsed]="false" (itemClick)="closeDrawer()">
-          <sp-admin-icon name="send" />
-        </sp-admin-sidebar-nav-item></li>
-        <li><sp-admin-sidebar-nav-item label="Placement items" route="/admin/placement-items" [collapsed]="false" (itemClick)="closeDrawer()">
-          <sp-admin-icon name="filter" />
-        </sp-admin-sidebar-nav-item></li>
-        <li><sp-admin-sidebar-nav-item label="Activity templates" route="/admin/activity-templates" [collapsed]="false" (itemClick)="closeDrawer()">
-          <sp-admin-icon name="list" />
-        </sp-admin-sidebar-nav-item></li>
-        <li><sp-admin-sidebar-nav-item label="Review queue" route="/admin/review-queue" [collapsed]="false" (itemClick)="closeDrawer()">
-          <sp-admin-icon name="alert-circle" />
-        </sp-admin-sidebar-nav-item></li>
         <li><sp-admin-sidebar-nav-item label="Resource sources" route="/admin/resource-sources" [collapsed]="false" (itemClick)="closeDrawer()">
           <sp-admin-icon name="database" />
         </sp-admin-sidebar-nav-item></li>
@@ -126,6 +105,40 @@
         </sp-admin-sidebar-nav-item></li>
         <li><sp-admin-sidebar-nav-item label="Reading reference bank" route="/admin/resource-banks/reading-references" [collapsed]="false" (itemClick)="closeDrawer()">
           <sp-admin-icon name="book-open" />
+        </sp-admin-sidebar-nav-item></li>
+        <li><sp-admin-sidebar-nav-item label="Reading passage bank" route="/admin/resource-banks/reading-passages" [collapsed]="false" (itemClick)="closeDrawer()">
+          <sp-admin-icon name="book-open" />
+        </sp-admin-sidebar-nav-item></li>
+        <li><sp-admin-sidebar-nav-item label="Activity templates" route="/admin/activity-templates" [collapsed]="false" (itemClick)="closeDrawer()">
+          <sp-admin-icon name="list" />
+        </sp-admin-sidebar-nav-item></li>
+        <li><sp-admin-sidebar-nav-item label="Review queue" route="/admin/review-queue" [collapsed]="false" (itemClick)="closeDrawer()">
+          <sp-admin-icon name="alert-circle" />
+        </sp-admin-sidebar-nav-item></li>
+        <li><sp-admin-sidebar-nav-item label="Placement items" route="/admin/placement-items" [collapsed]="false" (itemClick)="closeDrawer()">
+          <sp-admin-icon name="filter" />
+        </sp-admin-sidebar-nav-item></li>
+        <li><sp-admin-sidebar-nav-item label="Onboarding" route="/admin/onboarding" [collapsed]="false" (itemClick)="closeDrawer()">
+          <sp-admin-icon name="send" />
+        </sp-admin-sidebar-nav-item></li>
+      </ul>
+    </div>
+    <div class="mb-2">
+      <sp-admin-sidebar-section label="Delivery" [collapsed]="false" />
+      <ul class="flex flex-col gap-1">
+        <li><sp-admin-sidebar-nav-item label="Today Delivery Health" route="/admin/lessons" [collapsed]="false" (itemClick)="closeDrawer()">
+          <sp-admin-icon name="activity" />
+        </sp-admin-sidebar-nav-item></li>
+      </ul>
+    </div>
+    <div class="mb-2">
+      <sp-admin-sidebar-section label="Learning Setup" [collapsed]="false" />
+      <ul class="flex flex-col gap-1">
+        <li><sp-admin-sidebar-nav-item label="Curriculum" route="/admin/curriculum" [collapsed]="false" (itemClick)="closeDrawer()">
+          <sp-admin-icon name="book" />
+        </sp-admin-sidebar-nav-item></li>
+        <li><sp-admin-sidebar-nav-item label="Exercise Types" route="/admin/exercise-types" [collapsed]="false" (itemClick)="closeDrawer()">
+          <sp-admin-icon name="zap" />
         </sp-admin-sidebar-nav-item></li>
       </ul>
     </div>
@@ -239,31 +252,10 @@
         </ul>
       </div>
 
-      <!-- CONTENT -->
+      <!-- CONTENT BANKS (primary bank-first content model) -->
       <div class="mb-2">
-        <sp-admin-sidebar-section label="Content" [collapsed]="collapsed()" />
+        <sp-admin-sidebar-section label="Content Banks" [collapsed]="collapsed()" />
         <ul class="flex flex-col gap-1">
-          <li><sp-admin-sidebar-nav-item label="Lessons" route="/admin/lessons" [collapsed]="collapsed()">
-            <sp-admin-icon name="book-open" />
-          </sp-admin-sidebar-nav-item></li>
-          <li><sp-admin-sidebar-nav-item label="Curriculum" route="/admin/curriculum" [collapsed]="collapsed()">
-            <sp-admin-icon name="book" />
-          </sp-admin-sidebar-nav-item></li>
-          <li><sp-admin-sidebar-nav-item label="Exercise Types" route="/admin/exercise-types" [collapsed]="collapsed()">
-            <sp-admin-icon name="zap" />
-          </sp-admin-sidebar-nav-item></li>
-          <li><sp-admin-sidebar-nav-item label="Onboarding" route="/admin/onboarding" [collapsed]="collapsed()">
-            <sp-admin-icon name="send" />
-          </sp-admin-sidebar-nav-item></li>
-          <li><sp-admin-sidebar-nav-item label="Placement items" route="/admin/placement-items" [collapsed]="collapsed()">
-            <sp-admin-icon name="filter" />
-          </sp-admin-sidebar-nav-item></li>
-          <li><sp-admin-sidebar-nav-item label="Activity templates" route="/admin/activity-templates" [collapsed]="collapsed()">
-            <sp-admin-icon name="list" />
-          </sp-admin-sidebar-nav-item></li>
-          <li><sp-admin-sidebar-nav-item label="Review queue" route="/admin/review-queue" [collapsed]="collapsed()">
-            <sp-admin-icon name="alert-circle" />
-          </sp-admin-sidebar-nav-item></li>
           <li><sp-admin-sidebar-nav-item label="Resource sources" route="/admin/resource-sources" [collapsed]="collapsed()">
             <sp-admin-icon name="database" />
           </sp-admin-sidebar-nav-item></li>
@@ -281,6 +273,44 @@
           </sp-admin-sidebar-nav-item></li>
           <li><sp-admin-sidebar-nav-item label="Reading reference bank" route="/admin/resource-banks/reading-references" [collapsed]="collapsed()">
             <sp-admin-icon name="book-open" />
+          </sp-admin-sidebar-nav-item></li>
+          <li><sp-admin-sidebar-nav-item label="Reading passage bank" route="/admin/resource-banks/reading-passages" [collapsed]="collapsed()">
+            <sp-admin-icon name="book-open" />
+          </sp-admin-sidebar-nav-item></li>
+          <li><sp-admin-sidebar-nav-item label="Activity templates" route="/admin/activity-templates" [collapsed]="collapsed()">
+            <sp-admin-icon name="list" />
+          </sp-admin-sidebar-nav-item></li>
+          <li><sp-admin-sidebar-nav-item label="Review queue" route="/admin/review-queue" [collapsed]="collapsed()">
+            <sp-admin-icon name="alert-circle" />
+          </sp-admin-sidebar-nav-item></li>
+          <li><sp-admin-sidebar-nav-item label="Placement items" route="/admin/placement-items" [collapsed]="collapsed()">
+            <sp-admin-icon name="filter" />
+          </sp-admin-sidebar-nav-item></li>
+          <li><sp-admin-sidebar-nav-item label="Onboarding" route="/admin/onboarding" [collapsed]="collapsed()">
+            <sp-admin-icon name="send" />
+          </sp-admin-sidebar-nav-item></li>
+        </ul>
+      </div>
+
+      <!-- DELIVERY (Today delivery / assignment queue — infrastructure, not content) -->
+      <div class="mb-2">
+        <sp-admin-sidebar-section label="Delivery" [collapsed]="collapsed()" />
+        <ul class="flex flex-col gap-1">
+          <li><sp-admin-sidebar-nav-item label="Today Delivery Health" route="/admin/lessons" [collapsed]="collapsed()">
+            <sp-admin-icon name="activity" />
+          </sp-admin-sidebar-nav-item></li>
+        </ul>
+      </div>
+
+      <!-- LEARNING SETUP (curriculum + capability config, not the content bank) -->
+      <div class="mb-2">
+        <sp-admin-sidebar-section label="Learning Setup" [collapsed]="collapsed()" />
+        <ul class="flex flex-col gap-1">
+          <li><sp-admin-sidebar-nav-item label="Curriculum" route="/admin/curriculum" [collapsed]="collapsed()">
+            <sp-admin-icon name="book" />
+          </sp-admin-sidebar-nav-item></li>
+          <li><sp-admin-sidebar-nav-item label="Exercise Types" route="/admin/exercise-types" [collapsed]="collapsed()">
+            <sp-admin-icon name="zap" />
           </sp-admin-sidebar-nav-item></li>
         </ul>
       </div>

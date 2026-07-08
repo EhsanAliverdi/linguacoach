@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Plan-Sync-After-G0)
+lastUpdated: 2026-07-09 (Phase G1)
 owner: architecture
 supersedes:
 supersededBy:
@@ -15,6 +15,24 @@ Cleanup) as the next implementation phase**, acting on §7/§9 below, ahead of P
 D3. G1 is labels/nav/page-structure only — it must not delete the readiness pool, remove legacy
 generation, or touch backend namespaces/entities/routes (those are G2's deferred, prove-safe-first
 scope; see §10).
+
+**Phase G1 status: DONE (2026-07-09).** The §9 safe quick wins are implemented — labels/nav/
+page-composition only, nothing deleted:
+- The "Content" nav was split into **Content Banks / Delivery / Learning Setup** (both the desktop
+  sidebar and the mobile drawer), making Resource Banks/Candidates/Templates the clear primary
+  content surface (addresses the P1 "Content overloaded" finding).
+- The missing **E7 reading-passages nav item** (`/admin/resource-banks/reading-passages`) was
+  added (addresses the P1 nav-gap finding).
+- `/admin/lessons` was **reframed in place** (route kept, no deep links broken): "Today Delivery
+  Health"; readiness/pool → delivery-queue/assignment language; manual generation reframed as AI
+  **fallback** generation; a new info banner states this is delivery infrastructure and points
+  admins to the Content Banks (addresses the P0 finding — the full **route split** remains
+  deferred to G2 per §10).
+- The student-detail readiness panel and the AI Operations card were relabeled to
+  assignment/delivery-queue language.
+`StudentActivityReadinessItem`, the pool/buffer/materialization jobs, `PracticeActivityCache`, and
+the legacy `IAiActivityGenerator` path are **all kept** — G1 removed nothing. Phase G2 (backend
+legacy cleanup) and G3 (diagnostics consolidation) remain not started.
 Related architecture: `docs/architecture/readiness-pool.md`,
 `docs/architecture/learning-activity-engine.md`,
 `docs/architecture/english-resource-bank-import-platform.md`.

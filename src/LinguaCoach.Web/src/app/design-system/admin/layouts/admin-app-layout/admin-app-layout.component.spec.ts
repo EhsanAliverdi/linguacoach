@@ -61,7 +61,10 @@ describe('AdminAppLayoutComponent (Phase 10UI-FIX-2)', () => {
     expect(text).toContain('Overview');
     expect(text).toContain('AI System');
     expect(text).toContain('Analytics');
-    expect(text).toContain('Content');
+    // Phase G1: "Content" was split into bank-first IA sections.
+    expect(text).toContain('Content Banks');
+    expect(text).toContain('Delivery');
+    expect(text).toContain('Learning Setup');
     expect(text).toContain('System');
   });
 
@@ -158,7 +161,9 @@ describe('AdminAppLayoutComponent — nav links and shell (Phase 10UI-FIX-2)', (
     const required = ['/admin', '/admin/students', '/admin/ai-config', '/admin/prompts',
       '/admin/usage', '/admin/usage-policies', '/admin/curriculum',
       '/admin/exercise-types', '/admin/notifications',
-      '/admin/integrations', '/admin/diagnostics', '/admin/security'];
+      '/admin/integrations', '/admin/diagnostics', '/admin/security',
+      // Phase G1: E7 reading-passages bank is now wired into the sidebar (was missing).
+      '/admin/resource-banks/reading-passages'];
     for (const r of required) {
       expect(routes).withContext(`route ${r} missing from desktop sidebar`).toContain(r);
     }

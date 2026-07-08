@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Plan-Sync-After-G0)
+lastUpdated: 2026-07-09 (Phase G1)
 owner: engineering
 supersedes:
 supersededBy:
@@ -14,37 +14,53 @@ Last updated: 2026-07-09
 
 ## Active sprint
 
+**Phase G1 — Admin Information Architecture Cleanup (2026-07-09)** — complete
+
+Implemented the low-risk admin-IA quick wins from the completed G0 audit — **labels/nav/
+page-composition only; nothing deleted, no route/namespace/entity renamed.** **Nav restructure**
+(both desktop sidebar and mobile drawer in `admin-app-layout.component.html`): the overloaded
+"Content" section was split into **Content Banks** (Resource sources/import-runs/candidates + the
+four Resource Banks + Activity templates + Review queue + Placement items + Onboarding — the
+primary content model), **Delivery** (the relabeled Today-delivery surface), and **Learning
+Setup** (Curriculum, Exercise Types). **Added the missing Phase E7 reading-passages nav item**
+(`/admin/resource-banks/reading-passages`) — routable since E7 but previously unreachable from
+the nav. **Reframed `/admin/lessons` in place** (route kept, no deep links broken): title
+"Lessons" → "Today Delivery Health"; subtitle/section headings/KPI labels from "readiness
+pool"/"pool health" → delivery-queue/assignment language; the manual generate-lessons card
+reframed as AI **fallback** generation; a new info banner states the page is delivery
+infrastructure (not the content model) and points admins to the Content Banks. **Terminology
+cleanup** in the student-detail readiness panel ("Readiness pool health" → "Assignment / Delivery
+Queue health") and the AI Operations card. Updated 3 spec assertions (`admin-app-layout`,
+`admin-student-detail`) to match new labels and to guard the new reading-passages nav item + IA
+sections. **`StudentActivityReadinessItem`, the pool/buffer/materialization jobs,
+`PracticeActivityCache`, and the legacy `IAiActivityGenerator` path are all kept — nothing
+deleted.**
+
+**Validation**: production `ng build` compiles with no new errors (only the pre-existing
+bundle-size-budget failure + pre-existing NG8107 warnings in untouched files). Karma could not
+run due to a pre-existing, unrelated TS error in `student/activity/presenters/test-helpers.ts`
+(a `feedbackPolicy` type mismatch) that fails the whole spec-bundle compile — pre-existing test
+debt, not fixed here per the phase's "no unrelated test debt" rule. No `.cs` changed (backend
+3,551 tests, not re-run).
+
+**Next: a Phase E8/D3 decision checkpoint now applies, not resolved by this phase** — Phase D3
+(broader Today composer migration), Phase E8 (more resource depth/search), Phase G2/G3
+(backend/diagnostics cleanup), or a docs-only plan sync. See
+`docs/architecture/bank-first-admin-backend-surface-audit.md` and `docs/roadmap/road-map.md` §19a
+for the phase order.
+
+---
+
+## Previous sprint
+
 **Plan-Sync-After-G0 — Choose G1 Admin IA Cleanup Before E8/D3 (2026-07-09)** — complete (docs-only)
 
-**Last completed: Phase G0** (`9dda2d9d`) — the read-only admin/backend surface audit, saved as
-`docs/architecture/bank-first-admin-backend-surface-audit.md`. It classified 31 admin routes, ~20
-controllers, 8 jobs + ~6 services, and 11 terminology terms (keep / rename-reframe /
-move-to-diagnostics / merge / remove-later), confirmed the readiness/delivery lifecycle is
-load-bearing (kept, reframed as "Student Activity Assignment / Delivery Queue," never deleted),
-and flagged the P0 `/admin/lessons` page and the P1 reading-passages-page-missing-from-nav gap.
-No cleanup was implemented — docs only.
-
-**Current immediate task (this docs sync): Plan-Sync-After-G0.** Resolved the post-G0 decision:
-**Phase G1 (Admin Information Architecture Cleanup) comes before Phase E8 and Phase D3.** G0's
-highest-value, lowest-risk findings are all admin-IA quick wins, and doing G1 first makes the
-bank-first model legible in the admin surface before E8 (more resource depth) or D3 (broader
-Today composer) build more on top of the current misleading AI-cache/readiness-pool framing. E7
-already deepened the resource bank with full internal reading passages and D2 already matured the
-Today bank-first hook, so neither E8 nor D3 is currently blocked by the other. Updated roadmap
-phase sequence: Phase E7 → Plan-Sync-G0 → Phase G0 → **Plan-Sync-After-G0 → Phase G1** → Phase
-E8/D3 decision checkpoint → Phase E8 or D3 → PG-v2A/B/C/D later → Phase F → Phase G2/G3 as
-appropriate. Docs-only; no app code, migrations, or config changed; does not start any
-implementation.
-
-**Next implementation phase: Phase G1** — admin information architecture cleanup acting on G0's
-low-risk quick wins: split the overloaded `/admin/lessons` page, add the missing reading-passages
-sidebar nav item, relabel readiness→delivery language, regroup the "Content" nav, reframe
-(labels/nav only) Exercise Types as an internal capability registry. **Admin IA cleanup only — not
-a visual redesign; must not delete the readiness pool, must not remove legacy generation, must not
-touch backend namespaces/entities/routes (G2's deferred scope).** **Not started.** Phase E8, Phase
-D3, Phase G2/G3, and PG-v2 implementation all remain not started. See
-`docs/architecture/bank-first-admin-backend-surface-audit.md` for the full inventory and
-`docs/roadmap/road-map.md` §19a for the phase order.
+Resolved the post-G0 decision: **Phase G1 (Admin Information Architecture Cleanup) comes before
+Phase E8 and Phase D3.** G0's highest-value/lowest-risk findings are all admin-IA quick wins, so
+making the bank-first model legible in the admin surface comes first. Updated roadmap phase
+sequence: Phase E7 → Plan-Sync-G0 → Phase G0 → Plan-Sync-After-G0 → Phase G1 → Phase E8/D3
+decision checkpoint → Phase E8 or D3 → PG-v2A/B/C/D later → Phase F → Phase G2/G3 as appropriate.
+Committed as `cd49739b`.
 
 ---
 

@@ -1,8 +1,17 @@
 <sp-admin-page-header
-  title="Lessons"
-  subtitle="Lesson buffer management, generation controls, and readiness pool health." />
+  title="Today Delivery Health"
+  subtitle="Delivery queue health, buffer settings, and fallback lesson generation for the per-student assignment lifecycle." />
 
 <sp-admin-page-body>
+
+  <!-- Context banner: this is delivery infrastructure, not the content bank -->
+  <sp-admin-alert variant="info">
+    This is <strong>delivery infrastructure</strong> — the per-student assignment/delivery queue that
+    schedules and buffers already-defined activities, plus AI <strong>fallback</strong> generation for
+    Today lessons. It is <strong>not</strong> the primary content model. Authored, reusable content lives in the
+    <strong>Content Banks</strong> — Resource Banks (vocabulary, grammar, reading references, reading passages),
+    Resource Candidates, and Activity Templates.
+  </sp-admin-alert>
 
   <!-- KPI strip -->
   <div class="sp-admin-kpi-row" aria-label="Lesson buffer summary">
@@ -34,7 +43,7 @@
       [error]="!!batchesError()"
       fallback="Unavailable" />
     <sp-admin-kpi-card
-      label="Readiness pool"
+      label="Delivery queue"
       variant="amber"
       layout="tile"
       icon="database">
@@ -42,9 +51,9 @@
     </sp-admin-kpi-card>
   </div>
 
-  <!-- Generate lessons for student -->
-  <sp-admin-card title="Generate lessons for student">
-    <p class="sp-admin-section-sub">Trigger immediate lesson generation for a specific student profile. The job is queued and processed in the background.</p>
+  <!-- Generate lessons for student (AI fallback/composition) -->
+  <sp-admin-card title="Generate lessons for student (fallback generation)">
+    <p class="sp-admin-section-sub">Trigger immediate AI fallback/composition lesson generation for a specific student profile — used when the delivery queue needs to be filled and no ready assignment exists. The job is queued and processed in the background.</p>
     <sp-admin-form-field label="Student profile ID">
       <sp-admin-input
         placeholder="Enter student profile ID"
@@ -67,21 +76,21 @@
     }
   </sp-admin-card>
 
-  <!-- Readiness pool — aggregate health -->
-  <div class="sp-admin-table-section" aria-label="Readiness pool — aggregate health">
+  <!-- Delivery queue — aggregate health -->
+  <div class="sp-admin-table-section" aria-label="Delivery queue — aggregate health">
     <div class="sp-admin-table-section-header sp-admin-table-section-header--no-divider">
-      <h2 class="sp-admin-table-section-title">Readiness pool — aggregate health</h2>
+      <h2 class="sp-admin-table-section-title">Delivery queue — aggregate health</h2>
       <sp-admin-button size="xs" appearance="ghost" variant="neutral" [disabled]="poolHealthLoading()" (clicked)="refreshPoolHealth()">
         Refresh
       </sp-admin-button>
     </div>
     @if (poolHealthLoading()) {
       <div class="sp-admin-card-body-md">
-        <sp-admin-loading-state message="Loading pool health" />
+        <sp-admin-loading-state message="Loading delivery queue health" />
       </div>
     } @else if (poolHealthError()) {
       <div class="sp-admin-card-body-md">
-        <sp-admin-error-state title="Pool health unavailable" [message]="poolHealthError()" />
+        <sp-admin-error-state title="Delivery queue health unavailable" [message]="poolHealthError()" />
       </div>
     } @else if (poolHealth()) {
       <div class="sp-admin-card-grid-3-equal">
@@ -92,11 +101,11 @@
             sublabel="have ≥1 ready item"
             [tone]="poolReadyRingPct() >= 90 ? 'green' : poolReadyRingPct() >= 60 ? 'amber' : 'danger'" />
         </sp-admin-card>
-        <sp-admin-card title="Pool status distribution">
+        <sp-admin-card title="Delivery status distribution">
           @if (poolStatusItems().length > 0) {
             <sp-admin-breakdown-bars [items]="poolStatusItems()" [showPct]="true" />
           } @else {
-            <sp-admin-visual-placeholder state="not-available" title="Pool status distribution" message="No readiness pool items yet" />
+            <sp-admin-visual-placeholder state="not-available" title="Delivery status distribution" message="No delivery queue items yet" />
           }
         </sp-admin-card>
         <sp-admin-card title="Needs attention">
@@ -109,7 +118,7 @@
       </div>
       @if (poolHealth()!.totalFailed > 0) {
         <sp-admin-alert variant="warning">
-          {{ poolHealth()!.studentsWithFailedItems }} student(s) have failed pool items. Check generation logs.
+          {{ poolHealth()!.studentsWithFailedItems }} student(s) have failed delivery queue items. Check generation logs.
         </sp-admin-alert>
       }
       <p class="sp-admin-section-sub" style="margin-top:0.5rem">
