@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase C2)
+lastUpdated: 2026-07-08 (Plan-Sync-B2)
 owner: engineering
 supersedes:
 supersededBy:
@@ -14,6 +14,34 @@ Last updated: 2026-07-08
 
 ## Active sprint
 
+**Plan-Sync-B2 — Add Activity Feedback / Repeat / Calibration phase to roadmap (2026-07-08)** — complete (docs-only)
+
+**Last completed implementation phase: Phase C2** (7 of ~28 Practice Gym pattern keys now
+template-enabled — see the "Previous sprint" entry below for detail).
+
+**Current immediate task:** this Plan-Sync-B2 docs update, inserting a new **Phase B2 — Activity
+Feedback, Repeat Policy, and Calibration Signals** into the phase sequence between Phase C2 and
+Phase C3. New doc: `docs/architecture/activity-feedback-and-calibration.md` (purpose, scope,
+admin policy off/optional/required, per-surface policy, student feedback fields, data flow,
+calibration uses, out-of-scope). Updated `docs/roadmap/road-map.md` §19a phase sequence and
+Decision Log, `docs/architecture/README.md`, and `docs/architecture/repetition-and-novelty.md`
+(new "Relationship to Phase B2" section, explicit that nothing is implemented yet). No app code,
+migrations, or config changed.
+
+**Next implementation phase: Phase B2 — Activity Feedback, Repeat Policy, and Calibration
+Signals** (not started). Phase B2 was inserted ahead of Phase C3 because explicit
+student-reported difficulty/clarity/usefulness/repeat-preference feedback should start
+accumulating before Practice Gym migration continues further.
+
+**After Phase B2: continue with Phase C3** (a third small Practice Gym batch) — **Phase C3 has
+not started.** Phase D and Phase E implementation remain not started. Today lesson generation
+remains 100% legacy `IAiActivityGenerator` freeform generation. See `docs/roadmap/road-map.md`
+§19a for the full phase order.
+
+---
+
+## Previous sprint
+
 **Phase C2 — Expand Practice Gym bank-first template coverage to the next safe batch (2026-07-08)** — complete
 
 Extended the bank-first Form.io template path from 4 to 7 total pattern keys, adding
@@ -26,11 +54,7 @@ reusing existing `ComponentAnswerScorer` kinds (`single_choice`, `multiple_choic
 Listening patterns and `ReorderParagraphs` were evaluated and deliberately excluded (see
 `docs/architecture/practice-gym.md`). ~21 of ~28 Practice Gym patterns and all Today lessons
 remain untouched legacy generation. Full design: `docs/architecture/practice-gym.md`
-("Bank-first pattern coverage" section).
-
-**Phase D and Phase E implementation remain not started.** Today lesson generation remains 100%
-legacy `IAiActivityGenerator` freeform generation. See `docs/roadmap/road-map.md` §19a for the
-full phase order — Phase C3 (a third small batch) is the recommended next Practice Gym increment.
+("Bank-first pattern coverage" section). Committed as `c84279a0`.
 
 ---
 

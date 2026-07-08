@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase C2)
+lastUpdated: 2026-07-08 (Plan-Sync-B2)
 owner: architecture
 supersedes:
 supersededBy:
@@ -107,16 +107,24 @@ Key facts about where this stands today (2026-07-08):
   support — UI chrome, onboarding language-pair selection, support-language hints/translation
   help — never seeded as learning content.
 
-Current state (as of 2026-07-08, Phase C2): **Phase C1 and Phase C2 both done** — generalized
+Current state (as of 2026-07-08, Plan-Sync-B2): **Phase C1 and Phase C2 both done** — generalized
 the Form.io template path from 1 pilot pattern to 7 total (C1's `phrase_match`,
 `gap_fill_workplace_phrase`, `reading_multiple_choice_single`; C2's
 `reading_multiple_choice_multi`, `reading_fill_in_blanks`, `reading_writing_fill_in_blanks`); see
-docs/architecture/practice-gym.md. Phase C continues as a **sequence** — C3 → C4 → C-Final —
-rather than one large migration phase. Phase E is planned as the resource-import platform above
-(E0-E8). Phase D (bank-first Today lesson composer) is sequenced to start only after Phase C
-reaches C-Final and Phase E reaches at least E4 (first published banks) — see
-`docs/roadmap/road-map.md` §19a for the full phase order. Neither Phase D nor Phase E
-implementation has started.
+docs/architecture/practice-gym.md. A new **Phase B2 — Activity Feedback, Repeat Policy, and
+Calibration Signals** has been planned (not started) and inserted into the sequence directly
+after Phase C2 and before Phase C3 — see
+docs/architecture/activity-feedback-and-calibration.md. It adds explicit student-reported
+difficulty/clarity/usefulness/repeat-preference feedback across both Today and Practice Gym,
+distinct from Phase B's deterministic usage-log/cooldown tracking, to feed CEFR calibration,
+difficulty-band calibration, `ActivityTemplate`/resource quality, AI-generation quality,
+novelty/cooldown tuning, and admin review triggers. Phase C continues as a **sequence** —
+C3 → C4 → C-Final — rather than one large migration phase, now gated behind Phase B2 in the
+recommended order. Phase E is planned as the resource-import platform above (E0-E8). Phase D
+(bank-first Today lesson composer) is sequenced to start only after Phase C reaches C-Final and
+Phase E reaches at least E4 (first published banks) — see `docs/roadmap/road-map.md` §19a for the
+full phase order. **Phase B2 implementation, Phase C3, Phase D, and Phase E implementation have
+all not started.**
 
 ---
 
@@ -140,6 +148,7 @@ implementation has started.
 | [cefr-resource-licensing-review.md](cefr-resource-licensing-review.md) | CEFR Resource Bank schema (`CefrResourceSource`/`CefrDescriptor`/`CefrVocabularyEntry`/`CefrGrammarProfileEntry`/`CefrReadingReference`, added 2026-07-07, no data imported yet); licensing gate for CEFR-J/UniversalCEFR import |
 | [formio-onboarding-placement-model.md](formio-onboarding-placement-model.md) | Form.io-native onboarding (`StudentFlowTemplate`/`Version`/`Submission`) and placement (`PlacementItemDefinition` with `FormIoSchemaJson`/`ScoringRulesJson`, backend-only scoring); the strongest current bank-first example |
 | [repetition-and-novelty.md](repetition-and-novelty.md) | `StudentActivityUsageLog`; `IActivityContentFingerprintService`/`IActivityNoveltyPolicy`; deterministic/exact-match cooldown foundation (Phase B, 2026-07-08) — not embeddings/semantic near-duplicate detection |
+| [activity-feedback-and-calibration.md](activity-feedback-and-calibration.md) | Planned (Phase B2, not started): explicit student-reported difficulty/clarity/usefulness/repeat-preference feedback; admin per-surface feedback policy (off/optional/required); data flow into CEFR/difficulty-band/template/resource/AI-quality calibration and admin review triggers |
 | [english-resource-bank-import-platform.md](english-resource-bank-import-platform.md) | Phase E plan (E0-E8): source registry → import → candidate analysis → validation → admin preview → review → publish pipeline for English-only resource banks. Planning only, not started |
 
 ### Planned / Deferred (not implemented yet)
@@ -229,7 +238,8 @@ Archived
 | Clean-A / Clean-A2 dead-code cleanup | ✅ Done (2026-07-08) — removed dead onboarding enums, an orphaned onboarding component, dead route aliases, and a fully-orphaned admin career/word authoring API/UI chain; see `docs/reviews/2026-07-08-bank-first-ai-teaching-clean-architecture-plan.md` |
 | Session reflection | ⬜ Deferred — needs AI prompt `session_reflection` and stable session completion signal |
 | Bank-first Today lesson composer | ⬜ Deferred — planned Phase D1, sequenced after Phase C-Final and Phase E4; not started |
-| Generalize Form.io template path across the rest of Practice Gym | 🟡 In progress — Phase C1 (batch of 3) and Phase C2 (batch of 3 more) done 2026-07-08, 7 of ~28 keys template-enabled; Phase C3/C4/C-Final (small batches, complex speaking/listening/writing patterns deferred until renderer/evaluator support is ready) not started |
+| Generalize Form.io template path across the rest of Practice Gym | 🟡 In progress — Phase C1 (batch of 3) and Phase C2 (batch of 3 more) done 2026-07-08, 7 of ~28 keys template-enabled; Phase C3/C4/C-Final (small batches, complex speaking/listening/writing patterns deferred until renderer/evaluator support is ready) not started; Phase B2 (feedback/calibration) now sequenced ahead of C3 |
+| Activity Feedback, Repeat Policy, and Calibration Signals (Phase B2) | ⬜ Planned only (2026-07-08, Plan-Sync-B2) — see docs/architecture/activity-feedback-and-calibration.md. Cross-surface (Today + Practice Gym); distinct from Phase B's deterministic usage-log/cooldown tracking. Not started |
 | English Resource Bank Import/Review/Preview/Publishing Platform (Phase E0-E8) | ⬜ Planned only (2026-07-08, Plan-Sync-After-C1) — see docs/architecture/english-resource-bank-import-platform.md. English-only; no Persian/bilingual seed data at any phase. Not started |
 | IFileStorageService / MinIO | ✅ Done — audio (TTS + speaking uploads) fully on object storage; not blocking deployment at current scale |
 | Admin lifecycle reset tools | ✅ Done |
