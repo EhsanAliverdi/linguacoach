@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase E5)
+lastUpdated: 2026-07-08 (Plan-Sync-E6-Decision)
 owner: architecture
 supersedes:
 supersededBy:
@@ -10,14 +10,18 @@ supersededBy:
 
 **Date planned:** 2026-07-08 (Plan-Sync-After-C1), **finalized:** 2026-07-08 (Phase E0),
 **E1 implemented:** 2026-07-08, **E2 implemented:** 2026-07-08, **E3 implemented:** 2026-07-08,
-**E4 implemented:** 2026-07-08, **Plan-Sync-After-E4:** 2026-07-08, **E5 implemented:** 2026-07-08
+**E4 implemented:** 2026-07-08, **Plan-Sync-After-E4:** 2026-07-08, **E5 implemented:** 2026-07-08,
+**Plan-Sync-E6-Decision:** 2026-07-08
 **Status:** E1 (staging), E2 (AI analysis + validation gates 4-6), E3 (admin rendered preview),
-E4 (publish to first banks), and **E5 (published-bank browsing/search/admin management)** are all
+E4 (publish to first banks), and E5 (published-bank browsing/search/admin management) are all
 implemented. The published banks (vocabulary, grammar, short reading references) can now be
 browsed, filtered, and searched by an admin, with reverse traceability back to the originating
-`ResourceCandidate`/import run/source where available. **A product decision checkpoint follows**:
-start Phase D1 (Today bank-first composer) using the current bank surface, or continue Phase E6
-(reading/listening resource depth) first — not resolved by this phase, see the Decision Log.
+`ResourceCandidate`/import run/source where available. **The Phase D1 decision checkpoint has
+been resolved (Plan-Sync-E6-Decision, 2026-07-08): continue with Phase E6 before Phase D1** —
+bank *visibility* now exists, but real English content *depth* does not; the banks still hold
+only small synthetic/test data, not enough for Today's composer to produce anything useful.
+**Phase E6 (deepen real English resource/content support) is the next recommended implementation
+phase.** Phase D1 remains deferred until after E6, or a later explicit product decision.
 **Some rows have now been published — but only `VocabularyEntry`/`GrammarProfileEntry`/short-
 excerpt `ReadingPassage` candidates that passed validation AND were explicitly admin-approved.**
 `ActivityTemplateCandidate` publishing is **deferred** (see "E4 — Publish to first banks" below
@@ -218,7 +222,7 @@ enabling approval) and E4 (approve/reject + publish action).
 | **E3** | Admin rendered preview | Gate 7a prerequisite — dedicated read-only rendered view per candidate, required before approval is enabled. |
 | **E4** ✅ done 2026-07-08 | Publish to first banks | Approve/reject + publish action — promotes an approved, validation-passed candidate into `CefrVocabularyEntry`/`CefrGrammarProfileEntry`/short-excerpt `CefrReadingReference`. `ActivityTemplateCandidate` publishing deferred. |
 | **E5** ✅ done 2026-07-08 | Published bank browsing/search/admin management | Admin search/browse over the first published banks (vocabulary, grammar, short reading references) — filter by CEFR level/source/search text, surfacing source/license/provenance, published status, and candidate traceability (reverse-lookup back to the `ResourceCandidate` it came from). Read-only — no edit/delete actions; all mutation still happens through Resource Candidates. Not a full analytics dashboard; not yet `ActivityTemplate`/AI-generation-time consumption (that's a later integration once Phase D exists). No external dataset import, no embeddings/semantic search. |
-| **E6** | Reading/listening resources | Extend the pipeline to `CefrReadingReference`-shaped content (passages) — same pipeline, new candidate/validation rules for longer-form text. A first listening-script bank (new typed entity) may also land here once audio-adjacent metadata handling is designed. |
+| **E6** — next recommended phase (Plan-Sync-E6-Decision, 2026-07-08) | Reading/listening resources — deepen real English content | Extend the pipeline to `CefrReadingReference`-shaped content (passages) — same pipeline, new candidate/validation rules for longer-form text. A first listening-script bank (new typed entity) may also land here once audio-adjacent metadata handling is designed. **Explicitly chosen before Phase D1** — Phase E5 built the browsing/search surface but the banks still lack real English content depth for Today's composer to use. **Must preserve the English-only rule; no Persian/bilingual/support-language seed content at any point.** |
 | **E7** | Bigger import support | Background/queued import jobs (Quartz) for larger sources, ZIP archive support, audio-file-carrying sources (Common Voice, LibriVox) — deferred until E1-E6 prove the pipeline on simpler text sources first. |
 | **E8** | RAG/search enrichment | Embedding/vector-search-based candidate deduplication and semantic bank search — explicitly deferred past all of E0-E7; no pgvector, no embeddings before this phase, consistent with Phase B's repetition/novelty foundation scope discipline. |
 
@@ -547,13 +551,15 @@ give Phase D real bank content to compose from — not before. Phase D1's origin
 **Plan-Sync-After-E4 (2026-07-08) revised the near-term sequence: Phase E5 came before Phase D1**,
 not after it, since a handful of small, synthetic/test-only published rows with no browsing/
 search/admin-management surface didn't meet the gate's actual intent ("Phase D has real, usable
-bank content to compose from"). **Phase E5 (2026-07-08) has now closed that gap** — the published
-banks can be browsed, filtered, and searched, with traceability back to their source candidates.
-**A decision checkpoint now applies**: start Phase D1 using the current bank surface (still small
-and synthetic — no external dataset has been imported yet), or continue Phase E6 (reading/
-listening resource depth, more real content volume) first. This document does not resolve that
-choice — see `docs/roadmap/road-map.md` Decision Log (2026-07-08, Plan-Sync-After-C1,
-Plan-Sync-After-E4, and Phase E5 entries) for the full reasoning and current preferred phase
+bank content to compose from"). **Phase E5 (2026-07-08) closed the visibility gap** — the
+published banks can be browsed, filtered, and searched, with traceability back to their source
+candidates — but **did not** close the content-depth gap. **Plan-Sync-E6-Decision (2026-07-08)
+resolved that follow-on decision checkpoint: continue with Phase E6 before Phase D1.** The banks
+still hold only small synthetic/test data — not enough real English content depth for Today's
+composer to produce anything useful. **Phase D1 now remains deferred until after Phase E6, or
+until a later explicit product decision** (a second decision checkpoint follows E6). See
+`docs/roadmap/road-map.md` Decision Log (2026-07-08, Plan-Sync-After-C1, Plan-Sync-After-E4,
+Phase E5, and Plan-Sync-E6-Decision entries) for the full reasoning and current preferred phase
 order.
 
 ---
@@ -590,6 +596,11 @@ order.
   design and invariant documented, "Relationship to Phase D" section updated with the E5-closed-
   the-gap status and the live decision checkpoint); `docs/roadmap/road-map.md`,
   `docs/sprints/current-sprint.md`, `docs/architecture/README.md`.
+- Docs updated (Plan-Sync-E6-Decision, this section, docs-only): this file (E6 phase-breakdown
+  row and "Relationship to Phase D" section updated to reflect the resolved decision checkpoint —
+  E6 next, D1 deferred until after E6 or a later decision); `docs/roadmap/road-map.md` (§19a
+  phase sequence, Decision Log), `docs/sprints/current-sprint.md`, `docs/architecture/README.md`,
+  `docs/backlog/product-backlog.md`.
 - Docs intentionally not updated: `docs/architecture/cefr-resource-licensing-review.md` — its
   licensing findings are unchanged by this phase; no new sources were browsed or licensing
   conclusions revisited in E0. `docs/architecture/practice-gym.md`/`repetition-and-novelty.md` —

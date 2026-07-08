@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase E5)
+lastUpdated: 2026-07-08 (Plan-Sync-E6-Decision)
 owner: product
 supersedes:
 supersededBy:
@@ -21,10 +21,13 @@ into `CefrVocabularyEntry`/`CefrGrammarProfileEntry`/short-excerpt `CefrReadingR
 candidate-type publish targets were evaluated and deliberately deferred rather than forced
 through with a lossy or dishonest shortcut — tracked here as future backlog items. **Published-
 bank browsing/search/admin management for the banks E4 can already publish into is done as of
-Phase E5** (2026-07-08, `ResourceBankQueryService`, read-only, reverse candidate traceability) —
-sequenced ahead of Phase D1 despite D1's technical gate being met. Real source import (real
-external datasets, licensing-approved) remains a later, separately-scoped step — not part of E5
-or E6 unless explicitly re-scoped.
+Phase E5** (2026-07-08, `ResourceBankQueryService`, read-only, reverse candidate traceability).
+**Plan-Sync-E6-Decision (2026-07-08) chose Phase E6 (deepen real English resource/content
+support) as the next implementation phase, ahead of Phase D1** — bank visibility now exists
+(E5), but real English content depth does not; Phase D1 remains deferred until after E6 or a
+later explicit product decision. Real source import (real external datasets, licensing-approved)
+remains a later, separately-scoped step within E6 or beyond — not automatically in scope just
+because E6 was chosen next, unless explicitly re-scoped when E6 actually starts.
 
 - [ ] **`ActivityTemplateCandidate` → `ActivityTemplate` publishing** `Not started`
   - **Purpose**: allow an imported/staged Form.io-shaped candidate to become a real, usable

@@ -1,18 +1,18 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase E5)
+lastUpdated: 2026-07-08 (Plan-Sync-E6-Decision)
 owner: product / engineering
 ---
 
 # SpeakPath / LinguaCoach Roadmap
 
-**Accurate as of: 2026-07-08 (Phase E5 — see §19a for the current phase sequence).
+**Accurate as of: 2026-07-08 (Plan-Sync-E6-Decision — see §19a for the current phase sequence).
 The 2026-07-03 "Phase 20H" line below is the last entry confirmed live against speakpath.app;
 everything since then (Clean-A/A2, Phase B, Phase C1, Plan-Sync-After-C1, Phase C2, Plan-Sync-B2,
 Phase B2, Phase C3, Phase C-Final, Phase E0, Plan-Sync-PG-v2, Phase E1, Phase E2, Phase E3,
-Phase E4, Plan-Sync-After-E4, Phase E5) has been developed and tested locally but not yet
-deployed — see the "Current Project Status" and Decision Log sections below for what's actually
-landed.**
+Phase E4, Plan-Sync-After-E4, Phase E5, Plan-Sync-E6-Decision) has been developed and tested
+locally but not yet deployed — see the "Current Project Status" and Decision Log sections below
+for what's actually landed.**
 
 This is the canonical project memory document. It captures completed work, current state, known gaps, deferred items, and the recommended order of future phases.
 
@@ -24,28 +24,32 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest phase completed (local, not yet deployed):** Phase E5 — Published Bank Browsing, Search,
-and Admin Management (2026-07-08). Added `ResourceBankQueryService` — list + detail queries for
-`CefrVocabularyEntry`/`CefrGrammarProfileEntry`/`CefrReadingReference` (search text, CEFR level,
-source id filters; pagination capped at 200; sort newest-first by `CreatedAt`, since none of the
-three entities has its own "published at" field — documented, not a gap). **Key design finding**:
-none of the three published bank entities carries a forward reference to the `ResourceCandidate`
-that produced it — traceability is a **reverse lookup** matching
-`ResourceCandidate.PublishedEntityType`/`PublishedEntityId` against the bank row being viewed,
-never throwing when no match exists (returns an explicit "unavailable" result instead — no new
-columns were needed on the bank entities). A dedicated test confirms the pre-existing invariant
-that nothing unpublished/rejected can ever appear in a bank-browse list, since these tables are
-only ever written to by E4's publish service. New admin API (`GET /api/admin/resource-banks/
-{vocabulary,grammar,reading-references}` list + detail) and 3 new read-only admin pages (search/
-CEFR/source filters, paginated table, detail drawer with source/license/provenance/traceability,
-empty/loading/error states) — **no edit or delete actions**, mutation remains exclusively on
-Resource Candidates. +31 backend tests. Full detail:
-`docs/architecture/english-resource-bank-import-platform.md`. **A decision checkpoint now
-applies**: start Phase D1 using the current (still small, synthetic) bank surface, or continue
-Phase E6 (reading/listening depth, more real content volume) first — **not resolved by this
-phase**; see the Decision Log. **Phase D and PG-v2 implementation remain not started.**
+**Latest phase completed (local, not yet deployed):** Plan-Sync-E6-Decision — Choose E6 before
+Today composer (2026-07-08, this commit, **docs-only — no app code, migrations, or config
+changed**). Resolved the Phase D1 decision checkpoint opened by Phase E5: **continue with Phase
+E6 before Phase D1.** Phase E5 built the published-bank browsing/search/admin-management
+surface, but the banks themselves still hold only small synthetic/test data — not enough real
+English content depth for Today's bank-first composer to produce useful lessons from. **Phase
+E6** (deepen real English resource/content support — reading/listening resources per the
+original E0-E8 plan, still English-only, still no Persian/bilingual/support-language seed
+content, still no direct import-to-final-table bypass) is now the next recommended
+implementation phase. **Phase D1 remains deferred until after Phase E6, or until a later
+explicit product decision** — a second Phase D1 decision checkpoint follows E6, not resolved in
+advance. Full detail: `docs/architecture/english-resource-bank-import-platform.md`. **Phase E6,
+Phase D, and PG-v2 implementation all remain not started.**
 
-**Latest phase completed before this:** Plan-Sync-After-E4 — Move E5 before D1 (2026-07-08,
+**Latest phase completed before this:** Phase E5 — Published Bank Browsing, Search, and Admin
+Management (2026-07-08, `394bb4ff`). Added `ResourceBankQueryService` — list + detail queries
+for `CefrVocabularyEntry`/`CefrGrammarProfileEntry`/`CefrReadingReference` (search text, CEFR
+level, source id filters; pagination capped at 200; sort newest-first by `CreatedAt`). **Key
+design finding**: none of the three published bank entities carries a forward reference to the
+`ResourceCandidate` that produced it — traceability is a **reverse lookup** matching
+`ResourceCandidate.PublishedEntityType`/`PublishedEntityId` against the bank row being viewed,
+never throwing when no match exists. New admin API and 3 new read-only admin pages — **no edit
+or delete actions**, mutation remains exclusively on Resource Candidates. +31 backend tests. Full
+detail: `docs/architecture/english-resource-bank-import-platform.md`.
+
+**Before that:** Plan-Sync-After-E4 — Move E5 before D1 (2026-07-08,
 `4849875d`, docs-only). Although Phase D1's "E0-E4 before D1" technical gate was met, decided to
 sequence Phase E5 before Phase D1 since the published banks held only small synthetic/test data
 with no browsing/search/admin-management surface. Full detail:
@@ -155,7 +159,7 @@ unmodified throughout.
 
 **Branch:** main
 
-**Test totals (as of Phase E5, 2026-07-08, local only):**
+**Test totals (as of Plan-Sync-E6-Decision, 2026-07-08, local only — unchanged from Phase E5 since this phase is docs-only):**
 - Backend: 3,486 passed (5 architecture + 2,019 unit + 1,462 integration), 0 failed — net +31 vs Phase E4 (3,455): new `ResourceBankQueryServiceTests` and `AdminResourceBankEndpointTests` (list/filter/pagination/detail-traceability for all 3 bank types, unpublished-candidate-never-appears invariant, no-matching-candidate detail case, admin-only auth).
 - Angular unit (Karma): not run this phase — same judgment call as E1-E4, no dedicated Angular test suite exists for the resource-import admin pages to extend cheaply; baseline unchanged at 120 pre-existing failures.
 - Angular production build (`ng build --configuration production`): still fails on the pre-existing `initial` bundle-size budget (1.56MB over the 1MB threshold) — confirmed not a new regression, no new TypeScript/template compile errors from the E5 bank-browsing pages.
@@ -951,10 +955,11 @@ These are planning estimates, not exact metrics. Provided to guide sequencing de
 | 2026-07-08 | **Phase E4 implemented — publish to first banks**: new `ResourceCandidate.Approve(notes?)`/`.Reject(reason)` and `ResourceCandidatePublishService`, which re-checks every gate live at publish time (English-only, source approval, `AllowsStudentDisplay`/`AllowsCommercialUse` — hard-blocked here unlike E2's warn-only validation pass, `ValidationStatus == Passed`, `ReviewStatus == Approved`) and is idempotent (repeat publish returns the existing reference, never a duplicate row). `VocabularyEntry`→`CefrVocabularyEntry` and `GrammarProfileEntry`→`CefrGrammarProfileEntry` fully supported; `ReadingPassage`→`CefrReadingReference` supported only for staged text ≤500 characters (`CefrReadingReference`'s own doc comment: "only a short excerpt/citation, not a full copyrighted text"); `ActivityTemplateCandidate` publishing deferred entirely (`ActivityTemplate` needs a stable Key, valid Skill/Subskill, and real hand-authored `GenerationInstructions` a staged row was never designed to carry). New approve/reject/publish admin endpoints; admin UI gained Approve/Reject/Publish actions with clear disabled-reason messaging and a published-state indicator. +16 backend tests | Rejected two shortcuts that would have "worked" but been dishonest: silently truncating a full reading passage into `CefrReadingReference.ReferenceExcerpt` (lossy, misrepresents what was published), and inventing placeholder `GenerationInstructions` text to force an `ActivityTemplate` through (would publish a "template" that looks authored but wasn't). Both candidate types are cleanly blocked with explanatory errors instead, left for a future phase once a real staging shape exists. The `AllowsStudentDisplay`/`AllowsCommercialUse` hard-block (vs. E2's warn-only treatment) reflects that publish is the actual step moving content to a live, paying-student-facing table — by that point a missing permission is no longer just a note for a human, it's a real blocker. No "preview must be viewed before approve" tracking was built (E3 never added a preview-viewed flag) — documented as a known limitation, not silently dropped |
 | 2026-07-08 | **Plan-Sync-After-E4**: decided to sequence **Phase E5 before Phase D1**, even though Phase D1's "E0-E4 before D1" technical gate is now met. E4 completed the first controlled publishing pipeline, but the published banks currently hold only small synthetic/test data with no browsing/search/admin-management surface — starting Today's bank-first composer now would have essentially nothing real to compose from. Phase E5 (published-bank browsing/search for the first supported banks: vocabulary, grammar, short reading references — surfacing source/license/provenance, CEFR, tags, quality, published status, and candidate traceability) is the next implementation phase. **After E5, a product decision checkpoint follows**: either start Phase D1 using whatever published banks exist by then, or continue Phase E6 (reading/listening resource depth) first — this doc does not resolve that choice now, it only sequences E5 ahead of both. Docs-only; no app code, migrations, or config changed; does not start E5 implementation, Phase D, or PG-v2 | A technical gate being met ("Phase E reached E4") is not the same as the gate's underlying intent being satisfied ("Phase D has real bank content to compose from"). The intent was always "enough of the resource-bank platform exists to give Phase D real bank content" (per the original Plan-Sync-After-C1 rationale) — a handful of synthetic/test rows with no way for an admin (or eventually Today's composer) to browse, search, or assess quality/coverage does not meet that bar, even though the E0-E4 pipeline itself is complete and correct |
 | 2026-07-08 | **Phase E5 implemented — published bank browsing/search/admin management**: `ResourceBankQueryService` — list + detail queries for all 3 published bank types, filters (search text, CEFR level, source id), pagination capped at 200, sort newest-first by `CreatedAt` (documented fallback — none of the 3 entities has its own "published at" field). **Key finding**: no published bank entity carries a forward reference to its originating `ResourceCandidate` — traceability is implemented as a **reverse lookup** (`ResourceCandidate.PublishedEntityType`/`PublishedEntityId` matched against the bank row), returning an explicit "unavailable" result rather than throwing when no match exists; no new columns were added to any bank entity. A dedicated test confirms the pre-existing invariant that unpublished/rejected candidates can never appear in a bank-browse list. New `GET /api/admin/resource-banks/{vocabulary,grammar,reading-references}` list+detail endpoints; 3 new read-only admin pages (search/CEFR/source filters, paginated table, detail drawer with source/license/provenance/traceability) — **no edit or delete actions**, all mutation remains on Resource Candidates. +31 backend tests | The "no forward reference" finding confirms E0's original hybrid-entity decision was sound — a reverse query against `ResourceCandidate` is sufficient for E5's read-only browsing needs, so no schema change was needed on the already-live `Cefr*` tables just to support browsing. Keeping E5 strictly read-only (no edit/delete) was a deliberate scope discipline choice, not an oversight — Resource Candidates remains the single place mutation happens, avoiding two parallel edit surfaces for the same underlying data |
+| 2026-07-08 | **Plan-Sync-E6-Decision**: resolved the Phase D1 decision checkpoint (opened by Phase E5) — **continue with Phase E6 before Phase D1**. Phase E5 built the published-bank browsing/search/admin-management surface, but the banks themselves still hold only small synthetic/test data — not enough real English content depth for Today's bank-first composer to produce useful lessons from. Phase E6 (deepen real English resource/content support — reading/listening resources per the original E0-E8 plan, still English-only, still no Persian/bilingual/support-language seed content, still no direct import-to-final-table bypass) is now the next recommended implementation phase. **Phase D1 remains deferred until after Phase E6, or until a later explicit product decision.** Docs-only; no app code, migrations, or config changed; does not start E6 implementation, Phase D, or PG-v2 | The Phase D1 decision checkpoint exists precisely to force this kind of explicit choice rather than let a technical gate ("the pipeline exists") silently stand in for a product judgment ("the pipeline has produced something worth composing from"). Phase E5 closed the *visibility* gap (an admin can now see what's published) but did not — and was never scoped to — close the *content depth* gap. Choosing E6 next keeps the same discipline the project has followed throughout Phase E: don't start the next consumer (Phase D) until the producer side (Phase E) has given it something real to consume |
 
 ---
 
-## 19a. Phase Sequence (as of 2026-07-08, Phase E5)
+## 19a. Phase Sequence (as of 2026-07-08, Plan-Sync-E6-Decision)
 
 Preferred order, each phase gated on the previous one's completion review:
 
@@ -971,24 +976,27 @@ Preferred order, each phase gated on the previous one's completion review:
 11. ~~**Phase E4**~~ — done (2026-07-08): publish to first banks — `ResourceCandidatePublishService`, live gate re-checks, idempotent. `VocabularyEntry`/`GrammarProfileEntry` fully supported; short-excerpt `ReadingPassage` supported; `ActivityTemplateCandidate` publishing deferred (see Decision Log). **Some rows are now published** — vocabulary and grammar banks are no longer necessarily empty, though still likely small/sparse pending real source import (still no external dataset imported). See `docs/architecture/english-resource-bank-import-platform.md`.
 12. ~~**Plan-Sync-After-E4**~~ — done (2026-07-08, docs-only): decided **Phase E5 comes before Phase D1**, even though D1's technical "E0-E4" gate is now met — the published banks are still too thin (small synthetic/test data, no browsing/search/admin-management surface) for Today's composer to have anything real to work with. See the Decision Log entry above for the full reasoning.
 13. ~~**Phase E5**~~ — done (2026-07-08): published bank browsing/search/admin management — `ResourceBankQueryService` (list/detail, search/CEFR/source filters, reverse-lookup candidate traceability, no forward reference needed on the bank entities themselves), read-only admin pages for vocabulary/grammar/reading-references, no edit/delete actions. See `docs/architecture/english-resource-bank-import-platform.md`.
-14. **Phase D1 decision checkpoint** — **now reached**: an explicit product decision — start Phase D1 (bank-first Today lesson composer, first slice) using the current (still small, synthetic) published banks, or continue Phase E6 (reading/listening resource depth, more real content volume) first. Not a phase itself — this checkpoint is **not resolved by this phase**; the decision remains open for a future phase to make.
-15. **Phase E6-E8** — reading/listening resources, larger import support, RAG/search enrichment — proceed depending on the Phase D1 decision checkpoint's outcome. Not started.
-16. **Phase PG-v2A** — backend skill/objective-first Practice Gym selector (planned, not started; see `docs/backlog/product-backlog.md`). Sequenced after Phase E5-E8, not immediately after C-Final — a good skill-first selector needs enough published bank/resource content and search/selector coverage to have real options to choose from.
-17. **Phase PG-v2B** — student Practice Gym UI simplified around skills, weak areas, review, challenge, recommended practice (planned, not started).
-18. **Phase PG-v2C** — admin capability-registry cleanup / internal pattern management, reframing `ExerciseTypeDefinition`/`ExercisePatternDefinition` as internal capability config rather than the student-facing model (planned, not started; these entities are **not deleted** at any point in this sequence).
-19. **Phase PG-v2D** — legacy type-driven Practice Gym path retirement, **only after the skill-first selector (PG-v2A/B) is proven** — not a forced cutover (planned, not started).
-20. **Phase F** — legacy freeform-generation retirement, **per-pattern only, destructive only after each pattern's replacement is proven** — not a bulk deletion, and not started until Phase C-Final (done) and Phase D have each individually proven their replacement paths. Not started.
-21. **Phase G** — admin bank/content navigation cleanup (consolidate the "Content" vs "AI System" nav split flagged in the 2026-07-08 clean-architecture plan) — deferred until enough new bank-first admin pages exist (Phase C-Final done + Phase E's admin pages, now started) to make a single consolidated redesign worthwhile rather than premature. Not started.
+14. ~~**Phase D1 decision checkpoint**~~ — **resolved (2026-07-08, Plan-Sync-E6-Decision)**: continue with **Phase E6 before Phase D1**. The published-bank browsing/search surface exists (E5), but real English content depth is still too thin (small synthetic/test data only) for Today's composer to produce anything useful. See the Decision Log entry above.
+15. **Phase E6** — deepen real English resource/content support (reading/listening resources, per the original E0-E8 plan) — still English-only, no Persian/bilingual/support-language seed content, no direct import-to-final-table bypass. **Not started — this is the next recommended phase.**
+16. **Phase D1 decision checkpoint (second instance)** — after Phase E6, another explicit product decision: start Phase D1 using the deepened bank content, or continue further with Phase E7/E8 (larger import support, RAG/search enrichment) first. Not reached yet.
+17. **Phase E7-E8** — larger import support, RAG/search enrichment — proceed depending on the second Phase D1 decision checkpoint's outcome. Not started.
+18. **Phase PG-v2A** — backend skill/objective-first Practice Gym selector (planned, not started; see `docs/backlog/product-backlog.md`). Sequenced after Phase E5-E8, not immediately after C-Final — a good skill-first selector needs enough published bank/resource content and search/selector coverage to have real options to choose from.
+19. **Phase PG-v2B** — student Practice Gym UI simplified around skills, weak areas, review, challenge, recommended practice (planned, not started).
+20. **Phase PG-v2C** — admin capability-registry cleanup / internal pattern management, reframing `ExerciseTypeDefinition`/`ExercisePatternDefinition` as internal capability config rather than the student-facing model (planned, not started; these entities are **not deleted** at any point in this sequence).
+21. **Phase PG-v2D** — legacy type-driven Practice Gym path retirement, **only after the skill-first selector (PG-v2A/B) is proven** — not a forced cutover (planned, not started).
+22. **Phase F** — legacy freeform-generation retirement, **per-pattern only, destructive only after each pattern's replacement is proven** — not a bulk deletion, and not started until Phase C-Final (done) and Phase D have each individually proven their replacement paths. Not started.
+23. **Phase G** — admin bank/content navigation cleanup (consolidate the "Content" vs "AI System" nav split flagged in the 2026-07-08 clean-architecture plan) — deferred until enough new bank-first admin pages exist (Phase C-Final done + Phase E's admin pages, now started) to make a single consolidated redesign worthwhile rather than premature. Not started.
 
 **Phase E has now reached E5 — both the original "E0-E4 before D1" gate and the
 Plan-Sync-After-E4 "E5 closes the browsing/search gap" gate are met.** The published banks (still
 small and synthetic — no external dataset has been imported yet, that step is still ahead, gated
 on real licensing approval per `docs/architecture/cefr-resource-licensing-review.md`) can now be
 browsed, filtered, searched, and traced back to their source candidates by an admin. **The Phase
-D1 decision checkpoint (item 14 above) is now the live open question**: start Phase D1 with the
-current bank surface, or continue Phase E6 (reading/listening depth, more real content volume)
-first. This roadmap does not resolve that choice — it is a genuine product decision for whoever
-picks up the next phase.
+D1 decision checkpoint has now been resolved (Plan-Sync-E6-Decision, 2026-07-08): continue with
+Phase E6 before Phase D1.** Bank *visibility* now exists (E5), but real English content *depth*
+does not — the banks still hold only small synthetic/test data, not enough for Today's composer
+to produce anything useful. **Phase E6 is the next recommended implementation phase.** A second
+Phase D1 decision checkpoint follows after E6 (item 16 above), not resolved in advance.
 
 **Practice Gym v2 (PG-v2A-D) is planned, not started**, and is sequenced deliberately late — after
 Phase E5-E8, before Phase F/G — because a skill/objective-first selector needs mature bank/resource
@@ -1021,10 +1029,13 @@ from small synthetic/test staged data only, not real external content).
 technical gate now being met, since the published banks were still too thin for Today's composer
 to use).
 **Phase E5 is complete** (published-bank browsing/search/admin management — read-only, reverse
-candidate traceability, no edit/delete — see `docs/architecture/english-resource-bank-import-platform.md`).
-**The Phase D1 decision checkpoint is now live and unresolved: start Phase D1 or continue Phase
-E6 first.** **Phase D implementation has not started** — explicitly deferred pending that
-decision; PG-v2 implementation also remains not started.
+candidate traceability, no edit/delete).
+**Plan-Sync-E6-Decision is complete** (docs-only — resolved the Phase D1 decision checkpoint:
+continue with Phase E6 before Phase D1, since bank *visibility* now exists but real English
+content *depth* does not — see `docs/architecture/english-resource-bank-import-platform.md`).
+**Phase E6 is the next recommended implementation phase. Phase D implementation has not
+started** — explicitly deferred until after E6 (or a later explicit decision); PG-v2
+implementation also remains not started.
 
 **Today lesson generation and all non-migrated Practice Gym patterns remain on the legacy
 `IAiActivityGenerator` freeform path, unmodified, throughout this entire sequence** until their
