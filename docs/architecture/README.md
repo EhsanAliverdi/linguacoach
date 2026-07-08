@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase G1)
+lastUpdated: 2026-07-09 (Phase D3)
 owner: architecture
 supersedes:
 supersededBy:
@@ -134,12 +134,16 @@ Key facts about where this stands today (2026-07-08):
   replacing an FK-mismatched field). **Plan-Sync-After-D2 (2026-07-09, docs-only)** chose Phase
   E7 before Phase D3. **Phase E7 (2026-07-09)** then added a new `CefrReadingPassage` bank for
   full-length original reading passages (`CefrReadingReference` stays short-excerpt-only), with
-  E5-style browse/search and 10 new full-length passages through the same pipeline — Today
-  composer remains **partially bank-first with fallback** (Vocabulary/Reading-primary patterns
-  only, legacy freeform generation everywhere else; `TodayBankResourceSelector` is not wired to
-  the new passage bank yet). Phase D3 (broader Today composer migration) remains deferred until
-  after E8 if needed — see docs/architecture/learning-activity-engine.md and
-  docs/architecture/english-resource-bank-import-platform.md.
+  E5-style browse/search and 10 new full-length passages through the same pipeline (E7 itself did
+  not wire Today to the new bank). **Phase D3 (2026-07-09)** then wired it in — a narrow,
+  fallback-safe extension: `TodayBankResourceSelector` now prefers a full `CefrReadingPassage`
+  anchor for the comprehension/reorder Reading patterns (`reading_multiple_choice_single`/`_multi`,
+  `reorder_paragraphs`) and falls back to short `CefrReadingReference` (and ultimately legacy
+  generation) for cloze patterns, missing passages, or novelty-blocked passages. Today composer
+  remains **partially bank-first with fallback** (Vocabulary/Reading-primary patterns only, legacy
+  freeform generation everywhere else). Nothing was deleted; the legacy fallback stays intact. A
+  Phase E8/D4 decision checkpoint follows — see docs/architecture/learning-activity-engine.md
+  (Phase D3 section) and docs/architecture/english-resource-bank-import-platform.md.
 - **English-only seed/resource-bank rule (non-negotiable, applies to all current and future
   resource banks):** no Persian seed corpus, no bilingual phrase bank, no English–Persian (or
   English–any-language) import. Supported languages (Persian, etc.) are **runtime-only**
@@ -182,7 +186,7 @@ Key facts about where this stands today (2026-07-08):
   checkpoint now applies; Phase G2 (backend legacy cleanup) / G3 (diagnostics consolidation)
   remain sequenced late. See `docs/roadmap/road-map.md` §1 and Decision Log.
 
-Current state (as of 2026-07-09, Phase G1): **Practice Gym bank-first migration (content
+Current state (as of 2026-07-09, Phase D3): **Practice Gym bank-first migration (content
 layer) is closed at Phase C-Final** — generalized the Form.io template path from 1 pilot pattern
 to 8 total (C1's `phrase_match`, `gap_fill_workplace_phrase`, `reading_multiple_choice_single`;
 C2's `reading_multiple_choice_multi`, `reading_fill_in_blanks`, `reading_writing_fill_in_blanks`;

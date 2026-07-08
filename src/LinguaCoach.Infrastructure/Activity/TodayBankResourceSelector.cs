@@ -1,5 +1,7 @@
+using System.Text;
 using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.ResourceImport;
+using LinguaCoach.Domain;
 using LinguaCoach.Domain.Constants;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
@@ -25,6 +27,29 @@ public sealed class TodayBankResourceSelector : ITodayBankResourceSelector
     private const int MaxGrammar = 1;
     private const int MaxReading = 2;
     private const int MaxOpportunisticReadingForVocabPattern = 1;
+    // Phase D3 — a full passage is far heavier prompt material than a short reference excerpt, so
+    // exactly one is injected as the reading anchor (comprehension/reorder patterns work off a
+    // single text). Keeps the TopicHint bounded.
+    private const int MaxReadingPassage = 1;
+    // Phase D3 — defensive upper bound on injected passage text length. Bank passages are short by
+    // construction (the E7 seed pack caps at ~250 words / well under 2 000 chars), but a future
+    // longer passage must never blow up the prompt.
+    private const int MaxInjectedPassageChars = 4000;
+
+    /// <summary>
+    /// Phase D3 — the Reading-primary patterns for which a full <see cref="Domain.Entities.CefrReadingPassage"/>
+    /// is a suitable anchor: comprehension questions over a whole text, and paragraph reordering
+    /// (which needs a coherent multi-paragraph passage). Cloze/fill-in-blanks patterns
+    /// (reading_fill_in_blanks, reading_writing_fill_in_blanks) are deliberately excluded — they
+    /// generate their own gapped text and are better anchored by a short CefrReadingReference, so
+    /// they keep the D2 behavior.
+    /// </summary>
+    private static readonly HashSet<string> FullPassageReadingPatterns = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ExercisePatternKey.ReadingMultipleChoiceSingle,
+        ExercisePatternKey.ReadingMultipleChoiceMulti,
+        ExercisePatternKey.ReorderParagraphs,
+    };
 
     private readonly IResourceBankQueryService _bankQuery;
     private readonly IActivityNoveltyPolicy _noveltyPolicy;
@@ -85,9 +110,23 @@ public sealed class TodayBankResourceSelector : ITodayBankResourceSelector
             }
             else // isReading
             {
-                var (reading, readingRawHits) = await SelectReadingAsync(request, MaxReading, ct);
-                candidates.AddRange(reading);
-                anyRawHits |= readingRawHits;
+                // Phase D3 — for full-passage-suitable patterns, prefer a full CefrReadingPassage
+                // anchor. Fall back to short CefrReadingReference when the pattern isn't
+                // full-passage-suitable, no passage exists at the routed level, or novelty
+                // excluded every available passage.
+                if (ReadingPatternPrefersFullPassage(request.PatternKey))
+                {
+                    var (passages, passageRawHits) = await SelectReadingPassageAsync(request, MaxReadingPassage, ct);
+                    candidates.AddRange(passages);
+                    anyRawHits |= passageRawHits;
+                }
+
+                if (candidates.Count == 0)
+                {
+                    var (reading, readingRawHits) = await SelectReadingAsync(request, MaxReading, ct);
+                    candidates.AddRange(reading);
+                    anyRawHits |= readingRawHits;
+                }
             }
 
             if (candidates.Count == 0)
@@ -183,14 +222,65 @@ public sealed class TodayBankResourceSelector : ITodayBankResourceSelector
     }
 
     /// <summary>
-    /// Phase D2 — queries at the exact routed CEFR level first. Only when that returns zero raw
-    /// rows AND the request allows review/scaffold widening does it retry at the next level down
-    /// (per CefrLevelConstants.All ordering) — never upward, never for ordinary generation.
+    /// Phase D3 — selects a full <see cref="Domain.Entities.CefrReadingPassage"/> anchor for a
+    /// full-passage-suitable Reading pattern. Lists passages at the routed CEFR (with the same
+    /// exact-first / review-only-widen-down policy as every other bank type), runs each through the
+    /// shared novelty + feedback check, then fetches full detail (title + passage text) for the
+    /// finally-selected passages only (bounded by <see cref="MaxReadingPassage"/>). Never throws:
+    /// the caller wraps this in the same try/catch that guards all selection.
     /// </summary>
-    private async Task<(IReadOnlyList<(Guid Id, string Display, Guid SourceId)> Items, string LevelUsed, string ReasonSuffix, bool AnyRawHits)>
-        QueryWithOptionalWideningAsync(
+    private async Task<(List<TodayBankSelectedResource> Selected, bool AnyRawHits)> SelectReadingPassageAsync(
+        TodayBankSelectionRequest request, int max, CancellationToken ct)
+    {
+        var selected = new List<TodayBankSelectedResource>();
+        var (items, _, reasonSuffix, anyRawHits) = await QueryWithOptionalWideningAsync(
+            request,
+            level => _bankQuery.ListReadingPassagesAsync(
+                new ResourceBankListFilter(CefrLevel: level, PageSize: BankQueryPageSize), ct)
+                .ContinueWith(t => (IReadOnlyList<ResourceBankReadingPassageListItemDto>)t.Result.Items, ct),
+            ct);
+
+        foreach (var item in items.Take(CandidateScanCap))
+        {
+            if (selected.Count >= max) break;
+            var fingerprint = $"bank-reading-passage-precheck:{item.Id}";
+            if (!await IsAllowedAsync(request.StudentProfileId, fingerprint, item.Id, ct)) continue;
+
+            // Full passage text lives only on the detail DTO — fetch it just for the chosen passage.
+            var detail = await _bankQuery.GetReadingPassageDetailAsync(item.Id, ct);
+            if (detail is null || string.IsNullOrWhiteSpace(detail.PassageText)) continue;
+
+            selected.Add(new TodayBankSelectedResource(
+                Id: item.Id,
+                ResourceType: "ReadingPassage",
+                DisplayText: detail.Title,
+                SourceId: item.SourceId,
+                ContentFingerprint: fingerprint,
+                SelectionReason: $"full reading passage{reasonSuffix}",
+                CefrLevel: detail.CefrLevel,
+                Title: detail.Title,
+                PassageText: detail.PassageText,
+                WordCount: detail.WordCount,
+                EstimatedReadingMinutes: detail.EstimatedReadingMinutes));
+        }
+
+        return (selected, anyRawHits);
+    }
+
+    private static bool ReadingPatternPrefersFullPassage(string? patternKey) =>
+        !string.IsNullOrWhiteSpace(patternKey) && FullPassageReadingPatterns.Contains(patternKey);
+
+    /// <summary>
+    /// Phase D2/D3 — queries at the exact routed CEFR level first. Only when that returns zero raw
+    /// rows AND the request allows review/scaffold widening does it retry at the next level down
+    /// (per CefrLevelConstants.All ordering) — never upward, never for ordinary generation. Generic
+    /// over the row shape so vocabulary/grammar/reading tuples and full-passage list DTOs (Phase D3)
+    /// share one widening implementation.
+    /// </summary>
+    private async Task<(IReadOnlyList<T> Items, string LevelUsed, string ReasonSuffix, bool AnyRawHits)>
+        QueryWithOptionalWideningAsync<T>(
             TodayBankSelectionRequest request,
-            Func<string, Task<IReadOnlyList<(Guid Id, string Display, Guid SourceId)>>> query,
+            Func<string, Task<IReadOnlyList<T>>> query,
             CancellationToken ct)
     {
         var exact = await query(request.CefrLevel);
@@ -210,7 +300,7 @@ public sealed class TodayBankResourceSelector : ITodayBankResourceSelector
             }
         }
 
-        return (Array.Empty<(Guid, string, Guid)>(), request.CefrLevel, string.Empty, false);
+        return (Array.Empty<T>(), request.CefrLevel, string.Empty, false);
     }
 
     /// <summary>
@@ -273,10 +363,41 @@ public sealed class TodayBankResourceSelector : ITodayBankResourceSelector
     /// </summary>
     private static string BuildStructuredPromptBlock(IReadOnlyList<TodayBankSelectedResource> resources, string cefrLevel)
     {
-        var lines = resources.Select(r => $"- [{r.ResourceType}] \"{r.DisplayText}\"");
-        return "Approved bank resources to use as anchors (do not invent unrelated vocabulary or "
-             + $"content, keep the student's CEFR level at {cefrLevel}, keep all content English-only, "
-             + "support-language behavior stays runtime-only): "
-             + string.Join(" ", lines) + ".";
+        var sb = new StringBuilder();
+        sb.Append("Approved bank resources to use as anchors (do not invent unrelated vocabulary or ")
+          .Append($"content, keep the student's CEFR level at {cefrLevel}, keep all content English-only, ")
+          .Append("support-language behavior stays runtime-only): ");
+
+        var shortResources = resources.Where(r => !IsFullPassage(r)).ToList();
+        var passages = resources.Where(IsFullPassage).ToList();
+
+        if (shortResources.Count > 0)
+        {
+            sb.Append(string.Join(" ", shortResources.Select(r => $"- [{r.ResourceType}] \"{r.DisplayText}\"")));
+            if (passages.Count > 0) sb.Append(' ');
+        }
+
+        // Phase D3 — each full passage gets its own bounded, unambiguous anchor block: metadata
+        // plus the passage text delimited by <<< >>> and explicit "use this passage only"
+        // instructions, so the AI builds questions/tasks strictly from the supplied text.
+        foreach (var p in passages)
+        {
+            var passageText = p.PassageText ?? string.Empty;
+            if (passageText.Length > MaxInjectedPassageChars)
+                passageText = passageText[..MaxInjectedPassageChars] + " [passage truncated]";
+
+            sb.Append("- [ReadingPassage] Use ONLY the following full reading passage as the reading anchor. ")
+              .Append($"Title: \"{p.Title ?? p.DisplayText}\". CEFR: {p.CefrLevel ?? cefrLevel}. ")
+              .Append($"Word count: {p.WordCount?.ToString() ?? "n/a"}. ")
+              .Append($"Estimated reading time: {p.EstimatedReadingMinutes?.ToString() ?? "n/a"} min. ")
+              .Append("Base every comprehension question or task strictly on this passage, do not invent ")
+              .Append("unrelated passage content, and keep the difficulty aligned with the stated CEFR. ")
+              .Append("Passage text: <<<").Append(passageText).Append(">>> ");
+        }
+
+        return sb.ToString().TrimEnd() + ".";
     }
+
+    private static bool IsFullPassage(TodayBankSelectedResource r) =>
+        string.Equals(r.ResourceType, "ReadingPassage", StringComparison.OrdinalIgnoreCase);
 }

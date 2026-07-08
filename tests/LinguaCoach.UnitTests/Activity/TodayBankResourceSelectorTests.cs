@@ -86,14 +86,30 @@ public sealed class TodayBankResourceSelectorTests : IDisposable
         return entry.Id;
     }
 
+    private Guid SeedReadingPassage(string title, string passageText, string cefrLevel = "B1")
+    {
+        var entry = new CefrReadingPassage(_sourceId, title, passageText, cefrLevel);
+        _db.CefrReadingPassages.Add(entry);
+        return entry.Id;
+    }
+
     private static TodayBankSelectionRequest Request(
         string cefrLevel = "B1",
         string primarySkill = "Vocabulary",
         IReadOnlyList<string>? secondarySkills = null,
         Guid? studentId = null,
-        bool allowLowerLevelReview = false) =>
+        bool allowLowerLevelReview = false,
+        string? patternKey = null) =>
         new(studentId ?? Guid.NewGuid(), cefrLevel, primarySkill, secondarySkills ?? Array.Empty<string>(),
-            AllowLowerLevelReview: allowLowerLevelReview);
+            AllowLowerLevelReview: allowLowerLevelReview, PatternKey: patternKey);
+
+    // A representative full-passage-suitable reading pattern (comprehension over a whole text).
+    private const string FullPassagePattern = LinguaCoach.Domain.ExercisePatternKey.ReadingMultipleChoiceSingle;
+    private const string FillInBlanksPattern = LinguaCoach.Domain.ExercisePatternKey.ReadingFillInBlanks;
+    private const string LongPassage =
+        "The team met on Monday to review the quarterly results. Sales had grown steadily, "
+        + "but customer support wanted more staff. After a long discussion, the manager agreed "
+        + "to hire two new people and to revisit the plan in three months.";
 
     [Fact]
     public async Task Returns_matching_vocabulary_entries_for_vocabulary_pattern_and_cefr_level()
@@ -352,5 +368,188 @@ public sealed class TodayBankResourceSelectorTests : IDisposable
         result.PromptSupplementText.Should().Contain("B1");
         result.PromptSupplementText.Should().Contain("English-only");
         result.PromptSupplementText.Should().Contain("do not invent unrelated vocabulary");
+    }
+
+    // ── Phase D3 — full reading passage bank ────────────────────────────────────
+
+    [Fact]
+    public async Task Selects_full_reading_passage_for_a_full_passage_suitable_reading_pattern()
+    {
+        SeedReadingPassage("Quarterly Review", LongPassage, "B1");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Reading", studentId: _studentId, patternKey: FullPassagePattern));
+
+        result.Outcome.Should().Be(TodayBankSelectionOutcome.BankResourcesFound);
+        var passage = result.Resources.Should().ContainSingle().Subject;
+        passage.ResourceType.Should().Be("ReadingPassage");
+        passage.Title.Should().Be("Quarterly Review");
+        passage.PassageText.Should().Be(LongPassage);
+        passage.CefrLevel.Should().Be("B1");
+        passage.WordCount.Should().BeGreaterThan(0);
+        passage.EstimatedReadingMinutes.Should().BeGreaterThan(0);
+    }
+
+    [Fact]
+    public async Task Prefers_full_passage_over_short_reference_when_both_exist_for_a_suitable_pattern()
+    {
+        SeedReadingPassage("Full", LongPassage, "B1");
+        SeedReading("A short excerpt.", "B1");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Reading", studentId: _studentId, patternKey: FullPassagePattern));
+
+        result.Resources.Should().OnlyContain(r => r.ResourceType == "ReadingPassage");
+    }
+
+    [Fact]
+    public async Task Falls_back_to_short_reference_when_no_full_passage_exists()
+    {
+        SeedReading("A short workplace excerpt about a meeting.", "B1");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Reading", studentId: _studentId, patternKey: FullPassagePattern));
+
+        result.Outcome.Should().Be(TodayBankSelectionOutcome.BankResourcesFound);
+        result.Resources.Should().OnlyContain(r => r.ResourceType == "Reading");
+    }
+
+    [Fact]
+    public async Task Uses_short_reference_not_full_passage_for_a_cloze_pattern_even_when_a_passage_exists()
+    {
+        SeedReadingPassage("Full", LongPassage, "B1");
+        SeedReading("A short excerpt.", "B1");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Reading", studentId: _studentId, patternKey: FillInBlanksPattern));
+
+        result.Resources.Should().OnlyContain(r => r.ResourceType == "Reading");
+    }
+
+    [Fact]
+    public async Task Falls_back_to_no_resources_when_neither_full_passage_nor_reference_exists()
+    {
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Reading", studentId: _studentId, patternKey: FullPassagePattern));
+
+        result.Outcome.Should().Be(TodayBankSelectionOutcome.NoSuitableResources);
+        result.Resources.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Prefers_exact_cefr_full_passage_and_never_widens_upward()
+    {
+        SeedReadingPassage("Harder", LongPassage, "C1"); // above routed level — must never be selected
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Reading", studentId: _studentId,
+            allowLowerLevelReview: true, patternKey: FullPassagePattern));
+
+        result.Outcome.Should().Be(TodayBankSelectionOutcome.NoSuitableResources);
+    }
+
+    [Fact]
+    public async Task Widens_full_passage_one_level_down_only_for_review()
+    {
+        SeedReadingPassage("Lower", LongPassage, "A2");
+        _db.SaveChanges();
+
+        var withoutReview = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Reading", studentId: _studentId,
+            allowLowerLevelReview: false, patternKey: FullPassagePattern));
+        withoutReview.Outcome.Should().Be(TodayBankSelectionOutcome.NoSuitableResources);
+
+        var withReview = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Reading", studentId: Guid.NewGuid(),
+            allowLowerLevelReview: true, patternKey: FullPassagePattern));
+        withReview.Outcome.Should().Be(TodayBankSelectionOutcome.BankResourcesFound);
+        withReview.Resources.Should().OnlyContain(r => r.ResourceType == "ReadingPassage");
+        withReview.Resources.Should().OnlyContain(r => r.SelectionReason.Contains("review/lower-level match"));
+    }
+
+    [Fact]
+    public async Task Avoids_a_recently_used_full_passage_and_falls_back_to_reference()
+    {
+        var passageId = SeedReadingPassage("Full", LongPassage, "B1");
+        SeedReading("A short excerpt.", "B1");
+        _db.SaveChanges();
+
+        _db.StudentActivityUsageLogs.Add(new StudentActivityUsageLog(
+            studentProfileId: _studentId,
+            contentFingerprint: $"bank-reading-passage-precheck:{passageId}",
+            consumedAtUtc: DateTime.UtcNow.AddDays(-1)));
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Reading", studentId: _studentId, patternKey: FullPassagePattern));
+
+        // Passage excluded by novelty → short reference used instead.
+        result.Resources.Should().OnlyContain(r => r.ResourceType == "Reading");
+    }
+
+    [Fact]
+    public async Task Excludes_a_full_passage_the_student_marked_not_useful()
+    {
+        var passageId = SeedReadingPassage("Full", LongPassage, "B1");
+        _db.SaveChanges();
+
+        var activity = new LearningActivity(
+            ActivityType.ReadingTask, ActivitySource.AiGenerated, "t", "B1", "{}");
+        activity.SetBankResourceProvenance($"[{{\"type\":\"ReadingPassage\",\"id\":\"{passageId}\"}}]");
+        _db.LearningActivities.Add(activity);
+        _db.SaveChanges();
+
+        _db.ActivityFeedbackSignals.Add(new ActivityFeedbackSignal(
+            _studentId, activity.Id,
+            ActivityFeedbackDifficultyRating.RightLevel,
+            ActivityFeedbackClarityRating.Clear,
+            ActivityFeedbackUsefulnessRating.NotUseful,
+            ActivityFeedbackRepeatPreference.Neutral));
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Reading", studentId: _studentId, patternKey: FullPassagePattern));
+
+        result.Resources.Should().NotContain(r => r.ResourceType == "ReadingPassage");
+    }
+
+    [Fact]
+    public async Task Structured_prompt_block_includes_full_passage_title_text_cefr_and_constraints()
+    {
+        SeedReadingPassage("Quarterly Review", LongPassage, "B1");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Reading", studentId: _studentId, patternKey: FullPassagePattern));
+
+        result.PromptSupplementText.Should().Contain("ReadingPassage");
+        result.PromptSupplementText.Should().Contain("Quarterly Review");
+        result.PromptSupplementText.Should().Contain(LongPassage);
+        result.PromptSupplementText.Should().Contain("B1");
+        result.PromptSupplementText.Should().Contain("Base every comprehension question");
+        result.PromptSupplementText.Should().Contain("English-only");
+    }
+
+    [Fact]
+    public async Task Discovers_full_passages_seeded_by_the_phase_e7_internal_seed_pack()
+    {
+        var importService = new ResourceImportService(_db, new ActivityContentFingerprintService());
+        var validationService = new ResourceCandidateValidationService(_db, new FormIoSchemaValidationService());
+        var publishService = new ResourceCandidatePublishService(_db);
+        await InternalResourceSeedPackSeeder.SeedAsync(
+            _db, importService, validationService, publishService, NullLogger.Instance);
+
+        var anyPassageLevel = await _db.CefrReadingPassages.Select(p => p.CefrLevel).FirstAsync();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: anyPassageLevel, primarySkill: "Reading", studentId: _studentId, patternKey: FullPassagePattern));
+
+        result.Outcome.Should().Be(TodayBankSelectionOutcome.BankResourcesFound);
+        result.Resources.Should().Contain(r => r.ResourceType == "ReadingPassage");
     }
 }

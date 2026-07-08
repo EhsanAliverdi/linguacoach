@@ -31,7 +31,15 @@ public sealed record TodayBankSelectionRequest(
     /// widens upward, and never widens at all for ordinary (non-review) generation — a student
     /// must never be silently served harder content than their routed level.
     /// </summary>
-    bool AllowLowerLevelReview = false);
+    bool AllowLowerLevelReview = false,
+    /// <summary>
+    /// Phase D3 — the specific ExercisePatternKey (e.g. "reading_multiple_choice_single"). Used
+    /// only to decide, for Reading-primary patterns, whether a full <c>CefrReadingPassage</c> is a
+    /// suitable anchor (comprehension/reorder patterns) or whether a short
+    /// <c>CefrReadingReference</c> is the better fit (cloze/fill-in-blanks patterns). Null/empty
+    /// falls back to the D2 short-reference behavior — full passages are strictly opt-in per pattern.
+    /// </summary>
+    string? PatternKey = null);
 
 public enum TodayBankSelectionOutcome
 {
@@ -43,9 +51,13 @@ public enum TodayBankSelectionOutcome
 }
 
 /// <summary>
-/// Phase D2 — one bank resource offered to the AI prompt, with enough metadata to reconstruct
+/// Phase D2/D3 — one bank resource offered to the AI prompt, with enough metadata to reconstruct
 /// full provenance later (see LearningActivity.BankResourceProvenanceJson) without re-querying
-/// the bank. ResourceType is "Vocabulary"|"Grammar"|"Reading".
+/// the bank. ResourceType is "Vocabulary"|"Grammar"|"Reading"|"ReadingPassage". The trailing
+/// passage-specific fields (<see cref="CefrLevel"/>/<see cref="Title"/>/<see cref="PassageText"/>/
+/// <see cref="WordCount"/>/<see cref="EstimatedReadingMinutes"/>) are populated only for
+/// "ReadingPassage" resources (Phase D3, full <c>CefrReadingPassage</c> anchors) and stay null for
+/// the compact short-resource types.
 /// </summary>
 public sealed record TodayBankSelectedResource(
     Guid Id,
@@ -57,7 +69,18 @@ public sealed record TodayBankSelectedResource(
     string ContentFingerprint,
     /// <summary>Short human-readable reason this resource was selected, e.g. "exact CEFR match"
     /// or "review/lower-level match (B1, routing reason Scaffold)".</summary>
-    string SelectionReason);
+    string SelectionReason,
+    /// <summary>Phase D3 — the resource's own CEFR level (full passages only; null otherwise).</summary>
+    string? CefrLevel = null,
+    /// <summary>Phase D3 — full-passage title (full passages only; null otherwise).</summary>
+    string? Title = null,
+    /// <summary>Phase D3 — the full passage text used as the AI reading anchor (full passages only;
+    /// null otherwise). For short resources the anchor text lives in <see cref="DisplayText"/>.</summary>
+    string? PassageText = null,
+    /// <summary>Phase D3 — passage word count (full passages only; null otherwise).</summary>
+    int? WordCount = null,
+    /// <summary>Phase D3 — estimated reading time in minutes (full passages only; null otherwise).</summary>
+    int? EstimatedReadingMinutes = null);
 
 public sealed record TodayBankSelectionResult(
     TodayBankSelectionOutcome Outcome,

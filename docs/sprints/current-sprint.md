@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase G1)
+lastUpdated: 2026-07-09 (Phase D3)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,47 @@ Last updated: 2026-07-09
 ---
 
 ## Active sprint
+
+**Phase D3 — Wire Full Reading Passage Bank into Today Bank-First Composer (2026-07-09)** — complete
+
+Extended the D2 Today bank-first composer so Reading-primary Today activities can select and use
+the new E7 `CefrReadingPassage` full-passage bank — a **narrow, fallback-safe extension, not a
+full Today composer rewrite; nothing deleted or replaced.** `TodayBankResourceSelector` now, for
+the comprehension/reorder Reading patterns (`reading_multiple_choice_single`,
+`reading_multiple_choice_multi`, `reorder_paragraphs`), prefers a full `CefrReadingPassage` anchor
+— reusing E7's existing `IResourceBankQueryService.ListReadingPassagesAsync`/
+`GetReadingPassageDetailAsync` (no new query surface), listing at the routed CEFR then fetching
+full text only for the finally-selected passage (at most one injected). It falls back to the short
+`CefrReadingReference` behavior when the pattern is cloze/fill-in-blanks
+(`reading_fill_in_blanks`, `reading_writing_fill_in_blanks`), when no suitable passage exists at
+the routed level, or when novelty/feedback excludes every candidate passage. The selector receives
+the concrete pattern via a new `TodayBankSelectionRequest.PatternKey`; the D2 CEFR policy is
+unchanged (exact level first, one-level-down widening only for Review/Scaffold/Remediation, never
+upward). Full-passage novelty uses a distinct `bank-reading-passage-precheck:{id}` fingerprint;
+feedback exclusion applies via the same `LearningActivity.BankResourceProvenanceJson` match. The
+structured `TopicHint` block gained a bounded, delimited, length-capped full-passage anchor
+sub-block (title/CEFR/word-count/reading-time/passage-text + "build tasks from this passage only,
+keep CEFR aligned, English-only" instructions). Provenance now records `type=ReadingPassage` with
+id/sourceId/contentFingerprint/selectionReason plus `cefrLevel`/`title`.
+
+**Legacy fallback fully intact** — unsupported patterns, missing/blocked passages, selector
+exceptions, and AI generation/validation failures all still flow through the unchanged
+`IAiActivityGenerator` path; the existing legacy-fallback integration test is unchanged and green.
+Vocabulary-primary behavior unchanged from D2; Speaking/listening/image/open-ended remain legacy.
+**No migration** (no schema change; provenance reuses the D2 column). +12 backend tests
+(3,551 → 3,563: +11 `TodayBankResourceSelectorTests`, +1 `ActivityMaterializationJobBankFirstTests`);
+full `dotnet test --configuration Release` re-run, all green. No frontend changed; no external
+datasets; no Persian/bilingual seed content. `StudentActivityReadinessItem` / readiness pool /
+Practice Gym legacy fallback all kept.
+
+**Next: a Phase E8/D4 decision checkpoint applies** — Phase D4 (broader Today composer expansion),
+Phase E8 (resource depth/types), Phase G2/G3 (backend/diagnostics cleanup), or PG-v2. Not started.
+See `docs/architecture/learning-activity-engine.md` Phase D3 section and `docs/roadmap/road-map.md`
+§19a.
+
+---
+
+## Previous sprint
 
 **Phase G1 — Admin Information Architecture Cleanup (2026-07-09)** — complete
 

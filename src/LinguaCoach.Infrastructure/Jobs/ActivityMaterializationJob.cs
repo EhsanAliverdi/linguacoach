@@ -218,7 +218,8 @@ public sealed class ActivityMaterializationJob : IJob
                         CefrLevel: routing.TargetCefrLevel,
                         PatternPrimarySkill: pattern.PrimarySkill,
                         PatternSecondarySkills: secondarySkills,
-                        AllowLowerLevelReview: isIntentionalReview), ct);
+                        AllowLowerLevelReview: isIntentionalReview,
+                        PatternKey: patternKey), ct);
             }
             catch (Exception ex)
             {
@@ -366,7 +367,10 @@ public sealed class ActivityMaterializationJob : IJob
             id = r.Id,
             sourceId = r.SourceId,
             contentFingerprint = r.ContentFingerprint,
-            selectionReason = r.SelectionReason
+            selectionReason = r.SelectionReason,
+            // Phase D3 — full-passage provenance carries CEFR + title too (null for short resources).
+            cefrLevel = r.CefrLevel,
+            title = r.Title
         }));
 
     /// <summary>Parses ExercisePatternDefinition.SecondarySkillsJson (a JSON string array); returns

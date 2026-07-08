@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase G1)
+lastUpdated: 2026-07-09 (Phase D3)
 owner: product
 supersedes:
 supersededBy:
@@ -211,11 +211,14 @@ composer migration:
   scoped to Vocabulary/Reading only, matching the E6 seed pack's actual content types. These
   pattern families need their own bank-content shape (audio, image, rubric) before a selector
   can meaningfully serve them.
-- [ ] **`TodayBankResourceSelector` consumption of `CefrReadingPassage`** `Not started` — Phase E7
-  (2026-07-09) added a full-length reading passage bank, but deliberately did not wire it into
-  Today's selector (a pure resource-platform expansion, not a Today-composer change). A future
-  phase would need to decide which Today pattern(s) should anchor on a full passage rather than a
-  short excerpt, and how much passage text is safe/useful to inject into `TopicHint`.
+- [x] **`TodayBankResourceSelector` consumption of `CefrReadingPassage`** `Done` (Phase D3,
+  2026-07-09) — the selector now prefers a full `CefrReadingPassage` anchor for the
+  comprehension/reorder Reading patterns (`reading_multiple_choice_single`/`_multi`,
+  `reorder_paragraphs`), reusing E7's existing query methods, and falls back to the short
+  `CefrReadingReference` behavior for cloze patterns, missing passages, or novelty-blocked
+  passages. At most one full passage is injected, through a bounded, delimited, length-capped
+  `TopicHint` block; provenance records `type=ReadingPassage` + cefr/title. Legacy fallback fully
+  intact. See docs/architecture/learning-activity-engine.md Phase D3 section.
 - [x] **CEFR-level widening** `Done` (Phase D2, 2026-07-08) — the selector now retries one CEFR
   level down, but **only** when the routing reason is Review/Scaffold/Remediation and the exact
   level has zero bank rows; it never widens upward and never widens at all for ordinary

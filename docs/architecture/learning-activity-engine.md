@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase G0)
+lastUpdated: 2026-07-09 (Phase D3)
 owner: architecture
 supersedes:
 supersededBy:
@@ -203,6 +203,33 @@ bank-first Today coverage remains exactly what D1/D2 established (Vocabulary/Rea
 patterns only, legacy fallback everywhere else). Whether/how Today should ever consume full
 reading passages is left for a future phase (Phase D3 or later), not decided here. **Phase D3
 and PG-v2 implementation remain not started.**
+
+**Phase D3 (2026-07-09) wired the E7 full reading passage bank into the Today bank-first
+composer.** This is a **narrow, fallback-safe extension of the D2 slice, not a full Today composer
+rewrite**: `TodayBankResourceSelector` now, for Reading-primary patterns, prefers a full
+`CefrReadingPassage` anchor when the pattern is one of the comprehension/reorder patterns
+(`reading_multiple_choice_single`, `reading_multiple_choice_multi`, `reorder_paragraphs`), and
+otherwise (or when no suitable passage exists, or novelty excludes every candidate passage) falls
+back to the short `CefrReadingReference` behavior exactly as before. Cloze/fill-in-blanks patterns
+(`reading_fill_in_blanks`, `reading_writing_fill_in_blanks`) deliberately keep the short-reference
+behavior — they generate their own gapped text and are better anchored by a short excerpt. The
+selector receives the concrete `PatternKey` (new `TodayBankSelectionRequest.PatternKey`) to make
+this decision; the existing CEFR policy is preserved unchanged (exact level first, one-level-down
+widening only for Review/Scaffold/Remediation, never upward). At most **one** full passage is
+injected (heavier prompt material than a short excerpt), through a bounded structured TopicHint
+block carrying the passage title, CEFR, word count, estimated reading time, the passage text
+(delimited, length-capped), and explicit "build questions/tasks from this passage only, keep the
+CEFR aligned, English-only" instructions. Full-passage novelty uses a distinct
+`bank-reading-passage-precheck:{id}` fingerprint; feedback-based exclusion (NotUseful /
+DoNotShowSimilarSoon) applies to passages via the same `LearningActivity.BankResourceProvenanceJson`
+match as other bank types. Provenance now records `type=ReadingPassage` plus the passage `id`,
+`sourceId`, `contentFingerprint`, `selectionReason`, `cefrLevel`, and `title`. **Legacy fallback
+is fully intact**: unsupported patterns, a missing/blocked passage, a selector exception, an AI
+generation/validation failure, or an empty bank all still flow through the unchanged
+`IAiActivityGenerator` path — D3 removed nothing. Vocabulary-primary behavior is unchanged from D2.
+Speaking/listening/image/open-ended remain legacy. No external datasets, no Persian/bilingual seed
+content. **Next Today-composer decision (E8 for more resource depth/types, D4 for broader composer
+expansion, PG-v2 later) is deferred, not decided here.**
 
 **Plan-Sync-G0 (2026-07-09, docs-only)** reframes, but does not delete, the readiness-pool
 lifecycle this file's fallback/generation flow relies on: `StudentActivityReadinessItem`/

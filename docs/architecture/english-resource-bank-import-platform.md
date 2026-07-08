@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Plan-Sync-G0)
+lastUpdated: 2026-07-09 (Phase D3)
 owner: architecture
 supersedes:
 supersededBy:
@@ -617,6 +617,13 @@ stability, and the bank-table-untouched guarantee.
   query methods are exposed and tested now, but `TodayBankResourceSelector` (Phase D1/D2) is
   **not** wired to consume `CefrReadingPassage` this phase — that consumption decision belongs to
   a future Today-composer phase (D3), not E7.
+  - **Update (Phase D3, 2026-07-09): now consumed.** `TodayBankResourceSelector` reuses the E7
+    `IResourceBankQueryService.ListReadingPassagesAsync`/`GetReadingPassageDetailAsync` methods
+    (no new query surface added) to anchor comprehension/reorder Reading patterns
+    (`reading_multiple_choice_single`/`_multi`, `reorder_paragraphs`) on a full `CefrReadingPassage`,
+    falling back to short `CefrReadingReference` otherwise. Cloze patterns keep the short reference.
+    Fallback-safe and additive only — see `docs/architecture/learning-activity-engine.md`'s Phase
+    D3 section.
 - **Tests**: `CefrReadingPassageTests` (entity construction/validation, word-count/reading-time
   computation); `ResourceCandidatePublishServiceTests` (full passage publishes to
   `CefrReadingPassage`; short passage still publishes to `CefrReadingReference` unchanged; a full
@@ -734,16 +741,17 @@ E0 (no direct final-bank seeding is introduced by E7, exactly as no phase before
 E7 (2026-07-09) delivered exactly that**: a new `CefrReadingPassage` bank for full-length
 original reading passages (previously the platform's clearest gap — `CefrReadingReference` was
 short-excerpt-only, and E4 explicitly deferred full-passage publishing rather than force it
-through dishonestly), plus 10 new full-length passages through the same real pipeline. **Today
-consumption of this new bank is deliberately NOT wired this phase** —
-`TodayBankResourceSelector` still only reads vocabulary/grammar/short-reading-reference rows;
-extending it to full reading passages is left for whichever future phase actually builds a
-reading-passage-consuming Today pattern. **Phase D3 remains deferred until after Phase E7 (this
-phase) and E8 if needed**, at which point a new Phase D3 decision checkpoint follows, not
-resolved in advance. See `docs/roadmap/road-map.md` Decision Log (2026-07-08, Plan-Sync-After-C1,
-Plan-Sync-After-E4, Phase E5, Plan-Sync-E6-Decision, Phase E6, Phase D1, Bugfix-D1A, Phase D2,
-Plan-Sync-After-D2, and Phase E7 entries) for the full reasoning and current preferred phase
-order.
+through dishonestly), plus 10 new full-length passages through the same real pipeline. E7 itself
+did **not** wire Today to the new bank. **Phase D3 (2026-07-09) then did**: `TodayBankResourceSelector`
+now anchors comprehension/reorder Reading patterns on a full `CefrReadingPassage` (reusing the E7
+query methods, no new query surface here), falling back to short `CefrReadingReference` for cloze
+patterns and whenever no suitable passage exists or novelty excludes every candidate. D3 is a
+narrow, fallback-safe Today-composer extension, not a rewrite, and again changes nothing in this
+platform's own E0-E7 pipeline. **A Phase E8/D4 decision checkpoint follows D3** (more resource
+depth/types vs broader composer expansion vs PG-v2), not resolved in advance. See
+`docs/roadmap/road-map.md` Decision Log (2026-07-08, Plan-Sync-After-C1, Plan-Sync-After-E4,
+Phase E5, Plan-Sync-E6-Decision, Phase E6, Phase D1, Bugfix-D1A, Phase D2, Plan-Sync-After-D2,
+Phase E7, and Phase D3 entries) for the full reasoning and current preferred phase order.
 
 **Plan-Sync-G0 (2026-07-09, docs-only)** confirms Resource Banks, Resource Candidates, and
 Activity Templates — this platform's own E0-E7 output — as the **primary content model going
