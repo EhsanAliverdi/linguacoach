@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase B2)
+lastUpdated: 2026-07-08 (Phase C3)
 owner: engineering
 supersedes:
 supersededBy:
@@ -14,33 +14,49 @@ Last updated: 2026-07-08
 
 ## Active sprint
 
-**Phase B2 — Activity Feedback, Repeat Policy, and Calibration Signals (2026-07-08)** — complete (foundation)
+**Phase C3 — Continue Practice Gym bank-first migration (2026-07-08)** — complete
 
-**Last completed implementation phase: Phase B2.** Implemented the persistence/API/minimal-UI
-foundation for explicit student feedback on completed activities, across both Today and Practice
-Gym: new `ActivityFeedbackSignal` entity + migration (`AddActivityFeedbackSignal`), admin
-Off/Optional/Required policy per surface via the existing feature-gate/runtime-settings system
-(new group `activity-feedback-policy`, keys `ActivityFeedback.TodayPolicy`/
-`ActivityFeedback.PracticeGymPolicy`, default `Optional`, no new admin UI needed),
-`ISubmitActivityFeedbackHandler`/`ActivityFeedbackHandler` (upsert by attempt or activity,
-ownership check, comment-length validation, provenance backfill from `StudentActivityUsageLog`),
-new endpoint `POST /api/activity/attempt/{attemptId}/feedback`, `FeedbackPolicy` added to the
-existing attempt-submission response DTO, and a minimal `activity-feedback-prompt` Angular
-component shown from the existing student result screen only when policy is not Off (Skip shown
-only when Optional). +14 backend tests (3,357 → 3,371 passed). **This is a foundation, not a
-calibration engine** — nothing yet automatically consumes this data for CEFR/difficulty-band
-calibration, template/resource quality scoring, novelty/cooldown adjustment, or admin review; see
-`docs/architecture/activity-feedback-and-calibration.md` for full detail and explicit
-deferred-scope list.
+**Last completed implementation phase: Phase C3.** Migrated exactly one additional pattern,
+`reorder_paragraphs`, to the bank-first Form.io template path — a full re-audit of the ~26
+remaining legacy pattern keys against their actual content DTOs found no other safe deterministic
+candidate (everything else is open-ended-AI-evaluated, audio-referencing despite misleading
+catalog flags, or fuzzy/partial-credit scored). Built a new generic `ordered_sequence`
+`ComponentAnswerScorer` kind (reusing the exact positional-comparison logic the legacy
+`ExactMatchEvaluator` already used for this pattern) and one seeded `ActivityTemplate`
+(`reorder_paragraphs_workplace_seed_v1`) using a **stock Form.io `datagrid`** component with its
+built-in drag-to-reorder setting — no new custom Form.io component and no frontend code changes
+were needed (the existing `ExerciseRendererComponent` already routes to Form.io purely on
+`formIoSchemaJson` presence). 8 of ~33 pattern rows now template-enabled. +8 backend tests
+(3,371 → 3,379 passed). **The C3 audit found no further safe deterministic candidates — recommend
+Phase C-Final over a forced Phase C4** (a real C4 would need a dedicated audio-compatibility
+review or dedicated AI-evaluated-pattern Form.io support, neither a small batch). See
+`docs/architecture/practice-gym.md`'s "Phase C3" and "Migration plan" sections for full detail.
 
-**Before this: Phase C2** (7 of ~28 Practice Gym pattern keys template-enabled — see the
-"Previous sprint" entry below for detail).
+**Before this: Phase B2** — Activity Feedback, Repeat Policy, and Calibration Signals foundation
+(entity, policy, API, minimal UI; not a calibration engine — see
+`docs/architecture/activity-feedback-and-calibration.md`).
 
-**Next implementation phase: Phase C3** — migrate a third small batch of Practice Gym patterns.
-**Not started.** Phase D and Phase E implementation remain not started. Today lesson generation
-remains 100% legacy `IAiActivityGenerator` freeform generation; the `/speaking-attempt` and
+**Next recommended phase: Phase C-Final** — formally close out the deterministic-pattern
+migration track at 8/~33 and document the remaining ~26 legacy keys as staying on legacy
+generation pending a dedicated audio-compatibility or AI-evaluated-pattern review. **Not
+started.** Phase D and Phase E implementation remain not started. Today lesson generation remains
+100% legacy `IAiActivityGenerator` freeform generation; the `/speaking-attempt` and
 `/audio-attempt` endpoints remain outside Phase B2's feedback wiring (they don't go through
 `ActivitySubmitHandler`). See `docs/roadmap/road-map.md` §19a for the full phase order.
+
+---
+
+## Previous sprint
+
+**Phase B2 — Activity Feedback, Repeat Policy, and Calibration Signals (2026-07-08)** — complete (foundation)
+
+Implemented the persistence/API/minimal-UI foundation for explicit student feedback on completed
+activities, across both Today and Practice Gym: new `ActivityFeedbackSignal` entity + migration
+(`AddActivityFeedbackSignal`), admin Off/Optional/Required policy per surface via the existing
+feature-gate/runtime-settings system, `ISubmitActivityFeedbackHandler`/`ActivityFeedbackHandler`,
+new endpoint `POST /api/activity/attempt/{attemptId}/feedback`, `FeedbackPolicy` added to the
+existing attempt-submission response DTO, and a minimal `activity-feedback-prompt` Angular
+component. +14 backend tests (3,357 → 3,371 passed). Committed as `08de5c70`.
 
 ---
 

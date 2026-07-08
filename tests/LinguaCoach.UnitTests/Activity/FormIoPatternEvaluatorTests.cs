@@ -110,6 +110,51 @@ public sealed class FormIoPatternEvaluatorTests
     }
 
     [Fact]
+    public async Task EvaluateAsync_CorrectOrderedSequenceAnswer_PassesWithFullScore()
+    {
+        // Phase C3 — representative of reorder_paragraphs's stock Form.io "datagrid" (reorder).
+        var evaluator = new FormIoPatternEvaluator(new LinguaCoach.Infrastructure.Placement.PlacementScoringService());
+        var scoringRules = """{"components":{"paragraphs":{"kind":"ordered_sequence","correctOrder":["p1","p2","p3"],"points":1.0}}}""";
+        var submitted = """{"paragraphs":[{"itemId":"p1"},{"itemId":"p2"},{"itemId":"p3"}]}""";
+
+        var result = await evaluator.EvaluateAsync(MakeRequest(submitted, scoringRules), CancellationToken.None);
+
+        Assert.True(result.Passed);
+        Assert.Equal(3.0, result.Score);
+        Assert.Equal(3.0, result.MaxScore);
+        Assert.True(result.ItemResults[0].IsCorrect);
+    }
+
+    [Fact]
+    public async Task EvaluateAsync_ScrambledOrderedSequenceAnswer_ScoresPartialCredit()
+    {
+        // Only the first position ("p1") matches — 1 of 3 points, not a pass.
+        var evaluator = new FormIoPatternEvaluator(new LinguaCoach.Infrastructure.Placement.PlacementScoringService());
+        var scoringRules = """{"components":{"paragraphs":{"kind":"ordered_sequence","correctOrder":["p1","p2","p3"],"points":1.0}}}""";
+        var submitted = """{"paragraphs":[{"itemId":"p1"},{"itemId":"p3"},{"itemId":"p2"}]}""";
+
+        var result = await evaluator.EvaluateAsync(MakeRequest(submitted, scoringRules), CancellationToken.None);
+
+        Assert.False(result.Passed);
+        Assert.Equal(1.0, result.Score);
+        Assert.Equal(3.0, result.MaxScore);
+        Assert.False(result.ItemResults[0].IsCorrect);
+    }
+
+    [Fact]
+    public async Task EvaluateAsync_OrderedSequenceItemResults_NeverExposeCorrectOrder()
+    {
+        var evaluator = new FormIoPatternEvaluator(new LinguaCoach.Infrastructure.Placement.PlacementScoringService());
+        var scoringRules = """{"components":{"paragraphs":{"kind":"ordered_sequence","correctOrder":["p1","p2","p3"],"points":1.0}}}""";
+        var submitted = """{"paragraphs":[{"itemId":"p3"},{"itemId":"p1"},{"itemId":"p2"}]}""";
+
+        var result = await evaluator.EvaluateAsync(MakeRequest(submitted, scoringRules), CancellationToken.None);
+
+        Assert.Null(result.ItemResults[0].CorrectAnswer);
+        Assert.Empty(result.ItemResults[0].AcceptedAnswers);
+    }
+
+    [Fact]
     public async Task EvaluateAsync_NullScoringRules_ReturnsIncompleteZeroScore()
     {
         var evaluator = new FormIoPatternEvaluator(new LinguaCoach.Infrastructure.Placement.PlacementScoringService());

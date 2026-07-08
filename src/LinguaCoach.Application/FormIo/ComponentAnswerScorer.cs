@@ -24,6 +24,7 @@ public static class ComponentAnswerScorer
             ScoringRuleKinds.MultipleChoice => ScoreMultipleChoice(key, rule, value),
             ScoringRuleKinds.TextExact => ScoreText(key, rule, value, normalize: false),
             ScoringRuleKinds.TextNormalized => ScoreText(key, rule, value, normalize: true),
+            ScoringRuleKinds.OrderedSequence => ScoreOrderedSequence(key, rule, value),
             _ => new ComponentScoreResult(key, ExtractRawText(value), false, 0.0, rule.Points),
         };
     }
@@ -69,6 +70,61 @@ public static class ComponentAnswerScorer
                 : string.Equals(given, expected, StringComparison.Ordinal));
 
         return new ComponentScoreResult(key, raw?.Trim(), isCorrect, isCorrect ? rule.Points : 0.0, rule.Points);
+    }
+
+    /// <summary>Scores a stock Form.io "datagrid" (reorder enabled) submission by positional
+    /// comparison against the backend-only correct order — the same semantics
+    /// ExactMatchEvaluator.EvaluateReorderParagraphsAsync uses for the legacy content-driven
+    /// reorder_paragraphs path, so a Form.io-scored instance of the pattern behaves identically.
+    /// One point per correctly-placed position; the component's max score is
+    /// CorrectOrder.Count * Points.</summary>
+    private static ComponentScoreResult ScoreOrderedSequence(string key, ComponentScoringRule rule, JsonElement value)
+    {
+        var correctOrder = rule.CorrectOrder ?? [];
+        var submittedOrder = ExtractOrderedIds(value);
+
+        // Deduplicate submitted ids (keep first occurrence) — mirrors the legacy evaluator.
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var deduped = submittedOrder.Where(id => seen.Add(id)).ToList();
+
+        var correctPositions = 0;
+        for (var i = 0; i < correctOrder.Count; i++)
+        {
+            var submittedId = i < deduped.Count ? deduped[i] : null;
+            if (string.Equals(submittedId, correctOrder[i], StringComparison.Ordinal))
+                correctPositions++;
+        }
+
+        var maxPoints = correctOrder.Count * rule.Points;
+        var pointsEarned = correctPositions * rule.Points;
+        var isCorrect = correctOrder.Count > 0 && correctPositions == correctOrder.Count;
+        var normalizedValue = string.Join(",", deduped);
+
+        return new ComponentScoreResult(key, normalizedValue, isCorrect, pointsEarned, maxPoints);
+    }
+
+    /// <summary>Extracts row ids, in submitted order, from a Form.io datagrid submission value —
+    /// an array of either plain id strings, or row objects carrying an "itemId" property (the
+    /// convention used by reorder-style datagrid rows; see reorder_paragraphs_workplace_seed_v1).</summary>
+    private static IReadOnlyList<string> ExtractOrderedIds(JsonElement value)
+    {
+        if (value.ValueKind != JsonValueKind.Array) return [];
+
+        var ids = new List<string>();
+        foreach (var item in value.EnumerateArray())
+        {
+            switch (item.ValueKind)
+            {
+                case JsonValueKind.String:
+                    ids.Add(item.GetString()!);
+                    break;
+                case JsonValueKind.Object when item.TryGetProperty("itemId", out var idProp)
+                    && idProp.ValueKind == JsonValueKind.String:
+                    ids.Add(idProp.GetString()!);
+                    break;
+            }
+        }
+        return ids;
     }
 
     private static string NormalizeText(string value) =>

@@ -20,7 +20,14 @@ public sealed class FormIoSchemaValidationService : IFormIoSchemaValidationServi
         // Custom components (registered client-side in shared/formio/components) — audioPlayer is
         // presentational-only (no answer data), speakingResponse carries only an uploaded audio
         // storage-key reference, never an authored correct answer.
-        "audioPlayer", "speakingResponse"
+        "audioPlayer", "speakingResponse",
+        // Stock Form.io "Data Grid" (Phase C3, 2026-07-08 — reorder_paragraphs template
+        // migration), used with its built-in "reorder" setting for drag-to-reorder lists. Its
+        // own nested "components" (row template) are still recursively validated below via
+        // ContainerComponentArrayProps, so this carries no more risk than any other container
+        // type already allowed. "hidden" is a plain non-rendering data field (no script/eval
+        // capability) used inside a datagrid row to carry each row's stable item id.
+        "datagrid", "hidden"
     };
 
     private static readonly string[] ForbiddenScriptProperties =

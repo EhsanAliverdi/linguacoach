@@ -85,9 +85,45 @@ public sealed class FormIoSchemaValidationServiceTests
     }
 
     [Fact]
+    public void DatagridWithReorder_AndValidNestedComponents_IsValid()
+    {
+        // Phase C3 — stock "datagrid" (reorder enabled) used for reorder_paragraphs, with a
+        // "hidden" itemId field and a disabled "textarea" row field, both allow-listed.
+        var json = """
+        {"components":[
+            {"type":"datagrid","key":"paragraphs","reorder":true,"disableAddingRemovingRows":true,
+             "components":[
+                {"type":"hidden","key":"itemId"},
+                {"type":"textarea","key":"text","disabled":true}
+             ]}
+        ]}
+        """;
+
+        var result = _sut.ValidateSchema(json);
+
+        Assert.True(result.IsValid, result.Error);
+    }
+
+    [Fact]
+    public void DatagridWithDisallowedNestedComponent_IsRejected()
+    {
+        var json = """
+        {"components":[
+            {"type":"datagrid","key":"paragraphs","components":[
+                {"type":"iframe","key":"nested_bad"}
+            ]}
+        ]}
+        """;
+
+        var result = _sut.ValidateSchema(json);
+
+        Assert.False(result.IsValid);
+    }
+
+    [Fact]
     public void Component_WithDisallowedType_IsRejected()
     {
-        var json = """{"components":[{"type":"datagrid","key":"x"}]}""";
+        var json = """{"components":[{"type":"iframe","key":"x"}]}""";
 
         var result = _sut.ValidateSchema(json);
 
@@ -124,7 +160,7 @@ public sealed class FormIoSchemaValidationServiceTests
         var json = """
         {"components":[
             {"type":"panel","key":"p1","components":[
-                {"type":"datagrid","key":"nested_bad"}
+                {"type":"iframe","key":"nested_bad"}
             ]}
         ]}
         """;

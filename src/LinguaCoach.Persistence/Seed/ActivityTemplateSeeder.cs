@@ -9,8 +9,9 @@ namespace LinguaCoach.Persistence.Seed;
 /// Seeds a small, original, English-only batch of approved/published ActivityTemplates.
 /// Phase C1 seeded the first three (PhraseMatch, GapFillWorkplacePhrase,
 /// ReadingMultipleChoiceSingle). Phase C2 (2026-07-08) adds three more reading-family patterns
-/// (ReadingMultipleChoiceMulti, ReadingFillInBlanks, ReadingWritingFillInBlanks). See
-/// docs/architecture/practice-gym.md.
+/// (ReadingMultipleChoiceMulti, ReadingFillInBlanks, ReadingWritingFillInBlanks). Phase C3
+/// (2026-07-08) adds ReorderParagraphs, using a stock Form.io "datagrid" (reorder enabled) instead
+/// of individual answer components. See docs/architecture/practice-gym.md.
 ///
 /// Idempotent per template Key — safe to run on every startup.
 ///
@@ -329,5 +330,69 @@ public static class ActivityTemplateSeeder
             }),
             ValidationRulesJson: ValidationRules(["reading_passage", "blank_1", "blank_2"]),
             EstimatedDurationSeconds: 220),
+
+        // ── 7. ReorderParagraphs — reading, B1 (Phase C3) ───────────────────────────────
+        // Stock Form.io "datagrid" with its built-in "reorder" setting (drag-to-reorder rows).
+        // The row template carries a hidden "itemId" field (the stable paragraph id) plus a
+        // read-only "text" field showing the paragraph. Rows are listed below in an arbitrary
+        // SHUFFLED display order — the correct order lives exclusively in ScoringModelJson's
+        // "correctOrder" (backend-only, ordered_sequence kind), never in this schema.
+        new TemplateSeed(
+            Key: "reorder_paragraphs_workplace_seed_v1",
+            Skill: "reading",
+            Subskill: "reading.inference",
+            CefrLevel: "B1",
+            ActivityType: "ReadingTask",
+            PatternKey: "reorder_paragraphs",
+            ContextTagsJson: """["workplace"]""",
+            FocusTagsJson: """["reading_coherence"]""",
+            CurriculumObjectiveKey: "b1.reading.understanding_texts",
+            FormIoBaseSchemaJson: Schema(new object[]
+            {
+                new { type = "content", key = "instructions", input = false,
+                      html = "<p>Drag the steps below into the correct order for onboarding a new " +
+                             "team member.</p>" },
+                new
+                {
+                    type = "datagrid",
+                    key = "paragraphs",
+                    label = "Onboarding steps",
+                    reorder = true,
+                    disableAddingRemovingRows = true,
+                    components = new object[]
+                    {
+                        new { type = "hidden", key = "itemId", input = true, clearOnHide = false },
+                        new { type = "textarea", key = "text", input = true, disabled = true, clearOnHide = false },
+                    },
+                    defaultValue = new object[]
+                    {
+                        new { itemId = "p3", text = "By the end of the first week, assign the new hire a mentor from the team who can answer day-to-day questions and check in regularly." },
+                        new { itemId = "p1", text = "Before the new hire's start date, IT sets up their email account, laptop, and access to the shared project folders." },
+                        new { itemId = "p5", text = "At the 30-day mark, the manager holds a short check-in meeting to review progress and address any open questions." },
+                        new { itemId = "p2", text = "On the first day, the manager gives a short welcome tour of the office and introduces the new hire to the immediate team." },
+                        new { itemId = "p4", text = "During the second week, the new hire completes their first small task under the mentor's guidance and receives feedback." },
+                    },
+                },
+            }),
+            GenerationInstructions:
+                "Personalize only minor surface wording within each paragraph (e.g. word choice), while " +
+                "keeping every paragraph's logical position in the sequence, its role in the process, and its " +
+                "connection to the paragraph before and after it completely unchanged. Do NOT change the " +
+                "component 'key' values (instructions, paragraphs), the row 'itemId' values (p1-p5), the number " +
+                "of rows, or the 'reorder'/'disableAddingRemovingRows' settings. Do NOT add any numbering, " +
+                "ordinal words (first/second/third), or sequence hints inside the paragraph text or " +
+                "instructions that would reveal the correct order. Keep all content in English only. Keep a " +
+                "professional, workplace-appropriate tone suitable for CEFR B1 learners.",
+            ScoringModelJson: ScoringRules(new Dictionary<string, object>
+            {
+                ["paragraphs"] = new
+                {
+                    kind = "ordered_sequence",
+                    correctOrder = new[] { "p1", "p2", "p3", "p4", "p5" },
+                    points = 1.0,
+                },
+            }),
+            ValidationRulesJson: ValidationRules(["paragraphs"]),
+            EstimatedDurationSeconds: 240),
     ];
 }

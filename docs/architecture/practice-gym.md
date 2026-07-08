@@ -121,11 +121,12 @@ enforces exact-fingerprint/same-template/same-topic cooldowns; the Form.io Pract
 fingerprint after, with a small bounded retry before falling back to standard generation. This is
 **deterministic/exact-match only** — no embeddings, no semantic near-duplicate detection.
 
-## Bank-first pattern coverage (as of 2026-07-08, Phase C2)
+## Bank-first pattern coverage (as of 2026-07-08, Phase C3)
 
 Phase C1 generalized the Form.io template path from one pilot pattern to a small first batch of
 three deterministic patterns; Phase C2 added a second small batch of three more reading-family
-patterns. All seven keys are tracked in `PracticeGymGenerationJob.TemplateMigratedPatternKeys`:
+patterns; Phase C3 added exactly one pattern, `reorder_paragraphs`. All eight keys are tracked in
+`PracticeGymGenerationJob.TemplateMigratedPatternKeys`:
 
 | Pattern key | Skill | Marking | Status |
 |---|---|---|---|
@@ -133,14 +134,71 @@ patterns. All seven keys are tracked in `PracticeGymGenerationJob.TemplateMigrat
 | `phrase_match` | vocabulary | KeyedSelection (native), FormIoScored when template-sourced | Migrated in C1 |
 | `gap_fill_workplace_phrase` | vocabulary | ExactMatch (native), FormIoScored when template-sourced | Migrated in C1 |
 | `reading_multiple_choice_single` | reading | KeyedSelection (native), FormIoScored when template-sourced | Migrated in C1 |
-| `reading_multiple_choice_multi` | reading | KeyedSelection (native), FormIoScored when template-sourced | **Migrated in C2** |
-| `reading_fill_in_blanks` | reading | ExactMatch (native), FormIoScored when template-sourced | **Migrated in C2** |
-| `reading_writing_fill_in_blanks` | reading | ExactMatch (native), FormIoScored when template-sourced | **Migrated in C2** |
+| `reading_multiple_choice_multi` | reading | KeyedSelection (native), FormIoScored when template-sourced | Migrated in C2 |
+| `reading_fill_in_blanks` | reading | ExactMatch (native), FormIoScored when template-sourced | Migrated in C2 |
+| `reading_writing_fill_in_blanks` | reading | ExactMatch (native), FormIoScored when template-sourced | Migrated in C2 |
+| `reorder_paragraphs` | reading | ExactMatch (native), FormIoScored when template-sourced | **Migrated in C3** |
 
-**Everything else in the ~28-pattern catalog remains fully legacy** — the freeform
-`IAiActivityGenerator` content-generation path, completely unchanged. This is deliberate,
+**Everything else in the ~33-row pattern catalog (26 legacy after C3, corrected from the earlier
+~28/~21 estimate against the actual `ExercisePatternSeeder` count) remains fully legacy** — the
+freeform `IAiActivityGenerator` content-generation path, completely unchanged. This is deliberate,
 small-batch migration: each batch is chosen for being deterministic, audio-free, image-free, and
-already `SupportsPracticeGym=true`; broader migration continues in future increments (Phase C3+).
+already `SupportsPracticeGym=true`.
+
+## Phase C3 — `reorder_paragraphs` (2026-07-08)
+
+A full re-audit of the remaining 26 legacy pattern keys against their actual content DTOs (not
+just catalog flags) found **exactly one** additional safe candidate: `reorder_paragraphs`. Every
+other remaining key is excluded for a concrete, code-grounded reason — see "Excluded patterns"
+below, which extends the C2 audit with three newly-identified exclusions
+(`answer_short_question`, `read_aloud`, `repeat_sentence`).
+
+**What was built:**
+- A new `ComponentAnswerScorer` kind, `ScoringRuleKinds.OrderedSequence` ("ordered_sequence"),
+  reusing the exact positional-comparison scoring semantics `ExactMatchEvaluator.EvaluateReorderParagraphsAsync`
+  already used for the legacy path — a Form.io-scored instance behaves identically to a
+  legacy-generated one. Generic: usable by any future reorder-style template, not hardcoded to
+  this one pattern. `ComponentScoringRule.CorrectOrder` (`IReadOnlyList<string>?`) carries the
+  correct id order — backend-only, never serialized into `FormIoBaseSchemaJson`.
+- One seeded template, `reorder_paragraphs_workplace_seed_v1` (B1, reading/`reading.inference`,
+  original English-only "onboarding a new team member" 5-paragraph workplace scenario). Uses the
+  **stock Form.io `datagrid` component with its built-in `reorder` setting** (drag-to-reorder
+  rows) — no custom Form.io component class was needed, unlike `audioPlayer`/`speakingResponse`.
+  Each row carries a hidden `itemId` field (stable paragraph id) and a disabled `textarea` field
+  (paragraph text). The schema's row display order is deliberately shuffled and never matches the
+  correct order; the correct order lives exclusively in `ScoringModelJson`.
+- `FormIoSchemaValidationService`'s allow-list extended with `datagrid` and `hidden` — both
+  recursively validated the same as any other container/field type, so this carries no more risk
+  than the existing `panel`/`columns`/`table` container types already allowed.
+- `reorder_paragraphs` added to `PracticeGymGenerationJob.TemplateMigratedPatternKeys`.
+- **No frontend code changes were needed.** `ExerciseRendererComponent` already routes to the
+  generic `FormioRendererComponent` purely based on `LearningActivity.formIoSchemaJson` being
+  populated (the same content-driven mechanism proven since the original pilot) — a stock
+  `datagrid`'s submission (`{"paragraphs": [{"itemId": ..., "text": ...}, ...]}` in the student's
+  chosen order) is emitted by Form.io's own `submit` event and consumed as-is by
+  `ComponentAnswerScorer`'s `ordered_sequence` case, no transformation needed on either side. The
+  separate, legacy, non-Form.io `ReorderParagraphsComponent` (up/down-button reordering) is
+  untouched and continues to serve any instance without `formIoSchemaJson` populated.
+
+**Excluded patterns (Phase C3 audit findings — supersedes/extends the Phase C2 exclusion list):**
+Every remaining legacy key falls into one of:
+- **Open-ended AI-evaluated** (`AiStructured`/`AiOpenEnded` marking): `listen_and_answer`,
+  `email_reply`, `teams_chat_simulation`, `open_writing_task`, `spoken_response_from_prompt`,
+  `speaking_roleplay_turn`, `summarize_written_text`, `write_essay`, `summarize_spoken_text`,
+  `respond_to_situation`, `describe_image`, `retell_lecture`, `summarize_group_discussion`.
+- **Audio-referencing content DTO despite `RequiresAudio=false`** (the C2-identified "flag lies"
+  problem): `listening_multiple_choice_single/multi`, `listening_fill_in_blanks`,
+  `select_missing_word`, `highlight_correct_summary`, `highlight_incorrect_words`,
+  `write_from_dictation` — all still reference `AudioUrl`/`AudioScript` in their content DTO.
+- **Newly identified in the C3 audit — also audio-referencing, AND fuzzy/partial-credit scored**
+  (not a binary `ComponentAnswerScorer`-shaped comparison): `answer_short_question` (substring
+  "contains" fuzzy match), `read_aloud` and `repeat_sentence` (word-overlap percentage scoring,
+  0.60 threshold, partial credit). These were not explicitly named in the C2 exclusion list;
+  they're doubly excluded — audio AND non-binary scoring — not simply overlooked.
+- **Not Practice-Gym-eligible:** `lesson_reflection` (`SupportsPracticeGym=false`).
+
+No sentence-ordering/matching/exact-match reading-grammar-vocabulary pattern remains that hasn't
+already been migrated (C1/C2/C3) or excluded above for a concrete reason.
 
 **Phase C2 selection note:** all three C2 additions are reading-family patterns using only
 components the existing `ComponentAnswerScorer` already supports (`single_choice` via radio,
@@ -154,11 +212,11 @@ audio/transcript script (see `ListeningFillInBlanksContent.AudioUrl` and the `Li
 integration in `PracticeGymGenerationJob`), so they do not yet have "strong evidence" of being
 audio-free per the migration-batch selection rule. They remain legacy pending a dedicated review
 of whether/how a text-only variant could be authored safely. `ReorderParagraphs` was also excluded
-from C2 — its `ExactMatch` marking is deterministic, but scoring a paragraph-ordering interaction
-has no existing `ComponentAnswerScorer` kind (no reorder/sequencing scorer exists yet), so
-migrating it would require new scorer logic, which C1/C2's small-batch discipline defers.
+from C2 at the time — its `ExactMatch` marking is deterministic, but scoring a paragraph-ordering
+interaction had no existing `ComponentAnswerScorer` kind — see "Phase C3" above for how this was
+resolved with a new `ordered_sequence` kind.
 
-**Key generalization insight (Phase C1, still true for C2):** for each newly-migrated pattern, its
+**Key generalization insight (Phase C1, still true for C2 and C3):** for each newly-migrated pattern, its
 `ExercisePatternDefinition.MarkingMode` stays at its legacy value (`KeyedSelection`/`ExactMatch`)
 — it is NOT changed to `FormIoScored`, because that field is shared, static config also used by
 the legacy fallback for the same pattern key. Instead, `ActivitySubmitHandler` now decides
@@ -169,19 +227,20 @@ nominal marking mode alone. This is what lets the SAME pattern key serve both te
 and legacy-generated instances correctly, side by side, without a global marking-mode change
 breaking the legacy fallback. The frontend renderer (`ExerciseRendererComponent.formIoSchema`)
 was already content-driven this way since the original pilot — no frontend changes were needed
-for Phase C1 or Phase C2.
+for Phase C1, Phase C2, or Phase C3 (confirmed again for C3's stock `datagrid` component, which
+required no new custom component registration either).
 
-**Safety gates (all three still required, same defense-in-depth as the original pilot):**
+**Safety gates (all still required, same defense-in-depth as the original pilot):**
 1. Pattern key must be in `TemplateMigratedPatternKeys` (code-level allow-list — the safe,
    admin-UI-free way to add/remove which patterns attempt the template path).
 2. The existing `PracticeGymFormIoPilot.Enabled` runtime setting must be on (the master switch
-   for all seven keys now in the allow-list, not just the original pilot — one admin toggle, no
+   for all eight keys now in the allow-list, not just the original pilot — one admin toggle, no
    new UI).
 3. An approved (`ReviewStatus.Approved`) + published (`IsPublished`) `ActivityTemplate` must
    exist for the pattern key — `phrase_match_workplace_seed_v1` / `gap_fill_workplace_phrase_seed_v1`
-   / `reading_mcq_workplace_seed_v1` (Phase C1), and `reading_mcq_multi_workplace_seed_v1` /
+   / `reading_mcq_workplace_seed_v1` (Phase C1), `reading_mcq_multi_workplace_seed_v1` /
    `reading_fill_in_blanks_workplace_seed_v1` / `reading_writing_fill_in_blanks_workplace_seed_v1`
-   (Phase C2) — see `ActivityTemplateSeeder`.
+   (Phase C2), and `reorder_paragraphs_workplace_seed_v1` (Phase C3) — see `ActivityTemplateSeeder`.
 
 If any gate fails, or the Phase B novelty policy blocks the template/content as a recent
 duplicate after a small bounded retry, generation falls back to the legacy freeform path for
@@ -194,23 +253,32 @@ therefore explicitly forbid the AI from renaming component keys or changing whic
 option/value is correct. This is enforced by instruction only (plus
 `ActivityTemplateValidationRules.requiredComponentKeys` catching a renamed/missing key) — there
 is no automated check that the AI didn't shift which answer is correct while keeping the same
-key. This is not a new risk introduced by Phase C1 or C2; it is the same constraint the original
-pilot template design already accepted.
+key. This is not a new risk introduced by Phase C1, C2, or C3; it is the same constraint the
+original pilot template design already accepted.
 
-## Migration plan for the rest of the catalog (Phase C3+)
+## Migration plan for the rest of the catalog (Phase C4+)
 
 Phase C is a **sequence** (C1 → C2 → C3 → C4 → C-Final), not one large "migrate everything"
-phase — each increment is small enough to review and roll back independently. C1 and C2 are both
-complete (7 of ~28 pattern keys template-enabled). See `docs/roadmap/road-map.md` §19a for the
-phase order relative to Phase D and Phase E.
+phase — each increment is small enough to review and roll back independently. C1, C2, and C3 are
+all complete (8 of ~33 pattern rows template-enabled — 26 legacy remain). See
+`docs/roadmap/road-map.md` §19a for the phase order relative to Phase D and Phase E.
 
-**Continue in small batches**, applying the same selection criteria C1/C2 used: deterministic or
-mostly-deterministic marking, no audio/image requirement, `SupportsPracticeGym=true` already in
-production, and an existing simple scoring shape (`single_choice`/`multiple_choice`/
-`text_exact`/`text_normalized` via `ComponentAnswerScorer`). `ReorderParagraphs` is the next
-deterministic candidate but needs a new sequencing/reorder `ComponentAnswerScorer` kind first — a
-small, reviewable scoring addition, not a full renderer rebuild. The excluded "listening" patterns
-noted above need a dedicated audio-compatibility review before any of them can be considered.
+**No further deterministic/simple candidates remain** after the C3 audit — see "Excluded
+patterns" above. **Phase C4, if pursued, must therefore either:**
+1. Do a dedicated audio-compatibility review of the "listening" family (6 keys) and the 3
+   fuzzy-scored speaking keys (`answer_short_question`, `read_aloud`, `repeat_sentence`) to
+   determine whether a text-only or word-overlap-scorer variant can be authored safely — this is
+   real new scope (a new scorer kind for partial/fuzzy matching, and a decision on whether
+   audio-referencing content can be migrated at all), not a small batch like C1-C3; or
+2. Build dedicated Form.io renderer + evaluator support for `AiStructured`/`AiOpenEnded` marking
+   modes (open-ended AI-graded text, audio submission scoring, multi-turn speaking evaluation) —
+   also real new scope, not a small batch.
+
+Given this, **Phase C-Final (closing out the deterministic-pattern migration track at 8/~33, and
+formally documenting the remaining 26 as staying on legacy generation pending the above dedicated
+reviews) is a legitimate, and arguably preferable, next step over forcing a C4 that isn't a small,
+low-risk batch.** See `docs/roadmap/road-map.md` §19a and the Decision Log for the actual
+phase-sequence decision.
 
 **Do not migrate complex speaking, listening, or open writing/AI-evaluated patterns
 (`AiStructured`/`AiOpenEnded` marking modes, or any pattern requiring audio recording/playback)

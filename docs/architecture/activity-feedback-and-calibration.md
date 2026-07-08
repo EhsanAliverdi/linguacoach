@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase B2)
+lastUpdated: 2026-07-08 (Phase C3)
 owner: architecture
 supersedes:
 supersededBy:
@@ -11,9 +11,14 @@ supersededBy:
 Phase B2 (2026-07-08) implemented the **foundation** for this system: entity, migration, admin
 policy, API endpoints, and a minimal student-facing prompt. It is **not** a full calibration
 engine — no automated CEFR/difficulty/template-quality recalculation runs on this data yet; it is
-collected and queryable, ready for that future work. It is inserted into the phase sequence
-directly after Phase C2 and before Phase C3 — see `docs/roadmap/road-map.md` §19a. **Phase C3
-remains next and has not started.**
+collected and queryable, ready for that future work. It was inserted into the phase sequence
+directly after Phase C2 and before Phase C3.
+
+**Phase C3 (2026-07-08)** migrated one additional Practice Gym pattern (`reorder_paragraphs`) to
+the bank-first template path. No changes were needed to the `FeedbackPolicy` wiring in
+`ActivitySubmitHandler` (added in Phase B2) — it is gated only on Today-vs-Practice-Gym surface
+detection (via the `SessionExercise` link), never on a specific pattern key, so it applies to
+`reorder_paragraphs` (and any future migrated pattern) automatically.
 
 ---
 

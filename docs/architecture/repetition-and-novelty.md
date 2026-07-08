@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase B2)
+lastUpdated: 2026-07-08 (Phase C3)
 owner: architecture
 supersedes:
 supersededBy:
@@ -129,12 +129,13 @@ section. No admin UI was built for this in Phase B, per scope.
   `template-precheck:{templateId}` fingerprint so only the template-cooldown branch can match),
   then checks the real content fingerprint *after* generation, retrying generation up to
   `MaxTemplateGenerationAttempts` (2) times before falling back to the standard freeform path.
-  As of Phase C2 (2026-07-08) this applies to 7 pattern keys
+  As of Phase C3 (2026-07-08) this applies to 8 pattern keys
   (`TemplateMigratedPatternKeys` — the original pilot, C1's `phrase_match`,
-  `gap_fill_workplace_phrase`, `reading_multiple_choice_single`, and C2's
-  `reading_multiple_choice_multi`, `reading_fill_in_blanks`, `reading_writing_fill_in_blanks`),
-  generalized from the single original pilot pattern. It still does not touch any pattern outside
-  that set — see docs/architecture/practice-gym.md for the full list and safety gates.
+  `gap_fill_workplace_phrase`, `reading_multiple_choice_single`, C2's
+  `reading_multiple_choice_multi`, `reading_fill_in_blanks`, `reading_writing_fill_in_blanks`,
+  and C3's `reorder_paragraphs`), generalized from the single original pilot pattern. It still
+  does not touch any pattern outside that set — see docs/architecture/practice-gym.md for the
+  full list and safety gates.
 - **Today lessons / legacy generation** (`ActivityMaterializationJob.MaterializeExerciseAsync`):
   builds an "avoid repeating" hint from the student's recent `StudentActivityUsageLog` history
   for the same pattern (last 14 days, by `TopicKey` — currently usually empty, see limitations

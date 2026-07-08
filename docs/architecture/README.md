@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase B2)
+lastUpdated: 2026-07-08 (Phase C3)
 owner: architecture
 supersedes:
 supersededBy:
@@ -107,12 +107,17 @@ Key facts about where this stands today (2026-07-08):
   support — UI chrome, onboarding language-pair selection, support-language hints/translation
   help — never seeded as learning content.
 
-Current state (as of 2026-07-08, Phase B2): **Phase C1 and Phase C2 both done** — generalized
-the Form.io template path from 1 pilot pattern to 7 total (C1's `phrase_match`,
+Current state (as of 2026-07-08, Phase C3): **Phase C1, Phase C2, and Phase C3 all done** —
+generalized the Form.io template path from 1 pilot pattern to 8 total (C1's `phrase_match`,
 `gap_fill_workplace_phrase`, `reading_multiple_choice_single`; C2's
-`reading_multiple_choice_multi`, `reading_fill_in_blanks`, `reading_writing_fill_in_blanks`); see
-docs/architecture/practice-gym.md. **Phase B2 — Activity Feedback, Repeat Policy, and
-Calibration Signals** has now implemented its persistence/API/minimal-UI foundation — see
+`reading_multiple_choice_multi`, `reading_fill_in_blanks`, `reading_writing_fill_in_blanks`; C3's
+`reorder_paragraphs`, using a new `ordered_sequence` scorer kind and a stock Form.io `datagrid`
+component with no new custom component or frontend code); see docs/architecture/practice-gym.md.
+A full C3 re-audit of the remaining ~26 legacy pattern keys found no further safe deterministic
+candidates — everything else is open-ended-AI-evaluated or has an audio-referencing/fuzzy-scored
+content DTO; **recommend Phase C-Final over a forced Phase C4** (see practice-gym.md's "Migration
+plan" section). **Phase B2 — Activity Feedback, Repeat Policy, and Calibration Signals** has
+implemented its persistence/API/minimal-UI foundation — see
 docs/architecture/activity-feedback-and-calibration.md. It adds explicit student-reported
 difficulty/clarity/usefulness/repeat-preference feedback across both Today and Practice Gym
 (`ActivityFeedbackSignal`, admin-configurable Off/Optional/Required policy per surface via the
@@ -120,12 +125,11 @@ existing feature-gate system, `POST /api/activity/attempt/{attemptId}/feedback`)
 Phase B's deterministic usage-log/cooldown tracking. **This is a foundation, not a calibration
 engine** — no automated CEFR calibration, difficulty-band calibration, `ActivityTemplate`/resource
 quality scoring, novelty/cooldown adjustment, or admin review automation consumes this data yet;
-it is collected and queryable for future work. Phase C continues as a **sequence** —
-C3 → C4 → C-Final — rather than one large migration phase. Phase E is planned as the
-resource-import platform above (E0-E8). Phase D (bank-first Today lesson composer) is sequenced
-to start only after Phase C reaches C-Final and Phase E reaches at least E4 (first published
-banks) — see `docs/roadmap/road-map.md` §19a for the full phase order. **Phase C3, Phase D, and
-Phase E implementation remain not started.**
+it is collected and queryable for future work. Phase E is planned as the resource-import platform
+above (E0-E8). Phase D (bank-first Today lesson composer) is sequenced to start only after Phase C
+reaches C-Final and Phase E reaches at least E4 (first published banks) — see
+`docs/roadmap/road-map.md` §19a for the full phase order. **Phase D and Phase E implementation
+remain not started.**
 
 ---
 
@@ -239,7 +243,7 @@ Archived
 | Clean-A / Clean-A2 dead-code cleanup | ✅ Done (2026-07-08) — removed dead onboarding enums, an orphaned onboarding component, dead route aliases, and a fully-orphaned admin career/word authoring API/UI chain; see `docs/reviews/2026-07-08-bank-first-ai-teaching-clean-architecture-plan.md` |
 | Session reflection | ⬜ Deferred — needs AI prompt `session_reflection` and stable session completion signal |
 | Bank-first Today lesson composer | ⬜ Deferred — planned Phase D1, sequenced after Phase C-Final and Phase E4; not started |
-| Generalize Form.io template path across the rest of Practice Gym | 🟡 In progress — Phase C1 (batch of 3) and Phase C2 (batch of 3 more) done 2026-07-08, 7 of ~28 keys template-enabled; Phase C3/C4/C-Final (small batches, complex speaking/listening/writing patterns deferred until renderer/evaluator support is ready) not started |
+| Generalize Form.io template path across the rest of Practice Gym | 🟡 In progress — Phase C1 (batch of 3), Phase C2 (batch of 3 more), and Phase C3 (1 pattern, `reorder_paragraphs`, new `ordered_sequence` scorer) done 2026-07-08, 8 of ~33 pattern rows template-enabled; C3 audit found no further safe deterministic candidates — recommend Phase C-Final over Phase C4 (see docs/architecture/practice-gym.md) |
 | Activity Feedback, Repeat Policy, and Calibration Signals (Phase B2) | 🟡 Foundation implemented (2026-07-08) — see docs/architecture/activity-feedback-and-calibration.md. `ActivityFeedbackSignal` entity/migration, Off/Optional/Required policy per surface (Today + Practice Gym) via existing feature-gate system, submit/upsert API, minimal student prompt UI. Not yet consumed by any automated calibration/novelty/admin-review logic — collection only |
 | English Resource Bank Import/Review/Preview/Publishing Platform (Phase E0-E8) | ⬜ Planned only (2026-07-08, Plan-Sync-After-C1) — see docs/architecture/english-resource-bank-import-platform.md. English-only; no Persian/bilingual seed data at any phase. Not started |
 | IFileStorageService / MinIO | ✅ Done — audio (TTS + speaking uploads) fully on object storage; not blocking deployment at current scale |

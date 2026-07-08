@@ -52,6 +52,8 @@ public sealed class PracticeGymGenerationJob : IJob
         ExercisePatternKey.ReadingMultipleChoiceMulti,
         ExercisePatternKey.ReadingFillInBlanks,
         ExercisePatternKey.ReadingWritingFillInBlanks,
+        // Phase C3 addition:
+        ExercisePatternKey.ReorderParagraphs,
     };
 
     private readonly LinguaCoachDbContext _db;
