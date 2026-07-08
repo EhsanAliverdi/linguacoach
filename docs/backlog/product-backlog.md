@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase D1)
+lastUpdated: 2026-07-08 (Bugfix-D1A)
 owner: product
 supersedes:
 supersededBy:
@@ -63,6 +63,28 @@ phase unless explicitly re-scoped when that phase starts.
 
 ---
 
+## EF Default-Value Audit Follow-Up (Post Bugfix-D1A) `Not started`
+
+Bugfix-D1A (2026-07-08) fixed `LearningSession.GenerationStatus`'s EF default-value bug and
+audited every enum-typed `HasDefaultValue(...)` configuration in `Configurations/*.cs` for the
+same collision class (a configured default that differs from the property type's CLR default,
+combined with application code that can legitimately construct-then-explicitly-set the property
+to that CLR default before its first save). No other enum instance was found —
+`AdminReviewStatus.NotRequired` and `FormRendererKind.FormIo` both already default to ordinal 0.
+
+- [ ] **Numeric `HasDefaultValue(1)`-style properties not individually call-site-audited** `Not started`
+  — `ActivityTemplate.VersionNumber`, `ExerciseTypeDefinition`'s `MinItemsPerPractice`/
+  `DefaultItemsPerPractice`/`MaxItemsPerPractice`, `PlacementItemDefinition.DifficultyBand`/
+  `ItemVersion` all configure a non-zero DB default for a plain `int` property (CLR default 0).
+  The same class of bug would apply if any code path ever explicitly constructs one of these
+  entities and sets the property to exactly `0` before its first `SaveChangesAsync`, intending
+  that value to persist. Not confirmed as a live bug — lower priority than the enum case since
+  none of these fields' "0" value carries an obviously distinct real-world meaning the way
+  `GenerationStatus.Pending` did. Worth a dedicated call-site audit if a similar symptom
+  (a value silently reverting to its configured default) is ever reported for one of them.
+
+---
+
 ## Bank-First Today Composer — Phase D1 (First Slice) `Done` (2026-07-08)
 
 Phase D1 implemented the first narrow, fallback-safe consumer of the Resource Bank platform:
@@ -89,23 +111,11 @@ D1's scope — tracked here for a future Phase D2 or larger Today composer migra
   list of resources actually offered to the AI prompt lives only in a structured log line, not
   a queryable column. A dedicated provenance table/JSON field would be needed to track every
   resource considered/used per activity.
-- [ ] **Discovered bug (not fixed by D1 — out of scope, pre-existing, affects `LessonBatchGenerationJob` too)**:
-  `LearningSession.GenerationStatus` is configured with EF `.HasDefaultValue(GenerationStatus.Ready)`.
-  Since `GenerationStatus.Pending == 0` (the enum's CLR default), EF Core's "omit CLR-default
-  values from the INSERT, let the SQL default apply" convention means an explicit
-  `session.MarkGenerationPending()` call made **before a brand-new session's first
-  `SaveChangesAsync`** is silently discarded — the row persists as `Ready` instead of `Pending`.
-  `LessonBatchGenerationJob.cs` (line ~238) uses exactly this pattern
-  (`new LearningSession(...)` → `MarkGenerationPending()` → `Add` → `SaveChangesAsync`) when
-  creating background-generated sessions, meaning newly-created sessions may never actually
-  reach a real `Pending` state in the database, and `ActivityMaterializationJob`'s own
-  `GenerationStatus != Ready` filter (its only way of finding sessions that still need
-  materializing) could be silently skipping them. **Needs a dedicated investigation phase** to
-  confirm real-world impact (verified only against SQLite in-memory in a Phase D1 test, not yet
-  confirmed against PostgreSQL) and a fix — likely either dropping the `HasDefaultValue`
-  configuration (since the CLR always sets an explicit value on construction anyway) or
-  reordering session construction so `MarkGenerationPending()` runs in a second, separate
-  `SaveChangesAsync` after the row already exists as `Ready`.
+- [x] **Discovered bug — `LearningSession.GenerationStatus` EF default-value bug** `Done` (Bugfix-D1A, 2026-07-08):
+  fixed by removing `LearningSessionConfiguration`'s `.HasDefaultValue(GenerationStatus.Ready)`
+  (migration `Bugfix_D1A_RemoveGenerationStatusDefault`, no data loss). See
+  docs/architecture/learning-activity-engine.md for the full root-cause writeup and
+  docs/roadmap/road-map.md's Decision Log (Bugfix-D1A entry) for the fix rationale.
 
 ---
 

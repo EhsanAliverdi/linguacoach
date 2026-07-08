@@ -34,8 +34,15 @@ internal sealed class LearningSessionConfiguration : IEntityTypeConfiguration<Le
         // Background generation / lesson buffer (T10)
         builder.Property(e => e.StudentProfileId).HasColumnName("student_profile_id").IsRequired(false);
         builder.Property(e => e.CourseSequenceNumber).HasColumnName("course_sequence_number").IsRequired(false);
+        // Bugfix-D1A: no HasDefaultValue here (deliberately). GenerationStatus.Pending == 0, the
+        // enum's CLR default — configuring a DB default here makes EF treat any CLR value equal
+        // to the type's default as "unset" and skip sending it in the INSERT, letting the DB
+        // default apply instead. That silently discarded MarkGenerationPending() calls made
+        // before a new session's first SaveChanges (see LessonBatchGenerationJob), always
+        // persisting Ready regardless. New LearningSession instances already default to Ready via
+        // the property initializer in code, so no DB-side default is needed for correctness.
         builder.Property(e => e.GenerationStatus).HasColumnName("generation_status")
-            .HasConversion<int>().HasDefaultValue(GenerationStatus.Ready).IsRequired();
+            .HasConversion<int>().IsRequired();
         builder.Property(e => e.ReadyAtUtc).HasColumnName("ready_at_utc").IsRequired(false);
         builder.Property(e => e.GenerationBatchId).HasColumnName("generation_batch_id").IsRequired(false);
         builder.Property(e => e.DeletedAtUtc).HasColumnName("deleted_at_utc").IsRequired(false);

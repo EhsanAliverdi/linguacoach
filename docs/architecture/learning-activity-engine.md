@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase D1)
+lastUpdated: 2026-07-08 (Bugfix-D1A)
 owner: architecture
 supersedes:
 supersededBy:
@@ -138,6 +138,31 @@ list is only in the structured log line, not a new column. See
 composer" section for the decision-checkpoint history that led to this phase, and
 `docs/backlog/product-backlog.md` for what remains explicitly deferred (Speaking/Listening/
 image/open-ended patterns, CEFR-level widening, full provenance of every selected resource).
+
+**`GenerationStatus` default-value bugfix (Bugfix-D1A, 2026-07-08):** while building D1's
+regression tests, a pre-existing bug was found in `LearningSessionConfiguration`:
+`GenerationStatus` was configured with EF `.HasDefaultValue(GenerationStatus.Ready)`. Because
+`GenerationStatus.Pending == 0` (the enum's own CLR default), EF Core's "omit CLR-default
+property values from the INSERT, let the DB default apply" convention silently discarded an
+explicit `session.MarkGenerationPending()` call made before a brand-new session's first
+`SaveChangesAsync` — the row always persisted as `Ready` regardless.
+`LessonBatchGenerationJob.MaterializeSessionsAsync` uses exactly that construction order
+(`new LearningSession(...)` → `MarkGenerationPending()` → `Add` → `SaveChangesAsync`), so
+background-generated sessions never actually reached a real `Pending` state in the database.
+Practical impact: `StudentReadinessAuditService`'s "no stuck session generation" check (which
+looks for sessions stuck in `Pending`/`Failed` for over 30 minutes) could never detect a real
+stuck-generation incident, since sessions always read back as `Ready` immediately. **Fixed** by
+removing the `HasDefaultValue(...)` configuration (migration
+`Bugfix_D1A_RemoveGenerationStatusDefault` — an `ALTER COLUMN ... DROP DEFAULT`, no data change,
+no column type change); `LearningSession` instances already default to `Ready` via their own
+property initializer in code, so no DB-side default was ever needed for correctness. One
+existing test (`LessonBatchGenerationJobTests`) had its assertion corrected from `Ready` to
+`Pending` — it had been unknowingly asserting the bug's symptom rather than the intended
+behavior, since `ActivityMaterializationJob` (the only thing that ever calls
+`MarkGenerationReady`) never actually runs within that test. See
+`docs/roadmap/road-map.md` Decision Log (2026-07-08, Bugfix-D1A) for the full audit and fix
+rationale, including the review of similar `HasDefaultValue`-on-enum patterns elsewhere in the
+codebase (none found to carry the same live risk).
 
 ---
 

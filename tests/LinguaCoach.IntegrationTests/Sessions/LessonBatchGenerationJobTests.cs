@@ -76,7 +76,14 @@ public sealed class LessonBatchGenerationJobTests : IClassFixture<ApiTestFactory
             .OrderBy(s => s.CourseSequenceNumber)
             .ToListAsync();
         Assert.Equal(2, sessions.Count);
-        Assert.All(sessions, s => Assert.Equal(GenerationStatus.Ready, s.GenerationStatus));
+        // Bugfix-D1A: prior to the fix, LearningSession.GenerationStatus's EF HasDefaultValue(Ready)
+        // silently discarded the explicit MarkGenerationPending() call LessonBatchGenerationJob makes
+        // before each new session's first SaveChanges, so this assertion used to read Ready even
+        // though ActivityMaterializationJob (which alone calls MarkGenerationReady) never actually
+        // runs in this test — the scheduled trigger is never executed by this bare in-memory
+        // scheduler (no Start(), no custom IJobFactory). Now that the bug is fixed, sessions
+        // correctly persist as Pending until a real ActivityMaterializationJob run marks them Ready.
+        Assert.All(sessions, s => Assert.Equal(GenerationStatus.Pending, s.GenerationStatus));
         Assert.Equal(new int?[] { 1, 2 }, sessions.Select(s => s.CourseSequenceNumber).ToArray());
 
         var exerciseCount = await db.SessionExercises

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase D1)
+lastUpdated: 2026-07-08 (Bugfix-D1A)
 owner: engineering
 supersedes:
 supersededBy:
@@ -14,36 +14,50 @@ Last updated: 2026-07-08
 
 ## Active sprint
 
+**Bugfix-D1A — Fix `LearningSession.GenerationStatus` Default/State Persistence Bug (2026-07-08)** — complete
+
+A correctness/hardening phase run before Phase D2, fixing the bug D1 discovered rather than
+building further on top of it. **Root cause**: `LearningSessionConfiguration` configured
+`GenerationStatus` with EF `.HasDefaultValue(GenerationStatus.Ready)`; since
+`GenerationStatus.Pending == 0` is also the enum's CLR default, EF's "omit CLR-default values
+from the INSERT, let the DB default apply" convention silently discarded an explicit
+`MarkGenerationPending()` call made before a brand-new session's first `SaveChangesAsync` —
+always persisting `Ready` regardless. `LessonBatchGenerationJob.MaterializeSessionsAsync` uses
+exactly that construction order for every background-generated session. **Confirmed practical
+impact**: `StudentReadinessAuditService`'s "no stuck session generation" check (flags sessions
+stuck in `Pending`/`Failed` 30+ minutes) could never fire, since affected sessions always read
+back as `Ready` immediately — a real diagnostic blind spot. **Fix**: removed the
+`HasDefaultValue(...)` configuration — migration `Bugfix_D1A_RemoveGenerationStatusDefault` is a
+clean `ALTER COLUMN ... DROP DEFAULT`, no column type change, no data touched, no data loss;
+`LearningSession` already defaults to `Ready` via its own property initializer, so no DB-side
+default was ever needed. **Audited all `HasDefaultValue(...)` enum configurations** across
+`Configurations/*.cs` — `AdminReviewStatus.NotRequired`/`FormRendererKind.FormIo` both default to
+ordinal 0 (their own CLR default), so no equivalent risk exists there; no other live instance of
+this bug class was found (a few non-enum numeric `HasDefaultValue(1)`-style properties were
+flagged as lower-priority backlog items, not individually call-site-audited). +5 backend tests
+(`LearningSessionGenerationStatusPersistenceTests`) proving `Pending`/`Ready`/`Failed` each
+round-trip correctly through a real save/reload; one pre-existing test
+(`LessonBatchGenerationJobTests`) corrected from asserting `Ready` to asserting `Pending` — it
+had been unknowingly asserting the bug's own symptom. 3,513 → 3,518 backend tests passed (5
+architecture + 2,044 unit + 1,469 integration). **No external dataset imported, no
+Persian/bilingual/support-language content added, Today/Practice Gym legacy fallback not removed,
+no data loss.**
+
+**Next: Phase D2 (expand Today bank-first support), Phase E7/E8 (more resource depth/search), or
+a larger Today composer migration — not resolved by this phase.** See
+`docs/roadmap/road-map.md` §19a for the full phase order.
+
+---
+
+## Previous sprint
+
 **Phase D1 — First Bank-First Today Composer Slice (2026-07-08)** — complete
 
 Resolved the third Phase D1 decision checkpoint by starting D1 itself. New
 `ITodayBankResourceSelector`/`TodayBankResourceSelector` queries the published Resource Bank
-(`IResourceBankQueryService`, unchanged) at the routing-recommended CEFR level, scoped to Today
-patterns whose `PrimarySkill` is `"Vocabulary"` or `"Reading"` only — grammar bank content is
-included only opportunistically for `gap_fill_workplace_phrase`'s `Grammar` secondary skill
-(Today has no dedicated grammar pattern yet). `ActivityMaterializationJob` appends the
-selector's short supplement text onto the existing free-text `TopicHint`
-(`avoidRepeatingHint`'s established mechanism) — **no AI prompt template changes needed**.
-Candidates are novelty-prechecked via a synthetic fingerprint (`"bank-vocab-precheck:{id}"`
-etc.), mirroring `PracticeGymGenerationJob`'s per-template precheck. Every unsupported pattern
-and every no-bank-match case falls back to legacy freeform generation completely unchanged —
-verified by a dedicated integration test. Provenance is best-effort: the primary selected
-resource id is recorded via the pre-existing, previously-unused
-`StudentActivityReadinessItem.SetBankItemProvenance(...)` when a readiness-pool item exists,
-flowing into `StudentActivityUsageLog.SourceBankItemId` at submit time (no schema change); the
-full selected list is logged only. +13 backend tests (3,500 → 3,513 passed: 5 architecture +
-2,044 unit + 1,464 integration). **No external dataset imported, no Persian/bilingual/
-support-language content added, no fallback removed.**
-
-**Discovered, not fixed (out of scope this phase)**: `LearningSession.GenerationStatus`'s EF
-`HasDefaultValue(Ready)` silently overrides an explicit `MarkGenerationPending()` call made
-before a new session's first save, since `Pending=0` is also the enum's CLR default —
-`LessonBatchGenerationJob` itself already uses this exact pattern. Flagged as a new backlog item.
-
-**Next: a follow-on decision point now applies, not resolved by this phase** — expand Today
-bank-first support to more patterns/skills (Phase D2), continue Phase E7/E8 for more resource
-depth/search, or plan a larger Today composer migration. See `docs/roadmap/road-map.md` §19a for
-the full phase order.
+for Vocabulary/Reading-primary-skill Today patterns only; legacy freeform generation is the
+unchanged fallback everywhere else. +13 backend tests (3,500 → 3,513 passed). Discovered (fixed
+by Bugfix-D1A, above) the `GenerationStatus` default-value bug.
 
 ---
 

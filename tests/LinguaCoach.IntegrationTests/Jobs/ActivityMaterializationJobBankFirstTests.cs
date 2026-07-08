@@ -125,16 +125,6 @@ public sealed class ActivityMaterializationJobBankFirstTests : IClassFixture<Api
         db.LearningSessions.Add(session);
         await db.SaveChangesAsync();
 
-        // Work around a pre-existing, unrelated EF default-value quirk: LearningSession.GenerationStatus
-        // is configured with HasDefaultValue(GenerationStatus.Ready), and Pending==0 is also the enum's
-        // CLR default, so EF's "skip sending CLR-default values on insert, let the DB default apply"
-        // convention silently persists Ready instead of the Pending value just set above — the exact
-        // same MarkGenerationPending()-before-first-SaveChanges pattern LessonBatchGenerationJob itself
-        // uses (line 238). This is out of scope for Phase D1 to fix; force the column directly so this
-        // test can exercise ActivityMaterializationJob's actual pending-session code path.
-        await db.Database.ExecuteSqlInterpolatedAsync(
-            $"UPDATE learning_sessions SET generation_status = 0 WHERE id = {session.Id}");
-
         var exercise = new SessionExercise(
             session.Id, 0, ExercisePatternKey.PhraseMatch, "Vocabulary", "Practise key workplace phrases.", 3);
         db.SessionExercises.Add(exercise);

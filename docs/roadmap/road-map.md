@@ -1,18 +1,18 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase D1)
+lastUpdated: 2026-07-08 (Bugfix-D1A)
 owner: product / engineering
 ---
 
 # SpeakPath / LinguaCoach Roadmap
 
-**Accurate as of: 2026-07-08 (Phase D1 — see §19a for the current phase sequence).
+**Accurate as of: 2026-07-08 (Bugfix-D1A — see §19a for the current phase sequence).
 The 2026-07-03 "Phase 20H" line below is the last entry confirmed live against speakpath.app;
 everything since then (Clean-A/A2, Phase B, Phase C1, Plan-Sync-After-C1, Phase C2, Plan-Sync-B2,
 Phase B2, Phase C3, Phase C-Final, Phase E0, Plan-Sync-PG-v2, Phase E1, Phase E2, Phase E3,
-Phase E4, Plan-Sync-After-E4, Phase E5, Plan-Sync-E6-Decision, Phase E6, Phase D1) has been
-developed and tested locally but not yet deployed — see the "Current Project Status" and
-Decision Log sections below for what's actually landed.**
+Phase E4, Plan-Sync-After-E4, Phase E5, Plan-Sync-E6-Decision, Phase E6, Phase D1, Bugfix-D1A)
+has been developed and tested locally but not yet deployed — see the "Current Project Status"
+and Decision Log sections below for what's actually landed.**
 
 This is the canonical project memory document. It captures completed work, current state, known gaps, deferred items, and the recommended order of future phases.
 
@@ -24,36 +24,44 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest phase completed (local, not yet deployed):** Phase D1 — First Bank-First Today
-Composer Slice (2026-07-08). Resolved the third Phase D1 decision checkpoint by starting D1
-itself, using Phase E6's first real content slice. New `ITodayBankResourceSelector`/
-`TodayBankResourceSelector` (Application/Infrastructure) queries the published Resource Bank
-(`IResourceBankQueryService`, unchanged) at the routing-recommended CEFR level for Today
-exercises whose pattern's `PrimarySkill` is `"Vocabulary"` (`phrase_match`,
-`gap_fill_workplace_phrase`) or `"Reading"` (`reading_multiple_choice_single`,
-`reading_fill_in_blanks`, `reorder_paragraphs`) — grammar bank content is pulled in only
-opportunistically for `gap_fill_workplace_phrase`'s `Grammar` secondary skill, never as its own
-pattern gate (Today has no dedicated grammar pattern yet). `ActivityMaterializationJob` appends
-the selector's short prompt supplement onto the existing free-text `TopicHint`
-(`avoidRepeatingHint`'s established injection mechanism) — **no AI prompt template changes were
-needed**. Candidates are novelty-prechecked via a synthetic fingerprint
-(`"bank-vocab-precheck:{id}"`, mirroring `PracticeGymGenerationJob`'s per-template precheck).
-Every other pattern (Writing/Speaking/Listening/Reflection) and every case with no matching bank
-rows falls back to today's unchanged legacy freeform generation — **no fallback removed, no
-prompt template touched, no migration required**. Provenance is best-effort: the primary
-selected resource id is recorded via `StudentActivityReadinessItem.SetBankItemProvenance(...)`
-(a pre-existing, previously-unused method) when a readiness-pool item exists, flowing into
-`StudentActivityUsageLog.SourceBankItemId` at submit time; the full selected list is logged only.
-+13 backend tests (3,513 total: 5 architecture + 2,044 unit + 1,464 integration). **Discovered
-(not fixed, out of scope): `LearningSession.GenerationStatus`'s EF `HasDefaultValue(Ready)`
-silently overrides an explicit `MarkGenerationPending()` call made before a new session's first
-save, since `Pending=0` is also the enum's CLR default — the same pattern
-`LessonBatchGenerationJob` itself already uses. Flagged as a backlog item, not fixed this phase.**
-**No external dataset imported, no Persian/bilingual/support-language content added, PG-v2
-implementation not started, Practice Gym untouched.** Full detail:
+**Latest phase completed (local, not yet deployed):** Bugfix-D1A — Fix
+`LearningSession.GenerationStatus` Default/State Persistence Bug (2026-07-08). A
+correctness/hardening phase run before Phase D2, fixing the bug D1 discovered rather than
+building on top of it. **Root cause**: `LearningSessionConfiguration` configured
+`GenerationStatus` with EF `.HasDefaultValue(GenerationStatus.Ready)`. Since
+`GenerationStatus.Pending == 0` is also the enum's CLR default, EF Core's "omit CLR-default
+property values from the INSERT, let the DB default apply" convention silently discarded an
+explicit `MarkGenerationPending()` call made before a brand-new session's first
+`SaveChangesAsync` — the row always persisted as `Ready` regardless.
+`LessonBatchGenerationJob.MaterializeSessionsAsync` uses exactly that construction order, so
+every background-generated session silently skipped a real `Pending` state. **Practical
+impact confirmed**: `StudentReadinessAuditService`'s "no stuck session generation" check (which
+flags sessions stuck in `Pending`/`Failed` for 30+ minutes) could never fire, since affected
+sessions always read back as `Ready` immediately — a diagnostic blind spot for real stuck
+generation. **Fix**: removed the `HasDefaultValue(...)` configuration (migration
+`Bugfix_D1A_RemoveGenerationStatusDefault`, a clean `ALTER COLUMN ... DROP DEFAULT` — no data
+change, no column type change, no data loss); `LearningSession` already defaults to `Ready` via
+its own property initializer in code, so no DB-side default was ever needed. **Audited similar
+enum-default patterns** across all `Configurations/*.cs` — `AdminReviewStatus.NotRequired` and
+`FormRendererKind.FormIo` defaults are both configured to ordinal 0 (their own CLR default), so
+they carry no equivalent risk; no other live instance of this bug class was found. +5 backend
+tests (3,513 → 3,518 total: 5 architecture + 2,044 unit + 1,469 integration) proving every
+`GenerationStatus` value round-trips correctly through save/reload, plus a corrected assertion
+in `LessonBatchGenerationJobTests` (it had been unknowingly asserting the bug's symptom, not the
+intended behavior). **No external dataset imported, no Persian/bilingual/support-language
+content added, Today/Practice Gym legacy fallback not removed, no data loss.** Full detail:
 `docs/architecture/learning-activity-engine.md`.
 
-**Latest phase completed before this:** Phase E6 — First Real English Resource
+**Latest phase completed before this:** Phase D1 — First Bank-First Today
+Composer Slice (2026-07-08, `2039d115`). New `ITodayBankResourceSelector`/
+`TodayBankResourceSelector` inject published Resource Bank content into
+`ActivityMaterializationJob`'s AI prompt (`TopicHint`) for Vocabulary/Reading-primary-skill
+Today patterns only; legacy freeform generation is the unchanged fallback everywhere else.
++13 backend tests (3,500 → 3,513 total). Discovered (fixed by Bugfix-D1A, this entry, above)
+the `GenerationStatus` default-value bug. Full detail:
+`docs/architecture/learning-activity-engine.md`.
+
+**Before that:** Phase E6 — First Real English Resource
 Depth (2026-07-08, `0c46519d`). Added an original, internally-authored, English-only seed pack —
 32 vocabulary entries (A1-B2), 12 grammar profile entries, 10 short reading excerpts — routed
 through the full staging→analysis/validation→approval→publish pipeline via
@@ -185,6 +193,12 @@ unmodified throughout.
 (2026-07-03) — see the entry below; everything after this line is developed/tested locally only.
 
 **Branch:** main
+
+**Test totals (as of Bugfix-D1A, 2026-07-08, local only):**
+- Backend: 3,518 passed (5 architecture + 2,044 unit + 1,469 integration), 0 failed — net +5 vs Phase D1 (3,513): new `LearningSessionGenerationStatusPersistenceTests` (5 tests, all under `IntegrationTests`: Pending set before first save round-trips as Pending; Ready-by-constructor-default round-trips as Ready; Ready set explicitly before first save round-trips as Ready; Failed set before first save round-trips as Failed; Pending→Ready across two separate saves round-trips correctly). One pre-existing test corrected: `LessonBatchGenerationJobTests`'s assertion changed from `GenerationStatus.Ready` to `GenerationStatus.Pending` — it had been unknowingly asserting the bug's symptom (`ActivityMaterializationJob`, the only caller of `MarkGenerationReady`, never actually runs in that test).
+- Angular unit (Karma): not run this phase — no frontend files touched (Bugfix-D1A is backend-only); baseline unchanged at 120 pre-existing failures.
+- Angular production build (`ng build --configuration production`): still fails on the pre-existing `initial` bundle-size budget (1.56MB over the 1MB threshold) — confirmed not a new regression, no frontend files changed.
+- Playwright E2E: not run this phase — no UI changed; `e2e/core-flow-smoke.spec.ts` remains `test.skip`'d (see Clean-A2 decision log entry).
 
 **Test totals (as of Phase D1, 2026-07-08, local only):**
 - Backend: 3,513 passed (5 architecture + 2,044 unit + 1,464 integration), 0 failed — net +13 vs Phase E6 (3,500): new `TodayBankResourceSelectorTests` (11 tests: matching vocabulary/opportunistic-grammar/reading selection by CEFR, unsupported-pattern skip, empty-bank graceful result, novelty-blocked exclusion, English-only regression guard, discovers E6 seed-pack content — all under `UnitTests`) and `ActivityMaterializationJobBankFirstTests` (2 tests: bank context injected into `TopicHint` when matching bank rows exist at the routed CEFR level, unchanged legacy fallback when none exist — under `IntegrationTests`).
@@ -997,10 +1011,11 @@ These are planning estimates, not exact metrics. Provided to guide sequencing de
 | 2026-07-08 | **Plan-Sync-E6-Decision**: resolved the Phase D1 decision checkpoint (opened by Phase E5) — **continue with Phase E6 before Phase D1**. Phase E5 built the published-bank browsing/search/admin-management surface, but the banks themselves still hold only small synthetic/test data — not enough real English content depth for Today's bank-first composer to produce useful lessons from. Phase E6 (deepen real English resource/content support — reading/listening resources per the original E0-E8 plan, still English-only, still no Persian/bilingual/support-language seed content, still no direct import-to-final-table bypass) is now the next recommended implementation phase. **Phase D1 remains deferred until after Phase E6, or until a later explicit product decision.** Docs-only; no app code, migrations, or config changed; does not start E6 implementation, Phase D, or PG-v2 | The Phase D1 decision checkpoint exists precisely to force this kind of explicit choice rather than let a technical gate ("the pipeline exists") silently stand in for a product judgment ("the pipeline has produced something worth composing from"). Phase E5 closed the *visibility* gap (an admin can now see what's published) but did not — and was never scoped to — close the *content depth* gap. Choosing E6 next keeps the same discipline the project has followed throughout Phase E: don't start the next consumer (Phase D) until the producer side (Phase E) has given it something real to consume |
 | 2026-07-08 | **Phase E6 implemented — first real English content depth**: E6 was deliberately scoped narrower than its original E0-sketch ("reading/listening resource expansion") — a **controlled first content-depth slice** instead: 32 vocabulary entries (A1-B2), 12 grammar profile entries, 10 short reading excerpts (150-225 chars, under the 500-char publish limit), 100% original/internally-authored, English-only. Routed through the real staging→analysis/validation→approval→publish pipeline via a new `InternalResourceSeedPackSeeder`, not direct final-table seeding. New `ResourceImportService.ApplyDeterministicRowMetadata` copies an already-known `cefrLevel`/`skill`/`subskill` straight onto a candidate (reusing the existing `ApplyAnalysis` mutator, `cefrConfidence=1.0`, marked `"import-row-deterministic-mapping"`) instead of routing internally-authored content through AI-advisory analysis for metadata the author already asserts — no AI provider is invoked anywhere in this path; rows without these columns are unaffected. The seeder itself calls `ResourceCandidate.Approve(...)` on behalf of the reviewing admin, consistent with `ActivityTemplateSeeder`'s existing precedent for its own hand-authored, pre-reviewed content — every deterministic validation gate still runs for real. A dedicated test proves every published bank row resolves back to a `ResourceCandidate` marked published by the real publish workflow (no direct-final-table-bypass). Idempotent (source-name existence check; full rerun creates no duplicates). +14 backend tests (3,500 total). **No external dataset imported, no Persian/bilingual/support-language content added.** **A third Phase D1 decision checkpoint now applies, not resolved by this phase.** | Proving the E1-E5 pipeline could carry real, useful, original content end to end — not just synthetic test fixtures — was the actual goal, and doing it as a small slice (rather than a large import) kept the phase reviewable and low-risk. The deterministic-mapping fix avoids a backwards design (asking AI to "discover" metadata the content author already knows) and keeps the seeder's tests free of any live-AI dependency, matching this codebase's established testing convention. The seeder-performs-approval judgment call was made explicit and code-documented rather than silently assumed, following the exact precedent `ActivityTemplateSeeder` already set |
 | 2026-07-08 | **Phase D1 implemented — first bank-first Today composer slice**: resolved the third Phase D1 decision checkpoint by starting D1 itself rather than deferring further. New `ITodayBankResourceSelector`/`TodayBankResourceSelector` queries the published Resource Bank (`IResourceBankQueryService`, unchanged) at the routing-recommended CEFR level, scoped to Today patterns whose `PrimarySkill` is `"Vocabulary"` or `"Reading"` only (grammar bank content included only opportunistically for `gap_fill_workplace_phrase`'s `Grammar` secondary skill — Today has no dedicated grammar pattern). `ActivityMaterializationJob` appends the selector's short supplement text onto the existing free-text `TopicHint` (the same mechanism `avoidRepeatingHint` already used) — **no AI prompt template changes needed**. Candidates are novelty-prechecked via a synthetic fingerprint (`"bank-vocab-precheck:{id}"` etc.), mirroring `PracticeGymGenerationJob`'s per-template precheck. Every unsupported pattern and every case with no matching bank rows falls back to legacy freeform generation completely unchanged — verified by a dedicated integration test asserting the `TopicHint` carries no bank marker in that case. Provenance is best-effort only: the single "primary" selected resource id is recorded via the pre-existing, previously-unused `StudentActivityReadinessItem.SetBankItemProvenance(...)` method when a readiness-pool item exists, flowing automatically into `StudentActivityUsageLog.SourceBankItemId` at attempt-submit time (no schema change); the full selected-resource list lives only in a structured log line. +13 backend tests (3,513 total: 5 architecture + 2,044 unit + 1,464 integration) — no migration required. **Discovered but explicitly not fixed this phase (out of scope, pre-existing, unrelated to D1's own code)**: `LearningSession.GenerationStatus` is configured with EF `HasDefaultValue(GenerationStatus.Ready)`, and since `Pending=0` is also the enum's CLR default, EF's "skip sending CLR-default values on insert" convention silently persists `Ready` instead of an explicit `MarkGenerationPending()` call made before a new session's first `SaveChangesAsync` — `LessonBatchGenerationJob` itself already uses this exact pattern (line 238) when creating background-generated sessions. Flagged as a new backlog item; a dedicated test writer had to route around it with a raw SQL fix-up to exercise `ActivityMaterializationJob`'s actual pending-session code path. **No external dataset imported, no Persian/bilingual/support-language content added, Today/Practice Gym legacy fallback not removed, PG-v2 implementation not started.** | The bank platform (E0-E6) had proven it could carry real content, but nothing consumed it yet — D1's job was to prove the *other* half: that Today's generator could actually use that content safely. Scoping to only Vocabulary/Reading patterns (rather than attempting all patterns) kept the first slice narrow and matched what the bank already has real content for; appending to the existing `TopicHint` field rather than adding new prompt-template variables avoided touching any AI prompt content, the highest-blast-radius surface in the whole system per the 2026-07-08 clean-architecture plan's own risk assessment. The discovered `GenerationStatus` default-value bug was flagged rather than silently fixed, since fixing it would touch `LessonBatchGenerationJob`'s tested, unrelated production behavior — outside this phase's narrow scope |
+| 2026-07-08 | **Bugfix-D1A implemented — fixed the `LearningSession.GenerationStatus` default-value bug D1 discovered, before starting Phase D2**: root cause was `LearningSessionConfiguration`'s EF `.HasDefaultValue(GenerationStatus.Ready)` — since `GenerationStatus.Pending == 0` is also the enum's CLR default, EF's "omit CLR-default property values from the INSERT, let the DB default apply" convention silently discarded an explicit `MarkGenerationPending()` call made before a new session's first `SaveChangesAsync`, always persisting `Ready` instead. `LessonBatchGenerationJob.MaterializeSessionsAsync` uses exactly that construction order for every background-generated session. **Confirmed practical impact**: `StudentReadinessAuditService`'s "no stuck session generation" check (looking for sessions stuck in `Pending`/`Failed` 30+ minutes) could never fire, since affected sessions always read back as `Ready` immediately — a real diagnostic blind spot, not just a cosmetic mismatch. **Fix**: removed the `HasDefaultValue(...)` configuration entirely — migration `Bugfix_D1A_RemoveGenerationStatusDefault` is a clean `ALTER COLUMN generation_status DROP DEFAULT`, no column type change, no data touched, no data loss; `LearningSession` already defaults to `Ready` via its own property initializer in code, so the DB-side default was redundant and only ever created risk. **Audited all `HasDefaultValue(...)` configurations across `Configurations/*.cs`** for the same enum-CLR-default-collision class of bug: `AdminReviewStatus.NotRequired` (used in `ActivityTemplateConfiguration`, `PlacementItemDefinitionConfiguration`, `StudentActivityReadinessItemConfiguration`) and `FormRendererKind.FormIo` (`PlacementItemDefinitionConfiguration`, `StudentFlowTemplateVersionConfiguration`) are both configured to ordinal 0 — their own enum's CLR default — so no divergence is possible; no other live instance of this bug found. A handful of non-enum `HasDefaultValue(1)`-style numeric defaults (`ActivityTemplate.VersionNumber`, `ExerciseTypeDefinition`'s item/option counts, `PlacementItemDefinition.DifficultyBand`/`ItemVersion`) were not individually call-site-audited — flagged as a lower-priority backlog item, not the same confirmed-live bug class. +5 backend tests (`LearningSessionGenerationStatusPersistenceTests`: Pending/Ready/Failed each round-trip correctly through a real save/reload, plus a two-save Pending→Ready transition) proving the fix; one pre-existing test (`LessonBatchGenerationJobTests`) had its assertion corrected from `Ready` to `Pending` — it had been unknowingly asserting the bug's own symptom, since `ActivityMaterializationJob` (the only caller of `MarkGenerationReady`) never actually runs within that test. 3,513 → 3,518 total. **No external dataset imported, no Persian/bilingual/support-language content added, Today/Practice Gym legacy fallback not removed, Phase D2/E7-E8/PG-v2 implementation not started.** | This was scoped as a correctness/hardening phase specifically *before* expanding Today's bank-first composer (Phase D2) — building more consumers on top of a data-layer bug that silently discards explicit state transitions would only compound the risk. Removing the DB default (rather than renumbering the enum or adding conditional EF configuration) was the least risky fix: it required no data migration, no behavior change for any code path that doesn't explicitly set `GenerationStatus` (those already default to `Ready` in the CLR and always did), and directly targets the actual defect (a redundant, risk-creating DB-side default) rather than working around it. Renumbering `GenerationStatus` so `Pending != 0` was rejected as needlessly invasive — it would require a data migration to remap every existing row's stored ordinal and touch every enum comparison in the codebase, for no benefit over simply removing the unnecessary default |
 
 ---
 
-## 19a. Phase Sequence (as of 2026-07-08, Phase D1)
+## 19a. Phase Sequence (as of 2026-07-08, Bugfix-D1A)
 
 Preferred order, each phase gated on the previous one's completion review:
 
@@ -1020,7 +1035,8 @@ Preferred order, each phase gated on the previous one's completion review:
 14. ~~**Phase D1 decision checkpoint**~~ — **resolved (2026-07-08, Plan-Sync-E6-Decision)**: continue with **Phase E6 before Phase D1**. The published-bank browsing/search surface exists (E5), but real English content depth is still too thin (small synthetic/test data only) for Today's composer to produce anything useful. See the Decision Log entry above.
 15. ~~**Phase E6**~~ — done (2026-07-08): first real English content depth — 32 vocabulary / 12 grammar / 10 reading-excerpt rows, original/internally-authored/English-only, flowed through the full staging→validation→approval→publish pipeline via `InternalResourceSeedPackSeeder`. See `docs/architecture/english-resource-bank-import-platform.md` and the Decision Log entry above.
 16. ~~**Phase D1 decision checkpoint (third instance)**~~ — **resolved (2026-07-08)**: started **Phase D1** itself rather than deferring further. See the Decision Log entry above.
-16a. ~~**Phase D1**~~ — done (2026-07-08): first bank-first Today composer slice — `ITodayBankResourceSelector`/`TodayBankResourceSelector` inject published vocabulary/grammar/reading bank content into `ActivityMaterializationJob`'s AI prompt (`TopicHint`) for Vocabulary/Reading-primary-skill Today patterns only; legacy freeform generation is the unchanged fallback for every other pattern and every no-bank-match case. See `docs/architecture/learning-activity-engine.md` and the Decision Log entry above. **A follow-on decision point now applies**: expand Today bank-first support to more patterns/skills (Phase D2), continue Phase E7/E8 for more resource depth/search, or plan a larger Today composer migration — not resolved by this phase.
+16a. ~~**Phase D1**~~ — done (2026-07-08): first bank-first Today composer slice — `ITodayBankResourceSelector`/`TodayBankResourceSelector` inject published vocabulary/grammar/reading bank content into `ActivityMaterializationJob`'s AI prompt (`TopicHint`) for Vocabulary/Reading-primary-skill Today patterns only; legacy freeform generation is the unchanged fallback for every other pattern and every no-bank-match case. See `docs/architecture/learning-activity-engine.md` and the Decision Log entry above. Discovered (fixed by Bugfix-D1A, next item) the `GenerationStatus` default-value bug. **A follow-on decision point now applies**: expand Today bank-first support to more patterns/skills (Phase D2), continue Phase E7/E8 for more resource depth/search, or plan a larger Today composer migration — not resolved by this phase.
+16b. ~~**Bugfix-D1A**~~ — done (2026-07-08): fixed `LearningSession.GenerationStatus`'s EF default-value bug discovered during D1 — removed `HasDefaultValue(GenerationStatus.Ready)` (migration `Bugfix_D1A_RemoveGenerationStatusDefault`, no data loss); +5 regression tests; one pre-existing test corrected. Run deliberately **before** Phase D2 as a correctness/hardening pass. See `docs/architecture/learning-activity-engine.md` and the Decision Log entry above.
 17. **Phase E7-E8** — larger import support, RAG/search enrichment — available as a next step alongside Phase D2, per the follow-on decision above. Not started.
 18. **Phase PG-v2A** — backend skill/objective-first Practice Gym selector (planned, not started; see `docs/backlog/product-backlog.md`). Sequenced after Phase E5-E8, not immediately after C-Final — a good skill-first selector needs enough published bank/resource content and search/selector coverage to have real options to choose from.
 19. **Phase PG-v2B** — student Practice Gym UI simplified around skills, weak areas, review, challenge, recommended practice (planned, not started).
@@ -1038,11 +1054,15 @@ external dataset imported, gated on real licensing approval per
 `docs/architecture/cefr-resource-licensing-review.md`), can be browsed/filtered/searched by an
 admin (Phase E5), and are now also consumed by Today's generator for a narrow first slice (Phase
 D1: Vocabulary/Reading-primary-skill patterns only, legacy fallback unchanged everywhere else).
-**Phase E6 is complete. Phase D1 is complete.** A follow-on decision point now applies (item 16a
-above, not resolved by this phase): expand Today bank-first support (Phase D2), continue Phase
-E7/E8 for more resource depth/search, or plan a larger Today composer migration. **Full Phase D
-implementation (beyond D1's narrow slice) has not started. PG-v2 implementation has not
-started.**
+**Phase E6 is complete. Phase D1 is complete.** D1's own regression tests then surfaced a
+pre-existing data-layer bug (`LearningSession.GenerationStatus`'s EF default-value convention
+silently discarding explicit `Pending` transitions) — **Bugfix-D1A (2026-07-08) fixed it** as a
+deliberate correctness/hardening pass before any further Today composer expansion (migration
+`Bugfix_D1A_RemoveGenerationStatusDefault`, +5 regression tests, no data loss). **Bugfix-D1A is
+complete.** A follow-on decision point now applies (item 17 above, not resolved by this phase):
+expand Today bank-first support (Phase D2), continue Phase E7/E8 for more resource depth/search,
+or plan a larger Today composer migration. **Full Phase D implementation (beyond D1's narrow
+slice) has not started. Phase E7/E8 and PG-v2 implementation have not started.**
 
 **Practice Gym v2 (PG-v2A-D) is planned, not started**, and is sequenced deliberately late — after
 Phase E5-E8, before Phase F/G — because a skill/objective-first selector needs mature bank/resource
