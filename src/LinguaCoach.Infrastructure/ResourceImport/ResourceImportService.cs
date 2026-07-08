@@ -25,17 +25,6 @@ public sealed class ResourceImportService : IResourceImportService
     // should contain before it's split up).
     public const int MaxFileSizeBytes = 5 * 1024 * 1024;
 
-    // Unicode ranges used by Persian/Arabic-script text. Used only as a conservative reject
-    // signal for gate 1 — this is NOT a language-identification library. Limitation: does not
-    // detect non-English text written in Latin script (e.g. French, Turkish) — Phase E1 accepts
-    // that gap and relies on admins choosing correct sources; a real language-ID pass is future
-    // work if needed.
-    private static bool IsArabicScriptChar(char c) =>
-        (c >= '؀' && c <= 'ۿ') ||
-        (c >= 'ݐ' && c <= 'ݿ') ||
-        (c >= 'ﭐ' && c <= '﷿') ||
-        (c >= 'ﹰ' && c <= '﻿');
-
     private static readonly string[] ExplicitLanguageFieldNames = { "languagecode", "language", "lang" };
     private static readonly string[] AllowedExplicitLanguageValues = { "en", "eng", "en-us", "en-gb" };
 
@@ -281,19 +270,14 @@ public sealed class ResourceImportService : IResourceImportService
                 : new LanguageVerdict(false, normalized, $"Row's explicit language field is '{value}', not English.");
         }
 
-        // No explicit language field — fall back to a conservative script/character heuristic.
-        // Limitation: this only catches Persian/Arabic-script text and a high proportion of
-        // non-Latin characters; it will not catch non-English text written in Latin script.
+        // No explicit language field — fall back to the shared conservative script/character
+        // heuristic (also used by Phase E2's ResourceCandidateValidationService, see
+        // ResourceLanguageHeuristic for the documented limitation).
         var allText = string.Join(' ', row.Values.Where(v => !string.IsNullOrEmpty(v)));
-        if (allText.Any(IsArabicScriptChar))
-            return new LanguageVerdict(false, "fa", "Row contains Persian/Arabic-script text.");
-
-        var letters = allText.Where(char.IsLetter).ToList();
-        if (letters.Count > 0)
+        if (ResourceLanguageHeuristic.LooksNonEnglish(allText, out var reason))
         {
-            var nonBasicLatin = letters.Count(c => c > 'ɏ'); // beyond Latin Extended-B
-            if ((double)nonBasicLatin / letters.Count > 0.15)
-                return new LanguageVerdict(false, "unknown", "Row's text is predominantly non-Latin-script.");
+            var detected = reason!.Contains("Arabic", StringComparison.OrdinalIgnoreCase) ? "fa" : "unknown";
+            return new LanguageVerdict(false, detected, $"Row {(detected == "fa" ? "contains Persian/Arabic-script text." : "is predominantly non-Latin-script.")}");
         }
 
         return new LanguageVerdict(true, "en", null);

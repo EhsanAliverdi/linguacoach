@@ -90,6 +90,12 @@ export class AdminResourceCandidatesComponent implements OnInit {
   notesDraft = '';
   savingNotes = signal(false);
 
+  // Phase E2 — AI analysis / re-validation trigger state.
+  analyzing = signal(false);
+  validating = signal(false);
+  lastValidationErrors = signal<string[]>([]);
+  lastValidationWarnings = signal<string[]>([]);
+
   constructor(private svc: AdminResourceCandidateService) {}
 
   ngOnInit(): void {
@@ -150,7 +156,58 @@ export class AdminResourceCandidatesComponent implements OnInit {
     this.selectedCandidate.set(item);
     this.notesDraft = item.adminNotes ?? '';
     this.actionError.set('');
+    this.lastValidationErrors.set(this.parseSummaryList(item.rejectReason, 'errors'));
+    this.lastValidationWarnings.set(this.parseSummaryList(item.rejectReason, 'warnings'));
     this.drawerOpen.set(true);
+  }
+
+  private parseSummaryList(rejectReasonJson: string | null, key: 'errors' | 'warnings'): string[] {
+    if (!rejectReasonJson) return [];
+    try {
+      const parsed = JSON.parse(rejectReasonJson);
+      return Array.isArray(parsed?.[key]) ? parsed[key] : [];
+    } catch {
+      return [];
+    }
+  }
+
+  /** Phase E2 — triggers AI analysis + immediate re-validation for the open candidate. */
+  analyzeSelected(): void {
+    const candidate = this.selectedCandidate();
+    if (!candidate) return;
+    this.analyzing.set(true);
+    this.actionError.set('');
+    this.svc.analyze(candidate.candidateId).subscribe({
+      next: response => {
+        this.analyzing.set(false);
+        this.selectedCandidate.set(response.candidate);
+        this.lastValidationErrors.set(response.validation.errors);
+        this.lastValidationWarnings.set(response.validation.warnings);
+        this.actionSuccess.set(
+          response.analysis.success ? 'Analysis complete.' : `Analysis could not complete: ${response.analysis.errorMessage}`);
+        this.loadAll();
+      },
+      error: err => { this.analyzing.set(false); this.actionError.set(err.error?.error ?? 'Could not analyze candidate.'); },
+    });
+  }
+
+  /** Phase E2 — re-runs deterministic rule validation only (no AI call). */
+  validateSelected(): void {
+    const candidate = this.selectedCandidate();
+    if (!candidate) return;
+    this.validating.set(true);
+    this.actionError.set('');
+    this.svc.validate(candidate.candidateId).subscribe({
+      next: result => {
+        this.validating.set(false);
+        this.lastValidationErrors.set(result.errors);
+        this.lastValidationWarnings.set(result.warnings);
+        this.actionSuccess.set('Validation complete.');
+        this.svc.get(candidate.candidateId).subscribe(updated => this.selectedCandidate.set(updated));
+        this.loadAll();
+      },
+      error: err => { this.validating.set(false); this.actionError.set(err.error?.error ?? 'Could not validate candidate.'); },
+    });
   }
 
   closeDrawer(): void {
@@ -180,10 +237,17 @@ export class AdminResourceCandidatesComponent implements OnInit {
   }
 
   rowActions(_item: AdminResourceCandidateDto): SpAdminRowAction[] {
-    return [{ id: 'view', label: 'View', icon: 'view', tone: 'default' }];
+    return [
+      { id: 'view', label: 'View', icon: 'view', tone: 'default' },
+      { id: 'analyze', label: 'Analyze', icon: 'sparkles', tone: 'default' },
+    ];
   }
 
   onRowAction(actionId: string, item: AdminResourceCandidateDto): void {
     if (actionId === 'view') this.openDrawer(item);
+    if (actionId === 'analyze') {
+      this.openDrawer(item);
+      this.analyzeSelected();
+    }
   }
 }

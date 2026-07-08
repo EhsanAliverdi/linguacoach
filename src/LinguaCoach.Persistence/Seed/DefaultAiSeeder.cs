@@ -15,6 +15,7 @@ public static class DefaultAiSeeder
 
     public const string ActivityGenerateWritingKey = "activity_generate_writing";
     public const string ActivityTemplateGenerateInstanceKey = "activity_template_generate_instance";
+    public const string ResourceCandidateAnalyzeKey = "resource_candidate_analyze";
     public const string ActivityGenerateListeningKey = "activity_generate_listening";
     public const string ActivityGenerateSpeakingRolePlayKey = "activity_generate_speaking_roleplay";
     public const string ActivityEvaluateWritingKey = "activity_evaluate_writing";
@@ -4493,6 +4494,57 @@ The template's base Form.io schema (student-safe — contains no correct answers
 Return ONLY a valid Form.io schema JSON object, in the exact same shape as the base schema above (same top-level "display"/"components" structure, same component keys and types). No markdown. No text outside JSON. Never include a correct answer, "score", "rubric", or any scoring-related property anywhere in the output — this schema is shown directly to the student.
 """;
 
+    // Phase E2 — advisory classification of one staged ResourceCandidate. This output is never
+    // trusted to decide ValidationStatus by itself (ResourceCandidateValidationService does that,
+    // deterministically) — it only suggests values for the candidate's classification fields.
+    private const string ResourceCandidateAnalyzeContent = """
+You are classifying ONE staged English-language learning resource candidate for an internal content pipeline. Your output is advisory only — a separate deterministic system decides whether this candidate is actually approved, not you.
+
+Candidate type (as already inferred by the import pipeline, do not change it): {{candidateType}}
+Candidate language code: {{languageCode}}
+Source name: {{sourceName}}
+Source license: {{sourceLicense}}
+
+Canonical text:
+{{canonicalText}}
+
+Normalized data (as imported):
+{{normalizedJson}}
+
+Additional raw context (may be empty):
+{{rawContext}}
+
+Return ONLY valid JSON (no markdown, no text outside the JSON object) matching this exact shape:
+
+{
+  "candidateType": "{{candidateType}}",
+  "languageCode": "en",
+  "cefrLevel": "<one of A1, A2, B1, B2, C1, C2, or null if you cannot judge confidently>",
+  "cefrConfidence": <number 0-1: how confident you are in cefrLevel>,
+  "primarySkill": "<one of writing, reading, listening, speaking, vocabulary, grammar, pronunciation, fluency, confidence, or null>",
+  "subskill": "<a matching subskill for primarySkill using the pattern '<skill>.<name>', e.g. 'reading.gist', or null>",
+  "difficultyBand": <integer 1-5 within the CEFR level, 1=easiest, or null>,
+  "contextTags": ["<short real-life context tag, e.g. 'workplace_email'>"],
+  "focusTags": ["<short focus tag, e.g. 'polite_requests'>"],
+  "grammarTags": ["<grammar point this content illustrates, if any>"],
+  "vocabularyTags": ["<notable vocabulary theme, if any>"],
+  "pronunciationTags": ["<pronunciation feature, only if candidateType relates to speaking/listening>"],
+  "activitySuitabilityTags": ["<short label for what kind of exercise this content could support, e.g. 'gap_fill', 'reading_comprehension'>"],
+  "safetyTags": ["<short label ONLY if the content is unsafe/inappropriate for a learning platform — otherwise leave this empty>"],
+  "qualityScore": <number 0-1: overall content quality/usefulness for language learning>,
+  "needsHumanReview": <true if you are unsure about classification or quality, otherwise false>,
+  "qualityIssues": ["<short description of any quality problem you noticed, e.g. 'text is too short to classify reliably'>"],
+  "suggestedActivityUses": ["<short suggestion for how this content could be used in an exercise>"],
+  "searchText": "<a short lowercase space-separated string of useful search keywords for this candidate>"
+}
+
+Rules:
+- Never invent a correct answer, score, or scoring rubric for this content — this is a content classification pass, not an exercise author.
+- If you cannot confidently classify a field, use null (or an empty array for tag lists) rather than guessing.
+- safetyTags must stay empty unless the content is genuinely unsafe/inappropriate — do not flag ordinary workplace or everyday content.
+- Do not include any text outside the JSON object. No markdown fences.
+""";
+
     public static async Task SeedAsync(
         LinguaCoachDbContext db,
         ILogger logger,
@@ -4559,6 +4611,11 @@ Return ONLY a valid Form.io schema JSON object, in the exact same shape as the b
         await SeedOrUpgradePromptAsync(db, logger,
             ActivityTemplateGenerateInstanceKey, ActivityTemplateGenerateInstanceContent,
             maxInputTokens: 2400, maxOutputTokens: 2200, ct);
+
+        // Phase E2 — resource candidate AI analysis (advisory classification)
+        await SeedOrUpgradePromptAsync(db, logger,
+            ResourceCandidateAnalyzeKey, ResourceCandidateAnalyzeContent,
+            maxInputTokens: 3200, maxOutputTokens: 1400, ct);
 
         // Activity evaluation prompts
         await SeedOrUpgradePromptAsync(db, logger,

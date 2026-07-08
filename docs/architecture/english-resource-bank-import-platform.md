@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase E1)
+lastUpdated: 2026-07-08 (Phase E2)
 owner: architecture
 supersedes:
 supersededBy:
@@ -9,10 +9,14 @@ supersededBy:
 # English Resource Bank Import, Review, Preview, and Publishing Platform (Phase E)
 
 **Date planned:** 2026-07-08 (Plan-Sync-After-C1), **finalized:** 2026-07-08 (Phase E0),
-**E1 implemented:** 2026-07-08
-**Status:** E1 (staging foundation) implemented. E2 (AI analysis + validation gates) not started.
-**No rows have ever been written to any published `Cefr*` bank table** — E1 is staging-only, by
-design and by test (`No_rows_are_ever_written_to_any_published_cefr_bank_table`).
+**E1 implemented:** 2026-07-08, **E2 implemented:** 2026-07-08
+**Status:** E1 (staging) and E2 (AI analysis + validation gates 4-6) implemented. E3 (rendered
+preview) not started.
+**No rows have ever been written to any published `Cefr*` bank table** — staging/analysis only,
+by design and by test (`No_rows_are_ever_written_to_any_published_cefr_bank_table`, present in
+both the E1 and E2 test suites). **AI analysis is advisory only** — backend rule validation
+(`ResourceCandidateValidationService`) remains the sole authority on `ValidationStatus`; the AI
+never sets it directly.
 **Supersedes the informal "seed CEFR-J/UniversalCEFR data" framing** used in earlier planning
 docs (`docs/reviews/2026-07-07-ai-bank-assessment-architecture-plan.md` §4.6/§9,
 `docs/architecture/cefr-resource-licensing-review.md`). Those docs' licensing findings still
@@ -272,22 +276,59 @@ stability, and the bank-table-untouched guarantee.
 
 ## E2–E4 boundaries
 
-### E2 — AI analysis + validation gates
-- **Backend**: a new AI-analysis service reusing `ActivityTemplateInstanceGenerator`'s
-  retry-once-then-fail pattern to suggest CEFR level/skill/subskill/tags per candidate (advisory
-  only, gate 4); a deterministic rule-validation pass (gate 5: required fields, valid CEFR/skill/
-  subskill against `Domain.Constants`, forbidden-content patterns); a dedup pass reusing
-  `IActivityContentFingerprintService` (gate 6), flagging (not silently dropping) duplicates.
-- **Admin pages**: extend Resource Candidates with AI-suggested (editable) metadata, a
-  validation-status filter/badge, and a "run validation" action.
-- **Tests**: AI-enrichment retry/failure handling with a fake AI provider (matching the existing
-  `ActivityTemplateInstanceGenerator` test convention); rule-validation unit tests per gate 5
-  check; fingerprint/dedup unit tests with fixed input → known hash, mirroring
-  `ActivityContentFingerprintService`'s own test style.
-- **Acceptance**: every candidate has a definitive `ValidationStatus` (`Passed`/`Failed`) with
-  structured `ValidationErrorsJson` reasons when failed; AI suggestions are always editable and
-  never auto-approve or auto-publish; still zero rows published.
-- **Explicitly deferred**: embeddings/semantic dedup (E8), the rendered preview UI (E3).
+### E2 — AI analysis + validation gates — implemented (2026-07-08)
+
+- **Backend**: `ResourceCandidateAnalysisService` (gate 4, advisory only) reuses
+  `ActivityTemplateInstanceGenerator`'s AI-call pattern (`IAiContextBuilder`/`AiExecutionService`,
+  new prompt key `resource_candidate_analyze`) to suggest CEFR level/confidence, skill/subskill,
+  difficulty band, context/focus/grammar/vocabulary/pronunciation/activity-suitability/safety
+  tags, quality score, and suggested activity uses per candidate. Retries once on bad/unparseable
+  AI JSON; **on a second failure or an unavailable provider it fails gracefully** (never throws,
+  never corrupts the candidate's existing data) rather than the synchronous student-facing
+  retry-once-then-throw behavior `ActivityTemplateInstanceGenerator` uses — this is an offline
+  admin-triggered enrichment step, so failure degrades to "needs manual review," not an error.
+  `ResourceCandidateValidationService` (gates 5+6, fully deterministic) independently decides
+  `ValidationStatus` — **the AI's suggestions are never trusted to set validation status
+  themselves**; every check (English-only, CEFR validity + confidence threshold, skill/subskill
+  taxonomy, candidate-type, text-length bounds, safety tags, live source-approval re-check,
+  Form.io schema safety for `ActivityTemplateCandidate` rows, attribution-required heuristic,
+  exact-fingerprint dedup within-run/within-source/global) runs over the candidate's stored field
+  values regardless of whether those came from a human, an import default, or an AI suggestion.
+- **Judgment calls made** (documented in code, restated here): CEFR-confidence review threshold
+  **0.6** (below → `NeedsReview`, never an automatic pass); max `CanonicalText` length **5000**
+  chars; any AI-reported safety tag is a hard **Failed**, not just a review flag; attribution
+  considered "required" when the source's `LicenseType` name contains `"BY"` (covers the
+  Creative-Commons Attribution family) — missing `AttributionText` in that case is a warning, not
+  a fail; `CandidateType.Unknown` always needs human review (no clear bank-mapping exists for it);
+  a source whose approval was revoked after original import fails re-validation immediately.
+- **Dedup scope**: exact-`ContentFingerprint` match checked within the same import run, within
+  the same source (across runs), and globally across the whole `ResourceCandidate` table — a
+  match produces a `NeedsReview` warning, **never an automatic delete**. Cross-checking against
+  published `CefrVocabularyEntry`/`CefrGrammarProfileEntry`/`CefrReadingReference` rows was
+  **deliberately skipped** — those entities predate `IActivityContentFingerprintService` and have
+  no fingerprint-shaped column; adding one would be a schema change to published tables, out of
+  scope for a staging-phase gate. No embeddings/pgvector/semantic dedup — exact match only.
+- **Admin API**: `POST /api/admin/resource-candidates/{id}/analyze` (AI analysis, then
+  auto-re-validates so `ValidationStatus` reflects the new suggestion immediately),
+  `POST /api/admin/resource-candidates/{id}/validate` (deterministic re-validation only, no AI
+  call — needed e.g. after a source's approval is revoked), `POST
+  /api/admin/resource-import-runs/{id}/candidates/analyze` (batch-analyzes pending candidates for
+  one run, capped at **50 per call** — E2 is synchronous/batched by design; larger background
+  processing is Phase E7's job, not E2's).
+- **Admin UI**: Resource Candidates gained Analyze/Re-validate actions (drawer + list row), an
+  "Analyze pending" batch action on the Import Runs list, and a detail view showing CEFR/skill/
+  subskill/difficulty/quality score/safety issues/validation errors-warnings/raw AI JSON. No
+  approve/reject/publish action was added — still explicitly out of scope until E4.
+- **Tests**: AI-metadata storage, malformed-AI-JSON handling, AI-unavailable handling, valid/
+  invalid CEFR, invalid subskill, low-confidence review, Persian-script rejection, revoked-source
+  re-validation, Form.io answer-leak rejection, within-run and cross-table duplicate detection,
+  admin-only auth on both new endpoints, batch-limit enforcement, and a dedicated
+  zero-published-rows assertion (mirroring E1's own).
+- **Acceptance — met**: every candidate has a definitive `ValidationStatus`
+  (`Pending`/`Passed`/`Failed`/`NeedsReview`) with structured error/warning reasons; AI
+  suggestions are stored but never auto-approve or auto-publish; zero rows published.
+- **Explicitly deferred (confirmed not built)**: embeddings/semantic dedup (E8), the rendered
+  preview UI (E3), any approve/reject/publish action (E4).
 
 ### E3 — Admin rendered preview
 - **Backend**: a read-only "preview projection" endpoint per candidate, rendering the bank-type-
@@ -401,6 +442,9 @@ and preferred phase order.
   `docs/backlog/product-backlog.md` (see accompanying commit).
 - Docs updated (Phase E1, this section): this file (E1 exact-scope section marked implemented,
   actual entity/field deviations documented); `docs/roadmap/road-map.md`,
+  `docs/sprints/current-sprint.md`, `docs/architecture/README.md`.
+- Docs updated (Phase E2, this section): this file (E2 boundaries section marked implemented,
+  judgment calls/thresholds documented); `docs/roadmap/road-map.md`,
   `docs/sprints/current-sprint.md`, `docs/architecture/README.md`.
 - Docs intentionally not updated: `docs/architecture/cefr-resource-licensing-review.md` — its
   licensing findings are unchanged by this phase; no new sources were browsed or licensing

@@ -110,6 +110,9 @@ export class AdminResourceImportRunsComponent implements OnInit {
   rawRecordsLoading = signal(false);
   rawRecordsFilter = signal<string>('all');
 
+  // Phase E2 — batch AI analysis trigger state (per run row).
+  analyzingRunId = signal<string | null>(null);
+
   constructor(
     private runSvc: AdminResourceImportRunService,
     private sourceSvc: AdminResourceSourceService,
@@ -193,11 +196,32 @@ export class AdminResourceImportRunsComponent implements OnInit {
   }
 
   rowActions(_item: AdminResourceImportRunDto): SpAdminRowAction[] {
-    return [{ id: 'view', label: 'View raw records', icon: 'view', tone: 'default' }];
+    return [
+      { id: 'view', label: 'View raw records', icon: 'view', tone: 'default' },
+      { id: 'analyze', label: 'Analyze pending candidates', icon: 'sparkles', tone: 'default' },
+    ];
   }
 
   onRowAction(actionId: string, item: AdminResourceImportRunDto): void {
     if (actionId === 'view') this.openDrawer(item);
+    if (actionId === 'analyze') this.analyzePendingCandidates(item);
+  }
+
+  /** Phase E2 — bounded-batch AI analysis + re-validation of not-yet-analyzed candidates for
+   *  this run (server-side cap of 50 per call; re-trigger to sweep the next batch). */
+  analyzePendingCandidates(item: AdminResourceImportRunDto): void {
+    this.analyzingRunId.set(item.runId);
+    this.actionError.set('');
+    this.runSvc.analyzePendingCandidates(item.runId).subscribe({
+      next: result => {
+        this.analyzingRunId.set(null);
+        this.actionSuccess.set(
+          `Analyzed ${result.candidatesAnalyzed} of ${result.candidatesConsidered} pending candidate(s): `
+          + `${result.succeededCount} succeeded, ${result.failedCount} failed.`
+          + (result.batchLimitReached ? ' Batch limit reached — run again to continue.' : ''));
+      },
+      error: err => { this.analyzingRunId.set(null); this.actionError.set(err.error?.error ?? 'Could not analyze pending candidates.'); },
+    });
   }
 
   openDrawer(item: AdminResourceImportRunDto): void {

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase E1)
+lastUpdated: 2026-07-08 (Phase E2)
 owner: engineering
 supersedes:
 supersededBy:
@@ -14,32 +14,46 @@ Last updated: 2026-07-08
 
 ## Active sprint
 
+**Phase E2 — AI Analysis, Rule Validation, Dedup/Fingerprint, and Candidate Quality Gates (2026-07-08)** — complete
+
+**Last completed: Phase E2.** Implemented gates 4-6 for staged `ResourceCandidate` rows.
+`ResourceCandidateAnalysisService` (gate 4, **advisory only**) reuses
+`ActivityTemplateInstanceGenerator`'s AI-call pattern to suggest CEFR level/confidence,
+skill/subskill, difficulty band, and tag/quality/safety metadata — degrades gracefully (never
+throws, never corrupts candidate data) on AI failure/unavailability.
+`ResourceCandidateValidationService` (gates 5-6, fully deterministic) is the **sole authority** on
+`ValidationStatus` — English-only, CEFR validity + a 0.6 confidence review threshold,
+skill/subskill taxonomy, a 5000-char text bound, safety-tag hard-fail, a live source-approval
+re-check, Form.io answer-leak safety for `ActivityTemplateCandidate` rows, an attribution
+heuristic, and exact-fingerprint dedup within-run/within-source/global (never auto-deletes a
+duplicate). New endpoints: analyze-one, validate-one, analyze-import-run (batched, capped at
+50/call). Admin UI gained Analyze/Re-validate actions and CEFR/skill/quality/validation display —
+no approve/publish action. +21 backend tests (3,396 → 3,417 passed) including a dedicated
+zero-published-rows assertion. See `docs/architecture/english-resource-bank-import-platform.md`
+for full detail, including every judgment call/threshold made.
+
+**Before this: Phase E1.** Implemented the staging foundation — source registry extension, import
+runs, raw records, candidates, gates 1-3 (English-only, license/source-approval, parser).
+Zero rows published. Committed as `874ee423`.
+
+**Next implementation phase: Phase E3** — admin rendered preview (gate 7a prerequisite). **Not
+started.** Phase D remains gated on Phase E reaching at least E4 — E1/E2 built staging/analysis/
+validation only, nothing is published yet. PG-v2 implementation remains not started. Today lesson
+generation remains 100% legacy `IAiActivityGenerator` freeform generation. See
+`docs/roadmap/road-map.md` §19a for the full phase order.
+
+---
+
+## Previous sprint
+
 **Phase E1 — English Resource Source Registry, Import Runs, Raw Records, and Candidate Staging (2026-07-08)** — complete
 
-**Last completed: Phase E1.** Implemented the first Phase E slice: `CefrResourceSource` extended
-(added `LanguageCode` enforced to `"en"`, `AllowsStudentDisplay`, `AllowsCommercialUse`,
-`AttributionText`, `SourceVersion`, `DownloadUrl`, `Update(...)`) as the source registry — no
-duplicate entity created. New staging entities `ResourceImportRun`/`ResourceRawRecord`/
-`ResourceCandidate` (migration `AddResourceImportStaging`). `ResourceImportService` implements
-gates 1-3 only (English-only, license/source-approval, parser) with continue-on-error per-row
-processing and within-run duplicate-hash detection; supports CSV/JSON/JSONL. `ContentFingerprint`
-reuses `IActivityContentFingerprintService`. Admin CRUD/API/UI for Resource Sources, Resource
-Import Runs (Raw Records nested under run detail), and Resource Candidates (read-only + notes,
-explicit "staging only" banner) under the existing Content sidebar group. **Zero rows written to
-any published `Cefr*` bank table — confirmed by a dedicated test.** +17 backend tests
-(3,379 → 3,396 passed). No AI analysis, no rendered preview, no publish action — all correctly
-deferred to E2/E3/E4. See `docs/architecture/english-resource-bank-import-platform.md` for full
-detail, including two small documented deviations from the E0 plan.
-
-**Before this: Plan-Sync-PG-v2.** Added a future **Practice Gym v2** (skill/objective-first
-selector) track to the roadmap, after Phase E5-E8 and before Phase F/G. Docs-only — see
-`docs/architecture/practice-gym.md`'s "Future target: skill-first Practice Gym" section.
-
-**Next implementation phase: Phase E2** — AI analysis + validation gates (gates 4-6). **Not
-started.** Phase D remains gated on Phase E reaching at least E4 — Phase E1 only built the
-staging foundation, nothing is published yet. PG-v2 implementation remains not started. Today
-lesson generation remains 100% legacy `IAiActivityGenerator` freeform generation. See
-`docs/roadmap/road-map.md` §19a for the full phase order.
+Implemented the first Phase E slice: `CefrResourceSource` extended as the source registry (no
+duplicate entity); new staging entities `ResourceImportRun`/`ResourceRawRecord`/
+`ResourceCandidate` (migration `AddResourceImportStaging`); gates 1-3 only (English-only, license/
+source-approval, parser); CSV/JSON/JSONL support; admin CRUD/API/UI for Resource Sources, Import
+Runs, and Candidates under the existing Content sidebar group. Zero rows published. +17 backend
+tests (3,379 → 3,396 passed). Committed as `874ee423`.
 
 ---
 

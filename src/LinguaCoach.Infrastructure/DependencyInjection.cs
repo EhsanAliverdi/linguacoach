@@ -536,6 +536,15 @@ public static class DependencyInjection
         services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceImportService,
             LinguaCoach.Infrastructure.ResourceImport.ResourceImportService>();
 
+        // Phase E2 — AI analysis (advisory), deterministic rule validation, and dedup/fingerprint
+        // gates over staged candidates.
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceCandidateAnalysisService,
+            LinguaCoach.Infrastructure.ResourceImport.ResourceCandidateAnalysisService>();
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceCandidateValidationService,
+            LinguaCoach.Infrastructure.ResourceImport.ResourceCandidateValidationService>();
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceCandidateBatchAnalysisService,
+            LinguaCoach.Infrastructure.ResourceImport.ResourceCandidateBatchAnalysisService>();
+
         // AI Bank-First Teaching Architecture Phase 9 — cross-entity admin review queue
         services.AddScoped<LinguaCoach.Application.Admin.ReviewQueue.IAdminReviewQueueQuery,
             LinguaCoach.Infrastructure.Admin.ReviewQueue.AdminReviewQueueQueryHandler>();

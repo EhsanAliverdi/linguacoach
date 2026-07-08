@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase E1)
+lastUpdated: 2026-07-08 (Phase E2)
 owner: architecture
 supersedes:
 supersededBy:
@@ -108,19 +108,20 @@ Key facts about where this stands today (2026-07-08):
   skill-first Practice Gym" section and docs/backlog/product-backlog.md's "Practice Gym v2"
   section. Sequenced deliberately late (after Phase E5-E8, before Phase F/G) — see
   docs/roadmap/road-map.md §19a.
-- **Phase E1 (2026-07-08) implemented the staging foundation — source registry, import runs, raw
-  records, candidates, gates 1-3 only; Phase E2 (AI analysis + validation) not started** — the
+- **Phase E1 (staging) and Phase E2 (2026-07-08, AI-advisory analysis + deterministic validation/
+  dedup gates 4-6) are implemented; Phase E3 (admin rendered preview) not started** — the
   English Resource Bank Import, Review, Preview, and Publishing Platform is a multi-step pipeline
   (source registry → import → candidate analysis → validation → admin preview → review →
-  publish), not a one-shot data seed. **Zero rows have been published to any bank table.** See
-  docs/architecture/english-resource-bank-import-platform.md.
+  publish), not a one-shot data seed. **AI analysis is advisory only** — deterministic backend
+  validation remains the sole authority on candidate status. **Zero rows have been published to
+  any bank table.** See docs/architecture/english-resource-bank-import-platform.md.
 - **English-only seed/resource-bank rule (non-negotiable, applies to all current and future
   resource banks):** no Persian seed corpus, no bilingual phrase bank, no English–Persian (or
   English–any-language) import. Supported languages (Persian, etc.) are **runtime-only**
   support — UI chrome, onboarding language-pair selection, support-language hints/translation
   help — never seeded as learning content.
 
-Current state (as of 2026-07-08, Phase E1): **Practice Gym bank-first migration (content
+Current state (as of 2026-07-08, Phase E2): **Practice Gym bank-first migration (content
 layer) is closed at Phase C-Final** — generalized the Form.io template path from 1 pilot pattern
 to 8 total (C1's `phrase_match`, `gap_fill_workplace_phrase`, `reading_multiple_choice_single`;
 C2's `reading_multiple_choice_multi`, `reading_fill_in_blanks`, `reading_writing_fill_in_blanks`;
@@ -136,15 +137,18 @@ review automation consumes this data yet; it is collected and queryable for futu
 roadmap**, sequenced after Phase E5-E8 and before Phase F/G — a separate, later concern from the
 content-migration track that just closed, and does not delete
 `ExerciseTypeDefinition`/`ExercisePatternDefinition`.
-**Phase E1 implemented the resource-import-platform staging foundation** — `CefrResourceSource`
-extended as the source registry (no duplicate entity); new `ResourceImportRun`/
-`ResourceRawRecord`/`ResourceCandidate` entities; gates 1-3 only (English-only, license/source-
-approval, parser); admin CRUD/API/UI for Sources/Import Runs/Candidates; CSV/JSON/JSONL support;
-**zero rows published to any `Cefr*` bank table** (confirmed by a dedicated test) — see
-docs/architecture/english-resource-bank-import-platform.md. Phase D (bank-first Today lesson
+**Phase E1 implemented the resource-import-platform staging foundation** (`CefrResourceSource`
+extended as the source registry; `ResourceImportRun`/`ResourceRawRecord`/`ResourceCandidate`;
+gates 1-3) and **Phase E2 implemented AI-advisory analysis + deterministic validation/dedup**
+(gates 4-6: `ResourceCandidateAnalysisService` suggests CEFR/skill/tags but never decides
+validation status; `ResourceCandidateValidationService` is the sole authority, including
+exact-fingerprint dedup within-run/within-source/global) — admin CRUD/API/UI for Sources/Import
+Runs/Candidates with analyze/re-validate actions; CSV/JSON/JSONL support;
+**zero rows published to any `Cefr*` bank table** (confirmed by dedicated tests in both phases) —
+see docs/architecture/english-resource-bank-import-platform.md. Phase D (bank-first Today lesson
 composer) remains sequenced to start only after Phase E reaches at least E4 (first published
 banks) — see `docs/roadmap/road-map.md` §19a for the full phase order.
-**Phase E2 (AI analysis + validation gates), Phase D implementation, and PG-v2 implementation all
+**Phase E3 (admin rendered preview), Phase D implementation, and PG-v2 implementation all
 remain not started.**
 
 ---
@@ -170,7 +174,7 @@ remain not started.**
 | [formio-onboarding-placement-model.md](formio-onboarding-placement-model.md) | Form.io-native onboarding (`StudentFlowTemplate`/`Version`/`Submission`) and placement (`PlacementItemDefinition` with `FormIoSchemaJson`/`ScoringRulesJson`, backend-only scoring); the strongest current bank-first example |
 | [repetition-and-novelty.md](repetition-and-novelty.md) | `StudentActivityUsageLog`; `IActivityContentFingerprintService`/`IActivityNoveltyPolicy`; deterministic/exact-match cooldown foundation (Phase B, 2026-07-08) — not embeddings/semantic near-duplicate detection |
 | [activity-feedback-and-calibration.md](activity-feedback-and-calibration.md) | Foundation implemented (Phase B2, 2026-07-08): explicit student-reported difficulty/clarity/usefulness/repeat-preference feedback (`ActivityFeedbackSignal`); admin per-surface feedback policy (off/optional/required) via existing feature-gate system; API + minimal student UI. Not yet consumed by any automated CEFR/difficulty-band/template/resource/AI-quality calibration or admin review automation — collection only |
-| [english-resource-bank-import-platform.md](english-resource-bank-import-platform.md) | Phase E plan (E0-E8). E0 finalized entity/status/gate model; **E1 implemented (2026-07-08)**: `CefrResourceSource` extended as source registry; `ResourceImportRun`/`ResourceRawRecord`/`ResourceCandidate` staging entities; gates 1-3 (English-only, license, parser); admin CRUD/API/UI for Sources/Import Runs/Candidates; CSV/JSON/JSONL support. Zero rows published to any bank table — E2 (AI analysis + validation) not started |
+| [english-resource-bank-import-platform.md](english-resource-bank-import-platform.md) | Phase E plan (E0-E8). E0 finalized entity/status/gate model; **E1 + E2 implemented (2026-07-08)**: `CefrResourceSource` extended as source registry; `ResourceImportRun`/`ResourceRawRecord`/`ResourceCandidate` staging entities; gates 1-3 (English-only, license, parser) + gates 4-6 (AI-advisory analysis, deterministic validation, exact-fingerprint dedup); admin CRUD/API/UI. Zero rows published to any bank table — E3 (admin rendered preview) not started |
 
 ### Planned / Deferred (not implemented yet)
 
@@ -261,7 +265,7 @@ Archived
 | Bank-first Today lesson composer | ⬜ Deferred — planned Phase D1, sequenced after Phase C-Final and Phase E4; not started |
 | Generalize Form.io template path across the rest of Practice Gym | ✅ **Closed at Phase C-Final** (2026-07-08) — Phase C1 (batch of 3), Phase C2 (batch of 3 more), and Phase C3 (1 pattern, `reorder_paragraphs`, new `ordered_sequence` scorer) done, 8 of 33 pattern rows template-enabled; C-Final verified all 8 stable and formally documented the remaining 25 legacy keys with 4 tracked backlog items. **No Phase C4.** See docs/architecture/practice-gym.md |
 | Activity Feedback, Repeat Policy, and Calibration Signals (Phase B2) | 🟡 Foundation implemented (2026-07-08) — see docs/architecture/activity-feedback-and-calibration.md. `ActivityFeedbackSignal` entity/migration, Off/Optional/Required policy per surface (Today + Practice Gym) via existing feature-gate system, submit/upsert API, minimal student prompt UI. Not yet consumed by any automated calibration/novelty/admin-review logic — collection only |
-| English Resource Bank Import/Review/Preview/Publishing Platform (Phase E0-E8) | 🟡 **E1 implemented** (2026-07-08) — see docs/architecture/english-resource-bank-import-platform.md. `CefrResourceSource` extended (source registry, no duplicate entity); `ResourceImportRun`/`ResourceRawRecord`/`ResourceCandidate` staging entities (migration `AddResourceImportStaging`); gates 1-3 (English-only, license/source-approval, parser); admin CRUD/API/UI for Sources/Import Runs/Candidates; CSV/JSON/JSONL. **Zero rows published to any `Cefr*` bank table** (E2-E4 not started). English-only; no Persian/bilingual seed data at any phase |
+| English Resource Bank Import/Review/Preview/Publishing Platform (Phase E0-E8) | 🟡 **E1 + E2 implemented** (2026-07-08) — see docs/architecture/english-resource-bank-import-platform.md. `CefrResourceSource` extended (source registry, no duplicate entity); `ResourceImportRun`/`ResourceRawRecord`/`ResourceCandidate` staging entities; gates 1-3 (English-only, license/source-approval, parser) + gates 4-6 (`ResourceCandidateAnalysisService` AI-advisory only; `ResourceCandidateValidationService` sole authority on validation status, incl. exact-fingerprint dedup); admin CRUD/API/UI with analyze/re-validate actions. **Zero rows published to any `Cefr*` bank table** (E3-E4 not started). English-only; no Persian/bilingual seed data at any phase |
 | IFileStorageService / MinIO | ✅ Done — audio (TTS + speaking uploads) fully on object storage; not blocking deployment at current scale |
 | Admin lifecycle reset tools | ✅ Done |
 

@@ -12,6 +12,9 @@ import {
   AdminResourceCandidateDto,
   AdminResourceCandidateListResult,
   ResourceImportResult,
+  ResourceCandidateAnalyzeResponse,
+  ResourceCandidateValidationResult,
+  ResourceCandidateBatchAnalysisResult,
 } from '../models/admin-resource-import.models';
 
 @Injectable({ providedIn: 'root' })
@@ -81,6 +84,12 @@ export class AdminResourceImportRunService {
     if (extractionStatus && extractionStatus !== 'all') params = params.set('extractionStatus', extractionStatus);
     return this.http.get<AdminResourceRawRecordListResult>(`${this.base}/${runId}/raw-records`, { params });
   }
+
+  /** Phase E2 — bounded-batch AI analysis + re-validation of all not-yet-analyzed candidates
+   *  for this run (capped server-side; re-call to sweep the next batch if the cap was hit). */
+  analyzePendingCandidates(runId: string): Observable<ResourceCandidateBatchAnalysisResult> {
+    return this.http.post<ResourceCandidateBatchAnalysisResult>(`${this.base}/${runId}/candidates/analyze`, {});
+  }
 }
 
 @Injectable({ providedIn: 'root' })
@@ -111,5 +120,15 @@ export class AdminResourceCandidateService {
 
   setNotes(candidateId: string, adminNotes: string | null): Observable<AdminResourceCandidateDto> {
     return this.http.put<AdminResourceCandidateDto>(`${this.base}/${candidateId}/notes`, { adminNotes });
+  }
+
+  /** Phase E2 — AI analysis (advisory) followed immediately by full deterministic re-validation. */
+  analyze(candidateId: string): Observable<ResourceCandidateAnalyzeResponse> {
+    return this.http.post<ResourceCandidateAnalyzeResponse>(`${this.base}/${candidateId}/analyze`, {});
+  }
+
+  /** Phase E2 — re-runs deterministic rule validation only (no AI call). */
+  validate(candidateId: string): Observable<ResourceCandidateValidationResult> {
+    return this.http.post<ResourceCandidateValidationResult>(`${this.base}/${candidateId}/validate`, {});
   }
 }

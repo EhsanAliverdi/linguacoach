@@ -102,10 +102,21 @@ export interface AdminResourceCandidateDto {
   difficultyBand: number | null;
   contextTagsJson: string | null;
   focusTagsJson: string | null;
+  // Phase E2 — AI-suggested classification tags/output.
+  grammarTagsJson: string | null;
+  vocabularyTagsJson: string | null;
+  pronunciationTagsJson: string | null;
+  activitySuitabilityTagsJson: string | null;
+  safetyTagsJson: string | null;
+  licenseTagsJson: string | null;
   qualityScore: number | null;
   contentFingerprint: string;
+  /** Phase E2 — raw AI advisory analysis output, null until analyzed at least once. */
+  aiAnalysisJson: string | null;
   validationStatus: string;
   reviewStatus: string;
+  /** Phase E2 broadens this field's meaning to hold the most recent deterministic
+   *  validation run's {"errors":[...],"warnings":[...]} JSON summary. */
   rejectReason: string | null;
   adminNotes: string | null;
   createdAt: string;
@@ -116,6 +127,37 @@ export interface AdminResourceCandidateListResult {
   items: AdminResourceCandidateDto[];
   totalCount: number;
   overallTotalCount: number;
+}
+
+// ── Phase E2 — AI analysis / rule validation trigger results ───────────────────
+
+export interface ResourceCandidateAnalysisSummary {
+  success: boolean;
+  errorMessage: string | null;
+  providerName: string | null;
+  modelName: string | null;
+}
+
+export interface ResourceCandidateValidationResult {
+  candidateId: string;
+  status: string;
+  errors: string[];
+  warnings: string[];
+  needsHumanReview: boolean;
+}
+
+export interface ResourceCandidateAnalyzeResponse {
+  candidate: AdminResourceCandidateDto;
+  analysis: ResourceCandidateAnalysisSummary;
+  validation: ResourceCandidateValidationResult;
+}
+
+export interface ResourceCandidateBatchAnalysisResult {
+  candidatesConsidered: number;
+  candidatesAnalyzed: number;
+  succeededCount: number;
+  failedCount: number;
+  batchLimitReached: boolean;
 }
 
 export interface ResourceImportResult {

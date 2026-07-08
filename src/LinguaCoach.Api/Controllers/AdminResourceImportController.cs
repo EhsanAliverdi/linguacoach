@@ -21,19 +21,22 @@ public sealed class AdminResourceImportController : ControllerBase
     private readonly IAdminResourceRawRecordListQuery _rawRecordListQuery;
     private readonly IAdminResourceRawRecordGetQuery _rawRecordGetQuery;
     private readonly IResourceImportService _importService;
+    private readonly IResourceCandidateBatchAnalysisService _batchAnalysisService;
 
     public AdminResourceImportController(
         IAdminResourceImportRunListQuery runListQuery,
         IAdminResourceImportRunGetQuery runGetQuery,
         IAdminResourceRawRecordListQuery rawRecordListQuery,
         IAdminResourceRawRecordGetQuery rawRecordGetQuery,
-        IResourceImportService importService)
+        IResourceImportService importService,
+        IResourceCandidateBatchAnalysisService batchAnalysisService)
     {
         _runListQuery = runListQuery;
         _runGetQuery = runGetQuery;
         _rawRecordListQuery = rawRecordListQuery;
         _rawRecordGetQuery = rawRecordGetQuery;
         _importService = importService;
+        _batchAnalysisService = batchAnalysisService;
     }
 
     // GET api/admin/resource-import-runs?page=1&pageSize=20&sourceId=...&status=Completed
@@ -99,6 +102,18 @@ public sealed class AdminResourceImportController : ControllerBase
         return result is null ? NotFound() : Ok(result);
     }
 
+    // POST api/admin/resource-import-runs/{runId}/candidates/analyze
+    // Phase E2 — bounded-batch AI analysis + re-validation of all not-yet-analyzed candidates for
+    // this run. Capped at IResourceCandidateBatchAnalysisService's MaxCandidatesPerBatch (50) per
+    // call — this is deliberately synchronous/batched, not a background job (see that service's
+    // doc comment for why). Re-run the same call to sweep the next batch if the cap was reached.
+    [HttpPost("{runId:guid}/candidates/analyze")]
+    public async Task<IActionResult> AnalyzePendingCandidates(Guid runId, CancellationToken ct)
+    {
+        var result = await _batchAnalysisService.AnalyzePendingForRunAsync(runId, ct);
+        return Ok(result);
+    }
+
     private Guid? GetCurrentUserId()
     {
         var raw = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
@@ -118,15 +133,21 @@ public sealed class AdminResourceCandidateController : ControllerBase
     private readonly IAdminResourceCandidateListQuery _listQuery;
     private readonly IAdminResourceCandidateGetQuery _getQuery;
     private readonly IAdminResourceCandidateNotesHandler _notesHandler;
+    private readonly IResourceCandidateAnalysisService _analysisService;
+    private readonly IResourceCandidateValidationService _validationService;
 
     public AdminResourceCandidateController(
         IAdminResourceCandidateListQuery listQuery,
         IAdminResourceCandidateGetQuery getQuery,
-        IAdminResourceCandidateNotesHandler notesHandler)
+        IAdminResourceCandidateNotesHandler notesHandler,
+        IResourceCandidateAnalysisService analysisService,
+        IResourceCandidateValidationService validationService)
     {
         _listQuery = listQuery;
         _getQuery = getQuery;
         _notesHandler = notesHandler;
+        _analysisService = analysisService;
+        _validationService = validationService;
     }
 
     // GET api/admin/resource-candidates?page=1&pageSize=20&sourceId=&importRunId=&candidateType=&
@@ -161,6 +182,46 @@ public sealed class AdminResourceCandidateController : ControllerBase
         {
             var result = await _notesHandler.HandleAsync(
                 new SetResourceCandidateAdminNotesCommand(candidateId, request.AdminNotes), ct);
+            return Ok(result);
+        }
+        catch (ResourceImportValidationException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    // POST api/admin/resource-candidates/{candidateId}/analyze
+    // Phase E2 — AI analysis (advisory) followed immediately by a full deterministic
+    // re-validation, so the returned candidate's ValidationStatus always reflects the AI's
+    // latest suggestion. Idempotent/update-safe — re-running overwrites the prior analysis,
+    // never duplicates anything. Never publishes, never deletes a candidate.
+    [HttpPost("{candidateId:guid}/analyze")]
+    public async Task<IActionResult> Analyze(Guid candidateId, CancellationToken ct)
+    {
+        var analysisResult = await _analysisService.AnalyzeAsync(candidateId, ct);
+        if (!analysisResult.Success && string.Equals(analysisResult.ErrorMessage, "Candidate not found.", StringComparison.Ordinal))
+            return NotFound(new { error = analysisResult.ErrorMessage });
+
+        var validationResult = await _validationService.ValidateAsync(candidateId, ct);
+        var dto = await _getQuery.HandleAsync(new GetAdminResourceCandidateQuery(candidateId), ct);
+
+        return Ok(new
+        {
+            candidate = dto,
+            analysis = new { analysisResult.Success, analysisResult.ErrorMessage, analysisResult.ProviderName, analysisResult.ModelName },
+            validation = validationResult
+        });
+    }
+
+    // POST api/admin/resource-candidates/{candidateId}/validate
+    // Phase E2 — re-runs deterministic rule validation only (no AI call). Useful to re-check a
+    // candidate after something external changed, e.g. its source's import approval was revoked.
+    [HttpPost("{candidateId:guid}/validate")]
+    public async Task<IActionResult> Validate(Guid candidateId, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _validationService.ValidateAsync(candidateId, ct);
             return Ok(result);
         }
         catch (ResourceImportValidationException ex)

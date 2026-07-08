@@ -110,10 +110,22 @@ public sealed record AdminResourceCandidateDto(
     int? DifficultyBand,
     string? ContextTagsJson,
     string? FocusTagsJson,
+    string? GrammarTagsJson,
+    string? VocabularyTagsJson,
+    string? PronunciationTagsJson,
+    string? ActivitySuitabilityTagsJson,
+    string? SafetyTagsJson,
+    string? LicenseTagsJson,
     double? QualityScore,
     string ContentFingerprint,
+    // Phase E2 — AI's raw advisory analysis output (null until IResourceCandidateAnalysisService
+    // has analyzed this candidate at least once).
+    string? AiAnalysisJson,
     string ValidationStatus,
     string ReviewStatus,
+    // Phase E2 broadens this field's meaning — see ResourceCandidate.RejectReason's doc comment:
+    // holds the most recent deterministic validation run's {"errors":[...],"warnings":[...]}
+    // summary, not just a plain rejection reason.
     string? RejectReason,
     string? AdminNotes,
     DateTime CreatedAt,

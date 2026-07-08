@@ -113,12 +113,53 @@
       <sp-admin-form-field label="Review status">
         <sp-admin-badge tone="neutral">{{ candidate.reviewStatus }}</sp-admin-badge>
       </sp-admin-form-field>
+
+      <!-- Phase E2 — AI analysis / validation output (advisory; AI never sets validation status). -->
+      <sp-admin-form-field label="CEFR level / confidence">
+        {{ candidate.cefrLevel ?? '—' }}
+        @if (candidate.cefrConfidence !== null) { ({{ (candidate.cefrConfidence * 100).toFixed(0) }}% confidence) }
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Skill / subskill">
+        {{ candidate.primarySkill ?? '—' }} @if (candidate.subskill) { / {{ candidate.subskill }} }
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Difficulty band">
+        {{ candidate.difficultyBand ?? '—' }}
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Quality score">
+        {{ candidate.qualityScore !== null ? (candidate.qualityScore * 100).toFixed(0) + '%' : '—' }}
+      </sp-admin-form-field>
+      @if (candidate.safetyTagsJson) {
+        <sp-admin-form-field label="Safety flags">
+          <sp-admin-badge tone="danger">{{ candidate.safetyTagsJson }}</sp-admin-badge>
+        </sp-admin-form-field>
+      }
+
+      @if (lastValidationErrors().length > 0) {
+        <sp-admin-form-field label="Validation errors">
+          <ul>
+            @for (e of lastValidationErrors(); track e) { <li>{{ e }}</li> }
+          </ul>
+        </sp-admin-form-field>
+      }
+      @if (lastValidationWarnings().length > 0) {
+        <sp-admin-form-field label="Validation warnings (incl. duplicate detection)">
+          <ul>
+            @for (w of lastValidationWarnings(); track w) { <li>{{ w }}</li> }
+          </ul>
+        </sp-admin-form-field>
+      }
+
       <sp-admin-form-field label="Content fingerprint">
         <code>{{ candidate.contentFingerprint }}</code>
       </sp-admin-form-field>
       <sp-admin-form-field label="Normalized JSON">
         <pre>{{ candidate.normalizedJson }}</pre>
       </sp-admin-form-field>
+      @if (candidate.aiAnalysisJson) {
+        <sp-admin-form-field label="Raw AI analysis (advisory only)">
+          <pre>{{ candidate.aiAnalysisJson }}</pre>
+        </sp-admin-form-field>
+      }
       <sp-admin-form-field label="Admin notes" hint="The only editable field in Phase E1 — no approve/reject/publish workflow yet">
         <sp-admin-textarea [(ngModel)]="notesDraft" placeholder="Optional internal note" />
       </sp-admin-form-field>
@@ -130,6 +171,12 @@
   @if (selectedCandidate()) {
     <div slot="footer">
       <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeDrawer()">Close</sp-admin-button>
+      <sp-admin-button variant="neutral" appearance="outline" [disabled]="validating()" (clicked)="validateSelected()">
+        {{ validating() ? 'Validating…' : 'Re-validate' }}
+      </sp-admin-button>
+      <sp-admin-button variant="neutral" appearance="outline" [disabled]="analyzing()" (clicked)="analyzeSelected()">
+        {{ analyzing() ? 'Analyzing…' : 'Analyze' }}
+      </sp-admin-button>
       <sp-admin-button variant="primary" [disabled]="savingNotes()" (clicked)="saveNotes()">
         {{ savingNotes() ? 'Saving…' : 'Save notes' }}
       </sp-admin-button>
