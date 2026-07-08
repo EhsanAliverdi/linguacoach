@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase E7)
+lastUpdated: 2026-07-09 (Plan-Sync-G0)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,41 @@ Last updated: 2026-07-09
 ---
 
 ## Active sprint
+
+**Plan-Sync-G0 — Bank-First Admin/Backend Surface Cleanup Track (2026-07-09)** — complete (docs-only)
+
+Opens a new roadmap track auditing the pre-bank-first admin/backend surface. **Not a visual
+redesign, and not a deletion of the readiness pool.** Records two decisions: (1) the per-student
+readiness lifecycle (`StudentActivityReadinessItem`, `IStudentActivityReadinessPoolService`) is
+**kept** — its state machine (selected → assigned → ready → reserved → completed/expired/stale/
+failed) is still exactly what production needs, only its framing changes from "AI-generated
+activity cache" to **"Student Activity Assignment / Delivery Queue"** language; (2) Resource
+Banks/Resource Candidates/Activity Templates (E0-E7) are confirmed the **primary content model**
+going forward, with AI generation remaining for fallback generation, evaluation, composition,
+and cost/diagnostics visibility only. Specific treatment decisions recorded now: Readiness Pool
+admin UI reworked/renamed/moved to diagnostics; "Pool Health"/"Lesson readiness" admin pages
+renamed/reframed as "Today Delivery Health"/"Assignment Health"/"Delivery Queue Health";
+`PracticeActivityCache` audited later, not touched now; AI-generation admin pages narrowed to
+fallback/evaluation/composition/cost-diagnostics scope; stale forward-facing wording ("AI-
+generated activity cache," "generated pool as main content source," etc.) flagged for a future
+removal pass, with historical decision-log entries exempted; legacy generation paths kept until
+replacements are proven (reaffirms existing Phase F scope). Added **Phase G0 — Bank-First Admin/
+Backend Surface Audit** (audits every admin page/API/job/lifecycle concept, classifying each as
+keep/rename-reframe/move-to-diagnostics/merge/remove-later) plus **Phase G1/G2/G3** (act on G0's
+classifications for admin IA cleanup, backend legacy cleanup, and diagnostics consolidation
+respectively), expanding the roadmap's previously-generic single "Phase G" item. Sequenced
+Plan-Sync-G0 → Phase G0 immediately after Phase E7 (done) and before the Phase D3/E8 decision
+checkpoint. **No app code, migrations, or config changed.** Full detail:
+`docs/roadmap/road-map.md` §1 and Decision Log.
+
+**Next: Phase G0's own audit has not started, and the Phase D3/E8 decision checkpoint remains
+unresolved** — start Phase D3 using the deepened bank content, continue Phase E8 for further
+resource-platform work, run Phase G0's audit, or a further docs-only plan sync. See
+`docs/roadmap/road-map.md` §19a for the full phase order.
+
+---
+
+## Previous sprint
 
 **Phase E7 — Full Internal Reading Passage Bank and Resource Depth Expansion (2026-07-09)** — complete
 
@@ -38,11 +73,6 @@ phase** — query methods exposed and tested, Today consumption left for a futur
 backend tests (3,527 → 3,551 total: 5 architecture + 2,070 unit + 1,476 integration). **No
 external dataset imported, no Persian/bilingual/support-language content added, Today/Practice
 Gym legacy fallback not removed, no direct import-to-final-bank bypass introduced.**
-
-**Next: a new Phase D3 decision checkpoint now applies, not resolved by this phase** — start
-Phase D3 using the deepened bank content, continue Phase E8 for further resource-platform work,
-or a docs-only plan sync if the roadmap changes. See `docs/roadmap/road-map.md` §19a for the full
-phase order.
 
 ---
 

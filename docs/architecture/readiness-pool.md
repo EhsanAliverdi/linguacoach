@@ -12,6 +12,8 @@ supersededBy:
 
 The readiness pool is a student-specific queue of pre-generated or in-progress learning items. It decouples content generation from content serving, and preserves the routing/personalisation snapshot at the time of generation so content is never mis-matched if the student's profile changes later.
 
+> **Forward reference (Plan-Sync-G0, 2026-07-09, docs-only):** this pool is **kept, not deleted**. The bank-first migration (Resource Banks/Candidates/Activity Templates) is now the primary content model, so this doc's own framing — and any admin UI ("Pool Health"/"Lesson readiness" pages) built around it — will eventually be reframed from "AI-generated activity cache" language to **"Student Activity Assignment / Delivery Queue"** language. The entity, lifecycle, and concurrency model documented below are unchanged by this decision; a future **Phase G0** audit (see `docs/roadmap/road-map.md` §19a and Decision Log) will classify this doc's admin surfaces and decide the concrete rename/rework, not this note.
+
 ## Entity: StudentActivityReadinessItem
 
 Table: `student_activity_readiness_items`

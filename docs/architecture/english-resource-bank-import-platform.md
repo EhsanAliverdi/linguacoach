@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase E7)
+lastUpdated: 2026-07-09 (Plan-Sync-G0)
 owner: architecture
 supersedes:
 supersededBy:
@@ -745,6 +745,15 @@ Plan-Sync-After-E4, Phase E5, Plan-Sync-E6-Decision, Phase E6, Phase D1, Bugfix-
 Plan-Sync-After-D2, and Phase E7 entries) for the full reasoning and current preferred phase
 order.
 
+**Plan-Sync-G0 (2026-07-09, docs-only)** confirms Resource Banks, Resource Candidates, and
+Activity Templates — this platform's own E0-E7 output — as the **primary content model going
+forward**, explicitly narrowing AI generation's role to fallback generation, evaluation,
+composition, and cost/diagnostics visibility. A future **Phase G0** audit will review how
+existing admin surfaces (including any still framed around the pre-bank-first readiness-pool/
+AI-generation-as-primary-content model) relate to this platform and classify each accordingly;
+this file's own scope remains Phase E, not the G-track — see `docs/roadmap/road-map.md` §1 and
+Decision Log (Plan-Sync-G0 entry) for the full decision.
+
 ---
 
 ## Documentation impact
@@ -812,6 +821,12 @@ order.
   learning-activity-engine.md`; `docs/roadmap/road-map.md` (Current Project Status, Test Totals,
   Decision Log, §19a phase sequence); `docs/sprints/current-sprint.md`;
   `docs/architecture/README.md`; `docs/backlog/product-backlog.md`.
+- Docs updated (Plan-Sync-G0, this section, docs-only): this file ("Relationship to Today lesson
+  composer" section updated with the primary-content-model confirmation and forward reference to
+  Phase G0); `docs/roadmap/road-map.md` (§1, Decision Log, §19a phase sequence);
+  `docs/sprints/current-sprint.md`; `docs/architecture/learning-activity-engine.md`;
+  `docs/architecture/README.md`; `docs/backlog/product-backlog.md`;
+  `docs/architecture/readiness-pool.md` (forward-reference note only, not rewritten).
 - Docs intentionally not updated: `docs/architecture/cefr-resource-licensing-review.md` — its
   licensing findings are unchanged by this phase; no new sources were browsed or licensing
   conclusions revisited in E0. `docs/architecture/practice-gym.md`/`repetition-and-novelty.md` —

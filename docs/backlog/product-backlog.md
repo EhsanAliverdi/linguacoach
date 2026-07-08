@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase E7)
+lastUpdated: 2026-07-09 (Plan-Sync-G0)
 owner: product
 supersedes:
 supersededBy:
@@ -11,6 +11,64 @@ supersededBy:
 Status labels: `Not started` Â· `Planned` Â· `Blocked` Â· `Done`
 
 Items are grouped by theme. Each item is a discrete unit of work; sub-bullets are acceptance criteria or notes.
+
+---
+
+## Bank-First Admin/Backend Surface Cleanup — Phase G0/G1/G2/G3 `Planned`
+
+Plan-Sync-G0 (2026-07-09, docs-only) opened a new roadmap track auditing every admin page, API,
+background job, and backend lifecycle concept for consistency with the now-primary bank-first
+content model (Resource Banks/Resource Candidates/Activity Templates). This is a **planning/
+architecture-cleanup track, not a visual redesign**, and it does **not** delete the per-student
+readiness lifecycle — see the treatment decisions below. Sequenced immediately after Phase E7
+(done) and before the Phase D3/E8 decision checkpoint; see `docs/roadmap/road-map.md` §19a for
+the full phase order and Decision Log for the full rationale.
+
+- [ ] **Phase G0 — Bank-First Admin/Backend Surface Audit** `Not started`
+  - **Purpose**: go through every admin page, API endpoint, background job, and backend
+    lifecycle concept post-bank-first-migration and classify each as keep / rename-reframe /
+    move-to-diagnostics / merge / remove-later, using the treatment decisions below as the
+    framework.
+  - **Not an open design question** — the framework itself was decided in this docs pass; G0's
+    job is to apply it to concrete surfaces, not re-derive it.
+- [ ] **Phase G1 — Admin Information Architecture Cleanup** `Not started`
+  - Acts on Phase G0's classifications: nav/page reorganization, including the "Content" vs "AI
+    System" nav split the roadmap's original generic "Phase G" item named.
+- [ ] **Phase G2 — Backend Legacy Surface Cleanup** `Not started`
+  - Acts on Phase G0's "remove-later"/"merge" classifications for backend code (jobs, services,
+    dead admin API routes) once G0 has classified them.
+- [ ] **Phase G3 — Delivery/Bank/AI Diagnostics Consolidation** `Not started`
+  - Consolidates the "keep as diagnostics" pieces G0 identifies (readiness/pool health,
+    AI-generation cost/quality visibility) into one coherent diagnostics area.
+
+**Treatment decisions recorded now** (product decisions made in this docs pass, not audit
+findings — G0 applies these, it does not re-decide them):
+
+- [x] **`StudentActivityReadinessItem` / `IStudentActivityReadinessPoolService`** `Kept, reframed`
+  — kept, not deleted; reframed as "Student Activity Assignment / Delivery Queue" rather than
+  "AI-generated activity cache." The lifecycle state machine (selected → assigned → ready →
+  reserved → completed → expired/stale/failed) is unchanged.
+- [ ] **Readiness Pool admin UI** `Not started` — rework/rename/move to diagnostics; should not
+  remain framed as a "content generation cache" concept.
+- [ ] **"Pool Health" / "Lesson readiness" admin pages** `Not started` — rename/reframe as "Today
+  Delivery Health" / "Assignment Health" / "Delivery Queue Health."
+- [ ] **`PracticeActivityCache` and related practice-cache logic** `Not started, deferred` —
+  audited in a future phase; may shrink or be removed after PG-v2, but not deleted now.
+- [x] **AI generation admin pages** `Scope confirmed` — kept only for fallback generation,
+  evaluation, composition, and cost visibility/diagnostics. AI generation is no longer the
+  primary content model and should not be presented as such going forward.
+- [x] **Resource Banks / Resource Candidates / Activity Templates** `Confirmed primary` — these
+  ARE the main admin content surfaces going forward (already exist from Phase E0-E7 and earlier
+  Activity Template work).
+- [ ] **Stale wording flagged for future removal** `Not started` — "AI-generated activity
+  cache," "generated pool as main content source," "random activity cache," "pre-generated
+  per-student cache" — flagged for removal in a future docs/UI/admin-label pass where it is
+  misleading about the *current* architecture. Historical decision-log entries describing what a
+  *past* phase actually built are explicitly exempt and stay as accurate history.
+- [x] **Legacy generation paths (freeform `IAiActivityGenerator`, etc.)** `Unchanged — Phase F
+  scope reaffirmed` — kept until replacements are proven; retirement stays pattern-by-pattern /
+  surface-by-surface in a later cleanup phase, per existing Phase F scope (not changed by this
+  item).
 
 ---
 

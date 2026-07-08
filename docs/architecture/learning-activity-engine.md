@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase E7)
+lastUpdated: 2026-07-09 (Plan-Sync-G0)
 owner: architecture
 supersedes:
 supersededBy:
@@ -203,6 +203,18 @@ bank-first Today coverage remains exactly what D1/D2 established (Vocabulary/Rea
 patterns only, legacy fallback everywhere else). Whether/how Today should ever consume full
 reading passages is left for a future phase (Phase D3 or later), not decided here. **Phase D3
 and PG-v2 implementation remain not started.**
+
+**Plan-Sync-G0 (2026-07-09, docs-only)** reframes, but does not delete, the readiness-pool
+lifecycle this file's fallback/generation flow relies on: `StudentActivityReadinessItem`/
+`IStudentActivityReadinessPoolService` is now described as a **"Student Activity Assignment /
+Delivery Queue"** rather than an "AI-generated activity cache" — the underlying selected →
+assigned → ready → reserved → completed/expired/stale/failed state machine is unchanged and
+still fully load-bearing for both Today and Practice Gym. A future **Phase G0** audit will
+formalize this reframing across every admin page/API/job that touches readiness/pool
+terminology; this file's own primary subject remains the AI generation engine, not the readiness
+pool's architecture — see `docs/roadmap/road-map.md` §1 and Decision Log (Plan-Sync-G0 entry) for
+the full decision and `docs/architecture/readiness-pool.md` for the pool's entity/lifecycle
+detail.
 
 **`GenerationStatus` default-value bugfix (Bugfix-D1A, 2026-07-08):** while building D1's
 regression tests, a pre-existing bug was found in `LearningSessionConfiguration`:

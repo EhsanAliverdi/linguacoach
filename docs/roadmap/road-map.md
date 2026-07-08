@@ -1,19 +1,19 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase E7)
+lastUpdated: 2026-07-09 (Plan-Sync-G0)
 owner: product / engineering
 ---
 
 # SpeakPath / LinguaCoach Roadmap
 
-**Accurate as of: 2026-07-09 (Phase E7 — see §19a for the current phase sequence).
+**Accurate as of: 2026-07-09 (Plan-Sync-G0 — see §19a for the current phase sequence).
 The 2026-07-03 "Phase 20H" line below is the last entry confirmed live against speakpath.app;
 everything since then (Clean-A/A2, Phase B, Phase C1, Plan-Sync-After-C1, Phase C2, Plan-Sync-B2,
 Phase B2, Phase C3, Phase C-Final, Phase E0, Plan-Sync-PG-v2, Phase E1, Phase E2, Phase E3,
 Phase E4, Plan-Sync-After-E4, Phase E5, Plan-Sync-E6-Decision, Phase E6, Phase D1, Bugfix-D1A,
-Phase D2, Plan-Sync-After-D2, Phase E7) has been developed and tested locally but not yet
-deployed — see the "Current Project Status" and Decision Log sections below for what's actually
-landed.**
+Phase D2, Plan-Sync-After-D2, Phase E7, Plan-Sync-G0) has been developed and tested locally but
+not yet deployed — see the "Current Project Status" and Decision Log sections below for what's
+actually landed.**
 
 This is the canonical project memory document. It captures completed work, current state, known gaps, deferred items, and the recommended order of future phases.
 
@@ -25,7 +25,55 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest phase completed (local, not yet deployed):** Phase E7 —
+**Latest phase completed (local, not yet deployed):** Plan-Sync-G0 —
+Bank-First Admin/Backend Surface Cleanup Track (2026-07-09, docs-only). This is a planning/
+docs-only decision pass, not implementation and not a visual redesign. It records two decisions.
+**First**, the per-student readiness lifecycle (`StudentActivityReadinessItem`,
+`IStudentActivityReadinessPoolService`) is **kept, not deleted** — only its framing changes, from
+"AI-generated activity cache" language to **"Student Activity Assignment / Delivery Queue"**
+language, since the underlying state machine (selected → assigned → ready → reserved →
+completed/expired/stale/failed) is still exactly what the pilot/production system needs; the
+words describing it were stale, not the mechanism itself. **Second**, Resource Banks (`Cefr*`
+entities), Resource Candidates (the E0-E7 staging/review/publish pipeline), and Activity
+Templates are now explicitly named the **primary content model going forward** — AI generation
+remains for fallback generation, evaluation, composition, and cost/diagnostics visibility only,
+not as the primary content source it was historically framed as. A new roadmap track, **Phase
+G0 — Bank-First Admin/Backend Surface Audit**, is added: it will audit every admin page, API,
+background job, and backend lifecycle concept post-bank-first-migration and classify each as
+keep / rename-reframe / move-to-diagnostics / merge / remove-later, using this phase's treatment
+decisions as its framework. Specific treatment decisions recorded now (not audit findings —
+product decisions made in this docs pass): (1) `StudentActivityReadinessItem` kept, reframed as
+assignment/delivery-queue language; (2) the Readiness Pool admin UI reworked/renamed/moved to
+diagnostics, no longer framed as a "content generation cache"; (3) "Pool Health"/"Lesson
+readiness" admin pages renamed/reframed as "Today Delivery Health"/"Assignment Health"/"Delivery
+Queue Health"; (4) `PracticeActivityCache` and related practice-cache logic audited later (a
+future phase) — may shrink or be removed after PG-v2, not touched now; (5) AI-generation admin
+pages kept only for fallback/evaluation/composition/cost-visibility/diagnostics purposes, no
+longer presented as the primary content model; (6) Resource Banks/Resource Candidates/Activity
+Templates confirmed as the primary admin content surfaces going forward; (7) stale wording
+("AI-generated activity cache," "generated pool as main content source," "random activity
+cache," "pre-generated per-student cache") flagged for removal in future forward-facing docs/UI/
+admin-label passes — historical decision-log entries describing what a past phase actually built
+are explicitly exempt and stay as accurate history; (8) legacy generation paths (freeform
+`IAiActivityGenerator`, etc.) kept until replacements are proven, retirement staying
+pattern-by-pattern/surface-by-surface in a later cleanup phase — this reaffirms, and does not
+change, existing Phase F scope. **Roadmap sequence placement**: Plan-Sync-G0 and Phase G0 are
+inserted immediately after Phase E7 (done) and before the Phase D3 decision checkpoint — Phase E7
+(done) → **Plan-Sync-G0 → Phase G0** → Phase D3/E8 decision checkpoint → Phase D3 or E8 →
+PG-v2A/B/C/D later → Phase F → Phase G1/G2/G3. §19a's single pre-existing generic "Phase G —
+admin bank/content navigation cleanup" list item is **expanded into Phase G1 (Admin Information
+Architecture Cleanup, acts on G0's classifications for nav/page reorganization), Phase G2
+(Backend Legacy Surface Cleanup, acts on G0's remove-later/merge classifications for backend
+code), and Phase G3 (Delivery/Bank/AI Diagnostics Consolidation, consolidates the "keep as
+diagnostics" pieces from readiness/pool/AI-generation into one coherent diagnostics area)** —
+chosen over adding G0 as an unrelated new item and leaving the old generic "Phase G" item
+in place unchanged, since the old item's own stated purpose ("consolidate the Content vs AI
+System nav split") is squarely what G1 now covers in more detail; expanding it avoids two
+overlapping "Phase G" concepts on the same roadmap. **No app code, migrations, or config changed
+by this phase. Phase G0 itself (the actual audit) has not started.** Full detail: this
+document's Decision Log and §19a below.
+
+**Latest phase completed before this:** Phase E7 —
 Full Internal Reading Passage Bank and Resource Depth Expansion (2026-07-09). Resolved the
 Plan-Sync-After-D2 decision by adding exactly the resource-depth gap that decision identified:
 `CefrReadingReference` is short-excerpt/citation-only by design, and Phase E4 had explicitly
@@ -57,7 +105,7 @@ Gym legacy fallback not removed, no direct import-to-final-bank bypass introduce
 `docs/architecture/english-resource-bank-import-platform.md`. **Phase D3 and PG-v2 implementation
 remain not started.**
 
-**Latest phase completed before this:** Plan-Sync-After-D2 —
+**Before that:** Plan-Sync-After-D2 —
 Choose Phase E7 Before Broader Today Composer Migration (2026-07-09, `b81519f1`, docs-only).
 **Decision: Phase E7 comes before Phase D3.** Full detail:
 `docs/architecture/english-resource-bank-import-platform.md`.
@@ -260,6 +308,12 @@ unmodified throughout.
 (2026-07-03) — see the entry below; everything after this line is developed/tested locally only.
 
 **Branch:** main
+
+**Test totals (as of Plan-Sync-G0, 2026-07-09, local only — unchanged from Phase E7 since this phase was docs-only):**
+- Backend: 3,551 passed (5 architecture + 2,070 unit + 1,476 integration), 0 failed — no code changed this phase.
+- Angular unit (Karma): not run this phase — docs-only; baseline unchanged at 120 pre-existing failures.
+- Angular production build (`ng build --configuration production`): not run this phase — docs-only, no app code/config changed.
+- Playwright E2E: not run this phase — docs-only, no UI changed.
 
 **Test totals (as of Phase E7, 2026-07-09, local only):**
 - Backend: 3,551 passed (5 architecture + 2,070 unit + 1,476 integration), 0 failed — net +24 vs Plan-Sync-After-D2 (3,527): new `CefrReadingPassageTests` (9, entity construction/validation/word-count computation); `ResourceCandidatePublishServiceTests` (+2 net: full passage publishes to `CefrReadingPassage`, missing-title full passage blocked, idempotent republish, plus the existing "long passage" test rewritten for the new behavior); `ResourceBankQueryServiceTests` (+6: list/filter/pagination/detail-traceability for the new bank type); `AdminResourceBankEndpointTests` (+6: auth/404 coverage for the two new routes across the existing 4 theories); `InternalResourceSeedPackSeederTests` (updated counts + 1 new fact proving the 10 new passages stage/validate/publish correctly).
@@ -1100,10 +1154,11 @@ These are planning estimates, not exact metrics. Provided to guide sequencing de
 | 2026-07-08 | **Phase D2 implemented — expanded Today bank-first composer coverage and provenance**: audited D1's implementation and confirmed `TodayBankResourceSelector`'s gate is purely skill-based (`pattern.PrimarySkill`), not an explicit pattern-key allow-list — every current Vocabulary/Reading-primary Today pattern was already covered, including `reading_multiple_choice_multi`/`reading_writing_fill_in_blanks` (never explicitly named in D1's own docs); added a regression test proving this rather than any gating code change. No Grammar-primary Today pattern exists, so grammar bank content stays opportunistic-only. **Selector quality**: returns a balanced bundle for Vocabulary-primary patterns (up to 2 vocabulary + 1 opportunistic grammar + 1 opportunistic reading, capped at 4); widens the CEFR search one level down only when routing reason is Review/Scaffold/Remediation and the exact level is empty (never upward, never otherwise); adds a cheap feedback-signal exclusion (`ActivityFeedbackSignal.UsefulnessRating == NotUseful` or `RepeatPreference == DoNotShowSimilarSoon`), matched via `LearningActivity.BankResourceProvenanceJson` rather than `ActivityFeedbackSignal.SourceBankItemId` (see below for why). **Bank context**: replaced the single loose prompt sentence with a clearer structured block (resource type/content/CEFR/explicit anchor-and-constraint instructions), still appended to the existing `TopicHint` field — no AI prompt template changes. **Provenance — discovered-and-fixed finding**: D1's `StudentActivityReadinessItem.SetBankItemProvenance(...)` call was latently broken — `SourceBankItemId` on `StudentActivityReadinessItem`/`StudentActivityUsageLog`/`ActivityFeedbackSignal` is FK-constrained to `PlacementItemDefinition`, not any Phase E Cefr* bank table, so writing a Cefr* resource id into it would throw a foreign-key violation against a real database the first time a readiness-pool item existed at materialization time — D1's own integration test happened not to exercise that exact path. **Fixed** by adding `LearningActivity.BankResourceProvenanceJson` (migration `Phase_D2_AddLearningActivityBankResourceProvenance`, nullable jsonb, no default value — deliberately avoiding the exact Bugfix-D1A default-value trap), a durable JSON array of every selected resource (`type`/`id`/`sourceId`/`contentFingerprint`/`selectionReason`) set at materialization time; the D1 call was removed entirely rather than patched. +9 backend tests (3,527 total: 5 architecture + 2,052 unit + 1,470 integration). **No external dataset imported, no Persian/bilingual/support-language content added, Today/Practice Gym legacy fallback not removed, no data loss.** | The pattern-coverage "finding" (skill-based gate already covers more than D1's docs implied) is a documentation/test-completeness correction, not new gating logic — writing the missing regression test was the honest way to close that gap without inventing an allow-list that wasn't needed. The provenance fix follows the same discipline as Bugfix-D1A: a latent, previously-untested defect was found via careful audit (not by a production incident) and fixed at its root (a new, correctly-scoped field) rather than patched around; reusing `SourceBankItemId` despite its FK mismatch would have either required loosening a real data-integrity constraint or silently working around it, both worse than adding one small nullable column |
 | 2026-07-09 | **Plan-Sync-After-D2**: resolved the Phase D2 follow-on decision — **Phase E7 comes before Phase D3**. Phase D2 expanded the Today bank-first slice as far as the current bank/resource-type coverage reasonably allows: balanced vocabulary/grammar/reading bundles, CEFR-widening for review/scaffold routing only, a feedback-signal exclusion, a structured prompt block, and full resource provenance. But Today still has no Grammar-primary pattern, no Speaking/Listening/image/open-ended bank content, and no semantic/embedding selection — and the bank itself is still only the 32/12/10-row internal seed pack from Phase E6. A broader Phase D3 composer migration attempted now would mostly run into missing content/resource types and thin bank depth, not any limitation of the D1/D2 integration hook itself — the more defensible next move is to deepen and harden the resource platform/content model (Phase E7) before expanding Today further. **Phase D3 remains deferred until after Phase E7 (and E8 if needed)**, at which point a new Phase D3 decision checkpoint follows, not resolved in advance. Docs-only; no app code, migrations, or config changed; does not start E7 implementation, Phase D3, or PG-v2 | Phase D2's own audit already showed the *integration mechanism* (skill-based gating, balanced selection, structured context, provenance) is now about as complete as it can usefully be for a narrow first slice — every further Today improvement (grammar-focused patterns, speaking/listening/image support, semantic ranking) is gated on the bank having more/different content and types to select from, not on more selector engineering. Choosing E7 next keeps the same discipline the project has followed throughout Phase E/D: don't ask the next consumer (D3) to do more than its producer (the resource bank) can currently support |
 | 2026-07-09 | **Phase E7 implemented — full internal reading passage bank + resource depth expansion**: re-scoped from E7's original "bigger import support" sketch to close the most concrete, well-understood gap Plan-Sync-After-D2 and Phase E4's own deferred-item list both flagged — `CefrReadingReference` is short-excerpt-only by design, and E4 explicitly deferred full-length `ReadingPassage` publishing rather than force it through dishonestly. New published bank entity `CefrReadingPassage` (migration `Phase_E7_AddCefrReadingPassage`, nullable-column-safe, no default-value trap) — `Title`, `PassageText`, `Summary?`, `CefrLevel`, `DifficultyBand?`, `PrimarySkill`, `Subskill?`, topic/context/focus tags, computed `WordCount`/`EstimatedReadingMinutes`, a denormalized `AttributionText?` snapshot, `ContentFingerprint?`, `QualityScore?`. **No new candidate type needed** — `ResourceCandidateType.ReadingPassage` already existed; `ResourceCandidatePublishService` now routes by staged-text length (≤500 chars → `CefrReadingReference` unchanged; over 500 chars → `CefrReadingPassage` instead of being blocked, requiring a `title` field). **Preview needed no changes** — `ResourceCandidatePreviewService.BuildReadingPreview` already rendered full passage text/word count/reading time regardless of length, confirmed by this phase's audit. New `IResourceBankQueryService.ListReadingPassagesAsync`/`GetReadingPassageDetailAsync`, admin API (`GET /api/admin/resource-banks/reading-passages`[`/{id}`]), and read-only admin page (`/admin/resource-banks/reading-passages`), matching the E5 pattern exactly. 10 new full-length, 100% original English reading passages (A1-B2, 458-940 characters) added to `InternalResourceSeedPackSeeder`'s internal source through the same real staging→validation→approval→publish pipeline as E6's content. **`TodayBankResourceSelector` is deliberately NOT wired to `CefrReadingPassage` this phase** — query methods exposed and tested, Today consumption left for a future phase. +24 backend tests (3,527 → 3,551 total: 5 architecture + 2,070 unit + 1,476 integration). **No external dataset imported, no Persian/bilingual/support-language content added, Today/Practice Gym legacy fallback not removed, no direct import-to-final-bank bypass introduced.** | Phase D2's audit already showed the Today-side integration mechanism was mature enough that the real blocker to further progress was resource depth/type coverage, not selector engineering — E7 closes the single most concrete instance of that gap (full reading passages) rather than attempting a broader, less-well-understood scope (background import jobs, ZIP archives, audio sources) that wasn't actually blocking anything yet. Deliberately not wiring `TodayBankResourceSelector` to the new bank keeps this phase a pure resource-platform expansion — consistent with the project's established discipline of not letting a producer-side phase quietly also make consumer-side (Today) decisions that deserve their own explicit scoping |
+| 2026-07-09 | **Plan-Sync-G0 — opened a new Bank-First Admin/Backend Surface Cleanup track (Phase G0/G1/G2/G3), and recorded the readiness-pool reframe and primary-content-model decisions now rather than deferring them to a future audit**: the per-student readiness lifecycle (`StudentActivityReadinessItem`, `IStudentActivityReadinessPoolService`) is **kept, not deleted** — reframed as "Student Activity Assignment / Delivery Queue" language instead of "AI-generated activity cache" language, since the state machine (selected → assigned → ready → reserved → completed/expired/stale/failed) is exactly what the pilot/production system still needs; only the words describing it were stale. Resource Banks/Resource Candidates/Activity Templates (E0-E7) are confirmed as the **primary content model going forward**; AI generation is confirmed to remain for fallback generation, evaluation, composition, and cost/diagnostics visibility only. Specific treatment decisions recorded: Readiness Pool admin UI reworked/renamed/moved to diagnostics; "Pool Health"/"Lesson readiness" admin pages renamed/reframed as "Today Delivery Health"/"Assignment Health"/"Delivery Queue Health"; `PracticeActivityCache` and related practice-cache logic audited later (may shrink/be removed after PG-v2, not touched now); AI-generation admin pages kept only for fallback/evaluation/composition/cost-visibility/diagnostics, no longer presented as the primary content model; stale forward-facing wording ("AI-generated activity cache," "generated pool as main content source," "random activity cache," "pre-generated per-student cache") flagged for removal in a future docs/UI/admin-label pass, with historical decision-log entries explicitly exempted; legacy generation paths (freeform `IAiActivityGenerator`, etc.) kept until replacements are proven, retirement staying pattern-by-pattern/surface-by-surface in a later cleanup phase (reaffirms existing Phase F scope, does not change it). New **Phase G0 — Bank-First Admin/Backend Surface Audit** will audit every admin page/API/background job/backend lifecycle concept and classify each as keep/rename-reframe/move-to-diagnostics/merge/remove-later, using these treatment decisions as its framework; **Phase G1 (Admin IA Cleanup)**, **Phase G2 (Backend Legacy Surface Cleanup)**, and **Phase G3 (Delivery/Bank/AI Diagnostics Consolidation)** act on G0's classifications. Sequenced Plan-Sync-G0 → Phase G0 immediately after Phase E7 (done) and before the Phase D3/E8 decision checkpoint. §19a's pre-existing single generic "Phase G — admin bank/content navigation cleanup" item is expanded into G1/G2/G3 rather than left standing alongside a new unrelated G0, since G1's scope directly subsumes what that old item already described. Docs-only; no app code, migrations, or config changed; does not start Phase G0's own audit, Phase D3, Phase E8, or PG-v2 implementation | The bank-first migration (Resource Banks/Candidates/Activity Templates, E0-E7 plus the earlier Phase 1-10/Clean-A architecture work) has now made the pre-bank-first admin/backend framing genuinely misleading in places — several admin pages and lifecycle concepts still read as though AI-generated per-student caching is the primary content model, when it is not anymore. Deleting or silently renaming those surfaces without a structured audit would risk breaking still-load-bearing lifecycle mechanics (the readiness/delivery state machine is real and still used) or losing institutional knowledge about why each surface exists. Recording the reframe-not-delete decision now, before Phase G0's audit even starts, prevents G0 from having to re-litigate a product decision that is already settled — G0's job is to classify each concrete surface against this already-decided framework, not to decide the framework itself |
 
 ---
 
-## 19a. Phase Sequence (as of 2026-07-09, Phase E7)
+## 19a. Phase Sequence (as of 2026-07-09, Plan-Sync-G0)
 
 Preferred order, each phase gated on the previous one's completion review:
 
@@ -1128,15 +1183,20 @@ Preferred order, each phase gated on the previous one's completion review:
 16c. ~~**Phase D2**~~ — done (2026-07-08): expanded Today bank-first composer coverage/quality — confirmed the skill-based pattern gate already covers every Vocabulary/Reading-primary Today pattern; balanced vocabulary/grammar/reading resource bundle; CEFR widening only for review/scaffold routing; feedback-signal exclusion; structured prompt block; fixed a latent D1 provenance bug (`SetBankItemProvenance`'s FK mismatch) by adding `LearningActivity.BankResourceProvenanceJson`. See `docs/architecture/learning-activity-engine.md` and the Decision Log entry above.
 16d. ~~**Plan-Sync-After-D2**~~ — **resolved (2026-07-09, docs-only)**: **Phase E7 comes before Phase D3.** D2 expanded the Today bank-first slice as far as current bank/resource-type coverage reasonably allows; a broader D3 migration now would mostly run into missing content/resource types and thin bank depth (Phase E6's 32/12/10-row seed pack), not a limitation of the integration hook itself. See the Decision Log entry above.
 17. ~~**Phase E7**~~ — done (2026-07-09): full internal reading passage bank + resource depth expansion — new `CefrReadingPassage` bank entity for full-length passages (distinct from short-excerpt-only `CefrReadingReference`); `ResourceCandidatePublishService` routes by staged-text length instead of blocking full passages; E5-style browse/search API + admin page; 10 new full-length passages through the same E1-E6 pipeline. `TodayBankResourceSelector` deliberately not wired to the new bank this phase. See `docs/architecture/english-resource-bank-import-platform.md` and the Decision Log entry above.
+17a. ~~**Plan-Sync-G0**~~ — done (2026-07-09, docs-only): opened the Bank-First Admin/Backend Surface Cleanup track. Recorded the readiness-pool reframe decision (kept, not deleted — renamed "Student Activity Assignment / Delivery Queue") and the primary-content-model decision (Resource Banks/Candidates/Activity Templates are now the primary content model; AI generation is fallback/evaluation/composition/cost-diagnostics only). Added Phase G0/G1/G2/G3 to the sequence below, expanding the previously-generic single "Phase G" item (see item 26 below). See the Decision Log entry above and `docs/roadmap/road-map.md` §1.
+17b. **Phase G0 — Bank-First Admin/Backend Surface Audit** — audit every admin page, API, background job, and backend lifecycle concept post-bank-first-migration, classifying each as keep / rename-reframe / move-to-diagnostics / merge / remove-later, using Plan-Sync-G0's treatment decisions as the framework (readiness pool → assignment/delivery-queue framing; Pool Health/Lesson readiness → Today Delivery Health/Assignment Health/Delivery Queue Health; `PracticeActivityCache` audited but not touched; AI-generation admin pages narrowed to fallback/evaluation/composition/cost-diagnostics scope). Feeds Phase G1/G2/G3 below. Not started.
 18. **Phase E8** — further resource-platform hardening/enrichment (RAG/search, larger import support) if needed after E7 — proceed depending on what E7 reveals is still missing. Not started.
-19. **Phase D3 decision checkpoint** — after Phase E7 (and E8 if pursued), another explicit product decision: start Phase D3 (broader Today composer migration) using the deepened bank content, or continue with Practice Gym v2 (PG-v2A) first. Not reached yet.
+19. **Phase D3 decision checkpoint** — after Phase E7 (and E8 if pursued) and Phase G0's audit, another explicit product decision: start Phase D3 (broader Today composer migration) using the deepened bank content, or continue with Practice Gym v2 (PG-v2A) first. Not reached yet.
 20. **Phase D3 or Phase PG-v2A** — whichever the Phase D3 decision checkpoint selects. Both **not started**.
 21. **Phase PG-v2A** — backend skill/objective-first Practice Gym selector (planned, not started; see `docs/backlog/product-backlog.md`). Sequenced after Phase E5-E8, not immediately after C-Final — a good skill-first selector needs enough published bank/resource content and search/selector coverage to have real options to choose from.
 22. **Phase PG-v2B** — student Practice Gym UI simplified around skills, weak areas, review, challenge, recommended practice (planned, not started).
 23. **Phase PG-v2C** — admin capability-registry cleanup / internal pattern management, reframing `ExerciseTypeDefinition`/`ExercisePatternDefinition` as internal capability config rather than the student-facing model (planned, not started; these entities are **not deleted** at any point in this sequence).
 24. **Phase PG-v2D** — legacy type-driven Practice Gym path retirement, **only after the skill-first selector (PG-v2A/B) is proven** — not a forced cutover (planned, not started).
 25. **Phase F** — legacy freeform-generation retirement, **per-pattern only, destructive only after each pattern's replacement is proven** — not a bulk deletion, and not started until Phase C-Final (done) and Phase D have each individually proven their replacement paths. Not started.
-26. **Phase G** — admin bank/content navigation cleanup (consolidate the "Content" vs "AI System" nav split flagged in the 2026-07-08 clean-architecture plan) — deferred until enough new bank-first admin pages exist (Phase C-Final done + Phase E's admin pages, now started) to make a single consolidated redesign worthwhile rather than premature. Not started.
+26. **Phase G — superseded by Phase G1/G2/G3 (Plan-Sync-G0, 2026-07-09)**: this item originally read "admin bank/content navigation cleanup (consolidate the 'Content' vs 'AI System' nav split flagged in the 2026-07-08 clean-architecture plan)" and is expanded below rather than left standing alongside a separately-numbered G0 — G1's scope directly subsumes what this item already described, so keeping both would create two overlapping "Phase G" concepts on the same roadmap. Not started (unchanged — no work against this item's original scope has begun).
+27. **Phase G1 — Admin Information Architecture Cleanup** — act on Phase G0's classifications: nav/page reorganization across admin (e.g. consolidating the "Content" vs "AI System" nav split this item originally named, reframing readiness/pool pages per G0's audit). Deferred until Phase G0 completes its audit. Not started.
+28. **Phase G2 — Backend Legacy Surface Cleanup** — act on Phase G0's "remove-later"/"merge" classifications for backend code (jobs, services, dead admin API routes) once G0 has classified them. Deferred until Phase G0 completes. Not started.
+29. **Phase G3 — Delivery/Bank/AI Diagnostics Consolidation** — consolidate the "keep as diagnostics" pieces identified by G0 (readiness/pool health, AI-generation cost/quality visibility) into one coherent diagnostics area. Deferred until Phase G0 completes. Not started.
 
 **Phase E has now reached E6, and Phase D1 has started and is complete.** The original
 "E0-E4 before D1" gate, the Plan-Sync-After-E4 "E5 closes the browsing/search gap" gate, and the
@@ -1167,11 +1227,17 @@ passages (`CefrReadingReference` stays short-excerpt-only), publish routing by s
 length instead of blocking full passages, E5-style browse/search API + admin page, and 10 new
 full-length passages through the same real staging/review/publish pipeline —
 `TodayBankResourceSelector` is deliberately not wired to the new bank this phase. **Phase E7 is
-complete.** A new Phase D3 decision checkpoint now applies (item 19 above), not resolved by this
-phase: start Phase D3 using the deepened bank content, continue Phase E8 for further resource-
-platform work, or a docs-only plan sync if the roadmap changes. **Full Phase D implementation
-(beyond D1/D2's narrow slice) has not started. Phase E8 and PG-v2 implementation have not
-started.**
+complete.** **Plan-Sync-G0 (2026-07-09, docs-only) then opened the Bank-First Admin/Backend
+Surface Cleanup track**: the readiness-pool lifecycle is kept, reframed as "Student Activity
+Assignment / Delivery Queue"; Resource Banks/Candidates/Activity Templates are confirmed the
+primary content model; AI generation is confirmed fallback/evaluation/composition/
+cost-diagnostics only; new Phase G0 (audit) plus G1/G2/G3 (act on G0's classifications) were
+added, expanding the previously-generic single "Phase G" item. **Plan-Sync-G0 is complete.
+Phase G0's own audit has not started.** A new Phase D3 decision checkpoint now applies (item 19
+above), not resolved by this phase: start Phase D3 using the deepened bank content, continue
+Phase E8 for further resource-platform work, run Phase G0's audit, or a docs-only plan sync if
+the roadmap changes. **Full Phase D implementation (beyond D1/D2's narrow slice) has not
+started. Phase E8, Phase G0/G1/G2/G3, and PG-v2 implementation have not started.**
 
 **Practice Gym v2 (PG-v2A-D) is planned, not started**, and is sequenced deliberately late — after
 Phase E5-E8, before Phase F/G — because a skill/objective-first selector needs mature bank/resource

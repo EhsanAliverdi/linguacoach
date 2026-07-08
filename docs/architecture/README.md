@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase E7)
+lastUpdated: 2026-07-09 (Plan-Sync-G0)
 owner: architecture
 supersedes:
 supersededBy:
@@ -145,6 +145,16 @@ Key facts about where this stands today (2026-07-08):
   English–any-language) import. Supported languages (Persian, etc.) are **runtime-only**
   support — UI chrome, onboarding language-pair selection, support-language hints/translation
   help — never seeded as learning content.
+- **Bank-First Admin/Backend Surface Cleanup track opened (Plan-Sync-G0, 2026-07-09, docs-only)**:
+  Resource Banks/Resource Candidates/Activity Templates are now the confirmed primary content
+  model going forward; AI generation is confirmed fallback/evaluation/composition/cost-
+  diagnostics only. The per-student readiness lifecycle (`StudentActivityReadinessItem`,
+  `IStudentActivityReadinessPoolService`) is **kept, not deleted** — reframed as "Student Activity
+  Assignment / Delivery Queue" rather than "AI-generated activity cache." A new **Phase G0**
+  (audit every admin page/API/job/lifecycle concept, classify keep/rename-reframe/move-to-
+  diagnostics/merge/remove-later) plus **Phase G1/G2/G3** (act on G0's classifications) were added
+  to the roadmap, expanding the previously-generic single "Phase G" item. See
+  `docs/roadmap/road-map.md` §1 and Decision Log.
 
 Current state (as of 2026-07-09, Phase E7): **Practice Gym bank-first migration (content
 layer) is closed at Phase C-Final** — generalized the Form.io template path from 1 pilot pattern
@@ -223,9 +233,18 @@ browse/search API + admin page (`/admin/resource-banks/reading-passages`); 10 ne
 passages added through the same real staging/review/publish pipeline. `TodayBankResourceSelector`
 is deliberately not wired to the new bank this phase. +24 backend tests (3,551 total). See
 `docs/architecture/learning-activity-engine.md` and `docs/roadmap/road-map.md` §19a for the full
-reasoning and phase order. **A new Phase D3 decision checkpoint now applies, not resolved by this
-phase: Phase D3, Phase E8, or a docs-only plan sync. Full Phase D implementation (beyond D1/D2's
-narrow slice) and PG-v2 implementation remain not started.**
+reasoning and phase order. **Plan-Sync-G0 (2026-07-09, docs-only)** then opened the Bank-First
+Admin/Backend Surface Cleanup track: confirmed Resource Banks/Candidates/Activity Templates as
+the primary content model going forward (AI generation narrowed to fallback/evaluation/
+composition/cost-diagnostics only); confirmed the readiness-pool lifecycle is **kept**, reframed
+as "Student Activity Assignment / Delivery Queue" rather than "AI-generated activity cache"; and
+added a new **Phase G0** audit (classify every admin page/API/job/lifecycle concept as
+keep/rename-reframe/move-to-diagnostics/merge/remove-later) plus **Phase G1/G2/G3** (act on G0's
+classifications), expanding the roadmap's previously-generic single "Phase G" item. No app code,
+migrations, or config changed. See `docs/roadmap/road-map.md` §1 and Decision Log. **A new Phase
+D3 decision checkpoint now applies, not resolved by this phase: Phase D3, Phase E8, Phase G0's
+audit, or a further docs-only plan sync. Full Phase D implementation (beyond D1/D2's narrow
+slice), Phase G0/G1/G2/G3, and PG-v2 implementation remain not started.**
 
 ---
 
@@ -242,7 +261,7 @@ narrow slice) and PG-v2 implementation remain not started.**
 | [student-lifecycle-reset-tools.md](student-lifecycle-reset-tools.md) | 12 lifecycle stages (canonical enum); admin reset endpoint; `StudentResetLog`; soft vs hard delete rules |
 | [student-learning-memory.md](student-learning-memory.md) | `UserLearningSummary` / `StudentSkillProfile`; memory write/read paths; best-effort update rules |
 | [learning-activity-engine.md](learning-activity-engine.md) | `LearningActivity` / `ActivityAttempt` entity relationships; legacy always-fresh AI generation flow (still the active path for most Practice Gym patterns and all non-Vocabulary/Reading Today patterns); how activity types share infrastructure. **Phase D1/D2 (2026-07-08)**: `ActivityMaterializationJob` tries `ITodayBankResourceSelector` first for every Vocabulary/Reading Today pattern, injecting a balanced, structured bank-content block into `TopicHint` before falling back to unchanged legacy generation; full resource provenance on `LearningActivity.BankResourceProvenanceJson`. **Bugfix-D1A**: `LearningSession.GenerationStatus` EF default-value bug fixed |
-| [readiness-pool.md](readiness-pool.md) | `StudentActivityReadinessItem` entity; `ReadinessPoolStatus` / `ReadinessPoolSource` enums; lifecycle transitions; routing snapshot; `IStudentActivityReadinessPoolService`; concurrency model (Phase 10M); template-provenance fields added 2026-07-07 |
+| [readiness-pool.md](readiness-pool.md) | `StudentActivityReadinessItem` entity; `ReadinessPoolStatus` / `ReadinessPoolSource` enums; lifecycle transitions; routing snapshot; `IStudentActivityReadinessPoolService`; concurrency model (Phase 10M); template-provenance fields added 2026-07-07. **Kept, reframed as "Student Activity Assignment / Delivery Queue" (Plan-Sync-G0, 2026-07-09) — not deleted; Phase G0 will formalize the reframing across admin surfaces** |
 | [curriculum-routing.md](curriculum-routing.md) | `ICurriculumRoutingService`; `CurriculumRoutingRequest/Recommendation`; CEFR normalization; level/context/skill/difficulty routing rules; RoutingReason enum; integration points (Phase 10L). `CurriculumObjective` entity, CEFR level constants, and subskill taxonomy (`CurriculumSubskillConstants`, added 2026-07-07) are defined in Domain but do not yet have a dedicated architecture doc — the `curriculum-syllabus-model.md` doc referenced here previously no longer exists in the repo; see `docs/reviews/2026-07-07-ai-bank-assessment-architecture-plan.md` §4.4 for the subskill taxonomy design instead |
 | [runtime-settings-and-feature-gates.md](runtime-settings-and-feature-gates.md) | `IFeatureGateRegistry` / `IRuntimeSettingsService`; `FeatureGateGroupDefinition` registry; `RuntimeSettingOverride` table; effective-value resolution order; audit via `AdminAuditLog`; what's runtime-editable vs read-only (Phase 20B). Backs the `PracticeGymFormIoPilot.Enabled` gate added 2026-07-07 |
 | [student-readiness-and-backfill.md](student-readiness-and-backfill.md) | `IStudentReadinessAuditService` / `IStudentPilotReadinessRepairService`; read-only per-student pilot-readiness audit (~20 checks); explicit, idempotent, audited repair actions; implemented vs deferred repair actions (Phase 20D) |
@@ -307,7 +326,7 @@ Archived
 
 ---
 
-## Implementation State (as of 2026-07-08)
+## Implementation State (as of 2026-07-09)
 
 | Feature | Status |
 |---|---|
@@ -344,6 +363,7 @@ Archived
 | English Resource Bank Import/Review/Preview/Publishing Platform (Phase E0-E8) | 🟡 **E1-E7 all implemented** (2026-07-09) — see docs/architecture/english-resource-bank-import-platform.md. `CefrResourceSource` extended (source registry, no duplicate entity); `ResourceImportRun`/`ResourceRawRecord`/`ResourceCandidate` staging entities; gates 1-3 + gates 4-6 + `ResourceCandidatePreviewService` (rendered admin preview, read-only) + `ResourceCandidatePublishService` (every gate re-checked live, idempotent; `VocabularyEntry`/`GrammarProfileEntry`/short-excerpt `ReadingPassage`→`CefrReadingReference`, full-length `ReadingPassage`→**`CefrReadingPassage` (E7)**, `ActivityTemplateCandidate` deferred) + `ResourceBankQueryService` (published-bank browsing/search for all 4 bank types, reverse candidate traceability, no forward reference needed on bank entities, read-only) + first real content depth (32/12/10 rows, E6) + **10 full-length original reading passages (E7)**. Admin CRUD/API/UI with analyze/re-validate/preview/approve/reject/publish/browse actions including a new reading-passages admin page. Still no external dataset imported. **Phase D1+D2 (2026-07-08) are real consumers** (see the "Bank-first Today lesson composer" row) — `TodayBankResourceSelector` is not yet wired to the new E7 passage bank. **A new Phase D3 decision checkpoint applies, not resolved by E7.** English-only; no Persian/bilingual seed data at any phase |
 | IFileStorageService / MinIO | ✅ Done — audio (TTS + speaking uploads) fully on object storage; not blocking deployment at current scale |
 | Admin lifecycle reset tools | ✅ Done |
+| Bank-First Admin/Backend Surface Cleanup (Phase G0/G1/G2/G3) | 🟡 **Planned** (Plan-Sync-G0, 2026-07-09, docs-only) — confirms Resource Banks/Candidates/Activity Templates as the primary content model going forward (AI generation narrowed to fallback/evaluation/composition/cost-diagnostics); confirms the readiness-pool lifecycle is **kept**, reframed as "Student Activity Assignment / Delivery Queue" rather than "AI-generated activity cache." Phase G0 (audit every admin page/API/job/lifecycle concept, classify keep/rename-reframe/move-to-diagnostics/merge/remove-later) plus Phase G1 (admin IA cleanup)/G2 (backend legacy cleanup)/G3 (diagnostics consolidation) — expands the roadmap's previously-generic single "Phase G — admin bank/content navigation cleanup" item. See docs/roadmap/road-map.md §1, Decision Log, §19a. **Not started** beyond this docs-only planning pass |
 
 ---
 
