@@ -290,8 +290,11 @@ public sealed class ResourceCandidatePublishServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task Long_reading_passage_is_blocked_not_truncated()
+    public async Task Long_reading_passage_publishes_to_CefrReadingPassage_not_truncated_into_CefrReadingReference()
     {
+        // Phase E7: a full-length passage is no longer blocked at publish time — it routes to the
+        // new CefrReadingPassage bank instead of being silently truncated into
+        // CefrReadingReference (which stays short-excerpt-only).
         var source = SeedSource();
         var longPassage = string.Concat(Enumerable.Repeat("This is a sentence about grammar and vocabulary practice. ", 20)); // > 500 chars
         longPassage.Length.Should().BeGreaterThan(ResourceCandidatePublishService.MaxReadingExcerptLength);
@@ -304,9 +307,57 @@ public sealed class ResourceCandidatePublishServiceTests : IDisposable
 
         var result = await _sut.PublishAsync(candidate.Id, null);
 
-        result.Success.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.Contains("excerpt limit"));
+        result.Success.Should().BeTrue();
+        result.PublishedEntityType.Should().Be(nameof(CefrReadingPassage));
         (await _db.CefrReadingReferences.CountAsync()).Should().Be(0);
+
+        var rows = await _db.CefrReadingPassages.ToListAsync();
+        rows.Should().HaveCount(1);
+        rows[0].Title.Should().Be("Long passage");
+        rows[0].PassageText.Should().Be(longPassage.Trim());
+        rows[0].CefrLevel.Should().Be("A1");
+        rows[0].PrimarySkill.Should().Be("reading");
+        rows[0].WordCount.Should().BeGreaterThan(0);
+        rows[0].SourceId.Should().Be(source.Id);
+        rows[0].AttributionText.Should().Be("Test Attribution");
+    }
+
+    [Fact]
+    public async Task Full_reading_passage_without_a_title_field_is_blocked_with_a_clear_error()
+    {
+        var source = SeedSource();
+        var longPassage = string.Concat(Enumerable.Repeat("This is a sentence about grammar and vocabulary practice. ", 20));
+        var (_, raw) = SeedRunAndRaw(source, $$"""{"passage":"{{longPassage}}"}""");
+        var candidate = SeedCandidate(
+            raw, ResourceCandidateType.ReadingPassage, longPassage,
+            $$"""{"passage":"{{longPassage}}"}""");
+        MakePublishReady(candidate, primarySkill: "reading");
+
+        var result = await _sut.PublishAsync(candidate.Id, null);
+
+        result.Success.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("'title' field is required"));
+        (await _db.CefrReadingPassages.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Republishing_an_already_published_full_reading_passage_is_idempotent()
+    {
+        var source = SeedSource();
+        var longPassage = string.Concat(Enumerable.Repeat("This is a sentence about grammar and vocabulary practice. ", 20));
+        var (_, raw) = SeedRunAndRaw(source, $$"""{"title":"Long passage","passage":"{{longPassage}}"}""");
+        var candidate = SeedCandidate(
+            raw, ResourceCandidateType.ReadingPassage, "Long passage",
+            $$"""{"title":"Long passage","passage":"{{longPassage}}"}""");
+        MakePublishReady(candidate, primarySkill: "reading");
+
+        var first = await _sut.PublishAsync(candidate.Id, null);
+        var second = await _sut.PublishAsync(candidate.Id, null);
+
+        first.Success.Should().BeTrue();
+        second.Success.Should().BeTrue();
+        second.PublishedEntityId.Should().Be(first.PublishedEntityId);
+        (await _db.CefrReadingPassages.CountAsync()).Should().Be(1);
     }
 
     [Fact]

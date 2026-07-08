@@ -122,6 +122,46 @@ public sealed record ResourceBankReadingReferenceListResult(
     int TotalCount
 );
 
+// ── Reading passages (Phase E7 — full-length passages, distinct from ReadingReference) ────────
+
+public sealed record ResourceBankReadingPassageListItemDto(
+    Guid Id,
+    string Title,
+    string CefrLevel,
+    int WordCount,
+    int EstimatedReadingMinutes,
+    string? Subskill,
+    Guid SourceId,
+    string SourceName,
+    DateTime CreatedAt
+);
+
+public sealed record ResourceBankReadingPassageDetailDto(
+    Guid Id,
+    string Title,
+    string PassageText,
+    string? Summary,
+    string CefrLevel,
+    int? DifficultyBand,
+    string PrimarySkill,
+    string? Subskill,
+    IReadOnlyList<string> TopicTags,
+    IReadOnlyList<string> ContextTags,
+    IReadOnlyList<string> FocusTags,
+    int WordCount,
+    int EstimatedReadingMinutes,
+    string? AttributionText,
+    double? QualityScore,
+    DateTime CreatedAt,
+    ResourceCandidateSourceInfoDto Source,
+    ResourceBankTraceabilityDto Traceability
+);
+
+public sealed record ResourceBankReadingPassageListResult(
+    IReadOnlyList<ResourceBankReadingPassageListItemDto> Items,
+    int TotalCount
+);
+
 // ── Query service ───────────────────────────────────────────────────────────────
 
 public interface IResourceBankQueryService
@@ -134,4 +174,7 @@ public interface IResourceBankQueryService
 
     Task<ResourceBankReadingReferenceListResult> ListReadingReferencesAsync(ResourceBankListFilter filter, CancellationToken ct = default);
     Task<ResourceBankReadingReferenceDetailDto?> GetReadingReferenceDetailAsync(Guid id, CancellationToken ct = default);
+
+    Task<ResourceBankReadingPassageListResult> ListReadingPassagesAsync(ResourceBankListFilter filter, CancellationToken ct = default);
+    Task<ResourceBankReadingPassageDetailDto?> GetReadingPassageDetailAsync(Guid id, CancellationToken ct = default);
 }

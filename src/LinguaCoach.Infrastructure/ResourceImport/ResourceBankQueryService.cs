@@ -227,7 +227,99 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
             loaded.Entry.ReferenceExcerpt, loaded.Entry.CreatedAt, ToSourceInfoDto(loaded.Source), traceability);
     }
 
+    // ── Reading passages (Phase E7 — full-length passages, distinct from ReadingReference) ────
+
+    public async Task<ResourceBankReadingPassageListResult> ListReadingPassagesAsync(
+        ResourceBankListFilter filter, CancellationToken ct = default)
+    {
+        var (page, pageSize) = NormalizePaging(filter);
+
+        var query =
+            from e in _db.CefrReadingPassages
+            join s in _db.CefrResourceSources on e.SourceId equals s.Id
+            select new { Entry = e, Source = s };
+
+        if (filter.SourceId.HasValue)
+            query = query.Where(x => x.Entry.SourceId == filter.SourceId.Value);
+
+        if (!string.IsNullOrWhiteSpace(filter.CefrLevel))
+            query = query.Where(x => x.Entry.CefrLevel == filter.CefrLevel);
+
+        if (!string.IsNullOrWhiteSpace(filter.SearchText))
+        {
+            var search = filter.SearchText.Trim().ToLowerInvariant();
+            query = query.Where(x =>
+                x.Entry.Title.ToLower().Contains(search)
+                || x.Entry.PassageText.ToLower().Contains(search)
+                || (x.Entry.Summary != null && x.Entry.Summary.ToLower().Contains(search)));
+        }
+
+        var totalCount = await query.CountAsync(ct);
+
+        var page_ = await query
+            .OrderByDescending(x => x.Entry.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+
+        var items = page_
+            .Select(x => new ResourceBankReadingPassageListItemDto(
+                x.Entry.Id, x.Entry.Title, x.Entry.CefrLevel, x.Entry.WordCount, x.Entry.EstimatedReadingMinutes,
+                x.Entry.Subskill, x.Source.Id, x.Source.Name, x.Entry.CreatedAt))
+            .ToList();
+
+        return new ResourceBankReadingPassageListResult(items, totalCount);
+    }
+
+    public async Task<ResourceBankReadingPassageDetailDto?> GetReadingPassageDetailAsync(Guid id, CancellationToken ct = default)
+    {
+        var loaded = await (
+            from e in _db.CefrReadingPassages
+            join s in _db.CefrResourceSources on e.SourceId equals s.Id
+            where e.Id == id
+            select new { Entry = e, Source = s })
+            .FirstOrDefaultAsync(ct);
+
+        if (loaded is null)
+            return null;
+
+        var traceability = await BuildTraceabilityAsync(nameof(CefrReadingPassage), id, ct);
+
+        return new ResourceBankReadingPassageDetailDto(
+            loaded.Entry.Id, loaded.Entry.Title, loaded.Entry.PassageText, loaded.Entry.Summary,
+            loaded.Entry.CefrLevel, loaded.Entry.DifficultyBand, loaded.Entry.PrimarySkill, loaded.Entry.Subskill,
+            ParseJsonStringArray(loaded.Entry.TopicTagsJson), ParseJsonStringArray(loaded.Entry.ContextTagsJson),
+            ParseJsonStringArray(loaded.Entry.FocusTagsJson), loaded.Entry.WordCount, loaded.Entry.EstimatedReadingMinutes,
+            loaded.Entry.AttributionText, loaded.Entry.QualityScore, loaded.Entry.CreatedAt,
+            ToSourceInfoDto(loaded.Source), traceability);
+    }
+
     // ── Shared helpers ──────────────────────────────────────────────────────────
+
+    private static IReadOnlyList<string> ParseJsonStringArray(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+            return Array.Empty<string>();
+
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            if (doc.RootElement.ValueKind != System.Text.Json.JsonValueKind.Array)
+                return Array.Empty<string>();
+
+            var list = new List<string>();
+            foreach (var item in doc.RootElement.EnumerateArray())
+            {
+                if (item.ValueKind == System.Text.Json.JsonValueKind.String && !string.IsNullOrWhiteSpace(item.GetString()))
+                    list.Add(item.GetString()!);
+            }
+            return list;
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return Array.Empty<string>();
+        }
+    }
 
     private static (int Page, int PageSize) NormalizePaging(ResourceBankListFilter filter) =>
         (Math.Max(filter.Page, 1), Math.Clamp(filter.PageSize, 1, MaxPageSize));

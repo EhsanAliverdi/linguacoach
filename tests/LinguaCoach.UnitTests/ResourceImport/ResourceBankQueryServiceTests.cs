@@ -311,6 +311,100 @@ public sealed class ResourceBankQueryServiceTests : IDisposable
         detail.Traceability.CandidateId.Should().Be(candidate.Id);
     }
 
+    // ── Reading passages (Phase E7): parallel coverage ──────────────────────────
+
+    private string LongPassage() =>
+        string.Concat(Enumerable.Repeat("This is a sentence about grammar and vocabulary practice. ", 20));
+
+    [Fact]
+    public async Task ListReadingPassages_Filters_By_CefrLevel_SourceId_And_SearchText()
+    {
+        var source = SeedSource();
+        var longPassage = LongPassage();
+        var (_, raw) = SeedRunAndRaw(source, $$"""{"title":"Grammar practice","passage":"{{longPassage}}"}""");
+        var candidate = SeedCandidate(raw, ResourceCandidateType.ReadingPassage, "Grammar practice", $$"""{"title":"Grammar practice","passage":"{{longPassage}}"}""");
+        MakePublishReady(candidate, "B1", "reading");
+        var publishResult = await _publishService.PublishAsync(candidate.Id, null);
+        publishResult.Success.Should().BeTrue();
+        publishResult.PublishedEntityType.Should().Be(nameof(CefrReadingPassage));
+
+        var byCefr = await _sut.ListReadingPassagesAsync(new ResourceBankListFilter(CefrLevel: "B1"));
+        var bySource = await _sut.ListReadingPassagesAsync(new ResourceBankListFilter(SourceId: source.Id));
+        var bySearch = await _sut.ListReadingPassagesAsync(new ResourceBankListFilter(SearchText: "grammar"));
+        var noMatch = await _sut.ListReadingPassagesAsync(new ResourceBankListFilter(CefrLevel: "C2"));
+
+        byCefr.Items.Should().ContainSingle();
+        bySource.Items.Should().ContainSingle();
+        bySearch.Items.Should().ContainSingle();
+        noMatch.Items.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ListReadingPassages_Respects_Page_And_PageSize()
+    {
+        var source = SeedSource();
+        for (var i = 0; i < 3; i++)
+        {
+            var longPassage = LongPassage();
+            var (_, raw) = SeedRunAndRaw(source, $$"""{"title":"Passage {{i}}","passage":"{{longPassage}}"}""");
+            var candidate = SeedCandidate(raw, ResourceCandidateType.ReadingPassage, $"Passage {i}", $$"""{"title":"Passage {{i}}","passage":"{{longPassage}}"}""");
+            MakePublishReady(candidate, "B1", "reading");
+            await _publishService.PublishAsync(candidate.Id, null);
+        }
+
+        var page1 = await _sut.ListReadingPassagesAsync(new ResourceBankListFilter(Page: 1, PageSize: 2));
+        var page2 = await _sut.ListReadingPassagesAsync(new ResourceBankListFilter(Page: 2, PageSize: 2));
+
+        page1.TotalCount.Should().Be(3);
+        page1.Items.Should().HaveCount(2);
+        page2.Items.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task GetReadingPassageDetail_Includes_Source_License_Provenance_And_Traceability()
+    {
+        var source = SeedSource();
+        var longPassage = LongPassage();
+        var (_, raw) = SeedRunAndRaw(source, $$"""{"title":"Grammar practice","passage":"{{longPassage}}"}""");
+        var candidate = SeedCandidate(raw, ResourceCandidateType.ReadingPassage, "Grammar practice", $$"""{"title":"Grammar practice","passage":"{{longPassage}}"}""");
+        MakePublishReady(candidate, "B1", "reading");
+        var publishResult = await _publishService.PublishAsync(candidate.Id, null);
+
+        var detail = await _sut.GetReadingPassageDetailAsync(publishResult.PublishedEntityId!.Value);
+
+        detail.Should().NotBeNull();
+        detail!.Title.Should().Be("Grammar practice");
+        detail.PassageText.Should().Be(longPassage.Trim());
+        detail.WordCount.Should().BeGreaterThan(0);
+        detail.EstimatedReadingMinutes.Should().BeGreaterThanOrEqualTo(1);
+        detail.Source.SourceId.Should().Be(source.Id);
+        detail.Source.LicenseType.Should().Be("CC-BY-4.0");
+        detail.Traceability.TraceabilityAvailable.Should().BeTrue();
+        detail.Traceability.CandidateId.Should().Be(candidate.Id);
+    }
+
+    [Fact]
+    public async Task GetReadingPassageDetail_Returns_TraceabilityUnavailable_When_No_Matching_Candidate_Exists()
+    {
+        var source = SeedSource();
+        var entry = new CefrReadingPassage(source.Id, "Orphan", LongPassage(), "B1");
+        _db.CefrReadingPassages.Add(entry);
+        await _db.SaveChangesAsync();
+
+        var detail = await _sut.GetReadingPassageDetailAsync(entry.Id);
+
+        detail.Should().NotBeNull();
+        detail!.Traceability.TraceabilityAvailable.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task GetReadingPassageDetail_Returns_Null_For_Nonexistent_Id()
+    {
+        var detail = await _sut.GetReadingPassageDetailAsync(Guid.NewGuid());
+
+        detail.Should().BeNull();
+    }
+
     // ── Invariant: only published candidates' rows can ever appear ──────────────
 
     [Fact]

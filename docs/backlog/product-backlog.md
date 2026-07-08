@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Plan-Sync-After-D2)
+lastUpdated: 2026-07-09 (Phase E7)
 owner: product
 supersedes:
 supersededBy:
@@ -14,7 +14,7 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
 
 ---
 
-## Resource Bank — Deferred Publish Targets (Post Phase E4) `Not started`
+## Resource Bank — Deferred Publish Targets (Post Phase E4) `Partially resolved (E7)`
 
 Phase E4 (2026-07-08) implemented controlled publishing from staged `ResourceCandidate` rows
 into `CefrVocabularyEntry`/`CefrGrammarProfileEntry`/short-excerpt `CefrReadingReference`. Two
@@ -25,13 +25,13 @@ Phase E5** (2026-07-08, `ResourceBankQueryService`, read-only, reverse candidate
 **Phase E6 (2026-07-08) added the first real English content depth**: an original,
 internally-authored, English-only seed pack (32 vocabulary / 12 grammar / 10 reading excerpts)
 published through the real staging→validation→approval→publish pipeline — no direct-final-table
-seeding, no external dataset, no Persian/bilingual content. The two candidate-type publish
-targets below are unaffected by E6 (it only used `VocabularyEntry`/`GrammarProfileEntry`/
-`ReadingPassage` candidate types, already supported since E4) and remain deferred as described.
-**Phase D1 (2026-07-08) resolved the third decision checkpoint by starting D1 itself** — see the
-"Bank-First Today Composer" section below. Real external-dataset import remains a later,
-separately-scoped step, gated on licensing review — not automatically in scope for any future
-phase unless explicitly re-scoped when that phase starts.
+seeding, no external dataset, no Persian/bilingual content. **Phase D1 (2026-07-08) resolved the
+third decision checkpoint by starting D1 itself** — see the "Bank-First Today Composer" section
+below. **Phase E7 (2026-07-09) resolved the full-length `ReadingPassage` item below** — see its
+entry for what was actually built. `ActivityTemplateCandidate` publishing remains the one
+deferred item. Real external-dataset import remains a later, separately-scoped step, gated on
+licensing review — not automatically in scope for any future phase unless explicitly re-scoped
+when that phase starts.
 
 - [ ] **`ActivityTemplateCandidate` → `ActivityTemplate` publishing** `Not started`
   - **Purpose**: allow an imported/staged Form.io-shaped candidate to become a real, usable
@@ -49,17 +49,18 @@ phase unless explicitly re-scoped when that phase starts.
     existing candidates through (rejected in E4 as dishonest — see
     `docs/architecture/english-resource-bank-import-platform.md`'s E4 section).
 
-- [ ] **Full-length `ReadingPassage` → reading-content bank** `Not started`
-  - **Purpose**: publish full reading passages (not just short excerpts), for use as real reading
-    practice content.
-  - **Blocker**: `CefrReadingReference`'s own documented purpose is "reading difficulty guidance,
-    not a content library" — it intentionally holds only a short excerpt/citation, not a full
-    copyrighted text. E4 only publishes `ReadingPassage` candidates ≤500 characters into this
-    entity; longer passages are blocked, not truncated.
-  - **What would need to change**: a new, purpose-built reading-content bank entity (distinct
-    from `CefrReadingReference`) designed to hold full passage text with appropriate licensing/
-    attribution tracking — this is Phase E6's documented scope ("reading/listening resources"),
-    not a Phase E4 fix.
+- [x] **Full-length `ReadingPassage` → reading-content bank** `Done` (Phase E7, 2026-07-09)
+  - **Resolved by**: a new `CefrReadingPassage` entity (migration
+    `Phase_E7_AddCefrReadingPassage`), distinct from `CefrReadingReference`, built to hold full
+    passage text plus title/summary/tags/word-count/reading-time/attribution/quality metadata.
+    `ResourceCandidatePublishService` now routes a `ReadingPassage` candidate by staged-text
+    length: ≤500 chars still publishes to `CefrReadingReference` unchanged; over 500 chars
+    publishes to `CefrReadingPassage` instead of being blocked. 10 new full-length original
+    passages published through the real pipeline. See
+    `docs/architecture/english-resource-bank-import-platform.md`'s E7 detail section.
+  - **Still deferred from this item's original scope**: `TodayBankResourceSelector` consumption
+    of `CefrReadingPassage` (E7 was a pure resource-platform expansion, not a Today-composer
+    change — see the "Bank-First Today Composer" section below).
 
 ---
 
@@ -101,10 +102,10 @@ on `LearningActivity.BankResourceProvenanceJson`, fixing a latent D1 bug where
 `PlacementItemDefinition` rather than any Phase E Cefr* bank table). See
 docs/architecture/learning-activity-engine.md for the full design. **Plan-Sync-After-D2
 (2026-07-09, docs-only) deferred Phase D3** (broader Today composer migration) until after Phase
-E7 (resource depth/type expansion) and E8 if needed — every item below is gated on the bank
-having more/different content and resource types, not on more selector engineering, so Phase E7
-is the more defensible next step. Explicitly **not** part of D1/D2's scope — tracked here for a
-future Phase D3 or larger Today composer migration:
+E7 (resource depth/type expansion, done 2026-07-09) and E8 if needed — every item below is gated
+on the bank having more/different content and resource types, not on more selector engineering.
+Explicitly **not** part of D1/D2's scope — tracked here for a future Phase D3 or larger Today
+composer migration:
 
 - [ ] **Grammar-focused Today pattern** `Not started` — Today has no pattern whose
   `PrimarySkill` is `"Grammar"`; D1/D2 only pull grammar bank content in opportunistically for
@@ -114,6 +115,11 @@ future Phase D3 or larger Today composer migration:
   scoped to Vocabulary/Reading only, matching the E6 seed pack's actual content types. These
   pattern families need their own bank-content shape (audio, image, rubric) before a selector
   can meaningfully serve them.
+- [ ] **`TodayBankResourceSelector` consumption of `CefrReadingPassage`** `Not started` — Phase E7
+  (2026-07-09) added a full-length reading passage bank, but deliberately did not wire it into
+  Today's selector (a pure resource-platform expansion, not a Today-composer change). A future
+  phase would need to decide which Today pattern(s) should anchor on a full passage rather than a
+  short excerpt, and how much passage text is safe/useful to inject into `TopicHint`.
 - [x] **CEFR-level widening** `Done` (Phase D2, 2026-07-08) — the selector now retries one CEFR
   level down, but **only** when the routing reason is Review/Scaffold/Remediation and the exact
   level has zero bank rows; it never widens upward and never widens at all for ordinary

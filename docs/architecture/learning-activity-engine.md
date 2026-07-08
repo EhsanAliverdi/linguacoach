@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Plan-Sync-After-D2)
+lastUpdated: 2026-07-09 (Phase E7)
 owner: architecture
 supersedes:
 supersededBy:
@@ -189,6 +189,20 @@ types and thin bank depth, not a limitation of the D1/D2 integration hook itself
 (deepen and harden the resource platform/content model) is the next recommended implementation
 phase, and Phase D3 remains deferred** until after E7 (and E8 if needed). See
 `docs/roadmap/road-map.md` Decision Log (2026-07-09, Plan-Sync-After-D2) for the full reasoning.
+
+**Phase E7 (2026-07-09) added a full internal/original English reading passage bank** — a new
+`CefrReadingPassage` published bank entity, entirely separate from `CefrReadingReference` (which
+remains short-excerpt/citation-style only, unchanged). See
+`docs/architecture/english-resource-bank-import-platform.md`'s E7 detail section for the full
+design (new bank entity, publish routing by staged-text length, browse/search API + admin page,
+10 new full-length passages through the same E1-E6 staging/review/publish pipeline — no
+external datasets, no Persian/bilingual content). **This is a resource-platform expansion, not a
+Today-composer change**: `TodayBankResourceSelector`/`ActivityMaterializationJob` are untouched
+by E7 and still only ever query vocabulary/grammar/short-reading-reference rows — current
+bank-first Today coverage remains exactly what D1/D2 established (Vocabulary/Reading-primary
+patterns only, legacy fallback everywhere else). Whether/how Today should ever consume full
+reading passages is left for a future phase (Phase D3 or later), not decided here. **Phase D3
+and PG-v2 implementation remain not started.**
 
 **`GenerationStatus` default-value bugfix (Bugfix-D1A, 2026-07-08):** while building D1's
 regression tests, a pre-existing bug was found in `LearningSessionConfiguration`:

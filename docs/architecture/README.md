@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Plan-Sync-After-D2)
+lastUpdated: 2026-07-09 (Phase E7)
 owner: architecture
 supersedes:
 supersededBy:
@@ -131,13 +131,14 @@ Key facts about where this stands today (2026-07-08):
   the slice — a balanced vocabulary/grammar/reading bundle, CEFR-widening for review/scaffold
   routing only, a feedback-signal exclusion, a clearer structured prompt block, and a fix for a
   second latent D1 bug (durable provenance now on `LearningActivity.BankResourceProvenanceJson`,
-  replacing an FK-mismatched field). **Plan-Sync-After-D2 (2026-07-09, docs-only): Phase E7
-  comes before Phase D3.** D2 expanded the Today bank-first slice as far as current bank/
-  resource-type coverage reasonably allows — Today composer remains **partially bank-first with
-  fallback** (Vocabulary/Reading-primary patterns only, legacy freeform generation everywhere
-  else); Phase E7 (deepen/harden the resource platform's content depth and resource types) is
-  next, with Phase D3 (broader Today composer migration) deferred until after E7/E8 — see
-  docs/architecture/learning-activity-engine.md and
+  replacing an FK-mismatched field). **Plan-Sync-After-D2 (2026-07-09, docs-only)** chose Phase
+  E7 before Phase D3. **Phase E7 (2026-07-09)** then added a new `CefrReadingPassage` bank for
+  full-length original reading passages (`CefrReadingReference` stays short-excerpt-only), with
+  E5-style browse/search and 10 new full-length passages through the same pipeline — Today
+  composer remains **partially bank-first with fallback** (Vocabulary/Reading-primary patterns
+  only, legacy freeform generation everywhere else; `TodayBankResourceSelector` is not wired to
+  the new passage bank yet). Phase D3 (broader Today composer migration) remains deferred until
+  after E8 if needed — see docs/architecture/learning-activity-engine.md and
   docs/architecture/english-resource-bank-import-platform.md.
 - **English-only seed/resource-bank rule (non-negotiable, applies to all current and future
   resource banks):** no Persian seed corpus, no bilingual phrase bank, no English–Persian (or
@@ -145,7 +146,7 @@ Key facts about where this stands today (2026-07-08):
   support — UI chrome, onboarding language-pair selection, support-language hints/translation
   help — never seeded as learning content.
 
-Current state (as of 2026-07-09, Plan-Sync-After-D2): **Practice Gym bank-first migration (content
+Current state (as of 2026-07-09, Phase E7): **Practice Gym bank-first migration (content
 layer) is closed at Phase C-Final** — generalized the Form.io template path from 1 pilot pattern
 to 8 total (C1's `phrase_match`, `gap_fill_workplace_phrase`, `reading_multiple_choice_single`;
 C2's `reading_multiple_choice_multi`, `reading_fill_in_blanks`, `reading_writing_fill_in_blanks`;
@@ -214,11 +215,17 @@ targets `PlacementItemDefinition`, not any Phase E Cefr* bank table) — with a 
 comes before Phase D3.** D2 expanded the Today bank-first slice as far as current bank/
 resource-type coverage reasonably allows — a broader D3 migration attempted now would mostly
 run into missing content/resource types and thin bank depth, not a limitation of the D1/D2
-integration hook itself. See `docs/architecture/learning-activity-engine.md` and
-`docs/roadmap/road-map.md` §19a for the full reasoning and phase order. **Phase E7 is the next
-recommended implementation phase. Phase D3 remains deferred until after Phase E7 (and E8 if
-needed). Full Phase D implementation (beyond D1/D2's narrow slice) and PG-v2 implementation
-remain not started.**
+integration hook itself. **Phase E7 (2026-07-09)** then closed exactly that gap: a new
+`CefrReadingPassage` published bank for full-length original reading passages (separate from the
+short-excerpt-only `CefrReadingReference`); `ResourceCandidatePublishService` now routes a
+`ReadingPassage` candidate by staged-text length instead of blocking full passages; new E5-style
+browse/search API + admin page (`/admin/resource-banks/reading-passages`); 10 new full-length
+passages added through the same real staging/review/publish pipeline. `TodayBankResourceSelector`
+is deliberately not wired to the new bank this phase. +24 backend tests (3,551 total). See
+`docs/architecture/learning-activity-engine.md` and `docs/roadmap/road-map.md` §19a for the full
+reasoning and phase order. **A new Phase D3 decision checkpoint now applies, not resolved by this
+phase: Phase D3, Phase E8, or a docs-only plan sync. Full Phase D implementation (beyond D1/D2's
+narrow slice) and PG-v2 implementation remain not started.**
 
 ---
 
@@ -243,7 +250,7 @@ remain not started.**
 | [formio-onboarding-placement-model.md](formio-onboarding-placement-model.md) | Form.io-native onboarding (`StudentFlowTemplate`/`Version`/`Submission`) and placement (`PlacementItemDefinition` with `FormIoSchemaJson`/`ScoringRulesJson`, backend-only scoring); the strongest current bank-first example |
 | [repetition-and-novelty.md](repetition-and-novelty.md) | `StudentActivityUsageLog`; `IActivityContentFingerprintService`/`IActivityNoveltyPolicy`; deterministic/exact-match cooldown foundation (Phase B, 2026-07-08) — not embeddings/semantic near-duplicate detection |
 | [activity-feedback-and-calibration.md](activity-feedback-and-calibration.md) | Foundation implemented (Phase B2, 2026-07-08): explicit student-reported difficulty/clarity/usefulness/repeat-preference feedback (`ActivityFeedbackSignal`); admin per-surface feedback policy (off/optional/required) via existing feature-gate system; API + minimal student UI. Not yet consumed by any automated CEFR/difficulty-band/template/resource/AI-quality calibration or admin review automation — collection only |
-| [english-resource-bank-import-platform.md](english-resource-bank-import-platform.md) | Phase E plan (E0-E8). E0 finalized entity/status/gate model; **E1-E6 all implemented (2026-07-08)**: `CefrResourceSource` extended as source registry; `ResourceImportRun`/`ResourceRawRecord`/`ResourceCandidate` staging entities; gates 1-3 + gates 4-6 + rendered admin preview + controlled publish (`VocabularyEntry`/`GrammarProfileEntry`/short-excerpt `ReadingPassage` supported, `ActivityTemplateCandidate` deferred) + published-bank browsing/search/admin management (`ResourceBankQueryService`, reverse candidate traceability, read-only) + **first real English content depth** (32 vocabulary / 12 grammar / 10 reading excerpts, original/internal, via `InternalResourceSeedPackSeeder` and a deterministic import-time CEFR/skill/subskill mapping fix). No external dataset imported; no Persian/bilingual content. **Phase D1/D2 (2026-07-08) are now real consumers of this platform (see the "Bank-first Today lesson composer" row). Plan-Sync-After-D2 (2026-07-09) chose Phase E7 next** — resource depth/type expansion for Today and future Practice Gym v2, preserving the English-only staged/reviewable/traceable pipeline (no direct final-bank seeding); Phase D3 deferred until after E7/E8 |
+| [english-resource-bank-import-platform.md](english-resource-bank-import-platform.md) | Phase E plan (E0-E8). E0 finalized entity/status/gate model; **E1-E7 all implemented (2026-07-09)**: `CefrResourceSource` extended as source registry; `ResourceImportRun`/`ResourceRawRecord`/`ResourceCandidate` staging entities; gates 1-3 + gates 4-6 + rendered admin preview + controlled publish (`VocabularyEntry`/`GrammarProfileEntry`/short-excerpt `ReadingPassage`→`CefrReadingReference`, `ActivityTemplateCandidate` deferred) + published-bank browsing/search/admin management (`ResourceBankQueryService`, reverse candidate traceability, read-only) + first real English content depth (32 vocabulary / 12 grammar / 10 reading excerpts, E6) + **full-length reading passage bank (E7)**: new `CefrReadingPassage` entity, `ReadingPassage` candidates over the 500-char excerpt threshold now publish there instead of being blocked, new browse/search API + admin page, 10 new full-length passages. No external dataset imported; no Persian/bilingual content. **Phase D1/D2 (2026-07-08) are real consumers of this platform (see the "Bank-first Today lesson composer" row) — E7's new passage bank is not yet wired to Today.** A new Phase D3 decision checkpoint applies, not resolved by E7 |
 
 ### Planned / Deferred (not implemented yet)
 
@@ -334,7 +341,7 @@ Archived
 | Bank-first Today lesson composer | 🟡 **Phase D1+D2 done** (2026-07-08) — `ITodayBankResourceSelector`/`TodayBankResourceSelector` inject a balanced, structured vocabulary/grammar/reading bank-content bundle into `ActivityMaterializationJob`'s AI prompt for every Vocabulary/Reading-primary-skill Today pattern (CEFR-widening for review/scaffold routing only, feedback-signal exclusion, full provenance on `LearningActivity.BankResourceProvenanceJson`); legacy freeform generation is the unchanged fallback everywhere else. See docs/architecture/learning-activity-engine.md. Full Today composer migration beyond this slice (Phase D3+) remains not started |
 | Generalize Form.io template path across the rest of Practice Gym | ✅ **Closed at Phase C-Final** (2026-07-08) — Phase C1 (batch of 3), Phase C2 (batch of 3 more), and Phase C3 (1 pattern, `reorder_paragraphs`, new `ordered_sequence` scorer) done, 8 of 33 pattern rows template-enabled; C-Final verified all 8 stable and formally documented the remaining 25 legacy keys with 4 tracked backlog items. **No Phase C4.** See docs/architecture/practice-gym.md |
 | Activity Feedback, Repeat Policy, and Calibration Signals (Phase B2) | 🟡 Foundation implemented (2026-07-08) — see docs/architecture/activity-feedback-and-calibration.md. `ActivityFeedbackSignal` entity/migration, Off/Optional/Required policy per surface (Today + Practice Gym) via existing feature-gate system, submit/upsert API, minimal student prompt UI. Not yet consumed by any automated calibration/novelty/admin-review logic — collection only |
-| English Resource Bank Import/Review/Preview/Publishing Platform (Phase E0-E8) | 🟡 **E1-E6 all implemented** (2026-07-08) — see docs/architecture/english-resource-bank-import-platform.md. `CefrResourceSource` extended (source registry, no duplicate entity); `ResourceImportRun`/`ResourceRawRecord`/`ResourceCandidate` staging entities; gates 1-3 + gates 4-6 + `ResourceCandidatePreviewService` (rendered admin preview, read-only) + `ResourceCandidatePublishService` (every gate re-checked live, idempotent; `VocabularyEntry`/`GrammarProfileEntry`/short-excerpt `ReadingPassage` publish, `ActivityTemplateCandidate` deferred) + `ResourceBankQueryService` (published-bank browsing/search, reverse candidate traceability, no forward reference needed on bank entities, read-only) + **E6 first real content depth** (32 vocabulary / 12 grammar / 10 reading-excerpt rows, original/internal/English-only, via `InternalResourceSeedPackSeeder` and a deterministic import-time CEFR/skill/subskill mapping fix, no AI provider invoked, no direct-final-table bypass — proven by a dedicated test). Admin CRUD/API/UI with analyze/re-validate/preview/approve/reject/publish/browse actions. Still no external dataset imported. **Phase D1+D2 (2026-07-08) are now real consumers** (see the "Bank-first Today lesson composer" row). **Plan-Sync-After-D2 (2026-07-09) chose Phase E7 next** — resource depth/type expansion, Phase D3 deferred until after E7/E8. English-only; no Persian/bilingual seed data at any phase |
+| English Resource Bank Import/Review/Preview/Publishing Platform (Phase E0-E8) | 🟡 **E1-E7 all implemented** (2026-07-09) — see docs/architecture/english-resource-bank-import-platform.md. `CefrResourceSource` extended (source registry, no duplicate entity); `ResourceImportRun`/`ResourceRawRecord`/`ResourceCandidate` staging entities; gates 1-3 + gates 4-6 + `ResourceCandidatePreviewService` (rendered admin preview, read-only) + `ResourceCandidatePublishService` (every gate re-checked live, idempotent; `VocabularyEntry`/`GrammarProfileEntry`/short-excerpt `ReadingPassage`→`CefrReadingReference`, full-length `ReadingPassage`→**`CefrReadingPassage` (E7)**, `ActivityTemplateCandidate` deferred) + `ResourceBankQueryService` (published-bank browsing/search for all 4 bank types, reverse candidate traceability, no forward reference needed on bank entities, read-only) + first real content depth (32/12/10 rows, E6) + **10 full-length original reading passages (E7)**. Admin CRUD/API/UI with analyze/re-validate/preview/approve/reject/publish/browse actions including a new reading-passages admin page. Still no external dataset imported. **Phase D1+D2 (2026-07-08) are real consumers** (see the "Bank-first Today lesson composer" row) — `TodayBankResourceSelector` is not yet wired to the new E7 passage bank. **A new Phase D3 decision checkpoint applies, not resolved by E7.** English-only; no Persian/bilingual seed data at any phase |
 | IFileStorageService / MinIO | ✅ Done — audio (TTS + speaking uploads) fully on object storage; not blocking deployment at current scale |
 | Admin lifecycle reset tools | ✅ Done |
 

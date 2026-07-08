@@ -78,4 +78,23 @@ public sealed class AdminResourceBankController : ControllerBase
         var result = await _bankQueryService.GetReadingReferenceDetailAsync(id, ct);
         return result is null ? NotFound(new { error = $"Reading reference bank entry '{id}' was not found." }) : Ok(result);
     }
+
+    // GET api/admin/resource-banks/reading-passages?search=&cefrLevel=&sourceId=&page=1&pageSize=20
+    [HttpGet("reading-passages")]
+    public async Task<IActionResult> ListReadingPassages(
+        [FromQuery] string? search = null, [FromQuery] string? cefrLevel = null, [FromQuery] Guid? sourceId = null,
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
+    {
+        var result = await _bankQueryService.ListReadingPassagesAsync(
+            new ResourceBankListFilter(search, cefrLevel, sourceId, page, pageSize), ct);
+        return Ok(result);
+    }
+
+    // GET api/admin/resource-banks/reading-passages/{id}
+    [HttpGet("reading-passages/{id:guid}")]
+    public async Task<IActionResult> GetReadingPassageDetail(Guid id, CancellationToken ct)
+    {
+        var result = await _bankQueryService.GetReadingPassageDetailAsync(id, ct);
+        return result is null ? NotFound(new { error = $"Reading passage bank entry '{id}' was not found." }) : Ok(result);
+    }
 }

@@ -61,6 +61,7 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<CefrVocabularyEntry> CefrVocabularyEntries => Set<CefrVocabularyEntry>();
     public DbSet<CefrGrammarProfileEntry> CefrGrammarProfileEntries => Set<CefrGrammarProfileEntry>();
     public DbSet<CefrReadingReference> CefrReadingReferences => Set<CefrReadingReference>();
+    public DbSet<CefrReadingPassage> CefrReadingPassages => Set<CefrReadingPassage>();
 
     // Phase 10M — Student activity readiness pool
     public DbSet<StudentActivityReadinessItem> StudentActivityReadinessItems => Set<StudentActivityReadinessItem>();

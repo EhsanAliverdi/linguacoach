@@ -21,15 +21,14 @@ namespace LinguaCoach.Infrastructure.ResourceImport;
 /// <see cref="ResourceCandidateType.GrammarProfileEntry"/> — fully supported. Their bank entities
 /// (<see cref="CefrVocabularyEntry"/>/<see cref="CefrGrammarProfileEntry"/>) need only a handful
 /// of fields that a staged candidate reliably carries.</description></item>
-/// <item><description><see cref="ResourceCandidateType.ReadingPassage"/> — supported ONLY when the
-/// staged passage text is short enough to plausibly already be an excerpt/citation (see
-/// <see cref="MaxReadingExcerptLength"/>). <see cref="CefrReadingReference"/>'s own doc comment is
-/// explicit that it holds "only a short excerpt/citation, not a full copyrighted text — reading
-/// difficulty guidance, not a content library." A full reading passage (the normal shape a
-/// ReadingPassage candidate carries) does not fit that entity's documented purpose — rather than
-/// silently truncating a full passage into <see cref="CefrReadingReference.ReferenceExcerpt"/>
-/// (lossy and dishonest about what was actually published), publish is blocked with a clear error
-/// for anything over the threshold. Genuinely short passages/excerpts can still publish.</description></item>
+/// <item><description><see cref="ResourceCandidateType.ReadingPassage"/> — routes to one of two
+/// targets based on staged text length (see <see cref="MaxReadingExcerptLength"/>). Text at or
+/// under the threshold publishes to <see cref="CefrReadingReference"/> (short excerpt/citation
+/// only, per that entity's own doc comment). Text over the threshold — a genuine full-length
+/// passage — publishes to <see cref="CefrReadingPassage"/> (Phase E7), never silently truncated
+/// into <see cref="CefrReadingReference.ReferenceExcerpt"/> (that would be lossy and dishonest
+/// about what was actually published). Both targets still require CefrLevel and every publish
+/// gate above (English-only, source approval/license, validation, admin approval).</description></item>
 /// <item><description><see cref="ResourceCandidateType.ActivityTemplateCandidate"/> — deferred
 /// entirely in this phase. <see cref="ActivityTemplate"/> is a much richer entity than the Cefr*
 /// ones: it needs a stable, unique <c>Key</c>, a curriculum-taxonomy-valid Skill/Subskill pair,
@@ -131,7 +130,7 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
         if (errors.Count > 0)
             return new ResourceCandidatePublishResult(false, null, null, null, errors);
 
-        var (entity, entityTypeName, mappingErrors) = BuildTargetEntity(candidate, loaded.Source.Id);
+        var (entity, entityTypeName, mappingErrors) = BuildTargetEntity(candidate, loaded.Source);
         if (entity is null)
             return new ResourceCandidatePublishResult(false, null, null, null, mappingErrors);
 
@@ -145,6 +144,9 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
                 break;
             case CefrReadingReference readingReference:
                 _db.CefrReadingReferences.Add(readingReference);
+                break;
+            case CefrReadingPassage readingPassage:
+                _db.CefrReadingPassages.Add(readingPassage);
                 break;
         }
 
@@ -160,7 +162,7 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
     }
 
     private static (BaseEntity? Entity, string? EntityTypeName, List<string> Errors) BuildTargetEntity(
-        ResourceCandidate candidate, Guid sourceId)
+        ResourceCandidate candidate, CefrResourceSource source)
     {
         var errors = new List<string>();
         var fields = ResourceCandidateFieldHelper.ParseFields(candidate.NormalizedJson);
@@ -168,13 +170,13 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
         switch (candidate.CandidateType)
         {
             case ResourceCandidateType.VocabularyEntry:
-                return BuildVocabularyEntry(candidate, sourceId, fields, errors);
+                return BuildVocabularyEntry(candidate, source.Id, fields, errors);
 
             case ResourceCandidateType.GrammarProfileEntry:
-                return BuildGrammarProfileEntry(candidate, sourceId, fields, errors);
+                return BuildGrammarProfileEntry(candidate, source.Id, fields, errors);
 
             case ResourceCandidateType.ReadingPassage:
-                return BuildReadingReference(candidate, sourceId, fields, errors);
+                return BuildReadingReferenceOrPassage(candidate, source, fields, errors);
 
             case ResourceCandidateType.ActivityTemplateCandidate:
                 errors.Add(
@@ -243,8 +245,8 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
         }
     }
 
-    private static (BaseEntity?, string?, List<string>) BuildReadingReference(
-        ResourceCandidate candidate, Guid sourceId, IReadOnlyDictionary<string, string?> fields, List<string> errors)
+    private static (BaseEntity?, string?, List<string>) BuildReadingReferenceOrPassage(
+        ResourceCandidate candidate, CefrResourceSource source, IReadOnlyDictionary<string, string?> fields, List<string> errors)
     {
         if (string.IsNullOrWhiteSpace(candidate.CefrLevel))
         {
@@ -253,29 +255,56 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
         }
 
         var passage = ResourceCandidateFieldHelper.GetFieldCI(fields, "passage", "text") ?? candidate.CanonicalText;
-        if (passage.Length > MaxReadingExcerptLength)
+        var title = ResourceCandidateFieldHelper.GetFieldCI(fields, "title");
+
+        if (passage.Length <= MaxReadingExcerptLength)
+        {
+            var textType = ResourceCandidateFieldHelper.GetFieldCI(fields, "texttype", "type");
+            var difficultyNotes = title is null ? null : $"Title: {title}";
+
+            try
+            {
+                var entity = new CefrReadingReference(source.Id, candidate.CefrLevel, textType, difficultyNotes, passage);
+                return (entity, nameof(CefrReadingReference), errors);
+            }
+            catch (ArgumentException ex)
+            {
+                errors.Add($"Could not construct a CefrReadingReference: {ex.Message}");
+                return (null, null, errors);
+            }
+        }
+
+        // Phase E7 — a genuine full-length passage. Published to CefrReadingPassage instead of
+        // being blocked (Phase E4's original behavior) or silently truncated.
+        if (string.IsNullOrWhiteSpace(title))
         {
             errors.Add(
-                $"Passage text is {passage.Length} characters, which exceeds the {MaxReadingExcerptLength}-character " +
-                "excerpt limit for CefrReadingReference. That entity intentionally holds only a short excerpt/" +
-                "citation, not a full copyrighted text (see its own doc comment) — publishing a full passage into " +
-                "it would misuse that field. Publish is blocked for this candidate rather than silently truncating " +
-                "it. Shorten the staged content or defer this candidate.");
+                "A 'title' field is required to publish a full-length ReadingPassage candidate to CefrReadingPassage " +
+                $"(passage text is {passage.Length} characters, over the {MaxReadingExcerptLength}-character " +
+                "CefrReadingReference excerpt limit).");
             return (null, null, errors);
         }
 
-        var textType = ResourceCandidateFieldHelper.GetFieldCI(fields, "texttype", "type");
-        var title = ResourceCandidateFieldHelper.GetFieldCI(fields, "title");
-        var difficultyNotes = title is null ? null : $"Title: {title}";
-
         try
         {
-            var entity = new CefrReadingReference(sourceId, candidate.CefrLevel, textType, difficultyNotes, passage);
-            return (entity, nameof(CefrReadingReference), errors);
+            var entity = new CefrReadingPassage(
+                sourceId: source.Id,
+                title: title,
+                passageText: passage,
+                cefrLevel: candidate.CefrLevel,
+                difficultyBand: candidate.DifficultyBand,
+                primarySkill: candidate.PrimarySkill ?? "Reading",
+                subskill: candidate.Subskill,
+                contextTagsJson: candidate.ContextTagsJson,
+                focusTagsJson: candidate.FocusTagsJson,
+                attributionText: source.AttributionText,
+                contentFingerprint: candidate.ContentFingerprint,
+                qualityScore: candidate.QualityScore);
+            return (entity, nameof(CefrReadingPassage), errors);
         }
         catch (ArgumentException ex)
         {
-            errors.Add($"Could not construct a CefrReadingReference: {ex.Message}");
+            errors.Add($"Could not construct a CefrReadingPassage: {ex.Message}");
             return (null, null, errors);
         }
     }

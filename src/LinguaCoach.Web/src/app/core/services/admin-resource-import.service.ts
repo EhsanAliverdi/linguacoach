@@ -23,6 +23,8 @@ import {
   ResourceBankGrammarDetailDto,
   ResourceBankReadingReferenceListResult,
   ResourceBankReadingReferenceDetailDto,
+  ResourceBankReadingPassageListResult,
+  ResourceBankReadingPassageDetailDto,
 } from '../models/admin-resource-import.models';
 
 @Injectable({ providedIn: 'root' })
@@ -207,5 +209,15 @@ export class AdminResourceBankService {
 
   getReadingReferenceDetail(id: string): Observable<ResourceBankReadingReferenceDetailDto> {
     return this.http.get<ResourceBankReadingReferenceDetailDto>(`${this.base}/reading-references/${id}`);
+  }
+
+  listReadingPassages(page: number, pageSize: number, search?: string, cefrLevel?: string, sourceId?: string):
+    Observable<ResourceBankReadingPassageListResult> {
+    return this.http.get<ResourceBankReadingPassageListResult>(
+      `${this.base}/reading-passages`, { params: this.listParams(page, pageSize, search, cefrLevel, sourceId) });
+  }
+
+  getReadingPassageDetail(id: string): Observable<ResourceBankReadingPassageDetailDto> {
+    return this.http.get<ResourceBankReadingPassageDetailDto>(`${this.base}/reading-passages/${id}`);
   }
 }

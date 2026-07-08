@@ -167,6 +167,10 @@ export const routes: Routes = [
         path: 'resource-banks/reading-references',
         loadComponent: () => import('./features/admin/admin-resource-bank-reading-references/admin-resource-bank-reading-references.component').then(m => m.AdminResourceBankReadingReferencesComponent),
       },
+      {
+        path: 'resource-banks/reading-passages',
+        loadComponent: () => import('./features/admin/admin-resource-bank-reading-passages/admin-resource-bank-reading-passages.component').then(m => m.AdminResourceBankReadingPassagesComponent),
+      },
     ],
   },
 

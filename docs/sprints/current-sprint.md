@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Plan-Sync-After-D2)
+lastUpdated: 2026-07-09 (Phase E7)
 owner: engineering
 supersedes:
 supersededBy:
@@ -14,34 +14,45 @@ Last updated: 2026-07-09
 
 ## Active sprint
 
+**Phase E7 — Full Internal Reading Passage Bank and Resource Depth Expansion (2026-07-09)** — complete
+
+Resolved the Plan-Sync-After-D2 decision by closing the most concrete gap it identified:
+`CefrReadingReference` is short-excerpt/citation-only by design, and Phase E4 explicitly deferred
+full-length `ReadingPassage` publishing rather than force it through dishonestly. **New published
+bank entity**: `CefrReadingPassage` (migration `Phase_E7_AddCefrReadingPassage`) — `Title`,
+`PassageText`, `Summary?`, `CefrLevel`, `DifficultyBand?`, `PrimarySkill`, `Subskill?`, topic/
+context/focus tags, computed `WordCount`/`EstimatedReadingMinutes`, a denormalized
+`AttributionText?` snapshot, `ContentFingerprint?`, `QualityScore?`. **No new candidate type
+needed** — `ResourceCandidateType.ReadingPassage` already existed; `ResourceCandidatePublishService`
+now routes by staged-text length (≤500 chars → `CefrReadingReference` unchanged; over 500 chars
+→ `CefrReadingPassage` instead of being blocked, requiring a `title` field). **Preview needed no
+changes** — E3's `BuildReadingPreview` already rendered full passage text/word count/reading time
+regardless of length. **Browse/search**: new `IResourceBankQueryService.ListReadingPassagesAsync`/
+`GetReadingPassageDetailAsync`, admin API (`GET /api/admin/resource-banks/reading-passages`
+[`/{id}`]), and a new read-only admin page (`/admin/resource-banks/reading-passages`), matching
+the E5 pattern exactly. **Content added**: 10 new full-length, 100% original English reading
+passages (A1-B2, 458-940 characters) added to `InternalResourceSeedPackSeeder`'s internal source
+through the same real staging→validation→approval→publish pipeline as E6's content — no direct-
+final-table seeding. **`TodayBankResourceSelector` deliberately not wired to the new bank this
+phase** — query methods exposed and tested, Today consumption left for a future phase. +24
+backend tests (3,527 → 3,551 total: 5 architecture + 2,070 unit + 1,476 integration). **No
+external dataset imported, no Persian/bilingual/support-language content added, Today/Practice
+Gym legacy fallback not removed, no direct import-to-final-bank bypass introduced.**
+
+**Next: a new Phase D3 decision checkpoint now applies, not resolved by this phase** — start
+Phase D3 using the deepened bank content, continue Phase E8 for further resource-platform work,
+or a docs-only plan sync if the roadmap changes. See `docs/roadmap/road-map.md` §19a for the full
+phase order.
+
+---
+
+## Previous sprint
+
 **Plan-Sync-After-D2 — Choose Phase E7 Before Broader Today Composer Migration (2026-07-09)** — complete (docs-only)
 
-**Last completed: Phase D2.** Expanded D1's narrow bank-first slice — confirmed the skill-based
-pattern gate already covers every Vocabulary/Reading-primary Today pattern; added a balanced
-vocabulary/grammar/reading resource bundle, CEFR-widening for review/scaffold routing only, and a
-feedback-signal exclusion; replaced the loose prompt sentence with a structured block; fixed a
-latent D1 provenance bug (`StudentActivityReadinessItem.SetBankItemProvenance`'s FK mismatch) by
-adding `LearningActivity.BankResourceProvenanceJson`. +9 backend tests (3,518 → 3,527 passed).
-Committed as `67c19aeb`.
-
-**Current immediate task (this docs sync): Plan-Sync-After-D2.** Resolved the follow-on decision
-D2 left open: **Phase E7 comes before Phase D3.** D2 expanded the Today bank-first slice as far
-as current bank/resource-type coverage reasonably allows — Today still has no Grammar-primary
-pattern, no Speaking/Listening/image/open-ended bank content, and no semantic/embedding
-selection, and the bank itself is still only Phase E6's 32/12/10-row internal seed pack. A
-broader Phase D3 migration attempted now would mostly run into missing content/resource types and
-thin bank depth, not a limitation of the D1/D2 integration hook itself. Updated roadmap phase
+Resolved the Phase D2 follow-on decision: Phase E7 comes before Phase D3. Updated roadmap phase
 sequence: Phase D2 → Plan-Sync-After-D2 → Phase E7 → Phase E8 if needed → Phase D3 decision
-checkpoint → Phase D3 or PG-v2A → PG-v2A/B/C/D later → Phase F → Phase G. Docs-only; no app code,
-migrations, or config changed; does not start any implementation.
-
-**Next implementation phase: Phase E7** — deepen and harden the resource platform/content model:
-resource depth/type expansion needed by Today and future Practice Gym v2, preserving the
-English-only, staged, reviewable, traceable pipeline (no direct final-bank seeding). **Not
-started.** Phase D3 remains not started (deferred until after E7/E8); PG-v2 implementation
-remains not started. Today lesson generation remains bank-first only for Vocabulary/Reading-
-primary patterns, with legacy `IAiActivityGenerator` freeform generation as the fallback
-everywhere else. See `docs/roadmap/road-map.md` §19a for the full phase order.
+checkpoint → Phase D3 or PG-v2A → PG-v2A/B/C/D later → Phase F → Phase G. Committed as `b81519f1`.
 
 ---
 

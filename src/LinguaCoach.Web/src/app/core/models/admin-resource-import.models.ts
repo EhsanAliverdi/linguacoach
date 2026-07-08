@@ -401,6 +401,44 @@ export interface ResourceBankReadingReferenceListResult {
   totalCount: number;
 }
 
+export interface ResourceBankReadingPassageListItemDto {
+  id: string;
+  title: string;
+  cefrLevel: string;
+  wordCount: number;
+  estimatedReadingMinutes: number;
+  subskill: string | null;
+  sourceId: string;
+  sourceName: string;
+  createdAt: string;
+}
+
+export interface ResourceBankReadingPassageDetailDto {
+  id: string;
+  title: string;
+  passageText: string;
+  summary: string | null;
+  cefrLevel: string;
+  difficultyBand: number | null;
+  primarySkill: string;
+  subskill: string | null;
+  topicTags: string[];
+  contextTags: string[];
+  focusTags: string[];
+  wordCount: number;
+  estimatedReadingMinutes: number;
+  attributionText: string | null;
+  qualityScore: number | null;
+  createdAt: string;
+  source: ResourceBankSourceInfoDto;
+  traceability: ResourceBankTraceabilityDto;
+}
+
+export interface ResourceBankReadingPassageListResult {
+  items: ResourceBankReadingPassageListItemDto[];
+  totalCount: number;
+}
+
 export const RESOURCE_BANK_CEFR_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
 
 export const RESOURCE_IMPORT_MODES = ['Csv', 'Json', 'Jsonl'] as const;
