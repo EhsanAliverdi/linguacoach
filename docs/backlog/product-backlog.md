@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Plan-Sync-After-E4)
+lastUpdated: 2026-07-08 (Phase E5)
 owner: product
 supersedes:
 supersededBy:
@@ -20,11 +20,11 @@ Phase E4 (2026-07-08) implemented controlled publishing from staged `ResourceCan
 into `CefrVocabularyEntry`/`CefrGrammarProfileEntry`/short-excerpt `CefrReadingReference`. Two
 candidate-type publish targets were evaluated and deliberately deferred rather than forced
 through with a lossy or dishonest shortcut — tracked here as future backlog items. **Published-
-bank browsing/search/admin management for the banks E4 can already publish into is Phase E5**
-(Plan-Sync-After-E4, 2026-07-08) — sequenced ahead of Phase D1 despite D1's technical gate now
-being met, since the published banks currently have no way for an admin to browse, search, or
-assess coverage. Real source import (real external datasets, licensing-approved) remains a
-later, separately-scoped step — not part of E5 unless explicitly re-scoped.
+bank browsing/search/admin management for the banks E4 can already publish into is done as of
+Phase E5** (2026-07-08, `ResourceBankQueryService`, read-only, reverse candidate traceability) —
+sequenced ahead of Phase D1 despite D1's technical gate being met. Real source import (real
+external datasets, licensing-approved) remains a later, separately-scoped step — not part of E5
+or E6 unless explicitly re-scoped.
 
 - [ ] **`ActivityTemplateCandidate` → `ActivityTemplate` publishing** `Not started`
   - **Purpose**: allow an imported/staged Form.io-shaped candidate to become a real, usable

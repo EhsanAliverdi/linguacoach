@@ -1,0 +1,145 @@
+<sp-admin-page-header
+  title="Reading reference bank"
+  subtitle="Published CEFR reading difficulty references (short excerpts/citations only). Browse/search only — editing and publishing happen through Resource Candidates.">
+  <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="loadAll()">
+    Refresh
+  </sp-admin-button>
+</sp-admin-page-header>
+
+<sp-admin-page-body>
+
+  @if (error()) {
+    <sp-admin-error-state title="Could not load reading reference bank entries" [message]="error()" />
+  }
+
+  @if (loading()) {
+    <sp-admin-loading-state message="Loading reading reference bank entries" />
+  } @else {
+
+    <sp-admin-filter-bar>
+      <sp-admin-input
+        search size="sm" placeholder="Search text type, notes, or excerpt..."
+        [value]="searchQuery()" (input)="onSearch($event)" aria-label="Search reading reference bank" />
+      <sp-admin-select
+        size="sm" placeholder="All levels"
+        [ngModel]="cefrLevelFilter()" (ngModelChange)="onCefrLevelFilterChange($event)"
+        [options]="cefrLevelOptions" aria-label="Filter by CEFR level" />
+      <sp-admin-select
+        size="sm" placeholder="All sources"
+        [ngModel]="sourceFilter()" (ngModelChange)="onSourceFilterChange($event)"
+        [options]="sourceOptions()" aria-label="Filter by source" />
+      <span class="sp-admin-filter-count">{{ totalCount() }} entr{{ totalCount() !== 1 ? 'ies' : 'y' }}</span>
+    </sp-admin-filter-bar>
+
+    @if (items().length === 0) {
+      <sp-admin-empty-state title="No reading references" message="No published reading references match these filters." />
+    } @else {
+      <sp-admin-table layout="first-column-fluid">
+        <table>
+          <thead>
+            <tr>
+              <th>Excerpt</th>
+              <th>Level</th>
+              <th>Text type</th>
+              <th>Source</th>
+              <th class="sp-admin-th-actions"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of items(); track item.id) {
+              <tr>
+                <td>{{ excerptPreview(item.referenceExcerpt) }}</td>
+                <td><sp-admin-badge tone="neutral">{{ item.cefrLevel }}</sp-admin-badge></td>
+                <td>{{ item.textType ?? '—' }}</td>
+                <td>{{ item.sourceName }}</td>
+                <td>
+                  <sp-admin-table-actions
+                    mode="dropdown"
+                    [richActions]="rowActions(item)"
+                    (actionSelected)="onRowAction($event, item)" />
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        <sp-admin-table-footer>
+          Page {{ page() }} of {{ totalPages() }} · {{ totalCount() }} entries
+          <sp-admin-pagination slot="actions" [page]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
+        </sp-admin-table-footer>
+      </sp-admin-table>
+    }
+  }
+
+</sp-admin-page-body>
+
+<!-- ── Detail drawer (read-only) ───────────────────────────────────────────── -->
+<sp-admin-drawer
+  [open]="drawerOpen()"
+  [title]="detail()?.textType ?? 'Reading reference'"
+  side="right"
+  size="lg"
+  (closed)="closeDrawer()">
+
+  @if (detailLoading()) {
+    <sp-admin-loading-state message="Loading entry detail" />
+  }
+  @if (detailError()) {
+    <sp-admin-error-state title="Could not load entry detail" [message]="detailError()" />
+  }
+
+  @if (detail(); as d) {
+    <div class="sp-admin-form-stack">
+      <sp-admin-form-field label="CEFR level"><sp-admin-badge tone="neutral">{{ d.cefrLevel }}</sp-admin-badge></sp-admin-form-field>
+      @if (d.textType) { <sp-admin-form-field label="Text type">{{ d.textType }}</sp-admin-form-field> }
+      @if (d.difficultyNotes) { <sp-admin-form-field label="Difficulty notes">{{ d.difficultyNotes }}</sp-admin-form-field> }
+      @if (d.referenceExcerpt) {
+        <sp-admin-form-field label="Reference excerpt">
+          <p class="sp-e3-passage-text">{{ d.referenceExcerpt }}</p>
+        </sp-admin-form-field>
+      }
+      <sp-admin-form-field label="Created">{{ d.createdAt | date:'medium' }}</sp-admin-form-field>
+
+      <sp-admin-form-field label="Source">
+        {{ d.source.sourceName }} · <code>{{ d.source.licenseType }}</code>
+        @if (!d.source.allowsStudentDisplay || !d.source.allowsCommercialUse) {
+          <sp-admin-badge tone="warning">Restricted use</sp-admin-badge>
+        }
+      </sp-admin-form-field>
+      @if (d.source.attributionText) {
+        <sp-admin-form-field label="Attribution">{{ d.source.attributionText }}</sp-admin-form-field>
+      }
+      @if (d.source.sourceUrl || d.source.downloadUrl) {
+        <sp-admin-form-field label="Links">
+          @if (d.source.sourceUrl) { <div><a [href]="d.source.sourceUrl" target="_blank" rel="noopener">Source</a></div> }
+          @if (d.source.downloadUrl) { <div><a [href]="d.source.downloadUrl" target="_blank" rel="noopener">Download</a></div> }
+        </sp-admin-form-field>
+      }
+
+      @if (d.traceability.traceabilityAvailable) {
+        <sp-admin-form-field label="Traceability">
+          Candidate <code>{{ d.traceability.candidateId }}</code>
+          · Import run <code>{{ d.traceability.resourceImportRunId }}</code>
+        </sp-admin-form-field>
+        @if (d.traceability.contentFingerprint) {
+          <sp-admin-form-field label="Content fingerprint"><code>{{ d.traceability.contentFingerprint }}</code></sp-admin-form-field>
+        }
+        @if (d.traceability.qualityScore !== null) {
+          <sp-admin-form-field label="Quality score">{{ (d.traceability.qualityScore * 100).toFixed(0) }}%</sp-admin-form-field>
+        }
+        @if (d.traceability.publishedAtUtc) {
+          <sp-admin-form-field label="Published">{{ d.traceability.publishedAtUtc | date:'medium' }}</sp-admin-form-field>
+        }
+      } @else {
+        <sp-admin-form-field label="Traceability">
+          <sp-admin-badge tone="warning">Traceability unavailable</sp-admin-badge>
+          — no originating resource candidate could be found for this entry.
+        </sp-admin-form-field>
+      }
+    </div>
+  }
+
+  <div slot="footer">
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeDrawer()">Close</sp-admin-button>
+  </div>
+
+</sp-admin-drawer>

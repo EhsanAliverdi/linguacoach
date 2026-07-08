@@ -155,6 +155,18 @@ export const routes: Routes = [
         path: 'resource-candidates',
         loadComponent: () => import('./features/admin/admin-resource-candidates/admin-resource-candidates.component').then(m => m.AdminResourceCandidatesComponent),
       },
+      {
+        path: 'resource-banks/vocabulary',
+        loadComponent: () => import('./features/admin/admin-resource-bank-vocabulary/admin-resource-bank-vocabulary.component').then(m => m.AdminResourceBankVocabularyComponent),
+      },
+      {
+        path: 'resource-banks/grammar',
+        loadComponent: () => import('./features/admin/admin-resource-bank-grammar/admin-resource-bank-grammar.component').then(m => m.AdminResourceBankGrammarComponent),
+      },
+      {
+        path: 'resource-banks/reading-references',
+        loadComponent: () => import('./features/admin/admin-resource-bank-reading-references/admin-resource-bank-reading-references.component').then(m => m.AdminResourceBankReadingReferencesComponent),
+      },
     ],
   },
 

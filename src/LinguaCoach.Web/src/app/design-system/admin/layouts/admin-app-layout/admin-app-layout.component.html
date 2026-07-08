@@ -118,6 +118,15 @@
         <li><sp-admin-sidebar-nav-item label="Resource candidates" route="/admin/resource-candidates" [collapsed]="false" (itemClick)="closeDrawer()">
           <sp-admin-icon name="filter" />
         </sp-admin-sidebar-nav-item></li>
+        <li><sp-admin-sidebar-nav-item label="Vocabulary bank" route="/admin/resource-banks/vocabulary" [collapsed]="false" (itemClick)="closeDrawer()">
+          <sp-admin-icon name="book" />
+        </sp-admin-sidebar-nav-item></li>
+        <li><sp-admin-sidebar-nav-item label="Grammar bank" route="/admin/resource-banks/grammar" [collapsed]="false" (itemClick)="closeDrawer()">
+          <sp-admin-icon name="list" />
+        </sp-admin-sidebar-nav-item></li>
+        <li><sp-admin-sidebar-nav-item label="Reading reference bank" route="/admin/resource-banks/reading-references" [collapsed]="false" (itemClick)="closeDrawer()">
+          <sp-admin-icon name="book-open" />
+        </sp-admin-sidebar-nav-item></li>
       </ul>
     </div>
     <div>
@@ -263,6 +272,15 @@
           </sp-admin-sidebar-nav-item></li>
           <li><sp-admin-sidebar-nav-item label="Resource candidates" route="/admin/resource-candidates" [collapsed]="collapsed()">
             <sp-admin-icon name="filter" />
+          </sp-admin-sidebar-nav-item></li>
+          <li><sp-admin-sidebar-nav-item label="Vocabulary bank" route="/admin/resource-banks/vocabulary" [collapsed]="collapsed()">
+            <sp-admin-icon name="book" />
+          </sp-admin-sidebar-nav-item></li>
+          <li><sp-admin-sidebar-nav-item label="Grammar bank" route="/admin/resource-banks/grammar" [collapsed]="collapsed()">
+            <sp-admin-icon name="list" />
+          </sp-admin-sidebar-nav-item></li>
+          <li><sp-admin-sidebar-nav-item label="Reading reference bank" route="/admin/resource-banks/reading-references" [collapsed]="collapsed()">
+            <sp-admin-icon name="book-open" />
           </sp-admin-sidebar-nav-item></li>
         </ul>
       </div>

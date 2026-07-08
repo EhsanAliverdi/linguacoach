@@ -17,6 +17,12 @@ import {
   ResourceCandidateBatchAnalysisResult,
   ResourceCandidatePreviewDto,
   ResourceCandidatePublishResult,
+  ResourceBankVocabularyListResult,
+  ResourceBankVocabularyDetailDto,
+  ResourceBankGrammarListResult,
+  ResourceBankGrammarDetailDto,
+  ResourceBankReadingReferenceListResult,
+  ResourceBankReadingReferenceDetailDto,
 } from '../models/admin-resource-import.models';
 
 @Injectable({ providedIn: 'root' })
@@ -153,5 +159,53 @@ export class AdminResourceCandidateService {
    *  Idempotent; a failed attempt returns 200 with success=false and a list of reasons. */
   publish(candidateId: string): Observable<ResourceCandidatePublishResult> {
     return this.http.post<ResourceCandidatePublishResult>(`${this.base}/${candidateId}/publish`, {});
+  }
+}
+
+/** Phase E5 — read-only browse/search over the published Cefr* bank tables. Browse/search only:
+ *  no edit/delete methods exist here — all mutation happens through AdminResourceCandidateService's
+ *  approve/reject/publish workflow. */
+@Injectable({ providedIn: 'root' })
+export class AdminResourceBankService {
+  private readonly base = `${environment.apiUrl}/admin/resource-banks`;
+
+  constructor(private http: HttpClient) {}
+
+  private listParams(page: number, pageSize: number, search?: string, cefrLevel?: string, sourceId?: string): HttpParams {
+    let params = new HttpParams().set('page', page).set('pageSize', pageSize);
+    if (search) params = params.set('search', search);
+    if (cefrLevel && cefrLevel !== 'all') params = params.set('cefrLevel', cefrLevel);
+    if (sourceId) params = params.set('sourceId', sourceId);
+    return params;
+  }
+
+  listVocabulary(page: number, pageSize: number, search?: string, cefrLevel?: string, sourceId?: string):
+    Observable<ResourceBankVocabularyListResult> {
+    return this.http.get<ResourceBankVocabularyListResult>(
+      `${this.base}/vocabulary`, { params: this.listParams(page, pageSize, search, cefrLevel, sourceId) });
+  }
+
+  getVocabularyDetail(id: string): Observable<ResourceBankVocabularyDetailDto> {
+    return this.http.get<ResourceBankVocabularyDetailDto>(`${this.base}/vocabulary/${id}`);
+  }
+
+  listGrammar(page: number, pageSize: number, search?: string, cefrLevel?: string, sourceId?: string):
+    Observable<ResourceBankGrammarListResult> {
+    return this.http.get<ResourceBankGrammarListResult>(
+      `${this.base}/grammar`, { params: this.listParams(page, pageSize, search, cefrLevel, sourceId) });
+  }
+
+  getGrammarDetail(id: string): Observable<ResourceBankGrammarDetailDto> {
+    return this.http.get<ResourceBankGrammarDetailDto>(`${this.base}/grammar/${id}`);
+  }
+
+  listReadingReferences(page: number, pageSize: number, search?: string, cefrLevel?: string, sourceId?: string):
+    Observable<ResourceBankReadingReferenceListResult> {
+    return this.http.get<ResourceBankReadingReferenceListResult>(
+      `${this.base}/reading-references`, { params: this.listParams(page, pageSize, search, cefrLevel, sourceId) });
+  }
+
+  getReadingReferenceDetail(id: string): Observable<ResourceBankReadingReferenceDetailDto> {
+    return this.http.get<ResourceBankReadingReferenceDetailDto>(`${this.base}/reading-references/${id}`);
   }
 }

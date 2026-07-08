@@ -554,6 +554,9 @@ public static class DependencyInjection
         // Phase E4 — publishes an approved, validated ResourceCandidate into its target Cefr* bank table.
         services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceCandidatePublishService,
             LinguaCoach.Infrastructure.ResourceImport.ResourceCandidatePublishService>();
+        // Phase E5 — read-only browse/search over the published Cefr* bank tables.
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceBankQueryService,
+            LinguaCoach.Infrastructure.ResourceImport.ResourceBankQueryService>();
 
         // AI Bank-First Teaching Architecture Phase 9 — cross-entity admin review queue
         services.AddScoped<LinguaCoach.Application.Admin.ReviewQueue.IAdminReviewQueueQuery,

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Plan-Sync-After-E4)
+lastUpdated: 2026-07-08 (Phase E5)
 owner: engineering
 supersedes:
 supersededBy:
@@ -14,31 +14,43 @@ Last updated: 2026-07-08
 
 ## Active sprint
 
+**Phase E5 — Published Bank Browsing, Search, and Admin Management (2026-07-08)** — complete
+
+**Last completed: Phase E5.** Added `ResourceBankQueryService` — list + detail queries for
+`CefrVocabularyEntry`/`CefrGrammarProfileEntry`/`CefrReadingReference` (search text, CEFR level,
+source id filters; pagination capped at 200; sort newest-first by `CreatedAt`). **Key finding**:
+none of the three published bank entities carries a forward reference to its originating
+`ResourceCandidate` — traceability is a **reverse lookup** (`PublishedEntityType`/
+`PublishedEntityId` matched against the bank row), returning an explicit "unavailable" result
+rather than throwing when no match exists; no new columns were added to any bank entity. A
+dedicated test confirms the pre-existing invariant that unpublished/rejected candidates can never
+appear in a bank-browse list. New `GET /api/admin/resource-banks/{vocabulary,grammar,reading-
+references}` list+detail endpoints; 3 new **read-only** admin pages (search/CEFR/source filters,
+paginated table, detail drawer with source/license/provenance/traceability, empty/loading/error
+states) — no edit or delete actions anywhere, mutation remains exclusively on Resource
+Candidates. +31 backend tests (3,455 → 3,486 passed). See
+`docs/architecture/english-resource-bank-import-platform.md` for full detail.
+
+**Before this: Plan-Sync-After-E4.** Docs-only — sequenced Phase E5 before Phase D1 despite D1's
+technical gate being met. Committed as `4849875d`.
+
+**A decision checkpoint now applies — not resolved by this phase**: start Phase D1 using the
+current (still small, synthetic) bank surface, or continue Phase E6 (reading/listening depth,
+more real content volume) first. PG-v2 implementation remains not started. Today lesson
+generation remains 100% legacy `IAiActivityGenerator` freeform generation. See
+`docs/roadmap/road-map.md` §19a for the full phase order.
+
+---
+
+## Previous sprint
+
 **Plan-Sync-After-E4 — Move E5 before D1 (2026-07-08)** — complete (docs-only)
 
-**Last completed: Phase E4.** Added `ResourceCandidatePublishService` and
-`Approve(notes?)`/`.Reject(reason)`. Every publish gate re-checked live; idempotent;
-`VocabularyEntry`/`GrammarProfileEntry` fully supported, short-excerpt `ReadingPassage`
-supported, `ActivityTemplateCandidate` deferred. +16 backend tests (3,430 → 3,455 passed).
-Committed as `ab4e2d1d`.
-
-**Current immediate task (this docs sync): Plan-Sync-After-E4.** Although Phase D1's "E0-E4
-before D1" technical gate is now met, decided to sequence **Phase E5 before Phase D1**. The
-published banks currently hold only small synthetic/test data with no browsing/search/admin-
-management surface — starting Today's bank-first composer now would have essentially nothing
-real to compose from. Updated roadmap phase sequence: E5 → Phase D1 decision checkpoint → either
-D1 or E6 → E6/E7/E8 as needed → PG-v2A/B/C/D later → Phase F → Phase G. Docs-only; no app code,
-migrations, or config changed; does not start any implementation.
-
-**Next implementation phase: Phase E5** — published-bank browsing/search/admin management for
-the first supported banks (vocabulary, grammar, short reading references), surfacing source/
-license/provenance, CEFR, tags, quality, published status, and candidate traceability. **Not
-started.** No external dataset import in scope for E5 unless explicitly re-scoped later. After
-E5, an explicit product decision follows: start Phase D1 with whatever banks exist by then, or
-continue Phase E6 (reading/listening resource depth) first — not resolved by this docs sync.
-PG-v2 implementation remains not started. Today lesson generation remains 100% legacy
-`IAiActivityGenerator` freeform generation. See `docs/roadmap/road-map.md` §19a for the full phase
-order.
+Although Phase D1's "E0-E4 before D1" technical gate was met, decided to sequence Phase E5
+before Phase D1 — the published banks held only small synthetic/test data with no browsing/
+search/admin-management surface. Updated roadmap phase sequence: E5 → Phase D1 decision
+checkpoint → either D1 or E6 → E6/E7/E8 as needed → PG-v2A/B/C/D later → Phase F → Phase G.
+Committed as `4849875d`.
 
 ---
 

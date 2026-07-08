@@ -292,6 +292,117 @@ export interface ResourceCandidatePublishResult {
   errors: string[];
 }
 
+// ── Phase E5 — Published bank browsing/search/admin management. Read-only: browse/search only,
+// no edit or delete actions — all mutation still happens through Resource Candidates (E4). ──
+
+export interface ResourceBankSourceInfoDto {
+  sourceId: string;
+  sourceName: string;
+  licenseType: string;
+  sourceUrl: string | null;
+  downloadUrl: string | null;
+  attributionText: string | null;
+  allowsStudentDisplay: boolean;
+  allowsCommercialUse: boolean;
+}
+
+/** Reverse-lookup traceability back to the originating ResourceCandidate/ImportRun. None of the
+ *  Cefr* bank entities carries a forward reference to the candidate that published it, so this is
+ *  built by searching ResourceCandidate for a row whose PublishedEntityType/PublishedEntityId
+ *  match. `traceabilityAvailable` is false (all other fields null) when no such candidate is
+ *  found — e.g. a bank row seeded some other way than through the publish workflow. */
+export interface ResourceBankTraceabilityDto {
+  traceabilityAvailable: boolean;
+  candidateId: string | null;
+  resourceImportRunId: string | null;
+  contentFingerprint: string | null;
+  qualityScore: number | null;
+  candidateCreatedAt: string | null;
+  publishedAtUtc: string | null;
+  publishedByUserId: string | null;
+}
+
+export interface ResourceBankVocabularyListItemDto {
+  id: string;
+  word: string;
+  cefrLevel: string;
+  partOfSpeech: string | null;
+  notes: string | null;
+  sourceId: string;
+  sourceName: string;
+  createdAt: string;
+}
+
+export interface ResourceBankVocabularyDetailDto {
+  id: string;
+  word: string;
+  cefrLevel: string;
+  partOfSpeech: string | null;
+  notes: string | null;
+  createdAt: string;
+  source: ResourceBankSourceInfoDto;
+  traceability: ResourceBankTraceabilityDto;
+}
+
+export interface ResourceBankVocabularyListResult {
+  items: ResourceBankVocabularyListItemDto[];
+  totalCount: number;
+}
+
+export interface ResourceBankGrammarListItemDto {
+  id: string;
+  grammarPoint: string;
+  cefrLevel: string;
+  description: string | null;
+  sourceId: string;
+  sourceName: string;
+  createdAt: string;
+}
+
+export interface ResourceBankGrammarDetailDto {
+  id: string;
+  grammarPoint: string;
+  cefrLevel: string;
+  description: string | null;
+  createdAt: string;
+  source: ResourceBankSourceInfoDto;
+  traceability: ResourceBankTraceabilityDto;
+}
+
+export interface ResourceBankGrammarListResult {
+  items: ResourceBankGrammarListItemDto[];
+  totalCount: number;
+}
+
+export interface ResourceBankReadingReferenceListItemDto {
+  id: string;
+  cefrLevel: string;
+  textType: string | null;
+  difficultyNotes: string | null;
+  referenceExcerpt: string | null;
+  sourceId: string;
+  sourceName: string;
+  createdAt: string;
+}
+
+export interface ResourceBankReadingReferenceDetailDto {
+  id: string;
+  cefrLevel: string;
+  textType: string | null;
+  difficultyNotes: string | null;
+  referenceExcerpt: string | null;
+  createdAt: string;
+  source: ResourceBankSourceInfoDto;
+  traceability: ResourceBankTraceabilityDto;
+}
+
+export interface ResourceBankReadingReferenceListResult {
+  items: ResourceBankReadingReferenceListItemDto[];
+  totalCount: number;
+}
+
+export const RESOURCE_BANK_CEFR_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
+
 export const RESOURCE_IMPORT_MODES = ['Csv', 'Json', 'Jsonl'] as const;
 export const RESOURCE_CANDIDATE_TYPES = [
   'Unknown', 'VocabularyEntry', 'GrammarProfileEntry', 'ReadingPassage', 'ActivityTemplateCandidate',

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Plan-Sync-After-E4)
+lastUpdated: 2026-07-08 (Phase E5)
 owner: architecture
 supersedes:
 supersededBy:
@@ -10,13 +10,14 @@ supersededBy:
 
 **Date planned:** 2026-07-08 (Plan-Sync-After-C1), **finalized:** 2026-07-08 (Phase E0),
 **E1 implemented:** 2026-07-08, **E2 implemented:** 2026-07-08, **E3 implemented:** 2026-07-08,
-**E4 implemented:** 2026-07-08, **Plan-Sync-After-E4:** 2026-07-08
+**E4 implemented:** 2026-07-08, **Plan-Sync-After-E4:** 2026-07-08, **E5 implemented:** 2026-07-08
 **Status:** E1 (staging), E2 (AI analysis + validation gates 4-6), E3 (admin rendered preview),
-and E4 (publish to first banks) implemented. **E5 (published-bank browsing/search/admin
-management) is now the next recommended implementation phase** — Plan-Sync-After-E4 (2026-07-08)
-sequenced it ahead of Phase D1 despite D1's technical "E0-E4" gate now being met, because the
-published banks currently hold only small synthetic/test data with no way to browse, search, or
-manage them yet.
+E4 (publish to first banks), and **E5 (published-bank browsing/search/admin management)** are all
+implemented. The published banks (vocabulary, grammar, short reading references) can now be
+browsed, filtered, and searched by an admin, with reverse traceability back to the originating
+`ResourceCandidate`/import run/source where available. **A product decision checkpoint follows**:
+start Phase D1 (Today bank-first composer) using the current bank surface, or continue Phase E6
+(reading/listening resource depth) first — not resolved by this phase, see the Decision Log.
 **Some rows have now been published — but only `VocabularyEntry`/`GrammarProfileEntry`/short-
 excerpt `ReadingPassage` candidates that passed validation AND were explicitly admin-approved.**
 `ActivityTemplateCandidate` publishing is **deferred** (see "E4 — Publish to first banks" below
@@ -216,7 +217,7 @@ enabling approval) and E4 (approve/reject + publish action).
 | **E2** | AI analysis + validation gates | Gates 4-6 (AI analysis/advisory, rule validation, dedup/fingerprint). See "E2-E4 boundaries" below. |
 | **E3** | Admin rendered preview | Gate 7a prerequisite — dedicated read-only rendered view per candidate, required before approval is enabled. |
 | **E4** ✅ done 2026-07-08 | Publish to first banks | Approve/reject + publish action — promotes an approved, validation-passed candidate into `CefrVocabularyEntry`/`CefrGrammarProfileEntry`/short-excerpt `CefrReadingReference`. `ActivityTemplateCandidate` publishing deferred. |
-| **E5** — next recommended phase (Plan-Sync-After-E4, 2026-07-08) | Published bank browsing/search/admin management | Admin search/browse over the first published banks (vocabulary, grammar, short reading references) — filter by CEFR/skill/subskill/context, surfacing source/license/provenance, tags, quality, published status, and candidate traceability (link back to the `ResourceCandidate` it came from). Sequenced **before** Phase D1 — see the "Sequencing note" below. Not a full analytics dashboard; not yet `ActivityTemplate`/AI-generation-time consumption (that's a later integration once Phase D exists). No external dataset import in this phase unless explicitly re-scoped. |
+| **E5** ✅ done 2026-07-08 | Published bank browsing/search/admin management | Admin search/browse over the first published banks (vocabulary, grammar, short reading references) — filter by CEFR level/source/search text, surfacing source/license/provenance, published status, and candidate traceability (reverse-lookup back to the `ResourceCandidate` it came from). Read-only — no edit/delete actions; all mutation still happens through Resource Candidates. Not a full analytics dashboard; not yet `ActivityTemplate`/AI-generation-time consumption (that's a later integration once Phase D exists). No external dataset import, no embeddings/semantic search. |
 | **E6** | Reading/listening resources | Extend the pipeline to `CefrReadingReference`-shaped content (passages) — same pipeline, new candidate/validation rules for longer-form text. A first listening-script bank (new typed entity) may also land here once audio-adjacent metadata handling is designed. |
 | **E7** | Bigger import support | Background/queued import jobs (Quartz) for larger sources, ZIP archive support, audio-file-carrying sources (Common Voice, LibriVox) — deferred until E1-E6 prove the pipeline on simpler text sources first. |
 | **E8** | RAG/search enrichment | Embedding/vector-search-based candidate deduplication and semantic bank search — explicitly deferred past all of E0-E7; no pgvector, no embeddings before this phase, consistent with Phase B's repetition/novelty foundation scope discipline. |
@@ -436,6 +437,52 @@ stability, and the bank-table-untouched guarantee.
 - **Explicitly deferred**: published-bank browsing (E5), reading/listening banks (E6),
   background/queued large imports + ZIP + audio sources (E7), RAG/embeddings/semantic dedup (E8).
 
+### E5 — Published bank browsing, search, and admin management — implemented (2026-07-08)
+
+- **Backend**: `IResourceBankQueryService`/`ResourceBankQueryService` — list + detail queries for
+  all three published bank types (`CefrVocabularyEntry`/`CefrGrammarProfileEntry`/
+  `CefrReadingReference`). Filters: search text (case-insensitive `Contains` over the type's
+  relevant fields — `Word`/`Notes` for vocabulary, `GrammarPoint`/`Description` for grammar,
+  `TextType`/`DifficultyNotes`/`ReferenceExcerpt` for reading), CEFR level (exact match), source
+  id (exact match). Pagination capped at 200 per page, matching the existing candidate-list
+  endpoint's cap. Sort: newest first by `CreatedAt` (none of the three entities has its own
+  "published at" timestamp — a documented, deliberate fallback, not a gap needing a new column).
+  **No advanced ranking, no embeddings, no semantic search** — plain deterministic filter + sort.
+- **Traceability — the key design finding this phase confirmed**: none of the three published
+  bank entities carries a *forward* reference back to the `ResourceCandidate` that produced it.
+  Traceability is a **reverse lookup**: `ResourceCandidate.PublishedEntityType`/`PublishedEntityId`
+  (set by E4's `MarkPublished`) are matched against the bank row being viewed, then joined through
+  to the candidate's raw record/import run the same way `ResourceCandidatePublishService`/
+  `ResourceCandidateValidationService` already do. **Never throws when no match exists** — returns
+  an explicit "traceability unavailable" result instead (covered by a test that seeds a bank row
+  directly via the DbContext, bypassing the publish service entirely, to prove the no-match path
+  is handled cleanly). **No new columns were added to any published bank entity** — the reverse
+  query was sufficient for E5's read-only browsing needs.
+- **Invariant confirmed by a dedicated test**: because these three tables are only ever written to
+  by `ResourceCandidatePublishService`, nothing unpublished or rejected can ever appear in a bank-
+  browse list — this was true by construction since E4, and E5 adds an explicit test proving it
+  holds through the new query surface too, not just trusting E4's own tests.
+- **Admin API**: `GET /api/admin/resource-banks/{vocabulary|grammar|reading-references}` (list,
+  filters above) and `.../{id}` (detail, includes source/license/provenance + attribution +
+  traceability). All admin-only, 404 for a missing id.
+- **Admin UI**: three new pages under `/admin/resource-banks/{vocabulary,grammar,reading-
+  references}` — search/CEFR/source filter bar, paginated table, read-only detail drawer (core
+  content, CEFR level, source/license/provenance, traceability or its "unavailable" state), empty/
+  loading/error states matching the existing Resource Candidates page's pattern. **No edit or
+  delete actions anywhere** — a persistent note clarifies that mutation still happens through
+  Resource Candidates (approve/reject/publish). New "Resource Banks" nav entries under the
+  existing Content sidebar group (desktop and mobile).
+- **Tests**: list/filter/pagination for all three bank types; detail-with-traceability for all
+  three; the unpublished-candidate-never-appears invariant; the no-matching-candidate detail case;
+  all 6 endpoints admin-only.
+- **Acceptance — met**: an admin can browse, filter, and search the published vocabulary/grammar/
+  reading-reference banks, see source/license/provenance and (where available) a trace back to
+  the originating candidate/import run, without any edit/delete/publish capability on this
+  surface — mutation remains exclusively on Resource Candidates.
+- **Explicitly deferred (confirmed not built)**: reading/listening resource expansion (E6),
+  background/queued larger imports (E7), embeddings/semantic search (E8), any `ActivityTemplate`/
+  AI-generation-time consumption of these banks (that's a Phase D integration concern, not E5's).
+
 ---
 
 ## Initial source priorities
@@ -475,7 +522,7 @@ to that eventual cleanup's scope but does not attempt it now.
 | Resource Sources | `/admin/resource-sources` | ✅ E1 done | `CefrResourceSource` CRUD + approve/revoke (extended with new fields, not a new entity). |
 | Resource Import Runs | `/admin/resource-import-runs` | ✅ E1 done | List + trigger new run (file upload). Raw Records are a nested tab on the run detail view, not a separate top-level page. |
 | Resource Candidates | `/admin/resource-candidates` | ✅ E1 done (read-only + staging banner) → E2 (validation) → E3 (preview) → E4 (approve/publish) | The main working surface, built up incrementally across E1-E4 rather than all at once. |
-| Published Resource Banks | `/admin/resource-banks` (tentative) | E5 | Browse/search published `Cefr*` rows — not part of E4. |
+| Published Resource Banks | `/admin/resource-banks/{vocabulary,grammar,reading-references}` | ✅ E5 done | Browse/search published `Cefr*` rows, read-only, with reverse candidate traceability. |
 | Tags/Taxonomy | TBD | Later, post-E4 | Deferred until enough banks exist to warrant a shared taxonomy admin surface. |
 
 Shared components to reuse (no new UI primitives to invent): the `design-system/admin` component
@@ -496,16 +543,18 @@ least once. Admin must never approve based on raw JSON/CSV alone.
 Phase D (bank-first Today lesson composer) is intentionally sequenced **after** Practice Gym
 migration (Phase C2/C3/C4/C-Final) and after enough of this resource-bank platform exists to
 give Phase D real bank content to compose from — not before. Phase D1's originally-documented
-"E0-E4 before D1" gate is technically met (Phase E reached E4, 2026-07-08) — but
-**Plan-Sync-After-E4 (2026-07-08) revised the near-term sequence: Phase E5 now comes before Phase
-D1**, not after it. The intent behind the original gate was always "Phase D has real, usable bank
-content to compose from," not merely "the E0-E4 pipeline exists" — a handful of small,
-synthetic/test-only published rows with no browsing/search/admin-management surface doesn't meet
-that intent, even though the pipeline itself is complete and correct. After Phase E5, an explicit
-product decision checkpoint follows: start Phase D1 using whatever published banks exist by then,
-or continue Phase E6 (reading/listening resource depth) first. See `docs/roadmap/road-map.md`
-Decision Log (2026-07-08, Plan-Sync-After-C1 and Plan-Sync-After-E4 entries) for the full
-reasoning and current preferred phase order.
+"E0-E4 before D1" gate was technically met once Phase E reached E4 (2026-07-08) — but
+**Plan-Sync-After-E4 (2026-07-08) revised the near-term sequence: Phase E5 came before Phase D1**,
+not after it, since a handful of small, synthetic/test-only published rows with no browsing/
+search/admin-management surface didn't meet the gate's actual intent ("Phase D has real, usable
+bank content to compose from"). **Phase E5 (2026-07-08) has now closed that gap** — the published
+banks can be browsed, filtered, and searched, with traceability back to their source candidates.
+**A decision checkpoint now applies**: start Phase D1 using the current bank surface (still small
+and synthetic — no external dataset has been imported yet), or continue Phase E6 (reading/
+listening resource depth, more real content volume) first. This document does not resolve that
+choice — see `docs/roadmap/road-map.md` Decision Log (2026-07-08, Plan-Sync-After-C1,
+Plan-Sync-After-E4, and Phase E5 entries) for the full reasoning and current preferred phase
+order.
 
 ---
 
@@ -537,6 +586,10 @@ reasoning and current preferred phase order.
   and "Relationship to Phase D" section updated to reflect E5-before-D1 sequencing);
   `docs/roadmap/road-map.md` (§19a phase sequence, Decision Log), `docs/sprints/current-sprint.md`,
   `docs/architecture/README.md`, `docs/backlog/product-backlog.md`.
+- Docs updated (Phase E5, this section): this file (E5 boundaries section added, traceability
+  design and invariant documented, "Relationship to Phase D" section updated with the E5-closed-
+  the-gap status and the live decision checkpoint); `docs/roadmap/road-map.md`,
+  `docs/sprints/current-sprint.md`, `docs/architecture/README.md`.
 - Docs intentionally not updated: `docs/architecture/cefr-resource-licensing-review.md` — its
   licensing findings are unchanged by this phase; no new sources were browsed or licensing
   conclusions revisited in E0. `docs/architecture/practice-gym.md`/`repetition-and-novelty.md` —

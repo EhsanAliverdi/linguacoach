@@ -1,0 +1,137 @@
+namespace LinguaCoach.Application.ResourceImport;
+
+// ── Phase E5 — Published bank browsing/search/admin management. Read-only: nothing here ever
+// mutates a Cefr* bank row or a ResourceCandidate. All mutation (approve/reject/publish) still
+// lives solely in the Resource Candidates workflow (Phase E4). ──
+//
+// None of CefrVocabularyEntry/CefrGrammarProfileEntry/CefrReadingReference carries a forward
+// reference back to the ResourceCandidate that produced it — the only link is the reverse
+// direction (ResourceCandidate.PublishedEntityType/PublishedEntityId, set by
+// ResourceCandidatePublishService.MarkPublished). ResourceBankTraceabilityDto below is built by
+// querying ResourceCandidate for a row whose PublishedEntityType/PublishedEntityId match the bank
+// row being viewed. TraceabilityAvailable is false (with every other field null) when no such
+// candidate is found — e.g. a bank row seeded some other way than through the publish workflow.
+
+public sealed record ResourceBankListFilter(
+    string? SearchText = null,
+    string? CefrLevel = null,
+    Guid? SourceId = null,
+    int Page = 1,
+    int PageSize = 20
+);
+
+/// <summary>Reverse-lookup traceability back to the originating ResourceCandidate/ImportRun, or a
+/// clear "unavailable" state when no matching candidate exists.</summary>
+public sealed record ResourceBankTraceabilityDto(
+    bool TraceabilityAvailable,
+    Guid? CandidateId,
+    Guid? ResourceImportRunId,
+    string? ContentFingerprint,
+    double? QualityScore,
+    DateTime? CandidateCreatedAt,
+    DateTimeOffset? PublishedAtUtc,
+    Guid? PublishedByUserId
+)
+{
+    public static readonly ResourceBankTraceabilityDto Unavailable =
+        new(false, null, null, null, null, null, null, null);
+}
+
+// ── Vocabulary ──────────────────────────────────────────────────────────────────
+
+public sealed record ResourceBankVocabularyListItemDto(
+    Guid Id,
+    string Word,
+    string CefrLevel,
+    string? PartOfSpeech,
+    string? Notes,
+    Guid SourceId,
+    string SourceName,
+    DateTime CreatedAt
+);
+
+public sealed record ResourceBankVocabularyDetailDto(
+    Guid Id,
+    string Word,
+    string CefrLevel,
+    string? PartOfSpeech,
+    string? Notes,
+    DateTime CreatedAt,
+    ResourceCandidateSourceInfoDto Source,
+    ResourceBankTraceabilityDto Traceability
+);
+
+public sealed record ResourceBankVocabularyListResult(
+    IReadOnlyList<ResourceBankVocabularyListItemDto> Items,
+    int TotalCount
+);
+
+// ── Grammar ─────────────────────────────────────────────────────────────────────
+
+public sealed record ResourceBankGrammarListItemDto(
+    Guid Id,
+    string GrammarPoint,
+    string CefrLevel,
+    string? Description,
+    Guid SourceId,
+    string SourceName,
+    DateTime CreatedAt
+);
+
+public sealed record ResourceBankGrammarDetailDto(
+    Guid Id,
+    string GrammarPoint,
+    string CefrLevel,
+    string? Description,
+    DateTime CreatedAt,
+    ResourceCandidateSourceInfoDto Source,
+    ResourceBankTraceabilityDto Traceability
+);
+
+public sealed record ResourceBankGrammarListResult(
+    IReadOnlyList<ResourceBankGrammarListItemDto> Items,
+    int TotalCount
+);
+
+// ── Reading references ─────────────────────────────────────────────────────────
+
+public sealed record ResourceBankReadingReferenceListItemDto(
+    Guid Id,
+    string CefrLevel,
+    string? TextType,
+    string? DifficultyNotes,
+    string? ReferenceExcerpt,
+    Guid SourceId,
+    string SourceName,
+    DateTime CreatedAt
+);
+
+public sealed record ResourceBankReadingReferenceDetailDto(
+    Guid Id,
+    string CefrLevel,
+    string? TextType,
+    string? DifficultyNotes,
+    string? ReferenceExcerpt,
+    DateTime CreatedAt,
+    ResourceCandidateSourceInfoDto Source,
+    ResourceBankTraceabilityDto Traceability
+);
+
+public sealed record ResourceBankReadingReferenceListResult(
+    IReadOnlyList<ResourceBankReadingReferenceListItemDto> Items,
+    int TotalCount
+);
+
+// ── Query service ───────────────────────────────────────────────────────────────
+
+public interface IResourceBankQueryService
+{
+    Task<ResourceBankVocabularyListResult> ListVocabularyAsync(ResourceBankListFilter filter, CancellationToken ct = default);
+    Task<ResourceBankVocabularyDetailDto?> GetVocabularyDetailAsync(Guid id, CancellationToken ct = default);
+
+    Task<ResourceBankGrammarListResult> ListGrammarAsync(ResourceBankListFilter filter, CancellationToken ct = default);
+    Task<ResourceBankGrammarDetailDto?> GetGrammarDetailAsync(Guid id, CancellationToken ct = default);
+
+    Task<ResourceBankReadingReferenceListResult> ListReadingReferencesAsync(ResourceBankListFilter filter, CancellationToken ct = default);
+    Task<ResourceBankReadingReferenceDetailDto?> GetReadingReferenceDetailAsync(Guid id, CancellationToken ct = default);
+}
