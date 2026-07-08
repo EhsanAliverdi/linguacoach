@@ -135,19 +135,22 @@ public sealed class AdminResourceCandidateController : ControllerBase
     private readonly IAdminResourceCandidateNotesHandler _notesHandler;
     private readonly IResourceCandidateAnalysisService _analysisService;
     private readonly IResourceCandidateValidationService _validationService;
+    private readonly IResourceCandidatePreviewService _previewService;
 
     public AdminResourceCandidateController(
         IAdminResourceCandidateListQuery listQuery,
         IAdminResourceCandidateGetQuery getQuery,
         IAdminResourceCandidateNotesHandler notesHandler,
         IResourceCandidateAnalysisService analysisService,
-        IResourceCandidateValidationService validationService)
+        IResourceCandidateValidationService validationService,
+        IResourceCandidatePreviewService previewService)
     {
         _listQuery = listQuery;
         _getQuery = getQuery;
         _notesHandler = notesHandler;
         _analysisService = analysisService;
         _validationService = validationService;
+        _previewService = previewService;
     }
 
     // GET api/admin/resource-candidates?page=1&pageSize=20&sourceId=&importRunId=&candidateType=&
@@ -228,6 +231,20 @@ public sealed class AdminResourceCandidateController : ControllerBase
         {
             return NotFound(new { error = ex.Message });
         }
+    }
+
+    // GET api/admin/resource-candidates/{candidateId}/preview
+    // Phase E3 — read-only rendered preview: a "what the student would see" projection per
+    // candidate type plus an admin-only provenance/validation/AI-analysis summary. Never mutates
+    // the candidate and never writes to any published Cefr* bank table. No publish/approve
+    // action exists here (Phase E4).
+    [HttpGet("{candidateId:guid}/preview")]
+    public async Task<IActionResult> Preview(Guid candidateId, CancellationToken ct)
+    {
+        var result = await _previewService.GetPreviewAsync(candidateId, ct);
+        return result is null
+            ? NotFound(new { error = $"Resource candidate '{candidateId}' was not found." })
+            : Ok(result);
     }
 
     public sealed record SetCandidateNotesRequest(string? AdminNotes);

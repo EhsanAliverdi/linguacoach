@@ -4,10 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { AdminResourceCandidateService } from '../../../core/services/admin-resource-import.service';
 import {
   AdminResourceCandidateDto,
+  ResourceCandidatePreviewDto,
   RESOURCE_CANDIDATE_TYPES,
   RESOURCE_VALIDATION_STATUSES,
   RESOURCE_REVIEW_STATUSES,
 } from '../../../core/models/admin-resource-import.models';
+import { FormioRendererComponent } from '../../../shared/formio/formio-renderer.component';
 import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
@@ -58,6 +60,7 @@ const PAGE_SIZE = 20;
     SpAdminTableComponent,
     SpAdminTableFooterComponent,
     SpAdminTextareaComponent,
+    FormioRendererComponent,
   ],
   templateUrl: './admin-resource-candidates.component.html',
 })
@@ -95,6 +98,13 @@ export class AdminResourceCandidatesComponent implements OnInit {
   validating = signal(false);
   lastValidationErrors = signal<string[]>([]);
   lastValidationWarnings = signal<string[]>([]);
+
+  // ── Phase E3 — read-only rendered preview drawer ────────────────────────
+  previewDrawerOpen = signal(false);
+  previewLoading = signal(false);
+  previewError = signal('');
+  preview = signal<ResourceCandidatePreviewDto | null>(null);
+  previewRawJsonOpen = signal(false);
 
   constructor(private svc: AdminResourceCandidateService) {}
 
@@ -239,15 +249,46 @@ export class AdminResourceCandidatesComponent implements OnInit {
   rowActions(_item: AdminResourceCandidateDto): SpAdminRowAction[] {
     return [
       { id: 'view', label: 'View', icon: 'view', tone: 'default' },
+      { id: 'preview', label: 'Preview', icon: 'view', tone: 'default' },
       { id: 'analyze', label: 'Analyze', icon: 'sparkles', tone: 'default' },
     ];
   }
 
   onRowAction(actionId: string, item: AdminResourceCandidateDto): void {
     if (actionId === 'view') this.openDrawer(item);
+    if (actionId === 'preview') this.openPreview(item.candidateId);
     if (actionId === 'analyze') {
       this.openDrawer(item);
       this.analyzeSelected();
+    }
+  }
+
+  /** Phase E3 — opens the read-only rendered preview drawer for one candidate. Read-only: never
+   *  mutates the candidate, no approve/reject/publish action exists here (Phase E4). */
+  openPreview(candidateId: string): void {
+    this.previewError.set('');
+    this.previewRawJsonOpen.set(false);
+    this.preview.set(null);
+    this.previewDrawerOpen.set(true);
+    this.previewLoading.set(true);
+    this.svc.preview(candidateId).subscribe({
+      next: result => { this.previewLoading.set(false); this.preview.set(result); },
+      error: err => { this.previewLoading.set(false); this.previewError.set(err.error?.error ?? 'Could not load preview.'); },
+    });
+  }
+
+  closePreview(): void {
+    this.previewDrawerOpen.set(false);
+  }
+
+  /** Parses a rendered ActivityTemplateCandidate's Form.io schema JSON string into an object for
+   *  app-formio-renderer's `[schema]` input (which expects a parsed object, not a JSON string). */
+  parsedFormIoSchema(schemaJson: string | null): unknown {
+    if (!schemaJson) return null;
+    try {
+      return JSON.parse(schemaJson);
+    } catch {
+      return null;
     }
   }
 }

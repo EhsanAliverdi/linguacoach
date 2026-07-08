@@ -1165,3 +1165,28 @@ li.active .wizard-page-label,
 .sf-speaking-btn-record { @apply bg-indigo-600 text-white hover:bg-indigo-700; }
 .sf-speaking-btn-stop { @apply bg-red-600 text-white hover:bg-red-700; }
 .sf-speaking-btn-rerecord { @apply bg-white text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50; }
+
+/* ── Phase E3 — resource candidate rendered preview: student-visible vs admin-only panels ───
+   Visually/structurally distinct per spec — a colored left border + tinted background per panel,
+   not just two unlabeled blocks of similar-looking text. */
+.sp-e3-preview-panel {
+  @apply mt-4 rounded-xl border-l-4 p-4;
+}
+.sp-e3-preview-panel-title {
+  @apply m-0 mb-3 text-xs font-bold uppercase tracking-wide;
+}
+.sp-e3-preview-panel--student {
+  @apply border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30;
+}
+.sp-e3-preview-panel--student .sp-e3-preview-panel-title {
+  @apply text-emerald-700 dark:text-emerald-300;
+}
+.sp-e3-preview-panel--admin {
+  @apply border-slate-400 bg-slate-50 dark:bg-slate-900/40;
+}
+.sp-e3-preview-panel--admin .sp-e3-preview-panel-title {
+  @apply text-slate-600 dark:text-slate-300;
+}
+.sp-e3-passage-text {
+  @apply whitespace-pre-wrap text-sm leading-relaxed;
+}

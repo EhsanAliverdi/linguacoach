@@ -193,4 +193,63 @@ public sealed class AdminResourceImportEndpointTests : IClassFixture<ApiTestFact
         Assert.Equal(1, batchBody.GetProperty("candidatesAnalyzed").GetInt32());
         Assert.False(batchBody.GetProperty("batchLimitReached").GetBoolean());
     }
+
+    // ── Phase E3 — read-only rendered preview endpoint ──────────────────────────────
+
+    [Fact]
+    public async Task Preview_Unauthenticated_Returns401()
+    {
+        var client = _factory.CreateClient();
+        var response = await client.GetAsync($"/api/admin/resource-candidates/{Guid.NewGuid()}/preview");
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Preview_NonAdmin_Returns403()
+    {
+        var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"student-{Guid.NewGuid():N}@test.linguacoach.com");
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var response = await client.GetAsync($"/api/admin/resource-candidates/{Guid.NewGuid()}/preview");
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Preview_NonexistentCandidate_Returns404()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var response = await client.GetAsync($"/api/admin/resource-candidates/{Guid.NewGuid()}/preview");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Preview_ExistingCandidate_Returns200_And_Never_Writes_To_Published_Bank_Tables()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var (_, candidateId) = await ImportOneApprovedCandidateAsync(client);
+
+        var beforeResp = await client.GetAsync($"/api/admin/resource-candidates/{candidateId}");
+        var beforeBody = await beforeResp.Content.ReadFromJsonAsync<JsonElement>();
+        var updatedAtBefore = beforeBody.GetProperty("updatedAtUtc").GetString();
+
+        var previewResp = await client.GetAsync($"/api/admin/resource-candidates/{candidateId}/preview");
+        Assert.Equal(HttpStatusCode.OK, previewResp.StatusCode);
+        var previewBody = await previewResp.Content.ReadFromJsonAsync<JsonElement>();
+
+        Assert.Equal("VocabularyEntry", previewBody.GetProperty("candidateType").GetString());
+        Assert.True(previewBody.TryGetProperty("renderedPreviewModel", out _));
+        Assert.True(previewBody.TryGetProperty("source", out var sourceEl));
+        Assert.False(string.IsNullOrWhiteSpace(sourceEl.GetProperty("sourceName").GetString()));
+
+        var afterResp = await client.GetAsync($"/api/admin/resource-candidates/{candidateId}");
+        var afterBody = await afterResp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(updatedAtBefore, afterBody.GetProperty("updatedAtUtc").GetString());
+    }
 }

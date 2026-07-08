@@ -168,7 +168,7 @@
     @if (actionError()) { <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert> }
   }
 
-  @if (selectedCandidate()) {
+  @if (selectedCandidate(); as footerCandidate) {
     <div slot="footer">
       <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeDrawer()">Close</sp-admin-button>
       <sp-admin-button variant="neutral" appearance="outline" [disabled]="validating()" (clicked)="validateSelected()">
@@ -177,10 +177,200 @@
       <sp-admin-button variant="neutral" appearance="outline" [disabled]="analyzing()" (clicked)="analyzeSelected()">
         {{ analyzing() ? 'Analyzing…' : 'Analyze' }}
       </sp-admin-button>
+      <sp-admin-button variant="neutral" appearance="outline" (clicked)="openPreview(footerCandidate.candidateId)">
+        Preview
+      </sp-admin-button>
       <sp-admin-button variant="primary" [disabled]="savingNotes()" (clicked)="saveNotes()">
         {{ savingNotes() ? 'Saving…' : 'Save notes' }}
       </sp-admin-button>
     </div>
   }
+
+</sp-admin-drawer>
+
+<!-- ── Phase E3 — read-only rendered preview drawer ────────────────────────── -->
+<sp-admin-drawer
+  [open]="previewDrawerOpen()"
+  [title]="preview()?.title ?? 'Candidate preview'"
+  side="right"
+  size="xl"
+  (closed)="closePreview()">
+
+  <sp-admin-alert variant="warning">
+    E3 preview only — publish is not available until E4. Nothing here has been published to the student-facing bank.
+  </sp-admin-alert>
+
+  @if (previewLoading()) {
+    <sp-admin-loading-state message="Loading preview" />
+  }
+  @if (previewError()) {
+    <sp-admin-error-state title="Could not load preview" [message]="previewError()" />
+  }
+
+  @if (preview(); as p) {
+    @if (!p.canPreview) {
+      <sp-admin-alert variant="warning">
+        This candidate could not be fully rendered.
+        @for (w of p.previewWarnings; track w) { <div>{{ w }}</div> }
+      </sp-admin-alert>
+    }
+
+    <!-- What the student would see ──────────────────────────────────────── -->
+    <section class="sp-e3-preview-panel sp-e3-preview-panel--student">
+      <h3 class="sp-e3-preview-panel-title">What the student would see</h3>
+
+      @switch (p.renderedPreviewModel.kind) {
+        @case ('VocabularyEntry') {
+          <div class="sp-admin-form-stack">
+            <sp-admin-form-field label="Word"><strong>{{ p.renderedPreviewModel.word }}</strong></sp-admin-form-field>
+            @if (p.renderedPreviewModel.partOfSpeech) {
+              <sp-admin-form-field label="Part of speech">{{ p.renderedPreviewModel.partOfSpeech }}</sp-admin-form-field>
+            }
+            @if (p.renderedPreviewModel.definition) {
+              <sp-admin-form-field label="Definition">{{ p.renderedPreviewModel.definition }}</sp-admin-form-field>
+            }
+            @if (p.renderedPreviewModel.example) {
+              <sp-admin-form-field label="Example">{{ p.renderedPreviewModel.example }}</sp-admin-form-field>
+            }
+          </div>
+        }
+        @case ('GrammarProfileEntry') {
+          <div class="sp-admin-form-stack">
+            <sp-admin-form-field label="Grammar point"><strong>{{ p.renderedPreviewModel.grammarTitle }}</strong></sp-admin-form-field>
+            @if (p.renderedPreviewModel.explanation) {
+              <sp-admin-form-field label="Explanation">{{ p.renderedPreviewModel.explanation }}</sp-admin-form-field>
+            }
+            @if (p.renderedPreviewModel.grammarExamples?.length) {
+              <sp-admin-form-field label="Examples">
+                <ul>
+                  @for (ex of p.renderedPreviewModel.grammarExamples; track ex) { <li>{{ ex }}</li> }
+                </ul>
+              </sp-admin-form-field>
+            }
+          </div>
+        }
+        @case ('ReadingPassage') {
+          <div class="sp-admin-form-stack">
+            <sp-admin-form-field label="Title"><strong>{{ p.renderedPreviewModel.title }}</strong></sp-admin-form-field>
+            @if (p.renderedPreviewModel.passageText) {
+              <sp-admin-form-field
+                [label]="(p.renderedPreviewModel.wordCount ?? 0) + ' words · ~' + (p.renderedPreviewModel.estimatedReadingMinutes ?? 0) + ' min read'">
+                <p class="sp-e3-passage-text">{{ p.renderedPreviewModel.passageText }}</p>
+              </sp-admin-form-field>
+            }
+          </div>
+        }
+        @case ('ActivityTemplateCandidate') {
+          @if (p.renderedPreviewModel.studentVisibleFormIoSchemaJson) {
+            <app-formio-renderer [schema]="parsedFormIoSchema(p.renderedPreviewModel.studentVisibleFormIoSchemaJson)" [disabled]="true" />
+          } @else {
+            <sp-admin-empty-state title="No student-safe schema available" message="This candidate's Form.io schema could not be rendered — see the warnings above." />
+          }
+        }
+        @default {
+          <sp-admin-form-field label="Generic field summary" hint="This candidate type has no specialized preview yet.">
+            <ul>
+              @for (f of p.renderedPreviewModel.fieldSummary; track f) { <li>{{ f }}</li> }
+            </ul>
+          </sp-admin-form-field>
+        }
+      }
+    </section>
+
+    <!-- Admin-only ────────────────────────────────────────────────────────── -->
+    <section class="sp-e3-preview-panel sp-e3-preview-panel--admin">
+      <h3 class="sp-e3-preview-panel-title">Admin-only</h3>
+
+      <div class="sp-admin-form-stack">
+        <sp-admin-form-field label="Source">
+          {{ p.source.sourceName }} · <code>{{ p.source.licenseType }}</code>
+          @if (!p.source.allowsStudentDisplay || !p.source.allowsCommercialUse) {
+            <sp-admin-badge tone="warning">Restricted use</sp-admin-badge>
+          }
+        </sp-admin-form-field>
+        @if (p.source.attributionText) {
+          <sp-admin-form-field label="Attribution">{{ p.source.attributionText }}</sp-admin-form-field>
+        }
+        @if (p.source.sourceUrl || p.source.downloadUrl) {
+          <sp-admin-form-field label="Links">
+            @if (p.source.sourceUrl) { <div><a [href]="p.source.sourceUrl" target="_blank" rel="noopener">Source</a></div> }
+            @if (p.source.downloadUrl) { <div><a [href]="p.source.downloadUrl" target="_blank" rel="noopener">Download</a></div> }
+          </sp-admin-form-field>
+        }
+
+        <sp-admin-form-field label="Validation status">
+          <sp-admin-badge [tone]="validationStatusTone(p.validationStatus)">{{ p.validationStatus }}</sp-admin-badge>
+          · Review: {{ p.reviewStatus }}
+        </sp-admin-form-field>
+        @if (p.validationErrors.length > 0) {
+          <sp-admin-form-field label="Validation errors">
+            <ul>@for (e of p.validationErrors; track e) { <li>{{ e }}</li> }</ul>
+          </sp-admin-form-field>
+        }
+        @if (p.validationWarnings.length > 0) {
+          <sp-admin-form-field label="Validation warnings">
+            <ul>@for (w of p.validationWarnings; track w) { <li>{{ w }}</li> }</ul>
+          </sp-admin-form-field>
+        }
+        @if (p.duplicateIndicators.length > 0) {
+          <sp-admin-form-field label="Duplicate indicators">
+            <ul>@for (d of p.duplicateIndicators; track d) { <li>{{ d }}</li> }</ul>
+          </sp-admin-form-field>
+        }
+
+        <sp-admin-form-field label="CEFR / skill">
+          {{ p.cefrLevel ?? '—' }} @if (p.cefrConfidence !== null) { ({{ (p.cefrConfidence * 100).toFixed(0) }}%) }
+          @if (p.primarySkill) { · {{ p.primarySkill }} @if (p.subskill) { / {{ p.subskill }} } }
+        </sp-admin-form-field>
+        @if (p.qualityScore !== null) {
+          <sp-admin-form-field label="Quality score">{{ (p.qualityScore * 100).toFixed(0) }}%</sp-admin-form-field>
+        }
+        @if (p.safetyIssues.length > 0) {
+          <sp-admin-form-field label="Safety issues">
+            <sp-admin-badge tone="danger">{{ p.safetyIssues.join(', ') }}</sp-admin-badge>
+          </sp-admin-form-field>
+        }
+
+        @if (p.aiAnalysisSummary; as ai) {
+          <sp-admin-form-field label="AI analysis summary (advisory only)">
+            CEFR {{ ai.cefrLevel ?? '—' }}
+            @if (ai.cefrConfidence !== null) { ({{ (ai.cefrConfidence * 100).toFixed(0) }}%) }
+            · {{ ai.primarySkill ?? '—' }} @if (ai.subskill) { / {{ ai.subskill }} }
+          </sp-admin-form-field>
+        }
+
+        <sp-admin-form-field label="Content fingerprint"><code>{{ p.contentFingerprint }}</code></sp-admin-form-field>
+        <sp-admin-form-field label="Raw record">
+          {{ p.rawRecordSummary.extractionStatus }} — {{ p.rawRecordSummary.excerpt }}
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Import run">
+          {{ p.importRunSummary.status }} (started {{ p.importRunSummary.startedAtUtc | date:'short' }})
+        </sp-admin-form-field>
+
+        <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="previewRawJsonOpen.set(!previewRawJsonOpen())">
+          {{ previewRawJsonOpen() ? 'Hide' : 'Show' }} raw/normalized JSON
+        </sp-admin-button>
+        @if (previewRawJsonOpen()) {
+          <sp-admin-form-field label="Normalized content">
+            <pre>{{ p.normalizedContent | json }}</pre>
+          </sp-admin-form-field>
+          @if (p.adminOnlyActivityMetadataJson) {
+            <sp-admin-form-field label="Admin-only activity metadata (scoring/rubric — never student-visible)">
+              <pre>{{ p.adminOnlyActivityMetadataJson }}</pre>
+            </sp-admin-form-field>
+          }
+          @if (p.aiAnalysisDetailsJson) {
+            <sp-admin-form-field label="Raw AI analysis (admin-only)">
+              <pre>{{ p.aiAnalysisDetailsJson }}</pre>
+            </sp-admin-form-field>
+          }
+        }
+      </div>
+    </section>
+  }
+
+  <div slot="footer">
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closePreview()">Close</sp-admin-button>
+  </div>
 
 </sp-admin-drawer>

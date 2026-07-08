@@ -15,6 +15,7 @@ import {
   ResourceCandidateAnalyzeResponse,
   ResourceCandidateValidationResult,
   ResourceCandidateBatchAnalysisResult,
+  ResourceCandidatePreviewDto,
 } from '../models/admin-resource-import.models';
 
 @Injectable({ providedIn: 'root' })
@@ -130,5 +131,10 @@ export class AdminResourceCandidateService {
   /** Phase E2 — re-runs deterministic rule validation only (no AI call). */
   validate(candidateId: string): Observable<ResourceCandidateValidationResult> {
     return this.http.post<ResourceCandidateValidationResult>(`${this.base}/${candidateId}/validate`, {});
+  }
+
+  /** Phase E3 — read-only rendered preview. Never mutates the candidate. */
+  preview(candidateId: string): Observable<ResourceCandidatePreviewDto> {
+    return this.http.get<ResourceCandidatePreviewDto>(`${this.base}/${candidateId}/preview`);
   }
 }

@@ -544,6 +544,9 @@ public static class DependencyInjection
             LinguaCoach.Infrastructure.ResourceImport.ResourceCandidateValidationService>();
         services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceCandidateBatchAnalysisService,
             LinguaCoach.Infrastructure.ResourceImport.ResourceCandidateBatchAnalysisService>();
+        // Phase E3 — read-only rendered preview for a staged ResourceCandidate.
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceCandidatePreviewService,
+            LinguaCoach.Infrastructure.ResourceImport.ResourceCandidatePreviewService>();
 
         // AI Bank-First Teaching Architecture Phase 9 — cross-entity admin review queue
         services.AddScoped<LinguaCoach.Application.Admin.ReviewQueue.IAdminReviewQueueQuery,

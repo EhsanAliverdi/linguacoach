@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase E2)
+lastUpdated: 2026-07-08 (Phase E3)
 owner: engineering
 supersedes:
 supersededBy:
@@ -14,33 +14,47 @@ Last updated: 2026-07-08
 
 ## Active sprint
 
+**Phase E3 — Admin Rendered Preview for Resource Candidates (2026-07-08)** — complete
+
+**Last completed: Phase E3.** Added `GET /api/admin/resource-candidates/{id}/preview`
+(`ResourceCandidatePreviewService`) returning a bank-type-specific rendered model —
+`VocabularyEntry`/`GrammarProfileEntry`/`ReadingPassage` get dedicated preview cards;
+`ActivityTemplateCandidate` reuses `app-formio-renderer`, but only after **re-validating the
+schema live** through `IFormIoSchemaValidationService` at preview time, never trusting E2's
+earlier pass as still-current — any scoring/rubric metadata stays admin-only, never merged into
+the student-visible schema. **Read-only end to end** (no `SaveChangesAsync`, `UpdatedAtUtc`
+unchanged, asserted by test). Unsupported/malformed shapes degrade to `CanPreview=false` + a
+warning, never an exception. Admin UI gained a dedicated Preview drawer with a green
+"student-visible" panel and a slate "admin-only" panel, plus a persistent "E3 preview only —
+publish is not available until E4" banner — no approve/reject/publish control exists anywhere.
++14 backend tests (3,417 → 3,430 passed). **Corrects a scope assumption from the original Phase
+E0 plan**: no approve action exists yet at all (that's E4's own deliverable, along with its
+"preview viewed before approve" UI gate) — E3 built the preview capability E4 will depend on. See
+`docs/architecture/english-resource-bank-import-platform.md` for full detail.
+
+**Before this: Phase E2.** Implemented gates 4-6 — AI-advisory analysis
+(`ResourceCandidateAnalysisService`) plus fully deterministic rule validation and
+exact-fingerprint dedup (`ResourceCandidateValidationService`, sole authority on
+`ValidationStatus`). +21 backend tests. Committed as `18015671`.
+
+**Next implementation phase: Phase E4** — publish to first banks (vocabulary, grammar); must also
+build the approve action itself and its preview-viewed UI gate. **Not started.** Phase D remains
+gated on Phase E reaching E4 — E1/E2/E3 built staging/analysis/validation/preview only, nothing is
+published yet. PG-v2 implementation remains not started. Today lesson generation remains 100%
+legacy `IAiActivityGenerator` freeform generation. See `docs/roadmap/road-map.md` §19a for the
+full phase order.
+
+---
+
+## Previous sprint
+
 **Phase E2 — AI Analysis, Rule Validation, Dedup/Fingerprint, and Candidate Quality Gates (2026-07-08)** — complete
 
-**Last completed: Phase E2.** Implemented gates 4-6 for staged `ResourceCandidate` rows.
-`ResourceCandidateAnalysisService` (gate 4, **advisory only**) reuses
-`ActivityTemplateInstanceGenerator`'s AI-call pattern to suggest CEFR level/confidence,
-skill/subskill, difficulty band, and tag/quality/safety metadata — degrades gracefully (never
-throws, never corrupts candidate data) on AI failure/unavailability.
-`ResourceCandidateValidationService` (gates 5-6, fully deterministic) is the **sole authority** on
-`ValidationStatus` — English-only, CEFR validity + a 0.6 confidence review threshold,
-skill/subskill taxonomy, a 5000-char text bound, safety-tag hard-fail, a live source-approval
-re-check, Form.io answer-leak safety for `ActivityTemplateCandidate` rows, an attribution
-heuristic, and exact-fingerprint dedup within-run/within-source/global (never auto-deletes a
-duplicate). New endpoints: analyze-one, validate-one, analyze-import-run (batched, capped at
-50/call). Admin UI gained Analyze/Re-validate actions and CEFR/skill/quality/validation display —
-no approve/publish action. +21 backend tests (3,396 → 3,417 passed) including a dedicated
-zero-published-rows assertion. See `docs/architecture/english-resource-bank-import-platform.md`
-for full detail, including every judgment call/threshold made.
-
-**Before this: Phase E1.** Implemented the staging foundation — source registry extension, import
-runs, raw records, candidates, gates 1-3 (English-only, license/source-approval, parser).
-Zero rows published. Committed as `874ee423`.
-
-**Next implementation phase: Phase E3** — admin rendered preview (gate 7a prerequisite). **Not
-started.** Phase D remains gated on Phase E reaching at least E4 — E1/E2 built staging/analysis/
-validation only, nothing is published yet. PG-v2 implementation remains not started. Today lesson
-generation remains 100% legacy `IAiActivityGenerator` freeform generation. See
-`docs/roadmap/road-map.md` §19a for the full phase order.
+Implemented gates 4-6: `ResourceCandidateAnalysisService` (gate 4, advisory-only AI enrichment)
+and `ResourceCandidateValidationService` (gates 5-6, fully deterministic, sole authority on
+`ValidationStatus`, including exact-fingerprint dedup within-run/within-source/global). New
+analyze-one/validate-one/analyze-import-run (batched, capped at 50) endpoints. Admin UI gained
+Analyze/Re-validate actions. +21 backend tests (3,396 → 3,417 passed). Committed as `18015671`.
 
 ---
 

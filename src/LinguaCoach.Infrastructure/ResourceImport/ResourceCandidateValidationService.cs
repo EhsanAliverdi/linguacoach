@@ -219,37 +219,11 @@ public sealed class ResourceCandidateValidationService : IResourceCandidateValid
     /// Looks for the Form.io-shaped payload staged for an ActivityTemplateCandidate. E1's
     /// ResourceImportService stores the whole imported row (field-name-keyed) as
     /// <c>NormalizedJson</c> — the actual schema lives under whichever of 'formio'/'schema'/
-    /// 'template' was populated on that row.
+    /// 'template' was populated on that row. Delegates to <see cref="ResourceCandidateFormIoHelper"/>
+    /// (Phase E3 factored this lookup out so the preview service can reuse the exact same logic).
     /// </summary>
-    private static string? ExtractFormIoSchemaJson(ResourceCandidate candidate)
-    {
-        try
-        {
-            using var doc = JsonDocument.Parse(candidate.NormalizedJson);
-            if (doc.RootElement.ValueKind != JsonValueKind.Object)
-                return null;
-
-            foreach (var fieldName in new[] { "formio", "schema", "template" })
-            {
-                foreach (var prop in doc.RootElement.EnumerateObject())
-                {
-                    if (string.Equals(prop.Name, fieldName, StringComparison.OrdinalIgnoreCase)
-                        && prop.Value.ValueKind == JsonValueKind.String
-                        && !string.IsNullOrWhiteSpace(prop.Value.GetString()))
-                    {
-                        return prop.Value.GetString();
-                    }
-                }
-            }
-        }
-        catch (JsonException)
-        {
-            // Not parseable — ExtractFormIoSchemaJson returns null, caller records the "no
-            // recognizable schema" error rather than throwing.
-        }
-
-        return null;
-    }
+    private static string? ExtractFormIoSchemaJson(ResourceCandidate candidate) =>
+        ResourceCandidateFormIoHelper.ExtractFormIoSchemaJson(candidate.NormalizedJson);
 
     // ── Gate: attribution ───────────────────────────────────────────────────────
     private static void ValidateAttribution(CefrResourceSource source, List<string> warnings, ref bool needsHumanReview)

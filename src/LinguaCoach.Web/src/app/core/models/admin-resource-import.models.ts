@@ -170,6 +170,104 @@ export interface ResourceImportResult {
   errorSummary: string | null;
 }
 
+// ── Phase E3 — read-only rendered preview ───────────────────────────────────────
+
+export interface ResourceCandidateSourceInfoDto {
+  sourceId: string;
+  sourceName: string;
+  licenseType: string;
+  sourceUrl: string | null;
+  downloadUrl: string | null;
+  attributionText: string | null;
+  allowsStudentDisplay: boolean;
+  allowsCommercialUse: boolean;
+}
+
+export interface ResourceCandidateTagsDto {
+  contextTags: string[];
+  focusTags: string[];
+  grammarTags: string[];
+  vocabularyTags: string[];
+  pronunciationTags: string[];
+  activitySuitabilityTags: string[];
+}
+
+export interface ResourceCandidateAiAnalysisSummaryDto {
+  cefrLevel: string | null;
+  cefrConfidence: number | null;
+  primarySkill: string | null;
+  subskill: string | null;
+  difficultyBand: number | null;
+  qualityScore: number | null;
+  safetyTags: string[];
+}
+
+export interface ResourceCandidateRawRecordSummaryDto {
+  rawRecordId: string;
+  extractionStatus: string;
+  excerpt: string;
+}
+
+export interface ResourceCandidateImportRunSummaryDto {
+  importRunId: string;
+  sourceId: string;
+  startedAtUtc: string;
+  completedAtUtc: string | null;
+  status: string;
+}
+
+/** One flexible rendered-preview shape covering all 5 candidate types — only the fields
+ *  relevant to `kind` are populated. `studentVisibleFormIoSchemaJson` is the ONLY slot ever
+ *  rendered in the "what the student would see" panel for an ActivityTemplateCandidate row. */
+export interface ResourceCandidateRenderedPreviewDto {
+  kind: string;
+  word: string | null;
+  partOfSpeech: string | null;
+  definition: string | null;
+  example: string | null;
+  grammarTitle: string | null;
+  explanation: string | null;
+  grammarExamples: string[] | null;
+  title: string | null;
+  passageText: string | null;
+  wordCount: number | null;
+  estimatedReadingMinutes: number | null;
+  studentVisibleFormIoSchemaJson: string | null;
+  fieldSummary: string[] | null;
+}
+
+export interface ResourceCandidatePreviewDto {
+  candidateId: string;
+  candidateType: string;
+  title: string;
+  languageCode: string;
+  canonicalText: string;
+  normalizedContent: Record<string, string | null>;
+  renderedPreviewModel: ResourceCandidateRenderedPreviewDto;
+  source: ResourceCandidateSourceInfoDto;
+  cefrLevel: string | null;
+  cefrConfidence: number | null;
+  primarySkill: string | null;
+  subskill: string | null;
+  difficultyBand: number | null;
+  tags: ResourceCandidateTagsDto;
+  qualityScore: number | null;
+  safetyIssues: string[];
+  validationStatus: string;
+  validationErrors: string[];
+  validationWarnings: string[];
+  reviewStatus: string;
+  contentFingerprint: string;
+  duplicateIndicators: string[];
+  aiAnalysisSummary: ResourceCandidateAiAnalysisSummaryDto | null;
+  aiAnalysisDetailsJson: string | null;
+  rawRecordSummary: ResourceCandidateRawRecordSummaryDto;
+  importRunSummary: ResourceCandidateImportRunSummaryDto;
+  canPreview: boolean;
+  previewWarnings: string[];
+  adminOnlyActivityMetadataJson: string | null;
+}
+
 export const RESOURCE_IMPORT_MODES = ['Csv', 'Json', 'Jsonl'] as const;
 export const RESOURCE_CANDIDATE_TYPES = [
   'Unknown', 'VocabularyEntry', 'GrammarProfileEntry', 'ReadingPassage', 'ActivityTemplateCandidate',

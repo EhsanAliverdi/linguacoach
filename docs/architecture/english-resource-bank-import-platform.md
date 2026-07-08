@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase E2)
+lastUpdated: 2026-07-08 (Phase E3)
 owner: architecture
 supersedes:
 supersededBy:
@@ -9,14 +9,16 @@ supersededBy:
 # English Resource Bank Import, Review, Preview, and Publishing Platform (Phase E)
 
 **Date planned:** 2026-07-08 (Plan-Sync-After-C1), **finalized:** 2026-07-08 (Phase E0),
-**E1 implemented:** 2026-07-08, **E2 implemented:** 2026-07-08
-**Status:** E1 (staging) and E2 (AI analysis + validation gates 4-6) implemented. E3 (rendered
-preview) not started.
-**No rows have ever been written to any published `Cefr*` bank table** — staging/analysis only,
-by design and by test (`No_rows_are_ever_written_to_any_published_cefr_bank_table`, present in
-both the E1 and E2 test suites). **AI analysis is advisory only** — backend rule validation
+**E1 implemented:** 2026-07-08, **E2 implemented:** 2026-07-08, **E3 implemented:** 2026-07-08
+**Status:** E1 (staging), E2 (AI analysis + validation gates 4-6), and E3 (admin rendered
+preview) implemented. E4 (publish to first banks) not started.
+**No rows have ever been written to any published `Cefr*` bank table** — staging/analysis/preview
+only, by design and by test (`No_rows_are_ever_written_to_any_published_cefr_bank_table`, present
+in the E1, E2, and E3 test suites). **AI analysis is advisory only** — backend rule validation
 (`ResourceCandidateValidationService`) remains the sole authority on `ValidationStatus`; the AI
-never sets it directly.
+never sets it directly. **The admin preview clearly separates what a student would see from
+admin-only metadata** (source/license, validation results, AI analysis, fingerprint/dedup) — no
+candidate can be approved based on invisible JSON alone once E4 adds an approval step.
 **Supersedes the informal "seed CEFR-J/UniversalCEFR data" framing** used in earlier planning
 docs (`docs/reviews/2026-07-07-ai-bank-assessment-architecture-plan.md` §4.6/§9,
 `docs/architecture/cefr-resource-licensing-review.md`). Those docs' licensing findings still
@@ -330,30 +332,56 @@ stability, and the bank-table-untouched guarantee.
 - **Explicitly deferred (confirmed not built)**: embeddings/semantic dedup (E8), the rendered
   preview UI (E3), any approve/reject/publish action (E4).
 
-### E3 — Admin rendered preview
-- **Backend**: a read-only "preview projection" endpoint per candidate, rendering the bank-type-
-  specific student-facing shape (e.g. a vocabulary-entry card: word/CEFR level/part of speech; a
-  grammar-entry card: grammar point/description) — **not** a Form.io schema render. This is a
-  deliberate departure from `app-formio-renderer`: these are reference-data bank entries, not
-  interactive Form.io activities, so a dedicated read-only preview card (reusing
-  `sp-admin-card`/`sp-admin-drawer` from the shared admin component library) is the right shape,
-  not the Form.io renderer used by Placement/Activity Templates.
-- **Admin pages**: a Candidate Preview drawer/page — rendered card + a raw/candidate JSON toggle
-  for debugging, plus the gate 1-6 validation results.
-- **Acceptance**: the approve action (gate 7a) is **UI-disabled until the admin has opened the
-  rendered preview at least once for that candidate** — "admin must not approve invisible JSON
-  only" is enforced as a UI gate, not just a written convention.
-- **Explicitly deferred**: the publish action itself (E4), bulk approve/reject actions.
+### E3 — Admin rendered preview — implemented (2026-07-08)
+- **Backend**: `GET /api/admin/resource-candidates/{id}/preview` (`IResourceCandidatePreviewService`/
+  `ResourceCandidatePreviewService`) returns a `ResourceCandidatePreviewDto` with a bank-type-
+  specific rendered model — `VocabularyEntry` (word/POS/definition/example), `GrammarProfileEntry`
+  (grammar title/explanation/examples), `ReadingPassage` (title/passage text/word count/reading
+  time), plus source/license/provenance, CEFR/skill/subskill/difficulty, tags, validation status/
+  errors/warnings, duplicate indicators, and an AI-analysis summary (admin-only). **Not a Form.io
+  schema render for these three bank types** — a dedicated read-only preview model (reusing
+  `sp-admin-card`/`sp-admin-drawer`) is the right shape for reference-data bank entries, not the
+  Form.io renderer used by Placement/Activity Templates. **The one exception**:
+  `ActivityTemplateCandidate` rows DO carry a real Form.io schema, so that candidate type's
+  student-visible render target reuses `app-formio-renderer` — but only after the schema is
+  **re-validated live** through `IFormIoSchemaValidationService` at preview time (not just trusted
+  from E2's earlier validation pass); if it fails, nothing is exposed as student-visible and a
+  `previewWarnings` entry explains why. Any scoring/rubric-shaped metadata on an
+  `ActivityTemplateCandidate` row goes only into a separate `AdminOnlyActivityMetadataJson` field,
+  never merged into the student-visible schema. **Read-only, never mutates a candidate** —
+  no `SaveChangesAsync` call, `UpdatedAtUtc` unchanged after a preview call (asserted by test).
+  Unsupported/malformed candidate shapes never throw — `CanPreview=false` plus a `previewWarnings`
+  explanation, with whatever generic info (canonical text, source/license) is still available.
+- **Admin pages**: a second, dedicated Preview drawer on `/admin/resource-candidates` (kept
+  separate from the existing detail/notes drawer) with two clearly distinguished panels — a
+  green-bordered **"What the student would see"** panel (the rendered model) and a slate-bordered
+  **"Admin-only"** panel (source/license, validation results, AI analysis, fingerprint/duplicate
+  indicators, raw/normalized JSON) — plus a persistent **"E3 preview only — publish is not
+  available until E4"** banner. No approve/reject/publish control exists anywhere in this UI.
+- **Acceptance (revised from the original E0 plan)**: the original plan assumed an approve action
+  would already exist by E3 and be UI-gated on preview having been viewed. **No approve/publish
+  action exists yet at all** (that's E4's own deliverable) — so there is nothing to gate in E3.
+  The "admin must not approve invisible JSON only" principle is instead satisfied by E3 existing
+  at all: by the time E4 adds an approve action, a rendered preview will already be available for
+  every candidate. **E4 must still enforce** "preview viewed before approve enabled" as its own
+  UI gate when it builds the approve action — this doc's E4 section below is updated accordingly.
+- **Explicitly deferred (confirmed not built)**: the publish action itself (E4), any approve/
+  reject action, bulk actions, final-bank browsing/search.
 
 ### E4 — Publish to first banks
 - **Backend**: a `PublishCandidateHandler` — requires `ReviewStatus == Approved` AND
-  `ValidationStatus == Passed` AND the preview-viewed UI gate from E3; maps `CandidateDataJson`
-  into a new `CefrVocabularyEntry` or `CefrGrammarProfileEntry` row (matched by `BankType`); sets
-  `ResourceCandidate.IsPublished=true`/`PublishedAtUtc`/`PublishedEntityType`/`PublishedEntityId`;
-  links the published row's provenance back to `SourceId`.
-- **Admin pages**: a Publish action on the Candidate detail/review page (enabled only once the E3
-  gate and E4 preconditions are met). Full published-bank browsing is **E5**, not E4 — E4 adds
-  only the publish action and a minimal confirmation, not a browse/search UI.
+  `ValidationStatus == Passed`; maps candidate content into a new `CefrVocabularyEntry` or
+  `CefrGrammarProfileEntry` row (matched by `CandidateType`); sets `ResourceCandidate.IsPublished
+  =true`/`PublishedAtUtc`/`PublishedEntityType`/`PublishedEntityId`; links the published row's
+  provenance back to `SourceId`. **E4 must also build the approve action itself** (it does not
+  exist yet — E3 only built the preview an approve action will rely on) and its own UI gate
+  requiring the preview to have been opened at least once before approval is enabled — E3's
+  `ResourceCandidatePreviewService` is the dependency this gate calls into, but the "has this
+  been viewed" tracking/gate is E4's own deliverable, not something E3 pre-built.
+- **Admin pages**: an Approve action (new) and a Publish action on the Candidate detail/review
+  page, both gated on the preview having been opened at least once. Full published-bank browsing
+  is **E5**, not E4 — E4 adds only approve+publish and a minimal confirmation, not a browse/search
+  UI.
 - **Tests**: publish handler correctly maps fields per bank type; idempotency (a candidate cannot
   be published twice); rejected/pending/validation-failed candidates cannot be published (guard
   tests for each precondition).
@@ -445,6 +473,9 @@ and preferred phase order.
   `docs/sprints/current-sprint.md`, `docs/architecture/README.md`.
 - Docs updated (Phase E2, this section): this file (E2 boundaries section marked implemented,
   judgment calls/thresholds documented); `docs/roadmap/road-map.md`,
+  `docs/sprints/current-sprint.md`, `docs/architecture/README.md`.
+- Docs updated (Phase E3, this section): this file (E3 boundaries section marked implemented,
+  E4's "approve action doesn't exist yet" correction documented); `docs/roadmap/road-map.md`,
   `docs/sprints/current-sprint.md`, `docs/architecture/README.md`.
 - Docs intentionally not updated: `docs/architecture/cefr-resource-licensing-review.md` — its
   licensing findings are unchanged by this phase; no new sources were browsed or licensing
