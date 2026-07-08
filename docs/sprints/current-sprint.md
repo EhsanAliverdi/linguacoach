@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase E4)
+lastUpdated: 2026-07-08 (Plan-Sync-After-E4)
 owner: engineering
 supersedes:
 supersededBy:
@@ -14,38 +14,42 @@ Last updated: 2026-07-08
 
 ## Active sprint
 
-**Phase E4 — Publish Approved Resource Candidates to First English Banks (2026-07-08)** — complete
+**Plan-Sync-After-E4 — Move E5 before D1 (2026-07-08)** — complete (docs-only)
 
-**Last completed: Phase E4.** Added `ResourceCandidate.Approve(notes?)`/`.Reject(reason)` and
-`ResourceCandidatePublishService`. Every publish gate is **re-checked live**, never trusted from
-an earlier snapshot: English-only, source still approved, `AllowsStudentDisplay`/
-`AllowsCommercialUse` (**hard-blocked here**, unlike E2's warn-only treatment), `ValidationStatus
-== Passed`, `ReviewStatus == Approved`. **Idempotent** — repeat publish returns the existing
-reference, never a duplicate row. **Candidate-type decisions**: `VocabularyEntry`→
-`CefrVocabularyEntry` and `GrammarProfileEntry`→`CefrGrammarProfileEntry` fully supported;
-`ReadingPassage`→`CefrReadingReference` only for staged text ≤500 characters (that entity's own
-doc comment: "only a short excerpt/citation, not a full copyrighted text") — longer passages
-blocked with a clear error, never silently truncated; `ActivityTemplateCandidate` publishing
-**deferred entirely** (`ActivityTemplate` needs a stable Key, valid Skill/Subskill, and real
-hand-authored `GenerationInstructions` a staged row was never designed to carry — inventing
-placeholder text to force it through would publish something dishonest). New approve/reject/
-publish admin endpoints; admin UI gained Approve/Reject/Publish actions (Publish disabled with a
-clear reason when ineligible) and a published-state indicator. +16 backend tests (3,430 → 3,455
-passed). **Known limitation**: no "preview viewed before approve" tracking exists (E3 never built
-a preview-viewed flag) — documented, not silently dropped. See
-`docs/architecture/english-resource-bank-import-platform.md` for full detail.
+**Last completed: Phase E4.** Added `ResourceCandidatePublishService` and
+`Approve(notes?)`/`.Reject(reason)`. Every publish gate re-checked live; idempotent;
+`VocabularyEntry`/`GrammarProfileEntry` fully supported, short-excerpt `ReadingPassage`
+supported, `ActivityTemplateCandidate` deferred. +16 backend tests (3,430 → 3,455 passed).
+Committed as `ab4e2d1d`.
 
-**Before this: Phase E3.** Added `GET .../preview` (`ResourceCandidatePreviewService`), read-only,
-student-visible/admin-only separation. +14 backend tests. Committed as `c9831599`.
+**Current immediate task (this docs sync): Plan-Sync-After-E4.** Although Phase D1's "E0-E4
+before D1" technical gate is now met, decided to sequence **Phase E5 before Phase D1**. The
+published banks currently hold only small synthetic/test data with no browsing/search/admin-
+management surface — starting Today's bank-first composer now would have essentially nothing
+real to compose from. Updated roadmap phase sequence: E5 → Phase D1 decision checkpoint → either
+D1 or E6 → E6/E7/E8 as needed → PG-v2A/B/C/D later → Phase F → Phase G. Docs-only; no app code,
+migrations, or config changed; does not start any implementation.
 
-**Recommendation for next phase**: Phase E has now reached E4 — the "E0-E4 before D1" gate is
-technically satisfied, but **Phase D1 was deliberately not started this phase** per direct
-instruction; the published banks currently hold only small synthetic/test data (no external
-dataset imported yet). Whether to start Phase D1 now or continue Phase E5-E8 first (real import
-sources, published-bank browsing, more resource types) is a product decision for a future phase.
+**Next implementation phase: Phase E5** — published-bank browsing/search/admin management for
+the first supported banks (vocabulary, grammar, short reading references), surfacing source/
+license/provenance, CEFR, tags, quality, published status, and candidate traceability. **Not
+started.** No external dataset import in scope for E5 unless explicitly re-scoped later. After
+E5, an explicit product decision follows: start Phase D1 with whatever banks exist by then, or
+continue Phase E6 (reading/listening resource depth) first — not resolved by this docs sync.
 PG-v2 implementation remains not started. Today lesson generation remains 100% legacy
 `IAiActivityGenerator` freeform generation. See `docs/roadmap/road-map.md` §19a for the full phase
 order.
+
+---
+
+## Previous sprint
+
+**Phase E4 — Publish Approved Resource Candidates to First English Banks (2026-07-08)** — complete
+
+Added `ResourceCandidatePublishService`, every publish gate re-checked live, idempotent.
+`VocabularyEntry`/`GrammarProfileEntry` fully supported; short-excerpt `ReadingPassage`
+supported; `ActivityTemplateCandidate` publishing deferred entirely. New approve/reject/publish
+admin endpoints and UI actions. +16 backend tests (3,430 → 3,455 passed). Committed as `ab4e2d1d`.
 
 ---
 

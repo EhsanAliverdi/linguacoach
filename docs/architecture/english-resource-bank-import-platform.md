@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase E4)
+lastUpdated: 2026-07-08 (Plan-Sync-After-E4)
 owner: architecture
 supersedes:
 supersededBy:
@@ -10,9 +10,13 @@ supersededBy:
 
 **Date planned:** 2026-07-08 (Plan-Sync-After-C1), **finalized:** 2026-07-08 (Phase E0),
 **E1 implemented:** 2026-07-08, **E2 implemented:** 2026-07-08, **E3 implemented:** 2026-07-08,
-**E4 implemented:** 2026-07-08
+**E4 implemented:** 2026-07-08, **Plan-Sync-After-E4:** 2026-07-08
 **Status:** E1 (staging), E2 (AI analysis + validation gates 4-6), E3 (admin rendered preview),
-and E4 (publish to first banks) implemented. E5 (published-bank browsing/search) not started.
+and E4 (publish to first banks) implemented. **E5 (published-bank browsing/search/admin
+management) is now the next recommended implementation phase** — Plan-Sync-After-E4 (2026-07-08)
+sequenced it ahead of Phase D1 despite D1's technical "E0-E4" gate now being met, because the
+published banks currently hold only small synthetic/test data with no way to browse, search, or
+manage them yet.
 **Some rows have now been published — but only `VocabularyEntry`/`GrammarProfileEntry`/short-
 excerpt `ReadingPassage` candidates that passed validation AND were explicitly admin-approved.**
 `ActivityTemplateCandidate` publishing is **deferred** (see "E4 — Publish to first banks" below
@@ -211,8 +215,8 @@ enabling approval) and E4 (approve/reject + publish action).
 | **E1** | Source registry integration + CSV/JSON/JSONL import + raw/candidate staging | **First implementation slice** — see "E1 exact scope" below. Gates 1-3 only (English-only, license, parser). **Does not publish anything.** |
 | **E2** | AI analysis + validation gates | Gates 4-6 (AI analysis/advisory, rule validation, dedup/fingerprint). See "E2-E4 boundaries" below. |
 | **E3** | Admin rendered preview | Gate 7a prerequisite — dedicated read-only rendered view per candidate, required before approval is enabled. |
-| **E4** | Publish to first banks | Gates 7a (approve/reject) + 7b (publish action) — promotes an approved, validation-passed candidate into `CefrVocabularyEntry`/`CefrGrammarProfileEntry`. |
-| **E5** | Published bank browsing/search | Admin (and eventually `ActivityTemplate`/AI-generation-time) search/browse over published bank content — filter by CEFR/skill/subskill/context, not just an admin CRUD list. |
+| **E4** ✅ done 2026-07-08 | Publish to first banks | Approve/reject + publish action — promotes an approved, validation-passed candidate into `CefrVocabularyEntry`/`CefrGrammarProfileEntry`/short-excerpt `CefrReadingReference`. `ActivityTemplateCandidate` publishing deferred. |
+| **E5** — next recommended phase (Plan-Sync-After-E4, 2026-07-08) | Published bank browsing/search/admin management | Admin search/browse over the first published banks (vocabulary, grammar, short reading references) — filter by CEFR/skill/subskill/context, surfacing source/license/provenance, tags, quality, published status, and candidate traceability (link back to the `ResourceCandidate` it came from). Sequenced **before** Phase D1 — see the "Sequencing note" below. Not a full analytics dashboard; not yet `ActivityTemplate`/AI-generation-time consumption (that's a later integration once Phase D exists). No external dataset import in this phase unless explicitly re-scoped. |
 | **E6** | Reading/listening resources | Extend the pipeline to `CefrReadingReference`-shaped content (passages) — same pipeline, new candidate/validation rules for longer-form text. A first listening-script bank (new typed entity) may also land here once audio-adjacent metadata handling is designed. |
 | **E7** | Bigger import support | Background/queued import jobs (Quartz) for larger sources, ZIP archive support, audio-file-carrying sources (Common Voice, LibriVox) — deferred until E1-E6 prove the pipeline on simpler text sources first. |
 | **E8** | RAG/search enrichment | Embedding/vector-search-based candidate deduplication and semantic bank search — explicitly deferred past all of E0-E7; no pgvector, no embeddings before this phase, consistent with Phase B's repetition/novelty foundation scope discipline. |
@@ -491,9 +495,17 @@ least once. Admin must never approve based on raw JSON/CSV alone.
 
 Phase D (bank-first Today lesson composer) is intentionally sequenced **after** Practice Gym
 migration (Phase C2/C3/C4/C-Final) and after enough of this resource-bank platform exists to
-give Phase D real bank content to compose from — not before. See
-`docs/roadmap/road-map.md` Decision Log (2026-07-08, Plan-Sync-After-C1 entry) for the reasoning
-and preferred phase order.
+give Phase D real bank content to compose from — not before. Phase D1's originally-documented
+"E0-E4 before D1" gate is technically met (Phase E reached E4, 2026-07-08) — but
+**Plan-Sync-After-E4 (2026-07-08) revised the near-term sequence: Phase E5 now comes before Phase
+D1**, not after it. The intent behind the original gate was always "Phase D has real, usable bank
+content to compose from," not merely "the E0-E4 pipeline exists" — a handful of small,
+synthetic/test-only published rows with no browsing/search/admin-management surface doesn't meet
+that intent, even though the pipeline itself is complete and correct. After Phase E5, an explicit
+product decision checkpoint follows: start Phase D1 using whatever published banks exist by then,
+or continue Phase E6 (reading/listening resource depth) first. See `docs/roadmap/road-map.md`
+Decision Log (2026-07-08, Plan-Sync-After-C1 and Plan-Sync-After-E4 entries) for the full
+reasoning and current preferred phase order.
 
 ---
 
@@ -521,6 +533,10 @@ and preferred phase order.
 - Docs updated (Phase E4, this section): this file (E4 boundaries section marked implemented,
   candidate-type support decisions and the preview-viewed-gate limitation documented);
   `docs/roadmap/road-map.md`, `docs/sprints/current-sprint.md`, `docs/architecture/README.md`.
+- Docs updated (Plan-Sync-After-E4, this section, docs-only): this file (E5 phase-breakdown row
+  and "Relationship to Phase D" section updated to reflect E5-before-D1 sequencing);
+  `docs/roadmap/road-map.md` (§19a phase sequence, Decision Log), `docs/sprints/current-sprint.md`,
+  `docs/architecture/README.md`, `docs/backlog/product-backlog.md`.
 - Docs intentionally not updated: `docs/architecture/cefr-resource-licensing-review.md` — its
   licensing findings are unchanged by this phase; no new sources were browsed or licensing
   conclusions revisited in E0. `docs/architecture/practice-gym.md`/`repetition-and-novelty.md` —
