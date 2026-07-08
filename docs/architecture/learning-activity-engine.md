@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase D3)
+lastUpdated: 2026-07-09 (Plan-Sync-After-D3)
 owner: architecture
 supersedes:
 supersededBy:
@@ -228,8 +228,11 @@ is fully intact**: unsupported patterns, a missing/blocked passage, a selector e
 generation/validation failure, or an empty bank all still flow through the unchanged
 `IAiActivityGenerator` path — D3 removed nothing. Vocabulary-primary behavior is unchanged from D2.
 Speaking/listening/image/open-ended remain legacy. No external datasets, no Persian/bilingual seed
-content. **Next Today-composer decision (E8 for more resource depth/types, D4 for broader composer
-expansion, PG-v2 later) is deferred, not decided here.**
+content. **Next Today-composer decision: Plan-Sync-After-D3 (2026-07-09, docs-only) resolved this —
+Phase E8 (more resource depth/types) comes before Phase D4 (broader composer expansion), since
+D1/D2/D3 proved the composer path end to end and the bottleneck is now bank breadth/depth. D4
+remains the likely composer phase after E8; PG-v2 later. See docs/roadmap/road-map.md §1 / Decision
+Log.**
 
 **Plan-Sync-G0 (2026-07-09, docs-only)** reframes, but does not delete, the readiness-pool
 lifecycle this file's fallback/generation flow relies on: `StudentActivityReadinessItem`/

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase D3)
+lastUpdated: 2026-07-09 (Plan-Sync-After-D3)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,39 @@ Last updated: 2026-07-09
 ---
 
 ## Active sprint
+
+**Plan-Sync-After-D3 — Decide Next Bank-First Phase After Full Reading Passage Today Wiring (2026-07-09)** — complete (docs-only)
+
+A docs-only planning/decision sync after Phase D3. **Decision: Phase E8 (more resource depth/types)
+comes before Phase D4 (broader Today composer expansion).** D1/D2/D3 have now proven the Today
+bank-first selector/composer path end to end, including full reading passage consumption, so the
+mechanism is no longer the constraint — **bank breadth/depth is.** Outside vocabulary, grammar
+metadata, short reading references, and full reading passages, published bank depth is still thin,
+and the highest-value next composer moves (grammar-aware Today activities, richer multi-resource
+bundles, better pattern-specific prompt shaping) all depend on deeper published bank content. Doing
+E8 first makes D4 safer and more useful and reduces pressure on the AI fallback, improving
+bank-first reliability.
+
+**Proposed Phase E8 — Internal Resource Bank Depth Expansion for Grammar, Usage, and Reading
+Support**: expand original, English-only bank depth through the existing staging → validation →
+approval → publish pipeline — more `CefrVocabularyEntry`/`CefrGrammarProfileEntry` depth across
+A1–B2, more `CefrReadingReference` short-reference material, more `CefrReadingPassage` full-passage
+material if useful, and better metadata coverage (CEFR, skill, subskill, context/focus tags,
+difficulty, estimated time, source/provenance), plus validation proving published resources are
+discoverable by the selector. **E8 must not**: import external datasets, add
+Persian/bilingual/support-language content, seed final tables directly, rewrite the Today composer,
+remove any legacy fallback, delete the readiness/delivery queue, start PG-v2, or redesign student
+UI. **Phase D4 — Broader Today Bank-First Composer Expansion** remains the likely composer phase
+after E8 (not cancelled): richer grammar/vocabulary/reading bundles, better pattern-specific bank
+context, wider safe bank-first coverage — keeping legacy fallback, not rewriting the composer.
+
+No app code, migrations, seed content, API, admin UI, or tests changed — docs only. Readiness pool,
+Today legacy fallback, and Practice Gym fallback all remain. PG-v2, Phase F, and Phase G2/G3 stay
+sequenced later. See `docs/roadmap/road-map.md` §1, §19 Decision Log, §19a (items 18–20).
+
+---
+
+## Previous sprint
 
 **Phase D3 — Wire Full Reading Passage Bank into Today Bank-First Composer (2026-07-09)** — complete
 

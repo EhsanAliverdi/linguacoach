@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase D3)
+lastUpdated: 2026-07-09 (Plan-Sync-After-D3)
 owner: architecture
 supersedes:
 supersededBy:
@@ -747,8 +747,12 @@ now anchors comprehension/reorder Reading patterns on a full `CefrReadingPassage
 query methods, no new query surface here), falling back to short `CefrReadingReference` for cloze
 patterns and whenever no suitable passage exists or novelty excludes every candidate. D3 is a
 narrow, fallback-safe Today-composer extension, not a rewrite, and again changes nothing in this
-platform's own E0-E7 pipeline. **A Phase E8/D4 decision checkpoint follows D3** (more resource
-depth/types vs broader composer expansion vs PG-v2), not resolved in advance. See
+platform's own E0-E7 pipeline. **Plan-Sync-After-D3 (2026-07-09, docs-only) then resolved the
+post-D3 checkpoint: Phase E8 (more resource depth/types) comes before Phase D4 (broader Today
+composer expansion)** — the composer path is proven, so the bottleneck is now this platform's
+breadth/depth. Proposed E8 deepens original English-only vocabulary/grammar/reading-reference/
+reading-passage content and metadata through the same E0-E7 pipeline (no external datasets, no
+direct final-table seeding). See
 `docs/roadmap/road-map.md` Decision Log (2026-07-08, Plan-Sync-After-C1, Plan-Sync-After-E4,
 Phase E5, Plan-Sync-E6-Decision, Phase E6, Phase D1, Bugfix-D1A, Phase D2, Plan-Sync-After-D2,
 Phase E7, and Phase D3 entries) for the full reasoning and current preferred phase order.

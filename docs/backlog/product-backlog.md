@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase D3)
+lastUpdated: 2026-07-09 (Plan-Sync-After-D3)
 owner: product
 supersedes:
 supersededBy:
@@ -241,6 +241,36 @@ composer migration:
   foreign-key violation against a real database the first time a readiness-pool item existed at
   materialization time. Fixed by removing the call entirely and recording provenance on
   `LearningActivity.BankResourceProvenanceJson` instead (see above).
+
+---
+
+## Bank-First Next Phase — E8 then D4 (Plan-Sync-After-D3, 2026-07-09) `Planned`
+
+Phase D3 (2026-07-09, `4fced4c7`) wired the E7 full reading passage bank into the Today bank-first
+composer, proving D1/D2/D3's selector/composer path can consume deep internal content end to end.
+**Plan-Sync-After-D3 (2026-07-09, docs-only) then decided Phase E8 (more resource depth/types)
+comes before Phase D4 (broader Today composer expansion)** — the bottleneck is now bank
+breadth/depth, not the composer mechanism. See docs/roadmap/road-map.md §1, Decision Log
+(Plan-Sync-After-D3), and §19a items 18–20.
+
+- [ ] **Phase E8 — Internal Resource Bank Depth Expansion for Grammar, Usage, and Reading Support**
+  `Not started` — **next recommended implementation phase.** Expand original, English-only internal
+  bank depth through the existing staging → validation → approval → publish pipeline:
+  - [ ] More `CefrVocabularyEntry` depth across A1–B2
+  - [ ] More `CefrGrammarProfileEntry` depth across A1–B2
+  - [ ] More `CefrReadingReference` short-reference material
+  - [ ] More `CefrReadingPassage` full-passage material if useful
+  - [ ] Better metadata coverage (CEFR, skill, subskill where supported, context tags, focus tags,
+    difficulty, estimated time, source/provenance)
+  - [ ] Validation coverage proving published resources are discoverable by the selector
+  - **Must not**: import external datasets; add Persian/bilingual/support-language content; seed
+    final published tables directly; rewrite the Today composer; remove any legacy fallback; delete
+    the readiness/delivery queue; start PG-v2; redesign student UI.
+- [ ] **Phase D4 — Broader Today Bank-First Composer Expansion** `Not started` — likely composer
+  phase **after** E8 (not cancelled). Use richer grammar/vocabulary/reading bank bundles; improve
+  pattern-specific bank context; expand safe bank-first coverage beyond the current vocabulary/
+  reading slice. **Keep legacy fallback; do not rewrite the full Today composer**; only where bank
+  resources are deep enough.
 
 ---
 

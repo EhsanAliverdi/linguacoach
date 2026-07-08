@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-03 (20I)
+lastUpdated: 2026-07-09 (Plan-Sync-After-D3)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,72 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-03 (20I)
+Last updated: 2026-07-09 (Plan-Sync-After-D3)
+
+> **Note on scope of this file.** The dated sections below are a running
+> product-state log that ends at Phase 20I (2026-07-03, the last
+> live-deployed pilot state). Everything after that — the Clean-Architecture
+> work, the Phase B/C Practice-Gym template migration, and the entire
+> **bank-first Resource Bank track (Phase E0–E7) and Today bank-first
+> composer track (Phase D1–D3)** — has been developed and tested locally but
+> **not yet deployed**. For the authoritative current phase sequence, decision
+> log, and test totals, see `docs/roadmap/road-map.md` (§1, §19 Decision Log,
+> §19a Phase Sequence). The catch-up section immediately below summarizes only
+> the most recent bank-first state; it does not replay the full E/D history.
+
+---
+
+## Bank-First Architecture — Current Direction and Phase D3 Closure (2026-07-09)
+
+**Architecture direction.** SpeakPath / LinguaCoach is moving to a
+**bank-first teaching architecture**:
+
+* **Resource Banks / Resource Candidates / Activity Templates = the primary
+  content model.** Original, English-only content flows through a real
+  staging → validation → approval → publish pipeline; final published bank
+  tables are never seeded directly.
+* **AI generation = fallback, composition, evaluation, diagnostics, and
+  personalization** — not the primary content source. The system is no longer
+  described as mainly generating large per-student AI activity caches.
+* **The readiness / delivery queue = a per-student assignment lifecycle**
+  (`StudentActivityReadinessItem` / `IStudentActivityReadinessPoolService`),
+  kept and load-bearing — not a random AI-generated cache. It is never deleted.
+
+**Phase D3 is complete (commit `4fced4c7`, 2026-07-09).** It wired the E7 full
+reading passage bank (`CefrReadingPassage`) into the Today bank-first composer:
+
+* The Today composer now uses **`CefrReadingPassage` full passages** for
+  full-passage-suitable Reading-primary patterns:
+  `reading_multiple_choice_single`, `reading_multiple_choice_multi`,
+  `reorder_paragraphs`.
+* **`CefrReadingReference` (short excerpts) remains** for short/cloze/reference
+  cases (`reading_fill_in_blanks`, `reading_writing_fill_in_blanks`) and as the
+  fallback when no suitable full passage exists.
+* If no suitable bank resource exists, or the selector/AI generation fails,
+  **Today's legacy AI-generation fallback remains fully intact.**
+* **Practice Gym legacy fallback remains.**
+* **Readiness / delivery queue remains** (not deleted).
+* `LearningActivity.BankResourceProvenanceJson` now records `ReadingPassage`
+  provenance.
+* Validation: `dotnet build --configuration Release` passed; `dotnet test
+  --configuration Release` = 3,563 passed, 0 failed; Angular production build
+  failed only on the known pre-existing bundle-size budget (no frontend files
+  changed); Playwright skipped (backend selector/materialization logic only).
+* **No Phase E8 started. No PG-v2 started. No external datasets. No
+  Persian/bilingual seed content.**
+
+**Next-step decision (Plan-Sync-After-D3, 2026-07-09, docs-only):** a decision
+checkpoint follows D3 between **Phase E8 (more resource depth/types)** and
+**Phase D4 (broader Today composer expansion)**. **Recommendation: Phase E8
+next** — D1/D2/D3 have proven the selector/composer path end to end, so the
+current bottleneck is bank breadth/depth (especially beyond vocabulary and
+reading), and D4 will be safer and more useful once E8 has produced richer bank
+material to compose from. E8 also reduces pressure on the AI fallback and
+improves bank-first reliability. D4 remains the likely composer phase *after*
+E8, not cancelled. PG-v2, Phase F (legacy retirement), and Phase G2/G3
+(backend/diagnostics cleanup) remain sequenced later. Full reasoning and the
+proposed E8/D4 scope: `docs/roadmap/road-map.md` §1, §19 Decision Log
+(Plan-Sync-After-D3 entry), and §19a.
 
 ---
 
