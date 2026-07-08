@@ -1,16 +1,17 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase C3)
+lastUpdated: 2026-07-08 (Phase E0)
 owner: product / engineering
 ---
 
 # SpeakPath / LinguaCoach Roadmap
 
-**Accurate as of: 2026-07-08 (Phase C3 — see §19a for the current phase sequence).
+**Accurate as of: 2026-07-08 (Phase E0 — see §19a for the current phase sequence).
 The 2026-07-03 "Phase 20H" line below is the last entry confirmed live against speakpath.app;
 everything since then (Clean-A/A2, Phase B, Phase C1, Plan-Sync-After-C1, Phase C2, Plan-Sync-B2,
-Phase B2, Phase C3) has been developed and tested locally but not yet deployed — see the "Current
-Project Status" and Decision Log sections below for what's actually landed.**
+Phase B2, Phase C3, Phase C-Final, Phase E0) has been developed and tested locally but not yet
+deployed — see the "Current Project Status" and Decision Log sections below for what's actually
+landed.**
 
 This is the canonical project memory document. It captures completed work, current state, known gaps, deferred items, and the recommended order of future phases.
 
@@ -22,31 +23,44 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest phase completed (local, not yet deployed):** Phase C3 — Continue Practice Gym bank-first
-migration (2026-07-08, this commit). Migrated **exactly one** additional pattern,
-`reorder_paragraphs`, to the bank-first Form.io template path — a full re-audit of the remaining
-~25 legacy pattern keys against their actual content DTOs (not just catalog flags) found no other
-safe deterministic candidate; everything else is open-ended-AI-evaluated, or has an
-audio-referencing content DTO despite a misleading `RequiresAudio=false` flag, or uses
-fuzzy/partial-credit scoring incompatible with the existing binary `ComponentAnswerScorer` kinds.
-Built a new generic `ordered_sequence` `ComponentAnswerScorer` kind (reusing the exact positional-
-comparison semantics the legacy `ExactMatchEvaluator` already used for this pattern), one seeded
-`ActivityTemplate` (`reorder_paragraphs_workplace_seed_v1`) using a **stock Form.io `datagrid`**
-component with its built-in drag-to-reorder setting — no new custom Form.io component class and
-no frontend code changes were needed, since `ExerciseRendererComponent` already routes to Form.io
-purely based on `formIoSchemaJson` being populated. +8 backend tests (3,371 → 3,379). 8 of ~33
-pattern rows are now template-enabled. **The C3 audit found no further safe deterministic
-candidates — recommend Phase C-Final over a forced Phase C4** (see
-`docs/architecture/practice-gym.md`'s "Migration plan for the rest of the catalog" section for the
-full reasoning and the two concrete tracks a real Phase C4 would need: audio-compatibility review,
-or dedicated AI-evaluated-pattern Form.io support — neither is a small batch).
+**Latest phase completed (local, not yet deployed):** Phase E0 — English Resource Bank Import
+Platform final model and implementation plan (2026-07-08, this commit, **planning/docs only — no
+app code, migrations, or config changed**). Finalized the entity model for the not-yet-started
+Phase E platform: the source registry reuses the existing `CefrResourceSource` entity directly
+(supersedes the earlier informal proposal to add a separate `ResourceImportSource`); new staging
+entities `ResourceImportRun`/`ResourceRawRecord`/`ResourceCandidate`; published resources use a
+**hybrid model** — E4 reuses the existing typed `CefrVocabularyEntry`/`CefrGrammarProfileEntry`
+(no new polymorphic `ResourceBankItem` table). Finalized a 7-gate status/gate model (English-only,
+license, parser, AI-analysis-advisory, rule-validation, dedup/fingerprint, admin review+publish),
+reusing `AdminReviewStatus`, `IFormIoSchemaValidationService`, `IActivityContentFingerprintService`,
+and `IFileStorageService` throughout rather than inventing parallel mechanisms. Defined E1's exact
+scope (source integration + CSV/JSON/JSONL import + raw/candidate staging, gates 1-3 only, **no
+publishing**) and E2-E4 boundaries, plus an admin nav plan (new pages under the existing Content
+sidebar group). Full detail: `docs/architecture/english-resource-bank-import-platform.md`.
+**Phase E1 has not started.**
 
-**Latest phase completed before this:** Phase B2 — Activity Feedback, Repeat Policy, and
-Calibration Signals (2026-07-08, `08de5c70`). Implemented the persistence/API/minimal-UI
-foundation for explicit student feedback on completed activities across both Today and Practice
-Gym. **This is a foundation, not a calibration engine** — nothing yet automatically consumes this
-data for CEFR/difficulty-band calibration, template/resource quality scoring, novelty/cooldown
-adjustment, or admin review; it is collected and queryable for future phases. Full detail:
+**Latest phase completed before this:** Phase C-Final — Practice Gym bank-first migration closure
+and readiness audit (2026-07-08, `5279c083`). Verified all 8 template-enabled Practice Gym keys
+(templates approved/published, seeders idempotent, schemas leak-safe, gating/fallback/novelty/
+feedback-policy wiring intact); produced a definitive 33-row pattern audit table (8
+template-enabled, 25 legacy, corrected from an off-by-one "26 legacy" figure that had propagated
+through Phase C3's own docs); added 4 explicit backlog entries for the deferred pattern families
+(listening/audio, speaking/audio, open-ended AI-evaluated, fuzzy/short-answer). **Closes the
+deterministic Practice Gym migration track — no Phase C4.** Full detail:
+`docs/architecture/practice-gym.md`.
+
+**Before that:** Phase C3 — Continue Practice Gym bank-first migration (2026-07-08, `ce4d76c6`).
+Migrated **exactly one** additional pattern, `reorder_paragraphs`, to the bank-first Form.io
+template path via a new generic `ordered_sequence` `ComponentAnswerScorer` kind and a stock
+Form.io `datagrid` component (no new custom Form.io component, no frontend code changes). +8
+backend tests (3,371 → 3,379). 8 of 33 pattern rows template-enabled.
+
+**Before that:** Phase B2 — Activity Feedback, Repeat Policy, and Calibration Signals (2026-07-08,
+`08de5c70`). Implemented the persistence/API/minimal-UI foundation for explicit student feedback
+on completed activities across both Today and Practice Gym. **This is a foundation, not a
+calibration engine** — nothing yet automatically consumes this data for CEFR/difficulty-band
+calibration, template/resource quality scoring, novelty/cooldown adjustment, or admin review; it
+is collected and queryable for future phases. Full detail:
 `docs/architecture/activity-feedback-and-calibration.md`.
 
 Preceded by Plan-Sync-B2 — docs-only roadmap update inserting Phase B2 ahead of Phase C3
@@ -63,12 +77,11 @@ unmodified throughout.
 
 **Branch:** main
 
-**Test totals (as of Phase C3, 2026-07-08, local only):**
-- Backend: 3,379 passed (5 architecture + 1,951 unit + 1,423 integration), 0 failed — net +8 vs Phase B2 (3,371): 2 new `ActivityTemplateSeederTests` (7th seeded template + no-order-leak assertion), 1 new `PracticeGymTemplateGenerationJobTests` (reorder_paragraphs materializes via template path), 3 new `FormIoPatternEvaluatorTests` (`ordered_sequence` correct/scrambled/no-leak), 2 new `FormIoSchemaValidationServiceTests` (`datagrid` allowed with valid nested components / rejected with disallowed nested component); 2 pre-existing `FormIoSchemaValidationServiceTests` updated to use a still-disallowed type (`iframe`) instead of `datagrid` as their negative-case example, since `datagrid` is now legitimately allowed.
-- Angular unit (Karma): not run this phase — no frontend files changed (stock Form.io `datagrid` required no frontend code); baseline unchanged at 120 pre-existing failures (`AdminStudentDetailComponent`/`AdminAiConfigComponent`/`VoiceRecorderComponent`).
-- Angular production build (`ng build --configuration production`): still fails on the pre-existing `initial` bundle-size budget (1.55MB over the 1MB threshold in `angular.json`, predating this phase at commit `246daead`) — not a regression, no frontend files touched this phase.
-- Playwright E2E: not run this phase — no routed UI behavior changed (no frontend files touched; `reorder_paragraphs` renders through the same generic `FormioRendererComponent` path already exercised by the 7 previously-migrated patterns).
-- Playwright E2E: `e2e/core-flow-smoke.spec.ts` remains `test.skip`'d (see Clean-A2 decision log entry); not run this phase per task scope (targeted Playwright only requested if environment stable and time-permitting — deferred, low risk given the new UI is additive and hidden behind a default-`Optional` policy).
+**Test totals (as of Phase E0, 2026-07-08, local only — unchanged from Phase C-Final since E0 is docs/planning only):**
+- Backend: 3,379 passed (5 architecture + 1,951 unit + 1,423 integration), 0 failed — unchanged since Phase C3 (no code touched by Phase C-Final or Phase E0).
+- Angular unit (Karma): not run this phase (no frontend files touched); baseline unchanged at 120 pre-existing failures (`AdminStudentDetailComponent`/`AdminAiConfigComponent`/`VoiceRecorderComponent`).
+- Angular production build (`ng build --configuration production`): not run this phase — no frontend files touched; last known state (Phase C3) still fails on the pre-existing `initial` bundle-size budget (1.55MB over the 1MB threshold in `angular.json`, predating this initiative at commit `246daead`), not a regression.
+- Playwright E2E: not run this phase — no routed UI behavior changed; `e2e/core-flow-smoke.spec.ts` remains `test.skip`'d (see Clean-A2 decision log entry).
 
 **Test totals (as of 20D, last live-confirmed baseline):**
 - Backend unit: 1,750 (+20 from Phase 20D: `StudentReadinessAuditServiceTests`, `StudentPilotReadinessRepairServiceTests`)
@@ -851,38 +864,47 @@ These are planning estimates, not exact metrics. Provided to guide sequencing de
 | 2026-07-08 | **Phase B2 implemented**: new `ActivityFeedbackSignal` entity (migration `AddActivityFeedbackSignal`) capturing difficulty/clarity/usefulness/repeat-preference/optional-comment, idempotent per `(StudentProfileId, ActivityAttemptId)` (fallback `(StudentProfileId, LearningActivityId)` when no attempt) via two partial unique indexes; `IActivityFeedbackPolicyProvider`/`ActivityFeedbackPolicyProvider` (Off/Optional/Required per surface, reusing the existing feature-gate/`RuntimeSettingOverride` system — new group `activity-feedback-policy`, keys `ActivityFeedback.TodayPolicy`/`ActivityFeedback.PracticeGymPolicy`, default `Optional`, no new admin UI needed); `ISubmitActivityFeedbackHandler`/`ActivityFeedbackHandler` (upsert, ownership check, comment-length validation, provenance backfill from `StudentActivityUsageLog`); new endpoint `POST /api/activity/attempt/{attemptId}/feedback`; `FeedbackPolicy` added to the existing `ActivityFeedbackDto` attempt-submission response, populated by `ActivitySubmitHandler` in both its pattern-eval and legacy dispatch paths; minimal `activity-feedback-prompt` Angular component shown from the existing student result screen only when policy is not Off, with Skip shown only when Optional. +14 backend tests (3,357 → 3,371). Did not wire the collected signal into any automated calibration/novelty/admin-review logic — that remains future work | This is a foundation/collection layer, not a calibration engine, per the explicit scope given for this phase: build persistence + policy + API + minimal UI now so signal starts accumulating, defer automated consumption to a later phase. `ActivitySubmitHandler` was the correct single insertion point since it audited as the shared completion path for both Today and Practice Gym (confirmed via `SessionExercise`-link surface detection, the same mechanism already used for `StudentLearningEvent.Source`) |
 | 2026-07-08 | **Phase C3 — re-audited the full remaining Practice Gym catalog against actual content DTOs (not just catalog flags) and migrated exactly one pattern, `reorder_paragraphs`**, to the Form.io template path. Built a new generic `ScoringRuleKinds.OrderedSequence` (`ordered_sequence`) `ComponentAnswerScorer` kind reusing the exact positional-comparison semantics `ExactMatchEvaluator.EvaluateReorderParagraphsAsync` already used; one seeded `ActivityTemplate` (`reorder_paragraphs_workplace_seed_v1`, B1, `reading.inference`) using a **stock Form.io `datagrid`** component with its built-in `reorder` setting (no new custom Form.io component); `FormIoSchemaValidationService`'s allow-list extended with `datagrid`/`hidden`; `reorder_paragraphs` added to `TemplateMigratedPatternKeys`. **No frontend code changes were needed** — `ExerciseRendererComponent` already routes to Form.io purely on `formIoSchemaJson` presence, and a stock datagrid's `{"paragraphs":[{"itemId":...}]}` submission shape is consumed as-is by the new scorer. +8 backend tests (3,371 → 3,379): seeder count/no-leak, template-path materialization, 3 `ordered_sequence` evaluator cases (correct/scrambled/no-leak), 2 schema-validation cases for `datagrid` (allowed with valid nested components / rejected with a disallowed nested type), plus 2 pre-existing schema-validation tests updated to use `iframe` instead of `datagrid` as their still-disallowed-type example. Fixed one bug found during validation: the seed template originally used subskill `reading.coherence`, which isn't in `CurriculumSubskillConstants`'s allowed list for `reading` — corrected to `reading.inference` (caught by the full backend test suite, not by a targeted test, underscoring why "run the whole suite" remains part of this project's validation discipline) | The full audit (not just re-reading the C2 exclusion doc) found that 3 additional patterns (`answer_short_question`, `read_aloud`, `repeat_sentence`) are ALSO excluded — audio-referencing item DTOs plus fuzzy/word-overlap scoring incompatible with `ComponentAnswerScorer`'s binary kinds — not previously named explicitly in the C2 exclusion list. With those confirmed excluded alongside the already-known listening family and all AI-evaluated patterns, no further deterministic/simple candidate remains in the ~25-key legacy set. `reorder_paragraphs` was chosen as C3's sole pattern specifically because it was the one remaining candidate needing only a small, generic, reviewable scorer addition — not a renderer rebuild — consistent with C1/C2's small-batch discipline |
 | 2026-07-08 | **Recommend Phase C-Final over a forced Phase C4** | The C3 audit's negative result (no further safe deterministic patterns) means a real Phase C4 would have to open new scope — either a dedicated audio-compatibility review (deciding whether text-only variants of the listening family can be authored, and inventing a new fuzzy/partial-credit scorer kind for `answer_short_question`/`read_aloud`/`repeat_sentence`) or dedicated Form.io renderer/evaluator support for `AiStructured`/`AiOpenEnded` marking modes — neither is a small, low-risk batch like C1/C2/C3 were. Forcing a C4 under the same "small batch" framing would either misrepresent the scope or produce a rushed, unreviewed evaluator/renderer addition; closing the deterministic-pattern track at C-Final (8/~33 template-enabled, 25 legacy documented with concrete exclusion reasons) is the more honest outcome, with either audio-compatibility or AI-evaluated-pattern support becoming its own dedicated future phase if the product decides to pursue it |
+| 2026-07-08 | **Phase C-Final implemented**: verified all 8 template-enabled Practice Gym keys (approved+published templates, idempotent seeders, leak-safe schemas, intact gating/fallback/novelty/feedback-policy wiring — no code gaps found, docs-only closure); produced a definitive 33-row pattern audit table (8 template-enabled, 25 legacy) correcting an off-by-one "26 legacy" figure that had propagated through Phase C3's own docs; added 4 explicit backlog entries (`docs/backlog/product-backlog.md`) for the deferred pattern families (listening/audio, speaking/audio, open-ended AI-evaluated, fuzzy/short-answer) so future migration scope is tracked, not left as an implicit doc note | This closure pass found no code/test gaps — the verification confirmed C1-C3's work was already correct and complete, so the phase stayed docs-only as scoped. Explicit backlog entries exist so a future "should we do Phase C4" conversation starts from a tracked list, not a re-derivation of the C3 audit |
+| 2026-07-08 | **Phase E0 implemented — finalized the Phase E entity/status/gate model**: source registry reuses the existing `CefrResourceSource` entity directly (supersedes the Plan-Sync-After-C1 placeholder's proposed separate `ResourceImportSource`); new staging entities `ResourceImportRun`/`ResourceRawRecord`/`ResourceCandidate` (naming unchanged from the placeholder); published resources use a hybrid model — E4 reuses existing typed `CefrVocabularyEntry`/`CefrGrammarProfileEntry` (rejected a polymorphic `ResourceBankItem` + JSON-blob table). Defined a 7-gate model (English-only, license, parser, AI-analysis-advisory, rule-validation, dedup/fingerprint, admin review+publish) reusing `AdminReviewStatus`, `IFormIoSchemaValidationService`, `IActivityContentFingerprintService`, `IFileStorageService` — no new parallel mechanisms invented. Defined E1's exact scope (gates 1-3 only, no publishing) and E2-E4 boundaries; new admin pages placed under the existing Content sidebar group. See `docs/architecture/english-resource-bank-import-platform.md` | The E0 audit found `CefrResourceSource` already has every field a source registry needs (name/license/URL/notes/approval/imported-at) — adding a second near-identical `ResourceImportSource` entity would have duplicated it for no reason, violating this project's own "don't duplicate existing good entities" convention. The hybrid publish-target decision follows the same reasoning: the existing typed `Cefr*` entities already have clean, purpose-built schemas that a polymorphic JSON-blob table would be a step backward from |
 
 ---
 
-## 19a. Phase Sequence (as of 2026-07-08, Phase C3)
+## 19a. Phase Sequence (as of 2026-07-08, Phase E0)
 
 Preferred order, each phase gated on the previous one's completion review:
 
 1. ~~**Plan-Sync-B2**~~ — done (2026-07-08, docs-only): inserted Phase B2 into the sequence below, ahead of Phase C3.
 2. ~~**Phase B2**~~ — done (2026-07-08): Activity Feedback, Repeat Policy, and Calibration Signals — **foundation only** (entity/migration, policy, API, minimal UI). See `docs/architecture/activity-feedback-and-calibration.md` for full scope and status. Cross-surface (Today + Practice Gym); admin-configurable per-surface feedback policy (off/optional/required). Automated calibration consumption of this signal is deferred to a future phase, not part of B2.
 3. ~~**Phase C3**~~ — done (2026-07-08): migrated one pattern, `reorder_paragraphs`, via a new generic `ordered_sequence` scorer + stock Form.io `datagrid`. A full re-audit found **no further safe deterministic candidates** in the remaining ~25 legacy keys — see `docs/architecture/practice-gym.md`'s "Phase C3" and "Excluded patterns" sections.
-4. **Phase C4** — **not recommended as a small batch; recommend Phase C-Final instead** (see the Decision Log entry above and `docs/architecture/practice-gym.md`'s "Migration plan for the rest of the catalog"). If pursued anyway, C4 would need to open genuinely new scope: either a dedicated audio-compatibility review + a new fuzzy/partial-credit scorer kind (for the listening family and `answer_short_question`/`read_aloud`/`repeat_sentence`), or dedicated Form.io renderer/evaluator support for `AiStructured`/`AiOpenEnded` marking modes. Not started.
-5. **Phase C-Final** — close out the deterministic-pattern migration track at 8/~33 pattern rows template-enabled; formally document the remaining ~25 as staying on legacy generation pending a dedicated audio-compatibility or AI-evaluated-pattern review (see Phase C4 note above). **Recommended next step over Phase C4.** Not started.
-6. **Phase E0** — finalize the resource-import-platform model/plan (planning only). Not started.
-7. **Phase E1** — first implementation slice: source registry + CSV/JSON/JSONL import + raw/candidate staging (no publishing yet). Not started.
-8. **Phase E2** — AI analysis + validation gates. Not started.
-9. **Phase E3** — admin rendered preview. Not started.
-10. **Phase E4** — publish to first banks (vocabulary, grammar). Not started.
-11. **Phase D1** — bank-first Today lesson composer, first slice — only after Phase C reaches C-Final (or a deliberate earlier stopping point) and Phase E reaches at least E4, so Today has both a proven multi-pattern template path and real bank content to compose from. Not started.
+4. ~~**Phase C4**~~ — **skipped, not pursued**: the C3 audit's negative result meant a real C4 would need genuinely new scope (audio-compatibility review or AI-evaluated-pattern Form.io support), not a small batch — see the Decision Log. Superseded by going straight to Phase C-Final.
+5. ~~**Phase C-Final**~~ — done (2026-07-08): closed the deterministic-pattern Practice Gym migration track at 8/~33 pattern rows template-enabled; verified all 8 keys stable; documented the remaining 25 legacy keys with concrete exclusion reasons and 4 tracked backlog items. See `docs/architecture/practice-gym.md` and `docs/backlog/product-backlog.md`.
+6. ~~**Phase E0**~~ — done (2026-07-08): finalized the resource-import-platform entity/status/gate model (planning only, no code). See `docs/architecture/english-resource-bank-import-platform.md`.
+7. **Phase E1** — first implementation slice: `CefrResourceSource`-backed source integration + CSV/JSON/JSONL import + raw/candidate staging (gates 1-3 only; no publishing yet). **Not started — this is the next recommended phase.**
+8. **Phase E2** — AI analysis + validation gates (gates 4-6). Not started.
+9. **Phase E3** — admin rendered preview (gate 7a prerequisite). Not started.
+10. **Phase E4** — publish to first banks — vocabulary, grammar (gates 7a+7b). Not started.
+11. **Phase D1** — bank-first Today lesson composer, first slice — only after Phase C reaches C-Final (done) and Phase E reaches at least E4, so Today has both a proven multi-pattern template path and real bank content to compose from. Not started.
 12. **Phase E5-E8** — published bank browsing, reading/listening resources, larger import support, RAG/search enrichment — proceed in parallel with or after Phase D1 depending on product priority at that time. Not started.
-13. **Phase F** — legacy freeform-generation retirement, **per-pattern only, destructive only after each pattern's replacement is proven** — not a bulk deletion, and not started until Phase C-Final and Phase D have each individually proven their replacement paths. Not started.
-14. **Phase G** — admin bank/content navigation cleanup (consolidate the "Content" vs "AI System" nav split flagged in the 2026-07-08 clean-architecture plan) — deferred until enough new bank-first admin pages exist (Phase C-Final + Phase E's admin pages) to make a single consolidated redesign worthwhile rather than premature. Not started.
+13. **Phase F** — legacy freeform-generation retirement, **per-pattern only, destructive only after each pattern's replacement is proven** — not a bulk deletion, and not started until Phase C-Final (done) and Phase D have each individually proven their replacement paths. Not started.
+14. **Phase G** — admin bank/content navigation cleanup (consolidate the "Content" vs "AI System" nav split flagged in the 2026-07-08 clean-architecture plan) — deferred until enough new bank-first admin pages exist (Phase C-Final done + Phase E's admin pages, still pending) to make a single consolidated redesign worthwhile rather than premature. Not started.
 
-**Phase C3 is complete** (8 of ~33 Practice Gym pattern rows template-enabled:
+**Phase D1 remains gated on Phase E reaching E4 — not E0.** Phase E0 only finalized the model;
+it does not itself give Phase D any bank content to compose from. The next recommended
+implementation phase is **Phase E1**, consistent with the "E0-E4 before D1" preferred order set in
+Plan-Sync-After-C1 and unchanged by Phase E0 (no roadmap sequencing change was needed — Phase E0
+confirmed the plan, it did not revise the sequence).
+
+**Phase C-Final is complete** (8 of ~33 Practice Gym pattern rows template-enabled:
 `formio_practice_gym_pilot`, `phrase_match`, `gap_fill_workplace_phrase`,
 `reading_multiple_choice_single`, `reading_multiple_choice_multi`, `reading_fill_in_blanks`,
-`reading_writing_fill_in_blanks`, `reorder_paragraphs`). The C3 audit found no further safe
-deterministic candidates in the remaining ~25 legacy keys — **Phase C4 is not recommended as a
-small batch; Phase C-Final is the recommended next step** for closing out this track (see the
-Decision Log and `docs/architecture/practice-gym.md`).
+`reading_writing_fill_in_blanks`, `reorder_paragraphs`; 25 legacy keys formally documented with
+concrete exclusion reasons and 4 tracked backlog items). **No Phase C4** — the C3 audit found no
+further safe deterministic candidates, so this track closed at C-Final instead.
 **Phase B2 is complete as a foundation** (persistence/API/minimal UI; no automated calibration
 consumption yet — see `docs/architecture/activity-feedback-and-calibration.md`).
-**Phase D and Phase E implementation have not started.**
+**Phase E0 is complete** (entity/status/gate model finalized, no code — see
+`docs/architecture/english-resource-bank-import-platform.md`).
+**Phase E1 (first Phase E implementation) and Phase D implementation have not started.**
 
 **Today lesson generation and all non-migrated Practice Gym patterns remain on the legacy
 `IAiActivityGenerator` freeform path, unmodified, throughout this entire sequence** until their

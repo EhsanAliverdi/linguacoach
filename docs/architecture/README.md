@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase C3)
+lastUpdated: 2026-07-08 (Phase E0)
 owner: architecture
 supersedes:
 supersededBy:
@@ -91,15 +91,17 @@ Key facts about where this stands today (2026-07-08):
   deterministic/exact-match only (no embeddings/semantic near-duplicate detection). See
   docs/architecture/repetition-and-novelty.md. `PracticeActivityCache.ContentFingerprint`
   (fixed in Clean-A) remains a separate queue-slot uniqueness key, not this content-dedup signal.
-- **Practice Gym now has 7 bank-first/template-enabled pattern keys** (as of Phase C2,
-  2026-07-08): `formio_practice_gym_pilot` (original pilot), C1's `phrase_match`,
-  `gap_fill_workplace_phrase`, `reading_multiple_choice_single`, and C2's
-  `reading_multiple_choice_multi`, `reading_fill_in_blanks`, `reading_writing_fill_in_blanks`.
-  **~21 of ~28 Practice Gym patterns remain on the legacy path with a full, unmodified
-  fallback** — this is intentional, not a gap; see docs/architecture/practice-gym.md.
-- **Phase E is planned (not started) as the English Resource Bank Import, Review, Preview, and
-  Publishing Platform** — a multi-step pipeline (source registry → import → candidate analysis
-  → validation → admin preview → review → publish), not a one-shot data seed. See
+- **Practice Gym has 8 bank-first/template-enabled pattern keys, closed as of Phase C-Final**
+  (2026-07-08): `formio_practice_gym_pilot` (original pilot), C1's `phrase_match`,
+  `gap_fill_workplace_phrase`, `reading_multiple_choice_single`, C2's
+  `reading_multiple_choice_multi`, `reading_fill_in_blanks`, `reading_writing_fill_in_blanks`, and
+  C3's `reorder_paragraphs`. **25 of 33 Practice Gym pattern rows remain on the legacy path with a
+  full, unmodified fallback** — this is intentional and formally documented, not a gap; no Phase
+  C4 — see docs/architecture/practice-gym.md.
+- **Phase E's entity/status/gate model was finalized in Phase E0 (2026-07-08); no implementation
+  has started (E1 not begun)** — the English Resource Bank Import, Review, Preview, and Publishing
+  Platform is a multi-step pipeline (source registry → import → candidate analysis → validation →
+  admin preview → review → publish), not a one-shot data seed. See
   docs/architecture/english-resource-bank-import-platform.md.
 - **English-only seed/resource-bank rule (non-negotiable, applies to all current and future
   resource banks):** no Persian seed corpus, no bilingual phrase bank, no English–Persian (or
@@ -107,29 +109,25 @@ Key facts about where this stands today (2026-07-08):
   support — UI chrome, onboarding language-pair selection, support-language hints/translation
   help — never seeded as learning content.
 
-Current state (as of 2026-07-08, Phase C3): **Phase C1, Phase C2, and Phase C3 all done** —
-generalized the Form.io template path from 1 pilot pattern to 8 total (C1's `phrase_match`,
-`gap_fill_workplace_phrase`, `reading_multiple_choice_single`; C2's
+Current state (as of 2026-07-08, Phase E0): **Practice Gym bank-first migration is closed at
+Phase C-Final** — generalized the Form.io template path from 1 pilot pattern to 8 total (C1's
+`phrase_match`, `gap_fill_workplace_phrase`, `reading_multiple_choice_single`; C2's
 `reading_multiple_choice_multi`, `reading_fill_in_blanks`, `reading_writing_fill_in_blanks`; C3's
-`reorder_paragraphs`, using a new `ordered_sequence` scorer kind and a stock Form.io `datagrid`
-component with no new custom component or frontend code); see docs/architecture/practice-gym.md.
-A full C3 re-audit of the remaining ~25 legacy pattern keys found no further safe deterministic
-candidates — everything else is open-ended-AI-evaluated or has an audio-referencing/fuzzy-scored
-content DTO; **recommend Phase C-Final over a forced Phase C4** (see practice-gym.md's "Migration
-plan" section). **Phase B2 — Activity Feedback, Repeat Policy, and Calibration Signals** has
-implemented its persistence/API/minimal-UI foundation — see
-docs/architecture/activity-feedback-and-calibration.md. It adds explicit student-reported
-difficulty/clarity/usefulness/repeat-preference feedback across both Today and Practice Gym
-(`ActivityFeedbackSignal`, admin-configurable Off/Optional/Required policy per surface via the
-existing feature-gate system, `POST /api/activity/attempt/{attemptId}/feedback`), distinct from
-Phase B's deterministic usage-log/cooldown tracking. **This is a foundation, not a calibration
-engine** — no automated CEFR calibration, difficulty-band calibration, `ActivityTemplate`/resource
-quality scoring, novelty/cooldown adjustment, or admin review automation consumes this data yet;
-it is collected and queryable for future work. Phase E is planned as the resource-import platform
-above (E0-E8). Phase D (bank-first Today lesson composer) is sequenced to start only after Phase C
-reaches C-Final and Phase E reaches at least E4 (first published banks) — see
-`docs/roadmap/road-map.md` §19a for the full phase order. **Phase D and Phase E implementation
-remain not started.**
+`reorder_paragraphs`); the remaining 25 of 33 pattern rows are formally documented as
+intentionally legacy, with 4 tracked backlog items for future audio/fuzzy/AI-evaluated support —
+see docs/architecture/practice-gym.md and docs/backlog/product-backlog.md. **No Phase C4.**
+**Phase B2 — Activity Feedback, Repeat Policy, and Calibration Signals** implemented its
+persistence/API/minimal-UI foundation — see docs/architecture/activity-feedback-and-calibration.md.
+**This is a foundation, not a calibration engine** — no automated CEFR calibration, difficulty-band
+calibration, `ActivityTemplate`/resource quality scoring, novelty/cooldown adjustment, or admin
+review automation consumes this data yet; it is collected and queryable for future work.
+**Phase E0 finalized the resource-import-platform entity/status/gate model** (source registry
+reuses `CefrResourceSource`; new `ResourceImportRun`/`ResourceRawRecord`/`ResourceCandidate`
+staging entities; hybrid publish model reusing existing typed `Cefr*` entities) — see
+docs/architecture/english-resource-bank-import-platform.md. Phase D (bank-first Today lesson
+composer) remains sequenced to start only after Phase E reaches at least E4 (first published
+banks) — see `docs/roadmap/road-map.md` §19a for the full phase order. **Phase E1 (first Phase E
+implementation) and Phase D implementation remain not started.**
 
 ---
 
@@ -154,7 +152,7 @@ remain not started.**
 | [formio-onboarding-placement-model.md](formio-onboarding-placement-model.md) | Form.io-native onboarding (`StudentFlowTemplate`/`Version`/`Submission`) and placement (`PlacementItemDefinition` with `FormIoSchemaJson`/`ScoringRulesJson`, backend-only scoring); the strongest current bank-first example |
 | [repetition-and-novelty.md](repetition-and-novelty.md) | `StudentActivityUsageLog`; `IActivityContentFingerprintService`/`IActivityNoveltyPolicy`; deterministic/exact-match cooldown foundation (Phase B, 2026-07-08) — not embeddings/semantic near-duplicate detection |
 | [activity-feedback-and-calibration.md](activity-feedback-and-calibration.md) | Foundation implemented (Phase B2, 2026-07-08): explicit student-reported difficulty/clarity/usefulness/repeat-preference feedback (`ActivityFeedbackSignal`); admin per-surface feedback policy (off/optional/required) via existing feature-gate system; API + minimal student UI. Not yet consumed by any automated CEFR/difficulty-band/template/resource/AI-quality calibration or admin review automation — collection only |
-| [english-resource-bank-import-platform.md](english-resource-bank-import-platform.md) | Phase E plan (E0-E8): source registry → import → candidate analysis → validation → admin preview → review → publish pipeline for English-only resource banks. Planning only, not started |
+| [english-resource-bank-import-platform.md](english-resource-bank-import-platform.md) | Phase E plan (E0-E8), entity/status/gate model finalized in Phase E0 (2026-07-08): source registry reuses `CefrResourceSource`; new `ResourceImportRun`/`ResourceRawRecord`/`ResourceCandidate` staging entities; hybrid publish model; 7-gate pipeline (English-only → license → parser → AI-analysis-advisory → rule-validation → dedup → admin review+publish). Planning only — E1 not started |
 
 ### Planned / Deferred (not implemented yet)
 
@@ -243,9 +241,9 @@ Archived
 | Clean-A / Clean-A2 dead-code cleanup | ✅ Done (2026-07-08) — removed dead onboarding enums, an orphaned onboarding component, dead route aliases, and a fully-orphaned admin career/word authoring API/UI chain; see `docs/reviews/2026-07-08-bank-first-ai-teaching-clean-architecture-plan.md` |
 | Session reflection | ⬜ Deferred — needs AI prompt `session_reflection` and stable session completion signal |
 | Bank-first Today lesson composer | ⬜ Deferred — planned Phase D1, sequenced after Phase C-Final and Phase E4; not started |
-| Generalize Form.io template path across the rest of Practice Gym | 🟡 In progress — Phase C1 (batch of 3), Phase C2 (batch of 3 more), and Phase C3 (1 pattern, `reorder_paragraphs`, new `ordered_sequence` scorer) done 2026-07-08, 8 of ~33 pattern rows template-enabled; C3 audit found no further safe deterministic candidates — recommend Phase C-Final over Phase C4 (see docs/architecture/practice-gym.md) |
+| Generalize Form.io template path across the rest of Practice Gym | ✅ **Closed at Phase C-Final** (2026-07-08) — Phase C1 (batch of 3), Phase C2 (batch of 3 more), and Phase C3 (1 pattern, `reorder_paragraphs`, new `ordered_sequence` scorer) done, 8 of 33 pattern rows template-enabled; C-Final verified all 8 stable and formally documented the remaining 25 legacy keys with 4 tracked backlog items. **No Phase C4.** See docs/architecture/practice-gym.md |
 | Activity Feedback, Repeat Policy, and Calibration Signals (Phase B2) | 🟡 Foundation implemented (2026-07-08) — see docs/architecture/activity-feedback-and-calibration.md. `ActivityFeedbackSignal` entity/migration, Off/Optional/Required policy per surface (Today + Practice Gym) via existing feature-gate system, submit/upsert API, minimal student prompt UI. Not yet consumed by any automated calibration/novelty/admin-review logic — collection only |
-| English Resource Bank Import/Review/Preview/Publishing Platform (Phase E0-E8) | ⬜ Planned only (2026-07-08, Plan-Sync-After-C1) — see docs/architecture/english-resource-bank-import-platform.md. English-only; no Persian/bilingual seed data at any phase. Not started |
+| English Resource Bank Import/Review/Preview/Publishing Platform (Phase E0-E8) | 🟡 **E0 model finalized** (2026-07-08) — see docs/architecture/english-resource-bank-import-platform.md. Entity model (`CefrResourceSource` reused as source registry; new `ResourceImportRun`/`ResourceRawRecord`/`ResourceCandidate`), 7-gate model, E1-E4 boundaries, admin nav plan all decided. No code — **E1 not started.** English-only; no Persian/bilingual seed data at any phase |
 | IFileStorageService / MinIO | ✅ Done — audio (TTS + speaking uploads) fully on object storage; not blocking deployment at current scale |
 | Admin lifecycle reset tools | ✅ Done |
 
