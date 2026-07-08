@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase B)
+lastUpdated: 2026-07-08 (Phase C1)
 owner: architecture
 supersedes:
 supersededBy:
@@ -92,9 +92,12 @@ Key facts about where this stands today (2026-07-08):
   docs/architecture/repetition-and-novelty.md. `PracticeActivityCache.ContentFingerprint`
   (fixed in Clean-A) remains a separate queue-slot uniqueness key, not this content-dedup signal.
 
-Current recommended next phase: **Phase C (generalize the Form.io template path across more
-Practice Gym patterns)** per
-`docs/reviews/2026-07-08-bank-first-ai-teaching-clean-architecture-plan.md` §17 — not started.
+Current state: **Phase C1 done (2026-07-08)** — generalized the Form.io template path from 1
+pilot pattern to a small first batch of 3 (`phrase_match`, `gap_fill_workplace_phrase`,
+`reading_multiple_choice_single`); see docs/architecture/practice-gym.md. Recommended next phase:
+either **Phase C2+** (migrate more Practice Gym patterns using the same proven approach) or
+**Phase D** (bank-first Today lesson composer) per
+`docs/reviews/2026-07-08-bank-first-ai-teaching-clean-architecture-plan.md` §17 — neither started.
 
 ---
 
@@ -200,12 +203,13 @@ Archived
 | Placement calibration/review fields | ✅ Done (2026-07-07) — `DifficultyBand`, `ReviewStatus`, `DiscriminationIndex`/`CalibrationSampleSize`; ⬜ `EvidenceWeight` recorded but **not yet consumed** by `PlacementAssessmentService`'s confidence calc |
 | `StudentLearningEvent.CurriculumObjectiveKey` | ✅ Done (2026-07-07) — closes the mastery-grouping proxy gap (`PatternKey` fallback retained for historical events) |
 | Admin review queue (cross-entity) | ✅ Done (2026-07-07) — `ActivityTemplate` + `PlacementItemDefinition`, read-only triage list |
-| Form.io Practice Gym pilot | ✅ Done (2026-07-07), **one pattern only** (`formio_practice_gym_pilot`), triple safety-gated (feature flag off by default + `ImplementationStatus="planned"` + requires an approved template); all other Practice Gym patterns and all Today lessons still use the legacy freeform `IAiActivityGenerator` path |
+| Form.io Practice Gym pilot | ✅ Done (2026-07-07), **one pattern only** (`formio_practice_gym_pilot`), triple safety-gated (feature flag off by default + `ImplementationStatus="planned"` + requires an approved template) |
+| Generalize Form.io template path — first batch (Phase C1) | ✅ Done (2026-07-08) — generalized from 1 to 4 pattern keys (`phrase_match`, `gap_fill_workplace_phrase`, `reading_multiple_choice_single` added). Each requires: code-level allow-list membership + the existing master feature flag + an approved/published `ActivityTemplate`. Evaluation dispatch (`ActivitySubmitHandler`) fixed to be content-driven (checks `LearningActivity.FormIoSchemaJson` presence) rather than pattern-driven, so legacy fallback for the SAME pattern key is unaffected. ~24 of ~28 patterns and all Today lessons still use the legacy freeform `IAiActivityGenerator` path |
 | Content-level repetition/novelty avoidance | ✅ Done (2026-07-08, Phase B) — `StudentActivityUsageLog`, `IActivityContentFingerprintService` (deterministic, exact-match only, no embeddings), `IActivityNoveltyPolicy` (fingerprint/template/topic/scenario cooldowns). Wired into `ActivitySubmitHandler`, `PracticeGymGenerationJob`'s Form.io pilot, and `ActivityMaterializationJob`. `TopicKey`/`ScenarioKey` extraction from content not yet built. See docs/architecture/repetition-and-novelty.md |
 | Clean-A / Clean-A2 dead-code cleanup | ✅ Done (2026-07-08) — removed dead onboarding enums, an orphaned onboarding component, dead route aliases, and a fully-orphaned admin career/word authoring API/UI chain; see `docs/reviews/2026-07-08-bank-first-ai-teaching-clean-architecture-plan.md` |
 | Session reflection | ⬜ Deferred — needs AI prompt `session_reflection` and stable session completion signal |
 | Bank-first Today lesson composer | ⬜ Deferred — planned Phase D of the 2026-07-08 plan, not started |
-| Generalize Form.io template path across Practice Gym | ⬜ Deferred — planned Phase C, not started |
+| Generalize Form.io template path across the rest of Practice Gym | ⬜ Deferred — Phase C1 (first batch of 3) done 2026-07-08; broader migration (Phase C2+) not started |
 | IFileStorageService / MinIO | ✅ Done — audio (TTS + speaking uploads) fully on object storage; not blocking deployment at current scale |
 | Admin lifecycle reset tools | ✅ Done |
 

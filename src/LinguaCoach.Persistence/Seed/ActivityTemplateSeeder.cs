@@ -1,0 +1,210 @@
+using System.Text.Json;
+using LinguaCoach.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+
+namespace LinguaCoach.Persistence.Seed;
+
+/// <summary>
+/// Seeds a small, original, English-only first batch of approved/published ActivityTemplates
+/// for Phase C1 — generalizing the Form.io Practice Gym pilot from one pattern to three
+/// low-risk, deterministic patterns (PhraseMatch, GapFillWorkplacePhrase,
+/// ReadingMultipleChoiceSingle). See docs/architecture/practice-gym.md.
+///
+/// Idempotent per template Key — safe to run on every startup.
+///
+/// IMPORTANT design note for anyone editing these templates: ActivityTemplateInstanceGenerator
+/// personalizes FormIoBaseSchemaJson via AI, but ScoringModelJson is NEVER regenerated — it is
+/// applied as-is to whatever the AI produces, keyed by component "key". GenerationInstructions
+/// below therefore explicitly forbid the AI from changing which option/value is correct or
+/// renaming/removing scored component keys. This is the same constraint the existing pilot
+/// template design already accepts; it is not a new risk introduced by this phase.
+/// </summary>
+public static class ActivityTemplateSeeder
+{
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
+    public static async Task SeedAsync(LinguaCoachDbContext db, ILogger logger, CancellationToken ct = default)
+    {
+        foreach (var seed in Templates)
+        {
+            var exists = await db.ActivityTemplates.AnyAsync(t => t.Key == seed.Key, ct);
+            if (exists) continue;
+
+            var template = new ActivityTemplate(
+                key: seed.Key,
+                skill: seed.Skill,
+                cefrLevel: seed.CefrLevel,
+                activityType: seed.ActivityType,
+                subskill: seed.Subskill,
+                patternKey: seed.PatternKey,
+                contextTagsJson: seed.ContextTagsJson,
+                focusTagsJson: seed.FocusTagsJson,
+                curriculumObjectiveKey: seed.CurriculumObjectiveKey,
+                formIoBaseSchemaJson: seed.FormIoBaseSchemaJson,
+                generationInstructions: seed.GenerationInstructions,
+                scoringModelJson: seed.ScoringModelJson,
+                validationRulesJson: seed.ValidationRulesJson,
+                estimatedDurationSeconds: seed.EstimatedDurationSeconds);
+
+            template.Approve();
+            template.Publish();
+
+            db.ActivityTemplates.Add(template);
+            logger.LogInformation("ActivityTemplateSeeder: seeded template '{Key}' for pattern '{PatternKey}'.", seed.Key, seed.PatternKey);
+        }
+
+        await db.SaveChangesAsync(ct);
+    }
+
+    private sealed record TemplateSeed(
+        string Key,
+        string Skill,
+        string? Subskill,
+        string CefrLevel,
+        string ActivityType,
+        string PatternKey,
+        string ContextTagsJson,
+        string FocusTagsJson,
+        string? CurriculumObjectiveKey,
+        string FormIoBaseSchemaJson,
+        string GenerationInstructions,
+        string ScoringModelJson,
+        string ValidationRulesJson,
+        int EstimatedDurationSeconds);
+
+    private static string Schema(object components) =>
+        JsonSerializer.Serialize(new { display = "form", components }, JsonOptions);
+
+    private static string ScoringRules(Dictionary<string, object> components) =>
+        JsonSerializer.Serialize(new { components }, JsonOptions);
+
+    private static string ValidationRules(string[] requiredKeys) =>
+        JsonSerializer.Serialize(new { requiredComponentKeys = requiredKeys, maxSchemaLength = 6000 }, JsonOptions);
+
+    private static readonly IReadOnlyList<TemplateSeed> Templates =
+    [
+        // ── 1. PhraseMatch — vocabulary, B1 ─────────────────────────────────────────────
+        new TemplateSeed(
+            Key: "phrase_match_workplace_seed_v1",
+            Skill: "vocabulary",
+            Subskill: "vocabulary.collocation",
+            CefrLevel: "B1",
+            ActivityType: "VocabularyPractice",
+            PatternKey: "phrase_match",
+            ContextTagsJson: """["workplace"]""",
+            FocusTagsJson: """["phrase_matching"]""",
+            CurriculumObjectiveKey: "b1.vocabulary.topic_word_families",
+            FormIoBaseSchemaJson: Schema(new object[]
+            {
+                new { type = "content", key = "instructions", input = false,
+                      html = "<p>Choose the meaning that best matches each workplace phrase.</p>" },
+                new { type = "radio", key = "phrase_1", label = "What does 'circle back' mean?",
+                      values = new[] {
+                          new { label = "Discuss something again later", value = "A" },
+                          new { label = "Walk around the office", value = "B" },
+                          new { label = "Cancel a meeting", value = "C" } } },
+                new { type = "radio", key = "phrase_2", label = "What does 'touch base' mean?",
+                      values = new[] {
+                          new { label = "Finish a project", value = "A" },
+                          new { label = "Make brief contact to check in", value = "B" },
+                          new { label = "Start a new task", value = "C" } } },
+                new { type = "radio", key = "phrase_3", label = "What does 'attach the file' mean?",
+                      values = new[] {
+                          new { label = "Print the document", value = "A" },
+                          new { label = "Delete the document", value = "B" },
+                          new { label = "Send a document along with an email", value = "C" } } },
+            }),
+            GenerationInstructions:
+                "Personalize only the surface wording: you may reword the three phrase questions and the " +
+                "wording of all answer options, and you may change which workplace phrases are asked about. " +
+                "Do NOT change the component 'key' values (instructions, phrase_1, phrase_2, phrase_3) or the " +
+                "number of components. For each radio component, the option with value 'B' MUST remain the " +
+                "correct meaning of the phrase asked about (value 'A' and 'C' must remain incorrect distractors). " +
+                "Keep all content in English only — do not add any other language. Keep a professional, " +
+                "workplace-appropriate tone suitable for CEFR B1 learners.",
+            ScoringModelJson: ScoringRules(new Dictionary<string, object>
+            {
+                ["phrase_1"] = new { kind = "single_choice", correctAnswer = "A", points = 1.0 },
+                ["phrase_2"] = new { kind = "single_choice", correctAnswer = "B", points = 1.0 },
+                ["phrase_3"] = new { kind = "single_choice", correctAnswer = "C", points = 1.0 },
+            }),
+            ValidationRulesJson: ValidationRules(["phrase_1", "phrase_2", "phrase_3"]),
+            EstimatedDurationSeconds: 180),
+
+        // ── 2. GapFillWorkplacePhrase — vocabulary, B1 ──────────────────────────────────
+        new TemplateSeed(
+            Key: "gap_fill_workplace_phrase_seed_v1",
+            Skill: "vocabulary",
+            Subskill: "vocabulary.collocation",
+            CefrLevel: "B1",
+            ActivityType: "VocabularyPractice",
+            PatternKey: "gap_fill_workplace_phrase",
+            ContextTagsJson: """["workplace"]""",
+            FocusTagsJson: """["gap_fill"]""",
+            CurriculumObjectiveKey: "b1.vocabulary.topic_word_families",
+            FormIoBaseSchemaJson: Schema(new object[]
+            {
+                new { type = "content", key = "sentence_1", input = false,
+                      html = "<p>Could you please ______ the meeting to Thursday? I have a scheduling conflict.</p>" },
+                new { type = "textfield", key = "blank_1", label = "Fill in the missing word" },
+                new { type = "content", key = "sentence_2", input = false,
+                      html = "<p>I'll ______ base with you once I have an update from the client.</p>" },
+                new { type = "textfield", key = "blank_2", label = "Fill in the missing word" },
+            }),
+            GenerationInstructions:
+                "Personalize only the surface wording: you may change the two workplace sentences and which " +
+                "missing word they test, as long as each sentence still has exactly one clear, unambiguous " +
+                "missing word. Do NOT change the component 'key' values (sentence_1, blank_1, sentence_2, " +
+                "blank_2) or the number of components. Update the 'html' text in sentence_1/sentence_2 to match " +
+                "whatever new sentence you write, keeping the blank shown as a blank (e.g. '______'). Keep all " +
+                "content in English only. Keep a professional, workplace-appropriate tone suitable for CEFR B1 " +
+                "learners.",
+            ScoringModelJson: ScoringRules(new Dictionary<string, object>
+            {
+                ["blank_1"] = new { kind = "text_normalized", correctAnswer = "reschedule", points = 1.0 },
+                ["blank_2"] = new { kind = "text_normalized", correctAnswer = "touch", points = 1.0 },
+            }),
+            ValidationRulesJson: ValidationRules(["blank_1", "blank_2"]),
+            EstimatedDurationSeconds: 150),
+
+        // ── 3. ReadingMultipleChoiceSingle — reading, B1 ────────────────────────────────
+        new TemplateSeed(
+            Key: "reading_mcq_workplace_seed_v1",
+            Skill: "reading",
+            Subskill: "reading.detail",
+            CefrLevel: "B1",
+            ActivityType: "ReadingTask",
+            PatternKey: "reading_multiple_choice_single",
+            ContextTagsJson: """["workplace"]""",
+            FocusTagsJson: """["reading_comprehension"]""",
+            CurriculumObjectiveKey: "b1.reading.understanding_texts",
+            FormIoBaseSchemaJson: Schema(new object[]
+            {
+                new { type = "content", key = "reading_passage", input = false,
+                      html = "<p>The marketing team submitted the quarterly report a week late because two " +
+                             "members were out sick. The manager decided to extend the internal review period " +
+                             "by three days so the finance department would still have enough time to prepare " +
+                             "the summary for the board meeting.</p>" },
+                new { type = "radio", key = "answer", label = "Why did the manager extend the review period?",
+                      values = new[] {
+                          new { label = "To reduce costs", value = "A" },
+                          new { label = "Because the report was submitted late", value = "B" },
+                          new { label = "Because the board meeting was cancelled", value = "C" } } },
+            }),
+            GenerationInstructions:
+                "Personalize only the surface wording: you may write a different short workplace passage " +
+                "(3-5 sentences) and a different single comprehension question with three answer options, as " +
+                "long as the passage clearly and unambiguously supports exactly one correct answer. Do NOT " +
+                "change the component 'key' values (reading_passage, answer) or the number of components. The " +
+                "option with value 'B' MUST remain the correct answer supported by the passage; 'A' and 'C' " +
+                "must remain plausible-but-incorrect distractors. Keep all content in English only. Keep a " +
+                "professional, workplace-appropriate tone suitable for CEFR B1 learners.",
+            ScoringModelJson: ScoringRules(new Dictionary<string, object>
+            {
+                ["answer"] = new { kind = "single_choice", correctAnswer = "B", points = 1.0 },
+            }),
+            ValidationRulesJson: ValidationRules(["reading_passage", "answer"]),
+            EstimatedDurationSeconds: 240),
+    ];
+}

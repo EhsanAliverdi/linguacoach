@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase B)
+lastUpdated: 2026-07-08 (Phase C1)
 owner: engineering
 supersedes:
 supersededBy:
@@ -14,36 +14,51 @@ Last updated: 2026-07-08
 
 ## Active sprint
 
-**Phase B — Repetition/Novelty Foundation (2026-07-08)** — complete, uncommitted
+**Phase C1 — Generalize the Form.io Practice Gym pilot (2026-07-08)** — complete, committed
 
-Last completed: Clean-A/Clean-A2 cleanup (dead code removal, doc-root remediation,
-`LearningTrack`/`WritingSubmission` deletion) — see "Previous sprint" below. Before that,
-the 2026-07-07 bank-first architecture (Phases 1-10).
+Last completed: Phase B — Repetition/Novelty Foundation (see "Previous sprint" below). Before
+that, Clean-A/Clean-A2 cleanup, and before that the 2026-07-07 bank-first architecture
+(Phases 1-10).
 
-**This sprint added the real content-usage/cooldown layer Clean-A explicitly did not build:**
-new `StudentActivityUsageLog` entity (migration `T_PhaseB_StudentActivityUsageLog`, applied to
-local dev DB), `IActivityContentFingerprintService` (deterministic content fingerprint —
-exact-match only, no embeddings), `IActivityNoveltyPolicy` (fingerprint/template/topic/scenario
-cooldowns with an intentional-review bypass). Wired into `ActivitySubmitHandler` (usage logging
-on every completion), `PracticeGymGenerationJob`'s Form.io pilot (template + content cooldown
-checks, bounded retry, safe fallback), and `ActivityMaterializationJob` (avoid-repeating prompt
-hint + content cooldown check, bounded retry, never blocks Today lessons). Full design:
-**docs/architecture/repetition-and-novelty.md**.
+**This sprint proved the bank-first migration pattern scales beyond one pilot pattern.**
+Generalized `PracticeGymGenerationJob`'s Form.io template path from the single original pilot
+pattern to a small first batch of 3 real patterns (`phrase_match`, `gap_fill_workplace_phrase`,
+`reading_multiple_choice_single`), chosen for being deterministic, audio-free, and already live
+in Practice Gym. Seeded 3 new approved/published `ActivityTemplate` rows
+(`ActivityTemplateSeeder`, idempotent, original English-only content). Found and fixed a real
+generalization bug: `ActivitySubmitHandler`'s Form.io-scored evaluation dispatch was
+pattern-driven (would have broken legacy fallback for the same pattern key) — changed to
+content-driven (checks `LearningActivity.FormIoSchemaJson` presence instead). Full design:
+**docs/architecture/practice-gym.md** ("Bank-first pattern coverage" section).
 
-**Known gaps, deliberately deferred:** `TopicKey`/`ScenarioKey`/`PassageKey` are not yet
-populated from content (fields + cooldown logic exist, no populator yet); no job-level
-integration test for the two jobs' retry loops (matches existing project convention for this
-job); no admin UI for cooldown-window configuration.
+**~24 of ~28 Practice Gym patterns and all Today lessons remain untouched legacy generation** —
+this was a deliberately small first batch, not a broad migration.
+
+**Known gaps, deliberately deferred:** no automated check that AI-personalized content keeps
+the same correct-answer identity as the template's static scoring rules (enforced by generation
+instructions + required-key validation only — same limitation the original pilot accepted); no
+new admin UI (reuses the existing single feature-flag toggle for all 4 template-path patterns).
 
 **Next planned (none started yet):**
-- **Phase C** — generalize the Form.io template path from the one Practice Gym pilot pattern to
-  more of the exercise-pattern catalog
+- **Phase C2+** — migrate more Practice Gym patterns using the same proven approach
 - **Phase D** — bank-first Today lesson composer (highest-risk phase; Today lessons currently
   use 100% legacy freeform AI generation with zero bank involvement)
 
 Today lessons and all non-migrated Practice Gym patterns continue to use the legacy
 `IAiActivityGenerator` freeform generation path unchanged and un-deprecated — this is the active
-fallback, not dead code, and must not be bulk-deleted before Phases C/D replace it pattern-by-pattern.
+fallback, not dead code, and must not be bulk-deleted before Phase D replaces it.
+
+---
+
+## Previous sprint
+
+**Phase B — Repetition/Novelty Foundation (2026-07-08)** — complete
+
+Added the real content-usage/cooldown layer: `StudentActivityUsageLog` entity, deterministic
+`IActivityContentFingerprintService`, cooldown-based `IActivityNoveltyPolicy`. Wired into
+`ActivitySubmitHandler` (usage logging), `PracticeGymGenerationJob`'s Form.io pilot, and
+`ActivityMaterializationJob` (Today lessons) — both job integrations bounded-retry and fail
+open. Full design: `docs/architecture/repetition-and-novelty.md`.
 
 ---
 

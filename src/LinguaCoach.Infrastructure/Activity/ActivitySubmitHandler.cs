@@ -340,16 +340,25 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         var studentSkillContext = await BuildStudentSkillContextAsync(
             profile.Id, activity.ExercisePatternKey, pattern.MarkingMode, ct);
 
-        // Form.io Practice Gym pilot: ContentJson carries the student-safe schema (never the
+        // Form.io-scored dispatch is CONTENT-driven, not pattern-driven (Phase C1, 2026-07-08).
+        // A pattern's ExercisePatternDefinition.MarkingMode is a static, shared config value —
+        // it must stay whatever the pattern's legacy default is (e.g. KeyedSelection for
+        // PhraseMatch) so that legacy-generated instances of the SAME pattern (the fallback path
+        // when no approved template exists) keep evaluating exactly as before. Whether THIS
+        // SPECIFIC activity instance should be Form.io-scored is decided by whether it actually
+        // carries Form.io content (LearningActivity.FormIoSchemaJson, set only by
+        // ActivityTemplate-personalized instances via SetFormIoContent) — never by the pattern's
+        // nominal marking mode alone. ContentJson carries the student-safe schema (never the
         // legacy AiGeneratedContentJson placeholder), and ScoringRulesJson is sourced
         // server-side only — never derived from anything sent to the client.
-        var isFormIoScored = pattern.MarkingMode == MarkingMode.FormIoScored;
+        var isFormIoScored = pattern.MarkingMode == MarkingMode.FormIoScored
+            || !string.IsNullOrWhiteSpace(activity.FormIoSchemaJson);
 
         var evalRequest = new PatternEvaluationRequest(
             ActivityId: activity.Id,
             StudentProfileId: profile.Id,
             ExercisePatternKey: activity.ExercisePatternKey,
-            MarkingMode: pattern.MarkingMode,
+            MarkingMode: isFormIoScored ? MarkingMode.FormIoScored : pattern.MarkingMode,
             InteractionMode: pattern.InteractionMode,
             ActivityType: activity.ActivityType,
             ContentJson: isFormIoScored ? (activity.FormIoSchemaJson ?? "{}") : activity.AiGeneratedContentJson,

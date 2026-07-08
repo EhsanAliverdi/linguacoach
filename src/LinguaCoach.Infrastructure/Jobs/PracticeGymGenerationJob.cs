@@ -31,6 +31,24 @@ public sealed class PracticeGymGenerationJob : IJob
     public const string JobName = "practice-gym-generation";
     private const int MaxItemsPerRun = 20;
 
+    /// <summary>
+    /// Pattern keys allowed to attempt the bank-first Form.io template path (Phase C1, 2026-07-08
+    /// — generalizes the original single-pattern pilot to a small first batch). Any pattern NOT
+    /// in this set always uses the legacy freeform <see cref="IAiActivityGenerator"/> path,
+    /// unchanged. Adding/removing a key here is the safe, code-level way to expand or roll back
+    /// which patterns attempt the template path — no admin UI, per Phase C1 scope. The master
+    /// <see cref="IPracticeGymFormIoTemplatePilotSettingsProvider"/> toggle remains the single
+    /// admin-editable kill switch covering every key in this set.
+    /// See docs/architecture/practice-gym.md.
+    /// </summary>
+    private static readonly HashSet<string> TemplateMigratedPatternKeys = new(StringComparer.Ordinal)
+    {
+        ExercisePatternKey.FormIoPracticeGymPilot,
+        ExercisePatternKey.PhraseMatch,
+        ExercisePatternKey.GapFillWorkplacePhrase,
+        ExercisePatternKey.ReadingMultipleChoiceSingle,
+    };
+
     private readonly LinguaCoachDbContext _db;
     private readonly IAiActivityGenerator _aiGenerator;
     private readonly IExercisePatternRepository _patternRepo;
@@ -238,17 +256,21 @@ public sealed class PracticeGymGenerationJob : IJob
         // type is also promoted from "planned" to "ready") — personalize from a published,
         // approved ActivityTemplate instead of free-form AI generation. Falls back to the
         // standard path below on any failure or when no matching template exists.
-        if (pattern.Key == ExercisePatternKey.FormIoPracticeGymPilot
+        if (TemplateMigratedPatternKeys.Contains(pattern.Key)
             && await _formIoPilotSettings.IsEnabledAsync(ct))
         {
-            var pilotActivity = await TryMaterializeFromTemplateAsync(cache, pattern, routing, poolItemId, ct);
-            if (pilotActivity is not null)
+            var templateActivity = await TryMaterializeFromTemplateAsync(cache, pattern, routing, poolItemId, ct);
+            if (templateActivity is not null)
             {
                 _logger.LogInformation(
-                    "PracticeGymGenerationJob: cache row {CacheId} ready (Form.io template pilot) with ActivityId={ActivityId}.",
-                    cache.Id, pilotActivity.Id);
+                    "PracticeGymGenerationJob: cache row {CacheId} ready (Form.io template path) PatternKey={PatternKey} ActivityId={ActivityId}.",
+                    cache.Id, pattern.Key, templateActivity.Id);
                 return;
             }
+
+            _logger.LogInformation(
+                "PracticeGymGenerationJob: no usable template for PatternKey={PatternKey} cache row {CacheId} — falling back to legacy generation.",
+                pattern.Key, cache.Id);
         }
 
         var contentJson = await _aiGenerator.GenerateActivityContentAsync(generationContext, ct);
