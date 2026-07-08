@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Plan-Sync-G0)
+lastUpdated: 2026-07-09 (Phase G0)
 owner: product
 supersedes:
 supersededBy:
@@ -22,24 +22,42 @@ content model (Resource Banks/Resource Candidates/Activity Templates). This is a
 architecture-cleanup track, not a visual redesign**, and it does **not** delete the per-student
 readiness lifecycle — see the treatment decisions below. Sequenced immediately after Phase E7
 (done) and before the Phase D3/E8 decision checkpoint; see `docs/roadmap/road-map.md` §19a for
-the full phase order and Decision Log for the full rationale.
+the full phase order and Decision Log for the full rationale. **Phase G0 (the audit itself) is
+now done (2026-07-09, docs/audit-only)** — the full surface-by-surface inventory and
+classification lives in `docs/architecture/bank-first-admin-backend-surface-audit.md`; G1/G2/G3
+below are the implementation phases that act on its findings and have **not** started.
 
-- [ ] **Phase G0 — Bank-First Admin/Backend Surface Audit** `Not started`
-  - **Purpose**: go through every admin page, API endpoint, background job, and backend
-    lifecycle concept post-bank-first-migration and classify each as keep / rename-reframe /
-    move-to-diagnostics / merge / remove-later, using the treatment decisions below as the
-    framework.
-  - **Not an open design question** — the framework itself was decided in this docs pass; G0's
-    job is to apply it to concrete surfaces, not re-derive it.
+- [x] **Phase G0 — Bank-First Admin/Backend Surface Audit** `Done` (2026-07-09, docs/audit-only)
+  - **Delivered**: `docs/architecture/bank-first-admin-backend-surface-audit.md` — inventory +
+    classification of 31 admin routes, ~20 controllers, 8 jobs + ~6 services, 11 terminology
+    terms, each tagged keep / rename-reframe / move-to-diagnostics / merge / remove-later with a
+    P0/P1/P2 priority and a target phase.
+  - **No cleanup implemented** — no routes renamed, no code moved, no pages deleted, no
+    migrations; docs only.
+  - **Confirmed**: the readiness/assignment/delivery lifecycle is load-bearing →
+    `StudentActivityReadinessItem` kept, reframed as "Student Activity Assignment / Delivery
+    Queue," never deleted.
+  - **Headline findings**: P0 `/admin/lessons` conflates delivery-queue health + manual
+    generation + buffer settings + diagnostics ("readiness pool health" subtitle); P1 the E7
+    reading-passages admin page (`/admin/resource-banks/reading-passages`) is routable but
+    missing from the sidebar nav (a G1 safe quick win, deliberately not fixed in G0); P1 the
+    "Content" nav section is overloaded.
 - [ ] **Phase G1 — Admin Information Architecture Cleanup** `Not started`
-  - Acts on Phase G0's classifications: nav/page reorganization, including the "Content" vs "AI
-    System" nav split the roadmap's original generic "Phase G" item named.
+  - Acts on Phase G0's classifications: split the P0 "Lessons" page; add the missing
+    reading-passages nav item (safe quick win); regroup the overloaded "Content" nav section;
+    relabel readiness/pool-health surfaces to assignment/delivery-queue language; reframe
+    "Exercise Types" as a capability registry (label only). Labels/nav/page-composition only —
+    no route or DTO renames.
 - [ ] **Phase G2 — Backend Legacy Surface Cleanup** `Not started`
   - Acts on Phase G0's "remove-later"/"merge" classifications for backend code (jobs, services,
-    dead admin API routes) once G0 has classified them.
+    dead admin API routes); completes the endpoint-by-endpoint sweep G0 flagged as its own
+    limitation; decides whether the `Application.ReadinessPool` namespace / `PracticeActivityCache`
+    names are worth renaming (only if proven low-risk). No delivery-lifecycle behaviour change.
 - [ ] **Phase G3 — Delivery/Bank/AI Diagnostics Consolidation** `Not started`
-  - Consolidates the "keep as diagnostics" pieces G0 identifies (readiness/pool health,
-    AI-generation cost/quality visibility) into one coherent diagnostics area.
+  - Consolidates the "keep as diagnostics" pieces G0 identified (`AdminAiOperationsController`,
+    `AdminGenerationQualityController`, pool/delivery health endpoints, `StudentReadinessAuditService`
+    output, generation-validation-failure summaries, AI cost/usage) into one coherent diagnostics
+    area anchored on `/admin/diagnostics`.
 
 **Treatment decisions recorded now** (product decisions made in this docs pass, not audit
 findings — G0 applies these, it does not re-decide them):

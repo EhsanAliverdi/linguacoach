@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Plan-Sync-G0)
+lastUpdated: 2026-07-09 (Phase G0)
 owner: architecture
 supersedes:
 supersededBy:
@@ -209,12 +209,16 @@ lifecycle this file's fallback/generation flow relies on: `StudentActivityReadin
 `IStudentActivityReadinessPoolService` is now described as a **"Student Activity Assignment /
 Delivery Queue"** rather than an "AI-generated activity cache" — the underlying selected →
 assigned → ready → reserved → completed/expired/stale/failed state machine is unchanged and
-still fully load-bearing for both Today and Practice Gym. A future **Phase G0** audit will
-formalize this reframing across every admin page/API/job that touches readiness/pool
-terminology; this file's own primary subject remains the AI generation engine, not the readiness
-pool's architecture — see `docs/roadmap/road-map.md` §1 and Decision Log (Plan-Sync-G0 entry) for
-the full decision and `docs/architecture/readiness-pool.md` for the pool's entity/lifecycle
-detail.
+still fully load-bearing for both Today and Practice Gym. **Phase G0 (done, 2026-07-09,
+docs/audit-only)** then audited every admin page/API/job that touches readiness/pool terminology
+and confirmed exactly this: `ActivityMaterializationJob`, `LessonBatchGenerationJob`, and the
+readiness replenishment/buffer jobs are all classified keep (with the legacy freeform fallback
+portions deferred to Phase F, per-pattern), and `StudentActivityReadinessItem` is classified
+keep-reframe, never delete. This file's own primary subject remains the AI generation engine, not
+the readiness pool's architecture — see `docs/architecture/bank-first-admin-backend-surface-audit.md`
+for the full surface classification, `docs/roadmap/road-map.md` §1 and Decision Log (Plan-Sync-G0
+and Phase G0 entries) for the decisions, and `docs/architecture/readiness-pool.md` for the pool's
+entity/lifecycle detail.
 
 **`GenerationStatus` default-value bugfix (Bugfix-D1A, 2026-07-08):** while building D1's
 regression tests, a pre-existing bug was found in `LearningSessionConfiguration`:
