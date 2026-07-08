@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Plan-Sync-E6-Decision)
+lastUpdated: 2026-07-08 (Phase E6)
 owner: engineering
 supersedes:
 supersededBy:
@@ -14,27 +14,39 @@ Last updated: 2026-07-08
 
 ## Active sprint
 
+**Phase E6 — First Real English Resource Depth (2026-07-08)** — complete
+
+Added an original, internally-authored, English-only seed pack — 32 vocabulary entries (A1-B2),
+12 grammar profile entries, 10 short reading excerpts (150-225 chars, under the 500-char publish
+limit) — routed through the real staging→analysis/validation→approval→publish pipeline via a new
+`InternalResourceSeedPackSeeder`, not direct final-table seeding. New
+`ResourceImportService.ApplyDeterministicRowMetadata` maps an already-known `cefrLevel`/`skill`/
+`subskill` straight onto a candidate (reusing the existing `ApplyAnalysis` mutator, confidence
+1.0, marked `"import-row-deterministic-mapping"`) instead of routing internally-authored content
+through AI-advisory analysis — no AI provider is invoked anywhere in this path. The seeder itself
+calls `ResourceCandidate.Approve(...)` on behalf of the reviewing admin, consistent with
+`ActivityTemplateSeeder`'s existing precedent; every deterministic validation gate still runs for
+real. A dedicated test proves every published bank row resolves back to a `ResourceCandidate`
+marked published by the real publish workflow (no direct-final-table-bypass). Idempotent. +14
+backend tests (3,486 → 3,500 passed: 5 architecture + 2,033 unit + 1,462 integration). **No
+external dataset imported, no Persian/bilingual/support-language content added.**
+
+**Next: a third Phase D1 decision checkpoint is now live, not resolved by this phase** — start
+Phase D1 using this first real content slice, or continue Phase E7/E8 for more resource depth/
+search first. Phase D remains not started; PG-v2 implementation remains not started. Today lesson
+generation remains 100% legacy `IAiActivityGenerator` freeform generation. See
+`docs/roadmap/road-map.md` §19a for the full phase order.
+
+---
+
+## Previous sprint
+
 **Plan-Sync-E6-Decision — Choose E6 before Today composer (2026-07-08)** — complete (docs-only)
 
-**Last completed: Phase E5.** Added `ResourceBankQueryService` — read-only list + detail queries
-for `CefrVocabularyEntry`/`CefrGrammarProfileEntry`/`CefrReadingReference`, reverse-lookup
-candidate traceability, 3 new admin pages. +31 backend tests (3,455 → 3,486 passed). Committed as
-`394bb4ff`.
-
-**Current immediate task (this docs sync): Plan-Sync-E6-Decision.** Resolved the Phase D1
-decision checkpoint opened by Phase E5: **continue with Phase E6 before Phase D1.** Bank
-*visibility* now exists (E5), but real English content *depth* does not — the published banks
-still hold only small synthetic/test data, not enough for Today's composer to produce anything
-useful. Updated roadmap phase sequence: E6 → Phase D1 decision checkpoint (second instance) →
+Resolved the Phase D1 decision checkpoint opened by Phase E5: continue with Phase E6 before
+Phase D1. Updated roadmap phase sequence: E6 → Phase D1 decision checkpoint (second instance) →
 either Phase D1 or Phase E7/E8 → PG-v2A/B/C/D later → Phase F → Phase G. Docs-only; no app code,
 migrations, or config changed; does not start any implementation.
-
-**Next implementation phase: Phase E6** — deepen real English resource/content support (reading/
-listening resources per the original E0-E8 plan). **Not started.** Still English-only, still no
-Persian/bilingual/support-language seed content, still no direct import-to-final-table bypass.
-Phase D remains not started; PG-v2 implementation remains not started. Today lesson generation
-remains 100% legacy `IAiActivityGenerator` freeform generation. See `docs/roadmap/road-map.md`
-§19a for the full phase order.
 
 ---
 

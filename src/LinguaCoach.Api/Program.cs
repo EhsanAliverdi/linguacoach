@@ -291,6 +291,12 @@ if (!app.Environment.IsEnvironment("Testing"))
     await LinguaCoach.Persistence.Seed.NotificationTemplateSeeder.SeedAsync(db, seederLogger);
     await LinguaCoach.Persistence.Seed.OnboardingTemplateSeeder.SeedAsync(db, seederLogger);
     await LinguaCoach.Persistence.Seed.ActivityTemplateSeeder.SeedAsync(db, seederLogger);
+    await LinguaCoach.Persistence.Seed.InternalResourceSeedPackSeeder.SeedAsync(
+        db,
+        scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.ResourceImport.IResourceImportService>(),
+        scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.ResourceImport.IResourceCandidateValidationService>(),
+        scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.ResourceImport.IResourceCandidatePublishService>(),
+        seederLogger);
 
     // Storage + Quartz startup health checks (warn-only — do not block startup).
     var storage = scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.Storage.IFileStorageService>();

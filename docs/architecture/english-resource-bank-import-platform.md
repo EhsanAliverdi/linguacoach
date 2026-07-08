@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Plan-Sync-E6-Decision)
+lastUpdated: 2026-07-08 (Phase E6)
 owner: architecture
 supersedes:
 supersededBy:
@@ -11,17 +11,17 @@ supersededBy:
 **Date planned:** 2026-07-08 (Plan-Sync-After-C1), **finalized:** 2026-07-08 (Phase E0),
 **E1 implemented:** 2026-07-08, **E2 implemented:** 2026-07-08, **E3 implemented:** 2026-07-08,
 **E4 implemented:** 2026-07-08, **Plan-Sync-After-E4:** 2026-07-08, **E5 implemented:** 2026-07-08,
-**Plan-Sync-E6-Decision:** 2026-07-08
+**Plan-Sync-E6-Decision:** 2026-07-08, **E6 implemented:** 2026-07-08
 **Status:** E1 (staging), E2 (AI analysis + validation gates 4-6), E3 (admin rendered preview),
-E4 (publish to first banks), and E5 (published-bank browsing/search/admin management) are all
-implemented. The published banks (vocabulary, grammar, short reading references) can now be
-browsed, filtered, and searched by an admin, with reverse traceability back to the originating
-`ResourceCandidate`/import run/source where available. **The Phase D1 decision checkpoint has
-been resolved (Plan-Sync-E6-Decision, 2026-07-08): continue with Phase E6 before Phase D1** —
-bank *visibility* now exists, but real English content *depth* does not; the banks still hold
-only small synthetic/test data, not enough for Today's composer to produce anything useful.
-**Phase E6 (deepen real English resource/content support) is the next recommended implementation
-phase.** Phase D1 remains deferred until after E6, or a later explicit product decision.
+E4 (publish to first banks), E5 (published-bank browsing/search/admin management), and **E6
+(first real English content depth)** are all implemented. The published banks now hold an
+original, internally-authored, English-only seed pack (32 vocabulary / 12 grammar / 10 short
+reading excerpts) that flowed through the full staging→validation→approval→publish pipeline —
+**no direct-final-table seeding, no external dataset, no Persian/bilingual content**. Traceable
+end to end: every published row resolves back to its originating `ResourceCandidate`/import
+run/source. **A new Phase D1 decision checkpoint follows E6**: start Phase D1 using this first
+real content slice, or continue Phase E7/E8 for more resource depth/search first — not resolved
+by this phase, see the Decision Log.
 **Some rows have now been published — but only `VocabularyEntry`/`GrammarProfileEntry`/short-
 excerpt `ReadingPassage` candidates that passed validation AND were explicitly admin-approved.**
 `ActivityTemplateCandidate` publishing is **deferred** (see "E4 — Publish to first banks" below
@@ -222,7 +222,7 @@ enabling approval) and E4 (approve/reject + publish action).
 | **E3** | Admin rendered preview | Gate 7a prerequisite — dedicated read-only rendered view per candidate, required before approval is enabled. |
 | **E4** ✅ done 2026-07-08 | Publish to first banks | Approve/reject + publish action — promotes an approved, validation-passed candidate into `CefrVocabularyEntry`/`CefrGrammarProfileEntry`/short-excerpt `CefrReadingReference`. `ActivityTemplateCandidate` publishing deferred. |
 | **E5** ✅ done 2026-07-08 | Published bank browsing/search/admin management | Admin search/browse over the first published banks (vocabulary, grammar, short reading references) — filter by CEFR level/source/search text, surfacing source/license/provenance, published status, and candidate traceability (reverse-lookup back to the `ResourceCandidate` it came from). Read-only — no edit/delete actions; all mutation still happens through Resource Candidates. Not a full analytics dashboard; not yet `ActivityTemplate`/AI-generation-time consumption (that's a later integration once Phase D exists). No external dataset import, no embeddings/semantic search. |
-| **E6** — next recommended phase (Plan-Sync-E6-Decision, 2026-07-08) | Reading/listening resources — deepen real English content | Extend the pipeline to `CefrReadingReference`-shaped content (passages) — same pipeline, new candidate/validation rules for longer-form text. A first listening-script bank (new typed entity) may also land here once audio-adjacent metadata handling is designed. **Explicitly chosen before Phase D1** — Phase E5 built the browsing/search surface but the banks still lack real English content depth for Today's composer to use. **Must preserve the English-only rule; no Persian/bilingual/support-language seed content at any point.** |
+| **E6** ✅ done 2026-07-08 | First real English content depth | An original, internally-authored, English-only seed pack (32 vocabulary / 12 grammar / 10 short reading excerpts) flowed through the full staging→validation→approval→publish pipeline — no direct-final-table seeding, no external dataset, no Persian/bilingual content. Proves the E1-E5 platform handles real usable content, not just synthetic tests. **Not** a full external-dataset import or E6's originally-envisioned "reading/listening resource expansion" scope — that broader scope remains available for a future phase if chosen. |
 | **E7** | Bigger import support | Background/queued import jobs (Quartz) for larger sources, ZIP archive support, audio-file-carrying sources (Common Voice, LibriVox) — deferred until E1-E6 prove the pipeline on simpler text sources first. |
 | **E8** | RAG/search enrichment | Embedding/vector-search-based candidate deduplication and semantic bank search — explicitly deferred past all of E0-E7; no pgvector, no embeddings before this phase, consistent with Phase B's repetition/novelty foundation scope discipline. |
 
@@ -483,9 +483,75 @@ stability, and the bank-table-untouched guarantee.
   reading-reference banks, see source/license/provenance and (where available) a trace back to
   the originating candidate/import run, without any edit/delete/publish capability on this
   surface — mutation remains exclusively on Resource Candidates.
-- **Explicitly deferred (confirmed not built)**: reading/listening resource expansion (E6),
-  background/queued larger imports (E7), embeddings/semantic search (E8), any `ActivityTemplate`/
-  AI-generation-time consumption of these banks (that's a Phase D integration concern, not E5's).
+- **Explicitly deferred (confirmed not built)**: content depth/volume (E6), background/queued
+  larger imports (E7), embeddings/semantic search (E8), any `ActivityTemplate`/AI-generation-time
+  consumption of these banks (that's a Phase D integration concern, not E5's).
+
+### E6 — First real English resource depth — implemented (2026-07-08)
+
+- **Scope decision**: E6 was deliberately scoped as a **controlled first content-depth slice**,
+  not the broader "reading/listening resource expansion" originally sketched for E6 in the E0
+  phase table — a genuine product-scoping choice made this phase, not a shortfall. The goal was
+  narrower and more load-bearing: prove the E1-E5 pipeline can carry real, useful, original
+  English content end to end, not only synthetic test fixtures.
+- **Content**: 32 vocabulary entries (A1-B2, general + some workplace terms, including phrasal
+  verbs), 12 grammar profile entries (spanning the grammar subskill taxonomy), 10 short reading
+  excerpts (150-225 characters, comfortably under `CefrReadingReference`'s 500-character publish
+  limit). **100% original, internally authored — no external dataset, no copied textbook/site
+  content, no Persian/bilingual content anywhere.**
+- **Pipeline discipline — no shortcuts taken**: the content was staged through
+  `ResourceImportService.ImportAsync` (three import runs, one per content group) exactly like an
+  admin-triggered import, then validated via `ResourceCandidateValidationService.ValidateAsync`
+  (real deterministic gates, no bypass), then approved and published via the real
+  `ResourceCandidate.Approve(...)`/`ResourceCandidatePublishService.PublishAsync` — **the same
+  code path an admin's UI click would exercise**, run by a startup seeder
+  (`InternalResourceSeedPackSeeder`) rather than clicked by a human, since this is pre-reviewed,
+  codebase-authored content (the same judgment the existing `ActivityTemplateSeeder` already
+  makes for its own hand-authored templates — `Approve()`/`Publish()` called directly, not routed
+  through a separate human-review UI step for content that's essentially reviewed by virtue of
+  being written into source control).
+- **Key design fix — deterministic CEFR/skill/subskill mapping at import time**: prior to E6,
+  `ResourceImportService` left `CefrLevel`/`PrimarySkill`/`Subskill` null at import time — those
+  fields were populated only by `ResourceCandidateAnalysisService`'s AI-advisory analysis (E2).
+  For internally-authored content where the author already knows the correct classification
+  (it's not a probabilistic guess), asking an AI to "discover" already-known metadata is
+  backwards. E6 added `ResourceImportService.ApplyDeterministicRowMetadata` — if a raw row
+  carries its own `cefrLevel`/`skill`/`subskill`/`tags` columns, they're copied straight onto the
+  candidate via the same `ApplyAnalysis` mutator E2 uses, but with `cefrConfidence=1.0` and an
+  explicit `mappingSource: "import-row-deterministic-mapping"` marker distinguishing it from a
+  real AI response — **no AI provider is invoked anywhere in this path**. Rows without these
+  columns are completely unaffected (existing import behavior for every prior import is
+  unchanged) — this is additive, not a breaking change to E1's import shape.
+- **No direct-final-table bypass**: `CefrVocabularyEntry`/`CefrGrammarProfileEntry`/
+  `CefrReadingReference` are constructed nowhere in this codebase except inside
+  `ResourceCandidatePublishService.BuildTargetEntity` — confirmed by a dedicated test asserting
+  every seeded bank row resolves back to a `ResourceCandidate` with `IsPublished=true` and a
+  matching `PublishedEntityType`/`PublishedEntityId` (a row inserted by any other path would have
+  no such candidate and would fail the assertion).
+- **Idempotency**: `InternalResourceSeedPackSeeder` checks for an existing `CefrResourceSource`
+  named `"SpeakPath Internal English Seed Pack v1"` and skips entirely if found — a full second
+  run creates no duplicate source, import runs, raw records, candidates, or published rows.
+- **Source registration**: the seed pack registers its own `CefrResourceSource` — `LanguageCode
+  ="en"`, `LicenseType="Internal/Original"` (never claims an external license like CC-BY),
+  `AllowsStudentDisplay=true`, `AllowsCommercialUse=true`, honest internal `AttributionText`,
+  approved via the real `ApproveForImport(...)` method.
+- **Tests**: source idempotency, import-run/raw-record/candidate creation, deterministic
+  CEFR/skill/subskill population (proven distinct from AI output), successful validation with no
+  AI provider call, successful publish to all three target tables with correct field mapping,
+  published rows queryable via E5's `ResourceBankQueryService`, traceability back to
+  candidate/import run/source, full-seeder-rerun idempotency, and the no-direct-final-table-
+  bypass guarantee. +14 backend tests, all deterministic — no test requires a live/real AI
+  provider or external network call.
+- **Acceptance — met**: the published banks now hold real, original, English-only content
+  (32/12/10 rows) discoverable through E5's browse/search surface, fully traceable to its
+  originating candidate/import/source, added without bypassing any staging/review/publish gate.
+- **Explicitly deferred (confirmed not built)**: any real external dataset (CEFR-J, CMUdict,
+  Common Voice, LibriVox, Gutenberg, Wiktionary, or any scraped site) remains future work, gated
+  on licensing review per `docs/architecture/cefr-resource-licensing-review.md`; broader reading/
+  listening resource-type expansion (the originally-sketched E6 scope) is deferred to a future
+  phase if chosen; `ActivityTemplateCandidate` publishing and full-length `ReadingPassage`
+  publishing remain deferred per Phase E4's own decisions; background/queued imports (E7),
+  embeddings/semantic search (E8), Phase D, and PG-v2 are all untouched.
 
 ---
 
@@ -554,13 +620,15 @@ search/admin-management surface didn't meet the gate's actual intent ("Phase D h
 bank content to compose from"). **Phase E5 (2026-07-08) closed the visibility gap** — the
 published banks can be browsed, filtered, and searched, with traceability back to their source
 candidates — but **did not** close the content-depth gap. **Plan-Sync-E6-Decision (2026-07-08)
-resolved that follow-on decision checkpoint: continue with Phase E6 before Phase D1.** The banks
-still hold only small synthetic/test data — not enough real English content depth for Today's
-composer to produce anything useful. **Phase D1 now remains deferred until after Phase E6, or
-until a later explicit product decision** (a second decision checkpoint follows E6). See
+resolved that follow-on decision checkpoint: continue with Phase E6 before Phase D1.** **Phase E6
+(2026-07-08) closed the content-depth gap for a first slice** — the published banks now hold 32
+vocabulary / 12 grammar / 10 reading-excerpt rows of real, original, English-only content, added
+through the full staging/review/publish pipeline with no bypass. **A third Phase D1 decision
+checkpoint now applies and is not resolved by this phase**: start Phase D1 using this first
+real content slice, or continue Phase E7/E8 for more resource depth/search before D1. See
 `docs/roadmap/road-map.md` Decision Log (2026-07-08, Plan-Sync-After-C1, Plan-Sync-After-E4,
-Phase E5, and Plan-Sync-E6-Decision entries) for the full reasoning and current preferred phase
-order.
+Phase E5, Plan-Sync-E6-Decision, and Phase E6 entries) for the full reasoning and current
+preferred phase order.
 
 ---
 
@@ -601,6 +669,11 @@ order.
   E6 next, D1 deferred until after E6 or a later decision); `docs/roadmap/road-map.md` (§19a
   phase sequence, Decision Log), `docs/sprints/current-sprint.md`, `docs/architecture/README.md`,
   `docs/backlog/product-backlog.md`.
+- Docs updated (Phase E6, this section): this file (E6 detail section added, "Relationship to
+  Phase D" section updated to reflect the closed content-depth gap and the third live-but-
+  unresolved Phase D1 decision checkpoint); `docs/roadmap/road-map.md` (Current Project Status,
+  Test Totals, Decision Log, §19a phase sequence); `docs/sprints/current-sprint.md`;
+  `docs/architecture/README.md`; `docs/backlog/product-backlog.md`.
 - Docs intentionally not updated: `docs/architecture/cefr-resource-licensing-review.md` — its
   licensing findings are unchanged by this phase; no new sources were browsed or licensing
   conclusions revisited in E0. `docs/architecture/practice-gym.md`/`repetition-and-novelty.md` —

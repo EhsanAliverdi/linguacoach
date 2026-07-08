@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Plan-Sync-E6-Decision)
+lastUpdated: 2026-07-08 (Phase E6)
 owner: product
 supersedes:
 supersededBy:
@@ -22,12 +22,16 @@ candidate-type publish targets were evaluated and deliberately deferred rather t
 through with a lossy or dishonest shortcut — tracked here as future backlog items. **Published-
 bank browsing/search/admin management for the banks E4 can already publish into is done as of
 Phase E5** (2026-07-08, `ResourceBankQueryService`, read-only, reverse candidate traceability).
-**Plan-Sync-E6-Decision (2026-07-08) chose Phase E6 (deepen real English resource/content
-support) as the next implementation phase, ahead of Phase D1** — bank visibility now exists
-(E5), but real English content depth does not; Phase D1 remains deferred until after E6 or a
-later explicit product decision. Real source import (real external datasets, licensing-approved)
-remains a later, separately-scoped step within E6 or beyond — not automatically in scope just
-because E6 was chosen next, unless explicitly re-scoped when E6 actually starts.
+**Phase E6 (2026-07-08) added the first real English content depth**: an original,
+internally-authored, English-only seed pack (32 vocabulary / 12 grammar / 10 reading excerpts)
+published through the real staging→validation→approval→publish pipeline — no direct-final-table
+seeding, no external dataset, no Persian/bilingual content. The two candidate-type publish
+targets below are unaffected by E6 (it only used `VocabularyEntry`/`GrammarProfileEntry`/
+`ReadingPassage` candidate types, already supported since E4) and remain deferred as described.
+**A third Phase D1 decision checkpoint is now live, not resolved by E6**: start Phase D1 using
+this first content slice, or continue Phase E7/E8 for more resource depth/search first. Real
+external-dataset import remains a later, separately-scoped step, gated on licensing review — not
+automatically in scope for any future phase unless explicitly re-scoped when that phase starts.
 
 - [ ] **`ActivityTemplateCandidate` → `ActivityTemplate` publishing** `Not started`
   - **Purpose**: allow an imported/staged Form.io-shaped candidate to become a real, usable

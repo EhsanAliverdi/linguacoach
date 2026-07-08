@@ -15,6 +15,16 @@ namespace LinguaCoach.Infrastructure.ResourceImport;
 /// JSONL) → per-row gates (duplicate, English-only, recognizable-content) → stage
 /// <see cref="ResourceRawRecord"/>/<see cref="ResourceCandidate"/> rows. Never writes to any
 /// published Cefr* bank table. No AI analysis, no CEFR classification — those are Phase E2+.
+///
+/// Phase E6 addition: when a row already carries its own <c>cefrLevel</c>/<c>skill</c>/
+/// <c>subskill</c>/<c>tags</c> columns (e.g. an internally-authored seed pack where the author
+/// already knows the correct classification), <see cref="ProcessRow"/> copies those values
+/// straight onto the new <see cref="ResourceCandidate"/> via <see cref="ResourceCandidate.ApplyAnalysis"/>
+/// at staging time. This is a deterministic, content-driven mapping — explicitly distinct from
+/// Phase E2's <see cref="ResourceCandidateAnalysisService"/>, which calls a real AI provider to
+/// *guess* classification for content whose CEFR level/skill is not already known. A row with no
+/// such columns is left exactly as before (null classification fields, unchanged until Phase E2
+/// analysis runs).
 /// </summary>
 public sealed class ResourceImportService : IResourceImportService
 {
@@ -35,6 +45,14 @@ public sealed class ResourceImportService : IResourceImportService
     private static readonly string[] TitleFields = { "title" };
     private static readonly string[] AnyContentFields =
         { "word", "lemma", "text", "passage", "title", "grammarkey", "explanation", "formio", "schema", "template" };
+
+    // Phase E6 — optional deterministic classification columns. When present on a row, their
+    // values are copied directly onto the staged candidate (see ProcessRow) instead of being left
+    // null for Phase E2's AI analysis to fill in later.
+    private const string CefrLevelField = "cefrlevel";
+    private const string SkillField = "skill";
+    private const string SubskillField = "subskill";
+    private const string TagsField = "tags";
 
     private readonly LinguaCoachDbContext _db;
     private readonly IActivityContentFingerprintService _fingerprint;
@@ -196,9 +214,55 @@ public sealed class ResourceImportService : IResourceImportService
         var candidate = new ResourceCandidate(
             record.Id, candidateType, canonicalText, normalizedJson, languageVerdict.DetectedLanguageCode,
             searchText, fingerprint, ResourceCandidateValidationStatus.NeedsReview);
+        ApplyDeterministicRowMetadata(candidate, row);
         _db.ResourceCandidates.Add(candidate);
 
         succeeded++;
+    }
+
+    /// <summary>
+    /// Phase E6 — if the row already carries <c>cefrLevel</c>/<c>skill</c>/<c>subskill</c>/
+    /// <c>tags</c> columns, copy them straight onto the candidate. No-op when none of those
+    /// columns are present (the common case for genuinely unclassified imports), so existing
+    /// behavior for every prior import is unchanged. Confidence is stamped at 1.0 — this is a
+    /// value the row's own author already asserts, not a probabilistic AI guess, so there is no
+    /// "confidence" to estimate. <paramref name="row"/>'s <c>tags</c> column (if a JSON array) is
+    /// passed straight through as <c>ContextTagsJson</c>.
+    /// </summary>
+    private static void ApplyDeterministicRowMetadata(ResourceCandidate candidate, IReadOnlyDictionary<string, string?> row)
+    {
+        var cefrLevel = GetField(row, CefrLevelField);
+        var skill = GetField(row, SkillField);
+        var subskill = GetField(row, SubskillField);
+        var tags = GetField(row, TagsField);
+
+        if (cefrLevel is null && skill is null && subskill is null)
+            return;
+
+        var mappingJson = JsonSerializer.Serialize(new
+        {
+            mappingSource = "import-row-deterministic-mapping",
+            cefrLevel,
+            skill,
+            subskill
+        });
+
+        candidate.ApplyAnalysis(
+            aiAnalysisJson: mappingJson,
+            cefrLevel: cefrLevel,
+            cefrConfidence: cefrLevel is null ? null : 1.0,
+            primarySkill: skill,
+            subskill: subskill,
+            difficultyBand: null,
+            contextTagsJson: tags ?? "[]",
+            focusTagsJson: "[]",
+            grammarTagsJson: null,
+            vocabularyTagsJson: null,
+            pronunciationTagsJson: null,
+            activitySuitabilityTagsJson: null,
+            safetyTagsJson: null,
+            qualityScore: null,
+            searchText: null);
     }
 
     private void RejectRow(
