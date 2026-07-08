@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase D2)
+lastUpdated: 2026-07-09 (Plan-Sync-After-D2)
 owner: product
 supersedes:
 supersededBy:
@@ -99,8 +99,12 @@ exclusion), bank-context clarity (structured prompt block), and provenance (full
 on `LearningActivity.BankResourceProvenanceJson`, fixing a latent D1 bug where
 `StudentActivityReadinessItem.SetBankItemProvenance(...)` was FK-mismatched to
 `PlacementItemDefinition` rather than any Phase E Cefr* bank table). See
-docs/architecture/learning-activity-engine.md for the full design. Explicitly **not** part of
-D1/D2's scope — tracked here for a future Phase D3 or larger Today composer migration:
+docs/architecture/learning-activity-engine.md for the full design. **Plan-Sync-After-D2
+(2026-07-09, docs-only) deferred Phase D3** (broader Today composer migration) until after Phase
+E7 (resource depth/type expansion) and E8 if needed — every item below is gated on the bank
+having more/different content and resource types, not on more selector engineering, so Phase E7
+is the more defensible next step. Explicitly **not** part of D1/D2's scope — tracked here for a
+future Phase D3 or larger Today composer migration:
 
 - [ ] **Grammar-focused Today pattern** `Not started` — Today has no pattern whose
   `PrimarySkill` is `"Grammar"`; D1/D2 only pull grammar bank content in opportunistically for

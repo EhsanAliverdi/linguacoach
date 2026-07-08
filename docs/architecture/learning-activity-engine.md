@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase D2)
+lastUpdated: 2026-07-09 (Plan-Sync-After-D2)
 owner: architecture
 supersedes:
 supersededBy:
@@ -176,6 +176,19 @@ data. See `docs/architecture/english-resource-bank-import-platform.md`'s "Relati
 lesson composer" section for the decision-checkpoint history, and `docs/backlog/product-backlog.md`
 for what remains explicitly deferred (Speaking/Listening/image/open-ended patterns, a dedicated
 grammar-focused Today pattern, semantic/embedding-based selection).
+
+**Plan-Sync-After-D2 (2026-07-09, docs-only): Phase E7 comes before Phase D3.** D2 expanded this
+bank-first slice as far as the current bank/resource-type coverage reasonably allows — Today
+still has no Grammar-primary pattern, no Speaking/Listening/image/open-ended bank content, and no
+semantic/embedding selection, and the bank itself is still only Phase E6's 32/12/10-row internal
+seed pack. **Current bank-first coverage remains exactly what D1/D2 established: Vocabulary/
+Reading-primary Today patterns only, with legacy `IAiActivityGenerator` freeform generation as
+the unchanged fallback for Speaking/Listening/image/open-ended and every other pattern.** A
+broader Phase D3 composer migration attempted now would mostly run into missing content/resource
+types and thin bank depth, not a limitation of the D1/D2 integration hook itself — so **Phase E7
+(deepen and harden the resource platform/content model) is the next recommended implementation
+phase, and Phase D3 remains deferred** until after E7 (and E8 if needed). See
+`docs/roadmap/road-map.md` Decision Log (2026-07-09, Plan-Sync-After-D2) for the full reasoning.
 
 **`GenerationStatus` default-value bugfix (Bugfix-D1A, 2026-07-08):** while building D1's
 regression tests, a pre-existing bug was found in `LearningSessionConfiguration`:

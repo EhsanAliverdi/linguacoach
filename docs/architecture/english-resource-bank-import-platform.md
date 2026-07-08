@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase D2)
+lastUpdated: 2026-07-09 (Plan-Sync-After-D2)
 owner: architecture
 supersedes:
 supersededBy:
@@ -641,10 +641,22 @@ provenance on `LearningActivity.BankResourceProvenanceJson` (replacing D1's
 `StudentActivityReadinessItem.SetBankItemProvenance` call, which D2's audit found was latently
 broken — FK-constrained to `PlacementItemDefinition`, not any Phase E Cefr* bank table). Neither
 D1 nor D2 changes anything in this platform's own pipeline (E0-E6) — both are pure read-only
-consumers of `IResourceBankQueryService`. See `docs/roadmap/road-map.md` Decision Log
+consumers of `IResourceBankQueryService`. **Plan-Sync-After-D2 (2026-07-09, docs-only): Phase E7
+comes before Phase D3.** D2's own audit found the Today-side integration mechanism (skill-based
+gating, balanced selection, structured context, full provenance) is now about as complete as it
+can usefully be for a narrow first slice — every further Today improvement (a dedicated
+grammar-focused pattern, Speaking/Listening/image/open-ended support, semantic ranking) is gated
+on this platform having more/different content and resource types to select from, not on more
+selector engineering. **Phase E7 is therefore the next recommended implementation phase**: it
+should focus on resource depth/type expansion needed by Today and future Practice Gym v2 — new
+resource types and/or a larger, still-original/English-only content volume — while preserving
+the same English-only, staged, reviewable, traceable pipeline this platform has followed since
+E0 (no direct final-bank seeding is introduced by E7, exactly as no phase before it has). **Phase
+D3 remains deferred until after Phase E7 (and E8 if needed)**, at which point a new Phase D3
+decision checkpoint follows, not resolved in advance. See `docs/roadmap/road-map.md` Decision Log
 (2026-07-08, Plan-Sync-After-C1, Plan-Sync-After-E4, Phase E5, Plan-Sync-E6-Decision, Phase E6,
-Phase D1, Bugfix-D1A, and Phase D2 entries) for the full reasoning and current preferred phase
-order.
+Phase D1, Bugfix-D1A, Phase D2, and Plan-Sync-After-D2 entries) for the full reasoning and
+current preferred phase order.
 
 ---
 
@@ -702,6 +714,11 @@ order.
   to cover D2's balanced bundle, CEFR widening, feedback avoidance, structured prompt block, and
   the provenance-mechanism fix); `docs/roadmap/road-map.md` (Current Project Status, Test Totals,
   Decision Log, §19a phase sequence); `docs/sprints/current-sprint.md`; `docs/architecture/README.md`;
+  `docs/backlog/product-backlog.md`.
+- Docs updated (Plan-Sync-After-D2, this section, docs-only): this file ("Relationship to Phase
+  D" section updated — E7 chosen next, D3 deferred until after E7/E8);
+  `docs/roadmap/road-map.md` (§19a phase sequence, Decision Log); `docs/sprints/current-sprint.md`;
+  `docs/architecture/learning-activity-engine.md`; `docs/architecture/README.md`;
   `docs/backlog/product-backlog.md`.
 - Docs intentionally not updated: `docs/architecture/cefr-resource-licensing-review.md` — its
   licensing findings are unchanged by this phase; no new sources were browsed or licensing

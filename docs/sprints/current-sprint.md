@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase D2)
+lastUpdated: 2026-07-09 (Plan-Sync-After-D2)
 owner: engineering
 supersedes:
 supersededBy:
@@ -8,41 +8,52 @@ supersededBy:
 
 # Current Sprint — SpeakPath
 
-Last updated: 2026-07-08
+Last updated: 2026-07-09
 
 ---
 
 ## Active sprint
 
+**Plan-Sync-After-D2 — Choose Phase E7 Before Broader Today Composer Migration (2026-07-09)** — complete (docs-only)
+
+**Last completed: Phase D2.** Expanded D1's narrow bank-first slice — confirmed the skill-based
+pattern gate already covers every Vocabulary/Reading-primary Today pattern; added a balanced
+vocabulary/grammar/reading resource bundle, CEFR-widening for review/scaffold routing only, and a
+feedback-signal exclusion; replaced the loose prompt sentence with a structured block; fixed a
+latent D1 provenance bug (`StudentActivityReadinessItem.SetBankItemProvenance`'s FK mismatch) by
+adding `LearningActivity.BankResourceProvenanceJson`. +9 backend tests (3,518 → 3,527 passed).
+Committed as `67c19aeb`.
+
+**Current immediate task (this docs sync): Plan-Sync-After-D2.** Resolved the follow-on decision
+D2 left open: **Phase E7 comes before Phase D3.** D2 expanded the Today bank-first slice as far
+as current bank/resource-type coverage reasonably allows — Today still has no Grammar-primary
+pattern, no Speaking/Listening/image/open-ended bank content, and no semantic/embedding
+selection, and the bank itself is still only Phase E6's 32/12/10-row internal seed pack. A
+broader Phase D3 migration attempted now would mostly run into missing content/resource types and
+thin bank depth, not a limitation of the D1/D2 integration hook itself. Updated roadmap phase
+sequence: Phase D2 → Plan-Sync-After-D2 → Phase E7 → Phase E8 if needed → Phase D3 decision
+checkpoint → Phase D3 or PG-v2A → PG-v2A/B/C/D later → Phase F → Phase G. Docs-only; no app code,
+migrations, or config changed; does not start any implementation.
+
+**Next implementation phase: Phase E7** — deepen and harden the resource platform/content model:
+resource depth/type expansion needed by Today and future Practice Gym v2, preserving the
+English-only, staged, reviewable, traceable pipeline (no direct final-bank seeding). **Not
+started.** Phase D3 remains not started (deferred until after E7/E8); PG-v2 implementation
+remains not started. Today lesson generation remains bank-first only for Vocabulary/Reading-
+primary patterns, with legacy `IAiActivityGenerator` freeform generation as the fallback
+everywhere else. See `docs/roadmap/road-map.md` §19a for the full phase order.
+
+---
+
+## Previous sprint
+
 **Phase D2 — Expand Today Bank-First Composer Coverage and Provenance (2026-07-08)** — complete
 
-Expanded D1's narrow bank-first slice — a correctness/quality pass, not a full Today generator
-migration. **Pattern coverage finding**: `TodayBankResourceSelector` gates purely on
-`pattern.PrimarySkill`, not an explicit pattern-key allow-list, so it already covered every
-current Vocabulary/Reading-primary Today pattern, including `reading_multiple_choice_multi` and
-`reading_writing_fill_in_blanks` (never explicitly named in D1's own docs) — a regression test
-now proves this rather than any gating code change. No Grammar-primary Today pattern exists, so
-grammar bank content stays opportunistic-only (`gap_fill_workplace_phrase`'s `Grammar` secondary
-skill). **Selector improvements**: returns a balanced bundle for Vocabulary-primary patterns (up
-to 2 vocabulary + 1 opportunistic grammar + 1 opportunistic reading, capped at 4); widens the
-CEFR search one level down only when routing reason is Review/Scaffold/Remediation and the exact
-level is empty; adds a cheap feedback-signal exclusion for resources previously marked
-`NotUseful`/`DoNotShowSimilarSoon`. **Bank context**: replaced the single loose prompt sentence
-with a clearer structured block, still appended to the existing `TopicHint` field — no AI prompt
-template changes. **Provenance — discovered-and-fixed finding**: D1's
-`StudentActivityReadinessItem.SetBankItemProvenance(...)` call was latently broken — that column
-is FK-constrained to `PlacementItemDefinition`, not any Phase E Cefr* bank table, so it would
-throw a foreign-key violation against a real database the first time a readiness-pool item
-existed at materialization time. **Fixed** by adding `LearningActivity.
-BankResourceProvenanceJson` (migration `Phase_D2_AddLearningActivityBankResourceProvenance`,
-nullable jsonb, no default value), a durable JSON array of every selected resource; the D1 call
-was removed entirely. +9 backend tests (3,518 → 3,527 total: 5 architecture + 2,052 unit + 1,470
-integration). **No external dataset imported, no Persian/bilingual/support-language content
-added, Today/Practice Gym legacy fallback not removed, no data loss.**
-
-**Next: Phase D3 (broader Today composer migration), Phase E7/E8 (more resource depth/search), or
-a docs-only plan sync if the roadmap changes — not resolved by this phase.** See
-`docs/roadmap/road-map.md` §19a for the full phase order.
+Confirmed the skill-based pattern gate already covers every Vocabulary/Reading-primary Today
+pattern; added a balanced vocabulary/grammar/reading resource bundle, CEFR-widening for review/
+scaffold routing only, a feedback-signal exclusion, a structured prompt block, and fixed a latent
+D1 provenance bug via `LearningActivity.BankResourceProvenanceJson`. +9 backend tests (3,518 →
+3,527 passed). Committed as `67c19aeb`.
 
 ---
 
