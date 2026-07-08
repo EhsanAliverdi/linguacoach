@@ -1,17 +1,17 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase E3)
+lastUpdated: 2026-07-08 (Phase E4)
 owner: product / engineering
 ---
 
 # SpeakPath / LinguaCoach Roadmap
 
-**Accurate as of: 2026-07-08 (Phase E3 — see §19a for the current phase sequence).
+**Accurate as of: 2026-07-08 (Phase E4 — see §19a for the current phase sequence).
 The 2026-07-03 "Phase 20H" line below is the last entry confirmed live against speakpath.app;
 everything since then (Clean-A/A2, Phase B, Phase C1, Plan-Sync-After-C1, Phase C2, Plan-Sync-B2,
-Phase B2, Phase C3, Phase C-Final, Phase E0, Plan-Sync-PG-v2, Phase E1, Phase E2, Phase E3) has
-been developed and tested locally but not yet deployed — see the "Current Project Status" and
-Decision Log sections below for what's actually landed.**
+Phase B2, Phase C3, Phase C-Final, Phase E0, Plan-Sync-PG-v2, Phase E1, Phase E2, Phase E3,
+Phase E4) has been developed and tested locally but not yet deployed — see the "Current Project
+Status" and Decision Log sections below for what's actually landed.**
 
 This is the canonical project memory document. It captures completed work, current state, known gaps, deferred items, and the recommended order of future phases.
 
@@ -23,28 +23,36 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest phase completed (local, not yet deployed):** Phase E3 — Admin Rendered Preview for
-Resource Candidates (2026-07-08). Added `GET /api/admin/resource-candidates/{id}/preview`
-(`ResourceCandidatePreviewService`), returning a bank-type-specific rendered model —
-`VocabularyEntry` (word/POS/definition/example), `GrammarProfileEntry` (grammar title/
-explanation/examples), `ReadingPassage` (title/passage/word count/reading time), plus source/
-license/provenance, CEFR/skill/subskill/difficulty, tags, validation status/errors/warnings,
-duplicate indicators, and an AI-analysis summary. `ActivityTemplateCandidate` rows reuse
-`app-formio-renderer` for the student-visible schema, but only after **re-validating it live**
-through `IFormIoSchemaValidationService` at preview time — any scoring/rubric metadata stays in a
-separate admin-only field, never merged into the student-visible render. **Read-only, never
-mutates a candidate** (no `SaveChangesAsync`, `UpdatedAtUtc` unchanged — asserted by test).
-Unsupported/malformed shapes degrade to `CanPreview=false` + a warning, never an exception. Admin
-UI gained a dedicated Preview drawer with two visually distinct panels — a green "what the
-student would see" panel and a slate "admin-only" panel — plus a persistent "E3 preview only"
-banner; no approve/reject/publish control exists anywhere. **Corrects a scope assumption from the
-original Phase E0 plan**: E0 assumed an approve action would already exist by E3 and be gated on
-preview having been viewed — no approve action exists yet at all (that's E4's own deliverable),
-so E3 built the preview capability E4 will depend on, not a gate on a feature that doesn't exist.
-+14 backend tests including a dedicated zero-published-rows assertion. Full detail:
-`docs/architecture/english-resource-bank-import-platform.md`. **Phase E4 has not started.**
+**Latest phase completed (local, not yet deployed):** Phase E4 — Publish Approved Resource
+Candidates to First English Banks (2026-07-08). Added new `ResourceCandidate.Approve(notes?)`/
+`.Reject(reason)` methods (separate from validation) and `ResourceCandidatePublishService`, which
+re-checks every gate **live** at publish time rather than trusting an earlier staging/validation
+snapshot (English-only, `CefrResourceSource.IsImportApproved`, `AllowsStudentDisplay`/
+`AllowsCommercialUse` — **hard-blocked here**, unlike E2's validation pass which only warns for
+this — `ValidationStatus == Passed`, `ReviewStatus == Approved`) and is idempotent (a repeated
+publish returns the existing published-entity reference, never a duplicate row). **Candidate-type
+decisions**: `VocabularyEntry`→`CefrVocabularyEntry` and `GrammarProfileEntry`→
+`CefrGrammarProfileEntry` are fully supported; `ReadingPassage`→`CefrReadingReference` is
+supported **only for staged text ≤500 characters**, since that entity's own doc comment says it
+holds "only a short excerpt/citation, not a full copyrighted text" — longer passages are blocked
+with a clear error rather than silently truncated; `ActivityTemplateCandidate` publishing is
+**deferred entirely** — `ActivityTemplate` needs a stable Key, valid Skill/Subskill, and real
+hand-authored `GenerationInstructions` that a CSV/JSON-staged row was never designed to carry,
+and inventing placeholder text to force it through would publish something dishonest. New
+approve/reject/publish admin endpoints; admin UI gained Approve/Reject/Publish actions (Publish
+disabled with a clear reason when ineligible) and a published-state indicator. +16 backend tests.
+**Known limitation vs. the original E0 plan**: no "preview must be opened before approval"
+tracking exists (E3 didn't build a preview-viewed flag) — the underlying safety property holds in
+practice (preview is one click away on the same page) but isn't mechanically enforced. Full
+detail: `docs/architecture/english-resource-bank-import-platform.md`. **Phase E5 has not
+started.**
 
-**Latest phase completed before this:** Phase E2 — AI Analysis, Rule Validation, Dedup/
+**Latest phase completed before this:** Phase E3 — Admin Rendered Preview for Resource
+Candidates (2026-07-08, `c9831599`). Added `GET .../preview` (`ResourceCandidatePreviewService`),
+bank-type-specific rendered models, read-only, student-visible/admin-only separation. +14
+backend tests. Full detail: `docs/architecture/english-resource-bank-import-platform.md`.
+
+**Before that:** Phase E2 — AI Analysis, Rule Validation, Dedup/
 Fingerprint, and Candidate Quality Gates (2026-07-08, `18015671`). Implemented gates 4-6:
 AI-advisory analysis (`ResourceCandidateAnalysisService`) plus fully deterministic rule
 validation and exact-fingerprint dedup (`ResourceCandidateValidationService`, sole authority on
@@ -119,11 +127,11 @@ unmodified throughout.
 
 **Branch:** main
 
-**Test totals (as of Phase E3, 2026-07-08, local only):**
-- Backend: 3,430 passed (5 architecture + 1,990 unit + 1,435 integration), 0 failed — net +13 vs Phase E2 (3,417): new `ResourceCandidatePreviewServiceTests`, plus additions to `AdminResourceImportEndpointTests` (preview endpoint auth/404/happy-path and no-mutation checks).
-- Angular unit (Karma): not run this phase — same judgment call as E1/E2, no dedicated Angular test suite exists for the resource-import admin pages to extend cheaply; baseline unchanged at 120 pre-existing failures.
-- Angular production build (`ng build --configuration production`): still fails on the pre-existing `initial` bundle-size budget (1.56MB over the 1MB threshold) — confirmed not a new regression, no new TypeScript/template compile errors from the E3 preview drawer UI.
-- Playwright E2E: not run this phase — no new routed *existing* UI behavior changed, only extensions to the E1/E2 admin-only pages; `e2e/core-flow-smoke.spec.ts` remains `test.skip`'d (see Clean-A2 decision log entry).
+**Test totals (as of Phase E4, 2026-07-08, local only):**
+- Backend: 3,455 passed (5 architecture + 2,006 unit + 1,444 integration), 0 failed — net +25 vs Phase E3 (3,430): new `ResourceCandidatePublishServiceTests`, plus additions to `AdminResourceImportEndpointTests` (approve/reject/publish endpoint auth and idempotency checks).
+- Angular unit (Karma): not run this phase — same judgment call as E1/E2/E3, no dedicated Angular test suite exists for the resource-import admin pages to extend cheaply; baseline unchanged at 120 pre-existing failures.
+- Angular production build (`ng build --configuration production`): still fails on the pre-existing `initial` bundle-size budget (1.56MB over the 1MB threshold) — confirmed not a new regression, no new TypeScript/template compile errors from the E4 Approve/Reject/Publish UI additions.
+- Playwright E2E: not run this phase — no new routed *existing* UI behavior changed, only extensions to the E1/E2/E3 admin-only pages; `e2e/core-flow-smoke.spec.ts` remains `test.skip`'d (see Clean-A2 decision log entry).
 
 **Test totals (as of 20D, last live-confirmed baseline):**
 - Backend unit: 1,750 (+20 from Phase 20D: `StudentReadinessAuditServiceTests`, `StudentPilotReadinessRepairServiceTests`)
@@ -912,10 +920,11 @@ These are planning estimates, not exact metrics. Provided to guide sequencing de
 | 2026-07-08 | **Phase E1 implemented — first Phase E implementation slice**: `CefrResourceSource` extended with `LanguageCode` (enforced to `"en"`), `AllowsStudentDisplay`, `AllowsCommercialUse`, `AttributionText`, `SourceVersion`, `DownloadUrl`, `UpdatedAtUtc`, `Update(...)` — no duplicate source-registry entity created. New staging entities `ResourceImportRun`/`ResourceRawRecord`/`ResourceCandidate` (migration `AddResourceImportStaging`) plus `ResourceImportRunStatus`/`ResourceRawRecordStatus`/`ResourceCandidateValidationStatus`/`ResourceCandidateType`/`ResourceImportMode` enums. `ResourceImportService` implements gates 1-3 only (English-only via explicit language field or a conservative Arabic/Persian-script + non-Latin heuristic; license/source-approval, blocking before any run is created; parser gate requiring a recognizable content field) with continue-on-error per-row processing (one malformed row never aborts a run) and within-run duplicate-hash detection. `ContentFingerprint` reuses `IActivityContentFingerprintService`. Admin CRUD/API/UI for Resource Sources/Import Runs/Candidates under the existing Content sidebar group (Raw Records nested under run detail, not top-level), reusing shared admin components — no rendered preview, no approve/publish action (both explicitly deferred to E3/E4). +17 backend tests including a dedicated assertion that zero rows are ever written to `CefrVocabularyEntry`/`CefrGrammarProfileEntry`/`CefrReadingReference`/`CefrDescriptor` | Deviates from the E0 plan in two small, justified ways: (1) `CefrResourceSource` needed new fields after all — E0 assumed none were needed, but E1's own admin-page requirements (license/commercial-use/student-display flags, attribution, version/download URL) required them; extending the existing entity (not creating a new one) is still consistent with E0's core "no duplicate source registry" decision. (2) The uploaded import file is processed in-memory from the request stream rather than persisted via `IFileStorageService` — the file is ephemeral import input, not a long-lived asset like audio, so persisting it added no value for this phase |
 | 2026-07-08 | **Phase E2 implemented — gates 4-6**: `ResourceCandidateAnalysisService` (gate 4, advisory-only AI enrichment reusing `ActivityTemplateInstanceGenerator`'s AI-call pattern, new prompt key `resource_candidate_analyze`) suggests CEFR/skill/subskill/difficulty/tags/quality/safety metadata, degrading gracefully (never throwing, never corrupting candidate data) on AI failure or unavailability rather than the synchronous retry-then-throw behavior the student-facing template generator uses. `ResourceCandidateValidationService` (gates 5-6, fully deterministic) is the sole authority on `ValidationStatus` — the AI never sets it directly. Judgment calls: CEFR-confidence review threshold 0.6 (below → `NeedsReview`, never auto-pass); max `CanonicalText` length 5000 chars; any AI-reported safety tag is a hard `Failed`; attribution "required" when a source's `LicenseType` name contains `"BY"` (Creative-Commons-Attribution family), missing `AttributionText` in that case is a warning not a fail; `CandidateType.Unknown` always needs human review; a source's approval revoked after original import fails re-validation immediately. Exact-fingerprint dedup checked within-run/within-source/globally across `ResourceCandidate` — never against published `Cefr*` tables (they have no fingerprint column; adding one is a published-table schema change, out of scope) — a match is `NeedsReview`, never auto-deleted. New endpoints: analyze-one, validate-one (deterministic re-check only, no AI), analyze-import-run (batched, capped at 50/call — E7 owns real background processing). Admin UI gained Analyze/Re-validate actions and CEFR/skill/quality/validation display; no approve/publish action. +21 backend tests including a dedicated zero-published-rows assertion | AI-advisory-only was the explicit product rule for this phase — separating the AI-suggestion step (gate 4) from the deterministic-decision step (gates 5-6) into two services, rather than one combined service, makes this separation structurally enforced rather than just a convention a future edit could accidentally violate. The published-bank dedup cross-check was skipped because retrofitting a fingerprint column onto already-live `Cefr*` entities is genuinely out-of-scope schema work for a staging-phase gate, not a shortcut taken to save time |
 | 2026-07-08 | **Phase E3 implemented — admin rendered preview**: `GET /api/admin/resource-candidates/{id}/preview` (`ResourceCandidatePreviewService`) returns a bank-type-specific rendered model (Vocabulary/Grammar/Reading), reusing `app-formio-renderer` only for `ActivityTemplateCandidate` rows and only after re-validating the schema live through `IFormIoSchemaValidationService` at preview time — never trusting E2's earlier validation pass as still-current. Any scoring/rubric metadata on template candidates stays in a separate admin-only field. Read-only end to end (no `SaveChangesAsync`, `UpdatedAtUtc` unchanged, asserted by test). Unsupported/malformed candidate shapes degrade to `CanPreview=false` + a warning rather than throwing. Admin UI gained a dedicated Preview drawer with a green "student-visible" panel and a slate "admin-only" panel, plus a persistent "E3 preview only" banner — no approve/reject/publish control added anywhere. +14 backend tests | **Corrects a scope assumption in the original Phase E0 plan**: E0's E3 section assumed an approve action would already exist by E3 and be UI-gated on the preview having been viewed. No approve action exists yet at all — that is E4's own deliverable, not something to retrofit a gate onto in E3. E3's actual job was narrower and correctly scoped once this was noticed: build the preview capability E4 will depend on, and document that E4 must build both the approve action itself and the "preview viewed before approve enabled" gate as part of its own deliverable, not inherit a half-built gate from E3 |
+| 2026-07-08 | **Phase E4 implemented — publish to first banks**: new `ResourceCandidate.Approve(notes?)`/`.Reject(reason)` and `ResourceCandidatePublishService`, which re-checks every gate live at publish time (English-only, source approval, `AllowsStudentDisplay`/`AllowsCommercialUse` — hard-blocked here unlike E2's warn-only validation pass, `ValidationStatus == Passed`, `ReviewStatus == Approved`) and is idempotent (repeat publish returns the existing reference, never a duplicate row). `VocabularyEntry`→`CefrVocabularyEntry` and `GrammarProfileEntry`→`CefrGrammarProfileEntry` fully supported; `ReadingPassage`→`CefrReadingReference` supported only for staged text ≤500 characters (`CefrReadingReference`'s own doc comment: "only a short excerpt/citation, not a full copyrighted text"); `ActivityTemplateCandidate` publishing deferred entirely (`ActivityTemplate` needs a stable Key, valid Skill/Subskill, and real hand-authored `GenerationInstructions` a staged row was never designed to carry). New approve/reject/publish admin endpoints; admin UI gained Approve/Reject/Publish actions with clear disabled-reason messaging and a published-state indicator. +16 backend tests | Rejected two shortcuts that would have "worked" but been dishonest: silently truncating a full reading passage into `CefrReadingReference.ReferenceExcerpt` (lossy, misrepresents what was published), and inventing placeholder `GenerationInstructions` text to force an `ActivityTemplate` through (would publish a "template" that looks authored but wasn't). Both candidate types are cleanly blocked with explanatory errors instead, left for a future phase once a real staging shape exists. The `AllowsStudentDisplay`/`AllowsCommercialUse` hard-block (vs. E2's warn-only treatment) reflects that publish is the actual step moving content to a live, paying-student-facing table — by that point a missing permission is no longer just a note for a human, it's a real blocker. No "preview must be viewed before approve" tracking was built (E3 never added a preview-viewed flag) — documented as a known limitation, not silently dropped |
 
 ---
 
-## 19a. Phase Sequence (as of 2026-07-08, Phase E3)
+## 19a. Phase Sequence (as of 2026-07-08, Phase E4)
 
 Preferred order, each phase gated on the previous one's completion review:
 
@@ -929,8 +938,8 @@ Preferred order, each phase gated on the previous one's completion review:
 8. ~~**Phase E1**~~ — done (2026-07-08): first Phase E implementation slice — `CefrResourceSource` extended as source registry (no duplicate entity), new `ResourceImportRun`/`ResourceRawRecord`/`ResourceCandidate` staging entities, gates 1-3 only (English-only, license/source-approval, parser), CSV/JSON/JSONL import, admin CRUD/API/UI for Sources/Import Runs/Candidates. **Zero rows published to any `Cefr*` bank table** (E4's job, not started). See `docs/architecture/english-resource-bank-import-platform.md`.
 9. ~~**Phase E2**~~ — done (2026-07-08): gates 4-6 — `ResourceCandidateAnalysisService` (gate 4, advisory-only AI enrichment) + `ResourceCandidateValidationService` (gates 5-6, sole deterministic authority on `ValidationStatus`, including exact-fingerprint dedup). Admin analyze/validate/batch-analyze endpoints and UI extensions. **Still zero rows published to any `Cefr*` bank table.** See `docs/architecture/english-resource-bank-import-platform.md`.
 10. ~~**Phase E3**~~ — done (2026-07-08): admin rendered preview — `ResourceCandidatePreviewService` (bank-type-specific rendered models; `app-formio-renderer` reused only for `ActivityTemplateCandidate`, re-validated live for leak-safety), read-only, never mutates a candidate. Admin UI gained a Preview drawer with distinct student-visible/admin-only panels. **No approve action exists yet** — that is E4's own deliverable, along with the "preview viewed before approve" UI gate. See `docs/architecture/english-resource-bank-import-platform.md`.
-11. **Phase E4** — publish to first banks — vocabulary, grammar; must also build the approve action itself and its preview-viewed UI gate (gates 7a+7b). **Not started — this is the next recommended phase.**
-12. **Phase D1** — bank-first Today lesson composer, first slice — only after Phase C reaches C-Final (done) and Phase E reaches at least E4, so Today has both a proven multi-pattern template path and real bank content to compose from. Not started.
+11. ~~**Phase E4**~~ — done (2026-07-08): publish to first banks — `ResourceCandidatePublishService`, live gate re-checks, idempotent. `VocabularyEntry`/`GrammarProfileEntry` fully supported; short-excerpt `ReadingPassage` supported; `ActivityTemplateCandidate` publishing deferred (see Decision Log). **Some rows are now published** — vocabulary and grammar banks are no longer necessarily empty, though still likely small/sparse pending real source import (still no external dataset imported). See `docs/architecture/english-resource-bank-import-platform.md`.
+12. **Phase D1** — bank-first Today lesson composer, first slice. **Phase E has now reached E4, satisfying this gate** — but Phase D1 is deliberately **not started this phase** per explicit workflow instruction; starting it is a separate decision for a future phase, not an automatic consequence of the gate being met. Not started.
 13. **Phase E5-E8** — published bank browsing, reading/listening resources, larger import support, RAG/search enrichment — proceed in parallel with or after Phase D1 depending on product priority at that time. Not started.
 14. **Phase PG-v2A** — backend skill/objective-first Practice Gym selector (planned, not started; see `docs/backlog/product-backlog.md`). Sequenced after Phase E5-E8, not immediately after C-Final — a good skill-first selector needs enough published bank/resource content and search/selector coverage to have real options to choose from.
 15. **Phase PG-v2B** — student Practice Gym UI simplified around skills, weak areas, review, challenge, recommended practice (planned, not started).
@@ -939,11 +948,16 @@ Preferred order, each phase gated on the previous one's completion review:
 18. **Phase F** — legacy freeform-generation retirement, **per-pattern only, destructive only after each pattern's replacement is proven** — not a bulk deletion, and not started until Phase C-Final (done) and Phase D have each individually proven their replacement paths. Not started.
 19. **Phase G** — admin bank/content navigation cleanup (consolidate the "Content" vs "AI System" nav split flagged in the 2026-07-08 clean-architecture plan) — deferred until enough new bank-first admin pages exist (Phase C-Final done + Phase E's admin pages, now started) to make a single consolidated redesign worthwhile rather than premature. Not started.
 
-**Phase D1 remains gated on Phase E reaching E4 — not E1, E2, or E3.** E1 built staging, E2 added
-AI-advisory analysis plus deterministic validation/dedup, and E3 added the rendered preview
-capability; nothing is published yet, so Phase D still has no real bank content to compose from.
-The next recommended implementation phase is **Phase E4**, consistent with the "E0-E4 before D1"
-preferred order set in Plan-Sync-After-C1 and unchanged by any subsequent phase.
+**Phase E has now reached E4 — the "E0-E4 before D1" gate from Plan-Sync-After-C1 is technically
+satisfied**, meaning Phase D1 is next in the documented preferred order. Note the important
+caveat: E4 only published `VocabularyEntry`/`GrammarProfileEntry`/short-excerpt-`ReadingPassage`
+candidates staged from small, synthetic, test-only data — no external dataset has been imported
+yet (that step is still ahead, gated on real licensing approval per
+`docs/architecture/cefr-resource-licensing-review.md`), so the published banks are currently
+sparse/synthetic, not yet real production content. Phase D1 was explicitly **not started this
+phase** per direct instruction, regardless of the gate being met — starting it (vs. continuing
+Phase E5-E8 to get real bank content first) is a product decision for a future phase, not
+something this phase's docs sync resolves on its own.
 
 **Practice Gym v2 (PG-v2A-D) is planned, not started**, and is sequenced deliberately late — after
 Phase E5-E8, before Phase F/G — because a skill/objective-first selector needs mature bank/resource
@@ -968,9 +982,13 @@ records, candidates, gates 1-3; zero rows published to any bank table).
 **Phase E2 is complete** (gates 4-6 — AI-advisory analysis, deterministic rule validation,
 exact-fingerprint dedup; still zero rows published).
 **Phase E3 is complete** (admin rendered preview, read-only, student-visible/admin-only
-separation; still zero rows published — see
+separation; still zero rows published).
+**Phase E4 is complete** (publish to first banks — `VocabularyEntry`/`GrammarProfileEntry`/short-
+excerpt `ReadingPassage` supported, `ActivityTemplateCandidate` deferred; some rows now published,
+from small synthetic/test staged data only, not real external content — see
 `docs/architecture/english-resource-bank-import-platform.md`).
-**Phase E4 (publish to first banks) and Phase D implementation have not started.**
+**Phase D implementation has not started** — explicitly deferred this phase despite Phase D1's
+"E0-E4" gate now being met; PG-v2 implementation also remains not started.
 
 **Today lesson generation and all non-migrated Practice Gym patterns remain on the legacy
 `IAiActivityGenerator` freeform path, unmodified, throughout this entire sequence** until their

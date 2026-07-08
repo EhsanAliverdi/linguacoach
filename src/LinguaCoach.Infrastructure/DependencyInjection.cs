@@ -533,6 +533,10 @@ public static class DependencyInjection
             LinguaCoach.Infrastructure.ResourceImport.AdminResourceCandidateGetQueryHandler>();
         services.AddScoped<LinguaCoach.Application.ResourceImport.IAdminResourceCandidateNotesHandler,
             LinguaCoach.Infrastructure.ResourceImport.AdminResourceCandidateNotesHandler>();
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IAdminResourceCandidateApproveHandler,
+            LinguaCoach.Infrastructure.ResourceImport.AdminResourceCandidateApproveHandler>();
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IAdminResourceCandidateRejectHandler,
+            LinguaCoach.Infrastructure.ResourceImport.AdminResourceCandidateRejectHandler>();
         services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceImportService,
             LinguaCoach.Infrastructure.ResourceImport.ResourceImportService>();
 
@@ -547,6 +551,9 @@ public static class DependencyInjection
         // Phase E3 — read-only rendered preview for a staged ResourceCandidate.
         services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceCandidatePreviewService,
             LinguaCoach.Infrastructure.ResourceImport.ResourceCandidatePreviewService>();
+        // Phase E4 — publishes an approved, validated ResourceCandidate into its target Cefr* bank table.
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceCandidatePublishService,
+            LinguaCoach.Infrastructure.ResourceImport.ResourceCandidatePublishService>();
 
         // AI Bank-First Teaching Architecture Phase 9 — cross-entity admin review queue
         services.AddScoped<LinguaCoach.Application.Admin.ReviewQueue.IAdminReviewQueueQuery,

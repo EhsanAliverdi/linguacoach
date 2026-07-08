@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase E3)
+lastUpdated: 2026-07-08 (Phase E4)
 owner: engineering
 supersedes:
 supersededBy:
@@ -14,35 +14,48 @@ Last updated: 2026-07-08
 
 ## Active sprint
 
-**Phase E3 — Admin Rendered Preview for Resource Candidates (2026-07-08)** — complete
+**Phase E4 — Publish Approved Resource Candidates to First English Banks (2026-07-08)** — complete
 
-**Last completed: Phase E3.** Added `GET /api/admin/resource-candidates/{id}/preview`
-(`ResourceCandidatePreviewService`) returning a bank-type-specific rendered model —
-`VocabularyEntry`/`GrammarProfileEntry`/`ReadingPassage` get dedicated preview cards;
-`ActivityTemplateCandidate` reuses `app-formio-renderer`, but only after **re-validating the
-schema live** through `IFormIoSchemaValidationService` at preview time, never trusting E2's
-earlier pass as still-current — any scoring/rubric metadata stays admin-only, never merged into
-the student-visible schema. **Read-only end to end** (no `SaveChangesAsync`, `UpdatedAtUtc`
-unchanged, asserted by test). Unsupported/malformed shapes degrade to `CanPreview=false` + a
-warning, never an exception. Admin UI gained a dedicated Preview drawer with a green
-"student-visible" panel and a slate "admin-only" panel, plus a persistent "E3 preview only —
-publish is not available until E4" banner — no approve/reject/publish control exists anywhere.
-+14 backend tests (3,417 → 3,430 passed). **Corrects a scope assumption from the original Phase
-E0 plan**: no approve action exists yet at all (that's E4's own deliverable, along with its
-"preview viewed before approve" UI gate) — E3 built the preview capability E4 will depend on. See
+**Last completed: Phase E4.** Added `ResourceCandidate.Approve(notes?)`/`.Reject(reason)` and
+`ResourceCandidatePublishService`. Every publish gate is **re-checked live**, never trusted from
+an earlier snapshot: English-only, source still approved, `AllowsStudentDisplay`/
+`AllowsCommercialUse` (**hard-blocked here**, unlike E2's warn-only treatment), `ValidationStatus
+== Passed`, `ReviewStatus == Approved`. **Idempotent** — repeat publish returns the existing
+reference, never a duplicate row. **Candidate-type decisions**: `VocabularyEntry`→
+`CefrVocabularyEntry` and `GrammarProfileEntry`→`CefrGrammarProfileEntry` fully supported;
+`ReadingPassage`→`CefrReadingReference` only for staged text ≤500 characters (that entity's own
+doc comment: "only a short excerpt/citation, not a full copyrighted text") — longer passages
+blocked with a clear error, never silently truncated; `ActivityTemplateCandidate` publishing
+**deferred entirely** (`ActivityTemplate` needs a stable Key, valid Skill/Subskill, and real
+hand-authored `GenerationInstructions` a staged row was never designed to carry — inventing
+placeholder text to force it through would publish something dishonest). New approve/reject/
+publish admin endpoints; admin UI gained Approve/Reject/Publish actions (Publish disabled with a
+clear reason when ineligible) and a published-state indicator. +16 backend tests (3,430 → 3,455
+passed). **Known limitation**: no "preview viewed before approve" tracking exists (E3 never built
+a preview-viewed flag) — documented, not silently dropped. See
 `docs/architecture/english-resource-bank-import-platform.md` for full detail.
 
-**Before this: Phase E2.** Implemented gates 4-6 — AI-advisory analysis
-(`ResourceCandidateAnalysisService`) plus fully deterministic rule validation and
-exact-fingerprint dedup (`ResourceCandidateValidationService`, sole authority on
-`ValidationStatus`). +21 backend tests. Committed as `18015671`.
+**Before this: Phase E3.** Added `GET .../preview` (`ResourceCandidatePreviewService`), read-only,
+student-visible/admin-only separation. +14 backend tests. Committed as `c9831599`.
 
-**Next implementation phase: Phase E4** — publish to first banks (vocabulary, grammar); must also
-build the approve action itself and its preview-viewed UI gate. **Not started.** Phase D remains
-gated on Phase E reaching E4 — E1/E2/E3 built staging/analysis/validation/preview only, nothing is
-published yet. PG-v2 implementation remains not started. Today lesson generation remains 100%
-legacy `IAiActivityGenerator` freeform generation. See `docs/roadmap/road-map.md` §19a for the
-full phase order.
+**Recommendation for next phase**: Phase E has now reached E4 — the "E0-E4 before D1" gate is
+technically satisfied, but **Phase D1 was deliberately not started this phase** per direct
+instruction; the published banks currently hold only small synthetic/test data (no external
+dataset imported yet). Whether to start Phase D1 now or continue Phase E5-E8 first (real import
+sources, published-bank browsing, more resource types) is a product decision for a future phase.
+PG-v2 implementation remains not started. Today lesson generation remains 100% legacy
+`IAiActivityGenerator` freeform generation. See `docs/roadmap/road-map.md` §19a for the full phase
+order.
+
+---
+
+## Previous sprint
+
+**Phase E3 — Admin Rendered Preview for Resource Candidates (2026-07-08)** — complete
+
+Added `GET .../preview` (`ResourceCandidatePreviewService`) returning a bank-type-specific
+rendered model, read-only, with a UI that clearly separates student-visible content from
+admin-only metadata. +14 backend tests (3,417 → 3,430 passed). Committed as `c9831599`.
 
 ---
 

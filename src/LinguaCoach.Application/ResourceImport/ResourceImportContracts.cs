@@ -129,7 +129,13 @@ public sealed record AdminResourceCandidateDto(
     string? RejectReason,
     string? AdminNotes,
     DateTime CreatedAt,
-    DateTime UpdatedAtUtc
+    DateTime UpdatedAtUtc,
+    // Phase E4 — publish state.
+    bool IsPublished,
+    DateTimeOffset? PublishedAtUtc,
+    string? PublishedEntityType,
+    Guid? PublishedEntityId,
+    Guid? PublishedByUserId
 );
 
 public sealed record ListAdminResourceCandidatesQuery(
@@ -168,6 +174,24 @@ public sealed record SetResourceCandidateAdminNotesCommand(Guid CandidateId, str
 public interface IAdminResourceCandidateNotesHandler
 {
     Task<AdminResourceCandidateDto> HandleAsync(SetResourceCandidateAdminNotesCommand command, CancellationToken ct = default);
+}
+
+// ── Phase E4 — admin approve/reject workflow (distinct from ValidationStatus, which stays the
+// sole responsibility of IResourceCandidateValidationService). Neither of these ever writes to a
+// published Cefr* bank table — that is IResourceCandidatePublishService's job alone. ──
+
+public sealed record ApproveResourceCandidateCommand(Guid CandidateId, string? Notes = null);
+
+public interface IAdminResourceCandidateApproveHandler
+{
+    Task<AdminResourceCandidateDto> HandleAsync(ApproveResourceCandidateCommand command, CancellationToken ct = default);
+}
+
+public sealed record RejectResourceCandidateCommand(Guid CandidateId, string Reason);
+
+public interface IAdminResourceCandidateRejectHandler
+{
+    Task<AdminResourceCandidateDto> HandleAsync(RejectResourceCandidateCommand command, CancellationToken ct = default);
 }
 
 // ── Import service (the parser/gate pipeline) ──────────────────────────────────

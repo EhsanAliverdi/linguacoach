@@ -252,4 +252,114 @@ public sealed class AdminResourceImportEndpointTests : IClassFixture<ApiTestFact
         var afterBody = await afterResp.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal(updatedAtBefore, afterBody.GetProperty("updatedAtUtc").GetString());
     }
+
+    // ── Phase E4 — approve/reject/publish workflow ──────────────────────────────────
+
+    [Fact]
+    public async Task Approve_Unauthenticated_Returns401()
+    {
+        var client = _factory.CreateClient();
+        var response = await client.PostAsJsonAsync($"/api/admin/resource-candidates/{Guid.NewGuid()}/approve", new { });
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Approve_NonAdmin_Returns403()
+    {
+        var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"student-{Guid.NewGuid():N}@test.linguacoach.com");
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var response = await client.PostAsJsonAsync($"/api/admin/resource-candidates/{Guid.NewGuid()}/approve", new { });
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Reject_Unauthenticated_Returns401()
+    {
+        var client = _factory.CreateClient();
+        var response = await client.PostAsJsonAsync(
+            $"/api/admin/resource-candidates/{Guid.NewGuid()}/reject", new { reason = "bad" });
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Reject_NonAdmin_Returns403()
+    {
+        var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"student-{Guid.NewGuid():N}@test.linguacoach.com");
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var response = await client.PostAsJsonAsync(
+            $"/api/admin/resource-candidates/{Guid.NewGuid()}/reject", new { reason = "bad" });
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Publish_Unauthenticated_Returns401()
+    {
+        var client = _factory.CreateClient();
+        var response = await client.PostAsync($"/api/admin/resource-candidates/{Guid.NewGuid()}/publish", null);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Publish_NonAdmin_Returns403()
+    {
+        var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"student-{Guid.NewGuid():N}@test.linguacoach.com");
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var response = await client.PostAsync($"/api/admin/resource-candidates/{Guid.NewGuid()}/publish", null);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Reject_WithBlankReason_Returns400()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var (_, candidateId) = await ImportOneApprovedCandidateAsync(client);
+
+        var response = await client.PostAsJsonAsync(
+            $"/api/admin/resource-candidates/{candidateId}/reject", new { reason = "" });
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Approve_ThenPublish_WithoutValidationPassed_ReturnsFailureNotException()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var (_, candidateId) = await ImportOneApprovedCandidateAsync(client);
+
+        var approveResp = await client.PostAsJsonAsync($"/api/admin/resource-candidates/{candidateId}/approve", new { });
+        Assert.Equal(HttpStatusCode.OK, approveResp.StatusCode);
+        var approveBody = await approveResp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("Approved", approveBody.GetProperty("reviewStatus").GetString());
+
+        // A freshly-imported candidate has never been through E2's AI analysis/validation pass in
+        // this test (the test AI provider is fake/unusable), so ValidationStatus is still Pending
+        // — publish must fail cleanly with a reason, never throw/500.
+        var publishResp = await client.PostAsync($"/api/admin/resource-candidates/{candidateId}/publish", null);
+        Assert.Equal(HttpStatusCode.OK, publishResp.StatusCode);
+        var publishBody = await publishResp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.False(publishBody.GetProperty("success").GetBoolean());
+        Assert.True(publishBody.GetProperty("errors").GetArrayLength() > 0);
+    }
+
+    [Fact]
+    public async Task Publish_NonexistentCandidate_Returns404()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var response = await client.PostAsync($"/api/admin/resource-candidates/{Guid.NewGuid()}/publish", null);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
 }

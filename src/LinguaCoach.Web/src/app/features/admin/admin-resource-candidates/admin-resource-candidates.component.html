@@ -9,8 +9,10 @@
 <sp-admin-page-body>
 
   <sp-admin-alert variant="warning">
-    Staging only — Phase E1. Nothing on this page has been published to the student-facing bank.
-    Publishing arrives in Phase E4.
+    Phase E4 publish is live for VocabularyEntry and GrammarProfileEntry candidates, and for
+    ReadingPassage candidates whose staged text is short enough to count as an excerpt (a full
+    passage is blocked, not truncated). ActivityTemplateCandidate and Unknown candidates cannot be
+    published yet — see the candidate drawer for the exact reason.
   </sp-admin-alert>
 
   @if (error()) {
@@ -59,6 +61,7 @@
               <th>Language</th>
               <th>Validation</th>
               <th>Review</th>
+              <th>Published</th>
               <th class="sp-admin-th-actions"></th>
             </tr>
           </thead>
@@ -70,6 +73,13 @@
                 <td>{{ item.languageCode }}</td>
                 <td><sp-admin-badge [tone]="validationStatusTone(item.validationStatus)">{{ item.validationStatus }}</sp-admin-badge></td>
                 <td><sp-admin-badge tone="neutral">{{ item.reviewStatus }}</sp-admin-badge></td>
+                <td>
+                  @if (item.isPublished) {
+                    <sp-admin-badge tone="success">{{ item.publishedEntityType }}</sp-admin-badge>
+                  } @else {
+                    <sp-admin-badge tone="neutral">Not published</sp-admin-badge>
+                  }
+                </td>
                 <td>
                   <sp-admin-table-actions
                     mode="dropdown"
@@ -99,9 +109,16 @@
   (closed)="closeDrawer()">
 
   @if (selectedCandidate(); as candidate) {
-    <sp-admin-alert variant="warning">
-      Not published — Phase E1 staging only. Publishing to the student-facing bank arrives in Phase E4.
-    </sp-admin-alert>
+    @if (candidate.isPublished) {
+      <sp-admin-alert variant="success">
+        Published as {{ candidate.publishedEntityType }} (id: <code>{{ candidate.publishedEntityId }}</code>)
+        on {{ candidate.publishedAtUtc | date:'medium' }}.
+      </sp-admin-alert>
+    } @else {
+      <sp-admin-alert variant="warning">
+        Not published yet. Approve, ensure validation has passed, then use Publish below.
+      </sp-admin-alert>
+    }
 
     <div class="sp-admin-form-stack">
       <sp-admin-form-field label="Type">
@@ -160,9 +177,25 @@
           <pre>{{ candidate.aiAnalysisJson }}</pre>
         </sp-admin-form-field>
       }
-      <sp-admin-form-field label="Admin notes" hint="The only editable field in Phase E1 — no approve/reject/publish workflow yet">
+      <sp-admin-form-field label="Admin notes" hint="Also used to store the rejection reason, if this candidate is ever rejected">
         <sp-admin-textarea [(ngModel)]="notesDraft" placeholder="Optional internal note" />
       </sp-admin-form-field>
+
+      @if (!candidate.isPublished && candidate.reviewStatus !== 'Rejected') {
+        <sp-admin-form-field label="Rejection reason" hint="Required only if you use Reject below">
+          <sp-admin-textarea [(ngModel)]="rejectReasonDraft" placeholder="Why this candidate is being rejected" />
+        </sp-admin-form-field>
+      }
+
+      @if (lastPublishResult(); as publishResult) {
+        @if (!publishResult.success) {
+          <sp-admin-form-field label="Publish failed">
+            <ul>
+              @for (e of publishResult.errors; track e) { <li>{{ e }}</li> }
+            </ul>
+          </sp-admin-form-field>
+        }
+      }
     </div>
 
     @if (actionError()) { <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert> }
@@ -183,6 +216,27 @@
       <sp-admin-button variant="primary" [disabled]="savingNotes()" (clicked)="saveNotes()">
         {{ savingNotes() ? 'Saving…' : 'Save notes' }}
       </sp-admin-button>
+
+      @if (footerCandidate.reviewStatus !== 'Approved' && !footerCandidate.isPublished) {
+        <sp-admin-button variant="neutral" appearance="outline" [disabled]="approving()" (clicked)="approveSelected()">
+          {{ approving() ? 'Approving…' : 'Approve' }}
+        </sp-admin-button>
+      }
+      @if (footerCandidate.reviewStatus !== 'Rejected' && !footerCandidate.isPublished) {
+        <sp-admin-button variant="danger" appearance="outline" [disabled]="rejecting()" (clicked)="rejectSelected()">
+          {{ rejecting() ? 'Rejecting…' : 'Reject' }}
+        </sp-admin-button>
+      }
+      <sp-admin-button
+        variant="primary"
+        [disabled]="publishing() || !!publishBlockedReason(footerCandidate)"
+        [title]="publishBlockedReason(footerCandidate) ?? 'Publish to the Cefr* bank'"
+        (clicked)="publishSelected()">
+        {{ publishing() ? 'Publishing…' : (footerCandidate.isPublished ? 'Published' : 'Publish') }}
+      </sp-admin-button>
+      @if (publishBlockedReason(footerCandidate); as blockedReason) {
+        <small>{{ blockedReason }}</small>
+      }
     </div>
   }
 
@@ -197,7 +251,7 @@
   (closed)="closePreview()">
 
   <sp-admin-alert variant="warning">
-    E3 preview only — publish is not available until E4. Nothing here has been published to the student-facing bank.
+    Read-only preview. Use Approve/Reject/Publish in the candidate detail drawer, not here.
   </sp-admin-alert>
 
   @if (previewLoading()) {

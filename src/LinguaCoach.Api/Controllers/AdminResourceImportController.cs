@@ -123,7 +123,8 @@ public sealed class AdminResourceImportController : ControllerBase
 
 /// <summary>
 /// Phase E1 — read-only visibility into staged candidates, plus a limited AdminNotes edit.
-/// No approve/reject/publish action exists here by design (Phase E4 scope).
+/// Phase E4 adds the approve/reject/publish workflow (see the Approve/Reject/Publish actions
+/// below) — publish is the only action here that ever writes to a Cefr* bank table.
 /// </summary>
 [ApiController]
 [Route("api/admin/resource-candidates")]
@@ -136,6 +137,9 @@ public sealed class AdminResourceCandidateController : ControllerBase
     private readonly IResourceCandidateAnalysisService _analysisService;
     private readonly IResourceCandidateValidationService _validationService;
     private readonly IResourceCandidatePreviewService _previewService;
+    private readonly IAdminResourceCandidateApproveHandler _approveHandler;
+    private readonly IAdminResourceCandidateRejectHandler _rejectHandler;
+    private readonly IResourceCandidatePublishService _publishService;
 
     public AdminResourceCandidateController(
         IAdminResourceCandidateListQuery listQuery,
@@ -143,7 +147,10 @@ public sealed class AdminResourceCandidateController : ControllerBase
         IAdminResourceCandidateNotesHandler notesHandler,
         IResourceCandidateAnalysisService analysisService,
         IResourceCandidateValidationService validationService,
-        IResourceCandidatePreviewService previewService)
+        IResourceCandidatePreviewService previewService,
+        IAdminResourceCandidateApproveHandler approveHandler,
+        IAdminResourceCandidateRejectHandler rejectHandler,
+        IResourceCandidatePublishService publishService)
     {
         _listQuery = listQuery;
         _getQuery = getQuery;
@@ -151,6 +158,9 @@ public sealed class AdminResourceCandidateController : ControllerBase
         _analysisService = analysisService;
         _validationService = validationService;
         _previewService = previewService;
+        _approveHandler = approveHandler;
+        _rejectHandler = rejectHandler;
+        _publishService = publishService;
     }
 
     // GET api/admin/resource-candidates?page=1&pageSize=20&sourceId=&importRunId=&candidateType=&
@@ -247,5 +257,67 @@ public sealed class AdminResourceCandidateController : ControllerBase
             : Ok(result);
     }
 
+    // POST api/admin/resource-candidates/{candidateId}/approve  { notes? }
+    // Phase E4 — admin approval step, separate from ValidationStatus (deterministic). Never
+    // publishes anything by itself.
+    [HttpPost("{candidateId:guid}/approve")]
+    public async Task<IActionResult> Approve(Guid candidateId, [FromBody] ApproveCandidateRequest request, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _approveHandler.HandleAsync(new ApproveResourceCandidateCommand(candidateId, request.Notes), ct);
+            return Ok(result);
+        }
+        catch (ResourceImportValidationException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    // POST api/admin/resource-candidates/{candidateId}/reject  { reason }
+    // Phase E4 — admin rejection. Reason is required. Blocked outright for an already-published
+    // candidate (no unpublish step exists in this phase).
+    [HttpPost("{candidateId:guid}/reject")]
+    public async Task<IActionResult> Reject(Guid candidateId, [FromBody] RejectCandidateRequest request, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _rejectHandler.HandleAsync(new RejectResourceCandidateCommand(candidateId, request.Reason), ct);
+            return Ok(result);
+        }
+        catch (ResourceImportValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    // POST api/admin/resource-candidates/{candidateId}/publish
+    // Phase E4 — publishes an approved, validated candidate into its target Cefr* bank table.
+    // Idempotent (repeated calls after a successful publish return the same target reference, no
+    // duplicate row). A failed publish returns 200 with Success=false and a list of reasons — this
+    // mirrors the shape admins need to see every unmet gate at once, not just the first one; a
+    // not-found candidate id is the only case that returns 404.
+    [HttpPost("{candidateId:guid}/publish")]
+    public async Task<IActionResult> Publish(Guid candidateId, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _publishService.PublishAsync(candidateId, GetCurrentUserId(), ct);
+            return Ok(result);
+        }
+        catch (ResourceImportValidationException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    private Guid? GetCurrentUserId()
+    {
+        var raw = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        return Guid.TryParse(raw, out var id) ? id : null;
+    }
+
     public sealed record SetCandidateNotesRequest(string? AdminNotes);
+    public sealed record ApproveCandidateRequest(string? Notes = null);
+    public sealed record RejectCandidateRequest(string Reason);
 }

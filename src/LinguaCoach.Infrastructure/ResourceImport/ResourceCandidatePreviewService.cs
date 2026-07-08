@@ -340,24 +340,13 @@ public sealed class ResourceCandidatePreviewService : IResourceCandidatePreviewS
         ?? GetFieldCI(normalized, "grammarkey")
         ?? candidate.CanonicalText;
 
-    private static string? GetFieldCI(IReadOnlyDictionary<string, string?> dict, params string[] fieldNames)
-    {
-        foreach (var fieldName in fieldNames)
-        {
-            foreach (var kv in dict)
-            {
-                if (string.Equals(kv.Key, fieldName, StringComparison.OrdinalIgnoreCase)
-                    && !string.IsNullOrWhiteSpace(kv.Value))
-                {
-                    return kv.Value;
-                }
-            }
-        }
-        return null;
-    }
+    private static string? GetFieldCI(IReadOnlyDictionary<string, string?> dict, params string[] fieldNames) =>
+        ResourceCandidateFieldHelper.GetFieldCI(dict, fieldNames);
 
     /// <summary>
-    /// Parses NormalizedJson's field-keyed row into a plain dictionary. When
+    /// Parses NormalizedJson's field-keyed row into a plain dictionary, delegating the actual
+    /// field-name-keyed parse to <see cref="ResourceCandidateFieldHelper.ParseFields"/> (Phase E4
+    /// factored this out so the publish service can reuse the exact same lookup). When
     /// <paramref name="truncate"/> is true, each value is bounded to
     /// <see cref="MaxFieldValueLength"/> — used only for the DTO's display-safe
     /// <c>NormalizedContent</c> projection. When false, full-fidelity values are returned — used
@@ -366,28 +355,14 @@ public sealed class ResourceCandidatePreviewService : IResourceCandidatePreviewS
     /// </summary>
     private static Dictionary<string, string?> ParseFields(string normalizedJson, bool truncate)
     {
-        var result = new Dictionary<string, string?>(StringComparer.Ordinal);
-        try
-        {
-            using var doc = JsonDocument.Parse(normalizedJson);
-            if (doc.RootElement.ValueKind != JsonValueKind.Object)
-                return result;
+        var result = ResourceCandidateFieldHelper.ParseFields(normalizedJson);
+        if (!truncate)
+            return result;
 
-            foreach (var prop in doc.RootElement.EnumerateObject())
-            {
-                var value = prop.Value.ValueKind switch
-                {
-                    JsonValueKind.String => prop.Value.GetString(),
-                    JsonValueKind.Null or JsonValueKind.Undefined => null,
-                    _ => prop.Value.GetRawText(),
-                };
-                result[prop.Name] = value is null || !truncate ? value : Truncate(value, MaxFieldValueLength);
-            }
-        }
-        catch (JsonException)
+        foreach (var key in result.Keys.ToList())
         {
-            // Unparsable NormalizedJson — return whatever was collected (empty dict) rather
-            // than throwing; the caller still has CanonicalText/source/license to show.
+            if (result[key] is { } value)
+                result[key] = Truncate(value, MaxFieldValueLength);
         }
         return result;
     }

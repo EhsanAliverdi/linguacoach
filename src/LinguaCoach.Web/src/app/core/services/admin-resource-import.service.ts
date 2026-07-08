@@ -16,6 +16,7 @@ import {
   ResourceCandidateValidationResult,
   ResourceCandidateBatchAnalysisResult,
   ResourceCandidatePreviewDto,
+  ResourceCandidatePublishResult,
 } from '../models/admin-resource-import.models';
 
 @Injectable({ providedIn: 'root' })
@@ -136,5 +137,21 @@ export class AdminResourceCandidateService {
   /** Phase E3 — read-only rendered preview. Never mutates the candidate. */
   preview(candidateId: string): Observable<ResourceCandidatePreviewDto> {
     return this.http.get<ResourceCandidatePreviewDto>(`${this.base}/${candidateId}/preview`);
+  }
+
+  /** Phase E4 — admin approval step, separate from ValidationStatus. */
+  approve(candidateId: string, notes?: string | null): Observable<AdminResourceCandidateDto> {
+    return this.http.post<AdminResourceCandidateDto>(`${this.base}/${candidateId}/approve`, { notes: notes ?? null });
+  }
+
+  /** Phase E4 — admin rejection. Reason is required. */
+  reject(candidateId: string, reason: string): Observable<AdminResourceCandidateDto> {
+    return this.http.post<AdminResourceCandidateDto>(`${this.base}/${candidateId}/reject`, { reason });
+  }
+
+  /** Phase E4 — publishes an approved, validated candidate into its target Cefr* bank table.
+   *  Idempotent; a failed attempt returns 200 with success=false and a list of reasons. */
+  publish(candidateId: string): Observable<ResourceCandidatePublishResult> {
+    return this.http.post<ResourceCandidatePublishResult>(`${this.base}/${candidateId}/publish`, {});
   }
 }

@@ -90,6 +90,11 @@ internal static class ResourceImportMappers
         candidate.RejectReason,
         candidate.AdminNotes,
         candidate.CreatedAt,
-        candidate.UpdatedAtUtc
+        candidate.UpdatedAtUtc,
+        candidate.IsPublished,
+        candidate.PublishedAtUtc,
+        candidate.PublishedEntityType,
+        candidate.PublishedEntityId,
+        candidate.PublishedByUserId
     );
 }

@@ -5,9 +5,11 @@ import { AdminResourceCandidateService } from '../../../core/services/admin-reso
 import {
   AdminResourceCandidateDto,
   ResourceCandidatePreviewDto,
+  ResourceCandidatePublishResult,
   RESOURCE_CANDIDATE_TYPES,
   RESOURCE_VALIDATION_STATUSES,
   RESOURCE_REVIEW_STATUSES,
+  RESOURCE_PUBLISH_SUPPORTED_TYPES,
 } from '../../../core/models/admin-resource-import.models';
 import { FormioRendererComponent } from '../../../shared/formio/formio-renderer.component';
 import {
@@ -106,6 +108,13 @@ export class AdminResourceCandidatesComponent implements OnInit {
   preview = signal<ResourceCandidatePreviewDto | null>(null);
   previewRawJsonOpen = signal(false);
 
+  // ── Phase E4 — approve/reject/publish workflow ──────────────────────────
+  approving = signal(false);
+  rejecting = signal(false);
+  publishing = signal(false);
+  rejectReasonDraft = '';
+  lastPublishResult = signal<ResourceCandidatePublishResult | null>(null);
+
   constructor(private svc: AdminResourceCandidateService) {}
 
   ngOnInit(): void {
@@ -165,9 +174,11 @@ export class AdminResourceCandidatesComponent implements OnInit {
   openDrawer(item: AdminResourceCandidateDto): void {
     this.selectedCandidate.set(item);
     this.notesDraft = item.adminNotes ?? '';
+    this.rejectReasonDraft = '';
     this.actionError.set('');
     this.lastValidationErrors.set(this.parseSummaryList(item.rejectReason, 'errors'));
     this.lastValidationWarnings.set(this.parseSummaryList(item.rejectReason, 'warnings'));
+    this.lastPublishResult.set(null);
     this.drawerOpen.set(true);
   }
 
@@ -237,6 +248,79 @@ export class AdminResourceCandidatesComponent implements OnInit {
       },
       error: err => { this.savingNotes.set(false); this.actionError.set(err.error?.error ?? 'Could not save notes.'); },
     });
+  }
+
+  /** Phase E4 — admin approval step, separate from ValidationStatus (deterministic). */
+  approveSelected(): void {
+    const candidate = this.selectedCandidate();
+    if (!candidate) return;
+    this.approving.set(true);
+    this.actionError.set('');
+    this.svc.approve(candidate.candidateId).subscribe({
+      next: updated => {
+        this.approving.set(false);
+        this.selectedCandidate.set(updated);
+        this.actionSuccess.set('Candidate approved.');
+        this.loadAll();
+      },
+      error: err => { this.approving.set(false); this.actionError.set(err.error?.error ?? 'Could not approve candidate.'); },
+    });
+  }
+
+  /** Phase E4 — admin rejection. Reason (rejectReasonDraft) is required server-side. */
+  rejectSelected(): void {
+    const candidate = this.selectedCandidate();
+    if (!candidate) return;
+    if (!this.rejectReasonDraft.trim()) {
+      this.actionError.set('A reason is required to reject a candidate.');
+      return;
+    }
+    this.rejecting.set(true);
+    this.actionError.set('');
+    this.svc.reject(candidate.candidateId, this.rejectReasonDraft.trim()).subscribe({
+      next: updated => {
+        this.rejecting.set(false);
+        this.selectedCandidate.set(updated);
+        this.actionSuccess.set('Candidate rejected.');
+        this.loadAll();
+      },
+      error: err => { this.rejecting.set(false); this.actionError.set(err.error?.error ?? 'Could not reject candidate.'); },
+    });
+  }
+
+  /** Phase E4 — publishes into the target Cefr* bank table. A failed attempt returns 200 with
+   *  a list of reasons (not an HTTP error) — surfaced via lastPublishResult, not actionError. */
+  publishSelected(): void {
+    const candidate = this.selectedCandidate();
+    if (!candidate) return;
+    this.publishing.set(true);
+    this.actionError.set('');
+    this.lastPublishResult.set(null);
+    this.svc.publish(candidate.candidateId).subscribe({
+      next: result => {
+        this.publishing.set(false);
+        this.lastPublishResult.set(result);
+        if (result.success) {
+          this.actionSuccess.set('Candidate published.');
+          this.svc.get(candidate.candidateId).subscribe(updated => this.selectedCandidate.set(updated));
+          this.loadAll();
+        }
+      },
+      error: err => { this.publishing.set(false); this.actionError.set(err.error?.error ?? 'Could not publish candidate.'); },
+    });
+  }
+
+  /** Client-side hint only — the server re-checks every gate live at publish time regardless of
+   *  what this returns. Null means "looks eligible from what this page can see"; a non-null
+   *  string is shown next to the disabled Publish button. */
+  publishBlockedReason(candidate: AdminResourceCandidateDto): string | null {
+    if (candidate.isPublished) return 'Already published.';
+    if (candidate.reviewStatus !== 'Approved') return 'Requires approval first.';
+    if (candidate.validationStatus !== 'Passed') return 'Validation must pass first.';
+    if (!(RESOURCE_PUBLISH_SUPPORTED_TYPES as readonly string[]).includes(candidate.candidateType)) {
+      return 'Candidate type not yet supported for publishing in this phase.';
+    }
+    return null;
   }
 
   validationStatusTone(status: string): 'success' | 'neutral' | 'danger' | 'warning' {

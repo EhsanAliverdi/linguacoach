@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase E3)
+lastUpdated: 2026-07-08 (Phase E4)
 owner: architecture
 supersedes:
 supersededBy:
@@ -9,16 +9,19 @@ supersededBy:
 # English Resource Bank Import, Review, Preview, and Publishing Platform (Phase E)
 
 **Date planned:** 2026-07-08 (Plan-Sync-After-C1), **finalized:** 2026-07-08 (Phase E0),
-**E1 implemented:** 2026-07-08, **E2 implemented:** 2026-07-08, **E3 implemented:** 2026-07-08
-**Status:** E1 (staging), E2 (AI analysis + validation gates 4-6), and E3 (admin rendered
-preview) implemented. E4 (publish to first banks) not started.
-**No rows have ever been written to any published `Cefr*` bank table** — staging/analysis/preview
-only, by design and by test (`No_rows_are_ever_written_to_any_published_cefr_bank_table`, present
-in the E1, E2, and E3 test suites). **AI analysis is advisory only** — backend rule validation
+**E1 implemented:** 2026-07-08, **E2 implemented:** 2026-07-08, **E3 implemented:** 2026-07-08,
+**E4 implemented:** 2026-07-08
+**Status:** E1 (staging), E2 (AI analysis + validation gates 4-6), E3 (admin rendered preview),
+and E4 (publish to first banks) implemented. E5 (published-bank browsing/search) not started.
+**Some rows have now been published — but only `VocabularyEntry`/`GrammarProfileEntry`/short-
+excerpt `ReadingPassage` candidates that passed validation AND were explicitly admin-approved.**
+`ActivityTemplateCandidate` publishing is **deferred** (see "E4 — Publish to first banks" below
+for why). **AI analysis is advisory only** — backend rule validation
 (`ResourceCandidateValidationService`) remains the sole authority on `ValidationStatus`; the AI
 never sets it directly. **The admin preview clearly separates what a student would see from
-admin-only metadata** (source/license, validation results, AI analysis, fingerprint/dedup) — no
-candidate can be approved based on invisible JSON alone once E4 adds an approval step.
+admin-only metadata**, and every publish-time gate is re-checked live rather than trusted from
+earlier staging/validation/approval steps — a source's approval or license flags can change
+between staging and publish.
 **Supersedes the informal "seed CEFR-J/UniversalCEFR data" framing** used in earlier planning
 docs (`docs/reviews/2026-07-07-ai-bank-assessment-architecture-plan.md` §4.6/§9,
 `docs/architecture/cefr-resource-licensing-review.md`). Those docs' licensing findings still
@@ -368,26 +371,64 @@ stability, and the bank-table-untouched guarantee.
 - **Explicitly deferred (confirmed not built)**: the publish action itself (E4), any approve/
   reject action, bulk actions, final-bank browsing/search.
 
-### E4 — Publish to first banks
-- **Backend**: a `PublishCandidateHandler` — requires `ReviewStatus == Approved` AND
-  `ValidationStatus == Passed`; maps candidate content into a new `CefrVocabularyEntry` or
-  `CefrGrammarProfileEntry` row (matched by `CandidateType`); sets `ResourceCandidate.IsPublished
-  =true`/`PublishedAtUtc`/`PublishedEntityType`/`PublishedEntityId`; links the published row's
-  provenance back to `SourceId`. **E4 must also build the approve action itself** (it does not
-  exist yet — E3 only built the preview an approve action will rely on) and its own UI gate
-  requiring the preview to have been opened at least once before approval is enabled — E3's
-  `ResourceCandidatePreviewService` is the dependency this gate calls into, but the "has this
-  been viewed" tracking/gate is E4's own deliverable, not something E3 pre-built.
-- **Admin pages**: an Approve action (new) and a Publish action on the Candidate detail/review
-  page, both gated on the preview having been opened at least once. Full published-bank browsing
-  is **E5**, not E4 — E4 adds only approve+publish and a minimal confirmation, not a browse/search
-  UI.
-- **Tests**: publish handler correctly maps fields per bank type; idempotency (a candidate cannot
-  be published twice); rejected/pending/validation-failed candidates cannot be published (guard
-  tests for each precondition).
-- **Acceptance**: approved, validated, preview-viewed candidates targeting vocabulary or grammar
-  produce real `CefrVocabularyEntry`/`CefrGrammarProfileEntry` rows; reading/listening/speaking
-  banks remain empty until E6+.
+### E4 — Publish to first banks — implemented (2026-07-08)
+- **Backend**: `ResourceCandidatePublishService` — every gate is **re-checked live** at publish
+  time (never trusting an earlier staging/validation/approval snapshot, since a source's approval
+  or license flags can change after the fact): English-only (`LanguageCode` + script heuristic,
+  same as the validation gate, run again), `CefrResourceSource.IsImportApproved`,
+  `AllowsStudentDisplay`/`AllowsCommercialUse` (**hard-blocked at publish**, unlike E2's
+  validation pass which only warns/flags `NeedsReview` for this — by publish time the permission
+  gap is no longer a "note for a human," it's a real blocker on moving content to a live,
+  paying-student-facing table), `ValidationStatus == Passed`, `ReviewStatus == Approved`
+  (`Approve(notes?)`/`Reject(reason)` are new candidate methods, separate from validation).
+  **Idempotent** — publishing an already-published candidate returns the existing
+  `PublishedEntityType`/`PublishedEntityId` reference, never a second bank row.
+  **Candidate-type support decided in E4**:
+  - `VocabularyEntry` → `CefrVocabularyEntry` and `GrammarProfileEntry` → `CefrGrammarProfileEntry`
+    — **fully supported**, both target entities need only a handful of fields a staged candidate
+    reliably carries.
+  - `ReadingPassage` → `CefrReadingReference` — **supported only when the staged text is ≤500
+    characters** (`ResourceCandidatePublishService.MaxReadingExcerptLength`). `CefrReadingReference`'s
+    own doc comment is explicit that it holds "only a short excerpt/citation, not a full
+    copyrighted text — reading difficulty guidance, not a content library." A full reading
+    passage (the normal shape this candidate type carries) does not fit that documented purpose.
+    Rather than silently truncating a full passage into `ReferenceExcerpt` (lossy and dishonest
+    about what was actually published), anything over the threshold is blocked with a clear
+    error explaining why. Genuinely short passages/excerpts still publish.
+  - `ActivityTemplateCandidate` → **deferred entirely, not published in E4**. `ActivityTemplate`
+    is a much richer entity — it needs a stable unique `Key`, a curriculum-taxonomy-valid
+    Skill/Subskill pair, and real hand-authored `GenerationInstructions` prose (required for
+    `ActivityTemplateInstanceGenerator` to function at all). A row staged from a simple CSV/JSON
+    import was never designed to carry a curriculum designer's generation instructions —
+    inventing placeholder text to force it through would publish something dishonest (a
+    "template" that looks complete but was never actually authored). Blocked with a clear error;
+    left for a future phase once a real staging shape for these fields exists.
+  - `Unknown` — always blocked, no bank table it could map to.
+- **Known limitation vs. the original E0 plan**: the original plan envisioned a "preview must be
+  opened at least once before approval is enabled" UI gate. E3 did not build any "has this
+  candidate been previewed" tracking field, so E4 does not enforce that specific gate — approval
+  is a deliberate admin action gated on the candidate's validation/review state, not on a
+  preview-viewed flag. The underlying safety property (no approval of invisible JSON) is still
+  upheld in practice — the preview is one click away on the same page an admin uses to approve —
+  but it is not mechanically enforced. This could be added in a future phase if it becomes a real
+  workflow problem.
+- **Admin pages**: Approve/Reject/Publish actions on the Resource Candidates page (reject requires
+  a reason). Publish is **disabled, not hidden**, with a clear reason shown when ineligible (e.g.
+  "Validation must pass first," "Requires approval first," "Candidate type not yet supported for
+  publishing"). Published candidates show their target entity type + id as text — no browse link,
+  since **full published-bank browsing is E5, not E4**.
+- **Tests**: publish blocked before validation passes, before admin approval, after rejection,
+  after source approval is revoked, after a student-display/commercial-use permission is missing,
+  and for a Persian-script candidate (English-only re-checked live, defense-in-depth); idempotent
+  repeated publish; correct field mapping for `VocabularyEntry`/`GrammarProfileEntry`; the
+  `ReadingPassage` length gate (both under and over threshold); `ActivityTemplateCandidate` and
+  `Unknown` both blocked with zero final rows created; publish metadata correctly recorded;
+  `ResourceRawRecord` unchanged after publish; endpoints admin-only.
+- **Acceptance — met**: approved, validated `VocabularyEntry`/`GrammarProfileEntry` candidates
+  (and short-excerpt `ReadingPassage` candidates) produce real `CefrVocabularyEntry`/
+  `CefrGrammarProfileEntry`/`CefrReadingReference` rows; `ActivityTemplateCandidate` and anything
+  failing a live gate recheck remain unpublished; listening/speaking banks remain empty (no such
+  candidate type or target entity exists yet — that's E6+).
 - **Explicitly deferred**: published-bank browsing (E5), reading/listening banks (E6),
   background/queued large imports + ZIP + audio sources (E7), RAG/embeddings/semantic dedup (E8).
 
@@ -477,6 +518,9 @@ and preferred phase order.
 - Docs updated (Phase E3, this section): this file (E3 boundaries section marked implemented,
   E4's "approve action doesn't exist yet" correction documented); `docs/roadmap/road-map.md`,
   `docs/sprints/current-sprint.md`, `docs/architecture/README.md`.
+- Docs updated (Phase E4, this section): this file (E4 boundaries section marked implemented,
+  candidate-type support decisions and the preview-viewed-gate limitation documented);
+  `docs/roadmap/road-map.md`, `docs/sprints/current-sprint.md`, `docs/architecture/README.md`.
 - Docs intentionally not updated: `docs/architecture/cefr-resource-licensing-review.md` — its
   licensing findings are unchanged by this phase; no new sources were browsed or licensing
   conclusions revisited in E0. `docs/architecture/practice-gym.md`/`repetition-and-novelty.md` —

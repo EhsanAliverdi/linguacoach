@@ -47,6 +47,12 @@ internal sealed class ResourceCandidateConfiguration : IEntityTypeConfiguration<
         builder.Property(e => e.RejectReason).HasColumnName("reject_reason");
         builder.Property(e => e.AdminNotes).HasColumnName("admin_notes");
 
+        builder.Property(e => e.IsPublished).HasColumnName("is_published").IsRequired().HasDefaultValue(false);
+        builder.Property(e => e.PublishedAtUtc).HasColumnName("published_at_utc");
+        builder.Property(e => e.PublishedEntityType).HasColumnName("published_entity_type").HasMaxLength(64);
+        builder.Property(e => e.PublishedEntityId).HasColumnName("published_entity_id");
+        builder.Property(e => e.PublishedByUserId).HasColumnName("published_by_user_id");
+
         builder.HasOne<ResourceRawRecord>()
             .WithMany()
             .HasForeignKey(e => e.ResourceRawRecordId)
@@ -57,5 +63,6 @@ internal sealed class ResourceCandidateConfiguration : IEntityTypeConfiguration<
         builder.HasIndex(e => e.CandidateType).HasDatabaseName("ix_resource_candidates_type");
         builder.HasIndex(e => e.ValidationStatus).HasDatabaseName("ix_resource_candidates_validation_status");
         builder.HasIndex(e => e.ReviewStatus).HasDatabaseName("ix_resource_candidates_review_status");
+        builder.HasIndex(e => e.IsPublished).HasDatabaseName("ix_resource_candidates_is_published");
     }
 }

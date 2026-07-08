@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Plan-Sync-PG-v2)
+lastUpdated: 2026-07-08 (Phase E4)
 owner: product
 supersedes:
 supersededBy:
@@ -11,6 +11,43 @@ supersededBy:
 Status labels: `Not started` Â· `Planned` Â· `Blocked` Â· `Done`
 
 Items are grouped by theme. Each item is a discrete unit of work; sub-bullets are acceptance criteria or notes.
+
+---
+
+## Resource Bank — Deferred Publish Targets (Post Phase E4) `Not started`
+
+Phase E4 (2026-07-08) implemented controlled publishing from staged `ResourceCandidate` rows
+into `CefrVocabularyEntry`/`CefrGrammarProfileEntry`/short-excerpt `CefrReadingReference`. Two
+candidate-type publish targets were evaluated and deliberately deferred rather than forced
+through with a lossy or dishonest shortcut — tracked here as future backlog items:
+
+- [ ] **`ActivityTemplateCandidate` → `ActivityTemplate` publishing** `Not started`
+  - **Purpose**: allow an imported/staged Form.io-shaped candidate to become a real, usable
+    `ActivityTemplate` (Practice Gym bank-first content), not just the Cefr* reference banks.
+  - **Blocker**: `ActivityTemplate` requires a stable unique `Key`, a curriculum-taxonomy-valid
+    Skill/Subskill pair, and real hand-authored `GenerationInstructions` prose (required for
+    `ActivityTemplateInstanceGenerator` to function). A row staged from a simple CSV/JSON import
+    was never designed to carry a curriculum designer's generation instructions.
+  - **What would need to change**: either a richer import/staging shape specifically for
+    activity-template candidates (capturing generation instructions as a real staged field, not
+    inferred or invented), or a distinct admin authoring step between "candidate" and "published
+    template" that lets a human write the missing instructions before publish — not a Phase E4
+    shortcut.
+  - **Out of scope for this item**: inventing placeholder `GenerationInstructions` to force
+    existing candidates through (rejected in E4 as dishonest — see
+    `docs/architecture/english-resource-bank-import-platform.md`'s E4 section).
+
+- [ ] **Full-length `ReadingPassage` → reading-content bank** `Not started`
+  - **Purpose**: publish full reading passages (not just short excerpts), for use as real reading
+    practice content.
+  - **Blocker**: `CefrReadingReference`'s own documented purpose is "reading difficulty guidance,
+    not a content library" — it intentionally holds only a short excerpt/citation, not a full
+    copyrighted text. E4 only publishes `ReadingPassage` candidates ≤500 characters into this
+    entity; longer passages are blocked, not truncated.
+  - **What would need to change**: a new, purpose-built reading-content bank entity (distinct
+    from `CefrReadingReference`) designed to hold full passage text with appropriate licensing/
+    attribution tracking — this is Phase E6's documented scope ("reading/listening resources"),
+    not a Phase E4 fix.
 
 ---
 

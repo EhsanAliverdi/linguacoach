@@ -115,3 +115,70 @@ public sealed class AdminResourceCandidateNotesHandler : IAdminResourceCandidate
         return ResourceImportMappers.ToDto(result.Candidate, result.Run.Id, result.Run.CefrResourceSourceId);
     }
 }
+
+/// <summary>Phase E4 — admin approval step, separate from ValidationStatus (deterministic) and
+/// from IResourceCandidatePublishService (which never runs here).</summary>
+public sealed class AdminResourceCandidateApproveHandler : IAdminResourceCandidateApproveHandler
+{
+    private readonly LinguaCoachDbContext _db;
+
+    public AdminResourceCandidateApproveHandler(LinguaCoachDbContext db) => _db = db;
+
+    public async Task<AdminResourceCandidateDto> HandleAsync(
+        ApproveResourceCandidateCommand command, CancellationToken ct = default)
+    {
+        var result =
+            await (from c in _db.ResourceCandidates
+                   join r in _db.ResourceRawRecords on c.ResourceRawRecordId equals r.Id
+                   join run in _db.ResourceImportRuns on r.ResourceImportRunId equals run.Id
+                   where c.Id == command.CandidateId
+                   select new { Candidate = c, Run = run })
+                .FirstOrDefaultAsync(ct)
+            ?? throw new ResourceImportValidationException($"Resource candidate '{command.CandidateId}' was not found.");
+
+        result.Candidate.Approve(command.Notes);
+        await _db.SaveChangesAsync(ct);
+
+        return ResourceImportMappers.ToDto(result.Candidate, result.Run.Id, result.Run.CefrResourceSourceId);
+    }
+}
+
+/// <summary>Phase E4 — admin rejection. Blocked outright for an already-published candidate (see
+/// ResourceCandidate.Reject's doc comment) — surfaced to the caller as a
+/// ResourceImportValidationException so the controller can return 400 rather than 500.</summary>
+public sealed class AdminResourceCandidateRejectHandler : IAdminResourceCandidateRejectHandler
+{
+    private readonly LinguaCoachDbContext _db;
+
+    public AdminResourceCandidateRejectHandler(LinguaCoachDbContext db) => _db = db;
+
+    public async Task<AdminResourceCandidateDto> HandleAsync(
+        RejectResourceCandidateCommand command, CancellationToken ct = default)
+    {
+        var result =
+            await (from c in _db.ResourceCandidates
+                   join r in _db.ResourceRawRecords on c.ResourceRawRecordId equals r.Id
+                   join run in _db.ResourceImportRuns on r.ResourceImportRunId equals run.Id
+                   where c.Id == command.CandidateId
+                   select new { Candidate = c, Run = run })
+                .FirstOrDefaultAsync(ct)
+            ?? throw new ResourceImportValidationException($"Resource candidate '{command.CandidateId}' was not found.");
+
+        try
+        {
+            result.Candidate.Reject(command.Reason);
+        }
+        catch (ArgumentException ex)
+        {
+            throw new ResourceImportValidationException(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new ResourceImportValidationException(ex.Message);
+        }
+
+        await _db.SaveChangesAsync(ct);
+
+        return ResourceImportMappers.ToDto(result.Candidate, result.Run.Id, result.Run.CefrResourceSourceId);
+    }
+}

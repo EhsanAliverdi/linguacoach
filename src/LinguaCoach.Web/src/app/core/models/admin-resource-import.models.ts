@@ -121,6 +121,12 @@ export interface AdminResourceCandidateDto {
   adminNotes: string | null;
   createdAt: string;
   updatedAtUtc: string;
+  // Phase E4 — publish state.
+  isPublished: boolean;
+  publishedAtUtc: string | null;
+  publishedEntityType: string | null;
+  publishedEntityId: string | null;
+  publishedByUserId: string | null;
 }
 
 export interface AdminResourceCandidateListResult {
@@ -266,6 +272,24 @@ export interface ResourceCandidatePreviewDto {
   canPreview: boolean;
   previewWarnings: string[];
   adminOnlyActivityMetadataJson: string | null;
+}
+
+// ── Phase E4 — approve/reject/publish workflow ──────────────────────────────────
+
+/** Candidate types this admin UI's Publish button will actually attempt server-side in Phase E4
+ *  — ReadingPassage/ActivityTemplateCandidate/Unknown are NOT listed here (see the banner in the
+ *  candidates page): ReadingPassage publishes only when the staged text is short enough to be a
+ *  genuine excerpt (server-side length gate), ActivityTemplateCandidate/Unknown are deferred
+ *  entirely. The Publish button stays visible for every type so the server's specific error
+ *  message is always what tells the admin why, rather than this list silently hiding the action. */
+export const RESOURCE_PUBLISH_SUPPORTED_TYPES = ['VocabularyEntry', 'GrammarProfileEntry', 'ReadingPassage'] as const;
+
+export interface ResourceCandidatePublishResult {
+  success: boolean;
+  publishedEntityType: string | null;
+  publishedEntityId: string | null;
+  publishedAtUtc: string | null;
+  errors: string[];
 }
 
 export const RESOURCE_IMPORT_MODES = ['Csv', 'Json', 'Jsonl'] as const;
