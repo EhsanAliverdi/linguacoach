@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase C-Final)
+lastUpdated: 2026-07-08 (Plan-Sync-PG-v2)
 owner: architecture
 supersedes:
 supersededBy:
@@ -369,3 +369,91 @@ scoring, or multi-turn speaking evaluation. Attempting those patterns before tha
 evaluator work exists would either silently degrade grading quality or require inventing new,
 unreviewed evaluation logic under time pressure — exactly the risk this phased approach is
 designed to avoid.
+
+---
+
+## Future target: skill-first Practice Gym (planned, not started — Plan-Sync-PG-v2, 2026-07-08)
+
+Everything above this section describes **content migration** — moving individual pattern keys
+from legacy freeform generation onto the `ActivityTemplate`/Form.io bank-first path. That work is
+now closed at Phase C-Final (8/33 pattern rows migrated). **This is a separate concern from how
+students choose what to practice**, and closing the content-migration track does not mean the
+final Practice Gym UX should stay built around raw pattern/type selection.
+
+### The problem with the current model
+
+Today, Practice Gym is (and after Phase C-Final remains) effectively **activity-type-first**:
+students see and choose among internal exercise types — gap fill, phrase match, reorder
+paragraphs, multiple choice, listening fill-in-blanks, and so on. This mirrors the internal
+`ExercisePatternDefinition`/`ExerciseTypeDefinition` catalog directly in the student-facing
+surface. That catalog is an excellent **implementation detail** (which format can render which
+content, which scorer applies, what CEFR level it suits) — but it is a poor **mental model** to
+hand a student. A learner doesn't wake up wanting to do "reorder_paragraphs"; they want to work on
+their reading, fix a weak area, review something they got wrong, or be challenged at their level.
+
+### The target model: skill/subskill/objective-first
+
+Future Practice Gym should ask **"what skill/objective/weak area should be practised?"** first,
+not **"which exercise type do you want?"**. Concretely, students should choose or be guided
+toward:
+
+- a **skill** (reading, writing, listening, speaking, vocabulary, grammar)
+- a **subskill** (e.g. reading → inference, reading → gist, vocabulary → collocation)
+- a **weak area** (surfaced from evidence — low mastery score, repeated mistakes, low placement
+  confidence)
+- a **curriculum objective** (a specific `CurriculumObjectiveKey` the student hasn't mastered yet)
+- **review** (spaced repetition of something previously struggled with)
+- **challenge** (deliberately above current level, for stretch practice)
+- **recommended practice** (a system-suggested next best activity, no explicit choice required)
+
+The system then internally selects the best `ActivityTemplate`/resource/activity **format** to
+serve that need — the student never directly picks "multiple choice" vs. "fill in the blanks";
+the selector picks whichever format best fits the moment, based on:
+
+- student CEFR level
+- target skill/subskill
+- weakness/evidence signals (mastery scores, placement confidence, `ActivityFeedbackSignal`
+  difficulty/clarity ratings — see `docs/architecture/activity-feedback-and-calibration.md`)
+- novelty/cooldown state (`IActivityNoveltyPolicy` — see `docs/architecture/repetition-and-novelty.md`)
+- available published bank items (Phase E's resource banks, once they exist)
+- renderer/scorer/evaluator capability (does a suitable, proven format exist for this
+  skill/subskill/CEFR combination right now?)
+
+**Example flow:**
+
+```
+Student need:  Reading → inference → B1 → workplace/general context
+
+Selector chooses internally (any of, depending on availability/novelty/feedback signal):
+  - reading_multiple_choice_single (already template-enabled)
+  - reorder_paragraphs (already template-enabled)
+  - reading_fill_in_blanks (already template-enabled)
+  - answer_short_question (once Backlog item D's fuzzy scorer exists)
+  - a legacy freeform-generated activity (fallback, if no suitable template/bank item exists)
+
+The student sees "Practice: Reading — Inference" — never the internal pattern key.
+```
+
+### What does NOT change
+
+- **`ExerciseTypeDefinition` and `ExercisePatternDefinition` are not deleted.** They are
+  **reframed** as an internal **capability registry** — the system's own record of: renderer
+  capability, scorer/evaluator capability, audio/image/speaking/open-ended requirements, Form.io
+  compatibility, supported skills/subskills, CEFR suitability, Practice Gym/Today compatibility,
+  and fallback/generation capability. The selector queries this registry; students never see it
+  directly.
+- **`ActivityTemplate` remains the recipe layer** (a specific, admin-authored/approved way to
+  render one skill/subskill/CEFR combination).
+- **Resource banks (Phase E's `Cefr*` entities) remain the ingredient layer** (the underlying
+  vocabulary/grammar/reading content templates draw from).
+- **The Practice Gym selector becomes the skill/objective-first orchestrator** sitting above both
+  — a new component, not a replacement for either existing layer.
+- **Legacy type-first paths are retired only after the skill-first selector is proven** — this is
+  a UX/orchestration change layered on top of the existing content model, not a rip-and-replace.
+  See `docs/backlog/product-backlog.md`'s "Practice Gym v2" section (items PG-v2A-D) for the
+  planned implementation breakdown, and `docs/roadmap/road-map.md` §19a for sequencing (after
+  Phase E5-E8, before Phase F/G — deliberately late, since a good selector needs mature
+  bank/resource search coverage to have real content to choose from).
+
+**Status: planned, not started.** No code, migrations, or config changed by this section's
+addition (Plan-Sync-PG-v2, 2026-07-08, docs-only).

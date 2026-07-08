@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase C-Final)
+lastUpdated: 2026-07-08 (Plan-Sync-PG-v2)
 owner: product
 supersedes:
 supersededBy:
@@ -11,6 +11,80 @@ supersededBy:
 Status labels: `Not started` Â· `Planned` Â· `Blocked` Â· `Done`
 
 Items are grouped by theme. Each item is a discrete unit of work; sub-bullets are acceptance criteria or notes.
+
+---
+
+## Practice Gym v2 — Skill-first selector and UX `Planned` (Plan-Sync-PG-v2)
+
+Practice Gym should eventually become **skill/subskill/objective-first**, not
+activity-type-first. Students should choose or be guided toward a skill/subskill/weak-area/
+objective/review/challenge/recommended-practice target — never a raw internal exercise type
+(gap fill, phrase match, reorder paragraphs, etc.) — with the system internally selecting the
+best `ActivityTemplate`/resource/format. Sequenced deliberately late (after Phase E5-E8, before
+Phase F/G — see `docs/roadmap/road-map.md` §19a) because a good selector needs mature
+bank/resource search/selector coverage to have real content to choose from. See
+`docs/architecture/practice-gym.md`'s "Future target: skill-first Practice Gym" section for full
+design rationale. **`ExerciseTypeDefinition`/`ExercisePatternDefinition` are never deleted** by
+any item below — they become an internal capability registry.
+
+- [ ] **PG-v2A: Backend skill/objective-first Practice Gym selector** `Planned`
+  - **Purpose**: given a target (skill/subskill/weak-area/objective/review/challenge/recommended),
+    the student's CEFR, weakness/evidence signals (mastery scores, placement confidence,
+    `ActivityFeedbackSignal` ratings), novelty/cooldown state, and available published bank
+    items/templates, select the single best `ActivityTemplate`/resource/activity instance to
+    serve — without the student ever choosing a raw pattern/type name.
+  - **Acceptance criteria**: selector returns a suitable activity for a given skill/subskill/CEFR
+    combination when a compatible published template/bank item exists; falls back to legacy
+    freeform generation when no suitable bank-first option exists (never a hard failure); respects
+    `IActivityNoveltyPolicy` cooldowns and `ActivityFeedbackSignal` repeat-preference signals;
+    queries the existing `ExerciseTypeDefinition`/`ExercisePatternDefinition` capability registry
+    rather than a new parallel classification system.
+  - **Out of scope**: any UI changes (PG-v2B); retiring the existing type-first Practice Gym
+    entry points (PG-v2D, only after this is proven); embeddings/semantic matching (still
+    deferred per Phase E8's scope discipline) — selection logic is rule-based/deterministic plus
+    existing evidence signals, not a new ML-driven recommender.
+
+- [ ] **PG-v2B: Student Practice Gym UI simplified around skills, weak areas, review, challenge, recommended practice** `Planned`
+  - **Purpose**: replace (or sit alongside, during transition) the current type-first Practice
+    Gym entry UI with a skill/objective-first entry point — student picks "Reading", "a weak
+    area", "review", "challenge", or "recommended for you," never a raw pattern name.
+  - **Acceptance criteria**: student can start a practice session by skill/subskill/weak-area/
+    review/challenge/recommended without seeing internal pattern/type keys anywhere in the UI;
+    the resulting activity still renders via the existing `ExerciseRendererComponent`/
+    `FormioRendererComponent` paths (no new renderer); existing Practice Gym routes/deep-links
+    keep working during the transition (PG-v2D governs full retirement, not this item).
+  - **Out of scope**: backend selector logic (PG-v2A, prerequisite); deleting the existing
+    type-first UI (PG-v2D); a full visual redesign of the result/feedback screens (those are
+    Phase B2's/existing surfaces, reused as-is).
+
+- [ ] **PG-v2C: Admin capability-registry cleanup / internal pattern management** `Planned`
+  - **Purpose**: reframe the admin experience around `ExerciseTypeDefinition`/
+    `ExercisePatternDefinition` as an internal **capability registry** (renderer capability,
+    scorer/evaluator capability, audio/image/speaking/open-ended requirements, Form.io
+    compatibility, supported skills/subskills, CEFR suitability, Practice Gym/Today
+    compatibility, fallback/generation capability) rather than a student-facing catalog admins
+    manage the same way as `ActivityTemplate`.
+  - **Acceptance criteria**: admin can view/edit pattern capability flags without implying
+    they're editing "the Practice Gym menu"; no change to the underlying `ExercisePatternKey`
+    catalog's actual capability data, only to its admin framing/UI; existing
+    `ExerciseTypeDefinitionSeeder`/pattern catalog remain the single source of truth (no
+    duplicate registry created).
+  - **Out of scope**: deleting or renaming `ExerciseTypeDefinition`/`ExercisePatternDefinition`
+    (never in scope, at any PG-v2 item); building a brand-new admin capability-registry entity —
+    this is a UI/framing cleanup of the existing catalog, not a new data model.
+
+- [ ] **PG-v2D: Legacy type-driven Practice Gym path retirement after proof** `Planned`
+  - **Purpose**: once PG-v2A/B are proven (real students successfully completing skill-first
+    practice sessions, selector reliably choosing suitable activities), retire the legacy
+    type-first Practice Gym entry UI — not the underlying pattern/template/legacy-generation
+    infrastructure, just the direct type-selection entry point.
+  - **Acceptance criteria**: retirement only proceeds after an explicit product decision
+    confirming PG-v2A/B are working well in practice (this item does not define its own success
+    metric — that's a product call at the time); legacy generation fallback and
+    `ExerciseTypeDefinition`/`ExercisePatternDefinition` remain fully intact and functional
+    throughout — this item retires a UI entry point, not backend capability.
+  - **Out of scope**: deleting any pattern/template/legacy-generation code or data; a hard cutover
+    date — this is explicitly gated on proof, not a calendar deadline.
 
 ---
 

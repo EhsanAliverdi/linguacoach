@@ -1,17 +1,17 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase E0)
+lastUpdated: 2026-07-08 (Plan-Sync-PG-v2)
 owner: product / engineering
 ---
 
 # SpeakPath / LinguaCoach Roadmap
 
-**Accurate as of: 2026-07-08 (Phase E0 — see §19a for the current phase sequence).
+**Accurate as of: 2026-07-08 (Plan-Sync-PG-v2 — see §19a for the current phase sequence).
 The 2026-07-03 "Phase 20H" line below is the last entry confirmed live against speakpath.app;
 everything since then (Clean-A/A2, Phase B, Phase C1, Plan-Sync-After-C1, Phase C2, Plan-Sync-B2,
-Phase B2, Phase C3, Phase C-Final, Phase E0) has been developed and tested locally but not yet
-deployed — see the "Current Project Status" and Decision Log sections below for what's actually
-landed.**
+Phase B2, Phase C3, Phase C-Final, Phase E0, Plan-Sync-PG-v2) has been developed and tested
+locally but not yet deployed — see the "Current Project Status" and Decision Log sections below
+for what's actually landed.**
 
 This is the canonical project memory document. It captures completed work, current state, known gaps, deferred items, and the recommended order of future phases.
 
@@ -23,21 +23,33 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest phase completed (local, not yet deployed):** Phase E0 — English Resource Bank Import
-Platform final model and implementation plan (2026-07-08, this commit, **planning/docs only — no
-app code, migrations, or config changed**). Finalized the entity model for the not-yet-started
-Phase E platform: the source registry reuses the existing `CefrResourceSource` entity directly
-(supersedes the earlier informal proposal to add a separate `ResourceImportSource`); new staging
-entities `ResourceImportRun`/`ResourceRawRecord`/`ResourceCandidate`; published resources use a
-**hybrid model** — E4 reuses the existing typed `CefrVocabularyEntry`/`CefrGrammarProfileEntry`
-(no new polymorphic `ResourceBankItem` table). Finalized a 7-gate status/gate model (English-only,
-license, parser, AI-analysis-advisory, rule-validation, dedup/fingerprint, admin review+publish),
-reusing `AdminReviewStatus`, `IFormIoSchemaValidationService`, `IActivityContentFingerprintService`,
-and `IFileStorageService` throughout rather than inventing parallel mechanisms. Defined E1's exact
-scope (source integration + CSV/JSON/JSONL import + raw/candidate staging, gates 1-3 only, **no
-publishing**) and E2-E4 boundaries, plus an admin nav plan (new pages under the existing Content
-sidebar group). Full detail: `docs/architecture/english-resource-bank-import-platform.md`.
-**Phase E1 has not started.**
+**Latest phase completed (local, not yet deployed):** Plan-Sync-PG-v2 — Add skill-first Practice
+Gym v2 to later roadmap (2026-07-08, this commit, **docs-only — no app code, migrations, or
+config changed**). Added a new future track, **Practice Gym v2**, to the roadmap sequence — after
+Phase E5-E8 and before Phase F/G. Practice Gym should eventually let students choose or be guided
+toward a **skill/subskill/weak-area/objective/review/challenge/recommended-practice** target
+rather than primarily choosing a raw internal exercise type (gap fill, phrase match, reorder
+paragraphs, multiple choice, listening fill-in-blanks, etc.); the system should internally select
+the best `ActivityTemplate`/resource/activity format based on CEFR, skill/subskill, weakness
+evidence, novelty/cooldown, feedback signals, available published bank items, and
+renderer/scorer/evaluator capability. **`ExerciseTypeDefinition`/`ExercisePatternDefinition` are
+NOT deleted** — they are reframed as an internal capability registry, not the student-facing
+product model. This does not change the Phase C-Final closure decision and does not start any
+implementation. Full detail: `docs/architecture/practice-gym.md`'s "Future target: skill-first
+Practice Gym" section and `docs/backlog/product-backlog.md`'s "Practice Gym v2" section.
+**Phase E1 remains the next recommended implementation phase — unchanged by this docs sync.**
+
+**Latest phase completed before this:** Phase E0 — English Resource Bank Import Platform final
+model and implementation plan (2026-07-08, `0fa92a25`, planning/docs only). Finalized the entity
+model for the not-yet-started Phase E platform: the source registry reuses the existing
+`CefrResourceSource` entity directly (supersedes the earlier informal proposal to add a separate
+`ResourceImportSource`); new staging entities `ResourceImportRun`/`ResourceRawRecord`/
+`ResourceCandidate`; published resources use a **hybrid model** — E4 reuses the existing typed
+`CefrVocabularyEntry`/`CefrGrammarProfileEntry` (no new polymorphic `ResourceBankItem` table).
+Finalized a 7-gate status/gate model reusing `AdminReviewStatus`,
+`IFormIoSchemaValidationService`, `IActivityContentFingerprintService`, and `IFileStorageService`.
+Defined E1's exact scope and E2-E4 boundaries, plus an admin nav plan. Full detail:
+`docs/architecture/english-resource-bank-import-platform.md`.
 
 **Latest phase completed before this:** Phase C-Final — Practice Gym bank-first migration closure
 and readiness audit (2026-07-08, `5279c083`). Verified all 8 template-enabled Practice Gym keys
@@ -77,7 +89,7 @@ unmodified throughout.
 
 **Branch:** main
 
-**Test totals (as of Phase E0, 2026-07-08, local only — unchanged from Phase C-Final since E0 is docs/planning only):**
+**Test totals (as of Plan-Sync-PG-v2, 2026-07-08, local only — unchanged since Phase C3, since C-Final/E0/Plan-Sync-PG-v2 are all docs/planning only):**
 - Backend: 3,379 passed (5 architecture + 1,951 unit + 1,423 integration), 0 failed — unchanged since Phase C3 (no code touched by Phase C-Final or Phase E0).
 - Angular unit (Karma): not run this phase (no frontend files touched); baseline unchanged at 120 pre-existing failures (`AdminStudentDetailComponent`/`AdminAiConfigComponent`/`VoiceRecorderComponent`).
 - Angular production build (`ng build --configuration production`): not run this phase — no frontend files touched; last known state (Phase C3) still fails on the pre-existing `initial` bundle-size budget (1.55MB over the 1MB threshold in `angular.json`, predating this initiative at commit `246daead`), not a regression.
@@ -866,10 +878,11 @@ These are planning estimates, not exact metrics. Provided to guide sequencing de
 | 2026-07-08 | **Recommend Phase C-Final over a forced Phase C4** | The C3 audit's negative result (no further safe deterministic patterns) means a real Phase C4 would have to open new scope — either a dedicated audio-compatibility review (deciding whether text-only variants of the listening family can be authored, and inventing a new fuzzy/partial-credit scorer kind for `answer_short_question`/`read_aloud`/`repeat_sentence`) or dedicated Form.io renderer/evaluator support for `AiStructured`/`AiOpenEnded` marking modes — neither is a small, low-risk batch like C1/C2/C3 were. Forcing a C4 under the same "small batch" framing would either misrepresent the scope or produce a rushed, unreviewed evaluator/renderer addition; closing the deterministic-pattern track at C-Final (8/~33 template-enabled, 25 legacy documented with concrete exclusion reasons) is the more honest outcome, with either audio-compatibility or AI-evaluated-pattern support becoming its own dedicated future phase if the product decides to pursue it |
 | 2026-07-08 | **Phase C-Final implemented**: verified all 8 template-enabled Practice Gym keys (approved+published templates, idempotent seeders, leak-safe schemas, intact gating/fallback/novelty/feedback-policy wiring — no code gaps found, docs-only closure); produced a definitive 33-row pattern audit table (8 template-enabled, 25 legacy) correcting an off-by-one "26 legacy" figure that had propagated through Phase C3's own docs; added 4 explicit backlog entries (`docs/backlog/product-backlog.md`) for the deferred pattern families (listening/audio, speaking/audio, open-ended AI-evaluated, fuzzy/short-answer) so future migration scope is tracked, not left as an implicit doc note | This closure pass found no code/test gaps — the verification confirmed C1-C3's work was already correct and complete, so the phase stayed docs-only as scoped. Explicit backlog entries exist so a future "should we do Phase C4" conversation starts from a tracked list, not a re-derivation of the C3 audit |
 | 2026-07-08 | **Phase E0 implemented — finalized the Phase E entity/status/gate model**: source registry reuses the existing `CefrResourceSource` entity directly (supersedes the Plan-Sync-After-C1 placeholder's proposed separate `ResourceImportSource`); new staging entities `ResourceImportRun`/`ResourceRawRecord`/`ResourceCandidate` (naming unchanged from the placeholder); published resources use a hybrid model — E4 reuses existing typed `CefrVocabularyEntry`/`CefrGrammarProfileEntry` (rejected a polymorphic `ResourceBankItem` + JSON-blob table). Defined a 7-gate model (English-only, license, parser, AI-analysis-advisory, rule-validation, dedup/fingerprint, admin review+publish) reusing `AdminReviewStatus`, `IFormIoSchemaValidationService`, `IActivityContentFingerprintService`, `IFileStorageService` — no new parallel mechanisms invented. Defined E1's exact scope (gates 1-3 only, no publishing) and E2-E4 boundaries; new admin pages placed under the existing Content sidebar group. See `docs/architecture/english-resource-bank-import-platform.md` | The E0 audit found `CefrResourceSource` already has every field a source registry needs (name/license/URL/notes/approval/imported-at) — adding a second near-identical `ResourceImportSource` entity would have duplicated it for no reason, violating this project's own "don't duplicate existing good entities" convention. The hybrid publish-target decision follows the same reasoning: the existing typed `Cefr*` entities already have clean, purpose-built schemas that a polymorphic JSON-blob table would be a step backward from |
+| 2026-07-08 | **Plan-Sync-PG-v2**: added a new future track, **Practice Gym v2 (skill/subskill/objective-first)**, to the roadmap after Phase E5-E8 and before Phase F/G. Practice Gym should eventually let students choose or be guided toward a **skill/subskill/weak-area/objective/review/challenge/recommended-practice** target rather than primarily choosing a raw internal exercise type (gap fill, phrase match, reorder paragraphs, multiple choice, listening fill-in-blanks, etc.); the system should internally select the best `ActivityTemplate`/resource/activity format based on CEFR, skill/subskill, weakness evidence, novelty/cooldown, feedback signals, available published bank items, and renderer/scorer/evaluator capability. **`ExerciseTypeDefinition`/`ExercisePatternDefinition` are NOT deleted** — they are reframed as an internal capability registry (renderer capability, scorer/evaluator capability, audio/image/speaking/open-ended requirements, Form.io compatibility, supported skills/subskills, CEFR suitability, Practice Gym/Today compatibility, fallback/generation capability), not the student-facing product model. Docs-only; no app code, migrations, or config changed; does not reopen or change the Phase C-Final closure decision | Phase C1-C3/C-Final proved the bank-first *content* migration works, but migrating individual pattern keys to templates is orthogonal to *how students choose what to practice* — the current Practice Gym UX still surfaces raw pattern/type names, which is a fundamentally different (and, long-term, less pedagogically sound) mental model than skill/objective-first practice. Sequencing PG-v2 after Phase E5-E8 (not immediately after C-Final) is deliberate: a good skill-first selector depends on enough published bank/resource content and search/selector coverage to have real options to choose from — attempting PG-v2 before Phase E matures would just recreate the current pattern-first UX with extra steps |
 
 ---
 
-## 19a. Phase Sequence (as of 2026-07-08, Phase E0)
+## 19a. Phase Sequence (as of 2026-07-08, Plan-Sync-PG-v2)
 
 Preferred order, each phase gated on the previous one's completion review:
 
@@ -879,20 +892,33 @@ Preferred order, each phase gated on the previous one's completion review:
 4. ~~**Phase C4**~~ — **skipped, not pursued**: the C3 audit's negative result meant a real C4 would need genuinely new scope (audio-compatibility review or AI-evaluated-pattern Form.io support), not a small batch — see the Decision Log. Superseded by going straight to Phase C-Final.
 5. ~~**Phase C-Final**~~ — done (2026-07-08): closed the deterministic-pattern Practice Gym migration track at 8/~33 pattern rows template-enabled; verified all 8 keys stable; documented the remaining 25 legacy keys with concrete exclusion reasons and 4 tracked backlog items. See `docs/architecture/practice-gym.md` and `docs/backlog/product-backlog.md`.
 6. ~~**Phase E0**~~ — done (2026-07-08): finalized the resource-import-platform entity/status/gate model (planning only, no code). See `docs/architecture/english-resource-bank-import-platform.md`.
-7. **Phase E1** — first implementation slice: `CefrResourceSource`-backed source integration + CSV/JSON/JSONL import + raw/candidate staging (gates 1-3 only; no publishing yet). **Not started — this is the next recommended phase.**
-8. **Phase E2** — AI analysis + validation gates (gates 4-6). Not started.
-9. **Phase E3** — admin rendered preview (gate 7a prerequisite). Not started.
-10. **Phase E4** — publish to first banks — vocabulary, grammar (gates 7a+7b). Not started.
-11. **Phase D1** — bank-first Today lesson composer, first slice — only after Phase C reaches C-Final (done) and Phase E reaches at least E4, so Today has both a proven multi-pattern template path and real bank content to compose from. Not started.
-12. **Phase E5-E8** — published bank browsing, reading/listening resources, larger import support, RAG/search enrichment — proceed in parallel with or after Phase D1 depending on product priority at that time. Not started.
-13. **Phase F** — legacy freeform-generation retirement, **per-pattern only, destructive only after each pattern's replacement is proven** — not a bulk deletion, and not started until Phase C-Final (done) and Phase D have each individually proven their replacement paths. Not started.
-14. **Phase G** — admin bank/content navigation cleanup (consolidate the "Content" vs "AI System" nav split flagged in the 2026-07-08 clean-architecture plan) — deferred until enough new bank-first admin pages exist (Phase C-Final done + Phase E's admin pages, still pending) to make a single consolidated redesign worthwhile rather than premature. Not started.
+7. ~~**Plan-Sync-PG-v2**~~ — done (2026-07-08, docs-only): added the future skill-first Practice Gym v2 track (items 12a-12d below) to the roadmap, after Phase E5-E8 and before Phase F/G. Does not change the Phase C-Final closure or start any implementation.
+8. **Phase E1** — first implementation slice: `CefrResourceSource`-backed source integration + CSV/JSON/JSONL import + raw/candidate staging (gates 1-3 only; no publishing yet). **Not started — this is the next recommended phase.**
+9. **Phase E2** — AI analysis + validation gates (gates 4-6). Not started.
+10. **Phase E3** — admin rendered preview (gate 7a prerequisite). Not started.
+11. **Phase E4** — publish to first banks — vocabulary, grammar (gates 7a+7b). Not started.
+12. **Phase D1** — bank-first Today lesson composer, first slice — only after Phase C reaches C-Final (done) and Phase E reaches at least E4, so Today has both a proven multi-pattern template path and real bank content to compose from. Not started.
+13. **Phase E5-E8** — published bank browsing, reading/listening resources, larger import support, RAG/search enrichment — proceed in parallel with or after Phase D1 depending on product priority at that time. Not started.
+14. **Phase PG-v2A** — backend skill/objective-first Practice Gym selector (planned, not started; see `docs/backlog/product-backlog.md`). Sequenced after Phase E5-E8, not immediately after C-Final — a good skill-first selector needs enough published bank/resource content and search/selector coverage to have real options to choose from.
+15. **Phase PG-v2B** — student Practice Gym UI simplified around skills, weak areas, review, challenge, recommended practice (planned, not started).
+16. **Phase PG-v2C** — admin capability-registry cleanup / internal pattern management, reframing `ExerciseTypeDefinition`/`ExercisePatternDefinition` as internal capability config rather than the student-facing model (planned, not started; these entities are **not deleted** at any point in this sequence).
+17. **Phase PG-v2D** — legacy type-driven Practice Gym path retirement, **only after the skill-first selector (PG-v2A/B) is proven** — not a forced cutover (planned, not started).
+18. **Phase F** — legacy freeform-generation retirement, **per-pattern only, destructive only after each pattern's replacement is proven** — not a bulk deletion, and not started until Phase C-Final (done) and Phase D have each individually proven their replacement paths. Not started.
+19. **Phase G** — admin bank/content navigation cleanup (consolidate the "Content" vs "AI System" nav split flagged in the 2026-07-08 clean-architecture plan) — deferred until enough new bank-first admin pages exist (Phase C-Final done + Phase E's admin pages, still pending) to make a single consolidated redesign worthwhile rather than premature. Not started.
 
 **Phase D1 remains gated on Phase E reaching E4 — not E0.** Phase E0 only finalized the model;
 it does not itself give Phase D any bank content to compose from. The next recommended
 implementation phase is **Phase E1**, consistent with the "E0-E4 before D1" preferred order set in
-Plan-Sync-After-C1 and unchanged by Phase E0 (no roadmap sequencing change was needed — Phase E0
-confirmed the plan, it did not revise the sequence).
+Plan-Sync-After-C1 and unchanged by Phase E0 or Plan-Sync-PG-v2 (neither revised the near-term
+sequence — Plan-Sync-PG-v2 only appended a later track after E5-E8).
+
+**Practice Gym v2 (PG-v2A-D) is planned, not started**, and is sequenced deliberately late — after
+Phase E5-E8, before Phase F/G — because a skill/objective-first selector needs mature bank/resource
+search and selector coverage to have real content to choose from. It does not change anything about
+the already-closed Phase C-Final deterministic-pattern migration track, and it does **not** delete
+`ExerciseTypeDefinition`/`ExercisePatternDefinition` at any point — see
+`docs/architecture/practice-gym.md`'s "Future target: skill-first Practice Gym" section for the
+full design intent.
 
 **Phase C-Final is complete** (8 of ~33 Practice Gym pattern rows template-enabled:
 `formio_practice_gym_pilot`, `phrase_match`, `gap_fill_workplace_phrase`,

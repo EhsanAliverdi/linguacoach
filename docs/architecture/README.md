@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase E0)
+lastUpdated: 2026-07-08 (Plan-Sync-PG-v2)
 owner: architecture
 supersedes:
 supersededBy:
@@ -98,6 +98,16 @@ Key facts about where this stands today (2026-07-08):
   C3's `reorder_paragraphs`. **25 of 33 Practice Gym pattern rows remain on the legacy path with a
   full, unmodified fallback** — this is intentional and formally documented, not a gap; no Phase
   C4 — see docs/architecture/practice-gym.md.
+- **Future Practice Gym direction is skill/objective-first, not activity-type-first (planned,
+  not started — Plan-Sync-PG-v2, 2026-07-08)**: students should eventually choose or be guided
+  toward a skill/subskill/weak-area/objective/review/challenge/recommended-practice target, with
+  the system internally selecting the best `ActivityTemplate`/resource/format — not the reverse.
+  `ExerciseTypeDefinition`/`ExercisePatternDefinition` are **not deleted**; they become an
+  internal capability registry (renderer/scorer/evaluator/CEFR/Form.io capability), not the
+  student-facing mental model. See docs/architecture/practice-gym.md's "Future target:
+  skill-first Practice Gym" section and docs/backlog/product-backlog.md's "Practice Gym v2"
+  section. Sequenced deliberately late (after Phase E5-E8, before Phase F/G) — see
+  docs/roadmap/road-map.md §19a.
 - **Phase E's entity/status/gate model was finalized in Phase E0 (2026-07-08); no implementation
   has started (E1 not begun)** — the English Resource Bank Import, Review, Preview, and Publishing
   Platform is a multi-step pipeline (source registry → import → candidate analysis → validation →
@@ -109,11 +119,11 @@ Key facts about where this stands today (2026-07-08):
   support — UI chrome, onboarding language-pair selection, support-language hints/translation
   help — never seeded as learning content.
 
-Current state (as of 2026-07-08, Phase E0): **Practice Gym bank-first migration is closed at
-Phase C-Final** — generalized the Form.io template path from 1 pilot pattern to 8 total (C1's
-`phrase_match`, `gap_fill_workplace_phrase`, `reading_multiple_choice_single`; C2's
-`reading_multiple_choice_multi`, `reading_fill_in_blanks`, `reading_writing_fill_in_blanks`; C3's
-`reorder_paragraphs`); the remaining 25 of 33 pattern rows are formally documented as
+Current state (as of 2026-07-08, Plan-Sync-PG-v2): **Practice Gym bank-first migration (content
+layer) is closed at Phase C-Final** — generalized the Form.io template path from 1 pilot pattern
+to 8 total (C1's `phrase_match`, `gap_fill_workplace_phrase`, `reading_multiple_choice_single`;
+C2's `reading_multiple_choice_multi`, `reading_fill_in_blanks`, `reading_writing_fill_in_blanks`;
+C3's `reorder_paragraphs`); the remaining 25 of 33 pattern rows are formally documented as
 intentionally legacy, with 4 tracked backlog items for future audio/fuzzy/AI-evaluated support —
 see docs/architecture/practice-gym.md and docs/backlog/product-backlog.md. **No Phase C4.**
 **Phase B2 — Activity Feedback, Repeat Policy, and Calibration Signals** implemented its
@@ -124,10 +134,14 @@ review automation consumes this data yet; it is collected and queryable for futu
 **Phase E0 finalized the resource-import-platform entity/status/gate model** (source registry
 reuses `CefrResourceSource`; new `ResourceImportRun`/`ResourceRawRecord`/`ResourceCandidate`
 staging entities; hybrid publish model reusing existing typed `Cefr*` entities) — see
-docs/architecture/english-resource-bank-import-platform.md. Phase D (bank-first Today lesson
-composer) remains sequenced to start only after Phase E reaches at least E4 (first published
-banks) — see `docs/roadmap/road-map.md` §19a for the full phase order. **Phase E1 (first Phase E
-implementation) and Phase D implementation remain not started.**
+docs/architecture/english-resource-bank-import-platform.md. **Plan-Sync-PG-v2 added a future
+Practice Gym v2 (skill/objective-first selector) track to the roadmap**, sequenced after Phase
+E5-E8 and before Phase F/G — this is a separate, later concern from the content-migration track
+that just closed, and does not delete `ExerciseTypeDefinition`/`ExercisePatternDefinition`. Phase
+D (bank-first Today lesson composer) remains sequenced to start only after Phase E reaches at
+least E4 (first published banks) — see `docs/roadmap/road-map.md` §19a for the full phase order.
+**Phase E1 (first Phase E implementation), Phase D implementation, and PG-v2 implementation all
+remain not started.**
 
 ---
 
@@ -139,7 +153,7 @@ implementation) and Phase D implementation remain not started.**
 | [exercise-pattern-library.md](exercise-pattern-library.md) | All named `ExercisePattern` keys, input/output/skills/minutes, TeamsChatSimulation spec, pattern priority table |
 | [placement-assessment-model.md](placement-assessment-model.md) | `PlacementAssessment` entity (standalone, not a LearningModule), 6 sections, `PlacementResult` JSON, lifecycle flow |
 | [professional-experience-domain-complexity.md](professional-experience-domain-complexity.md) | Two-dimension difficulty: `LanguageDifficulty` (CEFR) + `DomainComplexity` (workplace experience); `ProfessionalExperienceLevel` and `RoleFamiliarity` enums; AI prompt rules |
-| [practice-gym.md](practice-gym.md) | Practice Gym as secondary on-demand experience; how it relates to guided course; Call Mode future placement |
+| [practice-gym.md](practice-gym.md) | Practice Gym as secondary on-demand experience; how it relates to guided course; Call Mode future placement; bank-first pattern migration closed at Phase C-Final (8/33); future skill/objective-first Practice Gym v2 target (planned, not started — Plan-Sync-PG-v2) |
 | [file-storage-minio.md](file-storage-minio.md) | `IFileStorageService` interface; `LocalFileStorageService` and `MinioFileStorageService`; authenticated streaming pattern |
 | [student-lifecycle-reset-tools.md](student-lifecycle-reset-tools.md) | 12 lifecycle stages (canonical enum); admin reset endpoint; `StudentResetLog`; soft vs hard delete rules |
 | [student-learning-memory.md](student-learning-memory.md) | `UserLearningSummary` / `StudentSkillProfile`; memory write/read paths; best-effort update rules |
