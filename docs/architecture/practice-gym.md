@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase C1)
+lastUpdated: 2026-07-08 (Plan-Sync-After-C1)
 owner: architecture
 supersedes:
 supersededBy:
@@ -174,3 +174,26 @@ option/value is correct. This is enforced by instruction only (plus
 is no automated check that the AI didn't shift which answer is correct while keeping the same
 key. This is not a new risk introduced by Phase C1; it is the same constraint the original pilot
 template design already accepted.
+
+## Migration plan for the rest of the catalog (Phase C2+)
+
+Phase C is a **sequence** (C2 → C3 → C4 → C-Final), not one large "migrate everything" phase —
+each increment should be small enough to review and roll back independently, the same discipline
+Phase C1 followed. See `docs/roadmap/road-map.md` §19a for the phase order relative to Phase D
+and Phase E.
+
+**Continue in small batches**, applying the same selection criteria Phase C1 used: deterministic
+or mostly-deterministic marking, no audio/image requirement, `SupportsPracticeGym=true` already
+in production, and an existing simple scoring shape (`single_choice`/`multiple_choice`/
+`text_exact`/`text_normalized` via `ComponentAnswerScorer`).
+
+**Do not migrate complex speaking, listening, or open writing/AI-evaluated patterns
+(`AiStructured`/`AiOpenEnded` marking modes, or any pattern requiring audio recording/playback)
+until dedicated Form.io renderer and evaluator support for those interaction types exists and is
+proven safe.** The current Form.io path only has a working, tested story for
+single-component/multi-component deterministic scoring (`FormIoPatternEvaluator` +
+`ComponentAnswerScorer`) — it has no story yet for AI-graded open-ended text, audio submission
+scoring, or multi-turn speaking evaluation. Attempting those patterns before that renderer/
+evaluator work exists would either silently degrade grading quality or require inventing new,
+unreviewed evaluation logic under time pressure — exactly the risk this phased approach is
+designed to avoid.

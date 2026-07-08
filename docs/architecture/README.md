@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase C1)
+lastUpdated: 2026-07-08 (Plan-Sync-After-C1)
 owner: architecture
 supersedes:
 supersededBy:
@@ -84,20 +84,37 @@ Key facts about where this stands today (2026-07-08):
   (`cefr-resource-licensing-review.md`).
 - **Today lessons and most Practice Gym exercise patterns still use the legacy, per-student,
   always-fresh `IAiActivityGenerator` generation path with zero bank involvement.** This is
-  intentional and not yet migrated — see Phases C/D of the 2026-07-08 plan doc. Do not delete
-  this path; it is the active fallback for everything not yet migrated to the bank.
+  intentional and not yet migrated — see Phase C2+ below. Do not delete this path; it is the
+  active fallback for everything not yet migrated to the bank.
 - **Real content-level repetition/novelty avoidance exists as of 2026-07-08 (Phase B)** —
   `StudentActivityUsageLog` + `IActivityContentFingerprintService` + `IActivityNoveltyPolicy`,
   deterministic/exact-match only (no embeddings/semantic near-duplicate detection). See
   docs/architecture/repetition-and-novelty.md. `PracticeActivityCache.ContentFingerprint`
   (fixed in Clean-A) remains a separate queue-slot uniqueness key, not this content-dedup signal.
+- **Practice Gym now has 4 bank-first/template-enabled pattern keys** (as of Phase C1,
+  2026-07-08): `formio_practice_gym_pilot` (original pilot), `phrase_match`,
+  `gap_fill_workplace_phrase`, `reading_multiple_choice_single`. **~24 of ~28 Practice Gym
+  patterns remain on the legacy path with a full, unmodified fallback** — this is intentional,
+  not a gap; see docs/architecture/practice-gym.md.
+- **Phase E is planned (not started) as the English Resource Bank Import, Review, Preview, and
+  Publishing Platform** — a multi-step pipeline (source registry → import → candidate analysis
+  → validation → admin preview → review → publish), not a one-shot data seed. See
+  docs/architecture/english-resource-bank-import-platform.md.
+- **English-only seed/resource-bank rule (non-negotiable, applies to all current and future
+  resource banks):** no Persian seed corpus, no bilingual phrase bank, no English–Persian (or
+  English–any-language) import. Supported languages (Persian, etc.) are **runtime-only**
+  support — UI chrome, onboarding language-pair selection, support-language hints/translation
+  help — never seeded as learning content.
 
-Current state: **Phase C1 done (2026-07-08)** — generalized the Form.io template path from 1
-pilot pattern to a small first batch of 3 (`phrase_match`, `gap_fill_workplace_phrase`,
-`reading_multiple_choice_single`); see docs/architecture/practice-gym.md. Recommended next phase:
-either **Phase C2+** (migrate more Practice Gym patterns using the same proven approach) or
-**Phase D** (bank-first Today lesson composer) per
-`docs/reviews/2026-07-08-bank-first-ai-teaching-clean-architecture-plan.md` §17 — neither started.
+Current state (as of 2026-07-08, Plan-Sync-After-C1): **Phase C1 done** — generalized the
+Form.io template path from 1 pilot pattern to a small first batch of 3
+(`phrase_match`, `gap_fill_workplace_phrase`, `reading_multiple_choice_single`); see
+docs/architecture/practice-gym.md. Phase C continues as a **sequence** — C2 → C3 → C4 →
+C-Final — rather than one large migration phase. Phase E is planned as the resource-import
+platform above (E0-E8). Phase D (bank-first Today lesson composer) is sequenced to start only
+after Phase C reaches C-Final and Phase E reaches at least E4 (first published banks) — see
+`docs/roadmap/road-map.md` §19a for the full phase order. Neither Phase D nor Phase E
+implementation has started.
 
 ---
 
@@ -121,6 +138,7 @@ either **Phase C2+** (migrate more Practice Gym patterns using the same proven a
 | [cefr-resource-licensing-review.md](cefr-resource-licensing-review.md) | CEFR Resource Bank schema (`CefrResourceSource`/`CefrDescriptor`/`CefrVocabularyEntry`/`CefrGrammarProfileEntry`/`CefrReadingReference`, added 2026-07-07, no data imported yet); licensing gate for CEFR-J/UniversalCEFR import |
 | [formio-onboarding-placement-model.md](formio-onboarding-placement-model.md) | Form.io-native onboarding (`StudentFlowTemplate`/`Version`/`Submission`) and placement (`PlacementItemDefinition` with `FormIoSchemaJson`/`ScoringRulesJson`, backend-only scoring); the strongest current bank-first example |
 | [repetition-and-novelty.md](repetition-and-novelty.md) | `StudentActivityUsageLog`; `IActivityContentFingerprintService`/`IActivityNoveltyPolicy`; deterministic/exact-match cooldown foundation (Phase B, 2026-07-08) — not embeddings/semantic near-duplicate detection |
+| [english-resource-bank-import-platform.md](english-resource-bank-import-platform.md) | Phase E plan (E0-E8): source registry → import → candidate analysis → validation → admin preview → review → publish pipeline for English-only resource banks. Planning only, not started |
 
 ### Planned / Deferred (not implemented yet)
 
@@ -208,8 +226,9 @@ Archived
 | Content-level repetition/novelty avoidance | ✅ Done (2026-07-08, Phase B) — `StudentActivityUsageLog`, `IActivityContentFingerprintService` (deterministic, exact-match only, no embeddings), `IActivityNoveltyPolicy` (fingerprint/template/topic/scenario cooldowns). Wired into `ActivitySubmitHandler`, `PracticeGymGenerationJob`'s Form.io pilot, and `ActivityMaterializationJob`. `TopicKey`/`ScenarioKey` extraction from content not yet built. See docs/architecture/repetition-and-novelty.md |
 | Clean-A / Clean-A2 dead-code cleanup | ✅ Done (2026-07-08) — removed dead onboarding enums, an orphaned onboarding component, dead route aliases, and a fully-orphaned admin career/word authoring API/UI chain; see `docs/reviews/2026-07-08-bank-first-ai-teaching-clean-architecture-plan.md` |
 | Session reflection | ⬜ Deferred — needs AI prompt `session_reflection` and stable session completion signal |
-| Bank-first Today lesson composer | ⬜ Deferred — planned Phase D of the 2026-07-08 plan, not started |
-| Generalize Form.io template path across the rest of Practice Gym | ⬜ Deferred — Phase C1 (first batch of 3) done 2026-07-08; broader migration (Phase C2+) not started |
+| Bank-first Today lesson composer | ⬜ Deferred — planned Phase D1, sequenced after Phase C-Final and Phase E4; not started |
+| Generalize Form.io template path across the rest of Practice Gym | ⬜ Deferred — Phase C1 (first batch of 3) done 2026-07-08; Phase C2/C3/C4/C-Final (small batches, complex speaking/listening/writing patterns deferred until renderer/evaluator support is ready) not started |
+| English Resource Bank Import/Review/Preview/Publishing Platform (Phase E0-E8) | ⬜ Planned only (2026-07-08, Plan-Sync-After-C1) — see docs/architecture/english-resource-bank-import-platform.md. English-only; no Persian/bilingual seed data at any phase. Not started |
 | IFileStorageService / MinIO | ✅ Done — audio (TTS + speaking uploads) fully on object storage; not blocking deployment at current scale |
 | Admin lifecycle reset tools | ✅ Done |
 

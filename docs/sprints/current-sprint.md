@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase C1)
+lastUpdated: 2026-07-08 (Plan-Sync-After-C1)
 owner: engineering
 supersedes:
 supersededBy:
@@ -14,39 +14,50 @@ Last updated: 2026-07-08
 
 ## Active sprint
 
-**Phase C1 — Generalize the Form.io Practice Gym pilot (2026-07-08)** — complete, committed
+**Plan-Sync-After-C1 — Roadmap and Phase E plan alignment (2026-07-08)** — docs-only, in progress
 
-Last completed: Phase B — Repetition/Novelty Foundation (see "Previous sprint" below). Before
-that, Clean-A/Clean-A2 cleanup, and before that the 2026-07-07 bank-first architecture
-(Phases 1-10).
+Last completed implementation: **Phase C1** — Generalize the Form.io Practice Gym pilot to a
+small first batch of 3 patterns (see "Previous sprint" below).
 
-**This sprint proved the bank-first migration pattern scales beyond one pilot pattern.**
-Generalized `PracticeGymGenerationJob`'s Form.io template path from the single original pilot
-pattern to a small first batch of 3 real patterns (`phrase_match`, `gap_fill_workplace_phrase`,
-`reading_multiple_choice_single`), chosen for being deterministic, audio-free, and already live
-in Practice Gym. Seeded 3 new approved/published `ActivityTemplate` rows
+**Current immediate task:** bring the roadmap, current-sprint, and architecture docs in line
+with two plan corrections made after Phase C1 landed:
+1. Phase C continues as a **sequence** (C2 → C3 → C4 → C-Final), not one large "migrate the
+   rest of Practice Gym" phase.
+2. Phase E is re-planned from an informal "seed CEFR-J/UniversalCEFR data" task into a full
+   **English-only resource import/review/preview/publishing platform** (E0-E8) — see the new
+   `docs/architecture/english-resource-bank-import-platform.md`.
+
+No app code, migrations, or config changed in this sprint — docs only.
+
+**Preferred phase order** (see `docs/roadmap/road-map.md` §19a for full detail):
+1. **Phase C2** — migrate a second small batch of Practice Gym patterns.
+2. **Phase C3** — migrate a third small batch.
+3. **Phase C-Final** — close out remaining safe-to-migrate patterns.
+4. **Phase E0/E1/E2/E3/E4** — resource-import platform: plan → source registry + staging
+   (E1, first implementation slice) → AI analysis/validation (E2) → admin preview (E3) →
+   publish to first banks (E4).
+5. **Phase D1** — bank-first Today lesson composer, first slice — only after C reaches
+   C-Final (or a deliberate stopping point) and E reaches at least E4.
+
+**Phase D and Phase E implementation are both explicitly not started.** Today lesson generation
+remains 100% legacy `IAiActivityGenerator` freeform generation throughout this entire sprint and
+the next several planned phases.
+
+---
+
+## Previous sprint
+
+**Phase C1 — Generalize the Form.io Practice Gym pilot (2026-07-08)** — complete
+
+Extended the bank-first Form.io template path from 1 pilot pattern to 4 total
+(`formio_practice_gym_pilot`, `phrase_match`, `gap_fill_workplace_phrase`,
+`reading_multiple_choice_single`). Seeded 3 new approved/published `ActivityTemplate` rows
 (`ActivityTemplateSeeder`, idempotent, original English-only content). Found and fixed a real
 generalization bug: `ActivitySubmitHandler`'s Form.io-scored evaluation dispatch was
 pattern-driven (would have broken legacy fallback for the same pattern key) — changed to
-content-driven (checks `LearningActivity.FormIoSchemaJson` presence instead). Full design:
-**docs/architecture/practice-gym.md** ("Bank-first pattern coverage" section).
-
-**~24 of ~28 Practice Gym patterns and all Today lessons remain untouched legacy generation** —
-this was a deliberately small first batch, not a broad migration.
-
-**Known gaps, deliberately deferred:** no automated check that AI-personalized content keeps
-the same correct-answer identity as the template's static scoring rules (enforced by generation
-instructions + required-key validation only — same limitation the original pilot accepted); no
-new admin UI (reuses the existing single feature-flag toggle for all 4 template-path patterns).
-
-**Next planned (none started yet):**
-- **Phase C2+** — migrate more Practice Gym patterns using the same proven approach
-- **Phase D** — bank-first Today lesson composer (highest-risk phase; Today lessons currently
-  use 100% legacy freeform AI generation with zero bank involvement)
-
-Today lessons and all non-migrated Practice Gym patterns continue to use the legacy
-`IAiActivityGenerator` freeform generation path unchanged and un-deprecated — this is the active
-fallback, not dead code, and must not be bulk-deleted before Phase D replaces it.
+content-driven (checks `LearningActivity.FormIoSchemaJson` presence instead). ~24 of ~28
+Practice Gym patterns and all Today lessons remain untouched legacy generation. Full design:
+`docs/architecture/practice-gym.md` ("Bank-first pattern coverage" section).
 
 ---
 
