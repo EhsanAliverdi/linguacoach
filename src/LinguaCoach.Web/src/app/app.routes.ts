@@ -143,6 +143,18 @@ export const routes: Routes = [
         path: 'review-queue',
         loadComponent: () => import('./features/admin/admin-review-queue/admin-review-queue.component').then(m => m.AdminReviewQueueComponent),
       },
+      {
+        path: 'resource-sources',
+        loadComponent: () => import('./features/admin/admin-resource-sources/admin-resource-sources.component').then(m => m.AdminResourceSourcesComponent),
+      },
+      {
+        path: 'resource-import-runs',
+        loadComponent: () => import('./features/admin/admin-resource-import-runs/admin-resource-import-runs.component').then(m => m.AdminResourceImportRunsComponent),
+      },
+      {
+        path: 'resource-candidates',
+        loadComponent: () => import('./features/admin/admin-resource-candidates/admin-resource-candidates.component').then(m => m.AdminResourceCandidatesComponent),
+      },
     ],
   },
 

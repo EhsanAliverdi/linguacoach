@@ -108,6 +108,11 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     // Phase 17C — Writing evaluation mastery signal integration
     public DbSet<WritingEvaluationAppliedSignal> WritingEvaluationAppliedSignals => Set<WritingEvaluationAppliedSignal>();
 
+    // Phase E1 — English resource import staging (source → run → raw record → candidate)
+    public DbSet<ResourceImportRun> ResourceImportRuns => Set<ResourceImportRun>();
+    public DbSet<ResourceRawRecord> ResourceRawRecords => Set<ResourceRawRecord>();
+    public DbSet<ResourceCandidate> ResourceCandidates => Set<ResourceCandidate>();
+
     // Phase 10W — Enterprise notification platform
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<NotificationOutboxItem> NotificationOutboxItems => Set<NotificationOutboxItem>();

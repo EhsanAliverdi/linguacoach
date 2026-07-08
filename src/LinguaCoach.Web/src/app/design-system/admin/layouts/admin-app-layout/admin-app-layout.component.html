@@ -109,6 +109,15 @@
         <li><sp-admin-sidebar-nav-item label="Review queue" route="/admin/review-queue" [collapsed]="false" (itemClick)="closeDrawer()">
           <sp-admin-icon name="alert-circle" />
         </sp-admin-sidebar-nav-item></li>
+        <li><sp-admin-sidebar-nav-item label="Resource sources" route="/admin/resource-sources" [collapsed]="false" (itemClick)="closeDrawer()">
+          <sp-admin-icon name="database" />
+        </sp-admin-sidebar-nav-item></li>
+        <li><sp-admin-sidebar-nav-item label="Resource import runs" route="/admin/resource-import-runs" [collapsed]="false" (itemClick)="closeDrawer()">
+          <sp-admin-icon name="upload" />
+        </sp-admin-sidebar-nav-item></li>
+        <li><sp-admin-sidebar-nav-item label="Resource candidates" route="/admin/resource-candidates" [collapsed]="false" (itemClick)="closeDrawer()">
+          <sp-admin-icon name="filter" />
+        </sp-admin-sidebar-nav-item></li>
       </ul>
     </div>
     <div>
@@ -245,6 +254,15 @@
           </sp-admin-sidebar-nav-item></li>
           <li><sp-admin-sidebar-nav-item label="Review queue" route="/admin/review-queue" [collapsed]="collapsed()">
             <sp-admin-icon name="alert-circle" />
+          </sp-admin-sidebar-nav-item></li>
+          <li><sp-admin-sidebar-nav-item label="Resource sources" route="/admin/resource-sources" [collapsed]="collapsed()">
+            <sp-admin-icon name="database" />
+          </sp-admin-sidebar-nav-item></li>
+          <li><sp-admin-sidebar-nav-item label="Resource import runs" route="/admin/resource-import-runs" [collapsed]="collapsed()">
+            <sp-admin-icon name="upload" />
+          </sp-admin-sidebar-nav-item></li>
+          <li><sp-admin-sidebar-nav-item label="Resource candidates" route="/admin/resource-candidates" [collapsed]="collapsed()">
+            <sp-admin-icon name="filter" />
           </sp-admin-sidebar-nav-item></li>
         </ul>
       </div>

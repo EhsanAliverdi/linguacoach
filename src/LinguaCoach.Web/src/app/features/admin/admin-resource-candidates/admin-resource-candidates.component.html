@@ -1,0 +1,139 @@
+<sp-admin-page-header
+  title="Resource candidates"
+  subtitle="Phase E1 staged candidates from imported resource files.">
+  <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="loadAll()">
+    Refresh
+  </sp-admin-button>
+</sp-admin-page-header>
+
+<sp-admin-page-body>
+
+  <sp-admin-alert variant="warning">
+    Staging only — Phase E1. Nothing on this page has been published to the student-facing bank.
+    Publishing arrives in Phase E4.
+  </sp-admin-alert>
+
+  @if (error()) {
+    <sp-admin-error-state title="Could not load resource candidates" [message]="error()" />
+  }
+
+  <div class="sp-admin-kpi-row" aria-label="Resource candidate summary">
+    <sp-admin-kpi-card label="Total staged candidates" variant="indigo" layout="tile" icon="layers" [value]="overallTotalCount().toString()" />
+  </div>
+
+  @if (loading()) {
+    <sp-admin-loading-state message="Loading resource candidates" />
+  } @else {
+
+    @if (actionSuccess()) { <sp-admin-alert variant="success">{{ actionSuccess() }}</sp-admin-alert> }
+    @if (actionError()) { <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert> }
+
+    <sp-admin-filter-bar>
+      <sp-admin-input
+        search size="sm" placeholder="Search text..."
+        [value]="searchQuery()" (input)="onSearch($event)" aria-label="Search resource candidates" />
+      <sp-admin-select
+        size="sm" placeholder="All types"
+        [ngModel]="candidateTypeFilter()" (ngModelChange)="onCandidateTypeFilterChange($event)"
+        [options]="candidateTypeOptions" aria-label="Filter by candidate type" />
+      <sp-admin-select
+        size="sm" placeholder="All validation statuses"
+        [ngModel]="validationStatusFilter()" (ngModelChange)="onValidationStatusFilterChange($event)"
+        [options]="validationStatusOptions" aria-label="Filter by validation status" />
+      <sp-admin-select
+        size="sm" placeholder="All review statuses"
+        [ngModel]="reviewStatusFilter()" (ngModelChange)="onReviewStatusFilterChange($event)"
+        [options]="reviewStatusOptions" aria-label="Filter by review status" />
+      <span class="sp-admin-filter-count">{{ totalCount() }} candidate{{ totalCount() !== 1 ? 's' : '' }}</span>
+    </sp-admin-filter-bar>
+
+    @if (items().length === 0) {
+      <sp-admin-empty-state title="No candidates" message="Import a file against an approved source to stage candidates." />
+    } @else {
+      <sp-admin-table layout="first-column-fluid">
+        <table>
+          <thead>
+            <tr>
+              <th>Text</th>
+              <th>Type</th>
+              <th>Language</th>
+              <th>Validation</th>
+              <th>Review</th>
+              <th class="sp-admin-th-actions"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of items(); track item.candidateId) {
+              <tr>
+                <td>{{ item.canonicalText }}</td>
+                <td><sp-admin-badge tone="neutral">{{ item.candidateType }}</sp-admin-badge></td>
+                <td>{{ item.languageCode }}</td>
+                <td><sp-admin-badge [tone]="validationStatusTone(item.validationStatus)">{{ item.validationStatus }}</sp-admin-badge></td>
+                <td><sp-admin-badge tone="neutral">{{ item.reviewStatus }}</sp-admin-badge></td>
+                <td>
+                  <sp-admin-table-actions
+                    mode="dropdown"
+                    [richActions]="rowActions(item)"
+                    (actionSelected)="onRowAction($event, item)" />
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        <sp-admin-table-footer>
+          Page {{ page() }} of {{ totalPages() }} · {{ totalCount() }} candidates
+          <sp-admin-pagination slot="actions" [page]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
+        </sp-admin-table-footer>
+      </sp-admin-table>
+    }
+  }
+
+</sp-admin-page-body>
+
+<!-- ── Candidate detail drawer (read-only + AdminNotes) ───────────────────── -->
+<sp-admin-drawer
+  [open]="drawerOpen()"
+  [title]="selectedCandidate()?.canonicalText ?? 'Candidate'"
+  side="right"
+  size="lg"
+  (closed)="closeDrawer()">
+
+  @if (selectedCandidate(); as candidate) {
+    <sp-admin-alert variant="warning">
+      Not published — Phase E1 staging only. Publishing to the student-facing bank arrives in Phase E4.
+    </sp-admin-alert>
+
+    <div class="sp-admin-form-stack">
+      <sp-admin-form-field label="Type">
+        <sp-admin-badge tone="neutral">{{ candidate.candidateType }}</sp-admin-badge>
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Validation status">
+        <sp-admin-badge [tone]="validationStatusTone(candidate.validationStatus)">{{ candidate.validationStatus }}</sp-admin-badge>
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Review status">
+        <sp-admin-badge tone="neutral">{{ candidate.reviewStatus }}</sp-admin-badge>
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Content fingerprint">
+        <code>{{ candidate.contentFingerprint }}</code>
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Normalized JSON">
+        <pre>{{ candidate.normalizedJson }}</pre>
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Admin notes" hint="The only editable field in Phase E1 — no approve/reject/publish workflow yet">
+        <sp-admin-textarea [(ngModel)]="notesDraft" placeholder="Optional internal note" />
+      </sp-admin-form-field>
+    </div>
+
+    @if (actionError()) { <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert> }
+  }
+
+  @if (selectedCandidate()) {
+    <div slot="footer">
+      <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeDrawer()">Close</sp-admin-button>
+      <sp-admin-button variant="primary" [disabled]="savingNotes()" (clicked)="saveNotes()">
+        {{ savingNotes() ? 'Saving…' : 'Save notes' }}
+      </sp-admin-button>
+    </div>
+  }
+
+</sp-admin-drawer>

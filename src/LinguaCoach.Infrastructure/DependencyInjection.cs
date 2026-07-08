@@ -507,6 +507,35 @@ public static class DependencyInjection
         services.AddScoped<LinguaCoach.Application.ActivityTemplates.IActivityTemplateInstanceGenerator,
             LinguaCoach.Infrastructure.ActivityTemplates.ActivityTemplateInstanceGenerator>();
 
+        // Phase E1 — English resource import staging (source registry, import runs, raw
+        // records, candidate staging)
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IAdminResourceSourceListQuery,
+            LinguaCoach.Infrastructure.ResourceImport.AdminResourceSourceListQueryHandler>();
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IAdminResourceSourceGetQuery,
+            LinguaCoach.Infrastructure.ResourceImport.AdminResourceSourceGetQueryHandler>();
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IAdminAddResourceSourceHandler,
+            LinguaCoach.Infrastructure.ResourceImport.AdminAddResourceSourceHandler>();
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IAdminUpdateResourceSourceHandler,
+            LinguaCoach.Infrastructure.ResourceImport.AdminUpdateResourceSourceHandler>();
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IAdminResourceSourceApprovalHandler,
+            LinguaCoach.Infrastructure.ResourceImport.AdminResourceSourceApprovalHandler>();
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IAdminResourceImportRunListQuery,
+            LinguaCoach.Infrastructure.ResourceImport.AdminResourceImportRunListQueryHandler>();
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IAdminResourceImportRunGetQuery,
+            LinguaCoach.Infrastructure.ResourceImport.AdminResourceImportRunGetQueryHandler>();
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IAdminResourceRawRecordListQuery,
+            LinguaCoach.Infrastructure.ResourceImport.AdminResourceRawRecordListQueryHandler>();
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IAdminResourceRawRecordGetQuery,
+            LinguaCoach.Infrastructure.ResourceImport.AdminResourceRawRecordGetQueryHandler>();
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IAdminResourceCandidateListQuery,
+            LinguaCoach.Infrastructure.ResourceImport.AdminResourceCandidateListQueryHandler>();
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IAdminResourceCandidateGetQuery,
+            LinguaCoach.Infrastructure.ResourceImport.AdminResourceCandidateGetQueryHandler>();
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IAdminResourceCandidateNotesHandler,
+            LinguaCoach.Infrastructure.ResourceImport.AdminResourceCandidateNotesHandler>();
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceImportService,
+            LinguaCoach.Infrastructure.ResourceImport.ResourceImportService>();
+
         // AI Bank-First Teaching Architecture Phase 9 — cross-entity admin review queue
         services.AddScoped<LinguaCoach.Application.Admin.ReviewQueue.IAdminReviewQueueQuery,
             LinguaCoach.Infrastructure.Admin.ReviewQueue.AdminReviewQueueQueryHandler>();

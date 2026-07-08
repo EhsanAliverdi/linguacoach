@@ -1,0 +1,179 @@
+<sp-admin-page-header
+  title="Resource import runs"
+  subtitle="Phase E1 staging pipeline: upload a file against an approved English source, then review staged raw records and candidates. Nothing here is published to the student-facing bank.">
+  <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="loadAll()">
+    Refresh
+  </sp-admin-button>
+</sp-admin-page-header>
+
+<sp-admin-page-body>
+
+  @if (error()) {
+    <sp-admin-error-state title="Could not load import runs" [message]="error()" />
+  }
+
+  <div class="sp-admin-kpi-row" aria-label="Import run summary">
+    <sp-admin-kpi-card label="Total runs" variant="indigo" layout="tile" icon="document" [value]="overallTotalCount().toString()" />
+  </div>
+
+  @if (loading()) {
+    <sp-admin-loading-state message="Loading import runs" />
+  } @else {
+
+    @if (actionSuccess()) { <sp-admin-alert variant="success">{{ actionSuccess() }}</sp-admin-alert> }
+    @if (actionError()) { <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert> }
+
+    <sp-admin-filter-bar>
+      <sp-admin-select
+        size="sm" placeholder="All statuses"
+        [ngModel]="statusFilter()" (ngModelChange)="onStatusFilterChange($event)"
+        [options]="statusOptions" aria-label="Filter by run status" />
+      <span class="sp-admin-filter-count">{{ totalCount() }} run{{ totalCount() !== 1 ? 's' : '' }}</span>
+      <span actions>
+        <sp-admin-button variant="primary" size="sm" (clicked)="openUploadForm()">Import file</sp-admin-button>
+      </span>
+    </sp-admin-filter-bar>
+
+    @if (items().length === 0) {
+      <sp-admin-empty-state title="No import runs" message="Import a file against an approved source to get started." />
+    } @else {
+      <sp-admin-table layout="first-column-fluid">
+        <table>
+          <thead>
+            <tr>
+              <th>Source</th>
+              <th>File</th>
+              <th>Mode</th>
+              <th>Status</th>
+              <th>Total</th>
+              <th>Succeeded</th>
+              <th>Rejected</th>
+              <th>Started</th>
+              <th class="sp-admin-th-actions"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of items(); track item.runId) {
+              <tr>
+                <td>{{ item.sourceName }}</td>
+                <td>{{ item.fileName }}</td>
+                <td><sp-admin-badge tone="neutral">{{ item.importMode }}</sp-admin-badge></td>
+                <td><sp-admin-badge [tone]="statusTone(item.status)">{{ item.status }}</sp-admin-badge></td>
+                <td>{{ item.totalRecordCount }}</td>
+                <td>{{ item.succeededCount }}</td>
+                <td>{{ item.rejectedCount }}</td>
+                <td>{{ item.startedAtUtc | date:'short' }}</td>
+                <td>
+                  <sp-admin-table-actions
+                    mode="dropdown"
+                    [richActions]="rowActions(item)"
+                    (actionSelected)="onRowAction($event, item)" />
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        <sp-admin-table-footer>
+          Page {{ page() }} of {{ totalPages() }} · {{ totalCount() }} runs
+          <sp-admin-pagination slot="actions" [page]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
+        </sp-admin-table-footer>
+      </sp-admin-table>
+    }
+  }
+
+</sp-admin-page-body>
+
+<!-- ── Upload/import modal ──────────────────────────────────────────────── -->
+<sp-admin-modal
+  [open]="uploadOpen()"
+  title="Import resource file"
+  variant="form"
+  (closed)="closeUploadForm()">
+
+  <div class="sp-admin-form-stack">
+    <sp-admin-form-field label="Source" [required]="true" hint="Only approved sources may be imported from">
+      <sp-admin-native-select
+        [(ngModel)]="selectedSourceId" name="sourceId"
+        [options]="sourceOptions()" placeholder="Select an approved source" />
+    </sp-admin-form-field>
+    @if (approvedSources().length === 0) {
+      <sp-admin-alert variant="warning">No approved sources yet — approve a source first.</sp-admin-alert>
+    }
+    <sp-admin-form-field label="Import mode" [required]="true">
+      <sp-admin-native-select
+        [(ngModel)]="selectedImportMode" name="importMode"
+        [options]="importModeOptions" />
+    </sp-admin-form-field>
+    <sp-admin-form-field label="File" [required]="true" hint="CSV, JSON array/object, or JSONL — max 5MB">
+      <input type="file" accept=".csv,.json,.jsonl,.txt" (change)="onFileSelected($event)" />
+    </sp-admin-form-field>
+    <sp-admin-form-field label="Notes">
+      <sp-admin-textarea [(ngModel)]="uploadNotes" placeholder="Optional note about this import run" />
+    </sp-admin-form-field>
+  </div>
+
+  @if (actionError()) { <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert> }
+
+  <div slot="footer">
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeUploadForm()">Cancel</sp-admin-button>
+    <sp-admin-button variant="primary" [disabled]="uploading()" (clicked)="submitUpload()">
+      {{ uploading() ? 'Importing…' : 'Import' }}
+    </sp-admin-button>
+  </div>
+
+</sp-admin-modal>
+
+<!-- ── Raw records drawer ───────────────────────────────────────────────── -->
+<sp-admin-drawer
+  [open]="drawerOpen()"
+  [title]="selectedRun() ? ('Raw records — ' + selectedRun()!.fileName) : 'Raw records'"
+  side="right"
+  size="lg"
+  (closed)="closeDrawer()">
+
+  @if (selectedRun(); as run) {
+    <p>
+      {{ run.sourceName }} · {{ run.status }} · {{ run.succeededCount }} staged / {{ run.rejectedCount }} rejected
+      of {{ run.totalRecordCount }}.
+    </p>
+    @if (run.errorSummary) {
+      <sp-admin-alert variant="error">{{ run.errorSummary }}</sp-admin-alert>
+    }
+
+    <sp-admin-filter-bar>
+      <sp-admin-select
+        size="sm" [ngModel]="rawRecordsFilter()" (ngModelChange)="onRawRecordsFilterChange($event)"
+        [options]="rawRecordStatusOptions" aria-label="Filter raw records by status" />
+    </sp-admin-filter-bar>
+
+    @if (rawRecordsLoading()) {
+      <sp-admin-loading-state message="Loading raw records" />
+    } @else if (rawRecords().length === 0) {
+      <sp-admin-empty-state title="No raw records" message="No raw records match this filter." />
+    } @else {
+      <sp-admin-table layout="first-column-fluid">
+        <table>
+          <thead>
+            <tr>
+              <th>Status</th>
+              <th>Language</th>
+              <th>Raw content</th>
+              <th>Warnings</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (record of rawRecords(); track record.rawRecordId) {
+              <tr>
+                <td><sp-admin-badge [tone]="extractionStatusTone(record.extractionStatus)">{{ record.extractionStatus }}</sp-admin-badge></td>
+                <td>{{ record.detectedLanguageCode }}</td>
+                <td><code>{{ record.rawJson }}</code></td>
+                <td>{{ record.extractionWarningsJson }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </sp-admin-table>
+    }
+  }
+
+</sp-admin-drawer>

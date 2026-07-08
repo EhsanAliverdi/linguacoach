@@ -1,0 +1,147 @@
+<sp-admin-page-header
+  title="Resource sources"
+  subtitle="English-only external reference sources (license/provenance registry) for the Phase E1 import staging pipeline.">
+  <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="loadAll()">
+    Refresh
+  </sp-admin-button>
+</sp-admin-page-header>
+
+<sp-admin-page-body>
+
+  @if (error()) {
+    <sp-admin-error-state title="Could not load resource sources" [message]="error()" />
+  }
+
+  <div class="sp-admin-kpi-row" aria-label="Resource source summary">
+    <sp-admin-kpi-card label="Total sources" variant="indigo" layout="tile" icon="database" [value]="overallTotalCount().toString()" />
+    <sp-admin-kpi-card label="Approved for import" variant="indigo" layout="tile" icon="check" [value]="approvedCount().toString()" />
+  </div>
+
+  @if (loading()) {
+    <sp-admin-loading-state message="Loading resource sources" />
+  } @else {
+
+    @if (actionSuccess()) { <sp-admin-alert variant="success">{{ actionSuccess() }}</sp-admin-alert> }
+    @if (actionError()) { <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert> }
+
+    <sp-admin-filter-bar>
+      <sp-admin-input
+        search size="sm" placeholder="Search by name..."
+        [value]="searchQuery()" (input)="onSearch($event)" aria-label="Search resource sources" />
+      <sp-admin-select
+        size="sm" placeholder="All sources"
+        [ngModel]="approvedFilter()" (ngModelChange)="onApprovedFilterChange($event)"
+        [options]="approvedOptions" aria-label="Filter by approval status" />
+      <span class="sp-admin-filter-count">{{ totalCount() }} source{{ totalCount() !== 1 ? 's' : '' }}</span>
+      <span actions>
+        <sp-admin-button variant="primary" size="sm" (clicked)="openCreateForm()">Add source</sp-admin-button>
+      </span>
+    </sp-admin-filter-bar>
+
+    @if (items().length === 0) {
+      <sp-admin-empty-state title="No resource sources" message="Add a source before it can be approved and imported from." />
+    } @else {
+      <sp-admin-table layout="first-column-fluid">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>License</th>
+              <th>Language</th>
+              <th>Approved</th>
+              <th>Student display</th>
+              <th>Commercial use</th>
+              <th class="sp-admin-th-actions"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of items(); track item.sourceId) {
+              <tr>
+                <td>{{ item.name }}</td>
+                <td>{{ item.licenseType }}</td>
+                <td><sp-admin-badge tone="neutral">{{ item.languageCode }}</sp-admin-badge></td>
+                <td><sp-admin-badge [tone]="approvedTone(item)">{{ item.isImportApproved ? 'Yes' : 'No' }}</sp-admin-badge></td>
+                <td>{{ item.allowsStudentDisplay ? 'Yes' : 'No' }}</td>
+                <td>{{ item.allowsCommercialUse ? 'Yes' : 'No' }}</td>
+                <td>
+                  <sp-admin-table-actions
+                    mode="dropdown"
+                    [richActions]="rowActions(item)"
+                    (actionSelected)="onRowAction($event, item)" />
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        <sp-admin-table-footer>
+          Page {{ page() }} of {{ totalPages() }} · {{ totalCount() }} sources
+          <sp-admin-pagination slot="actions" [page]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
+        </sp-admin-table-footer>
+      </sp-admin-table>
+    }
+  }
+
+</sp-admin-page-body>
+
+<!-- ── Create/edit source modal ─────────────────────────────────────────── -->
+<sp-admin-modal
+  [open]="formOpen()"
+  [title]="editingId() ? 'Edit resource source' : 'Add resource source'"
+  variant="form"
+  (closed)="closeForm()">
+
+  <div class="sp-admin-form-stack">
+    <sp-admin-form-field label="Name" [required]="true">
+      <sp-admin-input [(ngModel)]="form.name" placeholder="e.g. Open Language Profiles" />
+    </sp-admin-form-field>
+    <sp-admin-form-field label="License type" [required]="true">
+      <sp-admin-input [(ngModel)]="form.licenseType" placeholder="e.g. CC-BY-4.0" />
+    </sp-admin-form-field>
+    <sp-admin-form-field label="Source URL" hint="Homepage/reference link">
+      <sp-admin-input [(ngModel)]="form.sourceUrl" placeholder="https://..." />
+    </sp-admin-form-field>
+    <sp-admin-form-field label="Download URL" hint="Direct download/archive link, if different">
+      <sp-admin-input [(ngModel)]="form.downloadUrl" placeholder="https://..." />
+    </sp-admin-form-field>
+    <sp-admin-form-field label="Source version">
+      <sp-admin-input [(ngModel)]="form.sourceVersion" placeholder="e.g. 2023-06" />
+    </sp-admin-form-field>
+    <sp-admin-form-field label="Attribution text" hint="Required by some licenses">
+      <sp-admin-textarea [(ngModel)]="form.attributionText" placeholder="Optional attribution text" />
+    </sp-admin-form-field>
+    <sp-admin-form-field label="Usage restriction notes">
+      <sp-admin-textarea [(ngModel)]="form.usageRestrictionNotes" placeholder="Optional notes" />
+    </sp-admin-form-field>
+    <sp-admin-checkbox label="Allows student display" [(ngModel)]="form.allowsStudentDisplay" />
+    <sp-admin-checkbox label="Allows commercial use" [(ngModel)]="form.allowsCommercialUse" />
+    <p>Language is always English ("en") — this registry has no supported non-English source shape.</p>
+  </div>
+
+  @if (actionError()) { <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert> }
+
+  <div slot="footer">
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeForm()">Cancel</sp-admin-button>
+    <sp-admin-button variant="primary" (clicked)="saveForm()">Save</sp-admin-button>
+  </div>
+
+</sp-admin-modal>
+
+<!-- ── Revoke approval modal ─────────────────────────────────────────────── -->
+<sp-admin-modal
+  [open]="revokeOpen()"
+  title="Revoke import approval"
+  variant="form"
+  (closed)="closeRevoke()">
+
+  <div class="sp-admin-form-stack">
+    <sp-admin-form-field label="Reason" [required]="true" hint="Required — e.g. license terms changed">
+      <sp-admin-textarea [(ngModel)]="revokeReason" placeholder="Why is approval being revoked?" />
+    </sp-admin-form-field>
+  </div>
+
+  <div slot="footer">
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeRevoke()">Cancel</sp-admin-button>
+    <sp-admin-button variant="primary" (clicked)="confirmRevoke()">Revoke</sp-admin-button>
+  </div>
+
+</sp-admin-modal>

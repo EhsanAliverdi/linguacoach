@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase E0)
+lastUpdated: 2026-07-08 (Phase E1)
 owner: architecture
 supersedes:
 supersededBy:
@@ -8,8 +8,11 @@ supersededBy:
 
 # English Resource Bank Import, Review, Preview, and Publishing Platform (Phase E)
 
-**Date planned:** 2026-07-08 (Plan-Sync-After-C1), **finalized:** 2026-07-08 (Phase E0)
-**Status:** Model finalized, no implementation started (E1 not begun).
+**Date planned:** 2026-07-08 (Plan-Sync-After-C1), **finalized:** 2026-07-08 (Phase E0),
+**E1 implemented:** 2026-07-08
+**Status:** E1 (staging foundation) implemented. E2 (AI analysis + validation gates) not started.
+**No rows have ever been written to any published `Cefr*` bank table** — E1 is staging-only, by
+design and by test (`No_rows_are_ever_written_to_any_published_cefr_bank_table`).
 **Supersedes the informal "seed CEFR-J/UniversalCEFR data" framing** used in earlier planning
 docs (`docs/reviews/2026-07-07-ai-bank-assessment-architecture-plan.md` §4.6/§9,
 `docs/architecture/cefr-resource-licensing-review.md`). Those docs' licensing findings still
@@ -207,38 +210,63 @@ enabling approval) and E4 (approve/reject + publish action).
 
 ---
 
-## E1 exact scope (next recommended phase)
+## E1 exact scope — implemented (2026-07-08)
 
-**Entities**: `ResourceImportRun`, `ResourceRawRecord`, `ResourceCandidate` (new); `CefrResourceSource`
-reused unmodified as the source registry (no new fields needed).
+**Entities**: `ResourceImportRun`, `ResourceRawRecord`, `ResourceCandidate` (new, migration
+`AddResourceImportStaging`). **`CefrResourceSource` WAS extended** — the E0 plan assumed no new
+fields were needed, but implementation found E1's own admin-page requirements (language/source-kind
+metadata, license/commercial-use/student-display flags, attribution text, version/download URL)
+needed real fields: `LanguageCode` (must be `"en"` — enforced in the constructor/`Update`, this
+entity can never represent a non-English source), `AllowsStudentDisplay` (bool),
+`AllowsCommercialUse` (bool), `AttributionText` (string?), `SourceVersion` (string?),
+`DownloadUrl` (string?), `UpdatedAtUtc`, plus a new `Update(...)` method (metadata edit, separate
+from `ApproveForImport`/`RevokeApproval` — an edit never silently changes approval status).
 
-**Backend**: manual/admin-triggered CSV/JSON/JSONL file upload (via `IFileStorageService`,
-category `"resource-import"`) → `ResourceImportRun` created only if `CefrResourceSource.IsImportApproved`
-(gate 2) → per-row parse into `ResourceRawRecord` (gate 3, continue-on-error) → first-pass mapping
-into `ResourceCandidate` with **simple placeholder metadata** (no AI yet — CEFR level/skill/subskill
-left null or copied verbatim from the source file's own columns if present) → English-only check
-(gate 1) recorded on `ValidationStatus`/`ValidationErrorsJson`.
+**Backend** (`ResourceImportService`, `src/LinguaCoach.Infrastructure/ResourceImport/`): admin
+uploads a CSV/JSON/JSONL file directly via multipart form (processed in-memory from the request
+stream — **not** persisted through `IFileStorageService`, since the uploaded file is ephemeral
+import input, not a long-lived asset like audio; this is a deliberate deviation from the E0 plan's
+assumption). Gate 2 (license + English-only source) blocks **before any `ResourceImportRun` row is
+created** — an import against an unapproved or non-English source is a caller/process error, not a
+data-quality issue worth a run record. A conservative 5MB file-size cap applies (documented in
+code — no existing upload convention in this codebase targets structured-data files at this
+size). Per row: duplicate-hash check → gate 1 (English-only: explicit `languageCode`/`language`/
+`lang` field if present, else a conservative Arabic/Persian-script + non-Latin-proportion
+heuristic — documented limitation: this does not catch non-English text in Latin script, e.g.
+French/Turkish) → gate 3 (must have at least one recognizable content field: `word`/`lemma`/
+`text`/`passage`/`title`/`grammarKey`/`formIo`/`schema`/`template`) → stage `ResourceRawRecord`
+(`Parsed`) + exactly one `ResourceCandidate` (`ValidationStatus = NeedsReview`, `ReviewStatus =
+NotRequired` — no review workflow exists yet in E1, matching `AdminReviewStatus`'s own documented
+semantics for "not yet applicable"). Rejected rows get a `ResourceRawRecord` (`Rejected`) with a
+warning reason but **no `ResourceCandidate`**. One malformed row never aborts the run
+(continue-on-error, matching `PracticeGymGenerationJob`'s per-item try/catch convention); only a
+fundamentally unreadable file (not valid CSV/JSON/JSONL at all) fails the whole run.
+`ContentFingerprint` reuses `IActivityContentFingerprintService` (no new fingerprint logic).
 
-**Admin pages** (all under the existing "Content" sidebar group):
+**Admin pages** (all under the existing "Content" sidebar group), routes as planned:
 - **Resource Sources** (`/admin/resource-sources`) — `CefrResourceSource` CRUD + approve/revoke.
 - **Resource Import Runs** (`/admin/resource-import-runs`) — list per source, trigger new run
   (file upload), status, record counts; **Raw Records shown as a nested tab/section on the run's
-  detail view**, not a separate top-level nav item (kept off the sidebar to avoid nav clutter for
-  what is fundamentally debug/audit data).
-- **Resource Candidates** (`/admin/resource-candidates`) — list with source/status/bank-type/CEFR
-  filters, detail view showing raw + candidate JSON side by side. **No rendered preview yet (E3),
-  no approve/reject action yet (E4)** — read-only visibility into what E1 staged.
+  detail view**, not a separate top-level nav item.
+- **Resource Candidates** (`/admin/resource-candidates`) — list with source/import-run/candidate-
+  type/validation-status/review-status/language/CEFR/search-text filters; detail view showing raw
+  + candidate JSON side by side; explicit "staging only — publishing arrives in Phase E4" banner.
+  **No rendered preview (E3), no approve/reject/publish action (E4)** — read-only + `AdminNotes`-
+  only edit, per the explicit E1 scope boundary.
 
-**Explicitly NOT in E1** (per the phase's own "smallest useful slice" scope, unchanged from the
-task brief): full AI analysis (E2), full rendered preview (E3), publishing to any bank (E4) — **no
-tiny "safe" early publish target either**; embeddings/pgvector (E8); audio ZIP import (E7);
-generic web scraping (excluded at every phase, see "Initial source priorities"); Persian/bilingual
-data (excluded at every phase, non-negotiable); Today composer migration (Phase D, separate).
+**Explicitly NOT in E1** (confirmed, none of these were built): full AI analysis (E2), full
+rendered preview (E3), publishing to any bank (E4) — **no tiny "safe" early publish target
+either**, confirmed by a dedicated test (`No_rows_are_ever_written_to_any_published_cefr_bank_table`);
+embeddings/pgvector (E8); audio ZIP import (E7); generic web scraping; Persian/bilingual data (a
+Persian-script fixture exists only as a negative test proving gate 1 rejects it, never as staged/
+approved content); Today composer migration (Phase D, separate).
 
-**E1 acceptance criteria**: an admin can approve a `CefrResourceSource`, upload a CSV/JSON/JSONL
-file against it, see the resulting `ResourceImportRun` with an accurate record count and
-per-row parse status, and see the resulting `ResourceCandidate` rows with an English-only
-validation result — with zero rows written to any published `Cefr*` bank table.
+**E1 acceptance criteria — met**: an admin can approve a `CefrResourceSource` (English-only,
+language-code-enforced), upload a CSV/JSON/JSONL file against it, see the resulting
+`ResourceImportRun` with an accurate record count and per-row parse status, and see the resulting
+`ResourceCandidate` rows — with zero rows ever written to any published `Cefr*` bank table.
++17 backend tests covering both gates, all 3 formats, duplicates, malformed rows, fingerprint
+stability, and the bank-table-untouched guarantee.
 
 ---
 
@@ -330,9 +358,9 @@ to that eventual cleanup's scope but does not attempt it now.
 
 | Page | Route | Phase | Notes |
 |---|---|---|---|
-| Resource Sources | `/admin/resource-sources` | E1 | `CefrResourceSource` CRUD + approve/revoke — no new entity. |
-| Resource Import Runs | `/admin/resource-import-runs` | E1 | List + trigger new run (file upload). Raw Records are a nested tab on the run detail view, not a separate top-level page. |
-| Resource Candidates | `/admin/resource-candidates` | E1 (read-only) → E2 (validation) → E3 (preview) → E4 (approve/publish) | The main working surface, built up incrementally across E1-E4 rather than all at once. |
+| Resource Sources | `/admin/resource-sources` | ✅ E1 done | `CefrResourceSource` CRUD + approve/revoke (extended with new fields, not a new entity). |
+| Resource Import Runs | `/admin/resource-import-runs` | ✅ E1 done | List + trigger new run (file upload). Raw Records are a nested tab on the run detail view, not a separate top-level page. |
+| Resource Candidates | `/admin/resource-candidates` | ✅ E1 done (read-only + staging banner) → E2 (validation) → E3 (preview) → E4 (approve/publish) | The main working surface, built up incrementally across E1-E4 rather than all at once. |
 | Published Resource Banks | `/admin/resource-banks` (tentative) | E5 | Browse/search published `Cefr*` rows — not part of E4. |
 | Tags/Taxonomy | TBD | Later, post-E4 | Deferred until enough banks exist to warrant a shared taxonomy admin surface. |
 
@@ -371,6 +399,9 @@ and preferred phase order.
   boundaries defined, admin UX plan finalized); `docs/roadmap/road-map.md`,
   `docs/sprints/current-sprint.md`, `docs/architecture/README.md`,
   `docs/backlog/product-backlog.md` (see accompanying commit).
+- Docs updated (Phase E1, this section): this file (E1 exact-scope section marked implemented,
+  actual entity/field deviations documented); `docs/roadmap/road-map.md`,
+  `docs/sprints/current-sprint.md`, `docs/architecture/README.md`.
 - Docs intentionally not updated: `docs/architecture/cefr-resource-licensing-review.md` — its
   licensing findings are unchanged by this phase; no new sources were browsed or licensing
   conclusions revisited in E0. `docs/architecture/practice-gym.md`/`repetition-and-novelty.md` —

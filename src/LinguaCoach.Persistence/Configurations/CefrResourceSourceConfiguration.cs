@@ -23,6 +23,17 @@ internal sealed class CefrResourceSourceConfiguration : IEntityTypeConfiguration
             .HasDefaultValue(false);
         builder.Property(e => e.ImportedAtUtc).HasColumnName("imported_at_utc");
 
+        builder.Property(e => e.LanguageCode).HasColumnName("language_code").HasMaxLength(10).IsRequired()
+            .HasDefaultValue(Domain.Entities.CefrResourceSource.RequiredLanguageCode);
+        builder.Property(e => e.AllowsStudentDisplay).HasColumnName("allows_student_display").IsRequired()
+            .HasDefaultValue(false);
+        builder.Property(e => e.AllowsCommercialUse).HasColumnName("allows_commercial_use").IsRequired()
+            .HasDefaultValue(false);
+        builder.Property(e => e.AttributionText).HasColumnName("attribution_text");
+        builder.Property(e => e.SourceVersion).HasColumnName("source_version").HasMaxLength(100);
+        builder.Property(e => e.DownloadUrl).HasColumnName("download_url").HasMaxLength(500);
+        builder.Property(e => e.UpdatedAtUtc).HasColumnName("updated_at_utc");
+
         builder.HasIndex(e => e.Name)
             .IsUnique()
             .HasDatabaseName("ix_cefr_resource_sources_name");

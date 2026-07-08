@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Plan-Sync-PG-v2)
+lastUpdated: 2026-07-08 (Phase E1)
 owner: engineering
 supersedes:
 supersededBy:
@@ -14,35 +14,45 @@ Last updated: 2026-07-08
 
 ## Active sprint
 
+**Phase E1 — English Resource Source Registry, Import Runs, Raw Records, and Candidate Staging (2026-07-08)** — complete
+
+**Last completed: Phase E1.** Implemented the first Phase E slice: `CefrResourceSource` extended
+(added `LanguageCode` enforced to `"en"`, `AllowsStudentDisplay`, `AllowsCommercialUse`,
+`AttributionText`, `SourceVersion`, `DownloadUrl`, `Update(...)`) as the source registry — no
+duplicate entity created. New staging entities `ResourceImportRun`/`ResourceRawRecord`/
+`ResourceCandidate` (migration `AddResourceImportStaging`). `ResourceImportService` implements
+gates 1-3 only (English-only, license/source-approval, parser) with continue-on-error per-row
+processing and within-run duplicate-hash detection; supports CSV/JSON/JSONL. `ContentFingerprint`
+reuses `IActivityContentFingerprintService`. Admin CRUD/API/UI for Resource Sources, Resource
+Import Runs (Raw Records nested under run detail), and Resource Candidates (read-only + notes,
+explicit "staging only" banner) under the existing Content sidebar group. **Zero rows written to
+any published `Cefr*` bank table — confirmed by a dedicated test.** +17 backend tests
+(3,379 → 3,396 passed). No AI analysis, no rendered preview, no publish action — all correctly
+deferred to E2/E3/E4. See `docs/architecture/english-resource-bank-import-platform.md` for full
+detail, including two small documented deviations from the E0 plan.
+
+**Before this: Plan-Sync-PG-v2.** Added a future **Practice Gym v2** (skill/objective-first
+selector) track to the roadmap, after Phase E5-E8 and before Phase F/G. Docs-only — see
+`docs/architecture/practice-gym.md`'s "Future target: skill-first Practice Gym" section.
+
+**Next implementation phase: Phase E2** — AI analysis + validation gates (gates 4-6). **Not
+started.** Phase D remains gated on Phase E reaching at least E4 — Phase E1 only built the
+staging foundation, nothing is published yet. PG-v2 implementation remains not started. Today
+lesson generation remains 100% legacy `IAiActivityGenerator` freeform generation. See
+`docs/roadmap/road-map.md` §19a for the full phase order.
+
+---
+
+## Previous sprint
+
 **Plan-Sync-PG-v2 — Add skill-first Practice Gym v2 to later roadmap (2026-07-08)** — complete (docs-only)
 
-**Last completed: Phase E0.** Finalized the Phase E entity/status/gate model (planning only, no
-code) — see `docs/architecture/english-resource-bank-import-platform.md`.
-
-**Current immediate task (this docs sync): Plan-Sync-PG-v2.** Added a new future track,
-**Practice Gym v2**, to the roadmap after Phase E5-E8 and before Phase F/G. Practice Gym should
-eventually become **skill/subskill/objective-first**, not activity-type-first: students should
-choose or be guided toward a skill/subskill/weak-area/objective/review/challenge/recommended-
-practice target rather than primarily choosing a raw internal exercise type (gap fill, phrase
-match, reorder paragraphs, multiple choice, listening fill-in-blanks, etc.); the system should
-internally select the best `ActivityTemplate`/resource/activity format based on CEFR,
-skill/subskill, weakness evidence, novelty/cooldown, feedback signals, available published bank
-items, and renderer/scorer/evaluator capability. **`ExerciseTypeDefinition`/
-`ExercisePatternDefinition` are NOT deleted** — they are reframed as an internal capability
-registry (renderer/scorer/evaluator capability, audio/image/speaking/open-ended requirements,
-Form.io compatibility, supported skills/subskills, CEFR suitability, fallback/generation
-capability), not the student-facing product model. This does not reopen or change the Phase
-C-Final closure. See `docs/architecture/practice-gym.md`'s "Future target: skill-first Practice
-Gym" section and `docs/backlog/product-backlog.md`'s "Practice Gym v2" section (items PG-v2A-D).
-
-**Next implementation phase after this docs sync: Phase E1** — first Phase E implementation
-slice: `CefrResourceSource`-backed source integration + CSV/JSON/JSONL import + raw/candidate
-staging (gates 1-3 only, no publishing). **Not started.** Phase D remains gated on Phase E
-reaching at least E4. **PG-v2 implementation (PG-v2A-D) has not started** and is sequenced after
-Phase E5-E8 — it needs mature bank/resource search/selector coverage before a skill-first
-selector has real content to choose from. Today lesson generation remains 100% legacy
-`IAiActivityGenerator` freeform generation. See `docs/roadmap/road-map.md` §19a for the full phase
-order.
+Added a future **Practice Gym v2** track to the roadmap after Phase E5-E8 and before Phase F/G:
+students should eventually choose or be guided toward a skill/subskill/weak-area/objective/
+review/challenge/recommended-practice target rather than a raw internal exercise type, with the
+system internally selecting the best format. `ExerciseTypeDefinition`/`ExercisePatternDefinition`
+are NOT deleted — reframed as an internal capability registry. Docs-only; does not reopen the
+Phase C-Final closure. Committed as `23aa3e2c`.
 
 ---
 

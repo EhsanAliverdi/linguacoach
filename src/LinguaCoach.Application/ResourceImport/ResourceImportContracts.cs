@@ -1,0 +1,190 @@
+using LinguaCoach.Domain.Enums;
+
+namespace LinguaCoach.Application.ResourceImport;
+
+// ── Phase E1 — Import runs / raw records / candidates: admin-facing read contracts +
+// the import service contract. No publish/approve workflow — staging only. ──
+
+public sealed record AdminResourceImportRunDto(
+    Guid RunId,
+    Guid CefrResourceSourceId,
+    string SourceName,
+    DateTimeOffset StartedAtUtc,
+    DateTimeOffset? CompletedAtUtc,
+    string Status,
+    Guid? ImportedByUserId,
+    string ImportMode,
+    string FileName,
+    string FileHash,
+    string? SourceVersion,
+    string ParserVersion,
+    string? AiModelUsed,
+    int TotalRecordCount,
+    int SucceededCount,
+    int RejectedCount,
+    int WarningCount,
+    string? ErrorSummary,
+    string? Notes
+);
+
+public sealed record ListAdminResourceImportRunsQuery(
+    int Page = 1,
+    int PageSize = 20,
+    Guid? SourceId = null,
+    string? Status = null
+);
+
+public sealed record AdminResourceImportRunListResult(
+    IReadOnlyList<AdminResourceImportRunDto> Items,
+    int TotalCount,
+    int OverallTotalCount
+);
+
+public interface IAdminResourceImportRunListQuery
+{
+    Task<AdminResourceImportRunListResult> HandleAsync(ListAdminResourceImportRunsQuery query, CancellationToken ct = default);
+}
+
+public sealed record GetAdminResourceImportRunQuery(Guid RunId);
+
+public interface IAdminResourceImportRunGetQuery
+{
+    Task<AdminResourceImportRunDto?> HandleAsync(GetAdminResourceImportRunQuery query, CancellationToken ct = default);
+}
+
+// ── Raw records ─────────────────────────────────────────────────────────────────
+
+public sealed record AdminResourceRawRecordDto(
+    Guid RawRecordId,
+    Guid ResourceImportRunId,
+    string? ExternalRecordId,
+    string? RawJson,
+    string? RawText,
+    string RawHash,
+    string DetectedLanguageCode,
+    string DetectedFormat,
+    string ExtractionStatus,
+    string? ExtractionWarningsJson,
+    DateTime CreatedAt
+);
+
+public sealed record ListAdminResourceRawRecordsQuery(
+    Guid ResourceImportRunId,
+    int Page = 1,
+    int PageSize = 50,
+    string? ExtractionStatus = null
+);
+
+public sealed record AdminResourceRawRecordListResult(
+    IReadOnlyList<AdminResourceRawRecordDto> Items,
+    int TotalCount
+);
+
+public interface IAdminResourceRawRecordListQuery
+{
+    Task<AdminResourceRawRecordListResult> HandleAsync(ListAdminResourceRawRecordsQuery query, CancellationToken ct = default);
+}
+
+public sealed record GetAdminResourceRawRecordQuery(Guid RawRecordId);
+
+public interface IAdminResourceRawRecordGetQuery
+{
+    Task<AdminResourceRawRecordDto?> HandleAsync(GetAdminResourceRawRecordQuery query, CancellationToken ct = default);
+}
+
+// ── Candidates ──────────────────────────────────────────────────────────────────
+
+public sealed record AdminResourceCandidateDto(
+    Guid CandidateId,
+    Guid ResourceRawRecordId,
+    Guid ResourceImportRunId,
+    Guid CefrResourceSourceId,
+    string CandidateType,
+    string CanonicalText,
+    string NormalizedJson,
+    string LanguageCode,
+    string? CefrLevel,
+    double? CefrConfidence,
+    string? PrimarySkill,
+    string? Subskill,
+    int? DifficultyBand,
+    string? ContextTagsJson,
+    string? FocusTagsJson,
+    double? QualityScore,
+    string ContentFingerprint,
+    string ValidationStatus,
+    string ReviewStatus,
+    string? RejectReason,
+    string? AdminNotes,
+    DateTime CreatedAt,
+    DateTime UpdatedAtUtc
+);
+
+public sealed record ListAdminResourceCandidatesQuery(
+    int Page = 1,
+    int PageSize = 20,
+    Guid? SourceId = null,
+    Guid? ImportRunId = null,
+    string? CandidateType = null,
+    string? ValidationStatus = null,
+    string? ReviewStatus = null,
+    string? LanguageCode = null,
+    string? CefrLevel = null,
+    string? Search = null
+);
+
+public sealed record AdminResourceCandidateListResult(
+    IReadOnlyList<AdminResourceCandidateDto> Items,
+    int TotalCount,
+    int OverallTotalCount
+);
+
+public interface IAdminResourceCandidateListQuery
+{
+    Task<AdminResourceCandidateListResult> HandleAsync(ListAdminResourceCandidatesQuery query, CancellationToken ct = default);
+}
+
+public sealed record GetAdminResourceCandidateQuery(Guid CandidateId);
+
+public interface IAdminResourceCandidateGetQuery
+{
+    Task<AdminResourceCandidateDto?> HandleAsync(GetAdminResourceCandidateQuery query, CancellationToken ct = default);
+}
+
+public sealed record SetResourceCandidateAdminNotesCommand(Guid CandidateId, string? AdminNotes);
+
+public interface IAdminResourceCandidateNotesHandler
+{
+    Task<AdminResourceCandidateDto> HandleAsync(SetResourceCandidateAdminNotesCommand command, CancellationToken ct = default);
+}
+
+// ── Import service (the parser/gate pipeline) ──────────────────────────────────
+
+public sealed record ResourceImportRequest(
+    Guid SourceId,
+    Stream FileStream,
+    string FileName,
+    ResourceImportMode ImportMode,
+    Guid? ImportedByUserId = null,
+    string? Notes = null
+);
+
+public sealed record ResourceImportResult(
+    Guid RunId,
+    string Status,
+    int TotalRecordCount,
+    int SucceededCount,
+    int RejectedCount,
+    int WarningCount,
+    string? ErrorSummary
+);
+
+public interface IResourceImportService
+{
+    Task<ResourceImportResult> ImportAsync(ResourceImportRequest request, CancellationToken ct = default);
+}
+
+public sealed class ResourceImportValidationException : Exception
+{
+    public ResourceImportValidationException(string message) : base(message) { }
+}
