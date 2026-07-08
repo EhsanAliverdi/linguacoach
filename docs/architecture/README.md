@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase D1)
+lastUpdated: 2026-07-08 (Phase D2)
 owner: architecture
 supersedes:
 supersededBy:
@@ -126,7 +126,12 @@ Key facts about where this stands today (2026-07-08):
   decision checkpoint by starting D1 itself**: `ITodayBankResourceSelector` now injects this
   published bank content into `ActivityMaterializationJob`'s AI prompt for Vocabulary/Reading-
   primary-skill Today patterns only, with legacy freeform generation as the unchanged fallback
-  everywhere else — see docs/architecture/learning-activity-engine.md and
+  everywhere else. **Bugfix-D1A (2026-07-08)** fixed a `LearningSession.GenerationStatus` EF
+  default-value bug D1's regression tests surfaced. **Phase D2 (2026-07-08)** then expanded
+  the slice — a balanced vocabulary/grammar/reading bundle, CEFR-widening for review/scaffold
+  routing only, a feedback-signal exclusion, a clearer structured prompt block, and a fix for a
+  second latent D1 bug (durable provenance now on `LearningActivity.BankResourceProvenanceJson`,
+  replacing an FK-mismatched field) — see docs/architecture/learning-activity-engine.md and
   docs/architecture/english-resource-bank-import-platform.md.
 - **English-only seed/resource-bank rule (non-negotiable, applies to all current and future
   resource banks):** no Persian seed corpus, no bilingual phrase bank, no English–Persian (or
@@ -134,7 +139,7 @@ Key facts about where this stands today (2026-07-08):
   support — UI chrome, onboarding language-pair selection, support-language hints/translation
   help — never seeded as learning content.
 
-Current state (as of 2026-07-08, Phase D1): **Practice Gym bank-first migration (content
+Current state (as of 2026-07-08, Phase D2): **Practice Gym bank-first migration (content
 layer) is closed at Phase C-Final** — generalized the Form.io template path from 1 pilot pattern
 to 8 total (C1's `phrase_match`, `gap_fill_workplace_phrase`, `reading_multiple_choice_single`;
 C2's `reading_multiple_choice_multi`, `reading_fill_in_blanks`, `reading_writing_fill_in_blanks`;
@@ -185,13 +190,25 @@ opportunistic, for `gap_fill_workplace_phrase`'s secondary skill) — `ActivityM
 appends the selector's short supplement onto the existing `TopicHint` free-text field (no AI
 prompt template changes needed), novelty-prechecked via a synthetic fingerprint mirroring
 `PracticeGymGenerationJob`'s per-template precheck. Every unsupported pattern and every no-match
-case falls back to unchanged legacy freeform generation. Provenance is best-effort via the
-pre-existing `StudentActivityReadinessItem.SetBankItemProvenance(...)` (no schema change). +13
-backend tests (3,513 total). See `docs/architecture/learning-activity-engine.md` and
-`docs/roadmap/road-map.md` §19a for the full reasoning and phase order. **A follow-on decision
-point now applies, not resolved by this phase: expand Today bank-first support (Phase D2),
-continue Phase E7/E8, or plan a larger Today composer migration. Full Phase D implementation
-(beyond D1's narrow slice) and PG-v2 implementation remain not started.**
+case falls back to unchanged legacy freeform generation. +13 backend tests (3,513 total).
+**Bugfix-D1A (2026-07-08)** fixed a pre-existing `LearningSession.GenerationStatus` EF
+default-value bug D1's own regression tests surfaced (`HasDefaultValue(Ready)` silently
+discarding an explicit `Pending` transition) — removed the default, migration
+`Bugfix_D1A_RemoveGenerationStatusDefault`, +5 tests, no data loss. **Phase D2 (2026-07-08)**
+expanded the D1 slice: confirmed the skill-based pattern gate already covers every current
+Vocabulary/Reading-primary Today pattern (incl. `reading_multiple_choice_multi`/
+`reading_writing_fill_in_blanks`); added a balanced vocabulary/grammar/reading bundle,
+CEFR-widening for review/scaffold routing only, and a feedback-signal exclusion; replaced the
+loose prompt sentence with a structured block; and fixed a second latent D1 bug — D1's
+`StudentActivityReadinessItem.SetBankItemProvenance(...)` call was FK-mismatched (that column
+targets `PlacementItemDefinition`, not any Phase E Cefr* bank table) — with a new
+`LearningActivity.BankResourceProvenanceJson` column (migration
+`Phase_D2_AddLearningActivityBankResourceProvenance`). +9 backend tests (3,527 total). See
+`docs/architecture/learning-activity-engine.md` and `docs/roadmap/road-map.md` §19a for the full
+reasoning and phase order. **A follow-on decision point now applies, not resolved by this
+phase: Phase D3 for a broader Today composer migration, Phase E7/E8 for more resource depth/
+search, or a docs-only plan sync if the roadmap changes. Full Phase D implementation (beyond
+D1/D2's narrow slice) and PG-v2 implementation remain not started.**
 
 ---
 
@@ -207,7 +224,7 @@ continue Phase E7/E8, or plan a larger Today composer migration. Full Phase D im
 | [file-storage-minio.md](file-storage-minio.md) | `IFileStorageService` interface; `LocalFileStorageService` and `MinioFileStorageService`; authenticated streaming pattern |
 | [student-lifecycle-reset-tools.md](student-lifecycle-reset-tools.md) | 12 lifecycle stages (canonical enum); admin reset endpoint; `StudentResetLog`; soft vs hard delete rules |
 | [student-learning-memory.md](student-learning-memory.md) | `UserLearningSummary` / `StudentSkillProfile`; memory write/read paths; best-effort update rules |
-| [learning-activity-engine.md](learning-activity-engine.md) | `LearningActivity` / `ActivityAttempt` entity relationships; legacy always-fresh AI generation flow (still the active path for most Practice Gym patterns and all non-Vocabulary/Reading Today patterns); how activity types share infrastructure. **Phase D1 (2026-07-08)**: `ActivityMaterializationJob` now tries `ITodayBankResourceSelector` first for Vocabulary/Reading Today patterns, injecting published bank content into `TopicHint` before falling back to unchanged legacy generation |
+| [learning-activity-engine.md](learning-activity-engine.md) | `LearningActivity` / `ActivityAttempt` entity relationships; legacy always-fresh AI generation flow (still the active path for most Practice Gym patterns and all non-Vocabulary/Reading Today patterns); how activity types share infrastructure. **Phase D1/D2 (2026-07-08)**: `ActivityMaterializationJob` tries `ITodayBankResourceSelector` first for every Vocabulary/Reading Today pattern, injecting a balanced, structured bank-content block into `TopicHint` before falling back to unchanged legacy generation; full resource provenance on `LearningActivity.BankResourceProvenanceJson`. **Bugfix-D1A**: `LearningSession.GenerationStatus` EF default-value bug fixed |
 | [readiness-pool.md](readiness-pool.md) | `StudentActivityReadinessItem` entity; `ReadinessPoolStatus` / `ReadinessPoolSource` enums; lifecycle transitions; routing snapshot; `IStudentActivityReadinessPoolService`; concurrency model (Phase 10M); template-provenance fields added 2026-07-07 |
 | [curriculum-routing.md](curriculum-routing.md) | `ICurriculumRoutingService`; `CurriculumRoutingRequest/Recommendation`; CEFR normalization; level/context/skill/difficulty routing rules; RoutingReason enum; integration points (Phase 10L). `CurriculumObjective` entity, CEFR level constants, and subskill taxonomy (`CurriculumSubskillConstants`, added 2026-07-07) are defined in Domain but do not yet have a dedicated architecture doc — the `curriculum-syllabus-model.md` doc referenced here previously no longer exists in the repo; see `docs/reviews/2026-07-07-ai-bank-assessment-architecture-plan.md` §4.4 for the subskill taxonomy design instead |
 | [runtime-settings-and-feature-gates.md](runtime-settings-and-feature-gates.md) | `IFeatureGateRegistry` / `IRuntimeSettingsService`; `FeatureGateGroupDefinition` registry; `RuntimeSettingOverride` table; effective-value resolution order; audit via `AdminAuditLog`; what's runtime-editable vs read-only (Phase 20B). Backs the `PracticeGymFormIoPilot.Enabled` gate added 2026-07-07 |
@@ -304,10 +321,10 @@ Archived
 | Content-level repetition/novelty avoidance | ✅ Done (2026-07-08, Phase B) — `StudentActivityUsageLog`, `IActivityContentFingerprintService` (deterministic, exact-match only, no embeddings), `IActivityNoveltyPolicy` (fingerprint/template/topic/scenario cooldowns). Wired into `ActivitySubmitHandler`, `PracticeGymGenerationJob`'s Form.io pilot, and `ActivityMaterializationJob`. `TopicKey`/`ScenarioKey` extraction from content not yet built. See docs/architecture/repetition-and-novelty.md |
 | Clean-A / Clean-A2 dead-code cleanup | ✅ Done (2026-07-08) — removed dead onboarding enums, an orphaned onboarding component, dead route aliases, and a fully-orphaned admin career/word authoring API/UI chain; see `docs/reviews/2026-07-08-bank-first-ai-teaching-clean-architecture-plan.md` |
 | Session reflection | ⬜ Deferred — needs AI prompt `session_reflection` and stable session completion signal |
-| Bank-first Today lesson composer | 🟡 **Phase D1 (first slice) done** (2026-07-08) — `ITodayBankResourceSelector`/`TodayBankResourceSelector` inject published vocabulary/grammar/reading bank content into `ActivityMaterializationJob`'s AI prompt for Vocabulary/Reading-primary-skill Today patterns only; legacy freeform generation is the unchanged fallback everywhere else. See docs/architecture/learning-activity-engine.md. Full Today composer migration beyond this narrow slice remains not started |
+| Bank-first Today lesson composer | 🟡 **Phase D1+D2 done** (2026-07-08) — `ITodayBankResourceSelector`/`TodayBankResourceSelector` inject a balanced, structured vocabulary/grammar/reading bank-content bundle into `ActivityMaterializationJob`'s AI prompt for every Vocabulary/Reading-primary-skill Today pattern (CEFR-widening for review/scaffold routing only, feedback-signal exclusion, full provenance on `LearningActivity.BankResourceProvenanceJson`); legacy freeform generation is the unchanged fallback everywhere else. See docs/architecture/learning-activity-engine.md. Full Today composer migration beyond this slice (Phase D3+) remains not started |
 | Generalize Form.io template path across the rest of Practice Gym | ✅ **Closed at Phase C-Final** (2026-07-08) — Phase C1 (batch of 3), Phase C2 (batch of 3 more), and Phase C3 (1 pattern, `reorder_paragraphs`, new `ordered_sequence` scorer) done, 8 of 33 pattern rows template-enabled; C-Final verified all 8 stable and formally documented the remaining 25 legacy keys with 4 tracked backlog items. **No Phase C4.** See docs/architecture/practice-gym.md |
 | Activity Feedback, Repeat Policy, and Calibration Signals (Phase B2) | 🟡 Foundation implemented (2026-07-08) — see docs/architecture/activity-feedback-and-calibration.md. `ActivityFeedbackSignal` entity/migration, Off/Optional/Required policy per surface (Today + Practice Gym) via existing feature-gate system, submit/upsert API, minimal student prompt UI. Not yet consumed by any automated calibration/novelty/admin-review logic — collection only |
-| English Resource Bank Import/Review/Preview/Publishing Platform (Phase E0-E8) | 🟡 **E1-E6 all implemented** (2026-07-08) — see docs/architecture/english-resource-bank-import-platform.md. `CefrResourceSource` extended (source registry, no duplicate entity); `ResourceImportRun`/`ResourceRawRecord`/`ResourceCandidate` staging entities; gates 1-3 + gates 4-6 + `ResourceCandidatePreviewService` (rendered admin preview, read-only) + `ResourceCandidatePublishService` (every gate re-checked live, idempotent; `VocabularyEntry`/`GrammarProfileEntry`/short-excerpt `ReadingPassage` publish, `ActivityTemplateCandidate` deferred) + `ResourceBankQueryService` (published-bank browsing/search, reverse candidate traceability, no forward reference needed on bank entities, read-only) + **E6 first real content depth** (32 vocabulary / 12 grammar / 10 reading-excerpt rows, original/internal/English-only, via `InternalResourceSeedPackSeeder` and a deterministic import-time CEFR/skill/subskill mapping fix, no AI provider invoked, no direct-final-table bypass — proven by a dedicated test). Admin CRUD/API/UI with analyze/re-validate/preview/approve/reject/publish/browse actions. Still no external dataset imported. **Phase D1 (2026-07-08) is now a real consumer** (see the "Bank-first Today lesson composer" row) — a follow-on decision point applies for what's next (Phase D2, E7/E8, or a larger Today migration). English-only; no Persian/bilingual seed data at any phase |
+| English Resource Bank Import/Review/Preview/Publishing Platform (Phase E0-E8) | 🟡 **E1-E6 all implemented** (2026-07-08) — see docs/architecture/english-resource-bank-import-platform.md. `CefrResourceSource` extended (source registry, no duplicate entity); `ResourceImportRun`/`ResourceRawRecord`/`ResourceCandidate` staging entities; gates 1-3 + gates 4-6 + `ResourceCandidatePreviewService` (rendered admin preview, read-only) + `ResourceCandidatePublishService` (every gate re-checked live, idempotent; `VocabularyEntry`/`GrammarProfileEntry`/short-excerpt `ReadingPassage` publish, `ActivityTemplateCandidate` deferred) + `ResourceBankQueryService` (published-bank browsing/search, reverse candidate traceability, no forward reference needed on bank entities, read-only) + **E6 first real content depth** (32 vocabulary / 12 grammar / 10 reading-excerpt rows, original/internal/English-only, via `InternalResourceSeedPackSeeder` and a deterministic import-time CEFR/skill/subskill mapping fix, no AI provider invoked, no direct-final-table bypass — proven by a dedicated test). Admin CRUD/API/UI with analyze/re-validate/preview/approve/reject/publish/browse actions. Still no external dataset imported. **Phase D1+D2 (2026-07-08) are now real consumers** (see the "Bank-first Today lesson composer" row) — a follow-on decision point applies for what's next (Phase D3, E7/E8, or a docs-only plan sync). English-only; no Persian/bilingual seed data at any phase |
 | IFileStorageService / MinIO | ✅ Done — audio (TTS + speaking uploads) fully on object storage; not blocking deployment at current scale |
 | Admin lifecycle reset tools | ✅ Done |
 

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Phase E6)
+lastUpdated: 2026-07-08 (Phase D2)
 owner: architecture
 supersedes:
 supersededBy:
@@ -633,11 +633,18 @@ checkpoint was resolved by starting Phase D1 (2026-07-08)** — see
 `docs/architecture/learning-activity-engine.md` for the full D1 design (a narrow,
 fallback-safe first slice: `ActivityMaterializationJob` + `TodayBankResourceSelector` inject
 bank content into the AI prompt for vocabulary/reading-focused patterns only; legacy generation
-is untouched and remains the fallback whenever no matching bank content exists). D1 does not
-change anything in this platform's own pipeline (E0-E6) — it is a pure read-only consumer of
-`IResourceBankQueryService`. See `docs/roadmap/road-map.md` Decision Log (2026-07-08,
-Plan-Sync-After-C1, Plan-Sync-After-E4, Phase E5, Plan-Sync-E6-Decision, Phase E6, and Phase D1
-entries) for the full reasoning and current preferred phase order.
+is untouched and remains the fallback whenever no matching bank content exists). **Phase D2
+(2026-07-08) then expanded that first slice**: a balanced vocabulary/grammar/reading bundle
+(rather than a single resource type), CEFR-widening for review/scaffold routing only, a
+feedback-signal avoidance check, a clearer structured prompt block, and durable full-resource
+provenance on `LearningActivity.BankResourceProvenanceJson` (replacing D1's
+`StudentActivityReadinessItem.SetBankItemProvenance` call, which D2's audit found was latently
+broken — FK-constrained to `PlacementItemDefinition`, not any Phase E Cefr* bank table). Neither
+D1 nor D2 changes anything in this platform's own pipeline (E0-E6) — both are pure read-only
+consumers of `IResourceBankQueryService`. See `docs/roadmap/road-map.md` Decision Log
+(2026-07-08, Plan-Sync-After-C1, Plan-Sync-After-E4, Phase E5, Plan-Sync-E6-Decision, Phase E6,
+Phase D1, Bugfix-D1A, and Phase D2 entries) for the full reasoning and current preferred phase
+order.
 
 ---
 
@@ -690,6 +697,12 @@ entries) for the full reasoning and current preferred phase order.
   Totals, Decision Log, §19a phase sequence); `docs/sprints/current-sprint.md`;
   `docs/architecture/README.md`; `docs/backlog/product-backlog.md` (new discovered-bug entry —
   see below).
+- Docs updated (Phase D2, this section): this file ("Relationship to Phase D" section updated —
+  D2 expanded the D1 slice); `docs/architecture/learning-activity-engine.md` (D1 section rewritten
+  to cover D2's balanced bundle, CEFR widening, feedback avoidance, structured prompt block, and
+  the provenance-mechanism fix); `docs/roadmap/road-map.md` (Current Project Status, Test Totals,
+  Decision Log, §19a phase sequence); `docs/sprints/current-sprint.md`; `docs/architecture/README.md`;
+  `docs/backlog/product-backlog.md`.
 - Docs intentionally not updated: `docs/architecture/cefr-resource-licensing-review.md` — its
   licensing findings are unchanged by this phase; no new sources were browsed or licensing
   conclusions revisited in E0. `docs/architecture/practice-gym.md`/`repetition-and-novelty.md` —

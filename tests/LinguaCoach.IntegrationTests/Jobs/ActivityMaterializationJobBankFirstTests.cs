@@ -22,11 +22,13 @@ using Quartz.Impl;
 namespace LinguaCoach.IntegrationTests.Jobs;
 
 /// <summary>
-/// Phase D1 — first bank-first Today slice. Proves ActivityMaterializationJob injects published
-/// Resource Bank content into the AI prompt's TopicHint for vocabulary-focused patterns when
-/// matching bank rows exist at the student's CEFR level, and that it falls back to today's
-/// unchanged legacy behavior (no bank marker) when no matching bank rows exist. Uses a
-/// context-capturing fake IAiActivityGenerator — no real/live AI provider anywhere in this suite.
+/// Phase D1/D2 — bank-first Today slice. Proves ActivityMaterializationJob injects published
+/// Resource Bank content into the AI prompt's TopicHint for vocabulary/reading patterns when
+/// matching bank rows exist at the student's CEFR level, that it falls back to today's unchanged
+/// legacy behavior (no bank marker) when no matching bank rows exist, and (Phase D2) that the
+/// full selected-resource list is durably recorded on LearningActivity.BankResourceProvenanceJson.
+/// Uses a context-capturing fake IAiActivityGenerator — no real/live AI provider anywhere in this
+/// suite.
 /// </summary>
 public sealed class ActivityMaterializationJobBankFirstTests : IClassFixture<ApiTestFactory>
 {
@@ -62,6 +64,10 @@ public sealed class ActivityMaterializationJobBankFirstTests : IClassFixture<Api
 
         var exercise = await db.SessionExercises.AsNoTracking().SingleAsync(e => e.Id == exerciseId);
         exercise.LearningActivityId.Should().NotBeNull();
+
+        var activity = await db.LearningActivities.AsNoTracking().SingleAsync(a => a.Id == exercise.LearningActivityId);
+        activity.BankResourceProvenanceJson.Should().NotBeNullOrWhiteSpace();
+        activity.BankResourceProvenanceJson.Should().Contain("Vocabulary");
     }
 
     [Fact]
@@ -87,10 +93,53 @@ public sealed class ActivityMaterializationJobBankFirstTests : IClassFixture<Api
 
         var exercise = await db.SessionExercises.AsNoTracking().SingleAsync(e => e.Id == exerciseId);
         exercise.LearningActivityId.Should().NotBeNull();
+
+        var activity = await db.LearningActivities.AsNoTracking().SingleAsync(a => a.Id == exercise.LearningActivityId);
+        activity.BankResourceProvenanceJson.Should().BeNull();
     }
 
-    private static async Task<(Guid ProfileId, Guid BatchId, Guid ExerciseId)> SeedPendingVocabularyExerciseAsync(
-        LinguaCoachDbContext db, string cefrLevel)
+    [Fact]
+    public async Task Injects_bank_resource_context_for_reading_multiple_choice_multi_confirming_broadened_pattern_coverage()
+    {
+        // Phase D2 finding: TodayBankResourceSelector gates purely on pattern.PrimarySkill, not an
+        // explicit pattern-key allow-list — so every Reading-primary-skill pattern was already
+        // covered, not just the 3 patterns D1's own docs originally called out. This test proves
+        // reading_multiple_choice_multi (never explicitly mentioned in D1) gets bank context too.
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+
+        var (_, batchId, exerciseId) = await SeedPendingExerciseAsync(
+            db, cefrLevel: "B1", patternKey: ExercisePatternKey.ReadingMultipleChoiceMulti, primarySkill: "Reading");
+
+        var source = new CefrResourceSource("D2 Test Source", "Internal/Original",
+            allowsStudentDisplay: true, allowsCommercialUse: true);
+        source.ApproveForImport();
+        db.CefrResourceSources.Add(source);
+        await db.SaveChangesAsync();
+        db.CefrReadingReferences.Add(new CefrReadingReference(source.Id, "B1", referenceExcerpt: "A short workplace excerpt."));
+        await db.SaveChangesAsync();
+
+        var aiGenerator = new ContextCapturingAiActivityGenerator();
+        var (job, capturingLogger) = await BuildJobAsync(scope, db, aiGenerator);
+
+        await job.Execute(new FakeJobExecutionContext(
+            await CreateInMemorySchedulerAsync(),
+            new JobDataMap { [ActivityMaterializationJob.BatchIdKey] = batchId.ToString() }));
+
+        aiGenerator.LastContext.Should().NotBeNull(capturingLogger.LastException?.ToString() ?? "no exception captured");
+        aiGenerator.LastContext!.TopicHint.Should().Contain("Bank resources:");
+
+        var exercise = await db.SessionExercises.AsNoTracking().SingleAsync(e => e.Id == exerciseId);
+        var activity = await db.LearningActivities.AsNoTracking().SingleAsync(a => a.Id == exercise.LearningActivityId);
+        activity.BankResourceProvenanceJson.Should().Contain("Reading");
+    }
+
+    private static Task<(Guid ProfileId, Guid BatchId, Guid ExerciseId)> SeedPendingVocabularyExerciseAsync(
+        LinguaCoachDbContext db, string cefrLevel) =>
+        SeedPendingExerciseAsync(db, cefrLevel, ExercisePatternKey.PhraseMatch, "Vocabulary");
+
+    private static async Task<(Guid ProfileId, Guid BatchId, Guid ExerciseId)> SeedPendingExerciseAsync(
+        LinguaCoachDbContext db, string cefrLevel, string patternKey, string primarySkill)
     {
         var user = new ApplicationUser
         {
@@ -119,14 +168,14 @@ public sealed class ActivityMaterializationJobBankFirstTests : IClassFixture<Api
         db.GenerationBatches.Add(batch);
         await db.SaveChangesAsync();
 
-        var session = new LearningSession(module.Id, "Session", "topic", "goal", 15, "Vocabulary", 0);
+        var session = new LearningSession(module.Id, "Session", "topic", "goal", 15, primarySkill, 0);
         session.SetGenerationMetadata(profile.Id, 1, batch.Id);
         session.MarkGenerationPending();
         db.LearningSessions.Add(session);
         await db.SaveChangesAsync();
 
         var exercise = new SessionExercise(
-            session.Id, 0, ExercisePatternKey.PhraseMatch, "Vocabulary", "Practise key workplace phrases.", 3);
+            session.Id, 0, patternKey, primarySkill, "Practise key workplace content.", 3);
         db.SessionExercises.Add(exercise);
         await db.SaveChangesAsync();
 

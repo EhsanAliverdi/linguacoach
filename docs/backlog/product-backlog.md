@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Bugfix-D1A)
+lastUpdated: 2026-07-08 (Phase D2)
 owner: product
 supersedes:
 supersededBy:
@@ -85,37 +85,53 @@ to that CLR default before its first save). No other enum instance was found —
 
 ---
 
-## Bank-First Today Composer — Phase D1 (First Slice) `Done` (2026-07-08)
+## Bank-First Today Composer — Phase D1/D2 `Done` (2026-07-08)
 
 Phase D1 implemented the first narrow, fallback-safe consumer of the Resource Bank platform:
-`ActivityMaterializationJob` now tries `ITodayBankResourceSelector`/`TodayBankResourceSelector`
+`ActivityMaterializationJob` tries `ITodayBankResourceSelector`/`TodayBankResourceSelector`
 before AI generation, for Today exercises whose `ExercisePatternDefinition.PrimarySkill` is
-`"Vocabulary"` (`phrase_match`, `gap_fill_workplace_phrase`) or `"Reading"`
-(`reading_multiple_choice_single`, `reading_fill_in_blanks`, `reorder_paragraphs`) only. See
+`"Vocabulary"` or `"Reading"` — a purely skill-based gate (not an explicit pattern-key
+allow-list), confirmed by Phase D2's audit to already cover every current pattern in both
+families, including `reading_multiple_choice_multi`/`reading_writing_fill_in_blanks` which D1's
+own docs never explicitly named. Phase D2 then improved selection quality (balanced vocabulary/
+grammar/reading bundle, CEFR-widening for review/scaffold routing only, a feedback-signal
+exclusion), bank-context clarity (structured prompt block), and provenance (full resource list
+on `LearningActivity.BankResourceProvenanceJson`, fixing a latent D1 bug where
+`StudentActivityReadinessItem.SetBankItemProvenance(...)` was FK-mismatched to
+`PlacementItemDefinition` rather than any Phase E Cefr* bank table). See
 docs/architecture/learning-activity-engine.md for the full design. Explicitly **not** part of
-D1's scope — tracked here for a future Phase D2 or larger Today composer migration:
+D1/D2's scope — tracked here for a future Phase D3 or larger Today composer migration:
 
 - [ ] **Grammar-focused Today pattern** `Not started` — Today has no pattern whose
-  `PrimarySkill` is `"Grammar"`; D1 only pulls grammar bank content in opportunistically for
+  `PrimarySkill` is `"Grammar"`; D1/D2 only pull grammar bank content in opportunistically for
   `gap_fill_workplace_phrase`'s `Grammar` secondary skill. A dedicated grammar-focused pattern
   would let the selector target `CefrGrammarProfileEntry` directly instead of piggybacking.
-- [ ] **Speaking/Listening/image/open-ended Today patterns** `Not started` — D1 deliberately
+- [ ] **Speaking/Listening/image/open-ended Today patterns** `Not started` — D1/D2 deliberately
   scoped to Vocabulary/Reading only, matching the E6 seed pack's actual content types. These
   pattern families need their own bank-content shape (audio, image, rubric) before a selector
   can meaningfully serve them.
-- [ ] **CEFR-level widening** `Not started` — D1's selector queries only the exact
-  routing-recommended CEFR level; if no bank rows exist there, it falls back to legacy
-  generation rather than searching a neighboring level (e.g. B1 when B2 is empty).
-- [ ] **Full per-resource provenance** `Not started` — D1 records only a single "primary"
-  selected resource id via `StudentActivityReadinessItem.SetBankItemProvenance(...)`; the full
-  list of resources actually offered to the AI prompt lives only in a structured log line, not
-  a queryable column. A dedicated provenance table/JSON field would be needed to track every
-  resource considered/used per activity.
+- [x] **CEFR-level widening** `Done` (Phase D2, 2026-07-08) — the selector now retries one CEFR
+  level down, but **only** when the routing reason is Review/Scaffold/Remediation and the exact
+  level has zero bank rows; it never widens upward and never widens at all for ordinary
+  generation.
+- [x] **Full per-resource provenance** `Done` (Phase D2, 2026-07-08) — every selected resource
+  (type/id/sourceId/contentFingerprint/selectionReason) is now recorded as a JSON array on
+  `LearningActivity.BankResourceProvenanceJson`, not just a single "primary" id in a log line.
+- [ ] **Semantic/embedding-based resource selection** `Not started` — explicitly out of scope
+  for D1/D2 per their own product brief (deterministic bank queries + exact-fingerprint novelty
+  + cheap feedback-signal checks only); would belong to a future Phase E8-adjacent effort if ever
+  pursued.
 - [x] **Discovered bug — `LearningSession.GenerationStatus` EF default-value bug** `Done` (Bugfix-D1A, 2026-07-08):
   fixed by removing `LearningSessionConfiguration`'s `.HasDefaultValue(GenerationStatus.Ready)`
   (migration `Bugfix_D1A_RemoveGenerationStatusDefault`, no data loss). See
   docs/architecture/learning-activity-engine.md for the full root-cause writeup and
   docs/roadmap/road-map.md's Decision Log (Bugfix-D1A entry) for the fix rationale.
+- [x] **Discovered bug — `StudentActivityReadinessItem.SetBankItemProvenance` FK mismatch**
+  `Done` (Phase D2, 2026-07-08): that column is FK-constrained to `PlacementItemDefinition`, not
+  any Phase E Cefr* bank table; D1's call to it with a Cefr* resource id would have thrown a
+  foreign-key violation against a real database the first time a readiness-pool item existed at
+  materialization time. Fixed by removing the call entirely and recording provenance on
+  `LearningActivity.BankResourceProvenanceJson` instead (see above).
 
 ---
 

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Bugfix-D1A)
+lastUpdated: 2026-07-08 (Phase D2)
 owner: architecture
 supersedes:
 supersededBy:
@@ -113,31 +113,69 @@ activity also now writes a `StudentActivityUsageLog` row (real content-usage his
 `ActivitySubmitHandler`. See **docs/architecture/repetition-and-novelty.md** for the full design
 — this diagram above does not yet show that wrapping step.
 
-**Bank-first Today slice (Phase D1, 2026-07-08):** `ActivityMaterializationJob` now tries
-`ITodayBankResourceSelector`/`TodayBankResourceSelector` before generation, for Today
-exercises whose `ExercisePatternDefinition.PrimarySkill` is `"Vocabulary"` (`phrase_match`,
-`gap_fill_workplace_phrase`) or `"Reading"` (`reading_multiple_choice_single`,
-`reading_fill_in_blanks`, `reorder_paragraphs`) — grammar bank content
-(`CefrGrammarProfileEntry`) is pulled in only opportunistically for
-`gap_fill_workplace_phrase` (its `Grammar` secondary skill), never as its own pattern gate,
-since Today has no dedicated grammar-focused pattern yet. The selector queries the published
-Resource Bank (`IResourceBankQueryService`, Phase E5) at the routing-recommended CEFR level,
-runs each candidate through a synthetic-fingerprint novelty precheck
-(`"bank-vocab-precheck:{id}"` etc., mirroring `PracticeGymGenerationJob`'s per-template
-precheck), and returns up to 3 resources plus a short ready-to-append prompt sentence. This
-supplement text is appended to the same free-text `TopicHint` that `avoidRepeatingHint`
-already uses — **no prompt template changes were needed**. All other patterns
-(Writing/Speaking/Listening/Reflection) are unaffected (`SkippedUnsupportedPattern`); when no
-bank rows exist at the CEFR level, generation proceeds exactly as before
-(`NoSuitableResources`). Provenance is best-effort only: the single "primary" selected resource
-id is recorded via `StudentActivityReadinessItem.SetBankItemProvenance(...)` (pre-existing,
-previously unused method) when a readiness-pool item is linked, flowing automatically into
-`StudentActivityUsageLog.SourceBankItemId` at attempt-submit time; the full selected-resource
-list is only in the structured log line, not a new column. See
-`docs/architecture/english-resource-bank-import-platform.md`'s "Relationship to Today lesson
-composer" section for the decision-checkpoint history that led to this phase, and
-`docs/backlog/product-backlog.md` for what remains explicitly deferred (Speaking/Listening/
-image/open-ended patterns, CEFR-level widening, full provenance of every selected resource).
+**Bank-first Today slice (Phase D1, 2026-07-08; expanded Phase D2, 2026-07-08):**
+`ActivityMaterializationJob` tries `ITodayBankResourceSelector`/`TodayBankResourceSelector`
+before generation, for Today exercises whose `ExercisePatternDefinition.PrimarySkill` is
+`"Vocabulary"` (`phrase_match`, `gap_fill_workplace_phrase`) or `"Reading"` — the gate is purely
+skill-based, not an explicit pattern-key allow-list, so it already covers every current
+Reading-primary pattern: `reading_multiple_choice_single`, `reading_fill_in_blanks`,
+`reorder_paragraphs`, and (confirmed/tested explicitly in D2, though always covered by
+construction) `reading_multiple_choice_multi` and `reading_writing_fill_in_blanks`. Grammar bank
+content (`CefrGrammarProfileEntry`) is pulled in only opportunistically for
+`gap_fill_workplace_phrase` (its `Grammar` secondary skill), never as its own pattern gate, since
+Today has no dedicated grammar-focused pattern yet — the audit found no other current pattern
+lists `Grammar` as a secondary skill without also being a Writing/Speaking/Listening pattern
+(AiStructured/AiOpenEnded marking, explicitly out of scope for this bank-first slice).
+
+**Phase D2 selector improvements**: the selector now returns a **balanced bundle** for
+Vocabulary-primary patterns — up to 2 vocabulary entries, up to 1 opportunistic grammar entry,
+and up to 1 opportunistic short reading excerpt (useful anchor material even for a
+vocabulary-focused activity) — capped at 4 total resources; Reading-primary patterns still
+receive up to 2 reading references only. The selector queries the published Resource Bank
+(`IResourceBankQueryService`, Phase E5) at the exact routing-recommended CEFR level first;
+**only when the routing reason is Review/Scaffold/Remediation** (`AllowLowerLevelReview`) and the
+exact level has zero rows does it retry one CEFR level down (`CefrLevelConstants.All` ordering)
+— it never widens upward and never widens at all for ordinary generation. Each candidate is
+run through a synthetic-fingerprint novelty precheck (`"bank-vocab-precheck:{id}"` etc.,
+mirroring `PracticeGymGenerationJob`'s per-template precheck) **and** a cheap feedback-signal
+check: a student who previously marked an activity `NotUseful` or `DoNotShowSimilarSoon`
+(`ActivityFeedbackSignal`) will not have that same bank resource selected again — matched via
+`LearningActivity.BankResourceProvenanceJson` (a string-contains check), not
+`ActivityFeedbackSignal.SourceBankItemId` (see the provenance note below for why). "Skill/
+subskill preference" from the original D2 brief is satisfied structurally — the bank-type
+queried (vocabulary/grammar/reading) already *is* the skill match, since none of the three
+Cefr* bank entities carries its own skill/subskill column to filter further.
+
+**Structured bank context (Phase D2)**: instead of a single loose sentence, the selector now
+builds a clearly-bounded block — `Approved bank resources to use as anchors (do not invent
+unrelated vocabulary or content, keep the student's CEFR level at {level}, keep all content
+English-only, support-language behavior stays runtime-only): - [Vocabulary] "..." - [Grammar]
+"..." - [Reading] "...".` — still appended to the same free-text `TopicHint` field that
+`avoidRepeatingHint` already uses (`ActivityGenerationContext` has no dedicated "supporting
+material" field, so no AI prompt template changes were needed for either D1 or D2). All other
+patterns (Writing/Speaking/Listening/Reflection) are unaffected (`SkippedUnsupportedPattern`);
+when no bank rows exist at the applicable CEFR level(s), generation proceeds exactly as before
+(`NoSuitableResources`).
+
+**Provenance (Phase D2 — replaces D1's mechanism)**: D1 recorded a single "primary" resource id
+via `StudentActivityReadinessItem.SetBankItemProvenance(...)`. **This was discovered during D2 to
+be a latent bug**: `SourceBankItemId` on `StudentActivityReadinessItem`/`StudentActivityUsageLog`/
+`ActivityFeedbackSignal` is FK-constrained to `PlacementItemDefinition`, not to any Phase E
+Cefr* bank table — writing a `CefrVocabularyEntry`/`CefrGrammarProfileEntry`/
+`CefrReadingReference` id into that column would throw a foreign-key violation against a real
+(FK-enforcing) database the first time a readiness-pool item actually existed at materialization
+time; D1's own integration test happened not to exercise that exact path, so it went unnoticed
+until D2's audit. **Fixed** by adding a new column instead: `LearningActivity.
+BankResourceProvenanceJson` — a JSON array of every selected resource
+(`{type, id, sourceId, contentFingerprint, selectionReason}`), set at materialization time before
+the activity's first save (migration `Phase_D2_AddLearningActivityBankResourceProvenance`, a
+plain nullable `jsonb` column, no default value — deliberately avoiding the exact
+Bugfix-D1A default-value trap). The `StudentActivityReadinessItem.SetBankItemProvenance(...)`
+call from D1 was removed entirely rather than patched — it was never a safe mechanism for this
+data. See `docs/architecture/english-resource-bank-import-platform.md`'s "Relationship to Today
+lesson composer" section for the decision-checkpoint history, and `docs/backlog/product-backlog.md`
+for what remains explicitly deferred (Speaking/Listening/image/open-ended patterns, a dedicated
+grammar-focused Today pattern, semantic/embedding-based selection).
 
 **`GenerationStatus` default-value bugfix (Bugfix-D1A, 2026-07-08):** while building D1's
 regression tests, a pre-existing bug was found in `LearningSessionConfiguration`:

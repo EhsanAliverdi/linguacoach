@@ -199,9 +199,13 @@ public sealed class ActivityMaterializationJob : IJob
             ? baseTopicHint
             : $"{baseTopicHint} (Avoid repeating: {avoidRepeatingHint})";
 
-        // Phase D1 — bank-first Today slice: for vocabulary/reading patterns only, try to pull in
-        // a small set of published resource-bank entries as supporting prompt material. Never
-        // blocks or alters generation on failure — a selector error just means no bank supplement.
+        var isIntentionalReview = routing.RoutingReason is
+            RoutingReason.Review or RoutingReason.Scaffold or RoutingReason.Remediation;
+
+        // Phase D1/D2 — bank-first Today slice: for vocabulary/reading patterns only, try to
+        // pull in a small, balanced bundle of published resource-bank entries as supporting
+        // prompt material. Never blocks or alters generation on failure — a selector error just
+        // means no bank supplement.
         var bankSelection = TodayBankSelectionResult.NoResources;
         if (pattern is not null)
         {
@@ -213,7 +217,8 @@ public sealed class ActivityMaterializationJob : IJob
                         StudentProfileId: profile.Id,
                         CefrLevel: routing.TargetCefrLevel,
                         PatternPrimarySkill: pattern.PrimarySkill,
-                        PatternSecondarySkills: secondarySkills), ct);
+                        PatternSecondarySkills: secondarySkills,
+                        AllowLowerLevelReview: isIntentionalReview), ct);
             }
             catch (Exception ex)
             {
@@ -253,9 +258,6 @@ public sealed class ActivityMaterializationJob : IJob
             RoutingContext: routing.RoutingContextSummary,
             RoutingReason: routing.RoutingReason.ToString().ToLowerInvariant(),
             IsReviewOrScaffold: routing.IsLowerLevelContent);
-
-        var isIntentionalReview = routing.RoutingReason is
-            RoutingReason.Review or RoutingReason.Scaffold or RoutingReason.Remediation;
 
         string contentJson = "{}";
         for (var attempt = 1; attempt <= MaxGenerationAttempts; attempt++)
@@ -312,6 +314,26 @@ public sealed class ActivityMaterializationJob : IJob
             ExtractTitle(contentJson) ?? $"{activityType} activity",
             profile.CefrLevel ?? "B1", contentJson,
             session.LearningModuleId, exercisePatternKey: patternKey);
+
+        // Phase D2 — durable provenance for every bank resource offered to the AI prompt (not
+        // just one representative id). Set before the first save so it's part of the same insert.
+        // Deliberately NOT StudentActivityReadinessItem.SetBankItemProvenance — that column is
+        // FK-constrained to PlacementItemDefinition and cannot hold a Phase E Cefr* bank row id
+        // (attempting to would throw a foreign-key violation against a real database).
+        if (bankSelection.Resources.Count > 0)
+        {
+            try
+            {
+                activity.SetBankResourceProvenance(BuildBankResourceProvenanceJson(bankSelection.Resources));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex,
+                    "ActivityMaterializationJob: failed to build bank provenance JSON for exercise {ExerciseId} — continuing without it.",
+                    exercise.Id);
+            }
+        }
+
         _db.LearningActivities.Add(activity);
         await _db.SaveChangesAsync(ct);
 
@@ -332,25 +354,20 @@ public sealed class ActivityMaterializationJob : IJob
                 learningActivityId: activity.Id,
                 sessionExerciseId: exercise.Id,
                 ct);
-
-            // Phase D1 provenance — record only the single "primary" bank resource used (the
-            // full selected list lives only in the log line above); best-effort, never blocks.
-            if (bankSelection.Resources.Count > 0)
-            {
-                try
-                {
-                    poolItem.SetBankItemProvenance(bankSelection.Resources[0].Id);
-                    await _db.SaveChangesAsync(ct);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex,
-                        "ActivityMaterializationJob: failed to record bank provenance for exercise {ExerciseId} — continuing without it.",
-                        exercise.Id);
-                }
-            }
         }
     }
+
+    /// <summary>Serializes the selected bank resources into the JSON array shape documented on
+    /// LearningActivity.BankResourceProvenanceJson.</summary>
+    private static string BuildBankResourceProvenanceJson(IReadOnlyList<TodayBankSelectedResource> resources) =>
+        System.Text.Json.JsonSerializer.Serialize(resources.Select(r => new
+        {
+            type = r.ResourceType,
+            id = r.Id,
+            sourceId = r.SourceId,
+            contentFingerprint = r.ContentFingerprint,
+            selectionReason = r.SelectionReason
+        }));
 
     /// <summary>Parses ExercisePatternDefinition.SecondarySkillsJson (a JSON string array); returns
     /// an empty list on any malformed/missing input rather than throwing.</summary>

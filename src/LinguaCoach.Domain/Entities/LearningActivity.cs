@@ -52,6 +52,17 @@ public sealed class LearningActivity : BaseEntity
     /// key (same shape as PlacementItemDefinition.ScoringRulesJson). Never returned to students.</summary>
     public string? ScoringRulesJson { get; private set; }
 
+    /// <summary>Phase D2 — JSON array of published Resource Bank entries (CefrVocabularyEntry/
+    /// CefrGrammarProfileEntry/CefrReadingReference) offered to the AI prompt as supporting
+    /// material at materialization time: [{type, id, sourceId, contentFingerprint,
+    /// selectionReason}, ...]. Admin-only debugging/traceability — never shown to students, and
+    /// distinct from AiGeneratedContentJson (the actual student-facing content). Null when no
+    /// bank resources were used (legacy generation, or a pattern D1/D2 doesn't support).
+    /// Deliberately a separate field from StudentActivityReadinessItem/StudentActivityUsageLog/
+    /// ActivityFeedbackSignal's SourceBankItemId — that column is FK-constrained to
+    /// PlacementItemDefinition and cannot hold a Phase E Cefr* bank row id.</summary>
+    public string? BankResourceProvenanceJson { get; private set; }
+
     public bool IsActive { get; private set; }
 
     public IReadOnlyList<ActivityAttempt> Attempts => _attempts.AsReadOnly();
@@ -107,5 +118,14 @@ public sealed class LearningActivity : BaseEntity
 
         FormIoSchemaJson = formIoSchemaJson;
         ScoringRulesJson = scoringRulesJson;
+    }
+
+    /// <summary>Records which published Resource Bank entries (if any) were offered to the AI
+    /// prompt for this activity — see <see cref="BankResourceProvenanceJson"/>.</summary>
+    public void SetBankResourceProvenance(string bankResourceProvenanceJson)
+    {
+        if (string.IsNullOrWhiteSpace(bankResourceProvenanceJson))
+            throw new ArgumentException("BankResourceProvenanceJson is required.", nameof(bankResourceProvenanceJson));
+        BankResourceProvenanceJson = bankResourceProvenanceJson;
     }
 }
