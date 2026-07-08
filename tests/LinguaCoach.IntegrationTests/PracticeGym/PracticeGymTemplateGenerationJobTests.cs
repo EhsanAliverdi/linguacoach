@@ -27,9 +27,10 @@ using Quartz;
 namespace LinguaCoach.IntegrationTests.PracticeGym;
 
 /// <summary>
-/// Phase C1 (2026-07-08) — generalizes the Form.io Practice Gym pilot to a small first batch of
-/// patterns. Uses fake AI providers — no real API calls, per project convention. See
-/// docs/architecture/practice-gym.md.
+/// Phase C1 (2026-07-08) generalized the Form.io Practice Gym pilot to a small first batch of
+/// patterns; Phase C2 (2026-07-08) added a second small batch (reading_multiple_choice_multi,
+/// reading_fill_in_blanks, reading_writing_fill_in_blanks). Uses fake AI providers — no real API
+/// calls, per project convention. See docs/architecture/practice-gym.md.
 /// </summary>
 public sealed class PracticeGymTemplateGenerationJobTests : IClassFixture<PracticeGymTemplateTestFactory>
 {
@@ -51,6 +52,43 @@ public sealed class PracticeGymTemplateGenerationJobTests : IClassFixture<Practi
 
         var cache = new PracticeActivityCache(
             profileId, "reading_multiple_choice_single", "B1", "general_workplace",
+            contentFingerprint: Guid.NewGuid().ToString("N"));
+        db.PracticeActivityCache.Add(cache);
+        await db.SaveChangesAsync();
+
+        var job = BuildJob(scope);
+        var scheduler = await CreateInMemorySchedulerAsync();
+        await job.Execute(new FakeJobExecutionContext(scheduler));
+
+        var refreshedCache = await db.PracticeActivityCache.AsNoTracking().SingleAsync(c => c.Id == cache.Id);
+        Assert.Equal(PracticeCacheStatus.Ready, refreshedCache.Status);
+        Assert.NotNull(refreshedCache.LearningActivityId);
+
+        var activity = await db.LearningActivities.AsNoTracking().SingleAsync(a => a.Id == refreshedCache.LearningActivityId);
+        Assert.False(string.IsNullOrWhiteSpace(activity.FormIoSchemaJson));
+        Assert.False(string.IsNullOrWhiteSpace(activity.ScoringRulesJson));
+        Assert.DoesNotContain("correctAnswer", activity.FormIoSchemaJson, StringComparison.OrdinalIgnoreCase);
+        await scheduler.Shutdown();
+
+        var readinessItem = await db.StudentActivityReadinessItems.AsNoTracking()
+            .SingleAsync(i => i.LearningActivityId == activity.Id);
+        Assert.NotNull(readinessItem.SourceTemplateId);
+    }
+
+    [Fact]
+    public async Task MigratedPattern_C2_ReadingMultipleChoiceMulti_MaterializesViaTemplatePath()
+    {
+        _factory.UseReadingMultiProvider();
+        await _factory.EnsureCreatedAsync();
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+
+        await EnablePilotFlagAsync(db);
+        var profileId = await SeedStudentAsync(db);
+
+        var cache = new PracticeActivityCache(
+            profileId, "reading_multiple_choice_multi", "B1", "general_workplace",
             contentFingerprint: Guid.NewGuid().ToString("N"));
         db.PracticeActivityCache.Add(cache);
         await db.SaveChangesAsync();
@@ -200,6 +238,7 @@ public sealed class PracticeGymTemplateTestFactory : ApiTestFactory
     private readonly SwappableTemplateAiProvider _provider = new();
 
     public void UseReadingMcqProvider() => _provider.Inner = new ReadingMcqFakeAiProvider();
+    public void UseReadingMultiProvider() => _provider.Inner = new ReadingMultiFakeAiProvider();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -251,6 +290,68 @@ internal sealed class ReadingMcqFakeAiProvider : IAiProvider
             {"label":"The customer called twice","value":"A"},
             {"label":"The issue was clearly described with screenshots","value":"B"},
             {"label":"The team worked overtime","value":"C"}
+          ]}
+        ]}
+        """;
+
+    private const string ModuleStageSchemaJson = """
+        {
+          "schemaVersion": "module_stage_v1",
+          "primarySkill": "writing",
+          "learnContent": {
+            "teachingTitle": "Replying to a workplace email",
+            "explanation": "Use a polite, clear structure when replying to a colleague's email.",
+            "keyPoints": ["Acknowledge the request", "State your response clearly"],
+            "examples": [{ "phrase": "Thank you for reaching out", "meaning": "polite opener", "note": null }],
+            "strategy": null,
+            "commonMistakes": [],
+            "sourceLanguageSupport": null
+          },
+          "practiceContent": {
+            "instructions": "Reply to the email below.",
+            "scenario": "A colleague asks for a status update.",
+            "task": "Write a short, polite reply.",
+            "exerciseData": {
+              "prompt": "Reply to confirm the status update.",
+              "incomingMessage": "Hi, could you give me a quick status update on the project?"
+            }
+          },
+          "feedbackPlan": {
+            "evaluationCriteria": ["clarity", "politeness"],
+            "rubric": [],
+            "feedbackFocus": null,
+            "successCriteria": ["Clear reply"]
+          }
+        }
+        """;
+}
+
+/// <summary>
+/// Phase C2 — branches by prompt key like <see cref="ReadingMcqFakeAiProvider"/>, but returns a
+/// schema matching the seeded "reading_mcq_multi_workplace_seed_v1" template's component keys
+/// (reading_passage, answers — a "selectboxes" multi-select component) for the ActivityTemplate
+/// instance-generation prompt.
+/// </summary>
+internal sealed class ReadingMultiFakeAiProvider : IAiProvider
+{
+    public string ProviderName => "fake-provider";
+
+    public Task<AiResponse> CompleteAsync(AiRequest request, CancellationToken ct = default)
+    {
+        var json = request.PromptKey == "activity_template_generate_instance"
+            ? FormIoSchemaJson
+            : ModuleStageSchemaJson;
+        return Task.FromResult(new AiResponse(json, InputTokens: 250, OutputTokens: 120, CostUsd: 0.001m, "fake-model", ProviderName));
+    }
+
+    private const string FormIoSchemaJson = """
+        {"display":"form","components":[
+          {"type":"content","key":"reading_passage","input":false,"html":"<p>The billing team closed thirty invoices this week. Twenty-two were paid on time, six were disputed, and two are still pending manager approval.</p>"},
+          {"type":"selectboxes","key":"answers","label":"Select all statements supported by the passage","values":[
+            {"label":"Most invoices were paid on time","value":"A"},
+            {"label":"No invoices were disputed","value":"B"},
+            {"label":"A few invoices need manager approval","value":"C"},
+            {"label":"All invoices were closed this week","value":"D"}
           ]}
         ]}
         """;

@@ -81,6 +81,35 @@ public sealed class FormIoPatternEvaluatorTests
     }
 
     [Fact]
+    public async Task EvaluateAsync_CorrectMultipleChoiceSelectboxesAnswer_PassesWithFullScore()
+    {
+        // Phase C2 — representative of reading_multiple_choice_multi's "selectboxes" component.
+        var evaluator = new FormIoPatternEvaluator(new LinguaCoach.Infrastructure.Placement.PlacementScoringService());
+        var scoringRules = """{"components":{"answers":{"kind":"multiple_choice","correctAnswers":["A","C"],"points":1.0}}}""";
+        var submitted = """{"answers":{"A":true,"B":false,"C":true,"D":false}}""";
+
+        var result = await evaluator.EvaluateAsync(MakeRequest(submitted, scoringRules), CancellationToken.None);
+
+        Assert.True(result.Passed);
+        Assert.Equal(1.0, result.Score);
+        Assert.True(result.ItemResults[0].IsCorrect);
+    }
+
+    [Fact]
+    public async Task EvaluateAsync_PartialMultipleChoiceSelectboxesAnswer_FailsWithZeroScore()
+    {
+        var evaluator = new FormIoPatternEvaluator(new LinguaCoach.Infrastructure.Placement.PlacementScoringService());
+        var scoringRules = """{"components":{"answers":{"kind":"multiple_choice","correctAnswers":["A","C"],"points":1.0}}}""";
+        var submitted = """{"answers":{"A":true,"B":false,"C":false,"D":false}}""";
+
+        var result = await evaluator.EvaluateAsync(MakeRequest(submitted, scoringRules), CancellationToken.None);
+
+        Assert.False(result.Passed);
+        Assert.Equal(0.0, result.Score);
+        Assert.False(result.ItemResults[0].IsCorrect);
+    }
+
+    [Fact]
     public async Task EvaluateAsync_NullScoringRules_ReturnsIncompleteZeroScore()
     {
         var evaluator = new FormIoPatternEvaluator(new LinguaCoach.Infrastructure.Placement.PlacementScoringService());

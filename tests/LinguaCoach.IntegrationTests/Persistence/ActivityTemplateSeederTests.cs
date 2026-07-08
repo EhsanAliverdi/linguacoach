@@ -8,8 +8,9 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace LinguaCoach.IntegrationTests.Persistence;
 
 /// <summary>
-/// Phase C1 (2026-07-08) — seeds a small first batch of approved/published ActivityTemplates
-/// for the migrated patterns (PhraseMatch, GapFillWorkplacePhrase, ReadingMultipleChoiceSingle).
+/// Phase C1 (2026-07-08) seeded a first batch of approved/published ActivityTemplates
+/// (PhraseMatch, GapFillWorkplacePhrase, ReadingMultipleChoiceSingle). Phase C2 (2026-07-08) added
+/// a second batch (ReadingMultipleChoiceMulti, ReadingFillInBlanks, ReadingWritingFillInBlanks).
 /// </summary>
 public sealed class ActivityTemplateSeederTests : IDisposable
 {
@@ -33,12 +34,12 @@ public sealed class ActivityTemplateSeederTests : IDisposable
     }
 
     [Fact]
-    public async Task SeedAsync_WhenEmpty_Seeds3ApprovedPublishedTemplates()
+    public async Task SeedAsync_WhenEmpty_Seeds6ApprovedPublishedTemplates()
     {
         await ActivityTemplateSeeder.SeedAsync(_db, NullLogger.Instance);
 
         var templates = await _db.ActivityTemplates.ToListAsync();
-        Assert.Equal(3, templates.Count);
+        Assert.Equal(6, templates.Count);
         Assert.All(templates, t => Assert.Equal(AdminReviewStatus.Approved, t.ReviewStatus));
         Assert.All(templates, t => Assert.True(t.IsPublished));
     }
@@ -50,13 +51,16 @@ public sealed class ActivityTemplateSeederTests : IDisposable
         await ActivityTemplateSeeder.SeedAsync(_db, NullLogger.Instance);
 
         var count = await _db.ActivityTemplates.CountAsync();
-        Assert.Equal(3, count);
+        Assert.Equal(6, count);
     }
 
     [Theory]
     [InlineData("phrase_match")]
     [InlineData("gap_fill_workplace_phrase")]
     [InlineData("reading_multiple_choice_single")]
+    [InlineData("reading_multiple_choice_multi")]
+    [InlineData("reading_fill_in_blanks")]
+    [InlineData("reading_writing_fill_in_blanks")]
     public async Task SeedAsync_EachMigratedPattern_HasApprovedPublishedTemplate(string patternKey)
     {
         await ActivityTemplateSeeder.SeedAsync(_db, NullLogger.Instance);

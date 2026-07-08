@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Plan-Sync-After-C1)
+lastUpdated: 2026-07-08 (Phase C2)
 owner: architecture
 supersedes:
 supersededBy:
@@ -91,11 +91,12 @@ Key facts about where this stands today (2026-07-08):
   deterministic/exact-match only (no embeddings/semantic near-duplicate detection). See
   docs/architecture/repetition-and-novelty.md. `PracticeActivityCache.ContentFingerprint`
   (fixed in Clean-A) remains a separate queue-slot uniqueness key, not this content-dedup signal.
-- **Practice Gym now has 4 bank-first/template-enabled pattern keys** (as of Phase C1,
-  2026-07-08): `formio_practice_gym_pilot` (original pilot), `phrase_match`,
-  `gap_fill_workplace_phrase`, `reading_multiple_choice_single`. **~24 of ~28 Practice Gym
-  patterns remain on the legacy path with a full, unmodified fallback** — this is intentional,
-  not a gap; see docs/architecture/practice-gym.md.
+- **Practice Gym now has 7 bank-first/template-enabled pattern keys** (as of Phase C2,
+  2026-07-08): `formio_practice_gym_pilot` (original pilot), C1's `phrase_match`,
+  `gap_fill_workplace_phrase`, `reading_multiple_choice_single`, and C2's
+  `reading_multiple_choice_multi`, `reading_fill_in_blanks`, `reading_writing_fill_in_blanks`.
+  **~21 of ~28 Practice Gym patterns remain on the legacy path with a full, unmodified
+  fallback** — this is intentional, not a gap; see docs/architecture/practice-gym.md.
 - **Phase E is planned (not started) as the English Resource Bank Import, Review, Preview, and
   Publishing Platform** — a multi-step pipeline (source registry → import → candidate analysis
   → validation → admin preview → review → publish), not a one-shot data seed. See
@@ -106,13 +107,14 @@ Key facts about where this stands today (2026-07-08):
   support — UI chrome, onboarding language-pair selection, support-language hints/translation
   help — never seeded as learning content.
 
-Current state (as of 2026-07-08, Plan-Sync-After-C1): **Phase C1 done** — generalized the
-Form.io template path from 1 pilot pattern to a small first batch of 3
-(`phrase_match`, `gap_fill_workplace_phrase`, `reading_multiple_choice_single`); see
-docs/architecture/practice-gym.md. Phase C continues as a **sequence** — C2 → C3 → C4 →
-C-Final — rather than one large migration phase. Phase E is planned as the resource-import
-platform above (E0-E8). Phase D (bank-first Today lesson composer) is sequenced to start only
-after Phase C reaches C-Final and Phase E reaches at least E4 (first published banks) — see
+Current state (as of 2026-07-08, Phase C2): **Phase C1 and Phase C2 both done** — generalized
+the Form.io template path from 1 pilot pattern to 7 total (C1's `phrase_match`,
+`gap_fill_workplace_phrase`, `reading_multiple_choice_single`; C2's
+`reading_multiple_choice_multi`, `reading_fill_in_blanks`, `reading_writing_fill_in_blanks`); see
+docs/architecture/practice-gym.md. Phase C continues as a **sequence** — C3 → C4 → C-Final —
+rather than one large migration phase. Phase E is planned as the resource-import platform above
+(E0-E8). Phase D (bank-first Today lesson composer) is sequenced to start only after Phase C
+reaches C-Final and Phase E reaches at least E4 (first published banks) — see
 `docs/roadmap/road-map.md` §19a for the full phase order. Neither Phase D nor Phase E
 implementation has started.
 
@@ -227,7 +229,7 @@ Archived
 | Clean-A / Clean-A2 dead-code cleanup | ✅ Done (2026-07-08) — removed dead onboarding enums, an orphaned onboarding component, dead route aliases, and a fully-orphaned admin career/word authoring API/UI chain; see `docs/reviews/2026-07-08-bank-first-ai-teaching-clean-architecture-plan.md` |
 | Session reflection | ⬜ Deferred — needs AI prompt `session_reflection` and stable session completion signal |
 | Bank-first Today lesson composer | ⬜ Deferred — planned Phase D1, sequenced after Phase C-Final and Phase E4; not started |
-| Generalize Form.io template path across the rest of Practice Gym | ⬜ Deferred — Phase C1 (first batch of 3) done 2026-07-08; Phase C2/C3/C4/C-Final (small batches, complex speaking/listening/writing patterns deferred until renderer/evaluator support is ready) not started |
+| Generalize Form.io template path across the rest of Practice Gym | 🟡 In progress — Phase C1 (batch of 3) and Phase C2 (batch of 3 more) done 2026-07-08, 7 of ~28 keys template-enabled; Phase C3/C4/C-Final (small batches, complex speaking/listening/writing patterns deferred until renderer/evaluator support is ready) not started |
 | English Resource Bank Import/Review/Preview/Publishing Platform (Phase E0-E8) | ⬜ Planned only (2026-07-08, Plan-Sync-After-C1) — see docs/architecture/english-resource-bank-import-platform.md. English-only; no Persian/bilingual seed data at any phase. Not started |
 | IFileStorageService / MinIO | ✅ Done — audio (TTS + speaking uploads) fully on object storage; not blocking deployment at current scale |
 | Admin lifecycle reset tools | ✅ Done |

@@ -6,10 +6,11 @@ using Microsoft.Extensions.Logging;
 namespace LinguaCoach.Persistence.Seed;
 
 /// <summary>
-/// Seeds a small, original, English-only first batch of approved/published ActivityTemplates
-/// for Phase C1 — generalizing the Form.io Practice Gym pilot from one pattern to three
-/// low-risk, deterministic patterns (PhraseMatch, GapFillWorkplacePhrase,
-/// ReadingMultipleChoiceSingle). See docs/architecture/practice-gym.md.
+/// Seeds a small, original, English-only batch of approved/published ActivityTemplates.
+/// Phase C1 seeded the first three (PhraseMatch, GapFillWorkplacePhrase,
+/// ReadingMultipleChoiceSingle). Phase C2 (2026-07-08) adds three more reading-family patterns
+/// (ReadingMultipleChoiceMulti, ReadingFillInBlanks, ReadingWritingFillInBlanks). See
+/// docs/architecture/practice-gym.md.
 ///
 /// Idempotent per template Key — safe to run on every startup.
 ///
@@ -206,5 +207,127 @@ public static class ActivityTemplateSeeder
             }),
             ValidationRulesJson: ValidationRules(["reading_passage", "answer"]),
             EstimatedDurationSeconds: 240),
+
+        // ── 4. ReadingMultipleChoiceMulti — reading, B1 (Phase C2) ──────────────────────
+        new TemplateSeed(
+            Key: "reading_mcq_multi_workplace_seed_v1",
+            Skill: "reading",
+            Subskill: "reading.detail",
+            CefrLevel: "B1",
+            ActivityType: "ReadingTask",
+            PatternKey: "reading_multiple_choice_multi",
+            ContextTagsJson: """["workplace"]""",
+            FocusTagsJson: """["reading_comprehension"]""",
+            CurriculumObjectiveKey: "b1.reading.understanding_texts",
+            FormIoBaseSchemaJson: Schema(new object[]
+            {
+                new { type = "content", key = "reading_passage", input = false,
+                      html = "<p>The IT helpdesk received forty tickets on Monday. Twenty-five were resolved " +
+                             "the same day, ten were escalated to a specialist team, and five were closed as " +
+                             "duplicates. The helpdesk manager praised the team for the fast same-day rate but " +
+                             "asked staff to check for duplicate tickets earlier next time.</p>" },
+                new { type = "selectboxes", key = "answers",
+                      label = "Select all statements supported by the passage",
+                      values = new[] {
+                          new { label = "Most tickets were resolved the same day", value = "A" },
+                          new { label = "No tickets were escalated", value = "B" },
+                          new { label = "Some tickets were duplicates", value = "C" },
+                          new { label = "The manager was unhappy with the team's speed", value = "D" } } },
+            }),
+            GenerationInstructions:
+                "Personalize only the surface wording: you may write a different short workplace passage " +
+                "(3-5 sentences) and different answer-option wording, as long as the passage clearly and " +
+                "unambiguously supports exactly two of the four statements as true and the other two as false " +
+                "or unsupported. Do NOT change the component 'key' values (reading_passage, answers) or the " +
+                "number of components or options. The options with value 'A' and 'C' MUST remain the two " +
+                "statements supported by the passage; 'B' and 'D' must remain unsupported or contradicted by " +
+                "the passage. Keep all content in English only. Keep a professional, workplace-appropriate tone " +
+                "suitable for CEFR B1 learners.",
+            ScoringModelJson: ScoringRules(new Dictionary<string, object>
+            {
+                ["answers"] = new { kind = "multiple_choice", correctAnswers = new[] { "A", "C" }, points = 1.0 },
+            }),
+            ValidationRulesJson: ValidationRules(["reading_passage", "answers"]),
+            EstimatedDurationSeconds: 240),
+
+        // ── 5. ReadingFillInBlanks — reading, B1 (Phase C2) ─────────────────────────────
+        new TemplateSeed(
+            Key: "reading_fill_in_blanks_workplace_seed_v1",
+            Skill: "reading",
+            Subskill: "reading.vocabulary_in_context",
+            CefrLevel: "B1",
+            ActivityType: "ReadingTask",
+            PatternKey: "reading_fill_in_blanks",
+            ContextTagsJson: """["workplace"]""",
+            FocusTagsJson: """["vocabulary_in_context"]""",
+            CurriculumObjectiveKey: "b1.reading.vocabulary_in_context",
+            FormIoBaseSchemaJson: Schema(new object[]
+            {
+                new { type = "content", key = "reading_passage", input = false,
+                      html = "<p>Before the client visit, please make sure the meeting room is tidy and the " +
+                             "projector is [blank_1]. If anything is missing, [blank_2] the facilities team " +
+                             "right away.</p>" },
+                new { type = "radio", key = "blank_1", label = "Choose the best word for blank 1",
+                      values = new[] {
+                          new { label = "working", value = "A" },
+                          new { label = "loud", value = "B" },
+                          new { label = "expensive", value = "C" } } },
+                new { type = "radio", key = "blank_2", label = "Choose the best word for blank 2",
+                      values = new[] {
+                          new { label = "ignore", value = "A" },
+                          new { label = "contact", value = "B" },
+                          new { label = "replace", value = "C" } } },
+            }),
+            GenerationInstructions:
+                "Personalize only the surface wording: you may write a different short workplace passage with " +
+                "two blanks (marked as [blank_1] and [blank_2] inside the 'reading_passage' html) and different " +
+                "answer-option wording for each blank, as long as exactly one option per blank is clearly correct " +
+                "given the passage context. Do NOT change the component 'key' values (reading_passage, blank_1, " +
+                "blank_2) or the number of components. The option with value 'A' MUST remain the correct answer " +
+                "for blank_1, and the option with value 'B' MUST remain the correct answer for blank_2; the other " +
+                "options at each blank must remain plausible-but-incorrect distractors. Keep all content in " +
+                "English only. Keep a professional, workplace-appropriate tone suitable for CEFR B1 learners.",
+            ScoringModelJson: ScoringRules(new Dictionary<string, object>
+            {
+                ["blank_1"] = new { kind = "single_choice", correctAnswer = "A", points = 1.0 },
+                ["blank_2"] = new { kind = "single_choice", correctAnswer = "B", points = 1.0 },
+            }),
+            ValidationRulesJson: ValidationRules(["reading_passage", "blank_1", "blank_2"]),
+            EstimatedDurationSeconds: 200),
+
+        // ── 6. ReadingWritingFillInBlanks — reading/writing, B2 (Phase C2) ──────────────
+        new TemplateSeed(
+            Key: "reading_writing_fill_in_blanks_workplace_seed_v1",
+            Skill: "reading",
+            Subskill: "reading.vocabulary_in_context",
+            CefrLevel: "B2",
+            ActivityType: "ReadingTask",
+            PatternKey: "reading_writing_fill_in_blanks",
+            ContextTagsJson: """["workplace"]""",
+            FocusTagsJson: """["word_form"]""",
+            CurriculumObjectiveKey: "b2.reading.word_form",
+            FormIoBaseSchemaJson: Schema(new object[]
+            {
+                new { type = "content", key = "reading_passage", input = false,
+                      html = "<p>The team's ______ (blank_1) on the new process was overwhelmingly positive, " +
+                             "so management decided to ______ (blank_2) it across every department.</p>" },
+                new { type = "textfield", key = "blank_1", label = "Type the correct word form for blank 1" },
+                new { type = "textfield", key = "blank_2", label = "Type the correct word form for blank 2" },
+            }),
+            GenerationInstructions:
+                "Personalize only the surface wording: you may write a different short workplace passage with " +
+                "two word-form blanks (marked as ______ (blank_1) and ______ (blank_2) inside the " +
+                "'reading_passage' html) and a different pair of target words, as long as each blank has exactly " +
+                "one unambiguous correct word form given the sentence's grammar. Do NOT change the component " +
+                "'key' values (reading_passage, blank_1, blank_2) or the number of components. Keep the expected " +
+                "answer for each blank a single English word only (no punctuation). Keep all content in English " +
+                "only. Keep a professional, workplace-appropriate tone suitable for CEFR B2 learners.",
+            ScoringModelJson: ScoringRules(new Dictionary<string, object>
+            {
+                ["blank_1"] = new { kind = "text_normalized", correctAnswer = "feedback", points = 1.0 },
+                ["blank_2"] = new { kind = "text_normalized", correctAnswer = "roll out", points = 1.0 },
+            }),
+            ValidationRulesJson: ValidationRules(["reading_passage", "blank_1", "blank_2"]),
+            EstimatedDurationSeconds: 220),
     ];
 }

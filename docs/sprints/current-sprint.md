@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Plan-Sync-After-C1)
+lastUpdated: 2026-07-08 (Phase C2)
 owner: engineering
 supersedes:
 supersededBy:
@@ -14,34 +14,37 @@ Last updated: 2026-07-08
 
 ## Active sprint
 
-**Plan-Sync-After-C1 — Roadmap and Phase E plan alignment (2026-07-08)** — docs-only, in progress
+**Phase C2 — Expand Practice Gym bank-first template coverage to the next safe batch (2026-07-08)** — complete
 
-Last completed implementation: **Phase C1** — Generalize the Form.io Practice Gym pilot to a
-small first batch of 3 patterns (see "Previous sprint" below).
+Extended the bank-first Form.io template path from 4 to 7 total pattern keys, adding
+`reading_multiple_choice_multi`, `reading_fill_in_blanks`, `reading_writing_fill_in_blanks`
+(reading-family, deterministic KeyedSelection/ExactMatch marking, audio-free, image-free).
+Seeded 3 more approved/published `ActivityTemplate` rows (`reading_mcq_multi_workplace_seed_v1`,
+`reading_fill_in_blanks_workplace_seed_v1`, `reading_writing_fill_in_blanks_workplace_seed_v1`),
+reusing existing `ComponentAnswerScorer` kinds (`single_choice`, `multiple_choice` via a Form.io
+`selectboxes` component, `text_normalized`) — no new scorer or frontend component needed.
+Listening patterns and `ReorderParagraphs` were evaluated and deliberately excluded (see
+`docs/architecture/practice-gym.md`). ~21 of ~28 Practice Gym patterns and all Today lessons
+remain untouched legacy generation. Full design: `docs/architecture/practice-gym.md`
+("Bank-first pattern coverage" section).
 
-**Current immediate task:** bring the roadmap, current-sprint, and architecture docs in line
-with two plan corrections made after Phase C1 landed:
-1. Phase C continues as a **sequence** (C2 → C3 → C4 → C-Final), not one large "migrate the
-   rest of Practice Gym" phase.
-2. Phase E is re-planned from an informal "seed CEFR-J/UniversalCEFR data" task into a full
-   **English-only resource import/review/preview/publishing platform** (E0-E8) — see the new
-   `docs/architecture/english-resource-bank-import-platform.md`.
+**Phase D and Phase E implementation remain not started.** Today lesson generation remains 100%
+legacy `IAiActivityGenerator` freeform generation. See `docs/roadmap/road-map.md` §19a for the
+full phase order — Phase C3 (a third small batch) is the recommended next Practice Gym increment.
 
-No app code, migrations, or config changed in this sprint — docs only.
+---
 
-**Preferred phase order** (see `docs/roadmap/road-map.md` §19a for full detail):
-1. **Phase C2** — migrate a second small batch of Practice Gym patterns.
-2. **Phase C3** — migrate a third small batch.
-3. **Phase C-Final** — close out remaining safe-to-migrate patterns.
-4. **Phase E0/E1/E2/E3/E4** — resource-import platform: plan → source registry + staging
-   (E1, first implementation slice) → AI analysis/validation (E2) → admin preview (E3) →
-   publish to first banks (E4).
-5. **Phase D1** — bank-first Today lesson composer, first slice — only after C reaches
-   C-Final (or a deliberate stopping point) and E reaches at least E4.
+## Previous sprint
 
-**Phase D and Phase E implementation are both explicitly not started.** Today lesson generation
-remains 100% legacy `IAiActivityGenerator` freeform generation throughout this entire sprint and
-the next several planned phases.
+**Plan-Sync-After-C1 — Roadmap and Phase E plan alignment (2026-07-08)** — complete (docs-only)
+
+Brought the roadmap, current-sprint, and architecture docs in line with two plan corrections
+made after Phase C1 landed: (1) Phase C continues as a sequence (C2 → C3 → C4 → C-Final), not
+one large "migrate the rest of Practice Gym" phase; (2) Phase E was re-planned from an informal
+"seed CEFR-J/UniversalCEFR data" task into a full English-only resource
+import/review/preview/publishing platform (E0-E8) — see
+`docs/architecture/english-resource-bank-import-platform.md`. No app code, migrations, or
+config changed — docs only. Committed as `2b099e5b`.
 
 ---
 

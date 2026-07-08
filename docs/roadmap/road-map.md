@@ -1,16 +1,16 @@
 ---
 status: current
-lastUpdated: 2026-07-08 (Plan-Sync-After-C1)
+lastUpdated: 2026-07-08 (Phase C2)
 owner: product / engineering
 ---
 
 # SpeakPath / LinguaCoach Roadmap
 
-**Accurate as of: 2026-07-08 (Plan-Sync-After-C1 — see §19a for the current phase sequence).
+**Accurate as of: 2026-07-08 (Phase C2 — see §19a for the current phase sequence).
 The 2026-07-03 "Phase 20H" line below is the last entry confirmed live against speakpath.app;
-everything since then (Clean-A/A2, Phase B, Phase C1, this plan-sync) has been developed and
-tested locally but not yet deployed — see the "Current Project Status" and Decision Log
-sections below for what's actually landed.**
+everything since then (Clean-A/A2, Phase B, Phase C1, Plan-Sync-After-C1, Phase C2) has been
+developed and tested locally but not yet deployed — see the "Current Project Status" and
+Decision Log sections below for what's actually landed.**
 
 This is the canonical project memory document. It captures completed work, current state, known gaps, deferred items, and the recommended order of future phases.
 
@@ -22,23 +22,26 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest phase completed (local, not yet deployed):** Phase C1 — Generalize the Form.io Practice
-Gym pilot to a small first batch of patterns (2026-07-08, commit `fd996acc`) — extended the
-bank-first Form.io template path from 1 pilot pattern to 4 total (`formio_practice_gym_pilot`,
-`phrase_match`, `gap_fill_workplace_phrase`, `reading_multiple_choice_single`). Preceded by
-Phase B — Repetition/Novelty Foundation (`7b425f02`), Clean-A/Clean-A2 cleanup (`1bada3c1`), and
-the 2026-07-07 bank-first architecture (Phases 1-10, `ac68677d`). See §19/§19a for the full
-decision log and current phase sequence. Today lesson generation is unmodified throughout.
+**Latest phase completed (local, not yet deployed):** Phase C2 — Expand Practice Gym bank-first
+template coverage to the next safe batch (2026-07-08, this commit) — extended the bank-first
+Form.io template path from 4 to 7 total pattern keys, adding `reading_multiple_choice_multi`,
+`reading_fill_in_blanks`, `reading_writing_fill_in_blanks`. Preceded by Plan-Sync-After-C1
+(`2b099e5b`), Phase C1 — Generalize the Form.io Practice Gym pilot to a small first batch of
+patterns (`fd996acc`), Phase B — Repetition/Novelty Foundation (`7b425f02`), Clean-A/Clean-A2
+cleanup (`1bada3c1`), and the 2026-07-07 bank-first architecture (Phases 1-10, `ac68677d`). See
+§19/§19a for the full decision log and current phase sequence. Today lesson generation is
+unmodified throughout.
 
 **Latest phase confirmed live against `speakpath.app`:** Phase 20H — Live Pilot Stabilization
 (2026-07-03) — see the entry below; everything after this line is developed/tested locally only.
 
 **Branch:** main
 
-**Test totals (as of Phase C1, 2026-07-08, local only):**
-- Backend: 3,351 passed (5 architecture + 1,933 unit + 1,413 integration), 0 failed.
-- Angular unit (Karma): baseline unchanged at 120 pre-existing failures (`AdminStudentDetailComponent`/`AdminAiConfigComponent`/`VoiceRecorderComponent`) — no frontend files touched since Clean-A2.
-- Playwright E2E: `e2e/core-flow-smoke.spec.ts` remains `test.skip`'d (see Clean-A2 decision log entry); no other change.
+**Test totals (as of Phase C2, 2026-07-08, local only):**
+- Backend: 3,357 passed (5 architecture + 1,935 unit + 1,417 integration), 0 failed.
+- Angular unit (Karma): not run this phase — no frontend files touched; baseline unchanged at 120 pre-existing failures (`AdminStudentDetailComponent`/`AdminAiConfigComponent`/`VoiceRecorderComponent`).
+- Angular production build (`ng build --configuration production`): fails on the pre-existing `initial` bundle-size budget (2.55MB vs 1MB error threshold in `angular.json`, predating this phase at commit `246daead`) — not a regression, no frontend files were touched in Phase C1, Plan-Sync-After-C1, or Phase C2.
+- Playwright E2E: `e2e/core-flow-smoke.spec.ts` remains `test.skip`'d (see Clean-A2 decision log entry); not run this phase (no routed UI behavior changed).
 
 **Test totals (as of 20D, last live-confirmed baseline):**
 - Backend unit: 1,750 (+20 from Phase 20D: `StudentReadinessAuditServiceTests`, `StudentPilotReadinessRepairServiceTests`)
@@ -815,15 +818,17 @@ These are planning estimates, not exact metrics. Provided to guide sequencing de
 | 2026-07-08 | **Plan-Sync-After-C1**: Phase C re-planned as a sequence (C2/C3/C4/C-Final) rather than one large "generalize the rest of Practice Gym" phase; Phase E re-planned from an informal "seed CEFR-J/UniversalCEFR data" task into a full multi-step English-only resource **import/review/preview/publishing platform** (E0-E8), documented in new `docs/architecture/english-resource-bank-import-platform.md` | Phase C1 proved the migration pattern works but only touched 3 patterns out of ~28 — doing "the rest" as one phase would repeat the same undersized-scope mistake the original Phase E framing made. Splitting both into small, provable increments matches the project's established phase discipline (Clean-A/A2, Phase B, Phase C1 were all deliberately small) |
 | 2026-07-08 | Phase E is explicitly **English-only** — supported languages (Persian, etc.) are runtime-only support (onboarding language-pair selection, support-language hints/translation help), never seeded learning content. No Persian seed corpus, no bilingual phrase bank, no English–Persian (or English–any-language) parallel import, at any phase | SpeakPath teaches English with English; a bilingual seed corpus would contradict the product's own teaching model and the existing `CefrResourceSource`/`CefrVocabularyEntry` schema design (English-only fields, no target-language-pair column) |
 | 2026-07-08 | Phase D (bank-first Today lesson composer) sequenced to start only after Phase C (Practice Gym migration) reaches a mature state AND enough of Phase E's resource-bank platform exists to give Phase D real bank content to compose from | Today lessons are the primary, highest-blast-radius student-facing surface (per the 2026-07-08 clean-architecture plan's own risk assessment) — starting Phase D before the bank/template pattern is proven across more of Practice Gym, or before there's real resource-bank content to draw from, would repeat the exact "per-student throwaway generation" problem this whole initiative exists to fix |
+| 2026-07-08 | Phase C2 — migrated a second small batch of 3 reading-family patterns (`reading_multiple_choice_multi`, `reading_fill_in_blanks`, `reading_writing_fill_in_blanks`) to the Form.io template path, bringing the total to 7 of ~28 pattern keys. Seeded 3 more approved/published `ActivityTemplate` rows (`reading_mcq_multi_workplace_seed_v1`, `reading_fill_in_blanks_workplace_seed_v1`, `reading_writing_fill_in_blanks_workplace_seed_v1`) | Continues C1's small-batch discipline; all 3 reuse existing `ComponentAnswerScorer` kinds (`single_choice`, `multiple_choice` via a Form.io `selectboxes` component, `text_normalized`) with no new scorer or frontend component needed |
+| 2026-07-08 | Phase C2 deliberately excluded all "listening" patterns despite their catalog `RequiresAudio=false` flag, and excluded `ReorderParagraphs` | The listening patterns' content DTOs/generation flow are still built around an audio script/URL (e.g. `ListeningFillInBlanksContent.AudioUrl`), so the `RequiresAudio` flag alone isn't "strong evidence" of audio-free compatibility per the migration rule; `ReorderParagraphs` needs a new sequencing/reorder scorer kind that doesn't exist yet. Both are flagged as candidates for a future phase after a dedicated review/scorer addition, not silently dropped |
 
 ---
 
-## 19a. Phase Sequence (as of 2026-07-08, Plan-Sync-After-C1)
+## 19a. Phase Sequence (as of 2026-07-08, Phase C2)
 
 Preferred order, each phase gated on the previous one's completion review:
 
-1. **Phase C2** — migrate a second small batch of Practice Gym patterns (same proven approach as C1: deterministic, audio-free, already-`ready` patterns first).
-2. **Phase C3** — migrate a third small batch; by this point, revisit whether patterns needing light AI evaluation (not full open-ended) can safely join.
+1. ~~**Phase C2**~~ — done (2026-07-08): migrated a second small batch of 3 reading-family Practice Gym patterns (`reading_multiple_choice_multi`, `reading_fill_in_blanks`, `reading_writing_fill_in_blanks`), bringing the total to 7 of ~28 pattern keys template-enabled.
+2. **Phase C3** — migrate a third small batch; `ReorderParagraphs` is the next deterministic candidate but needs a new sequencing/reorder `ComponentAnswerScorer` kind first. By this point, also revisit whether patterns needing light AI evaluation (not full open-ended) can safely join.
 3. **Phase C4** — continue in small batches; complex speaking/listening/open-writing patterns are explicitly deferred until renderer/evaluator support for those interaction types is proven safe (see `docs/architecture/practice-gym.md`).
 4. **Phase C-Final** — close out remaining safe-to-migrate Practice Gym patterns; document which ones are permanently excluded (if any) and why.
 5. **Phase E0** — finalize the resource-import-platform model/plan (planning only).

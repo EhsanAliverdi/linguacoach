@@ -32,11 +32,12 @@ public sealed class PracticeGymGenerationJob : IJob
     private const int MaxItemsPerRun = 20;
 
     /// <summary>
-    /// Pattern keys allowed to attempt the bank-first Form.io template path (Phase C1, 2026-07-08
-    /// — generalizes the original single-pattern pilot to a small first batch). Any pattern NOT
-    /// in this set always uses the legacy freeform <see cref="IAiActivityGenerator"/> path,
-    /// unchanged. Adding/removing a key here is the safe, code-level way to expand or roll back
-    /// which patterns attempt the template path — no admin UI, per Phase C1 scope. The master
+    /// Pattern keys allowed to attempt the bank-first Form.io template path. Phase C1 (2026-07-08)
+    /// generalized the original single-pattern pilot to a small first batch; Phase C2 (2026-07-08)
+    /// added a second small batch of reading-family patterns. Any pattern NOT in this set always
+    /// uses the legacy freeform <see cref="IAiActivityGenerator"/> path, unchanged. Adding/removing
+    /// a key here is the safe, code-level way to expand or roll back which patterns attempt the
+    /// template path — no admin UI, per Phase C scope. The master
     /// <see cref="IPracticeGymFormIoTemplatePilotSettingsProvider"/> toggle remains the single
     /// admin-editable kill switch covering every key in this set.
     /// See docs/architecture/practice-gym.md.
@@ -47,6 +48,10 @@ public sealed class PracticeGymGenerationJob : IJob
         ExercisePatternKey.PhraseMatch,
         ExercisePatternKey.GapFillWorkplacePhrase,
         ExercisePatternKey.ReadingMultipleChoiceSingle,
+        // Phase C2 additions:
+        ExercisePatternKey.ReadingMultipleChoiceMulti,
+        ExercisePatternKey.ReadingFillInBlanks,
+        ExercisePatternKey.ReadingWritingFillInBlanks,
     };
 
     private readonly LinguaCoachDbContext _db;
