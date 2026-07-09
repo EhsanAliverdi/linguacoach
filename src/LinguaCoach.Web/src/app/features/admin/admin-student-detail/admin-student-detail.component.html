@@ -309,6 +309,30 @@
         }
       </sp-admin-card>
 
+      <!-- Practice Gym module selection diagnostic — Phase H7 -->
+      <sp-admin-card title="Practice Gym module selection" data-testid="practice-gym-module-preview-card">
+        @if (practiceGymModulePreviewLoading()) {
+          <sp-admin-loading-state message="Loading Practice Gym module preview" />
+        } @else if (practiceGymModulePreviewError()) {
+          <sp-admin-error-state title="Practice Gym module preview unavailable" [message]="practiceGymModulePreviewError()" />
+        } @else if (practiceGymModulePreview()) {
+          @let pgPreview = practiceGymModulePreview()!;
+          @if (pgPreview.fallbackRequired) {
+            <sp-admin-badge tone="warning">Fallback used</sp-admin-badge>
+            <p class="sp-admin-mt-2 sp-admin-text-xs sp-admin-text-muted">{{ pgPreview.fallbackReason }}</p>
+          } @else {
+            <sp-admin-badge tone="success">Module pipeline</sp-admin-badge>
+            <ul class="sp-admin-simple-list sp-admin-mt-2">
+              @for (m of pgPreview.suggestions; track m.moduleDefinitionId) {
+                <li>{{ m.title }} @if (m.cefrLevel) { ({{ m.cefrLevel }}) } — {{ m.reason }}</li>
+              }
+            </ul>
+          }
+        } @else {
+          <sp-admin-empty-state message="Practice Gym module preview not available." />
+        }
+      </sp-admin-card>
+
       <!-- Pilot readiness — Phase 20D -->
       <sp-admin-card title="Pilot readiness" data-testid="pilot-readiness-card">
         @if (readinessLoading()) {

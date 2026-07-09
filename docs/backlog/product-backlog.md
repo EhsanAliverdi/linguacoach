@@ -14,7 +14,7 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
 
 ---
 
-## Product Model Realignment — Phase H0-H8 `H0-H6 Done, H7-H8 Planned` (2026-07-09)
+## Product Model Realignment — Phase H0-H9 `H0-H7 Done, H8-H9 Planned` (2026-07-09)
 
 **Phase H0 (docs-only, done 2026-07-09)** defined the intended product model — `Resource Bank Item
 → Learn Item/Activity → Module → Daily Lesson/Practice Gym → Attempt → Feedback + Rating →
@@ -77,10 +77,31 @@ E1-E10/D1-D6 substrate, and G2/G3/PG-v2 remain valid, separately-scoped tracks.
   total). See `docs/reviews/2026-07-09-phase-h6-daily-lesson-module-pipeline-review.md`.
   `TODO-H6-1`: wire real learning-plan/weak-skill signals into the selection request (currently
   only `CefrLevel` is passed from `SessionQueryHandler`).
-- [ ] **Phase H7 — Practice Gym Module Pipeline** `Planned` — Practice Gym becomes skill/weakness
-  Module selection; preserve legacy Practice Gym fallback until proven replacement.
-- [ ] **Phase H8 — Admin IA Simplification** `Planned` — move technical pages under
-  Advanced/Diagnostics; Content Studio becomes the main admin surface.
+- [x] **Phase H7 — Practice Gym Module Pipeline** `Done` (2026-07-09) — new
+  `IPracticeGymModuleSelectionService` (deterministic, no AI call, read-only), same eligibility
+  rule as H6 plus self-directed skill/subskill/objective/difficulty requests and weakness-signal
+  preferences; suggestions attached additively as an optional
+  `PracticeGymSuggestionsDto.ModuleSuggestions`; existing readiness-pool suggestion logic (both
+  Practice Gym entry points) completely unchanged. New additive
+  `StudentPracticeGymModuleAssignment` bookkeeping table (one new table, migration
+  `Phase_H7_AddPracticeGymModulePipeline`) for a 14-day reuse guard and admin diagnostics. New
+  admin-only `api/admin/practice-gym/modules/preview` (read-only) and
+  `api/admin/practice-gym/students/{id}/assignments`. No new student "start" endpoint — module
+  suggestions are display-only ("Coming soon") since `ActivityDefinition` has no attempt/scoring
+  runtime yet. Minimal read-only student Practice Gym section and admin student-detail diagnostic
+  card. No Module attempts, no scoring, no mastery updates, no legacy bank removal. +40 backend
+  tests (3,895 total). See
+  `docs/reviews/2026-07-09-phase-h7-practice-gym-module-pipeline-review.md`.
+  `TODO-H7-1`: legacy invalid bank/admin structures should be removed (not hidden) once H6/H7 are
+  proven — via a Plan-Sync-After-H7 checkpoint, then H8/H9 below.
+- [ ] **Phase H8 — Content Studio/Admin IA cleanup and removal planning** `Planned` — audit which
+  legacy bank/admin structures are now superseded by the Learn Item/Activity Definition/Module
+  Definition content studio; move technical pages under Advanced/Diagnostics; produce a removal
+  plan (not the removal itself) for H9. Requires a docs-only Plan-Sync-After-H7 first.
+- [ ] **Phase H9 — Legacy Bank Structure Removal and Consolidation** `Planned` — execute H8's
+  removal plan: actually remove (not merely hide) superseded legacy bank/admin structures once
+  the H6/H7 module pipelines are proven in real use. Destructive; requires its own explicit
+  scoping and sign-off, same discipline as Phase F/G2/G3.
 
 ---
 

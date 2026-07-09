@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H6)
+lastUpdated: 2026-07-09 (Phase H7)
 owner: product
 supersedes:
 supersededBy:
@@ -169,9 +169,54 @@ Full detail: `docs/roadmap/road-map.md` §1, and
 `docs/reviews/2026-07-09-phase-h6-daily-lesson-module-pipeline-review.md`. **`TODO-H6-1`:**
 `SessionQueryHandler` only passes `CefrLevel` into the selection request today —
 `RequestedSkill`/`FocusAreas`/`ContextTags` are accepted by the request shape but not yet
-populated from the student's learning plan; a future phase should wire those in. **Recommended
-next implementation phase: H7 — Practice Gym Module Pipeline**, though a PG-v2A/H7 sequencing
-decision remains a future Plan-Sync checkpoint.
+populated from the student's learning plan; a future phase should wire those in.
+
+**Phase H7, 2026-07-09. Implemented.** H7 is the second phase to consume `ModuleDefinition` at
+runtime — Practice Gym, after H6's Daily Lesson. Before implementation, H6's ancestry was
+verified (`git merge-base --is-ancestor <H5 commit> <H6 commit>` confirmed H6 includes H5) per the
+phase brief's mandatory Step -1. New `IPracticeGymModuleSelectionService.SelectAsync` — pure/
+read-only, deterministic, no AI call — uses the same eligibility rule as H6 (Approved
+`ModuleDefinition` with at least one Approved linked `LearnItem` AND at least one Approved linked
+`ActivityDefinition`), extended with Practice Gym's self-directed signals
+(`RequestedSkill`/`RequestedSubskill`/`RequestedObjectiveKey`/`RequestedDifficulty`/
+`WeaknessSignals`) and per-suggestion `IsReview`/`IsScaffold`/`IsRemediation` flags. Self-directed
+requests narrow the eligible pool but degrade gracefully to the broader pool when over-narrow
+(Practice Gym is a soft preference, unlike Today's automatic selection). Same "exact CEFR match
+preferred, only ever broadens as an explicit review/scaffold/remediation/fallback selection"
+behavior as H6. New additive `StudentPracticeGymModuleAssignment` bookkeeping table
+(`Phase_H7_AddPracticeGymModulePipeline` migration — one new table, no change to any existing
+table), idempotent per student per calendar day (Practice Gym suggestions recompute on every page
+load, unlike Today's once-per-day generation) — the 14-day reuse-guard query is a
+fetch-then-filter-client-side pattern because SQLite's EF Core provider cannot translate
+`DateTimeOffset` comparisons server-side (a test-only limitation; the client-side filter is
+correct on PostgreSQL too). Never throws. Wired into
+`PracticeGymSuggestionService.GetSuggestionsForStudentAsync` **additively**: the existing
+readiness-pool-backed suggestion logic (ranking, dedup, pilot gating) is completely unchanged;
+module selection runs in a **separate** try/catch and attaches the result via a new optional
+`PracticeGymSuggestionsDto.ModuleSuggestions` property. Student-safe projections only —
+`PracticeGymModuleLearnItemSummary`/`PracticeGymModuleActivitySummary` deliberately omit
+`ActivityDefinition.AnswerKeyJson`/`ScoringRulesJson`. **No new student "start" endpoint**: the
+Step 0 audit confirmed `ActivityDefinition` has no attempt/scoring runtime wired to it anywhere —
+building one safely was out of scope, so module suggestions are display-only this phase (a
+"Coming soon" label), consistent with the phase brief's own permission to fall back to
+suggestions-only. New admin-only, read-only `GET api/admin/practice-gym/modules/preview` (calls
+the selector directly, bypassing the recorder) and
+`GET api/admin/practice-gym/students/{id}/assignments`. Minimal Angular additions: a read-only
+"Recommended module practice" section on the student Practice Gym page (no new network call — the
+module section rides on the existing suggestions response) and a "Practice Gym module selection"
+diagnostic card on the admin student-detail page, mirroring H6's exactly. +26 unit, +14
+integration tests (3,855 → 3,895). No PG-v2 started, no full Practice Gym redesign, no student
+self-authored/custom module creation, no Module attempts, no module scoring, no learner mastery
+updates from Modules, no `ActivityTemplate`/`LearningActivity`/`LearningSession`/
+`PracticeActivityCache` replacement, no readiness-pool/delivery-queue deletion, no
+Today/Practice-Gym fallback removed, no legacy bank/admin structure removal. Full detail:
+`docs/roadmap/road-map.md` §1, and
+`docs/reviews/2026-07-09-phase-h7-practice-gym-module-pipeline-review.md`. **Cleanup direction
+decided (not yet scheduled):** once H6/H7 are proven in real use, legacy invalid bank/admin
+structures should be **removed, not merely hidden** — see the new H8/H9 rows in §8 below and
+`TODOS.md` (`TODO-H7-1`). **Recommended next implementation phase: a docs-only
+Plan-Sync-After-H7**, to sequence H8 (Content Studio/Admin IA cleanup and removal planning) and
+H9 (Legacy Bank Structure Removal and Consolidation) against the still-open PG-v2 track.
 
 ---
 
@@ -484,8 +529,9 @@ pages exist to populate "Content Studio." Not implemented in H0.
 | **H4 — Activity Foundation with Form.io** `Done (2026-07-09)` | New `ActivityDefinition`/`ActivityResourceLink` entities (additive-only migration, two new tables) — deliberately separate from `ActivityTemplate`, not built on top of it; Form.io schema/scoring/feedback-plan storage for `gap_fill`/`multiple_choice_single`/`short_answer`; deterministic (no AI) generation from Resource Bank rows or a Learn Item; approval lifecycle; source-resource + optional Learn Item traceability. | H2 (parallel with H3) |
 | **H5 — Module Foundation** `Done (2026-07-09)` | New `ModuleDefinition`/`ModuleDefinitionLearnItemLink`/`ModuleDefinitionActivityLink` entities (additive-only migration, three new tables), deliberately separate from runtime `LearningModule`; `ModuleDefinition` = Learn Item(s) + Activity Definition(s) + module-level Feedback Plan; deterministic (no AI) generation from selected items, a Resource Bank row, a Learn Item, or an Activity Definition — every entry point requires Approved sources; approval lifecycle; objective/CEFR/skill/subskill/context/focus/difficulty/estimated-minutes metadata. | H3, H4 |
 | **H6 — Daily Lesson Module Pipeline** `Done (2026-07-09)` | Deterministic, read-only `IDailyLessonModuleSelectionService` selects an Approved Module (with an Approved Learn Item and Approved Activity Definition) for Today, attached additively as an optional `TodaysSessionResult.ModuleSection`; existing session generation and Today legacy fallback unchanged; new additive `StudentDailyModuleAssignment` bookkeeping table for a 14-day reuse guard and admin diagnostics. | H5 |
-| **H7 — Practice Gym Module Pipeline** | Practice Gym becomes skill/weakness/self-directed Module selection; uses approved Modules and unseen Activities; preserve legacy Practice Gym fallback until proven replacement. | H6 (may run alongside/after PG-v2A's selector work) |
-| **H8 — Admin IA Simplification** | Move technical pages under Advanced/Diagnostics; make Content Studio the main admin surface (§7). | H1–H7 substantially landed |
+| **H7 — Practice Gym Module Pipeline** `Done (2026-07-09)` | Deterministic, read-only `IPracticeGymModuleSelectionService` suggests Approved Modules (with Approved linked Learn Item/Activity Definition) for Practice Gym, attached additively as an optional `PracticeGymSuggestionsDto.ModuleSuggestions`; adds self-directed skill/subskill/objective/difficulty/weakness-signal preferences on top of H6's shape; no student "start" flow yet (display-only). | H6 |
+| **H8 — Content Studio/Admin IA cleanup and removal planning** `Planned` | Audit which legacy bank/admin structures are now superseded by the Learn Item/Activity Definition/Module Definition content studio; move technical pages under Advanced/Diagnostics; produce a removal plan (not the removal itself) for H9. Requires a docs-only Plan-Sync-After-H7 first. | H1–H7 substantially landed |
+| **H9 — Legacy Bank Structure Removal and Consolidation** `Planned` | Execute H8's removal plan: actually remove (not merely hide) superseded legacy bank/admin structures once H6/H7 module pipelines are proven in real use. Destructive; requires its own explicit scoping/sign-off, same discipline as Phase F/G2/G3. | H8 |
 
 **Not scheduled by this phase:** destructive cleanup of any kind. Phase F (legacy generation
 retirement), G2/G3 (backend/diagnostics cleanup), and PG-v2 (skill-first Activity selector)
@@ -536,8 +582,15 @@ session generation, Today legacy fallback, and Practice Gym all unchanged. See
 `docs/roadmap/road-map.md` §1 and
 `docs/reviews/2026-07-09-phase-h6-daily-lesson-module-pipeline-review.md` for full detail.
 
-**Recommended next: H7 — Practice Gym Module Pipeline.** A PG-v2A/H7 sequencing decision (which
-comes first) remains a future Plan-Sync checkpoint, not resolved by this phase.
+**H7 — Practice Gym Module Pipeline — done (2026-07-09).** Second runtime consumer of
+`ModuleDefinition`; deterministic, read-only selection additively attached to Practice Gym
+suggestions; existing readiness-pool suggestion logic (both entry points) and Today all
+unchanged; no student "start" flow yet (display-only). See `docs/roadmap/road-map.md` §1 and
+`docs/reviews/2026-07-09-phase-h7-practice-gym-module-pipeline-review.md` for full detail.
+
+**Recommended next: a docs-only Plan-Sync-After-H7**, to sequence H8 (Content Studio/Admin IA
+cleanup and removal planning) and H9 (Legacy Bank Structure Removal and Consolidation) against
+the still-open PG-v2 track. Not resolved by this phase.
 
 ---
 

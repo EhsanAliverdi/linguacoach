@@ -50,6 +50,24 @@ supersededBy:
 > planned future consumer there). See `docs/architecture/product-model-realignment-h0.md` and
 > `docs/reviews/2026-07-09-phase-h6-daily-lesson-module-pipeline-review.md` for the full H6
 > detail.
+>
+> **Phase H7 note (2026-07-09):** H7 does the same additive thing H6 did, but for Practice Gym.
+> `PracticeGymSuggestionService.GetSuggestionsForStudentAsync` still builds
+> `SuggestedItems`/`ContinueItems`/`ReviewItems` from `StudentActivityReadinessItem` completely
+> unchanged — `PracticeActivityCache`, `PracticeGymGenerationJob`, `PracticeGymBufferRefillJob`,
+> and the separate legacy `ActivityController.GetPracticeGymNext`/`IPracticeGymPoolService` path
+> are all untouched. Separately, in its own try/catch, it now also calls the new
+> `IPracticeGymModuleSelectionService` (deterministic, no AI call, read-only — same eligibility
+> rule as H6) and attaches the result as an optional `PracticeGymSuggestionsDto.ModuleSuggestions`.
+> A selection failure or "no suitable Module" case never affects the sections above. The module
+> selector creates no `LearningActivity`/`ActivityAttempt`/`PracticeActivityCache` rows and does
+> not touch `StudentActivityReadinessItem`. There is deliberately no "start" flow for a module
+> suggestion in H7 — `ActivityDefinition` (H4) still has no attempt/scoring runtime wired to it
+> anywhere, unlike `ActivityTemplate`'s live Form.io pilot, which remains the only Practice Gym
+> path that actually launches a scored activity. See
+> `docs/architecture/product-model-realignment-h0.md` and
+> `docs/reviews/2026-07-09-phase-h7-practice-gym-module-pipeline-review.md` for the full H7
+> detail.
 
 ## Why `LearningActivity` is the Centre of the Product
 

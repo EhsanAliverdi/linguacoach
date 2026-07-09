@@ -714,6 +714,29 @@ export interface AdminDailyLessonModulePreview {
   warnings: string[];
 }
 
+/** Phase H7 — admin preview of the Practice Gym module selector's decision for a student. */
+export interface AdminPracticeGymSuggestedModule {
+  moduleDefinitionId: string;
+  title: string;
+  cefrLevel: string | null;
+  skill: string | null;
+  subskill: string | null;
+  estimatedMinutes: number | null;
+  reason: string;
+  isReview: boolean;
+  isScaffold: boolean;
+  isRemediation: boolean;
+}
+
+export interface AdminPracticeGymModulePreview {
+  suggestions: AdminPracticeGymSuggestedModule[];
+  fallbackRequired: boolean;
+  fallbackReason: string | null;
+  selectionReason: string | null;
+  targetCefrLevel: string | null;
+  warnings: string[];
+}
+
 export interface AggregatePoolHealthSummary {
   totalStudentsWithItems: number;
   totalQueued: number;

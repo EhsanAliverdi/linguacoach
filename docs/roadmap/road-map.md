@@ -26,7 +26,48 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest phase completed (local, not yet deployed):** Phase H6 —
+**Latest phase completed (local, not yet deployed):** Phase H7 —
+Practice Gym Module Pipeline (2026-07-09). Second runtime consumer of `ModuleDefinition`, after
+H6's Daily Lesson pipeline. New `IPracticeGymModuleSelectionService.SelectAsync` — deterministic
+(no AI call), pure/read-only — selects approved `ModuleDefinition` records with at least one
+Approved linked `LearnItem` AND at least one Approved linked `ActivityDefinition`, extending H6's
+selection shape with Practice Gym's self-directed signals (requested skill/subskill/objective/
+difficulty, weakness signals) and per-suggestion `IsReview`/`IsScaffold`/`IsRemediation` flags.
+Prefers an exact CEFR match; only broadens to another level as an explicit review/scaffold/
+remediation/fallback selection, never silently. 14-day reuse guard via a new additive
+`StudentPracticeGymModuleAssignment` bookkeeping table (`Phase_H7_AddPracticeGymModulePipeline`
+migration — one new table, no change to any existing table), idempotent per student per calendar
+day since Practice Gym suggestions recompute on every page load. Wired into
+`PracticeGymSuggestionService.GetSuggestionsForStudentAsync` **additively**: the existing
+readiness-pool-backed suggestion logic is completely unchanged; module selection runs in a
+separate try/catch and attaches an optional `PracticeGymSuggestionsDto.ModuleSuggestions` —
+every "no suitable content" case degrades to a fallback flag and never blocks or breaks Practice
+Gym. Student-safe projections only — `AnswerKeyJson`/`ScoringRulesJson` are never included. No new
+student "start" endpoint: `ActivityDefinition` has no attempt/scoring runtime wired anywhere yet,
+so module suggestions are display-only this phase (a "Coming soon" label), with the existing
+suggestedItems/continueItems/reviewItems start flow remaining the only way to launch practice.
+New admin-only `api/admin/practice-gym/modules/preview` (read-only) and
+`api/admin/practice-gym/students/{id}/assignments`. Minimal Angular additions: a "Recommended
+module practice" read-only section on the student Practice Gym page (no new network call — rides
+on the existing suggestions response) and a "Practice Gym module selection" diagnostic card on
+the admin student-detail page, mirroring H6's. +26 unit tests, +14 integration tests
+(3,855 → 3,895). Frontend production build has no new TS/Angular errors — only the pre-existing
+bundle-size budget failure. **No PG-v2 started, no full Practice Gym redesign, no student
+self-authored/custom module creation, no Module attempts, no module scoring, no mastery updates
+from Modules, no `ActivityTemplate`/`LearningActivity`/`LearningSession`/`PracticeActivityCache`
+replacement, no readiness/delivery-queue change, no Today/Practice-Gym fallback removed, no
+legacy bank/admin structure removal.** Full detail:
+`docs/architecture/product-model-realignment-h0.md` (updated) and
+`docs/reviews/2026-07-09-phase-h7-practice-gym-module-pipeline-review.md`.
+
+**Cleanup direction (decided, not yet scheduled):** once H6/H7 module pipelines are proven in
+real use, legacy invalid bank/admin structures should be **removed, not merely hidden** — a
+docs-only Plan-Sync-After-H7 should sequence this before any destructive work begins. Likely next
+track: **H8 — Content Studio/Admin IA cleanup and removal planning**, then **H9 — Legacy Bank
+Structure Removal and Consolidation**. Not implemented in H7 — see `TODOS.md` (`TODO-H7-1`) and
+`docs/architecture/product-model-realignment-h0.md` §8.
+
+**Previous phase:** Phase H6 —
 Daily Lesson Module Pipeline (2026-07-09). First phase to actually consume `ModuleDefinition` at
 runtime. New `IDailyLessonModuleSelectionService.SelectAsync` — deterministic (no AI call),
 pure/read-only, selects approved `ModuleDefinition` records with at least one Approved linked

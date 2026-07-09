@@ -21,6 +21,13 @@ public sealed class PracticeGymSuggestionsDto
 
     public bool IsReplenishmentRecommended { get; init; }
     public DateTime GeneratedAtUtc { get; init; }
+
+    /// <summary>Phase H7 — additive, optional Module-based suggestions computed alongside the
+    /// existing readiness-pool suggestions, attached in a separate try/catch so a
+    /// module-selection failure can never break Practice Gym. Null whenever no compatible
+    /// approved Module exists (the readiness-pool suggestions above remain the source of truth
+    /// in that case).</summary>
+    public LinguaCoach.Application.PracticeGymModules.PracticeGymModuleSelectionResult? ModuleSuggestions { get; init; }
 }
 
 /// <summary>

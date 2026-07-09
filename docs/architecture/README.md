@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H6)
+lastUpdated: 2026-07-09 (Phase H7)
 owner: architecture
 supersedes:
 supersededBy:
@@ -439,10 +439,42 @@ Minimal Angular additions: a read-only "Today's module" card on the student dash
 integration tests (3,822 → 3,855). No H7 started, no PG-v2 started, no student self-directed
 module selection, no Module attempts, no module scoring, no mastery updates from Modules, no
 `LearningActivity`/`LearningSession`/`ActivityTemplate` replacement, no readiness/delivery-queue
-change, no Today/Practice Gym fallback removed. **Recommended next implementation phase: H7 —
-Practice Gym Module Pipeline**, though a PG-v2A/H7 sequencing decision remains a future Plan-Sync
-checkpoint. See `docs/architecture/product-model-realignment-h0.md`,
-`docs/reviews/2026-07-09-phase-h6-daily-lesson-module-pipeline-review.md`, and
+change, no Today/Practice Gym fallback removed. See `docs/architecture/product-model-realignment-h0.md`
+and `docs/reviews/2026-07-09-phase-h6-daily-lesson-module-pipeline-review.md`.
+
+**Phase H7 (2026-07-09)** — Practice Gym Module Pipeline: the second phase to consume
+`ModuleDefinition` at runtime. Before implementation, verified H6's ancestry includes H5
+(`git merge-base --is-ancestor` check per the phase brief's mandatory Step -1). New
+`IPracticeGymModuleSelectionService.SelectAsync` — pure/read-only, deterministic, no AI call —
+same eligibility rule as H6, extended with Practice Gym's self-directed
+skill/subskill/objective/difficulty requests and weakness-signal preferences (degrading
+gracefully to the broader pool when over-narrow, rather than forcing a fallback — Practice Gym is
+a soft preference, unlike Today's automatic selection); adds per-suggestion
+`IsReview`/`IsScaffold`/`IsRemediation` flags. New additive `StudentPracticeGymModuleAssignment`
+bookkeeping table (`Phase_H7_AddPracticeGymModulePipeline` migration — one new table, no change to
+any existing table), idempotent per student per calendar day since Practice Gym suggestions
+recompute on every page load. Wired into
+`PracticeGymSuggestionService.GetSuggestionsForStudentAsync` **additively** — the existing
+readiness-pool-backed suggestion logic (both Practice Gym entry points) is unchanged; module
+selection runs in a separate try/catch and attaches an optional
+`PracticeGymSuggestionsDto.ModuleSuggestions`; every "no suitable content" case degrades to a
+fallback flag and never blocks or breaks Practice Gym. Student-safe projections only — no
+`AnswerKeyJson`/`ScoringRulesJson` ever reach a student. **No new student "start" endpoint** —
+`ActivityDefinition` has no attempt/scoring runtime wired anywhere yet, so module suggestions are
+display-only ("Coming soon"). New admin-only, read-only
+`api/admin/practice-gym/modules/preview` and `api/admin/practice-gym/students/{id}/assignments`.
+Minimal Angular additions: a read-only "Recommended module practice" section on the student
+Practice Gym page (no new network call) and a "Practice Gym module selection" diagnostic card on
+the admin student-detail page, mirroring H6's. +26 unit, +14 integration tests
+(3,855 → 3,895). No PG-v2 started, no full Practice Gym redesign, no student self-authored/
+custom module creation, no Module attempts, no module scoring, no mastery updates from Modules,
+no `ActivityTemplate`/`LearningActivity`/`LearningSession`/`PracticeActivityCache` replacement, no
+readiness/delivery-queue change, no Today/Practice Gym fallback removed, no legacy bank removal.
+**Cleanup direction decided (not scheduled):** legacy invalid bank/admin structures should be
+removed, not hidden, once H6/H7 are proven — see the new H8/H9 roadmap entries and `TODOS.md`
+(`TODO-H7-1`). **Recommended next: a docs-only Plan-Sync-After-H7**, to sequence H8/H9 against
+the still-open PG-v2 track. See `docs/architecture/product-model-realignment-h0.md`,
+`docs/reviews/2026-07-09-phase-h7-practice-gym-module-pipeline-review.md`, and
 `docs/roadmap/road-map.md` §1, Decision Log, and §19a.
 
 ---

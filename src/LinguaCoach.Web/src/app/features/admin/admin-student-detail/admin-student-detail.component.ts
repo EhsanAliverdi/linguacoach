@@ -7,7 +7,7 @@ import {
   UpdateStudentProfileRequest, ResetStudentRequest, StudentLifecycleStageName,
   AdminStudentLearningMemory, ResetStudentResponse, AdminActivityHistoryItem,
   AdminStudentDetail, StudentAuditHistoryItem, StudentReadinessPoolHealth, AdminMasteryPoolSummary,
-  AdminDailyLessonModulePreview,
+  AdminDailyLessonModulePreview, AdminPracticeGymModulePreview,
   AdminPlacementLatestResponse, AdminPlacementProgress, AdminStudentPracticeSummary,
   AdminLearningPlanProgress, AdminStudentProgressSummary, AdminStudentSpeakingAttemptsResult,
   AdminWritingEvaluationItemDto, StudentReadinessSummary, StudentReadinessRepairRequest,
@@ -164,6 +164,11 @@ export class AdminStudentDetailComponent implements OnInit {
   dailyLessonModulePreview = signal<AdminDailyLessonModulePreview | null>(null);
   dailyLessonModulePreviewLoading = signal(true);
   dailyLessonModulePreviewError = signal('');
+
+  // Phase H7 — Practice Gym module selection diagnostic (read-only preview)
+  practiceGymModulePreview = signal<AdminPracticeGymModulePreview | null>(null);
+  practiceGymModulePreviewLoading = signal(true);
+  practiceGymModulePreviewError = signal('');
 
   // Phase 20D — Pilot readiness audit + repair
   readiness = signal<StudentReadinessSummary | null>(null);
@@ -389,6 +394,11 @@ export class AdminStudentDetailComponent implements OnInit {
     this.adminApi.getDailyLessonModulePreview(id).subscribe({
       next: p => { this.dailyLessonModulePreview.set(p); this.dailyLessonModulePreviewLoading.set(false); },
       error: () => { this.dailyLessonModulePreviewError.set('Could not load Daily Lesson module preview.'); this.dailyLessonModulePreviewLoading.set(false); },
+    });
+
+    this.adminApi.getPracticeGymModulePreview(id).subscribe({
+      next: p => { this.practiceGymModulePreview.set(p); this.practiceGymModulePreviewLoading.set(false); },
+      error: () => { this.practiceGymModulePreviewError.set('Could not load Practice Gym module preview.'); this.practiceGymModulePreviewLoading.set(false); },
     });
   }
 

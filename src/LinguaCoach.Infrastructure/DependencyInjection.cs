@@ -417,6 +417,13 @@ public static class DependencyInjection
         // Practice Gym suggestion service (Phase 10O)
         services.AddScoped<IPracticeGymSuggestionService, LinguaCoach.Infrastructure.PracticeGym.PracticeGymSuggestionService>();
 
+        // Phase H7 — Practice Gym Module Pipeline (deterministic, read-only module selection for
+        // Practice Gym suggestions + the one write path for its assignment bookkeeping).
+        services.AddScoped<LinguaCoach.Application.PracticeGymModules.IPracticeGymModuleSelectionService,
+            LinguaCoach.Infrastructure.PracticeGymModules.PracticeGymModuleSelectionService>();
+        services.AddScoped<LinguaCoach.Application.PracticeGymModules.IPracticeGymModuleAssignmentRecorder,
+            LinguaCoach.Infrastructure.PracticeGymModules.PracticeGymModuleAssignmentRecorder>();
+
         // Admin runtime settings / feature gate registry (Phase 20B)
         services.AddSingleton<IFeatureGateRegistry, LinguaCoach.Infrastructure.Admin.FeatureGateRegistryService>();
         services.AddScoped<IRuntimeSettingsService, LinguaCoach.Infrastructure.Admin.RuntimeSettingsService>();

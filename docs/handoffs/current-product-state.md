@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H6)
+lastUpdated: 2026-07-09 (Phase H7)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,45 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-09 (Phase H6)
+Last updated: 2026-07-09 (Phase H7)
+
+## Practice Gym Module Pipeline (Phase H7, 2026-07-09)
+
+`ModuleDefinition` is now consumed by Practice Gym too — the second runtime consumer after H6's
+Daily Lesson pipeline. A deterministic selector (`IPracticeGymModuleSelectionService`, no AI
+call, no database writes) suggests approved Modules — one with at least one approved linked
+Learn Item AND at least one approved linked Activity Definition — for a student's Practice Gym,
+extending H6's approach with self-directed skill/subskill/objective/difficulty requests and
+weakness-signal preferences. The result is attached **additively** to the existing suggestions
+response as an optional `moduleSuggestions` section — the existing readiness-pool-backed
+suggestion logic (both Practice Gym entry points) is completely unchanged, and every "no suitable
+content" case safely degrades to the existing suggestions with no module section at all. Nothing
+shown to students ever includes an answer key or scoring rule.
+
+Students see a small, read-only "Recommended module practice" section on the Practice Gym page
+when Modules were suggested (title, skill/CEFR badges, estimated minutes, reason) — there is no
+"Start" button yet, only a "Coming soon" label, because `ActivityDefinition` has no attempt/
+scoring runtime wired to it anywhere in the codebase; launching module-based practice safely is
+future work. Admins get two new read-only diagnostics:
+`GET api/admin/practice-gym/modules/preview` (what would be suggested for a student, with the
+fallback reason if nothing would be) and `GET api/admin/practice-gym/students/{id}/assignments`
+(what was actually recorded), plus a matching "Practice Gym module selection" card on the admin
+student-detail page. A new additive `student_practice_gym_module_assignments` table records
+suggestions per student, purely for admin diagnostics and a 14-day reuse guard — it is not a
+student attempt/score record.
+
++40 backend tests (3,895 total: 26 unit, 14 integration). No PG-v2 started, no full Practice Gym
+redesign, no student self-authored/custom module creation, no Module attempts, no module scoring,
+no mastery updates from Modules, no `ActivityTemplate`/`LearningActivity`/`LearningSession`/
+`PracticeActivityCache` replacement, no readiness/delivery-queue change, no Today/Practice Gym
+fallback removed, no legacy bank/admin structure removal. **Decided but not yet scheduled:**
+legacy invalid bank/admin structures should be removed (not hidden) once H6/H7 are proven, via a
+future H8 (Content Studio/Admin IA cleanup and removal planning) and H9 (Legacy Bank Structure
+Removal and Consolidation). Full detail: `docs/architecture/product-model-realignment-h0.md` and
+`docs/reviews/2026-07-09-phase-h7-practice-gym-module-pipeline-review.md`; roadmap:
+`docs/roadmap/road-map.md` §1.
+
+---
 
 ## Daily Lesson Module Pipeline (Phase H6, 2026-07-09)
 

@@ -30,6 +30,60 @@ export interface PracticeGymSuggestionItem {
   linkedSessionExerciseId: string | null;
 }
 
+/** Phase H7 — student-safe Learn Item projection within a Practice Gym module suggestion. */
+export interface PracticeGymModuleLearnItemSummary {
+  learnItemId: string;
+  title: string;
+  body: string;
+  examples: string[];
+  commonMistakes: string[];
+  usageNotes: string | null;
+}
+
+/** Phase H7 — student-safe Activity Definition projection. Never carries an answer key or
+ * scoring rules — those are backend-only per ActivityDefinition's own contract. */
+export interface PracticeGymModuleActivitySummary {
+  activityDefinitionId: string;
+  title: string;
+  description: string | null;
+  instructions: string;
+  activityType: string;
+  formSchemaJson: string | null;
+  estimatedMinutes: number | null;
+}
+
+export interface PracticeGymModuleSuggestion {
+  moduleDefinitionId: string;
+  title: string;
+  description: string | null;
+  cefrLevel: string | null;
+  skill: string | null;
+  subskill: string | null;
+  difficultyBand: number | null;
+  estimatedMinutes: number | null;
+  contextTags: string[];
+  focusTags: string[];
+  reason: string;
+  isReview: boolean;
+  isScaffold: boolean;
+  isRemediation: boolean;
+  linkedLearnItemSummaries: PracticeGymModuleLearnItemSummary[];
+  linkedActivitySummaries: PracticeGymModuleActivitySummary[];
+}
+
+/** Phase H7 — additive, optional. Null when no compatible approved Module exists; the
+ * readiness-pool-backed sections above remain the source of truth in that case. There is no
+ * "start" flow for a module suggestion yet — Practice Gym launch stays on the existing
+ * suggestedItems/continueItems/reviewItems fallback path. */
+export interface PracticeGymModuleSuggestionsSection {
+  suggestions: PracticeGymModuleSuggestion[];
+  fallbackRequired: boolean;
+  fallbackReason: string | null;
+  selectionReason: string | null;
+  targetCefrLevel: string | null;
+  warnings: string[];
+}
+
 export interface PracticeGymSuggestionsResponse {
   suggestedItems: PracticeGymSuggestionItem[];
   continueItems: PracticeGymSuggestionItem[];
@@ -39,6 +93,7 @@ export interface PracticeGymSuggestionsResponse {
   reservedCount: number;
   isReplenishmentRecommended: boolean;
   generatedAtUtc: string;
+  moduleSuggestions: PracticeGymModuleSuggestionsSection | null;
 }
 
 export interface StartSuggestionResult {

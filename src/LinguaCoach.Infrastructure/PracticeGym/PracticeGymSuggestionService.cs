@@ -1,5 +1,6 @@
 using System.Text.Json;
 using LinguaCoach.Application.PracticeGym;
+using LinguaCoach.Application.PracticeGymModules;
 using LinguaCoach.Application.ReadinessPool;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
@@ -37,6 +38,8 @@ public sealed class PracticeGymSuggestionService : IPracticeGymSuggestionService
     private readonly LinguaCoachDbContext _db;
     private readonly IReadinessPoolReplenishmentService _replenishment;
     private readonly IEffectiveReadinessPoolSettingsProvider _settingsProvider;
+    private readonly IPracticeGymModuleSelectionService _moduleSelector;
+    private readonly IPracticeGymModuleAssignmentRecorder _moduleAssignmentRecorder;
 
     // Resolved fresh at the top of GetSuggestionsForStudentAsync — see below.
     private ReadinessPoolReplenishmentOptions _opts = new();
@@ -52,11 +55,15 @@ public sealed class PracticeGymSuggestionService : IPracticeGymSuggestionService
         LinguaCoachDbContext db,
         IReadinessPoolReplenishmentService replenishment,
         IEffectiveReadinessPoolSettingsProvider settingsProvider,
+        IPracticeGymModuleSelectionService moduleSelector,
+        IPracticeGymModuleAssignmentRecorder moduleAssignmentRecorder,
         ILogger<PracticeGymSuggestionService> logger)
     {
         _db = db;
         _replenishment = replenishment;
         _settingsProvider = settingsProvider;
+        _moduleSelector = moduleSelector;
+        _moduleAssignmentRecorder = moduleAssignmentRecorder;
         _logger = logger;
     }
 
@@ -182,6 +189,28 @@ public sealed class PracticeGymSuggestionService : IPracticeGymSuggestionService
 
         var health = await _replenishment.GetHealthAsync(profileId, ReadinessPoolSource.PracticeGym, ct);
 
+        // Phase H7 — additive, best-effort: a Practice Gym module selection failure must never
+        // break the existing readiness-pool-backed suggestions above, so it is wrapped separately.
+        PracticeGymModuleSelectionResult? moduleSuggestions = null;
+        try
+        {
+            moduleSuggestions = await _moduleSelector.SelectAsync(
+                new PracticeGymModuleSelectionRequest(
+                    StudentId: profileId,
+                    CefrLevel: profile?.CefrLevel,
+                    FocusAreas: focusTags,
+                    ContextTags: contextTags),
+                ct);
+
+            await _moduleAssignmentRecorder.RecordAsync(profileId, moduleSuggestions, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "Practice Gym module selection failed for student {StudentProfileId}; suggestions fall back to legacy readiness-pool content only.",
+                profileId);
+        }
+
         var dto = new PracticeGymSuggestionsDto
         {
             SuggestedItems             = ranked,
@@ -191,7 +220,8 @@ public sealed class PracticeGymSuggestionService : IPracticeGymSuggestionService
             ReviewOnlyCount            = health.ReviewOnlyCount,
             ReservedCount              = rawItems.Count(i => i.Status == ReadinessPoolStatus.Reserved),
             IsReplenishmentRecommended = health.NeedsReplenishment,
-            GeneratedAtUtc             = DateTime.UtcNow
+            GeneratedAtUtc             = DateTime.UtcNow,
+            ModuleSuggestions          = moduleSuggestions
         };
 
         _logger.LogDebug(

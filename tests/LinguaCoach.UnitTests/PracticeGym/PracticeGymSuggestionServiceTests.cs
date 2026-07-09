@@ -1,5 +1,6 @@
 using FluentAssertions;
 using LinguaCoach.Application.PracticeGym;
+using LinguaCoach.Application.PracticeGymModules;
 using LinguaCoach.Application.ReadinessPool;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
@@ -39,7 +40,24 @@ public sealed class PracticeGymSuggestionServiceTests : IDisposable
     }
 
     private PracticeGymSuggestionService BuildSut(ReadinessPoolReplenishmentOptions opts) =>
-        new(_db, _replenishment, new StubSettingsProvider(opts), NullLogger<PracticeGymSuggestionService>.Instance);
+        new(_db, _replenishment, new StubSettingsProvider(opts),
+            new FallbackOnlyModuleSelectionService(), new NoOpModuleAssignmentRecorder(),
+            NullLogger<PracticeGymSuggestionService>.Instance);
+
+    // Phase H7 — stubs so these pre-existing readiness-pool tests are unaffected by the new,
+    // additive Practice Gym module pipeline (always reports FallbackRequired, records nothing).
+    private sealed class FallbackOnlyModuleSelectionService : IPracticeGymModuleSelectionService
+    {
+        public Task<PracticeGymModuleSelectionResult> SelectAsync(
+            PracticeGymModuleSelectionRequest request, CancellationToken ct = default) =>
+            Task.FromResult(new PracticeGymModuleSelectionResult([], true, "No modules configured for this test.", null, null, []));
+    }
+
+    private sealed class NoOpModuleAssignmentRecorder : IPracticeGymModuleAssignmentRecorder
+    {
+        public Task RecordAsync(Guid studentId, PracticeGymModuleSelectionResult selectionResult, CancellationToken ct = default) =>
+            Task.CompletedTask;
+    }
 
     // 1. Consumed items excluded from all sections.
     [Fact]

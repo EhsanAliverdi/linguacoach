@@ -10,7 +10,7 @@ import {
   ResetStudentRequest, ResetStudentResponse, AdminStats, AdminActivityHistoryItem,
   AdminStudentDetail,
   StudentAuditHistoryItem, StudentReadinessPoolHealth, AdminMasteryPoolSummary,
-  AdminDailyLessonModulePreview,
+  AdminDailyLessonModulePreview, AdminPracticeGymModulePreview,
   AdminGenerationSettings, AdminUpdateGenerationSettingsRequest,
   AdminGenerationBatchesResponse, AdminGenerateLessonsResponse,
   StudentListQuery, PagedResponse, AiModelPricingItem,
@@ -171,6 +171,10 @@ export class AdminApiService {
   /** Phase H6 — preview which approved Modules the Daily Lesson selector would choose today. Read-only. */
   getDailyLessonModulePreview(studentProfileId: string): Observable<AdminDailyLessonModulePreview> {
     return this.http.get<AdminDailyLessonModulePreview>(`${this.api}/daily-lesson/modules/preview?studentId=${studentProfileId}`);
+  }
+  /** Phase H7 — preview which approved Modules the Practice Gym selector would suggest. Read-only. */
+  getPracticeGymModulePreview(studentProfileId: string): Observable<AdminPracticeGymModulePreview> {
+    return this.http.get<AdminPracticeGymModulePreview>(`${this.api}/practice-gym/modules/preview?studentId=${studentProfileId}&maxSuggestions=100`);
   }
   getStudentMasteryPoolSummary(studentProfileId: string): Observable<AdminMasteryPoolSummary> {
     return this.http.get<AdminMasteryPoolSummary>(`${this.api}/students/${studentProfileId}/readiness-pool`);

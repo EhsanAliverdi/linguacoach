@@ -214,6 +214,9 @@ export class DashboardComponent implements OnInit {
         reservedCount: 0,
         isReplenishmentRecommended: false,
         generatedAtUtc: new Date().toISOString(),
+        // Phase H7 — this synthesized dashboard summary never carries real module suggestions;
+        // the dedicated Practice Gym page calls the real suggestions endpoint for that.
+        moduleSuggestions: null,
       });
     }
   }

@@ -128,6 +128,13 @@ export class PracticeGymComponent implements OnInit {
   readonly continueItems = computed(() => this.suggestions()?.continueItems ?? []);
   readonly reviewItems = computed(() => this.suggestions()?.reviewItems ?? []);
 
+  /** Phase H7 — additive, read-only. Empty whenever no compatible approved Module exists; the
+   * existing suggestion sections above remain the full Practice Gym experience either way. */
+  readonly moduleSuggestions = computed(() => {
+    const section = this.suggestions()?.moduleSuggestions;
+    return section && !section.fallbackRequired ? section.suggestions : [];
+  });
+
   constructor(
     private activityService: ActivityService,
     private practiceGymSuggestionsService: PracticeGymSuggestionsService,
