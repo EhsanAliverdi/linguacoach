@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AdminUnifiedResourceBankService } from '../../../core/services/admin-resource-import.service';
 import { AdminLearnItemService } from '../../../core/services/admin-learn-item.service';
 import { AdminActivityDefinitionService } from '../../../core/services/admin-activity-definition.service';
@@ -133,9 +133,14 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
     private activitySvc: AdminActivityDefinitionService,
     private moduleSvc: AdminModuleDefinitionService,
     private router: Router,
+    private route: ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
+    const requestedType = this.route.snapshot.queryParamMap.get('type');
+    if (requestedType && UNIFIED_RESOURCE_BANK_TYPES.some(t => t.value === requestedType)) {
+      this.typeFilter.set(requestedType);
+    }
     this.loadAll();
   }
 

@@ -175,21 +175,23 @@ export const routes: Routes = [
         path: 'modules',
         loadComponent: () => import('./features/admin/admin-modules/admin-modules.component').then(m => m.AdminModulesComponent),
       },
+      // Phase H9A — the typed resource-bank pages were removed; old bookmarks/links redirect to
+      // the unified Resource Bank with a matching type filter (see admin-resource-bank-unified).
       {
         path: 'resource-banks/vocabulary',
-        loadComponent: () => import('./features/admin/admin-resource-bank-vocabulary/admin-resource-bank-vocabulary.component').then(m => m.AdminResourceBankVocabularyComponent),
+        redirectTo: () => '/admin/resource-bank?type=vocabulary',
       },
       {
         path: 'resource-banks/grammar',
-        loadComponent: () => import('./features/admin/admin-resource-bank-grammar/admin-resource-bank-grammar.component').then(m => m.AdminResourceBankGrammarComponent),
+        redirectTo: () => '/admin/resource-bank?type=grammar',
       },
       {
         path: 'resource-banks/reading-references',
-        loadComponent: () => import('./features/admin/admin-resource-bank-reading-references/admin-resource-bank-reading-references.component').then(m => m.AdminResourceBankReadingReferencesComponent),
+        redirectTo: () => '/admin/resource-bank?type=readingReference',
       },
       {
         path: 'resource-banks/reading-passages',
-        loadComponent: () => import('./features/admin/admin-resource-bank-reading-passages/admin-resource-bank-reading-passages.component').then(m => m.AdminResourceBankReadingPassagesComponent),
+        redirectTo: () => '/admin/resource-bank?type=readingPassage',
       },
     ],
   },

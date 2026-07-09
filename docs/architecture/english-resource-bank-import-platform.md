@@ -86,6 +86,19 @@ first runtime launch path. Noted here only for completeness: the import staging 
 remain exactly as classified in Plan-Sync-After-H7 (do not remove). See
 `docs/reviews/2026-07-10-phase-h10-activitydefinition-runtime-launch-bridge-review.md`.
 
+**Phase H9A (2026-07-10, frontend/admin-only)** went one step further than H8: the four typed
+admin bank pages H8 had removed from *navigation* were now physically removed (page components,
+route entries, the `AdminResourceBankService` Angular service, and 12 dead frontend model
+interfaces) — old routes redirect to the unified Resource Bank page with a matching type filter.
+**This platform's own staging pipeline, the four typed Cefr* published tables, `ResourceBankQueryService`'s
+typed aggregation methods, and `AdminResourceBankController`'s typed HTTP actions were all left
+untouched**, exactly as Plan-Sync-After-H7 classified them ("do not remove" — still the only path
+by which content becomes a published Resource Bank row, and still the only unified admin read
+model). One small, non-destructive value fix: `UnifiedResourceBankItemDto.DetailRoute` — built by
+`ResourceBankQueryService` at 4 construction sites — previously pointed at the now-removed typed
+admin routes; it is now always `null` instead of a dead link. See
+`docs/reviews/2026-07-10-phase-h9a-legacy-admin-code-path-removal-review.md`.
+
 **Date planned:** 2026-07-08 (Plan-Sync-After-C1), **finalized:** 2026-07-08 (Phase E0),
 **E1 implemented:** 2026-07-08, **E2 implemented:** 2026-07-08, **E3 implemented:** 2026-07-08,
 **E4 implemented:** 2026-07-08, **Plan-Sync-After-E4:** 2026-07-08, **E5 implemented:** 2026-07-08,

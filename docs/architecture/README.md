@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-10 (Phase H10)
+lastUpdated: 2026-07-10 (Phase H9A)
 owner: architecture
 supersedes:
 supersededBy:
@@ -535,9 +535,26 @@ mastery updates from Modules, no native ActivityDefinition attempt runtime (defe
 `PracticeActivityCache`, `StudentActivityReadinessItem`, and the full runtime session-entity
 chain are all untouched. Frontend production build clean (only the pre-existing bundle-size
 warning); Karma still blocked by the same pre-existing `TODO-H8-2` gap (re-confirmed, none of the
-six files touched by H10). **Recommended next: H9 — Legacy Bank Structure Removal and
-Consolidation**, starting with its own fresh safety audit. See
+six files touched by H10). See
 `docs/reviews/2026-07-10-phase-h10-activitydefinition-runtime-launch-bridge-review.md`.
+
+**Phase H9A (2026-07-10)** — Legacy Admin/API/Code Path Removal Safety Pass. First H9 cleanup
+phase (split H9A/H9B/H9C/H9D); **frontend/admin cleanup only**. Removed the four legacy typed
+admin bank Angular pages/components/routes (vocabulary/grammar/reading-references/
+reading-passages — already unreachable via nav since H8), the orphaned `AdminResourceBankService`
+Angular service, and 12 dead frontend model interfaces. Old routes now redirect via Angular's
+`RedirectFunction` to the unified Resource Bank with a matching `?type=` filter;
+`AdminResourceBankUnifiedComponent` reads that param on init to pre-seed its filter. One small,
+non-destructive backend fix: `UnifiedResourceBankItemDto.DetailRoute` (previously a dead link to
+the just-removed typed routes) is now always `null`. `AdminResourceBankController`'s typed HTTP
+actions and `IResourceBankQueryService`'s typed methods were deliberately kept — the latter is
+load-bearing for `TodayBankResourceSelector` (a student-facing Today feature). +3 Angular unit
+tests (Karma bundle still blocked by `TODO-H8-2`). All 3,925 backend tests pass; frontend
+production build clean (only the pre-existing bundle-size warning). No typed bank
+table/data/service-method/runtime-dependency touched, no physical `ResourceBankItem`
+consolidation. **Recommended next: H9B — Physical ResourceBankItem Consolidation Decision and
+Design**, starting with its own fresh safety audit. See
+`docs/reviews/2026-07-10-phase-h9a-legacy-admin-code-path-removal-review.md`.
 
 ---
 

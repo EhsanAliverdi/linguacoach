@@ -102,6 +102,15 @@ supersededBy:
 > `ActivitySubmitHandler`, `ComponentAnswerScorer`, `ActivityAttempt`, or any other entity/service
 > this document describes. See
 > `docs/reviews/2026-07-10-phase-h10-activitydefinition-runtime-launch-bridge-review.md`.
+>
+> **Phase H9A note (2026-07-10):** first H9 cleanup phase, frontend/admin cleanup only. Removed
+> the four legacy typed admin bank Angular pages/routes (already unreachable via nav since H8) and
+> their supporting Angular service/model interfaces. **Touched none of the runtime infrastructure
+> this document describes** — `LearningActivity`/`LearningSession`/`SessionExercise`/
+> `LearningModule`, `ActivityMaterializationJob`, `LessonBatchGenerationJob`,
+> `PracticeGymGenerationJob`, `ActivityTemplate`, `PracticeActivityCache`, and
+> `StudentActivityReadinessItem` are all unchanged. See
+> `docs/reviews/2026-07-10-phase-h9a-legacy-admin-code-path-removal-review.md`.
 
 ## Why `LearningActivity` is the Centre of the Product
 

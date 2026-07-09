@@ -526,7 +526,7 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
                 x.Entry.CefrLevel, "Vocabulary", x.Entry.Subskill,
                 ParseJsonStringArray(x.Entry.ContextTagsJson), ParseJsonStringArray(x.Entry.FocusTagsJson),
                 x.Entry.DifficultyBand, x.Source.Id, x.Source.Name, null, "Published",
-                x.Entry.CreatedAt, null, nameof(CefrVocabularyEntry), "/admin/resource-banks/vocabulary",
+                x.Entry.CreatedAt, null, nameof(CefrVocabularyEntry), null,
                 null, null, null))
             .ToList();
     }
@@ -574,7 +574,7 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
                 x.Entry.CefrLevel, "Grammar", x.Entry.Subskill,
                 ParseJsonStringArray(x.Entry.ContextTagsJson), ParseJsonStringArray(x.Entry.FocusTagsJson),
                 x.Entry.DifficultyBand, x.Source.Id, x.Source.Name, null, "Published",
-                x.Entry.CreatedAt, null, nameof(CefrGrammarProfileEntry), "/admin/resource-banks/grammar",
+                x.Entry.CreatedAt, null, nameof(CefrGrammarProfileEntry), null,
                 null, null, null))
             .ToList();
     }
@@ -625,7 +625,7 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
                 x.Entry.CefrLevel, "Reading", x.Entry.Subskill,
                 ParseJsonStringArray(x.Entry.ContextTagsJson), ParseJsonStringArray(x.Entry.FocusTagsJson),
                 x.Entry.DifficultyBand, x.Source.Id, x.Source.Name, null, "Published",
-                x.Entry.CreatedAt, null, nameof(CefrReadingReference), "/admin/resource-banks/reading-references",
+                x.Entry.CreatedAt, null, nameof(CefrReadingReference), null,
                 null, null, null))
             .ToList();
     }
@@ -674,7 +674,7 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
                 x.Entry.CefrLevel, x.Entry.PrimarySkill, x.Entry.Subskill,
                 ParseJsonStringArray(x.Entry.ContextTagsJson), ParseJsonStringArray(x.Entry.FocusTagsJson),
                 x.Entry.DifficultyBand, x.Source.Id, x.Source.Name, x.Entry.ContentFingerprint, "Published",
-                x.Entry.CreatedAt, x.Entry.UpdatedAtUtc, nameof(CefrReadingPassage), "/admin/resource-banks/reading-passages",
+                x.Entry.CreatedAt, x.Entry.UpdatedAtUtc, nameof(CefrReadingPassage), null,
                 null, null, null))
             .ToList();
     }

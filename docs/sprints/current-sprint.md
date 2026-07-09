@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-10 (Phase H10)
+lastUpdated: 2026-07-10 (Phase H9A)
 owner: engineering
 supersedes:
 supersededBy:
@@ -14,7 +14,52 @@ Last updated: 2026-07-10
 
 ## Active sprint
 
-**Phase H10 — ActivityDefinition Runtime Launch Path / Attempt Bridge (2026-07-10)** — complete
+**Phase H9A — Legacy Admin/API/Code Path Removal Safety Pass (2026-07-10)** — complete
+
+First H9 cleanup phase (split H9A/H9B/H9C/H9D per `TODO-H9-1`). Safe, incremental, **frontend/
+admin-only** — no backend/data/runtime removal.
+
+- Removed the 4 legacy typed admin bank Angular pages/components/routes (vocabulary/grammar/
+  reading-references/reading-passages). Nav links were already gone since H8; this phase removed
+  the actual page components and route entries.
+- Removed the orphaned `AdminResourceBankService` Angular service (8 typed list/detail methods,
+  confirmed used only by the deleted pages) and 12 dead frontend model interfaces.
+- Old typed routes now redirect via Angular's `RedirectFunction` to the unified Resource Bank with
+  a matching type filter (e.g. `/admin/resource-banks/vocabulary` →
+  `/admin/resource-bank?type=vocabulary`). `AdminResourceBankUnifiedComponent` now injects
+  `ActivatedRoute` and reads `?type=` on init to pre-seed its filter (falls back to "all" on an
+  unrecognized value, never a blank page).
+- **Backend** (small, non-destructive): `UnifiedResourceBankItemDto.DetailRoute` — previously
+  hardcoded to the just-removed typed routes at 4 construction sites in
+  `ResourceBankQueryService.cs`, which would otherwise have become a dead 404 link in the unified
+  page's detail drawer — is now always `null`; the dead link block was removed from the template.
+- +3 Angular unit tests for the new query-param behavior (Karma bundle itself still blocked, see
+  below).
+
+**No typed bank tables/data removed. No typed backend controller actions or
+`IResourceBankQueryService` methods removed** (the latter is load-bearing for
+`TodayBankResourceSelector`, a student-facing Today feature — kept long-term). **No import/
+publish pipeline, `ActivityTemplate`, `PracticeActivityCache`, `StudentActivityReadinessItem`,
+`LearningActivity`/`LearningSession`/`SessionExercise`/`LearningModule`, Today/Practice Gym
+fallback, or ActivityDefinition launch bridge touched.**
+
+**Validation**: `dotnet build --configuration Release` passed (0 errors); `dotnet test
+--configuration Release` = 3,925 passed, 0 failed (unchanged — H9A added no new backend tests
+beyond the DTO value fix, which needed none). Angular production build: no new TS/Angular errors,
+only the pre-existing bundle-size budget failure. Karma unit-test suite remains blocked by the
+pre-existing `TODO-H8-2` (5 unrelated spec-fixture gaps, none touched by H9A) — the new
+`admin-resource-bank-unified.component.spec.ts` cannot currently run as part of the shared bundle.
+
+**Deferred:** `TODO-H9B-1` (physical `ResourceBankItem` consolidation decision/design),
+`TODO-H9C-1` (migration/compatibility adapters if consolidation is chosen), `TODO-H9D-1` (typed
+table/API removal after migration is proven safe).
+
+See `docs/reviews/2026-07-10-phase-h9a-legacy-admin-code-path-removal-review.md` for full detail.
+
+---
+
+**Previous phase completed:** Phase H10 — ActivityDefinition Runtime Launch Path / Attempt Bridge
+(2026-07-10) — complete
 
 Gives an approved `ActivityDefinition` (H4) its first real launch/attempt/scoring path, reached
 only through an approved `ModuleDefinition` suggestion in Practice Gym (H7). **Not** H9

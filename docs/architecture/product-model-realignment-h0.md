@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-10 (Phase H10)
+lastUpdated: 2026-07-10 (Phase H9A)
 owner: product
 supersedes:
 supersededBy:
@@ -313,6 +313,34 @@ launch integration (deferred, `TODO-H10-2`). `ActivityTemplate`, `PracticeActivi
 `StudentActivityReadinessItem`, and the full runtime session-entity chain are all untouched. Full
 detail: `docs/roadmap/road-map.md` §1, and
 `docs/reviews/2026-07-10-phase-h10-activitydefinition-runtime-launch-bridge-review.md`.
+
+**Phase H9A, 2026-07-10. Implemented.** First H9 cleanup phase (split H9A/H9B/H9C/H9D — see
+`TODO-H9-1`). **Frontend/admin cleanup only** — deliberately did not attempt physical
+`ResourceBankItem` consolidation (that's H9B's decision to make) or touch any typed bank table,
+backend service method, or runtime dependency. Removed the four legacy typed admin bank Angular
+pages/components/routes (vocabulary/grammar/reading-references/reading-passages) — H8 had already
+removed their nav links; H9A removed the actual page components and route definitions, confirmed
+unreachable and unused via grep before deletion. Removed the orphaned `AdminResourceBankService`
+Angular service (8 typed list/detail methods, used only by the deleted pages) and 12 dead frontend
+model interfaces. Old routes now redirect via Angular's `RedirectFunction` (confirmed supported in
+this project's Angular 19.2.0) to the unified Resource Bank with a matching type filter (e.g.
+`/admin/resource-banks/vocabulary` → `/admin/resource-bank?type=vocabulary`);
+`AdminResourceBankUnifiedComponent` now injects `ActivatedRoute` and reads `?type=` on init to
+pre-seed its filter, falling back to "all" on an unrecognized value. One small, non-destructive
+backend fix: `UnifiedResourceBankItemDto.DetailRoute` — previously hardcoded to the just-removed
+typed routes at 4 construction sites in `ResourceBankQueryService.cs`, which would otherwise have
+become a dead 404 link in the unified page's own detail drawer — is now always `null`; the dead
+link block was removed from the template. `AdminResourceBankController`'s 8 typed HTTP actions and
+`IResourceBankQueryService`'s 8 typed methods were deliberately kept — the latter is load-bearing
+for `TodayBankResourceSelector`, a student-facing Today feature completely unrelated to the admin
+UI being cleaned up. +3 Angular unit tests (Karma bundle still blocked by pre-existing
+`TODO-H8-2`). All 3,925 backend tests still pass; frontend production build clean (only the
+pre-existing bundle-size warning). No typed bank table/data removed, no destructive EF migration,
+no physical `ResourceBankItem` consolidation, no import/publish pipeline, `ActivityTemplate`,
+`PracticeActivityCache`, `StudentActivityReadinessItem`, runtime session entities, Today/Practice
+Gym fallback, or ActivityDefinition launch bridge touched. Full detail:
+`docs/roadmap/road-map.md` §1, and
+`docs/reviews/2026-07-10-phase-h9a-legacy-admin-code-path-removal-review.md`.
 
 ---
 
@@ -627,7 +655,10 @@ pages exist to populate "Content Studio." Not implemented in H0.
 | **H6 — Daily Lesson Module Pipeline** `Done (2026-07-09)` | Deterministic, read-only `IDailyLessonModuleSelectionService` selects an Approved Module (with an Approved Learn Item and Approved Activity Definition) for Today, attached additively as an optional `TodaysSessionResult.ModuleSection`; existing session generation and Today legacy fallback unchanged; new additive `StudentDailyModuleAssignment` bookkeeping table for a 14-day reuse guard and admin diagnostics. | H5 |
 | **H7 — Practice Gym Module Pipeline** `Done (2026-07-09)` | Deterministic, read-only `IPracticeGymModuleSelectionService` suggests Approved Modules (with Approved linked Learn Item/Activity Definition) for Practice Gym, attached additively as an optional `PracticeGymSuggestionsDto.ModuleSuggestions`; adds self-directed skill/subskill/objective/difficulty/weakness-signal preferences on top of H6's shape; no student "start" flow yet (display-only). | H6 |
 | **H8 — Content Studio/Admin IA Cleanup and Removal Readiness** `Done (2026-07-10)` | Frontend/docs-only. Split admin nav into Content Studio (Import → Bank → Learn Items → Activities → Modules) and Content Ops (staging/support pages); removed the four typed resource-bank nav entries (navigation only — routes/tables/APIs untouched); updated stale "future Modules" page copy. No table/API/route/component deletion. | H1–H7 substantially landed, Plan-Sync-After-H7 |
-| **H9 — Legacy Bank Structure Removal and Consolidation** `Planned` | The first genuinely destructive cleanup phase — gated on a per-item safety audit (dependency audit, data audit, migration strategy, compatibility strategy, rollback/backup notes, test coverage plan) re-run against whatever H8/Phase F have retired by then; Plan-Sync-After-H7's own audit found nothing yet proven safe this way. If physical `ResourceBankItem` consolidation (§4 Option A, deferred at H0) is pursued, split into H9A (remove already-dead admin/API/code paths) / H9B (introduce the new table, additive) / H9C (migrate typed tables behind it) / H9D (remove old typed tables only after verification). | H8 |
+| **H9A — Legacy Admin/API/Code Path Removal Safety Pass** `Done (2026-07-10)` | First H9 cleanup phase. Frontend/admin cleanup only — removed the four typed admin bank Angular pages/routes/components (already unreachable via nav since H8), the orphaned `AdminResourceBankService`, and 12 dead model interfaces; old routes redirect to the unified Resource Bank with a matching `?type=` filter; nulled a dead-link `DetailRoute` value backend-side. No typed table/data/service-method/runtime-dependency removed. | H8 |
+| **H9B — Physical ResourceBankItem Consolidation Decision and Design** `Planned` | Decide whether to pursue physical `ResourceBankItem` consolidation (§4 Option A) or keep the current read-model approach (Option B) permanently; design the new table if Option A is chosen. See `TODO-H9B-1`. | H9A |
+| **H9C — Data Migration/Compatibility Adapters** `Planned` | If H9B selects consolidation, migrate the 4 typed Cefr* tables into the new table, with compatibility adapters for `TodayBankResourceSelector`. See `TODO-H9C-1`. | H9B |
+| **H9D — Typed Table/API Removal After Migration Is Proven Safe** `Planned` | Remove the old typed tables/controller actions/service methods only after H9C's migration has soaked in production. See `TODO-H9D-1`. | H9C |
 | **H10 — ActivityDefinition Runtime Launch Path / Attempt Bridge** `Done (2026-07-10)` | Chose (C) hybrid, executed via (B)'s mechanism: materializes an eligible Activity Definition into a real `LearningActivity` via `SetFormIoContent` (same as `ActivityTemplate`'s pilot), reusing the entire existing scoring/attempt/ledger pipeline unchanged. New additive `StudentActivityDefinitionLaunch` bridge table for traceability. Practice Gym Start button now live for `gap_fill`/`multiple_choice_single` suggestions. | H7 |
 
 **Not scheduled by this phase:** destructive cleanup of any kind. Phase F (legacy generation
@@ -707,10 +738,14 @@ is still needed, but that decision is still H9's to make, not resolved here. See
 `docs/reviews/2026-07-10-phase-h10-activitydefinition-runtime-launch-bridge-review.md` for full
 detail.
 
-**Recommended next: H9 — Legacy Bank Structure Removal and Consolidation**, starting with its own
-fresh per-item safety audit (do not act on Plan-Sync-After-H7's snapshot directly — re-verify).
-The PG-v2 track remains a separate, still-open decision not resolved by this phase. `TODO-H10-2`
-(Today module launch) and `TODO-H10-3` (native ActivityDefinition attempt runtime) are smaller,
+**H9A — Legacy Admin/API/Code Path Removal Safety Pass — done (2026-07-10).** First H9 cleanup
+phase; frontend/admin cleanup only. See
+`docs/reviews/2026-07-10-phase-h9a-legacy-admin-code-path-removal-review.md`.
+
+**Recommended next: H9B — Physical ResourceBankItem Consolidation Decision and Design**, deciding
+whether physical consolidation is worth pursuing or whether the read-model approach should be
+permanent. The PG-v2 track remains a separate, still-open decision not resolved by this phase.
+`TODO-H10-2` (Today module launch) and `TODO-H10-3` (native ActivityDefinition attempt runtime) are smaller,
 independent follow-ups that can proceed in parallel.
 
 ---

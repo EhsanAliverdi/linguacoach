@@ -804,23 +804,70 @@ H8's scope.
 **Context:** `src/LinguaCoach.Web/src/app/features/student/dashboard/dashboard/dashboard.component.spec.ts`; `src/LinguaCoach.Web/src/app/features/student/practice/practice-gym.component.spec.ts`; `src/LinguaCoach.Web/src/app/features/student/activity/activity-feedback-page/activity-feedback-page.component.spec.ts`; `src/LinguaCoach.Web/src/app/features/student/activity/activity-lesson/activity-lesson-submission.component.spec.ts`; `src/LinguaCoach.Web/src/app/features/student/activity/activity-lesson/activity-lesson-vocab.component.spec.ts`; `src/LinguaCoach.Web/src/app/features/student/activity/presenters/test-helpers.ts`.
 **Deferred from:** Phase H8, 2026-07-10.
 
-### TODO-H9-1 — Remove/consolidate legacy bank structures after safety/data audit
+### ~~TODO-H9-1~~ — Remove/consolidate legacy bank structures after safety/data audit — **H9A done, H9B/C/D remain**
 **What:** H9 (the first genuinely destructive cleanup phase) should remove/consolidate legacy
 bank structures — but only after a fresh, per-item safety audit (dependency audit, data audit,
 migration strategy, compatibility strategy, rollback/backup notes, test coverage plan) re-run
-against whatever H8 and Phase F have retired by the time H9 starts. If physical
-`ResourceBankItem` consolidation (H0 §4 Option A, deferred at H0) is pursued, split into H9A
-(remove already-dead admin/API/code paths) / H9B (introduce the new table, additive) / H9C
-(migrate typed tables behind it) / H9D (remove old typed tables only after verification).
+against whatever H8 and Phase F have retired by the time H9 starts. Split into H9A (remove
+already-dead admin/API/code paths) / H9B (physical `ResourceBankItem` consolidation decision and
+design) / H9C (data migration/compatibility adapters if consolidation is chosen) / H9D (remove old
+typed tables/APIs only after migration is proven safe).
+**Resolution (H9A, 2026-07-10):** Removed the 4 legacy typed admin bank Angular pages/components/
+routes (vocabulary/grammar/reading-references/reading-passages) — nav links to them were already
+gone since H8, this phase removed the actual page components, route entries, the orphaned
+`AdminResourceBankService` Angular service, and 12 orphaned frontend model interfaces. Old routes
+now redirect to the unified Resource Bank page (`/admin/resource-bank?type=<value>`) via Angular's
+`RedirectFunction`, which now reads `?type=` on load to pre-seed its filter. Backend
+`UnifiedResourceBankItemDto.DetailRoute` (previously pointed at the now-removed typed routes) is
+now always `null` instead of a dead link. No typed bank tables, no typed backend controller
+actions/service methods, no `ResourceBankQueryService` typed aggregation, and no runtime/import
+dependency was touched — see `docs/reviews/2026-07-10-phase-h9a-legacy-admin-code-path-removal-review.md`.
 **Why:** Plan-Sync-After-H7's audit found **no current structure is yet a proven-safe H9
 candidate** — the Cefr* bank entities, import-staging pipeline, `ActivityTemplate`,
 `LearningActivity`/`LearningSession`/`SessionExercise`/`LearningModule`, `PracticeActivityCache`,
 `StudentActivityReadinessItem`, and both Today/Practice Gym legacy AI-generation fallbacks are
-all still live runtime dependencies. H9 must not act on that snapshot directly — it needs its own
-re-audit at kickoff.
+all still live runtime dependencies. H9A only removed frontend/admin surface proven unreachable
+and unused; H9B/H9C/H9D still need their own re-audits before touching anything backend/data.
 **Context:** `docs/reviews/2026-07-09-plan-sync-after-h7-legacy-bank-removal-strategy.md` (Step 0
-audit table); `docs/architecture/product-model-realignment-h0.md` §4 (Option A/B) and §8 (H9 row).
-**Deferred from:** Plan-Sync-After-H7, 2026-07-09.
+audit table); `docs/architecture/product-model-realignment-h0.md` §4 (Option A/B) and §8 (H9 row);
+`docs/reviews/2026-07-10-phase-h9a-legacy-admin-code-path-removal-review.md`.
+**Deferred from:** Plan-Sync-After-H7, 2026-07-09. **Partially resolved:** Phase H9A, 2026-07-10.
+
+### TODO-H9B-1 — Physical ResourceBankItem consolidation decision and design
+**What:** Decide whether to pursue physical `ResourceBankItem` consolidation (H0 §4 Option A) or
+keep the current read-model approach (Option B, what H1/H9A both assume) permanently. If Option A
+is chosen, design the new additive table before any migration work starts.
+**Why:** H9A deliberately did not attempt this — it stayed frontend/admin-only per its own scope
+boundary. The decision has architectural weight (new table, dual-write period, cutover strategy)
+and needs its own audit, not a rider on a cleanup phase.
+**Context:** `docs/architecture/product-model-realignment-h0.md` §4 (Option A/B);
+`docs/reviews/2026-07-10-phase-h9a-legacy-admin-code-path-removal-review.md`.
+**Deferred from:** Phase H9A, 2026-07-10.
+
+### TODO-H9C-1 — Data migration/compatibility adapters if consolidation is chosen
+**What:** If TODO-H9B-1 selects physical `ResourceBankItem` consolidation, build the migration
+path from the 4 typed Cefr* tables into the new table, plus any compatibility adapters needed to
+keep `TodayBankResourceSelector` and the typed backend service methods working during the
+transition.
+**Why:** Blocked on TODO-H9B-1's decision; migrating live student-facing data (Today's bank
+selection depends on `IResourceBankQueryService`'s typed methods) needs its own safety/rollback
+plan, not folded into the design phase.
+**Context:** `src/LinguaCoach.Infrastructure/Activity/TodayBankResourceSelector.cs`;
+`src/LinguaCoach.Infrastructure/ResourceImport/ResourceBankQueryService.cs`.
+**Deferred from:** Phase H9A, 2026-07-10.
+
+### TODO-H9D-1 — Remove old typed tables/APIs only after migration is proven safe
+**What:** Once TODO-H9C-1's migration has run and been verified in production for a sufficient
+soak period, remove the 4 typed Cefr* tables, the 8 typed `AdminResourceBankController` actions
+(kept in H9A as "compatibility only"), and the 8 typed `IResourceBankQueryService` methods —
+replacing `TodayBankResourceSelector`'s typed calls with calls against the new consolidated table.
+**Why:** H9A explicitly classified the typed controller actions and service methods "keep long
+term / keep for compatibility" — removing them before the underlying data has moved would break
+Today's bank-resource selection, a live student-facing feature.
+**Context:** `src/LinguaCoach.Api/Controllers/AdminResourceBankController.cs`;
+`src/LinguaCoach.Infrastructure/ResourceImport/ResourceBankQueryService.cs`;
+`src/LinguaCoach.Infrastructure/Activity/TodayBankResourceSelector.cs`.
+**Deferred from:** Phase H9A, 2026-07-10.
 
 ### ~~TODO-H10-1~~ — Decide/build ActivityDefinition runtime launch path or bridge — **DONE in Phase H10**
 **What:** H7 shipped Practice Gym module suggestions as **display-only** — there was no launch

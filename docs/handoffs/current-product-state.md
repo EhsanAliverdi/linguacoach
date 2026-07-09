@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-10 (Phase H10)
+lastUpdated: 2026-07-10 (Phase H9A)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,36 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-10 (Phase H10)
+Last updated: 2026-07-10 (Phase H9A)
+
+## Legacy Admin/API/Code Path Removal Safety Pass (Phase H9A, 2026-07-10)
+
+The four legacy typed admin bank pages (Vocabulary/Grammar/Reading reference/Reading passage
+bank) — already removed from navigation in H8 — are now physically removed: their Angular pages,
+route entries, the Angular service used only by them, and their dead model types are gone. Old
+bookmarks to these pages redirect automatically to the unified Resource Bank page with the
+matching type filter already applied, so nothing 404s and no admin capability is lost — the
+unified page already had full filter parity with the typed pages it replaces.
+
+The unified Resource Bank page's detail drawer no longer shows a "Typed bank page" link, since the
+page it pointed to no longer exists; this was a latent dead-link risk found and fixed as part of
+this cleanup (the backend value that fed that link is now always empty instead of pointing at a
+removed page).
+
+This is the first of four planned H9 cleanup phases (H9A–H9D). It is **frontend/admin cleanup
+only** — nothing about how content is stored, imported, published, or served to students changed.
+The typed database tables, the backend API actions that still serve them (kept for compatibility,
+though nothing in the admin UI calls them anymore), and the backend service methods that Today's
+lesson-selection logic depends on are all untouched and will stay that way until a future,
+separately-audited phase (H9B decides whether/how to consolidate the underlying tables; H9C would
+migrate data if that's chosen; H9D would only then remove the old tables/APIs).
+
+No student-facing behavior changed. No table was dropped, no data was migrated, no runtime
+dependency was touched. Full detail:
+`docs/reviews/2026-07-10-phase-h9a-legacy-admin-code-path-removal-review.md`; roadmap:
+`docs/roadmap/road-map.md` §1.
+
+---
 
 ## ActivityDefinition Runtime Launch Path / Attempt Bridge (Phase H10, 2026-07-10)
 

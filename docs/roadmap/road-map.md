@@ -1,12 +1,12 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase E10)
+lastUpdated: 2026-07-10 (Phase H9A)
 owner: product / engineering
 ---
 
 # SpeakPath / LinguaCoach Roadmap
 
-**Accurate as of: 2026-07-09 (Phase E10 — see §19a for the current phase sequence).
+**Accurate as of: 2026-07-10 (Phase H9A — see §19a for the current phase sequence).
 The 2026-07-03 "Phase 20H" line below is the last entry confirmed live against speakpath.app;
 everything since then (Clean-A/A2, Phase B, Phase C1, Plan-Sync-After-C1, Phase C2, Plan-Sync-B2,
 Phase B2, Phase C3, Phase C-Final, Phase E0, Plan-Sync-PG-v2, Phase E1, Phase E2, Phase E3,
@@ -26,7 +26,36 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest phase completed (local, not yet deployed):** Phase H10 —
+**Latest phase completed (local, not yet deployed):** Phase H9A — Legacy Admin/API/Code Path
+Removal Safety Pass (2026-07-10). First H9 cleanup phase (split H9A/H9B/H9C/H9D) — safe,
+incremental, frontend/admin-only. Removed the 4 legacy typed admin bank Angular pages/components
+(vocabulary/grammar/reading-references/reading-passages — nav links to them were already gone
+since H8; this phase removed the actual page components and route entries), the orphaned
+`AdminResourceBankService` Angular service (8 typed methods, used only by the removed pages), and
+12 now-dead frontend model interfaces. Old typed routes now redirect via Angular's
+`RedirectFunction` to the unified Resource Bank with a matching type filter
+(`/admin/resource-banks/vocabulary` → `/admin/resource-bank?type=vocabulary`, etc.) —
+`AdminResourceBankUnifiedComponent` now reads `?type=` on load to pre-seed its filter. Backend:
+one small, non-destructive fix — `UnifiedResourceBankItemDto.DetailRoute` (previously hardcoded to
+the just-removed typed routes at 4 construction sites in `ResourceBankQueryService.cs`, which
+would otherwise have become a dead 404 link in the unified page's detail drawer) is now always
+`null`; the dead link block was removed from the template. **No typed bank tables, no typed
+backend controller actions (`AdminResourceBankController`'s 8 typed HTTP actions kept for
+compatibility), no `IResourceBankQueryService` typed methods (load-bearing for
+`TodayBankResourceSelector`, a student-facing Today feature), no import/publish pipeline, no
+`ActivityTemplate`/`PracticeActivityCache`/`StudentActivityReadinessItem`, no
+`LearningActivity`/`LearningSession`/`SessionExercise`/`LearningModule`, no Today/Practice Gym
+fallback, no ActivityDefinition launch bridge touched.** +3 Angular unit tests (Karma still
+blocked, see below). Backend: all 3,925 tests still pass; `dotnet build --configuration Release`
+clean. Frontend production build has no new TS/Angular errors — only the pre-existing bundle-size
+budget failure. Karma's shared spec bundle remains blocked by the pre-existing `TODO-H8-2`
+(unrelated fixture gaps in 5 files H9A did not touch). **H9B (physical `ResourceBankItem`
+consolidation decision/design), H9C (migration/compatibility adapters if chosen), and H9D (typed
+table/API removal after migration is proven safe) remain future phases — no table drop, no data
+migration, no `ResourceBankItem` consolidation attempted this phase.** Full detail:
+`docs/reviews/2026-07-10-phase-h9a-legacy-admin-code-path-removal-review.md`.
+
+**Previous phase completed (local, not yet deployed):** Phase H10 —
 ActivityDefinition Runtime Launch Path / Attempt Bridge (2026-07-10). Gives an approved
 `ActivityDefinition` (H4) its first real launch/attempt/scoring path, reached only through an
 approved `ModuleDefinition` suggestion in Practice Gym (H7). **Chosen option: a hybrid bridge
@@ -1958,7 +1987,12 @@ Preferred order, each phase gated on the previous one's completion review:
 20m. ~~**Phase H5 — Module Foundation**~~ — done (2026-07-09): new `ModuleDefinition`/`ModuleDefinitionLearnItemLink`/`ModuleDefinitionActivityLink` entities (additive-only migration, three new tables), deliberately separate from runtime `LearningModule`; `api/admin/modules` CRUD + `generate-from-items`/`generate-from-resource`/`generate-from-learn-item`/`generate-from-activity` + approve/reject; deterministic (non-AI) composer over EXISTING Approved Learn Items/Activity Definitions only; new `/admin/modules` admin page; "Generate Module" wired live from the Resource Bank page, Learn Item drawer, and Activity drawer. +38 backend tests (3,822 total). No student assignment, no Module attempts, no Daily Lesson/Practice Gym pipeline. See `docs/architecture/product-model-realignment-h0.md`, `docs/reviews/2026-07-09-phase-h5-module-foundation-review.md`, and the Decision Log entry above.
 20n. **Phase H6 — Daily Lesson Module Pipeline** `Planned, not started` — Daily Lesson becomes several Modules selected by student time/weakness/plan; preserve Today fallback until proven replacement.
 20o. **Phase H7 — Practice Gym Module Pipeline** `Planned, not started` — Practice Gym becomes skill/weakness/self-directed Module selection using approved Modules and unseen Activities; preserve legacy Practice Gym fallback until proven replacement; may run alongside/after PG-v2A's Activity-level selector work.
-20p. **Phase H8 — Admin IA Simplification** `Planned, not started` — move technical pages under Advanced/Diagnostics; make Content Studio the main admin surface, per H0's target IA.
+20p. ~~**Phase H8 — Content Studio/Admin IA Cleanup and Removal Readiness**~~ — done (2026-07-10): split the admin sidebar's "Content Banks" section into Content Studio/Advanced-Diagnostics/Learning Setup and removed the four typed resource-bank nav entries (routes/components/tables untouched). See `docs/reviews/2026-07-10-phase-h8-content-studio-admin-ia-cleanup-review.md` and the Decision Log entry above.
+20p2. ~~**Phase H10 — ActivityDefinition Runtime Launch Path / Attempt Bridge**~~ — done (2026-07-10): gave an approved `ActivityDefinition` its first real launch/attempt/scoring path via a hybrid bridge into `LearningActivity`. See `docs/reviews/2026-07-10-phase-h10-activitydefinition-runtime-launch-bridge-review.md` and the Decision Log entry above.
+20p3. ~~**Phase H9A — Legacy Admin/API/Code Path Removal Safety Pass**~~ — done (2026-07-10): first H9 cleanup phase (split H9A/H9B/H9C/H9D); removed the four now-unreachable typed admin bank Angular pages/routes/components, the orphaned `AdminResourceBankService`, and 12 dead model interfaces; old routes redirect to the unified Resource Bank with a matching type filter; no typed bank tables/data/backend service methods/runtime dependencies touched. See `docs/reviews/2026-07-10-phase-h9a-legacy-admin-code-path-removal-review.md` and the Decision Log entry above.
+20p4. **Phase H9B — Physical ResourceBankItem consolidation decision and design** `Planned, not started` — decide whether to pursue physical consolidation (H0 §4 Option A) or keep the read-model approach permanently; see `TODO-H9B-1`.
+20p5. **Phase H9C — Data migration/compatibility adapters if consolidation is chosen** `Planned, not started` — blocked on H9B's decision; see `TODO-H9C-1`.
+20p6. **Phase H9D — Typed table/API removal after migration is proven safe** `Planned, not started` — blocked on H9C; see `TODO-H9D-1`.
 21. **Phase PG-v2A** — backend skill/objective-first Practice Gym selector (planned, not started; see `docs/backlog/product-backlog.md`). Sequenced after Phase E5-E8, not immediately after C-Final — a good skill-first selector needs enough published bank/resource content and search/selector coverage to have real options to choose from.
 22. **Phase PG-v2B** — student Practice Gym UI simplified around skills, weak areas, review, challenge, recommended practice (planned, not started).
 23. **Phase PG-v2C** — admin capability-registry cleanup / internal pattern management, reframing `ExerciseTypeDefinition`/`ExercisePatternDefinition` as internal capability config rather than the student-facing model (planned, not started; these entities are **not deleted** at any point in this sequence).

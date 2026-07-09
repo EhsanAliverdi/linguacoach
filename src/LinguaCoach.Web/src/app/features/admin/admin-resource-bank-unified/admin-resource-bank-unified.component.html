@@ -158,11 +158,6 @@
       <sp-admin-form-field label="Created">{{ d.createdAt | date:'medium' }}</sp-admin-form-field>
       @if (d.updatedAt) { <sp-admin-form-field label="Updated">{{ d.updatedAt | date:'medium' }}</sp-admin-form-field> }
       <sp-admin-form-field label="Source table"><code>{{ d.sourceTable }}</code></sp-admin-form-field>
-      @if (d.detailRoute) {
-        <sp-admin-form-field label="Typed bank page">
-          <a [routerLink]="d.detailRoute">Open in {{ typeLabel(d.type) }} bank</a>
-        </sp-admin-form-field>
-      }
 
       <sp-admin-form-field label="Learn / Activity / Module">
         @if (d.linkedLearnCount) {

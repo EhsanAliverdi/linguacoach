@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H1)
+lastUpdated: 2026-07-10 (Phase H9A)
 owner: product
 supersedes:
 supersededBy:
@@ -14,7 +14,7 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
 
 ---
 
-## Product Model Realignment — Phase H0-H10 `H0-H8+H10 Done, H9 Planned` (2026-07-10)
+## Product Model Realignment — Phase H0-H10 `H0-H8+H9A+H10 Done, H9B-D Planned` (2026-07-10)
 
 **Phase H0 (docs-only, done 2026-07-09)** defined the intended product model — `Resource Bank Item
 → Learn Item/Activity → Module → Daily Lesson/Practice Gym → Attempt → Feedback + Rating →
@@ -120,14 +120,35 @@ E1-E10/D1-D6 substrate, and G2/G3/PG-v2 remain valid, separately-scoped tracks.
   touched/removed. Frontend production build clean (only the pre-existing bundle-size warning);
   full Karma suite blocked by pre-existing, unrelated spec-fixture gaps from H6/H7 (`TODO-H8-2`).
   See `docs/reviews/2026-07-10-phase-h8-content-studio-admin-ia-cleanup-review.md`.
-- [ ] **Phase H9 — Legacy Bank Structure Removal and Consolidation** `Planned` — the first
-  genuinely destructive cleanup phase, gated on a per-item safety audit (dependency audit, data
-  audit, migration strategy, compatibility strategy, rollback/backup notes, test coverage plan)
-  re-run against whatever H8/Phase F have retired by the time it starts — Plan-Sync-After-H7's
-  own audit found nothing yet proven safe to remove this way. If physical `ResourceBankItem`
-  consolidation (H0 Option A, deferred at H0) is pursued, split into H9A (remove already-dead
-  admin/API/code paths) / H9B (introduce the new table, additive) / H9C (migrate typed tables
-  behind it) / H9D (remove old typed tables only after verification).
+- [x] **Phase H9A — Legacy Admin/API/Code Path Removal Safety Pass** `Done` (2026-07-10) — first
+  H9 cleanup phase, split H9A/H9B/H9C/H9D. **Frontend/admin cleanup only.** Removed the four
+  legacy typed admin bank Angular pages/components/routes (vocabulary/grammar/reading-references/
+  reading-passages — nav links were already gone since H8, this phase removed the actual page
+  components and route entries), the orphaned `AdminResourceBankService` Angular service (8 typed
+  methods, used only by the removed pages), and 12 dead frontend model interfaces. Old routes now
+  redirect via Angular's `RedirectFunction` to the unified Resource Bank with a matching type
+  filter (`AdminResourceBankUnifiedComponent` now reads `?type=` on init to pre-seed its filter).
+  Backend: one small, non-destructive fix — `UnifiedResourceBankItemDto.DetailRoute` (previously
+  hardcoded to the just-removed typed routes, which would have become a dead 404 link in the
+  unified page's detail drawer) is now always `null`; the dead link block was removed from the
+  template. No typed bank tables/data, no typed backend controller actions or
+  `IResourceBankQueryService` methods (load-bearing for `TodayBankResourceSelector`), no import/
+  publish pipeline, `ActivityTemplate`, `PracticeActivityCache`, `StudentActivityReadinessItem`,
+  runtime session entities, Today/Practice Gym fallback, or ActivityDefinition launch bridge
+  touched. +3 Angular unit tests (Karma bundle still blocked by pre-existing `TODO-H8-2`). All
+  3,925 backend tests still pass; frontend production build clean (only the pre-existing
+  bundle-size warning). See
+  `docs/reviews/2026-07-10-phase-h9a-legacy-admin-code-path-removal-review.md`.
+- [ ] **Phase H9B — Physical ResourceBankItem consolidation decision and design** `Planned` —
+  decide whether to pursue physical `ResourceBankItem` consolidation (H0 §4 Option A) or keep the
+  current read-model approach (Option B) permanently; design the new table if Option A is chosen.
+  See `TODO-H9B-1`.
+- [ ] **Phase H9C — Data migration/compatibility adapters if consolidation is chosen** `Planned` —
+  blocked on H9B's decision; migrate the 4 typed Cefr* tables into the new table if consolidation
+  is chosen, with compatibility adapters for `TodayBankResourceSelector`. See `TODO-H9C-1`.
+- [ ] **Phase H9D — Typed table/API removal after migration is proven safe** `Planned` — blocked
+  on H9C; remove the old typed tables/controller actions/service methods only after the migration
+  has soaked in production. See `TODO-H9D-1`.
 - [x] **Phase H10 — ActivityDefinition Runtime Launch Path / Attempt Bridge** `Done` (2026-07-10)
   — resolved H7's known limitation. **Chosen: (C) hybrid bridge**, executed via (B)'s mechanism —
   materializes an eligible `ActivityDefinition` into a real `LearningActivity` via
