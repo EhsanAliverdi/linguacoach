@@ -219,7 +219,10 @@ public sealed class ActivityMaterializationJob : IJob
                         PatternPrimarySkill: pattern.PrimarySkill,
                         PatternSecondarySkills: secondarySkills,
                         AllowLowerLevelReview: isIntentionalReview,
-                        PatternKey: patternKey), ct);
+                        PatternKey: patternKey,
+                        // Phase D4 — keep the bank general-English by default; only route
+                        // workplace-tagged content when the learner's goal context is workplace-specific.
+                        PrefersWorkplaceContext: resolvedGoalContext.WorkplaceSpecific), ct);
             }
             catch (Exception ex)
             {
@@ -368,6 +371,9 @@ public sealed class ActivityMaterializationJob : IJob
             sourceId = r.SourceId,
             contentFingerprint = r.ContentFingerprint,
             selectionReason = r.SelectionReason,
+            // Phase D4 — the resource's role in the bundle ("primary"/"supporting") so a
+            // multi-resource bundle's shape stays legible in durable provenance.
+            role = r.Role,
             // Phase D3 — full-passage provenance carries CEFR + title too (null for short resources).
             cefrLevel = r.CefrLevel,
             title = r.Title

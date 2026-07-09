@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase E8)
+lastUpdated: 2026-07-09 (Phase D4)
 owner: architecture
 supersedes:
 supersededBy:
@@ -815,7 +815,12 @@ above): a second internal seed pack of 40 vocabulary / 20 grammar / 16 short rea
 8 full reading passages across A1–B2, general-English-default with workplace a minority context,
 through the same E0-E7 pipeline (no external datasets, no direct final-table seeding), plus a
 narrow `focusTags`/`difficultyBand` metadata mapping. E8 changed nothing in Today's composer or
-selector — that is Phase D4's job, still not started. See
+selector. **Phase D4 (2026-07-09) then consumed that deeper bank**: `TodayBankResourceSelector` now
+assembles pattern-shaped multi-resource bundles (vocabulary-primary; reading comprehension with a
+full-passage anchor plus supporting vocabulary/grammar; reading cloze on a short reference), with a
+pattern-specific instruction layer, a general-English-by-default workplace-context filter for full
+passages (`PrefersWorkplaceContext`), and per-resource `role` provenance — no rewrite, all legacy
+fallbacks intact. See `docs/architecture/learning-activity-engine.md` (Phase D4 section). See
 `docs/roadmap/road-map.md` Decision Log (2026-07-08, Plan-Sync-After-C1, Plan-Sync-After-E4,
 Phase E5, Plan-Sync-E6-Decision, Phase E6, Phase D1, Bugfix-D1A, Phase D2, Plan-Sync-After-D2,
 Phase E7, Phase D3, Plan-Sync-After-D3, and Phase E8 entries) for the full reasoning and current preferred phase order.

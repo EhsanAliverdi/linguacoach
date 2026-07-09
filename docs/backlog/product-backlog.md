@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase E8)
+lastUpdated: 2026-07-09 (Phase D4)
 owner: product
 supersedes:
 supersededBy:
@@ -269,11 +269,26 @@ breadth/depth, not the composer mechanism. See docs/roadmap/road-map.md §1, Dec
   - General-English-default, workplace a minority context. No external datasets, no
     Persian/bilingual content, no direct final-table seeding, no composer/selector/Practice-Gym/UI
     change, no migration. See docs/architecture/english-resource-bank-import-platform.md (E8 detail).
-- [ ] **Phase D4 — Broader Today Bank-First Composer Expansion** `Not started` — likely composer
-  phase **after** E8 (not cancelled). Use richer grammar/vocabulary/reading bank bundles; improve
-  pattern-specific bank context; expand safe bank-first coverage beyond the current vocabulary/
-  reading slice. **Keep legacy fallback; do not rewrite the full Today composer**; only where bank
-  resources are deep enough.
+- [x] **Phase D4 — Broader Today Bank-First Composer Expansion** `Done` (2026-07-09) —
+  `TodayBankResourceSelector` now assembles pattern-shaped multi-resource bundles on the deeper E8
+  bank (no composer rewrite; all legacy fallbacks preserved):
+  - [x] Vocabulary-primary: up to 3 vocab targets (primary) + opportunistic grammar + short reading
+    reference (supporting)
+  - [x] Reading comprehension/reorder: full `CefrReadingPassage` anchor (primary) + up to 2
+    supporting vocab + optional grammar; short-reference fallback when no passage
+  - [x] Reading cloze: short `CefrReadingReference` (primary) + supporting vocab/grammar, never a
+    full passage
+  - [x] Compact pattern-specific instruction layer (`PatternInstruction`)
+  - [x] General-English-by-default: workplace-tagged full passages skipped unless routed workplace
+    (`PrefersWorkplaceContext` from `ResolvedLearningGoalContext.WorkplaceSpecific`)
+  - [x] Per-resource `role` (primary/supporting) provenance; flat JSON array preserved, no migration
+  - [x] Exact-CEFR/never-upward, novelty, and feedback exclusions preserved; AI stays composer/fallback
+  - [x] +16 backend tests. No new content, no external datasets, no UI, no legacy-fallback removal.
+    See docs/architecture/learning-activity-engine.md (Phase D4 section).
+- [ ] **Post-D4 next-step checkpoint** `Open` — candidates: Phase PG-v2A (skill/objective-first
+  Practice Gym selector), further Today composer work (e.g. a dedicated grammar-primary pattern),
+  Phase F (legacy freeform-generation retirement, per-pattern), or Phase G2/G3 (backend/diagnostics
+  cleanup). Not yet decided.
 
 ---
 

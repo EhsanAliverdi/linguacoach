@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase E8)
+lastUpdated: 2026-07-09 (Phase D4)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,56 @@ Last updated: 2026-07-09
 ---
 
 ## Active sprint
+
+**Phase D4 — Broader Today Bank-First Composer Expansion (2026-07-09)** — complete
+
+Used the deeper E8 bank to make Today bank-first composition richer and more pattern-aware,
+**without rewriting the Today composer and preserving every legacy fallback.** A composer/selector
+expansion phase, not a content-import or UI phase; no migration.
+
+`TodayBankResourceSelector` now assembles **pattern-shaped multi-resource bundles**:
+- **Vocabulary-primary** patterns: up to 3 vocabulary/usage targets (role `primary`) + an
+  opportunistic grammar hint (when the pattern lists Grammar as a secondary skill) + an
+  opportunistic short reading reference (`supporting`).
+- **Reading comprehension/reorder** patterns (`reading_multiple_choice_single`/`_multi`,
+  `reorder_paragraphs`): a full `CefrReadingPassage` anchor (`primary`) + up to 2 supporting
+  vocabulary targets + optional grammar hint; falls back to a short-reference bundle when no
+  suitable passage exists.
+- **Reading cloze** patterns (`reading_fill_in_blanks`, `reading_writing_fill_in_blanks`): a short
+  `CefrReadingReference` (`primary`) + supporting vocabulary/grammar — **never a full passage**.
+
+A compact, centralized **pattern-specific instruction layer** (`PatternInstruction`) adds one
+bounded sentence per pattern family to the prompt ("use the passage only," "create a CEFR-aligned
+gapped text, do not copy a full passage," "use the vocabulary targets naturally, do not default to
+workplace"). **General English stays the default**: full passages tagged workplace-specific are
+skipped unless the learner's routed goal context is workplace-specific (new
+`TodayBankSelectionRequest.PrefersWorkplaceContext`, fed from
+`ResolvedLearningGoalContext.WorkplaceSpecific`). The short vocab/grammar/reading-reference bank
+tables carry no context tags, so this filter applies to full passages only (documented limitation).
+Provenance now records a per-resource `role` (`primary`/`supporting`); the flat JSON array shape is
+unchanged, so D2/D3 provenance/feedback tests still pass and no migration is needed.
+
+**Preserved**: exact-CEFR-first / one-level-down-only-for-review / never-upward for every resource
+type including supporting ones; novelty precheck + NotUseful/DoNotShowSimilarSoon feedback
+exclusions; AI stays composer/fallback (bank content is appended to `TopicHint`, never replacing
+generation). **All fallbacks intact** — unsupported pattern → legacy AI, no/blocked bank resource →
+smaller bundle or legacy AI, selector exception → legacy AI, AI generation/validation failure →
+existing retry/fallback. Practice Gym fallback and the readiness/delivery queue unchanged.
+
+**Validation**: `dotnet build --configuration Release` passed (0 errors); `dotnet test
+--configuration Release` = 3,596 passed, 0 failed (+13 `TodayBankResourceSelectorTests`, +3
+`ActivityMaterializationJobBankFirstTests`). No frontend files changed, so no Angular/Playwright
+gates run. **No external datasets, no new resource seed content, no Persian/bilingual content, no
+direct final-table seeding, no student/admin UI, no new public API, no migration, no legacy-fallback
+removal.**
+
+**Next: a post-D4 checkpoint** — Phase PG-v2A, further Today composer work, Phase F, or Phase G2/G3.
+See `docs/architecture/learning-activity-engine.md` (Phase D4 section) and `docs/roadmap/road-map.md`
+§1/§19a.
+
+---
+
+## Previous sprint
 
 **Phase E8 — Internal Resource Bank Depth Expansion for Grammar, Usage, and Reading Support (2026-07-09)** — complete
 

@@ -177,6 +177,119 @@ public sealed class ActivityMaterializationJobBankFirstTests : IClassFixture<Api
         activity.BankResourceProvenanceJson.Should().Contain("The New Office");
     }
 
+    [Fact]
+    public async Task Phase_D4_vocabulary_primary_pattern_passes_enriched_bank_context_and_role_provenance()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+
+        var (_, batchId, exerciseId) = await SeedPendingExerciseAsync(
+            db, cefrLevel: "B1", patternKey: ExercisePatternKey.PhraseMatch, primarySkill: "Vocabulary");
+
+        var source = new CefrResourceSource("D4 Vocab Source", "Internal/Original",
+            allowsStudentDisplay: true, allowsCommercialUse: true);
+        source.ApproveForImport();
+        db.CefrResourceSources.Add(source);
+        await db.SaveChangesAsync();
+        db.CefrVocabularyEntries.Add(new CefrVocabularyEntry(source.Id, "deliverable", "B1"));
+        await db.SaveChangesAsync();
+
+        var aiGenerator = new ContextCapturingAiActivityGenerator();
+        var (job, capturingLogger) = await BuildJobAsync(scope, db, aiGenerator);
+
+        await job.Execute(new FakeJobExecutionContext(
+            await CreateInMemorySchedulerAsync(),
+            new JobDataMap { [ActivityMaterializationJob.BatchIdKey] = batchId.ToString() }));
+
+        aiGenerator.LastContext.Should().NotBeNull(capturingLogger.LastException?.ToString() ?? "no exception captured");
+        aiGenerator.LastContext!.TopicHint.Should().Contain("Bank resources:");
+        // Phase D4 — vocabulary-primary pattern instruction is injected.
+        aiGenerator.LastContext!.TopicHint.Should().Contain("Use the selected vocabulary/usage targets naturally");
+
+        var exercise = await db.SessionExercises.AsNoTracking().SingleAsync(e => e.Id == exerciseId);
+        var activity = await db.LearningActivities.AsNoTracking().SingleAsync(a => a.Id == exercise.LearningActivityId);
+        activity.BankResourceProvenanceJson.Should().Contain("Vocabulary");
+        activity.BankResourceProvenanceJson.Should().Contain("\"role\":\"primary\"");
+    }
+
+    [Fact]
+    public async Task Phase_D4_reading_comprehension_uses_full_passage_primary_with_supporting_vocabulary_provenance()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+
+        var (_, batchId, exerciseId) = await SeedPendingExerciseAsync(
+            db, cefrLevel: "B1", patternKey: ExercisePatternKey.ReadingMultipleChoiceSingle, primarySkill: "Reading");
+
+        var source = new CefrResourceSource("D4 Reading Source", "Internal/Original",
+            allowsStudentDisplay: true, allowsCommercialUse: true);
+        source.ApproveForImport();
+        db.CefrResourceSources.Add(source);
+        await db.SaveChangesAsync();
+
+        const string passageText =
+            "Maya spends most Sundays at the community garden near her flat. She waters the vegetables, "
+            + "pulls a few weeds, and chats with the other volunteers about what to plant next. Over the "
+            + "past year the small plot has become a quiet, friendly place that many neighbours now share.";
+        // General (non-workplace) context so it is not filtered for a general learner.
+        db.CefrReadingPassages.Add(new CefrReadingPassage(
+            source.Id, "The Community Garden", passageText, "B1", contextTagsJson: "[\"general\",\"social\"]"));
+        db.CefrVocabularyEntries.Add(new CefrVocabularyEntry(source.Id, "volunteer", "B1"));
+        await db.SaveChangesAsync();
+
+        var aiGenerator = new ContextCapturingAiActivityGenerator();
+        var (job, capturingLogger) = await BuildJobAsync(scope, db, aiGenerator);
+
+        await job.Execute(new FakeJobExecutionContext(
+            await CreateInMemorySchedulerAsync(),
+            new JobDataMap { [ActivityMaterializationJob.BatchIdKey] = batchId.ToString() }));
+
+        aiGenerator.LastContext.Should().NotBeNull(capturingLogger.LastException?.ToString() ?? "no exception captured");
+        aiGenerator.LastContext!.TopicHint.Should().Contain("Use ONLY the following full reading passage");
+
+        var exercise = await db.SessionExercises.AsNoTracking().SingleAsync(e => e.Id == exerciseId);
+        var activity = await db.LearningActivities.AsNoTracking().SingleAsync(a => a.Id == exercise.LearningActivityId);
+        activity.BankResourceProvenanceJson.Should().Contain("ReadingPassage");
+        activity.BankResourceProvenanceJson.Should().Contain("\"role\":\"primary\"");
+        // A supporting vocabulary target is attached to the passage anchor.
+        activity.BankResourceProvenanceJson.Should().Contain("\"role\":\"supporting\"");
+    }
+
+    [Fact]
+    public async Task Phase_D4_cloze_pattern_uses_short_reference_not_full_passage()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+
+        var (_, batchId, exerciseId) = await SeedPendingExerciseAsync(
+            db, cefrLevel: "B1", patternKey: ExercisePatternKey.ReadingFillInBlanks, primarySkill: "Reading");
+
+        var source = new CefrResourceSource("D4 Cloze Source", "Internal/Original",
+            allowsStudentDisplay: true, allowsCommercialUse: true);
+        source.ApproveForImport();
+        db.CefrResourceSources.Add(source);
+        await db.SaveChangesAsync();
+        db.CefrReadingReferences.Add(new CefrReadingReference(source.Id, "B1", referenceExcerpt: "A short note about a weekend plan."));
+        await db.SaveChangesAsync();
+
+        var aiGenerator = new ContextCapturingAiActivityGenerator();
+        var (job, capturingLogger) = await BuildJobAsync(scope, db, aiGenerator);
+
+        await job.Execute(new FakeJobExecutionContext(
+            await CreateInMemorySchedulerAsync(),
+            new JobDataMap { [ActivityMaterializationJob.BatchIdKey] = batchId.ToString() }));
+
+        aiGenerator.LastContext.Should().NotBeNull(capturingLogger.LastException?.ToString() ?? "no exception captured");
+        aiGenerator.LastContext!.TopicHint.Should().Contain("Bank resources:");
+        // Cloze pattern instruction, and no full-passage anchor block.
+        aiGenerator.LastContext!.TopicHint.Should().Contain("do NOT copy a full reading passage");
+        aiGenerator.LastContext!.TopicHint.Should().NotContain("Use ONLY the following full reading passage");
+
+        var exercise = await db.SessionExercises.AsNoTracking().SingleAsync(e => e.Id == exerciseId);
+        var activity = await db.LearningActivities.AsNoTracking().SingleAsync(a => a.Id == exercise.LearningActivityId);
+        activity.BankResourceProvenanceJson.Should().NotContain("ReadingPassage");
+    }
+
     private static Task<(Guid ProfileId, Guid BatchId, Guid ExerciseId)> SeedPendingVocabularyExerciseAsync(
         LinguaCoachDbContext db, string cefrLevel) =>
         SeedPendingExerciseAsync(db, cefrLevel, ExercisePatternKey.PhraseMatch, "Vocabulary");

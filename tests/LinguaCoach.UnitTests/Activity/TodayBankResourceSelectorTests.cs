@@ -86,9 +86,9 @@ public sealed class TodayBankResourceSelectorTests : IDisposable
         return entry.Id;
     }
 
-    private Guid SeedReadingPassage(string title, string passageText, string cefrLevel = "B1")
+    private Guid SeedReadingPassage(string title, string passageText, string cefrLevel = "B1", string? contextTagsJson = null)
     {
-        var entry = new CefrReadingPassage(_sourceId, title, passageText, cefrLevel);
+        var entry = new CefrReadingPassage(_sourceId, title, passageText, cefrLevel, contextTagsJson: contextTagsJson);
         _db.CefrReadingPassages.Add(entry);
         return entry.Id;
     }
@@ -99,13 +99,16 @@ public sealed class TodayBankResourceSelectorTests : IDisposable
         IReadOnlyList<string>? secondarySkills = null,
         Guid? studentId = null,
         bool allowLowerLevelReview = false,
-        string? patternKey = null) =>
+        string? patternKey = null,
+        bool prefersWorkplaceContext = false) =>
         new(studentId ?? Guid.NewGuid(), cefrLevel, primarySkill, secondarySkills ?? Array.Empty<string>(),
-            AllowLowerLevelReview: allowLowerLevelReview, PatternKey: patternKey);
+            AllowLowerLevelReview: allowLowerLevelReview, PatternKey: patternKey,
+            PrefersWorkplaceContext: prefersWorkplaceContext);
 
     // A representative full-passage-suitable reading pattern (comprehension over a whole text).
     private const string FullPassagePattern = LinguaCoach.Domain.ExercisePatternKey.ReadingMultipleChoiceSingle;
     private const string FillInBlanksPattern = LinguaCoach.Domain.ExercisePatternKey.ReadingFillInBlanks;
+    private const string PhraseMatchPattern = LinguaCoach.Domain.ExercisePatternKey.PhraseMatch;
     private const string LongPassage =
         "The team met on Monday to review the quarterly results. Sales had grown steadily, "
         + "but customer support wanted more staff. After a long discussion, the manager agreed "
@@ -551,5 +554,204 @@ public sealed class TodayBankResourceSelectorTests : IDisposable
 
         result.Outcome.Should().Be(TodayBankSelectionOutcome.BankResourcesFound);
         result.Resources.Should().Contain(r => r.ResourceType == "ReadingPassage");
+    }
+
+    // ── Phase D4 — richer, pattern-shaped bundles ───────────────────────────────
+
+    [Fact]
+    public async Task Vocabulary_primary_pattern_returns_a_richer_vocabulary_and_grammar_bundle()
+    {
+        SeedVocabulary("deadline", "B1");
+        SeedVocabulary("invoice", "B1");
+        SeedVocabulary("budget", "B1");
+        SeedGrammar("present perfect", "B1");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Vocabulary", secondarySkills: ["Grammar"],
+            studentId: _studentId, patternKey: PhraseMatchPattern));
+
+        result.Outcome.Should().Be(TodayBankSelectionOutcome.BankResourcesFound);
+        // Richer than D2's 2 — up to 3 vocabulary targets now.
+        result.Resources.Count(r => r.ResourceType == "Vocabulary").Should().Be(3);
+        result.Resources.Should().Contain(r => r.ResourceType == "Grammar");
+        result.Resources.Where(r => r.ResourceType == "Vocabulary").Should().OnlyContain(r => r.Role == "primary");
+        result.Resources.Where(r => r.ResourceType == "Grammar").Should().OnlyContain(r => r.Role == "supporting");
+    }
+
+    [Fact]
+    public async Task Reading_comprehension_pattern_uses_full_passage_as_primary_with_supporting_vocabulary()
+    {
+        SeedReadingPassage("Quarterly Review", LongPassage, "B1");
+        SeedVocabulary("deadline", "B1");
+        SeedVocabulary("invoice", "B1");
+        SeedVocabulary("budget", "B1"); // 3 available, but supporting vocab is capped at 2
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Reading", studentId: _studentId, patternKey: FullPassagePattern));
+
+        result.Outcome.Should().Be(TodayBankSelectionOutcome.BankResourcesFound);
+        var passage = result.Resources.Should().ContainSingle(r => r.ResourceType == "ReadingPassage").Subject;
+        passage.Role.Should().Be("primary");
+        // Supporting vocabulary is capped at 2 so the passage stays the anchor.
+        result.Resources.Count(r => r.ResourceType == "Vocabulary").Should().Be(2);
+        result.Resources.Where(r => r.ResourceType == "Vocabulary").Should().OnlyContain(r => r.Role == "supporting");
+    }
+
+    [Fact]
+    public async Task Reading_cloze_pattern_uses_short_reference_not_full_passage_with_supporting_vocabulary()
+    {
+        SeedReadingPassage("Full", LongPassage, "B1");
+        SeedReading("A short excerpt about a meeting.", "B1");
+        SeedVocabulary("deadline", "B1");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Reading", studentId: _studentId, patternKey: FillInBlanksPattern));
+
+        result.Resources.Should().NotContain(r => r.ResourceType == "ReadingPassage");
+        result.Resources.Should().Contain(r => r.ResourceType == "Reading" && r.Role == "primary");
+        result.Resources.Should().Contain(r => r.ResourceType == "Vocabulary" && r.Role == "supporting");
+    }
+
+    [Fact]
+    public async Task Comprehension_pattern_prompt_includes_pattern_specific_passage_instruction()
+    {
+        SeedReadingPassage("Quarterly Review", LongPassage, "B1");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Reading", studentId: _studentId, patternKey: FullPassagePattern));
+
+        result.PromptSupplementText.Should().Contain("ONLY the following full reading passage");
+        result.PromptSupplementText.Should().Contain("every question must be answerable from that passage");
+    }
+
+    [Fact]
+    public async Task Vocabulary_pattern_prompt_includes_pattern_specific_target_instruction()
+    {
+        SeedVocabulary("deadline", "B1");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Vocabulary", studentId: _studentId, patternKey: PhraseMatchPattern));
+
+        result.PromptSupplementText.Should().Contain("Use the selected vocabulary/usage targets naturally");
+        result.PromptSupplementText.Should().Contain("do not default to workplace");
+    }
+
+    [Fact]
+    public async Task Cloze_pattern_prompt_instructs_not_to_copy_a_full_passage()
+    {
+        SeedReading("A short excerpt about a meeting.", "B1");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Reading", studentId: _studentId, patternKey: FillInBlanksPattern));
+
+        result.PromptSupplementText.Should().Contain("do NOT copy a full reading passage");
+    }
+
+    [Fact]
+    public async Task General_learner_does_not_receive_a_workplace_tagged_full_passage()
+    {
+        SeedReadingPassage("Office Restructure", LongPassage, "B1", contextTagsJson: "[\"workplace\"]");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Reading", studentId: _studentId,
+            patternKey: FullPassagePattern, prefersWorkplaceContext: false));
+
+        // No non-workplace passage and no short reference exists → no bank resources at all.
+        result.Resources.Should().NotContain(r => r.ResourceType == "ReadingPassage");
+    }
+
+    [Fact]
+    public async Task Workplace_routed_learner_may_receive_a_workplace_tagged_full_passage()
+    {
+        SeedReadingPassage("Office Restructure", LongPassage, "B1", contextTagsJson: "[\"workplace\"]");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Reading", studentId: _studentId,
+            patternKey: FullPassagePattern, prefersWorkplaceContext: true));
+
+        result.Resources.Should().Contain(r => r.ResourceType == "ReadingPassage");
+    }
+
+    [Fact]
+    public async Task General_learner_prefers_a_non_workplace_passage_when_both_exist()
+    {
+        SeedReadingPassage("Office Restructure", LongPassage, "B1", contextTagsJson: "[\"workplace\"]");
+        SeedReadingPassage("A Walk in the Park",
+            "On Saturday morning, Maya walked to the park near her home. The air was cool and the "
+            + "paths were quiet. She sat on a bench, read a few pages of her book, and watched the "
+            + "ducks on the pond before heading back for breakfast with her family.",
+            "B1", contextTagsJson: "[\"general\",\"daily\"]");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Reading", studentId: _studentId,
+            patternKey: FullPassagePattern, prefersWorkplaceContext: false));
+
+        var passage = result.Resources.Should().ContainSingle(r => r.ResourceType == "ReadingPassage").Subject;
+        passage.Title.Should().Be("A Walk in the Park");
+    }
+
+    [Fact]
+    public async Task Reading_comprehension_falls_back_safely_when_supporting_vocabulary_is_absent()
+    {
+        SeedReadingPassage("Quarterly Review", LongPassage, "B1");
+        _db.SaveChanges(); // no vocabulary seeded
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Reading", studentId: _studentId, patternKey: FullPassagePattern));
+
+        result.Outcome.Should().Be(TodayBankSelectionOutcome.BankResourcesFound);
+        result.Resources.Should().ContainSingle().Which.ResourceType.Should().Be("ReadingPassage");
+    }
+
+    [Fact]
+    public async Task Reading_cloze_falls_back_safely_when_reading_reference_is_absent()
+    {
+        // Only vocabulary exists; a cloze pattern still returns a safe (vocabulary-supported) bundle
+        // without a reading reference, rather than throwing or returning nothing.
+        SeedVocabulary("deadline", "B1");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Reading", studentId: _studentId, patternKey: FillInBlanksPattern));
+
+        result.Outcome.Should().Be(TodayBankSelectionOutcome.BankResourcesFound);
+        result.Resources.Should().NotContain(r => r.ResourceType == "ReadingPassage");
+        result.Resources.Should().Contain(r => r.ResourceType == "Vocabulary");
+    }
+
+    [Fact]
+    public async Task Provenance_role_marks_primary_and_supporting_resources_in_a_multi_resource_bundle()
+    {
+        SeedReadingPassage("Quarterly Review", LongPassage, "B1");
+        SeedVocabulary("deadline", "B1");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Reading", studentId: _studentId, patternKey: FullPassagePattern));
+
+        result.Resources.Should().Contain(r => r.ResourceType == "ReadingPassage" && r.Role == "primary");
+        result.Resources.Should().Contain(r => r.ResourceType == "Vocabulary" && r.Role == "supporting");
+    }
+
+    [Fact]
+    public async Task Supporting_vocabulary_still_respects_exact_cefr_and_never_widens_upward()
+    {
+        SeedReadingPassage("Quarterly Review", LongPassage, "B1");
+        SeedVocabulary("harder-word", "C1"); // above routed level — must never be selected as support
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Reading", studentId: _studentId, patternKey: FullPassagePattern));
+
+        result.Resources.Should().NotContain(r => r.DisplayText == "harder-word");
     }
 }

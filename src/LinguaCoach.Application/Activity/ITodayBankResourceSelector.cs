@@ -24,7 +24,9 @@ public sealed record TodayBankSelectionRequest(
     /// content for gap_fill_workplace_phrase. Never used to gate a whole pattern.
     /// </summary>
     IReadOnlyList<string> PatternSecondarySkills,
-    int MaxResources = 4,
+    /// <summary>Phase D4 — raised from 4 to 6 to allow a richer multi-resource bundle (a primary
+    /// anchor plus a few supporting targets) while still staying small and bounded.</summary>
+    int MaxResources = 6,
     /// <summary>
     /// Phase D2 — when true (routing reason is Review/Scaffold/Remediation), the selector may
     /// widen its CEFR search to the next level down if the exact level has no bank rows. Never
@@ -39,7 +41,17 @@ public sealed record TodayBankSelectionRequest(
     /// <c>CefrReadingReference</c> is the better fit (cloze/fill-in-blanks patterns). Null/empty
     /// falls back to the D2 short-reference behavior — full passages are strictly opt-in per pattern.
     /// </summary>
-    string? PatternKey = null);
+    string? PatternKey = null,
+    /// <summary>
+    /// Phase D4 — true only when the learner's resolved goal/routing context is workplace/
+    /// professional-specific (see <c>ResolvedLearningGoalContext.WorkplaceSpecific</c>). Default is
+    /// false so the bank stays **general English by default**: when false, the selector skips full
+    /// reading passages whose bank context tags mark them as workplace-specific, so general learners
+    /// are not silently served workplace-heavy content. Short vocabulary/grammar/reading-reference
+    /// bank tables carry no context tags, so this filter applies to full passages only (see the
+    /// selector's own doc comment).
+    /// </summary>
+    bool PrefersWorkplaceContext = false);
 
 public enum TodayBankSelectionOutcome
 {
@@ -70,6 +82,12 @@ public sealed record TodayBankSelectedResource(
     /// <summary>Short human-readable reason this resource was selected, e.g. "exact CEFR match"
     /// or "review/lower-level match (B1, routing reason Scaffold)".</summary>
     string SelectionReason,
+    /// <summary>Phase D4 — the resource's role in the bundle: <c>"primary"</c> (the anchor the
+    /// activity is built around — the full passage for comprehension patterns, the short reference
+    /// for cloze patterns, or the vocabulary targets for a vocabulary pattern) or <c>"supporting"</c>
+    /// (opportunistic extra targets/context). Recorded in provenance so a bundle's shape stays
+    /// legible later.</summary>
+    string Role = "supporting",
     /// <summary>Phase D3 — the resource's own CEFR level (full passages only; null otherwise).</summary>
     string? CefrLevel = null,
     /// <summary>Phase D3 — full-passage title (full passages only; null otherwise).</summary>

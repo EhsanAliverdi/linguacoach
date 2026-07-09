@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase E8)
+lastUpdated: 2026-07-09 (Phase D4)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,7 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-09 (Phase E8)
+Last updated: 2026-07-09 (Phase D4)
 
 > **Note on scope of this file.** The dated sections below are a running
 > product-state log that ends at Phase 20I (2026-07-03, the last
@@ -78,13 +78,30 @@ test --configuration Release` = 3,580 passed, 0 failed (+17 tests); no frontend
 files changed. Today/Practice Gym legacy fallback and the readiness/delivery
 queue all remain intact.
 
-**Next-step decision:** **Phase D4 (broader Today bank-first composer
-expansion)** is the likely next phase now that the bank is deeper; the E8/D4
-checkpoint stays open between D4, PG-v2A, and Phase G2/G3. PG-v2, Phase F (legacy
-retirement), and G2/G3 (backend/diagnostics cleanup) remain sequenced later.
-Full reasoning: `docs/roadmap/road-map.md` §1, §19 Decision Log (Phase E8
-entry), and §19a; E8 detail in
-`docs/architecture/english-resource-bank-import-platform.md`.
+**Phase D4 is complete (2026-07-09).** It used the deeper E8 bank to make Today
+bank-first composition richer and pattern-aware, **without rewriting the Today
+composer and preserving every legacy fallback.** `TodayBankResourceSelector` now
+builds **pattern-shaped multi-resource bundles**: vocabulary-primary patterns get
+up to 3 vocabulary targets plus opportunistic grammar/reading; reading
+comprehension/reorder patterns get a full reading-passage anchor plus supporting
+vocabulary/grammar; reading cloze patterns get a short reference plus supporting
+vocabulary/grammar (never a full passage). A compact pattern-specific instruction
+layer shapes the prompt per pattern family. **General English stays the default**
+— full passages tagged workplace-specific are skipped unless the learner's routed
+goal context is workplace-specific. Provenance now records a per-resource `role`
+(primary/supporting). Exact-CEFR/never-upward, novelty, and feedback exclusions
+are preserved; AI remains composer/fallback. Validation: `dotnet build
+--configuration Release` passed; `dotnet test --configuration Release` = 3,596
+passed, 0 failed (+16 tests); no frontend files changed. Today legacy fallback,
+Practice Gym fallback, and the readiness/delivery queue all remain intact; no
+migration.
+
+**Next-step decision:** a post-D4 checkpoint — **Phase PG-v2A** (skill/objective-
+first Practice Gym selector), further Today composer work (e.g. a dedicated
+grammar-primary pattern), **Phase F** (legacy freeform-generation retirement,
+per-pattern), or **Phase G2/G3** (backend/diagnostics cleanup). Full reasoning:
+`docs/roadmap/road-map.md` §1, §19 Decision Log (Phase D4 entry), and §19a; D4
+detail in `docs/architecture/learning-activity-engine.md` (Phase D4 section).
 
 ---
 
