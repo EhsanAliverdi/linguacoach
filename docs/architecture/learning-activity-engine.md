@@ -8,6 +8,12 @@ supersededBy:
 
 # Learning Activity Engine
 
+> **Phase H3 note (2026-07-09):** the new Learn Item foundation
+> (`docs/architecture/product-model-realignment-h0.md`) does not touch this engine —
+> `LearningActivity`/Today/Practice Gym runtime selection are unchanged. `LearnItem` is a new,
+> separate reviewable-content entity upstream of a future Activity/Module layer (H4/H5), not a
+> replacement for anything documented below.
+
 ## Why `LearningActivity` is the Centre of the Product
 
 SpeakPath's core value proposition is personalised, AI-driven practice that tracks what a student knows, what they struggle with, and what they should do next. Every form of practice — writing, speaking, listening, vocabulary, reading, pronunciation — is modelled as a `LearningActivity`.

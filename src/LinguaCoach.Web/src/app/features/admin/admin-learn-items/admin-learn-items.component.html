@@ -1,0 +1,170 @@
+<sp-admin-page-header
+  title="Learn Items"
+  subtitle="Reviewable teaching/explanation blocks generated from Resource Bank rows. Learn Items become the Learn part of future Modules.">
+  <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="loadAll()">
+    Refresh
+  </sp-admin-button>
+</sp-admin-page-header>
+
+<sp-admin-page-body>
+
+  @if (error()) {
+    <sp-admin-error-state title="Could not load Learn Items" [message]="error()" />
+  }
+
+  @if (loading()) {
+    <sp-admin-loading-state message="Loading Learn Items" />
+  } @else {
+
+    @if (actionSuccess()) { <sp-admin-alert variant="success">{{ actionSuccess() }}</sp-admin-alert> }
+
+    <sp-admin-filter-bar>
+      <sp-admin-input
+        search size="sm" placeholder="Search title or body..."
+        [value]="searchQuery()" (input)="onSearch($event)" aria-label="Search Learn Items" />
+      <sp-admin-select
+        size="sm" placeholder="All statuses"
+        [ngModel]="statusFilter()" (ngModelChange)="onStatusFilterChange($event)"
+        [options]="statusOptions" aria-label="Filter by review status" />
+      <sp-admin-select
+        size="sm" placeholder="All levels"
+        [ngModel]="cefrLevelFilter()" (ngModelChange)="onCefrLevelFilterChange($event)"
+        [options]="cefrLevelOptions" aria-label="Filter by CEFR level" />
+      <span class="sp-admin-filter-count">{{ totalCount() }} item{{ totalCount() !== 1 ? 's' : '' }}</span>
+    </sp-admin-filter-bar>
+
+    @if (items().length === 0) {
+      <sp-admin-empty-state title="No Learn Items" message="Use Generate Learn on a Resource Bank row to create the first draft." />
+    } @else {
+      <sp-admin-table layout="first-column-fluid">
+        <table>
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Level</th>
+              <th>Skill / Subskill</th>
+              <th>Source</th>
+              <th>Status</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of items(); track item.id) {
+              <tr (click)="openDrawer(item)" style="cursor:pointer">
+                <td><strong>{{ item.title }}</strong></td>
+                <td>{{ item.cefrLevel ?? '—' }}</td>
+                <td>
+                  {{ item.skill ?? '—' }}
+                  @if (item.subskill) { <div class="sp-admin-text-muted">{{ item.subskill }}</div> }
+                </td>
+                <td><sp-admin-badge tone="neutral">{{ item.sourceMode }}</sp-admin-badge></td>
+                <td><sp-admin-badge [tone]="statusTone(item.reviewStatus)">{{ item.reviewStatus }}</sp-admin-badge></td>
+                <td>{{ item.createdAt | date:'short' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        <sp-admin-table-footer>
+          Page {{ page() }} of {{ totalPages() }} · {{ totalCount() }} items
+          <sp-admin-pagination slot="actions" [page]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
+        </sp-admin-table-footer>
+      </sp-admin-table>
+    }
+  }
+
+</sp-admin-page-body>
+
+<!-- ── Detail drawer ────────────────────────────────────────────────────── -->
+<sp-admin-drawer
+  [open]="drawerOpen()"
+  [title]="detail()?.title ?? 'Learn Item'"
+  side="right"
+  size="lg"
+  (closed)="closeDrawer()">
+
+  @if (detail(); as d) {
+    <div class="sp-admin-form-stack">
+      <sp-admin-form-field label="Status">
+        <sp-admin-badge [tone]="statusTone(d.reviewStatus)">{{ d.reviewStatus }}</sp-admin-badge>
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Source">
+        <sp-admin-badge tone="neutral">{{ d.sourceMode }}</sp-admin-badge>
+        @if (d.generationProvider) { <span class="sp-admin-text-muted"> · {{ d.generationProvider }} ({{ d.generationModel }})</span> }
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Title"><strong>{{ d.title }}</strong></sp-admin-form-field>
+      <sp-admin-form-field label="Body"><pre>{{ d.body }}</pre></sp-admin-form-field>
+
+      @if (examplesFor(d).length > 0) {
+        <sp-admin-form-field label="Examples">
+          <ul>
+            @for (e of examplesFor(d); track e) { <li>{{ e }}</li> }
+          </ul>
+        </sp-admin-form-field>
+      }
+      @if (commonMistakesFor(d).length > 0) {
+        <sp-admin-form-field label="Common mistakes">
+          <ul>
+            @for (m of commonMistakesFor(d); track m) { <li>{{ m }}</li> }
+          </ul>
+        </sp-admin-form-field>
+      }
+      @if (d.usageNotes) { <sp-admin-form-field label="Usage notes">{{ d.usageNotes }}</sp-admin-form-field> }
+
+      <sp-admin-form-field label="CEFR level">{{ d.cefrLevel ?? '—' }}</sp-admin-form-field>
+      <sp-admin-form-field label="Skill / subskill">{{ d.skill ?? '—' }} @if (d.subskill) { / {{ d.subskill }} }</sp-admin-form-field>
+      @if (contextTagsFor(d).length > 0) {
+        <sp-admin-form-field label="Context tags">
+          @for (tag of contextTagsFor(d); track tag) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
+        </sp-admin-form-field>
+      }
+      @if (focusTagsFor(d).length > 0) {
+        <sp-admin-form-field label="Focus tags">
+          @for (tag of focusTagsFor(d); track tag) { <sp-admin-badge tone="purple" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
+        </sp-admin-form-field>
+      }
+      <sp-admin-form-field label="Difficulty band">{{ d.difficultyBand ?? '—' }}</sp-admin-form-field>
+      @if (d.estimatedMinutes !== null) { <sp-admin-form-field label="Estimated minutes">{{ d.estimatedMinutes }}</sp-admin-form-field> }
+
+      <sp-admin-form-field label="Linked resources" [hint]="d.links.length === 0 ? 'No linked resources' : ''">
+        @for (link of d.links; track link.linkId) {
+          <div>
+            <sp-admin-badge tone="info" appearance="soft">{{ link.resourceType }}</sp-admin-badge>
+            <sp-admin-badge tone="neutral" appearance="outline" size="sm">{{ link.role }}</sp-admin-badge>
+            {{ link.snapshotTitle ?? link.resourceId }}
+          </div>
+        }
+      </sp-admin-form-field>
+
+      @if (d.reviewStatus === 'Rejected' && d.rejectionReason) {
+        <sp-admin-form-field label="Rejection reason"><sp-admin-badge tone="danger">{{ d.rejectionReason }}</sp-admin-badge></sp-admin-form-field>
+      }
+      @if (d.reviewNotes) { <sp-admin-form-field label="Review notes">{{ d.reviewNotes }}</sp-admin-form-field> }
+      <sp-admin-form-field label="Created">{{ d.createdAt | date:'medium' }}</sp-admin-form-field>
+
+      @if (d.reviewStatus !== 'Rejected') {
+        <sp-admin-form-field label="Rejection reason" hint="Required only if you use Reject below">
+          <sp-admin-textarea [(ngModel)]="rejectReasonDraft" placeholder="Why this Learn Item is being rejected" />
+        </sp-admin-form-field>
+      }
+    </div>
+
+    @if (actionError()) { <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert> }
+  }
+
+  @if (detail(); as footerItem) {
+    <div slot="footer">
+      <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeDrawer()">Close</sp-admin-button>
+      @if (footerItem.reviewStatus !== 'Approved') {
+        <sp-admin-button variant="primary" [disabled]="approving()" (clicked)="approveSelected()">
+          {{ approving() ? 'Approving…' : 'Approve' }}
+        </sp-admin-button>
+      }
+      @if (footerItem.reviewStatus !== 'Rejected') {
+        <sp-admin-button variant="danger" appearance="outline" [disabled]="rejecting()" (clicked)="rejectSelected()">
+          {{ rejecting() ? 'Rejecting…' : 'Reject' }}
+        </sp-admin-button>
+      }
+    </div>
+  }
+
+</sp-admin-drawer>

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H2)
+lastUpdated: 2026-07-09 (Phase H3)
 owner: product
 supersedes:
 supersededBy:
@@ -38,9 +38,32 @@ field it writes already existed on `ResourceCandidate` since E1/E6/E8. Result st
 a file import: pending `ResourceCandidate` rows, reviewed/approved/published only through the
 existing Resource Candidates page (unchanged). No AI structure analysis — deterministic mapping
 only, honestly labeled as such in the UI. +16 unit tests, +6 integration tests (3,715 total).
-Full detail: `docs/roadmap/road-map.md` §1, Decision Log (Phase H2 entry). **Recommended next
-implementation phase: H3 — Learn Item Foundation**, though a PG-v2A/H3 sequencing decision
-remains a future Plan-Sync checkpoint.
+Full detail: `docs/roadmap/road-map.md` §1, Decision Log (Phase H2 entry).
+
+**Phase H3, 2026-07-09. Implemented.** H3 built the Learn Item foundation — the first half of
+`Resource Bank Item → Learn Item/Activity → Module`. New `LearnItem` entity (reviewable
+teaching/explanation block: title/body/examples/common mistakes/usage notes, CEFR/skill/subskill/
+context/focus/difficulty metadata, `SourceMode` Manual/GeneratedFromResources/Imported,
+`GenerationProvider`/`GenerationModel`, reuses `AdminReviewStatus` for its approval lifecycle —
+always starts `PendingReview`, never auto-published) and `LearnItemResourceLink` (traceability
+back to the published `CefrVocabularyEntry`/`CefrGrammarProfileEntry`/`CefrReadingReference`/
+`CefrReadingPassage` row(s) it's about, keyed by a new Domain `PublishedResourceType` enum +
+`LearnItemResourceRole` Primary/Supporting). Additive-only migration
+(`Phase_H3_AddLearnItemFoundation`) — two new tables, no changes to any existing table.
+`IGenerateLearnItemFromResourcesHandler`/`LearnItemGenerationService` composes a **deterministic**
+draft directly from the selected resources' own fields — no AI provider call, because no existing
+AI service in this codebase generates teaching prose from source text (every existing generator is
+scoped to activity/exercise/learning-path content) and adding a new AI feature key was judged out
+of scope for a foundation phase; `GenerationProvider` is honestly stamped `"Deterministic"`, never
+a fake AI attribution. New endpoints under `api/admin/learn-items` (list/get/create/
+generate-from-resources/update/approve/reject, admin-only). New Angular page `/admin/learn-items`
+("Learn Items"), added to the Content Banks nav right after Resource Bank. The H1 unified Resource
+Bank page's "Generate Learn" row action is un-disabled (Generate Activity/Generate Module stay
+"coming soon" — H4/H5 don't exist yet); `UnifiedResourceBankItemDto.LinkedLearnCount` is now a real
+count instead of always-null. +22 unit, +8 integration tests (3,715 → 3,745). No Activity/Module entity, no
+student assignment, no Today/Practice Gym change. Full detail: `docs/roadmap/road-map.md` §1,
+Decision Log (Phase H3 entry). **Recommended next implementation phase: H4 — Activity Foundation
+with Form.io**, though a PG-v2A/H4 sequencing decision remains a future Plan-Sync checkpoint.
 
 ---
 
@@ -349,7 +372,7 @@ pages exist to populate "Content Studio." Not implemented in H0.
 | **H0 — Product Model Realignment** | Docs-only. This phase. | E10, D6 |
 | **H1 — Unified Resource Bank Admin Read Model** `Done (2026-07-09)` | One admin-facing Resource Bank API/page over existing typed published bank tables (Option B, §4). No physical consolidation. Old typed pages remain (not yet moved to Advanced — that's H8). | H0 |
 | **H2 — Import Content UX v1** `Done (2026-07-09)` | Admin paste (text/CSV/JSON)/import page; admin chooses broad type/category/default tags; deterministic mapping (no AI analyze yet — labeled "coming soon"); creates pending Resource Candidates through the existing E1 pipeline; no student assignment. File upload and async large-import handling remain on the existing Resource Import Runs page. | H1 |
-| **H3 — Learn Item Foundation** | Introduce `Learn Item` entity/table/API/admin review; generate Learn Item from selected Resource Bank rows; approval lifecycle; tags/source traceability. | H2 |
+| **H3 — Learn Item Foundation** `Done (2026-07-09)` | `LearnItem`/`LearnItemResourceLink` entities/tables/API/admin review; deterministic "Generate Learn" from selected Resource Bank rows (no AI call yet); reuses `AdminReviewStatus`; approval lifecycle; source-resource traceability. | H2 |
 | **H4 — Activity Foundation with Form.io** | Introduce/align `Activity` as an editable generated exercise (builds on existing `ActivityTemplate`); Form.io schema/config for supported types; answer/scoring/feedback plan; generated from selected Resource Bank rows; approval lifecycle; tags/source traceability. | H2 (parallel with H3) |
 | **H5 — Module Foundation** | `Module` = Learn + Activity/Activities + Feedback Plan; create/generate module drafts from selected resources/Learn Items/Activities; approval lifecycle; objective/estimated-time metadata. | H3, H4 |
 | **H6 — Daily Lesson Module Pipeline** | Daily Lesson contains several Modules based on student time/weakness/plan; preserve Today fallback until proven replacement; map existing Today materialization into the module-first model safely. | H5 |
@@ -381,8 +404,12 @@ implementation detail.
 already-built E1 pipeline — no schema/migration, no new published-bank writes, no AI-guessed
 classification. See `docs/roadmap/road-map.md` §1, Decision Log (Phase H2 entry) for full detail.
 
-**Recommended next: H3 — Learn Item Foundation.** A PG-v2A/H3 sequencing decision (which comes
-first) remains a future Plan-Sync checkpoint, not resolved by this phase.
+**H3 — Learn Item Foundation — done (2026-07-09).** An additive-only two-table migration and a
+deterministic "Generate Learn" composer — no AI call, no Activity/Module, no student assignment.
+See `docs/roadmap/road-map.md` §1, Decision Log (Phase H3 entry) for full detail.
+
+**Recommended next: H4 — Activity Foundation with Form.io.** A PG-v2A/H4 sequencing decision
+(which comes first) remains a future Plan-Sync checkpoint, not resolved by this phase.
 
 ---
 

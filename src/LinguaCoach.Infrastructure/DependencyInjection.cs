@@ -547,6 +547,23 @@ public static class DependencyInjection
         services.AddScoped<LinguaCoach.Application.ResourceImport.IContentImportService,
             LinguaCoach.Infrastructure.ResourceImport.ContentImportService>();
 
+        // Phase H3 — Learn Item foundation (reviewable teaching/explanation blocks generated from
+        // published Resource Bank rows).
+        services.AddScoped<LinguaCoach.Application.LearnItems.IAdminLearnItemListQuery,
+            LinguaCoach.Infrastructure.LearnItems.AdminLearnItemListQueryHandler>();
+        services.AddScoped<LinguaCoach.Application.LearnItems.IAdminLearnItemGetQuery,
+            LinguaCoach.Infrastructure.LearnItems.AdminLearnItemGetQueryHandler>();
+        services.AddScoped<LinguaCoach.Application.LearnItems.IAdminCreateLearnItemHandler,
+            LinguaCoach.Infrastructure.LearnItems.AdminCreateLearnItemHandler>();
+        services.AddScoped<LinguaCoach.Application.LearnItems.IAdminUpdateLearnItemHandler,
+            LinguaCoach.Infrastructure.LearnItems.AdminUpdateLearnItemHandler>();
+        services.AddScoped<LinguaCoach.Application.LearnItems.IAdminApproveLearnItemHandler,
+            LinguaCoach.Infrastructure.LearnItems.AdminApproveLearnItemHandler>();
+        services.AddScoped<LinguaCoach.Application.LearnItems.IAdminRejectLearnItemHandler,
+            LinguaCoach.Infrastructure.LearnItems.AdminRejectLearnItemHandler>();
+        services.AddScoped<LinguaCoach.Application.LearnItems.IGenerateLearnItemFromResourcesHandler,
+            LinguaCoach.Infrastructure.LearnItems.LearnItemGenerationService>();
+
         // Phase E2 — AI analysis (advisory), deterministic rule validation, and dedup/fingerprint
         // gates over staged candidates.
         services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceCandidateAnalysisService,

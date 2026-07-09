@@ -164,6 +164,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/admin-resource-bank-unified/admin-resource-bank-unified.component').then(m => m.AdminResourceBankUnifiedComponent),
       },
       {
+        path: 'learn-items',
+        loadComponent: () => import('./features/admin/admin-learn-items/admin-learn-items.component').then(m => m.AdminLearnItemsComponent),
+      },
+      {
         path: 'resource-banks/vocabulary',
         loadComponent: () => import('./features/admin/admin-resource-bank-vocabulary/admin-resource-bank-vocabulary.component').then(m => m.AdminResourceBankVocabularyComponent),
       },

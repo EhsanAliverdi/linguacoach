@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H2)
+lastUpdated: 2026-07-09 (Phase H3)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,32 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-09 (Phase H2)
+Last updated: 2026-07-09 (Phase H3)
+
+## Learn Item Foundation (Phase H3, 2026-07-09)
+
+The "Learn" half of `Resource Bank Item → Learn Item/Activity → Module` now exists. A Learn Item
+is a reviewable teaching/explanation block (title, body/explanation, examples, common mistakes,
+usage notes, CEFR/skill/subskill/context/focus/difficulty metadata) traced back to the published
+Resource Bank row(s) it's about. Admins can open `/admin/learn-items` ("Learn Items", added to the
+Content Banks nav right after Resource Bank) to browse/filter/review Learn Items, or generate one
+directly from a Resource Bank row via the now-live "Generate Learn" row action on
+`/admin/resource-bank` (previously a disabled "coming soon" placeholder). Generation is
+**deterministic** — the draft is composed directly from the selected resource's own fields, no AI
+provider call — because no existing AI service in this codebase generates teaching prose from
+source text; `GenerationProvider` is honestly stamped `"Deterministic"`, never a fake AI
+attribution. Every Learn Item starts pending review; only an explicit admin Approve/Reject changes
+that, and editing an approved Learn Item is blocked (reject first to reopen). **Additive-only
+migration** (two new tables, no change to any existing table) — no physical `ResourceBankItem`
+consolidation, no Activity/Module entity, no student assignment.
+
++30 backend tests (3,745 total: 22 unit, 8 integration). No H4/H5/H6/PG-v2 started. No external
+datasets, no Persian/bilingual content, no direct final-table seeding. Today/Practice Gym legacy
+fallback and the readiness/delivery queue are unchanged. Full detail:
+`docs/architecture/product-model-realignment-h0.md`; roadmap: `docs/roadmap/road-map.md` §1,
+Decision Log (Phase H3 entry), §19a item 20k.
+
+---
 
 ## Import Content UX v1 (Phase H2, 2026-07-09)
 

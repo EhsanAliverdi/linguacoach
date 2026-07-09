@@ -12,6 +12,14 @@
     <sp-admin-error-state title="Could not load the resource bank" [message]="error()" />
   }
 
+  @if (generateSuccess()) {
+    <sp-admin-alert variant="success">
+      {{ generateSuccess() }}
+      <a (click)="goToLearnItems()" style="cursor:pointer; text-decoration:underline;">Review in Learn Items</a>
+    </sp-admin-alert>
+  }
+  @if (generateError()) { <sp-admin-alert variant="error">{{ generateError() }}</sp-admin-alert> }
+
   @if (loading()) {
     <sp-admin-loading-state message="Loading resource bank" />
   } @else {
@@ -80,7 +88,11 @@
                 <td>{{ item.difficultyBand ?? '—' }}</td>
                 <td>{{ item.sourceName ?? '—' }}</td>
                 <td>
-                  <span class="sp-admin-text-muted">Not generated yet</span>
+                  @if (item.linkedLearnCount) {
+                    <sp-admin-badge tone="success" appearance="soft">{{ item.linkedLearnCount }} Learn</sp-admin-badge>
+                  } @else {
+                    <span class="sp-admin-text-muted">Not generated yet</span>
+                  }
                 </td>
                 <td>
                   <sp-admin-table-actions
@@ -144,13 +156,23 @@
       }
 
       <sp-admin-form-field label="Learn / Activity / Module">
-        <sp-admin-badge tone="neutral" appearance="outline">Not generated yet — coming in a future phase</sp-admin-badge>
+        @if (d.linkedLearnCount) {
+          <sp-admin-badge tone="success" appearance="soft">{{ d.linkedLearnCount }} Learn Item(s)</sp-admin-badge>
+        } @else {
+          <sp-admin-badge tone="neutral" appearance="outline">No Learn Item yet</sp-admin-badge>
+        }
+        <span class="sp-admin-text-muted"> · Activity/Module: coming in a future phase</span>
       </sp-admin-form-field>
     </div>
   }
 
   <div slot="footer">
     <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeDrawer()">Close</sp-admin-button>
+    @if (detail(); as d) {
+      <sp-admin-button variant="primary" [disabled]="generatingLearnId() === d.id" (clicked)="generateLearn(d)">
+        {{ generatingLearnId() === d.id ? 'Generating…' : 'Generate Learn' }}
+      </sp-admin-button>
+    }
   </div>
 
 </sp-admin-drawer>

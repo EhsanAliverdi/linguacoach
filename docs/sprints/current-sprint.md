@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H2)
+lastUpdated: 2026-07-09 (Phase H3)
 owner: engineering
 supersedes:
 supersededBy:
@@ -14,45 +14,54 @@ Last updated: 2026-07-09
 
 ## Active sprint
 
-**Phase H2 — Import Content UX v1 (2026-07-09)** — complete
+**Phase H3 — Learn Item Foundation (2026-07-09)** — complete
 
-A product-friendly admin wrapper over the existing Phase E1 import pipeline. **No schema/
-migration, no new published-bank writes, no AI-guessed classification.**
+The "Learn" half of `Resource Bank Item → Learn Item/Activity → Module`. **Additive-only
+migration, no AI provider call, no Activity/Module, no student assignment.**
 
-- **Backend**: new `IContentImportService`/`ContentImportService` finds-or-creates (and
-  auto-approves) a `CefrResourceSource` by exact name, converts pasted `pasted_text`/`csv_text`/
-  `json_text` into the shape `IResourceImportService.ImportAsync` already parses (pasted lines
-  become one-per-row JSONL under a generic `text` column), and forwards the admin's chosen
-  resource type + default metadata as new optional `ResourceImportRequest` fields
-  (`DefaultCandidateType`/`DefaultCefrLevel`/`DefaultSkill`/`DefaultSubskill`/
-  `DefaultContextTags`/`DefaultFocusTags`/`DefaultDifficultyBand` — all null for every existing
-  file-upload caller, zero behavior change there). `ResourceImportService` changed so the
-  admin-selected type always wins over row field-name inference, and a row's own metadata column
-  always wins over the import-level default; an invalid CEFR (row or default) falls back and
-  produces a raw-record warning instead of rejecting the row. New endpoint
-  `POST /api/admin/content-imports`.
-- **Frontend**: new `/admin/content/import` page ("Import Content") — Source/details, Content type
-  (vocabulary/grammar/reading — Listening/Speaking/Writing/Mixed shown "coming soon"), Defaults,
-  Input (paste mode + textarea), and a post-import result panel linking to Resource Candidates or
-  the Resource Bank. Added as the **first** "Content Banks" nav item (desktop + mobile), ahead of
-  Resource Bank.
-- **Review/pending behavior unchanged**: imported rows stay pending `ResourceCandidate` rows;
-  nothing is published until the existing Resource Candidates approve/publish flow runs.
-- **File upload and async large-import handling stay on the existing Resource Import Runs page** —
-  deliberately out of scope for the new endpoint.
+- **Backend**: new `LearnItem` entity (title/body/examples-JSON/common-mistakes-JSON/usage notes,
+  CEFR/skill/subskill/context/focus/difficulty metadata, `SourceMode` Manual/
+  GeneratedFromResources/Imported, `GenerationProvider`/`GenerationModel`, reuses
+  `AdminReviewStatus` — always starts `PendingReview`) and `LearnItemResourceLink` (traceability
+  back to the published Vocabulary/Grammar/ReadingReference/ReadingPassage row(s) it's about, via
+  a new Domain `PublishedResourceType` enum + `LearnItemResourceRole` Primary/Supporting). Migration
+  `Phase_H3_AddLearnItemFoundation` adds exactly two new tables — no change to any existing table.
+  `IGenerateLearnItemFromResourcesHandler`/`LearnItemGenerationService` composes a **deterministic**
+  draft directly from the selected resources' own fields — no AI call (no existing AI service in
+  this codebase generates teaching prose from source text; `GenerationProvider` is honestly
+  stamped `"Deterministic"`). New endpoints `api/admin/learn-items` (list/get/create/
+  generate-from-resources/update/approve/reject, admin-only).
+- **Frontend**: new `/admin/learn-items` page ("Learn Items") — filter bar (status/CEFR/search),
+  table, detail drawer with metadata/examples/common-mistakes/linked-resources and Approve/Reject
+  actions. Added to "Content Banks" nav (desktop + mobile) right after Resource Bank.
+- **Generate Learn is now live** on the H1 unified Resource Bank page's row actions (previously a
+  disabled "coming soon" placeholder) — one resource per call, always stages a pending-review
+  Learn Item, links to the Learn Items page on success. Generate Activity/Generate Module remain
+  disabled "coming soon" (H4/H5 don't exist yet). `UnifiedResourceBankItemDto.LinkedLearnCount`
+  now reflects real counts.
+- **Review/pending behavior**: every Learn Item starts `PendingReview`; only an explicit admin
+  Approve/Reject changes that; editing an approved Learn Item is blocked (reject first to reopen).
 
 **Validation**: `dotnet build --configuration Release` passed (0 errors); `dotnet test
---configuration Release` = 3,715 passed, 0 failed (+22: 16 unit, 6 integration; 5 architecture
+--configuration Release` = 3,745 passed, 0 failed (+22 unit, +8 integration; 5 architecture
 unchanged). Angular production build: no new TS/Angular compile errors, only the pre-existing
 bundle-size budget failure (documented, not new).
 
-**No H3/H4/H5 started. No PG-v2 started. No physical table consolidation. No external datasets.
-No Persian/bilingual/support-language content. No direct final-table seeding. No student
-assignment. Today/Practice Gym legacy fallback and the readiness/delivery queue are unchanged.**
+**No H4/H5/H6 started. No PG-v2 started. No physical table consolidation. No external datasets.
+No Persian/bilingual/support-language content. No direct final-table seeding. No Activity/Module
+entity. No student assignment. Today/Practice Gym legacy fallback and the readiness/delivery
+queue are unchanged.**
 
-**Next: Phase H3 — Learn Item Foundation** (recommended), though a PG-v2A/H3 sequencing decision
-remains a future Plan-Sync checkpoint. See `docs/architecture/product-model-realignment-h0.md` and
-`docs/roadmap/road-map.md` §1/§19a.
+**Next: Phase H4 — Activity Foundation with Form.io** (recommended), though a PG-v2A/H4
+sequencing decision remains a future Plan-Sync checkpoint. See
+`docs/architecture/product-model-realignment-h0.md` and `docs/roadmap/road-map.md` §1/§19a.
+
+---
+
+## Previous sprint (H2)
+
+**Phase H2 — Import Content UX v1 (2026-07-09)** — complete, docs-only summary retained: see
+`docs/architecture/product-model-realignment-h0.md` for full detail.
 
 ---
 

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H2)
+lastUpdated: 2026-07-09 (Phase H3)
 owner: architecture
 supersedes:
 supersededBy:
@@ -368,9 +368,22 @@ admin's chosen resource type + default metadata as new optional `ResourceImportR
 and `/admin/content/import` admin page ("Import Content"), added as the **first** "Content Banks"
 nav item. **No schema/migration, no new published-bank writes, no AI-guessed classification** —
 deterministic mapping only. File upload and async large-import handling stay on the existing
-Resource Import Runs page. +22 backend tests (3,715 total). No H3-H5 started, no PG-v2 started.
-**Recommended next implementation phase: H3 — Learn Item Foundation**, though a PG-v2A/H3
-sequencing decision remains a future Plan-Sync checkpoint. See
+Resource Import Runs page. +22 backend tests (3,715 total).
+
+**Phase H3 (2026-07-09)** — Learn Item Foundation: the "Learn" half of `Resource Bank Item → Learn
+Item/Activity → Module`. New `LearnItem`/`LearnItemResourceLink` entities (additive-only migration
+— two new tables, no change to any existing table); `LearnItem` reuses `AdminReviewStatus` for its
+approval lifecycle (always starts `PendingReview`, never auto-published).
+`IGenerateLearnItemFromResourcesHandler`/`LearnItemGenerationService` composes a **deterministic**
+draft directly from selected published Resource Bank rows' own fields — **no AI provider call**
+(no existing AI service in this codebase generates teaching prose from source text;
+`GenerationProvider` is honestly stamped `"Deterministic"`). New endpoints `api/admin/learn-items`
+and admin page `/admin/learn-items` ("Learn Items"), added to the Content Banks nav. The H1 unified
+Resource Bank page's "Generate Learn" row action is now live (was a disabled "coming soon"
+placeholder); `UnifiedResourceBankItemDto.LinkedLearnCount` now reflects real counts. +30 backend
+tests (3,745 total). No Activity/Module entity, no student assignment, no H4-H6 started, no PG-v2
+started. **Recommended next implementation phase: H4 — Activity Foundation with Form.io**, though a
+PG-v2A/H4 sequencing decision remains a future Plan-Sync checkpoint. See
 `docs/architecture/product-model-realignment-h0.md` and `docs/roadmap/road-map.md` §1, Decision
 Log, and §19a.
 

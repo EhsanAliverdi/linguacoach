@@ -14,7 +14,7 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
 
 ---
 
-## Product Model Realignment — Phase H0-H8 `H0-H2 Done, H3-H8 Planned` (2026-07-09)
+## Product Model Realignment — Phase H0-H8 `H0-H3 Done, H4-H8 Planned` (2026-07-09)
 
 **Phase H0 (docs-only, done 2026-07-09)** defined the intended product model — `Resource Bank Item
 → Learn Item/Activity → Module → Daily Lesson/Practice Gym → Attempt → Feedback + Rating →
@@ -38,8 +38,12 @@ E1-E10/D1-D6 substrate, and G2/G3/PG-v2 remain valid, separately-scoped tracks.
   E1 pipeline; no AI analyze/mapping preview yet (deterministic only), no async large-import
   handling (stays on the existing file-upload page), no student assignment, no schema/migration.
   +22 backend tests (3,715 total).
-- [ ] **Phase H3 — Learn Item Foundation** `Planned` — new `Learn Item` entity/API/admin review;
-  generated from selected Resource Bank rows; approval lifecycle.
+- [x] **Phase H3 — Learn Item Foundation** `Done` (2026-07-09) — new `LearnItem`/
+  `LearnItemResourceLink` entities (additive-only migration, two new tables); `api/admin/learn-items`
+  CRUD + `generate-from-resources` + approve/reject; deterministic (non-AI) "Generate Learn" draft
+  composer wired live from the H1 unified Resource Bank page; new `/admin/learn-items` admin page;
+  reuses `AdminReviewStatus`, always starts pending review. No Activity/Module entity, no student
+  assignment. +30 backend tests (3,745 total).
 - [ ] **Phase H4 — Activity Foundation with Form.io** `Planned` — align/extend `Activity` (building
   on `ActivityTemplate`) as an editable generated exercise; approval lifecycle.
 - [ ] **Phase H5 — Module Foundation** `Planned` — `Module` = Learn + Activity/Activities + Feedback

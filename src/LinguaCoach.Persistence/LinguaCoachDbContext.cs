@@ -114,6 +114,11 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<ResourceRawRecord> ResourceRawRecords => Set<ResourceRawRecord>();
     public DbSet<ResourceCandidate> ResourceCandidates => Set<ResourceCandidate>();
 
+    // Phase H3 — Learn Item foundation (reviewable teaching/explanation blocks generated from
+    // published Resource Bank rows; the "Learn" half of a future Module)
+    public DbSet<LearnItem> LearnItems => Set<LearnItem>();
+    public DbSet<LearnItemResourceLink> LearnItemResourceLinks => Set<LearnItemResourceLink>();
+
     // Phase 10W — Enterprise notification platform
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<NotificationOutboxItem> NotificationOutboxItems => Set<NotificationOutboxItem>();

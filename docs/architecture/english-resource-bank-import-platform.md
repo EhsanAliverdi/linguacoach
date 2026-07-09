@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H2)
+lastUpdated: 2026-07-09 (Phase H3)
 owner: architecture
 supersedes:
 supersededBy:
@@ -26,6 +26,17 @@ every existing file-upload caller). The E1 gate/parse/staging pipeline itself, a
 analysis/validation/preview/publish services, are unchanged — H2 is a second caller of E1's
 `ImportAsync`, not a parallel import path. See `docs/architecture/product-model-realignment-h0.md`
 and `docs/roadmap/road-map.md` §1/Decision Log for full H2 detail.
+
+**Phase H3 (2026-07-09)** added the first downstream consumer of this platform's *published* bank
+rows that isn't a browse/search page: `LearnItemGenerationService` reads selected
+`CefrVocabularyEntry`/`CefrGrammarProfileEntry`/`CefrReadingReference`/`CefrReadingPassage` rows
+(via a new `LearnItemResourceLookup` helper) to deterministically compose a `LearnItem` draft —
+read-only against this platform's tables, never writes to them. Traceability is forward this time
+(a new `LearnItemResourceLink` table points at the published row), the mirror image of this
+platform's existing reverse traceability (`ResourceCandidate.PublishedEntityType`/
+`PublishedEntityId` → published row). No change to any E1-E9 pipeline code. See
+`docs/architecture/product-model-realignment-h0.md` and `docs/roadmap/road-map.md` §1/Decision Log
+for full H3 detail.
 
 **Date planned:** 2026-07-08 (Plan-Sync-After-C1), **finalized:** 2026-07-08 (Phase E0),
 **E1 implemented:** 2026-07-08, **E2 implemented:** 2026-07-08, **E3 implemented:** 2026-07-08,

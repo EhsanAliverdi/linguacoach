@@ -1,8 +1,9 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AdminUnifiedResourceBankService } from '../../../core/services/admin-resource-import.service';
+import { AdminLearnItemService } from '../../../core/services/admin-learn-item.service';
 import {
   UnifiedResourceBankItemDto,
   UnifiedResourceBankItemType,
@@ -10,6 +11,7 @@ import {
   RESOURCE_BANK_CEFR_LEVELS,
 } from '../../../core/models/admin-resource-import.models';
 import {
+  SpAdminAlertComponent,
   SpAdminBadgeComponent,
   SpAdminButtonComponent,
   SpAdminDrawerComponent,
@@ -29,6 +31,15 @@ import {
 } from '../../../design-system/admin';
 import type { SpAdminRowAction } from '../../../design-system/admin';
 
+/** Phase H3 — UnifiedResourceBankItemType's member names match PublishedResourceType (backend
+ *  Domain enum) and LearnItemResourceLinkInput's ResourceType 1:1 — no translation table needed. */
+const RESOURCE_TYPE_TO_LEARN_ITEM_TYPE: Record<UnifiedResourceBankItemType, string> = {
+  vocabulary: 'Vocabulary',
+  grammar: 'Grammar',
+  readingReference: 'ReadingReference',
+  readingPassage: 'ReadingPassage',
+};
+
 const PAGE_SIZE = 20;
 
 /**
@@ -40,8 +51,9 @@ const PAGE_SIZE = 20;
  * no edit/delete here, all mutation stays on Resource Candidates (E4). The typed pages this
  * replaces as the primary entry point remain reachable and fully functional.
  *
- * Generate Learn / Generate Activity / Generate Module are disabled "Coming soon" actions —
- * placeholders for Phase H3/H4/H5, which do not exist yet.
+ * Phase H3 — "Generate Learn" is now a real row action (deterministic draft composer, see
+ * AdminLearnItemService); Generate Activity / Generate Module stay disabled "Coming soon" —
+ * placeholders for Phase H4/H5, which do not exist yet.
  */
 @Component({
   selector: 'app-admin-resource-bank-unified',
@@ -50,6 +62,7 @@ const PAGE_SIZE = 20;
     CommonModule,
     FormsModule,
     RouterLink,
+    SpAdminAlertComponent,
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
     SpAdminDrawerComponent,
@@ -97,7 +110,16 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
   drawerOpen = signal(false);
   detail = signal<UnifiedResourceBankItemDto | null>(null);
 
-  constructor(private bankSvc: AdminUnifiedResourceBankService) {}
+  // ── Phase H3 — Generate Learn ────────────────────────────────────────────
+  generatingLearnId = signal<string | null>(null);
+  generateSuccess = signal('');
+  generateError = signal('');
+
+  constructor(
+    private bankSvc: AdminUnifiedResourceBankService,
+    private learnItemSvc: AdminLearnItemService,
+    private router: Router,
+  ) {}
 
   ngOnInit(): void {
     this.loadAll();
@@ -166,10 +188,13 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
     return UNIFIED_RESOURCE_BANK_TYPES.find(t => t.value === type)?.label ?? type;
   }
 
-  rowActions(_item: UnifiedResourceBankItemDto): SpAdminRowAction[] {
+  rowActions(item: UnifiedResourceBankItemDto): SpAdminRowAction[] {
     return [
       { id: 'view', label: 'View', icon: 'view', tone: 'default' },
-      { id: 'generate-learn', label: 'Generate Learn (coming soon)', disabled: true, dividerBefore: true },
+      {
+        id: 'generate-learn', label: 'Generate Learn', icon: 'sparkles', tone: 'default', dividerBefore: true,
+        disabled: this.generatingLearnId() === item.id,
+      },
       { id: 'generate-activity', label: 'Generate Activity (coming soon)', disabled: true },
       { id: 'generate-module', label: 'Generate Module (coming soon)', disabled: true },
     ];
@@ -177,6 +202,33 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
 
   onRowAction(actionId: string, item: UnifiedResourceBankItemDto): void {
     if (actionId === 'view') this.openDrawer(item);
-    // generate-learn/generate-activity/generate-module are disabled — no handler needed (H3/H4/H5).
+    if (actionId === 'generate-learn') this.generateLearn(item);
+    // generate-activity/generate-module are disabled — no handler needed (H4/H5).
+  }
+
+  /** Phase H3 — deterministic draft composer, one resource per call (multi-select is a future
+   *  enhancement, not needed for this foundation phase). Always stages a pending-review Learn
+   *  Item — never publishes, never assigns anything to a student. */
+  generateLearn(item: UnifiedResourceBankItemDto): void {
+    this.generatingLearnId.set(item.id);
+    this.generateError.set('');
+    this.generateSuccess.set('');
+    this.learnItemSvc.generateFromResources({
+      resources: [{ resourceType: RESOURCE_TYPE_TO_LEARN_ITEM_TYPE[item.type], resourceId: item.id, role: 'Primary' }],
+    }).subscribe({
+      next: result => {
+        this.generatingLearnId.set(null);
+        this.generateSuccess.set(`Learn Item draft created from "${item.title}" — pending review.`);
+        this.loadAll();
+      },
+      error: err => {
+        this.generatingLearnId.set(null);
+        this.generateError.set(err.error?.error ?? 'Could not generate a Learn Item.');
+      },
+    });
+  }
+
+  goToLearnItems(): void {
+    this.router.navigateByUrl('/admin/learn-items');
   }
 }
