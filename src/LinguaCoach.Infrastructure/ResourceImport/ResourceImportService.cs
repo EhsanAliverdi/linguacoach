@@ -53,6 +53,14 @@ public sealed class ResourceImportService : IResourceImportService
     private const string SkillField = "skill";
     private const string SubskillField = "subskill";
     private const string TagsField = "tags";
+    // Phase E8 — two more optional deterministic columns. Like the E6 columns above, these are only
+    // read when the row actually carries them (internally-authored packs whose author already knows
+    // the correct focus tags / difficulty band), so every prior import path is completely unchanged
+    // (focus tags stay "[]", difficulty band stays null when the columns are absent). Only
+    // CefrReadingPassage persists these downstream — the other Cefr* bank entities do not carry
+    // focus-tag or difficulty-band columns, so mapping them is harmless for those types.
+    private const string FocusTagsField = "focustags";
+    private const string DifficultyBandField = "difficultyband";
 
     private readonly LinguaCoachDbContext _db;
     private readonly IActivityContentFingerprintService _fingerprint;
@@ -221,13 +229,17 @@ public sealed class ResourceImportService : IResourceImportService
     }
 
     /// <summary>
-    /// Phase E6 — if the row already carries <c>cefrLevel</c>/<c>skill</c>/<c>subskill</c>/
-    /// <c>tags</c> columns, copy them straight onto the candidate. No-op when none of those
-    /// columns are present (the common case for genuinely unclassified imports), so existing
-    /// behavior for every prior import is unchanged. Confidence is stamped at 1.0 — this is a
-    /// value the row's own author already asserts, not a probabilistic AI guess, so there is no
-    /// "confidence" to estimate. <paramref name="row"/>'s <c>tags</c> column (if a JSON array) is
-    /// passed straight through as <c>ContextTagsJson</c>.
+    /// Phase E6/E8 — if the row already carries <c>cefrLevel</c>/<c>skill</c>/<c>subskill</c>/
+    /// <c>tags</c> columns (E6), and optionally <c>focusTags</c>/<c>difficultyBand</c> (E8), copy
+    /// them straight onto the candidate. No-op when none of the E6 classification columns are
+    /// present (the common case for genuinely unclassified imports), so existing behavior for every
+    /// prior import is unchanged. Confidence is stamped at 1.0 — this is a value the row's own
+    /// author already asserts, not a probabilistic AI guess, so there is no "confidence" to
+    /// estimate. <paramref name="row"/>'s <c>tags</c> column (if a JSON array) is passed straight
+    /// through as <c>ContextTagsJson</c>; its <c>focusTags</c> column (if present) as
+    /// <c>FocusTagsJson</c>; and its <c>difficultyBand</c> column (if a 1-5 integer) as the
+    /// difficulty band. When those two E8 columns are absent, focus tags stay <c>"[]"</c> and the
+    /// difficulty band stays null — exactly the pre-E8 behavior.
     /// </summary>
     private static void ApplyDeterministicRowMetadata(ResourceCandidate candidate, IReadOnlyDictionary<string, string?> row)
     {
@@ -235,6 +247,8 @@ public sealed class ResourceImportService : IResourceImportService
         var skill = GetField(row, SkillField);
         var subskill = GetField(row, SubskillField);
         var tags = GetField(row, TagsField);
+        var focusTags = GetField(row, FocusTagsField);
+        var difficultyBand = ParseDifficultyBand(GetField(row, DifficultyBandField));
 
         if (cefrLevel is null && skill is null && subskill is null)
             return;
@@ -244,7 +258,8 @@ public sealed class ResourceImportService : IResourceImportService
             mappingSource = "import-row-deterministic-mapping",
             cefrLevel,
             skill,
-            subskill
+            subskill,
+            difficultyBand
         });
 
         candidate.ApplyAnalysis(
@@ -253,9 +268,9 @@ public sealed class ResourceImportService : IResourceImportService
             cefrConfidence: cefrLevel is null ? null : 1.0,
             primarySkill: skill,
             subskill: subskill,
-            difficultyBand: null,
+            difficultyBand: difficultyBand,
             contextTagsJson: tags ?? "[]",
-            focusTagsJson: "[]",
+            focusTagsJson: focusTags ?? "[]",
             grammarTagsJson: null,
             vocabularyTagsJson: null,
             pronunciationTagsJson: null,
@@ -263,6 +278,16 @@ public sealed class ResourceImportService : IResourceImportService
             safetyTagsJson: null,
             qualityScore: null,
             searchText: null);
+    }
+
+    /// <summary>Phase E8 — parses an optional <c>difficultyBand</c> row value to the 1-5 band the
+    /// bank entities accept. Any missing, non-numeric, or out-of-range value returns null (the row
+    /// simply carries no difficulty band), never throws — a malformed metadata column must never
+    /// abort staging.</summary>
+    private static int? ParseDifficultyBand(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return null;
+        return int.TryParse(raw.Trim(), out var band) && band is >= 1 and <= 5 ? band : null;
     }
 
     private void RejectRow(

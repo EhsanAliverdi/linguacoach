@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Plan-Sync-After-D3)
+lastUpdated: 2026-07-09 (Phase E8)
 owner: product
 supersedes:
 supersededBy:
@@ -253,19 +253,22 @@ comes before Phase D4 (broader Today composer expansion)** — the bottleneck is
 breadth/depth, not the composer mechanism. See docs/roadmap/road-map.md §1, Decision Log
 (Plan-Sync-After-D3), and §19a items 18–20.
 
-- [ ] **Phase E8 — Internal Resource Bank Depth Expansion for Grammar, Usage, and Reading Support**
-  `Not started` — **next recommended implementation phase.** Expand original, English-only internal
-  bank depth through the existing staging → validation → approval → publish pipeline:
-  - [ ] More `CefrVocabularyEntry` depth across A1–B2
-  - [ ] More `CefrGrammarProfileEntry` depth across A1–B2
-  - [ ] More `CefrReadingReference` short-reference material
-  - [ ] More `CefrReadingPassage` full-passage material if useful
-  - [ ] Better metadata coverage (CEFR, skill, subskill where supported, context tags, focus tags,
-    difficulty, estimated time, source/provenance)
-  - [ ] Validation coverage proving published resources are discoverable by the selector
-  - **Must not**: import external datasets; add Persian/bilingual/support-language content; seed
-    final published tables directly; rewrite the Today composer; remove any legacy fallback; delete
-    the readiness/delivery queue; start PG-v2; redesign student UI.
+- [x] **Phase E8 — Internal Resource Bank Depth Expansion for Grammar, Usage, and Reading Support**
+  `Done` (2026-07-09) — added `InternalResourceSeedPackE8Seeder` (second internal source,
+  idempotent) through the existing staging → validation → approval → publish pipeline:
+  - [x] **40** new `CefrVocabularyEntry` across A1–B2 (10 per level)
+  - [x] **20** new `CefrGrammarProfileEntry` across A1–B2 (5 per level)
+  - [x] **16** new `CefrReadingReference` short-reference rows across A1–B2 (4 per level)
+  - [x] **8** new `CefrReadingPassage` full passages across A1–B2 (2 per level)
+  - [x] Metadata coverage: CEFR/skill/subskill/context tags for all; plus focus tags + difficulty
+    band on full passages (via a narrow additive `ApplyDeterministicRowMetadata` mapping of optional
+    `focusTags`/`difficultyBand` columns); reading time/word count computed on `CefrReadingPassage`;
+    source/provenance traceable
+  - [x] Validation coverage (+17 tests) proving discoverability via `ResourceBankQueryService` and
+    trace-back with no direct-final-table bypass
+  - General-English-default, workplace a minority context. No external datasets, no
+    Persian/bilingual content, no direct final-table seeding, no composer/selector/Practice-Gym/UI
+    change, no migration. See docs/architecture/english-resource-bank-import-platform.md (E8 detail).
 - [ ] **Phase D4 — Broader Today Bank-First Composer Expansion** `Not started` — likely composer
   phase **after** E8 (not cancelled). Use richer grammar/vocabulary/reading bank bundles; improve
   pattern-specific bank context; expand safe bank-first coverage beyond the current vocabulary/

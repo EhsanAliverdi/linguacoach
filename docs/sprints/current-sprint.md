@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Plan-Sync-After-D3)
+lastUpdated: 2026-07-09 (Phase E8)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,44 @@ Last updated: 2026-07-09
 ---
 
 ## Active sprint
+
+**Phase E8 — Internal Resource Bank Depth Expansion for Grammar, Usage, and Reading Support (2026-07-09)** — complete
+
+Expanded original, English-only internal resource-bank depth through the existing staging →
+validation → approval → publish pipeline. **A resource-depth phase, not a composer/selector/
+Practice-Gym/UI change; no migration.** A new second seed source
+(`InternalResourceSeedPackE8Seeder`, distinct from the E6/E7 pack and idempotent by its own source
+name) adds **40 vocabulary + 20 grammar + 16 short reading references + 8 full reading passages,
+evenly across A1–B2** (10/10/10/10 vocab, 5/5/5/5 grammar, 4/4/4/4 references, 2/2/2/2 passages),
+all flowing through the real `IResourceImportService` → deterministic metadata mapping →
+`IResourceCandidateValidationService` → admin `Approve()` → `IResourceCandidatePublishService`
+pipeline — never a Cefr* row written directly. Content defaults to **general English** with balanced
+daily/social/travel/study contexts; **workplace is a minority tag**, never the default. None of it
+duplicates the E6/E7 pack.
+
+A narrow, additive metadata-mapping enhancement (`ResourceImportService.ApplyDeterministicRowMetadata`)
+now maps optional `focusTags` and `difficultyBand` row columns onto the candidate (and, for full
+passages, onto `CefrReadingPassage`); when those columns are absent — every E6/E7 row and every
+prior import — behavior is byte-for-byte unchanged. Publishing routes by staged-text length exactly
+as before (≤500 chars → `CefrReadingReference`, over → full `CefrReadingPassage`). Grammar subskills
+are constrained to the enforced `CurriculumSubskillConstants` grammar taxonomy. All rows are
+discoverable through the existing E5 `ResourceBankQueryService` browse/search APIs and trace back to
+their candidate/run/source. Wired into `Program.cs` startup after the E6/E7 seeder.
+
+**Validation**: `dotnet build --configuration Release` passed (0 errors); `dotnet test
+--configuration Release` = 3,580 passed, 0 failed (+17 `InternalResourceSeedPackE8SeederTests`). No
+frontend files changed, so no Angular/Playwright gates run. **No external datasets, no copied
+third-party/test-prep content, no Persian/bilingual/support-language seed content, no direct
+final-table seeding, no Today composer/selector change, no Practice Gym change, no student UI, no
+legacy-fallback removal, no readiness/delivery-queue change.**
+
+**Next: Phase D4 (broader Today bank-first composer expansion) is the likely next phase**, now that
+the bank is deeper; the E8/D4 checkpoint stays open between D4, PG-v2A, and G2/G3. See
+`docs/architecture/english-resource-bank-import-platform.md` and `docs/roadmap/road-map.md` §1/§19a.
+
+---
+
+## Previous sprint
 
 **Plan-Sync-After-D3 — Decide Next Bank-First Phase After Full Reading Passage Today Wiring (2026-07-09)** — complete (docs-only)
 

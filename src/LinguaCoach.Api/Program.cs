@@ -297,6 +297,15 @@ if (!app.Environment.IsEnvironment("Testing"))
         scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.ResourceImport.IResourceCandidateValidationService>(),
         scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.ResourceImport.IResourceCandidatePublishService>(),
         seederLogger);
+    // Phase E8 — a second, independent internal English depth-expansion pack (grammar/usage/reading),
+    // idempotent by its own source name, flowing through the same staging → validation → approval →
+    // publish pipeline as the E6/E7 pack above.
+    await LinguaCoach.Persistence.Seed.InternalResourceSeedPackE8Seeder.SeedAsync(
+        db,
+        scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.ResourceImport.IResourceImportService>(),
+        scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.ResourceImport.IResourceCandidateValidationService>(),
+        scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.ResourceImport.IResourceCandidatePublishService>(),
+        seederLogger);
 
     // Storage + Quartz startup health checks (warn-only — do not block startup).
     var storage = scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.Storage.IFileStorageService>();

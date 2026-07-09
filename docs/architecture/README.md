@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Plan-Sync-After-D3)
+lastUpdated: 2026-07-09 (Phase E8)
 owner: architecture
 supersedes:
 supersededBy:
@@ -145,9 +145,14 @@ Key facts about where this stands today (2026-07-08):
   **Plan-Sync-After-D3 (2026-07-09, docs-only)** then resolved the post-D3 checkpoint: **Phase E8
   (more resource depth/types) comes before Phase D4 (broader Today composer expansion)** — D1/D2/D3
   proved the composer path end to end, so the bottleneck is now bank breadth/depth; deepening the
-  bank first makes D4 safer/more useful. D4 remains the likely composer phase after E8. See
-  docs/architecture/learning-activity-engine.md (Phase D3 section), docs/roadmap/road-map.md §1 /
-  Decision Log, and docs/architecture/english-resource-bank-import-platform.md.
+  bank first makes D4 safer/more useful. **Phase E8 (2026-07-09) then delivered that depth**: a
+  second original English-only internal seed pack (40 vocabulary / 20 grammar / 16 short reading
+  references / 8 full reading passages across A1–B2, general-English-default with workplace a
+  minority context) through the existing staging → validation → approval → publish pipeline, plus a
+  narrow `focusTags`/`difficultyBand` metadata mapping — no external datasets, no direct final-table
+  seeding, no composer/selector/Practice-Gym/UI change, no migration. D4 remains the likely composer
+  phase after E8. See docs/architecture/english-resource-bank-import-platform.md (E8 detail section),
+  docs/architecture/learning-activity-engine.md, and docs/roadmap/road-map.md §1 / Decision Log.
 - **English-only seed/resource-bank rule (non-negotiable, applies to all current and future
   resource banks):** no Persian seed corpus, no bilingual phrase bank, no English–Persian (or
   English–any-language) import. Supported languages (Persian, etc.) are **runtime-only**
@@ -190,7 +195,7 @@ Key facts about where this stands today (2026-07-08):
   checkpoint now applies; Phase G2 (backend legacy cleanup) / G3 (diagnostics consolidation)
   remain sequenced late. See `docs/roadmap/road-map.md` §1 and Decision Log.
 
-Current state (as of 2026-07-09, Plan-Sync-After-D3): **Practice Gym bank-first migration (content
+Current state (as of 2026-07-09, Phase E8): **Practice Gym bank-first migration (content
 layer) is closed at Phase C-Final** — generalized the Form.io template path from 1 pilot pattern
 to 8 total (C1's `phrase_match`, `gap_fill_workplace_phrase`, `reading_multiple_choice_single`;
 C2's `reading_multiple_choice_multi`, `reading_fill_in_blanks`, `reading_writing_fill_in_blanks`;

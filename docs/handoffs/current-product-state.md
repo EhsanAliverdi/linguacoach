@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Plan-Sync-After-D3)
+lastUpdated: 2026-07-09 (Phase E8)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,7 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-09 (Plan-Sync-After-D3)
+Last updated: 2026-07-09 (Phase E8)
 
 > **Note on scope of this file.** The dated sections below are a running
 > product-state log that ends at Phase 20I (2026-07-03, the last
@@ -62,18 +62,29 @@ reading passage bank (`CefrReadingPassage`) into the Today bank-first composer:
 * **No Phase E8 started. No PG-v2 started. No external datasets. No
   Persian/bilingual seed content.**
 
-**Next-step decision (Plan-Sync-After-D3, 2026-07-09, docs-only):** a decision
-checkpoint follows D3 between **Phase E8 (more resource depth/types)** and
-**Phase D4 (broader Today composer expansion)**. **Recommendation: Phase E8
-next** — D1/D2/D3 have proven the selector/composer path end to end, so the
-current bottleneck is bank breadth/depth (especially beyond vocabulary and
-reading), and D4 will be safer and more useful once E8 has produced richer bank
-material to compose from. E8 also reduces pressure on the AI fallback and
-improves bank-first reliability. D4 remains the likely composer phase *after*
-E8, not cancelled. PG-v2, Phase F (legacy retirement), and Phase G2/G3
-(backend/diagnostics cleanup) remain sequenced later. Full reasoning and the
-proposed E8/D4 scope: `docs/roadmap/road-map.md` §1, §19 Decision Log
-(Plan-Sync-After-D3 entry), and §19a.
+**Phase E8 is complete (2026-07-09).** Plan-Sync-After-D3 chose E8 (more
+resource depth/types) before Phase D4 (broader Today composer expansion), and
+E8 then delivered that depth: a second original, English-only internal seed pack
+(`InternalResourceSeedPackE8Seeder`, distinct source, idempotent) of **40
+vocabulary + 20 grammar + 16 short reading references + 8 full reading passages
+across A1–B2**, general-English-default with **workplace a minority context**,
+all flowing through the existing staging → validation → approval → publish
+pipeline. A narrow, additive metadata mapping now carries optional
+`focusTags`/`difficultyBand` onto full passages. **No external datasets, no
+copied third-party/test-prep content, no Persian/bilingual seed content, no
+direct final-table seeding, no composer/selector/Practice-Gym/UI change, no
+migration.** Validation: `dotnet build --configuration Release` passed; `dotnet
+test --configuration Release` = 3,580 passed, 0 failed (+17 tests); no frontend
+files changed. Today/Practice Gym legacy fallback and the readiness/delivery
+queue all remain intact.
+
+**Next-step decision:** **Phase D4 (broader Today bank-first composer
+expansion)** is the likely next phase now that the bank is deeper; the E8/D4
+checkpoint stays open between D4, PG-v2A, and Phase G2/G3. PG-v2, Phase F (legacy
+retirement), and G2/G3 (backend/diagnostics cleanup) remain sequenced later.
+Full reasoning: `docs/roadmap/road-map.md` §1, §19 Decision Log (Phase E8
+entry), and §19a; E8 detail in
+`docs/architecture/english-resource-bank-import-platform.md`.
 
 ---
 

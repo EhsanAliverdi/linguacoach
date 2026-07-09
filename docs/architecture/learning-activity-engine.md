@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Plan-Sync-After-D3)
+lastUpdated: 2026-07-09 (Phase E8)
 owner: architecture
 supersedes:
 supersededBy:
@@ -230,8 +230,11 @@ generation/validation failure, or an empty bank all still flow through the uncha
 Speaking/listening/image/open-ended remain legacy. No external datasets, no Persian/bilingual seed
 content. **Next Today-composer decision: Plan-Sync-After-D3 (2026-07-09, docs-only) resolved this —
 Phase E8 (more resource depth/types) comes before Phase D4 (broader composer expansion), since
-D1/D2/D3 proved the composer path end to end and the bottleneck is now bank breadth/depth. D4
-remains the likely composer phase after E8; PG-v2 later. See docs/roadmap/road-map.md §1 / Decision
+D1/D2/D3 proved the composer path end to end and the bottleneck is now bank breadth/depth. Phase E8
+(2026-07-09) then completed that depth expansion (a second internal seed pack of 40 vocabulary / 20
+grammar / 16 short reading references / 8 full reading passages across A1–B2, general-English-default;
+it changed no composer/selector code — see docs/architecture/english-resource-bank-import-platform.md).
+D4 remains the likely composer phase after E8; PG-v2 later. See docs/roadmap/road-map.md §1 / Decision
 Log.**
 
 **Plan-Sync-G0 (2026-07-09, docs-only)** reframes, but does not delete, the readiness-pool
