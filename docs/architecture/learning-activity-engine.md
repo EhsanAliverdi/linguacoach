@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase D5)
+lastUpdated: 2026-07-09 (Plan-Sync-After-D5)
 owner: architecture
 supersedes:
 supersededBy:
@@ -306,6 +306,22 @@ rows for a general learner) yields no bank bundle and the caller runs the unchan
 generator; unsupported patterns still skip to legacy. See
 `docs/architecture/english-resource-bank-import-platform.md` (E9 detail section) and
 `docs/roadmap/road-map.md` §1 / Decision Log.
+
+**D5-discovered limitation → Phase E10 next (Plan-Sync-After-D5, 2026-07-09, docs-only)**: D5's
+selector filtering is only as good as the published bank's metadata. E9 fixed the *schema* (the lean
+tables now have the columns) and D5 wired the selector to *consume* them, but the internal E6/E7/E8
+lean packs were authored with context tags + subskill only — thin focus/difficulty metadata (only
+full passages carry difficulty/focus densely — `TODO-D5-1`) — and `ActivityMaterializationJob`
+null-feeds `PreferredSubskill`/`PreferredDifficultyBand` because there is no reliable per-request
+source yet. So D5's difficulty/focus filtering relaxes away on the lean tables today. The next
+limitation is therefore **content depth / metadata quality, not schema or wiring**, and it would
+also bound a future PG-v2 selector. **Plan-Sync-After-D5 resolved to fix this in Phase E10 (Internal
+Bank Metadata Depth Expansion for Focus and Difficulty)** — enriching/repairing the existing internal
+lean rows' focus/difficulty/subskill metadata through the existing pipeline / safe idempotent
+metadata-repair path (no schema change, no external datasets, no direct final-table seeding) — before
+a deeper Today topic-matching phase (**Phase D6 — Today Topic Matching and Subskill-Aware Resource
+Selection**) or PG-v2. See `docs/roadmap/road-map.md` §1 / Decision Log and
+`docs/architecture/english-resource-bank-import-platform.md`.
 
 **Plan-Sync-G0 (2026-07-09, docs-only)** reframes, but does not delete, the readiness-pool
 lifecycle this file's fallback/generation flow relies on: `StudentActivityReadinessItem`/

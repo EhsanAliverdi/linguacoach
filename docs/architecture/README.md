@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase D5)
+lastUpdated: 2026-07-09 (Plan-Sync-After-D5)
 owner: architecture
 supersedes:
 supersededBy:
@@ -171,8 +171,15 @@ Key facts about where this stands today (2026-07-08):
   (workplace-tagged vocabulary/grammar/reading-reference are skipped for general learners, matching
   passages) and recording applied-filter provenance. Deterministic metadata matching only — no
   embeddings/vector search; D4 pattern instructions, roles, novelty, and feedback exclusions
-  preserved; legacy fallback intact. No composer rewrite, no new content, no migration, no UI. A
-  post-D5 checkpoint follows (PG-v2A, further Today composer work, Phase F, or G2/G3).
+  preserved; legacy fallback intact. No composer rewrite, no new content, no migration, no UI.
+  **Plan-Sync-After-D5 (2026-07-09, docs-only)** then resolved the post-D5 decision: **Phase E10
+  (Internal Bank Metadata Depth Expansion for Focus and Difficulty) comes before Phase D6 and
+  PG-v2** — D5's filtering quality is now bounded by *metadata depth, not schema/wiring* (the
+  internal lean packs carry context tags + subskill but thin focus/difficulty metadata — `TODO-D5-1`),
+  so enriching the existing internal rows' focus/difficulty/subskill metadata (through the existing
+  pipeline / safe repair path, no schema change) is the next producer-side step. Phase D6 (Today
+  Topic Matching and Subskill-Aware Resource Selection) is the likely Today phase after E10; PG-v2
+  remains later (benefiting from E9 parity + D5 wiring + E10 depth + D6 selection).
   See docs/architecture/learning-activity-engine.md (Phase D5 section),
   docs/architecture/english-resource-bank-import-platform.md, and docs/roadmap/road-map.md §1 /
   Decision Log.
@@ -218,7 +225,7 @@ Key facts about where this stands today (2026-07-08):
   checkpoint now applies; Phase G2 (backend legacy cleanup) / G3 (diagnostics consolidation)
   remain sequenced late. See `docs/roadmap/road-map.md` §1 and Decision Log.
 
-Current state (as of 2026-07-09, Phase D5): **Practice Gym bank-first migration (content
+Current state (as of 2026-07-09, Plan-Sync-After-D5): **Practice Gym bank-first migration (content
 layer) is closed at Phase C-Final** — generalized the Form.io template path from 1 pilot pattern
 to 8 total (C1's `phrase_match`, `gap_fill_workplace_phrase`, `reading_multiple_choice_single`;
 C2's `reading_multiple_choice_multi`, `reading_fill_in_blanks`, `reading_writing_fill_in_blanks`;

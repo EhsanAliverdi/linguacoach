@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase D5)
+lastUpdated: 2026-07-09 (Plan-Sync-After-D5)
 owner: product
 supersedes:
 supersededBy:
@@ -323,11 +323,28 @@ breadth/depth, not the composer mechanism. See docs/roadmap/road-map.md §1, Dec
     selection-emphasis note; D4 pattern instructions + roles + novelty/feedback exclusions preserved
   - [x] Deterministic metadata matching only (no embeddings/vector search); legacy fallback intact
   - [x] +17 backend tests. No composer rewrite, no content, no migration, no UI.
-- [ ] **`TODO-D5-1` — enrich lean-pack authored metadata** `Not started` — the internal E6/E7/E8
-  lean packs carry context tags + subskill but no difficulty band, and focus tags only on some rows,
-  so D5's difficulty/focus filtering is opportunistic on those types (context/subskill filtering is
-  dense). A future content pass could author difficulty/focus metadata on the lean packs if richer
-  filtering is needed. Content-only; through the existing pipeline; no schema change.
+- [ ] **Phase E10 — Internal Bank Metadata Depth Expansion for Focus and Difficulty** `Not started` —
+  **next recommended implementation phase (Plan-Sync-After-D5, 2026-07-09).** Enrich existing internal
+  published lean rows so Today (D6) and future PG-v2 selectors have enough signal (addresses
+  `TODO-D5-1`):
+  - [ ] Audit E6/E7/E8 internal metadata coverage across `CefrVocabularyEntry`/
+    `CefrGrammarProfileEntry`/`CefrReadingReference`
+  - [ ] Enrich/repair difficulty bands, focus tags, and subskill coverage (using
+    `CurriculumSubskillConstants`) for existing internal rows **where safely traceable**, through the
+    existing staging → validation → approval → publish path or the idempotent safe metadata-repair
+    path (`PublishedBankMetadataBackfillSeeder`-style)
+  - [ ] Keep everything English-only and source-traceable
+  - [ ] Tests for metadata coverage, traceability, idempotency, and selector discoverability
+  - **Must not**: import external datasets; add Persian/bilingual/support-language content; seed final
+    tables directly; add schema/migrations (E9's columns already exist); rewrite the Today composer;
+    start PG-v2; remove any legacy fallback; delete the readiness/delivery queue; redesign
+    student/admin UI.
+- [ ] **Phase D6 — Today Topic Matching and Subskill-Aware Resource Selection** `Not started` — likely
+  Today/composer phase **after** E10. Use the richer E10 metadata for stronger topic/focus/subskill
+  matching in `TodayBankResourceSelector`; improve supporting-resource relevance; reduce irrelevant
+  vocabulary/grammar pairings. **Keep deterministic metadata matching (no embeddings/vector search
+  unless explicitly chosen); preserve legacy fallback.** Also revisit feeding
+  `PreferredSubskill`/`PreferredDifficultyBand` at runtime once a reliable per-request source exists.
 
 ---
 

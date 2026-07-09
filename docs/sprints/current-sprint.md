@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase D5)
+lastUpdated: 2026-07-09 (Plan-Sync-After-D5)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,42 @@ Last updated: 2026-07-09
 ---
 
 ## Active sprint
+
+**Plan-Sync-After-D5 — Decide Next Phase After Context-Aware Today Selection (2026-07-09)** — complete (docs-only)
+
+A docs-only planning/decision sync after Phase D5. **Decision: Phase E10 — Internal Bank Metadata
+Depth Expansion for Focus and Difficulty — comes next, before deeper Today topic matching (D6) and
+before PG-v2.**
+
+D5 proved the selector *can* consume the E9 metadata, but selection quality is now bounded by
+**metadata depth, not schema or wiring**: the internal E6/E7/E8 lean packs carry context tags +
+subskill but thin focus/difficulty metadata (only full passages carry difficulty/focus densely —
+`TODO-D5-1`), and runtime subskill/difficulty preference inputs are not reliably available yet (the
+job null-feeds them). So D5's difficulty/focus filtering relaxes away on the lean tables today. The
+next bottleneck is therefore **published-bank metadata quality/depth** — fixing it first makes both
+a deeper Today topic-matching phase (D6) and a future PG-v2 selector materially better; doing D6 or
+PG-v2 first would just re-hit the same sparse-metadata ceiling.
+
+**Proposed Phase E10 — Internal Bank Metadata Depth Expansion for Focus and Difficulty**: audit
+E6/E7/E8 internal metadata coverage; enrich/repair the existing internal lean rows where safely
+traceable — adding difficulty bands, focus tags, and stronger subskill coverage (using the existing
+`CurriculumSubskillConstants` taxonomy) to vocabulary/grammar/short reading references where
+appropriate — through the existing staging → validation → approval → publish path or the idempotent
+safe metadata-repair path; keep everything English-only and source-traceable; add tests for
+coverage, traceability, idempotency, and selector discoverability. **E10 must not**: import external
+datasets, add Persian/bilingual/support-language content, seed final tables directly, add
+schema/migrations (E9's columns already exist), rewrite the Today composer, start PG-v2, remove any
+legacy fallback, or delete the readiness/delivery queue. **Phase D6 — Today Topic Matching and
+Subskill-Aware Resource Selection** is documented as the likely Today phase after E10. **PG-v2
+remains later** and is expected to benefit from E9 parity + D5 wiring + E10 depth + D6 selection.
+
+No app code, migrations, schema, seed content, or tests changed — docs only. Today legacy fallback,
+Practice Gym fallback, and the readiness/delivery queue all remain. PG-v2, Phase F, and Phase G2/G3
+stay sequenced later. See `docs/roadmap/road-map.md` §1, §19 Decision Log, §19a (items 20e–20g).
+
+---
+
+## Previous sprint
 
 **Phase D5 — Context-Aware Today Bank Selection and Topic Matching (2026-07-09)** — complete
 

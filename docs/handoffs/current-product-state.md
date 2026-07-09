@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase D5)
+lastUpdated: 2026-07-09 (Plan-Sync-After-D5)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,7 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-09 (Phase D5)
+Last updated: 2026-07-09 (Plan-Sync-After-D5)
 
 > **Note on scope of this file.** The dated sections below are a running
 > product-state log that ends at Phase 20I (2026-07-03, the last
@@ -116,12 +116,23 @@ the readiness/delivery queue are all intact. `TODO-E9-1` is closed; `TODO-D5-1`
 notes the internal lean packs carry thin difficulty/focus metadata so those
 filters are opportunistic (a content task).
 
-**Next-step decision:** a post-D5 checkpoint — **Phase PG-v2A** (skill/objective-
-first Practice Gym selector), further Today composer work (a dedicated
-grammar-primary pattern, or richer lean-pack metadata per `TODO-D5-1`), **Phase F**
-(legacy freeform-generation retirement, per-pattern), or **Phase G2/G3**
-(backend/diagnostics cleanup). Full reasoning: `docs/roadmap/road-map.md` §1, §19
-Decision Log (Phase E9 + Phase D5 entries), and §19a; D5 detail in
+**Next-step decision (Plan-Sync-After-D5, 2026-07-09, docs-only):** **Phase E10 —
+Internal Bank Metadata Depth Expansion for Focus and Difficulty — comes next**,
+before deeper Today topic matching (D6) and before PG-v2. D5 proved the selector
+*can* consume the E9 metadata, but its filtering quality is now bounded by
+**metadata depth, not schema/wiring**: the internal E6/E7/E8 lean packs carry
+context tags + subskill but thin focus/difficulty metadata (`TODO-D5-1`), and the
+job null-feeds subskill/difficulty preferences (no reliable per-request source
+yet), so D5's difficulty/focus filtering relaxes away on the lean tables today.
+E10 will enrich/repair the existing internal lean rows' focus/difficulty/subskill
+metadata through the existing pipeline / safe idempotent metadata-repair path (no
+schema change, no external datasets, no direct final-table seeding). **Phase D6 —
+Today Topic Matching and Subskill-Aware Resource Selection** is the likely Today
+phase after E10; **PG-v2 remains later** and is expected to benefit from E9 parity
++ D5 wiring + E10 depth + D6 selection. PG-v2, Phase F (legacy retirement), and
+Phase G2/G3 (backend/diagnostics cleanup) remain sequenced later. Full reasoning:
+`docs/roadmap/road-map.md` §1, §19 Decision Log (Plan-Sync-After-D5 entry), and
+§19a (items 20e–20g); D5 detail in
 `docs/architecture/learning-activity-engine.md` (Phase D5 section).
 
 ---

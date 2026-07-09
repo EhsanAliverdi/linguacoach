@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase D5)
+lastUpdated: 2026-07-09 (Plan-Sync-After-D5)
 owner: architecture
 supersedes:
 supersededBy:
@@ -814,6 +814,15 @@ least once. Admin must never approve based on raw JSON/CSV alone.
   selection is context-aware across all bank types, with the general-English workplace exclusion now
   applied to the lean tables too (not only passages). See
   `docs/architecture/learning-activity-engine.md` (Phase D5 section).
+- **Next: Phase E10 (metadata depth) — Plan-Sync-After-D5 (2026-07-09, docs-only)**: D5 showed the
+  selector's filtering is now bounded by *metadata depth*, not schema — the internal lean packs
+  carry context tags + subskill but thin focus/difficulty metadata (`TODO-D5-1`), so those filters
+  relax away on the lean tables today. **Phase E10 — Internal Bank Metadata Depth Expansion for
+  Focus and Difficulty** will enrich/repair the existing internal lean rows' focus/difficulty/
+  subskill metadata **through this same staging → validation → approval → publish path or the safe
+  idempotent metadata-repair path** (no schema change — E9's columns already exist; no external
+  datasets; no direct final-table seeding). Phase D6 (Today Topic Matching and Subskill-Aware
+  Resource Selection) is the likely Today phase after E10; PG-v2 remains later.
 
 ---
 
