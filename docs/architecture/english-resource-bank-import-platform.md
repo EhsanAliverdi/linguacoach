@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H1)
+lastUpdated: 2026-07-09 (Phase H2)
 owner: architecture
 supersedes:
 supersededBy:
@@ -15,6 +15,17 @@ tables: `ResourceBankQueryService.ListUnifiedAsync` aggregates `CefrVocabularyEn
 platform's E1-E10 pipeline and typed query methods are entirely unchanged. See
 `docs/architecture/product-model-realignment-h0.md` and `docs/roadmap/road-map.md` §1/Decision Log
 for full H1 detail.
+
+**Phase H2 (2026-07-09)** added a product-friendly admin entry point over this platform's E1
+`IResourceImportService.ImportAsync` pipeline: `POST /api/admin/content-imports` (new
+`IContentImportService`/`ContentImportService`) lets an admin paste text/CSV/JSON instead of
+uploading a file, choose a broad resource type, and set default metadata — all forwarded as new
+optional `ResourceImportRequest` fields (`DefaultCandidateType`/`DefaultCefrLevel`/`DefaultSkill`/
+`DefaultSubskill`/`DefaultContextTags`/`DefaultFocusTags`/`DefaultDifficultyBand`, all null for
+every existing file-upload caller). The E1 gate/parse/staging pipeline itself, and E2-E9's
+analysis/validation/preview/publish services, are unchanged — H2 is a second caller of E1's
+`ImportAsync`, not a parallel import path. See `docs/architecture/product-model-realignment-h0.md`
+and `docs/roadmap/road-map.md` §1/Decision Log for full H2 detail.
 
 **Date planned:** 2026-07-08 (Plan-Sync-After-C1), **finalized:** 2026-07-08 (Phase E0),
 **E1 implemented:** 2026-07-08, **E2 implemented:** 2026-07-08, **E3 implemented:** 2026-07-08,

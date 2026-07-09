@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.ResourceImport;
+using LinguaCoach.Domain.Constants;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
@@ -129,7 +130,7 @@ public sealed class ResourceImportService : IResourceImportService
             total++;
             try
             {
-                ProcessRow(run.Id, row, seenHashes, ref succeeded, ref rejected, ref warnings);
+                ProcessRow(run.Id, row, seenHashes, request, ref succeeded, ref rejected, ref warnings);
             }
             catch (Exception)
             {
@@ -167,6 +168,7 @@ public sealed class ResourceImportService : IResourceImportService
         Guid runId,
         IReadOnlyDictionary<string, string?> row,
         HashSet<string> seenHashesInRun,
+        ResourceImportRequest request,
         ref int succeeded,
         ref int rejected,
         ref int warnings)
@@ -201,13 +203,24 @@ public sealed class ResourceImportService : IResourceImportService
             return;
         }
 
-        var (candidateType, canonicalText) = InferCandidateType(row);
+        // Phase H2 — an admin-chosen "broad resource type" is the primary import type for the
+        // whole run: it always wins over per-row field-name inference. Row inference (below)
+        // remains the sole behavior for every existing file-upload caller that leaves it null.
+        var (candidateType, canonicalText) = request.DefaultCandidateType is { } forcedType
+            ? (forcedType, ExtractCanonicalTextForType(row, forcedType))
+            : InferCandidateType(row);
+
+        var metadata = MergeRowMetadata(row, request);
+        var recordWarningsJson = metadata.Warnings.Count > 0
+            ? JsonSerializer.Serialize(metadata.Warnings)
+            : null;
 
         var record = new ResourceRawRecord(
             runId, rawHash, languageVerdict.DetectedLanguageCode, "row",
-            rawJson: rawJson);
+            rawJson: rawJson, extractionWarningsJson: recordWarningsJson);
         record.MarkParsed();
         _db.ResourceRawRecords.Add(record);
+        warnings += metadata.Warnings.Count;
 
         var normalizedJson = JsonSerializer.Serialize(
             row.OrderBy(kv => kv.Key, StringComparer.Ordinal).ToDictionary(kv => kv.Key, kv => kv.Value));
@@ -222,55 +235,123 @@ public sealed class ResourceImportService : IResourceImportService
         var candidate = new ResourceCandidate(
             record.Id, candidateType, canonicalText, normalizedJson, languageVerdict.DetectedLanguageCode,
             searchText, fingerprint, ResourceCandidateValidationStatus.NeedsReview);
-        ApplyDeterministicRowMetadata(candidate, row);
+        ApplyMergedMetadata(candidate, metadata);
         _db.ResourceCandidates.Add(candidate);
 
         succeeded++;
     }
 
-    /// <summary>
-    /// Phase E6/E8 — if the row already carries <c>cefrLevel</c>/<c>skill</c>/<c>subskill</c>/
-    /// <c>tags</c> columns (E6), and optionally <c>focusTags</c>/<c>difficultyBand</c> (E8), copy
-    /// them straight onto the candidate. No-op when none of the E6 classification columns are
-    /// present (the common case for genuinely unclassified imports), so existing behavior for every
-    /// prior import is unchanged. Confidence is stamped at 1.0 — this is a value the row's own
-    /// author already asserts, not a probabilistic AI guess, so there is no "confidence" to
-    /// estimate. <paramref name="row"/>'s <c>tags</c> column (if a JSON array) is passed straight
-    /// through as <c>ContextTagsJson</c>; its <c>focusTags</c> column (if present) as
-    /// <c>FocusTagsJson</c>; and its <c>difficultyBand</c> column (if a 1-5 integer) as the
-    /// difficulty band. When those two E8 columns are absent, focus tags stay <c>"[]"</c> and the
-    /// difficulty band stays null — exactly the pre-E8 behavior.
-    /// </summary>
-    private static void ApplyDeterministicRowMetadata(ResourceCandidate candidate, IReadOnlyDictionary<string, string?> row)
+    /// <summary>Phase H2 — canonical-text extraction used only when the admin has forced a
+    /// candidate type via <see cref="ResourceImportRequest.DefaultCandidateType"/>, bypassing
+    /// <see cref="InferCandidateType"/>'s field-name detection entirely. Tries the same field
+    /// names <see cref="InferCandidateType"/> would look for on that type, then falls back to
+    /// the first non-empty value on the row (e.g. a pasted line staged under a generic
+    /// <c>text</c> column).</summary>
+    private static string ExtractCanonicalTextForType(IReadOnlyDictionary<string, string?> row, ResourceCandidateType type)
     {
-        var cefrLevel = GetField(row, CefrLevelField);
-        var skill = GetField(row, SkillField);
-        var subskill = GetField(row, SubskillField);
-        var tags = GetField(row, TagsField);
-        var focusTags = GetField(row, FocusTagsField);
-        var difficultyBand = ParseDifficultyBand(GetField(row, DifficultyBandField));
+        string? text = type switch
+        {
+            ResourceCandidateType.VocabularyEntry =>
+                GetField(row, "word") ?? GetField(row, "lemma") ?? GetField(row, "text"),
+            ResourceCandidateType.GrammarProfileEntry =>
+                GetField(row, "grammarkey") ?? GetField(row, "title") ?? GetField(row, "explanation") ?? GetField(row, "text"),
+            ResourceCandidateType.ReadingPassage =>
+                GetField(row, "title") ?? GetField(row, "passage") ?? GetField(row, "text"),
+            ResourceCandidateType.ActivityTemplateCandidate =>
+                GetField(row, "title") ?? GetField(row, "formio") ?? GetField(row, "schema") ?? GetField(row, "template") ?? GetField(row, "text"),
+            _ => GetField(row, "title") ?? GetField(row, "text"),
+        };
 
-        if (cefrLevel is null && skill is null && subskill is null)
-            return;
+        return text ?? row.Values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? "(unknown)";
+    }
+
+    private readonly record struct MergedRowMetadata(
+        string? CefrLevel, string? Skill, string? Subskill, string? ContextTagsJson,
+        string? FocusTagsJson, int? DifficultyBand, IReadOnlyList<string> Warnings)
+    {
+        public bool HasAnyValue => CefrLevel is not null || Skill is not null || Subskill is not null
+            || ContextTagsJson is not null || FocusTagsJson is not null || DifficultyBand is not null;
+    }
+
+    /// <summary>
+    /// Phase E6/E8/H2 — merges a row's own <c>cefrLevel</c>/<c>skill</c>/<c>subskill</c>/
+    /// <c>tags</c>/<c>focusTags</c>/<c>difficultyBand</c> columns (E6/E8) with the import
+    /// request's Phase H2 defaults, row value always winning when both are present. A row's own
+    /// <c>cefrLevel</c> that isn't one of <see cref="CefrLevelConstants.All"/> is treated as
+    /// absent (falls back to the default, if any) and produces a warning — never rejects the row.
+    /// Returns a struct with everything <see cref="ApplyMergedMetadata"/> and the raw-record
+    /// warnings list need; <see cref="MergedRowMetadata.HasAnyValue"/> is false (no-op) when
+    /// neither the row nor the request supplies any classification value — exactly the pre-H2
+    /// behavior for every existing file-upload caller.
+    /// </summary>
+    private static MergedRowMetadata MergeRowMetadata(IReadOnlyDictionary<string, string?> row, ResourceImportRequest request)
+    {
+        var warnings = new List<string>();
+
+        var rowCefr = GetField(row, CefrLevelField);
+        string? cefrLevel;
+        if (rowCefr is not null)
+        {
+            if (CefrLevelConstants.IsValid(rowCefr))
+            {
+                cefrLevel = rowCefr.Trim().ToUpperInvariant();
+            }
+            else
+            {
+                warnings.Add($"Row's cefrLevel '{rowCefr}' is not a valid CEFR level — falling back to the import default.");
+                cefrLevel = ValidatedDefaultCefr(request.DefaultCefrLevel, warnings);
+            }
+        }
+        else
+        {
+            cefrLevel = ValidatedDefaultCefr(request.DefaultCefrLevel, warnings);
+        }
+
+        var skill = GetField(row, SkillField) ?? request.DefaultSkill;
+        var subskill = GetField(row, SubskillField) ?? request.DefaultSubskill;
+        var tags = GetField(row, TagsField)
+            ?? (request.DefaultContextTags is { Count: > 0 } ? JsonSerializer.Serialize(request.DefaultContextTags) : null);
+        var focusTags = GetField(row, FocusTagsField)
+            ?? (request.DefaultFocusTags is { Count: > 0 } ? JsonSerializer.Serialize(request.DefaultFocusTags) : null);
+        var difficultyBand = ParseDifficultyBand(GetField(row, DifficultyBandField)) ?? request.DefaultDifficultyBand;
+
+        return new MergedRowMetadata(cefrLevel, skill, subskill, tags, focusTags, difficultyBand, warnings);
+    }
+
+    private static string? ValidatedDefaultCefr(string? defaultCefr, List<string> warnings)
+    {
+        if (defaultCefr is null) return null;
+        if (CefrLevelConstants.IsValid(defaultCefr)) return defaultCefr.Trim().ToUpperInvariant();
+        warnings.Add($"Import default CEFR level '{defaultCefr}' is not valid — no CEFR level applied to this row.");
+        return null;
+    }
+
+    /// <summary>Writes a <see cref="MergeRowMetadata"/> result onto the candidate via
+    /// <see cref="ResourceCandidate.ApplyAnalysis"/>. Confidence is stamped at 1.0 whenever a
+    /// CEFR level is present — this is a value the row's author or the importing admin already
+    /// asserts, not a probabilistic AI guess. No-op when nothing was merged.</summary>
+    private static void ApplyMergedMetadata(ResourceCandidate candidate, MergedRowMetadata metadata)
+    {
+        if (!metadata.HasAnyValue) return;
 
         var mappingJson = JsonSerializer.Serialize(new
         {
             mappingSource = "import-row-deterministic-mapping",
-            cefrLevel,
-            skill,
-            subskill,
-            difficultyBand
+            cefrLevel = metadata.CefrLevel,
+            skill = metadata.Skill,
+            subskill = metadata.Subskill,
+            difficultyBand = metadata.DifficultyBand
         });
 
         candidate.ApplyAnalysis(
             aiAnalysisJson: mappingJson,
-            cefrLevel: cefrLevel,
-            cefrConfidence: cefrLevel is null ? null : 1.0,
-            primarySkill: skill,
-            subskill: subskill,
-            difficultyBand: difficultyBand,
-            contextTagsJson: tags ?? "[]",
-            focusTagsJson: focusTags ?? "[]",
+            cefrLevel: metadata.CefrLevel,
+            cefrConfidence: metadata.CefrLevel is null ? null : 1.0,
+            primarySkill: metadata.Skill,
+            subskill: metadata.Subskill,
+            difficultyBand: metadata.DifficultyBand,
+            contextTagsJson: metadata.ContextTagsJson ?? "[]",
+            focusTagsJson: metadata.FocusTagsJson ?? "[]",
             grammarTagsJson: null,
             vocabularyTagsJson: null,
             pronunciationTagsJson: null,

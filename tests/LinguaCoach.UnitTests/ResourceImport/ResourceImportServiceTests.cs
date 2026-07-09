@@ -253,4 +253,121 @@ public sealed class ResourceImportServiceTests : IDisposable
         result.ErrorSummary.Should().NotBeNullOrWhiteSpace();
         (await _db.ResourceCandidates.CountAsync()).Should().Be(0);
     }
+
+    // ── Phase H2 — admin-forced candidate type + default metadata ──────────────
+
+    [Fact]
+    public async Task DefaultCandidateType_overrides_row_field_name_inference()
+    {
+        var source = SeedApprovedSource();
+        // "word" would normally infer VocabularyEntry — force GrammarProfileEntry instead.
+        var csv = "word\nhello\n";
+
+        await _sut.ImportAsync(new ResourceImportRequest(
+            source.Id, ToStream(csv), "forced-type.csv", ResourceImportMode.Csv,
+            DefaultCandidateType: ResourceCandidateType.GrammarProfileEntry));
+
+        var candidate = await _db.ResourceCandidates.SingleAsync();
+        candidate.CandidateType.Should().Be(ResourceCandidateType.GrammarProfileEntry);
+        candidate.CanonicalText.Should().Be("hello");
+    }
+
+    [Fact]
+    public async Task Default_cefr_level_applies_when_row_has_no_cefrLevel_column()
+    {
+        var source = SeedApprovedSource();
+        var csv = "word\nhello\n";
+
+        await _sut.ImportAsync(new ResourceImportRequest(
+            source.Id, ToStream(csv), "default-cefr.csv", ResourceImportMode.Csv,
+            DefaultCandidateType: ResourceCandidateType.VocabularyEntry, DefaultCefrLevel: "B1"));
+
+        var candidate = await _db.ResourceCandidates.SingleAsync();
+        candidate.CefrLevel.Should().Be("B1");
+        candidate.CefrConfidence.Should().Be(1.0);
+    }
+
+    [Fact]
+    public async Task Row_cefrLevel_overrides_default_when_valid()
+    {
+        var source = SeedApprovedSource();
+        var csv = "word,cefrLevel\nhello,C1\n";
+
+        await _sut.ImportAsync(new ResourceImportRequest(
+            source.Id, ToStream(csv), "row-cefr.csv", ResourceImportMode.Csv,
+            DefaultCandidateType: ResourceCandidateType.VocabularyEntry, DefaultCefrLevel: "B1"));
+
+        var candidate = await _db.ResourceCandidates.SingleAsync();
+        candidate.CefrLevel.Should().Be("C1");
+    }
+
+    [Fact]
+    public async Task Invalid_row_cefrLevel_falls_back_to_default_and_produces_a_warning()
+    {
+        var source = SeedApprovedSource();
+        var csv = "word,cefrLevel\nhello,Z9\n";
+
+        var result = await _sut.ImportAsync(new ResourceImportRequest(
+            source.Id, ToStream(csv), "invalid-row-cefr.csv", ResourceImportMode.Csv,
+            DefaultCandidateType: ResourceCandidateType.VocabularyEntry, DefaultCefrLevel: "B1"));
+
+        var candidate = await _db.ResourceCandidates.SingleAsync();
+        candidate.CefrLevel.Should().Be("B1");
+        result.WarningCount.Should().Be(1);
+        result.SucceededCount.Should().Be(1);
+
+        var rawRecord = await _db.ResourceRawRecords.SingleAsync();
+        rawRecord.ExtractionStatus.Should().Be(ResourceRawRecordStatus.Parsed);
+        rawRecord.ExtractionWarningsJson.Should().Contain("Z9");
+    }
+
+    [Fact]
+    public async Task Invalid_default_cefrLevel_applies_no_cefr_and_produces_a_warning()
+    {
+        var source = SeedApprovedSource();
+        var csv = "word\nhello\n";
+
+        var result = await _sut.ImportAsync(new ResourceImportRequest(
+            source.Id, ToStream(csv), "invalid-default-cefr.csv", ResourceImportMode.Csv,
+            DefaultCandidateType: ResourceCandidateType.VocabularyEntry, DefaultCefrLevel: "not-a-level"));
+
+        var candidate = await _db.ResourceCandidates.SingleAsync();
+        candidate.CefrLevel.Should().BeNull();
+        result.WarningCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Default_skill_subskill_context_focus_and_difficulty_apply_when_row_has_none()
+    {
+        var source = SeedApprovedSource();
+        var csv = "word\nhello\n";
+
+        await _sut.ImportAsync(new ResourceImportRequest(
+            source.Id, ToStream(csv), "defaults.csv", ResourceImportMode.Csv,
+            DefaultCandidateType: ResourceCandidateType.VocabularyEntry,
+            DefaultSkill: "Vocabulary", DefaultSubskill: "CoreWords",
+            DefaultContextTags: new[] { "travel" }, DefaultFocusTags: new[] { "greetings" },
+            DefaultDifficultyBand: 2));
+
+        var candidate = await _db.ResourceCandidates.SingleAsync();
+        candidate.PrimarySkill.Should().Be("Vocabulary");
+        candidate.Subskill.Should().Be("CoreWords");
+        candidate.ContextTagsJson.Should().Contain("travel");
+        candidate.FocusTagsJson.Should().Contain("greetings");
+        candidate.DifficultyBand.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task Row_skill_overrides_default_skill()
+    {
+        var source = SeedApprovedSource();
+        var csv = "word,skill\nhello,Reading\n";
+
+        await _sut.ImportAsync(new ResourceImportRequest(
+            source.Id, ToStream(csv), "row-skill.csv", ResourceImportMode.Csv,
+            DefaultCandidateType: ResourceCandidateType.VocabularyEntry, DefaultSkill: "Vocabulary"));
+
+        var candidate = await _db.ResourceCandidates.SingleAsync();
+        candidate.PrimarySkill.Should().Be("Reading");
+    }
 }

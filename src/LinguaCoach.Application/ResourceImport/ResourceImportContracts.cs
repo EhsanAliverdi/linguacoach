@@ -196,13 +196,25 @@ public interface IAdminResourceCandidateRejectHandler
 
 // ── Import service (the parser/gate pipeline) ──────────────────────────────────
 
+// ── Phase H2 — optional row-metadata defaults + forced candidate type, applied by
+// ContentImportService (see ContentImportContracts.cs) so an admin-chosen "broad resource
+// type" and default metadata fill in whatever a row doesn't already carry itself. A row's own
+// value (e.g. its own cefrLevel column) always wins over these defaults. Untouched (all null)
+// for every existing file-upload caller — behavior there is unchanged. ──
 public sealed record ResourceImportRequest(
     Guid SourceId,
     Stream FileStream,
     string FileName,
     ResourceImportMode ImportMode,
     Guid? ImportedByUserId = null,
-    string? Notes = null
+    string? Notes = null,
+    ResourceCandidateType? DefaultCandidateType = null,
+    string? DefaultCefrLevel = null,
+    string? DefaultSkill = null,
+    string? DefaultSubskill = null,
+    IReadOnlyList<string>? DefaultContextTags = null,
+    IReadOnlyList<string>? DefaultFocusTags = null,
+    int? DefaultDifficultyBand = null
 );
 
 public sealed record ResourceImportResult(

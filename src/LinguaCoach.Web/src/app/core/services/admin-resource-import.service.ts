@@ -27,6 +27,8 @@ import {
   ResourceBankReadingPassageDetailDto,
   UnifiedResourceBankListResult,
   UnifiedResourceBankItemType,
+  ContentImportRequestBody,
+  ContentImportResult,
 } from '../models/admin-resource-import.models';
 
 @Injectable({ providedIn: 'root' })
@@ -257,5 +259,18 @@ export class AdminUnifiedResourceBankService {
     if (search) params = params.set('search', search);
     if (sourceId) params = params.set('sourceId', sourceId);
     return this.http.get<UnifiedResourceBankListResult>(this.base, { params });
+  }
+}
+
+/** Phase H2 — Import Content UX v1. Wraps POST /api/admin/content-imports: paste text/CSV/JSON,
+ *  choose a broad resource type + default metadata, get back pending Resource Candidates. */
+@Injectable({ providedIn: 'root' })
+export class AdminContentImportService {
+  private readonly base = `${environment.apiUrl}/admin/content-imports`;
+
+  constructor(private http: HttpClient) {}
+
+  import(body: ContentImportRequestBody): Observable<ContentImportResult> {
+    return this.http.post<ContentImportResult>(this.base, body);
   }
 }

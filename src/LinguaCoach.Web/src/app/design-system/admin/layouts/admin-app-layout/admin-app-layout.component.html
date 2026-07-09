@@ -88,6 +88,9 @@
     <div class="mb-2">
       <sp-admin-sidebar-section label="Content Banks" [collapsed]="false" />
       <ul class="flex flex-col gap-1">
+        <li><sp-admin-sidebar-nav-item label="Import Content" route="/admin/content/import" [collapsed]="false" (itemClick)="closeDrawer()">
+          <sp-admin-icon name="upload" />
+        </sp-admin-sidebar-nav-item></li>
         <li><sp-admin-sidebar-nav-item label="Resource Bank" route="/admin/resource-bank" [collapsed]="false" (itemClick)="closeDrawer()">
           <sp-admin-icon name="database" />
         </sp-admin-sidebar-nav-item></li>
@@ -259,6 +262,9 @@
       <div class="mb-2">
         <sp-admin-sidebar-section label="Content Banks" [collapsed]="collapsed()" />
         <ul class="flex flex-col gap-1">
+          <li><sp-admin-sidebar-nav-item label="Import Content" route="/admin/content/import" [collapsed]="collapsed()">
+            <sp-admin-icon name="upload" />
+          </sp-admin-sidebar-nav-item></li>
           <li><sp-admin-sidebar-nav-item label="Resource Bank" route="/admin/resource-bank" [collapsed]="collapsed()">
             <sp-admin-icon name="database" />
           </sp-admin-sidebar-nav-item></li>

@@ -14,7 +14,7 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
 
 ---
 
-## Product Model Realignment — Phase H0-H8 `H0-H1 Done, H2-H8 Planned` (2026-07-09)
+## Product Model Realignment — Phase H0-H8 `H0-H2 Done, H3-H8 Planned` (2026-07-09)
 
 **Phase H0 (docs-only, done 2026-07-09)** defined the intended product model — `Resource Bank Item
 → Learn Item/Activity → Module → Daily Lesson/Practice Gym → Attempt → Feedback + Rating →
@@ -31,9 +31,13 @@ E1-E10/D1-D6 substrate, and G2/G3/PG-v2 remain valid, separately-scoped tracks.
   four existing typed published bank tables; no physical consolidation, no schema/migration; disabled
   "coming soon" Generate Learn/Activity/Module row actions; all four typed pages/APIs/tables
   unchanged and remain fully reachable. +22 backend tests (3,693 total).
-- [ ] **Phase H2 — Import Content UX v1** `Planned` — admin upload/paste/import page; AI
-  analyze/mapping preview; creates pending Resource Candidates/Bank rows through the existing E1-E9
-  pipeline; no student assignment.
+- [x] **Phase H2 — Import Content UX v1** `Done` (2026-07-09) — admin paste (text/CSV/JSON) import
+  page (`/admin/content/import`, `POST /api/admin/content-imports`); admin chooses broad type
+  (vocabulary/grammar/reading — Listening/Speaking/Writing/Mixed "coming soon") and default
+  metadata (row's own value always wins); creates pending Resource Candidates through the existing
+  E1 pipeline; no AI analyze/mapping preview yet (deterministic only), no async large-import
+  handling (stays on the existing file-upload page), no student assignment, no schema/migration.
+  +22 backend tests (3,715 total).
 - [ ] **Phase H3 — Learn Item Foundation** `Planned` — new `Learn Item` entity/API/admin review;
   generated from selected Resource Bank rows; approval lifecycle.
 - [ ] **Phase H4 — Activity Foundation with Form.io** `Planned` — align/extend `Activity` (building

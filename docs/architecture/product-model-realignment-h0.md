@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H1)
+lastUpdated: 2026-07-09 (Phase H2)
 owner: product
 supersedes:
 supersededBy:
@@ -19,10 +19,28 @@ bank tables into one filtered/paginated view — no physical `ResourceBankItem` 
 migration. New `GET /api/admin/resource-bank` endpoint and `/admin/resource-bank` admin page
 ("Resource Bank"), added as the first "Content Banks" nav item; the four typed pages/APIs/tables
 are unchanged and remain fully reachable. Generate Learn/Activity/Module row actions are disabled
-"coming soon" placeholders — H3/H4/H5 do not exist yet. +22 backend tests (3,693 total). H2-H8
-have not started. Full implementation detail: `docs/roadmap/road-map.md` §1, Decision Log (Phase
-H1 entry), and §19a item 20i. **Recommended next implementation phase: H2 — Import Content UX
-v1**, though a PG-v2A/H2 sequencing decision remains a future Plan-Sync checkpoint.
+"coming soon" placeholders — H3/H4/H5 do not exist yet. +22 backend tests (3,693 total).
+
+**Phase H2, 2026-07-09. Implemented.** H2 built Import Content UX v1: a product-friendly admin
+wrapper (`IContentImportService`/`ContentImportService`, `POST /api/admin/content-imports`,
+`/admin/content/import` page, "Import Content" nav item — first Content Banks item) over the
+existing Phase E1 pipeline (`IResourceImportService.ImportAsync`). Admin pastes text/CSV/JSON
+(`pasted_text`/`csv_text`/`json_text` — file upload stays on the existing Resource Import Runs
+page, out of scope here), picks a broad resource type (vocabulary/grammar/reading — Listening/
+Speaking/Writing/Mixed-AI-detect are "coming soon": `ResourceCandidateType` has no shape for them
+yet) and default metadata (CEFR/skill/subskill/context tags/focus tags/difficulty band). Defaults
+apply only when a row doesn't already carry its own value; an invalid row or default CEFR falls
+back and produces a raw-record warning rather than rejecting the row. `ResourceImportRequest`
+gained optional `DefaultCandidateType`/`Default*` fields (all null for every existing file-upload
+caller — zero behavior change there). `ContentImportService` finds-or-creates (and
+auto-approves) the named `CefrResourceSource` — no new entity, no schema/migration change; every
+field it writes already existed on `ResourceCandidate` since E1/E6/E8. Result staged exactly like
+a file import: pending `ResourceCandidate` rows, reviewed/approved/published only through the
+existing Resource Candidates page (unchanged). No AI structure analysis — deterministic mapping
+only, honestly labeled as such in the UI. +16 unit tests, +6 integration tests (3,715 total).
+Full detail: `docs/roadmap/road-map.md` §1, Decision Log (Phase H2 entry). **Recommended next
+implementation phase: H3 — Learn Item Foundation**, though a PG-v2A/H3 sequencing decision
+remains a future Plan-Sync checkpoint.
 
 ---
 
@@ -330,7 +348,7 @@ pages exist to populate "Content Studio." Not implemented in H0.
 |---|---|---|
 | **H0 — Product Model Realignment** | Docs-only. This phase. | E10, D6 |
 | **H1 — Unified Resource Bank Admin Read Model** `Done (2026-07-09)` | One admin-facing Resource Bank API/page over existing typed published bank tables (Option B, §4). No physical consolidation. Old typed pages remain (not yet moved to Advanced — that's H8). | H0 |
-| **H2 — Import Content UX v1** | Admin upload/paste/import page; admin chooses broad type/category/default tags; AI analyze/mapping preview; creates pending Resource Candidates/Bank rows through the existing E1–E9 pipeline; async for large imports; no student assignment. | H1 |
+| **H2 — Import Content UX v1** `Done (2026-07-09)` | Admin paste (text/CSV/JSON)/import page; admin chooses broad type/category/default tags; deterministic mapping (no AI analyze yet — labeled "coming soon"); creates pending Resource Candidates through the existing E1 pipeline; no student assignment. File upload and async large-import handling remain on the existing Resource Import Runs page. | H1 |
 | **H3 — Learn Item Foundation** | Introduce `Learn Item` entity/table/API/admin review; generate Learn Item from selected Resource Bank rows; approval lifecycle; tags/source traceability. | H2 |
 | **H4 — Activity Foundation with Form.io** | Introduce/align `Activity` as an editable generated exercise (builds on existing `ActivityTemplate`); Form.io schema/config for supported types; answer/scoring/feedback plan; generated from selected Resource Bank rows; approval lifecycle; tags/source traceability. | H2 (parallel with H3) |
 | **H5 — Module Foundation** | `Module` = Learn + Activity/Activities + Feedback Plan; create/generate module drafts from selected resources/Learn Items/Activities; approval lifecycle; objective/estimated-time metadata. | H3, H4 |
@@ -359,7 +377,11 @@ and a safe first step that did not require Learn/Activity/Module to exist yet. S
 `docs/roadmap/road-map.md` §1, Decision Log (Phase H1 entry), and §19a item 20i for full
 implementation detail.
 
-**Recommended next: H2 — Import Content UX v1.** A PG-v2A/H2 sequencing decision (which comes
+**H2 — Import Content UX v1 — done (2026-07-09).** A thin, deterministic admin wrapper over the
+already-built E1 pipeline — no schema/migration, no new published-bank writes, no AI-guessed
+classification. See `docs/roadmap/road-map.md` §1, Decision Log (Phase H2 entry) for full detail.
+
+**Recommended next: H3 — Learn Item Foundation.** A PG-v2A/H3 sequencing decision (which comes
 first) remains a future Plan-Sync checkpoint, not resolved by this phase.
 
 ---

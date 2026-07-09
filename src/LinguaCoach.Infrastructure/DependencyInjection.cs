@@ -543,6 +543,10 @@ public static class DependencyInjection
         services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceImportService,
             LinguaCoach.Infrastructure.ResourceImport.ResourceImportService>();
 
+        // Phase H2 — Import Content UX v1 admin wrapper (paste text/CSV/JSON + broad type/defaults).
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IContentImportService,
+            LinguaCoach.Infrastructure.ResourceImport.ContentImportService>();
+
         // Phase E2 — AI analysis (advisory), deterministic rule validation, and dedup/fingerprint
         // gates over staged candidates.
         services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceCandidateAnalysisService,

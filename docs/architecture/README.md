@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H1)
+lastUpdated: 2026-07-09 (Phase H2)
 owner: architecture
 supersedes:
 supersededBy:
@@ -357,9 +357,20 @@ one filtered/paginated view — **no physical `ResourceBankItem` table, no schem
 `GET /api/admin/resource-bank` endpoint and `/admin/resource-bank` admin page ("Resource Bank"),
 added as the first "Content Banks" nav item, with disabled "coming soon" Generate Learn/Activity/
 Module row actions. **All four typed bank pages/APIs/tables are unchanged and remain fully
-reachable** — additive, not a replacement. +22 backend tests (3,693 total). No H2-H5 started, no
-PG-v2 started. **Recommended next implementation phase: H2 — Import Content UX v1**, though a
-PG-v2A/H2 sequencing decision remains a future Plan-Sync checkpoint. See
+reachable** — additive, not a replacement. +22 backend tests (3,693 total).
+
+**Phase H2 (2026-07-09)** — Import Content UX v1: a product-friendly admin wrapper over the
+existing Phase E1 pipeline. New `IContentImportService`/`ContentImportService` finds-or-creates
+(and auto-approves) a `CefrResourceSource` by name, converts pasted `pasted_text`/`csv_text`/
+`json_text` into the shape `IResourceImportService.ImportAsync` already parses, and forwards the
+admin's chosen resource type + default metadata as new optional `ResourceImportRequest` fields
+(all null for every existing file-upload caller). New `POST /api/admin/content-imports` endpoint
+and `/admin/content/import` admin page ("Import Content"), added as the **first** "Content Banks"
+nav item. **No schema/migration, no new published-bank writes, no AI-guessed classification** —
+deterministic mapping only. File upload and async large-import handling stay on the existing
+Resource Import Runs page. +22 backend tests (3,715 total). No H3-H5 started, no PG-v2 started.
+**Recommended next implementation phase: H3 — Learn Item Foundation**, though a PG-v2A/H3
+sequencing decision remains a future Plan-Sync checkpoint. See
 `docs/architecture/product-model-realignment-h0.md` and `docs/roadmap/road-map.md` §1, Decision
 Log, and §19a.
 

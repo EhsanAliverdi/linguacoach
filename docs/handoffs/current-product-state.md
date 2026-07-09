@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H1)
+lastUpdated: 2026-07-09 (Phase H2)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,29 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-09 (Phase H1)
+Last updated: 2026-07-09 (Phase H2)
+
+## Import Content UX v1 (Phase H2, 2026-07-09)
+
+A product-friendly admin entry point over the existing Phase E1 import pipeline. Admins can now
+open `/admin/content/import` ("Import Content", first Content Banks nav item), paste text/CSV/
+JSON, choose a broad resource type (vocabulary/grammar/reading — Listening/Speaking/Writing/Mixed
+shown "coming soon", since `ResourceCandidateType` has no shape for them yet) and default metadata
+(CEFR/skill/subskill/context tags/focus tags/difficulty band — applied only when a row doesn't
+already carry its own value), and get pending `ResourceCandidate` rows staged through the same
+gate/parse logic a file upload would use. **No schema/migration, no new published-bank writes, no
+AI-guessed classification** — deterministic mapping only, honestly labeled as such. File upload
+and async handling of very large imports remain on the existing Resource Import Runs page
+(unchanged), out of scope for the new endpoint. Imported rows stay pending review; nothing is
+published until the existing Resource Candidates approve/publish flow runs.
+
++22 backend tests (3,715 total: 16 unit, 6 integration). No H3/H4/H5/PG-v2 started. No external
+datasets, no Persian/bilingual content, no direct final-table seeding, no student assignment.
+Today/Practice Gym legacy fallback and the readiness/delivery queue are unchanged. Full detail:
+`docs/architecture/product-model-realignment-h0.md`; roadmap: `docs/roadmap/road-map.md` §1,
+Decision Log (Phase H2 entry), §19a item 20j.
+
+---
 
 ## Unified Resource Bank Admin Read Model (Phase H1, 2026-07-09)
 

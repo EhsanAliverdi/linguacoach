@@ -144,6 +144,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/admin-review-queue/admin-review-queue.component').then(m => m.AdminReviewQueueComponent),
       },
       {
+        path: 'content/import',
+        loadComponent: () => import('./features/admin/admin-content-import/admin-content-import.component').then(m => m.AdminContentImportComponent),
+      },
+      {
         path: 'resource-sources',
         loadComponent: () => import('./features/admin/admin-resource-sources/admin-resource-sources.component').then(m => m.AdminResourceSourcesComponent),
       },

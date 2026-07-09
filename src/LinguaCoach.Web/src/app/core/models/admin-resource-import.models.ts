@@ -488,6 +488,55 @@ export const UNIFIED_RESOURCE_BANK_TYPES: { value: UnifiedResourceBankItemType; 
 
 export const RESOURCE_BANK_CEFR_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
 
+// ── Phase H2 — Import Content UX v1. A product-friendly wrapper around the Phase E1 import
+// pipeline above: paste text/CSV/JSON, choose a broad resource type + default metadata, get
+// back pending ResourceCandidate rows. No AI structure detection — see the "Coming soon" types
+// below. Never publishes anything — review still happens on the Resource Candidates page. ──
+
+export type ContentImportResourceType = 'vocabulary' | 'grammar' | 'reading';
+export type ContentImportInputMode = 'pasted_text' | 'csv_text' | 'json_text';
+
+/** Only these three are implemented in H2 — ResourceCandidateType has no Listening/Speaking/
+ *  Writing/Mixed shape yet (see docs/architecture/product-model-realignment-h0.md). */
+export const CONTENT_IMPORT_RESOURCE_TYPES: { value: ContentImportResourceType; label: string }[] = [
+  { value: 'vocabulary', label: 'Vocabulary' },
+  { value: 'grammar', label: 'Grammar' },
+  { value: 'reading', label: 'Reading' },
+];
+
+export const CONTENT_IMPORT_COMING_SOON_TYPES = ['Listening', 'Speaking', 'Writing', 'Mixed / AI detect'];
+
+export const CONTENT_IMPORT_INPUT_MODES: { value: ContentImportInputMode; label: string; hint: string }[] = [
+  { value: 'pasted_text', label: 'Pasted text (one item per line)', hint: 'Each non-empty line becomes one candidate.' },
+  { value: 'csv_text', label: 'CSV', hint: 'Paste CSV with a header row, same columns the file-upload import accepts.' },
+  { value: 'json_text', label: 'JSON', hint: 'Paste a JSON array of row objects.' },
+];
+
+export interface ContentImportRequestBody {
+  sourceName: string;
+  resourceType: ContentImportResourceType;
+  inputMode: ContentImportInputMode;
+  content: string;
+  defaultCefrLevel?: string | null;
+  defaultSkill?: string | null;
+  defaultSubskill?: string | null;
+  defaultContextTags?: string[] | null;
+  defaultFocusTags?: string[] | null;
+  defaultDifficultyBand?: number | null;
+  notes?: string | null;
+}
+
+export interface ContentImportResult {
+  importRunId: string;
+  sourceId: string;
+  rawRecordCount: number;
+  candidateCount: number;
+  warningCount: number;
+  status: string;
+  errorSummary: string | null;
+  reviewRoute: string;
+}
+
 export const RESOURCE_IMPORT_MODES = ['Csv', 'Json', 'Jsonl'] as const;
 export const RESOURCE_CANDIDATE_TYPES = [
   'Unknown', 'VocabularyEntry', 'GrammarProfileEntry', 'ReadingPassage', 'ActivityTemplateCandidate',

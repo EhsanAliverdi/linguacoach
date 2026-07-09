@@ -1,0 +1,98 @@
+<sp-admin-page-header
+  title="Import Content"
+  subtitle="Import files or pasted datasets into the Resource Bank as pending review candidates.">
+</sp-admin-page-header>
+
+<sp-admin-page-body>
+
+  @if (result(); as importResult) {
+    <sp-admin-section-card title="Import complete">
+      <sp-admin-alert [variant]="importResult.warningCount > 0 ? 'warning' : 'success'">
+        Import {{ importResult.status }}: {{ importResult.candidateCount }} candidate(s) staged from
+        {{ importResult.rawRecordCount }} row(s), {{ importResult.warningCount }} warning(s).
+      </sp-admin-alert>
+      @if (importResult.errorSummary) {
+        <sp-admin-alert variant="error">{{ importResult.errorSummary }}</sp-admin-alert>
+      }
+      <p class="sp-admin-hint">
+        These rows are pending review — nothing has been published to the Resource Bank yet.
+      </p>
+      <div class="sp-admin-form-actions">
+        <sp-admin-button variant="primary" (clicked)="goToReview()">Review candidates</sp-admin-button>
+        <sp-admin-button variant="neutral" appearance="outline" (clicked)="goToResourceBank()">Go to Resource Bank</sp-admin-button>
+        <sp-admin-button variant="neutral" appearance="outline" (clicked)="startAnotherImport()">Import more content</sp-admin-button>
+      </div>
+    </sp-admin-section-card>
+  } @else {
+
+    @if (error()) { <sp-admin-alert variant="error">{{ error() }}</sp-admin-alert> }
+
+    <sp-admin-section-card title="Source / details">
+      <div class="sp-admin-form-stack">
+        <sp-admin-form-field label="Source name" [required]="true" hint="Reused if a source with this exact name already exists.">
+          <sp-admin-input [(ngModel)]="sourceName" name="sourceName" placeholder="e.g. Internal B1 vocabulary pack" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Notes">
+          <sp-admin-textarea [(ngModel)]="notes" placeholder="Optional note about this import" />
+        </sp-admin-form-field>
+      </div>
+    </sp-admin-section-card>
+
+    <sp-admin-section-card title="Content type">
+      <div class="sp-admin-form-stack">
+        <sp-admin-form-field label="Resource type" [required]="true" hint="The admin-selected type is applied to every row in this import.">
+          <sp-admin-native-select [(ngModel)]="resourceType" name="resourceType" [options]="resourceTypeOptions" />
+        </sp-admin-form-field>
+        <p class="sp-admin-hint">
+          Coming soon: {{ comingSoonTypes.join(', ') }} — AI structure detection is not yet implemented (see roadmap).
+        </p>
+      </div>
+    </sp-admin-section-card>
+
+    <sp-admin-section-card title="Defaults" [dashed]="true">
+      <p class="sp-admin-hint">
+        Applied only when a row doesn't already carry its own value — a row's own column always wins.
+      </p>
+      <sp-admin-form-grid [columns]="2">
+        <sp-admin-form-field label="Default CEFR level">
+          <sp-admin-native-select [(ngModel)]="defaultCefrLevel" name="defaultCefrLevel" [options]="cefrOptions" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Default skill">
+          <sp-admin-input [(ngModel)]="defaultSkill" name="defaultSkill" placeholder="e.g. Vocabulary" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Default subskill">
+          <sp-admin-input [(ngModel)]="defaultSubskill" name="defaultSubskill" placeholder="e.g. CoreWords" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Default difficulty band" hint="1 (easiest) – 5 (hardest)">
+          <sp-admin-number-input [(ngModel)]="defaultDifficultyBand" name="defaultDifficultyBand" [min]="1" [max]="5" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Default context tags" hint="Comma-separated">
+          <sp-admin-input [(ngModel)]="defaultContextTags" name="defaultContextTags" placeholder="travel, work" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Default focus tags" hint="Comma-separated">
+          <sp-admin-input [(ngModel)]="defaultFocusTags" name="defaultFocusTags" placeholder="greetings, small-talk" />
+        </sp-admin-form-field>
+      </sp-admin-form-grid>
+    </sp-admin-section-card>
+
+    <sp-admin-section-card title="Input">
+      <div class="sp-admin-form-stack">
+        <sp-admin-form-field label="Input mode" [required]="true">
+          <sp-admin-native-select [(ngModel)]="inputMode" name="inputMode" [options]="inputModeOptions" />
+        </sp-admin-form-field>
+        <p class="sp-admin-hint">{{ inputHint }}</p>
+        <sp-admin-form-field label="Content" [required]="true">
+          <sp-admin-textarea [(ngModel)]="content" [rows]="12" placeholder="Paste content here…" />
+        </sp-admin-form-field>
+      </div>
+    </sp-admin-section-card>
+
+    <div class="sp-admin-form-actions">
+      <sp-admin-button variant="primary" [disabled]="submitting()" (clicked)="submit()">
+        {{ submitting() ? 'Importing…' : 'Import as pending candidates' }}
+      </sp-admin-button>
+    </div>
+
+  }
+
+</sp-admin-page-body>
