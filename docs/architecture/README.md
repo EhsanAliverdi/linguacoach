@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase E10)
+lastUpdated: 2026-07-09 (Phase H0)
 owner: architecture
 supersedes:
 supersededBy:
@@ -329,7 +329,27 @@ pool, remove legacy generation, or touch backend namespaces/entities/routes (G2'
 scope).** After G1, a Phase E8/D3 decision checkpoint applies (not resolved in advance). **Phase
 G1 is the next recommended implementation phase; it has not started. Full Phase D implementation
 (beyond D1/D2's narrow slice), Phase E8, Phase G2/G3 cleanup, and PG-v2 implementation remain not
-started.**
+started.** (Historical note: superseded by later phases — G1, D3-D6, and E8-E10 all subsequently
+completed; see the Phase H0 entry below for the current state and next recommended phase.)
+
+**Phase H0 (2026-07-09, docs-only)** — after Phase D6 closed the bank-first selector-quality
+track (E6-E10, D1-D6), a new **Product Model Realignment** phase defined the intended target
+model (`Resource Bank Item → Learn Item/Activity → Module → Daily Lesson/Practice Gym → Attempt →
+Feedback + Rating → Learner Memory`), the intended import flow (import → AI-advisory analysis →
+typed candidate rows → review/approve → published Resource Bank → admin selects rows → generate
+Learn/Activity/Module drafts → review/approve), the recommended near-term unified-Resource-Bank
+direction (**Option B: admin read model over existing typed tables**, not physical
+consolidation), field requirements for Learn Item/Activity/Module/Daily Lesson/Practice Gym, a
+current-state mismatch audit, a target admin IA (Content Studio / Learning Setup / Delivery /
+Advanced-Diagnostics), and a new **H-track** (H1 Unified Resource Bank Admin Read Model → H2
+Import Content UX v1 → H3 Learn Item Foundation → H4 Activity Foundation with Form.io → H5 Module
+Foundation → H6 Daily Lesson Module Pipeline → H7 Practice Gym Module Pipeline → H8 Admin IA
+Simplification). **No code, migration, entity, API, Angular, or test change.** Existing bank-first
+work (E1-E10, D1-D6) is confirmed still-useful substrate, not superseded — nothing is deleted.
+Today/Practice Gym legacy fallback, the readiness/delivery queue, and PG-v2's planned scope are
+unchanged. **Recommended next implementation phase: H1.** See
+`docs/architecture/product-model-realignment-h0.md` and `docs/roadmap/road-map.md` §1, Decision
+Log, and §19a.
 
 ---
 
@@ -356,6 +376,7 @@ started.**
 | [repetition-and-novelty.md](repetition-and-novelty.md) | `StudentActivityUsageLog`; `IActivityContentFingerprintService`/`IActivityNoveltyPolicy`; deterministic/exact-match cooldown foundation (Phase B, 2026-07-08) — not embeddings/semantic near-duplicate detection |
 | [activity-feedback-and-calibration.md](activity-feedback-and-calibration.md) | Foundation implemented (Phase B2, 2026-07-08): explicit student-reported difficulty/clarity/usefulness/repeat-preference feedback (`ActivityFeedbackSignal`); admin per-surface feedback policy (off/optional/required) via existing feature-gate system; API + minimal student UI. Not yet consumed by any automated CEFR/difficulty-band/template/resource/AI-quality calibration or admin review automation — collection only |
 | [english-resource-bank-import-platform.md](english-resource-bank-import-platform.md) | Phase E plan (E0-E8). E0 finalized entity/status/gate model; **E1-E7 all implemented (2026-07-09)**: `CefrResourceSource` extended as source registry; `ResourceImportRun`/`ResourceRawRecord`/`ResourceCandidate` staging entities; gates 1-3 + gates 4-6 + rendered admin preview + controlled publish (`VocabularyEntry`/`GrammarProfileEntry`/short-excerpt `ReadingPassage`→`CefrReadingReference`, `ActivityTemplateCandidate` deferred) + published-bank browsing/search/admin management (`ResourceBankQueryService`, reverse candidate traceability, read-only) + first real English content depth (32 vocabulary / 12 grammar / 10 reading excerpts, E6) + **full-length reading passage bank (E7)**: new `CefrReadingPassage` entity, `ReadingPassage` candidates over the 500-char excerpt threshold now publish there instead of being blocked, new browse/search API + admin page, 10 new full-length passages. No external dataset imported; no Persian/bilingual content. **Phase D1/D2 (2026-07-08) are real consumers of this platform (see the "Bank-first Today lesson composer" row) — E7's new passage bank is not yet wired to Today.** A new Phase D3 decision checkpoint applies, not resolved by E7 |
+| [product-model-realignment-h0.md](product-model-realignment-h0.md) | **Phase H0 (2026-07-09, docs-only)**: intended product model (`Resource Bank Item → Learn Item/Activity → Module → Daily Lesson/Practice Gym → Attempt → Feedback + Rating → Learner Memory`), intended import flow, unified-Resource-Bank direction (Option B recommended), Learn/Activity/Module/Lesson/Practice-Gym field requirements, current-state mismatch audit, target admin IA, and the H1-H8 roadmap. No code/migration/entity/API/Angular/test change |
 
 ### Planned / Deferred (not implemented yet)
 

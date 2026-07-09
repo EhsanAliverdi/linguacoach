@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase D6)
+lastUpdated: 2026-07-09 (Phase H0)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,36 @@ Last updated: 2026-07-09
 ---
 
 ## Active sprint
+
+**Phase H0 — Product Model Realignment: Content Studio, Learn, Activity, Module, Lesson, Practice
+Gym (2026-07-09)** — complete, docs-only
+
+D6 closed the bank-first selector-quality track (E6→E10, D1→D6), but the admin/product model
+never caught up: no `Learn Item` concept, no `Module` concept, admin still sees many separate
+technical bank pages. **This phase does not implement a refactor.** It defines the intended model
+(`Resource Bank Item → Learn Item/Activity → Module → Daily Lesson/Practice Gym → Attempt →
+Feedback + Rating → Learner Memory`), the intended import flow, a recommended near-term unified
+Resource Bank direction (**Option B: admin read model over existing typed tables, not physical
+consolidation**), Learn/Activity/Module/Lesson/Practice-Gym field requirements, a current-state
+mismatch audit, a target admin IA (Content Studio / Learning Setup / Delivery /
+Advanced-Diagnostics), and a new **H-track** (H1 Unified Resource Bank Admin Read Model → H2
+Import Content UX v1 → H3 Learn Item Foundation → H4 Activity Foundation with Form.io → H5 Module
+Foundation → H6 Daily Lesson Module Pipeline → H7 Practice Gym Module Pipeline → H8 Admin IA
+Simplification).
+
+**No code, migration, entity, API, Angular, or test change.** Existing bank-first work (E1–E10,
+D1–D6) is confirmed still-useful substrate, not superseded. Today/Practice Gym legacy fallback,
+the readiness/delivery queue, D1–D6 selector logic, and PG-v2's planned scope are all unchanged.
+
+**Validation** (docs-only phase): `git status` clean before commit; `git diff --check` clean; no
+backend/frontend test suites run (no code touched).
+
+**Recommended next implementation phase: H1 — Unified Resource Bank Admin Read Model.** Full
+detail: `docs/architecture/product-model-realignment-h0.md`.
+
+---
+
+## Previous sprint (D6)
 
 **Phase D6 — Today Topic Matching and Subskill-Aware Resource Selection (2026-07-09)** — complete
 
@@ -47,12 +77,13 @@ closed. Residual: E10 difficulty bands are CEFR-uniform, so difficulty narrowing
 / a relaxation for Gentle/Challenging until genuinely mixed-difficulty content exists (mechanism
 correct, mixed-band-tested).
 
-**Next: Phase PG-v2A, Phase F, or Phase G2/G3** — checkpoint now live, not resolved in advance. See
+**Next:** resolved by Phase H0 (see "Active sprint" above) — the checkpoint surfaced a need to
+realign the admin/product model before choosing PG-v2A/Phase F/Phase G2/G3. See
 `docs/architecture/learning-activity-engine.md` (Phase D6 notes) and `docs/roadmap/road-map.md` §1/§19a.
 
 ---
 
-## Previous sprint
+## Previous sprint (E10)
 
 **Phase E10 — Internal Bank Metadata Depth Expansion for Focus and Difficulty (2026-07-09)** — complete
 

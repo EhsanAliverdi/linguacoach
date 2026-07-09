@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase E10)
+lastUpdated: 2026-07-09 (Phase H0)
 owner: product
 supersedes:
 supersededBy:
@@ -11,6 +11,39 @@ supersededBy:
 Status labels: `Not started` Â· `Planned` Â· `Blocked` Â· `Done`
 
 Items are grouped by theme. Each item is a discrete unit of work; sub-bullets are acceptance criteria or notes.
+
+---
+
+## Product Model Realignment — Phase H0-H8 `H0 Done, H1-H8 Planned` (2026-07-09)
+
+**Phase H0 (docs-only, done 2026-07-09)** defined the intended product model — `Resource Bank Item
+→ Learn Item/Activity → Module → Daily Lesson/Practice Gym → Attempt → Feedback + Rating →
+Learner Memory` — and a new H-track. Full detail: `docs/architecture/product-model-realignment-h0.md`.
+This does **not** replace or invalidate the Bank-First Admin/Backend Surface Cleanup (G0-G3) or
+Practice Gym v2 (PG-v2A-D) tracks below — H1-H8 are additive, sequenced on top of the same
+E1-E10/D1-D6 substrate, and G2/G3/PG-v2 remain valid, separately-scoped tracks.
+
+- [x] **Phase H0 — Product Model Realignment** `Done` (2026-07-09, docs-only) — model, import flow,
+  unified-Resource-Bank direction (Option B recommended), Learn/Activity/Module/Lesson/Practice-Gym
+  field requirements, mismatch audit, target admin IA, H1-H8 roadmap.
+- [ ] **Phase H1 — Unified Resource Bank Admin Read Model** `Planned` — one admin-facing Resource
+  Bank API/page aggregating existing typed published bank tables; no physical consolidation.
+  **Recommended next implementation phase.**
+- [ ] **Phase H2 — Import Content UX v1** `Planned` — admin upload/paste/import page; AI
+  analyze/mapping preview; creates pending Resource Candidates/Bank rows through the existing E1-E9
+  pipeline; no student assignment.
+- [ ] **Phase H3 — Learn Item Foundation** `Planned` — new `Learn Item` entity/API/admin review;
+  generated from selected Resource Bank rows; approval lifecycle.
+- [ ] **Phase H4 — Activity Foundation with Form.io** `Planned` — align/extend `Activity` (building
+  on `ActivityTemplate`) as an editable generated exercise; approval lifecycle.
+- [ ] **Phase H5 — Module Foundation** `Planned` — `Module` = Learn + Activity/Activities + Feedback
+  Plan; generated from selected resources/Learn Items/Activities; approval lifecycle.
+- [ ] **Phase H6 — Daily Lesson Module Pipeline** `Planned` — Daily Lesson becomes several Modules;
+  preserve Today fallback until proven replacement.
+- [ ] **Phase H7 — Practice Gym Module Pipeline** `Planned` — Practice Gym becomes skill/weakness
+  Module selection; preserve legacy Practice Gym fallback until proven replacement.
+- [ ] **Phase H8 — Admin IA Simplification** `Planned` — move technical pages under
+  Advanced/Diagnostics; Content Studio becomes the main admin surface.
 
 ---
 

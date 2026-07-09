@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase E10)
+lastUpdated: 2026-07-09 (Phase H0)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,34 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-09 (Phase E10)
+Last updated: 2026-07-09 (Phase H0)
+
+## Product Model Realignment Opened (Phase H0, 2026-07-09, docs-only)
+
+D6 closed the bank-first selector-quality track (E6–E10, D1–D6), but the admin/product model was
+never realigned to match: no `Learn Item` concept, no `Module` concept, admin still sees many
+separate technical bank pages. **Phase H0 is a docs-only planning phase** — it does not change
+any code, migration, entity, API, Angular file, or test. It defines the intended target model:
+
+```
+Resource Bank Item → Learn Item / Activity → Module → Daily Lesson / Practice Gym
+  → Attempt → Feedback + Rating → Learner Memory / Mastery
+```
+
+and a new **H-track** (H1 Unified Resource Bank Admin Read Model → H2 Import Content UX v1 → H3
+Learn Item Foundation → H4 Activity Foundation with Form.io → H5 Module Foundation → H6 Daily
+Lesson Module Pipeline → H7 Practice Gym Module Pipeline → H8 Admin IA Simplification).
+**Recommended next implementation phase: H1** (a read-only admin aggregation over the existing
+typed bank tables — no schema/migration). The direction chosen for the unified Resource Bank is
+**Option B (admin read model over existing typed tables)**, not immediate physical consolidation.
+
+**The existing bank-first work (E1–E10, D1–D6, described in the sections below) is not superseded
+— it remains the real, tested substrate the H-track will build on.** Today/Practice Gym legacy
+fallback, the readiness/delivery queue, and PG-v2's planned scope are all unchanged. Full detail:
+`docs/architecture/product-model-realignment-h0.md`; roadmap sequencing:
+`docs/roadmap/road-map.md` §1, Decision Log (Phase H0 entry), and §19a (items 20h–20p).
+
+---
 
 > **Note on scope of this file.** The dated sections below are a running
 > product-state log that ends at Phase 20I (2026-07-03, the last
