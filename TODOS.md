@@ -771,18 +771,38 @@ progress is always computed live from the ledger.
 **Context:** `docs/architecture/bank-first-admin-backend-surface-audit.md` (G0's existing classification); `docs/architecture/product-model-realignment-h0.md` §8 (H8/H9/H10 rows); `docs/backlog/product-backlog.md` (H8/H9/H10 entries).
 **Deferred from:** Phase H7, 2026-07-09. **Resolved:** Plan-Sync-After-H7, 2026-07-09.
 
-### TODO-H8-1 — Remove invalid/duplicate admin Content Bank surfaces after dependency audit
+### ~~TODO-H8-1~~ — Remove invalid/duplicate admin Content Bank surfaces after dependency audit — **DONE in Phase H8**
 **What:** The four typed admin resource-bank pages (`admin-resource-bank-vocabulary`,
-`-grammar`, `-reading-references`, `-reading-passages`) are still routed and still in the sidebar
+`-grammar`, `-reading-references`, `-reading-passages`) were still routed and still in the sidebar
 nav alongside the newer unified Resource Bank page (H1) — coexisting by design during the
-transition. H8 should remove or relocate this redundant admin *navigation* (e.g. under
-Advanced/Diagnostics) — not the underlying typed tables, their CRUD APIs, or their data, which
-Plan-Sync-After-H7's audit classified "do not remove." H8 should also sweep for any remaining
-pre-H-track admin labels/copy or "coming soon" placeholder generation actions already superseded
-by a live Learn/Activity/Module entry point.
-**Why:** Plan-Sync-After-H7's Step 0 audit (`docs/reviews/2026-07-09-plan-sync-after-h7-legacy-bank-removal-strategy.md`) found this is the only concrete, low-risk cleanup action currently identified — everything else audited is still a live runtime dependency. Confusing/duplicate admin nav is real cost even while the underlying tables must stay.
+transition.
+**Resolution:** Phase H8 (2026-07-10) removed the four typed bank pages from both the desktop
+sidebar and mobile drawer nav, split the remaining "Content Banks" section into "Content Studio"
+(primary authoring flow) and "Content Ops" (support/staging pages), and updated Learn
+Items/Activities/Modules page copy to drop stale "future Modules" language. Routes/components/
+tables/APIs were left untouched (navigation-only change), per Plan-Sync-After-H7's classification.
+See `docs/reviews/2026-07-10-phase-h8-content-studio-admin-ia-cleanup-review.md`.
 **Context:** `src/LinguaCoach.Web/src/app/features/admin/admin-resource-bank-vocabulary/` (and sibling `-grammar`/`-reading-references`/`-reading-passages` folders); `app.routes.ts`; `admin-app-layout.component.html` (sidebar nav).
-**Deferred from:** Plan-Sync-After-H7, 2026-07-09.
+**Deferred from:** Plan-Sync-After-H7, 2026-07-09. **Resolved:** Phase H8, 2026-07-10.
+
+### TODO-H8-2 — Karma unit-test bundle fails to compile due to pre-existing spec-fixture gaps
+**What:** The shared Angular Karma test bundle cannot compile because five spec files construct
+fixture objects missing fields that were added as **required** properties in earlier phases
+without the corresponding fixtures being updated: `dashboard.component.spec.ts` and
+`practice-gym.component.spec.ts` are missing `TodaysSessionResponse.moduleSection`/
+`PracticeGymSuggestionsResponse.moduleSuggestions` (added in H6/H7); `activity-feedback-page.component.spec.ts`,
+`activity-lesson-submission.component.spec.ts`, `activity-lesson-vocab.component.spec.ts`, and
+`presenters/test-helpers.ts` are missing `ActivityFeedbackDto.feedbackPolicy` (added in an
+earlier, unrelated feedback-policy phase). This blocks running *any* Karma unit test, not just
+ones related to the failing fixtures, since Angular compiles the whole spec bundle together.
+**Why:** Discovered during Phase H8 (2026-07-10) while trying to validate an admin-nav spec
+change. Confirmed via `git log` that none of the five affected files were touched in H6, H7, or
+H8 — this is pre-existing test debt from whichever phase added each required field, not
+something introduced by H8. Fixing it means updating fixtures in files with no connection to
+Content Studio/admin-IA, well outside H8's boundaries — tracked separately rather than expanding
+H8's scope.
+**Context:** `src/LinguaCoach.Web/src/app/features/student/dashboard/dashboard/dashboard.component.spec.ts`; `src/LinguaCoach.Web/src/app/features/student/practice/practice-gym.component.spec.ts`; `src/LinguaCoach.Web/src/app/features/student/activity/activity-feedback-page/activity-feedback-page.component.spec.ts`; `src/LinguaCoach.Web/src/app/features/student/activity/activity-lesson/activity-lesson-submission.component.spec.ts`; `src/LinguaCoach.Web/src/app/features/student/activity/activity-lesson/activity-lesson-vocab.component.spec.ts`; `src/LinguaCoach.Web/src/app/features/student/activity/presenters/test-helpers.ts`.
+**Deferred from:** Phase H8, 2026-07-10.
 
 ### TODO-H9-1 — Remove/consolidate legacy bank structures after safety/data audit
 **What:** H9 (the first genuinely destructive cleanup phase) should remove/consolidate legacy

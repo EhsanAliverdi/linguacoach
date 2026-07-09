@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Plan-Sync-After-H7)
+lastUpdated: 2026-07-10 (Phase H8)
 owner: engineering
 supersedes:
 supersededBy:
@@ -8,11 +8,50 @@ supersededBy:
 
 # Current Sprint — SpeakPath
 
-Last updated: 2026-07-09
+Last updated: 2026-07-10
 
 ---
 
 ## Active sprint
+
+**Phase H8 — Content Studio/Admin IA Cleanup and Removal Readiness (2026-07-10)** — complete
+
+Frontend/docs-only admin cleanup following Plan-Sync-After-H7. **Not** the destructive
+backend/table cleanup phase (that's H9).
+
+- **Nav**: split the admin sidebar's single 14-item "Content Banks" section into **"Content
+  Studio"** (Import Content → Resource Bank → Learn Items → Activities → Modules — the primary
+  authoring flow) and **"Content Ops"** (Resource sources/import runs/candidates, Activity
+  templates, Review queue, Placement items, Onboarding — still-live support surfaces). Removed
+  the four typed resource-bank nav entries (Vocabulary/Grammar/Reading reference/Reading passage
+  bank) from both the desktop sidebar and mobile drawer — **navigation only**; their routes,
+  components, and backing tables/APIs remain fully reachable and untouched.
+- **Copy**: updated Learn Items/Activities/Modules page subtitles to drop stale "future
+  Modules"/"will power future..." language (all three are live since H5-H7) and to state plainly
+  that launching a scored Module/Activity attempt is not implemented yet (H10); added a pointer
+  from each typed bank page to the unified Resource Bank page.
+- **Tests**: updated the existing admin-nav Karma spec (removed an obsolete required-route
+  assertion, added two new cheap assertions for the Content Studio flow and the
+  typed-bank-pages-removed-from-nav state).
+
+**No backend file, migration, table, entity, or API was touched; no route or component was
+deleted.** `ActivityTemplate`, `PracticeActivityCache`, `StudentActivityReadinessItem`, the
+runtime session entities, and both Today/Practice Gym legacy fallbacks are all untouched.
+
+**Validation**: Angular production build — no new TS/Angular errors, only the pre-existing
+bundle-size budget warning. The full Karma unit-test suite could not run: pre-existing,
+unrelated spec-fixture gaps from H6/H7 and an earlier feedback-policy phase (missing
+`moduleSection`/`moduleSuggestions`/`feedbackPolicy` fields in five spec files never touched
+this phase) block the shared test bundle — confirmed via `git log` this predates H8; tracked as
+new `TODO-H8-2` rather than silently expanding scope. No backend code changed, so backend
+build/test was not run.
+
+**No H9 destructive cleanup started. No H10 runtime bridge started. No PG-v2 started.** See
+`docs/reviews/2026-07-10-phase-h8-content-studio-admin-ia-cleanup-review.md` for full detail.
+
+---
+
+## Earlier sprint (Plan-Sync-After-H7)
 
 **Plan-Sync-After-H7 — Legacy Bank Removal Strategy (2026-07-09)** — complete, docs-only
 

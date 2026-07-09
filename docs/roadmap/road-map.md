@@ -26,7 +26,32 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest work completed (local, not yet deployed):** Plan-Sync-After-H7 — Legacy Bank Removal
+**Latest phase completed (local, not yet deployed):** Phase H8 — Content Studio/Admin IA Cleanup
+and Removal Readiness (2026-07-10). Frontend/docs-only admin cleanup, **not** the destructive
+backend/table cleanup (that's H9). Executed the one concrete, low-risk action Plan-Sync-After-H7's
+audit identified: split the admin sidebar's single 14-item "Content Banks" nav section into
+**"Content Studio"** (Import Content → Resource Bank → Learn Items → Activities → Modules — the
+primary content-authoring flow, in that order) and **"Content Ops"** (Resource sources/import
+runs/candidates, Activity templates, Review queue, Placement items, Onboarding — still-live
+support/staging surfaces, just not part of the primary flow), and removed the four typed
+resource-bank nav entries (Vocabulary/Grammar/Reading reference/Reading passage bank) from both
+the desktop sidebar and mobile drawer. **Only the navigation was removed — the routes,
+components, and backing tables/APIs remain fully reachable and untouched**, consistent with the
+audit's finding that nothing else is yet safe to remove. Updated Learn Items/Activities/Modules
+page subtitles to drop stale "future Modules"/"will power future..." language (all three are live
+today) and to explicitly state that launching a scored Module/Activity attempt is not implemented
+yet (H10); added a pointer from each typed bank page to the unified Resource Bank page. Updated
+the existing admin-nav Karma spec (removed a now-obsolete required-route assertion, added two new
+assertions for the Content Studio flow and the typed-bank-pages-are-gone-from-nav state). **No
+backend file, migration, table, entity, or API was touched; no route or component was deleted.**
+Frontend production build: no new TS/Angular errors, only the pre-existing bundle-size budget
+warning. The full Karma unit-test suite could not run — pre-existing, unrelated spec-fixture gaps
+from H6/H7 (missing `moduleSection`/`moduleSuggestions` fields) and an earlier feedback-policy
+phase block the shared test bundle; confirmed via `git log` this predates H8 and isn't in its
+scope — tracked as new `TODO-H8-2`. Full detail:
+`docs/reviews/2026-07-10-phase-h8-content-studio-admin-ia-cleanup-review.md`.
+
+**Previous work completed (local, not yet deployed):** Plan-Sync-After-H7 — Legacy Bank Removal
 Strategy (2026-07-09, docs-only). Following H7 (Practice Gym Module Pipeline), this planning
 phase confirmed H6/H7 are both additive and fallback-safe, recorded the user's clarified cleanup
 direction — **legacy invalid bank/admin structures should be removed, not merely hidden** — and

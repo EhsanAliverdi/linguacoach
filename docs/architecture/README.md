@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Plan-Sync-After-H7)
+lastUpdated: 2026-07-10 (Phase H8)
 owner: architecture
 supersedes:
 supersededBy:
@@ -491,8 +491,26 @@ cleanup), H9 (Legacy Bank Structure Removal and Consolidation — the first genu
 phase, gated on a per-item safety audit; may split into H9A-H9D), and H10 (ActivityDefinition
 Runtime Launch Path / Attempt Bridge — must resolve before H9 could ever remove
 `ActivityTemplate`). No application code, migration, table, entity, API, or UI page changed.
-**Recommended next: H8**, followed by an H10 decision before H9 could touch `ActivityTemplate`.
 See `docs/reviews/2026-07-09-plan-sync-after-h7-legacy-bank-removal-strategy.md`.
+
+**Phase H8 (2026-07-10)** — Content Studio/Admin IA Cleanup and Removal Readiness.
+Frontend/docs-only; **not** the destructive backend/table cleanup (that's H9). Executed the one
+concrete, low-risk action identified above: split the admin sidebar's "Content Banks" nav into
+**Content Studio** (Import Content → Resource Bank → Learn Items → Activities → Modules, the
+primary authoring flow) and **Content Ops** (Resource sources/import runs/candidates, Activity
+templates, Review queue, Placement items, Onboarding — still-live support surfaces); removed the
+four typed resource-bank nav entries (Vocabulary/Grammar/Reading reference/Reading passage bank)
+from both the desktop sidebar and mobile drawer — **navigation only**, their routes/components/
+tables/APIs remain fully reachable and untouched. Updated Learn Items/Activities/Modules page
+subtitles to drop stale "future Modules" language and to state that launching a scored
+Module/Activity attempt is not implemented yet (H10); added a pointer from each typed bank page
+to the unified Resource Bank. Updated the admin-nav Karma spec accordingly. **No backend file,
+migration, table, entity, or API was touched; no route or component was deleted.** Frontend
+production build clean (only the pre-existing bundle-size warning); the full Karma suite could
+not run due to pre-existing, unrelated spec-fixture gaps from H6/H7 and an earlier
+feedback-policy phase (`TODO-H8-2`, confirmed via `git log` to predate H8). **Recommended next:
+a decision on H10** before H9 could ever touch `ActivityTemplate`, then H9's own fresh safety
+audit. See `docs/reviews/2026-07-10-phase-h8-content-studio-admin-ia-cleanup-review.md`.
 
 ---
 

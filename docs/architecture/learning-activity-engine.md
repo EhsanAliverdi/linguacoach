@@ -79,6 +79,14 @@ supersededBy:
 > further proof. `ActivityTemplate` in particular cannot be removed until H10 decides how
 > `ActivityDefinition` gets a real launch/attempt path — see
 > `docs/reviews/2026-07-09-plan-sync-after-h7-legacy-bank-removal-strategy.md`.
+>
+> **Phase H8 note (2026-07-10):** confirmed the prediction above — H8 was frontend/docs-only
+> admin nav and page-copy cleanup, and touched **none** of the runtime infrastructure this
+> document describes. `LearningActivity`/`LearningSession`/`SessionExercise`/`LearningModule`,
+> `ActivityMaterializationJob`, `LessonBatchGenerationJob`, `PracticeGymGenerationJob`,
+> `ActivityTemplate`, `PracticeActivityCache`, and `StudentActivityReadinessItem` are all
+> unchanged. See
+> `docs/reviews/2026-07-10-phase-h8-content-studio-admin-ia-cleanup-review.md`.
 
 ## Why `LearningActivity` is the Centre of the Product
 

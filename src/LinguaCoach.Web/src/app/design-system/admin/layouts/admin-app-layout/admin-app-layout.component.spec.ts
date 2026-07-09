@@ -161,11 +161,35 @@ describe('AdminAppLayoutComponent — nav links and shell (Phase 10UI-FIX-2)', (
     const required = ['/admin', '/admin/students', '/admin/ai-config', '/admin/prompts',
       '/admin/usage', '/admin/usage-policies', '/admin/curriculum',
       '/admin/exercise-types', '/admin/notifications',
-      '/admin/integrations', '/admin/diagnostics', '/admin/security',
-      // Phase G1: E7 reading-passages bank is now wired into the sidebar (was missing).
-      '/admin/resource-banks/reading-passages'];
+      '/admin/integrations', '/admin/diagnostics', '/admin/security'];
     for (const r of required) {
       expect(routes).withContext(`route ${r} missing from desktop sidebar`).toContain(r);
+    }
+  });
+
+  // Phase H8: Content Studio is the primary content-authoring flow in the sidebar.
+  it('desktop sidebar contains the Content Studio flow routes', () => {
+    const { host } = setup();
+    const links = getAllNavLinks(host);
+    const routes = links.map(l => l.getAttribute('ng-reflect-router-link') ?? l.getAttribute('routerLink'));
+    const required = ['/admin/content/import', '/admin/resource-bank', '/admin/learn-items',
+      '/admin/activities', '/admin/modules'];
+    for (const r of required) {
+      expect(routes).withContext(`route ${r} missing from Content Studio nav`).toContain(r);
+    }
+  });
+
+  // Phase H8: the four typed resource-bank pages remain reachable by direct route (deep-link
+  // compatibility) but are no longer promoted in primary admin navigation — see
+  // docs/reviews/2026-07-10-phase-h8-content-studio-admin-ia-cleanup-review.md.
+  it('desktop sidebar no longer promotes the typed resource-bank pages', () => {
+    const { host } = setup();
+    const links = getAllNavLinks(host);
+    const routes = links.map(l => l.getAttribute('ng-reflect-router-link') ?? l.getAttribute('routerLink'));
+    const removed = ['/admin/resource-banks/vocabulary', '/admin/resource-banks/grammar',
+      '/admin/resource-banks/reading-references', '/admin/resource-banks/reading-passages'];
+    for (const r of removed) {
+      expect(routes).withContext(`route ${r} should no longer be in primary nav`).not.toContain(r);
     }
   });
 

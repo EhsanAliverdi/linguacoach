@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Plan-Sync-After-H7)
+lastUpdated: 2026-07-10 (Phase H8)
 owner: architecture
 supersedes:
 supersededBy:
@@ -70,6 +70,14 @@ admin/nav cleanup only) or H9 (destructive removal) without much stronger proof 
 path than currently exists. See
 `docs/reviews/2026-07-09-plan-sync-after-h7-legacy-bank-removal-strategy.md` for the full
 classification.
+
+**Phase H8 (2026-07-10, frontend/docs-only)** implemented exactly the low-risk action the
+classification above allowed: the four typed resource-bank admin pages
+(`admin-resource-bank-vocabulary`/`-grammar`/`-reading-references`/`-reading-passages`) were
+removed from primary admin navigation and their subtitles now point admins to the unified
+Resource Bank page instead. **Their routes, components, and this platform's underlying staging
+pipeline/tables/APIs were not touched** — H8 was navigation and page-copy only. See
+`docs/reviews/2026-07-10-phase-h8-content-studio-admin-ia-cleanup-review.md`.
 
 **Date planned:** 2026-07-08 (Plan-Sync-After-C1), **finalized:** 2026-07-08 (Phase E0),
 **E1 implemented:** 2026-07-08, **E2 implemented:** 2026-07-08, **E3 implemented:** 2026-07-08,

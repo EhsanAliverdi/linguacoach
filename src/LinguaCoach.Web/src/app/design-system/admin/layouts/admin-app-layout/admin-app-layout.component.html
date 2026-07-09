@@ -86,7 +86,7 @@
       </ul>
     </div>
     <div class="mb-2">
-      <sp-admin-sidebar-section label="Content Banks" [collapsed]="false" />
+      <sp-admin-sidebar-section label="Content Studio" [collapsed]="false" />
       <ul class="flex flex-col gap-1">
         <li><sp-admin-sidebar-nav-item label="Import Content" route="/admin/content/import" [collapsed]="false" (itemClick)="closeDrawer()">
           <sp-admin-icon name="upload" />
@@ -103,6 +103,11 @@
         <li><sp-admin-sidebar-nav-item label="Modules" route="/admin/modules" [collapsed]="false" (itemClick)="closeDrawer()">
           <sp-admin-icon name="grid" />
         </sp-admin-sidebar-nav-item></li>
+      </ul>
+    </div>
+    <div class="mb-2">
+      <sp-admin-sidebar-section label="Content Ops" [collapsed]="false" />
+      <ul class="flex flex-col gap-1">
         <li><sp-admin-sidebar-nav-item label="Resource sources" route="/admin/resource-sources" [collapsed]="false" (itemClick)="closeDrawer()">
           <sp-admin-icon name="database" />
         </sp-admin-sidebar-nav-item></li>
@@ -111,18 +116,6 @@
         </sp-admin-sidebar-nav-item></li>
         <li><sp-admin-sidebar-nav-item label="Resource candidates" route="/admin/resource-candidates" [collapsed]="false" (itemClick)="closeDrawer()">
           <sp-admin-icon name="filter" />
-        </sp-admin-sidebar-nav-item></li>
-        <li><sp-admin-sidebar-nav-item label="Vocabulary bank" route="/admin/resource-banks/vocabulary" [collapsed]="false" (itemClick)="closeDrawer()">
-          <sp-admin-icon name="book" />
-        </sp-admin-sidebar-nav-item></li>
-        <li><sp-admin-sidebar-nav-item label="Grammar bank" route="/admin/resource-banks/grammar" [collapsed]="false" (itemClick)="closeDrawer()">
-          <sp-admin-icon name="list" />
-        </sp-admin-sidebar-nav-item></li>
-        <li><sp-admin-sidebar-nav-item label="Reading reference bank" route="/admin/resource-banks/reading-references" [collapsed]="false" (itemClick)="closeDrawer()">
-          <sp-admin-icon name="book-open" />
-        </sp-admin-sidebar-nav-item></li>
-        <li><sp-admin-sidebar-nav-item label="Reading passage bank" route="/admin/resource-banks/reading-passages" [collapsed]="false" (itemClick)="closeDrawer()">
-          <sp-admin-icon name="book-open" />
         </sp-admin-sidebar-nav-item></li>
         <li><sp-admin-sidebar-nav-item label="Activity templates" route="/admin/activity-templates" [collapsed]="false" (itemClick)="closeDrawer()">
           <sp-admin-icon name="list" />
@@ -267,9 +260,10 @@
         </ul>
       </div>
 
-      <!-- CONTENT BANKS (primary bank-first content model) -->
+      <!-- CONTENT STUDIO (primary bank-first content-authoring flow: Import -> Resource Bank
+           -> Learn Items -> Activities -> Modules) -->
       <div class="mb-2">
-        <sp-admin-sidebar-section label="Content Banks" [collapsed]="collapsed()" />
+        <sp-admin-sidebar-section label="Content Studio" [collapsed]="collapsed()" />
         <ul class="flex flex-col gap-1">
           <li><sp-admin-sidebar-nav-item label="Import Content" route="/admin/content/import" [collapsed]="collapsed()">
             <sp-admin-icon name="upload" />
@@ -286,6 +280,17 @@
           <li><sp-admin-sidebar-nav-item label="Modules" route="/admin/modules" [collapsed]="collapsed()">
             <sp-admin-icon name="grid" />
           </sp-admin-sidebar-nav-item></li>
+        </ul>
+      </div>
+
+      <!-- CONTENT OPS (staging/support pages and the typed bank views — not the primary
+           authoring flow; typed bank pages remain reachable by direct route for deep-link
+           compatibility, browsing, and legacy bookmarks, but are no longer promoted as the
+           primary way to manage bank content — see Resource Bank instead. See
+           docs/reviews/2026-07-10-phase-h8-content-studio-admin-ia-cleanup-review.md) -->
+      <div class="mb-2">
+        <sp-admin-sidebar-section label="Content Ops" [collapsed]="collapsed()" />
+        <ul class="flex flex-col gap-1">
           <li><sp-admin-sidebar-nav-item label="Resource sources" route="/admin/resource-sources" [collapsed]="collapsed()">
             <sp-admin-icon name="database" />
           </sp-admin-sidebar-nav-item></li>
@@ -294,18 +299,6 @@
           </sp-admin-sidebar-nav-item></li>
           <li><sp-admin-sidebar-nav-item label="Resource candidates" route="/admin/resource-candidates" [collapsed]="collapsed()">
             <sp-admin-icon name="filter" />
-          </sp-admin-sidebar-nav-item></li>
-          <li><sp-admin-sidebar-nav-item label="Vocabulary bank" route="/admin/resource-banks/vocabulary" [collapsed]="collapsed()">
-            <sp-admin-icon name="book" />
-          </sp-admin-sidebar-nav-item></li>
-          <li><sp-admin-sidebar-nav-item label="Grammar bank" route="/admin/resource-banks/grammar" [collapsed]="collapsed()">
-            <sp-admin-icon name="list" />
-          </sp-admin-sidebar-nav-item></li>
-          <li><sp-admin-sidebar-nav-item label="Reading reference bank" route="/admin/resource-banks/reading-references" [collapsed]="collapsed()">
-            <sp-admin-icon name="book-open" />
-          </sp-admin-sidebar-nav-item></li>
-          <li><sp-admin-sidebar-nav-item label="Reading passage bank" route="/admin/resource-banks/reading-passages" [collapsed]="collapsed()">
-            <sp-admin-icon name="book-open" />
           </sp-admin-sidebar-nav-item></li>
           <li><sp-admin-sidebar-nav-item label="Activity templates" route="/admin/activity-templates" [collapsed]="collapsed()">
             <sp-admin-icon name="list" />

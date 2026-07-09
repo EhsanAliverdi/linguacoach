@@ -14,7 +14,7 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
 
 ---
 
-## Product Model Realignment — Phase H0-H10 `H0-H7 Done, Plan-Sync-After-H7 Done, H8-H10 Planned` (2026-07-09)
+## Product Model Realignment — Phase H0-H10 `H0-H8 Done, H9-H10 Planned` (2026-07-10)
 
 **Phase H0 (docs-only, done 2026-07-09)** defined the intended product model — `Resource Bank Item
 → Learn Item/Activity → Module → Daily Lesson/Practice Gym → Attempt → Feedback + Rating →
@@ -105,15 +105,21 @@ E1-E10/D1-D6 substrate, and G2/G3/PG-v2 remain valid, separately-scoped tracks.
   currently safe to touch (no table/API/data change). Defined H8/H9/H10 scope (not implemented).
   No application code, migration, table, entity, API, or UI page changed. See
   `docs/reviews/2026-07-09-plan-sync-after-h7-legacy-bank-removal-strategy.md`.
-- [ ] **Phase H8 — Content Studio/Admin IA Cleanup and Removal Readiness** `Planned` — remove or
-  relocate admin nav entries that duplicate the unified Content Studio surface (starting with the
-  four typed resource-bank pages, moved under Advanced/Diagnostics — not their tables/APIs);
-  remove obsolete pre-H-track admin labels/copy and any remaining placeholder generation actions
-  already superseded by a live Learn/Activity/Module entry point; remove UI components/routes
-  only where proven to have no active backend/runtime dependency. Must not remove Today/Practice
-  Gym fallbacks, `ActivityTemplate`, `PracticeActivityCache`, the readiness queue, the
-  `LearningActivity`/`LearningSession`/`SessionExercise`/`LearningModule` runtime, or any
-  import-staging table. No backend table removal in H8.
+- [x] **Phase H8 — Content Studio/Admin IA Cleanup and Removal Readiness** `Done` (2026-07-10) —
+  frontend/docs-only admin cleanup, not the destructive backend/table cleanup (that's H9). Split
+  the admin sidebar's "Content Banks" nav into "Content Studio" (Import Content → Resource Bank →
+  Learn Items → Activities → Modules, the primary authoring flow) and "Content Ops" (Resource
+  sources/import runs/candidates, Activity templates, Review queue, Placement items, Onboarding —
+  still-live support surfaces); removed the four typed resource-bank nav entries (Vocabulary/
+  Grammar/Reading reference/Reading passage bank) from both the desktop sidebar and mobile drawer
+  — navigation only, their routes/components/tables/APIs remain fully reachable and untouched.
+  Updated Learn Items/Activities/Modules page subtitles to drop stale "future Modules" language
+  and state plainly that Module/Activity attempt launch is not implemented yet (H10); added a
+  pointer from each typed bank page to the unified Resource Bank. Updated the admin-nav Karma
+  spec accordingly. No backend file, migration, table, entity, API, route, or component was
+  touched/removed. Frontend production build clean (only the pre-existing bundle-size warning);
+  full Karma suite blocked by pre-existing, unrelated spec-fixture gaps from H6/H7 (`TODO-H8-2`).
+  See `docs/reviews/2026-07-10-phase-h8-content-studio-admin-ia-cleanup-review.md`.
 - [ ] **Phase H9 — Legacy Bank Structure Removal and Consolidation** `Planned` — the first
   genuinely destructive cleanup phase, gated on a per-item safety audit (dependency audit, data
   audit, migration strategy, compatibility strategy, rollback/backup notes, test coverage plan)

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Plan-Sync-After-H7)
+lastUpdated: 2026-07-10 (Phase H8)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,30 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-09 (Plan-Sync-After-H7)
+Last updated: 2026-07-10 (Phase H8)
+
+## Content Studio/Admin IA Cleanup and Removal Readiness (Phase H8, 2026-07-10)
+
+The admin sidebar's Content Studio navigation is now cleaned up. It splits into **Content
+Studio** (Import Content → Resource Bank → Learn Items → Activities → Modules — the primary
+content-authoring flow) and **Content Ops** (Resource sources/import runs/candidates, Activity
+templates, Review queue, Placement items, Onboarding — still-live support/staging surfaces, just
+no longer mixed into the primary flow). The four typed resource-bank pages (Vocabulary/Grammar/
+Reading reference/Reading passage bank) were removed from primary navigation — this is
+navigation-only: their routes, components, and backing tables/APIs remain fully reachable and
+untouched, per Plan-Sync-After-H7's audit finding that this was the only proven-safe H8 action.
+
+Learn Items/Activities/Modules page copy no longer says "future Modules" or "will power future
+Daily Lessons and Practice Gym" — those are live today (H5-H7) — and now explicitly states that
+launching a scored Module/Activity attempt is not implemented yet (planned for H10), so admin UX
+never overstates current capability.
+
+No backend file, migration, table, entity, or API was touched; no route or component was
+deleted. `ActivityTemplate`, `PracticeActivityCache`, `StudentActivityReadinessItem`, the
+runtime session entities, and both Today/Practice Gym legacy fallbacks are all untouched. Full
+detail: `docs/reviews/2026-07-10-phase-h8-content-studio-admin-ia-cleanup-review.md`.
+
+---
 
 ## Plan-Sync-After-H7 — Legacy Bank Removal Strategy (2026-07-09, docs-only)
 
