@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H3)
+lastUpdated: 2026-07-09 (Phase H4)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,43 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-09 (Phase H3)
+Last updated: 2026-07-09 (Phase H4)
+
+## Activity Foundation with Form.io (Phase H4, 2026-07-09)
+
+The "Practice" half of `Resource Bank Item → Learn Item/Activity → Module` now exists. An Activity
+is a reviewable, editable practice task design (title, description, student-facing instructions,
+activity type, renderer type, Form.io schema, backend-only answer key/scoring rules/feedback plan,
+CEFR/skill/subskill/context/focus/difficulty metadata, optional link to a Learn Item) traced back
+to the published Resource Bank row(s) it's about. **This is a new, separate entity from two
+existing similarly-named things** — `LearningActivity` (a per-student runtime/delivery record used
+by Today/Practice Gym) and `ActivityTemplate` (an existing admin-authored template already wired
+into the live Practice Gym Form.io pilot) — Activity has Resource Bank/Learn Item traceability
+neither of those has, and is not wired into any runtime selection/delivery path this phase.
+
+Admins can open `/admin/activities` ("Activities", added to the Content Banks nav right after
+Learn Items) to browse/filter/review Activities, or generate one directly from a Resource Bank row
+(the now-live "Generate Activity" row action on `/admin/resource-bank`) or from an existing Learn
+Item (a new "Generate Activity" button on the Learn Item detail drawer). Generation is
+**deterministic** — no AI provider call, same reasoning as Learn Item generation. Three supported
+activity types: `gap_fill` and `multiple_choice_single` (Vocabulary/Grammar — deterministically
+scored; multiple-choice generation is rejected outright, not degraded, when no sibling-resource
+distractor exists) and `short_answer` (ReadingReference/ReadingPassage — open-ended, honestly
+marked as requiring manual/AI evaluation, never a fake score). Scoring rules reuse the existing
+shared scoring format already used by placement/onboarding; every generated Form.io schema is
+validated through the existing schema-safety service before saving. Every Activity starts pending
+review; only an explicit admin Approve/Reject changes that, and editing an approved Activity is
+blocked (reject first to reopen). **Additive-only migration** (two new tables, no change to any
+existing table, including `ActivityTemplate`'s own) — no physical `ResourceBankItem`
+consolidation, no Module entity, no student assignment, no Today/Practice Gym runtime change.
+
++39 backend tests (3,784 total: 29 unit, 10 integration). No H5/H6/H7/PG-v2 started. No external
+datasets, no Persian/bilingual content, no direct final-table seeding. Today/Practice Gym legacy
+fallback and the readiness/delivery queue are unchanged. Full detail:
+`docs/architecture/product-model-realignment-h0.md`; roadmap: `docs/roadmap/road-map.md` §1,
+Decision Log (Phase H4 entry), §19a item 20l.
+
+---
 
 ## Learn Item Foundation (Phase H3, 2026-07-09)
 

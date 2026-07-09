@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AdminUnifiedResourceBankService } from '../../../core/services/admin-resource-import.service';
 import { AdminLearnItemService } from '../../../core/services/admin-learn-item.service';
+import { AdminActivityDefinitionService } from '../../../core/services/admin-activity-definition.service';
 import {
   UnifiedResourceBankItemDto,
   UnifiedResourceBankItemType,
@@ -51,9 +52,10 @@ const PAGE_SIZE = 20;
  * no edit/delete here, all mutation stays on Resource Candidates (E4). The typed pages this
  * replaces as the primary entry point remain reachable and fully functional.
  *
- * Phase H3 — "Generate Learn" is now a real row action (deterministic draft composer, see
- * AdminLearnItemService); Generate Activity / Generate Module stay disabled "Coming soon" —
- * placeholders for Phase H4/H5, which do not exist yet.
+ * Phase H3 — "Generate Learn" is a real row action (deterministic draft composer, see
+ * AdminLearnItemService). Phase H4 — "Generate Activity" is now real too (see
+ * AdminActivityDefinitionService); Generate Module stays disabled "Coming soon" — a placeholder
+ * for Phase H5, which does not exist yet.
  */
 @Component({
   selector: 'app-admin-resource-bank-unified',
@@ -114,10 +116,15 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
   generatingLearnId = signal<string | null>(null);
   generateSuccess = signal('');
   generateError = signal('');
+  lastGeneratedKind = signal<'learn' | 'activity' | null>(null);
+
+  // ── Phase H4 — Generate Activity ─────────────────────────────────────────
+  generatingActivityId = signal<string | null>(null);
 
   constructor(
     private bankSvc: AdminUnifiedResourceBankService,
     private learnItemSvc: AdminLearnItemService,
+    private activitySvc: AdminActivityDefinitionService,
     private router: Router,
   ) {}
 
@@ -195,7 +202,10 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
         id: 'generate-learn', label: 'Generate Learn', icon: 'sparkles', tone: 'default', dividerBefore: true,
         disabled: this.generatingLearnId() === item.id,
       },
-      { id: 'generate-activity', label: 'Generate Activity (coming soon)', disabled: true },
+      {
+        id: 'generate-activity', label: 'Generate Activity', icon: 'sparkles', tone: 'default',
+        disabled: this.generatingActivityId() === item.id,
+      },
       { id: 'generate-module', label: 'Generate Module (coming soon)', disabled: true },
     ];
   }
@@ -203,7 +213,8 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
   onRowAction(actionId: string, item: UnifiedResourceBankItemDto): void {
     if (actionId === 'view') this.openDrawer(item);
     if (actionId === 'generate-learn') this.generateLearn(item);
-    // generate-activity/generate-module are disabled — no handler needed (H4/H5).
+    if (actionId === 'generate-activity') this.generateActivity(item);
+    // generate-module is disabled — no handler needed (H5).
   }
 
   /** Phase H3 — deterministic draft composer, one resource per call (multi-select is a future
@@ -218,6 +229,7 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
     }).subscribe({
       next: result => {
         this.generatingLearnId.set(null);
+        this.lastGeneratedKind.set('learn');
         this.generateSuccess.set(`Learn Item draft created from "${item.title}" — pending review.`);
         this.loadAll();
       },
@@ -230,5 +242,34 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
 
   goToLearnItems(): void {
     this.router.navigateByUrl('/admin/learn-items');
+  }
+
+  /** Phase H4 — deterministic draft composer, one resource per call. The activity type is
+   *  auto-picked server-side per resource type (gap_fill for Vocabulary/Grammar, short_answer
+   *  for ReadingReference/ReadingPassage) — no type picker here, keep the row action a single
+   *  click. Always stages a pending-review Activity — never publishes, never assigns anything to
+   *  a student. */
+  generateActivity(item: UnifiedResourceBankItemDto): void {
+    this.generatingActivityId.set(item.id);
+    this.generateError.set('');
+    this.generateSuccess.set('');
+    this.activitySvc.generateFromResources({
+      resources: [{ resourceType: RESOURCE_TYPE_TO_LEARN_ITEM_TYPE[item.type], resourceId: item.id, role: 'Primary' }],
+    }).subscribe({
+      next: result => {
+        this.generatingActivityId.set(null);
+        this.lastGeneratedKind.set('activity');
+        this.generateSuccess.set(`Activity draft created from "${item.title}" — pending review.`);
+        this.loadAll();
+      },
+      error: err => {
+        this.generatingActivityId.set(null);
+        this.generateError.set(err.error?.error ?? 'Could not generate an Activity.');
+      },
+    });
+  }
+
+  goToActivities(): void {
+    this.router.navigateByUrl('/admin/activities');
   }
 }

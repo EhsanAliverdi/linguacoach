@@ -564,6 +564,26 @@ public static class DependencyInjection
         services.AddScoped<LinguaCoach.Application.LearnItems.IGenerateLearnItemFromResourcesHandler,
             LinguaCoach.Infrastructure.LearnItems.LearnItemGenerationService>();
 
+        // Phase H4 — Activity foundation (reviewable, editable practice task designs generated
+        // from published Resource Bank rows or a Learn Item).
+        services.AddScoped<LinguaCoach.Application.ActivityDefinitions.IAdminActivityDefinitionListQuery,
+            LinguaCoach.Infrastructure.ActivityDefinitions.AdminActivityDefinitionListQueryHandler>();
+        services.AddScoped<LinguaCoach.Application.ActivityDefinitions.IAdminActivityDefinitionGetQuery,
+            LinguaCoach.Infrastructure.ActivityDefinitions.AdminActivityDefinitionGetQueryHandler>();
+        services.AddScoped<LinguaCoach.Application.ActivityDefinitions.IAdminCreateActivityDefinitionHandler,
+            LinguaCoach.Infrastructure.ActivityDefinitions.AdminCreateActivityDefinitionHandler>();
+        services.AddScoped<LinguaCoach.Application.ActivityDefinitions.IAdminUpdateActivityDefinitionHandler,
+            LinguaCoach.Infrastructure.ActivityDefinitions.AdminUpdateActivityDefinitionHandler>();
+        services.AddScoped<LinguaCoach.Application.ActivityDefinitions.IAdminApproveActivityDefinitionHandler,
+            LinguaCoach.Infrastructure.ActivityDefinitions.AdminApproveActivityDefinitionHandler>();
+        services.AddScoped<LinguaCoach.Application.ActivityDefinitions.IAdminRejectActivityDefinitionHandler,
+            LinguaCoach.Infrastructure.ActivityDefinitions.AdminRejectActivityDefinitionHandler>();
+        services.AddScoped<LinguaCoach.Infrastructure.ActivityDefinitions.ActivityGenerationService>();
+        services.AddScoped<LinguaCoach.Application.ActivityDefinitions.IGenerateActivityFromResourcesHandler>(
+            sp => sp.GetRequiredService<LinguaCoach.Infrastructure.ActivityDefinitions.ActivityGenerationService>());
+        services.AddScoped<LinguaCoach.Application.ActivityDefinitions.IGenerateActivityFromLearnItemHandler>(
+            sp => sp.GetRequiredService<LinguaCoach.Infrastructure.ActivityDefinitions.ActivityGenerationService>());
+
         // Phase E2 — AI analysis (advisory), deterministic rule validation, and dedup/fingerprint
         // gates over staged candidates.
         services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceCandidateAnalysisService,

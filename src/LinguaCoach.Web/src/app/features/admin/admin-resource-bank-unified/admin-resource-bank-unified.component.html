@@ -15,7 +15,11 @@
   @if (generateSuccess()) {
     <sp-admin-alert variant="success">
       {{ generateSuccess() }}
-      <a (click)="goToLearnItems()" style="cursor:pointer; text-decoration:underline;">Review in Learn Items</a>
+      @if (lastGeneratedKind() === 'activity') {
+        <a (click)="goToActivities()" style="cursor:pointer; text-decoration:underline;">Review in Activities</a>
+      } @else {
+        <a (click)="goToLearnItems()" style="cursor:pointer; text-decoration:underline;">Review in Learn Items</a>
+      }
     </sp-admin-alert>
   }
   @if (generateError()) { <sp-admin-alert variant="error">{{ generateError() }}</sp-admin-alert> }
@@ -161,7 +165,12 @@
         } @else {
           <sp-admin-badge tone="neutral" appearance="outline">No Learn Item yet</sp-admin-badge>
         }
-        <span class="sp-admin-text-muted"> · Activity/Module: coming in a future phase</span>
+        @if (d.linkedActivityCount) {
+          <sp-admin-badge tone="success" appearance="soft">{{ d.linkedActivityCount }} Activity(ies)</sp-admin-badge>
+        } @else {
+          <sp-admin-badge tone="neutral" appearance="outline">No Activity yet</sp-admin-badge>
+        }
+        <span class="sp-admin-text-muted"> · Module: coming in a future phase</span>
       </sp-admin-form-field>
     </div>
   }
@@ -171,6 +180,9 @@
     @if (detail(); as d) {
       <sp-admin-button variant="primary" [disabled]="generatingLearnId() === d.id" (clicked)="generateLearn(d)">
         {{ generatingLearnId() === d.id ? 'Generating…' : 'Generate Learn' }}
+      </sp-admin-button>
+      <sp-admin-button variant="primary" appearance="outline" [disabled]="generatingActivityId() === d.id" (clicked)="generateActivity(d)">
+        {{ generatingActivityId() === d.id ? 'Generating…' : 'Generate Activity' }}
       </sp-admin-button>
     }
   </div>

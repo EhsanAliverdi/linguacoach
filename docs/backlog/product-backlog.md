@@ -14,7 +14,7 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
 
 ---
 
-## Product Model Realignment — Phase H0-H8 `H0-H3 Done, H4-H8 Planned` (2026-07-09)
+## Product Model Realignment — Phase H0-H8 `H0-H4 Done, H5-H8 Planned` (2026-07-09)
 
 **Phase H0 (docs-only, done 2026-07-09)** defined the intended product model — `Resource Bank Item
 → Learn Item/Activity → Module → Daily Lesson/Practice Gym → Attempt → Feedback + Rating →
@@ -44,8 +44,15 @@ E1-E10/D1-D6 substrate, and G2/G3/PG-v2 remain valid, separately-scoped tracks.
   composer wired live from the H1 unified Resource Bank page; new `/admin/learn-items` admin page;
   reuses `AdminReviewStatus`, always starts pending review. No Activity/Module entity, no student
   assignment. +30 backend tests (3,745 total).
-- [ ] **Phase H4 — Activity Foundation with Form.io** `Planned` — align/extend `Activity` (building
-  on `ActivityTemplate`) as an editable generated exercise; approval lifecycle.
+- [x] **Phase H4 — Activity Foundation with Form.io** `Done` (2026-07-09) — new `ActivityDefinition`/
+  `ActivityResourceLink` entities (additive-only migration, two new tables), deliberately separate
+  from `ActivityTemplate` (not built on top of it) and runtime `LearningActivity`; `api/admin/activities`
+  CRUD + `generate-from-resources`/`generate-from-learn-item` + approve/reject; deterministic
+  (non-AI) composer for `gap_fill`/`multiple_choice_single`/`short_answer`, Form.io schema
+  validated via the existing schema-safety service, scoring rules in the existing shared format;
+  new `/admin/activities` admin page; "Generate Activity" wired live from both the Resource Bank
+  page and the Learn Item drawer. No Module entity, no student assignment, no runtime wiring.
+  +39 backend tests (3,784 total).
 - [ ] **Phase H5 — Module Foundation** `Planned` — `Module` = Learn + Activity/Activities + Feedback
   Plan; generated from selected resources/Learn Items/Activities; approval lifecycle.
 - [ ] **Phase H6 — Daily Lesson Module Pipeline** `Planned` — Daily Lesson becomes several Modules;

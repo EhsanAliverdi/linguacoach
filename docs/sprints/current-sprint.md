@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H3)
+lastUpdated: 2026-07-09 (Phase H4)
 owner: engineering
 supersedes:
 supersededBy:
@@ -14,47 +14,59 @@ Last updated: 2026-07-09
 
 ## Active sprint
 
-**Phase H3 — Learn Item Foundation (2026-07-09)** — complete
+**Phase H4 — Activity Foundation with Form.io (2026-07-09)** — complete
 
-The "Learn" half of `Resource Bank Item → Learn Item/Activity → Module`. **Additive-only
-migration, no AI provider call, no Activity/Module, no student assignment.**
+The "Practice" half of `Resource Bank Item → Learn Item/Activity → Module`. **Additive-only
+migration, no AI provider call, no Module, no student assignment, no runtime wiring.**
 
-- **Backend**: new `LearnItem` entity (title/body/examples-JSON/common-mistakes-JSON/usage notes,
-  CEFR/skill/subskill/context/focus/difficulty metadata, `SourceMode` Manual/
-  GeneratedFromResources/Imported, `GenerationProvider`/`GenerationModel`, reuses
-  `AdminReviewStatus` — always starts `PendingReview`) and `LearnItemResourceLink` (traceability
-  back to the published Vocabulary/Grammar/ReadingReference/ReadingPassage row(s) it's about, via
-  a new Domain `PublishedResourceType` enum + `LearnItemResourceRole` Primary/Supporting). Migration
-  `Phase_H3_AddLearnItemFoundation` adds exactly two new tables — no change to any existing table.
-  `IGenerateLearnItemFromResourcesHandler`/`LearnItemGenerationService` composes a **deterministic**
-  draft directly from the selected resources' own fields — no AI call (no existing AI service in
-  this codebase generates teaching prose from source text; `GenerationProvider` is honestly
-  stamped `"Deterministic"`). New endpoints `api/admin/learn-items` (list/get/create/
-  generate-from-resources/update/approve/reject, admin-only).
-- **Frontend**: new `/admin/learn-items` page ("Learn Items") — filter bar (status/CEFR/search),
-  table, detail drawer with metadata/examples/common-mistakes/linked-resources and Approve/Reject
-  actions. Added to "Content Banks" nav (desktop + mobile) right after Resource Bank.
-- **Generate Learn is now live** on the H1 unified Resource Bank page's row actions (previously a
-  disabled "coming soon" placeholder) — one resource per call, always stages a pending-review
-  Learn Item, links to the Learn Items page on success. Generate Activity/Generate Module remain
-  disabled "coming soon" (H4/H5 don't exist yet). `UnifiedResourceBankItemDto.LinkedLearnCount`
-  now reflects real counts.
-- **Review/pending behavior**: every Learn Item starts `PendingReview`; only an explicit admin
-  Approve/Reject changes that; editing an approved Learn Item is blocked (reject first to reopen).
+- **Backend**: new `ActivityDefinition` entity (title/description/instructions, `ActivityType`/
+  `PatternKey`, `RendererType` Formio/Custom/Legacy, student-safe `FormSchemaJson`, backend-only
+  `AnswerKeyJson`/`ScoringRulesJson`/`FeedbackPlanJson`, CEFR/skill/subskill/context/focus/
+  difficulty, optional `LearnItemId`, `SourceMode` Manual/GeneratedFromResources/
+  GeneratedFromLearnItem/Imported, reuses `AdminReviewStatus` — always starts `PendingReview`,
+  editing an approved Activity blocked) and `ActivityResourceLink` (structurally identical to
+  `LearnItemResourceLink`, reuses the same enums). **Deliberately a separate entity from two
+  existing similarly-named ones**: `LearningActivity` (per-student runtime record) and
+  `ActivityTemplate` (existing template already wired into the live Practice Gym Form.io pilot) —
+  `ActivityDefinition` has Resource Bank/Learn Item traceability neither of those has, and is not
+  wired into any runtime path this phase. Migration `Phase_H4_AddActivityFoundation` adds exactly
+  two new tables — no change to any existing table. `ActivityGenerationService` (implementing both
+  `IGenerateActivityFromResourcesHandler` and `IGenerateActivityFromLearnItemHandler`) composes a
+  **deterministic** draft — no AI call. Three `ActivityType`s: `gap_fill`/`multiple_choice_single`
+  (Vocabulary/Grammar) and `short_answer` (ReadingReference/ReadingPassage, honestly marked
+  `RequiresManualOrAiEvaluation=true`). `ScoringRulesJson` reuses the existing shared
+  `ScoringRulesDocument` format; every `FormSchemaJson` is validated via the existing
+  `IFormIoSchemaValidationService`. New endpoints `api/admin/activities` (list/get/create/
+  generate-from-resources/generate-from-learn-item/update/approve/reject, admin-only).
+- **Frontend**: new `/admin/activities` page ("Activities") — filter bar (status/type/CEFR/
+  search), table, detail drawer with Form.io schema/answer-key/scoring-rules/feedback-plan preview
+  and Approve/Reject. Added to "Content Banks" nav right after Learn Items.
+- **Generate Activity is now live** on both the H1 unified Resource Bank page's row action
+  (previously "coming soon") and the H3 Learn Item detail drawer. `UnifiedResourceBankItemDto.
+  LinkedActivityCount` now reflects real counts.
+- **Review/pending behavior**: every Activity starts `PendingReview`; only an explicit admin
+  Approve/Reject changes that; editing an approved Activity is blocked (reject first to reopen).
 
 **Validation**: `dotnet build --configuration Release` passed (0 errors); `dotnet test
---configuration Release` = 3,745 passed, 0 failed (+22 unit, +8 integration; 5 architecture
+--configuration Release` = 3,784 passed, 0 failed (+29 unit, +10 integration; 5 architecture
 unchanged). Angular production build: no new TS/Angular compile errors, only the pre-existing
 bundle-size budget failure (documented, not new).
 
-**No H4/H5/H6 started. No PG-v2 started. No physical table consolidation. No external datasets.
-No Persian/bilingual/support-language content. No direct final-table seeding. No Activity/Module
-entity. No student assignment. Today/Practice Gym legacy fallback and the readiness/delivery
-queue are unchanged.**
+**No H5/H6/H7 started. No PG-v2 started. No physical table consolidation. No external datasets.
+No Persian/bilingual/support-language content. No direct final-table seeding. No Module entity.
+No student assignment. No Today/Practice Gym runtime change. Today/Practice Gym legacy fallback
+and the readiness/delivery queue are unchanged.**
 
-**Next: Phase H4 — Activity Foundation with Form.io** (recommended), though a PG-v2A/H4
-sequencing decision remains a future Plan-Sync checkpoint. See
-`docs/architecture/product-model-realignment-h0.md` and `docs/roadmap/road-map.md` §1/§19a.
+**Next: Phase H5 — Module Foundation** (recommended), though a PG-v2A/H5 sequencing decision
+remains a future Plan-Sync checkpoint. See `docs/architecture/product-model-realignment-h0.md`
+and `docs/roadmap/road-map.md` §1/§19a.
+
+---
+
+## Previous sprint (H3)
+
+**Phase H3 — Learn Item Foundation (2026-07-09)** — complete, docs-only summary retained: see
+`docs/architecture/product-model-realignment-h0.md` for full detail.
 
 ---
 

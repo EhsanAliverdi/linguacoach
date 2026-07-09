@@ -409,35 +409,44 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
 
         var totalCount = ordered.Count;
         var paged = ordered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-        paged = await WithLinkedLearnCountsAsync(paged, ct);
+        paged = await WithLinkedCountsAsync(paged, ct);
 
         return new UnifiedResourceBankListResult(paged, totalCount);
     }
 
-    /// <summary>Phase H3 — populates <see cref="UnifiedResourceBankItemDto.LinkedLearnCount"/> from
-    /// <c>LearnItemResourceLink</c> (0 when no Learn Item references the row, never null once this
-    /// runs). <see cref="UnifiedResourceBankItemDto.LinkedActivityCount"/>/
-    /// <see cref="UnifiedResourceBankItemDto.LinkedModuleCount"/> stay null — Activity/Module don't
-    /// exist yet (H4/H5).</summary>
-    private async Task<List<UnifiedResourceBankItemDto>> WithLinkedLearnCountsAsync(
+    /// <summary>Phase H3/H4 — populates <see cref="UnifiedResourceBankItemDto.LinkedLearnCount"/>
+    /// from <c>LearnItemResourceLink</c> and <see cref="UnifiedResourceBankItemDto.LinkedActivityCount"/>
+    /// from <c>ActivityResourceLink</c> (0 when nothing references the row, never null once this
+    /// runs). <see cref="UnifiedResourceBankItemDto.LinkedModuleCount"/> stays null — Module doesn't
+    /// exist yet (H5).</summary>
+    private async Task<List<UnifiedResourceBankItemDto>> WithLinkedCountsAsync(
         List<UnifiedResourceBankItemDto> items, CancellationToken ct)
     {
         if (items.Count == 0) return items;
 
         var ids = items.Select(i => i.Id).ToList();
-        var counts = await _db.LearnItemResourceLinks
+        var learnCounts = await _db.LearnItemResourceLinks
             .Where(l => ids.Contains(l.ResourceId))
             .GroupBy(l => new { l.ResourceType, l.ResourceId })
             .Select(g => new { g.Key.ResourceType, g.Key.ResourceId, Count = g.Select(l => l.LearnItemId).Distinct().Count() })
+            .ToListAsync(ct);
+        var activityCounts = await _db.ActivityResourceLinks
+            .Where(l => ids.Contains(l.ResourceId))
+            .GroupBy(l => new { l.ResourceType, l.ResourceId })
+            .Select(g => new { g.Key.ResourceType, g.Key.ResourceId, Count = g.Select(l => l.ActivityDefinitionId).Distinct().Count() })
             .ToListAsync(ct);
 
         return items
             .Select(i => i with
             {
-                LinkedLearnCount = counts
+                LinkedLearnCount = learnCounts
                     .Where(c => c.ResourceId == i.Id && MatchesUnifiedType(c.ResourceType, i.Type))
                     .Select(c => (int?)c.Count)
-                    .FirstOrDefault() ?? 0
+                    .FirstOrDefault() ?? 0,
+                LinkedActivityCount = activityCounts
+                    .Where(c => c.ResourceId == i.Id && MatchesUnifiedType(c.ResourceType, i.Type))
+                    .Select(c => (int?)c.Count)
+                    .FirstOrDefault() ?? 0,
             })
             .ToList();
     }

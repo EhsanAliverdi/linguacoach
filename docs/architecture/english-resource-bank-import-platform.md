@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H3)
+lastUpdated: 2026-07-09 (Phase H4)
 owner: architecture
 supersedes:
 supersededBy:
@@ -37,6 +37,17 @@ platform's existing reverse traceability (`ResourceCandidate.PublishedEntityType
 `PublishedEntityId` → published row). No change to any E1-E9 pipeline code. See
 `docs/architecture/product-model-realignment-h0.md` and `docs/roadmap/road-map.md` §1/Decision Log
 for full H3 detail.
+
+**Phase H4 (2026-07-09)** added a second downstream consumer of this platform's published bank
+rows, alongside H3's Learn Item: `ActivityGenerationService` reads the same published
+`CefrVocabularyEntry`/`CefrGrammarProfileEntry`/`CefrReadingReference`/`CefrReadingPassage` rows
+(reusing H3's `LearnItemResourceLookup` helper as-is — no duplicate lookup logic) to
+deterministically compose an `ActivityDefinition` draft (or reads an existing `LearnItem`'s own
+linked resources for the "generate from Learn Item" path). Same forward-traceability shape as H3
+(`ActivityResourceLink`, structurally identical to `LearnItemResourceLink`). Read-only against this
+platform's tables — no writes, no change to any E1-E9 pipeline code. See
+`docs/architecture/product-model-realignment-h0.md` and `docs/roadmap/road-map.md` §1/Decision Log
+for full H4 detail.
 
 **Date planned:** 2026-07-08 (Plan-Sync-After-C1), **finalized:** 2026-07-08 (Phase E0),
 **E1 implemented:** 2026-07-08, **E2 implemented:** 2026-07-08, **E3 implemented:** 2026-07-08,

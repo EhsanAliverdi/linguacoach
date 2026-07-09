@@ -13,6 +13,17 @@ supersededBy:
 > `LearningActivity`/Today/Practice Gym runtime selection are unchanged. `LearnItem` is a new,
 > separate reviewable-content entity upstream of a future Activity/Module layer (H4/H5), not a
 > replacement for anything documented below.
+>
+> **Phase H4 note (2026-07-09):** the new Activity foundation added a `LinguaCoach.Domain.Entities.
+> ActivityDefinition` entity — **do not confuse it with `LearningActivity`** (this document's
+> subject, a per-student runtime/delivery record) **or with `ActivityTemplate`** (the existing
+> admin-authored template already wired into the live Practice Gym Form.io pilot runtime, see
+> `PracticeGymGenerationJob.TemplateMigratedPatternKeys`). `ActivityDefinition` is a reusable,
+> reviewable practice-task *design* with Resource Bank/Learn Item traceability that neither
+> `LearningActivity` nor `ActivityTemplate` has, and it is **not wired into any runtime
+> selection/delivery path** — Today materialization, Practice Gym generation, and
+> `ActivityTemplate`'s own pilot are all unchanged. See
+> `docs/architecture/product-model-realignment-h0.md` for the full H4 detail.
 
 ## Why `LearningActivity` is the Centre of the Product
 

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H3)
+lastUpdated: 2026-07-09 (Phase H4)
 owner: architecture
 supersedes:
 supersededBy:
@@ -382,8 +382,29 @@ and admin page `/admin/learn-items` ("Learn Items"), added to the Content Banks 
 Resource Bank page's "Generate Learn" row action is now live (was a disabled "coming soon"
 placeholder); `UnifiedResourceBankItemDto.LinkedLearnCount` now reflects real counts. +30 backend
 tests (3,745 total). No Activity/Module entity, no student assignment, no H4-H6 started, no PG-v2
-started. **Recommended next implementation phase: H4 — Activity Foundation with Form.io**, though a
-PG-v2A/H4 sequencing decision remains a future Plan-Sync checkpoint. See
+started.
+
+**Phase H4 (2026-07-09)** — Activity Foundation with Form.io: the "Practice" half of `Resource
+Bank Item → Learn Item/Activity → Module`. New `ActivityDefinition`/`ActivityResourceLink`
+entities (additive-only migration — two new tables, no change to any existing table) —
+**deliberately distinct from `LearningActivity`** (per-student runtime record, see
+`docs/architecture/learning-activity-engine.md`) **and from `ActivityTemplate`** (existing template
+already wired into the live Practice Gym Form.io pilot runtime); `ActivityDefinition` reuses
+`AdminReviewStatus` (always starts `PendingReview`) and is **not wired into any runtime
+selection/delivery path**. `ActivityGenerationService` (implementing both
+`IGenerateActivityFromResourcesHandler` and `IGenerateActivityFromLearnItemHandler`) composes a
+**deterministic** draft — no AI provider call, same reasoning as H3. Supports `gap_fill`/
+`multiple_choice_single` (Vocabulary/Grammar, deterministically scored) and `short_answer`
+(ReadingReference/ReadingPassage, honestly marked as requiring manual/AI evaluation).
+`ScoringRulesJson` reuses the existing shared `ScoringRulesDocument` format (already used by
+placement/onboarding/reorder_paragraphs); every generated `FormSchemaJson` is validated through the
+existing `IFormIoSchemaValidationService`. New endpoints `api/admin/activities` and admin page
+`/admin/activities` ("Activities"), added to the Content Banks nav. "Generate Activity" is now live
+on both the Resource Bank page's row action and the Learn Item drawer;
+`UnifiedResourceBankItemDto.LinkedActivityCount` now reflects real counts. +39 backend tests (3,784
+total). No Module entity, no student assignment, no H5-H7 started, no PG-v2 started, no Today/
+Practice Gym runtime change. **Recommended next implementation phase: H5 — Module Foundation**,
+though a PG-v2A/H5 sequencing decision remains a future Plan-Sync checkpoint. See
 `docs/architecture/product-model-realignment-h0.md` and `docs/roadmap/road-map.md` §1, Decision
 Log, and §19a.
 

@@ -119,6 +119,11 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<LearnItem> LearnItems => Set<LearnItem>();
     public DbSet<LearnItemResourceLink> LearnItemResourceLinks => Set<LearnItemResourceLink>();
 
+    // Phase H4 — Activity foundation (reviewable, editable practice task designs generated from
+    // published Resource Bank rows or a Learn Item; the "Practice" half of a future Module)
+    public DbSet<ActivityDefinition> ActivityDefinitions => Set<ActivityDefinition>();
+    public DbSet<ActivityResourceLink> ActivityResourceLinks => Set<ActivityResourceLink>();
+
     // Phase 10W — Enterprise notification platform
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<NotificationOutboxItem> NotificationOutboxItems => Set<NotificationOutboxItem>();

@@ -1,6 +1,6 @@
 <sp-admin-page-header
-  title="Learn Items"
-  subtitle="Reviewable teaching/explanation blocks generated from Resource Bank rows. Learn Items become the Learn part of future Modules.">
+  title="Activities"
+  subtitle="Reviewable practice tasks generated from Resource Bank rows or Learn Items. Activities become the Practice part of future Modules.">
   <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="loadAll()">
     Refresh
   </sp-admin-button>
@@ -9,30 +9,27 @@
 <sp-admin-page-body>
 
   @if (error()) {
-    <sp-admin-error-state title="Could not load Learn Items" [message]="error()" />
+    <sp-admin-error-state title="Could not load Activities" [message]="error()" />
   }
 
   @if (loading()) {
-    <sp-admin-loading-state message="Loading Learn Items" />
+    <sp-admin-loading-state message="Loading Activities" />
   } @else {
 
-    @if (actionSuccess()) {
-      <sp-admin-alert variant="success">
-        {{ actionSuccess() }}
-        @if (lastActionWasGenerateActivity()) {
-          <a (click)="goToActivities()" style="cursor:pointer; text-decoration:underline;">Review in Activities</a>
-        }
-      </sp-admin-alert>
-    }
+    @if (actionSuccess()) { <sp-admin-alert variant="success">{{ actionSuccess() }}</sp-admin-alert> }
 
     <sp-admin-filter-bar>
       <sp-admin-input
-        search size="sm" placeholder="Search title or body..."
-        [value]="searchQuery()" (input)="onSearch($event)" aria-label="Search Learn Items" />
+        search size="sm" placeholder="Search title or instructions..."
+        [value]="searchQuery()" (input)="onSearch($event)" aria-label="Search Activities" />
       <sp-admin-select
         size="sm" placeholder="All statuses"
         [ngModel]="statusFilter()" (ngModelChange)="onStatusFilterChange($event)"
         [options]="statusOptions" aria-label="Filter by review status" />
+      <sp-admin-select
+        size="sm" placeholder="All types"
+        [ngModel]="activityTypeFilter()" (ngModelChange)="onActivityTypeFilterChange($event)"
+        [options]="activityTypeOptions" aria-label="Filter by activity type" />
       <sp-admin-select
         size="sm" placeholder="All levels"
         [ngModel]="cefrLevelFilter()" (ngModelChange)="onCefrLevelFilterChange($event)"
@@ -41,16 +38,17 @@
     </sp-admin-filter-bar>
 
     @if (items().length === 0) {
-      <sp-admin-empty-state title="No Learn Items" message="Use Generate Learn on a Resource Bank row to create the first draft." />
+      <sp-admin-empty-state title="No Activities" message="Use Generate Activity on a Resource Bank row or Learn Item to create the first draft." />
     } @else {
       <sp-admin-table layout="first-column-fluid">
         <table>
           <thead>
             <tr>
               <th>Title</th>
+              <th>Type</th>
+              <th>Renderer</th>
               <th>Level</th>
-              <th>Skill / Subskill</th>
-              <th>Source</th>
+              <th>Learn Item</th>
               <th>Status</th>
               <th>Created</th>
             </tr>
@@ -59,12 +57,10 @@
             @for (item of items(); track item.id) {
               <tr (click)="openDrawer(item)" style="cursor:pointer">
                 <td><strong>{{ item.title }}</strong></td>
+                <td><sp-admin-badge tone="neutral">{{ item.activityType }}</sp-admin-badge></td>
+                <td>{{ item.rendererType }}</td>
                 <td>{{ item.cefrLevel ?? '—' }}</td>
-                <td>
-                  {{ item.skill ?? '—' }}
-                  @if (item.subskill) { <div class="sp-admin-text-muted">{{ item.subskill }}</div> }
-                </td>
-                <td><sp-admin-badge tone="neutral">{{ item.sourceMode }}</sp-admin-badge></td>
+                <td>{{ item.learnItemId ? 'Linked' : '—' }}</td>
                 <td><sp-admin-badge [tone]="statusTone(item.reviewStatus)">{{ item.reviewStatus }}</sp-admin-badge></td>
                 <td>{{ item.createdAt | date:'short' }}</td>
               </tr>
@@ -84,7 +80,7 @@
 <!-- ── Detail drawer ────────────────────────────────────────────────────── -->
 <sp-admin-drawer
   [open]="drawerOpen()"
-  [title]="detail()?.title ?? 'Learn Item'"
+  [title]="detail()?.title ?? 'Activity'"
   side="right"
   size="lg"
   (closed)="closeDrawer()">
@@ -99,38 +95,41 @@
         @if (d.generationProvider) { <span class="sp-admin-text-muted"> · {{ d.generationProvider }} ({{ d.generationModel }})</span> }
       </sp-admin-form-field>
       <sp-admin-form-field label="Title"><strong>{{ d.title }}</strong></sp-admin-form-field>
-      <sp-admin-form-field label="Body"><pre>{{ d.body }}</pre></sp-admin-form-field>
+      @if (d.description) { <sp-admin-form-field label="Description">{{ d.description }}</sp-admin-form-field> }
+      <sp-admin-form-field label="Instructions"><pre>{{ d.instructions }}</pre></sp-admin-form-field>
+      <sp-admin-form-field label="Activity type / Renderer">
+        <sp-admin-badge tone="neutral">{{ d.activityType }}</sp-admin-badge>
+        <sp-admin-badge tone="info" appearance="soft">{{ d.rendererType }}</sp-admin-badge>
+      </sp-admin-form-field>
 
-      @if (examplesFor(d).length > 0) {
-        <sp-admin-form-field label="Examples">
-          <ul>
-            @for (e of examplesFor(d); track e) { <li>{{ e }}</li> }
-          </ul>
+      @if (d.formSchemaJson) {
+        <sp-admin-form-field label="Form.io schema (student-safe)">
+          <pre>{{ d.formSchemaJson }}</pre>
         </sp-admin-form-field>
       }
-      @if (commonMistakesFor(d).length > 0) {
-        <sp-admin-form-field label="Common mistakes">
-          <ul>
-            @for (m of commonMistakesFor(d); track m) { <li>{{ m }}</li> }
-          </ul>
+      @if (d.answerKeyJson) {
+        <sp-admin-form-field label="Answer key (backend-only)">
+          <pre>{{ d.answerKeyJson }}</pre>
         </sp-admin-form-field>
       }
-      @if (d.usageNotes) { <sp-admin-form-field label="Usage notes">{{ d.usageNotes }}</sp-admin-form-field> }
+      @if (d.scoringRulesJson) {
+        <sp-admin-form-field label="Scoring rules (backend-only)">
+          <pre>{{ d.scoringRulesJson }}</pre>
+        </sp-admin-form-field>
+      }
+      @if (d.feedbackPlanJson) {
+        <sp-admin-form-field label="Feedback plan">
+          <pre>{{ d.feedbackPlanJson }}</pre>
+        </sp-admin-form-field>
+      }
 
       <sp-admin-form-field label="CEFR level">{{ d.cefrLevel ?? '—' }}</sp-admin-form-field>
       <sp-admin-form-field label="Skill / subskill">{{ d.skill ?? '—' }} @if (d.subskill) { / {{ d.subskill }} }</sp-admin-form-field>
-      @if (contextTagsFor(d).length > 0) {
-        <sp-admin-form-field label="Context tags">
-          @for (tag of contextTagsFor(d); track tag) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
-        </sp-admin-form-field>
-      }
-      @if (focusTagsFor(d).length > 0) {
-        <sp-admin-form-field label="Focus tags">
-          @for (tag of focusTagsFor(d); track tag) { <sp-admin-badge tone="purple" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
-        </sp-admin-form-field>
-      }
       <sp-admin-form-field label="Difficulty band">{{ d.difficultyBand ?? '—' }}</sp-admin-form-field>
-      @if (d.estimatedMinutes !== null) { <sp-admin-form-field label="Estimated minutes">{{ d.estimatedMinutes }}</sp-admin-form-field> }
+
+      <sp-admin-form-field label="Linked Learn Item" [hint]="d.learnItemId ? '' : 'Not linked to a Learn Item'">
+        @if (d.learnItemId) { <code>{{ d.learnItemId }}</code> }
+      </sp-admin-form-field>
 
       <sp-admin-form-field label="Linked resources" [hint]="d.links.length === 0 ? 'No linked resources' : ''">
         @for (link of d.links; track link.linkId) {
@@ -145,12 +144,11 @@
       @if (d.reviewStatus === 'Rejected' && d.rejectionReason) {
         <sp-admin-form-field label="Rejection reason"><sp-admin-badge tone="danger">{{ d.rejectionReason }}</sp-admin-badge></sp-admin-form-field>
       }
-      @if (d.reviewNotes) { <sp-admin-form-field label="Review notes">{{ d.reviewNotes }}</sp-admin-form-field> }
       <sp-admin-form-field label="Created">{{ d.createdAt | date:'medium' }}</sp-admin-form-field>
 
       @if (d.reviewStatus !== 'Rejected') {
         <sp-admin-form-field label="Rejection reason" hint="Required only if you use Reject below">
-          <sp-admin-textarea [(ngModel)]="rejectReasonDraft" placeholder="Why this Learn Item is being rejected" />
+          <sp-admin-textarea [(ngModel)]="rejectReasonDraft" placeholder="Why this Activity is being rejected" />
         </sp-admin-form-field>
       }
     </div>
@@ -171,9 +169,6 @@
           {{ rejecting() ? 'Rejecting…' : 'Reject' }}
         </sp-admin-button>
       }
-      <sp-admin-button variant="primary" appearance="outline" [disabled]="generatingActivity()" (clicked)="generateActivity()">
-        {{ generatingActivity() ? 'Generating…' : 'Generate Activity' }}
-      </sp-admin-button>
     </div>
   }
 
