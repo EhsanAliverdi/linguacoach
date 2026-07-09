@@ -1,12 +1,20 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase E10)
+lastUpdated: 2026-07-09 (Phase H1)
 owner: architecture
 supersedes:
 supersededBy:
 ---
 
 # English Resource Bank Import, Review, Preview, and Publishing Platform (Phase E)
+
+**Phase H1 (2026-07-09)** added a second, admin-facing consumer of this platform's published
+tables: `ResourceBankQueryService.ListUnifiedAsync` aggregates `CefrVocabularyEntry`/
+`CefrGrammarProfileEntry`/`CefrReadingReference`/`CefrReadingPassage` into one filtered admin view
+(`GET /api/admin/resource-bank`, `/admin/resource-bank`) — read-only, no schema change, this
+platform's E1-E10 pipeline and typed query methods are entirely unchanged. See
+`docs/architecture/product-model-realignment-h0.md` and `docs/roadmap/road-map.md` §1/Decision Log
+for full H1 detail.
 
 **Date planned:** 2026-07-08 (Plan-Sync-After-C1), **finalized:** 2026-07-08 (Phase E0),
 **E1 implemented:** 2026-07-08, **E2 implemented:** 2026-07-08, **E3 implemented:** 2026-07-08,

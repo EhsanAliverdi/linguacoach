@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H0)
+lastUpdated: 2026-07-09 (Phase H1)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,30 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-09 (Phase H0)
+Last updated: 2026-07-09 (Phase H1)
+
+## Unified Resource Bank Admin Read Model (Phase H1, 2026-07-09)
+
+Implements H0's Option B direction. Admins now have one Resource Bank view
+(`/admin/resource-bank`, "Resource Bank") aggregating the four existing typed published bank
+tables (vocabulary/grammar/reading-references/reading-passages) with type/CEFR/skill/search
+filters — instead of visiting four separate typed pages to see what content exists. **No physical
+`ResourceBankItem` table, no schema/migration.** The four typed pages/APIs/tables are unchanged
+and remain fully reachable; this is additive.
+
+The unified page's row actions include **disabled "Generate Learn (coming soon)" / "Generate
+Activity (coming soon)" / "Generate Module (coming soon)"** — real, visible placeholders (not
+working buttons) for the H3/H4/H5 phases that don't exist yet. This is intentional: it tells every
+admin who opens the page that the target Resource → Learn/Activity → Module model is coming,
+without pretending it is already built.
+
++22 backend tests (3,693 total). No H2/H3/H4/H5/PG-v2 started. No external datasets, no
+Persian/bilingual content, no direct final-table seeding. Today/Practice Gym legacy fallback and
+the readiness/delivery queue are unchanged. Full detail:
+`docs/architecture/product-model-realignment-h0.md`; roadmap: `docs/roadmap/road-map.md` §1,
+Decision Log (Phase H1 entry), §19a item 20i.
+
+---
 
 ## Product Model Realignment Opened (Phase H0, 2026-07-09, docs-only)
 

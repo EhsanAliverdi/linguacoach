@@ -109,4 +109,33 @@ public sealed class AdminResourceBankController : ControllerBase
         var result = await _bankQueryService.GetReadingPassageDetailAsync(id, ct);
         return result is null ? NotFound(new { error = $"Reading passage bank entry '{id}' was not found." }) : Ok(result);
     }
+
+    // Phase H1 — unified Resource Bank read model. Route override (~/) puts this at the singular
+    // "api/admin/resource-bank", distinct from this controller's plural "api/admin/resource-banks"
+    // base route used by the four typed endpoints above. Read-only, same as everything else in
+    // this controller — aggregates the same four typed tables, does not add a new table.
+    //
+    // GET api/admin/resource-bank?type=&cefrLevel=&skill=&subskill=&contextTag=&focusTag=
+    //     &difficultyBand=&search=&sourceId=&page=1&pageSize=20
+    [HttpGet("~/api/admin/resource-bank")]
+    public async Task<IActionResult> ListUnified(
+        [FromQuery] string? type = null, [FromQuery] string? cefrLevel = null, [FromQuery] string? skill = null,
+        [FromQuery] string? subskill = null, [FromQuery] string? contextTag = null, [FromQuery] string? focusTag = null,
+        [FromQuery] int? difficultyBand = null, [FromQuery] string? search = null, [FromQuery] Guid? sourceId = null,
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
+    {
+        UnifiedResourceBankItemType? parsedType = null;
+        if (!string.IsNullOrWhiteSpace(type))
+        {
+            if (!Enum.TryParse<UnifiedResourceBankItemType>(type, ignoreCase: true, out var value))
+                return BadRequest(new { error = $"Unknown resource bank type '{type}'." });
+            parsedType = value;
+        }
+
+        var result = await _bankQueryService.ListUnifiedAsync(
+            new UnifiedResourceBankListFilter(
+                parsedType, cefrLevel, skill, subskill, contextTag, focusTag, difficultyBand, search, sourceId, page, pageSize),
+            ct);
+        return Ok(result);
+    }
 }

@@ -25,6 +25,8 @@ import {
   ResourceBankReadingReferenceDetailDto,
   ResourceBankReadingPassageListResult,
   ResourceBankReadingPassageDetailDto,
+  UnifiedResourceBankListResult,
+  UnifiedResourceBankItemType,
 } from '../models/admin-resource-import.models';
 
 @Injectable({ providedIn: 'root' })
@@ -219,5 +221,41 @@ export class AdminResourceBankService {
 
   getReadingPassageDetail(id: string): Observable<ResourceBankReadingPassageDetailDto> {
     return this.http.get<ResourceBankReadingPassageDetailDto>(`${this.base}/reading-passages/${id}`);
+  }
+}
+
+/** Phase H1 — unified read model over all four typed published bank tables above. Read-only; no
+ *  edit/delete/generate methods here — Generate Learn/Activity/Module are H3-H5 concerns, not
+ *  implemented yet (the page shows them as disabled placeholders). */
+@Injectable({ providedIn: 'root' })
+export class AdminUnifiedResourceBankService {
+  private readonly base = `${environment.apiUrl}/admin/resource-bank`;
+
+  constructor(private http: HttpClient) {}
+
+  list(
+    page: number,
+    pageSize: number,
+    type?: UnifiedResourceBankItemType,
+    cefrLevel?: string,
+    skill?: string,
+    subskill?: string,
+    contextTag?: string,
+    focusTag?: string,
+    difficultyBand?: number,
+    search?: string,
+    sourceId?: string,
+  ): Observable<UnifiedResourceBankListResult> {
+    let params = new HttpParams().set('page', page).set('pageSize', pageSize);
+    if (type) params = params.set('type', type);
+    if (cefrLevel) params = params.set('cefrLevel', cefrLevel);
+    if (skill) params = params.set('skill', skill);
+    if (subskill) params = params.set('subskill', subskill);
+    if (contextTag) params = params.set('contextTag', contextTag);
+    if (focusTag) params = params.set('focusTag', focusTag);
+    if (difficultyBand !== undefined && difficultyBand !== null) params = params.set('difficultyBand', difficultyBand);
+    if (search) params = params.set('search', search);
+    if (sourceId) params = params.set('sourceId', sourceId);
+    return this.http.get<UnifiedResourceBankListResult>(this.base, { params });
   }
 }

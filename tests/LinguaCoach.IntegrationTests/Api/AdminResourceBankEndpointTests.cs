@@ -196,4 +196,99 @@ public sealed class AdminResourceBankEndpointTests : IClassFixture<ApiTestFactor
             Assert.Contains("workplace", tags);
         }
     }
+
+    // ── Phase H1 — unified Resource Bank read model endpoint ──────────────────────
+
+    [Fact]
+    public async Task Unified_List_Unauthenticated_Returns401()
+    {
+        var client = _factory.CreateClient();
+        var response = await client.GetAsync("/api/admin/resource-bank");
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Unified_List_NonAdmin_Returns403()
+    {
+        var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"student-{Guid.NewGuid():N}@test.linguacoach.com");
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var response = await client.GetAsync("/api/admin/resource-bank");
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Unified_List_Returns_Mixed_Typed_Rows()
+    {
+        await EnsureE8PublishedAsync();
+
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var response = await client.GetAsync("/api/admin/resource-bank?pageSize=200");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var doc = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var items = doc.GetProperty("items");
+        Assert.True(items.GetArrayLength() > 0);
+
+        // The E8 pack publishes vocabulary, grammar, short reading references, and full passages —
+        // the unified endpoint must surface more than one distinct type in a single call.
+        var distinctTypes = items.EnumerateArray()
+            .Select(i => i.GetProperty("type").GetString())
+            .Distinct()
+            .ToList();
+        Assert.True(distinctTypes.Count > 1);
+    }
+
+    [Fact]
+    public async Task Unified_List_Filtered_By_Type_And_Cefr_Returns_Only_Matching_Rows()
+    {
+        await EnsureE8PublishedAsync();
+
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var response = await client.GetAsync("/api/admin/resource-bank?type=Vocabulary&cefrLevel=B1&pageSize=200");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var doc = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var items = doc.GetProperty("items");
+        Assert.True(items.GetArrayLength() > 0);
+        foreach (var item in items.EnumerateArray())
+        {
+            Assert.Equal("vocabulary", item.GetProperty("type").GetString());
+            Assert.Equal("B1", item.GetProperty("cefrLevel").GetString());
+        }
+    }
+
+    [Fact]
+    public async Task Unified_List_Unknown_Type_Returns400()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var response = await client.GetAsync("/api/admin/resource-bank?type=NotARealType");
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Existing_Typed_Vocabulary_Endpoint_Still_Works_After_Unified_Endpoint_Added()
+    {
+        await EnsureE8PublishedAsync();
+
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var response = await client.GetAsync("/api/admin/resource-banks/vocabulary?pageSize=200");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var doc = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(doc.GetProperty("items").GetArrayLength() > 0);
+    }
 }

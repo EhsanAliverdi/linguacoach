@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H0)
+lastUpdated: 2026-07-09 (Phase H1)
 owner: architecture
 supersedes:
 supersededBy:
@@ -347,7 +347,19 @@ Foundation → H6 Daily Lesson Module Pipeline → H7 Practice Gym Module Pipeli
 Simplification). **No code, migration, entity, API, Angular, or test change.** Existing bank-first
 work (E1-E10, D1-D6) is confirmed still-useful substrate, not superseded — nothing is deleted.
 Today/Practice Gym legacy fallback, the readiness/delivery queue, and PG-v2's planned scope are
-unchanged. **Recommended next implementation phase: H1.** See
+unchanged. See `docs/architecture/product-model-realignment-h0.md` and
+`docs/roadmap/road-map.md` §1, Decision Log, and §19a.
+
+**Phase H1 (2026-07-09)** — implemented H0's Option B direction. `ResourceBankQueryService.
+ListUnifiedAsync` aggregates all four typed published bank tables
+(`CefrVocabularyEntry`/`CefrGrammarProfileEntry`/`CefrReadingReference`/`CefrReadingPassage`) into
+one filtered/paginated view — **no physical `ResourceBankItem` table, no schema/migration**; new
+`GET /api/admin/resource-bank` endpoint and `/admin/resource-bank` admin page ("Resource Bank"),
+added as the first "Content Banks" nav item, with disabled "coming soon" Generate Learn/Activity/
+Module row actions. **All four typed bank pages/APIs/tables are unchanged and remain fully
+reachable** — additive, not a replacement. +22 backend tests (3,693 total). No H2-H5 started, no
+PG-v2 started. **Recommended next implementation phase: H2 — Import Content UX v1**, though a
+PG-v2A/H2 sequencing decision remains a future Plan-Sync checkpoint. See
 `docs/architecture/product-model-realignment-h0.md` and `docs/roadmap/road-map.md` §1, Decision
 Log, and §19a.
 
@@ -376,7 +388,7 @@ Log, and §19a.
 | [repetition-and-novelty.md](repetition-and-novelty.md) | `StudentActivityUsageLog`; `IActivityContentFingerprintService`/`IActivityNoveltyPolicy`; deterministic/exact-match cooldown foundation (Phase B, 2026-07-08) — not embeddings/semantic near-duplicate detection |
 | [activity-feedback-and-calibration.md](activity-feedback-and-calibration.md) | Foundation implemented (Phase B2, 2026-07-08): explicit student-reported difficulty/clarity/usefulness/repeat-preference feedback (`ActivityFeedbackSignal`); admin per-surface feedback policy (off/optional/required) via existing feature-gate system; API + minimal student UI. Not yet consumed by any automated CEFR/difficulty-band/template/resource/AI-quality calibration or admin review automation — collection only |
 | [english-resource-bank-import-platform.md](english-resource-bank-import-platform.md) | Phase E plan (E0-E8). E0 finalized entity/status/gate model; **E1-E7 all implemented (2026-07-09)**: `CefrResourceSource` extended as source registry; `ResourceImportRun`/`ResourceRawRecord`/`ResourceCandidate` staging entities; gates 1-3 + gates 4-6 + rendered admin preview + controlled publish (`VocabularyEntry`/`GrammarProfileEntry`/short-excerpt `ReadingPassage`→`CefrReadingReference`, `ActivityTemplateCandidate` deferred) + published-bank browsing/search/admin management (`ResourceBankQueryService`, reverse candidate traceability, read-only) + first real English content depth (32 vocabulary / 12 grammar / 10 reading excerpts, E6) + **full-length reading passage bank (E7)**: new `CefrReadingPassage` entity, `ReadingPassage` candidates over the 500-char excerpt threshold now publish there instead of being blocked, new browse/search API + admin page, 10 new full-length passages. No external dataset imported; no Persian/bilingual content. **Phase D1/D2 (2026-07-08) are real consumers of this platform (see the "Bank-first Today lesson composer" row) — E7's new passage bank is not yet wired to Today.** A new Phase D3 decision checkpoint applies, not resolved by E7 |
-| [product-model-realignment-h0.md](product-model-realignment-h0.md) | **Phase H0 (2026-07-09, docs-only)**: intended product model (`Resource Bank Item → Learn Item/Activity → Module → Daily Lesson/Practice Gym → Attempt → Feedback + Rating → Learner Memory`), intended import flow, unified-Resource-Bank direction (Option B recommended), Learn/Activity/Module/Lesson/Practice-Gym field requirements, current-state mismatch audit, target admin IA, and the H1-H8 roadmap. No code/migration/entity/API/Angular/test change |
+| [product-model-realignment-h0.md](product-model-realignment-h0.md) | **Phase H0 (2026-07-09, docs-only)**: intended product model (`Resource Bank Item → Learn Item/Activity → Module → Daily Lesson/Practice Gym → Attempt → Feedback + Rating → Learner Memory`), intended import flow, unified-Resource-Bank direction (Option B recommended), Learn/Activity/Module/Lesson/Practice-Gym field requirements, current-state mismatch audit, target admin IA, and the H1-H8 roadmap. **Phase H1 (2026-07-09) implemented Option B**: `ResourceBankQueryService.ListUnifiedAsync`, `GET /api/admin/resource-bank`, `/admin/resource-bank` admin page — see this doc's own updates and `docs/roadmap/road-map.md` §1/Decision Log for full H1 detail |
 
 ### Planned / Deferred (not implemented yet)
 
@@ -471,6 +483,7 @@ Archived
 | IFileStorageService / MinIO | ✅ Done — audio (TTS + speaking uploads) fully on object storage; not blocking deployment at current scale |
 | Admin lifecycle reset tools | ✅ Done |
 | Bank-First Admin/Backend Surface Cleanup (Phase G0/G1/G2/G3) | 🟡 **G0 audit + G1 admin-IA cleanup done; G2/G3 planned** (2026-07-09) — Plan-Sync-G0 set the framework (Resource Banks/Candidates/Activity Templates = primary content model; AI generation = fallback/evaluation/composition/cost-diagnostics; readiness lifecycle **kept**, reframed "Student Activity Assignment / Delivery Queue"). **Phase G0 (done, docs-only)** executed the audit → `docs/architecture/bank-first-admin-backend-surface-audit.md`: 31 admin routes, ~20 controllers, 8 jobs + ~6 services, 11 terminology terms, each classified keep/rename-reframe/move-to-diagnostics/merge/remove-later with P0/P1/P2 priority + target phase. **Phase G1 (done, 2026-07-09)** implemented the low-risk quick wins — **labels/nav/page-composition only, nothing deleted**: split the "Content" nav into Content Banks / Delivery / Learning Setup (both desktop + mobile), added the missing E7 reading-passages nav item (`/admin/resource-banks/reading-passages`), reframed `/admin/lessons` in place ("Today Delivery Health"; readiness/pool → delivery-queue/assignment language; manual generation reframed as AI fallback generation; info banner pointing to the Content Banks), relabeled the student-detail readiness panel + AI Operations card. `StudentActivityReadinessItem`, pool/buffer/materialization jobs, `PracticeActivityCache`, and legacy `IAiActivityGenerator` **all kept**. Validated by production `ng build` (no new errors). **Phase G2 (backend legacy cleanup, sequenced late) / G3 (diagnostics consolidation, sequenced late) — not started.** A Phase E8/D3 decision checkpoint now applies. See docs/roadmap/road-map.md §1, Decision Log, §19a |
+| Product Model Realignment (Phase H0/H1) | 🟡 **H0 docs-only + H1 unified read model done; H2-H8 planned** (2026-07-09) — **Phase H0 (docs-only)** defined the target model (`Resource Bank Item → Learn Item/Activity → Module → Daily Lesson/Practice Gym → Attempt → Feedback + Rating → Learner Memory`), the intended import flow, unified-Resource-Bank direction (**Option B: admin read model over existing typed tables**, chosen over physical consolidation), field requirements, a mismatch audit, a target admin IA, and the H1-H8 roadmap. **Phase H1 (done, 2026-07-09)** implemented Option B: `ResourceBankQueryService.ListUnifiedAsync` aggregates all four typed published bank tables into one filtered/paginated view (**no schema/migration, no physical `ResourceBankItem` table**); new `GET /api/admin/resource-bank` endpoint; new `/admin/resource-bank` admin page ("Resource Bank") with type/CEFR/skill/search filters, added as the first "Content Banks" nav item; disabled "coming soon" Generate Learn/Activity/Module row actions (real placeholders for H3-H5, not fake working buttons). **All four typed bank pages/APIs/tables are unchanged and remain fully reachable.** +22 backend tests (3,693 total). **H2 (Import Content UX v1)/H3 (Learn Item)/H4 (Activity)/H5 (Module)/H6 (Daily Lesson)/H7 (Practice Gym)/H8 (Admin IA Simplification) — not started.** See `docs/architecture/product-model-realignment-h0.md` and `docs/roadmap/road-map.md` §1, Decision Log, §19a |
 
 ---
 

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H0)
+lastUpdated: 2026-07-09 (Phase H1)
 owner: product
 supersedes:
 supersededBy:
@@ -12,6 +12,17 @@ supersededBy:
 made in this phase. This document defines the intended product model, audits the current mismatch
 against it, and proposes a safe phased implementation path (the H-track). It does not implement
 any of it.
+
+**Phase H1, 2026-07-09. Implemented.** H1 built the §4 Option B direction: `ResourceBankQueryService
+.ListUnifiedAsync` (new `UnifiedResourceBankContracts.cs` DTOs) aggregates the four typed published
+bank tables into one filtered/paginated view — no physical `ResourceBankItem` table, no schema/
+migration. New `GET /api/admin/resource-bank` endpoint and `/admin/resource-bank` admin page
+("Resource Bank"), added as the first "Content Banks" nav item; the four typed pages/APIs/tables
+are unchanged and remain fully reachable. Generate Learn/Activity/Module row actions are disabled
+"coming soon" placeholders — H3/H4/H5 do not exist yet. +22 backend tests (3,693 total). H2-H8
+have not started. Full implementation detail: `docs/roadmap/road-map.md` §1, Decision Log (Phase
+H1 entry), and §19a item 20i. **Recommended next implementation phase: H2 — Import Content UX
+v1**, though a PG-v2A/H2 sequencing decision remains a future Plan-Sync checkpoint.
 
 ---
 
@@ -318,7 +329,7 @@ pages exist to populate "Content Studio." Not implemented in H0.
 | Phase | Scope | Depends on |
 |---|---|---|
 | **H0 — Product Model Realignment** | Docs-only. This phase. | E10, D6 |
-| **H1 — Unified Resource Bank Admin Read Model** | One admin-facing Resource Bank API/page over existing typed published bank tables (Option B, §4). No physical consolidation. Old typed pages may remain under Advanced temporarily. | H0 |
+| **H1 — Unified Resource Bank Admin Read Model** `Done (2026-07-09)` | One admin-facing Resource Bank API/page over existing typed published bank tables (Option B, §4). No physical consolidation. Old typed pages remain (not yet moved to Advanced — that's H8). | H0 |
 | **H2 — Import Content UX v1** | Admin upload/paste/import page; admin chooses broad type/category/default tags; AI analyze/mapping preview; creates pending Resource Candidates/Bank rows through the existing E1–E9 pipeline; async for large imports; no student assignment. | H1 |
 | **H3 — Learn Item Foundation** | Introduce `Learn Item` entity/table/API/admin review; generate Learn Item from selected Resource Bank rows; approval lifecycle; tags/source traceability. | H2 |
 | **H4 — Activity Foundation with Form.io** | Introduce/align `Activity` as an editable generated exercise (builds on existing `ActivityTemplate`); Form.io schema/config for supported types; answer/scoring/feedback plan; generated from selected Resource Bank rows; approval lifecycle; tags/source traceability. | H2 (parallel with H3) |
@@ -342,10 +353,14 @@ extends that pattern to Module selection. PG-v2 can proceed in parallel with ear
 
 ## 9. Recommended next phase
 
-**H1 — Unified Resource Bank Admin Read Model.** Lowest risk (no schema/migration, read-only
-aggregation over existing tables), highest immediate admin-UX value, and a safe first step that
-does not require Learn/Activity/Module to exist yet. A PG-v2A/H1 sequencing decision (which comes
-first) is a future Plan-Sync checkpoint, not resolved by this phase.
+**H1 — Unified Resource Bank Admin Read Model — done (2026-07-09).** Lowest risk (no
+schema/migration, read-only aggregation over existing tables), highest immediate admin-UX value,
+and a safe first step that did not require Learn/Activity/Module to exist yet. See
+`docs/roadmap/road-map.md` §1, Decision Log (Phase H1 entry), and §19a item 20i for full
+implementation detail.
+
+**Recommended next: H2 — Import Content UX v1.** A PG-v2A/H2 sequencing decision (which comes
+first) remains a future Plan-Sync checkpoint, not resolved by this phase.
 
 ---
 

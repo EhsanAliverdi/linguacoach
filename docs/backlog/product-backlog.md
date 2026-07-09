@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H0)
+lastUpdated: 2026-07-09 (Phase H1)
 owner: product
 supersedes:
 supersededBy:
@@ -14,7 +14,7 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
 
 ---
 
-## Product Model Realignment — Phase H0-H8 `H0 Done, H1-H8 Planned` (2026-07-09)
+## Product Model Realignment — Phase H0-H8 `H0-H1 Done, H2-H8 Planned` (2026-07-09)
 
 **Phase H0 (docs-only, done 2026-07-09)** defined the intended product model — `Resource Bank Item
 → Learn Item/Activity → Module → Daily Lesson/Practice Gym → Attempt → Feedback + Rating →
@@ -26,9 +26,11 @@ E1-E10/D1-D6 substrate, and G2/G3/PG-v2 remain valid, separately-scoped tracks.
 - [x] **Phase H0 — Product Model Realignment** `Done` (2026-07-09, docs-only) — model, import flow,
   unified-Resource-Bank direction (Option B recommended), Learn/Activity/Module/Lesson/Practice-Gym
   field requirements, mismatch audit, target admin IA, H1-H8 roadmap.
-- [ ] **Phase H1 — Unified Resource Bank Admin Read Model** `Planned` — one admin-facing Resource
-  Bank API/page aggregating existing typed published bank tables; no physical consolidation.
-  **Recommended next implementation phase.**
+- [x] **Phase H1 — Unified Resource Bank Admin Read Model** `Done` (2026-07-09) — one admin-facing
+  Resource Bank API/page (`GET /api/admin/resource-bank`, `/admin/resource-bank`) aggregating the
+  four existing typed published bank tables; no physical consolidation, no schema/migration; disabled
+  "coming soon" Generate Learn/Activity/Module row actions; all four typed pages/APIs/tables
+  unchanged and remain fully reachable. +22 backend tests (3,693 total).
 - [ ] **Phase H2 — Import Content UX v1** `Planned` — admin upload/paste/import page; AI
   analyze/mapping preview; creates pending Resource Candidates/Bank rows through the existing E1-E9
   pipeline; no student assignment.

@@ -439,6 +439,53 @@ export interface ResourceBankReadingPassageListResult {
   totalCount: number;
 }
 
+// ── Phase H1 — Unified Resource Bank admin read model. Aggregates the four typed published bank
+// tables above into one filtered/paginated view; no physical unified table exists behind this —
+// see docs/architecture/product-model-realignment-h0.md §4 (Option B). Read-only, same as the
+// typed views above: mutation still only happens through Resource Candidates (E4). ──
+
+export type UnifiedResourceBankItemType = 'vocabulary' | 'grammar' | 'readingReference' | 'readingPassage';
+
+/** One row of the unified Resource Bank view. `linkedLearnCount`/`linkedActivityCount`/
+ *  `linkedModuleCount` are always null in H1 — Learn Item/Activity/Module don't exist yet
+ *  (H3/H4/H5). `sourceTable`/`detailRoute` identify which typed table/page the row actually
+ *  lives in. */
+export interface UnifiedResourceBankItemDto {
+  id: string;
+  type: UnifiedResourceBankItemType;
+  title: string;
+  summary: string | null;
+  cefrLevel: string;
+  skill: string | null;
+  subskill: string | null;
+  contextTags: string[];
+  focusTags: string[];
+  difficultyBand: number | null;
+  sourceId: string | null;
+  sourceName: string | null;
+  contentFingerprint: string | null;
+  status: string | null;
+  createdAt: string;
+  updatedAt: string | null;
+  sourceTable: string;
+  detailRoute: string | null;
+  linkedLearnCount: number | null;
+  linkedActivityCount: number | null;
+  linkedModuleCount: number | null;
+}
+
+export interface UnifiedResourceBankListResult {
+  items: UnifiedResourceBankItemDto[];
+  totalCount: number;
+}
+
+export const UNIFIED_RESOURCE_BANK_TYPES: { value: UnifiedResourceBankItemType; label: string }[] = [
+  { value: 'vocabulary', label: 'Vocabulary' },
+  { value: 'grammar', label: 'Grammar' },
+  { value: 'readingReference', label: 'Reading reference' },
+  { value: 'readingPassage', label: 'Reading passage' },
+];
+
 export const RESOURCE_BANK_CEFR_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
 
 export const RESOURCE_IMPORT_MODES = ['Csv', 'Json', 'Jsonl'] as const;

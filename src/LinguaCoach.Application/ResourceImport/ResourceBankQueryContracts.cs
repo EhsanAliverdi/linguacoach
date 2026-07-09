@@ -215,4 +215,8 @@ public interface IResourceBankQueryService
 
     Task<ResourceBankReadingPassageListResult> ListReadingPassagesAsync(ResourceBankListFilter filter, CancellationToken ct = default);
     Task<ResourceBankReadingPassageDetailDto?> GetReadingPassageDetailAsync(Guid id, CancellationToken ct = default);
+
+    // Phase H1 — unified read model over all four typed bank tables. See
+    // UnifiedResourceBankContracts.cs for the DTO/filter shapes and their rationale.
+    Task<UnifiedResourceBankListResult> ListUnifiedAsync(UnifiedResourceBankListFilter filter, CancellationToken ct = default);
 }

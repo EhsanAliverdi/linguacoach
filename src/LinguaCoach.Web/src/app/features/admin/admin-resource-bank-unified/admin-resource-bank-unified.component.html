@@ -1,0 +1,156 @@
+<sp-admin-page-header
+  title="Resource Bank"
+  subtitle="Unified view of approved typed learning resources used to generate Learn items, Activities, Modules, Daily Lessons, and Practice Gym content.">
+  <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="loadAll()">
+    Refresh
+  </sp-admin-button>
+</sp-admin-page-header>
+
+<sp-admin-page-body>
+
+  @if (error()) {
+    <sp-admin-error-state title="Could not load the resource bank" [message]="error()" />
+  }
+
+  @if (loading()) {
+    <sp-admin-loading-state message="Loading resource bank" />
+  } @else {
+
+    <sp-admin-filter-bar>
+      <sp-admin-input
+        search size="sm" placeholder="Search title, word, or excerpt..."
+        [value]="searchQuery()" (input)="onSearch($event)" aria-label="Search resource bank" />
+      <sp-admin-select
+        size="sm" placeholder="All types"
+        [ngModel]="typeFilter()" (ngModelChange)="onTypeFilterChange($event)"
+        [options]="typeOptions" aria-label="Filter by type" />
+      <sp-admin-select
+        size="sm" placeholder="All levels"
+        [ngModel]="cefrLevelFilter()" (ngModelChange)="onCefrLevelFilterChange($event)"
+        [options]="cefrLevelOptions" aria-label="Filter by CEFR level" />
+      <sp-admin-select
+        size="sm" placeholder="All skills"
+        [ngModel]="skillFilter()" (ngModelChange)="onSkillFilterChange($event)"
+        [options]="skillOptions" aria-label="Filter by skill" />
+      <span class="sp-admin-filter-count">{{ totalCount() }} resource{{ totalCount() !== 1 ? 's' : '' }}</span>
+    </sp-admin-filter-bar>
+
+    @if (items().length === 0) {
+      <sp-admin-empty-state title="No resources" message="No published resources match these filters." />
+    } @else {
+      <sp-admin-table layout="first-column-fluid">
+        <table>
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Title</th>
+              <th>Level</th>
+              <th>Skill / Subskill</th>
+              <th>Context</th>
+              <th>Focus</th>
+              <th>Difficulty</th>
+              <th>Source</th>
+              <th>Learn / Activity / Module</th>
+              <th class="sp-admin-th-actions"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of items(); track item.id) {
+              <tr>
+                <td><sp-admin-badge tone="info" appearance="soft">{{ typeLabel(item.type) }}</sp-admin-badge></td>
+                <td>
+                  <strong>{{ item.title }}</strong>
+                  @if (item.summary) { <div class="sp-admin-text-muted">{{ item.summary }}</div> }
+                </td>
+                <td><sp-admin-badge tone="neutral">{{ item.cefrLevel }}</sp-admin-badge></td>
+                <td>
+                  {{ item.skill ?? '—' }}
+                  @if (item.subskill) { <div class="sp-admin-text-muted">{{ item.subskill }}</div> }
+                </td>
+                <td>
+                  @if (item.contextTags.length > 0) {
+                    @for (tag of item.contextTags; track tag) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
+                  } @else { — }
+                </td>
+                <td>
+                  @if (item.focusTags.length > 0) {
+                    @for (tag of item.focusTags; track tag) { <sp-admin-badge tone="purple" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
+                  } @else { — }
+                </td>
+                <td>{{ item.difficultyBand ?? '—' }}</td>
+                <td>{{ item.sourceName ?? '—' }}</td>
+                <td>
+                  <span class="sp-admin-text-muted">Not generated yet</span>
+                </td>
+                <td>
+                  <sp-admin-table-actions
+                    mode="dropdown"
+                    [richActions]="rowActions(item)"
+                    (actionSelected)="onRowAction($event, item)" />
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        <sp-admin-table-footer>
+          Page {{ page() }} of {{ totalPages() }} · {{ totalCount() }} resources
+          <sp-admin-pagination slot="actions" [page]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
+        </sp-admin-table-footer>
+      </sp-admin-table>
+    }
+  }
+
+</sp-admin-page-body>
+
+<!-- ── Detail drawer (read-only, uses the already-loaded row) ─────────────── -->
+<sp-admin-drawer
+  [open]="drawerOpen()"
+  [title]="detail()?.title ?? 'Resource'"
+  side="right"
+  size="lg"
+  (closed)="closeDrawer()">
+
+  @if (detail(); as d) {
+    <div class="sp-admin-form-stack">
+      <sp-admin-form-field label="Type"><sp-admin-badge tone="info" appearance="soft">{{ typeLabel(d.type) }}</sp-admin-badge></sp-admin-form-field>
+      <sp-admin-form-field label="Title"><strong>{{ d.title }}</strong></sp-admin-form-field>
+      @if (d.summary) { <sp-admin-form-field label="Summary">{{ d.summary }}</sp-admin-form-field> }
+      <sp-admin-form-field label="CEFR level"><sp-admin-badge tone="neutral">{{ d.cefrLevel }}</sp-admin-badge></sp-admin-form-field>
+      @if (d.skill) { <sp-admin-form-field label="Skill">{{ d.skill }}</sp-admin-form-field> }
+      @if (d.subskill) { <sp-admin-form-field label="Subskill">{{ d.subskill }}</sp-admin-form-field> }
+      @if (d.contextTags.length > 0) {
+        <sp-admin-form-field label="Context tags">
+          @for (tag of d.contextTags; track tag) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
+        </sp-admin-form-field>
+      }
+      @if (d.focusTags.length > 0) {
+        <sp-admin-form-field label="Focus tags">
+          @for (tag of d.focusTags; track tag) { <sp-admin-badge tone="purple" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
+        </sp-admin-form-field>
+      }
+      @if (d.difficultyBand !== null) { <sp-admin-form-field label="Difficulty band">{{ d.difficultyBand }}</sp-admin-form-field> }
+      <sp-admin-form-field label="Status"><sp-admin-badge tone="success" appearance="soft">{{ d.status ?? 'Published' }}</sp-admin-badge></sp-admin-form-field>
+      @if (d.sourceName) { <sp-admin-form-field label="Source">{{ d.sourceName }}</sp-admin-form-field> }
+      @if (d.contentFingerprint) {
+        <sp-admin-form-field label="Content fingerprint"><code>{{ d.contentFingerprint }}</code></sp-admin-form-field>
+      }
+      <sp-admin-form-field label="Created">{{ d.createdAt | date:'medium' }}</sp-admin-form-field>
+      @if (d.updatedAt) { <sp-admin-form-field label="Updated">{{ d.updatedAt | date:'medium' }}</sp-admin-form-field> }
+      <sp-admin-form-field label="Source table"><code>{{ d.sourceTable }}</code></sp-admin-form-field>
+      @if (d.detailRoute) {
+        <sp-admin-form-field label="Typed bank page">
+          <a [routerLink]="d.detailRoute">Open in {{ typeLabel(d.type) }} bank</a>
+        </sp-admin-form-field>
+      }
+
+      <sp-admin-form-field label="Learn / Activity / Module">
+        <sp-admin-badge tone="neutral" appearance="outline">Not generated yet — coming in a future phase</sp-admin-badge>
+      </sp-admin-form-field>
+    </div>
+  }
+
+  <div slot="footer">
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeDrawer()">Close</sp-admin-button>
+  </div>
+
+</sp-admin-drawer>

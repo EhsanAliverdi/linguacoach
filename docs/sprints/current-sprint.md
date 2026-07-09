@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H0)
+lastUpdated: 2026-07-09 (Phase H1)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,47 @@ Last updated: 2026-07-09
 ---
 
 ## Active sprint
+
+**Phase H1 — Unified Resource Bank Admin Read Model (2026-07-09)** — complete
+
+Implements H0's Option B direction: one admin-facing Resource Bank read model/API/page over the
+four existing typed published bank tables. **No schema/migration, no physical `ResourceBankItem`
+table.**
+
+- **Backend**: `ResourceBankQueryService.ListUnifiedAsync` (new `UnifiedResourceBankContracts.cs`
+  DTOs) queries `CefrVocabularyEntry`/`CefrGrammarProfileEntry`/`CefrReadingReference`/
+  `CefrReadingPassage` with the existing per-type filter patterns (source/CEFR/subskill/
+  difficulty/context/focus/search), maps each row to a shared `UnifiedResourceBankItemDto`, then
+  merges/sorts/paginates in memory (documented limitation, safe at current content volume). New
+  `GET /api/admin/resource-bank` endpoint (route-override, distinct from the existing plural
+  `/api/admin/resource-banks/*` typed routes) adds `type`/`skill` filters.
+- **Frontend**: new `/admin/resource-bank` page ("Resource Bank") reusing the vocabulary page's
+  filter-bar/table/drawer pattern exactly; filters for type/CEFR/skill/search; table shows
+  context/focus tags, difficulty, source, and a "Learn / Activity / Module" column reading "Not
+  generated yet." **Generate Learn/Activity/Module are disabled "(coming soon)" row actions** — not
+  fake working buttons. Added as the first "Content Banks" nav item (desktop + mobile).
+- **All four typed bank pages/APIs/tables are unchanged and remain fully reachable** — this is
+  additive, not a replacement.
+
+**Validation**: `dotnet build --configuration Release` passed (0 errors); `dotnet test
+--configuration Release` = 3,693 passed, 0 failed (+22: 16 unit, 6 integration; 5 architecture
+unchanged). Angular production build: no new TS/Angular compile errors, only the pre-existing
+bundle-size budget failure (documented, not new). No frontend unit tests added — no existing
+`.spec.ts` baseline for any of the four typed bank pages to extend without inventing new
+brittleness.
+
+**No H2/H3/H4/H5 started. No PG-v2 started. No physical table consolidation. No external
+datasets. No Persian/bilingual/support-language content. No direct final-table seeding. No
+typed bank table/API/page deleted. Today/Practice Gym legacy fallback and the readiness/delivery
+queue are unchanged.**
+
+**Next: Phase H2 — Import Content UX v1** (recommended), though a PG-v2A/H2 sequencing decision
+remains a future Plan-Sync checkpoint. See `docs/architecture/product-model-realignment-h0.md` and
+`docs/roadmap/road-map.md` §1/§19a.
+
+---
+
+## Previous sprint (H0)
 
 **Phase H0 — Product Model Realignment: Content Studio, Learn, Activity, Module, Lesson, Practice
 Gym (2026-07-09)** — complete, docs-only
