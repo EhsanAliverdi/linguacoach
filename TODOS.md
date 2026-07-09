@@ -765,8 +765,56 @@ progress is always computed live from the ledger.
 **Context:** `SessionQueryHandler.HandleAsync(GetTodaysSessionQuery)` in `src/LinguaCoach.Infrastructure/Sessions/SessionQueryHandler.cs`; `DailyLessonModuleSelectionRequest` in `src/LinguaCoach.Application/DailyLessonModules/DailyLessonModuleSelectionContracts.cs`.
 **Deferred from:** Phase H6, 2026-07-09.
 
-### TODO-H7-1 — Legacy invalid bank/admin structures should be removed, not just hidden, after H6/H7 are proven
-**What:** With both H6 (Daily Lesson) and H7 (Practice Gym) now proving the `Resource Bank Item → Learn Item/Activity Definition → Module Definition` module pipeline pattern end-to-end, the legacy bank/admin structures Phase G0's audit (`docs/architecture/bank-first-admin-backend-surface-audit.md`) already classified as superseded should be **removed**, not merely hidden behind admin-IA reorganization. This was explicitly not implemented in H7 — no legacy bank/admin structure was removed this phase.
-**Why:** Explicit product decision carried into H7's brief: hiding legacy structures indefinitely accumulates dead surface area and confuses future contributors about which content model is authoritative; once real usage proves the module pipeline, keeping the old structures live only as a safety net stops paying for itself. Sequencing needs a dedicated docs-only Plan-Sync-After-H7 first (to decide exactly what's now safe to remove and in what order), then **H8 — Content Studio/Admin IA cleanup and removal planning** (produces the removal plan), then **H9 — Legacy Bank Structure Removal and Consolidation** (executes it, destructive, needs its own explicit scoping/sign-off).
-**Context:** `docs/architecture/bank-first-admin-backend-surface-audit.md` (G0's existing classification); `docs/architecture/product-model-realignment-h0.md` §8 (H8/H9 rows); `docs/backlog/product-backlog.md` (H8/H9 entries).
-**Deferred from:** Phase H7, 2026-07-09.
+### ~~TODO-H7-1~~ — Legacy invalid bank/admin structures should be removed, not just hidden, after H6/H7 are proven — **DONE (strategy defined) in Plan-Sync-After-H7**
+**What:** With both H6 (Daily Lesson) and H7 (Practice Gym) now proving the `Resource Bank Item → Learn Item/Activity Definition → Module Definition` module pipeline pattern end-to-end, the legacy bank/admin structures Phase G0's audit (`docs/architecture/bank-first-admin-backend-surface-audit.md`) already classified as superseded should be **removed**, not merely hidden behind admin-IA reorganization.
+**Resolution:** Plan-Sync-After-H7 (2026-07-09, docs-only) produced the removal-risk audit and sequencing this TODO called for — see `docs/reviews/2026-07-09-plan-sync-after-h7-legacy-bank-removal-strategy.md`. Finding: almost every audited legacy structure is still core runtime infrastructure or a live fallback path, not yet safe to remove; only the redundant admin navigation for the four typed resource-bank pages is currently low-risk. Follow-on work is now tracked as `TODO-H8-1`/`TODO-H9-1`/`TODO-H10-1` below — this TODO's own scope (defining the strategy) is complete.
+**Context:** `docs/architecture/bank-first-admin-backend-surface-audit.md` (G0's existing classification); `docs/architecture/product-model-realignment-h0.md` §8 (H8/H9/H10 rows); `docs/backlog/product-backlog.md` (H8/H9/H10 entries).
+**Deferred from:** Phase H7, 2026-07-09. **Resolved:** Plan-Sync-After-H7, 2026-07-09.
+
+### TODO-H8-1 — Remove invalid/duplicate admin Content Bank surfaces after dependency audit
+**What:** The four typed admin resource-bank pages (`admin-resource-bank-vocabulary`,
+`-grammar`, `-reading-references`, `-reading-passages`) are still routed and still in the sidebar
+nav alongside the newer unified Resource Bank page (H1) — coexisting by design during the
+transition. H8 should remove or relocate this redundant admin *navigation* (e.g. under
+Advanced/Diagnostics) — not the underlying typed tables, their CRUD APIs, or their data, which
+Plan-Sync-After-H7's audit classified "do not remove." H8 should also sweep for any remaining
+pre-H-track admin labels/copy or "coming soon" placeholder generation actions already superseded
+by a live Learn/Activity/Module entry point.
+**Why:** Plan-Sync-After-H7's Step 0 audit (`docs/reviews/2026-07-09-plan-sync-after-h7-legacy-bank-removal-strategy.md`) found this is the only concrete, low-risk cleanup action currently identified — everything else audited is still a live runtime dependency. Confusing/duplicate admin nav is real cost even while the underlying tables must stay.
+**Context:** `src/LinguaCoach.Web/src/app/features/admin/admin-resource-bank-vocabulary/` (and sibling `-grammar`/`-reading-references`/`-reading-passages` folders); `app.routes.ts`; `admin-app-layout.component.html` (sidebar nav).
+**Deferred from:** Plan-Sync-After-H7, 2026-07-09.
+
+### TODO-H9-1 — Remove/consolidate legacy bank structures after safety/data audit
+**What:** H9 (the first genuinely destructive cleanup phase) should remove/consolidate legacy
+bank structures — but only after a fresh, per-item safety audit (dependency audit, data audit,
+migration strategy, compatibility strategy, rollback/backup notes, test coverage plan) re-run
+against whatever H8 and Phase F have retired by the time H9 starts. If physical
+`ResourceBankItem` consolidation (H0 §4 Option A, deferred at H0) is pursued, split into H9A
+(remove already-dead admin/API/code paths) / H9B (introduce the new table, additive) / H9C
+(migrate typed tables behind it) / H9D (remove old typed tables only after verification).
+**Why:** Plan-Sync-After-H7's audit found **no current structure is yet a proven-safe H9
+candidate** — the Cefr* bank entities, import-staging pipeline, `ActivityTemplate`,
+`LearningActivity`/`LearningSession`/`SessionExercise`/`LearningModule`, `PracticeActivityCache`,
+`StudentActivityReadinessItem`, and both Today/Practice Gym legacy AI-generation fallbacks are
+all still live runtime dependencies. H9 must not act on that snapshot directly — it needs its own
+re-audit at kickoff.
+**Context:** `docs/reviews/2026-07-09-plan-sync-after-h7-legacy-bank-removal-strategy.md` (Step 0
+audit table); `docs/architecture/product-model-realignment-h0.md` §4 (Option A/B) and §8 (H9 row).
+**Deferred from:** Plan-Sync-After-H7, 2026-07-09.
+
+### TODO-H10-1 — Decide/build ActivityDefinition runtime launch path or bridge
+**What:** H7 shipped Practice Gym module suggestions as **display-only** — there is no launch
+path, because `ActivityDefinition` (H4) has no attempt/scoring runtime anywhere in the codebase.
+`ActivityTemplate` remains the only path that actually launches a scored Form.io pilot activity
+today. H10 must decide one of: (A) build a real `ActivityDefinition` attempt/scoring runtime from
+scratch, (B) bridge `ActivityDefinition` into the existing `LearningActivity`/`ActivityTemplate`
+materialization path, or (C) hybrid — bridge first, full runtime later.
+**Why:** This decision must happen **before** H9 could ever remove `ActivityTemplate` or its
+dependent Practice Gym launch/scoring infrastructure — doing so prematurely would leave Practice
+Gym with no way to launch scored practice at all. Explicitly flagged as a known limitation in
+H7's own review (`docs/reviews/2026-07-09-phase-h7-practice-gym-module-pipeline-review.md`,
+Risks section) and carried forward by Plan-Sync-After-H7.
+**Context:** `src/LinguaCoach.Domain/Entities/ActivityDefinition.cs` (H4, no attempt/scoring
+wiring); `src/LinguaCoach.Domain/Entities/ActivityTemplate.cs` (live Form.io pilot);
+`PracticeGymGenerationJob.TemplateMigratedPatternKeys` (the only current launch path).
+**Deferred from:** Plan-Sync-After-H7, 2026-07-09.

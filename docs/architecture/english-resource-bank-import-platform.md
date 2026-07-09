@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H5)
+lastUpdated: 2026-07-09 (Plan-Sync-After-H7)
 owner: architecture
 supersedes:
 supersededBy:
@@ -57,6 +57,19 @@ from them — it never queries the four typed published tables directly, only th
 link tables. Read-only against this platform's tables — no writes, no change to any E1-E9 pipeline
 code. See `docs/architecture/product-model-realignment-h0.md` and `docs/roadmap/road-map.md`
 §1/Decision Log for full H5 detail.
+
+**Plan-Sync-After-H7 (2026-07-09, docs-only)** audited this platform's staging pipeline
+(`ResourceImportRun`/`ResourceRawRecord`/`ResourceCandidate`, `ResourceBankQueryService`,
+`UnifiedResourceBankItemDto`) as part of a broader legacy-structure removal-risk classification.
+**Finding: this pipeline is still the only path by which any content — including H2's Import
+Content UX — becomes a published Resource Bank row, and `ResourceBankQueryService` is still the
+only unified admin read model over the four typed tables (no physical `ResourceBankItem` table
+exists; Option B from §4 remains deliberately deferred, not superseded).** Classified **do not
+remove** — none of this platform's staging entities or services are candidates for H8 (safe
+admin/nav cleanup only) or H9 (destructive removal) without much stronger proof of an unused
+path than currently exists. See
+`docs/reviews/2026-07-09-plan-sync-after-h7-legacy-bank-removal-strategy.md` for the full
+classification.
 
 **Date planned:** 2026-07-08 (Plan-Sync-After-C1), **finalized:** 2026-07-08 (Phase E0),
 **E1 implemented:** 2026-07-08, **E2 implemented:** 2026-07-08, **E3 implemented:** 2026-07-08,

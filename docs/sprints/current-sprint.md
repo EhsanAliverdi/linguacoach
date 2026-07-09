@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H7)
+lastUpdated: 2026-07-09 (Plan-Sync-After-H7)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,40 @@ Last updated: 2026-07-09
 ---
 
 ## Active sprint
+
+**Plan-Sync-After-H7 — Legacy Bank Removal Strategy (2026-07-09)** — complete, docs-only
+
+Following H7 (Practice Gym Module Pipeline), this planning phase confirmed H6/H7 are both
+additive and fallback-safe, recorded the cleanup direction — **legacy invalid bank/admin
+structures should be removed, not merely hidden** — and audited every legacy structure by
+removal risk (Cefr* bank entities, resource-import staging, `ActivityTemplate`,
+`LearningActivity`/`LearningSession`/`SessionExercise`/`LearningModule`, `PracticeActivityCache`,
+`StudentActivityReadinessItem`, Today/Practice Gym legacy AI-generation fallbacks, old typed
+admin resource pages, legacy generation admin pages).
+
+**Finding: almost everything old is still core runtime infrastructure or a live fallback path —
+nothing is yet a proven-safe destructive-removal candidate.** The only concrete low-risk action
+found is trimming the redundant admin *navigation* for the four typed resource-bank pages (not
+their tables/APIs/data) — an H8 job.
+
+Defines three new future phases (**not implemented this phase**):
+
+- **H8 — Content Studio/Admin IA Cleanup and Removal Readiness** — safe UI/nav cleanup only, no
+  table/API deletion.
+- **H9 — Legacy Bank Structure Removal and Consolidation** — the first genuinely destructive
+  cleanup phase, gated on a per-item safety audit; may split into H9A-H9D if physical
+  `ResourceBankItem` consolidation is pursued.
+- **H10 — ActivityDefinition Runtime Launch Path / Attempt Bridge** — must resolve before H9
+  could ever remove `ActivityTemplate`, since it remains the only path that launches a scored
+  Form.io pilot activity (H7's Practice Gym module suggestions are display-only with no launch
+  path yet).
+
+**No application code, migration, table, entity, API, or UI page changed this phase.** See
+`docs/reviews/2026-07-09-plan-sync-after-h7-legacy-bank-removal-strategy.md` for full detail.
+
+---
+
+## Earlier sprint (H7)
 
 **Phase H7 — Practice Gym Module Pipeline (2026-07-09)** — complete
 

@@ -68,6 +68,17 @@ supersededBy:
 > `docs/architecture/product-model-realignment-h0.md` and
 > `docs/reviews/2026-07-09-phase-h7-practice-gym-module-pipeline-review.md` for the full H7
 > detail.
+>
+> **Plan-Sync-After-H7 note (2026-07-09, docs-only):** a legacy-structure audit confirmed every
+> entity/service/job this document describes — `LearningActivity`/`LearningSession`/
+> `SessionExercise`/`LearningModule`, `ActivityMaterializationJob`, `LessonBatchGenerationJob`,
+> `PracticeGymGenerationJob`, `ActivityTemplate`, `PracticeActivityCache`,
+> `StudentActivityReadinessItem` — is still live core runtime infrastructure, not a legacy
+> structure superseded by the H-track's content-studio model. None of it is a candidate for
+> removal in the upcoming H8 (admin/nav cleanup only) or even H9 (destructive cleanup) without
+> further proof. `ActivityTemplate` in particular cannot be removed until H10 decides how
+> `ActivityDefinition` gets a real launch/attempt path — see
+> `docs/reviews/2026-07-09-plan-sync-after-h7-legacy-bank-removal-strategy.md`.
 
 ## Why `LearningActivity` is the Centre of the Product
 

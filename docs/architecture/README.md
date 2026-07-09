@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H7)
+lastUpdated: 2026-07-09 (Plan-Sync-After-H7)
 owner: architecture
 supersedes:
 supersededBy:
@@ -470,12 +470,29 @@ the admin student-detail page, mirroring H6's. +26 unit, +14 integration tests
 custom module creation, no Module attempts, no module scoring, no mastery updates from Modules,
 no `ActivityTemplate`/`LearningActivity`/`LearningSession`/`PracticeActivityCache` replacement, no
 readiness/delivery-queue change, no Today/Practice Gym fallback removed, no legacy bank removal.
-**Cleanup direction decided (not scheduled):** legacy invalid bank/admin structures should be
-removed, not hidden, once H6/H7 are proven — see the new H8/H9 roadmap entries and `TODOS.md`
-(`TODO-H7-1`). **Recommended next: a docs-only Plan-Sync-After-H7**, to sequence H8/H9 against
-the still-open PG-v2 track. See `docs/architecture/product-model-realignment-h0.md`,
+See `docs/architecture/product-model-realignment-h0.md`,
 `docs/reviews/2026-07-09-phase-h7-practice-gym-module-pipeline-review.md`, and
 `docs/roadmap/road-map.md` §1, Decision Log, and §19a.
+
+**Plan-Sync-After-H7 (2026-07-09, docs-only)** — Legacy Bank Removal Strategy. Confirmed H6/H7
+are additive and fallback-safe; recorded the user's clarified cleanup direction — legacy invalid
+bank/admin structures should be **removed, not merely hidden**. A full Step 0 audit classified
+every pre-H-track structure (Cefr* bank entities, resource-import staging,
+`ResourceBankQueryService`, `ActivityTemplate`,
+`LearningActivity`/`LearningSession`/`SessionExercise`/`LearningModule`, `PracticeActivityCache`,
+`StudentActivityReadinessItem`, `PracticeGymSuggestionService`/`PracticeGymPoolService`, the
+Today/Practice Gym legacy AI-generation fallbacks, the four typed admin resource-bank pages,
+`admin-lessons.component.ts`) by removal risk. **Finding: almost every structure is still core
+runtime infrastructure or a live fallback path — nothing is yet a proven-safe removal candidate.**
+The only concrete low-risk action found is trimming redundant admin *navigation* for the four
+typed resource-bank pages (not their tables/APIs/data). Defined three new phases, **scope only,
+not implemented**: H8 (Content Studio/Admin IA Cleanup and Removal Readiness — safe UI/nav
+cleanup), H9 (Legacy Bank Structure Removal and Consolidation — the first genuinely destructive
+phase, gated on a per-item safety audit; may split into H9A-H9D), and H10 (ActivityDefinition
+Runtime Launch Path / Attempt Bridge — must resolve before H9 could ever remove
+`ActivityTemplate`). No application code, migration, table, entity, API, or UI page changed.
+**Recommended next: H8**, followed by an H10 decision before H9 could touch `ActivityTemplate`.
+See `docs/reviews/2026-07-09-plan-sync-after-h7-legacy-bank-removal-strategy.md`.
 
 ---
 

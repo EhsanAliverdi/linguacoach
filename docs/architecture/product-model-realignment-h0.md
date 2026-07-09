@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H7)
+lastUpdated: 2026-07-09 (Plan-Sync-After-H7)
 owner: product
 supersedes:
 supersededBy:
@@ -211,12 +211,32 @@ updates from Modules, no `ActivityTemplate`/`LearningActivity`/`LearningSession`
 `PracticeActivityCache` replacement, no readiness-pool/delivery-queue deletion, no
 Today/Practice-Gym fallback removed, no legacy bank/admin structure removal. Full detail:
 `docs/roadmap/road-map.md` §1, and
-`docs/reviews/2026-07-09-phase-h7-practice-gym-module-pipeline-review.md`. **Cleanup direction
-decided (not yet scheduled):** once H6/H7 are proven in real use, legacy invalid bank/admin
-structures should be **removed, not merely hidden** — see the new H8/H9 rows in §8 below and
-`TODOS.md` (`TODO-H7-1`). **Recommended next implementation phase: a docs-only
-Plan-Sync-After-H7**, to sequence H8 (Content Studio/Admin IA cleanup and removal planning) and
-H9 (Legacy Bank Structure Removal and Consolidation) against the still-open PG-v2 track.
+`docs/reviews/2026-07-09-phase-h7-practice-gym-module-pipeline-review.md`.
+
+**Plan-Sync-After-H7, 2026-07-09. Docs-only, complete.** Following H7, this planning phase
+confirmed H6/H7 are both additive and fallback-safe (neither replaced any existing runtime path)
+and recorded the user's clarified cleanup direction: legacy invalid bank/admin structures should
+be **removed, not merely hidden**. A full Step 0 audit classified every pre-H-track structure —
+Cefr* bank entities, `ResourceImportRun`/`ResourceRawRecord`/`ResourceCandidate`,
+`ResourceBankQueryService`/`UnifiedResourceBankItemDto`, `ActivityTemplate`,
+`LearningActivity`/`LearningSession`/`SessionExercise`/`LearningModule`, `PracticeActivityCache`,
+`StudentActivityReadinessItem`, `PracticeGymSuggestionService`/`PracticeGymPoolService`,
+`ActivityMaterializationJob`/`LessonBatchGenerationJob`/`PracticeGymGenerationJob`, the Today and
+Practice Gym legacy AI-generation fallbacks, the four typed admin resource-bank pages, and
+`admin-lessons.component.ts` — by removal risk. **Finding: almost every audited structure is
+still either core runtime infrastructure the live Today/Practice Gym pipelines actively depend
+on, or a live legacy AI-generation fallback still covering content the bank-first/module-first
+paths can't yet serve — nothing is yet a proven-safe H9-style removal candidate.** The only
+concrete, low-risk action identified is trimming the redundant admin *navigation* for the four
+typed resource-bank pages (not their tables, APIs, or data) — an H8 job. Defined three new future
+phases (**scope only, not implemented**): H8 (Content Studio/Admin IA Cleanup and Removal
+Readiness — safe UI/nav cleanup), H9 (Legacy Bank Structure Removal and Consolidation — the first
+genuinely destructive phase, gated on a per-item safety audit; may split into H9A-H9D for
+physical `ResourceBankItem` consolidation), and H10 (ActivityDefinition Runtime Launch Path /
+Attempt Bridge — must resolve before H9 could ever remove `ActivityTemplate`, since it remains
+the only path that launches a scored Form.io pilot activity). No application code, migration,
+table, entity, API, or UI page changed. Full detail:
+`docs/reviews/2026-07-09-plan-sync-after-h7-legacy-bank-removal-strategy.md`.
 
 ---
 
@@ -530,8 +550,9 @@ pages exist to populate "Content Studio." Not implemented in H0.
 | **H5 — Module Foundation** `Done (2026-07-09)` | New `ModuleDefinition`/`ModuleDefinitionLearnItemLink`/`ModuleDefinitionActivityLink` entities (additive-only migration, three new tables), deliberately separate from runtime `LearningModule`; `ModuleDefinition` = Learn Item(s) + Activity Definition(s) + module-level Feedback Plan; deterministic (no AI) generation from selected items, a Resource Bank row, a Learn Item, or an Activity Definition — every entry point requires Approved sources; approval lifecycle; objective/CEFR/skill/subskill/context/focus/difficulty/estimated-minutes metadata. | H3, H4 |
 | **H6 — Daily Lesson Module Pipeline** `Done (2026-07-09)` | Deterministic, read-only `IDailyLessonModuleSelectionService` selects an Approved Module (with an Approved Learn Item and Approved Activity Definition) for Today, attached additively as an optional `TodaysSessionResult.ModuleSection`; existing session generation and Today legacy fallback unchanged; new additive `StudentDailyModuleAssignment` bookkeeping table for a 14-day reuse guard and admin diagnostics. | H5 |
 | **H7 — Practice Gym Module Pipeline** `Done (2026-07-09)` | Deterministic, read-only `IPracticeGymModuleSelectionService` suggests Approved Modules (with Approved linked Learn Item/Activity Definition) for Practice Gym, attached additively as an optional `PracticeGymSuggestionsDto.ModuleSuggestions`; adds self-directed skill/subskill/objective/difficulty/weakness-signal preferences on top of H6's shape; no student "start" flow yet (display-only). | H6 |
-| **H8 — Content Studio/Admin IA cleanup and removal planning** `Planned` | Audit which legacy bank/admin structures are now superseded by the Learn Item/Activity Definition/Module Definition content studio; move technical pages under Advanced/Diagnostics; produce a removal plan (not the removal itself) for H9. Requires a docs-only Plan-Sync-After-H7 first. | H1–H7 substantially landed |
-| **H9 — Legacy Bank Structure Removal and Consolidation** `Planned` | Execute H8's removal plan: actually remove (not merely hide) superseded legacy bank/admin structures once H6/H7 module pipelines are proven in real use. Destructive; requires its own explicit scoping/sign-off, same discipline as Phase F/G2/G3. | H8 |
+| **H8 — Content Studio/Admin IA Cleanup and Removal Readiness** `Planned` | Safe UI/nav cleanup only — no table/API deletion. Remove/relocate admin nav entries that duplicate the Content Studio surface (starting with the four typed resource-bank pages, moved under Advanced/Diagnostics, per Plan-Sync-After-H7's audit); remove obsolete pre-H-track labels/copy and any remaining superseded "coming soon" placeholder actions; remove UI components/routes only where proven to have no active backend/runtime dependency. Must not touch Today/Practice Gym fallbacks, `ActivityTemplate`, `PracticeActivityCache`, the readiness queue, or the `LearningActivity`/`LearningSession`/`SessionExercise`/`LearningModule` runtime. | H1–H7 substantially landed, Plan-Sync-After-H7 |
+| **H9 — Legacy Bank Structure Removal and Consolidation** `Planned` | The first genuinely destructive cleanup phase — gated on a per-item safety audit (dependency audit, data audit, migration strategy, compatibility strategy, rollback/backup notes, test coverage plan) re-run against whatever H8/Phase F have retired by then; Plan-Sync-After-H7's own audit found nothing yet proven safe this way. If physical `ResourceBankItem` consolidation (§4 Option A, deferred at H0) is pursued, split into H9A (remove already-dead admin/API/code paths) / H9B (introduce the new table, additive) / H9C (migrate typed tables behind it) / H9D (remove old typed tables only after verification). | H8 |
+| **H10 — ActivityDefinition Runtime Launch Path / Attempt Bridge** `Planned` | Resolve H7's known limitation — Practice Gym module suggestions are display-only; `ActivityDefinition` has no attempt/scoring runtime; `ActivityTemplate` remains the only path that launches a scored Form.io pilot activity — before H9 could ever remove `ActivityTemplate`. Decide: (A) build a real `ActivityDefinition` attempt/scoring runtime, (B) bridge `ActivityDefinition` into the existing `LearningActivity`/`ActivityTemplate` materialization path, or (C) hybrid — bridge first, full runtime later. | H7 |
 
 **Not scheduled by this phase:** destructive cleanup of any kind. Phase F (legacy generation
 retirement), G2/G3 (backend/diagnostics cleanup), and PG-v2 (skill-first Activity selector)
@@ -588,9 +609,17 @@ suggestions; existing readiness-pool suggestion logic (both entry points) and To
 unchanged; no student "start" flow yet (display-only). See `docs/roadmap/road-map.md` §1 and
 `docs/reviews/2026-07-09-phase-h7-practice-gym-module-pipeline-review.md` for full detail.
 
-**Recommended next: a docs-only Plan-Sync-After-H7**, to sequence H8 (Content Studio/Admin IA
-cleanup and removal planning) and H9 (Legacy Bank Structure Removal and Consolidation) against
-the still-open PG-v2 track. Not resolved by this phase.
+**Plan-Sync-After-H7 — Legacy Bank Removal Strategy — done (2026-07-09, docs-only).** Confirmed
+H6/H7 are additive and fallback-safe; audited every pre-H-track legacy structure by removal risk
+(finding almost everything is still core runtime infrastructure or a live fallback — nothing yet
+proven safe to remove); defined H8/H9/H10 scope without implementing any of them. See
+`docs/roadmap/road-map.md` §1 and
+`docs/reviews/2026-07-09-plan-sync-after-h7-legacy-bank-removal-strategy.md` for full detail.
+
+**Recommended next: H8 — Content Studio/Admin IA Cleanup and Removal Readiness** (safe UI/nav
+cleanup only), followed by a decision on H10 (ActivityDefinition Runtime Launch Path) before H9
+could ever touch `ActivityTemplate`. The PG-v2 track remains a separate, still-open decision not
+resolved by this phase.
 
 ---
 

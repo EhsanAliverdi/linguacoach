@@ -26,7 +26,29 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest phase completed (local, not yet deployed):** Phase H7 —
+**Latest work completed (local, not yet deployed):** Plan-Sync-After-H7 — Legacy Bank Removal
+Strategy (2026-07-09, docs-only). Following H7 (Practice Gym Module Pipeline), this planning
+phase confirmed H6/H7 are both additive and fallback-safe, recorded the user's clarified cleanup
+direction — **legacy invalid bank/admin structures should be removed, not merely hidden** — and
+classified every audited legacy structure (Cefr* bank entities, resource-import staging,
+`ActivityTemplate`, `LearningActivity`/`LearningSession`/`SessionExercise`/`LearningModule`,
+`PracticeActivityCache`, `StudentActivityReadinessItem`, Today/Practice Gym legacy AI-generation
+fallbacks, old typed admin resource pages, legacy generation admin pages) by removal risk.
+**Finding: almost everything old is still either core runtime infrastructure or a live fallback
+path — no structure is yet a proven-safe destructive-removal candidate.** The only concrete,
+low-risk action identified is trimming the redundant admin *navigation* for the four typed
+resource-bank pages (not their tables/APIs) — an H8 job. Defines three new future phases without
+implementing any of them: **H8 — Content Studio/Admin IA Cleanup and Removal Readiness** (safe
+UI/nav cleanup only, no table/API deletion), **H9 — Legacy Bank Structure Removal and
+Consolidation** (the first genuinely destructive cleanup phase, gated on a per-item safety audit;
+may split into H9A-H9D if physical `ResourceBankItem` consolidation is pursued), and **H10 —
+ActivityDefinition Runtime Launch Path / Attempt Bridge** (must resolve before H9 could ever
+remove `ActivityTemplate`, since it remains the only path that launches a scored Form.io pilot
+activity — H7's Practice Gym module suggestions are display-only with no launch path yet).
+**No application code, migration, table, entity, API, or UI page changed.** Full detail:
+`docs/reviews/2026-07-09-plan-sync-after-h7-legacy-bank-removal-strategy.md`.
+
+**Previous phase completed (local, not yet deployed):** Phase H7 —
 Practice Gym Module Pipeline (2026-07-09). Second runtime consumer of `ModuleDefinition`, after
 H6's Daily Lesson pipeline. New `IPracticeGymModuleSelectionService.SelectAsync` — deterministic
 (no AI call), pure/read-only — selects approved `ModuleDefinition` records with at least one

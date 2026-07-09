@@ -14,7 +14,7 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
 
 ---
 
-## Product Model Realignment — Phase H0-H9 `H0-H7 Done, H8-H9 Planned` (2026-07-09)
+## Product Model Realignment — Phase H0-H10 `H0-H7 Done, Plan-Sync-After-H7 Done, H8-H10 Planned` (2026-07-09)
 
 **Phase H0 (docs-only, done 2026-07-09)** defined the intended product model — `Resource Bank Item
 → Learn Item/Activity → Module → Daily Lesson/Practice Gym → Attempt → Feedback + Rating →
@@ -94,14 +94,41 @@ E1-E10/D1-D6 substrate, and G2/G3/PG-v2 remain valid, separately-scoped tracks.
   `docs/reviews/2026-07-09-phase-h7-practice-gym-module-pipeline-review.md`.
   `TODO-H7-1`: legacy invalid bank/admin structures should be removed (not hidden) once H6/H7 are
   proven — via a Plan-Sync-After-H7 checkpoint, then H8/H9 below.
-- [ ] **Phase H8 — Content Studio/Admin IA cleanup and removal planning** `Planned` — audit which
-  legacy bank/admin structures are now superseded by the Learn Item/Activity Definition/Module
-  Definition content studio; move technical pages under Advanced/Diagnostics; produce a removal
-  plan (not the removal itself) for H9. Requires a docs-only Plan-Sync-After-H7 first.
-- [ ] **Phase H9 — Legacy Bank Structure Removal and Consolidation** `Planned` — execute H8's
-  removal plan: actually remove (not merely hide) superseded legacy bank/admin structures once
-  the H6/H7 module pipelines are proven in real use. Destructive; requires its own explicit
-  scoping and sign-off, same discipline as Phase F/G2/G3.
+- [x] **Plan-Sync-After-H7 — Legacy Bank Removal Strategy** `Done` (2026-07-09, docs-only) —
+  confirmed H6/H7 are additive and fallback-safe; audited every pre-H-track legacy structure
+  (Cefr* bank entities, resource-import staging, `ActivityTemplate`,
+  `LearningActivity`/`LearningSession`/`SessionExercise`/`LearningModule`,
+  `PracticeActivityCache`, `StudentActivityReadinessItem`, Today/Practice Gym legacy
+  AI-generation fallbacks, old typed admin resource pages, legacy generation admin pages) by
+  removal risk — finding almost everything old is still core runtime infrastructure or a live
+  fallback path, with only redundant admin *navigation* for the four typed resource-bank pages
+  currently safe to touch (no table/API/data change). Defined H8/H9/H10 scope (not implemented).
+  No application code, migration, table, entity, API, or UI page changed. See
+  `docs/reviews/2026-07-09-plan-sync-after-h7-legacy-bank-removal-strategy.md`.
+- [ ] **Phase H8 — Content Studio/Admin IA Cleanup and Removal Readiness** `Planned` — remove or
+  relocate admin nav entries that duplicate the unified Content Studio surface (starting with the
+  four typed resource-bank pages, moved under Advanced/Diagnostics — not their tables/APIs);
+  remove obsolete pre-H-track admin labels/copy and any remaining placeholder generation actions
+  already superseded by a live Learn/Activity/Module entry point; remove UI components/routes
+  only where proven to have no active backend/runtime dependency. Must not remove Today/Practice
+  Gym fallbacks, `ActivityTemplate`, `PracticeActivityCache`, the readiness queue, the
+  `LearningActivity`/`LearningSession`/`SessionExercise`/`LearningModule` runtime, or any
+  import-staging table. No backend table removal in H8.
+- [ ] **Phase H9 — Legacy Bank Structure Removal and Consolidation** `Planned` — the first
+  genuinely destructive cleanup phase, gated on a per-item safety audit (dependency audit, data
+  audit, migration strategy, compatibility strategy, rollback/backup notes, test coverage plan)
+  re-run against whatever H8/Phase F have retired by the time it starts — Plan-Sync-After-H7's
+  own audit found nothing yet proven safe to remove this way. If physical `ResourceBankItem`
+  consolidation (H0 Option A, deferred at H0) is pursued, split into H9A (remove already-dead
+  admin/API/code paths) / H9B (introduce the new table, additive) / H9C (migrate typed tables
+  behind it) / H9D (remove old typed tables only after verification).
+- [ ] **Phase H10 — ActivityDefinition Runtime Launch Path / Attempt Bridge** `Planned` — resolve
+  H7's known limitation (Practice Gym module suggestions are display-only; `ActivityDefinition`
+  has no attempt/scoring runtime; `ActivityTemplate` remains the only path that launches a scored
+  Form.io pilot activity) before H9 could ever remove `ActivityTemplate`. Decide: (A) build a
+  real `ActivityDefinition` attempt/scoring runtime, (B) bridge `ActivityDefinition` into the
+  existing `LearningActivity`/`ActivityTemplate` materialization path, or (C) hybrid — bridge
+  first, full runtime later.
 
 ---
 
