@@ -414,11 +414,12 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
         return new UnifiedResourceBankListResult(paged, totalCount);
     }
 
-    /// <summary>Phase H3/H4 — populates <see cref="UnifiedResourceBankItemDto.LinkedLearnCount"/>
-    /// from <c>LearnItemResourceLink</c> and <see cref="UnifiedResourceBankItemDto.LinkedActivityCount"/>
-    /// from <c>ActivityResourceLink</c> (0 when nothing references the row, never null once this
-    /// runs). <see cref="UnifiedResourceBankItemDto.LinkedModuleCount"/> stays null — Module doesn't
-    /// exist yet (H5).</summary>
+    /// <summary>Phase H3/H4/H5 — populates <see cref="UnifiedResourceBankItemDto.LinkedLearnCount"/>
+    /// from <c>LearnItemResourceLink</c>, <see cref="UnifiedResourceBankItemDto.LinkedActivityCount"/>
+    /// from <c>ActivityResourceLink</c>, and <see cref="UnifiedResourceBankItemDto.LinkedModuleCount"/>
+    /// from the distinct set of Modules reachable via either link chain (resource → Learn Item →
+    /// Module, or resource → Activity → Module) — 0 when nothing references the row, never null
+    /// once this runs.</summary>
     private async Task<List<UnifiedResourceBankItemDto>> WithLinkedCountsAsync(
         List<UnifiedResourceBankItemDto> items, CancellationToken ct)
     {
@@ -436,6 +437,23 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
             .Select(g => new { g.Key.ResourceType, g.Key.ResourceId, Count = g.Select(l => l.ActivityDefinitionId).Distinct().Count() })
             .ToListAsync(ct);
 
+        var moduleViaLearnItem = await
+            (from rl in _db.LearnItemResourceLinks
+             where ids.Contains(rl.ResourceId)
+             join ml in _db.ModuleDefinitionLearnItemLinks on rl.LearnItemId equals ml.LearnItemId
+             select new { rl.ResourceType, rl.ResourceId, ml.ModuleDefinitionId })
+            .ToListAsync(ct);
+        var moduleViaActivity = await
+            (from rl in _db.ActivityResourceLinks
+             where ids.Contains(rl.ResourceId)
+             join ml in _db.ModuleDefinitionActivityLinks on rl.ActivityDefinitionId equals ml.ActivityDefinitionId
+             select new { rl.ResourceType, rl.ResourceId, ml.ModuleDefinitionId })
+            .ToListAsync(ct);
+        var moduleCounts = moduleViaLearnItem.Concat(moduleViaActivity)
+            .GroupBy(x => new { x.ResourceType, x.ResourceId })
+            .Select(g => new { g.Key.ResourceType, g.Key.ResourceId, Count = g.Select(x => x.ModuleDefinitionId).Distinct().Count() })
+            .ToList();
+
         return items
             .Select(i => i with
             {
@@ -444,6 +462,10 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
                     .Select(c => (int?)c.Count)
                     .FirstOrDefault() ?? 0,
                 LinkedActivityCount = activityCounts
+                    .Where(c => c.ResourceId == i.Id && MatchesUnifiedType(c.ResourceType, i.Type))
+                    .Select(c => (int?)c.Count)
+                    .FirstOrDefault() ?? 0,
+                LinkedModuleCount = moduleCounts
                     .Where(c => c.ResourceId == i.Id && MatchesUnifiedType(c.ResourceType, i.Type))
                     .Select(c => (int?)c.Count)
                     .FirstOrDefault() ?? 0,

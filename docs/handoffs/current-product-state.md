@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H4)
+lastUpdated: 2026-07-09 (Phase H5)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,42 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-09 (Phase H4)
+Last updated: 2026-07-09 (Phase H5)
+
+## Module Foundation (Phase H5, 2026-07-09)
+
+The top of `Resource Bank Item → Learn Item/Activity Definition → Module Definition` now exists.
+A Module is a reusable, reviewable learning unit combining one or more Learn Items and Activity
+Definitions plus a module-level feedback plan (title, description, objective key, CEFR/skill/
+subskill/context/focus/difficulty/estimated-minutes metadata). **This is a new, separate entity
+from the existing runtime `LearningModule`** (a per-student thematic group of activities within a
+`LearningPath`) — Module Definition is not wired into any runtime selection/delivery path this
+phase.
+
+Admins can open `/admin/modules` ("Modules", added to the Content Banks nav right after
+Activities) to browse/filter/review Modules, or generate one from: a Resource Bank row (the
+now-live "Generate Module" row action on `/admin/resource-bank` — only succeeds when an already
+**approved** Learn Item and an already **approved** Activity Definition are both linked to that
+resource), a Learn Item (a "Generate Module" button on its detail drawer, finding compatible
+approved Activities), or an Activity (the same button on its drawer, finding compatible approved
+Learn Items), or by explicitly selecting a Learn Item id + Activity Definition id in the Modules
+page's own generate modal. Generation is **deterministic** — no AI provider call, same reasoning
+as Learn Item/Activity generation — and composes only existing, already-approved content; it never
+cascade-generates a new Learn Item or Activity. A draft/pending source is rejected with a clear
+message naming what to approve first. Every Module starts pending review; only an explicit admin
+Approve/Reject changes that, and editing an approved Module is blocked (reject first to reopen).
+**Additive-only migration** (three new tables, no change to any existing table, including runtime
+`LearningModule`'s own) — no physical `ResourceBankItem` consolidation, no student assignment, no
+Module attempts, no Daily Lesson/Practice Gym pipeline wiring.
+
++38 backend tests (3,822 total: 27 unit, 11 integration). No H6/H7/PG-v2 started. No external
+datasets, no Persian/bilingual content, no direct final-table seeding. Today/Practice Gym legacy
+fallback and the readiness/delivery queue are unchanged. Full detail:
+`docs/architecture/product-model-realignment-h0.md` and
+`docs/reviews/2026-07-09-phase-h5-module-foundation-review.md`; roadmap:
+`docs/roadmap/road-map.md` §1, Decision Log (Phase H5 entry), §19a item 20m.
+
+---
 
 ## Activity Foundation with Form.io (Phase H4, 2026-07-09)
 

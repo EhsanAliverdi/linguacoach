@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H4)
+lastUpdated: 2026-07-09 (Phase H5)
 owner: architecture
 supersedes:
 supersededBy:
@@ -48,6 +48,15 @@ linked resources for the "generate from Learn Item" path). Same forward-traceabi
 platform's tables — no writes, no change to any E1-E9 pipeline code. See
 `docs/architecture/product-model-realignment-h0.md` and `docs/roadmap/road-map.md` §1/Decision Log
 for full H4 detail.
+
+**Phase H5 (2026-07-09)** added `ModuleGenerationService.HandleAsync(GenerateModuleFromResourceRequest)`
+as a third, resource-indirect consumer: given a `(ResourceType, ResourceId)` pair it finds an
+existing Approved `LearnItem` and an existing Approved `ActivityDefinition` both already linked to
+that resource (via `LearnItemResourceLink`/`ActivityResourceLink`) and composes a `ModuleDefinition`
+from them — it never queries the four typed published tables directly, only through the H3/H4
+link tables. Read-only against this platform's tables — no writes, no change to any E1-E9 pipeline
+code. See `docs/architecture/product-model-realignment-h0.md` and `docs/roadmap/road-map.md`
+§1/Decision Log for full H5 detail.
 
 **Date planned:** 2026-07-08 (Plan-Sync-After-C1), **finalized:** 2026-07-08 (Phase E0),
 **E1 implemented:** 2026-07-08, **E2 implemented:** 2026-07-08, **E3 implemented:** 2026-07-08,

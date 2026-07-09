@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AdminLearnItemService } from '../../../core/services/admin-learn-item.service';
 import { AdminActivityDefinitionService } from '../../../core/services/admin-activity-definition.service';
+import { AdminModuleDefinitionService } from '../../../core/services/admin-module-definition.service';
 import {
   LearnItemDto,
   LEARN_ITEM_REVIEW_STATUSES,
@@ -100,11 +101,15 @@ export class AdminLearnItemsComponent implements OnInit {
 
   // ── Phase H4 — Generate Activity from this Learn Item ──────────────────
   generatingActivity = signal(false);
-  lastActionWasGenerateActivity = signal(false);
+  lastActionKind = signal<'activity' | 'module' | null>(null);
+
+  // ── Phase H5 — Generate Module from this Learn Item ─────────────────────
+  generatingModule = signal(false);
 
   constructor(
     private learnItemSvc: AdminLearnItemService,
     private activitySvc: AdminActivityDefinitionService,
+    private moduleSvc: AdminModuleDefinitionService,
     private route: ActivatedRoute,
     private router: Router,
   ) {}
@@ -208,7 +213,7 @@ export class AdminLearnItemsComponent implements OnInit {
     this.learnItemSvc.approve(item.id).subscribe({
       next: updated => {
         this.approving.set(false);
-        this.lastActionWasGenerateActivity.set(false);
+        this.lastActionKind.set(null);
         this.detail.set(updated);
         this.actionSuccess.set('Learn Item approved.');
         this.loadAll();
@@ -229,7 +234,7 @@ export class AdminLearnItemsComponent implements OnInit {
     this.learnItemSvc.reject(item.id, this.rejectReasonDraft.trim()).subscribe({
       next: updated => {
         this.rejecting.set(false);
-        this.lastActionWasGenerateActivity.set(false);
+        this.lastActionKind.set(null);
         this.detail.set(updated);
         this.actionSuccess.set('Learn Item rejected.');
         this.loadAll();
@@ -249,7 +254,7 @@ export class AdminLearnItemsComponent implements OnInit {
     this.activitySvc.generateFromLearnItem({ learnItemId: item.id }).subscribe({
       next: () => {
         this.generatingActivity.set(false);
-        this.lastActionWasGenerateActivity.set(true);
+        this.lastActionKind.set('activity');
         this.actionSuccess.set('Activity draft generated from this Learn Item — pending review.');
       },
       error: err => {
@@ -261,5 +266,30 @@ export class AdminLearnItemsComponent implements OnInit {
 
   goToActivities(): void {
     this.router.navigateByUrl('/admin/activities');
+  }
+
+  /** Phase H5 — generates a Module from this (approved) Learn Item's compatible approved
+   *  Activity Definition(s). Rejected with a clear message if the Learn Item itself isn't
+   *  approved yet, or no compatible approved Activity exists. */
+  generateModule(): void {
+    const item = this.detail();
+    if (!item) return;
+    this.generatingModule.set(true);
+    this.actionError.set('');
+    this.moduleSvc.generateFromLearnItem({ learnItemId: item.id }).subscribe({
+      next: () => {
+        this.generatingModule.set(false);
+        this.lastActionKind.set('module');
+        this.actionSuccess.set('Module draft generated from this Learn Item — pending review.');
+      },
+      error: err => {
+        this.generatingModule.set(false);
+        this.actionError.set(err.error?.error ?? 'Could not generate a Module.');
+      },
+    });
+  }
+
+  goToModules(): void {
+    this.router.navigateByUrl('/admin/modules');
   }
 }

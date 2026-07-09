@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H4)
+lastUpdated: 2026-07-09 (Phase H5)
 owner: engineering
 supersedes:
 supersededBy:
@@ -14,52 +14,61 @@ Last updated: 2026-07-09
 
 ## Active sprint
 
-**Phase H4 — Activity Foundation with Form.io (2026-07-09)** — complete
+**Phase H5 — Module Foundation (2026-07-09)** — complete
 
-The "Practice" half of `Resource Bank Item → Learn Item/Activity → Module`. **Additive-only
-migration, no AI provider call, no Module, no student assignment, no runtime wiring.**
+The top of `Resource Bank Item → Learn Item/Activity Definition → Module Definition`.
+**Additive-only migration, no AI provider call, no student assignment, no runtime wiring.**
 
-- **Backend**: new `ActivityDefinition` entity (title/description/instructions, `ActivityType`/
-  `PatternKey`, `RendererType` Formio/Custom/Legacy, student-safe `FormSchemaJson`, backend-only
-  `AnswerKeyJson`/`ScoringRulesJson`/`FeedbackPlanJson`, CEFR/skill/subskill/context/focus/
-  difficulty, optional `LearnItemId`, `SourceMode` Manual/GeneratedFromResources/
-  GeneratedFromLearnItem/Imported, reuses `AdminReviewStatus` — always starts `PendingReview`,
-  editing an approved Activity blocked) and `ActivityResourceLink` (structurally identical to
-  `LearnItemResourceLink`, reuses the same enums). **Deliberately a separate entity from two
-  existing similarly-named ones**: `LearningActivity` (per-student runtime record) and
-  `ActivityTemplate` (existing template already wired into the live Practice Gym Form.io pilot) —
-  `ActivityDefinition` has Resource Bank/Learn Item traceability neither of those has, and is not
-  wired into any runtime path this phase. Migration `Phase_H4_AddActivityFoundation` adds exactly
-  two new tables — no change to any existing table. `ActivityGenerationService` (implementing both
-  `IGenerateActivityFromResourcesHandler` and `IGenerateActivityFromLearnItemHandler`) composes a
-  **deterministic** draft — no AI call. Three `ActivityType`s: `gap_fill`/`multiple_choice_single`
-  (Vocabulary/Grammar) and `short_answer` (ReadingReference/ReadingPassage, honestly marked
-  `RequiresManualOrAiEvaluation=true`). `ScoringRulesJson` reuses the existing shared
-  `ScoringRulesDocument` format; every `FormSchemaJson` is validated via the existing
-  `IFormIoSchemaValidationService`. New endpoints `api/admin/activities` (list/get/create/
-  generate-from-resources/generate-from-learn-item/update/approve/reject, admin-only).
-- **Frontend**: new `/admin/activities` page ("Activities") — filter bar (status/type/CEFR/
-  search), table, detail drawer with Form.io schema/answer-key/scoring-rules/feedback-plan preview
-  and Approve/Reject. Added to "Content Banks" nav right after Learn Items.
-- **Generate Activity is now live** on both the H1 unified Resource Bank page's row action
-  (previously "coming soon") and the H3 Learn Item detail drawer. `UnifiedResourceBankItemDto.
-  LinkedActivityCount` now reflects real counts.
-- **Review/pending behavior**: every Activity starts `PendingReview`; only an explicit admin
-  Approve/Reject changes that; editing an approved Activity is blocked (reject first to reopen).
+- **Backend**: new `ModuleDefinition` entity (title/description/objective key, CEFR/skill/
+  subskill/context/focus/difficulty/estimated-minutes, module-level `FeedbackPlanJson`,
+  `SourceMode` Manual/GeneratedFromLearnAndActivities/GeneratedFromResources/Imported, reuses
+  `AdminReviewStatus` — always starts `PendingReview`, editing an approved Module blocked) plus
+  `ModuleDefinitionLearnItemLink` (reuses `LearnItemResourceRole`) and
+  `ModuleDefinitionActivityLink` (new `ModuleActivityRole` PrimaryPractice/SupportingPractice/
+  Review/Extension), both carrying `SortOrder` + `SnapshotTitle`. **Deliberately a separate
+  entity from the existing runtime `LearningModule`** (a per-student thematic group within a
+  `LearningPath`) — not wired into any runtime path this phase. Migration
+  `Phase_H5_AddModuleDefinitionFoundation` adds exactly three new tables — no change to any
+  existing table. `ModuleGenerationService` implements all four generation entry points
+  (from-items/from-resource/from-learn-item/from-activity) — **deterministic, no AI call**,
+  composing only EXISTING Learn Items/Activity Definitions. Every entry point requires its
+  source(s) to already be `Approved` — a draft/pending source is rejected with a clear message,
+  never silently pulled in. New endpoints `api/admin/modules` (list/get/create/
+  generate-from-items/generate-from-resource/generate-from-learn-item/generate-from-activity/
+  update/approve/reject, admin-only).
+- **Frontend**: new `/admin/modules` page ("Modules") — filter bar (status/CEFR/search), table,
+  detail drawer with linked-items/feedback-plan preview and Approve/Reject, plus a simple
+  generate-from-items modal (admin types an approved Learn Item id + an approved Activity
+  Definition id). Added to "Content Banks" nav right after Activities.
+- **Generate Module is now live** on the H1 unified Resource Bank page's row action (previously
+  "coming soon" — only succeeds when an Approved Learn Item AND an Approved Activity Definition
+  are both already linked to that resource), the H3 Learn Item detail drawer, and the H4 Activity
+  detail drawer. `UnifiedResourceBankItemDto.LinkedModuleCount` now reflects real counts.
+- **Review/pending behavior**: every Module starts `PendingReview`; only an explicit admin
+  Approve/Reject changes that; editing an approved Module is blocked (reject first to reopen).
 
 **Validation**: `dotnet build --configuration Release` passed (0 errors); `dotnet test
---configuration Release` = 3,784 passed, 0 failed (+29 unit, +10 integration; 5 architecture
+--configuration Release` = 3,822 passed, 0 failed (+27 unit, +11 integration; 5 architecture
 unchanged). Angular production build: no new TS/Angular compile errors, only the pre-existing
 bundle-size budget failure (documented, not new).
 
-**No H5/H6/H7 started. No PG-v2 started. No physical table consolidation. No external datasets.
-No Persian/bilingual/support-language content. No direct final-table seeding. No Module entity.
-No student assignment. No Today/Practice Gym runtime change. Today/Practice Gym legacy fallback
-and the readiness/delivery queue are unchanged.**
+**No H6/H7 started. No PG-v2 started. No physical table consolidation. No external datasets. No
+Persian/bilingual/support-language content. No direct final-table seeding. No student assignment.
+No Module attempts. No Daily Lesson/Practice Gym module pipeline. No Today/Practice Gym runtime
+change. Today/Practice Gym legacy fallback and the readiness/delivery queue are unchanged.**
 
-**Next: Phase H5 — Module Foundation** (recommended), though a PG-v2A/H5 sequencing decision
-remains a future Plan-Sync checkpoint. See `docs/architecture/product-model-realignment-h0.md`
-and `docs/roadmap/road-map.md` §1/§19a.
+**Next: Phase H6 — Daily Lesson Module Pipeline** (recommended), though a PG-v2A/H6 sequencing
+decision remains a future Plan-Sync checkpoint. See
+`docs/architecture/product-model-realignment-h0.md`,
+`docs/reviews/2026-07-09-phase-h5-module-foundation-review.md`, and
+`docs/roadmap/road-map.md` §1/§19a.
+
+---
+
+## Previous sprint (H4)
+
+**Phase H4 — Activity Foundation with Form.io (2026-07-09)** — complete, docs-only summary
+retained: see `docs/architecture/product-model-realignment-h0.md` for full detail.
 
 ---
 

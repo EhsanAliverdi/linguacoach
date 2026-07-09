@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H4)
+lastUpdated: 2026-07-09 (Phase H5)
 owner: architecture
 supersedes:
 supersededBy:
@@ -402,11 +402,28 @@ existing `IFormIoSchemaValidationService`. New endpoints `api/admin/activities` 
 `/admin/activities` ("Activities"), added to the Content Banks nav. "Generate Activity" is now live
 on both the Resource Bank page's row action and the Learn Item drawer;
 `UnifiedResourceBankItemDto.LinkedActivityCount` now reflects real counts. +39 backend tests (3,784
-total). No Module entity, no student assignment, no H5-H7 started, no PG-v2 started, no Today/
-Practice Gym runtime change. **Recommended next implementation phase: H5 — Module Foundation**,
-though a PG-v2A/H5 sequencing decision remains a future Plan-Sync checkpoint. See
-`docs/architecture/product-model-realignment-h0.md` and `docs/roadmap/road-map.md` §1, Decision
-Log, and §19a.
+total).
+
+**Phase H5 (2026-07-09)** — Module Foundation: the top of `Resource Bank Item → Learn
+Item/Activity Definition → Module Definition`. New `ModuleDefinition`/`ModuleDefinitionLearnItemLink`/
+`ModuleDefinitionActivityLink` entities (additive-only migration — three new tables, no change to
+any existing table) — **deliberately distinct from `LearningModule`** (per-student thematic group
+within a `LearningPath`, see `docs/architecture/learning-activity-engine.md`); `ModuleDefinition`
+reuses `AdminReviewStatus` (always starts `PendingReview`) and is **not wired into any runtime
+selection/delivery path**. `ModuleGenerationService` implements all four generation entry points
+(from-items/from-resource/from-learn-item/from-activity) — **deterministic** draft, no AI provider
+call, same reasoning as H3/H4 — composing only EXISTING Learn Items/Activity Definitions that are
+already `Approved` (never cascade-generates new ones, never composes from a draft/pending source).
+New endpoints `api/admin/modules` and admin page `/admin/modules` ("Modules"), added to the
+Content Banks nav after Activities. "Generate Module" is now live on the Resource Bank page's row
+action, the Learn Item drawer, and the Activity drawer; `UnifiedResourceBankItemDto.LinkedModuleCount`
+now reflects real counts. +38 backend tests (3,822 total). No student assignment, no Module
+attempts, no H6-H7 started, no PG-v2 started, no Today/Practice Gym runtime change.
+**Recommended next implementation phase: H6 — Daily Lesson Module Pipeline**, though a PG-v2A/H6
+sequencing decision remains a future Plan-Sync checkpoint. See
+`docs/architecture/product-model-realignment-h0.md`,
+`docs/reviews/2026-07-09-phase-h5-module-foundation-review.md`, and `docs/roadmap/road-map.md`
+§1, Decision Log, and §19a.
 
 ---
 

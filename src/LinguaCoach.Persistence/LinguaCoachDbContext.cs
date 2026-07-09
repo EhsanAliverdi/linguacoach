@@ -124,6 +124,13 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<ActivityDefinition> ActivityDefinitions => Set<ActivityDefinition>();
     public DbSet<ActivityResourceLink> ActivityResourceLinks => Set<ActivityResourceLink>();
 
+    // Phase H5 — Module Definition foundation (reusable, reviewable learning units combining
+    // Learn Items + Activity Definitions + a module-level feedback plan; not wired into any
+    // runtime path — see ModuleDefinition's doc comment for the distinction from LearningModule)
+    public DbSet<ModuleDefinition> ModuleDefinitions => Set<ModuleDefinition>();
+    public DbSet<ModuleDefinitionLearnItemLink> ModuleDefinitionLearnItemLinks => Set<ModuleDefinitionLearnItemLink>();
+    public DbSet<ModuleDefinitionActivityLink> ModuleDefinitionActivityLinks => Set<ModuleDefinitionActivityLink>();
+
     // Phase 10W — Enterprise notification platform
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<NotificationOutboxItem> NotificationOutboxItems => Set<NotificationOutboxItem>();

@@ -17,6 +17,8 @@
       {{ generateSuccess() }}
       @if (lastGeneratedKind() === 'activity') {
         <a (click)="goToActivities()" style="cursor:pointer; text-decoration:underline;">Review in Activities</a>
+      } @else if (lastGeneratedKind() === 'module') {
+        <a (click)="goToModules()" style="cursor:pointer; text-decoration:underline;">Review in Modules</a>
       } @else {
         <a (click)="goToLearnItems()" style="cursor:pointer; text-decoration:underline;">Review in Learn Items</a>
       }
@@ -97,6 +99,9 @@
                   } @else {
                     <span class="sp-admin-text-muted">Not generated yet</span>
                   }
+                  @if (item.linkedModuleCount) {
+                    <sp-admin-badge tone="success" appearance="soft">{{ item.linkedModuleCount }} Module</sp-admin-badge>
+                  }
                 </td>
                 <td>
                   <sp-admin-table-actions
@@ -170,7 +175,11 @@
         } @else {
           <sp-admin-badge tone="neutral" appearance="outline">No Activity yet</sp-admin-badge>
         }
-        <span class="sp-admin-text-muted"> · Module: coming in a future phase</span>
+        @if (d.linkedModuleCount) {
+          <sp-admin-badge tone="success" appearance="soft">{{ d.linkedModuleCount }} Module(s)</sp-admin-badge>
+        } @else {
+          <sp-admin-badge tone="neutral" appearance="outline">No Module yet</sp-admin-badge>
+        }
       </sp-admin-form-field>
     </div>
   }
@@ -183,6 +192,9 @@
       </sp-admin-button>
       <sp-admin-button variant="primary" appearance="outline" [disabled]="generatingActivityId() === d.id" (clicked)="generateActivity(d)">
         {{ generatingActivityId() === d.id ? 'Generating…' : 'Generate Activity' }}
+      </sp-admin-button>
+      <sp-admin-button variant="primary" appearance="outline" [disabled]="generatingModuleId() === d.id" (clicked)="generateModule(d)">
+        {{ generatingModuleId() === d.id ? 'Generating…' : 'Generate Module' }}
       </sp-admin-button>
     }
   </div>

@@ -584,6 +584,30 @@ public static class DependencyInjection
         services.AddScoped<LinguaCoach.Application.ActivityDefinitions.IGenerateActivityFromLearnItemHandler>(
             sp => sp.GetRequiredService<LinguaCoach.Infrastructure.ActivityDefinitions.ActivityGenerationService>());
 
+        // Phase H5 — Module Definition foundation (reusable, reviewable learning units combining
+        // Learn Items + Activity Definitions + a module-level feedback plan).
+        services.AddScoped<LinguaCoach.Application.ModuleDefinitions.IAdminModuleDefinitionListQuery,
+            LinguaCoach.Infrastructure.ModuleDefinitions.AdminModuleDefinitionListQueryHandler>();
+        services.AddScoped<LinguaCoach.Application.ModuleDefinitions.IAdminModuleDefinitionGetQuery,
+            LinguaCoach.Infrastructure.ModuleDefinitions.AdminModuleDefinitionGetQueryHandler>();
+        services.AddScoped<LinguaCoach.Application.ModuleDefinitions.IAdminCreateModuleDefinitionHandler,
+            LinguaCoach.Infrastructure.ModuleDefinitions.AdminCreateModuleDefinitionHandler>();
+        services.AddScoped<LinguaCoach.Application.ModuleDefinitions.IAdminUpdateModuleDefinitionHandler,
+            LinguaCoach.Infrastructure.ModuleDefinitions.AdminUpdateModuleDefinitionHandler>();
+        services.AddScoped<LinguaCoach.Application.ModuleDefinitions.IAdminApproveModuleDefinitionHandler,
+            LinguaCoach.Infrastructure.ModuleDefinitions.AdminApproveModuleDefinitionHandler>();
+        services.AddScoped<LinguaCoach.Application.ModuleDefinitions.IAdminRejectModuleDefinitionHandler,
+            LinguaCoach.Infrastructure.ModuleDefinitions.AdminRejectModuleDefinitionHandler>();
+        services.AddScoped<LinguaCoach.Infrastructure.ModuleDefinitions.ModuleGenerationService>();
+        services.AddScoped<LinguaCoach.Application.ModuleDefinitions.IGenerateModuleFromItemsHandler>(
+            sp => sp.GetRequiredService<LinguaCoach.Infrastructure.ModuleDefinitions.ModuleGenerationService>());
+        services.AddScoped<LinguaCoach.Application.ModuleDefinitions.IGenerateModuleFromResourceHandler>(
+            sp => sp.GetRequiredService<LinguaCoach.Infrastructure.ModuleDefinitions.ModuleGenerationService>());
+        services.AddScoped<LinguaCoach.Application.ModuleDefinitions.IGenerateModuleFromLearnItemHandler>(
+            sp => sp.GetRequiredService<LinguaCoach.Infrastructure.ModuleDefinitions.ModuleGenerationService>());
+        services.AddScoped<LinguaCoach.Application.ModuleDefinitions.IGenerateModuleFromActivityHandler>(
+            sp => sp.GetRequiredService<LinguaCoach.Infrastructure.ModuleDefinitions.ModuleGenerationService>());
+
         // Phase E2 — AI analysis (advisory), deterministic rule validation, and dedup/fingerprint
         // gates over staged candidates.
         services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceCandidateAnalysisService,

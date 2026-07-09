@@ -24,6 +24,17 @@ supersededBy:
 > selection/delivery path** — Today materialization, Practice Gym generation, and
 > `ActivityTemplate`'s own pilot are all unchanged. See
 > `docs/architecture/product-model-realignment-h0.md` for the full H4 detail.
+>
+> **Phase H5 note (2026-07-09):** the new Module foundation added a
+> `LinguaCoach.Domain.Entities.ModuleDefinition` entity — **do not confuse it with
+> `LearningModule`** (a per-student thematic group of `LearningActivity` rows within a
+> `LearningPath`, tracks its own completion). `ModuleDefinition` is a reusable, reviewable
+> learning unit combining Learn Items + Activity Definitions + a module-level feedback plan, and
+> it is **not wired into any runtime selection/delivery path** — Today materialization, Practice
+> Gym generation, and `LearningModule`/`LearningPath` are all unchanged. H6 (Daily Lesson) and H7
+> (Practice Gym) are the planned future runtime consumers, not built yet. See
+> `docs/architecture/product-model-realignment-h0.md` and
+> `docs/reviews/2026-07-09-phase-h5-module-foundation-review.md` for the full H5 detail.
 
 ## Why `LearningActivity` is the Centre of the Product
 

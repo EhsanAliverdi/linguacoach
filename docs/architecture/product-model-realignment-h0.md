@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H4)
+lastUpdated: 2026-07-09 (Phase H5)
 owner: product
 supersedes:
 supersededBy:
@@ -99,9 +99,42 @@ page `/admin/activities` ("Activities"), added to the Content Banks nav right af
 "coming soon") and the H3 Learn Item detail drawer; `UnifiedResourceBankItemDto.LinkedActivityCount`
 is now a real count (was always null). +29 unit, +10 integration tests (3,745 → 3,784). No Module
 entity, no student assignment, no Today/Practice Gym runtime change. Full detail:
-`docs/roadmap/road-map.md` §1, Decision Log (Phase H4 entry). **Recommended next implementation
-phase: H5 — Module Foundation**, though a PG-v2A/H5 sequencing decision remains a future Plan-Sync
-checkpoint.
+`docs/roadmap/road-map.md` §1, Decision Log (Phase H4 entry).
+
+**Phase H5, 2026-07-09. Implemented.** H5 built the Module Definition foundation — the top of
+`Resource Bank Item → Learn Item/Activity Definition → Module Definition`. New `ModuleDefinition`
+entity (reviewable learning unit: title/description/objective key, CEFR/skill/subskill/context/
+focus/difficulty metadata, module-level `FeedbackPlanJson`, `SourceMode` Manual/
+GeneratedFromLearnAndActivities/GeneratedFromResources/Imported, reuses `AdminReviewStatus` — always
+starts `PendingReview`, editing an approved Module blocked, same policy as Learn Item/Activity) and
+two link tables, `ModuleDefinitionLearnItemLink` (reuses `LearnItemResourceRole` Primary/Supporting)
+and `ModuleDefinitionActivityLink` (new `ModuleActivityRole` PrimaryPractice/SupportingPractice/
+Review/Extension), both carrying a `SortOrder` and a denormalized `SnapshotTitle`. **Named
+`ModuleDefinition`, deliberately distinct from the existing runtime `LearningModule`** (a
+per-student thematic group of `LearningActivity` rows within a `LearningPath`, tracks its own
+completion) — mirrors H4's `ActivityDefinition`-vs-`LearningActivity`/`ActivityTemplate` naming
+decision. Additive-only migration (`Phase_H5_AddModuleDefinitionFoundation`, three new tables — no
+change to any existing table). `ModuleGenerationService` implements all four generation entry
+points (`IGenerateModuleFromItemsHandler`/`IGenerateModuleFromResourceHandler`/
+`IGenerateModuleFromLearnItemHandler`/`IGenerateModuleFromActivityHandler`) — **deterministic, no
+AI call**, and composes only EXISTING Learn Items/Activity Definitions (never cascade-generates
+new ones). Every generation entry point requires its source Learn Item(s)/Activity Definition(s)
+to already be `Approved` — a draft/pending source is rejected with a clear message naming what to
+approve first, never silently pulled in. New endpoints `api/admin/modules` (list/get/create/
+generate-from-items/generate-from-resource/generate-from-learn-item/generate-from-activity/update/
+approve/reject, admin-only). New Angular page `/admin/modules` ("Modules"), added to the Content
+Banks nav right after Activities, including a simple generate-from-items modal (admin types an
+approved Learn Item id + an approved Activity Definition id). "Generate Module" is now live on the
+H1 unified Resource Bank page's row action (previously "coming soon" — only succeeds when an
+approved Learn Item AND an approved Activity Definition are both already linked to that resource),
+the H3 Learn Item detail drawer, and the H4 Activity detail drawer;
+`UnifiedResourceBankItemDto.LinkedModuleCount` is now a real count (reachable via either the
+Learn-Item or the Activity link chain). +27 unit, +11 integration tests (3,784 → 3,822). No
+student assignment, no Module attempts, no Today/Practice Gym runtime change. Full detail:
+`docs/roadmap/road-map.md` §1, Decision Log (Phase H5 entry), and
+`docs/reviews/2026-07-09-phase-h5-module-foundation-review.md`. **Recommended next implementation
+phase: H6 — Daily Lesson Module Pipeline**, though a PG-v2A/H6 sequencing decision remains a
+future Plan-Sync checkpoint.
 
 ---
 
@@ -412,7 +445,7 @@ pages exist to populate "Content Studio." Not implemented in H0.
 | **H2 — Import Content UX v1** `Done (2026-07-09)` | Admin paste (text/CSV/JSON)/import page; admin chooses broad type/category/default tags; deterministic mapping (no AI analyze yet — labeled "coming soon"); creates pending Resource Candidates through the existing E1 pipeline; no student assignment. File upload and async large-import handling remain on the existing Resource Import Runs page. | H1 |
 | **H3 — Learn Item Foundation** `Done (2026-07-09)` | `LearnItem`/`LearnItemResourceLink` entities/tables/API/admin review; deterministic "Generate Learn" from selected Resource Bank rows (no AI call yet); reuses `AdminReviewStatus`; approval lifecycle; source-resource traceability. | H2 |
 | **H4 — Activity Foundation with Form.io** `Done (2026-07-09)` | New `ActivityDefinition`/`ActivityResourceLink` entities (additive-only migration, two new tables) — deliberately separate from `ActivityTemplate`, not built on top of it; Form.io schema/scoring/feedback-plan storage for `gap_fill`/`multiple_choice_single`/`short_answer`; deterministic (no AI) generation from Resource Bank rows or a Learn Item; approval lifecycle; source-resource + optional Learn Item traceability. | H2 (parallel with H3) |
-| **H5 — Module Foundation** | `Module` = Learn + Activity/Activities + Feedback Plan; create/generate module drafts from selected resources/Learn Items/Activities; approval lifecycle; objective/estimated-time metadata. | H3, H4 |
+| **H5 — Module Foundation** `Done (2026-07-09)` | New `ModuleDefinition`/`ModuleDefinitionLearnItemLink`/`ModuleDefinitionActivityLink` entities (additive-only migration, three new tables), deliberately separate from runtime `LearningModule`; `ModuleDefinition` = Learn Item(s) + Activity Definition(s) + module-level Feedback Plan; deterministic (no AI) generation from selected items, a Resource Bank row, a Learn Item, or an Activity Definition — every entry point requires Approved sources; approval lifecycle; objective/CEFR/skill/subskill/context/focus/difficulty/estimated-minutes metadata. | H3, H4 |
 | **H6 — Daily Lesson Module Pipeline** | Daily Lesson contains several Modules based on student time/weakness/plan; preserve Today fallback until proven replacement; map existing Today materialization into the module-first model safely. | H5 |
 | **H7 — Practice Gym Module Pipeline** | Practice Gym becomes skill/weakness/self-directed Module selection; uses approved Modules and unseen Activities; preserve legacy Practice Gym fallback until proven replacement. | H5 (may run alongside/after PG-v2A's selector work) |
 | **H8 — Admin IA Simplification** | Move technical pages under Advanced/Diagnostics; make Content Studio the main admin surface (§7). | H1–H7 substantially landed |
@@ -453,8 +486,15 @@ the existing shared format, and a new entity kept explicitly separate from both 
 assignment, no Today/Practice Gym runtime change. See `docs/roadmap/road-map.md` §1, Decision Log
 (Phase H4 entry) for full detail.
 
-**Recommended next: H5 — Module Foundation.** A PG-v2A/H5 sequencing decision (which comes first)
-remains a future Plan-Sync checkpoint, not resolved by this phase.
+**H5 — Module Foundation — done (2026-07-09).** An additive-only three-table migration, a
+deterministic (no AI) composer over EXISTING Approved Learn Items/Activity Definitions only (never
+cascade-generates new ones), and a new entity kept explicitly separate from runtime
+`LearningModule`. No student assignment, no Module attempts, no Today/Practice Gym runtime change.
+See `docs/roadmap/road-map.md` §1, Decision Log (Phase H5 entry) and
+`docs/reviews/2026-07-09-phase-h5-module-foundation-review.md` for full detail.
+
+**Recommended next: H6 — Daily Lesson Module Pipeline.** A PG-v2A/H6 sequencing decision (which
+comes first) remains a future Plan-Sync checkpoint, not resolved by this phase.
 
 ---
 

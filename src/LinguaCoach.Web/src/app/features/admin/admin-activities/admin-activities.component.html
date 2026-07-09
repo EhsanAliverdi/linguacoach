@@ -16,7 +16,14 @@
     <sp-admin-loading-state message="Loading Activities" />
   } @else {
 
-    @if (actionSuccess()) { <sp-admin-alert variant="success">{{ actionSuccess() }}</sp-admin-alert> }
+    @if (actionSuccess()) {
+      <sp-admin-alert variant="success">
+        {{ actionSuccess() }}
+        @if (lastActionWasGenerateModule()) {
+          <a (click)="goToModules()" style="cursor:pointer; text-decoration:underline;">Review in Modules</a>
+        }
+      </sp-admin-alert>
+    }
 
     <sp-admin-filter-bar>
       <sp-admin-input
@@ -169,6 +176,9 @@
           {{ rejecting() ? 'Rejecting…' : 'Reject' }}
         </sp-admin-button>
       }
+      <sp-admin-button variant="primary" appearance="outline" [disabled]="generatingModule()" (clicked)="generateModule()">
+        {{ generatingModule() ? 'Generating…' : 'Generate Module' }}
+      </sp-admin-button>
     </div>
   }
 

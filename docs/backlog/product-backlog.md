@@ -14,7 +14,7 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
 
 ---
 
-## Product Model Realignment — Phase H0-H8 `H0-H4 Done, H5-H8 Planned` (2026-07-09)
+## Product Model Realignment — Phase H0-H8 `H0-H5 Done, H6-H8 Planned` (2026-07-09)
 
 **Phase H0 (docs-only, done 2026-07-09)** defined the intended product model — `Resource Bank Item
 → Learn Item/Activity → Module → Daily Lesson/Practice Gym → Attempt → Feedback + Rating →
@@ -53,8 +53,16 @@ E1-E10/D1-D6 substrate, and G2/G3/PG-v2 remain valid, separately-scoped tracks.
   new `/admin/activities` admin page; "Generate Activity" wired live from both the Resource Bank
   page and the Learn Item drawer. No Module entity, no student assignment, no runtime wiring.
   +39 backend tests (3,784 total).
-- [ ] **Phase H5 — Module Foundation** `Planned` — `Module` = Learn + Activity/Activities + Feedback
-  Plan; generated from selected resources/Learn Items/Activities; approval lifecycle.
+- [x] **Phase H5 — Module Foundation** `Done` (2026-07-09) — new `ModuleDefinition`/
+  `ModuleDefinitionLearnItemLink`/`ModuleDefinitionActivityLink` entities (additive-only migration,
+  three new tables), deliberately separate from runtime `LearningModule`; `api/admin/modules`
+  CRUD + `generate-from-items`/`generate-from-resource`/`generate-from-learn-item`/
+  `generate-from-activity` + approve/reject; deterministic (non-AI) composer over EXISTING
+  Approved Learn Items/Activity Definitions only (never cascade-generates new ones); new
+  `/admin/modules` admin page; "Generate Module" wired live from the Resource Bank page, Learn
+  Item drawer, and Activity drawer. No student assignment, no Module attempts, no Daily
+  Lesson/Practice Gym pipeline. +38 backend tests (3,822 total). See
+  `docs/reviews/2026-07-09-phase-h5-module-foundation-review.md`.
 - [ ] **Phase H6 — Daily Lesson Module Pipeline** `Planned` — Daily Lesson becomes several Modules;
   preserve Today fallback until proven replacement.
 - [ ] **Phase H7 — Practice Gym Module Pipeline** `Planned` — Practice Gym becomes skill/weakness

@@ -1,14 +1,12 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
-import { AdminActivityDefinitionService } from '../../../core/services/admin-activity-definition.service';
+import { ActivatedRoute } from '@angular/router';
 import { AdminModuleDefinitionService } from '../../../core/services/admin-module-definition.service';
 import {
-  ActivityDefinitionDto,
-  ACTIVITY_REVIEW_STATUSES,
-  ACTIVITY_TYPES,
-} from '../../../core/models/admin-activity-definition.models';
+  ModuleDefinitionDto,
+  MODULE_REVIEW_STATUSES,
+} from '../../../core/models/admin-module-definition.models';
 import { RESOURCE_BANK_CEFR_LEVELS } from '../../../core/models/admin-resource-import.models';
 import {
   SpAdminAlertComponent,
@@ -21,6 +19,7 @@ import {
   SpAdminFormFieldComponent,
   SpAdminInputComponent,
   SpAdminLoadingStateComponent,
+  SpAdminModalComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminPaginationComponent,
@@ -33,13 +32,12 @@ import {
 const PAGE_SIZE = 20;
 
 /**
- * Phase H4 — Activity foundation admin page. Reviewable, editable practice task designs
- * generated from (or authored about) published Resource Bank rows, optionally linked to a Learn
- * Item — the "Practice" half of a future Module. Nothing here creates a Module row or assigns
- * anything to a student.
+ * Phase H5 — Module Definition foundation admin page. Reusable, reviewable learning units
+ * combining Learn Items + Activity Definitions + a module-level feedback plan. Nothing here
+ * assigns anything to a student or changes Today/Practice Gym runtime selection.
  */
 @Component({
-  selector: 'app-admin-activities',
+  selector: 'app-admin-modules',
   standalone: true,
   imports: [
     CommonModule,
@@ -54,6 +52,7 @@ const PAGE_SIZE = 20;
     SpAdminFormFieldComponent,
     SpAdminInputComponent,
     SpAdminLoadingStateComponent,
+    SpAdminModalComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
     SpAdminPaginationComponent,
@@ -62,10 +61,10 @@ const PAGE_SIZE = 20;
     SpAdminTableFooterComponent,
     SpAdminTextareaComponent,
   ],
-  templateUrl: './admin-activities.component.html',
+  templateUrl: './admin-modules.component.html',
 })
-export class AdminActivitiesComponent implements OnInit {
-  items = signal<ActivityDefinitionDto[]>([]);
+export class AdminModulesComponent implements OnInit {
+  items = signal<ModuleDefinitionDto[]>([]);
   loading = signal(true);
   error = signal('');
   actionError = signal('');
@@ -73,7 +72,6 @@ export class AdminActivitiesComponent implements OnInit {
 
   searchQuery = signal('');
   statusFilter = signal<string>('all');
-  activityTypeFilter = signal<string>('all');
   cefrLevelFilter = signal<string>('all');
   page = signal(1);
 
@@ -81,27 +79,24 @@ export class AdminActivitiesComponent implements OnInit {
   totalCount = signal(0);
   readonly totalPages = computed(() => Math.max(1, Math.ceil(this.totalCount() / this.pageSize)));
 
-  readonly statusOptions = [{ value: 'all', label: 'All statuses' }, ...ACTIVITY_REVIEW_STATUSES.map(s => ({ value: s, label: s }))];
-  readonly activityTypeOptions = [{ value: 'all', label: 'All types' }, ...ACTIVITY_TYPES.map(t => ({ value: t, label: t }))];
+  readonly statusOptions = [{ value: 'all', label: 'All statuses' }, ...MODULE_REVIEW_STATUSES.map(s => ({ value: s, label: s }))];
   readonly cefrLevelOptions = [{ value: 'all', label: 'All levels' }, ...RESOURCE_BANK_CEFR_LEVELS.map(l => ({ value: l, label: l }))];
 
   // ── Detail drawer ────────────────────────────────────────────────────────
   drawerOpen = signal(false);
-  detail = signal<ActivityDefinitionDto | null>(null);
+  detail = signal<ModuleDefinitionDto | null>(null);
   rejectReasonDraft = '';
   approving = signal(false);
   rejecting = signal(false);
 
-  // ── Phase H5 — Generate Module from this Activity ────────────────────────
-  generatingModule = signal(false);
-  lastActionWasGenerateModule = signal(false);
+  // ── Generate-from-items modal (simple: admin types Learn Item + Activity ids) ──
+  generateModalOpen = signal(false);
+  generating = signal(false);
+  generateLearnItemId = '';
+  generateActivityId = '';
+  generateTitle = '';
 
-  constructor(
-    private activitySvc: AdminActivityDefinitionService,
-    private moduleSvc: AdminModuleDefinitionService,
-    private route: ActivatedRoute,
-    private router: Router,
-  ) {}
+  constructor(private moduleSvc: AdminModuleDefinitionService, private route: ActivatedRoute) {}
 
   ngOnInit(): void {
     this.loadAll();
@@ -114,18 +109,17 @@ export class AdminActivitiesComponent implements OnInit {
     this.loading.set(true);
     this.error.set('');
     const status = this.statusFilter() === 'all' ? undefined : this.statusFilter();
-    const activityType = this.activityTypeFilter() === 'all' ? undefined : this.activityTypeFilter();
     const cefrLevel = this.cefrLevelFilter() === 'all' ? undefined : this.cefrLevelFilter();
-    this.activitySvc
-      .list(this.page(), this.pageSize, status, activityType, undefined, cefrLevel, undefined, undefined,
-        undefined, undefined, undefined, undefined, this.searchQuery() || undefined)
+    this.moduleSvc
+      .list(this.page(), this.pageSize, status, cefrLevel, undefined, undefined, undefined, undefined,
+        undefined, undefined, undefined, this.searchQuery() || undefined)
       .subscribe({
         next: result => {
           this.items.set(result.items);
           this.totalCount.set(result.totalCount);
           this.loading.set(false);
         },
-        error: err => { this.loading.set(false); this.error.set(err.error?.error ?? 'Could not load Activities.'); },
+        error: err => { this.loading.set(false); this.error.set(err.error?.error ?? 'Could not load Modules.'); },
       });
   }
 
@@ -144,12 +138,6 @@ export class AdminActivitiesComponent implements OnInit {
     this.loadAll();
   }
 
-  onActivityTypeFilterChange(value: string): void {
-    this.activityTypeFilter.set(value);
-    this.page.set(1);
-    this.loadAll();
-  }
-
   onCefrLevelFilterChange(value: string): void {
     this.cefrLevelFilter.set(value);
     this.page.set(1);
@@ -161,7 +149,7 @@ export class AdminActivitiesComponent implements OnInit {
     this.loadAll();
   }
 
-  openDrawer(item: ActivityDefinitionDto): void {
+  openDrawer(item: ModuleDefinitionDto): void {
     this.detail.set(item);
     this.rejectReasonDraft = '';
     this.actionError.set('');
@@ -169,7 +157,7 @@ export class AdminActivitiesComponent implements OnInit {
   }
 
   openDrawerById(id: string): void {
-    this.activitySvc.get(id).subscribe({
+    this.moduleSvc.get(id).subscribe({
       next: item => this.openDrawer(item),
       error: () => { /* deep-linked item no longer exists — ignore, list still loads */ },
     });
@@ -191,12 +179,11 @@ export class AdminActivitiesComponent implements OnInit {
     if (!item) return;
     this.approving.set(true);
     this.actionError.set('');
-    this.activitySvc.approve(item.id).subscribe({
+    this.moduleSvc.approve(item.id).subscribe({
       next: updated => {
         this.approving.set(false);
-        this.lastActionWasGenerateModule.set(false);
         this.detail.set(updated);
-        this.actionSuccess.set('Activity approved.');
+        this.actionSuccess.set('Module approved.');
         this.loadAll();
       },
       error: err => { this.approving.set(false); this.actionError.set(err.error?.error ?? 'Could not approve.'); },
@@ -212,40 +199,53 @@ export class AdminActivitiesComponent implements OnInit {
     }
     this.rejecting.set(true);
     this.actionError.set('');
-    this.activitySvc.reject(item.id, this.rejectReasonDraft.trim()).subscribe({
+    this.moduleSvc.reject(item.id, this.rejectReasonDraft.trim()).subscribe({
       next: updated => {
         this.rejecting.set(false);
-        this.lastActionWasGenerateModule.set(false);
         this.detail.set(updated);
-        this.actionSuccess.set('Activity rejected.');
+        this.actionSuccess.set('Module rejected.');
         this.loadAll();
       },
       error: err => { this.rejecting.set(false); this.actionError.set(err.error?.error ?? 'Could not reject.'); },
     });
   }
 
-  /** Phase H5 — generates a Module from this (approved) Activity Definition's compatible
-   *  approved Learn Item(s). Rejected with a clear message if the Activity itself isn't approved
-   *  yet, or no compatible approved Learn Item exists. */
-  generateModule(): void {
-    const item = this.detail();
-    if (!item) return;
-    this.generatingModule.set(true);
+  openGenerateModal(): void {
+    this.generateLearnItemId = '';
+    this.generateActivityId = '';
+    this.generateTitle = '';
     this.actionError.set('');
-    this.moduleSvc.generateFromActivity({ activityDefinitionId: item.id }).subscribe({
+    this.generateModalOpen.set(true);
+  }
+
+  closeGenerateModal(): void {
+    this.generateModalOpen.set(false);
+  }
+
+  /** Phase H5 — simple selection form: admin types an approved Learn Item id and an approved
+   *  Activity Definition id. Both must already be Approved — the backend rejects otherwise. */
+  submitGenerateFromItems(): void {
+    if (!this.generateLearnItemId.trim() || !this.generateActivityId.trim()) {
+      this.actionError.set('Both a Learn Item id and an Activity Definition id are required.');
+      return;
+    }
+    this.generating.set(true);
+    this.actionError.set('');
+    this.moduleSvc.generateFromItems({
+      learnItemLinks: [{ learnItemId: this.generateLearnItemId.trim(), role: 'Primary' }],
+      activityLinks: [{ activityDefinitionId: this.generateActivityId.trim(), role: 'PrimaryPractice' }],
+      title: this.generateTitle.trim() || null,
+    }).subscribe({
       next: () => {
-        this.generatingModule.set(false);
-        this.lastActionWasGenerateModule.set(true);
-        this.actionSuccess.set('Module draft generated from this Activity — pending review.');
+        this.generating.set(false);
+        this.generateModalOpen.set(false);
+        this.actionSuccess.set('Module draft generated — pending review.');
+        this.loadAll();
       },
       error: err => {
-        this.generatingModule.set(false);
+        this.generating.set(false);
         this.actionError.set(err.error?.error ?? 'Could not generate a Module.');
       },
     });
-  }
-
-  goToModules(): void {
-    this.router.navigateByUrl('/admin/modules');
   }
 }

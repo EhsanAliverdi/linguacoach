@@ -5,6 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { AdminUnifiedResourceBankService } from '../../../core/services/admin-resource-import.service';
 import { AdminLearnItemService } from '../../../core/services/admin-learn-item.service';
 import { AdminActivityDefinitionService } from '../../../core/services/admin-activity-definition.service';
+import { AdminModuleDefinitionService } from '../../../core/services/admin-module-definition.service';
 import {
   UnifiedResourceBankItemDto,
   UnifiedResourceBankItemType,
@@ -53,9 +54,11 @@ const PAGE_SIZE = 20;
  * replaces as the primary entry point remain reachable and fully functional.
  *
  * Phase H3 — "Generate Learn" is a real row action (deterministic draft composer, see
- * AdminLearnItemService). Phase H4 — "Generate Activity" is now real too (see
- * AdminActivityDefinitionService); Generate Module stays disabled "Coming soon" — a placeholder
- * for Phase H5, which does not exist yet.
+ * AdminLearnItemService). Phase H4 — "Generate Activity" is real too (see
+ * AdminActivityDefinitionService). Phase H5 — "Generate Module" is now real too: it only
+ * succeeds when an already-approved Learn Item AND an already-approved Activity Definition are
+ * both linked to this resource (see AdminModuleDefinitionService.generateFromResource) — a clear
+ * validation error explains what's missing otherwise, never a silent no-op.
  */
 @Component({
   selector: 'app-admin-resource-bank-unified',
@@ -116,15 +119,19 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
   generatingLearnId = signal<string | null>(null);
   generateSuccess = signal('');
   generateError = signal('');
-  lastGeneratedKind = signal<'learn' | 'activity' | null>(null);
+  lastGeneratedKind = signal<'learn' | 'activity' | 'module' | null>(null);
 
   // ── Phase H4 — Generate Activity ─────────────────────────────────────────
   generatingActivityId = signal<string | null>(null);
+
+  // ── Phase H5 — Generate Module ───────────────────────────────────────────
+  generatingModuleId = signal<string | null>(null);
 
   constructor(
     private bankSvc: AdminUnifiedResourceBankService,
     private learnItemSvc: AdminLearnItemService,
     private activitySvc: AdminActivityDefinitionService,
+    private moduleSvc: AdminModuleDefinitionService,
     private router: Router,
   ) {}
 
@@ -206,7 +213,10 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
         id: 'generate-activity', label: 'Generate Activity', icon: 'sparkles', tone: 'default',
         disabled: this.generatingActivityId() === item.id,
       },
-      { id: 'generate-module', label: 'Generate Module (coming soon)', disabled: true },
+      {
+        id: 'generate-module', label: 'Generate Module', icon: 'sparkles', tone: 'default',
+        disabled: this.generatingModuleId() === item.id,
+      },
     ];
   }
 
@@ -214,7 +224,7 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
     if (actionId === 'view') this.openDrawer(item);
     if (actionId === 'generate-learn') this.generateLearn(item);
     if (actionId === 'generate-activity') this.generateActivity(item);
-    // generate-module is disabled — no handler needed (H5).
+    if (actionId === 'generate-module') this.generateModule(item);
   }
 
   /** Phase H3 — deterministic draft composer, one resource per call (multi-select is a future
@@ -271,5 +281,32 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
 
   goToActivities(): void {
     this.router.navigateByUrl('/admin/activities');
+  }
+
+  /** Phase H5 — only succeeds when an already-approved Learn Item AND an already-approved
+   *  Activity Definition are both linked to this resource; never cascade-generates either. */
+  generateModule(item: UnifiedResourceBankItemDto): void {
+    this.generatingModuleId.set(item.id);
+    this.generateError.set('');
+    this.generateSuccess.set('');
+    this.moduleSvc.generateFromResource({
+      resourceType: RESOURCE_TYPE_TO_LEARN_ITEM_TYPE[item.type],
+      resourceId: item.id,
+    }).subscribe({
+      next: result => {
+        this.generatingModuleId.set(null);
+        this.lastGeneratedKind.set('module');
+        this.generateSuccess.set(`Module draft created from "${item.title}" — pending review.`);
+        this.loadAll();
+      },
+      error: err => {
+        this.generatingModuleId.set(null);
+        this.generateError.set(err.error?.error ?? 'Could not generate a Module.');
+      },
+    });
+  }
+
+  goToModules(): void {
+    this.router.navigateByUrl('/admin/modules');
   }
 }
