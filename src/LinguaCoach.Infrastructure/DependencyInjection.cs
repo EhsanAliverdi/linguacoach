@@ -424,6 +424,12 @@ public static class DependencyInjection
         services.AddScoped<LinguaCoach.Application.PracticeGymModules.IPracticeGymModuleAssignmentRecorder,
             LinguaCoach.Infrastructure.PracticeGymModules.PracticeGymModuleAssignmentRecorder>();
 
+        // Phase H10 — ActivityDefinition Runtime Launch Path / Attempt Bridge (materializes an
+        // approved, launch-eligible Activity Definition into a real LearningActivity, reusing the
+        // existing ActivityTemplate Form.io pilot's scoring/attempt/ledger pipeline unchanged).
+        services.AddScoped<LinguaCoach.Application.ActivityDefinitionLaunch.IActivityDefinitionLaunchService,
+            LinguaCoach.Infrastructure.ActivityDefinitionLaunch.ActivityDefinitionLaunchService>();
+
         // Admin runtime settings / feature gate registry (Phase 20B)
         services.AddSingleton<IFeatureGateRegistry, LinguaCoach.Infrastructure.Admin.FeatureGateRegistryService>();
         services.AddScoped<IRuntimeSettingsService, LinguaCoach.Infrastructure.Admin.RuntimeSettingsService>();

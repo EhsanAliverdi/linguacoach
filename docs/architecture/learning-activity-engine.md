@@ -87,6 +87,21 @@ supersededBy:
 > `ActivityTemplate`, `PracticeActivityCache`, and `StudentActivityReadinessItem` are all
 > unchanged. See
 > `docs/reviews/2026-07-10-phase-h8-content-studio-admin-ia-cleanup-review.md`.
+>
+> **Phase H10 note (2026-07-10):** H10 adds a **third** way a `LearningActivity` row can come into
+> existence, alongside `IAiActivityGenerator`-generated ones and `ActivityTemplate`-materialized
+> ones (both already documented above): `ActivityDefinitionLaunchService` now also creates one,
+> using the exact same `SetFormIoContent(schema, scoringRules)` call `ActivityTemplate`'s pilot
+> already makes — so this document's entire description of how a `LearningActivity` gets scored
+> (`ActivitySubmitHandler`, the pattern-evaluation dispatch, `ActivityAttempt`, the learning
+> ledger) applies **unchanged** to Module-launched activities too. The activity's
+> `ExercisePatternKey` is always set to the shared, already-seeded `FormIoPracticeGymPilot` marker
+> pattern — the same one `ActivityTemplate` instances use — specifically so the existing
+> content-driven Form.io dispatch (`isFormIoScored`, keyed off `FormIoSchemaJson` being non-empty,
+> not off the pattern's own nominal marking mode) picks it up correctly. No change was made to
+> `ActivitySubmitHandler`, `ComponentAnswerScorer`, `ActivityAttempt`, or any other entity/service
+> this document describes. See
+> `docs/reviews/2026-07-10-phase-h10-activitydefinition-runtime-launch-bridge-review.md`.
 
 ## Why `LearningActivity` is the Centre of the Product
 

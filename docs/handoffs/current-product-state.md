@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-10 (Phase H8)
+lastUpdated: 2026-07-10 (Phase H10)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,41 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-10 (Phase H8)
+Last updated: 2026-07-10 (Phase H10)
+
+## ActivityDefinition Runtime Launch Path / Attempt Bridge (Phase H10, 2026-07-10)
+
+Approved `ActivityDefinition` records now have a real launch/attempt/scoring path — the first
+time this has been true since H4 introduced the entity. Reached only through an approved
+`ModuleDefinition` suggestion in Practice Gym: when a suggestion's Activity Definition is
+Approved, uses a supported activity type (`gap_fill` or `multiple_choice_single`), and has a
+valid, auto-scorable Form.io schema, the student now sees a real **Start** button instead of
+"Coming soon."
+
+Starting a suggestion materializes it into a real `LearningActivity` — using the exact same
+mechanism the existing `ActivityTemplate` Form.io pilot already uses — so the student is taken to
+the same, completely unmodified `/activity` page, Form.io renderer, and submission/scoring flow
+that already works today. No new scoring code was written; no new attempt entity was created. A
+small new bridge table (`StudentActivityDefinitionLaunch`) records which Module/Activity
+Definition/Learn Item each launched activity came from, purely for traceability and admin
+diagnostics.
+
+Activity types that can't be auto-scored yet (`short_answer`, anything requiring manual or
+AI-assisted review, unsupported renderers, invalid schemas) fail gracefully with a clear,
+student-safe reason — the Practice Gym page never breaks or shows a scary error.
+
+No application code was removed. `ActivityTemplate`, `PracticeActivityCache`,
+`StudentActivityReadinessItem`, and the full `LearningActivity`/`LearningSession`/
+`SessionExercise` runtime are all untouched — H10 makes future H9 cleanup safer by proving one
+more thing works, it doesn't remove anything itself. Today's module card remains display-only for
+now (`TODO-H10-2`); a native `ActivityDefinition` attempt runtime remains deferred (`TODO-H10-3`).
+
++30 backend tests (3,925 total: 16 unit, 2 regression, 12 integration). Full detail:
+`docs/architecture/product-model-realignment-h0.md` and
+`docs/reviews/2026-07-10-phase-h10-activitydefinition-runtime-launch-bridge-review.md`; roadmap:
+`docs/roadmap/road-map.md` §1.
+
+---
 
 ## Content Studio/Admin IA Cleanup and Removal Readiness (Phase H8, 2026-07-10)
 

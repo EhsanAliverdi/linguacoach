@@ -212,6 +212,14 @@ public sealed class PracticeGymModuleSelectionService : IPracticeGymModuleSelect
                     && entry.Module.Skill is not null
                     && request.WeaknessSignals.Contains(entry.Module.Skill, StringComparer.OrdinalIgnoreCase);
 
+                // Phase H10 — precompute launch eligibility so the client can show Start/disabled
+                // without an extra round trip. Re-validated fresh at actual launch time too.
+                var launchEligibility = entry.Activities
+                    .Select(Application.ActivityDefinitionLaunch.ActivityDefinitionLaunchEligibility.Evaluate)
+                    .FirstOrDefault(e => e.CanLaunch)
+                    ?? entry.Activities.Select(Application.ActivityDefinitionLaunch.ActivityDefinitionLaunchEligibility.Evaluate).FirstOrDefault()
+                    ?? new Application.ActivityDefinitionLaunch.ActivityDefinitionLaunchEligibilityResult(false, "This module has no launchable practice activity.");
+
                 suggestions.Add(new PracticeGymModuleSuggestion(
                     ModuleDefinitionId: entry.Module.Id,
                     Title: entry.Module.Title,
@@ -228,7 +236,9 @@ public sealed class PracticeGymModuleSelectionService : IPracticeGymModuleSelect
                     IsScaffold: usedBroadenedCefr && entry.Module.CefrLevel is null,
                     IsRemediation: isRemediation,
                     LinkedLearnItemSummaries: entry.Learns.Select(ToLearnItemSummary).ToList(),
-                    LinkedActivitySummaries: entry.Activities.Select(ToActivitySummary).ToList()));
+                    LinkedActivitySummaries: entry.Activities.Select(ToActivitySummary).ToList(),
+                    CanLaunch: launchEligibility.CanLaunch,
+                    UnsupportedReason: launchEligibility.UnsupportedReason));
 
                 if (entry.Module.Skill is not null)
                     usedSkills.Add(entry.Module.Skill);

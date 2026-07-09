@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-10 (Phase H8)
+lastUpdated: 2026-07-10 (Phase H10)
 owner: architecture
 supersedes:
 supersededBy:
@@ -78,6 +78,13 @@ removed from primary admin navigation and their subtitles now point admins to th
 Resource Bank page instead. **Their routes, components, and this platform's underlying staging
 pipeline/tables/APIs were not touched** — H8 was navigation and page-copy only. See
 `docs/reviews/2026-07-10-phase-h8-content-studio-admin-ia-cleanup-review.md`.
+
+**Phase H10 (2026-07-10)** does not touch this platform at all — it gives `ActivityDefinition` (a
+downstream H4 consumer of this platform's published tables, not part of the platform itself) its
+first runtime launch path. Noted here only for completeness: the import staging pipeline
+(`ResourceImportRun`/`ResourceRawRecord`/`ResourceCandidate`) and the four typed published tables
+remain exactly as classified in Plan-Sync-After-H7 (do not remove). See
+`docs/reviews/2026-07-10-phase-h10-activitydefinition-runtime-launch-bridge-review.md`.
 
 **Date planned:** 2026-07-08 (Plan-Sync-After-C1), **finalized:** 2026-07-08 (Phase E0),
 **E1 implemented:** 2026-07-08, **E2 implemented:** 2026-07-08, **E3 implemented:** 2026-07-08,

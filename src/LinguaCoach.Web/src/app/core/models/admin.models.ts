@@ -726,6 +726,9 @@ export interface AdminPracticeGymSuggestedModule {
   isReview: boolean;
   isScaffold: boolean;
   isRemediation: boolean;
+  /** Phase H10 — whether this suggestion's Activity Definition can actually be launched right now. */
+  canLaunch: boolean;
+  unsupportedReason: string | null;
 }
 
 export interface AdminPracticeGymModulePreview {

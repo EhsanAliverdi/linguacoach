@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-10 (Phase H8)
+lastUpdated: 2026-07-10 (Phase H10)
 owner: product
 supersedes:
 supersededBy:
@@ -262,6 +262,57 @@ suite could not run — pre-existing, unrelated spec-fixture gaps from H6/H7 and
 feedback-policy phase block the shared test bundle, confirmed via `git log` to predate H8;
 tracked as new `TODO-H8-2` rather than expanding H8's scope to fix. Full detail:
 `docs/reviews/2026-07-10-phase-h8-content-studio-admin-ia-cleanup-review.md`.
+
+**Phase H10, 2026-07-10. Implemented.** H10 gives an approved `ActivityDefinition` (H4) its first
+real launch/attempt/scoring path, reached only through an approved `ModuleDefinition` suggestion
+in Practice Gym (H7). Deliberately out of order relative to H9 (destructive legacy cleanup) — the
+user's H10 brief explicitly said not to start H9 yet, since `ActivityTemplate` couldn't safely be
+removed until `ActivityDefinition` had some proven launch path. **Chosen option: a hybrid bridge
+(Option C framing, executed via Option B's mechanism).** The Step 0 audit found the entire
+existing scored Form.io path — `ActivityTemplate` materialization →
+`LearningActivity.SetFormIoContent` → `POST api/activity/{id}/attempt` →
+`ActivitySubmitHandler.HandlePatternEvaluationAsync` (content-driven dispatch on
+`FormIoSchemaJson`, not pattern-driven) → `FormIoPatternEvaluator` →
+`IPlacementScoringService.ScoreSubmission` → `ComponentAnswerScorer.Score` — is keyed entirely off
+`LearningActivity.FormIoSchemaJson`/`ScoringRulesJson`, and confirmed by reading
+`ActivityGenerationService`'s actual serialization code that `ActivityDefinition.ScoringRulesJson`
+is already byte-compatible with `ComponentScoringRule`/`ScoringRulesDocument` — no adapter needed.
+`ActivityAttempt.LearningActivityId` is a required, non-nullable, constructor-enforced field, so a
+native parallel attempt entity (Option A) would have to reimplement the ledger write, multi-skill
+progress, memory update, and readiness/usage-log bookkeeping that today live entirely inside
+`ActivitySubmitHandler` — pure risk with no offsetting benefit. H10 therefore materializes an
+eligible `ActivityDefinition` into a real `LearningActivity` (reusing the existing, already-seeded
+`ExercisePatternKey.FormIoPracticeGymPilot` generic marker pattern — the same one
+`ActivityTemplate`'s pilot uses) via `SetFormIoContent`, so the entire downstream pipeline works
+unchanged. A new, minimal `StudentActivityDefinitionLaunch` bridge table
+(`Phase_H10_AddActivityDefinitionLaunchBridge` migration — one new table, no change to any
+existing table, including `LearningActivity`/`ActivityAttempt`) preserves traceability to
+`ModuleDefinition`/`ActivityDefinition`/`LearnItem` — it is not itself a student attempt/score
+record. New `ActivityDefinitionLaunchEligibility` — a pure, static, exception-safe check (Approved
+Module + Approved Activity Definition + `Formio` renderer + valid Form.io schema + supported
+`ActivityType` (`gap_fill`/`multiple_choice_single` only — `short_answer` and anything flagged
+`RequiresManualOrAiEvaluation` stay unsupported) — shared by H7's selector (to precompute
+`CanLaunch`/`UnsupportedReason` on every suggestion, no extra round trip) and the new
+`IActivityDefinitionLaunchService` (to re-validate fresh at click time). New
+`POST api/practice-gym/module-suggestions/{moduleDefinitionId}/start` on the existing
+`PracticeGymSuggestionsController` — resolves the caller's own profile server-side (a student can
+never launch on another's behalf), always 200 with `Success=false` for every non-launchable case,
+matching `StartSuggestionResult`'s existing non-throw convention. Student-safe launch result omits
+`AnswerKeyJson`/`ScoringRulesJson` entirely. Practice Gym's H7 "Recommended module practice"
+section now shows a real Start button when launchable (navigates to the existing, unmodified
+`/activity?activityId=...` page — same Form.io renderer, same submit endpoint, zero new frontend
+rendering/scoring code) and a clear, student-safe "not launchable yet" reason otherwise. Admin
+diagnostic card extended with a Launchable/reason badge per suggestion — no controller change
+needed, since the admin preview endpoint already returns the raw selection result. +16 unit, +2
+regression, +12 integration tests (3,895 → 3,925). Frontend production build clean (only the
+pre-existing bundle-size warning); the pre-existing Karma compile failure (`TODO-H8-2`) is
+unchanged — re-confirmed the same six spec files fail identically and none were touched by H10.
+No H9 destructive cleanup, no PG-v2, no full Practice Gym redesign, no learner mastery updates
+from Modules, no native `ActivityDefinition` attempt runtime (deferred, `TODO-H10-3`), no Today
+launch integration (deferred, `TODO-H10-2`). `ActivityTemplate`, `PracticeActivityCache`,
+`StudentActivityReadinessItem`, and the full runtime session-entity chain are all untouched. Full
+detail: `docs/roadmap/road-map.md` §1, and
+`docs/reviews/2026-07-10-phase-h10-activitydefinition-runtime-launch-bridge-review.md`.
 
 ---
 
@@ -577,7 +628,7 @@ pages exist to populate "Content Studio." Not implemented in H0.
 | **H7 — Practice Gym Module Pipeline** `Done (2026-07-09)` | Deterministic, read-only `IPracticeGymModuleSelectionService` suggests Approved Modules (with Approved linked Learn Item/Activity Definition) for Practice Gym, attached additively as an optional `PracticeGymSuggestionsDto.ModuleSuggestions`; adds self-directed skill/subskill/objective/difficulty/weakness-signal preferences on top of H6's shape; no student "start" flow yet (display-only). | H6 |
 | **H8 — Content Studio/Admin IA Cleanup and Removal Readiness** `Done (2026-07-10)` | Frontend/docs-only. Split admin nav into Content Studio (Import → Bank → Learn Items → Activities → Modules) and Content Ops (staging/support pages); removed the four typed resource-bank nav entries (navigation only — routes/tables/APIs untouched); updated stale "future Modules" page copy. No table/API/route/component deletion. | H1–H7 substantially landed, Plan-Sync-After-H7 |
 | **H9 — Legacy Bank Structure Removal and Consolidation** `Planned` | The first genuinely destructive cleanup phase — gated on a per-item safety audit (dependency audit, data audit, migration strategy, compatibility strategy, rollback/backup notes, test coverage plan) re-run against whatever H8/Phase F have retired by then; Plan-Sync-After-H7's own audit found nothing yet proven safe this way. If physical `ResourceBankItem` consolidation (§4 Option A, deferred at H0) is pursued, split into H9A (remove already-dead admin/API/code paths) / H9B (introduce the new table, additive) / H9C (migrate typed tables behind it) / H9D (remove old typed tables only after verification). | H8 |
-| **H10 — ActivityDefinition Runtime Launch Path / Attempt Bridge** `Planned` | Resolve H7's known limitation — Practice Gym module suggestions are display-only; `ActivityDefinition` has no attempt/scoring runtime; `ActivityTemplate` remains the only path that launches a scored Form.io pilot activity — before H9 could ever remove `ActivityTemplate`. Decide: (A) build a real `ActivityDefinition` attempt/scoring runtime, (B) bridge `ActivityDefinition` into the existing `LearningActivity`/`ActivityTemplate` materialization path, or (C) hybrid — bridge first, full runtime later. | H7 |
+| **H10 — ActivityDefinition Runtime Launch Path / Attempt Bridge** `Done (2026-07-10)` | Chose (C) hybrid, executed via (B)'s mechanism: materializes an eligible Activity Definition into a real `LearningActivity` via `SetFormIoContent` (same as `ActivityTemplate`'s pilot), reusing the entire existing scoring/attempt/ledger pipeline unchanged. New additive `StudentActivityDefinitionLaunch` bridge table for traceability. Practice Gym Start button now live for `gap_fill`/`multiple_choice_single` suggestions. | H7 |
 
 **Not scheduled by this phase:** destructive cleanup of any kind. Phase F (legacy generation
 retirement), G2/G3 (backend/diagnostics cleanup), and PG-v2 (skill-first Activity selector)
@@ -646,9 +697,21 @@ Frontend/docs-only nav and copy cleanup; no backend/table/API/route/component ch
 `docs/roadmap/road-map.md` §1 and
 `docs/reviews/2026-07-10-phase-h8-content-studio-admin-ia-cleanup-review.md` for full detail.
 
-**Recommended next: a decision on H10 (ActivityDefinition Runtime Launch Path)** before H9 could
-ever touch `ActivityTemplate`, then H9's own fresh safety audit. The PG-v2 track remains a
-separate, still-open decision not resolved by this phase.
+**H10 — ActivityDefinition Runtime Launch Path / Attempt Bridge — done (2026-07-10).** Chose a
+hybrid bridge (Option C framing, Option B mechanism): materializes an eligible
+`ActivityDefinition` into a real `LearningActivity`, reusing the entire existing scoring/attempt/
+ledger pipeline unchanged. `ActivityTemplate` was not removed — H10 gives `ActivityDefinition` a
+proven launch path so H9 will eventually have a real basis for deciding whether `ActivityTemplate`
+is still needed, but that decision is still H9's to make, not resolved here. See
+`docs/roadmap/road-map.md` §1 and
+`docs/reviews/2026-07-10-phase-h10-activitydefinition-runtime-launch-bridge-review.md` for full
+detail.
+
+**Recommended next: H9 — Legacy Bank Structure Removal and Consolidation**, starting with its own
+fresh per-item safety audit (do not act on Plan-Sync-After-H7's snapshot directly — re-verify).
+The PG-v2 track remains a separate, still-open decision not resolved by this phase. `TODO-H10-2`
+(Today module launch) and `TODO-H10-3` (native ActivityDefinition attempt runtime) are smaller,
+independent follow-ups that can proceed in parallel.
 
 ---
 

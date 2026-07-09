@@ -14,7 +14,7 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
 
 ---
 
-## Product Model Realignment — Phase H0-H10 `H0-H8 Done, H9-H10 Planned` (2026-07-10)
+## Product Model Realignment — Phase H0-H10 `H0-H8+H10 Done, H9 Planned` (2026-07-10)
 
 **Phase H0 (docs-only, done 2026-07-09)** defined the intended product model — `Resource Bank Item
 → Learn Item/Activity → Module → Daily Lesson/Practice Gym → Attempt → Feedback + Rating →
@@ -128,13 +128,24 @@ E1-E10/D1-D6 substrate, and G2/G3/PG-v2 remain valid, separately-scoped tracks.
   consolidation (H0 Option A, deferred at H0) is pursued, split into H9A (remove already-dead
   admin/API/code paths) / H9B (introduce the new table, additive) / H9C (migrate typed tables
   behind it) / H9D (remove old typed tables only after verification).
-- [ ] **Phase H10 — ActivityDefinition Runtime Launch Path / Attempt Bridge** `Planned` — resolve
-  H7's known limitation (Practice Gym module suggestions are display-only; `ActivityDefinition`
-  has no attempt/scoring runtime; `ActivityTemplate` remains the only path that launches a scored
-  Form.io pilot activity) before H9 could ever remove `ActivityTemplate`. Decide: (A) build a
-  real `ActivityDefinition` attempt/scoring runtime, (B) bridge `ActivityDefinition` into the
-  existing `LearningActivity`/`ActivityTemplate` materialization path, or (C) hybrid — bridge
-  first, full runtime later.
+- [x] **Phase H10 — ActivityDefinition Runtime Launch Path / Attempt Bridge** `Done` (2026-07-10)
+  — resolved H7's known limitation. **Chosen: (C) hybrid bridge**, executed via (B)'s mechanism —
+  materializes an eligible `ActivityDefinition` into a real `LearningActivity` via
+  `SetFormIoContent`, the exact mechanism `ActivityTemplate`'s Form.io pilot already uses, so
+  submission/scoring/the ledger/multi-skill progress flow through the completely unmodified
+  existing `ActivitySubmitHandler` pipeline — no new scoring code, no new attempt entity. New
+  additive `StudentActivityDefinitionLaunch` bridge table (migration
+  `Phase_H10_AddActivityDefinitionLaunchBridge`) for traceability to
+  `ModuleDefinition`/`ActivityDefinition`/`LearnItem`. New `IActivityDefinitionLaunchService` +
+  shared `ActivityDefinitionLaunchEligibility` check (Approved + `gap_fill`/
+  `multiple_choice_single` only + `Formio` renderer + valid schema + no manual/AI-evaluation
+  requirement). New `POST api/practice-gym/module-suggestions/{id}/start`. Student Practice Gym
+  page shows a real Start button when launchable, clear "not launchable yet" label otherwise. No
+  H9 destructive cleanup, no PG-v2, no learner mastery updates, `ActivityTemplate`/
+  `PracticeActivityCache`/`StudentActivityReadinessItem`/runtime session entities all untouched.
+  +30 backend tests (3,925 total). `TODO-H10-2` (Today launch integration) and `TODO-H10-3`
+  (native ActivityDefinition attempt runtime) deferred. See
+  `docs/reviews/2026-07-10-phase-h10-activitydefinition-runtime-launch-bridge-review.md`.
 
 ---
 

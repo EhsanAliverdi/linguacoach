@@ -77,8 +77,9 @@
       }
     </section>
 
-    <!-- Phase H7 — Recommended module practice: additive, read-only, shown only when the
-         backend suggested an approved Module. No start/attempt loop here yet. -->
+    <!-- Phase H7/H10 — Recommended module practice: additive, shown only when the backend
+         suggested an approved Module. Start is enabled only when the backend says the module's
+         Activity Definition can actually be launched (H10); otherwise a clear disabled state. -->
     @if (moduleSuggestions().length > 0) {
       <section class="sp-practice-section" data-testid="module-suggestions-section">
         <p class="sp-eyebrow sp-practice-section-label">Recommended module practice</p>
@@ -101,7 +102,20 @@
                 <p style="font-size:12.5px;color:var(--sp-muted);margin:0 0 6px">{{ module.description }}</p>
               }
               <p style="font-size:12px;color:var(--sp-muted);margin:0 0 8px">{{ module.reason }}</p>
-              <span style="font-size:11px;font-weight:700;color:var(--sp-muted)" data-testid="module-suggestion-coming-soon">Coming soon</span>
+              @if (module.canLaunch) {
+                <button
+                  type="button"
+                  class="sp-btn sp-btn-primary sp-suggestion-start-btn"
+                  data-testid="module-suggestion-start"
+                  [disabled]="startingModuleId() !== null"
+                  (click)="startModuleSuggestion(module)">
+                  {{ isStartingModule(module.moduleDefinitionId) ? 'Starting…' : 'Start' }}
+                </button>
+              } @else {
+                <span style="font-size:11px;font-weight:700;color:var(--sp-muted)" data-testid="module-suggestion-unsupported">
+                  {{ module.unsupportedReason ?? 'Not launchable yet' }}
+                </span>
+              }
             </div>
           }
         </div>

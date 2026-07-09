@@ -69,12 +69,14 @@ export interface PracticeGymModuleSuggestion {
   isRemediation: boolean;
   linkedLearnItemSummaries: PracticeGymModuleLearnItemSummary[];
   linkedActivitySummaries: PracticeGymModuleActivitySummary[];
+  /** Phase H10 — true when this suggestion can actually be started right now. False (with
+   * unsupportedReason set) for activity types/renderers not yet supported by the launch bridge. */
+  canLaunch: boolean;
+  unsupportedReason: string | null;
 }
 
 /** Phase H7 — additive, optional. Null when no compatible approved Module exists; the
- * readiness-pool-backed sections above remain the source of truth in that case. There is no
- * "start" flow for a module suggestion yet — Practice Gym launch stays on the existing
- * suggestedItems/continueItems/reviewItems fallback path. */
+ * readiness-pool-backed sections above remain the source of truth in that case. */
 export interface PracticeGymModuleSuggestionsSection {
   suggestions: PracticeGymModuleSuggestion[];
   fallbackRequired: boolean;
@@ -103,6 +105,27 @@ export interface StartSuggestionResult {
   learningSessionId: string | null;
   sessionExerciseId: string | null;
   alreadyReserved: boolean;
+}
+
+/** Phase H10 — result of starting a module-based suggestion. Never carries an answer key or
+ * scoring rules. When success is false, unsupportedReason explains why and the student should
+ * stay on the existing suggestion sections. */
+export interface ModuleSuggestionStartResult {
+  success: boolean;
+  unsupportedReason: string | null;
+  moduleDefinitionId: string;
+  activityDefinitionId: string | null;
+  learningActivityId: string | null;
+  title: string | null;
+  instructions: string | null;
+  rendererType: string | null;
+  formSchemaJson: string | null;
+  estimatedMinutes: number | null;
+  skill: string | null;
+  subskill: string | null;
+  cefrLevel: string | null;
+  canSubmit: boolean;
+  learnItem: PracticeGymModuleLearnItemSummary | null;
 }
 
 /** Student-friendly label for each routing reason. */
@@ -137,6 +160,16 @@ export class PracticeGymSuggestionsService {
   completeSuggestion(readinessItemId: string): Observable<void> {
     return this.http.post<void>(
       `${this.base}/suggestions/${readinessItemId}/complete`,
+      null
+    );
+  }
+
+  /** Phase H10 — starts a module-based suggestion. On success, navigate to
+   * `/activity?activityId=<learningActivityId>` — the existing Practice Gym launch/submit flow
+   * handles the rest unchanged. */
+  startModuleSuggestion(moduleDefinitionId: string): Observable<ModuleSuggestionStartResult> {
+    return this.http.post<ModuleSuggestionStartResult>(
+      `${this.base}/module-suggestions/${moduleDefinitionId}/start`,
       null
     );
   }

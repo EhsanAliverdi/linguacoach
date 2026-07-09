@@ -406,4 +406,47 @@ public sealed class PracticeGymModuleSelectionServiceTests : IDisposable
 
         (await _db.StudentDailyModuleAssignments.CountAsync()).Should().Be(1);
     }
+
+    // ── Phase H10 — CanLaunch precomputation ─────────────────────────────────
+
+    [Fact]
+    public async Task Suggestion_reports_can_launch_false_for_unsupported_scoring_shape()
+    {
+        // This file's own SeedActivity fixture ("{"word":{"kind":"exact"}}") does not match the
+        // real ScoringRulesDocument shape ActivityGenerationService actually produces — exactly
+        // the kind of malformed/incompatible data H10's eligibility check must fail closed on.
+        SeedModule();
+
+        var result = await _sut.SelectAsync(Request(Guid.NewGuid()));
+
+        result.FallbackRequired.Should().BeFalse();
+        result.Suggestions.Should().ContainSingle().Which.CanLaunch.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Suggestion_reports_can_launch_true_for_launch_eligible_activity()
+    {
+        var module = new ModuleDefinition("Launchable Module", ModuleSourceMode.Manual, cefrLevel: "B1", skill: "Vocabulary");
+        module.Approve(null);
+        _db.ModuleDefinitions.Add(module);
+        _db.SaveChanges();
+
+        var learnItem = SeedLearnItem(true);
+        var activity = new ActivityDefinition("Gap fill: launchable", "Type the missing word.", "gap_fill", ActivityRendererType.Formio,
+            ActivitySourceMode.Manual, cefrLevel: "B1", skill: "Vocabulary", estimatedMinutes: 5,
+            formSchemaJson: "{\"components\":[{\"key\":\"answer\",\"type\":\"textfield\"}]}",
+            scoringRulesJson: "{\"Components\":{\"answer\":{\"Kind\":\"text_normalized\",\"CorrectAnswer\":\"resilient\"}}}");
+        activity.Approve(null);
+        _db.ActivityDefinitions.Add(activity);
+        _db.SaveChanges();
+
+        _db.ModuleDefinitionLearnItemLinks.Add(new ModuleDefinitionLearnItemLink(module.Id, learnItem.Id, LearnItemResourceRole.Primary, 0));
+        _db.ModuleDefinitionActivityLinks.Add(new ModuleDefinitionActivityLink(module.Id, activity.Id, ModuleActivityRole.PrimaryPractice, 0));
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(Guid.NewGuid()));
+
+        result.FallbackRequired.Should().BeFalse();
+        result.Suggestions.Should().ContainSingle().Which.CanLaunch.Should().BeTrue();
+    }
 }

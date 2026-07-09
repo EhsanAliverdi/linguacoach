@@ -54,7 +54,16 @@ public sealed record PracticeGymModuleSuggestion(
     bool IsScaffold,
     bool IsRemediation,
     IReadOnlyList<PracticeGymModuleLearnItemSummary> LinkedLearnItemSummaries,
-    IReadOnlyList<PracticeGymModuleActivitySummary> LinkedActivitySummaries);
+    IReadOnlyList<PracticeGymModuleActivitySummary> LinkedActivitySummaries,
+    /// <summary>Phase H10 — true when at least one linked Activity Definition can actually be
+    /// launched into a real, runnable practice attempt right now (see
+    /// <c>ActivityDefinitionLaunch.ActivityDefinitionLaunchEligibility</c>). False for every
+    /// suggestion before H10; the student Practice Gym UI shows "Start" only when this is true.</summary>
+    bool CanLaunch = false,
+    /// <summary>Student-safe explanation for why <see cref="CanLaunch"/> is false — e.g. "This
+    /// module contains an activity type that is not launchable yet." Null when
+    /// <see cref="CanLaunch"/> is true.</summary>
+    string? UnsupportedReason = null);
 
 /// <summary>Student-safe projection of a <c>LearnItem</c> — no admin-only fields.</summary>
 public sealed record PracticeGymModuleLearnItemSummary(

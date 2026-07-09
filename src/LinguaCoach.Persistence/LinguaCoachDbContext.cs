@@ -139,6 +139,10 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     // any, the deterministic selector suggested to a student)
     public DbSet<StudentPracticeGymModuleAssignment> StudentPracticeGymModuleAssignments => Set<StudentPracticeGymModuleAssignment>();
 
+    // Phase H10 — ActivityDefinition Runtime Launch Path / Attempt Bridge (traceability: which
+    // ModuleDefinition/ActivityDefinition/LearnItem a materialized LearningActivity came from)
+    public DbSet<StudentActivityDefinitionLaunch> StudentActivityDefinitionLaunches => Set<StudentActivityDefinitionLaunch>();
+
     // Phase 10W — Enterprise notification platform
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<NotificationOutboxItem> NotificationOutboxItems => Set<NotificationOutboxItem>();

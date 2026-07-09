@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-10 (Phase H8)
+lastUpdated: 2026-07-10 (Phase H10)
 owner: architecture
 supersedes:
 supersededBy:
@@ -508,9 +508,36 @@ to the unified Resource Bank. Updated the admin-nav Karma spec accordingly. **No
 migration, table, entity, or API was touched; no route or component was deleted.** Frontend
 production build clean (only the pre-existing bundle-size warning); the full Karma suite could
 not run due to pre-existing, unrelated spec-fixture gaps from H6/H7 and an earlier
-feedback-policy phase (`TODO-H8-2`, confirmed via `git log` to predate H8). **Recommended next:
-a decision on H10** before H9 could ever touch `ActivityTemplate`, then H9's own fresh safety
-audit. See `docs/reviews/2026-07-10-phase-h8-content-studio-admin-ia-cleanup-review.md`.
+feedback-policy phase (`TODO-H8-2`, confirmed via `git log` to predate H8). See
+`docs/reviews/2026-07-10-phase-h8-content-studio-admin-ia-cleanup-review.md`.
+
+**Phase H10 (2026-07-10)** — ActivityDefinition Runtime Launch Path / Attempt Bridge. Gives an
+approved `ActivityDefinition` its first real launch/attempt/scoring path, reached only through an
+approved `ModuleDefinition` suggestion in Practice Gym. **Chosen: a hybrid bridge (Option C
+framing, Option B mechanism)** — materializes an eligible Activity Definition into a real
+`LearningActivity` via `SetFormIoContent`, exactly the mechanism `ActivityTemplate`'s Form.io
+pilot already uses, so submission/scoring/the ledger/multi-skill progress flow through the
+completely unmodified existing `ActivitySubmitHandler`/`ComponentAnswerScorer` pipeline — no new
+scoring code, no new attempt entity. New additive `StudentActivityDefinitionLaunch` bridge table
+(`Phase_H10_AddActivityDefinitionLaunchBridge` migration — one new table, no change to any
+existing table) for traceability to `ModuleDefinition`/`ActivityDefinition`/`LearnItem`. New,
+shared, exception-safe `ActivityDefinitionLaunchEligibility` (Approved + `gap_fill`/
+`multiple_choice_single` only + `Formio` renderer + valid schema + no manual/AI-evaluation
+requirement) used both to precompute `CanLaunch`/`UnsupportedReason` on H7's suggestions and to
+re-validate fresh at launch time. New `POST api/practice-gym/module-suggestions/{id}/start` —
+always 200, `Success=false` for every non-launchable case. Student Practice Gym page's H7 module
+section now shows a real Start button when launchable (navigates to the existing, unmodified
+`/activity` page) and a clear "not launchable yet" reason otherwise. Admin diagnostic card
+extended with a Launchable/reason badge. +16 unit, +2 regression, +12 integration tests
+(3,895 → 3,925). No H9 destructive cleanup, no PG-v2, no full Practice Gym redesign, no learner
+mastery updates from Modules, no native ActivityDefinition attempt runtime (deferred,
+`TODO-H10-3`), no Today launch integration (deferred, `TODO-H10-2`). `ActivityTemplate`,
+`PracticeActivityCache`, `StudentActivityReadinessItem`, and the full runtime session-entity
+chain are all untouched. Frontend production build clean (only the pre-existing bundle-size
+warning); Karma still blocked by the same pre-existing `TODO-H8-2` gap (re-confirmed, none of the
+six files touched by H10). **Recommended next: H9 — Legacy Bank Structure Removal and
+Consolidation**, starting with its own fresh safety audit. See
+`docs/reviews/2026-07-10-phase-h10-activitydefinition-runtime-launch-bridge-review.md`.
 
 ---
 

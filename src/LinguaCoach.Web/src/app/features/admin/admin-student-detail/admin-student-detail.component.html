@@ -324,7 +324,14 @@
             <sp-admin-badge tone="success">Module pipeline</sp-admin-badge>
             <ul class="sp-admin-simple-list sp-admin-mt-2">
               @for (m of pgPreview.suggestions; track m.moduleDefinitionId) {
-                <li>{{ m.title }} @if (m.cefrLevel) { ({{ m.cefrLevel }}) } — {{ m.reason }}</li>
+                <li>
+                  {{ m.title }} @if (m.cefrLevel) { ({{ m.cefrLevel }}) } — {{ m.reason }}
+                  @if (m.canLaunch) {
+                    <sp-admin-badge tone="success">Launchable</sp-admin-badge>
+                  } @else {
+                    <sp-admin-badge tone="neutral">{{ m.unsupportedReason ?? 'Not launchable yet' }}</sp-admin-badge>
+                  }
+                </li>
               }
             </ul>
           }

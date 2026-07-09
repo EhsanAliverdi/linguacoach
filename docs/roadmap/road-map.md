@@ -26,7 +26,41 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest phase completed (local, not yet deployed):** Phase H8 — Content Studio/Admin IA Cleanup
+**Latest phase completed (local, not yet deployed):** Phase H10 —
+ActivityDefinition Runtime Launch Path / Attempt Bridge (2026-07-10). Gives an approved
+`ActivityDefinition` (H4) its first real launch/attempt/scoring path, reached only through an
+approved `ModuleDefinition` suggestion in Practice Gym (H7). **Chosen option: a hybrid bridge
+(Option C framing, Option B mechanism)** — materializes an eligible `ActivityDefinition` into a
+real `LearningActivity` via `SetFormIoContent`, exactly the mechanism the existing `ActivityTemplate`
+Form.io pilot already uses (`PracticeGymGenerationJob.TryMaterializeFromTemplateAsync`), so
+submission/scoring/the learning ledger/multi-skill progress all flow through the completely
+unmodified existing `ActivitySubmitHandler`/`ComponentAnswerScorer` pipeline — no new scoring
+code, no new attempt entity. New additive `StudentActivityDefinitionLaunch` bridge table
+(`Phase_H10_AddActivityDefinitionLaunchBridge` migration — one new table, no change to any
+existing table, including `LearningActivity`/`ActivityAttempt`) preserves traceability back to
+`ModuleDefinition`/`ActivityDefinition`/`LearnItem`. New `IActivityDefinitionLaunchService` and a
+shared, exception-safe `ActivityDefinitionLaunchEligibility` check (Approved + supported
+`ActivityType` — `gap_fill`/`multiple_choice_single` only — + `Formio` renderer + valid schema +
+no manual/AI-evaluation requirement); H7's selector now precomputes `CanLaunch`/`UnsupportedReason`
+per suggestion so the client never needs an extra round trip to know whether Start is available.
+New `POST api/practice-gym/module-suggestions/{moduleDefinitionId}/start` on the existing
+`PracticeGymSuggestionsController` — always 200, `Success=false` for every non-launchable case,
+existing suggestions remain the fallback either way. Student Practice Gym page's H7 "Recommended
+module practice" section now shows a real **Start** button when launchable (navigates to the
+existing, unmodified `/activity?activityId=...` page) and a clear "not launchable yet" label
+otherwise — no more blanket "Coming soon." Admin diagnostic card extended with a
+Launchable/reason badge per suggestion. +16 unit, +2 regression, +12 integration tests
+(3,895 → 3,925). Frontend production build has no new TS/Angular errors — only the pre-existing
+bundle-size budget failure; the pre-existing Karma test-bundle compile failure (`TODO-H8-2`) is
+unchanged by this phase (re-confirmed: same six spec files, none touched by H10). **No H9
+destructive cleanup, no PG-v2, no full Practice Gym redesign, no learner mastery updates from
+Modules, no native ActivityDefinition attempt runtime (deferred, `TODO-H10-3`), no Today launch
+integration (deferred, `TODO-H10-2`), `ActivityTemplate`/`PracticeActivityCache`/
+`StudentActivityReadinessItem`/the runtime session entities all untouched.** Full detail:
+`docs/architecture/product-model-realignment-h0.md` (updated) and
+`docs/reviews/2026-07-10-phase-h10-activitydefinition-runtime-launch-bridge-review.md`.
+
+**Previous phase completed (local, not yet deployed):** Phase H8 — Content Studio/Admin IA Cleanup
 and Removal Readiness (2026-07-10). Frontend/docs-only admin cleanup, **not** the destructive
 backend/table cleanup (that's H9). Executed the one concrete, low-risk action Plan-Sync-After-H7's
 audit identified: split the admin sidebar's single 14-item "Content Banks" nav section into

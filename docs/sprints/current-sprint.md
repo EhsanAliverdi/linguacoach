@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-10 (Phase H8)
+lastUpdated: 2026-07-10 (Phase H10)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,52 @@ Last updated: 2026-07-10
 ---
 
 ## Active sprint
+
+**Phase H10 — ActivityDefinition Runtime Launch Path / Attempt Bridge (2026-07-10)** — complete
+
+Gives an approved `ActivityDefinition` (H4) its first real launch/attempt/scoring path, reached
+only through an approved `ModuleDefinition` suggestion in Practice Gym (H7). **Not** H9
+destructive cleanup, not PG-v2, not a Practice Gym redesign.
+
+- **Chosen option: hybrid bridge (Option C framing, Option B mechanism)** — materializes an
+  eligible `ActivityDefinition` into a real `LearningActivity` via `SetFormIoContent`, the exact
+  mechanism `ActivityTemplate`'s Form.io pilot already uses, so submission/scoring/the learning
+  ledger/multi-skill progress all flow through the completely unmodified existing
+  `ActivitySubmitHandler`/`ComponentAnswerScorer` pipeline. No new scoring code, no new attempt
+  entity.
+- **Backend**: new additive `StudentActivityDefinitionLaunch` bridge table (migration
+  `Phase_H10_AddActivityDefinitionLaunchBridge`, one new table, no change to any existing table)
+  for traceability back to `ModuleDefinition`/`ActivityDefinition`/`LearnItem`. New
+  `IActivityDefinitionLaunchService` + shared, exception-safe `ActivityDefinitionLaunchEligibility`
+  check (Approved + supported `ActivityType` — `gap_fill`/`multiple_choice_single` only — +
+  `Formio` renderer + valid schema + no manual/AI-evaluation requirement, fails closed on any
+  malformed data). H7's selector precomputes `CanLaunch`/`UnsupportedReason` per suggestion. New
+  `POST api/practice-gym/module-suggestions/{moduleDefinitionId}/start` — always 200,
+  `Success=false` for every non-launchable case, existing suggestions remain the fallback.
+- **Frontend**: student Practice Gym page's H7 module section now shows a real **Start** button
+  when launchable (navigates to the existing, unmodified `/activity` page) and a clear "not
+  launchable yet" label otherwise. Admin diagnostic card extended with a Launchable/reason badge.
+
+**No backend table/API removed. No H9 destructive cleanup. No PG-v2. No learner mastery updates
+from Modules. `ActivityTemplate`, `PracticeActivityCache`, `StudentActivityReadinessItem`, and
+the full runtime session-entity chain are all untouched.**
+
+**Validation**: `dotnet build --configuration Release` passed (0 errors); `dotnet test
+--configuration Release` = 3,925 passed, 0 failed (+16 unit, +2 regression, +12 integration; 5
+architecture unchanged). Angular production build: no new TS/Angular errors, only the
+pre-existing bundle-size budget warning. Karma unit-test suite re-confirmed still blocked by the
+same pre-existing `TODO-H8-2` spec-fixture gaps (six spec files, none touched by H10).
+
+**Deferred:** `TODO-H10-2` (Today module-card Start action — the launch service is already
+source-agnostic, just not wired into Today's UI this phase) and `TODO-H10-3` (native
+`ActivityDefinition` attempt runtime, if ever justified by real usage data).
+
+See `docs/reviews/2026-07-10-phase-h10-activitydefinition-runtime-launch-bridge-review.md` for
+full detail.
+
+---
+
+## Earlier sprint (H8)
 
 **Phase H8 — Content Studio/Admin IA Cleanup and Removal Readiness (2026-07-10)** — complete
 

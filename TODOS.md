@@ -822,19 +822,49 @@ re-audit at kickoff.
 audit table); `docs/architecture/product-model-realignment-h0.md` §4 (Option A/B) and §8 (H9 row).
 **Deferred from:** Plan-Sync-After-H7, 2026-07-09.
 
-### TODO-H10-1 — Decide/build ActivityDefinition runtime launch path or bridge
-**What:** H7 shipped Practice Gym module suggestions as **display-only** — there is no launch
-path, because `ActivityDefinition` (H4) has no attempt/scoring runtime anywhere in the codebase.
-`ActivityTemplate` remains the only path that actually launches a scored Form.io pilot activity
-today. H10 must decide one of: (A) build a real `ActivityDefinition` attempt/scoring runtime from
-scratch, (B) bridge `ActivityDefinition` into the existing `LearningActivity`/`ActivityTemplate`
-materialization path, or (C) hybrid — bridge first, full runtime later.
-**Why:** This decision must happen **before** H9 could ever remove `ActivityTemplate` or its
-dependent Practice Gym launch/scoring infrastructure — doing so prematurely would leave Practice
-Gym with no way to launch scored practice at all. Explicitly flagged as a known limitation in
-H7's own review (`docs/reviews/2026-07-09-phase-h7-practice-gym-module-pipeline-review.md`,
-Risks section) and carried forward by Plan-Sync-After-H7.
-**Context:** `src/LinguaCoach.Domain/Entities/ActivityDefinition.cs` (H4, no attempt/scoring
-wiring); `src/LinguaCoach.Domain/Entities/ActivityTemplate.cs` (live Form.io pilot);
-`PracticeGymGenerationJob.TemplateMigratedPatternKeys` (the only current launch path).
+### ~~TODO-H10-1~~ — Decide/build ActivityDefinition runtime launch path or bridge — **DONE in Phase H10**
+**What:** H7 shipped Practice Gym module suggestions as **display-only** — there was no launch
+path, because `ActivityDefinition` (H4) had no attempt/scoring runtime anywhere in the codebase.
+**Resolution:** Phase H10 (2026-07-10) chose **(C) hybrid**, executed via **(B)**'s mechanism:
+`ActivityDefinitionLaunchService` materializes an eligible, approved Activity Definition into a
+real `LearningActivity` via `SetFormIoContent` — the exact mechanism `ActivityTemplate`'s Form.io
+pilot already uses — so the entire existing submission/scoring/ledger pipeline
+(`ActivitySubmitHandler`/`ComponentAnswerScorer`/`ActivityAttempt`) works unchanged. Supported for
+`gap_fill`/`multiple_choice_single` only; a new additive `StudentActivityDefinitionLaunch` bridge
+table preserves traceability. New `POST api/practice-gym/module-suggestions/{id}/start`; Practice
+Gym's "Recommended module practice" section now shows a real Start button when launchable.
+`ActivityTemplate` was **not** removed — see `docs/reviews/2026-07-10-phase-h10-activitydefinition-runtime-launch-bridge-review.md`.
+**Context:** `src/LinguaCoach.Application/ActivityDefinitionLaunch/`;
+`src/LinguaCoach.Infrastructure/ActivityDefinitionLaunch/ActivityDefinitionLaunchService.cs`;
+`src/LinguaCoach.Domain/Entities/StudentActivityDefinitionLaunch.cs`.
+**Deferred from:** Phase H7, 2026-07-09. **Resolved:** Phase H10, 2026-07-10.
+
+### TODO-H10-2 — Wire a Today module-card Start action
+**What:** H10 built `IActivityDefinitionLaunchService`/`ActivityDefinitionLaunchSource` to be
+source-agnostic (`PracticeGym`/`DailyLesson`/`AdminPreview`), but only wired a Start button into
+Practice Gym this phase — Today's dashboard module card (from H6) remains display-only.
+**Why:** Explicit H10 scope-reduction decision — the phase brief allowed deferring Today
+integration ("Wire Practice Gym first... If not, leave Today display-only"). Practice Gym was the
+higher-value, lower-risk target since H7 already had the suggestion/eligibility plumbing in
+place; Today's dashboard card is a different component tree and was left for a focused follow-up
+rather than risking scope creep in H10.
+**Context:** `src/LinguaCoach.Web/src/app/features/student/dashboard/dashboard/dashboard.component.ts`/`.html`
+(the H6 "Today's module" card); `src/LinguaCoach.Application/ActivityDefinitionLaunch/ActivityDefinitionLaunchContracts.cs`
+(`ActivityDefinitionLaunchSource.DailyLesson` already defined, unused so far).
+**Deferred from:** Phase H10, 2026-07-10.
+
+### TODO-H10-3 — Revisit a native ActivityDefinition attempt runtime (Option A) if usage justifies it
+**What:** H10 deliberately chose the bridge (Option B/C), not a native `ActivityDefinition`
+attempt/scoring runtime (Option A) decoupled from `LearningActivity`. If real usage data ever
+shows the bridge's constraints (only `gap_fill`/`multiple_choice_single`, `LearningActivity`
+materialization on every launch, no direct `ActivityAttempt.ModuleDefinitionId`/
+`ActivityDefinitionId` FK) are limiting, a native runtime is the documented alternative.
+**Why:** The H10 Step 0 audit found `ActivityAttempt.LearningActivityId` is a required,
+non-nullable, constructor-enforced field — a native runtime would mean reimplementing the ledger
+write, multi-skill progress update, memory update, and readiness/usage-log bookkeeping that today
+live entirely inside `ActivitySubmitHandler`, pure risk with no current offsetting benefit. Not
+revisiting this without real usage data to justify the cost.
+**Context:** `docs/reviews/2026-07-10-phase-h10-activitydefinition-runtime-launch-bridge-review.md`
+(Step 0 audit, point 6); `src/LinguaCoach.Domain/Entities/ActivityAttempt.cs`.
+**Deferred from:** Phase H10, 2026-07-10.
 **Deferred from:** Plan-Sync-After-H7, 2026-07-09.

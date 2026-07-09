@@ -6,6 +6,7 @@ import {
   PracticeGymSuggestionsService,
   PracticeGymSuggestionItem,
   PracticeGymSuggestionsResponse,
+  PracticeGymModuleSuggestion,
   routingReasonLabel,
 } from '../../../core/services/practice-gym-suggestions.service';
 import { ExerciseTypeDefinition } from '../../../core/models/admin.models';
@@ -107,6 +108,10 @@ export class PracticeGymComponent implements OnInit {
   startingItemId = signal<string | null>(null);
   suggestionMessage = signal<string | null>(null);
 
+  /** Phase H10 — tracks which module suggestion is currently starting, so its button shows a
+   * busy state without disabling every other card. */
+  startingModuleId = signal<string | null>(null);
+
   readonly skillGroups = computed(() => {
     const all = this._types();
     const map = new Map<string, FormatCard[]>();
@@ -199,6 +204,35 @@ export class PracticeGymComponent implements OnInit {
         this.suggestionMessage.set('Could not start this practice. Please try again.');
       },
     });
+  }
+
+  /** Phase H10 — starts a launch-eligible module suggestion. Mirrors startSuggestion() above:
+   * on success, navigates to /activity with the real, materialized LearningActivity id. */
+  startModuleSuggestion(module: PracticeGymModuleSuggestion): void {
+    if (!module.canLaunch || this.startingModuleId() !== null) return;
+    this.suggestionMessage.set(null);
+    this.startingModuleId.set(module.moduleDefinitionId);
+
+    this.practiceGymSuggestionsService.startModuleSuggestion(module.moduleDefinitionId).subscribe({
+      next: result => {
+        this.startingModuleId.set(null);
+        if (!result.success || !result.learningActivityId) {
+          this.suggestionMessage.set(result.unsupportedReason ?? 'Could not start this practice. Please try again.');
+          return;
+        }
+        this.router.navigate(['/activity'], {
+          queryParams: { activityId: result.learningActivityId, returnTo: '/practice' },
+        });
+      },
+      error: () => {
+        this.startingModuleId.set(null);
+        this.suggestionMessage.set('Could not start this practice. Please try again.');
+      },
+    });
+  }
+
+  isStartingModule(moduleDefinitionId: string): boolean {
+    return this.startingModuleId() === moduleDefinitionId;
   }
 
   isStartingSuggestion(id: string): boolean {
