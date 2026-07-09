@@ -195,14 +195,19 @@ public sealed class TodayBankResourceSelector : ITodayBankResourceSelector
             {
                 candidates.AddRange(passages);
 
+                // Phase D6 — anchor supporting resources on the selected passage's topical context so
+                // the vocabulary/grammar the AI weaves in match the passage topic (e.g. a travel
+                // passage pulls travel vocabulary). Relaxes to the general ladder when no anchor match.
+                var anchor = PickAnchorContextTag(passages[0].MatchedContextTags);
+
                 // Supporting vocabulary targets (same routed CEFR) so the AI can weave in level-
                 // appropriate words; the passage remains the anchor. Optional grammar hint too.
                 var (vocabSupport, vocabRaw) = await SelectVocabularyAsync(
-                    request, MaxSupportingVocabulary, RoleSupporting, "vocabulary support", ct);
+                    request, MaxSupportingVocabulary, RoleSupporting, "vocabulary support", ct, anchor);
                 candidates.AddRange(vocabSupport);
                 anyRawHits |= vocabRaw;
 
-                var (grammarSupport, grammarRaw) = await SelectGrammarAsync(request, MaxGrammar, RoleSupporting, ct);
+                var (grammarSupport, grammarRaw) = await SelectGrammarAsync(request, MaxGrammar, RoleSupporting, ct, anchor);
                 candidates.AddRange(grammarSupport);
                 anyRawHits |= grammarRaw;
 
@@ -237,11 +242,15 @@ public sealed class TodayBankResourceSelector : ITodayBankResourceSelector
         var (refs, refRaw) = await SelectReadingReferenceAsync(request, MaxReadingReferencePrimary, RolePrimary, ct);
         candidates.AddRange(refs);
 
+        // Phase D6 — when a primary reference was chosen, anchor supporting resources on its topical
+        // context (same deterministic context matching as the full-passage bundle).
+        var anchor = refs.Count > 0 ? PickAnchorContextTag(refs[0].MatchedContextTags) : null;
+
         var (vocabSupport, vocabRaw) = await SelectVocabularyAsync(
-            request, MaxSupportingVocabulary, RoleSupporting, "vocabulary support", ct);
+            request, MaxSupportingVocabulary, RoleSupporting, "vocabulary support", ct, anchor);
         candidates.AddRange(vocabSupport);
 
-        var (grammarSupport, grammarRaw) = await SelectGrammarAsync(request, MaxGrammar, RoleSupporting, ct);
+        var (grammarSupport, grammarRaw) = await SelectGrammarAsync(request, MaxGrammar, RoleSupporting, ct, anchor);
         candidates.AddRange(grammarSupport);
 
         return (candidates, refRaw || vocabRaw || grammarRaw);
@@ -250,30 +259,33 @@ public sealed class TodayBankResourceSelector : ITodayBankResourceSelector
     // ── Per-type selection ───────────────────────────────────────────────────────
 
     private Task<(List<TodayBankSelectedResource> Selected, bool AnyRawHits)> SelectVocabularyAsync(
-        TodayBankSelectionRequest request, int max, string role, string reasonLabel, CancellationToken ct) =>
+        TodayBankSelectionRequest request, int max, string role, string reasonLabel, CancellationToken ct,
+        string? anchorContextTag = null) =>
         SelectLeanAsync(request, max, role, "Vocabulary", reasonLabel, "bank-vocab-precheck",
             filter => _bankQuery.ListVocabularyAsync(filter, ct)
                 .ContinueWith(t => (IReadOnlyList<LeanBankRow>)t.Result.Items.Select(i =>
                     new LeanBankRow(i.Id, i.Word, i.SourceId, i.ContextTags ?? Array.Empty<string>())).ToList(), ct),
-            ct);
+            ct, anchorContextTag);
 
     private Task<(List<TodayBankSelectedResource> Selected, bool AnyRawHits)> SelectGrammarAsync(
-        TodayBankSelectionRequest request, int max, string role, CancellationToken ct) =>
+        TodayBankSelectionRequest request, int max, string role, CancellationToken ct,
+        string? anchorContextTag = null) =>
         SelectLeanAsync(request, max, role, "Grammar", "grammar", "bank-grammar-precheck",
             filter => _bankQuery.ListGrammarAsync(filter, ct)
                 .ContinueWith(t => (IReadOnlyList<LeanBankRow>)t.Result.Items.Select(i =>
                     new LeanBankRow(i.Id, i.GrammarPoint, i.SourceId, i.ContextTags ?? Array.Empty<string>())).ToList(), ct),
-            ct);
+            ct, anchorContextTag);
 
     private Task<(List<TodayBankSelectedResource> Selected, bool AnyRawHits)> SelectReadingReferenceAsync(
-        TodayBankSelectionRequest request, int max, string role, CancellationToken ct) =>
+        TodayBankSelectionRequest request, int max, string role, CancellationToken ct,
+        string? anchorContextTag = null) =>
         SelectLeanAsync(request, max, role, "Reading", "reading", "bank-reading-precheck",
             filter => _bankQuery.ListReadingReferencesAsync(filter, ct)
                 .ContinueWith(t => (IReadOnlyList<LeanBankRow>)t.Result.Items.Select(i =>
                     new LeanBankRow(i.Id,
                         !string.IsNullOrWhiteSpace(i.ReferenceExcerpt) ? i.ReferenceExcerpt! : i.TextType ?? "reading reference",
                         i.SourceId, i.ContextTags ?? Array.Empty<string>())).ToList(), ct),
-            ct);
+            ct, anchorContextTag);
 
     /// <summary>A projected lean-bank row carrying just what the selector needs: identity, a display
     /// string, the source id, and (Phase E9) the row's published context tags for D5's context
@@ -291,13 +303,13 @@ public sealed class TodayBankResourceSelector : ITodayBankResourceSelector
     private async Task<(List<TodayBankSelectedResource> Selected, bool AnyRawHits)> SelectLeanAsync(
         TodayBankSelectionRequest request, int max, string role, string resourceType, string reasonLabel,
         string fingerprintPrefix, Func<ResourceBankListFilter, Task<IReadOnlyList<LeanBankRow>>> listFunc,
-        CancellationToken ct)
+        CancellationToken ct, string? anchorContextTag = null)
     {
         var selected = new List<TodayBankSelectedResource>();
         if (max <= 0) return (selected, false);
 
         var anyRawHits = false;
-        foreach (var attempt in BuildFilterLadder(request))
+        foreach (var attempt in BuildFilterLadder(request, anchorContextTag))
         {
             var (items, _, reasonSuffix, rawHits) = await QueryWithOptionalWideningAsync(
                 request,
@@ -333,13 +345,20 @@ public sealed class TodayBankResourceSelector : ITodayBankResourceSelector
     }
 
     /// <summary>
-    /// Phase D5 — builds the deterministic strict→loose filter relaxation ladder from the request's
+    /// Phase D5/D6 — builds the deterministic strict→loose filter relaxation ladder from the request's
     /// E9 metadata preferences. Order (per the D5 plan): keep context longest, drop difficulty →
     /// focus → subskill → context. Consecutive identical filter sets (when a preference is absent)
     /// are de-duplicated so absent preferences add no extra queries. The final step carries no
     /// positive metadata filter (the general/no-filter attempt).
+    ///
+    /// Phase D6 — when an <paramref name="anchorContextTag"/> is supplied (the topical context of a
+    /// selected reading passage/reference), a small set of **topic-anchor** rungs is prepended so
+    /// supporting resources prefer the anchor's context first (e.g. a travel passage pulls travel
+    /// vocabulary), before falling through to the D5 general ladder. This is pure deterministic
+    /// context-tag matching — no embeddings, no vector/semantic search — and it still relaxes all the
+    /// way down to the general attempt, so it can only narrow, never empty, the result.
     /// </summary>
-    private static IReadOnlyList<FilterAttempt> BuildFilterLadder(TodayBankSelectionRequest request)
+    private static IReadOnlyList<FilterAttempt> BuildFilterLadder(TodayBankSelectionRequest request, string? anchorContextTag = null)
     {
         // Positive context filter only when workplace-routed; otherwise context is handled by the
         // post-query workplace exclusion, so no positive context filter is added.
@@ -348,17 +367,29 @@ public sealed class TodayBankResourceSelector : ITodayBankResourceSelector
         var subskill = string.IsNullOrWhiteSpace(request.PreferredSubskill) ? null : request.PreferredSubskill;
         var difficulty = request.PreferredDifficultyBand;
 
-        var raw = new (string? Context, string? Focus, string? Subskill, int? Difficulty)[]
+        var raw = new List<(string? Context, string? Focus, string? Subskill, int? Difficulty, bool TopicAnchor)>();
+
+        // Phase D6 topic-anchor rungs (strictest first). Only added when a safe anchor context tag is
+        // known; workplace is never used as a topic anchor (it is a routing context, not a topic, and
+        // is governed by the workplace-exclusion policy instead).
+        var safeAnchor = ResolveSafeAnchorContextTag(anchorContextTag, request.PrefersWorkplaceContext);
+        if (safeAnchor is not null)
         {
-            (contextTag, focusTag, subskill, difficulty),
-            (contextTag, focusTag, subskill, null),   // drop difficulty
-            (contextTag, null, subskill, null),        // drop focus
-            (contextTag, null, null, null),            // drop subskill
-            (null, null, null, null),                  // general (drop context)
-        };
+            raw.Add((safeAnchor, focusTag, subskill, difficulty, true));
+            raw.Add((safeAnchor, focusTag, subskill, null, true));  // drop difficulty, keep topic
+            raw.Add((safeAnchor, null, subskill, null, true));       // drop focus, keep topic
+            raw.Add((safeAnchor, null, null, null, true));           // topic context only
+        }
+
+        // D5 general ladder (unchanged): keep routing context longest, then relax to general.
+        raw.Add((contextTag, focusTag, subskill, difficulty, false));
+        raw.Add((contextTag, focusTag, subskill, null, false));   // drop difficulty
+        raw.Add((contextTag, null, subskill, null, false));        // drop focus
+        raw.Add((contextTag, null, null, null, false));            // drop subskill
+        raw.Add((null, null, null, null, false));                  // general (drop context)
 
         var ladder = new List<FilterAttempt>();
-        (string? Context, string? Focus, string? Subskill, int? Difficulty)? previous = null;
+        (string? Context, string? Focus, string? Subskill, int? Difficulty, bool TopicAnchor)? previous = null;
         var strictest = raw[0];
         foreach (var f in raw)
         {
@@ -372,12 +403,31 @@ public sealed class TodayBankResourceSelector : ITodayBankResourceSelector
         return ladder;
     }
 
+    /// <summary>Phase D6 — normalizes a candidate anchor context tag for topic matching. Returns null
+    /// for a blank tag, or for the workplace tag when the learner is not workplace-routed (workplace
+    /// is a routing context handled by the exclusion policy, never a topic anchor).</summary>
+    private static string? ResolveSafeAnchorContextTag(string? anchorContextTag, bool prefersWorkplace)
+    {
+        if (string.IsNullOrWhiteSpace(anchorContextTag)) return null;
+        var tag = anchorContextTag.Trim();
+        if (!prefersWorkplace && string.Equals(tag, WorkplaceContextTag, StringComparison.OrdinalIgnoreCase))
+            return null;
+        return tag;
+    }
+
+    /// <summary>Phase D6 — picks the topical anchor context tag from a selected passage/reference's
+    /// context tags: the first non-workplace tag (workplace is a routing context, not a topic). Falls
+    /// back to null when the anchor carries no usable topical tag, leaving the D5 general ladder.</summary>
+    private static string? PickAnchorContextTag(IReadOnlyList<string> anchorContextTags) =>
+        anchorContextTags?.FirstOrDefault(t =>
+            !string.IsNullOrWhiteSpace(t) && !string.Equals(t, WorkplaceContextTag, StringComparison.OrdinalIgnoreCase));
+
     private readonly record struct FilterAttempt(ResourceBankListFilter Filter, string ProvenanceLabel, string ReasonSuffix);
 
-    private static string DescribeFilters((string? Context, string? Focus, string? Subskill, int? Difficulty) f)
+    private static string DescribeFilters((string? Context, string? Focus, string? Subskill, int? Difficulty, bool TopicAnchor) f)
     {
         var parts = new List<string>();
-        if (f.Context is not null) parts.Add($"context={f.Context}");
+        if (f.Context is not null) parts.Add(f.TopicAnchor ? $"context={f.Context}(topic-anchor)" : $"context={f.Context}");
         if (f.Focus is not null) parts.Add($"focus={f.Focus}");
         if (f.Subskill is not null) parts.Add($"subskill={f.Subskill}");
         if (f.Difficulty is not null) parts.Add($"difficulty={f.Difficulty}");
@@ -385,10 +435,12 @@ public sealed class TodayBankResourceSelector : ITodayBankResourceSelector
     }
 
     private static string DescribeRelaxation(
-        (string? Context, string? Focus, string? Subskill, int? Difficulty) strictest,
-        (string? Context, string? Focus, string? Subskill, int? Difficulty) applied)
+        (string? Context, string? Focus, string? Subskill, int? Difficulty, bool TopicAnchor) strictest,
+        (string? Context, string? Focus, string? Subskill, int? Difficulty, bool TopicAnchor) applied)
     {
         var relaxed = new List<string>();
+        // Losing the topic anchor is itself a relaxation worth recording.
+        if (strictest.TopicAnchor && !applied.TopicAnchor) relaxed.Add("topic");
         if (strictest.Context is not null && applied.Context is null) relaxed.Add("context");
         if (strictest.Focus is not null && applied.Focus is null) relaxed.Add("focus");
         if (strictest.Subskill is not null && applied.Subskill is null) relaxed.Add("subskill");

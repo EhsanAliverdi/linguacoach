@@ -336,6 +336,32 @@ still null-feeds `PreferredSubskill`/`PreferredDifficultyBand` at runtime (no re
 source yet) — a Phase D6 concern, not a data-depth gap. See `docs/roadmap/road-map.md` §1 / Decision
 Log and `docs/architecture/english-resource-bank-import-platform.md`.
 
+**Phase D6 (2026-07-09) closed `TODO-E10-1` and made Today bundles topic-aware.** Two changes, both
+deterministic (no embeddings/vector/semantic search):
+
+1. **Reliable runtime signal feeding.** `CurriculumRoutingRecommendation` now surfaces the matched
+   objective's `Subskill`. `ActivityMaterializationJob` feeds the selector request from routing:
+   `PreferredSubskill = routing.Subskill`; `PreferredFocusTags` prefers `routing.FocusTags` (objective
+   tags), falling back to the learner's resolved focus areas; `PreferredDifficultyBand` is derived
+   conservatively from `StudentProfile.DifficultyPreference` relative to the routed CEFR's normal band
+   via the shared `CefrDifficultyBand` helper (Gentle → one band lower same-CEFR, Balanced →
+   CEFR-normal band, Challenging → one band higher, unknown/unmappable → null). Subskill/difficulty
+   filtering now activates from live routing, not only from tests.
+2. **Anchor-context topic matching for supporting resources.** In reading bundles, after the primary
+   passage/reference is chosen, its first non-workplace context tag becomes a **topic anchor**:
+   `BuildFilterLadder` prepends strict topic-anchor rungs (`ContextTag = anchor`, combined with the
+   same focus/subskill/difficulty preferences) ahead of the D5 general ladder, so supporting
+   vocabulary/grammar prefer the passage's topic (a travel passage pulls travel vocabulary). Workplace
+   is never used as a topic anchor for a general-English learner, and the D5 general-English
+   workplace-exclusion still applies to every supporting row. The anchor rungs relax all the way down
+   to the general attempt, so topic matching can only narrow, never empty, the bundle — and the caller
+   still falls back to legacy AI generation when no bank resource remains. Provenance records the match
+   in `AppliedFilters` (e.g. `context=travel(topic-anchor)`); the flat provenance-array shape is
+   unchanged. **Residual:** E10's derived difficulty bands are CEFR-uniform, so difficulty narrowing is
+   effectively a no-op for Balanced / a relaxation for Gentle/Challenging on today's internal data; the
+   mechanism is correct and covered by mixed-band tests, and becomes selective once genuinely
+   mixed-difficulty content exists. No schema change, no migration, no selector rewrite.
+
 **Plan-Sync-G0 (2026-07-09, docs-only)** reframes, but does not delete, the readiness-pool
 lifecycle this file's fallback/generation flow relies on: `StudentActivityReadinessItem`/
 `IStudentActivityReadinessPoolService` is now described as a **"Student Activity Assignment /

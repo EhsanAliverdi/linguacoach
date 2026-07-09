@@ -26,6 +26,11 @@ public sealed class CurriculumRoutingRecommendation
     /// <summary>Human-readable title of the selected objective for AI prompt context.</summary>
     public string? CurriculumObjectiveTitle { get; init; }
 
+    /// <summary>Phase D6 — the matched objective's subskill (e.g. "reading.inference"), when one was
+    /// resolved. Null in the fallback path. A reliable per-request subskill signal for the Today
+    /// bank selector.</summary>
+    public string? Subskill { get; init; }
+
     /// <summary>Context tags resolved from learner goals (e.g. general_english, travel).</summary>
     public IReadOnlyList<string> ContextTags { get; init; } = [];
 

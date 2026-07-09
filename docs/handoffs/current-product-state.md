@@ -130,16 +130,32 @@ no external datasets, no Persian/bilingual content, no direct final-table conten
 insertion, no selector rewrite, no UI.** The D5 selector code was unchanged — E10
 only improved the data it reads.
 
-**Next-step decision:** a post-E10 checkpoint — **Phase D6 (Today Topic Matching
-and Subskill-Aware Resource Selection)** is the likely next phase, now unblocked by
-E10's metadata depth. D6 would improve topic/focus/subskill matching and feed
-`PreferredSubskill`/`PreferredDifficultyBand` at runtime (`TODO-E10-1` — the
-metadata now exists on all lean rows; the runtime feed is the remaining gap).
-Alternatives: **Phase PG-v2A**, **Phase F** (legacy retirement), or **Phase
-G2/G3** (backend/diagnostics cleanup). PG-v2 benefits from E9 parity + D5 wiring +
-E10 depth + D6 selection. Full reasoning: `docs/roadmap/road-map.md` §1, §19
-Decision Log (Phase E10 entry), and §19a; E10 detail in
-`docs/architecture/english-resource-bank-import-platform.md` (E10 detail section).
+**Phase D6 is complete (2026-07-09).** It closed the runtime-feeding gap
+(`TODO-E10-1`) and made Today bank-first bundles topic-aware, using deterministic
+metadata matching only. `CurriculumRoutingRecommendation` now surfaces the matched
+objective's `Subskill`, and `ActivityMaterializationJob` feeds
+`PreferredSubskill = routing.Subskill`, `PreferredFocusTags` (routing focus tags,
+falling back to learner focus areas), and `PreferredDifficultyBand` derived
+conservatively from `StudentProfile.DifficultyPreference` relative to the routed
+CEFR's normal band (shared `CefrDifficultyBand` helper: Gentle → one band lower,
+Balanced → CEFR-normal, Challenging → one band higher, unknown → null) into
+`TodayBankResourceSelector`. For reading bundles, the primary passage/reference's
+first non-workplace context tag becomes a **topic anchor** — strict topic-anchor
+rungs are prepended to the D5 relaxation ladder, so supporting vocabulary/grammar
+prefer the passage topic (a travel passage pulls travel vocabulary). D5 relaxation,
+CEFR policy, workplace-exclusion, flat provenance shape, novelty/feedback
+exclusion, and legacy AI/Practice-Gym fallback are all preserved. **No schema
+change, no migration, no content, no UI, no PG-v2.** Residual: E10's difficulty
+bands are CEFR-uniform, so difficulty narrowing is a no-op for Balanced / a
+relaxation otherwise until genuinely mixed-difficulty content exists (mechanism
+correct, mixed-band-tested).
+
+**Next-step decision:** a post-D6 checkpoint — **Phase PG-v2A** (backend
+skill/objective-first Practice Gym selector), **Phase F** (legacy retirement), or
+**Phase G2/G3** (backend/diagnostics cleanup). PG-v2 benefits from E9 parity + D5
+wiring + E10 depth + D6 selection. Full reasoning: `docs/roadmap/road-map.md` §1,
+§19 Decision Log (Phase D6 entry), and §19a; D6 detail in
+`docs/architecture/learning-activity-engine.md` (Phase D6 notes).
 
 ---
 

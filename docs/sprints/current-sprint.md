@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase E10)
+lastUpdated: 2026-07-09 (Phase D6)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,46 @@ Last updated: 2026-07-09
 ---
 
 ## Active sprint
+
+**Phase D6 — Today Topic Matching and Subskill-Aware Resource Selection (2026-07-09)** — complete
+
+Made Today bank-first bundles topic-aware and closed `TODO-E10-1`, using deterministic metadata
+matching only (no embeddings/vector/semantic search). **A selector/routing quality phase — no schema
+change, no migration, no selector rewrite.**
+
+- **Reliable runtime signal feeding**: `CurriculumRoutingRecommendation` now surfaces the matched
+  objective's `Subskill`, and `ActivityMaterializationJob` feeds `PreferredSubskill = routing.Subskill`,
+  `PreferredFocusTags` (prefers `routing.FocusTags`, falls back to learner focus areas), and
+  `PreferredDifficultyBand` derived conservatively from `StudentProfile.DifficultyPreference` relative
+  to the routed CEFR's normal band via the shared `Domain.Constants.CefrDifficultyBand` helper (Gentle
+  → one band lower, Balanced → CEFR-normal, Challenging → one band higher, unknown → null). The E10
+  seeder was refactored onto the same helper.
+- **Anchor-context topic matching**: for reading bundles, the primary passage/reference's first
+  non-workplace context tag becomes a topic anchor — strict topic-anchor rungs (`ContextTag = anchor`)
+  are prepended to the D5 relaxation ladder, so supporting vocabulary/grammar prefer the passage topic
+  (a travel passage pulls travel vocabulary). Workplace is never used as a topic anchor for a general
+  learner; the general-English workplace-exclusion still applies to every supporting row.
+- **Preserved**: D5 strict→loose relaxation (anchor rungs relax to general, so topic matching can only
+  narrow, never empty, a bundle); exact-CEFR-first/review-only-down/never-up; flat provenance-array
+  shape (topic matches recorded in `AppliedFilters`, e.g. `context=travel(topic-anchor)`); novelty +
+  feedback exclusion; AI stays composer/fallback. Vocabulary-primary bundles are intentionally not
+  anchored.
+
+**Validation**: `dotnet build --configuration Release` passed (0 errors); `dotnet test --configuration
+Release` = 3,671 passed, 0 failed (+7 selector unit, +2 routing unit, +3 bank-first integration). No
+frontend files changed, so no Angular/Playwright gates run. **No schema/migration, no external datasets,
+no Persian/bilingual content, no direct final-table seeding, no Today/Practice-Gym legacy-fallback
+removal, no readiness/delivery-queue change, no student/admin UI change, no PG-v2.** `TODO-E10-1`
+closed. Residual: E10 difficulty bands are CEFR-uniform, so difficulty narrowing is a no-op for Balanced
+/ a relaxation for Gentle/Challenging until genuinely mixed-difficulty content exists (mechanism
+correct, mixed-band-tested).
+
+**Next: Phase PG-v2A, Phase F, or Phase G2/G3** — checkpoint now live, not resolved in advance. See
+`docs/architecture/learning-activity-engine.md` (Phase D6 notes) and `docs/roadmap/road-map.md` §1/§19a.
+
+---
+
+## Previous sprint
 
 **Phase E10 — Internal Bank Metadata Depth Expansion for Focus and Difficulty (2026-07-09)** — complete
 
@@ -45,14 +85,13 @@ Persian/bilingual content, no direct final-table content insertion, no Practice-
 readiness/delivery-queue change.** `TODO-D5-1` resolved; narrowed residual `TODO-E10-1` tracks the
 runtime job still null-feeding subskill/difficulty preferences (a D6 concern).
 
-**Next: Phase D6 (Today Topic Matching and Subskill-Aware Resource Selection)** is the likely next
-phase, now unblocked by E10's metadata depth. PG-v2, Phase F, and Phase G2/G3 remain later. See
+**Followed by: Phase D6** (now the active sprint above). See
 `docs/architecture/english-resource-bank-import-platform.md` (E10 detail) and
 `docs/roadmap/road-map.md` §1/§19a.
 
 ---
 
-## Previous sprint
+## Earlier sprints
 
 **Plan-Sync-After-D5 — Decide Next Phase After Context-Aware Today Selection (2026-07-09)** — complete (docs-only)
 

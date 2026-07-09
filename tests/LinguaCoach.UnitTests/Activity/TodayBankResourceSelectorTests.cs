@@ -987,4 +987,119 @@ public sealed class TodayBankResourceSelectorTests : IDisposable
         result.Resources.Should().Contain(r => r.ResourceType == "ReadingPassage" && r.Role == "primary");
         result.Resources.Should().Contain(r => r.ResourceType == "Vocabulary" && r.Role == "supporting");
     }
+
+    // ── Phase D6 — topic-aware supporting-resource selection ─────────────────────
+
+    [Fact]
+    public async Task Passage_topic_anchors_supporting_vocabulary_to_the_passage_context()
+    {
+        // A travel passage should pull travel-context supporting vocabulary, not the generic word,
+        // even though both are level-appropriate — deterministic context-tag topic matching.
+        SeedReadingPassage("Trip Abroad", LongPassage, "B1", contextTagsJson: "[\"travel\"]");
+        SeedVocabulary("itinerary", "B1", contextTagsJson: "[\"travel\"]", subskill: "vocabulary.receptive");
+        SeedVocabulary("generic", "B1", contextTagsJson: "[\"general\"]", subskill: "vocabulary.receptive");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Reading", studentId: _studentId, patternKey: FullPassagePattern));
+
+        result.Resources.Should().Contain(r => r.ResourceType == "Vocabulary" && r.DisplayText == "itinerary");
+        result.Resources.Should().NotContain(r => r.ResourceType == "Vocabulary" && r.DisplayText == "generic");
+    }
+
+    [Fact]
+    public async Task Passage_topic_anchor_provenance_records_topic_anchor_context()
+    {
+        SeedReadingPassage("Trip Abroad", LongPassage, "B1", contextTagsJson: "[\"travel\"]");
+        SeedVocabulary("itinerary", "B1", contextTagsJson: "[\"travel\"]", subskill: "vocabulary.receptive");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Reading", studentId: _studentId, patternKey: FullPassagePattern));
+
+        var vocab = result.Resources.Should().ContainSingle(r => r.ResourceType == "Vocabulary").Subject;
+        vocab.AppliedFilters.Should().Contain("context=travel(topic-anchor)");
+        vocab.MatchedContextTags.Should().Contain("travel");
+    }
+
+    [Fact]
+    public async Task Passage_topic_anchor_relaxes_to_general_when_no_context_match_exists()
+    {
+        // Travel passage but only a general supporting word exists → the anchor rung finds nothing and
+        // must relax to the general ladder rather than dropping the supporting vocabulary entirely.
+        SeedReadingPassage("Trip Abroad", LongPassage, "B1", contextTagsJson: "[\"travel\"]");
+        SeedVocabulary("generic", "B1", contextTagsJson: "[\"general\"]", subskill: "vocabulary.receptive");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Reading", studentId: _studentId, patternKey: FullPassagePattern));
+
+        result.Outcome.Should().Be(TodayBankSelectionOutcome.BankResourcesFound);
+        result.Resources.Should().Contain(r => r.ResourceType == "Vocabulary" && r.DisplayText == "generic");
+    }
+
+    [Fact]
+    public async Task Reference_bundle_topic_anchors_supporting_vocabulary_to_the_reference_context()
+    {
+        // Cloze pattern → short reference primary. The reference's travel context should anchor the
+        // supporting vocabulary the same way a full passage does.
+        SeedReading("Booking a flight and a hotel for the summer.", "B1", contextTagsJson: "[\"travel\"]");
+        SeedVocabulary("itinerary", "B1", contextTagsJson: "[\"travel\"]", subskill: "vocabulary.receptive");
+        SeedVocabulary("generic", "B1", contextTagsJson: "[\"general\"]", subskill: "vocabulary.receptive");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Reading", studentId: _studentId, patternKey: FillInBlanksPattern));
+
+        result.Resources.Should().Contain(r => r.ResourceType == "Vocabulary" && r.DisplayText == "itinerary");
+        result.Resources.Should().NotContain(r => r.ResourceType == "Vocabulary" && r.DisplayText == "generic");
+    }
+
+    [Fact]
+    public async Task Passage_topic_anchor_still_excludes_workplace_vocabulary_for_general_learner()
+    {
+        // Even when anchoring on a topical context, the D5 general-English default still excludes
+        // workplace-tagged supporting rows for a non-workplace learner.
+        SeedReadingPassage("Trip Abroad", LongPassage, "B1", contextTagsJson: "[\"travel\"]");
+        SeedVocabulary("meeting", "B1", contextTagsJson: "[\"workplace\"]", subskill: "vocabulary.receptive");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Reading", studentId: _studentId,
+            patternKey: FullPassagePattern, prefersWorkplaceContext: false));
+
+        result.Resources.Should().NotContain(r => r.ResourceType == "Vocabulary" && r.DisplayText == "meeting");
+    }
+
+    [Fact]
+    public async Task Difficulty_band_preference_prefers_matching_band_when_rows_carry_mixed_bands()
+    {
+        // With mixed difficulty bands at the same CEFR (contrast with the E10-uniform limitation), the
+        // difficulty filter selects the requested band rather than relaxing.
+        SeedVocabulary("harderword", "B1", contextTagsJson: "[\"general\"]", subskill: "vocabulary.receptive", difficultyBand: 4);
+        SeedVocabulary("easierword", "B1", contextTagsJson: "[\"general\"]", subskill: "vocabulary.receptive", difficultyBand: 3);
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Vocabulary", studentId: _studentId,
+            patternKey: PhraseMatchPattern, preferredDifficultyBand: 4));
+
+        result.Resources.Should().Contain(r => r.DisplayText == "harderword");
+        result.Resources.Should().NotContain(r => r.DisplayText == "easierword");
+    }
+
+    [Fact]
+    public async Task Vocabulary_primary_bundle_is_not_topic_anchored_to_its_opportunistic_reference()
+    {
+        // Vocabulary is primary here; the opportunistic reference is supporting. Vocabulary selection
+        // must not be constrained by any reference context (no anchoring on a vocabulary-primary bundle).
+        SeedVocabulary("primaryword", "B1", contextTagsJson: "[\"general\"]", subskill: "vocabulary.receptive");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Vocabulary", studentId: _studentId, patternKey: PhraseMatchPattern));
+
+        var vocab = result.Resources.Should().ContainSingle(r => r.ResourceType == "Vocabulary").Subject;
+        vocab.AppliedFilters.Should().NotContain("topic-anchor");
+    }
 }

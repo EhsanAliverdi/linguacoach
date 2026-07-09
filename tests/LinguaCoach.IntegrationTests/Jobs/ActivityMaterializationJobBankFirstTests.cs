@@ -406,6 +406,152 @@ public sealed class ActivityMaterializationJobBankFirstTests : IClassFixture<Api
         activity.BankResourceProvenanceJson.Should().NotContain("ReadingPassage");
     }
 
+    // ── Phase D6 — topic-aware, subskill/difficulty-fed bank selection ───────────
+
+    [Fact]
+    public async Task Phase_D6_reading_comprehension_topic_anchors_supporting_vocabulary_to_passage_context()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+
+        // C2 is isolated in this shared fixture (startup seed packs only cover A1-B2; C1 is reserved by
+        // the legacy-fallback test which asserts C1 stays empty), so the passage the selector anchors
+        // on and the supporting rows it can reach are deterministic.
+        var (_, batchId, exerciseId) = await SeedPendingExerciseAsync(
+            db, cefrLevel: "C2", patternKey: ExercisePatternKey.ReadingMultipleChoiceSingle, primarySkill: "Reading");
+
+        var source = new CefrResourceSource("D6 Topic Source", "Internal/Original",
+            allowsStudentDisplay: true, allowsCommercialUse: true);
+        source.ApproveForImport();
+        db.CefrResourceSources.Add(source);
+        await db.SaveChangesAsync();
+
+        const string passageText =
+            "Nadia had never travelled abroad before, so she spent weeks planning the trip. She booked "
+            + "an early flight, printed her hotel itinerary, and packed a small bag so she could move "
+            + "easily between cities. The journey turned out to be the calmest holiday she had ever taken.";
+        db.CefrReadingPassages.Add(new CefrReadingPassage(
+            source.Id, "A First Trip Abroad", passageText, "C2", contextTagsJson: "[\"travel\"]"));
+
+        var travelVocab = new CefrVocabularyEntry(source.Id, "itinerary", "C2");
+        travelVocab.SetSelectionMetadata("vocabulary.receptive", null, "[\"travel\"]", "[]");
+        var generalVocab = new CefrVocabularyEntry(source.Id, "otherwise", "C2");
+        generalVocab.SetSelectionMetadata("vocabulary.receptive", null, "[\"general\"]", "[]");
+        db.CefrVocabularyEntries.AddRange(travelVocab, generalVocab);
+        await db.SaveChangesAsync();
+
+        var aiGenerator = new ContextCapturingAiActivityGenerator();
+        var (job, capturingLogger) = await BuildJobAsync(scope, db, aiGenerator);
+
+        await job.Execute(new FakeJobExecutionContext(
+            await CreateInMemorySchedulerAsync(),
+            new JobDataMap { [ActivityMaterializationJob.BatchIdKey] = batchId.ToString() }));
+
+        aiGenerator.LastContext.Should().NotBeNull(capturingLogger.LastException?.ToString() ?? "no exception captured");
+
+        var exercise = await db.SessionExercises.AsNoTracking().SingleAsync(e => e.Id == exerciseId);
+        var activity = await db.LearningActivities.AsNoTracking().SingleAsync(a => a.Id == exercise.LearningActivityId);
+        // Supporting vocabulary is anchored on the passage's travel context.
+        activity.BankResourceProvenanceJson.Should().Contain(travelVocab.Id.ToString());
+        activity.BankResourceProvenanceJson.Should().NotContain(generalVocab.Id.ToString());
+        activity.BankResourceProvenanceJson.Should().Contain("topic-anchor");
+    }
+
+    [Fact]
+    public async Task Phase_D6_cloze_reference_topic_anchors_supporting_vocabulary_to_reference_context()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+
+        // C2 references are isolated too (C1 is reserved by the legacy-fallback test). The shared C2
+        // vocabulary from the passage test above is fine: the deterministic travel anchor still
+        // excludes the general row.
+        var (_, batchId, exerciseId) = await SeedPendingExerciseAsync(
+            db, cefrLevel: "C2", patternKey: ExercisePatternKey.ReadingFillInBlanks, primarySkill: "Reading");
+
+        var source = new CefrResourceSource("D6 Cloze Source", "Internal/Original",
+            allowsStudentDisplay: true, allowsCommercialUse: true);
+        source.ApproveForImport();
+        db.CefrResourceSources.Add(source);
+        await db.SaveChangesAsync();
+
+        var reference = new CefrReadingReference(source.Id, "C2", referenceExcerpt: "Booking flights and hotels for a long trip.");
+        reference.SetSelectionMetadata("reading.gist", null, "[\"travel\"]", "[]");
+        db.CefrReadingReferences.Add(reference);
+
+        var travelVocab = new CefrVocabularyEntry(source.Id, "layover", "C2");
+        travelVocab.SetSelectionMetadata("vocabulary.receptive", null, "[\"travel\"]", "[]");
+        var generalVocab = new CefrVocabularyEntry(source.Id, "nevertheless", "C2");
+        generalVocab.SetSelectionMetadata("vocabulary.receptive", null, "[\"general\"]", "[]");
+        db.CefrVocabularyEntries.AddRange(travelVocab, generalVocab);
+        await db.SaveChangesAsync();
+
+        var aiGenerator = new ContextCapturingAiActivityGenerator();
+        var (job, capturingLogger) = await BuildJobAsync(scope, db, aiGenerator);
+
+        await job.Execute(new FakeJobExecutionContext(
+            await CreateInMemorySchedulerAsync(),
+            new JobDataMap { [ActivityMaterializationJob.BatchIdKey] = batchId.ToString() }));
+
+        aiGenerator.LastContext.Should().NotBeNull(capturingLogger.LastException?.ToString() ?? "no exception captured");
+
+        var exercise = await db.SessionExercises.AsNoTracking().SingleAsync(e => e.Id == exerciseId);
+        var activity = await db.LearningActivities.AsNoTracking().SingleAsync(a => a.Id == exercise.LearningActivityId);
+        activity.BankResourceProvenanceJson.Should().NotContain("ReadingPassage");
+        activity.BankResourceProvenanceJson.Should().Contain(travelVocab.Id.ToString());
+        activity.BankResourceProvenanceJson.Should().NotContain(generalVocab.Id.ToString());
+    }
+
+    [Fact]
+    public async Task Phase_D6_difficulty_preference_feeds_band_into_vocabulary_selection()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+
+        // C2 is isolated (empty from startup + no other test). Two mixed difficulty bands at the same
+        // CEFR let us prove the difficulty signal actually narrows selection rather than relaxing.
+        var (profileId, batchId, exerciseId) = await SeedPendingExerciseAsync(
+            db, cefrLevel: "C2", patternKey: ExercisePatternKey.PhraseMatch, primarySkill: "Vocabulary");
+
+        // Gentle → one band below the C2-normal band (5) = band 4.
+        var profile = await db.StudentProfiles.SingleAsync(p => p.Id == profileId);
+        profile.UpdateLearningPreferences(
+            preferredName: null, supportLanguageCode: null, supportLanguageName: null,
+            translationHelpPreference: null, learningGoals: null, customLearningGoal: null,
+            focusAreas: null, customFocusArea: null,
+            difficultyPreference: DifficultyPreference.Gentle, preferredSessionDurationMinutes: null);
+        await db.SaveChangesAsync();
+
+        var source = new CefrResourceSource("D6 Difficulty Source", "Internal/Original",
+            allowsStudentDisplay: true, allowsCommercialUse: true);
+        source.ApproveForImport();
+        db.CefrResourceSources.Add(source);
+        await db.SaveChangesAsync();
+
+        var band4 = new CefrVocabularyEntry(source.Id, "gentleword", "C2");
+        band4.SetSelectionMetadata("vocabulary.receptive", 4, "[\"general\"]", "[]");
+        var band5 = new CefrVocabularyEntry(source.Id, "hardestword", "C2");
+        band5.SetSelectionMetadata("vocabulary.receptive", 5, "[\"general\"]", "[]");
+        db.CefrVocabularyEntries.AddRange(band4, band5);
+        await db.SaveChangesAsync();
+
+        var aiGenerator = new ContextCapturingAiActivityGenerator();
+        var (job, capturingLogger) = await BuildJobAsync(scope, db, aiGenerator);
+
+        await job.Execute(new FakeJobExecutionContext(
+            await CreateInMemorySchedulerAsync(),
+            new JobDataMap { [ActivityMaterializationJob.BatchIdKey] = batchId.ToString() }));
+
+        aiGenerator.LastContext.Should().NotBeNull(capturingLogger.LastException?.ToString() ?? "no exception captured");
+
+        var exercise = await db.SessionExercises.AsNoTracking().SingleAsync(e => e.Id == exerciseId);
+        var activity = await db.LearningActivities.AsNoTracking().SingleAsync(a => a.Id == exercise.LearningActivityId);
+        // Gentle preference → band-4 row selected, band-5 not.
+        activity.BankResourceProvenanceJson.Should().Contain(band4.Id.ToString());
+        activity.BankResourceProvenanceJson.Should().NotContain(band5.Id.ToString());
+        activity.BankResourceProvenanceJson.Should().Contain("difficulty=4");
+    }
+
     private static Task<(Guid ProfileId, Guid BatchId, Guid ExerciseId)> SeedPendingVocabularyExerciseAsync(
         LinguaCoachDbContext db, string cefrLevel) =>
         SeedPendingExerciseAsync(db, cefrLevel, ExercisePatternKey.PhraseMatch, "Vocabulary");

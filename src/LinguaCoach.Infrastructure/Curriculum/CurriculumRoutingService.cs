@@ -326,6 +326,7 @@ public sealed class CurriculumRoutingService : ICurriculumRoutingService
             SecondarySkills = secondarySkills,
             CurriculumObjectiveKey = objective.Key,
             CurriculumObjectiveTitle = objective.Title,
+            Subskill = objective.Subskill,
             ContextTags = contextTags,
             FocusTags = focusTags,
             DifficultyBand = difficultyBand,

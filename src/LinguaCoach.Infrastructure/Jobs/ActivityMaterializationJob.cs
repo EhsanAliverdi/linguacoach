@@ -3,6 +3,7 @@ using LinguaCoach.Application.Curriculum;
 using LinguaCoach.Application.Learning;
 using LinguaCoach.Application.ReadinessPool;
 using LinguaCoach.Application.Sessions;
+using LinguaCoach.Domain.Constants;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.Ai;
@@ -212,6 +213,16 @@ public sealed class ActivityMaterializationJob : IJob
             try
             {
                 var secondarySkills = ParseSecondarySkills(pattern.SecondarySkillsJson);
+                // Phase D6 — feed the reliable routing signals into the selector. Focus tags prefer the
+                // matched objective's tags (routing.FocusTags) and fall back to the learner's resolved
+                // focus areas when routing matched no objective. Subskill comes from the matched
+                // objective. Difficulty is derived conservatively from the learner's difficulty
+                // preference relative to the routed CEFR's normal band (see DeriveDifficultyBand).
+                var preferredFocusTags = routing.FocusTags.Count > 0
+                    ? routing.FocusTags
+                    : ParseFocusTags(resolvedGoalContext.FocusAreaKeys);
+                var preferredDifficultyBand = DeriveDifficultyBand(
+                    profile.DifficultyPreference, routing.TargetCefrLevel);
                 bankSelection = await _bankResourceSelector.SelectAsync(
                     new TodayBankSelectionRequest(
                         StudentProfileId: profile.Id,
@@ -223,9 +234,12 @@ public sealed class ActivityMaterializationJob : IJob
                         // Phase D4 — keep the bank general-English by default; only route
                         // workplace-tagged content when the learner's goal context is workplace-specific.
                         PrefersWorkplaceContext: resolvedGoalContext.WorkplaceSpecific,
-                        // Phase D5 — soft context-aware selection: prefer bank resources whose focus
-                        // tags match the learner's resolved focus areas, relaxing when none match.
-                        PreferredFocusTags: ParseFocusTags(resolvedGoalContext.FocusAreaKeys)), ct);
+                        // Phase D5/D6 — soft context-aware selection: prefer bank resources whose focus
+                        // tags match the objective/learner focus areas, relaxing when none match.
+                        PreferredFocusTags: preferredFocusTags,
+                        // Phase D6 — reliable runtime subskill + difficulty signals (TODO-E10-1 closed).
+                        PreferredSubskill: routing.Subskill,
+                        PreferredDifficultyBand: preferredDifficultyBand), ct);
             }
             catch (Exception ex)
             {
@@ -412,6 +426,27 @@ public sealed class ActivityMaterializationJob : IJob
             .Select(k => k.ToLowerInvariant())
             .Distinct()
             .ToList();
+    }
+
+    /// <summary>
+    /// Phase D6 — derives a conservative preferred difficulty band (1-5) from the learner's difficulty
+    /// preference relative to the routed CEFR's normal band. Balanced → the CEFR-normal band;
+    /// Gentle → one band lower (easier, same CEFR); Challenging → one band higher. Returns null when
+    /// the preference is unknown or the CEFR level is not mappable, so nothing indefensible is filtered.
+    /// The band scale is shared with the E10 metadata enrichment via <see cref="CefrDifficultyBand"/>.
+    /// </summary>
+    private static int? DeriveDifficultyBand(DifficultyPreference? preference, string? cefrLevel)
+    {
+        if (preference is null) return null;
+        if (CefrDifficultyBand.FromCefr(cefrLevel) is not { } band) return null;
+
+        var shifted = preference switch
+        {
+            DifficultyPreference.Gentle => band - 1,
+            DifficultyPreference.Challenging => band + 1,
+            _ => band, // Balanced (and any future default) → CEFR-normal band
+        };
+        return CefrDifficultyBand.Clamp(shifted);
     }
 
     /// <summary>

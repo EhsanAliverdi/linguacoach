@@ -132,19 +132,10 @@ public static class InternalBankMetadataDepthSeeder
         return updated;
     }
 
-    /// <summary>Deterministic CEFR → difficulty-band mapping, aligned with the E8 passage authoring
-    /// convention (A1=1, A2=2, B1=3, B2=4) and extended to C1/C2=5. Returns null for any
-    /// unrecognized level so nothing indefensible is written.</summary>
-    private static int? DeriveDifficultyBand(string? cefrLevel) =>
-        (cefrLevel?.Trim().ToUpperInvariant()) switch
-        {
-            "A1" => 1,
-            "A2" => 2,
-            "B1" => 3,
-            "B2" => 4,
-            "C1" or "C2" => 5,
-            _ => null,
-        };
+    /// <summary>Deterministic CEFR → difficulty-band mapping (shared with the Phase D6 selector via
+    /// <see cref="CefrDifficultyBand"/>). Returns null for any unrecognized level so nothing
+    /// indefensible is written.</summary>
+    private static int? DeriveDifficultyBand(string? cefrLevel) => CefrDifficultyBand.FromCefr(cefrLevel);
 
     /// <summary>Derives a single focus tag from the row's subskill (e.g. "vocabulary.collocation" →
     /// <c>["collocation"]</c>, "reading.inference" → <c>["inference"]</c>). Only derives from a

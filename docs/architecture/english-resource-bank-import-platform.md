@@ -852,12 +852,18 @@ least once. Admin must never approve based on raw JSON/CSV alone.
   discoverable via the filters, unfiltered browse backward-compatible, 100% internal-lean coverage,
   ASCII/English-only, survives repeated E8+depth application; plus +1 `AdminResourceBankEndpointTests`
   (E10-derived difficulty filter end-to-end via the admin API). 3,639 → 3,659 backend.
-- **Residual (`TODO-E10-1`)**: the metadata now *exists* on all lean rows, but
-  `ActivityMaterializationJob` still null-feeds `PreferredSubskill`/`PreferredDifficultyBand` at
-  runtime (no reliable per-request source yet), so runtime subskill/difficulty filtering only
-  activates when a preference is supplied — a Phase D6 concern (the selector already supports it and
-  the data is now present). Passages' difficulty/focus remain author-supplied (E8); E6/E7 passages'
-  focus/difficulty were left as authored (out of E10's lean-table scope).
+- **Residual (`TODO-E10-1`) — closed in Phase D6 (2026-07-09)**: `ActivityMaterializationJob` now
+  feeds reliable per-request signals into the selector — `PreferredSubskill` from the matched
+  objective (surfaced on `CurriculumRoutingRecommendation`), `PreferredFocusTags` from routing focus
+  tags (falling back to learner focus areas), and `PreferredDifficultyBand` derived from
+  `StudentProfile.DifficultyPreference` relative to the routed CEFR's normal band (shared
+  `CefrDifficultyBand` helper). Runtime subskill/difficulty filtering now activates from live routing.
+  **One caveat remains inherent to E10's data, not a wiring gap:** the derived difficulty bands are
+  CEFR-uniform (all internal rows at a CEFR share one band), so difficulty narrowing is effectively a
+  no-op for Balanced / a relaxation for Gentle/Challenging until genuinely mixed-difficulty content
+  exists; the mechanism is correct and mixed-band-tested. Passages' difficulty/focus remain
+  author-supplied (E8); E6/E7 passages' focus/difficulty were left as authored (out of E10's
+  lean-table scope).
 
 ---
 

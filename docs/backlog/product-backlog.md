@@ -335,13 +335,19 @@ breadth/depth, not the composer mechanism. See docs/roadmap/road-map.md §1, Dec
     subskill/band, discoverability via the E9 filters, end-to-end admin API)
   - No schema/migration (E9's columns exist), no external datasets, no new content pack, no composer/
     selector change, no UI. See docs/architecture/english-resource-bank-import-platform.md (E10 detail).
-- [ ] **Phase D6 — Today Topic Matching and Subskill-Aware Resource Selection** `Not started` —
-  **likely next implementation phase (now unblocked by E10's metadata depth).** Use the richer E10
-  metadata for stronger topic/focus/subskill matching in `TodayBankResourceSelector`; improve
-  supporting-resource relevance; reduce irrelevant vocabulary/grammar pairings. **Keep deterministic
-  metadata matching (no embeddings/vector search unless explicitly chosen); preserve legacy fallback.**
-  Includes `TODO-E10-1`: feed `PreferredSubskill`/`PreferredDifficultyBand` at runtime once a reliable
-  per-request source exists (the metadata now exists on all lean rows; the runtime feed is the gap).
+- [x] **Phase D6 — Today Topic Matching and Subskill-Aware Resource Selection** `Done (2026-07-09)` —
+  closed `TODO-E10-1` and made Today bank-first bundles topic-aware, deterministic metadata matching
+  only (no embeddings/vector). `CurriculumRoutingRecommendation` surfaces the matched objective's
+  `Subskill`; `ActivityMaterializationJob` feeds `PreferredSubskill`/`PreferredFocusTags`/
+  `PreferredDifficultyBand` (the last derived from `StudentProfile.DifficultyPreference` relative to
+  the routed CEFR's normal band via the shared `CefrDifficultyBand` helper) into
+  `TodayBankResourceSelector`. Reading bundles anchor supporting vocabulary/grammar on the primary
+  passage/reference's context tag (strict topic-anchor rungs prepended to the D5 relaxation ladder).
+  D5 relaxation, CEFR policy, workplace-exclusion, provenance shape, and legacy fallback preserved.
+  +12 backend tests (3,671 total). No schema/migration, no content, no UI, no PG-v2. Residual: E10
+  difficulty bands are CEFR-uniform, so difficulty narrowing is a no-op for Balanced / a relaxation
+  otherwise until mixed-difficulty content lands. See
+  docs/architecture/learning-activity-engine.md (Phase D6 notes).
 
 ---
 

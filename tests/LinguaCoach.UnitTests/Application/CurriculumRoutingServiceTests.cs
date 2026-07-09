@@ -69,6 +69,36 @@ public sealed class CurriculumRoutingServiceTests
         Assert.Equal("b2_writing_general", rec.CurriculumObjectiveKey);
     }
 
+    // ── Phase D6 — matched objective's subskill surfaces on the recommendation ──
+
+    [Fact]
+    public async Task Recommend_ExactLevelMatch_SurfacesObjectiveSubskill()
+    {
+        var objective = MakeObjective("b2_reading_general", CefrLevelConstants.B2,
+            CurriculumSkillConstants.Reading, [CurriculumContextTagConstants.GeneralEnglish],
+            subskill: "reading.inference");
+
+        var svc = BuildService([objective]);
+        var req = MakeRequest(CefrLevelConstants.B2, workplaceSpecific: false);
+
+        var rec = await svc.RecommendAsync(req);
+
+        Assert.Equal("b2_reading_general", rec.CurriculumObjectiveKey);
+        Assert.Equal("reading.inference", rec.Subskill);
+    }
+
+    [Fact]
+    public async Task Recommend_Fallback_HasNullSubskill()
+    {
+        var svc = BuildService([]);
+        var req = MakeRequest(CefrLevelConstants.B2, workplaceSpecific: false);
+
+        var rec = await svc.RecommendAsync(req);
+
+        Assert.Null(rec.CurriculumObjectiveKey);
+        Assert.Null(rec.Subskill);
+    }
+
     // ── Lower-level not selected silently ───────────────────────────────────
 
     [Fact]
@@ -608,7 +638,8 @@ public sealed class CurriculumRoutingServiceTests
         IReadOnlyList<string> contextTags,
         int difficultyBand = 2,
         int recommendedOrder = 0,
-        bool isReviewable = false)
+        bool isReviewable = false,
+        string? subskill = null)
     {
         var contextTagsJson = System.Text.Json.JsonSerializer.Serialize(contextTags);
         var obj = new CurriculumObjective(
@@ -621,7 +652,8 @@ public sealed class CurriculumRoutingServiceTests
             difficultyBand: difficultyBand,
             recommendedOrder: recommendedOrder,
             isActive: true,
-            isReviewable: isReviewable);
+            isReviewable: isReviewable,
+            subskill: subskill);
         return obj;
     }
 
