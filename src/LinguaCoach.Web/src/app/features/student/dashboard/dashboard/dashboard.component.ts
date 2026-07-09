@@ -8,8 +8,9 @@ import { PlacementResult, AdaptivePlacementSummary } from '../../../../core/mode
 import { StudentDashboardSummary } from '../../../../core/models/dashboard-summary.models';
 import { DashboardResponse } from '../../../../core/models/dashboard.models';
 import { StudentLearningMemory } from '../../../../core/models/learning-path.models';
-import { TodaysSessionResponse } from '../../../../core/models/session.models';
+import { TodaysSessionResponse, DailyLessonModuleSection } from '../../../../core/models/session.models';
 import { PracticeGymSuggestionsResponse } from '../../../../core/services/practice-gym-suggestions.service';
+import { SessionService } from '../../../../core/services/session.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -28,6 +29,9 @@ export class DashboardComponent implements OnInit {
   sessionLoading = signal(false);
   practiceSuggestions = signal<PracticeGymSuggestionsResponse | null>(null);
   practiceLoading = signal(false);
+  /** Phase H6 — additive, best-effort. Null whenever no compatible approved Module exists;
+   * the primary Today's Lesson card above (from the summary endpoint) is unaffected either way. */
+  dailyLessonModuleSection = signal<DailyLessonModuleSection | null>(null);
 
   readonly howItWorks = [
     { n: 1, text: 'AI generates a realistic scenario for your goals and level.' },
@@ -56,6 +60,7 @@ export class DashboardComponent implements OnInit {
     private summaryService: DashboardSummaryService,
     private placementService: PlacementService,
     private authNotice: AuthNoticeService,
+    private sessionService: SessionService,
   ) {
     this.notice.set(this.authNotice.consume() ?? '');
   }
@@ -73,6 +78,14 @@ export class DashboardComponent implements OnInit {
           this.placementService.getAdaptiveCurrent().subscribe({
             next: adaptive => this.placementResult.set(this.toPlacementResult(adaptive)),
             error: () => this.placementResult.set(null),
+          });
+        }
+        // Phase H6 — additive, best-effort: a failed/empty module section must never affect
+        // the primary Today's Lesson card, so errors are swallowed and simply leave it null.
+        if (this.hasLessonAccess(summary.courseReadiness.lifecycleStatus)) {
+          this.sessionService.getToday().subscribe({
+            next: today => this.dailyLessonModuleSection.set(today.moduleSection ?? null),
+            error: () => this.dailyLessonModuleSection.set(null),
           });
         }
       },
@@ -155,6 +168,9 @@ export class DashboardComponent implements OnInit {
         status: sessionStatus,
         isResuming: ts.status === 'InProgress',
         exercises: Array.from({ length: ts.exerciseCount ?? 0 }) as any,
+        // Phase H6 — this synthesized summary object never carries a real module section; the
+        // dedicated getToday() call below (dailyLessonModuleSection) is the source of truth for it.
+        moduleSection: null,
       });
     }
 

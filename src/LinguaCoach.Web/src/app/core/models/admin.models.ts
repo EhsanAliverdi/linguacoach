@@ -694,6 +694,26 @@ export interface StudentReadinessPoolHealth {
   practiceGym: ReadinessPoolSourceHealth;
 }
 
+/** Phase H6 — admin preview of the Daily Lesson module selector's decision for a student. */
+export interface AdminDailyLessonSelectedModule {
+  moduleDefinitionId: string;
+  title: string;
+  cefrLevel: string | null;
+  skill: string | null;
+  estimatedMinutes: number | null;
+  reason: string;
+}
+
+export interface AdminDailyLessonModulePreview {
+  selectedModules: AdminDailyLessonSelectedModule[];
+  fallbackRequired: boolean;
+  fallbackReason: string | null;
+  selectionReason: string | null;
+  targetCefrLevel: string | null;
+  totalEstimatedMinutes: number;
+  warnings: string[];
+}
+
 export interface AggregatePoolHealthSummary {
   totalStudentsWithItems: number;
   totalQueued: number;

@@ -131,6 +131,10 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<ModuleDefinitionLearnItemLink> ModuleDefinitionLearnItemLinks => Set<ModuleDefinitionLearnItemLink>();
     public DbSet<ModuleDefinitionActivityLink> ModuleDefinitionActivityLinks => Set<ModuleDefinitionActivityLink>();
 
+    // Phase H6 — Daily Lesson Module Pipeline (additive bookkeeping: which ModuleDefinition, if
+    // any, the deterministic selector chose for a student on a given date)
+    public DbSet<StudentDailyModuleAssignment> StudentDailyModuleAssignments => Set<StudentDailyModuleAssignment>();
+
     // Phase 10W — Enterprise notification platform
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<NotificationOutboxItem> NotificationOutboxItems => Set<NotificationOutboxItem>();

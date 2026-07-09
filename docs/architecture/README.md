@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H5)
+lastUpdated: 2026-07-09 (Phase H6)
 owner: architecture
 supersedes:
 supersededBy:
@@ -419,11 +419,31 @@ Content Banks nav after Activities. "Generate Module" is now live on the Resourc
 action, the Learn Item drawer, and the Activity drawer; `UnifiedResourceBankItemDto.LinkedModuleCount`
 now reflects real counts. +38 backend tests (3,822 total). No student assignment, no Module
 attempts, no H6-H7 started, no PG-v2 started, no Today/Practice Gym runtime change.
-**Recommended next implementation phase: H6 — Daily Lesson Module Pipeline**, though a PG-v2A/H6
-sequencing decision remains a future Plan-Sync checkpoint. See
-`docs/architecture/product-model-realignment-h0.md`,
-`docs/reviews/2026-07-09-phase-h5-module-foundation-review.md`, and `docs/roadmap/road-map.md`
-§1, Decision Log, and §19a.
+
+**Phase H6 (2026-07-09)** — Daily Lesson Module Pipeline: the first phase to actually consume
+`ModuleDefinition` at runtime. New `IDailyLessonModuleSelectionService.SelectAsync` — pure/
+read-only, deterministic, no AI call — selects an Approved `ModuleDefinition` with at least one
+Approved linked `LearnItem` AND at least one Approved linked `ActivityDefinition`; exact CEFR
+match preferred, only ever broadens to another level as an explicit "review/scaffold... fallback"
+selection, never silently. New additive `StudentDailyModuleAssignment` bookkeeping table
+(`Phase_H6_AddDailyLessonModulePipeline` migration — one new table, no change to any existing
+table) drives a 14-day reuse guard and admin diagnostics. Wired into
+`SessionQueryHandler.HandleAsync(GetTodaysSessionQuery)` **additively** — the existing session
+generation call is unchanged; module selection runs in a separate try/catch and attaches an
+optional `TodaysSessionResult.ModuleSection`; every "no suitable content" case degrades to a
+fallback flag and never blocks or breaks Today. Student-safe projections only — no
+`AnswerKeyJson`/`ScoringRulesJson` ever reach a student. New admin-only, read-only
+`api/admin/daily-lesson/modules/preview` and `api/admin/daily-lesson/students/{id}/assignments`.
+Minimal Angular additions: a read-only "Today's module" card on the student dashboard and a
+"Daily Lesson module selection" diagnostic card on the admin student-detail page. +21 unit, +12
+integration tests (3,822 → 3,855). No H7 started, no PG-v2 started, no student self-directed
+module selection, no Module attempts, no module scoring, no mastery updates from Modules, no
+`LearningActivity`/`LearningSession`/`ActivityTemplate` replacement, no readiness/delivery-queue
+change, no Today/Practice Gym fallback removed. **Recommended next implementation phase: H7 —
+Practice Gym Module Pipeline**, though a PG-v2A/H7 sequencing decision remains a future Plan-Sync
+checkpoint. See `docs/architecture/product-model-realignment-h0.md`,
+`docs/reviews/2026-07-09-phase-h6-daily-lesson-module-pipeline-review.md`, and
+`docs/roadmap/road-map.md` §1, Decision Log, and §19a.
 
 ---
 

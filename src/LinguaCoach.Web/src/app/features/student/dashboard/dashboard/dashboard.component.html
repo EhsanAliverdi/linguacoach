@@ -139,6 +139,41 @@
       </section>
     }
 
+    <!-- Phase H6 — Daily Lesson module section: additive, read-only, shown only when the
+         backend selected an approved Module for today. No attempt/submit loop here yet. -->
+    @if (dailyLessonModuleSection() && !dailyLessonModuleSection()!.fallbackRequired && dailyLessonModuleSection()!.selectedModules.length > 0) {
+      <section class="sp-card" data-testid="daily-lesson-module-section" style="margin-bottom:18px;padding:16px;border-color:var(--sp-border2)">
+        <p style="font-size:12px;font-weight:800;color:var(--sp-muted);text-transform:uppercase;margin-bottom:8px">Today's module</p>
+        @for (module of dailyLessonModuleSection()!.selectedModules; track module.moduleDefinitionId) {
+          <div data-testid="daily-lesson-module-card" style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--sp-border)">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+              <span style="font-size:14px;font-weight:700;color:var(--sp-ink)">{{ module.title }}</span>
+              @if (module.cefrLevel) {
+                <span style="font-size:11px;font-weight:800;color:var(--sp-writing);background:var(--sp-writing-soft);border-radius:999px;padding:2px 8px">{{ module.cefrLevel }}</span>
+              }
+              @if (module.skill) {
+                <span style="font-size:11px;font-weight:700;color:var(--sp-muted);background:var(--sp-canvas2);border-radius:999px;padding:2px 8px">{{ module.skill }}</span>
+              }
+              @if (module.estimatedMinutes) {
+                <span style="font-size:11px;color:var(--sp-muted)">{{ module.estimatedMinutes }} min</span>
+              }
+            </div>
+            @if (module.description) {
+              <p style="font-size:12.5px;color:var(--sp-muted);margin:0 0 6px">{{ module.description }}</p>
+            }
+            @for (learnItem of module.linkedLearnItems; track learnItem.learnItemId) {
+              <div style="font-size:12.5px;color:var(--sp-text);margin-top:4px">
+                <strong>{{ learnItem.title }}</strong> — {{ learnItem.body }}
+              </div>
+            }
+            @for (activity of module.linkedActivityDefinitions; track activity.activityDefinitionId) {
+              <div style="font-size:12px;color:var(--sp-muted);margin-top:4px">{{ activity.instructions }}</div>
+            }
+          </div>
+        }
+      </section>
+    }
+
     <!-- Quick progress snapshot -->
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:11px;margin-bottom:18px">
       <div class="sp-card" style="padding:14px;text-align:center" data-testid="stat-streak">

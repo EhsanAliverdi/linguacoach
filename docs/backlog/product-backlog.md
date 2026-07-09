@@ -14,7 +14,7 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
 
 ---
 
-## Product Model Realignment — Phase H0-H8 `H0-H5 Done, H6-H8 Planned` (2026-07-09)
+## Product Model Realignment — Phase H0-H8 `H0-H6 Done, H7-H8 Planned` (2026-07-09)
 
 **Phase H0 (docs-only, done 2026-07-09)** defined the intended product model — `Resource Bank Item
 → Learn Item/Activity → Module → Daily Lesson/Practice Gym → Attempt → Feedback + Rating →
@@ -63,8 +63,20 @@ E1-E10/D1-D6 substrate, and G2/G3/PG-v2 remain valid, separately-scoped tracks.
   Item drawer, and Activity drawer. No student assignment, no Module attempts, no Daily
   Lesson/Practice Gym pipeline. +38 backend tests (3,822 total). See
   `docs/reviews/2026-07-09-phase-h5-module-foundation-review.md`.
-- [ ] **Phase H6 — Daily Lesson Module Pipeline** `Planned` — Daily Lesson becomes several Modules;
-  preserve Today fallback until proven replacement.
+- [x] **Phase H6 — Daily Lesson Module Pipeline** `Done` (2026-07-09) — new
+  `IDailyLessonModuleSelectionService` (deterministic, no AI call, read-only) selects an approved
+  Module (with an approved Learn Item AND an approved Activity Definition linked) for Today,
+  attached additively as an optional `TodaysSessionResult.ModuleSection`; existing session
+  generation and Today legacy fallback are completely unchanged. New additive
+  `StudentDailyModuleAssignment` bookkeeping table (one new table, migration
+  `Phase_H6_AddDailyLessonModulePipeline`) for a 14-day reuse guard and admin diagnostics. New
+  admin-only `api/admin/daily-lesson/modules/preview` (read-only) and
+  `api/admin/daily-lesson/students/{id}/assignments`. Minimal read-only student dashboard card
+  and admin student-detail diagnostic card. No student self-directed selection, no Module
+  attempts, no scoring, no mastery updates, no Practice Gym pipeline. +33 backend tests (3,855
+  total). See `docs/reviews/2026-07-09-phase-h6-daily-lesson-module-pipeline-review.md`.
+  `TODO-H6-1`: wire real learning-plan/weak-skill signals into the selection request (currently
+  only `CefrLevel` is passed from `SessionQueryHandler`).
 - [ ] **Phase H7 — Practice Gym Module Pipeline** `Planned` — Practice Gym becomes skill/weakness
   Module selection; preserve legacy Practice Gym fallback until proven replacement.
 - [ ] **Phase H8 — Admin IA Simplification** `Planned` — move technical pages under

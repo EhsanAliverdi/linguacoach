@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H5)
+lastUpdated: 2026-07-09 (Phase H6)
 owner: product
 supersedes:
 supersededBy:
@@ -132,9 +132,46 @@ the H3 Learn Item detail drawer, and the H4 Activity detail drawer;
 Learn-Item or the Activity link chain). +27 unit, +11 integration tests (3,784 → 3,822). No
 student assignment, no Module attempts, no Today/Practice Gym runtime change. Full detail:
 `docs/roadmap/road-map.md` §1, Decision Log (Phase H5 entry), and
-`docs/reviews/2026-07-09-phase-h5-module-foundation-review.md`. **Recommended next implementation
-phase: H6 — Daily Lesson Module Pipeline**, though a PG-v2A/H6 sequencing decision remains a
-future Plan-Sync checkpoint.
+`docs/reviews/2026-07-09-phase-h5-module-foundation-review.md`.
+
+**Phase H6, 2026-07-09. Implemented.** H6 is the first phase to actually consume
+`ModuleDefinition` at runtime. New `IDailyLessonModuleSelectionService.SelectAsync` — pure/
+read-only (no database writes), deterministic (no AI call) — selects an Approved
+`ModuleDefinition` with at least one Approved linked `LearnItem` AND at least one Approved
+linked `ActivityDefinition`. Prefers an exact CEFR match; only broadens to another level as an
+explicit "review/scaffold... fallback" selection when `AllowFallback` is true and no exact match
+exists — the returned `Reason` always names this explicitly, never a silent lower-level pick.
+Soft preferences (applied after the CEFR gate): requested skill match, focus/context tag overlap
+(malformed tag JSON degrades safely to an empty list, never throws), estimated-minutes fit to the
+preferred session length. New additive `StudentDailyModuleAssignment` bookkeeping table
+(`Phase_H6_AddDailyLessonModulePipeline` migration — one new table, no change to any existing
+table) drives a 14-day reuse guard and admin diagnostics; it is not a student attempt/score
+record. The whole selector is wrapped in a top-level try/catch so it **never throws** — every "no
+suitable content" case (no CEFR, no compatible Module, everything recently used, an unexpected
+error) returns `FallbackRequired = true` instead. Wired into
+`SessionQueryHandler.HandleAsync(GetTodaysSessionQuery)` **additively**: the existing
+`ISessionGeneratorService.GetOrCreateTodaysSessionAsync` call is completely unchanged; module
+selection runs in a **separate** try/catch (logged, never rethrown) and attaches the result via
+`result with { ModuleSection = moduleSection }` on a new optional trailing field of
+`TodaysSessionResult`. Student-safe projections only — `DailyLessonLearnItemView`/
+`DailyLessonActivityView` deliberately omit `ActivityDefinition.AnswerKeyJson`/`ScoringRulesJson`.
+New admin-only, read-only `GET api/admin/daily-lesson/modules/preview` (calls the selector
+directly, bypassing the recorder — no side effects) and
+`GET api/admin/daily-lesson/students/{id}/assignments`. Minimal Angular additions: a read-only
+"Today's module" card on the student dashboard (best-effort, errors swallowed, never affects the
+primary Today's Lesson card driven by the separate dashboard-summary endpoint) and a "Daily
+Lesson module selection" diagnostic card on the admin student-detail page. +21 unit, +12
+integration tests (3,822 → 3,855). No H7/Practice-Gym-module-pipeline started, no PG-v2 started,
+no student self-directed module selection, no Module attempts, no module scoring, no learner
+mastery updates from Modules, no `ActivityTemplate`/`LearningActivity`/`LearningSession`
+replacement, no readiness-pool/delivery-queue deletion, no Today/Practice-Gym fallback removed.
+Full detail: `docs/roadmap/road-map.md` §1, and
+`docs/reviews/2026-07-09-phase-h6-daily-lesson-module-pipeline-review.md`. **`TODO-H6-1`:**
+`SessionQueryHandler` only passes `CefrLevel` into the selection request today —
+`RequestedSkill`/`FocusAreas`/`ContextTags` are accepted by the request shape but not yet
+populated from the student's learning plan; a future phase should wire those in. **Recommended
+next implementation phase: H7 — Practice Gym Module Pipeline**, though a PG-v2A/H7 sequencing
+decision remains a future Plan-Sync checkpoint.
 
 ---
 
@@ -446,8 +483,8 @@ pages exist to populate "Content Studio." Not implemented in H0.
 | **H3 — Learn Item Foundation** `Done (2026-07-09)` | `LearnItem`/`LearnItemResourceLink` entities/tables/API/admin review; deterministic "Generate Learn" from selected Resource Bank rows (no AI call yet); reuses `AdminReviewStatus`; approval lifecycle; source-resource traceability. | H2 |
 | **H4 — Activity Foundation with Form.io** `Done (2026-07-09)` | New `ActivityDefinition`/`ActivityResourceLink` entities (additive-only migration, two new tables) — deliberately separate from `ActivityTemplate`, not built on top of it; Form.io schema/scoring/feedback-plan storage for `gap_fill`/`multiple_choice_single`/`short_answer`; deterministic (no AI) generation from Resource Bank rows or a Learn Item; approval lifecycle; source-resource + optional Learn Item traceability. | H2 (parallel with H3) |
 | **H5 — Module Foundation** `Done (2026-07-09)` | New `ModuleDefinition`/`ModuleDefinitionLearnItemLink`/`ModuleDefinitionActivityLink` entities (additive-only migration, three new tables), deliberately separate from runtime `LearningModule`; `ModuleDefinition` = Learn Item(s) + Activity Definition(s) + module-level Feedback Plan; deterministic (no AI) generation from selected items, a Resource Bank row, a Learn Item, or an Activity Definition — every entry point requires Approved sources; approval lifecycle; objective/CEFR/skill/subskill/context/focus/difficulty/estimated-minutes metadata. | H3, H4 |
-| **H6 — Daily Lesson Module Pipeline** | Daily Lesson contains several Modules based on student time/weakness/plan; preserve Today fallback until proven replacement; map existing Today materialization into the module-first model safely. | H5 |
-| **H7 — Practice Gym Module Pipeline** | Practice Gym becomes skill/weakness/self-directed Module selection; uses approved Modules and unseen Activities; preserve legacy Practice Gym fallback until proven replacement. | H5 (may run alongside/after PG-v2A's selector work) |
+| **H6 — Daily Lesson Module Pipeline** `Done (2026-07-09)` | Deterministic, read-only `IDailyLessonModuleSelectionService` selects an Approved Module (with an Approved Learn Item and Approved Activity Definition) for Today, attached additively as an optional `TodaysSessionResult.ModuleSection`; existing session generation and Today legacy fallback unchanged; new additive `StudentDailyModuleAssignment` bookkeeping table for a 14-day reuse guard and admin diagnostics. | H5 |
+| **H7 — Practice Gym Module Pipeline** | Practice Gym becomes skill/weakness/self-directed Module selection; uses approved Modules and unseen Activities; preserve legacy Practice Gym fallback until proven replacement. | H6 (may run alongside/after PG-v2A's selector work) |
 | **H8 — Admin IA Simplification** | Move technical pages under Advanced/Diagnostics; make Content Studio the main admin surface (§7). | H1–H7 substantially landed |
 
 **Not scheduled by this phase:** destructive cleanup of any kind. Phase F (legacy generation
@@ -493,7 +530,13 @@ cascade-generates new ones), and a new entity kept explicitly separate from runt
 See `docs/roadmap/road-map.md` §1, Decision Log (Phase H5 entry) and
 `docs/reviews/2026-07-09-phase-h5-module-foundation-review.md` for full detail.
 
-**Recommended next: H6 — Daily Lesson Module Pipeline.** A PG-v2A/H6 sequencing decision (which
+**H6 — Daily Lesson Module Pipeline — done (2026-07-09).** First runtime consumer of
+`ModuleDefinition`; deterministic, read-only selection additively attached to Today; existing
+session generation, Today legacy fallback, and Practice Gym all unchanged. See
+`docs/roadmap/road-map.md` §1 and
+`docs/reviews/2026-07-09-phase-h6-daily-lesson-module-pipeline-review.md` for full detail.
+
+**Recommended next: H7 — Practice Gym Module Pipeline.** A PG-v2A/H7 sequencing decision (which
 comes first) remains a future Plan-Sync checkpoint, not resolved by this phase.
 
 ---

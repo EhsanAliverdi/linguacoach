@@ -23,7 +23,12 @@ public sealed record TodaysSessionResult(
     string FocusSkill,
     SessionStatus Status,
     bool IsResuming,
-    IReadOnlyList<SessionExerciseResult> Exercises);
+    IReadOnlyList<SessionExerciseResult> Exercises,
+    /// <summary>Phase H6 — additive, optional Daily Lesson module content computed alongside the
+    /// existing session generation, attached in a separate try/catch so a module-selection failure
+    /// can never break Today. Null whenever no compatible approved Module exists (legacy Today
+    /// content — the <see cref="Exercises"/> above — remains the source of truth in that case).</summary>
+    DailyLessonModules.DailyLessonModuleSelectionResult? ModuleSection = null);
 
 /// <summary>Ordered step within the session.</summary>
 public sealed record SessionExerciseResult(

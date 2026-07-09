@@ -1,8 +1,10 @@
+using LinguaCoach.Application.DailyLessonModules;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Domain;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace LinguaCoach.Infrastructure.Sessions;
 
@@ -13,11 +15,22 @@ public sealed class SessionQueryHandler : IGetTodaysSessionHandler, IGetSessionH
 {
     private readonly LinguaCoachDbContext _db;
     private readonly ISessionGeneratorService _generator;
+    private readonly IDailyLessonModuleSelectionService _moduleSelector;
+    private readonly IDailyLessonModuleAssignmentRecorder _moduleAssignmentRecorder;
+    private readonly ILogger<SessionQueryHandler> _logger;
 
-    public SessionQueryHandler(LinguaCoachDbContext db, ISessionGeneratorService generator)
+    public SessionQueryHandler(
+        LinguaCoachDbContext db,
+        ISessionGeneratorService generator,
+        IDailyLessonModuleSelectionService moduleSelector,
+        IDailyLessonModuleAssignmentRecorder moduleAssignmentRecorder,
+        ILogger<SessionQueryHandler> logger)
     {
         _db = db;
         _generator = generator;
+        _moduleSelector = moduleSelector;
+        _moduleAssignmentRecorder = moduleAssignmentRecorder;
+        _logger = logger;
     }
 
     public async Task<TodaysSessionResult> HandleAsync(GetTodaysSessionQuery query, CancellationToken ct = default)
@@ -26,8 +39,31 @@ public sealed class SessionQueryHandler : IGetTodaysSessionHandler, IGetSessionH
             .FirstOrDefaultAsync(p => p.UserId == query.UserId, ct)
             ?? throw new InvalidOperationException("Student profile not found.");
 
-        return await _generator.GetOrCreateTodaysSessionAsync(
+        var result = await _generator.GetOrCreateTodaysSessionAsync(
             new GetOrCreateTodaysSessionCommand(profile.Id), ct);
+
+        // Phase H6 — additive, best-effort: a Daily Lesson module selection failure must never
+        // break Today, so it is wrapped separately from the existing (already-safe) generator call.
+        try
+        {
+            var moduleSection = await _moduleSelector.SelectAsync(
+                new DailyLessonModuleSelectionRequest(
+                    StudentId: profile.Id,
+                    CefrLevel: profile.CefrLevel,
+                    LearningPlanId: null,
+                    TargetDate: DateTime.UtcNow.Date),
+                ct);
+
+            await _moduleAssignmentRecorder.RecordAsync(profile.Id, DateTime.UtcNow.Date, moduleSection, ct);
+
+            result = result with { ModuleSection = moduleSection };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Daily Lesson module selection failed for student {StudentProfileId}; Today falls back to legacy content only.", profile.Id);
+        }
+
+        return result;
     }
 
     public async Task<SessionDetailResult> HandleAsync(GetSessionQuery query, CancellationToken ct = default)

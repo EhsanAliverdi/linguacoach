@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H5)
+lastUpdated: 2026-07-09 (Phase H6)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,54 @@ Last updated: 2026-07-09
 ---
 
 ## Active sprint
+
+**Phase H6 — Daily Lesson Module Pipeline (2026-07-09)** — complete
+
+First phase to actually consume `ModuleDefinition` at runtime. **Additive-only migration,
+deterministic (no AI call), Today legacy fallback preserved, Practice Gym untouched.**
+
+- **Backend**: new `IDailyLessonModuleSelectionService.SelectAsync` — pure/read-only, selects
+  Approved `ModuleDefinition` records with at least one Approved linked `LearnItem` AND at least
+  one Approved linked `ActivityDefinition`. Exact CEFR match preferred; broadens to other levels
+  only as an explicit "review/scaffold... fallback" selection, never silently. Soft preferences:
+  requested skill, focus/context tag overlap (malformed JSON degrades safely), estimated-minutes
+  fit. 14-day reuse guard via new `StudentDailyModuleAssignment` bookkeeping table (migration
+  `Phase_H6_AddDailyLessonModulePipeline`, one new table, no change to any existing table). Never
+  throws — every "no suitable content" case returns `FallbackRequired = true`. Wired into
+  `SessionQueryHandler.HandleAsync(GetTodaysSessionQuery)` additively: existing session generation
+  is unchanged; module selection runs in a separate try/catch and attaches an optional
+  `TodaysSessionResult.ModuleSection`. Student-safe projections only — no `AnswerKeyJson`/
+  `ScoringRulesJson`. New admin-only `GET api/admin/daily-lesson/modules/preview` (read-only, no
+  side effects) and `GET api/admin/daily-lesson/students/{id}/assignments`.
+- **Frontend**: read-only "Today's module" card on the student dashboard (best-effort, errors
+  swallowed, never affects the primary Today's Lesson card); "Daily Lesson module selection"
+  diagnostic card on the admin student-detail page (mirrors the existing delivery-queue-health
+  card's loading/error/empty pattern).
+- **Review/pending behavior**: unchanged from H3/H4/H5 — selection only ever reads Approved
+  content; the selector itself never mutates `ModuleDefinition`/`LearnItem`/`ActivityDefinition`
+  and creates no Module attempts, no scoring, no mastery updates, no Practice Gym records.
+
+**Validation**: `dotnet build --configuration Release` passed (0 errors); `dotnet test
+--configuration Release` = 3,855 passed, 0 failed (+21 unit, +12 integration; 5 architecture
+unchanged). Angular production build: no new TS/Angular compile errors, only the pre-existing
+bundle-size budget failure (documented, not new).
+
+**No H7 started. No PG-v2 started. No student self-directed module selection. No Module attempts.
+No final module scoring. No learner mastery updates from Modules. No `ActivityTemplate`/
+`LearningActivity`/`LearningSession` replacement. No readiness-pool deletion. No delivery-queue
+deletion. Today fallback remains intact. Practice Gym fallback remains intact. No physical
+`ResourceBankItem` consolidation. No external datasets. No Persian/bilingual content. No direct
+final-table seeding.**
+
+**Next: Phase H7 — Practice Gym Module Pipeline** (recommended), plus `TODO-H6-1` (wire real
+learning-plan/weak-skill signals into Daily Lesson selection) as a smaller near-term follow-up.
+See `docs/architecture/product-model-realignment-h0.md`,
+`docs/reviews/2026-07-09-phase-h6-daily-lesson-module-pipeline-review.md`, and
+`docs/roadmap/road-map.md` §1/§19a.
+
+---
+
+## Previous sprint
 
 **Phase H5 — Module Foundation (2026-07-09)** — complete
 
@@ -57,15 +105,11 @@ Persian/bilingual/support-language content. No direct final-table seeding. No st
 No Module attempts. No Daily Lesson/Practice Gym module pipeline. No Today/Practice Gym runtime
 change. Today/Practice Gym legacy fallback and the readiness/delivery queue are unchanged.**
 
-**Next: Phase H6 — Daily Lesson Module Pipeline** (recommended), though a PG-v2A/H6 sequencing
-decision remains a future Plan-Sync checkpoint. See
-`docs/architecture/product-model-realignment-h0.md`,
-`docs/reviews/2026-07-09-phase-h5-module-foundation-review.md`, and
-`docs/roadmap/road-map.md` §1/§19a.
+See `docs/reviews/2026-07-09-phase-h5-module-foundation-review.md` for full H5 detail.
 
 ---
 
-## Previous sprint (H4)
+## Earlier sprint (H4)
 
 **Phase H4 — Activity Foundation with Form.io (2026-07-09)** — complete, docs-only summary
 retained: see `docs/architecture/product-model-realignment-h0.md` for full detail.

@@ -35,6 +35,21 @@ supersededBy:
 > (Practice Gym) are the planned future runtime consumers, not built yet. See
 > `docs/architecture/product-model-realignment-h0.md` and
 > `docs/reviews/2026-07-09-phase-h5-module-foundation-review.md` for the full H5 detail.
+>
+> **Phase H6 note (2026-07-09):** H6 is the first phase to actually touch this engine's Today
+> path, and does so **additively**. `SessionQueryHandler.HandleAsync(GetTodaysSessionQuery)`
+> still calls `ISessionGeneratorService.GetOrCreateTodaysSessionAsync` completely unchanged —
+> `LearningSession`/`SessionExercise`/`LearningActivity` creation is untouched. Separately, in its
+> own try/catch, it now also calls the new `IDailyLessonModuleSelectionService` (deterministic, no
+> AI call, read-only — selects an Approved `ModuleDefinition` with an Approved `LearnItem` and
+> Approved `ActivityDefinition` linked) and attaches the result as an optional
+> `TodaysSessionResult.ModuleSection`. A selection failure or "no suitable Module" case never
+> affects the exercises returned above — it just leaves `ModuleSection` null. `LearningModule`,
+> `LearningPath`, and `ActivityAttempt` are all unchanged; the module selector creates no
+> `LearningActivity`/`ActivityAttempt` rows. Practice Gym generation is unchanged (H7 is the
+> planned future consumer there). See `docs/architecture/product-model-realignment-h0.md` and
+> `docs/reviews/2026-07-09-phase-h6-daily-lesson-module-pipeline-review.md` for the full H6
+> detail.
 
 ## Why `LearningActivity` is the Centre of the Product
 

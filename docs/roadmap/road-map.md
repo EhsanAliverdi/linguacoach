@@ -26,7 +26,35 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest phase completed (local, not yet deployed):** Phase H5 —
+**Latest phase completed (local, not yet deployed):** Phase H6 —
+Daily Lesson Module Pipeline (2026-07-09). First phase to actually consume `ModuleDefinition` at
+runtime. New `IDailyLessonModuleSelectionService.SelectAsync` — deterministic (no AI call),
+pure/read-only, selects approved `ModuleDefinition` records with at least one Approved linked
+`LearnItem` AND at least one Approved linked `ActivityDefinition`. Prefers an exact CEFR match;
+only broadens to a lower/other level as an explicit "review/scaffold... fallback" selection when
+`AllowFallback` is true and no exact match exists — never a silent lower-level pick. Soft
+preferences: requested skill, focus/context tag overlap, estimated-minutes fit to the preferred
+session length. 14-day reuse guard via a new additive `StudentDailyModuleAssignment` bookkeeping
+table (`Phase_H6_AddDailyLessonModulePipeline` migration — one new table, no change to any
+existing table). Wired into `SessionQueryHandler.HandleAsync(GetTodaysSessionQuery)` **additively**:
+the existing session-generation call is unchanged; module selection runs in a separate try/catch
+and attaches an optional `TodaysSessionResult.ModuleSection` — every "no suitable content" case
+(no CEFR, no plan, all recently used, malformed JSON, pending/rejected content, an unexpected
+error) degrades to a fallback flag and **never blocks or breaks Today**. Student-safe projections
+only — `AnswerKeyJson`/`ScoringRulesJson` are never included. New admin-only diagnostics:
+`GET api/admin/daily-lesson/modules/preview` (read-only, no side effects) and
+`GET api/admin/daily-lesson/students/{id}/assignments`. Minimal Angular additions: a read-only
+"Today's module" card on the student dashboard (best-effort, errors swallowed) and a "Daily Lesson
+module selection" diagnostic card on the admin student-detail page. +21 unit tests, +12
+integration tests (3,822 → 3,855). Frontend production build has no new TS/Angular errors — only
+the pre-existing bundle-size budget failure. **No H7/Practice-Gym-module-pipeline started, no
+PG-v2 started, no Module attempts, no module scoring, no mastery updates from Modules, no
+`LearningActivity`/`LearningSession`/`ActivityTemplate` replacement, no readiness/delivery-queue
+change, no Today/Practice-Gym fallback removed.** Full detail:
+`docs/architecture/product-model-realignment-h0.md` (updated) and
+`docs/reviews/2026-07-09-phase-h6-daily-lesson-module-pipeline-review.md`.
+
+**Previous phase:** Phase H5 —
 Module Foundation (2026-07-09). Introduces the top of `Resource Bank Item → Learn Item/Activity
 Definition → Module Definition`: a reusable, reviewable learning unit combining one or more Learn
 Items and Activity Definitions plus a module-level feedback plan. New `ModuleDefinition` entity

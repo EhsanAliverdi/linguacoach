@@ -285,6 +285,30 @@
         }
       </sp-admin-card>
 
+      <!-- Daily Lesson module selection diagnostic — Phase H6 -->
+      <sp-admin-card title="Daily Lesson module selection" data-testid="daily-lesson-module-preview-card">
+        @if (dailyLessonModulePreviewLoading()) {
+          <sp-admin-loading-state message="Loading Daily Lesson module preview" />
+        } @else if (dailyLessonModulePreviewError()) {
+          <sp-admin-error-state title="Daily Lesson module preview unavailable" [message]="dailyLessonModulePreviewError()" />
+        } @else if (dailyLessonModulePreview()) {
+          @let preview = dailyLessonModulePreview()!;
+          @if (preview.fallbackRequired) {
+            <sp-admin-badge tone="warning">Fallback used</sp-admin-badge>
+            <p class="sp-admin-mt-2 sp-admin-text-xs sp-admin-text-muted">{{ preview.fallbackReason }}</p>
+          } @else {
+            <sp-admin-badge tone="success">Module pipeline</sp-admin-badge>
+            <ul class="sp-admin-simple-list sp-admin-mt-2">
+              @for (m of preview.selectedModules; track m.moduleDefinitionId) {
+                <li>{{ m.title }} @if (m.cefrLevel) { ({{ m.cefrLevel }}) } — {{ m.reason }}</li>
+              }
+            </ul>
+          }
+        } @else {
+          <sp-admin-empty-state message="Daily Lesson module preview not available." />
+        }
+      </sp-admin-card>
+
       <!-- Pilot readiness — Phase 20D -->
       <sp-admin-card title="Pilot readiness" data-testid="pilot-readiness-card">
         @if (readinessLoading()) {

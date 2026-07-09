@@ -7,6 +7,7 @@ import {
   UpdateStudentProfileRequest, ResetStudentRequest, StudentLifecycleStageName,
   AdminStudentLearningMemory, ResetStudentResponse, AdminActivityHistoryItem,
   AdminStudentDetail, StudentAuditHistoryItem, StudentReadinessPoolHealth, AdminMasteryPoolSummary,
+  AdminDailyLessonModulePreview,
   AdminPlacementLatestResponse, AdminPlacementProgress, AdminStudentPracticeSummary,
   AdminLearningPlanProgress, AdminStudentProgressSummary, AdminStudentSpeakingAttemptsResult,
   AdminWritingEvaluationItemDto, StudentReadinessSummary, StudentReadinessRepairRequest,
@@ -158,6 +159,11 @@ export class AdminStudentDetailComponent implements OnInit {
   poolHealth = signal<StudentReadinessPoolHealth | null>(null);
   poolHealthLoading = signal(true);
   poolHealthError = signal('');
+
+  // Phase H6 — Daily Lesson module selection diagnostic (read-only preview)
+  dailyLessonModulePreview = signal<AdminDailyLessonModulePreview | null>(null);
+  dailyLessonModulePreviewLoading = signal(true);
+  dailyLessonModulePreviewError = signal('');
 
   // Phase 20D — Pilot readiness audit + repair
   readiness = signal<StudentReadinessSummary | null>(null);
@@ -378,6 +384,11 @@ export class AdminStudentDetailComponent implements OnInit {
     this.adminApi.getStudentProgressSummary(id).subscribe({
       next: ps => { this.progressSummary.set(ps); this.progressSummaryLoading.set(false); },
       error: () => { this.progressSummaryError.set('Could not load progress summary.'); this.progressSummaryLoading.set(false); },
+    });
+
+    this.adminApi.getDailyLessonModulePreview(id).subscribe({
+      next: p => { this.dailyLessonModulePreview.set(p); this.dailyLessonModulePreviewLoading.set(false); },
+      error: () => { this.dailyLessonModulePreviewError.set('Could not load Daily Lesson module preview.'); this.dailyLessonModulePreviewLoading.set(false); },
     });
   }
 

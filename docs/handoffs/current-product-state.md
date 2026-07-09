@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase H5)
+lastUpdated: 2026-07-09 (Phase H6)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,40 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-09 (Phase H5)
+Last updated: 2026-07-09 (Phase H6)
+
+## Daily Lesson Module Pipeline (Phase H6, 2026-07-09)
+
+`ModuleDefinition` (Phase H5) is now consumed at runtime for the first time. A deterministic
+selector (`IDailyLessonModuleSelectionService`, no AI call, no database writes) picks an
+approved Module — one with at least one approved linked Learn Item AND at least one approved
+linked Activity Definition — for a student's Today, preferring an exact CEFR match and only
+broadening to another level as an explicit "review/scaffold... fallback" choice, never silently.
+The result is attached **additively** to the existing Today response as an optional
+`moduleSection` — the existing session-generation path is completely unchanged, and every "no
+suitable content" case (no CEFR set, no compatible Module, everything recently used, an
+unexpected error) safely degrades to the legacy Today content with no module section at all.
+Nothing shown to students ever includes an answer key or scoring rule.
+
+Students see a small, read-only "Today's module" card on the dashboard when a Module was
+selected (title, description, Learn Item text, Activity instructions, CEFR/skill badges,
+estimated minutes) — no attempt/submit loop yet. Admins get two new read-only diagnostics:
+`GET api/admin/daily-lesson/modules/preview` (what would be selected for a student, with the
+fallback reason if nothing would be) and `GET api/admin/daily-lesson/students/{id}/assignments`
+(what was actually recorded), plus a matching "Daily Lesson module selection" card on the admin
+student-detail page. A new additive `student_daily_module_assignments` table records which
+Module (if any) was selected per student per day, purely for admin diagnostics and a 14-day
+reuse guard — it is not a student attempt/score record.
+
++33 backend tests (3,855 total: 21 unit, 12 integration). No H7/PG-v2 started, no student
+self-directed module selection, no Module attempts, no module scoring, no mastery updates from
+Modules, no `LearningActivity`/`LearningSession`/`ActivityTemplate` replacement, no
+readiness/delivery-queue change, no Today/Practice Gym fallback removed. Full detail:
+`docs/architecture/product-model-realignment-h0.md` and
+`docs/reviews/2026-07-09-phase-h6-daily-lesson-module-pipeline-review.md`; roadmap:
+`docs/roadmap/road-map.md` §1.
+
+---
 
 ## Module Foundation (Phase H5, 2026-07-09)
 
