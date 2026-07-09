@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase D4)
+lastUpdated: 2026-07-09 (Plan-Sync-After-D4)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,44 @@ Last updated: 2026-07-09
 ---
 
 ## Active sprint
+
+**Plan-Sync-After-D4 — Decide Next Phase After Richer Today Bank-First Composition (2026-07-09)** — complete (docs-only)
+
+A docs-only planning/decision sync after Phase D4. **Decision: Phase E9 — Published Bank Metadata
+Parity for Context-Aware Selection — comes next, before a deeper Today phase (D5) and before
+PG-v2.**
+
+Phase D4 proved richer, pattern-shaped bank composition works, but exposed a real selection
+limitation (`TODO-D4-1`): only `CefrReadingPassage` stores enough **published** metadata (context
+tags, focus tags, subskill, difficulty band) for context-aware filtering. The lean final tables —
+`CefrVocabularyEntry`, `CefrGrammarProfileEntry`, `CefrReadingReference` — carry that richer
+metadata only on the staging `ResourceCandidate` (and partially in provenance), not on the
+published rows a selector actually queries. That is why D4's general-English/workplace context
+filter could only be applied to full passages. The next bottleneck is therefore **published
+metadata parity, not composer mechanics** — fixing it first makes any deeper Today context matching
+(D5), and eventually PG-v2's own selector, safer and more explainable, and avoids each re-hitting
+the same gap.
+
+**Proposed Phase E9 — Published Bank Metadata Parity for Context-Aware Selection**: add metadata
+columns (context/focus tags, subskill, difficulty band as appropriate) to
+`CefrVocabularyEntry`/`CefrGrammarProfileEntry`/`CefrReadingReference` aligned with the existing
+`CefrReadingPassage` shape; extend `ResourceCandidatePublishService` to map candidate metadata into
+the final tables at publish; backfill existing internal E6/E7/E8 rows from candidate/provenance
+metadata where safely traceable; extend the E5 browse/search query surface only where filters
+already exist or need a small safe extension; add tests for mapping, backfill, filtering, and
+discoverability. **E9 must not**: add a new seed pack (beyond tiny test fixtures), import external
+datasets, add Persian/bilingual/support-language content, seed final tables directly, rewrite the
+Today composer, start PG-v2, rewrite Practice Gym, remove any legacy fallback, delete the
+readiness/delivery queue, or redesign student/admin UI. **Phase D5 — Context-Aware Today Bank
+Selection and Topic Matching** is documented as the likely Today phase after E9.
+
+No app code, migrations, schema, seed content, or tests changed — docs only. Today legacy fallback,
+Practice Gym fallback, and the readiness/delivery queue all remain. PG-v2, Phase F, and Phase G2/G3
+stay sequenced later. See `docs/roadmap/road-map.md` §1, §19 Decision Log, §19a (items 20b–20d).
+
+---
+
+## Previous sprint
 
 **Phase D4 — Broader Today Bank-First Composer Expansion (2026-07-09)** — complete
 

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase D4)
+lastUpdated: 2026-07-09 (Plan-Sync-After-D4)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,7 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-09 (Phase D4)
+Last updated: 2026-07-09 (Plan-Sync-After-D4)
 
 > **Note on scope of this file.** The dated sections below are a running
 > product-state log that ends at Phase 20I (2026-07-03, the last
@@ -96,12 +96,22 @@ passed, 0 failed (+16 tests); no frontend files changed. Today legacy fallback,
 Practice Gym fallback, and the readiness/delivery queue all remain intact; no
 migration.
 
-**Next-step decision:** a post-D4 checkpoint — **Phase PG-v2A** (skill/objective-
-first Practice Gym selector), further Today composer work (e.g. a dedicated
-grammar-primary pattern), **Phase F** (legacy freeform-generation retirement,
-per-pattern), or **Phase G2/G3** (backend/diagnostics cleanup). Full reasoning:
-`docs/roadmap/road-map.md` §1, §19 Decision Log (Phase D4 entry), and §19a; D4
-detail in `docs/architecture/learning-activity-engine.md` (Phase D4 section).
+**Next-step decision (Plan-Sync-After-D4, 2026-07-09, docs-only):** **Phase E9 —
+Published Bank Metadata Parity for Context-Aware Selection — comes next**, before
+a deeper Today phase (D5) and before PG-v2. D4 exposed a real limitation
+(`TODO-D4-1`): only `CefrReadingPassage` stores enough **published** metadata
+(context/focus tags, subskill, difficulty) for context-aware filtering; the lean
+`CefrVocabularyEntry`/`CefrGrammarProfileEntry`/`CefrReadingReference` tables carry
+that metadata only on the staging candidate/provenance, not on the published rows
+a selector queries — which is why D4's general-English/workplace context filter
+could only be applied to full passages. The next bottleneck is therefore
+published-metadata parity, not composer mechanics; fixing it first makes any
+deeper Today context matching (D5) and a future PG-v2 selector safer and more
+explainable. **Phase D5 — Context-Aware Today Bank Selection and Topic Matching**
+is the likely Today phase after E9. PG-v2, Phase F (legacy retirement), and
+Phase G2/G3 (backend/diagnostics cleanup) remain sequenced later. Full reasoning:
+`docs/roadmap/road-map.md` §1, §19 Decision Log (Plan-Sync-After-D4 entry), and
+§19a (items 20b–20d).
 
 ---
 

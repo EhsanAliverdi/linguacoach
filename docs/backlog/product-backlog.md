@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase D4)
+lastUpdated: 2026-07-09 (Plan-Sync-After-D4)
 owner: product
 supersedes:
 supersededBy:
@@ -285,10 +285,33 @@ breadth/depth, not the composer mechanism. See docs/roadmap/road-map.md §1, Dec
   - [x] Exact-CEFR/never-upward, novelty, and feedback exclusions preserved; AI stays composer/fallback
   - [x] +16 backend tests. No new content, no external datasets, no UI, no legacy-fallback removal.
     See docs/architecture/learning-activity-engine.md (Phase D4 section).
-- [ ] **Post-D4 next-step checkpoint** `Open` — candidates: Phase PG-v2A (skill/objective-first
-  Practice Gym selector), further Today composer work (e.g. a dedicated grammar-primary pattern),
-  Phase F (legacy freeform-generation retirement, per-pattern), or Phase G2/G3 (backend/diagnostics
-  cleanup). Not yet decided.
+- [x] **Post-D4 next-step checkpoint** `Resolved (Plan-Sync-After-D4, 2026-07-09)` — decided **Phase
+  E9 (Published Bank Metadata Parity for Context-Aware Selection) comes before Phase D5 and PG-v2**,
+  because D4 exposed `TODO-D4-1` (only `CefrReadingPassage` carries enough published metadata for
+  context-aware filtering). See below.
+- [ ] **Phase E9 — Published Bank Metadata Parity for Context-Aware Selection** `Not started` —
+  **next recommended implementation phase.** Give the lean published bank tables the same metadata
+  `CefrReadingPassage` already has so all bank types are filterable by context/focus/subskill/
+  difficulty:
+  - [ ] Add metadata columns (context/focus tags, subskill, difficulty band as appropriate) to
+    `CefrVocabularyEntry`, `CefrGrammarProfileEntry`, `CefrReadingReference`, aligned with
+    `CefrReadingPassage`
+  - [ ] Extend `ResourceCandidatePublishService` to map candidate metadata into those final tables
+    at publish time (preserve existing rows / backward compatibility)
+  - [ ] Backfill existing internal E6/E7/E8 rows from candidate/provenance metadata where safely
+    traceable
+  - [ ] Extend the E5 `ResourceBankQueryService` browse/search filters only where filters already
+    exist or need a small safe extension
+  - [ ] Tests for mapping, backfill, filtering, and discoverability
+  - **Must not**: add a new seed pack (beyond tiny test fixtures); import external datasets; add
+    Persian/bilingual/support-language content; seed final tables directly; rewrite the Today
+    composer; start PG-v2; rewrite Practice Gym; remove any legacy fallback; delete the
+    readiness/delivery queue; redesign student/admin UI.
+- [ ] **Phase D5 — Context-Aware Today Bank Selection and Topic Matching** `Not started` — likely
+  Today/composer phase **after** E9. Use E9's metadata parity for consistent context/focus/subskill/
+  difficulty filtering across all bank types; improve topic matching within published banks; reduce
+  irrelevant supporting resources. **Keep legacy fallback; avoid semantic/vector search unless
+  explicitly chosen.**
 
 ---
 

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase D4)
+lastUpdated: 2026-07-09 (Plan-Sync-After-D4)
 owner: architecture
 supersedes:
 supersededBy:
@@ -233,6 +233,7 @@ enabling approval) and E4 (approve/reject + publish action).
 | **E6** ✅ done 2026-07-08 | First real English content depth | An original, internally-authored, English-only seed pack (32 vocabulary / 12 grammar / 10 short reading excerpts) flowed through the full staging→validation→approval→publish pipeline — no direct-final-table seeding, no external dataset, no Persian/bilingual content. Proves the E1-E5 platform handles real usable content, not just synthetic tests. **Not** a full external-dataset import or E6's originally-envisioned "reading/listening resource expansion" scope — that broader scope remains available for a future phase if chosen. |
 | **E7** ✅ done 2026-07-09 | Full internal reading passage bank + resource depth expansion | New `CefrReadingPassage` published bank entity for full-length original/internal English reading passages (distinct from the short-excerpt-only `CefrReadingReference`); `ResourceCandidatePublishService` now routes a `ReadingPassage` candidate to whichever bank fits its actual length instead of blocking full passages; E5-style browse/search API + admin page; 10 new full-length passages added to the internal seed pack through the same E1-E6 pipeline. **Re-scoped from its original "bigger import support" sketch** — see the E7 detail section below for why. Background/queued import jobs, ZIP archives, and audio-carrying sources remain deferred to a future phase if chosen. |
 | **E8** ✅ done 2026-07-09 | Internal resource bank depth expansion (grammar/usage/reading) | **Re-scoped by Plan-Sync-After-D3 from the original "RAG/search enrichment" sketch to a content-depth phase** (D3 proved the Today composer path works; the bottleneck was bank breadth/depth, not semantic search). A second original, English-only internal seed pack (`InternalResourceSeedPackE8Seeder`, distinct source, idempotent) added **40 vocabulary + 20 grammar + 16 short reading references + 8 full reading passages, evenly across A1–B2**, general-English-default with workplace a minority context, through the same E1-E4 staging→validation→approval→publish pipeline (no direct-final-table seeding, no external datasets, no Persian/bilingual content). A narrow additive metadata mapping (`focusTags`/`difficultyBand` → candidate → `CefrReadingPassage`) was added. See the E8 detail section below. **RAG/embedding/vector-search enrichment remains deferred to a later phase** (no pgvector, no embeddings introduced here), consistent with Phase B's repetition/novelty scope discipline. |
+| **E9** ⏳ next (Plan-Sync-After-D4, 2026-07-09) | Published bank metadata parity for context-aware selection | **Chosen by Plan-Sync-After-D4** after Phase D4 exposed `TODO-D4-1`: only `CefrReadingPassage` stores enough **published** metadata (context/focus tags, subskill, difficulty band) for context-aware filtering; the lean `CefrVocabularyEntry`/`CefrGrammarProfileEntry`/`CefrReadingReference` tables carry that metadata only on the staging `ResourceCandidate`/provenance, not on the published rows a selector queries. E9 will add the missing metadata columns to those three final tables (aligned with `CefrReadingPassage`), extend `ResourceCandidatePublishService` to map candidate metadata into them at publish, backfill existing internal E6/E7/E8 rows from candidate/provenance metadata where safely traceable, and extend the E5 browse/search filters only where they already exist or need a small safe extension. **No new seed pack (beyond tiny test fixtures), no external datasets, no direct final-table seeding, no Today composer rewrite, no PG-v2, no legacy-fallback removal.** Sequenced before Phase D5 (Context-Aware Today Bank Selection and Topic Matching) and before PG-v2. **Docs-only so far — not started.** |
 
 ---
 
@@ -820,10 +821,24 @@ assembles pattern-shaped multi-resource bundles (vocabulary-primary; reading com
 full-passage anchor plus supporting vocabulary/grammar; reading cloze on a short reference), with a
 pattern-specific instruction layer, a general-English-by-default workplace-context filter for full
 passages (`PrefersWorkplaceContext`), and per-resource `role` provenance — no rewrite, all legacy
-fallbacks intact. See `docs/architecture/learning-activity-engine.md` (Phase D4 section). See
+fallbacks intact. See `docs/architecture/learning-activity-engine.md` (Phase D4 section).
+
+**Metadata-parity gap this platform must close (D4 finding, `TODO-D4-1`):** D4's context filter only
+works for full passages because `CefrReadingPassage` is the **only** published bank entity that
+stores context/focus tags, subskill, and difficulty band. The lean final tables
+(`CefrVocabularyEntry`, `CefrGrammarProfileEntry`, `CefrReadingReference`) carry that metadata only
+on the staging `ResourceCandidate` — `ResourceCandidatePublishService.BuildVocabularyEntry`/
+`BuildGrammarProfileEntry`/`BuildReadingReferenceOrPassage` map only the handful of fields those
+entities currently have, dropping context/focus/subskill/difficulty at publish time. **Plan-Sync-After-D4
+(2026-07-09, docs-only) chose Phase E9 (Published Bank Metadata Parity for Context-Aware Selection)
+as the next phase** to close this: add the missing published-metadata columns to those three
+entities (aligned with `CefrReadingPassage`), extend the publish mapping to carry candidate metadata
+into them, backfill the existing internal E6/E7/E8 rows from candidate/provenance metadata where
+safely traceable, and extend the E5 browse/search filters accordingly — before a deeper Today phase
+(D5) or PG-v2 builds more selectors on the current asymmetry. See
 `docs/roadmap/road-map.md` Decision Log (2026-07-08, Plan-Sync-After-C1, Plan-Sync-After-E4,
 Phase E5, Plan-Sync-E6-Decision, Phase E6, Phase D1, Bugfix-D1A, Phase D2, Plan-Sync-After-D2,
-Phase E7, Phase D3, Plan-Sync-After-D3, and Phase E8 entries) for the full reasoning and current preferred phase order.
+Phase E7, Phase D3, Plan-Sync-After-D3, Phase E8, Phase D4, and Plan-Sync-After-D4 entries) for the full reasoning and current preferred phase order.
 
 **Plan-Sync-G0 (2026-07-09, docs-only)** confirms Resource Banks, Resource Candidates, and
 Activity Templates — this platform's own E0-E7 output — as the **primary content model going
