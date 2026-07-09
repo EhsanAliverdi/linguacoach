@@ -17,7 +17,15 @@ public sealed record ResourceBankListFilter(
     string? CefrLevel = null,
     Guid? SourceId = null,
     int Page = 1,
-    int PageSize = 20
+    int PageSize = 20,
+    // Phase E9 — optional selection-metadata filters for the lean bank tables (vocabulary/grammar/
+    // reading-references). Null means "no filter on this field". A row with no metadata (a pre-E9
+    // or not-yet-backfilled row) simply never matches a metadata filter — it is not treated as a
+    // wildcard match.
+    string? ContextTag = null,
+    string? FocusTag = null,
+    string? Subskill = null,
+    int? DifficultyBand = null
 );
 
 /// <summary>Reverse-lookup traceability back to the originating ResourceCandidate/ImportRun, or a
@@ -47,7 +55,12 @@ public sealed record ResourceBankVocabularyListItemDto(
     string? Notes,
     Guid SourceId,
     string SourceName,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    // Phase E9 — published selection metadata (read-only).
+    string? Subskill = null,
+    int? DifficultyBand = null,
+    IReadOnlyList<string>? ContextTags = null,
+    IReadOnlyList<string>? FocusTags = null
 );
 
 public sealed record ResourceBankVocabularyDetailDto(
@@ -58,7 +71,12 @@ public sealed record ResourceBankVocabularyDetailDto(
     string? Notes,
     DateTime CreatedAt,
     ResourceCandidateSourceInfoDto Source,
-    ResourceBankTraceabilityDto Traceability
+    ResourceBankTraceabilityDto Traceability,
+    // Phase E9 — published selection metadata (read-only).
+    string? Subskill = null,
+    int? DifficultyBand = null,
+    IReadOnlyList<string>? ContextTags = null,
+    IReadOnlyList<string>? FocusTags = null
 );
 
 public sealed record ResourceBankVocabularyListResult(
@@ -75,7 +93,12 @@ public sealed record ResourceBankGrammarListItemDto(
     string? Description,
     Guid SourceId,
     string SourceName,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    // Phase E9 — published selection metadata (read-only).
+    string? Subskill = null,
+    int? DifficultyBand = null,
+    IReadOnlyList<string>? ContextTags = null,
+    IReadOnlyList<string>? FocusTags = null
 );
 
 public sealed record ResourceBankGrammarDetailDto(
@@ -85,7 +108,12 @@ public sealed record ResourceBankGrammarDetailDto(
     string? Description,
     DateTime CreatedAt,
     ResourceCandidateSourceInfoDto Source,
-    ResourceBankTraceabilityDto Traceability
+    ResourceBankTraceabilityDto Traceability,
+    // Phase E9 — published selection metadata (read-only).
+    string? Subskill = null,
+    int? DifficultyBand = null,
+    IReadOnlyList<string>? ContextTags = null,
+    IReadOnlyList<string>? FocusTags = null
 );
 
 public sealed record ResourceBankGrammarListResult(
@@ -103,7 +131,12 @@ public sealed record ResourceBankReadingReferenceListItemDto(
     string? ReferenceExcerpt,
     Guid SourceId,
     string SourceName,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    // Phase E9 — published selection metadata (read-only).
+    string? Subskill = null,
+    int? DifficultyBand = null,
+    IReadOnlyList<string>? ContextTags = null,
+    IReadOnlyList<string>? FocusTags = null
 );
 
 public sealed record ResourceBankReadingReferenceDetailDto(
@@ -114,7 +147,12 @@ public sealed record ResourceBankReadingReferenceDetailDto(
     string? ReferenceExcerpt,
     DateTime CreatedAt,
     ResourceCandidateSourceInfoDto Source,
-    ResourceBankTraceabilityDto Traceability
+    ResourceBankTraceabilityDto Traceability,
+    // Phase E9 — published selection metadata (read-only).
+    string? Subskill = null,
+    int? DifficultyBand = null,
+    IReadOnlyList<string>? ContextTags = null,
+    IReadOnlyList<string>? FocusTags = null
 );
 
 public sealed record ResourceBankReadingReferenceListResult(

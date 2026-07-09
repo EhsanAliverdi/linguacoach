@@ -15,6 +15,13 @@ public sealed class CefrGrammarProfileEntry : BaseEntity
     public string GrammarPoint { get; private set; } = string.Empty;
     public string? Description { get; private set; }
 
+    // Phase E9 — published selection metadata, aligned with CefrReadingPassage. Nullable for
+    // backward compatibility with pre-E9 rows.
+    public string? Subskill { get; private set; }
+    public int? DifficultyBand { get; private set; }
+    public string? ContextTagsJson { get; private set; }
+    public string? FocusTagsJson { get; private set; }
+
     private CefrGrammarProfileEntry() { }
 
     public CefrGrammarProfileEntry(
@@ -34,5 +41,16 @@ public sealed class CefrGrammarProfileEntry : BaseEntity
         CefrLevel = cefrLevel.ToUpperInvariant();
         GrammarPoint = grammarPoint.Trim();
         Description = description?.Trim();
+    }
+
+    /// <summary>Phase E9 — sets the published selection metadata (used by the publish mapping and by
+    /// the E9 backfill). DifficultyBand is validated to 1-5; tag JSON is stored as-is.</summary>
+    public void SetSelectionMetadata(string? subskill, int? difficultyBand, string? contextTagsJson, string? focusTagsJson)
+    {
+        CefrBankMetadata.ValidateDifficultyBand(difficultyBand);
+        Subskill = subskill?.Trim();
+        DifficultyBand = difficultyBand;
+        ContextTagsJson = contextTagsJson;
+        FocusTagsJson = focusTagsJson;
     }
 }

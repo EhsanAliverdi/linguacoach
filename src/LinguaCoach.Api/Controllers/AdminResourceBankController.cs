@@ -23,13 +23,17 @@ public sealed class AdminResourceBankController : ControllerBase
     }
 
     // GET api/admin/resource-banks/vocabulary?search=&cefrLevel=&sourceId=&page=1&pageSize=20
+    //     &contextTag=&focusTag=&subskill=&difficultyBand=   (Phase E9 metadata filters)
     [HttpGet("vocabulary")]
     public async Task<IActionResult> ListVocabulary(
         [FromQuery] string? search = null, [FromQuery] string? cefrLevel = null, [FromQuery] Guid? sourceId = null,
-        [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 20,
+        [FromQuery] string? contextTag = null, [FromQuery] string? focusTag = null,
+        [FromQuery] string? subskill = null, [FromQuery] int? difficultyBand = null, CancellationToken ct = default)
     {
         var result = await _bankQueryService.ListVocabularyAsync(
-            new ResourceBankListFilter(search, cefrLevel, sourceId, page, pageSize), ct);
+            new ResourceBankListFilter(search, cefrLevel, sourceId, page, pageSize,
+                contextTag, focusTag, subskill, difficultyBand), ct);
         return Ok(result);
     }
 
@@ -42,13 +46,17 @@ public sealed class AdminResourceBankController : ControllerBase
     }
 
     // GET api/admin/resource-banks/grammar?search=&cefrLevel=&sourceId=&page=1&pageSize=20
+    //     &contextTag=&focusTag=&subskill=&difficultyBand=   (Phase E9 metadata filters)
     [HttpGet("grammar")]
     public async Task<IActionResult> ListGrammar(
         [FromQuery] string? search = null, [FromQuery] string? cefrLevel = null, [FromQuery] Guid? sourceId = null,
-        [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 20,
+        [FromQuery] string? contextTag = null, [FromQuery] string? focusTag = null,
+        [FromQuery] string? subskill = null, [FromQuery] int? difficultyBand = null, CancellationToken ct = default)
     {
         var result = await _bankQueryService.ListGrammarAsync(
-            new ResourceBankListFilter(search, cefrLevel, sourceId, page, pageSize), ct);
+            new ResourceBankListFilter(search, cefrLevel, sourceId, page, pageSize,
+                contextTag, focusTag, subskill, difficultyBand), ct);
         return Ok(result);
     }
 
@@ -61,13 +69,17 @@ public sealed class AdminResourceBankController : ControllerBase
     }
 
     // GET api/admin/resource-banks/reading-references?search=&cefrLevel=&sourceId=&page=1&pageSize=20
+    //     &contextTag=&focusTag=&subskill=&difficultyBand=   (Phase E9 metadata filters)
     [HttpGet("reading-references")]
     public async Task<IActionResult> ListReadingReferences(
         [FromQuery] string? search = null, [FromQuery] string? cefrLevel = null, [FromQuery] Guid? sourceId = null,
-        [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 20,
+        [FromQuery] string? contextTag = null, [FromQuery] string? focusTag = null,
+        [FromQuery] string? subskill = null, [FromQuery] int? difficultyBand = null, CancellationToken ct = default)
     {
         var result = await _bankQueryService.ListReadingReferencesAsync(
-            new ResourceBankListFilter(search, cefrLevel, sourceId, page, pageSize), ct);
+            new ResourceBankListFilter(search, cefrLevel, sourceId, page, pageSize,
+                contextTag, focusTag, subskill, difficultyBand), ct);
         return Ok(result);
     }
 

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Plan-Sync-After-D4)
+lastUpdated: 2026-07-09 (Phase E9)
 owner: architecture
 supersedes:
 supersededBy:
@@ -157,13 +157,16 @@ Key facts about where this stands today (2026-07-08):
   pattern-specific instruction layer, a general-English-by-default workplace-context filter for full
   passages (`PrefersWorkplaceContext`), and per-resource `role` provenance. No composer rewrite;
   exact-CEFR/never-upward, novelty, feedback exclusions, and every legacy fallback preserved; no
-  migration. **Plan-Sync-After-D4 (2026-07-09, docs-only)** then resolved the post-D4 decision:
-  **Phase E9 (Published Bank Metadata Parity for Context-Aware Selection) comes before a deeper
-  Today phase (D5) and before PG-v2** — D4 exposed `TODO-D4-1` (only `CefrReadingPassage` carries
-  enough published metadata for context-aware filtering; the lean vocabulary/grammar/reading-reference
-  tables carry context/focus/subskill/difficulty only on the staging candidate/provenance), so the
-  next bottleneck is published-metadata parity, not composer mechanics. Phase D5 (Context-Aware
-  Today Bank Selection and Topic Matching) is the likely Today phase after E9.
+  migration. **Phase E9 (2026-07-09) then closed `TODO-D4-1`**: the lean published bank tables
+  (`CefrVocabularyEntry`/`CefrGrammarProfileEntry`/`CefrReadingReference`) gained
+  `subskill`/`difficulty_band`/`context_tags_json`/`focus_tags_json` columns (migration
+  `Phase_E9_AddLeanBankSelectionMetadata`; tag columns text, aligned in shape with
+  `CefrReadingPassage`), the publish mapping now carries candidate metadata onto them, an idempotent
+  traceable-only backfill repairs pre-E9 rows, and `ResourceBankQueryService` + the three admin list
+  endpoints gained context/focus/subskill/difficulty filters — so all bank types are now filterable
+  from the published rows, not only full passages. No composer change, no new content, no
+  legacy-fallback removal, no UI redesign. **Phase D5 (Context-Aware Today Bank Selection and Topic
+  Matching)** — wiring the selector to actually consume this parity — is the likely next phase.
   See docs/architecture/learning-activity-engine.md (Phase D4 section),
   docs/architecture/english-resource-bank-import-platform.md, and docs/roadmap/road-map.md §1 /
   Decision Log.
@@ -209,7 +212,7 @@ Key facts about where this stands today (2026-07-08):
   checkpoint now applies; Phase G2 (backend legacy cleanup) / G3 (diagnostics consolidation)
   remain sequenced late. See `docs/roadmap/road-map.md` §1 and Decision Log.
 
-Current state (as of 2026-07-09, Plan-Sync-After-D4): **Practice Gym bank-first migration (content
+Current state (as of 2026-07-09, Phase E9): **Practice Gym bank-first migration (content
 layer) is closed at Phase C-Final** — generalized the Form.io template path from 1 pilot pattern
 to 8 total (C1's `phrase_match`, `gap_fill_workplace_phrase`, `reading_multiple_choice_single`;
 C2's `reading_multiple_choice_multi`, `reading_fill_in_blanks`, `reading_writing_fill_in_blanks`;

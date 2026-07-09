@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Plan-Sync-After-D4)
+lastUpdated: 2026-07-09 (Phase E9)
 owner: product
 supersedes:
 supersededBy:
@@ -289,29 +289,31 @@ breadth/depth, not the composer mechanism. See docs/roadmap/road-map.md §1, Dec
   E9 (Published Bank Metadata Parity for Context-Aware Selection) comes before Phase D5 and PG-v2**,
   because D4 exposed `TODO-D4-1` (only `CefrReadingPassage` carries enough published metadata for
   context-aware filtering). See below.
-- [ ] **Phase E9 — Published Bank Metadata Parity for Context-Aware Selection** `Not started` —
-  **next recommended implementation phase.** Give the lean published bank tables the same metadata
-  `CefrReadingPassage` already has so all bank types are filterable by context/focus/subskill/
-  difficulty:
-  - [ ] Add metadata columns (context/focus tags, subskill, difficulty band as appropriate) to
-    `CefrVocabularyEntry`, `CefrGrammarProfileEntry`, `CefrReadingReference`, aligned with
-    `CefrReadingPassage`
-  - [ ] Extend `ResourceCandidatePublishService` to map candidate metadata into those final tables
-    at publish time (preserve existing rows / backward compatibility)
-  - [ ] Backfill existing internal E6/E7/E8 rows from candidate/provenance metadata where safely
-    traceable
-  - [ ] Extend the E5 `ResourceBankQueryService` browse/search filters only where filters already
-    exist or need a small safe extension
-  - [ ] Tests for mapping, backfill, filtering, and discoverability
-  - **Must not**: add a new seed pack (beyond tiny test fixtures); import external datasets; add
-    Persian/bilingual/support-language content; seed final tables directly; rewrite the Today
-    composer; start PG-v2; rewrite Practice Gym; remove any legacy fallback; delete the
-    readiness/delivery queue; redesign student/admin UI.
-- [ ] **Phase D5 — Context-Aware Today Bank Selection and Topic Matching** `Not started` — likely
-  Today/composer phase **after** E9. Use E9's metadata parity for consistent context/focus/subskill/
-  difficulty filtering across all bank types; improve topic matching within published banks; reduce
-  irrelevant supporting resources. **Keep legacy fallback; avoid semantic/vector search unless
-  explicitly chosen.**
+- [x] **Phase E9 — Published Bank Metadata Parity for Context-Aware Selection** `Done` (2026-07-09) —
+  gave the lean published bank tables the same selection metadata `CefrReadingPassage` has; closed
+  `TODO-D4-1` for those tables:
+  - [x] Added `subskill`/`difficulty_band`/`context_tags_json`/`focus_tags_json` (nullable) to
+    `CefrVocabularyEntry`/`CefrGrammarProfileEntry`/`CefrReadingReference` (migration
+    `Phase_E9_AddLeanBankSelectionMetadata`; tag columns text, aligned in shape with
+    `CefrReadingPassage`, filterable via the portable `.Contains` pattern)
+  - [x] `ResourceCandidatePublishService` maps candidate metadata onto the lean rows at publish
+    (out-of-range difficulty dropped to null; passage mapping unchanged)
+  - [x] Idempotent `PublishedBankMetadataBackfillSeeder` repairs pre-E9 rows only where they have no
+    metadata and trace to exactly one published candidate (never overwrites/guesses/inserts)
+  - [x] `ResourceBankQueryService` + the three admin list endpoints expose the metadata read-only
+    and support optional context/focus/subskill/difficulty filters; unfiltered browse unchanged
+  - [x] +26 backend tests (mapping, backfill, filtering, discoverability, end-to-end API)
+  - No new content/seed pack, no external datasets, no direct final-table seeding, no composer/UI
+    change, no legacy-fallback removal. See docs/architecture/english-resource-bank-import-platform.md
+    (E9 detail).
+  - **Residual (narrowed, not a bug)**: E6/E7/E8-authored lean rows carry only the metadata their
+    authors supplied (e.g. context tags + subskill but no difficulty band); a future content pass
+    could enrich the lean packs if difficulty/focus filtering is ever needed on those types.
+- [ ] **Phase D5 — Context-Aware Today Bank Selection and Topic Matching** `Not started` — **likely
+  next implementation phase (now unblocked by E9's parity).** Wire `TodayBankResourceSelector` to
+  consume E9's metadata for consistent context/focus/subskill/difficulty filtering across all bank
+  types; improve topic matching within published banks; reduce irrelevant supporting resources.
+  **Keep legacy fallback; avoid semantic/vector search unless explicitly chosen.**
 
 ---
 

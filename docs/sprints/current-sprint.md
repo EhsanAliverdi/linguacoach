@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Plan-Sync-After-D4)
+lastUpdated: 2026-07-09 (Phase E9)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,50 @@ Last updated: 2026-07-09
 ---
 
 ## Active sprint
+
+**Phase E9 — Published Bank Metadata Parity for Context-Aware Selection (2026-07-09)** — complete
+
+Closed the D4-discovered metadata gap (`TODO-D4-1`). The lean published bank tables now carry the
+same selection metadata `CefrReadingPassage` already had, so Today/D5 and a future PG-v2 selector
+can filter **all** bank types by context/focus/subskill/difficulty from the published rows — not
+only full passages. **A schema/mapping/backfill/discoverability phase; no Today composer change, no
+new content, no legacy-fallback removal.**
+
+- **Schema**: added four nullable columns — `subskill` varchar(128), `difficulty_band` int,
+  `context_tags_json` text, `focus_tags_json` text — to `CefrVocabularyEntry`,
+  `CefrGrammarProfileEntry`, `CefrReadingReference` via a `SetSelectionMetadata(...)` method
+  (difficulty validated 1-5, matching `CefrReadingPassage`). Migration
+  `Phase_E9_AddLeanBankSelectionMetadata` (12 additive nullable columns, no destructive change).
+  Tag columns are **text** (not jsonb) — a documented deviation from `CefrReadingPassage`'s jsonb so
+  the query filter can use the portable `.Contains("\"tag\"")` SQL LIKE that `CurriculumObjective`
+  already relies on, while keeping the same logical shape.
+- **Publish mapping**: `ResourceCandidatePublishService` now carries the candidate's
+  context/focus/subskill/difficulty onto the new lean rows at publish (out-of-range difficulty
+  dropped to null rather than blocking an otherwise-valid publish; `CefrReadingPassage` unchanged).
+- **Backfill**: new idempotent startup step `PublishedBankMetadataBackfillSeeder` repairs pre-E9
+  rows from the `ResourceCandidate` that published them — **only** where the row has no metadata yet
+  **and** traces to exactly one published candidate carrying metadata. Never overwrites, never
+  guesses for untraceable/ambiguous rows, never inserts a bank row.
+- **Discoverability**: `ResourceBankQueryService` list/detail for the three lean tables expose the
+  metadata read-only and support optional `ContextTag`/`FocusTag`/`Subskill`/`DifficultyBand`
+  filters; the three `AdminResourceBankController` list endpoints gained the matching query params.
+  Unfiltered browse is unchanged; a row with no metadata never matches a metadata filter.
+
+**Validation**: `dotnet build --configuration Release` passed (0 errors); `dotnet test
+--configuration Release` = 3,622 passed, 0 failed (+24 unit, +2 integration). No frontend files
+changed, so no Angular/Playwright gates run. **No external datasets, no new seed pack (test fixtures
++ the existing E8 pack through the real pipeline only), no Persian/bilingual content, no direct
+final-table seeding, no Today/Practice-Gym change, no student/admin UI redesign, no legacy-fallback
+removal, no readiness/delivery-queue change.** `TODO-D4-1` closed for the three lean tables.
+
+**Next: Phase D5 (Context-Aware Today Bank Selection and Topic Matching)** is the likely next phase,
+now unblocked by E9's parity. PG-v2, Phase F, and Phase G2/G3 remain later. See
+`docs/architecture/english-resource-bank-import-platform.md` (E9 detail) and
+`docs/roadmap/road-map.md` §1/§19a.
+
+---
+
+## Previous sprint
 
 **Plan-Sync-After-D4 — Decide Next Phase After Richer Today Bank-First Composition (2026-07-09)** — complete (docs-only)
 

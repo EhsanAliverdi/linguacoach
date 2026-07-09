@@ -212,6 +212,7 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
         try
         {
             var entity = new CefrVocabularyEntry(sourceId, word, candidate.CefrLevel, partOfSpeech, notes);
+            ApplySelectionMetadata(candidate, entity.SetSelectionMetadata);
             return (entity, nameof(CefrVocabularyEntry), errors);
         }
         catch (ArgumentException ex)
@@ -219,6 +220,18 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
             errors.Add($"Could not construct a CefrVocabularyEntry: {ex.Message}");
             return (null, null, errors);
         }
+    }
+
+    /// <summary>Phase E9 — carries the candidate's context/focus/subskill/difficulty selection
+    /// metadata onto the freshly-constructed lean bank entity so it is no longer lost at publish
+    /// time. Difficulty band that falls outside 1-5 is dropped to null rather than blocking the
+    /// publish (the candidate's other gates already passed; a stray difficulty value must not fail
+    /// an otherwise-valid publish).</summary>
+    private static void ApplySelectionMetadata(
+        ResourceCandidate candidate, Action<string?, int?, string?, string?> setMetadata)
+    {
+        var difficultyBand = candidate.DifficultyBand is >= 1 and <= 5 ? candidate.DifficultyBand : null;
+        setMetadata(candidate.Subskill, difficultyBand, candidate.ContextTagsJson, candidate.FocusTagsJson);
     }
 
     private static (BaseEntity?, string?, List<string>) BuildGrammarProfileEntry(
@@ -236,6 +249,7 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
         try
         {
             var entity = new CefrGrammarProfileEntry(sourceId, candidate.CefrLevel, grammarPoint, description);
+            ApplySelectionMetadata(candidate, entity.SetSelectionMetadata);
             return (entity, nameof(CefrGrammarProfileEntry), errors);
         }
         catch (ArgumentException ex)
@@ -265,6 +279,7 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
             try
             {
                 var entity = new CefrReadingReference(source.Id, candidate.CefrLevel, textType, difficultyNotes, passage);
+                ApplySelectionMetadata(candidate, entity.SetSelectionMetadata);
                 return (entity, nameof(CefrReadingReference), errors);
             }
             catch (ArgumentException ex)

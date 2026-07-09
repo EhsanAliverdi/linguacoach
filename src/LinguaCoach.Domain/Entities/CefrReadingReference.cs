@@ -18,6 +18,14 @@ public sealed class CefrReadingReference : BaseEntity
     public string? DifficultyNotes { get; private set; }
     public string? ReferenceExcerpt { get; private set; }
 
+    // Phase E9 — published selection metadata, aligned with CefrReadingPassage. Nullable for
+    // backward compatibility with pre-E9 rows. (DifficultyBand is the numeric 1-5 band used by
+    // selectors; the free-text DifficultyNotes above stays as human-readable guidance.)
+    public string? Subskill { get; private set; }
+    public int? DifficultyBand { get; private set; }
+    public string? ContextTagsJson { get; private set; }
+    public string? FocusTagsJson { get; private set; }
+
     private CefrReadingReference() { }
 
     public CefrReadingReference(
@@ -37,5 +45,16 @@ public sealed class CefrReadingReference : BaseEntity
         TextType = textType?.Trim();
         DifficultyNotes = difficultyNotes?.Trim();
         ReferenceExcerpt = referenceExcerpt?.Trim();
+    }
+
+    /// <summary>Phase E9 — sets the published selection metadata (used by the publish mapping and by
+    /// the E9 backfill). DifficultyBand is validated to 1-5; tag JSON is stored as-is.</summary>
+    public void SetSelectionMetadata(string? subskill, int? difficultyBand, string? contextTagsJson, string? focusTagsJson)
+    {
+        CefrBankMetadata.ValidateDifficultyBand(difficultyBand);
+        Subskill = subskill?.Trim();
+        DifficultyBand = difficultyBand;
+        ContextTagsJson = contextTagsJson;
+        FocusTagsJson = focusTagsJson;
     }
 }

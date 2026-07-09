@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Plan-Sync-After-D4)
+lastUpdated: 2026-07-09 (Phase E9)
 owner: architecture
 supersedes:
 supersededBy:
@@ -233,7 +233,7 @@ enabling approval) and E4 (approve/reject + publish action).
 | **E6** ✅ done 2026-07-08 | First real English content depth | An original, internally-authored, English-only seed pack (32 vocabulary / 12 grammar / 10 short reading excerpts) flowed through the full staging→validation→approval→publish pipeline — no direct-final-table seeding, no external dataset, no Persian/bilingual content. Proves the E1-E5 platform handles real usable content, not just synthetic tests. **Not** a full external-dataset import or E6's originally-envisioned "reading/listening resource expansion" scope — that broader scope remains available for a future phase if chosen. |
 | **E7** ✅ done 2026-07-09 | Full internal reading passage bank + resource depth expansion | New `CefrReadingPassage` published bank entity for full-length original/internal English reading passages (distinct from the short-excerpt-only `CefrReadingReference`); `ResourceCandidatePublishService` now routes a `ReadingPassage` candidate to whichever bank fits its actual length instead of blocking full passages; E5-style browse/search API + admin page; 10 new full-length passages added to the internal seed pack through the same E1-E6 pipeline. **Re-scoped from its original "bigger import support" sketch** — see the E7 detail section below for why. Background/queued import jobs, ZIP archives, and audio-carrying sources remain deferred to a future phase if chosen. |
 | **E8** ✅ done 2026-07-09 | Internal resource bank depth expansion (grammar/usage/reading) | **Re-scoped by Plan-Sync-After-D3 from the original "RAG/search enrichment" sketch to a content-depth phase** (D3 proved the Today composer path works; the bottleneck was bank breadth/depth, not semantic search). A second original, English-only internal seed pack (`InternalResourceSeedPackE8Seeder`, distinct source, idempotent) added **40 vocabulary + 20 grammar + 16 short reading references + 8 full reading passages, evenly across A1–B2**, general-English-default with workplace a minority context, through the same E1-E4 staging→validation→approval→publish pipeline (no direct-final-table seeding, no external datasets, no Persian/bilingual content). A narrow additive metadata mapping (`focusTags`/`difficultyBand` → candidate → `CefrReadingPassage`) was added. See the E8 detail section below. **RAG/embedding/vector-search enrichment remains deferred to a later phase** (no pgvector, no embeddings introduced here), consistent with Phase B's repetition/novelty scope discipline. |
-| **E9** ⏳ next (Plan-Sync-After-D4, 2026-07-09) | Published bank metadata parity for context-aware selection | **Chosen by Plan-Sync-After-D4** after Phase D4 exposed `TODO-D4-1`: only `CefrReadingPassage` stores enough **published** metadata (context/focus tags, subskill, difficulty band) for context-aware filtering; the lean `CefrVocabularyEntry`/`CefrGrammarProfileEntry`/`CefrReadingReference` tables carry that metadata only on the staging `ResourceCandidate`/provenance, not on the published rows a selector queries. E9 will add the missing metadata columns to those three final tables (aligned with `CefrReadingPassage`), extend `ResourceCandidatePublishService` to map candidate metadata into them at publish, backfill existing internal E6/E7/E8 rows from candidate/provenance metadata where safely traceable, and extend the E5 browse/search filters only where they already exist or need a small safe extension. **No new seed pack (beyond tiny test fixtures), no external datasets, no direct final-table seeding, no Today composer rewrite, no PG-v2, no legacy-fallback removal.** Sequenced before Phase D5 (Context-Aware Today Bank Selection and Topic Matching) and before PG-v2. **Docs-only so far — not started.** |
+| **E9** ✅ done 2026-07-09 | Published bank metadata parity for context-aware selection | Closed `TODO-D4-1`. Added `subskill`/`difficulty_band`/`context_tags_json`/`focus_tags_json` (nullable) to `CefrVocabularyEntry`/`CefrGrammarProfileEntry`/`CefrReadingReference` (migration `Phase_E9_AddLeanBankSelectionMetadata`; tag columns **text**, aligned in shape with `CefrReadingPassage`, filterable via the portable `.Contains` pattern `CurriculumObjective` uses). `ResourceCandidatePublishService` now maps the candidate's context/focus/subskill/difficulty onto the lean rows at publish; new idempotent `PublishedBankMetadataBackfillSeeder` repairs pre-E9 rows only where they have no metadata and trace to exactly one published candidate; `ResourceBankQueryService` + the three admin list endpoints expose the metadata read-only and support optional context/focus/subskill/difficulty filters. **No new seed pack, no external datasets, no direct final-table seeding, no Today composer change, no PG-v2, no legacy-fallback removal.** See the E9 detail section below. Phase D5 (Context-Aware Today Bank Selection and Topic Matching) is the likely next phase. |
 
 ---
 
@@ -757,6 +757,58 @@ least once. Admin must never approve based on raw JSON/CSV alone.
   embeddings/semantic ranking, no legacy-fallback removal, no readiness/delivery-queue change, no
   migration (existing entities only). **Phase D4 (broader Today composer expansion) and PG-v2 not
   started.**
+
+---
+
+### E9 — Published bank metadata parity for context-aware selection — implemented (2026-07-09)
+
+- **Why**: D4 exposed `TODO-D4-1` — only `CefrReadingPassage` stored enough *published* metadata
+  (context/focus tags, subskill, difficulty band) for a selector to filter by; the lean tables kept
+  that metadata only on the staging `ResourceCandidate`, so D4's general-English/workplace context
+  filter could only be applied to full passages. E9 closes that asymmetry for the three lean tables.
+- **Schema**: added four nullable columns to `CefrVocabularyEntry`/`CefrGrammarProfileEntry`/
+  `CefrReadingReference` — `subskill` (varchar 128), `difficulty_band` (int, validated 1-5 by the
+  entity's `SetSelectionMetadata`, matching `CefrReadingPassage`), `context_tags_json`,
+  `focus_tags_json`. Migration `Phase_E9_AddLeanBankSelectionMetadata` is 12 additive nullable
+  columns — no default, no destructive change, no table rebuild — so every existing row stays valid
+  with null metadata until backfilled.
+- **Text vs jsonb (deliberate)**: the tag columns are **text**, not jsonb like
+  `CefrReadingPassage`. E9's purpose is *filtering*, and the codebase's only proven cross-provider
+  tag-filter pattern (`CurriculumSyllabusQueryService` over `CurriculumObjective`) is a text column
+  + `.Contains`. jsonb would force either a PostgreSQL-only operator (breaking the SQLite test
+  suite) or client-side filtering that breaks pagination. The logical shape (a JSON string array)
+  is identical to `CefrReadingPassage`; only the column storage type differs, and it is documented
+  in the EF configuration.
+- **Publish mapping**: `ResourceCandidatePublishService`'s vocabulary/grammar/reading-reference
+  builders now call a shared `ApplySelectionMetadata` that carries the candidate's
+  context/focus/subskill/difficulty onto the freshly-constructed lean row. An out-of-range
+  difficulty band is dropped to null rather than blocking an otherwise-valid, already-gated publish
+  (difficulty is advisory selection metadata, not a content gate). `CefrReadingPassage`'s existing
+  mapping is untouched and covered by a no-regress test.
+- **Backfill (repair, never guess, never insert)**: `PublishedBankMetadataBackfillSeeder` (idempotent
+  startup step wired after the E8 seeder) fills metadata onto pre-E9 rows from the `ResourceCandidate`
+  that published them, but **only** when the row currently has no selection metadata **and** traces
+  to exactly one published candidate that actually carries metadata. Rows with no candidate, an
+  ambiguous multi-candidate match, or existing metadata are skipped. Re-running is a no-op. It never
+  constructs a bank row — it is metadata repair, not content insertion.
+- **Discoverability**: `ResourceBankListFilter` gained optional `ContextTag`/`FocusTag`/`Subskill`/
+  `DifficultyBand`; the three lean list/detail DTOs expose the metadata read-only (tags as parsed
+  string lists, matching `CefrReadingPassage`'s detail DTO); `AdminResourceBankController`'s three
+  lean list endpoints gained the matching optional query params. A tag filter matches the quoted
+  token (`"general"`) to avoid a substring false positive (e.g. "work" ≠ "workplace"); a row with no
+  metadata never matches a metadata filter; unfiltered browse is byte-for-byte unchanged.
+- **Tests**: `PublishedBankMetadataParityTests` (publish mapping per lean type, passage no-regress,
+  empty/null handling, out-of-range difficulty rejected by the entity, backfill restore/idempotent/
+  untraceable/ambiguous, publish trace-back), `ResourceBankMetadataFilterTests` (context/focus/
+  subskill/difficulty filters, quoted-token no-false-positive, detail exposure, unfiltered
+  backward-compat, no-metadata-never-matches), `InternalResourceSeedPackE8SeederTests` (+3 metadata
+  discoverability), and `AdminResourceBankEndpointTests` (+2 end-to-end via the admin API). +26
+  backend (3,596 → 3,622).
+- **Residual limitation (narrowed, not a bug)**: E6/E7/E8-authored lean rows carry only the metadata
+  their authors actually supplied — e.g. context tags + subskill but no difficulty band on the lean
+  packs (only full passages were authored with difficulty/focus tags). That is faithful provenance,
+  not a gap; a future content pass could enrich the lean packs' authored metadata if a selector ever
+  needs difficulty/focus filtering on those types.
 
 ---
 

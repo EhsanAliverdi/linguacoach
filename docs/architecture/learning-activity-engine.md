@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Plan-Sync-After-D4)
+lastUpdated: 2026-07-09 (Phase E9)
 owner: architecture
 supersedes:
 supersededBy:
@@ -270,20 +270,19 @@ no/blocked bank resource → smaller bundle or legacy AI, selector exception →
 generation/validation failure → existing retry/fallback. Practice Gym fallback and the
 readiness/delivery queue are unchanged.
 
-**Known limitation surfaced by D4 (`TODO-D4-1`)**: D4's general-English/workplace **context filter
-could only be applied to full reading passages**, because `CefrReadingPassage` is the only published
-bank entity that stores context/focus/subskill/difficulty metadata. The lean final tables
-(`CefrVocabularyEntry`, `CefrGrammarProfileEntry`, `CefrReadingReference`) carry that richer metadata
-only on the staging `ResourceCandidate` (and partially in `BankResourceProvenanceJson`), not on the
-published rows the selector queries — so supporting vocabulary/grammar/short-reference selection
-cannot yet be context/focus/subskill/difficulty-filtered. Having a selector re-read the staging
-candidate at selection time would be slow and a layering violation (the selector should read the
-published bank, not the import pipeline). **Plan-Sync-After-D4 (2026-07-09, docs-only) resolved to
-fix this in Phase E9 (Published Bank Metadata Parity for Context-Aware Selection) before a deeper
-Today phase (D5) or PG-v2** — adding the missing published-metadata columns + publish mapping +
-backfill so all bank types are filterable consistently. **Phase D5 — Context-Aware Today Bank
-Selection and Topic Matching** is the likely Today phase after E9. See `docs/roadmap/road-map.md` §1
-/ Decision Log and `docs/architecture/english-resource-bank-import-platform.md`.
+**D4 limitation `TODO-D4-1` — now closed by Phase E9 (2026-07-09)**: D4's general-English/workplace
+context filter could originally only be applied to full reading passages, because `CefrReadingPassage`
+was the only published bank entity storing context/focus/subskill/difficulty metadata — the lean
+tables (`CefrVocabularyEntry`, `CefrGrammarProfileEntry`, `CefrReadingReference`) kept that metadata
+only on the staging `ResourceCandidate`. **Phase E9 added those columns to the three lean published
+tables** (publish mapping + idempotent traceable backfill + queryable filters via
+`ResourceBankQueryService`), so a selector reading the published bank can now filter **all** bank
+types by context/focus/subskill/difficulty — no staging re-query needed. The selector does not yet
+*consume* this new lean-table filtering (D4's context filter still only acts on passages in code);
+wiring the selector to filter supporting vocabulary/grammar/references by context/focus/subskill/
+difficulty is **Phase D5 — Context-Aware Today Bank Selection and Topic Matching**, the likely next
+phase, now unblocked. See `docs/architecture/english-resource-bank-import-platform.md` (E9 detail
+section) and `docs/roadmap/road-map.md` §1 / Decision Log.
 
 **Plan-Sync-G0 (2026-07-09, docs-only)** reframes, but does not delete, the readiness-pool
 lifecycle this file's fallback/generation flow relies on: `StudentActivityReadinessItem`/

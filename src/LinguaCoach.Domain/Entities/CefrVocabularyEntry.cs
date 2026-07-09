@@ -18,6 +18,14 @@ public sealed class CefrVocabularyEntry : BaseEntity
     public string? PartOfSpeech { get; private set; }
     public string? Notes { get; private set; }
 
+    // Phase E9 — published selection metadata, aligned with CefrReadingPassage so Today/D5/PG-v2
+    // selectors can filter this bank by context/focus/subskill/difficulty without re-querying the
+    // staging ResourceCandidate. Nullable for backward compatibility with pre-E9 rows.
+    public string? Subskill { get; private set; }
+    public int? DifficultyBand { get; private set; }
+    public string? ContextTagsJson { get; private set; }
+    public string? FocusTagsJson { get; private set; }
+
     private CefrVocabularyEntry() { }
 
     public CefrVocabularyEntry(
@@ -39,5 +47,17 @@ public sealed class CefrVocabularyEntry : BaseEntity
         CefrLevel = cefrLevel.ToUpperInvariant();
         PartOfSpeech = partOfSpeech?.Trim();
         Notes = notes?.Trim();
+    }
+
+    /// <summary>Phase E9 — sets the published selection metadata (used by the publish mapping and by
+    /// the E9 backfill). DifficultyBand is validated to 1-5 (matching CefrReadingPassage); tag JSON
+    /// is stored as-is.</summary>
+    public void SetSelectionMetadata(string? subskill, int? difficultyBand, string? contextTagsJson, string? focusTagsJson)
+    {
+        CefrBankMetadata.ValidateDifficultyBand(difficultyBand);
+        Subskill = subskill?.Trim();
+        DifficultyBand = difficultyBand;
+        ContextTagsJson = contextTagsJson;
+        FocusTagsJson = focusTagsJson;
     }
 }

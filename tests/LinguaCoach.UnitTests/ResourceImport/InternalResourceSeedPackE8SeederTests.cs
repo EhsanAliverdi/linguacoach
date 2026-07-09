@@ -362,4 +362,43 @@ public sealed class InternalResourceSeedPackE8SeederTests : IDisposable
         (await _db.CefrReadingReferences.CountAsync()).Should().Be(10 + ReadingRefCount);
         (await _db.CefrReadingPassages.CountAsync()).Should().Be(10 + PassageCount);
     }
+
+    // ── Phase E9 — published E8 rows are discoverable with selection metadata ────
+
+    [Fact]
+    public async Task E8_published_vocabulary_is_discoverable_with_context_metadata()
+    {
+        await RunSeederAsync();
+
+        var query = new ResourceBankQueryService(_db);
+        // "responsible" is B1 workplace vocab in the E8 pack.
+        var result = await query.ListVocabularyAsync(new ResourceBankListFilter(ContextTag: "workplace", CefrLevel: "B1"));
+
+        result.Items.Should().Contain(i => i.Word == "responsible");
+        result.Items.Should().OnlyContain(i => i.ContextTags != null && i.ContextTags.Contains("workplace"));
+    }
+
+    [Fact]
+    public async Task E8_published_grammar_is_discoverable_with_subskill_metadata()
+    {
+        await RunSeederAsync();
+
+        var query = new ResourceBankQueryService(_db);
+        var result = await query.ListGrammarAsync(new ResourceBankListFilter(Subskill: "grammar.tense_aspect", CefrLevel: "B2"));
+
+        result.Items.Should().NotBeEmpty();
+        result.Items.Should().OnlyContain(i => i.Subskill == "grammar.tense_aspect");
+    }
+
+    [Fact]
+    public async Task E8_published_reading_references_are_discoverable_with_context_metadata()
+    {
+        await RunSeederAsync();
+
+        var query = new ResourceBankQueryService(_db);
+        var result = await query.ListReadingReferencesAsync(new ResourceBankListFilter(ContextTag: "study", CefrLevel: "B2"));
+
+        result.Items.Should().NotBeEmpty();
+        result.Items.Should().OnlyContain(i => i.ContextTags != null && i.ContextTags.Contains("study"));
+    }
 }

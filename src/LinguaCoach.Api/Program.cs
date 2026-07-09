@@ -306,6 +306,11 @@ if (!app.Environment.IsEnvironment("Testing"))
         scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.ResourceImport.IResourceCandidateValidationService>(),
         scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.ResourceImport.IResourceCandidatePublishService>(),
         seederLogger);
+    // Phase E9 — idempotent, one-time backfill of the lean published bank tables' new selection
+    // metadata (context/focus tags, subskill, difficulty band) from the ResourceCandidate that
+    // published each row. Safe no-op once every traceable row is backfilled. Metadata repair only —
+    // never inserts a bank row.
+    await LinguaCoach.Persistence.Seed.PublishedBankMetadataBackfillSeeder.RunAsync(db, seederLogger);
 
     // Storage + Quartz startup health checks (warn-only — do not block startup).
     var storage = scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.Storage.IFileStorageService>();

@@ -66,6 +66,24 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
                 || (x.Entry.Notes != null && x.Entry.Notes.ToLower().Contains(search)));
         }
 
+        if (!string.IsNullOrWhiteSpace(filter.Subskill))
+        {
+            var subskill = filter.Subskill.Trim();
+            query = query.Where(x => x.Entry.Subskill == subskill);
+        }
+        if (filter.DifficultyBand.HasValue)
+            query = query.Where(x => x.Entry.DifficultyBand == filter.DifficultyBand.Value);
+        if (!string.IsNullOrWhiteSpace(filter.ContextTag))
+        {
+            var needle = TagNeedle(filter.ContextTag);
+            query = query.Where(x => x.Entry.ContextTagsJson != null && x.Entry.ContextTagsJson.ToLower().Contains(needle));
+        }
+        if (!string.IsNullOrWhiteSpace(filter.FocusTag))
+        {
+            var needle = TagNeedle(filter.FocusTag);
+            query = query.Where(x => x.Entry.FocusTagsJson != null && x.Entry.FocusTagsJson.ToLower().Contains(needle));
+        }
+
         var totalCount = await query.CountAsync(ct);
 
         var page_ = await query
@@ -77,7 +95,9 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
         var items = page_
             .Select(x => new ResourceBankVocabularyListItemDto(
                 x.Entry.Id, x.Entry.Word, x.Entry.CefrLevel, x.Entry.PartOfSpeech, x.Entry.Notes,
-                x.Source.Id, x.Source.Name, x.Entry.CreatedAt))
+                x.Source.Id, x.Source.Name, x.Entry.CreatedAt,
+                x.Entry.Subskill, x.Entry.DifficultyBand,
+                ParseJsonStringArray(x.Entry.ContextTagsJson), ParseJsonStringArray(x.Entry.FocusTagsJson)))
             .ToList();
 
         return new ResourceBankVocabularyListResult(items, totalCount);
@@ -99,7 +119,9 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
 
         return new ResourceBankVocabularyDetailDto(
             loaded.Entry.Id, loaded.Entry.Word, loaded.Entry.CefrLevel, loaded.Entry.PartOfSpeech,
-            loaded.Entry.Notes, loaded.Entry.CreatedAt, ToSourceInfoDto(loaded.Source), traceability);
+            loaded.Entry.Notes, loaded.Entry.CreatedAt, ToSourceInfoDto(loaded.Source), traceability,
+            loaded.Entry.Subskill, loaded.Entry.DifficultyBand,
+            ParseJsonStringArray(loaded.Entry.ContextTagsJson), ParseJsonStringArray(loaded.Entry.FocusTagsJson));
     }
 
     // ── Grammar ─────────────────────────────────────────────────────────────────
@@ -128,6 +150,24 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
                 || (x.Entry.Description != null && x.Entry.Description.ToLower().Contains(search)));
         }
 
+        if (!string.IsNullOrWhiteSpace(filter.Subskill))
+        {
+            var subskill = filter.Subskill.Trim();
+            query = query.Where(x => x.Entry.Subskill == subskill);
+        }
+        if (filter.DifficultyBand.HasValue)
+            query = query.Where(x => x.Entry.DifficultyBand == filter.DifficultyBand.Value);
+        if (!string.IsNullOrWhiteSpace(filter.ContextTag))
+        {
+            var needle = TagNeedle(filter.ContextTag);
+            query = query.Where(x => x.Entry.ContextTagsJson != null && x.Entry.ContextTagsJson.ToLower().Contains(needle));
+        }
+        if (!string.IsNullOrWhiteSpace(filter.FocusTag))
+        {
+            var needle = TagNeedle(filter.FocusTag);
+            query = query.Where(x => x.Entry.FocusTagsJson != null && x.Entry.FocusTagsJson.ToLower().Contains(needle));
+        }
+
         var totalCount = await query.CountAsync(ct);
 
         var page_ = await query
@@ -139,7 +179,9 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
         var items = page_
             .Select(x => new ResourceBankGrammarListItemDto(
                 x.Entry.Id, x.Entry.GrammarPoint, x.Entry.CefrLevel, x.Entry.Description,
-                x.Source.Id, x.Source.Name, x.Entry.CreatedAt))
+                x.Source.Id, x.Source.Name, x.Entry.CreatedAt,
+                x.Entry.Subskill, x.Entry.DifficultyBand,
+                ParseJsonStringArray(x.Entry.ContextTagsJson), ParseJsonStringArray(x.Entry.FocusTagsJson)))
             .ToList();
 
         return new ResourceBankGrammarListResult(items, totalCount);
@@ -161,7 +203,9 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
 
         return new ResourceBankGrammarDetailDto(
             loaded.Entry.Id, loaded.Entry.GrammarPoint, loaded.Entry.CefrLevel, loaded.Entry.Description,
-            loaded.Entry.CreatedAt, ToSourceInfoDto(loaded.Source), traceability);
+            loaded.Entry.CreatedAt, ToSourceInfoDto(loaded.Source), traceability,
+            loaded.Entry.Subskill, loaded.Entry.DifficultyBand,
+            ParseJsonStringArray(loaded.Entry.ContextTagsJson), ParseJsonStringArray(loaded.Entry.FocusTagsJson));
     }
 
     // ── Reading references ─────────────────────────────────────────────────────
@@ -191,6 +235,24 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
                 || (x.Entry.ReferenceExcerpt != null && x.Entry.ReferenceExcerpt.ToLower().Contains(search)));
         }
 
+        if (!string.IsNullOrWhiteSpace(filter.Subskill))
+        {
+            var subskill = filter.Subskill.Trim();
+            query = query.Where(x => x.Entry.Subskill == subskill);
+        }
+        if (filter.DifficultyBand.HasValue)
+            query = query.Where(x => x.Entry.DifficultyBand == filter.DifficultyBand.Value);
+        if (!string.IsNullOrWhiteSpace(filter.ContextTag))
+        {
+            var needle = TagNeedle(filter.ContextTag);
+            query = query.Where(x => x.Entry.ContextTagsJson != null && x.Entry.ContextTagsJson.ToLower().Contains(needle));
+        }
+        if (!string.IsNullOrWhiteSpace(filter.FocusTag))
+        {
+            var needle = TagNeedle(filter.FocusTag);
+            query = query.Where(x => x.Entry.FocusTagsJson != null && x.Entry.FocusTagsJson.ToLower().Contains(needle));
+        }
+
         var totalCount = await query.CountAsync(ct);
 
         var page_ = await query
@@ -202,7 +264,9 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
         var items = page_
             .Select(x => new ResourceBankReadingReferenceListItemDto(
                 x.Entry.Id, x.Entry.CefrLevel, x.Entry.TextType, x.Entry.DifficultyNotes, x.Entry.ReferenceExcerpt,
-                x.Source.Id, x.Source.Name, x.Entry.CreatedAt))
+                x.Source.Id, x.Source.Name, x.Entry.CreatedAt,
+                x.Entry.Subskill, x.Entry.DifficultyBand,
+                ParseJsonStringArray(x.Entry.ContextTagsJson), ParseJsonStringArray(x.Entry.FocusTagsJson)))
             .ToList();
 
         return new ResourceBankReadingReferenceListResult(items, totalCount);
@@ -224,7 +288,9 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
 
         return new ResourceBankReadingReferenceDetailDto(
             loaded.Entry.Id, loaded.Entry.CefrLevel, loaded.Entry.TextType, loaded.Entry.DifficultyNotes,
-            loaded.Entry.ReferenceExcerpt, loaded.Entry.CreatedAt, ToSourceInfoDto(loaded.Source), traceability);
+            loaded.Entry.ReferenceExcerpt, loaded.Entry.CreatedAt, ToSourceInfoDto(loaded.Source), traceability,
+            loaded.Entry.Subskill, loaded.Entry.DifficultyBand,
+            ParseJsonStringArray(loaded.Entry.ContextTagsJson), ParseJsonStringArray(loaded.Entry.FocusTagsJson));
     }
 
     // ── Reading passages (Phase E7 — full-length passages, distinct from ReadingReference) ────
@@ -320,6 +386,12 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
             return Array.Empty<string>();
         }
     }
+
+    /// <summary>Phase E9 — builds the quoted, lowercased needle for a tag-containment filter, e.g.
+    /// context tag "general" → <c>"general"</c> (with the JSON quotes). Matching the quoted token
+    /// against the lowercased tag-JSON text avoids a substring false positive (e.g. "work" matching
+    /// "workplace") and translates to a portable SQL LIKE on both PostgreSQL and SQLite.</summary>
+    private static string TagNeedle(string? tag) => $"\"{tag!.Trim().ToLowerInvariant()}\"";
 
     private static (int Page, int PageSize) NormalizePaging(ResourceBankListFilter filter) =>
         (Math.Max(filter.Page, 1), Math.Clamp(filter.PageSize, 1, MaxPageSize));

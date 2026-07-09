@@ -20,6 +20,13 @@ internal sealed class CefrGrammarProfileEntryConfiguration : IEntityTypeConfigur
         builder.Property(e => e.GrammarPoint).HasColumnName("grammar_point").HasMaxLength(200).IsRequired();
         builder.Property(e => e.Description).HasColumnName("description");
 
+        // Phase E9 — published selection metadata (see CefrVocabularyEntryConfiguration for the
+        // text-vs-jsonb rationale). Nullable for backward compatibility.
+        builder.Property(e => e.Subskill).HasColumnName("subskill").HasMaxLength(128);
+        builder.Property(e => e.DifficultyBand).HasColumnName("difficulty_band");
+        builder.Property(e => e.ContextTagsJson).HasColumnName("context_tags_json");
+        builder.Property(e => e.FocusTagsJson).HasColumnName("focus_tags_json");
+
         builder.HasOne<CefrResourceSource>()
             .WithMany()
             .HasForeignKey(e => e.SourceId)
