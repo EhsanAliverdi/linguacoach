@@ -121,6 +121,34 @@ public sealed class AdminResourceBankEndpointTests : IClassFixture<ApiTestFactor
             sp.GetRequiredService<LinguaCoachDbContext>(), NullLogger.Instance);
     }
 
+    // ── Phase E10 — enriched depth metadata is filterable end-to-end ─────────────
+
+    [Fact]
+    public async Task Vocabulary_list_can_be_filtered_by_E10_derived_difficulty_band_end_to_end()
+    {
+        await EnsureE8PublishedAsync();
+        using (var scope = _factory.Services.CreateScope())
+        {
+            // E10 depth enrichment (derives difficulty from CEFR, focus from subskill).
+            await InternalBankMetadataDepthSeeder.RunAsync(
+                scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>(), NullLogger.Instance);
+        }
+
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        // B1 vocab now carries E10-derived difficulty band 3.
+        var response = await client.GetAsync("/api/admin/resource-banks/vocabulary?cefrLevel=B1&difficultyBand=3&pageSize=200");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var doc = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var items = doc.GetProperty("items");
+        Assert.True(items.GetArrayLength() > 0);
+        foreach (var item in items.EnumerateArray())
+            Assert.Equal(3, item.GetProperty("difficultyBand").GetInt32());
+    }
+
     [Fact]
     public async Task Vocabulary_list_exposes_E9_selection_metadata_from_the_seeded_bank()
     {

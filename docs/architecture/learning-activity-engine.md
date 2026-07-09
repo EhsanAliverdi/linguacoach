@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Plan-Sync-After-D5)
+lastUpdated: 2026-07-09 (Phase E10)
 owner: architecture
 supersedes:
 supersededBy:
@@ -320,8 +320,21 @@ Bank Metadata Depth Expansion for Focus and Difficulty)** — enriching/repairin
 lean rows' focus/difficulty/subskill metadata through the existing pipeline / safe idempotent
 metadata-repair path (no schema change, no external datasets, no direct final-table seeding) — before
 a deeper Today topic-matching phase (**Phase D6 — Today Topic Matching and Subskill-Aware Resource
-Selection**) or PG-v2. See `docs/roadmap/road-map.md` §1 / Decision Log and
-`docs/architecture/english-resource-bank-import-platform.md`.
+Selection**) or PG-v2.
+
+**Phase E10 (2026-07-09) then delivered that depth — `TODO-D5-1` resolved.** `InternalBankMetadataDepthSeeder`
+(idempotent startup step after the E9 backfill) derives the two missing lean-row fields from each
+row's own already-published metadata: **difficulty band from CEFR** (A1→1, A2→2, B1→3, B2→4, C1/C2→5)
+and a **focus tag from the row's subskill** (e.g. `vocabulary.collocation` → `["collocation"]`). It
+touches only `Internal/Original` rows traceable to exactly one published `ResourceCandidate`, fills
+only empty fields (never overwrites authored values such as the E8 passages' difficulty/focus),
+preserves subskill + context, never inserts a bank row, and is a no-op on rerun. After E10 every
+internal lean row carries context + subskill + difficulty + focus, so the D5 selector's
+difficulty/focus filters now have data to act on — **the selector code was unchanged; E10 only
+enriched the data it reads.** The one residual (`TODO-E10-1`) is that `ActivityMaterializationJob`
+still null-feeds `PreferredSubskill`/`PreferredDifficultyBand` at runtime (no reliable per-request
+source yet) — a Phase D6 concern, not a data-depth gap. See `docs/roadmap/road-map.md` §1 / Decision
+Log and `docs/architecture/english-resource-bank-import-platform.md`.
 
 **Plan-Sync-G0 (2026-07-09, docs-only)** reframes, but does not delete, the readiness-pool
 lifecycle this file's fallback/generation flow relies on: `StudentActivityReadinessItem`/

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Plan-Sync-After-D5)
+lastUpdated: 2026-07-09 (Phase E10)
 owner: architecture
 supersedes:
 supersededBy:
@@ -814,15 +814,50 @@ least once. Admin must never approve based on raw JSON/CSV alone.
   selection is context-aware across all bank types, with the general-English workplace exclusion now
   applied to the lean tables too (not only passages). See
   `docs/architecture/learning-activity-engine.md` (Phase D5 section).
-- **Next: Phase E10 (metadata depth) — Plan-Sync-After-D5 (2026-07-09, docs-only)**: D5 showed the
-  selector's filtering is now bounded by *metadata depth*, not schema — the internal lean packs
-  carry context tags + subskill but thin focus/difficulty metadata (`TODO-D5-1`), so those filters
-  relax away on the lean tables today. **Phase E10 — Internal Bank Metadata Depth Expansion for
-  Focus and Difficulty** will enrich/repair the existing internal lean rows' focus/difficulty/
-  subskill metadata **through this same staging → validation → approval → publish path or the safe
-  idempotent metadata-repair path** (no schema change — E9's columns already exist; no external
-  datasets; no direct final-table seeding). Phase D6 (Today Topic Matching and Subskill-Aware
-  Resource Selection) is the likely Today phase after E10; PG-v2 remains later.
+- **Done: Phase E10 (metadata depth, 2026-07-09)** — see the E10 detail section below. Enriched the
+  internal lean rows' focus/difficulty metadata by deriving it from each row's own already-published
+  CEFR + subskill, through the safe idempotent metadata-repair path (no schema change, no external
+  datasets, no direct final-table seeding). `TODO-D5-1` resolved. Phase D6 (Today Topic Matching and
+  Subskill-Aware Resource Selection) is the likely Today phase after E10; PG-v2 remains later.
+
+---
+
+### E10 — Internal bank metadata depth expansion for focus and difficulty — implemented (2026-07-09)
+
+- **Why**: E9 gave the lean tables the metadata *columns* and D5 wired the selector to *consume*
+  them, but the internal E6/E7/E8 lean rows were authored with context tags + subskill only — no
+  difficulty band, no focus tags — so D5's difficulty/focus filters relaxed away on those types
+  (`TODO-D5-1`). E10 fills that data gap for the existing rows.
+- **`InternalBankMetadataDepthSeeder` (idempotent startup step, after the E9 backfill)** — a
+  deterministic metadata **repair**, not new content: it derives the two missing lean-row fields
+  from each row's own already-published metadata.
+  - **Difficulty band** from CEFR: A1→1, A2→2, B1→3, B2→4, C1/C2→5 (aligned with the E8 passage
+    authoring convention; unmapped levels → null, nothing indefensible written).
+  - **Focus tag** from the row's subskill tail: `vocabulary.collocation` → `["collocation"]`,
+    `grammar.tense_aspect` → `["tense_aspect"]`, `reading.inference` → `["inference"]`. Only derived
+    from a subskill that is a valid `CurriculumSubskillConstants` value.
+- **Safety rules** (mirror the E9 backfill, plus an internal-source gate): updates only **existing**
+  rows (never inserts); touches only rows whose `CefrResourceSource.LicenseType == "Internal/Original"`
+  **and** that trace to exactly one published `ResourceCandidate` (untraceable/ambiguous rows are
+  skipped, never guessed); fills a field **only when empty** so an authored difficulty/focus (e.g.
+  the E8 passages, or any future authored value) is never overwritten; preserves subskill + context
+  tags exactly; never touches `CefrReadingPassage`; re-running is a no-op.
+- **Coverage after E10**: every internal lean row (`CefrVocabularyEntry`/`CefrGrammarProfileEntry`/
+  `CefrReadingReference`) now carries context tag + subskill + difficulty band + focus tag. These are
+  filterable through the existing E9 `ResourceBankQueryService` and `AdminResourceBankController`
+  filters — no query or selector change was needed.
+- **Tests**: `InternalBankMetadataDepthSeederTests` (+19) — derivation correctness per lean type,
+  CEFR→band mapping across levels, idempotency, no-insert, no-overwrite, skip non-internal/
+  untraceable/ambiguous, valid-subskill/valid-band only, context preserved, difficulty/focus
+  discoverable via the filters, unfiltered browse backward-compatible, 100% internal-lean coverage,
+  ASCII/English-only, survives repeated E8+depth application; plus +1 `AdminResourceBankEndpointTests`
+  (E10-derived difficulty filter end-to-end via the admin API). 3,639 → 3,659 backend.
+- **Residual (`TODO-E10-1`)**: the metadata now *exists* on all lean rows, but
+  `ActivityMaterializationJob` still null-feeds `PreferredSubskill`/`PreferredDifficultyBand` at
+  runtime (no reliable per-request source yet), so runtime subskill/difficulty filtering only
+  activates when a preference is supplied — a Phase D6 concern (the selector already supports it and
+  the data is now present). Passages' difficulty/focus remain author-supplied (E8); E6/E7 passages'
+  focus/difficulty were left as authored (out of E10's lean-table scope).
 
 ---
 

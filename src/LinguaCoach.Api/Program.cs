@@ -311,6 +311,12 @@ if (!app.Environment.IsEnvironment("Testing"))
     // published each row. Safe no-op once every traceable row is backfilled. Metadata repair only —
     // never inserts a bank row.
     await LinguaCoach.Persistence.Seed.PublishedBankMetadataBackfillSeeder.RunAsync(db, seederLogger);
+    // Phase E10 — idempotent, deterministic metadata-depth enrichment: fills the internal lean
+    // published rows' missing difficulty band (from CEFR) and focus tag (from subskill), never
+    // overwriting existing values or touching non-internal/untraceable rows. Runs after the E9
+    // backfill (which sets subskill/context) so difficulty/focus compose cleanly. Metadata repair
+    // only — never inserts a bank row, no schema change.
+    await LinguaCoach.Persistence.Seed.InternalBankMetadataDepthSeeder.RunAsync(db, seederLogger);
 
     // Storage + Quartz startup health checks (warn-only — do not block startup).
     var storage = scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.Storage.IFileStorageService>();

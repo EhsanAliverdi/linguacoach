@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Plan-Sync-After-D5)
+lastUpdated: 2026-07-09 (Phase E10)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,46 @@ Last updated: 2026-07-09
 ---
 
 ## Active sprint
+
+**Phase E10 — Internal Bank Metadata Depth Expansion for Focus and Difficulty (2026-07-09)** — complete
+
+Enriched the existing internal published lean bank rows (`CefrVocabularyEntry`/
+`CefrGrammarProfileEntry`/`CefrReadingReference`) with **difficulty bands and focus tags**, so D5's
+difficulty/focus filtering now has data to act on. **A deterministic, idempotent metadata-repair
+phase — no schema change (E9's columns already exist), no external datasets, no direct final-table
+content insertion, no selector rewrite.**
+
+- **Derivation seeder**: new idempotent startup step `InternalBankMetadataDepthSeeder` (wired after
+  the E9 backfill) derives the missing fields from each row's own already-published metadata:
+  **difficulty band from CEFR** (A1→1, A2→2, B1→3, B2→4, C1/C2→5) and a **focus tag from the row's
+  subskill** (e.g. `vocabulary.collocation` → `["collocation"]`, `grammar.tense_aspect` →
+  `["tense_aspect"]`, `reading.inference` → `["inference"]`).
+- **Safety** (mirrors the E9 backfill + an internal-source gate): touches only rows whose
+  `CefrResourceSource.LicenseType == "Internal/Original"` **and** that trace to exactly one published
+  `ResourceCandidate`; fills a field **only when empty** (never overwrites an authored difficulty/
+  focus — e.g. the E8 passages); skips non-internal, untraceable, and ambiguous rows; derives
+  difficulty only for a mappable CEFR and a focus tag only from a valid `CurriculumSubskillConstants`
+  subskill; preserves subskill + context tags exactly; never inserts a bank row; re-running is a
+  no-op.
+- **Coverage**: after E10 **every internal lean row carries context tag + subskill + difficulty band
+  + focus tag**, and those are filterable through the existing E9 `ResourceBankQueryService`/admin-API
+  filters (proven by tests). The D5 selector is unchanged — E10 only improves the data it reads.
+
+**Validation**: `dotnet build --configuration Release` passed (0 errors); `dotnet test
+--configuration Release` = 3,659 passed, 0 failed (+19 unit, +1 integration). No frontend files
+changed, so no Angular/Playwright gates run. **No schema/migration, no external datasets, no
+Persian/bilingual content, no direct final-table content insertion, no Practice-Gym change, no
+readiness/delivery-queue change.** `TODO-D5-1` resolved; narrowed residual `TODO-E10-1` tracks the
+runtime job still null-feeding subskill/difficulty preferences (a D6 concern).
+
+**Next: Phase D6 (Today Topic Matching and Subskill-Aware Resource Selection)** is the likely next
+phase, now unblocked by E10's metadata depth. PG-v2, Phase F, and Phase G2/G3 remain later. See
+`docs/architecture/english-resource-bank-import-platform.md` (E10 detail) and
+`docs/roadmap/road-map.md` §1/§19a.
+
+---
+
+## Previous sprint
 
 **Plan-Sync-After-D5 — Decide Next Phase After Context-Aware Today Selection (2026-07-09)** — complete (docs-only)
 

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Plan-Sync-After-D5)
+lastUpdated: 2026-07-09 (Phase E10)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,7 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-09 (Plan-Sync-After-D5)
+Last updated: 2026-07-09 (Phase E10)
 
 > **Note on scope of this file.** The dated sections below are a running
 > product-state log that ends at Phase 20I (2026-07-03, the last
@@ -116,24 +116,30 @@ the readiness/delivery queue are all intact. `TODO-E9-1` is closed; `TODO-D5-1`
 notes the internal lean packs carry thin difficulty/focus metadata so those
 filters are opportunistic (a content task).
 
-**Next-step decision (Plan-Sync-After-D5, 2026-07-09, docs-only):** **Phase E10 —
-Internal Bank Metadata Depth Expansion for Focus and Difficulty — comes next**,
-before deeper Today topic matching (D6) and before PG-v2. D5 proved the selector
-*can* consume the E9 metadata, but its filtering quality is now bounded by
-**metadata depth, not schema/wiring**: the internal E6/E7/E8 lean packs carry
-context tags + subskill but thin focus/difficulty metadata (`TODO-D5-1`), and the
-job null-feeds subskill/difficulty preferences (no reliable per-request source
-yet), so D5's difficulty/focus filtering relaxes away on the lean tables today.
-E10 will enrich/repair the existing internal lean rows' focus/difficulty/subskill
-metadata through the existing pipeline / safe idempotent metadata-repair path (no
-schema change, no external datasets, no direct final-table seeding). **Phase D6 —
-Today Topic Matching and Subskill-Aware Resource Selection** is the likely Today
-phase after E10; **PG-v2 remains later** and is expected to benefit from E9 parity
-+ D5 wiring + E10 depth + D6 selection. PG-v2, Phase F (legacy retirement), and
-Phase G2/G3 (backend/diagnostics cleanup) remain sequenced later. Full reasoning:
-`docs/roadmap/road-map.md` §1, §19 Decision Log (Plan-Sync-After-D5 entry), and
-§19a (items 20e–20g); D5 detail in
-`docs/architecture/learning-activity-engine.md` (Phase D5 section).
+**Phase E10 is complete (2026-07-09).** It closed the D5 metadata-depth gap
+(`TODO-D5-1`): `InternalBankMetadataDepthSeeder` (idempotent startup step after the
+E9 backfill) **derives** a difficulty band from each internal lean row's CEFR
+(A1→1…B2→4, C1/C2→5) and a focus tag from its subskill (e.g.
+`vocabulary.collocation` → `["collocation"]`), touching only `Internal/Original`
+rows traceable to a single published candidate, filling only empty fields (never
+overwriting authored values such as the E8 passages), preserving subskill +
+context, never inserting a row, and no-op on rerun. After E10 every internal lean
+row carries context + subskill + difficulty + focus, filterable through the
+existing E9 query/admin filters. **No schema change (E9's columns already exist),
+no external datasets, no Persian/bilingual content, no direct final-table content
+insertion, no selector rewrite, no UI.** The D5 selector code was unchanged — E10
+only improved the data it reads.
+
+**Next-step decision:** a post-E10 checkpoint — **Phase D6 (Today Topic Matching
+and Subskill-Aware Resource Selection)** is the likely next phase, now unblocked by
+E10's metadata depth. D6 would improve topic/focus/subskill matching and feed
+`PreferredSubskill`/`PreferredDifficultyBand` at runtime (`TODO-E10-1` — the
+metadata now exists on all lean rows; the runtime feed is the remaining gap).
+Alternatives: **Phase PG-v2A**, **Phase F** (legacy retirement), or **Phase
+G2/G3** (backend/diagnostics cleanup). PG-v2 benefits from E9 parity + D5 wiring +
+E10 depth + D6 selection. Full reasoning: `docs/roadmap/road-map.md` §1, §19
+Decision Log (Phase E10 entry), and §19a; E10 detail in
+`docs/architecture/english-resource-bank-import-platform.md` (E10 detail section).
 
 ---
 

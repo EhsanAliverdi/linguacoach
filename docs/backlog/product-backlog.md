@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Plan-Sync-After-D5)
+lastUpdated: 2026-07-09 (Phase E10)
 owner: product
 supersedes:
 supersededBy:
@@ -323,28 +323,25 @@ breadth/depth, not the composer mechanism. See docs/roadmap/road-map.md §1, Dec
     selection-emphasis note; D4 pattern instructions + roles + novelty/feedback exclusions preserved
   - [x] Deterministic metadata matching only (no embeddings/vector search); legacy fallback intact
   - [x] +17 backend tests. No composer rewrite, no content, no migration, no UI.
-- [ ] **Phase E10 — Internal Bank Metadata Depth Expansion for Focus and Difficulty** `Not started` —
-  **next recommended implementation phase (Plan-Sync-After-D5, 2026-07-09).** Enrich existing internal
-  published lean rows so Today (D6) and future PG-v2 selectors have enough signal (addresses
-  `TODO-D5-1`):
-  - [ ] Audit E6/E7/E8 internal metadata coverage across `CefrVocabularyEntry`/
-    `CefrGrammarProfileEntry`/`CefrReadingReference`
-  - [ ] Enrich/repair difficulty bands, focus tags, and subskill coverage (using
-    `CurriculumSubskillConstants`) for existing internal rows **where safely traceable**, through the
-    existing staging → validation → approval → publish path or the idempotent safe metadata-repair
-    path (`PublishedBankMetadataBackfillSeeder`-style)
-  - [ ] Keep everything English-only and source-traceable
-  - [ ] Tests for metadata coverage, traceability, idempotency, and selector discoverability
-  - **Must not**: import external datasets; add Persian/bilingual/support-language content; seed final
-    tables directly; add schema/migrations (E9's columns already exist); rewrite the Today composer;
-    start PG-v2; remove any legacy fallback; delete the readiness/delivery queue; redesign
-    student/admin UI.
-- [ ] **Phase D6 — Today Topic Matching and Subskill-Aware Resource Selection** `Not started` — likely
-  Today/composer phase **after** E10. Use the richer E10 metadata for stronger topic/focus/subskill
-  matching in `TodayBankResourceSelector`; improve supporting-resource relevance; reduce irrelevant
-  vocabulary/grammar pairings. **Keep deterministic metadata matching (no embeddings/vector search
-  unless explicitly chosen); preserve legacy fallback.** Also revisit feeding
-  `PreferredSubskill`/`PreferredDifficultyBand` at runtime once a reliable per-request source exists.
+- [x] **Phase E10 — Internal Bank Metadata Depth Expansion for Focus and Difficulty** `Done`
+  (2026-07-09) — enriched existing internal published lean rows; resolved `TODO-D5-1`:
+  - [x] `InternalBankMetadataDepthSeeder` (idempotent startup step after the E9 backfill) derives
+    **difficulty band from CEFR** (A1→1…B2→4, C1/C2→5) and a **focus tag from the row's subskill**
+    onto `CefrVocabularyEntry`/`CefrGrammarProfileEntry`/`CefrReadingReference`
+  - [x] Touches only `Internal/Original` rows traceable to exactly one published candidate; fills only
+    empty fields (never overwrites authored values); skips non-internal/untraceable/ambiguous rows;
+    preserves subskill + context; never inserts a row; no-op on rerun; English-only, source-traceable
+  - [x] +20 backend tests (coverage, traceability, idempotency, no-insert, no-overwrite, valid
+    subskill/band, discoverability via the E9 filters, end-to-end admin API)
+  - No schema/migration (E9's columns exist), no external datasets, no new content pack, no composer/
+    selector change, no UI. See docs/architecture/english-resource-bank-import-platform.md (E10 detail).
+- [ ] **Phase D6 — Today Topic Matching and Subskill-Aware Resource Selection** `Not started` —
+  **likely next implementation phase (now unblocked by E10's metadata depth).** Use the richer E10
+  metadata for stronger topic/focus/subskill matching in `TodayBankResourceSelector`; improve
+  supporting-resource relevance; reduce irrelevant vocabulary/grammar pairings. **Keep deterministic
+  metadata matching (no embeddings/vector search unless explicitly chosen); preserve legacy fallback.**
+  Includes `TODO-E10-1`: feed `PreferredSubskill`/`PreferredDifficultyBand` at runtime once a reliable
+  per-request source exists (the metadata now exists on all lean rows; the runtime feed is the gap).
 
 ---
 

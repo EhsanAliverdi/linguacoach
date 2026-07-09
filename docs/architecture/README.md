@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Plan-Sync-After-D5)
+lastUpdated: 2026-07-09 (Phase E10)
 owner: architecture
 supersedes:
 supersededBy:
@@ -172,16 +172,18 @@ Key facts about where this stands today (2026-07-08):
   passages) and recording applied-filter provenance. Deterministic metadata matching only — no
   embeddings/vector search; D4 pattern instructions, roles, novelty, and feedback exclusions
   preserved; legacy fallback intact. No composer rewrite, no new content, no migration, no UI.
-  **Plan-Sync-After-D5 (2026-07-09, docs-only)** then resolved the post-D5 decision: **Phase E10
-  (Internal Bank Metadata Depth Expansion for Focus and Difficulty) comes before Phase D6 and
-  PG-v2** — D5's filtering quality is now bounded by *metadata depth, not schema/wiring* (the
-  internal lean packs carry context tags + subskill but thin focus/difficulty metadata — `TODO-D5-1`),
-  so enriching the existing internal rows' focus/difficulty/subskill metadata (through the existing
-  pipeline / safe repair path, no schema change) is the next producer-side step. Phase D6 (Today
-  Topic Matching and Subskill-Aware Resource Selection) is the likely Today phase after E10; PG-v2
-  remains later (benefiting from E9 parity + D5 wiring + E10 depth + D6 selection).
-  See docs/architecture/learning-activity-engine.md (Phase D5 section),
-  docs/architecture/english-resource-bank-import-platform.md, and docs/roadmap/road-map.md §1 /
+  **Phase E10 (2026-07-09) then closed `TODO-D5-1`**: `InternalBankMetadataDepthSeeder` (idempotent
+  startup step after the E9 backfill) derived a **difficulty band from CEFR** and a **focus tag from
+  the row's subskill** onto every internal lean row (`CefrVocabularyEntry`/`CefrGrammarProfileEntry`/
+  `CefrReadingReference`), touching only `Internal/Original` rows traceable to a single published
+  candidate, filling only empty fields (never overwriting authored values), never inserting a row,
+  and no-op on rerun — no schema change (E9's columns exist), no external datasets, no direct
+  final-table content insertion. Every internal lean row now carries context + subskill + difficulty
+  + focus, filterable through the existing E9 query/admin filters; the D5 selector code was unchanged.
+  **Phase D6 (Today Topic Matching and Subskill-Aware Resource Selection)** — feeding those richer
+  filters at runtime and improving topic matching — is the likely next phase; PG-v2 remains later.
+  See docs/architecture/learning-activity-engine.md (Phase D5/E10 notes),
+  docs/architecture/english-resource-bank-import-platform.md (E10 detail), and docs/roadmap/road-map.md §1 /
   Decision Log.
 - **English-only seed/resource-bank rule (non-negotiable, applies to all current and future
   resource banks):** no Persian seed corpus, no bilingual phrase bank, no English–Persian (or
@@ -225,7 +227,7 @@ Key facts about where this stands today (2026-07-08):
   checkpoint now applies; Phase G2 (backend legacy cleanup) / G3 (diagnostics consolidation)
   remain sequenced late. See `docs/roadmap/road-map.md` §1 and Decision Log.
 
-Current state (as of 2026-07-09, Plan-Sync-After-D5): **Practice Gym bank-first migration (content
+Current state (as of 2026-07-09, Phase E10): **Practice Gym bank-first migration (content
 layer) is closed at Phase C-Final** — generalized the Form.io template path from 1 pilot pattern
 to 8 total (C1's `phrase_match`, `gap_fill_workplace_phrase`, `reading_multiple_choice_single`;
 C2's `reading_multiple_choice_multi`, `reading_fill_in_blanks`, `reading_writing_fill_in_blanks`;
