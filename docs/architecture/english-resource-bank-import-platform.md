@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase E9)
+lastUpdated: 2026-07-09 (Phase D5)
 owner: architecture
 supersedes:
 supersededBy:
@@ -808,7 +808,12 @@ least once. Admin must never approve based on raw JSON/CSV alone.
   their authors actually supplied — e.g. context tags + subskill but no difficulty band on the lean
   packs (only full passages were authored with difficulty/focus tags). That is faithful provenance,
   not a gap; a future content pass could enrich the lean packs' authored metadata if a selector ever
-  needs difficulty/focus filtering on those types.
+  needs difficulty/focus filtering on those types (tracked as `TODO-D5-1`).
+- **Consumed by Phase D5 (2026-07-09)**: `TodayBankResourceSelector` now uses these E9 filters — a
+  strict→loose relaxation ladder over context/focus/subskill/difficulty — so Today bank-first
+  selection is context-aware across all bank types, with the general-English workplace exclusion now
+  applied to the lean tables too (not only passages). See
+  `docs/architecture/learning-activity-engine.md` (Phase D5 section).
 
 ---
 

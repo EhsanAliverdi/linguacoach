@@ -222,7 +222,10 @@ public sealed class ActivityMaterializationJob : IJob
                         PatternKey: patternKey,
                         // Phase D4 — keep the bank general-English by default; only route
                         // workplace-tagged content when the learner's goal context is workplace-specific.
-                        PrefersWorkplaceContext: resolvedGoalContext.WorkplaceSpecific), ct);
+                        PrefersWorkplaceContext: resolvedGoalContext.WorkplaceSpecific,
+                        // Phase D5 — soft context-aware selection: prefer bank resources whose focus
+                        // tags match the learner's resolved focus areas, relaxing when none match.
+                        PreferredFocusTags: ParseFocusTags(resolvedGoalContext.FocusAreaKeys)), ct);
             }
             catch (Exception ex)
             {
@@ -376,7 +379,11 @@ public sealed class ActivityMaterializationJob : IJob
             role = r.Role,
             // Phase D3 — full-passage provenance carries CEFR + title too (null for short resources).
             cefrLevel = r.CefrLevel,
-            title = r.Title
+            title = r.Title,
+            // Phase D5 — which E9 metadata filters were applied and the resource's matched context
+            // tags, so the context-aware selection stays auditable in durable provenance.
+            appliedFilters = r.AppliedFilters,
+            matchedContextTags = r.MatchedContextTags
         }));
 
     /// <summary>Parses ExercisePatternDefinition.SecondarySkillsJson (a JSON string array); returns
@@ -392,6 +399,19 @@ public sealed class ActivityMaterializationJob : IJob
         {
             return Array.Empty<string>();
         }
+    }
+
+    /// <summary>Phase D5 — splits ResolvedLearningGoalContext.FocusAreaKeys (a comma-joined key list)
+    /// into normalized lowercase focus tags for the bank focus-tag filter. Empty/null ⇒ no
+    /// preference; never throws.</summary>
+    private static IReadOnlyList<string> ParseFocusTags(string? focusAreaKeys)
+    {
+        if (string.IsNullOrWhiteSpace(focusAreaKeys)) return Array.Empty<string>();
+        return focusAreaKeys
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(k => k.ToLowerInvariant())
+            .Distinct()
+            .ToList();
     }
 
     /// <summary>

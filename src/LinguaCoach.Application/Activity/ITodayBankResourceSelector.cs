@@ -45,13 +45,31 @@ public sealed record TodayBankSelectionRequest(
     /// <summary>
     /// Phase D4 — true only when the learner's resolved goal/routing context is workplace/
     /// professional-specific (see <c>ResolvedLearningGoalContext.WorkplaceSpecific</c>). Default is
-    /// false so the bank stays **general English by default**: when false, the selector skips full
-    /// reading passages whose bank context tags mark them as workplace-specific, so general learners
-    /// are not silently served workplace-heavy content. Short vocabulary/grammar/reading-reference
-    /// bank tables carry no context tags, so this filter applies to full passages only (see the
-    /// selector's own doc comment).
+    /// false so the bank stays **general English by default**. Phase D5 extends this beyond full
+    /// passages: when false, the selector now also skips workplace-tagged vocabulary/grammar/
+    /// reading-reference rows (using the E9 published context metadata), so general learners are not
+    /// silently served workplace-heavy supporting content on any bank type; when true, it prefers
+    /// workplace-tagged rows via the E9 context filter and permits workplace passages.
     /// </summary>
-    bool PrefersWorkplaceContext = false);
+    bool PrefersWorkplaceContext = false,
+    /// <summary>
+    /// Phase D5 — preferred bank focus tags (e.g. from the learner's resolved focus areas), matched
+    /// against the E9 published <c>FocusTagsJson</c>. The first non-empty tag is used as a soft
+    /// filter that relaxes away if no matching resource exists. Empty ⇒ no focus preference.
+    /// </summary>
+    IReadOnlyList<string>? PreferredFocusTags = null,
+    /// <summary>
+    /// Phase D5 — a preferred bank subskill (e.g. "vocabulary.collocation"), matched exactly against
+    /// the E9 published <c>Subskill</c>. Soft filter that relaxes away if unmatched. Null ⇒ none.
+    /// </summary>
+    string? PreferredSubskill = null,
+    /// <summary>
+    /// Phase D5 — a preferred difficulty band (1-5), matched against the E9 published
+    /// <c>DifficultyBand</c>. Soft filter that relaxes away if unmatched. Null ⇒ none. (Only full
+    /// passages currently carry a difficulty band in the internal packs — see the E9 residual note —
+    /// so this filter is dropped first in the relaxation ladder.)
+    /// </summary>
+    int? PreferredDifficultyBand = null);
 
 public enum TodayBankSelectionOutcome
 {
@@ -98,7 +116,14 @@ public sealed record TodayBankSelectedResource(
     /// <summary>Phase D3 — passage word count (full passages only; null otherwise).</summary>
     int? WordCount = null,
     /// <summary>Phase D3 — estimated reading time in minutes (full passages only; null otherwise).</summary>
-    int? EstimatedReadingMinutes = null);
+    int? EstimatedReadingMinutes = null,
+    /// <summary>Phase D5 — a short, deterministic description of which E9 metadata filters were
+    /// applied (and which were relaxed) to select this resource, e.g. "applied: context=workplace;
+    /// relaxed: focus,difficulty". Null when no metadata filtering applied. Recorded in provenance.</summary>
+    string? AppliedFilters = null,
+    /// <summary>Phase D5 — the resource's own published context tags at selection time (from the E9
+    /// bank metadata), so a bundle's context match stays legible in provenance. Null/empty otherwise.</summary>
+    IReadOnlyList<string>? MatchedContextTags = null);
 
 public sealed record TodayBankSelectionResult(
     TodayBankSelectionOutcome Outcome,

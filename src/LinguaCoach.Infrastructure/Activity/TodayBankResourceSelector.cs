@@ -32,12 +32,19 @@ namespace LinguaCoach.Infrastructure.Activity;
 /// (primary) plus supporting vocabulary/grammar — never a full passage.</description></item>
 /// </list>
 ///
-/// Context defaulting (Phase D4): the bank stays **general English by default**. When the learner's
-/// routed goal context is not workplace-specific (<see cref="TodayBankSelectionRequest.PrefersWorkplaceContext"/>
-/// is false), full reading passages whose bank <c>ContextTags</c> mark them workplace-specific are
-/// skipped. The short vocabulary/grammar/reading-reference bank tables carry no context tags at all
-/// (only <see cref="Domain.Entities.CefrReadingPassage"/> stores them), so this filter necessarily
-/// applies to full passages only — a documented limitation, not an oversight.
+/// Phase D5 — context-aware selection across all bank types using the E9 published metadata. The
+/// lean bank tables now carry context/focus/subskill/difficulty (Phase E9), so the selector applies
+/// those as E9 query filters through a deterministic strict→loose relaxation ladder (context kept
+/// longest; drop difficulty → focus → subskill → context → general), each combined with the
+/// exact-CEFR-first / review-only-widen-down policy. **General English stays the default**: when the
+/// learner is not workplace-routed (<see cref="TodayBankSelectionRequest.PrefersWorkplaceContext"/>
+/// is false), workplace-tagged rows are skipped on **every** bank type — vocabulary/grammar/
+/// reading-reference (via the E9 context metadata) as well as full passages (via detail context
+/// tags) — closing the D4-era limitation where only passages could be context-filtered. When the
+/// learner is workplace-routed, workplace content is preferred/permitted. Topic matching is purely
+/// deterministic metadata matching — no embeddings, no vector search. All filters relax safely to a
+/// smaller/general bundle rather than producing an empty result, and the caller still falls back to
+/// legacy AI generation when no bank resource remains.
 /// </summary>
 public sealed class TodayBankResourceSelector : ITodayBankResourceSelector
 {
@@ -242,84 +249,151 @@ public sealed class TodayBankResourceSelector : ITodayBankResourceSelector
 
     // ── Per-type selection ───────────────────────────────────────────────────────
 
-    private async Task<(List<TodayBankSelectedResource> Selected, bool AnyRawHits)> SelectVocabularyAsync(
-        TodayBankSelectionRequest request, int max, string role, string reasonLabel, CancellationToken ct)
-    {
-        var selected = new List<TodayBankSelectedResource>();
-        if (max <= 0) return (selected, false);
-
-        var (items, _, reasonSuffix, anyRawHits) = await QueryWithOptionalWideningAsync(
-            request,
-            level => _bankQuery.ListVocabularyAsync(
-                new ResourceBankListFilter(CefrLevel: level, PageSize: BankQueryPageSize), ct)
-                .ContinueWith(t => (IReadOnlyList<(Guid Id, string Display, Guid SourceId)>)
-                    t.Result.Items.Select(i => (i.Id, i.Word, i.SourceId)).ToList(), ct),
+    private Task<(List<TodayBankSelectedResource> Selected, bool AnyRawHits)> SelectVocabularyAsync(
+        TodayBankSelectionRequest request, int max, string role, string reasonLabel, CancellationToken ct) =>
+        SelectLeanAsync(request, max, role, "Vocabulary", reasonLabel, "bank-vocab-precheck",
+            filter => _bankQuery.ListVocabularyAsync(filter, ct)
+                .ContinueWith(t => (IReadOnlyList<LeanBankRow>)t.Result.Items.Select(i =>
+                    new LeanBankRow(i.Id, i.Word, i.SourceId, i.ContextTags ?? Array.Empty<string>())).ToList(), ct),
             ct);
 
-        foreach (var (id, display, sourceId) in items.Take(CandidateScanCap))
-        {
-            if (selected.Count >= max) break;
-            var fingerprint = $"bank-vocab-precheck:{id}";
-            if (!await IsAllowedAsync(request.StudentProfileId, fingerprint, id, ct)) continue;
-            selected.Add(new TodayBankSelectedResource(
-                id, "Vocabulary", display, sourceId, fingerprint, $"{reasonLabel}{reasonSuffix}", Role: role));
-        }
-
-        return (selected, anyRawHits);
-    }
-
-    private async Task<(List<TodayBankSelectedResource> Selected, bool AnyRawHits)> SelectGrammarAsync(
-        TodayBankSelectionRequest request, int max, string role, CancellationToken ct)
-    {
-        var selected = new List<TodayBankSelectedResource>();
-        if (max <= 0) return (selected, false);
-
-        var (items, _, reasonSuffix, anyRawHits) = await QueryWithOptionalWideningAsync(
-            request,
-            level => _bankQuery.ListGrammarAsync(
-                new ResourceBankListFilter(CefrLevel: level, PageSize: BankQueryPageSize), ct)
-                .ContinueWith(t => (IReadOnlyList<(Guid Id, string Display, Guid SourceId)>)
-                    t.Result.Items.Select(i => (i.Id, i.GrammarPoint, i.SourceId)).ToList(), ct),
+    private Task<(List<TodayBankSelectedResource> Selected, bool AnyRawHits)> SelectGrammarAsync(
+        TodayBankSelectionRequest request, int max, string role, CancellationToken ct) =>
+        SelectLeanAsync(request, max, role, "Grammar", "grammar", "bank-grammar-precheck",
+            filter => _bankQuery.ListGrammarAsync(filter, ct)
+                .ContinueWith(t => (IReadOnlyList<LeanBankRow>)t.Result.Items.Select(i =>
+                    new LeanBankRow(i.Id, i.GrammarPoint, i.SourceId, i.ContextTags ?? Array.Empty<string>())).ToList(), ct),
             ct);
 
-        foreach (var (id, display, sourceId) in items.Take(CandidateScanCap))
-        {
-            if (selected.Count >= max) break;
-            var fingerprint = $"bank-grammar-precheck:{id}";
-            if (!await IsAllowedAsync(request.StudentProfileId, fingerprint, id, ct)) continue;
-            selected.Add(new TodayBankSelectedResource(
-                id, "Grammar", display, sourceId, fingerprint, $"grammar{reasonSuffix} (opportunistic)", Role: role));
-        }
-
-        return (selected, anyRawHits);
-    }
-
-    private async Task<(List<TodayBankSelectedResource> Selected, bool AnyRawHits)> SelectReadingReferenceAsync(
-        TodayBankSelectionRequest request, int max, string role, CancellationToken ct)
-    {
-        var selected = new List<TodayBankSelectedResource>();
-        if (max <= 0) return (selected, false);
-
-        var (items, _, reasonSuffix, anyRawHits) = await QueryWithOptionalWideningAsync(
-            request,
-            level => _bankQuery.ListReadingReferencesAsync(
-                new ResourceBankListFilter(CefrLevel: level, PageSize: BankQueryPageSize), ct)
-                .ContinueWith(t => (IReadOnlyList<(Guid Id, string Display, Guid SourceId)>)
-                    t.Result.Items.Select(i => (i.Id,
+    private Task<(List<TodayBankSelectedResource> Selected, bool AnyRawHits)> SelectReadingReferenceAsync(
+        TodayBankSelectionRequest request, int max, string role, CancellationToken ct) =>
+        SelectLeanAsync(request, max, role, "Reading", "reading", "bank-reading-precheck",
+            filter => _bankQuery.ListReadingReferencesAsync(filter, ct)
+                .ContinueWith(t => (IReadOnlyList<LeanBankRow>)t.Result.Items.Select(i =>
+                    new LeanBankRow(i.Id,
                         !string.IsNullOrWhiteSpace(i.ReferenceExcerpt) ? i.ReferenceExcerpt! : i.TextType ?? "reading reference",
-                        i.SourceId)).ToList(), ct),
+                        i.SourceId, i.ContextTags ?? Array.Empty<string>())).ToList(), ct),
             ct);
 
-        foreach (var (id, display, sourceId) in items.Take(CandidateScanCap))
+    /// <summary>A projected lean-bank row carrying just what the selector needs: identity, a display
+    /// string, the source id, and (Phase E9) the row's published context tags for D5's context
+    /// defaulting.</summary>
+    private readonly record struct LeanBankRow(Guid Id, string Display, Guid SourceId, IReadOnlyList<string> ContextTags);
+
+    /// <summary>
+    /// Phase D5 — shared selection for the lean bank tables (vocabulary/grammar/reading-reference)
+    /// using the E9 published metadata filters. Tries a strict→loose relaxation ladder of
+    /// context/focus/subskill/difficulty filters (each combined with the existing exact-CEFR-first /
+    /// review-only-widen-down policy); the first ladder step that yields any allowed candidate wins.
+    /// General-English default: when the learner is not workplace-routed, workplace-tagged rows are
+    /// skipped on every bank type (not just full passages). Never throws.
+    /// </summary>
+    private async Task<(List<TodayBankSelectedResource> Selected, bool AnyRawHits)> SelectLeanAsync(
+        TodayBankSelectionRequest request, int max, string role, string resourceType, string reasonLabel,
+        string fingerprintPrefix, Func<ResourceBankListFilter, Task<IReadOnlyList<LeanBankRow>>> listFunc,
+        CancellationToken ct)
+    {
+        var selected = new List<TodayBankSelectedResource>();
+        if (max <= 0) return (selected, false);
+
+        var anyRawHits = false;
+        foreach (var attempt in BuildFilterLadder(request))
         {
-            if (selected.Count >= max) break;
-            var fingerprint = $"bank-reading-precheck:{id}";
-            if (!await IsAllowedAsync(request.StudentProfileId, fingerprint, id, ct)) continue;
-            selected.Add(new TodayBankSelectedResource(
-                id, "Reading", display, sourceId, fingerprint, $"reading{reasonSuffix}", Role: role));
+            var (items, _, reasonSuffix, rawHits) = await QueryWithOptionalWideningAsync(
+                request,
+                level => listFunc(attempt.Filter with { CefrLevel = level, PageSize = BankQueryPageSize }),
+                ct);
+            anyRawHits |= rawHits;
+            if (items.Count == 0) continue;
+
+            var stepSelected = new List<TodayBankSelectedResource>();
+            foreach (var row in items.Take(CandidateScanCap))
+            {
+                if (stepSelected.Count >= max) break;
+                // General-English default (Phase D5): skip workplace-tagged rows unless routed workplace.
+                if (!request.PrefersWorkplaceContext && IsWorkplaceTagged(row.ContextTags)) continue;
+
+                var fingerprint = $"{fingerprintPrefix}:{row.Id}";
+                if (!await IsAllowedAsync(request.StudentProfileId, fingerprint, row.Id, ct)) continue;
+
+                stepSelected.Add(new TodayBankSelectedResource(
+                    row.Id, resourceType, row.Display, row.SourceId, fingerprint,
+                    $"{reasonLabel}{reasonSuffix}{attempt.ReasonSuffix}", Role: role,
+                    AppliedFilters: attempt.ProvenanceLabel, MatchedContextTags: row.ContextTags));
+            }
+
+            if (stepSelected.Count > 0)
+            {
+                selected.AddRange(stepSelected);
+                break; // first ladder step that yields allowed candidates wins
+            }
         }
 
         return (selected, anyRawHits);
+    }
+
+    /// <summary>
+    /// Phase D5 — builds the deterministic strict→loose filter relaxation ladder from the request's
+    /// E9 metadata preferences. Order (per the D5 plan): keep context longest, drop difficulty →
+    /// focus → subskill → context. Consecutive identical filter sets (when a preference is absent)
+    /// are de-duplicated so absent preferences add no extra queries. The final step carries no
+    /// positive metadata filter (the general/no-filter attempt).
+    /// </summary>
+    private static IReadOnlyList<FilterAttempt> BuildFilterLadder(TodayBankSelectionRequest request)
+    {
+        // Positive context filter only when workplace-routed; otherwise context is handled by the
+        // post-query workplace exclusion, so no positive context filter is added.
+        var contextTag = request.PrefersWorkplaceContext ? WorkplaceContextTag : null;
+        var focusTag = request.PreferredFocusTags?.FirstOrDefault(f => !string.IsNullOrWhiteSpace(f));
+        var subskill = string.IsNullOrWhiteSpace(request.PreferredSubskill) ? null : request.PreferredSubskill;
+        var difficulty = request.PreferredDifficultyBand;
+
+        var raw = new (string? Context, string? Focus, string? Subskill, int? Difficulty)[]
+        {
+            (contextTag, focusTag, subskill, difficulty),
+            (contextTag, focusTag, subskill, null),   // drop difficulty
+            (contextTag, null, subskill, null),        // drop focus
+            (contextTag, null, null, null),            // drop subskill
+            (null, null, null, null),                  // general (drop context)
+        };
+
+        var ladder = new List<FilterAttempt>();
+        (string? Context, string? Focus, string? Subskill, int? Difficulty)? previous = null;
+        var strictest = raw[0];
+        foreach (var f in raw)
+        {
+            if (previous is { } p && p.Equals(f)) continue; // de-dupe consecutive identical sets
+            previous = f;
+            ladder.Add(new FilterAttempt(
+                new ResourceBankListFilter(ContextTag: f.Context, FocusTag: f.Focus, Subskill: f.Subskill, DifficultyBand: f.Difficulty),
+                ProvenanceLabel: DescribeFilters(f),
+                ReasonSuffix: DescribeRelaxation(strictest, f)));
+        }
+        return ladder;
+    }
+
+    private readonly record struct FilterAttempt(ResourceBankListFilter Filter, string ProvenanceLabel, string ReasonSuffix);
+
+    private static string DescribeFilters((string? Context, string? Focus, string? Subskill, int? Difficulty) f)
+    {
+        var parts = new List<string>();
+        if (f.Context is not null) parts.Add($"context={f.Context}");
+        if (f.Focus is not null) parts.Add($"focus={f.Focus}");
+        if (f.Subskill is not null) parts.Add($"subskill={f.Subskill}");
+        if (f.Difficulty is not null) parts.Add($"difficulty={f.Difficulty}");
+        return parts.Count == 0 ? "none" : string.Join(",", parts);
+    }
+
+    private static string DescribeRelaxation(
+        (string? Context, string? Focus, string? Subskill, int? Difficulty) strictest,
+        (string? Context, string? Focus, string? Subskill, int? Difficulty) applied)
+    {
+        var relaxed = new List<string>();
+        if (strictest.Context is not null && applied.Context is null) relaxed.Add("context");
+        if (strictest.Focus is not null && applied.Focus is null) relaxed.Add("focus");
+        if (strictest.Subskill is not null && applied.Subskill is null) relaxed.Add("subskill");
+        if (strictest.Difficulty is not null && applied.Difficulty is null) relaxed.Add("difficulty");
+        return relaxed.Count == 0 ? string.Empty : $" [relaxed: {string.Join(",", relaxed)}]";
     }
 
     /// <summary>
@@ -369,7 +443,11 @@ public sealed class TodayBankResourceSelector : ITodayBankResourceSelector
                 Title: detail.Title,
                 PassageText: detail.PassageText,
                 WordCount: detail.WordCount,
-                EstimatedReadingMinutes: detail.EstimatedReadingMinutes));
+                EstimatedReadingMinutes: detail.EstimatedReadingMinutes,
+                // Phase D5 — record the passage's context match for provenance parity with the lean
+                // bank types (the passage's workplace-context handling is the D4 exclusion above).
+                AppliedFilters: request.PrefersWorkplaceContext ? "context=workplace" : "context=general",
+                MatchedContextTags: detail.ContextTags));
         }
 
         return (selected, anyRawHits);
@@ -486,6 +564,12 @@ public sealed class TodayBankResourceSelector : ITodayBankResourceSelector
           .Append("support-language behavior stays runtime-only). ")
           .Append(PatternInstruction(request)).Append(' ');
 
+        // Phase D5 — a concise, bounded note on which selection filters shaped this bundle, so the
+        // AI keeps the same context/focus emphasis the selector matched on.
+        var appliedNote = DescribeAppliedFilters(resources, request);
+        if (appliedNote is not null)
+            sb.Append(appliedNote).Append(' ');
+
         var shortResources = resources.Where(r => !IsFullPassage(r)).ToList();
         var passages = resources.Where(IsFullPassage).ToList();
 
@@ -517,6 +601,21 @@ public sealed class TodayBankResourceSelector : ITodayBankResourceSelector
 
     private static string FormatShortResource(TodayBankSelectedResource r) =>
         $"- [{r.ResourceType}/{r.Role}] \"{r.DisplayText}\"";
+
+    /// <summary>Phase D5 — a one-line, bounded note describing the selection emphasis: the learner
+    /// context (general vs workplace) and any distinct focus/subskill filters that survived onto the
+    /// selected bundle. Null when there is nothing meaningful to say.</summary>
+    private static string? DescribeAppliedFilters(IReadOnlyList<TodayBankSelectedResource> resources, TodayBankSelectionRequest request)
+    {
+        var contextWord = request.PrefersWorkplaceContext ? "workplace" : "general English";
+        var extras = resources
+            .Select(r => r.AppliedFilters)
+            .Where(a => a is not null && a != "none" && a != "context=general" && a != "context=workplace")
+            .Distinct()
+            .ToList();
+        var extraNote = extras.Count > 0 ? $"; matched filters: {string.Join("; ", extras)}" : string.Empty;
+        return $"Selection emphasis: keep the {contextWord} context of these resources{extraNote}.";
+    }
 
     /// <summary>
     /// Phase D4 — a concise, deterministic, pattern-specific instruction. Bounded to one sentence;

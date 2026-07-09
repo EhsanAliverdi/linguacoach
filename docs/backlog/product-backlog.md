@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase E9)
+lastUpdated: 2026-07-09 (Phase D5)
 owner: product
 supersedes:
 supersededBy:
@@ -309,11 +309,25 @@ breadth/depth, not the composer mechanism. See docs/roadmap/road-map.md §1, Dec
   - **Residual (narrowed, not a bug)**: E6/E7/E8-authored lean rows carry only the metadata their
     authors supplied (e.g. context tags + subskill but no difficulty band); a future content pass
     could enrich the lean packs if difficulty/focus filtering is ever needed on those types.
-- [ ] **Phase D5 — Context-Aware Today Bank Selection and Topic Matching** `Not started` — **likely
-  next implementation phase (now unblocked by E9's parity).** Wire `TodayBankResourceSelector` to
-  consume E9's metadata for consistent context/focus/subskill/difficulty filtering across all bank
-  types; improve topic matching within published banks; reduce irrelevant supporting resources.
-  **Keep legacy fallback; avoid semantic/vector search unless explicitly chosen.**
+- [x] **Phase D5 — Context-Aware Today Bank Selection and Topic Matching** `Done` (2026-07-09) —
+  wired `TodayBankResourceSelector` to consume E9's metadata; closed `TODO-E9-1`:
+  - [x] Shared `SelectLeanAsync` applies E9 `ContextTag`/`FocusTag`/`Subskill`/`DifficultyBand`
+    filters through a deterministic strict→loose relaxation ladder (drop difficulty → focus →
+    subskill → context → general), combined with exact-CEFR-first / review-only-widen-down
+  - [x] General-English default extended to all bank types: workplace-tagged vocabulary/grammar/
+    reading-reference rows skipped for general learners (matching passages); workplace preferred
+    when workplace-routed
+  - [x] New request fields `PreferredFocusTags`/`PreferredSubskill`/`PreferredDifficultyBand`; focus
+    fed from `ResolvedLearningGoalContext.FocusAreaKeys`
+  - [x] Provenance records `appliedFilters` + `matchedContextTags`; prompt block gained a
+    selection-emphasis note; D4 pattern instructions + roles + novelty/feedback exclusions preserved
+  - [x] Deterministic metadata matching only (no embeddings/vector search); legacy fallback intact
+  - [x] +17 backend tests. No composer rewrite, no content, no migration, no UI.
+- [ ] **`TODO-D5-1` — enrich lean-pack authored metadata** `Not started` — the internal E6/E7/E8
+  lean packs carry context tags + subskill but no difficulty band, and focus tags only on some rows,
+  so D5's difficulty/focus filtering is opportunistic on those types (context/subskill filtering is
+  dense). A future content pass could author difficulty/focus metadata on the lean packs if richer
+  filtering is needed. Content-only; through the existing pipeline; no schema change.
 
 ---
 

@@ -65,23 +65,30 @@ public sealed class TodayBankResourceSelectorTests : IDisposable
         _db.Dispose();
     }
 
-    private Guid SeedVocabulary(string word, string cefrLevel = "B1")
+    private Guid SeedVocabulary(string word, string cefrLevel = "B1",
+        string? contextTagsJson = null, string? focusTagsJson = null, string? subskill = null, int? difficultyBand = null)
     {
         var entry = new CefrVocabularyEntry(_sourceId, word, cefrLevel);
+        if (contextTagsJson is not null || focusTagsJson is not null || subskill is not null || difficultyBand is not null)
+            entry.SetSelectionMetadata(subskill, difficultyBand, contextTagsJson, focusTagsJson);
         _db.CefrVocabularyEntries.Add(entry);
         return entry.Id;
     }
 
-    private Guid SeedGrammar(string grammarPoint, string cefrLevel = "B1")
+    private Guid SeedGrammar(string grammarPoint, string cefrLevel = "B1", string? contextTagsJson = null, string? subskill = null)
     {
         var entry = new CefrGrammarProfileEntry(_sourceId, cefrLevel, grammarPoint);
+        if (contextTagsJson is not null || subskill is not null)
+            entry.SetSelectionMetadata(subskill, null, contextTagsJson, "[]");
         _db.CefrGrammarProfileEntries.Add(entry);
         return entry.Id;
     }
 
-    private Guid SeedReading(string excerpt, string cefrLevel = "B1")
+    private Guid SeedReading(string excerpt, string cefrLevel = "B1", string? contextTagsJson = null, string? subskill = null)
     {
         var entry = new CefrReadingReference(_sourceId, cefrLevel, referenceExcerpt: excerpt);
+        if (contextTagsJson is not null || subskill is not null)
+            entry.SetSelectionMetadata(subskill, null, contextTagsJson, "[]");
         _db.CefrReadingReferences.Add(entry);
         return entry.Id;
     }
@@ -100,10 +107,15 @@ public sealed class TodayBankResourceSelectorTests : IDisposable
         Guid? studentId = null,
         bool allowLowerLevelReview = false,
         string? patternKey = null,
-        bool prefersWorkplaceContext = false) =>
+        bool prefersWorkplaceContext = false,
+        IReadOnlyList<string>? preferredFocusTags = null,
+        string? preferredSubskill = null,
+        int? preferredDifficultyBand = null) =>
         new(studentId ?? Guid.NewGuid(), cefrLevel, primarySkill, secondarySkills ?? Array.Empty<string>(),
             AllowLowerLevelReview: allowLowerLevelReview, PatternKey: patternKey,
-            PrefersWorkplaceContext: prefersWorkplaceContext);
+            PrefersWorkplaceContext: prefersWorkplaceContext,
+            PreferredFocusTags: preferredFocusTags, PreferredSubskill: preferredSubskill,
+            PreferredDifficultyBand: preferredDifficultyBand);
 
     // A representative full-passage-suitable reading pattern (comprehension over a whole text).
     private const string FullPassagePattern = LinguaCoach.Domain.ExercisePatternKey.ReadingMultipleChoiceSingle;
@@ -753,5 +765,226 @@ public sealed class TodayBankResourceSelectorTests : IDisposable
             cefrLevel: "B1", primarySkill: "Reading", studentId: _studentId, patternKey: FullPassagePattern));
 
         result.Resources.Should().NotContain(r => r.DisplayText == "harder-word");
+    }
+
+    // ── Phase D5 — context-aware selection across lean bank types (E9 metadata) ──
+
+    [Fact]
+    public async Task General_learner_does_not_select_workplace_tagged_vocabulary_when_general_exists()
+    {
+        SeedVocabulary("meeting", "B1", contextTagsJson: "[\"workplace\"]", subskill: "vocabulary.receptive");
+        SeedVocabulary("garden", "B1", contextTagsJson: "[\"general\",\"daily\"]", subskill: "vocabulary.receptive");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Vocabulary", studentId: _studentId,
+            patternKey: PhraseMatchPattern, prefersWorkplaceContext: false));
+
+        result.Resources.Should().Contain(r => r.DisplayText == "garden");
+        result.Resources.Should().NotContain(r => r.DisplayText == "meeting");
+    }
+
+    [Fact]
+    public async Task Workplace_learner_may_select_workplace_tagged_vocabulary()
+    {
+        SeedVocabulary("meeting", "B1", contextTagsJson: "[\"workplace\"]", subskill: "vocabulary.receptive");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Vocabulary", studentId: _studentId,
+            patternKey: PhraseMatchPattern, prefersWorkplaceContext: true));
+
+        result.Resources.Should().Contain(r => r.DisplayText == "meeting");
+        result.Resources.Should().OnlyContain(r => r.MatchedContextTags != null && r.MatchedContextTags.Contains("workplace"));
+    }
+
+    [Fact]
+    public async Task General_learner_does_not_select_workplace_tagged_grammar_when_general_exists()
+    {
+        SeedVocabulary("garden", "B1", contextTagsJson: "[\"general\"]");
+        SeedGrammar("Passive voice", "B1", contextTagsJson: "[\"workplace\"]", subskill: "grammar.tense_aspect");
+        SeedGrammar("First conditional", "B1", contextTagsJson: "[\"general\"]", subskill: "grammar.tense_aspect");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Vocabulary", secondarySkills: ["Grammar"], studentId: _studentId,
+            patternKey: PhraseMatchPattern, prefersWorkplaceContext: false));
+
+        result.Resources.Should().Contain(r => r.ResourceType == "Grammar" && r.DisplayText == "First conditional");
+        result.Resources.Should().NotContain(r => r.DisplayText == "Passive voice");
+    }
+
+    [Fact]
+    public async Task General_learner_does_not_select_workplace_tagged_reading_reference_when_general_exists()
+    {
+        SeedReading("A workplace memo about a deadline.", "B1", contextTagsJson: "[\"workplace\"]");
+        SeedReading("A note about a weekend walk.", "B1", contextTagsJson: "[\"general\",\"daily\"]");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Reading", studentId: _studentId,
+            patternKey: FillInBlanksPattern, prefersWorkplaceContext: false));
+
+        result.Resources.Should().Contain(r => r.ResourceType == "Reading" && r.DisplayText.Contains("weekend walk"));
+        result.Resources.Should().NotContain(r => r.DisplayText.Contains("workplace memo"));
+    }
+
+    [Fact]
+    public async Task Cloze_pattern_context_filters_short_reference_and_never_selects_full_passage()
+    {
+        SeedReadingPassage("Full", LongPassage, "B1", contextTagsJson: "[\"general\"]");
+        SeedReading("A note about a weekend walk.", "B1", contextTagsJson: "[\"general\"]");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Reading", studentId: _studentId,
+            patternKey: FillInBlanksPattern, prefersWorkplaceContext: false));
+
+        result.Resources.Should().NotContain(r => r.ResourceType == "ReadingPassage");
+        result.Resources.Should().Contain(r => r.ResourceType == "Reading");
+    }
+
+    [Fact]
+    public async Task Focus_tag_preference_prefers_a_matching_vocabulary_resource()
+    {
+        SeedVocabulary("collocate", "B1", contextTagsJson: "[\"general\"]", focusTagsJson: "[\"collocation\"]");
+        SeedVocabulary("plainword", "B1", contextTagsJson: "[\"general\"]", focusTagsJson: "[\"word_form\"]");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Vocabulary", studentId: _studentId,
+            patternKey: PhraseMatchPattern, preferredFocusTags: ["collocation"]));
+
+        result.Resources.Should().Contain(r => r.DisplayText == "collocate");
+        result.Resources.Should().NotContain(r => r.DisplayText == "plainword");
+    }
+
+    [Fact]
+    public async Task Subskill_preference_prefers_a_matching_vocabulary_resource()
+    {
+        SeedVocabulary("productiveword", "B1", contextTagsJson: "[\"general\"]", subskill: "vocabulary.productive");
+        SeedVocabulary("receptiveword", "B1", contextTagsJson: "[\"general\"]", subskill: "vocabulary.receptive");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Vocabulary", studentId: _studentId,
+            patternKey: PhraseMatchPattern, preferredSubskill: "vocabulary.productive"));
+
+        result.Resources.Should().Contain(r => r.DisplayText == "productiveword");
+        result.Resources.Should().NotContain(r => r.DisplayText == "receptiveword");
+    }
+
+    [Fact]
+    public async Task Difficulty_band_preference_relaxes_when_no_lean_row_carries_it()
+    {
+        // Lean rows carry no difficulty band → the difficulty filter finds nothing and must relax
+        // (drop difficulty first) rather than returning an empty bundle.
+        SeedVocabulary("plainword", "B1", contextTagsJson: "[\"general\"]", subskill: "vocabulary.receptive");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Vocabulary", studentId: _studentId,
+            patternKey: PhraseMatchPattern, preferredDifficultyBand: 3));
+
+        result.Outcome.Should().Be(TodayBankSelectionOutcome.BankResourcesFound);
+        result.Resources.Should().Contain(r => r.DisplayText == "plainword");
+    }
+
+    [Fact]
+    public async Task Focus_filter_relaxes_to_general_when_no_focus_match_but_context_matches()
+    {
+        // No resource has the requested focus tag, but a general-context resource exists → relax
+        // focus and still return the general resource rather than nothing.
+        SeedVocabulary("plainword", "B1", contextTagsJson: "[\"general\"]", focusTagsJson: "[\"word_form\"]");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Vocabulary", studentId: _studentId,
+            patternKey: PhraseMatchPattern, preferredFocusTags: ["collocation"]));
+
+        result.Outcome.Should().Be(TodayBankSelectionOutcome.BankResourcesFound);
+        result.Resources.Should().Contain(r => r.DisplayText == "plainword");
+    }
+
+    [Fact]
+    public async Task Metadata_filtering_still_respects_exact_cefr_and_never_widens_upward()
+    {
+        SeedVocabulary("hardword", "C1", contextTagsJson: "[\"general\"]", subskill: "vocabulary.receptive");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Vocabulary", studentId: _studentId,
+            patternKey: PhraseMatchPattern, preferredSubskill: "vocabulary.receptive"));
+
+        result.Resources.Should().NotContain(r => r.DisplayText == "hardword");
+    }
+
+    [Fact]
+    public async Task Metadata_widening_down_only_for_review_scaffold()
+    {
+        SeedVocabulary("lowerword", "A2", contextTagsJson: "[\"general\"]", subskill: "vocabulary.receptive");
+        _db.SaveChanges();
+
+        var withoutReview = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Vocabulary", studentId: _studentId,
+            patternKey: PhraseMatchPattern, preferredSubskill: "vocabulary.receptive", allowLowerLevelReview: false));
+        withoutReview.Outcome.Should().Be(TodayBankSelectionOutcome.NoSuitableResources);
+
+        var withReview = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Vocabulary", studentId: Guid.NewGuid(),
+            patternKey: PhraseMatchPattern, preferredSubskill: "vocabulary.receptive", allowLowerLevelReview: true));
+        withReview.Outcome.Should().Be(TodayBankSelectionOutcome.BankResourcesFound);
+        withReview.Resources.Should().Contain(r => r.DisplayText == "lowerword");
+    }
+
+    [Fact]
+    public async Task Feedback_exclusion_still_applies_after_metadata_filtering()
+    {
+        var vocabId = SeedVocabulary("blocked", "B1", contextTagsJson: "[\"general\"]", subskill: "vocabulary.receptive");
+        _db.SaveChanges();
+
+        var activity = new LearningActivity(ActivityType.VocabularyPractice, ActivitySource.AiGenerated, "t", "B1", "{}");
+        activity.SetBankResourceProvenance($"[{{\"type\":\"Vocabulary\",\"id\":\"{vocabId}\"}}]");
+        _db.LearningActivities.Add(activity);
+        _db.SaveChanges();
+        _db.ActivityFeedbackSignals.Add(new ActivityFeedbackSignal(
+            _studentId, activity.Id, ActivityFeedbackDifficultyRating.RightLevel, ActivityFeedbackClarityRating.Clear,
+            ActivityFeedbackUsefulnessRating.NotUseful, ActivityFeedbackRepeatPreference.Neutral));
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Vocabulary", studentId: _studentId, patternKey: PhraseMatchPattern));
+
+        result.Resources.Should().NotContain(r => r.DisplayText == "blocked");
+    }
+
+    [Fact]
+    public async Task Provenance_records_applied_filters_and_matched_context_tags()
+    {
+        SeedVocabulary("meeting", "B1", contextTagsJson: "[\"workplace\"]", subskill: "vocabulary.receptive");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Vocabulary", studentId: _studentId,
+            patternKey: PhraseMatchPattern, prefersWorkplaceContext: true));
+
+        var res = result.Resources.Should().ContainSingle().Subject;
+        res.AppliedFilters.Should().Contain("context=workplace");
+        res.MatchedContextTags.Should().Contain("workplace");
+    }
+
+    [Fact]
+    public async Task Pattern_instruction_and_roles_preserved_with_metadata_filtering()
+    {
+        SeedReadingPassage("General Passage", LongPassage, "B1", contextTagsJson: "[\"general\"]");
+        SeedVocabulary("supportword", "B1", contextTagsJson: "[\"general\"]", subskill: "vocabulary.receptive");
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(
+            cefrLevel: "B1", primarySkill: "Reading", studentId: _studentId, patternKey: FullPassagePattern));
+
+        result.PromptSupplementText.Should().Contain("ONLY the following full reading passage");
+        result.Resources.Should().Contain(r => r.ResourceType == "ReadingPassage" && r.Role == "primary");
+        result.Resources.Should().Contain(r => r.ResourceType == "Vocabulary" && r.Role == "supporting");
     }
 }

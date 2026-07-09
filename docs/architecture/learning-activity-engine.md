@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase E9)
+lastUpdated: 2026-07-09 (Phase D5)
 owner: architecture
 supersedes:
 supersededBy:
@@ -280,9 +280,32 @@ tables** (publish mapping + idempotent traceable backfill + queryable filters vi
 types by context/focus/subskill/difficulty — no staging re-query needed. The selector does not yet
 *consume* this new lean-table filtering (D4's context filter still only acts on passages in code);
 wiring the selector to filter supporting vocabulary/grammar/references by context/focus/subskill/
-difficulty is **Phase D5 — Context-Aware Today Bank Selection and Topic Matching**, the likely next
-phase, now unblocked. See `docs/architecture/english-resource-bank-import-platform.md` (E9 detail
-section) and `docs/roadmap/road-map.md` §1 / Decision Log.
+difficulty was **Phase D5 — Context-Aware Today Bank Selection and Topic Matching**.
+
+**Phase D5 (2026-07-09) wired the selector to consume the E9 metadata — `TODO-E9-1` closed.** The
+three lean per-type selectors are unified into a shared `SelectLeanAsync` that applies the E9
+`ContextTag`/`FocusTag`/`Subskill`/`DifficultyBand` filters through a **deterministic strict→loose
+relaxation ladder** (context kept longest; drop difficulty → focus → subskill → context → general,
+de-duping absent-preference steps), each combined with the existing exact-CEFR-first /
+review-only-widen-down policy. The first ladder step that yields an allowed candidate wins, so a
+missing or unmatched preference relaxes safely rather than emptying the bundle. **General English is
+the default across all bank types now**: when the learner is not workplace-routed
+(`PrefersWorkplaceContext` false), workplace-tagged vocabulary/grammar/reading-reference rows are
+skipped (via the E9 context metadata on the list DTOs) exactly as full passages already were; when
+workplace-routed, workplace content is preferred via the E9 context filter. New request fields
+`PreferredFocusTags`/`PreferredSubskill`/`PreferredDifficultyBand` feed the ladder;
+`ActivityMaterializationJob` supplies `PreferredFocusTags` from
+`ResolvedLearningGoalContext.FocusAreaKeys` (subskill/difficulty are supported but left null-fed —
+the internal packs only populate difficulty on passages, tracked as `TODO-D5-1`). Topic matching is
+**deterministic metadata matching only — no embeddings, no vector search**. D4's pattern-specific
+instructions and `primary`/`supporting` roles are preserved; `TodayBankSelectedResource` gained
+`AppliedFilters`/`MatchedContextTags`, surfaced in `BankResourceProvenanceJson` and summarized as a
+one-line selection-emphasis note in the prompt block. Novelty and NotUseful/DoNotShowSimilarSoon
+feedback exclusions still apply after filtering; a fully-relaxed empty result (e.g. only workplace
+rows for a general learner) yields no bank bundle and the caller runs the unchanged legacy AI
+generator; unsupported patterns still skip to legacy. See
+`docs/architecture/english-resource-bank-import-platform.md` (E9 detail section) and
+`docs/roadmap/road-map.md` §1 / Decision Log.
 
 **Plan-Sync-G0 (2026-07-09, docs-only)** reframes, but does not delete, the readiness-pool
 lifecycle this file's fallback/generation flow relies on: `StudentActivityReadinessItem`/

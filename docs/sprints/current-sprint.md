@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase E9)
+lastUpdated: 2026-07-09 (Phase D5)
 owner: engineering
 supersedes:
 supersededBy:
@@ -13,6 +13,51 @@ Last updated: 2026-07-09
 ---
 
 ## Active sprint
+
+**Phase D5 — Context-Aware Today Bank Selection and Topic Matching (2026-07-09)** — complete
+
+Wired `TodayBankResourceSelector` to consume the E9 published metadata so Today bank-first selection
+is now **context-aware across all bank types** (vocabulary, grammar, short reading references, full
+passages), not only full passages. **A selector/composer quality phase — no composer rewrite, no
+new content, no migration, no UI, no legacy-fallback removal.**
+
+- **Relaxation ladder**: the three lean per-type selectors were unified into a shared
+  `SelectLeanAsync` that applies the E9 `ContextTag`/`FocusTag`/`Subskill`/`DifficultyBand` filters
+  through a deterministic strict→loose ladder (context kept longest; drop difficulty → focus →
+  subskill → context → general; absent-preference steps de-duped), each combined with the existing
+  exact-CEFR-first / review-only-widen-down policy. The first ladder step yielding an allowed
+  candidate wins, so a missing/unmatched preference relaxes safely instead of emptying the bundle.
+- **General English default across all types**: when the learner is not workplace-routed,
+  workplace-tagged vocabulary/grammar/reading-reference rows are now skipped (via the E9 context
+  metadata) exactly as full passages already were — closing the D4-era gap. When workplace-routed,
+  workplace content is preferred via the E9 context filter.
+- **Inputs**: new request fields `PreferredFocusTags`/`PreferredSubskill`/`PreferredDifficultyBand`;
+  `ActivityMaterializationJob` feeds `PreferredFocusTags` from
+  `ResolvedLearningGoalContext.FocusAreaKeys`. Subskill/difficulty are supported by the selector but
+  left null-fed for now (internal packs only carry difficulty on passages — E9 residual).
+- **Topic matching is deterministic metadata matching only** — no embeddings, no vector search.
+- **Preserved**: D4 pattern-specific instructions and `primary`/`supporting` role provenance;
+  novelty precheck + NotUseful/DoNotShowSimilarSoon feedback exclusion (after filtering); AI stays
+  composer/fallback. Provenance now also records `appliedFilters` + `matchedContextTags`; the prompt
+  block gained a one-line selection-emphasis note.
+- **Fallbacks intact**: a fully-relaxed empty result (e.g. only workplace rows for a general
+  learner) yields no bank bundle and the caller runs the unchanged legacy AI generator; unsupported
+  patterns still skip to legacy; Practice Gym fallback and the readiness/delivery queue unchanged.
+
+**Validation**: `dotnet build --configuration Release` passed (0 errors); `dotnet test
+--configuration Release` = 3,639 passed, 0 failed (+14 unit, +3 integration). No frontend files
+changed, so no Angular/Playwright gates run. **No external datasets, no new seed content, no
+Persian/bilingual content, no direct final-table seeding, no Practice-Gym change, no
+readiness/delivery-queue change.** `TODO-E9-1` closed; narrowed residual `TODO-D5-1` tracks the thin
+lean-pack difficulty/focus metadata.
+
+**Next: a post-D5 checkpoint** — PG-v2A, further Today composer work, Phase F, or Phase G2/G3. See
+`docs/architecture/learning-activity-engine.md` (Phase D5 section) and `docs/roadmap/road-map.md`
+§1/§19a.
+
+---
+
+## Previous sprint
 
 **Phase E9 — Published Bank Metadata Parity for Context-Aware Selection (2026-07-09)** — complete
 
