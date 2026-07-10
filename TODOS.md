@@ -858,54 +858,37 @@ and needed its own audit, not a rider on a cleanup phase.
 `docs/reviews/2026-07-10-phase-h9b-resourcebankitem-consolidation-decision.md`.
 **Deferred from:** Phase H9A, 2026-07-10. **Resolved:** Phase H9B, 2026-07-10.
 
-### TODO-H9C-1 — Data migration/compatibility adapters — **not scheduled; consolidation not recommended**
-**What:** If a future re-evaluation reverses H9B's recommendation and selects physical
-`ResourceBankItem` consolidation, build the migration path from the 4 typed Cefr* tables into the
-new table, plus any compatibility adapters needed to keep `TodayBankResourceSelector` and the
-typed backend service methods working during the transition. The target design (publish via a
-same-transaction projector, not dual-write; preserve old row Ids 1:1 to avoid needing a dual-link
-period) is already documented in
-`docs/reviews/2026-07-10-phase-h9b-resourcebankitem-consolidation-decision.md`.
-**Why:** H9B (2026-07-10) found no evidence justifying physical consolidation at current content
-volume — this item stays open only as a placeholder in case that evidence changes (see the
-"revisit" trigger condition in the H9B review's Risks section), not as active planned work.
-**Context:** `src/LinguaCoach.Infrastructure/Activity/TodayBankResourceSelector.cs`;
-`src/LinguaCoach.Infrastructure/ResourceImport/ResourceBankQueryService.cs`;
-`docs/reviews/2026-07-10-phase-h9b-resourcebankitem-consolidation-decision.md`.
-**Deferred from:** Phase H9A, 2026-07-10. **Re-scoped:** Phase H9B, 2026-07-10 (not recommended
-for implementation; kept open only as a conditional placeholder).
+### ~~TODO-H9C-1~~ — Data migration/compatibility adapters — **superseded by Phase I0, 2026-07-10**
+**What:** Build the migration path from the 4 typed Cefr* tables into a consolidated table.
+**Resolution:** implemented in Phase I0 (2026-07-10), following the exact target design H9B
+documented (hybrid columns + `ContentJson`, Ids preserved 1:1, no dual-link period needed). See
+`docs/reviews/2026-07-10-phase-i0-resourcebankitem-physical-consolidation-review.md`.
+**Why re-scoped from "not recommended" to "done":** the user explicitly reversed H9B's
+recommendation this session and directed a full physical consolidation, delivered in one phase
+rather than the cautious H9B/H9C/H9D staging (aggressive-deletion execution mode — see the I-track
+plan).
+**Context:** `docs/reviews/2026-07-10-phase-i0-resourcebankitem-physical-consolidation-review.md`.
+**Deferred from:** Phase H9A, 2026-07-10. **Superseded/implemented:** Phase I0, 2026-07-10.
 
-### TODO-H9D-1 — Remove old typed tables/APIs — **not scheduled; blocked on TODO-H9C-1, which is itself not recommended**
-**What:** Once (if ever) TODO-H9C-1's migration has run and been verified in production for a
-sufficient soak period, remove the 4 typed Cefr* tables, the 8 typed `AdminResourceBankController`
-actions (kept in H9A as "compatibility only"), and the 8 typed `IResourceBankQueryService` methods
-— replacing `TodayBankResourceSelector`'s typed calls with calls against the new consolidated
-table. The full removal safety gate checklist is documented in
-`docs/reviews/2026-07-10-phase-h9b-resourcebankitem-consolidation-decision.md`.
-**Why:** H9A explicitly classified the typed controller actions and service methods "keep long
-term / keep for compatibility" — removing them before the underlying data has moved would break
-Today's bank-resource selection, a live student-facing feature. H9B found no current justification
-for starting this chain at all.
+### ~~TODO-H9D-1~~ — Remove old typed tables/APIs — **superseded by Phase I0, 2026-07-10**
+**What:** Remove the 4 typed Cefr* tables and typed `AdminResourceBankController` HTTP actions.
+**Resolution:** implemented in Phase I0 (2026-07-10) — the 4 typed tables are dropped (2 EF
+migrations: create `resource_bank_items`, then drop the typed tables); the 8 typed HTTP actions on
+`AdminResourceBankController` are deleted (confirmed zero callers post-H9A). The 8 typed
+`IResourceBankQueryService` *service-layer* methods were **kept** (not deleted) — `TodayBankResourceSelector`
+depends on them directly via DI, not HTTP; this was a correction the H9B/H9D framing had missed.
+See `docs/reviews/2026-07-10-phase-i0-resourcebankitem-physical-consolidation-review.md`.
 **Context:** `src/LinguaCoach.Api/Controllers/AdminResourceBankController.cs`;
 `src/LinguaCoach.Infrastructure/ResourceImport/ResourceBankQueryService.cs`;
-`src/LinguaCoach.Infrastructure/Activity/TodayBankResourceSelector.cs`;
-`docs/reviews/2026-07-10-phase-h9b-resourcebankitem-consolidation-decision.md`.
-**Deferred from:** Phase H9A, 2026-07-10. **Re-scoped:** Phase H9B, 2026-07-10 (not recommended
-for implementation).
+`docs/reviews/2026-07-10-phase-i0-resourcebankitem-physical-consolidation-review.md`.
+**Deferred from:** Phase H9A, 2026-07-10. **Superseded/implemented:** Phase I0, 2026-07-10.
 
-### TODO-H11-1 — Strengthen ResourceBankQueryService with a SQL-side unified view
-**What:** If `ResourceBankQueryService.ListUnifiedAsync`'s in-memory per-type scan (pulls the
-entire filtered result set for each of the 4 typed tables into memory, concatenates/sorts/pages in
-application code) ever becomes a measured admin-page performance problem, replace it with a SQL
-`UNION ALL` database view (or an EF-mapped keyless entity over one) spanning the 4 typed tables,
-giving real DB-side pagination for the unified admin Resource Bank page.
-**Why:** H9B (2026-07-10) identified this as the one concretely-real pain point behind the
-physical `ResourceBankItem` consolidation question, but found it has a strictly cheaper fix than a
-physical table: zero data migration, zero dual-write/projector risk, zero change to any of the 4
-typed tables, their writer (`ResourceCandidatePublishService`), or their 3 direct-query readers
-(`TodayBankResourceSelector`, `LearnItemResourceLookup`, `ActivityGenerationService`). Not started
-— current content volume (internal seed packs, dozens of rows per type) does not yet make this a
-real problem.
+### ~~TODO-H11-1~~ — Strengthen ResourceBankQueryService with a SQL-side unified view — **moot after Phase I0**
+**What:** Replace `ListUnifiedAsync`'s in-memory per-type scan with a SQL view for real DB-side
+pagination.
+**Resolution:** moot — Phase I0 (2026-07-10) made `ListUnifiedAsync` a genuine single-table
+DB-paginated query directly (no more 4-way in-memory scan to work around), since there's only one
+table now. No SQL view needed.
 **Context:** `src/LinguaCoach.Infrastructure/ResourceImport/ResourceBankQueryService.cs`
 (`ListUnifiedAsync`, `BuildUnified*Async` helpers);
 `docs/reviews/2026-07-10-phase-h9b-resourcebankitem-consolidation-decision.md`.

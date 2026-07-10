@@ -1,5 +1,6 @@
 using FluentAssertions;
 using LinguaCoach.Application.ModuleDefinitions;
+using LinguaCoach.Application.ResourceImport;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.ModuleDefinitions;
@@ -56,12 +57,14 @@ public sealed class ModuleGenerationServiceTests : IDisposable
         return activity;
     }
 
-    private (CefrResourceSource Source, CefrVocabularyEntry Vocab) SeedVocabularyResource()
+    private (CefrResourceSource Source, ResourceBankItem Vocab) SeedVocabularyResource()
     {
         var source = new CefrResourceSource("Test Source", "CC-BY-4.0", allowsStudentDisplay: true, allowsCommercialUse: true);
         _db.CefrResourceSources.Add(source);
-        var vocab = new CefrVocabularyEntry(source.Id, "resilient", "B2", "adjective", "able to recover quickly");
-        _db.CefrVocabularyEntries.Add(vocab);
+        var vocab = new ResourceBankItem(
+            PublishedResourceType.Vocabulary, source.Id, "B2",
+            ResourceBankItemContent.Serialize(new VocabularyContent("resilient", "adjective", "able to recover quickly")));
+        _db.ResourceBankItems.Add(vocab);
         _db.SaveChanges();
         return (source, vocab);
     }

@@ -185,10 +185,10 @@ public sealed class InternalResourceSeedPackSeederTests : IDisposable
     {
         await RunSeederAsync();
 
-        (await _db.CefrVocabularyEntries.CountAsync()).Should().Be(32);
-        (await _db.CefrGrammarProfileEntries.CountAsync()).Should().Be(12);
-        (await _db.CefrReadingReferences.CountAsync()).Should().Be(10);
-        (await _db.CefrReadingPassages.CountAsync()).Should().Be(10);
+        (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.Vocabulary)).Should().Be(32);
+        (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.Grammar)).Should().Be(12);
+        (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.ReadingReference)).Should().Be(10);
+        (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.ReadingPassage)).Should().Be(10);
 
         var publishedCandidates = await _db.ResourceCandidates.Where(c => c.IsPublished).ToListAsync();
         publishedCandidates.Should().HaveCount(32 + 12 + 10 + 10);
@@ -199,8 +199,12 @@ public sealed class InternalResourceSeedPackSeederTests : IDisposable
     {
         await RunSeederAsync();
 
-        var passage = await _db.CefrReadingPassages.FirstAsync(p => p.Title == "Starting a New Job");
-        passage.CefrLevel.Should().Be("B1");
+        var passageItems = await _db.ResourceBankItems.Where(x => x.Type == PublishedResourceType.ReadingPassage).ToListAsync();
+        var passageItem = passageItems.First(x =>
+            ResourceBankItemContent.Deserialize<ReadingPassageContent>(x.ContentJson).Title == "Starting a New Job");
+        var passage = ResourceBankItemContent.Deserialize<ReadingPassageContent>(passageItem.ContentJson);
+
+        passageItem.CefrLevel.Should().Be("B1");
         passage.PrimarySkill.Should().Be("reading");
         passage.WordCount.Should().BeGreaterThan(20);
         passage.PassageText.Length.Should().BeGreaterThan(ResourceCandidatePublishService.MaxReadingExcerptLength);
@@ -211,8 +215,12 @@ public sealed class InternalResourceSeedPackSeederTests : IDisposable
     {
         await RunSeederAsync();
 
-        var entry = await _db.CefrVocabularyEntries.FirstAsync(v => v.Word == "collaborate");
-        entry.CefrLevel.Should().Be("B2");
+        var vocabItems = await _db.ResourceBankItems.Where(x => x.Type == PublishedResourceType.Vocabulary).ToListAsync();
+        var entryItem = vocabItems.First(x =>
+            ResourceBankItemContent.Deserialize<VocabularyContent>(x.ContentJson).Word == "collaborate");
+        var entry = ResourceBankItemContent.Deserialize<VocabularyContent>(entryItem.ContentJson);
+
+        entryItem.CefrLevel.Should().Be("B2");
         entry.PartOfSpeech.Should().Be("verb");
         entry.Notes.Should().Contain("work together");
     }
@@ -258,7 +266,9 @@ public sealed class InternalResourceSeedPackSeederTests : IDisposable
     {
         await RunSeederAsync();
 
-        var entry = await _db.CefrVocabularyEntries.FirstAsync(v => v.Word == "apple");
+        var vocabItems = await _db.ResourceBankItems.Where(x => x.Type == PublishedResourceType.Vocabulary).ToListAsync();
+        var entry = vocabItems.First(x =>
+            ResourceBankItemContent.Deserialize<VocabularyContent>(x.ContentJson).Word == "apple");
         var detail = await _queryService.GetVocabularyDetailAsync(entry.Id);
 
         detail.Should().NotBeNull();
@@ -283,10 +293,10 @@ public sealed class InternalResourceSeedPackSeederTests : IDisposable
         // ResourceCandidate pointing back to it and would fail this assertion.
         await RunSeederAsync();
 
-        var vocabIds = await _db.CefrVocabularyEntries.Select(v => v.Id).ToListAsync();
-        var grammarIds = await _db.CefrGrammarProfileEntries.Select(g => g.Id).ToListAsync();
-        var readingIds = await _db.CefrReadingReferences.Select(r => r.Id).ToListAsync();
-        var readingPassageIds = await _db.CefrReadingPassages.Select(r => r.Id).ToListAsync();
+        var vocabIds = await _db.ResourceBankItems.Where(x => x.Type == PublishedResourceType.Vocabulary).Select(v => v.Id).ToListAsync();
+        var grammarIds = await _db.ResourceBankItems.Where(x => x.Type == PublishedResourceType.Grammar).Select(g => g.Id).ToListAsync();
+        var readingIds = await _db.ResourceBankItems.Where(x => x.Type == PublishedResourceType.ReadingReference).Select(r => r.Id).ToListAsync();
+        var readingPassageIds = await _db.ResourceBankItems.Where(x => x.Type == PublishedResourceType.ReadingPassage).Select(r => r.Id).ToListAsync();
 
         vocabIds.Should().NotBeEmpty();
         grammarIds.Should().NotBeEmpty();
@@ -294,13 +304,13 @@ public sealed class InternalResourceSeedPackSeederTests : IDisposable
         readingPassageIds.Should().NotBeEmpty();
 
         foreach (var id in vocabIds)
-            await AssertTracesToPublishedCandidate(id, nameof(CefrVocabularyEntry));
+            await AssertTracesToPublishedCandidate(id, "CefrVocabularyEntry");
         foreach (var id in grammarIds)
-            await AssertTracesToPublishedCandidate(id, nameof(CefrGrammarProfileEntry));
+            await AssertTracesToPublishedCandidate(id, "CefrGrammarProfileEntry");
         foreach (var id in readingIds)
-            await AssertTracesToPublishedCandidate(id, nameof(CefrReadingReference));
+            await AssertTracesToPublishedCandidate(id, "CefrReadingReference");
         foreach (var id in readingPassageIds)
-            await AssertTracesToPublishedCandidate(id, nameof(CefrReadingPassage));
+            await AssertTracesToPublishedCandidate(id, "CefrReadingPassage");
     }
 
     private async Task AssertTracesToPublishedCandidate(Guid publishedEntityId, string publishedEntityType)
@@ -325,9 +335,9 @@ public sealed class InternalResourceSeedPackSeederTests : IDisposable
         (await _db.ResourceImportRuns.CountAsync()).Should().Be(4);
         (await _db.ResourceRawRecords.CountAsync()).Should().Be(32 + 12 + 10 + 10);
         (await _db.ResourceCandidates.CountAsync()).Should().Be(32 + 12 + 10 + 10);
-        (await _db.CefrVocabularyEntries.CountAsync()).Should().Be(32);
-        (await _db.CefrGrammarProfileEntries.CountAsync()).Should().Be(12);
-        (await _db.CefrReadingReferences.CountAsync()).Should().Be(10);
-        (await _db.CefrReadingPassages.CountAsync()).Should().Be(10);
+        (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.Vocabulary)).Should().Be(32);
+        (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.Grammar)).Should().Be(12);
+        (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.ReadingReference)).Should().Be(10);
+        (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.ReadingPassage)).Should().Be(10);
     }
 }

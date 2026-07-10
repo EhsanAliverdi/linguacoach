@@ -3,6 +3,7 @@ using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.Curriculum;
 using LinguaCoach.Application.Learning;
 using LinguaCoach.Application.ReadinessPool;
+using LinguaCoach.Application.ResourceImport;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Domain;
 using LinguaCoach.Domain.Entities;
@@ -49,7 +50,7 @@ public sealed class ActivityMaterializationJobBankFirstTests : IClassFixture<Api
         source.ApproveForImport();
         db.CefrResourceSources.Add(source);
         await db.SaveChangesAsync();
-        db.CefrVocabularyEntries.Add(new CefrVocabularyEntry(source.Id, "deadline", "B1"));
+        db.ResourceBankItems.Add(BuildVocab(source.Id, "deadline", "B1"));
         await db.SaveChangesAsync();
 
         var aiGenerator = new ContextCapturingAiActivityGenerator();
@@ -116,7 +117,7 @@ public sealed class ActivityMaterializationJobBankFirstTests : IClassFixture<Api
         source.ApproveForImport();
         db.CefrResourceSources.Add(source);
         await db.SaveChangesAsync();
-        db.CefrReadingReferences.Add(new CefrReadingReference(source.Id, "B1", referenceExcerpt: "A short workplace excerpt."));
+        db.ResourceBankItems.Add(BuildReadingReference(source.Id, "B1", "A short workplace excerpt."));
         await db.SaveChangesAsync();
 
         var aiGenerator = new ContextCapturingAiActivityGenerator();
@@ -156,7 +157,7 @@ public sealed class ActivityMaterializationJobBankFirstTests : IClassFixture<Api
             "The office moved to a new building last month. At first, staff found it hard to locate "
             + "meeting rooms, but signs were added and the problem was soon solved. Most people now "
             + "agree the bright, open space is a real improvement over the old office.";
-        db.CefrReadingPassages.Add(new CefrReadingPassage(source.Id, "The New Office", passageText, "B1"));
+        db.ResourceBankItems.Add(BuildReadingPassage(source.Id, "The New Office", passageText, "B1"));
         await db.SaveChangesAsync();
 
         var aiGenerator = new ContextCapturingAiActivityGenerator();
@@ -191,7 +192,7 @@ public sealed class ActivityMaterializationJobBankFirstTests : IClassFixture<Api
         source.ApproveForImport();
         db.CefrResourceSources.Add(source);
         await db.SaveChangesAsync();
-        db.CefrVocabularyEntries.Add(new CefrVocabularyEntry(source.Id, "deliverable", "B1"));
+        db.ResourceBankItems.Add(BuildVocab(source.Id, "deliverable", "B1"));
         await db.SaveChangesAsync();
 
         var aiGenerator = new ContextCapturingAiActivityGenerator();
@@ -232,9 +233,9 @@ public sealed class ActivityMaterializationJobBankFirstTests : IClassFixture<Api
             + "pulls a few weeds, and chats with the other volunteers about what to plant next. Over the "
             + "past year the small plot has become a quiet, friendly place that many neighbours now share.";
         // General (non-workplace) context so it is not filtered for a general learner.
-        db.CefrReadingPassages.Add(new CefrReadingPassage(
+        db.ResourceBankItems.Add(BuildReadingPassage(
             source.Id, "The Community Garden", passageText, "B1", contextTagsJson: "[\"general\",\"social\"]"));
-        db.CefrVocabularyEntries.Add(new CefrVocabularyEntry(source.Id, "volunteer", "B1"));
+        db.ResourceBankItems.Add(BuildVocab(source.Id, "volunteer", "B1"));
         await db.SaveChangesAsync();
 
         var aiGenerator = new ContextCapturingAiActivityGenerator();
@@ -269,7 +270,7 @@ public sealed class ActivityMaterializationJobBankFirstTests : IClassFixture<Api
         source.ApproveForImport();
         db.CefrResourceSources.Add(source);
         await db.SaveChangesAsync();
-        db.CefrReadingReferences.Add(new CefrReadingReference(source.Id, "B1", referenceExcerpt: "A short note about a weekend plan."));
+        db.ResourceBankItems.Add(BuildReadingReference(source.Id, "B1", "A short note about a weekend plan."));
         await db.SaveChangesAsync();
 
         var aiGenerator = new ContextCapturingAiActivityGenerator();
@@ -305,11 +306,9 @@ public sealed class ActivityMaterializationJobBankFirstTests : IClassFixture<Api
         db.CefrResourceSources.Add(source);
         await db.SaveChangesAsync();
 
-        var workplace = new CefrVocabularyEntry(source.Id, "quarterly", "B1");
-        workplace.SetSelectionMetadata("vocabulary.receptive", null, "[\"workplace\"]", "[]");
-        var general = new CefrVocabularyEntry(source.Id, "sunshine", "B1");
-        general.SetSelectionMetadata("vocabulary.receptive", null, "[\"general\",\"daily\"]", "[]");
-        db.CefrVocabularyEntries.AddRange(workplace, general);
+        var workplace = BuildVocab(source.Id, "quarterly", "B1", "vocabulary.receptive", null, "[\"workplace\"]", "[]");
+        var general = BuildVocab(source.Id, "sunshine", "B1", "vocabulary.receptive", null, "[\"general\",\"daily\"]", "[]");
+        db.ResourceBankItems.AddRange(workplace, general);
         await db.SaveChangesAsync();
 
         var aiGenerator = new ContextCapturingAiActivityGenerator();
@@ -345,9 +344,8 @@ public sealed class ActivityMaterializationJobBankFirstTests : IClassFixture<Api
         db.CefrResourceSources.Add(source);
         await db.SaveChangesAsync();
 
-        var workplace = new CefrVocabularyEntry(source.Id, "quarterly", "A2");
-        workplace.SetSelectionMetadata("vocabulary.receptive", null, "[\"workplace\"]", "[]");
-        db.CefrVocabularyEntries.Add(workplace);
+        var workplace = BuildVocab(source.Id, "quarterly", "A2", "vocabulary.receptive", null, "[\"workplace\"]", "[]");
+        db.ResourceBankItems.Add(workplace);
         await db.SaveChangesAsync();
 
         var aiGenerator = new ContextCapturingAiActivityGenerator();
@@ -381,10 +379,10 @@ public sealed class ActivityMaterializationJobBankFirstTests : IClassFixture<Api
         db.CefrResourceSources.Add(source);
         await db.SaveChangesAsync();
 
-        var reference = new CefrReadingReference(source.Id, "B1", referenceExcerpt: "A short note about a weekend plan.");
-        reference.SetSelectionMetadata("reading.gist", null, "[\"general\",\"social\"]", "[]");
-        db.CefrReadingReferences.Add(reference);
-        db.CefrReadingPassages.Add(new CefrReadingPassage(
+        var reference = BuildReadingReference(
+            source.Id, "B1", "A short note about a weekend plan.", "reading.gist", null, "[\"general\",\"social\"]", "[]");
+        db.ResourceBankItems.Add(reference);
+        db.ResourceBankItems.Add(BuildReadingPassage(
             source.Id, "A General Passage",
             "On Saturday, Maya walked to the park near her home, read a few pages of her book on a "
             + "bench, and watched the ducks on the pond before heading back for a quiet family breakfast.",
@@ -430,14 +428,12 @@ public sealed class ActivityMaterializationJobBankFirstTests : IClassFixture<Api
             "Nadia had never travelled abroad before, so she spent weeks planning the trip. She booked "
             + "an early flight, printed her hotel itinerary, and packed a small bag so she could move "
             + "easily between cities. The journey turned out to be the calmest holiday she had ever taken.";
-        db.CefrReadingPassages.Add(new CefrReadingPassage(
+        db.ResourceBankItems.Add(BuildReadingPassage(
             source.Id, "A First Trip Abroad", passageText, "C2", contextTagsJson: "[\"travel\"]"));
 
-        var travelVocab = new CefrVocabularyEntry(source.Id, "itinerary", "C2");
-        travelVocab.SetSelectionMetadata("vocabulary.receptive", null, "[\"travel\"]", "[]");
-        var generalVocab = new CefrVocabularyEntry(source.Id, "otherwise", "C2");
-        generalVocab.SetSelectionMetadata("vocabulary.receptive", null, "[\"general\"]", "[]");
-        db.CefrVocabularyEntries.AddRange(travelVocab, generalVocab);
+        var travelVocab = BuildVocab(source.Id, "itinerary", "C2", "vocabulary.receptive", null, "[\"travel\"]", "[]");
+        var generalVocab = BuildVocab(source.Id, "otherwise", "C2", "vocabulary.receptive", null, "[\"general\"]", "[]");
+        db.ResourceBankItems.AddRange(travelVocab, generalVocab);
         await db.SaveChangesAsync();
 
         var aiGenerator = new ContextCapturingAiActivityGenerator();
@@ -475,15 +471,13 @@ public sealed class ActivityMaterializationJobBankFirstTests : IClassFixture<Api
         db.CefrResourceSources.Add(source);
         await db.SaveChangesAsync();
 
-        var reference = new CefrReadingReference(source.Id, "C2", referenceExcerpt: "Booking flights and hotels for a long trip.");
-        reference.SetSelectionMetadata("reading.gist", null, "[\"travel\"]", "[]");
-        db.CefrReadingReferences.Add(reference);
+        var reference = BuildReadingReference(
+            source.Id, "C2", "Booking flights and hotels for a long trip.", "reading.gist", null, "[\"travel\"]", "[]");
+        db.ResourceBankItems.Add(reference);
 
-        var travelVocab = new CefrVocabularyEntry(source.Id, "layover", "C2");
-        travelVocab.SetSelectionMetadata("vocabulary.receptive", null, "[\"travel\"]", "[]");
-        var generalVocab = new CefrVocabularyEntry(source.Id, "nevertheless", "C2");
-        generalVocab.SetSelectionMetadata("vocabulary.receptive", null, "[\"general\"]", "[]");
-        db.CefrVocabularyEntries.AddRange(travelVocab, generalVocab);
+        var travelVocab = BuildVocab(source.Id, "layover", "C2", "vocabulary.receptive", null, "[\"travel\"]", "[]");
+        var generalVocab = BuildVocab(source.Id, "nevertheless", "C2", "vocabulary.receptive", null, "[\"general\"]", "[]");
+        db.ResourceBankItems.AddRange(travelVocab, generalVocab);
         await db.SaveChangesAsync();
 
         var aiGenerator = new ContextCapturingAiActivityGenerator();
@@ -528,11 +522,9 @@ public sealed class ActivityMaterializationJobBankFirstTests : IClassFixture<Api
         db.CefrResourceSources.Add(source);
         await db.SaveChangesAsync();
 
-        var band4 = new CefrVocabularyEntry(source.Id, "gentleword", "C2");
-        band4.SetSelectionMetadata("vocabulary.receptive", 4, "[\"general\"]", "[]");
-        var band5 = new CefrVocabularyEntry(source.Id, "hardestword", "C2");
-        band5.SetSelectionMetadata("vocabulary.receptive", 5, "[\"general\"]", "[]");
-        db.CefrVocabularyEntries.AddRange(band4, band5);
+        var band4 = BuildVocab(source.Id, "gentleword", "C2", "vocabulary.receptive", 4, "[\"general\"]", "[]");
+        var band5 = BuildVocab(source.Id, "hardestword", "C2", "vocabulary.receptive", 5, "[\"general\"]", "[]");
+        db.ResourceBankItems.AddRange(band4, band5);
         await db.SaveChangesAsync();
 
         var aiGenerator = new ContextCapturingAiActivityGenerator();
@@ -683,5 +675,33 @@ public sealed class ActivityMaterializationJobBankFirstTests : IClassFixture<Api
 
         public Task<string> EvaluateAttemptAsync(ActivityEvaluationContext context, CancellationToken ct)
             => throw new NotSupportedException("Not used by this test.");
+    }
+
+    // ── Phase I0 — ResourceBankItem fixture builders (replaces direct Cefr* construction) ───────
+
+    private static ResourceBankItem BuildVocab(
+        Guid sourceId, string word, string cefrLevel,
+        string? subskill = null, int? difficultyBand = null, string? contextTagsJson = null, string? focusTagsJson = null) =>
+        new(PublishedResourceType.Vocabulary, sourceId, cefrLevel,
+            ResourceBankItemContent.Serialize(new VocabularyContent(word, null, null)),
+            subskill, difficultyBand, contextTagsJson, focusTagsJson);
+
+    private static ResourceBankItem BuildReadingReference(
+        Guid sourceId, string cefrLevel, string referenceExcerpt,
+        string? subskill = null, int? difficultyBand = null, string? contextTagsJson = null, string? focusTagsJson = null) =>
+        new(PublishedResourceType.ReadingReference, sourceId, cefrLevel,
+            ResourceBankItemContent.Serialize(new ReadingReferenceContent(null, null, referenceExcerpt)),
+            subskill, difficultyBand, contextTagsJson, focusTagsJson);
+
+    private static ResourceBankItem BuildReadingPassage(
+        Guid sourceId, string title, string passageText, string cefrLevel, string? contextTagsJson = null)
+    {
+        var wordCount = passageText.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length;
+        var estimatedMinutes = Math.Max(1, (int)Math.Round(wordCount / 200.0, MidpointRounding.AwayFromZero));
+        return new ResourceBankItem(
+            PublishedResourceType.ReadingPassage, sourceId, cefrLevel,
+            ResourceBankItemContent.Serialize(new ReadingPassageContent(
+                title, passageText, null, "Reading", null, wordCount, estimatedMinutes, null, null)),
+            contextTagsJson: contextTagsJson);
     }
 }

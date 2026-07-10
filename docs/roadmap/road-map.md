@@ -1,12 +1,12 @@
 ---
 status: current
-lastUpdated: 2026-07-10 (Phase H9B)
+lastUpdated: 2026-07-10 (Phase I0)
 owner: product / engineering
 ---
 
 # SpeakPath / LinguaCoach Roadmap
 
-**Accurate as of: 2026-07-10 (Phase H9B — see §19a for the current phase sequence).
+**Accurate as of: 2026-07-10 (Phase I0 — see §19a for the current phase sequence).
 The 2026-07-03 "Phase 20H" line below is the last entry confirmed live against speakpath.app;
 everything since then (Clean-A/A2, Phase B, Phase C1, Plan-Sync-After-C1, Phase C2, Plan-Sync-B2,
 Phase B2, Phase C3, Phase C-Final, Phase E0, Plan-Sync-PG-v2, Phase E1, Phase E2, Phase E3,
@@ -26,7 +26,28 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest phase completed (local, not yet deployed):** Phase H9B — Physical ResourceBankItem
+**Latest phase completed (local, not yet deployed):** Phase I0 — Physical ResourceBankItem
+Consolidation, implemented (2026-07-10). Reverses Phase H9B's "do not consolidate" recommendation,
+per explicit user direction to unify the content pipeline (Import → Bank → Learn → Activities →
+Modules → Onboarding → Placement) into one physical Resource Bank table. The 4 typed tables
+(`CefrVocabularyEntry`/`CefrGrammarProfileEntry`/`CefrReadingReference`/`CefrReadingPassage`) are
+replaced by one `ResourceBankItem` table (hybrid schema: common columns + `ContentJson` for
+type-specific fields, per H9B's own documented design). 2 EF migrations (create, then drop); a
+one-time backfill preserved every row's Id 1:1, so `LearnItemResourceLink`/`ActivityResourceLink`
+needed no migration. `ResourceCandidatePublishService` now writes directly to the one table;
+`ResourceBankQueryService.ListUnifiedAsync` is now a real single-table DB-paginated query (was an
+in-memory 4-way scan); `LearnItemResourceLookup`/`ActivityGenerationService` switched to the one
+table; `TodayBankResourceSelector` needed **zero changes** (its typed DTO shapes are unchanged).
+Deleted: the 4 typed entities/EF configs, `AdminResourceBankController`'s 8 typed HTTP routes
+(confirmed zero callers post-H9A), `PublishedBankMetadataBackfillSeeder`/
+`InternalBankMetadataDepthSeeder` (repaired the now-gone typed tables directly, superseded by
+publish-time metadata). Backend: 3,854/3,854 tests pass (down from 3,925 — dead-code test files
+deleted, not a coverage loss). Frontend: no changes needed (DTOs unchanged). **This is I0 of a
+larger I-track (Import pipeline unification, legacy-fallback deletion, final nav consolidation) —
+I1/I2/I3 remain to be scoped and implemented.** Full detail:
+`docs/reviews/2026-07-10-phase-i0-resourcebankitem-physical-consolidation-review.md`.
+
+**Previous phase completed (local, not yet deployed):** Phase H9B — Physical ResourceBankItem
 Consolidation Decision and Design (2026-07-10, docs/design-only). Answered the question left open
 by H9A: should the 4 typed published bank tables (`CefrVocabularyEntry`/`CefrGrammarProfileEntry`/
 `CefrReadingReference`/`CefrReadingPassage`) be physically consolidated into one

@@ -234,10 +234,8 @@ public sealed class ResourceImportServiceTests : IDisposable
         await _sut.ImportAsync(new ResourceImportRequest(
             source.Id, ToStream(csv), "vocab.csv", ResourceImportMode.Csv));
 
-        (await _db.CefrVocabularyEntries.CountAsync()).Should().Be(0);
-        (await _db.CefrGrammarProfileEntries.CountAsync()).Should().Be(0);
-        (await _db.CefrReadingReferences.CountAsync()).Should().Be(0);
         (await _db.CefrDescriptors.CountAsync()).Should().Be(0);
+        (await _db.ResourceBankItems.CountAsync()).Should().Be(0);
     }
 
     [Fact]

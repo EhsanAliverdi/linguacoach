@@ -1,6 +1,7 @@
 using FluentAssertions;
 using LinguaCoach.Application.ActivityDefinitions;
 using LinguaCoach.Application.LearnItems;
+using LinguaCoach.Application.ResourceImport;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.ActivityDefinitions;
@@ -49,34 +50,45 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         return source;
     }
 
-    private CefrVocabularyEntry SeedVocabulary(Guid sourceId, string word = "resilient", string? notes = "able to recover quickly")
+    private ResourceBankItem SeedVocabulary(Guid sourceId, string word = "resilient", string? notes = "able to recover quickly")
     {
-        var e = new CefrVocabularyEntry(sourceId, word, "B2", "adjective", notes);
-        _db.CefrVocabularyEntries.Add(e);
+        var e = new ResourceBankItem(
+            PublishedResourceType.Vocabulary, sourceId, "B2",
+            ResourceBankItemContent.Serialize(new VocabularyContent(word, "adjective", notes)));
+        _db.ResourceBankItems.Add(e);
         _db.SaveChanges();
         return e;
     }
 
-    private CefrGrammarProfileEntry SeedGrammar(Guid sourceId)
+    private ResourceBankItem SeedGrammar(Guid sourceId)
     {
-        var e = new CefrGrammarProfileEntry(sourceId, "B1", "Present perfect", "Used for past actions with present relevance.");
-        _db.CefrGrammarProfileEntries.Add(e);
+        var e = new ResourceBankItem(
+            PublishedResourceType.Grammar, sourceId, "B1",
+            ResourceBankItemContent.Serialize(new GrammarContent("Present perfect", "Used for past actions with present relevance.")));
+        _db.ResourceBankItems.Add(e);
         _db.SaveChanges();
         return e;
     }
 
-    private CefrReadingReference SeedReadingReference(Guid sourceId)
+    private ResourceBankItem SeedReadingReference(Guid sourceId)
     {
-        var e = new CefrReadingReference(sourceId, "B1", "Article", "Moderate difficulty", "A short excerpt about travel.");
-        _db.CefrReadingReferences.Add(e);
+        var e = new ResourceBankItem(
+            PublishedResourceType.ReadingReference, sourceId, "B1",
+            ResourceBankItemContent.Serialize(new ReadingReferenceContent("Article", "Moderate difficulty", "A short excerpt about travel.")));
+        _db.ResourceBankItems.Add(e);
         _db.SaveChanges();
         return e;
     }
 
-    private CefrReadingPassage SeedReadingPassage(Guid sourceId)
+    private ResourceBankItem SeedReadingPassage(Guid sourceId)
     {
-        var e = new CefrReadingPassage(sourceId, "A Trip Abroad", "This is a full-length reading passage about travel.", "B1");
-        _db.CefrReadingPassages.Add(e);
+        const string passageText = "This is a full-length reading passage about travel.";
+        var wordCount = passageText.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length;
+        var e = new ResourceBankItem(
+            PublishedResourceType.ReadingPassage, sourceId, "B1",
+            ResourceBankItemContent.Serialize(new ReadingPassageContent(
+                "A Trip Abroad", passageText, null, "Reading", null, wordCount, 1, null, null)));
+        _db.ResourceBankItems.Add(e);
         _db.SaveChanges();
         return e;
     }
@@ -290,13 +302,13 @@ public sealed class ActivityGenerationServiceTests : IDisposable
     {
         var source = SeedSource();
         var vocab = SeedVocabulary(source.Id);
-        var originalWord = vocab.Word;
+        var originalWord = ResourceBankItemContent.Deserialize<VocabularyContent>(vocab.ContentJson).Word;
 
         await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
             new[] { new ActivityResourceLinkInput("Vocabulary", vocab.Id, "Primary") }));
 
-        var reloaded = await _db.CefrVocabularyEntries.FirstAsync(v => v.Id == vocab.Id);
-        reloaded.Word.Should().Be(originalWord);
+        var reloaded = await _db.ResourceBankItems.FirstAsync(v => v.Id == vocab.Id);
+        ResourceBankItemContent.Deserialize<VocabularyContent>(reloaded.ContentJson).Word.Should().Be(originalWord);
     }
 
     [Fact]

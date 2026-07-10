@@ -263,9 +263,7 @@ public sealed class ResourceCandidateValidationServiceTests : IDisposable
 
         await _sut.ValidateAsync(candidate.Id);
 
-        (await _db.CefrVocabularyEntries.CountAsync()).Should().Be(0);
-        (await _db.CefrGrammarProfileEntries.CountAsync()).Should().Be(0);
-        (await _db.CefrReadingReferences.CountAsync()).Should().Be(0);
         (await _db.CefrDescriptors.CountAsync()).Should().Be(0);
+        (await _db.ResourceBankItems.CountAsync()).Should().Be(0);
     }
 }

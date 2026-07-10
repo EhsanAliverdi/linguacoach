@@ -1,5 +1,6 @@
 using FluentAssertions;
 using LinguaCoach.Application.ResourceImport;
+using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.Activity;
 using LinguaCoach.Infrastructure.Onboarding;
@@ -136,16 +137,16 @@ public sealed class InternalResourceSeedPackE8SeederTests : IDisposable
 
         var source = await _db.CefrResourceSources.FirstAsync(s => s.Name == InternalResourceSeedPackE8Seeder.SourceName);
 
-        (await CountFromSource(_db.CefrVocabularyEntries.Select(v => v.SourceId), source.Id)).Should().Be(VocabCount);
-        (await CountFromSource(_db.CefrGrammarProfileEntries.Select(g => g.SourceId), source.Id)).Should().Be(GrammarCount);
-        (await CountFromSource(_db.CefrReadingReferences.Select(r => r.SourceId), source.Id)).Should().Be(ReadingRefCount);
-        (await CountFromSource(_db.CefrReadingPassages.Select(p => p.SourceId), source.Id)).Should().Be(PassageCount);
+        (await CountFromSource(PublishedResourceType.Vocabulary, source.Id)).Should().Be(VocabCount);
+        (await CountFromSource(PublishedResourceType.Grammar, source.Id)).Should().Be(GrammarCount);
+        (await CountFromSource(PublishedResourceType.ReadingReference, source.Id)).Should().Be(ReadingRefCount);
+        (await CountFromSource(PublishedResourceType.ReadingPassage, source.Id)).Should().Be(PassageCount);
 
         (await _db.ResourceCandidates.CountAsync(c => c.IsPublished)).Should().Be(TotalCount);
     }
 
-    private static Task<int> CountFromSource(IQueryable<Guid> sourceIds, Guid sourceId) =>
-        sourceIds.CountAsync(id => id == sourceId);
+    private Task<int> CountFromSource(PublishedResourceType type, Guid sourceId) =>
+        _db.ResourceBankItems.CountAsync(x => x.Type == type && x.SourceId == sourceId);
 
     // ── CEFR coverage ───────────────────────────────────────────────────────────
 
@@ -156,10 +157,10 @@ public sealed class InternalResourceSeedPackE8SeederTests : IDisposable
 
         var source = await _db.CefrResourceSources.FirstAsync(s => s.Name == InternalResourceSeedPackE8Seeder.SourceName);
 
-        var vocabLevels = await _db.CefrVocabularyEntries.Where(v => v.SourceId == source.Id).Select(v => v.CefrLevel).Distinct().ToListAsync();
-        var grammarLevels = await _db.CefrGrammarProfileEntries.Where(g => g.SourceId == source.Id).Select(g => g.CefrLevel).Distinct().ToListAsync();
-        var refLevels = await _db.CefrReadingReferences.Where(r => r.SourceId == source.Id).Select(r => r.CefrLevel).Distinct().ToListAsync();
-        var passageLevels = await _db.CefrReadingPassages.Where(p => p.SourceId == source.Id).Select(p => p.CefrLevel).Distinct().ToListAsync();
+        var vocabLevels = await _db.ResourceBankItems.Where(v => v.SourceId == source.Id && v.Type == PublishedResourceType.Vocabulary).Select(v => v.CefrLevel).Distinct().ToListAsync();
+        var grammarLevels = await _db.ResourceBankItems.Where(g => g.SourceId == source.Id && g.Type == PublishedResourceType.Grammar).Select(g => g.CefrLevel).Distinct().ToListAsync();
+        var refLevels = await _db.ResourceBankItems.Where(r => r.SourceId == source.Id && r.Type == PublishedResourceType.ReadingReference).Select(r => r.CefrLevel).Distinct().ToListAsync();
+        var passageLevels = await _db.ResourceBankItems.Where(p => p.SourceId == source.Id && p.Type == PublishedResourceType.ReadingPassage).Select(p => p.CefrLevel).Distinct().ToListAsync();
 
         vocabLevels.Should().Contain(CefrLevels);
         grammarLevels.Should().Contain(CefrLevels);
@@ -173,8 +174,8 @@ public sealed class InternalResourceSeedPackE8SeederTests : IDisposable
         await RunSeederAsync();
 
         var source = await _db.CefrResourceSources.FirstAsync(s => s.Name == InternalResourceSeedPackE8Seeder.SourceName);
-        var byLevel = await _db.CefrVocabularyEntries
-            .Where(v => v.SourceId == source.Id)
+        var byLevel = await _db.ResourceBankItems
+            .Where(v => v.SourceId == source.Id && v.Type == PublishedResourceType.Vocabulary)
             .GroupBy(v => v.CefrLevel)
             .Select(g => new { Level = g.Key, Count = g.Count() })
             .ToListAsync();
@@ -209,7 +210,8 @@ public sealed class InternalResourceSeedPackE8SeederTests : IDisposable
         await RunSeederAsync();
 
         var source = await _db.CefrResourceSources.FirstAsync(s => s.Name == InternalResourceSeedPackE8Seeder.SourceName);
-        var refs = await _db.CefrReadingReferences.Where(r => r.SourceId == source.Id).ToListAsync();
+        var refItems = await _db.ResourceBankItems.Where(r => r.SourceId == source.Id && r.Type == PublishedResourceType.ReadingReference).ToListAsync();
+        var refs = refItems.Select(r => ResourceBankItemContent.Deserialize<ReadingReferenceContent>(r.ContentJson)).ToList();
 
         refs.Should().HaveCount(ReadingRefCount);
         refs.Should().OnlyContain(r =>
@@ -234,10 +236,12 @@ public sealed class InternalResourceSeedPackE8SeederTests : IDisposable
 
         var source = await _db.CefrResourceSources.FirstAsync(s => s.Name == InternalResourceSeedPackE8Seeder.SourceName);
 
-        var passages = await _db.CefrReadingPassages.Where(p => p.SourceId == source.Id).ToListAsync();
+        var passageItems = await _db.ResourceBankItems.Where(p => p.SourceId == source.Id && p.Type == PublishedResourceType.ReadingPassage).ToListAsync();
+        var passages = passageItems.Select(p => ResourceBankItemContent.Deserialize<ReadingPassageContent>(p.ContentJson)).ToList();
         passages.Should().OnlyContain(p => p.PassageText.Length > ResourceCandidatePublishService.MaxReadingExcerptLength);
 
-        var refs = await _db.CefrReadingReferences.Where(r => r.SourceId == source.Id).ToListAsync();
+        var refItems = await _db.ResourceBankItems.Where(r => r.SourceId == source.Id && r.Type == PublishedResourceType.ReadingReference).ToListAsync();
+        var refs = refItems.Select(r => ResourceBankItemContent.Deserialize<ReadingReferenceContent>(r.ContentJson)).ToList();
         refs.Should().OnlyContain(r =>
             r.ReferenceExcerpt != null && r.ReferenceExcerpt.Length <= ResourceCandidatePublishService.MaxReadingExcerptLength);
     }
@@ -249,15 +253,19 @@ public sealed class InternalResourceSeedPackE8SeederTests : IDisposable
     {
         await RunSeederAsync();
 
-        var passage = await _db.CefrReadingPassages.FirstAsync(p => p.Title == "A Visit to the Zoo");
-        passage.CefrLevel.Should().Be("A1");
+        var passageItems = await _db.ResourceBankItems.Where(x => x.Type == PublishedResourceType.ReadingPassage).ToListAsync();
+        var passageItem = passageItems.First(x =>
+            ResourceBankItemContent.Deserialize<ReadingPassageContent>(x.ContentJson).Title == "A Visit to the Zoo");
+        var passage = ResourceBankItemContent.Deserialize<ReadingPassageContent>(passageItem.ContentJson);
+
+        passageItem.CefrLevel.Should().Be("A1");
         passage.PrimarySkill.Should().Be("reading");
-        passage.Subskill.Should().Be("reading.gist");
-        passage.DifficultyBand.Should().Be(1);
-        passage.ContextTagsJson.Should().NotBeNull();
-        passage.ContextTagsJson!.Should().Contain("daily");
-        passage.FocusTagsJson.Should().NotBeNull();
-        passage.FocusTagsJson!.Should().Contain("main_idea");
+        passageItem.Subskill.Should().Be("reading.gist");
+        passageItem.DifficultyBand.Should().Be(1);
+        passageItem.ContextTagsJson.Should().NotBeNull();
+        passageItem.ContextTagsJson!.Should().Contain("daily");
+        passageItem.FocusTagsJson.Should().NotBeNull();
+        passageItem.FocusTagsJson!.Should().Contain("main_idea");
         passage.WordCount.Should().BeGreaterThan(20);
         passage.EstimatedReadingMinutes.Should().BeGreaterThan(0);
     }
@@ -318,20 +326,20 @@ public sealed class InternalResourceSeedPackE8SeederTests : IDisposable
 
         var source = await _db.CefrResourceSources.FirstAsync(s => s.Name == InternalResourceSeedPackE8Seeder.SourceName);
 
-        var vocabIds = await _db.CefrVocabularyEntries.Where(v => v.SourceId == source.Id).Select(v => v.Id).ToListAsync();
-        var grammarIds = await _db.CefrGrammarProfileEntries.Where(g => g.SourceId == source.Id).Select(g => g.Id).ToListAsync();
-        var refIds = await _db.CefrReadingReferences.Where(r => r.SourceId == source.Id).Select(r => r.Id).ToListAsync();
-        var passageIds = await _db.CefrReadingPassages.Where(p => p.SourceId == source.Id).Select(p => p.Id).ToListAsync();
+        var vocabIds = await _db.ResourceBankItems.Where(v => v.SourceId == source.Id && v.Type == PublishedResourceType.Vocabulary).Select(v => v.Id).ToListAsync();
+        var grammarIds = await _db.ResourceBankItems.Where(g => g.SourceId == source.Id && g.Type == PublishedResourceType.Grammar).Select(g => g.Id).ToListAsync();
+        var refIds = await _db.ResourceBankItems.Where(r => r.SourceId == source.Id && r.Type == PublishedResourceType.ReadingReference).Select(r => r.Id).ToListAsync();
+        var passageIds = await _db.ResourceBankItems.Where(p => p.SourceId == source.Id && p.Type == PublishedResourceType.ReadingPassage).Select(p => p.Id).ToListAsync();
 
         vocabIds.Should().HaveCount(VocabCount);
         grammarIds.Should().HaveCount(GrammarCount);
         refIds.Should().HaveCount(ReadingRefCount);
         passageIds.Should().HaveCount(PassageCount);
 
-        foreach (var id in vocabIds) await AssertTracesToPublishedCandidate(id, nameof(LinguaCoach.Domain.Entities.CefrVocabularyEntry));
-        foreach (var id in grammarIds) await AssertTracesToPublishedCandidate(id, nameof(LinguaCoach.Domain.Entities.CefrGrammarProfileEntry));
-        foreach (var id in refIds) await AssertTracesToPublishedCandidate(id, nameof(LinguaCoach.Domain.Entities.CefrReadingReference));
-        foreach (var id in passageIds) await AssertTracesToPublishedCandidate(id, nameof(LinguaCoach.Domain.Entities.CefrReadingPassage));
+        foreach (var id in vocabIds) await AssertTracesToPublishedCandidate(id, "CefrVocabularyEntry");
+        foreach (var id in grammarIds) await AssertTracesToPublishedCandidate(id, "CefrGrammarProfileEntry");
+        foreach (var id in refIds) await AssertTracesToPublishedCandidate(id, "CefrReadingReference");
+        foreach (var id in passageIds) await AssertTracesToPublishedCandidate(id, "CefrReadingPassage");
     }
 
     private async Task AssertTracesToPublishedCandidate(Guid publishedEntityId, string publishedEntityType)
@@ -357,10 +365,10 @@ public sealed class InternalResourceSeedPackE8SeederTests : IDisposable
         (await _db.CefrResourceSources.CountAsync(s => s.Name == InternalResourceSeedPackE8Seeder.SourceName)).Should().Be(1);
 
         // Combined published depth = E6/E7 (32/12/10/10) + E8 (40/20/16/8).
-        (await _db.CefrVocabularyEntries.CountAsync()).Should().Be(32 + VocabCount);
-        (await _db.CefrGrammarProfileEntries.CountAsync()).Should().Be(12 + GrammarCount);
-        (await _db.CefrReadingReferences.CountAsync()).Should().Be(10 + ReadingRefCount);
-        (await _db.CefrReadingPassages.CountAsync()).Should().Be(10 + PassageCount);
+        (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.Vocabulary)).Should().Be(32 + VocabCount);
+        (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.Grammar)).Should().Be(12 + GrammarCount);
+        (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.ReadingReference)).Should().Be(10 + ReadingRefCount);
+        (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.ReadingPassage)).Should().Be(10 + PassageCount);
     }
 
     // ── Phase E9 — published E8 rows are discoverable with selection metadata ────

@@ -1,5 +1,6 @@
 using FluentAssertions;
 using LinguaCoach.Application.Activity;
+using LinguaCoach.Application.ResourceImport;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.Activity;
@@ -68,35 +69,44 @@ public sealed class TodayBankResourceSelectorTests : IDisposable
     private Guid SeedVocabulary(string word, string cefrLevel = "B1",
         string? contextTagsJson = null, string? focusTagsJson = null, string? subskill = null, int? difficultyBand = null)
     {
-        var entry = new CefrVocabularyEntry(_sourceId, word, cefrLevel);
-        if (contextTagsJson is not null || focusTagsJson is not null || subskill is not null || difficultyBand is not null)
-            entry.SetSelectionMetadata(subskill, difficultyBand, contextTagsJson, focusTagsJson);
-        _db.CefrVocabularyEntries.Add(entry);
+        var entry = new ResourceBankItem(
+            PublishedResourceType.Vocabulary, _sourceId, cefrLevel,
+            ResourceBankItemContent.Serialize(new VocabularyContent(word, null, null)),
+            subskill, difficultyBand, contextTagsJson, focusTagsJson);
+        _db.ResourceBankItems.Add(entry);
         return entry.Id;
     }
 
     private Guid SeedGrammar(string grammarPoint, string cefrLevel = "B1", string? contextTagsJson = null, string? subskill = null)
     {
-        var entry = new CefrGrammarProfileEntry(_sourceId, cefrLevel, grammarPoint);
-        if (contextTagsJson is not null || subskill is not null)
-            entry.SetSelectionMetadata(subskill, null, contextTagsJson, "[]");
-        _db.CefrGrammarProfileEntries.Add(entry);
+        var entry = new ResourceBankItem(
+            PublishedResourceType.Grammar, _sourceId, cefrLevel,
+            ResourceBankItemContent.Serialize(new GrammarContent(grammarPoint, null)),
+            subskill, null, contextTagsJson, "[]");
+        _db.ResourceBankItems.Add(entry);
         return entry.Id;
     }
 
     private Guid SeedReading(string excerpt, string cefrLevel = "B1", string? contextTagsJson = null, string? subskill = null)
     {
-        var entry = new CefrReadingReference(_sourceId, cefrLevel, referenceExcerpt: excerpt);
-        if (contextTagsJson is not null || subskill is not null)
-            entry.SetSelectionMetadata(subskill, null, contextTagsJson, "[]");
-        _db.CefrReadingReferences.Add(entry);
+        var entry = new ResourceBankItem(
+            PublishedResourceType.ReadingReference, _sourceId, cefrLevel,
+            ResourceBankItemContent.Serialize(new ReadingReferenceContent(null, null, excerpt)),
+            subskill, null, contextTagsJson, "[]");
+        _db.ResourceBankItems.Add(entry);
         return entry.Id;
     }
 
     private Guid SeedReadingPassage(string title, string passageText, string cefrLevel = "B1", string? contextTagsJson = null)
     {
-        var entry = new CefrReadingPassage(_sourceId, title, passageText, cefrLevel, contextTagsJson: contextTagsJson);
-        _db.CefrReadingPassages.Add(entry);
+        var wordCount = passageText.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length;
+        var entry = new ResourceBankItem(
+            PublishedResourceType.ReadingPassage, _sourceId, cefrLevel,
+            ResourceBankItemContent.Serialize(new ReadingPassageContent(
+                title, passageText, null, "Reading", null, wordCount,
+                Math.Max(1, (int)Math.Round(wordCount / 200.0, MidpointRounding.AwayFromZero)), null, null)),
+            contextTagsJson: contextTagsJson);
+        _db.ResourceBankItems.Add(entry);
         return entry.Id;
     }
 
@@ -200,9 +210,8 @@ public sealed class TodayBankResourceSelectorTests : IDisposable
     [Fact]
     public async Task Excludes_a_recently_used_bank_entry_and_reports_blocked_by_novelty_when_it_was_the_only_candidate()
     {
-        SeedVocabulary("deadline", "B1");
+        var entryId = SeedVocabulary("deadline", "B1");
         _db.SaveChanges();
-        var entryId = _db.CefrVocabularyEntries.Single().Id;
 
         _db.StudentActivityUsageLogs.Add(new StudentActivityUsageLog(
             studentProfileId: _studentId,
@@ -241,7 +250,7 @@ public sealed class TodayBankResourceSelectorTests : IDisposable
         await InternalResourceSeedPackSeeder.SeedAsync(
             _db, importService, validationService, publishService, NullLogger.Instance);
 
-        var anyVocabLevel = await _db.CefrVocabularyEntries.Select(v => v.CefrLevel).FirstAsync();
+        var anyVocabLevel = await _db.ResourceBankItems.Where(x => x.Type == PublishedResourceType.Vocabulary).Select(v => v.CefrLevel).FirstAsync();
 
         var result = await _sut.SelectAsync(Request(cefrLevel: anyVocabLevel, studentId: _studentId));
 
@@ -559,7 +568,7 @@ public sealed class TodayBankResourceSelectorTests : IDisposable
         await InternalResourceSeedPackSeeder.SeedAsync(
             _db, importService, validationService, publishService, NullLogger.Instance);
 
-        var anyPassageLevel = await _db.CefrReadingPassages.Select(p => p.CefrLevel).FirstAsync();
+        var anyPassageLevel = await _db.ResourceBankItems.Where(x => x.Type == PublishedResourceType.ReadingPassage).Select(p => p.CefrLevel).FirstAsync();
 
         var result = await _sut.SelectAsync(Request(
             cefrLevel: anyPassageLevel, primarySkill: "Reading", studentId: _studentId, patternKey: FullPassagePattern));

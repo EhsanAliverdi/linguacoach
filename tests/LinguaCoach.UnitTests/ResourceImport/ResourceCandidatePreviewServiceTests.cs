@@ -102,9 +102,7 @@ public sealed class ResourceCandidatePreviewServiceTests : IDisposable
         var reloaded = await _db.ResourceCandidates.AsNoTracking().FirstAsync(c => c.Id == candidate.Id);
         reloaded.UpdatedAtUtc.Should().Be(updatedAtBefore);
 
-        (await _db.CefrVocabularyEntries.CountAsync()).Should().Be(0);
-        (await _db.CefrGrammarProfileEntries.CountAsync()).Should().Be(0);
-        (await _db.CefrReadingReferences.CountAsync()).Should().Be(0);
+        (await _db.ResourceBankItems.CountAsync()).Should().Be(0);
     }
 
     [Fact]

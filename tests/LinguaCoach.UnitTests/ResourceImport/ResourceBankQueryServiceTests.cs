@@ -211,8 +211,10 @@ public sealed class ResourceBankQueryServiceTests : IDisposable
         // Construct a bank row directly via the DbContext, bypassing the publish service entirely
         // — simulates a row that was never linked to a ResourceCandidate.
         var source = SeedSource();
-        var entry = new CefrVocabularyEntry(source.Id, "orphan", "A1");
-        _db.CefrVocabularyEntries.Add(entry);
+        var entry = new ResourceBankItem(
+            PublishedResourceType.Vocabulary, source.Id, "A1",
+            ResourceBankItemContent.Serialize(new VocabularyContent("orphan", null, null)));
+        _db.ResourceBankItems.Add(entry);
         await _db.SaveChangesAsync();
 
         var detail = await _sut.GetVocabularyDetailAsync(entry.Id);
@@ -326,7 +328,7 @@ public sealed class ResourceBankQueryServiceTests : IDisposable
         MakePublishReady(candidate, "B1", "reading");
         var publishResult = await _publishService.PublishAsync(candidate.Id, null);
         publishResult.Success.Should().BeTrue();
-        publishResult.PublishedEntityType.Should().Be(nameof(CefrReadingPassage));
+        publishResult.PublishedEntityType.Should().Be("CefrReadingPassage");
 
         var byCefr = await _sut.ListReadingPassagesAsync(new ResourceBankListFilter(CefrLevel: "B1"));
         var bySource = await _sut.ListReadingPassagesAsync(new ResourceBankListFilter(SourceId: source.Id));
@@ -387,8 +389,13 @@ public sealed class ResourceBankQueryServiceTests : IDisposable
     public async Task GetReadingPassageDetail_Returns_TraceabilityUnavailable_When_No_Matching_Candidate_Exists()
     {
         var source = SeedSource();
-        var entry = new CefrReadingPassage(source.Id, "Orphan", LongPassage(), "B1");
-        _db.CefrReadingPassages.Add(entry);
+        var longPassage = LongPassage();
+        var wordCount = longPassage.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length;
+        var entry = new ResourceBankItem(
+            PublishedResourceType.ReadingPassage, source.Id, "B1",
+            ResourceBankItemContent.Serialize(new ReadingPassageContent(
+                "Orphan", longPassage, null, "Reading", null, wordCount, 1, null, null)));
+        _db.ResourceBankItems.Add(entry);
         await _db.SaveChangesAsync();
 
         var detail = await _sut.GetReadingPassageDetailAsync(entry.Id);
@@ -431,6 +438,6 @@ public sealed class ResourceBankQueryServiceTests : IDisposable
 
         result.Items.Should().BeEmpty();
         result.TotalCount.Should().Be(0);
-        (await _db.CefrVocabularyEntries.CountAsync()).Should().Be(0);
+        (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.Vocabulary)).Should().Be(0);
     }
 }

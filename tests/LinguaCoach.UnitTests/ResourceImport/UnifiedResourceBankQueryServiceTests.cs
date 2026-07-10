@@ -47,44 +47,54 @@ public sealed class UnifiedResourceBankQueryServiceTests : IDisposable
         _db.Dispose();
     }
 
-    private CefrVocabularyEntry SeedVocab(
+    private ResourceBankItem SeedVocab(
         string word, string cefr = "B1", string? subskill = null, int? difficulty = null,
         string? contextTagsJson = null, string? focusTagsJson = null)
     {
-        var e = new CefrVocabularyEntry(_sourceId, word, cefr);
-        e.SetSelectionMetadata(subskill, difficulty, contextTagsJson, focusTagsJson);
-        _db.CefrVocabularyEntries.Add(e);
+        var e = new ResourceBankItem(
+            PublishedResourceType.Vocabulary, _sourceId, cefr,
+            ResourceBankItemContent.Serialize(new VocabularyContent(word, null, null)),
+            subskill, difficulty, contextTagsJson, focusTagsJson);
+        _db.ResourceBankItems.Add(e);
         return e;
     }
 
-    private CefrGrammarProfileEntry SeedGrammar(
+    private ResourceBankItem SeedGrammar(
         string point, string cefr = "B1", string? subskill = null, int? difficulty = null,
         string? contextTagsJson = null, string? focusTagsJson = null)
     {
-        var e = new CefrGrammarProfileEntry(_sourceId, cefr, point);
-        e.SetSelectionMetadata(subskill, difficulty, contextTagsJson, focusTagsJson);
-        _db.CefrGrammarProfileEntries.Add(e);
+        var e = new ResourceBankItem(
+            PublishedResourceType.Grammar, _sourceId, cefr,
+            ResourceBankItemContent.Serialize(new GrammarContent(point, null)),
+            subskill, difficulty, contextTagsJson, focusTagsJson);
+        _db.ResourceBankItems.Add(e);
         return e;
     }
 
-    private CefrReadingReference SeedReference(
+    private ResourceBankItem SeedReference(
         string textType, string cefr = "B1", string? subskill = null, int? difficulty = null,
         string? contextTagsJson = null, string? focusTagsJson = null)
     {
-        var e = new CefrReadingReference(_sourceId, cefr, textType: textType, referenceExcerpt: "a short excerpt");
-        e.SetSelectionMetadata(subskill, difficulty, contextTagsJson, focusTagsJson);
-        _db.CefrReadingReferences.Add(e);
+        var e = new ResourceBankItem(
+            PublishedResourceType.ReadingReference, _sourceId, cefr,
+            ResourceBankItemContent.Serialize(new ReadingReferenceContent(textType, null, "a short excerpt")),
+            subskill, difficulty, contextTagsJson, focusTagsJson);
+        _db.ResourceBankItems.Add(e);
         return e;
     }
 
-    private CefrReadingPassage SeedPassage(
+    private ResourceBankItem SeedPassage(
         string title, string cefr = "B1", string? subskill = null, int? difficulty = null,
         string? contextTagsJson = null, string? focusTagsJson = null)
     {
-        var e = new CefrReadingPassage(
-            _sourceId, title, "Passage text with enough words to be realistic for a reading exercise.",
-            cefr, difficultyBand: difficulty, subskill: subskill, contextTagsJson: contextTagsJson, focusTagsJson: focusTagsJson);
-        _db.CefrReadingPassages.Add(e);
+        const string passageText = "Passage text with enough words to be realistic for a reading exercise.";
+        var wordCount = passageText.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length;
+        var e = new ResourceBankItem(
+            PublishedResourceType.ReadingPassage, _sourceId, cefr,
+            ResourceBankItemContent.Serialize(new ReadingPassageContent(
+                title, passageText, null, "Reading", null, wordCount, 1, null, null)),
+            subskill, difficulty, contextTagsJson, focusTagsJson);
+        _db.ResourceBankItems.Add(e);
         return e;
     }
 
@@ -261,7 +271,9 @@ public sealed class UnifiedResourceBankQueryServiceTests : IDisposable
     public async Task Missing_metadata_does_not_crash_and_row_still_appears()
     {
         // No subskill/difficulty/context/focus set at all (pre-E9-style row).
-        _db.CefrVocabularyEntries.Add(new CefrVocabularyEntry(_sourceId, "plainword", "B1"));
+        _db.ResourceBankItems.Add(new ResourceBankItem(
+            PublishedResourceType.Vocabulary, _sourceId, "B1",
+            ResourceBankItemContent.Serialize(new VocabularyContent("plainword", null, null))));
         _db.SaveChanges();
 
         var result = await _query.ListUnifiedAsync(new UnifiedResourceBankListFilter());

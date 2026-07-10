@@ -1,7 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using LinguaCoach.Application.ResourceImport;
 using LinguaCoach.Domain.Entities;
+using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,8 +25,10 @@ public sealed class AdminLearnItemEndpointTests : IClassFixture<ApiTestFactory>
         var source = new CefrResourceSource($"Learn Item Test Source {Guid.NewGuid():N}", "CC-BY-4.0",
             allowsStudentDisplay: true, allowsCommercialUse: true);
         db.CefrResourceSources.Add(source);
-        var entry = new CefrVocabularyEntry(source.Id, word, "B2", "adjective", "able to recover quickly");
-        db.CefrVocabularyEntries.Add(entry);
+        var entry = new ResourceBankItem(
+            PublishedResourceType.Vocabulary, source.Id, "B2",
+            ResourceBankItemContent.Serialize(new VocabularyContent(word, "adjective", "able to recover quickly")));
+        db.ResourceBankItems.Add(entry);
         await db.SaveChangesAsync();
         return entry.Id;
     }

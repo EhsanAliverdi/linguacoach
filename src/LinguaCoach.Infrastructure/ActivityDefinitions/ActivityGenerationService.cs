@@ -2,6 +2,7 @@ using System.Text.Json;
 using LinguaCoach.Application.ActivityDefinitions;
 using LinguaCoach.Application.Onboarding;
 using LinguaCoach.Application.Placement;
+using LinguaCoach.Application.ResourceImport;
 using LinguaCoach.Domain.Constants;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
@@ -326,26 +327,27 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
     private async Task<List<string>> FindDistractorDefinitionsAsync(
         PublishedResourceType type, Guid excludeId, string? cefrLevel, CancellationToken ct)
     {
-        List<string?> bodies = type switch
-        {
-            PublishedResourceType.Vocabulary => await _db.CefrVocabularyEntries
-                .Where(e => e.Id != excludeId && e.Notes != null && e.Notes != "")
-                .OrderByDescending(e => e.CefrLevel == cefrLevel)
-                .ThenBy(e => e.CreatedAt)
-                .Take(MaxDistractors)
-                .Select(e => e.Notes)
-                .ToListAsync(ct),
-            PublishedResourceType.Grammar => await _db.CefrGrammarProfileEntries
-                .Where(e => e.Id != excludeId && e.Description != null && e.Description != "")
-                .OrderByDescending(e => e.CefrLevel == cefrLevel)
-                .ThenBy(e => e.CreatedAt)
-                .Take(MaxDistractors)
-                .Select(e => e.Description)
-                .ToListAsync(ct),
-            _ => new List<string?>(),
-        };
+        if (type is not (PublishedResourceType.Vocabulary or PublishedResourceType.Grammar))
+            return new List<string>();
 
-        return bodies.Where(b => !string.IsNullOrWhiteSpace(b)).Select(b => b!.Trim()).Distinct().ToList();
+        var rows = await _db.ResourceBankItems
+            .Where(e => e.Type == type && e.Id != excludeId)
+            .OrderByDescending(e => e.CefrLevel == cefrLevel)
+            .ThenBy(e => e.CreatedAt)
+            .Take(MaxDistractors * 2) // over-fetch — some rows may lack a usable definition/description
+            .Select(e => e.ContentJson)
+            .ToListAsync(ct);
+
+        var bodies = type == PublishedResourceType.Vocabulary
+            ? rows.Select(json => ResourceBankItemContent.Deserialize<VocabularyContent>(json).Notes)
+            : rows.Select(json => ResourceBankItemContent.Deserialize<GrammarContent>(json).Description);
+
+        return bodies
+            .Where(b => !string.IsNullOrWhiteSpace(b))
+            .Select(b => b!.Trim())
+            .Distinct()
+            .Take(MaxDistractors)
+            .ToList();
     }
 
     private static List<string> ParseTags(string? json)

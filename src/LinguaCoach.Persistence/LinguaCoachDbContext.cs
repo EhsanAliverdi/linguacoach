@@ -58,10 +58,10 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<ActivityTemplate> ActivityTemplates => Set<ActivityTemplate>();
     public DbSet<CefrResourceSource> CefrResourceSources => Set<CefrResourceSource>();
     public DbSet<CefrDescriptor> CefrDescriptors => Set<CefrDescriptor>();
-    public DbSet<CefrVocabularyEntry> CefrVocabularyEntries => Set<CefrVocabularyEntry>();
-    public DbSet<CefrGrammarProfileEntry> CefrGrammarProfileEntries => Set<CefrGrammarProfileEntry>();
-    public DbSet<CefrReadingReference> CefrReadingReferences => Set<CefrReadingReference>();
-    public DbSet<CefrReadingPassage> CefrReadingPassages => Set<CefrReadingPassage>();
+
+    // Phase I0 — physical Resource Bank consolidation. Replaces CefrVocabularyEntry/
+    // CefrGrammarProfileEntry/CefrReadingReference/CefrReadingPassage (dropped this phase).
+    public DbSet<ResourceBankItem> ResourceBankItems => Set<ResourceBankItem>();
 
     // Phase 10M — Student activity readiness pool
     public DbSet<StudentActivityReadinessItem> StudentActivityReadinessItems => Set<StudentActivityReadinessItem>();

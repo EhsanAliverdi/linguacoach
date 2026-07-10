@@ -1,6 +1,7 @@
 using FluentAssertions;
 using LinguaCoach.Application.ResourceImport;
 using LinguaCoach.Domain.Entities;
+using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.ResourceImport;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -47,23 +48,29 @@ public sealed class ResourceBankMetadataFilterTests : IDisposable
 
     private void SeedVocab(string word, string subskill, int? difficulty, string contextTagsJson, string focusTagsJson = "[]")
     {
-        var e = new CefrVocabularyEntry(_sourceId, word, "B1");
-        e.SetSelectionMetadata(subskill, difficulty, contextTagsJson, focusTagsJson);
-        _db.CefrVocabularyEntries.Add(e);
+        var e = new ResourceBankItem(
+            PublishedResourceType.Vocabulary, _sourceId, "B1",
+            ResourceBankItemContent.Serialize(new VocabularyContent(word, null, null)),
+            subskill, difficulty, contextTagsJson, focusTagsJson);
+        _db.ResourceBankItems.Add(e);
     }
 
     private void SeedGrammar(string point, string subskill, string contextTagsJson)
     {
-        var e = new CefrGrammarProfileEntry(_sourceId, "B1", point);
-        e.SetSelectionMetadata(subskill, null, contextTagsJson, "[]");
-        _db.CefrGrammarProfileEntries.Add(e);
+        var e = new ResourceBankItem(
+            PublishedResourceType.Grammar, _sourceId, "B1",
+            ResourceBankItemContent.Serialize(new GrammarContent(point, null)),
+            subskill, null, contextTagsJson, "[]");
+        _db.ResourceBankItems.Add(e);
     }
 
     private void SeedReference(string textType, string subskill, string contextTagsJson)
     {
-        var e = new CefrReadingReference(_sourceId, "B1", textType: textType, referenceExcerpt: "excerpt");
-        e.SetSelectionMetadata(subskill, null, contextTagsJson, "[]");
-        _db.CefrReadingReferences.Add(e);
+        var e = new ResourceBankItem(
+            PublishedResourceType.ReadingReference, _sourceId, "B1",
+            ResourceBankItemContent.Serialize(new ReadingReferenceContent(textType, null, "excerpt")),
+            subskill, null, contextTagsJson, "[]");
+        _db.ResourceBankItems.Add(e);
     }
 
     // ── Vocabulary filters ──────────────────────────────────────────────────────
@@ -163,7 +170,7 @@ public sealed class ResourceBankMetadataFilterTests : IDisposable
     {
         SeedVocab("meeting", "vocabulary.collocation", 3, "[\"workplace\"]", "[\"collocation\"]");
         _db.SaveChanges();
-        var id = _db.CefrVocabularyEntries.Single().Id;
+        var id = _db.ResourceBankItems.Single().Id;
 
         var detail = await _query.GetVocabularyDetailAsync(id);
 
@@ -178,7 +185,9 @@ public sealed class ResourceBankMetadataFilterTests : IDisposable
     public async Task Unfiltered_browse_still_returns_all_rows_including_those_without_metadata()
     {
         SeedVocab("withmeta", "vocabulary.receptive", 3, "[\"general\"]");
-        _db.CefrVocabularyEntries.Add(new CefrVocabularyEntry(_sourceId, "nometa", "B1")); // pre-E9-style, no metadata
+        _db.ResourceBankItems.Add(new ResourceBankItem(
+            PublishedResourceType.Vocabulary, _sourceId, "B1",
+            ResourceBankItemContent.Serialize(new VocabularyContent("nometa", null, null)))); // pre-E9-style, no metadata
         _db.SaveChanges();
 
         var result = await _query.ListVocabularyAsync(new ResourceBankListFilter());
@@ -190,7 +199,9 @@ public sealed class ResourceBankMetadataFilterTests : IDisposable
     [Fact]
     public async Task A_metadata_filter_never_matches_a_row_that_has_no_metadata()
     {
-        _db.CefrVocabularyEntries.Add(new CefrVocabularyEntry(_sourceId, "nometa", "B1"));
+        _db.ResourceBankItems.Add(new ResourceBankItem(
+            PublishedResourceType.Vocabulary, _sourceId, "B1",
+            ResourceBankItemContent.Serialize(new VocabularyContent("nometa", null, null))));
         _db.SaveChanges();
 
         (await _query.ListVocabularyAsync(new ResourceBankListFilter(ContextTag: "general"))).Items.Should().BeEmpty();

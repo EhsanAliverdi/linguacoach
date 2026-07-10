@@ -111,7 +111,7 @@ public sealed class ResourceCandidatePublishServiceTests : IDisposable
 
         result.Success.Should().BeFalse();
         result.Errors.Should().Contain(e => e.Contains("ValidationStatus"));
-        (await _db.CefrVocabularyEntries.CountAsync()).Should().Be(0);
+        (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.Vocabulary)).Should().Be(0);
     }
 
     [Fact]
@@ -130,7 +130,7 @@ public sealed class ResourceCandidatePublishServiceTests : IDisposable
 
         result.Success.Should().BeFalse();
         result.Errors.Should().Contain(e => e.Contains("ReviewStatus"));
-        (await _db.CefrVocabularyEntries.CountAsync()).Should().Be(0);
+        (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.Vocabulary)).Should().Be(0);
     }
 
     [Fact]
@@ -165,7 +165,7 @@ public sealed class ResourceCandidatePublishServiceTests : IDisposable
 
         result.Success.Should().BeFalse();
         result.Errors.Should().Contain(e => e.Contains("no longer approved"));
-        (await _db.CefrVocabularyEntries.CountAsync()).Should().Be(0);
+        (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.Vocabulary)).Should().Be(0);
     }
 
     [Fact]
@@ -212,7 +212,7 @@ public sealed class ResourceCandidatePublishServiceTests : IDisposable
 
         result.Success.Should().BeFalse();
         result.Errors.Should().Contain(e => e.Contains("English-only script check"));
-        (await _db.CefrVocabularyEntries.CountAsync()).Should().Be(0);
+        (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.Vocabulary)).Should().Be(0);
     }
 
     // ── Successful publish per candidate type ───────────────────────────────────
@@ -230,20 +230,21 @@ public sealed class ResourceCandidatePublishServiceTests : IDisposable
         var result = await _sut.PublishAsync(candidate.Id, null);
 
         result.Success.Should().BeTrue();
-        result.PublishedEntityType.Should().Be(nameof(CefrVocabularyEntry));
+        result.PublishedEntityType.Should().Be("CefrVocabularyEntry");
         result.PublishedEntityId.Should().NotBeNull();
 
-        var rows = await _db.CefrVocabularyEntries.ToListAsync();
+        var rows = await _db.ResourceBankItems.Where(x => x.Type == PublishedResourceType.Vocabulary).ToListAsync();
         rows.Should().HaveCount(1);
-        rows[0].Word.Should().Be("hello");
+        var content = ResourceBankItemContent.Deserialize<VocabularyContent>(rows[0].ContentJson);
+        content.Word.Should().Be("hello");
         rows[0].CefrLevel.Should().Be("A1");
-        rows[0].PartOfSpeech.Should().Be("interjection");
+        content.PartOfSpeech.Should().Be("interjection");
         rows[0].SourceId.Should().Be(source.Id);
 
         var reloadedCandidate = await _db.ResourceCandidates.AsNoTracking().FirstAsync(c => c.Id == candidate.Id);
         reloadedCandidate.IsPublished.Should().BeTrue();
         reloadedCandidate.PublishedAtUtc.Should().NotBeNull();
-        reloadedCandidate.PublishedEntityType.Should().Be(nameof(CefrVocabularyEntry));
+        reloadedCandidate.PublishedEntityType.Should().Be("CefrVocabularyEntry");
         reloadedCandidate.PublishedEntityId.Should().Be(rows[0].Id);
     }
 
@@ -260,12 +261,13 @@ public sealed class ResourceCandidatePublishServiceTests : IDisposable
         var result = await _sut.PublishAsync(candidate.Id, null);
 
         result.Success.Should().BeTrue();
-        result.PublishedEntityType.Should().Be(nameof(CefrGrammarProfileEntry));
+        result.PublishedEntityType.Should().Be("CefrGrammarProfileEntry");
 
-        var rows = await _db.CefrGrammarProfileEntries.ToListAsync();
+        var rows = await _db.ResourceBankItems.Where(x => x.Type == PublishedResourceType.Grammar).ToListAsync();
         rows.Should().HaveCount(1);
-        rows[0].GrammarPoint.Should().Be("present simple");
-        rows[0].Description.Should().Be("habitual actions");
+        var content = ResourceBankItemContent.Deserialize<GrammarContent>(rows[0].ContentJson);
+        content.GrammarPoint.Should().Be("present simple");
+        content.Description.Should().Be("habitual actions");
     }
 
     [Fact]
@@ -282,11 +284,12 @@ public sealed class ResourceCandidatePublishServiceTests : IDisposable
         var result = await _sut.PublishAsync(candidate.Id, null);
 
         result.Success.Should().BeTrue();
-        result.PublishedEntityType.Should().Be(nameof(CefrReadingReference));
+        result.PublishedEntityType.Should().Be("CefrReadingReference");
 
-        var rows = await _db.CefrReadingReferences.ToListAsync();
+        var rows = await _db.ResourceBankItems.Where(x => x.Type == PublishedResourceType.ReadingReference).ToListAsync();
         rows.Should().HaveCount(1);
-        rows[0].ReferenceExcerpt.Should().Be(shortPassage);
+        var content = ResourceBankItemContent.Deserialize<ReadingReferenceContent>(rows[0].ContentJson);
+        content.ReferenceExcerpt.Should().Be(shortPassage);
     }
 
     [Fact]
@@ -308,18 +311,19 @@ public sealed class ResourceCandidatePublishServiceTests : IDisposable
         var result = await _sut.PublishAsync(candidate.Id, null);
 
         result.Success.Should().BeTrue();
-        result.PublishedEntityType.Should().Be(nameof(CefrReadingPassage));
-        (await _db.CefrReadingReferences.CountAsync()).Should().Be(0);
+        result.PublishedEntityType.Should().Be("CefrReadingPassage");
+        (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.ReadingReference)).Should().Be(0);
 
-        var rows = await _db.CefrReadingPassages.ToListAsync();
+        var rows = await _db.ResourceBankItems.Where(x => x.Type == PublishedResourceType.ReadingPassage).ToListAsync();
         rows.Should().HaveCount(1);
-        rows[0].Title.Should().Be("Long passage");
-        rows[0].PassageText.Should().Be(longPassage.Trim());
+        var content = ResourceBankItemContent.Deserialize<ReadingPassageContent>(rows[0].ContentJson);
+        content.Title.Should().Be("Long passage");
+        content.PassageText.Should().Be(longPassage.Trim());
         rows[0].CefrLevel.Should().Be("A1");
-        rows[0].PrimarySkill.Should().Be("reading");
-        rows[0].WordCount.Should().BeGreaterThan(0);
+        content.PrimarySkill.Should().Be("reading");
+        content.WordCount.Should().BeGreaterThan(0);
         rows[0].SourceId.Should().Be(source.Id);
-        rows[0].AttributionText.Should().Be("Test Attribution");
+        content.AttributionText.Should().Be("Test Attribution");
     }
 
     [Fact]
@@ -337,7 +341,7 @@ public sealed class ResourceCandidatePublishServiceTests : IDisposable
 
         result.Success.Should().BeFalse();
         result.Errors.Should().Contain(e => e.Contains("'title' field is required"));
-        (await _db.CefrReadingPassages.CountAsync()).Should().Be(0);
+        (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.ReadingPassage)).Should().Be(0);
     }
 
     [Fact]
@@ -357,7 +361,7 @@ public sealed class ResourceCandidatePublishServiceTests : IDisposable
         first.Success.Should().BeTrue();
         second.Success.Should().BeTrue();
         second.PublishedEntityId.Should().Be(first.PublishedEntityId);
-        (await _db.CefrReadingPassages.CountAsync()).Should().Be(1);
+        (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.ReadingPassage)).Should().Be(1);
     }
 
     [Fact]
@@ -389,9 +393,9 @@ public sealed class ResourceCandidatePublishServiceTests : IDisposable
 
         result.Success.Should().BeFalse();
         result.Errors.Should().Contain(e => e.Contains("no supported bank publish target"));
-        (await _db.CefrVocabularyEntries.CountAsync()).Should().Be(0);
-        (await _db.CefrGrammarProfileEntries.CountAsync()).Should().Be(0);
-        (await _db.CefrReadingReferences.CountAsync()).Should().Be(0);
+        (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.Vocabulary)).Should().Be(0);
+        (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.Grammar)).Should().Be(0);
+        (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.ReadingReference)).Should().Be(0);
     }
 
     // ── Idempotency + raw-record integrity ──────────────────────────────────────
@@ -411,7 +415,7 @@ public sealed class ResourceCandidatePublishServiceTests : IDisposable
         second.Success.Should().BeTrue();
         second.PublishedEntityId.Should().Be(first.PublishedEntityId);
 
-        (await _db.CefrVocabularyEntries.CountAsync()).Should().Be(1);
+        (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.Vocabulary)).Should().Be(1);
     }
 
     [Fact]

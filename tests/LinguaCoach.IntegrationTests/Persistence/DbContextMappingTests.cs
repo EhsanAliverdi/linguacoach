@@ -216,13 +216,15 @@ public sealed class DbContextMappingTests : IDisposable
     }
 
     [Fact]
-    public void CefrVocabularyEntry_DeletingReferencedSourceThrows()
+    public void ResourceBankItem_DeletingReferencedSourceThrows()
     {
         var source = new CefrResourceSource("CEFR-J Vocab Source", "cc-by");
         _db.CefrResourceSources.Add(source);
         _db.SaveChanges();
 
-        _db.CefrVocabularyEntries.Add(new CefrVocabularyEntry(source.Id, "greeting", "A1"));
+        _db.ResourceBankItems.Add(new ResourceBankItem(
+            LinguaCoach.Domain.Enums.PublishedResourceType.Vocabulary, source.Id, "A1",
+            "{\"word\":\"greeting\"}"));
         _db.SaveChanges();
         _db.ChangeTracker.Clear();
 

@@ -1,3 +1,4 @@
+using LinguaCoach.Application.ResourceImport;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -26,35 +27,35 @@ internal static class LearnItemResourceLookup
     public static async Task<LearnItemResourceSnapshot?> FindAsync(
         LinguaCoachDbContext db, PublishedResourceType resourceType, Guid resourceId, CancellationToken ct)
     {
+        var e = await db.ResourceBankItems.FirstOrDefaultAsync(x => x.Id == resourceId && x.Type == resourceType, ct);
+        if (e is null) return null;
+
         switch (resourceType)
         {
             case PublishedResourceType.Vocabulary:
             {
-                var e = await db.CefrVocabularyEntries.FirstOrDefaultAsync(x => x.Id == resourceId, ct);
-                return e is null ? null : new LearnItemResourceSnapshot(
-                    e.Word, e.Notes, e.CefrLevel, "Vocabulary", e.Subskill,
+                var c = ResourceBankItemContent.Deserialize<VocabularyContent>(e.ContentJson);
+                return new LearnItemResourceSnapshot(c.Word, c.Notes, e.CefrLevel, "Vocabulary", e.Subskill,
                     e.ContextTagsJson, e.FocusTagsJson, e.DifficultyBand, null);
             }
             case PublishedResourceType.Grammar:
             {
-                var e = await db.CefrGrammarProfileEntries.FirstOrDefaultAsync(x => x.Id == resourceId, ct);
-                return e is null ? null : new LearnItemResourceSnapshot(
-                    e.GrammarPoint, e.Description, e.CefrLevel, "Grammar", e.Subskill,
+                var c = ResourceBankItemContent.Deserialize<GrammarContent>(e.ContentJson);
+                return new LearnItemResourceSnapshot(c.GrammarPoint, c.Description, e.CefrLevel, "Grammar", e.Subskill,
                     e.ContextTagsJson, e.FocusTagsJson, e.DifficultyBand, null);
             }
             case PublishedResourceType.ReadingReference:
             {
-                var e = await db.CefrReadingReferences.FirstOrDefaultAsync(x => x.Id == resourceId, ct);
-                return e is null ? null : new LearnItemResourceSnapshot(
-                    !string.IsNullOrWhiteSpace(e.TextType) ? e.TextType! : "Reading reference",
-                    e.ReferenceExcerpt, e.CefrLevel, "Reading", e.Subskill,
+                var c = ResourceBankItemContent.Deserialize<ReadingReferenceContent>(e.ContentJson);
+                return new LearnItemResourceSnapshot(
+                    !string.IsNullOrWhiteSpace(c.TextType) ? c.TextType! : "Reading reference",
+                    c.ReferenceExcerpt, e.CefrLevel, "Reading", e.Subskill,
                     e.ContextTagsJson, e.FocusTagsJson, e.DifficultyBand, null);
             }
             case PublishedResourceType.ReadingPassage:
             {
-                var e = await db.CefrReadingPassages.FirstOrDefaultAsync(x => x.Id == resourceId, ct);
-                return e is null ? null : new LearnItemResourceSnapshot(
-                    e.Title, e.Summary ?? e.PassageText, e.CefrLevel, e.PrimarySkill, e.Subskill,
+                var c = ResourceBankItemContent.Deserialize<ReadingPassageContent>(e.ContentJson);
+                return new LearnItemResourceSnapshot(c.Title, c.Summary ?? c.PassageText, e.CefrLevel, c.PrimarySkill, e.Subskill,
                     e.ContextTagsJson, e.FocusTagsJson, e.DifficultyBand, e.ContentFingerprint);
             }
             default:

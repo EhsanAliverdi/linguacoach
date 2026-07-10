@@ -89,7 +89,7 @@ public sealed class ContentImportServiceTests : IDisposable
         // has validated the row (Phase E2+) — import alone stages it as NotRequired.
         candidate.ReviewStatus.Should().Be(AdminReviewStatus.NotRequired);
 
-        (await _db.CefrVocabularyEntries.CountAsync()).Should().Be(0);
+        (await _db.ResourceBankItems.CountAsync()).Should().Be(0);
     }
 
     [Fact]

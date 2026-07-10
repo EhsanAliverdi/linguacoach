@@ -1,19 +1,19 @@
 using LinguaCoach.Application.ResourceImport;
 using LinguaCoach.Domain.Entities;
+using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace LinguaCoach.Infrastructure.ResourceImport;
 
 /// <summary>
-/// Phase E5 — read-only browse/search over the three published Cefr* bank tables
-/// (<see cref="CefrVocabularyEntry"/>/<see cref="CefrGrammarProfileEntry"/>/
-/// <see cref="CefrReadingReference"/>). Only rows Phase E4's <see cref="ResourceCandidatePublishService"/>
-/// actually wrote can ever appear here — nothing else in this codebase writes to those tables, so
-/// no additional "is this row approved" filter is needed; querying the table directly is by
-/// construction "published items only".
+/// Phase I0 — read-only browse/search over the single consolidated <see cref="ResourceBankItem"/>
+/// table (replaces the four typed Cefr* tables). Only rows Phase E4's
+/// <see cref="ResourceCandidatePublishService"/> actually wrote can ever appear here — nothing else
+/// in this codebase writes to this table, so no additional "is this row approved" filter is
+/// needed; querying the table directly is by construction "published items only".
 ///
-/// None of the three bank entities carries a forward reference to the <see cref="ResourceCandidate"/>
+/// <see cref="ResourceBankItem"/> carries no forward reference to the <see cref="ResourceCandidate"/>
 /// that produced it, so detail-view traceability is a reverse lookup: find the
 /// <see cref="ResourceCandidate"/> whose <see cref="ResourceCandidate.PublishedEntityType"/>/
 /// <see cref="ResourceCandidate.PublishedEntityId"/> match the bank row being viewed (the same
@@ -22,11 +22,11 @@ namespace LinguaCoach.Infrastructure.ResourceImport;
 /// seeded directly, bypassing the publish workflow) returns
 /// <see cref="ResourceBankTraceabilityDto.Unavailable"/> rather than throwing.
 ///
-/// Plain filter + sort only, per this phase's explicit scope — no relevance ranking, no
-/// embeddings. Sort is newest-first by <c>BaseEntity.CreatedAt</c> (all three bank entities and
-/// ResourceCandidate inherit this) — there is no dedicated "published at" timestamp on the bank
-/// rows themselves (only ResourceCandidate.PublishedAtUtc, surfaced via Traceability), so CreatedAt
-/// is the closest available proxy and is a documented choice, not an oversight.
+/// The typed <c>List*Async</c>/<c>Get*DetailAsync</c> methods below still exist because
+/// <c>TodayBankResourceSelector</c> (student-facing, real-time) depends on their typed DTO shapes —
+/// they are now thin type-filtered projections over the one table, each real DB-paginated queries
+/// (no more in-memory scan). <see cref="ListUnifiedAsync"/> (Phase H1) is likewise now a genuine
+/// single-table DB-paginated query instead of the old four-way in-memory concat/sort/page.
 /// </summary>
 public sealed class ResourceBankQueryService : IResourceBankQueryService
 {
@@ -46,58 +46,27 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
         ResourceBankListFilter filter, CancellationToken ct = default)
     {
         var (page, pageSize) = NormalizePaging(filter);
-
-        var query =
-            from e in _db.CefrVocabularyEntries
-            join s in _db.CefrResourceSources on e.SourceId equals s.Id
-            select new { Entry = e, Source = s };
-
-        if (filter.SourceId.HasValue)
-            query = query.Where(x => x.Entry.SourceId == filter.SourceId.Value);
-
-        if (!string.IsNullOrWhiteSpace(filter.CefrLevel))
-            query = query.Where(x => x.Entry.CefrLevel == filter.CefrLevel);
+        var query = FilteredQuery(PublishedResourceType.Vocabulary, filter);
 
         if (!string.IsNullOrWhiteSpace(filter.SearchText))
         {
             var search = filter.SearchText.Trim().ToLowerInvariant();
-            query = query.Where(x =>
-                x.Entry.Word.ToLower().Contains(search)
-                || (x.Entry.Notes != null && x.Entry.Notes.ToLower().Contains(search)));
-        }
-
-        if (!string.IsNullOrWhiteSpace(filter.Subskill))
-        {
-            var subskill = filter.Subskill.Trim();
-            query = query.Where(x => x.Entry.Subskill == subskill);
-        }
-        if (filter.DifficultyBand.HasValue)
-            query = query.Where(x => x.Entry.DifficultyBand == filter.DifficultyBand.Value);
-        if (!string.IsNullOrWhiteSpace(filter.ContextTag))
-        {
-            var needle = TagNeedle(filter.ContextTag);
-            query = query.Where(x => x.Entry.ContextTagsJson != null && x.Entry.ContextTagsJson.ToLower().Contains(needle));
-        }
-        if (!string.IsNullOrWhiteSpace(filter.FocusTag))
-        {
-            var needle = TagNeedle(filter.FocusTag);
-            query = query.Where(x => x.Entry.FocusTagsJson != null && x.Entry.FocusTagsJson.ToLower().Contains(needle));
+            query = query.Where(x => x.Entry.ContentJson.ToLower().Contains(search));
         }
 
         var totalCount = await query.CountAsync(ct);
-
-        var page_ = await query
-            .OrderByDescending(x => x.Entry.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(ct);
+        var page_ = await Page(query, page, pageSize).ToListAsync(ct);
 
         var items = page_
-            .Select(x => new ResourceBankVocabularyListItemDto(
-                x.Entry.Id, x.Entry.Word, x.Entry.CefrLevel, x.Entry.PartOfSpeech, x.Entry.Notes,
-                x.Source.Id, x.Source.Name, x.Entry.CreatedAt,
-                x.Entry.Subskill, x.Entry.DifficultyBand,
-                ParseJsonStringArray(x.Entry.ContextTagsJson), ParseJsonStringArray(x.Entry.FocusTagsJson)))
+            .Select(x =>
+            {
+                var c = ResourceBankItemContent.Deserialize<VocabularyContent>(x.Entry.ContentJson);
+                return new ResourceBankVocabularyListItemDto(
+                    x.Entry.Id, c.Word, x.Entry.CefrLevel, c.PartOfSpeech, c.Notes,
+                    x.Source.Id, x.Source.Name, x.Entry.CreatedAt,
+                    x.Entry.Subskill, x.Entry.DifficultyBand,
+                    ParseJsonStringArray(x.Entry.ContextTagsJson), ParseJsonStringArray(x.Entry.FocusTagsJson));
+            })
             .ToList();
 
         return new ResourceBankVocabularyListResult(items, totalCount);
@@ -105,21 +74,15 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
 
     public async Task<ResourceBankVocabularyDetailDto?> GetVocabularyDetailAsync(Guid id, CancellationToken ct = default)
     {
-        var loaded = await (
-            from e in _db.CefrVocabularyEntries
-            join s in _db.CefrResourceSources on e.SourceId equals s.Id
-            where e.Id == id
-            select new { Entry = e, Source = s })
-            .FirstOrDefaultAsync(ct);
+        var loaded = await LoadDetailAsync(PublishedResourceType.Vocabulary, id, ct);
+        if (loaded is null) return null;
 
-        if (loaded is null)
-            return null;
-
-        var traceability = await BuildTraceabilityAsync(nameof(CefrVocabularyEntry), id, ct);
+        var c = ResourceBankItemContent.Deserialize<VocabularyContent>(loaded.Entry.ContentJson);
+        var traceability = await BuildTraceabilityAsync("CefrVocabularyEntry", id, ct);
 
         return new ResourceBankVocabularyDetailDto(
-            loaded.Entry.Id, loaded.Entry.Word, loaded.Entry.CefrLevel, loaded.Entry.PartOfSpeech,
-            loaded.Entry.Notes, loaded.Entry.CreatedAt, ToSourceInfoDto(loaded.Source), traceability,
+            loaded.Entry.Id, c.Word, loaded.Entry.CefrLevel, c.PartOfSpeech,
+            c.Notes, loaded.Entry.CreatedAt, ToSourceInfoDto(loaded.Source), traceability,
             loaded.Entry.Subskill, loaded.Entry.DifficultyBand,
             ParseJsonStringArray(loaded.Entry.ContextTagsJson), ParseJsonStringArray(loaded.Entry.FocusTagsJson));
     }
@@ -130,58 +93,27 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
         ResourceBankListFilter filter, CancellationToken ct = default)
     {
         var (page, pageSize) = NormalizePaging(filter);
-
-        var query =
-            from e in _db.CefrGrammarProfileEntries
-            join s in _db.CefrResourceSources on e.SourceId equals s.Id
-            select new { Entry = e, Source = s };
-
-        if (filter.SourceId.HasValue)
-            query = query.Where(x => x.Entry.SourceId == filter.SourceId.Value);
-
-        if (!string.IsNullOrWhiteSpace(filter.CefrLevel))
-            query = query.Where(x => x.Entry.CefrLevel == filter.CefrLevel);
+        var query = FilteredQuery(PublishedResourceType.Grammar, filter);
 
         if (!string.IsNullOrWhiteSpace(filter.SearchText))
         {
             var search = filter.SearchText.Trim().ToLowerInvariant();
-            query = query.Where(x =>
-                x.Entry.GrammarPoint.ToLower().Contains(search)
-                || (x.Entry.Description != null && x.Entry.Description.ToLower().Contains(search)));
-        }
-
-        if (!string.IsNullOrWhiteSpace(filter.Subskill))
-        {
-            var subskill = filter.Subskill.Trim();
-            query = query.Where(x => x.Entry.Subskill == subskill);
-        }
-        if (filter.DifficultyBand.HasValue)
-            query = query.Where(x => x.Entry.DifficultyBand == filter.DifficultyBand.Value);
-        if (!string.IsNullOrWhiteSpace(filter.ContextTag))
-        {
-            var needle = TagNeedle(filter.ContextTag);
-            query = query.Where(x => x.Entry.ContextTagsJson != null && x.Entry.ContextTagsJson.ToLower().Contains(needle));
-        }
-        if (!string.IsNullOrWhiteSpace(filter.FocusTag))
-        {
-            var needle = TagNeedle(filter.FocusTag);
-            query = query.Where(x => x.Entry.FocusTagsJson != null && x.Entry.FocusTagsJson.ToLower().Contains(needle));
+            query = query.Where(x => x.Entry.ContentJson.ToLower().Contains(search));
         }
 
         var totalCount = await query.CountAsync(ct);
-
-        var page_ = await query
-            .OrderByDescending(x => x.Entry.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(ct);
+        var page_ = await Page(query, page, pageSize).ToListAsync(ct);
 
         var items = page_
-            .Select(x => new ResourceBankGrammarListItemDto(
-                x.Entry.Id, x.Entry.GrammarPoint, x.Entry.CefrLevel, x.Entry.Description,
-                x.Source.Id, x.Source.Name, x.Entry.CreatedAt,
-                x.Entry.Subskill, x.Entry.DifficultyBand,
-                ParseJsonStringArray(x.Entry.ContextTagsJson), ParseJsonStringArray(x.Entry.FocusTagsJson)))
+            .Select(x =>
+            {
+                var c = ResourceBankItemContent.Deserialize<GrammarContent>(x.Entry.ContentJson);
+                return new ResourceBankGrammarListItemDto(
+                    x.Entry.Id, c.GrammarPoint, x.Entry.CefrLevel, c.Description,
+                    x.Source.Id, x.Source.Name, x.Entry.CreatedAt,
+                    x.Entry.Subskill, x.Entry.DifficultyBand,
+                    ParseJsonStringArray(x.Entry.ContextTagsJson), ParseJsonStringArray(x.Entry.FocusTagsJson));
+            })
             .ToList();
 
         return new ResourceBankGrammarListResult(items, totalCount);
@@ -189,20 +121,14 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
 
     public async Task<ResourceBankGrammarDetailDto?> GetGrammarDetailAsync(Guid id, CancellationToken ct = default)
     {
-        var loaded = await (
-            from e in _db.CefrGrammarProfileEntries
-            join s in _db.CefrResourceSources on e.SourceId equals s.Id
-            where e.Id == id
-            select new { Entry = e, Source = s })
-            .FirstOrDefaultAsync(ct);
+        var loaded = await LoadDetailAsync(PublishedResourceType.Grammar, id, ct);
+        if (loaded is null) return null;
 
-        if (loaded is null)
-            return null;
-
-        var traceability = await BuildTraceabilityAsync(nameof(CefrGrammarProfileEntry), id, ct);
+        var c = ResourceBankItemContent.Deserialize<GrammarContent>(loaded.Entry.ContentJson);
+        var traceability = await BuildTraceabilityAsync("CefrGrammarProfileEntry", id, ct);
 
         return new ResourceBankGrammarDetailDto(
-            loaded.Entry.Id, loaded.Entry.GrammarPoint, loaded.Entry.CefrLevel, loaded.Entry.Description,
+            loaded.Entry.Id, c.GrammarPoint, loaded.Entry.CefrLevel, c.Description,
             loaded.Entry.CreatedAt, ToSourceInfoDto(loaded.Source), traceability,
             loaded.Entry.Subskill, loaded.Entry.DifficultyBand,
             ParseJsonStringArray(loaded.Entry.ContextTagsJson), ParseJsonStringArray(loaded.Entry.FocusTagsJson));
@@ -214,32 +140,117 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
         ResourceBankListFilter filter, CancellationToken ct = default)
     {
         var (page, pageSize) = NormalizePaging(filter);
-
-        var query =
-            from e in _db.CefrReadingReferences
-            join s in _db.CefrResourceSources on e.SourceId equals s.Id
-            select new { Entry = e, Source = s };
-
-        if (filter.SourceId.HasValue)
-            query = query.Where(x => x.Entry.SourceId == filter.SourceId.Value);
-
-        if (!string.IsNullOrWhiteSpace(filter.CefrLevel))
-            query = query.Where(x => x.Entry.CefrLevel == filter.CefrLevel);
+        var query = FilteredQuery(PublishedResourceType.ReadingReference, filter);
 
         if (!string.IsNullOrWhiteSpace(filter.SearchText))
         {
             var search = filter.SearchText.Trim().ToLowerInvariant();
-            query = query.Where(x =>
-                (x.Entry.TextType != null && x.Entry.TextType.ToLower().Contains(search))
-                || (x.Entry.DifficultyNotes != null && x.Entry.DifficultyNotes.ToLower().Contains(search))
-                || (x.Entry.ReferenceExcerpt != null && x.Entry.ReferenceExcerpt.ToLower().Contains(search)));
+            query = query.Where(x => x.Entry.ContentJson.ToLower().Contains(search));
         }
 
-        if (!string.IsNullOrWhiteSpace(filter.Subskill))
+        var totalCount = await query.CountAsync(ct);
+        var page_ = await Page(query, page, pageSize).ToListAsync(ct);
+
+        var items = page_
+            .Select(x =>
+            {
+                var c = ResourceBankItemContent.Deserialize<ReadingReferenceContent>(x.Entry.ContentJson);
+                return new ResourceBankReadingReferenceListItemDto(
+                    x.Entry.Id, x.Entry.CefrLevel, c.TextType, c.DifficultyNotes, c.ReferenceExcerpt,
+                    x.Source.Id, x.Source.Name, x.Entry.CreatedAt,
+                    x.Entry.Subskill, x.Entry.DifficultyBand,
+                    ParseJsonStringArray(x.Entry.ContextTagsJson), ParseJsonStringArray(x.Entry.FocusTagsJson));
+            })
+            .ToList();
+
+        return new ResourceBankReadingReferenceListResult(items, totalCount);
+    }
+
+    public async Task<ResourceBankReadingReferenceDetailDto?> GetReadingReferenceDetailAsync(Guid id, CancellationToken ct = default)
+    {
+        var loaded = await LoadDetailAsync(PublishedResourceType.ReadingReference, id, ct);
+        if (loaded is null) return null;
+
+        var c = ResourceBankItemContent.Deserialize<ReadingReferenceContent>(loaded.Entry.ContentJson);
+        var traceability = await BuildTraceabilityAsync("CefrReadingReference", id, ct);
+
+        return new ResourceBankReadingReferenceDetailDto(
+            loaded.Entry.Id, loaded.Entry.CefrLevel, c.TextType, c.DifficultyNotes,
+            c.ReferenceExcerpt, loaded.Entry.CreatedAt, ToSourceInfoDto(loaded.Source), traceability,
+            loaded.Entry.Subskill, loaded.Entry.DifficultyBand,
+            ParseJsonStringArray(loaded.Entry.ContextTagsJson), ParseJsonStringArray(loaded.Entry.FocusTagsJson));
+    }
+
+    // ── Reading passages (Phase E7 — full-length passages, distinct from ReadingReference) ────
+
+    public async Task<ResourceBankReadingPassageListResult> ListReadingPassagesAsync(
+        ResourceBankListFilter filter, CancellationToken ct = default)
+    {
+        var (page, pageSize) = NormalizePaging(filter);
+        var query = FilteredQuery(PublishedResourceType.ReadingPassage, filter);
+
+        if (!string.IsNullOrWhiteSpace(filter.SearchText))
         {
-            var subskill = filter.Subskill.Trim();
-            query = query.Where(x => x.Entry.Subskill == subskill);
+            var search = filter.SearchText.Trim().ToLowerInvariant();
+            query = query.Where(x => x.Entry.ContentJson.ToLower().Contains(search));
         }
+
+        var totalCount = await query.CountAsync(ct);
+        var page_ = await Page(query, page, pageSize).ToListAsync(ct);
+
+        var items = page_
+            .Select(x =>
+            {
+                var c = ResourceBankItemContent.Deserialize<ReadingPassageContent>(x.Entry.ContentJson);
+                return new ResourceBankReadingPassageListItemDto(
+                    x.Entry.Id, c.Title, x.Entry.CefrLevel, c.WordCount, c.EstimatedReadingMinutes,
+                    x.Entry.Subskill, x.Source.Id, x.Source.Name, x.Entry.CreatedAt);
+            })
+            .ToList();
+
+        return new ResourceBankReadingPassageListResult(items, totalCount);
+    }
+
+    public async Task<ResourceBankReadingPassageDetailDto?> GetReadingPassageDetailAsync(Guid id, CancellationToken ct = default)
+    {
+        var loaded = await LoadDetailAsync(PublishedResourceType.ReadingPassage, id, ct);
+        if (loaded is null) return null;
+
+        var c = ResourceBankItemContent.Deserialize<ReadingPassageContent>(loaded.Entry.ContentJson);
+        var traceability = await BuildTraceabilityAsync("CefrReadingPassage", id, ct);
+
+        return new ResourceBankReadingPassageDetailDto(
+            loaded.Entry.Id, c.Title, c.PassageText, c.Summary,
+            loaded.Entry.CefrLevel, loaded.Entry.DifficultyBand, c.PrimarySkill, loaded.Entry.Subskill,
+            ParseJsonStringArray(c.TopicTagsJson), ParseJsonStringArray(loaded.Entry.ContextTagsJson),
+            ParseJsonStringArray(loaded.Entry.FocusTagsJson), c.WordCount, c.EstimatedReadingMinutes,
+            c.AttributionText, c.QualityScore, loaded.Entry.CreatedAt,
+            ToSourceInfoDto(loaded.Source), traceability);
+    }
+
+    // ── Unified read model (Phase H1, now a real single-table query per Phase I0) ─────────────
+
+    public async Task<UnifiedResourceBankListResult> ListUnifiedAsync(
+        UnifiedResourceBankListFilter filter, CancellationToken ct = default)
+    {
+        var (page, pageSize) = NormalizePaging(filter.Page, filter.PageSize);
+
+        var query =
+            from e in _db.ResourceBankItems
+            join s in _db.CefrResourceSources on e.SourceId equals s.Id
+            select new QueryRow { Entry = e, Source = s };
+
+        if (filter.Type.HasValue)
+        {
+            var domainType = ToDomainType(filter.Type.Value);
+            query = query.Where(x => x.Entry.Type == domainType);
+        }
+        if (filter.SourceId.HasValue)
+            query = query.Where(x => x.Entry.SourceId == filter.SourceId.Value);
+        if (!string.IsNullOrWhiteSpace(filter.CefrLevel))
+            query = query.Where(x => x.Entry.CefrLevel == filter.CefrLevel);
+        if (!string.IsNullOrWhiteSpace(filter.Subskill))
+            query = query.Where(x => x.Entry.Subskill == filter.Subskill.Trim());
         if (filter.DifficultyBand.HasValue)
             query = query.Where(x => x.Entry.DifficultyBand == filter.DifficultyBand.Value);
         if (!string.IsNullOrWhiteSpace(filter.ContextTag))
@@ -252,167 +263,110 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
             var needle = TagNeedle(filter.FocusTag);
             query = query.Where(x => x.Entry.FocusTagsJson != null && x.Entry.FocusTagsJson.ToLower().Contains(needle));
         }
-
-        var totalCount = await query.CountAsync(ct);
-
-        var page_ = await query
-            .OrderByDescending(x => x.Entry.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(ct);
-
-        var items = page_
-            .Select(x => new ResourceBankReadingReferenceListItemDto(
-                x.Entry.Id, x.Entry.CefrLevel, x.Entry.TextType, x.Entry.DifficultyNotes, x.Entry.ReferenceExcerpt,
-                x.Source.Id, x.Source.Name, x.Entry.CreatedAt,
-                x.Entry.Subskill, x.Entry.DifficultyBand,
-                ParseJsonStringArray(x.Entry.ContextTagsJson), ParseJsonStringArray(x.Entry.FocusTagsJson)))
-            .ToList();
-
-        return new ResourceBankReadingReferenceListResult(items, totalCount);
-    }
-
-    public async Task<ResourceBankReadingReferenceDetailDto?> GetReadingReferenceDetailAsync(Guid id, CancellationToken ct = default)
-    {
-        var loaded = await (
-            from e in _db.CefrReadingReferences
-            join s in _db.CefrResourceSources on e.SourceId equals s.Id
-            where e.Id == id
-            select new { Entry = e, Source = s })
-            .FirstOrDefaultAsync(ct);
-
-        if (loaded is null)
-            return null;
-
-        var traceability = await BuildTraceabilityAsync(nameof(CefrReadingReference), id, ct);
-
-        return new ResourceBankReadingReferenceDetailDto(
-            loaded.Entry.Id, loaded.Entry.CefrLevel, loaded.Entry.TextType, loaded.Entry.DifficultyNotes,
-            loaded.Entry.ReferenceExcerpt, loaded.Entry.CreatedAt, ToSourceInfoDto(loaded.Source), traceability,
-            loaded.Entry.Subskill, loaded.Entry.DifficultyBand,
-            ParseJsonStringArray(loaded.Entry.ContextTagsJson), ParseJsonStringArray(loaded.Entry.FocusTagsJson));
-    }
-
-    // ── Reading passages (Phase E7 — full-length passages, distinct from ReadingReference) ────
-
-    public async Task<ResourceBankReadingPassageListResult> ListReadingPassagesAsync(
-        ResourceBankListFilter filter, CancellationToken ct = default)
-    {
-        var (page, pageSize) = NormalizePaging(filter);
-
-        var query =
-            from e in _db.CefrReadingPassages
-            join s in _db.CefrResourceSources on e.SourceId equals s.Id
-            select new { Entry = e, Source = s };
-
-        if (filter.SourceId.HasValue)
-            query = query.Where(x => x.Entry.SourceId == filter.SourceId.Value);
-
-        if (!string.IsNullOrWhiteSpace(filter.CefrLevel))
-            query = query.Where(x => x.Entry.CefrLevel == filter.CefrLevel);
-
         if (!string.IsNullOrWhiteSpace(filter.SearchText))
         {
             var search = filter.SearchText.Trim().ToLowerInvariant();
-            query = query.Where(x =>
-                x.Entry.Title.ToLower().Contains(search)
-                || x.Entry.PassageText.ToLower().Contains(search)
-                || (x.Entry.Summary != null && x.Entry.Summary.ToLower().Contains(search)));
+            query = query.Where(x => x.Entry.ContentJson.ToLower().Contains(search));
         }
 
         var totalCount = await query.CountAsync(ct);
 
         var page_ = await query
-            .OrderByDescending(x => x.Entry.CreatedAt)
+            .OrderBy(x => x.Entry.Type)
+            .ThenBy(x => x.Entry.CefrLevel)
+            .ThenBy(x => x.Entry.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(ct);
 
-        var items = page_
-            .Select(x => new ResourceBankReadingPassageListItemDto(
-                x.Entry.Id, x.Entry.Title, x.Entry.CefrLevel, x.Entry.WordCount, x.Entry.EstimatedReadingMinutes,
-                x.Entry.Subskill, x.Source.Id, x.Source.Name, x.Entry.CreatedAt))
-            .ToList();
+        var items = page_.Select(ToUnifiedDto).ToList();
 
-        return new ResourceBankReadingPassageListResult(items, totalCount);
-    }
-
-    public async Task<ResourceBankReadingPassageDetailDto?> GetReadingPassageDetailAsync(Guid id, CancellationToken ct = default)
-    {
-        var loaded = await (
-            from e in _db.CefrReadingPassages
-            join s in _db.CefrResourceSources on e.SourceId equals s.Id
-            where e.Id == id
-            select new { Entry = e, Source = s })
-            .FirstOrDefaultAsync(ct);
-
-        if (loaded is null)
-            return null;
-
-        var traceability = await BuildTraceabilityAsync(nameof(CefrReadingPassage), id, ct);
-
-        return new ResourceBankReadingPassageDetailDto(
-            loaded.Entry.Id, loaded.Entry.Title, loaded.Entry.PassageText, loaded.Entry.Summary,
-            loaded.Entry.CefrLevel, loaded.Entry.DifficultyBand, loaded.Entry.PrimarySkill, loaded.Entry.Subskill,
-            ParseJsonStringArray(loaded.Entry.TopicTagsJson), ParseJsonStringArray(loaded.Entry.ContextTagsJson),
-            ParseJsonStringArray(loaded.Entry.FocusTagsJson), loaded.Entry.WordCount, loaded.Entry.EstimatedReadingMinutes,
-            loaded.Entry.AttributionText, loaded.Entry.QualityScore, loaded.Entry.CreatedAt,
-            ToSourceInfoDto(loaded.Source), traceability);
-    }
-
-    // ── Unified read model (Phase H1) ─────────────────────────────────────────────
-    //
-    // Aggregates all four typed bank tables into one filtered/paginated view for the unified
-    // admin Resource Bank page. Each Build*Async helper below applies the same per-type filters
-    // the typed List*Async methods above already use (search/CEFR/source/subskill/difficulty/
-    // context/focus), then materializes the (already-filtered, currently small) result set into
-    // memory and maps it onto the shared UnifiedResourceBankItemDto shape.
-    //
-    // Sorting and pagination happen in memory over the merged, already-filtered set from up to
-    // four tables. At current content volume (dozens of rows per type, from internal seed packs
-    // only — no external dataset imported) this is simple and safe. It is a documented
-    // limitation, not an oversight: a genuinely large multi-table cross-page query would need a
-    // real unified projection (e.g. a DB view or the Option A physical table discussed in
-    // docs/architecture/product-model-realignment-h0.md §4) — out of scope for H1.
-    //
-    // Skill filtering happens in memory after mapping, since "Skill" is a constant-per-type value
-    // for three of the four tables (Vocabulary/Grammar/ReadingReference) and only genuinely
-    // per-row on CefrReadingPassage.PrimarySkill.
-
-    public async Task<UnifiedResourceBankListResult> ListUnifiedAsync(
-        UnifiedResourceBankListFilter filter, CancellationToken ct = default)
-    {
-        var (page, pageSize) = NormalizePaging(filter.Page, filter.PageSize);
-
-        var items = new List<UnifiedResourceBankItemDto>();
-
-        if (filter.Type is null or UnifiedResourceBankItemType.Vocabulary)
-            items.AddRange(await BuildUnifiedVocabularyAsync(filter, ct));
-        if (filter.Type is null or UnifiedResourceBankItemType.Grammar)
-            items.AddRange(await BuildUnifiedGrammarAsync(filter, ct));
-        if (filter.Type is null or UnifiedResourceBankItemType.ReadingReference)
-            items.AddRange(await BuildUnifiedReadingReferenceAsync(filter, ct));
-        if (filter.Type is null or UnifiedResourceBankItemType.ReadingPassage)
-            items.AddRange(await BuildUnifiedReadingPassageAsync(filter, ct));
-
+        // Skill filtering happens in memory after mapping, since "Skill" is a constant-per-type
+        // value for three of the four types and only genuinely per-row on ReadingPassage.
         if (!string.IsNullOrWhiteSpace(filter.Skill))
         {
             var skill = filter.Skill.Trim();
             items = items.Where(i => string.Equals(i.Skill, skill, StringComparison.OrdinalIgnoreCase)).ToList();
         }
 
-        var ordered = items
-            .OrderBy(i => i.Type)
-            .ThenBy(i => i.CefrLevel, StringComparer.Ordinal)
-            .ThenBy(i => i.Title, StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        items = await WithLinkedCountsAsync(items, ct);
 
-        var totalCount = ordered.Count;
-        var paged = ordered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-        paged = await WithLinkedCountsAsync(paged, ct);
-
-        return new UnifiedResourceBankListResult(paged, totalCount);
+        return new UnifiedResourceBankListResult(items, totalCount);
     }
+
+    private static UnifiedResourceBankItemDto ToUnifiedDto(QueryRow x)
+    {
+        var entry = x.Entry;
+        var source = x.Source;
+
+        return entry.Type switch
+        {
+            PublishedResourceType.Vocabulary => MapVocabulary(entry, source),
+            PublishedResourceType.Grammar => MapGrammar(entry, source),
+            PublishedResourceType.ReadingReference => MapReadingReference(entry, source),
+            PublishedResourceType.ReadingPassage => MapReadingPassage(entry, source),
+            _ => throw new InvalidOperationException($"Unknown PublishedResourceType '{entry.Type}'."),
+        };
+    }
+
+    private static UnifiedResourceBankItemDto MapVocabulary(ResourceBankItem entry, CefrResourceSource source)
+    {
+        var c = ResourceBankItemContent.Deserialize<VocabularyContent>(entry.ContentJson);
+        return new UnifiedResourceBankItemDto(
+            entry.Id, UnifiedResourceBankItemType.Vocabulary, c.Word, c.Notes,
+            entry.CefrLevel, "Vocabulary", entry.Subskill,
+            ParseJsonStringArray(entry.ContextTagsJson), ParseJsonStringArray(entry.FocusTagsJson),
+            entry.DifficultyBand, source.Id, source.Name, entry.ContentFingerprint, "Published",
+            entry.CreatedAt, entry.UpdatedAt, "CefrVocabularyEntry", null,
+            null, null, null);
+    }
+
+    private static UnifiedResourceBankItemDto MapGrammar(ResourceBankItem entry, CefrResourceSource source)
+    {
+        var c = ResourceBankItemContent.Deserialize<GrammarContent>(entry.ContentJson);
+        return new UnifiedResourceBankItemDto(
+            entry.Id, UnifiedResourceBankItemType.Grammar, c.GrammarPoint, c.Description,
+            entry.CefrLevel, "Grammar", entry.Subskill,
+            ParseJsonStringArray(entry.ContextTagsJson), ParseJsonStringArray(entry.FocusTagsJson),
+            entry.DifficultyBand, source.Id, source.Name, entry.ContentFingerprint, "Published",
+            entry.CreatedAt, entry.UpdatedAt, "CefrGrammarProfileEntry", null,
+            null, null, null);
+    }
+
+    private static UnifiedResourceBankItemDto MapReadingReference(ResourceBankItem entry, CefrResourceSource source)
+    {
+        var c = ResourceBankItemContent.Deserialize<ReadingReferenceContent>(entry.ContentJson);
+        return new UnifiedResourceBankItemDto(
+            entry.Id, UnifiedResourceBankItemType.ReadingReference,
+            !string.IsNullOrWhiteSpace(c.TextType) ? c.TextType! : "Reading reference",
+            Truncate(c.ReferenceExcerpt, 160),
+            entry.CefrLevel, "Reading", entry.Subskill,
+            ParseJsonStringArray(entry.ContextTagsJson), ParseJsonStringArray(entry.FocusTagsJson),
+            entry.DifficultyBand, source.Id, source.Name, entry.ContentFingerprint, "Published",
+            entry.CreatedAt, entry.UpdatedAt, "CefrReadingReference", null,
+            null, null, null);
+    }
+
+    private static UnifiedResourceBankItemDto MapReadingPassage(ResourceBankItem entry, CefrResourceSource source)
+    {
+        var c = ResourceBankItemContent.Deserialize<ReadingPassageContent>(entry.ContentJson);
+        return new UnifiedResourceBankItemDto(
+            entry.Id, UnifiedResourceBankItemType.ReadingPassage, c.Title, c.Summary,
+            entry.CefrLevel, c.PrimarySkill, entry.Subskill,
+            ParseJsonStringArray(entry.ContextTagsJson), ParseJsonStringArray(entry.FocusTagsJson),
+            entry.DifficultyBand, source.Id, source.Name, entry.ContentFingerprint, "Published",
+            entry.CreatedAt, entry.UpdatedAt, "CefrReadingPassage", null,
+            null, null, null);
+    }
+
+    private static PublishedResourceType ToDomainType(UnifiedResourceBankItemType type) => type switch
+    {
+        UnifiedResourceBankItemType.Vocabulary => PublishedResourceType.Vocabulary,
+        UnifiedResourceBankItemType.Grammar => PublishedResourceType.Grammar,
+        UnifiedResourceBankItemType.ReadingReference => PublishedResourceType.ReadingReference,
+        UnifiedResourceBankItemType.ReadingPassage => PublishedResourceType.ReadingPassage,
+        _ => throw new ArgumentOutOfRangeException(nameof(type)),
+    };
 
     /// <summary>Phase H3/H4/H5 — populates <see cref="UnifiedResourceBankItemDto.LinkedLearnCount"/>
     /// from <c>LearnItemResourceLink</c>, <see cref="UnifiedResourceBankItemDto.LinkedActivityCount"/>
@@ -473,23 +427,25 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
             .ToList();
     }
 
-    private static bool MatchesUnifiedType(Domain.Enums.PublishedResourceType linkType, UnifiedResourceBankItemType unifiedType) =>
+    private static bool MatchesUnifiedType(PublishedResourceType linkType, UnifiedResourceBankItemType unifiedType) =>
         (linkType, unifiedType) switch
         {
-            (Domain.Enums.PublishedResourceType.Vocabulary, UnifiedResourceBankItemType.Vocabulary) => true,
-            (Domain.Enums.PublishedResourceType.Grammar, UnifiedResourceBankItemType.Grammar) => true,
-            (Domain.Enums.PublishedResourceType.ReadingReference, UnifiedResourceBankItemType.ReadingReference) => true,
-            (Domain.Enums.PublishedResourceType.ReadingPassage, UnifiedResourceBankItemType.ReadingPassage) => true,
+            (PublishedResourceType.Vocabulary, UnifiedResourceBankItemType.Vocabulary) => true,
+            (PublishedResourceType.Grammar, UnifiedResourceBankItemType.Grammar) => true,
+            (PublishedResourceType.ReadingReference, UnifiedResourceBankItemType.ReadingReference) => true,
+            (PublishedResourceType.ReadingPassage, UnifiedResourceBankItemType.ReadingPassage) => true,
             _ => false
         };
 
-    private async Task<List<UnifiedResourceBankItemDto>> BuildUnifiedVocabularyAsync(
-        UnifiedResourceBankListFilter filter, CancellationToken ct)
+    // ── Shared query helpers ─────────────────────────────────────────────────────
+
+    private IQueryable<QueryRow> FilteredQuery(PublishedResourceType type, ResourceBankListFilter filter)
     {
         var query =
-            from e in _db.CefrVocabularyEntries
+            from e in _db.ResourceBankItems
             join s in _db.CefrResourceSources on e.SourceId equals s.Id
-            select new { Entry = e, Source = s };
+            where e.Type == type
+            select new QueryRow { Entry = e, Source = s };
 
         if (filter.SourceId.HasValue)
             query = query.Where(x => x.Entry.SourceId == filter.SourceId.Value);
@@ -510,174 +466,25 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
             query = query.Where(x => x.Entry.FocusTagsJson != null && x.Entry.FocusTagsJson.ToLower().Contains(needle));
         }
 
-        if (!string.IsNullOrWhiteSpace(filter.SearchText))
-        {
-            var search = filter.SearchText.Trim().ToLowerInvariant();
-            query = query.Where(x =>
-                x.Entry.Word.ToLower().Contains(search)
-                || (x.Entry.Notes != null && x.Entry.Notes.ToLower().Contains(search)));
-        }
-
-        var loaded = await query.ToListAsync(ct);
-
-        return loaded
-            .Select(x => new UnifiedResourceBankItemDto(
-                x.Entry.Id, UnifiedResourceBankItemType.Vocabulary, x.Entry.Word, x.Entry.Notes,
-                x.Entry.CefrLevel, "Vocabulary", x.Entry.Subskill,
-                ParseJsonStringArray(x.Entry.ContextTagsJson), ParseJsonStringArray(x.Entry.FocusTagsJson),
-                x.Entry.DifficultyBand, x.Source.Id, x.Source.Name, null, "Published",
-                x.Entry.CreatedAt, null, nameof(CefrVocabularyEntry), null,
-                null, null, null))
-            .ToList();
+        return query;
     }
 
-    private async Task<List<UnifiedResourceBankItemDto>> BuildUnifiedGrammarAsync(
-        UnifiedResourceBankListFilter filter, CancellationToken ct)
+    private sealed class QueryRow
     {
-        var query =
-            from e in _db.CefrGrammarProfileEntries
-            join s in _db.CefrResourceSources on e.SourceId equals s.Id
-            select new { Entry = e, Source = s };
-
-        if (filter.SourceId.HasValue)
-            query = query.Where(x => x.Entry.SourceId == filter.SourceId.Value);
-        if (!string.IsNullOrWhiteSpace(filter.CefrLevel))
-            query = query.Where(x => x.Entry.CefrLevel == filter.CefrLevel);
-        if (!string.IsNullOrWhiteSpace(filter.Subskill))
-            query = query.Where(x => x.Entry.Subskill == filter.Subskill.Trim());
-        if (filter.DifficultyBand.HasValue)
-            query = query.Where(x => x.Entry.DifficultyBand == filter.DifficultyBand.Value);
-        if (!string.IsNullOrWhiteSpace(filter.ContextTag))
-        {
-            var needle = TagNeedle(filter.ContextTag);
-            query = query.Where(x => x.Entry.ContextTagsJson != null && x.Entry.ContextTagsJson.ToLower().Contains(needle));
-        }
-        if (!string.IsNullOrWhiteSpace(filter.FocusTag))
-        {
-            var needle = TagNeedle(filter.FocusTag);
-            query = query.Where(x => x.Entry.FocusTagsJson != null && x.Entry.FocusTagsJson.ToLower().Contains(needle));
-        }
-
-        if (!string.IsNullOrWhiteSpace(filter.SearchText))
-        {
-            var search = filter.SearchText.Trim().ToLowerInvariant();
-            query = query.Where(x =>
-                x.Entry.GrammarPoint.ToLower().Contains(search)
-                || (x.Entry.Description != null && x.Entry.Description.ToLower().Contains(search)));
-        }
-
-        var loaded = await query.ToListAsync(ct);
-
-        return loaded
-            .Select(x => new UnifiedResourceBankItemDto(
-                x.Entry.Id, UnifiedResourceBankItemType.Grammar, x.Entry.GrammarPoint, x.Entry.Description,
-                x.Entry.CefrLevel, "Grammar", x.Entry.Subskill,
-                ParseJsonStringArray(x.Entry.ContextTagsJson), ParseJsonStringArray(x.Entry.FocusTagsJson),
-                x.Entry.DifficultyBand, x.Source.Id, x.Source.Name, null, "Published",
-                x.Entry.CreatedAt, null, nameof(CefrGrammarProfileEntry), null,
-                null, null, null))
-            .ToList();
+        public ResourceBankItem Entry { get; set; } = null!;
+        public CefrResourceSource Source { get; set; } = null!;
     }
 
-    private async Task<List<UnifiedResourceBankItemDto>> BuildUnifiedReadingReferenceAsync(
-        UnifiedResourceBankListFilter filter, CancellationToken ct)
-    {
-        var query =
-            from e in _db.CefrReadingReferences
+    private static IQueryable<QueryRow> Page(IQueryable<QueryRow> query, int page, int pageSize) =>
+        query.OrderByDescending(x => x.Entry.CreatedAt).Skip((page - 1) * pageSize).Take(pageSize);
+
+    private async Task<QueryRow?> LoadDetailAsync(PublishedResourceType type, Guid id, CancellationToken ct) =>
+        await (
+            from e in _db.ResourceBankItems
             join s in _db.CefrResourceSources on e.SourceId equals s.Id
-            select new { Entry = e, Source = s };
-
-        if (filter.SourceId.HasValue)
-            query = query.Where(x => x.Entry.SourceId == filter.SourceId.Value);
-        if (!string.IsNullOrWhiteSpace(filter.CefrLevel))
-            query = query.Where(x => x.Entry.CefrLevel == filter.CefrLevel);
-        if (!string.IsNullOrWhiteSpace(filter.Subskill))
-            query = query.Where(x => x.Entry.Subskill == filter.Subskill.Trim());
-        if (filter.DifficultyBand.HasValue)
-            query = query.Where(x => x.Entry.DifficultyBand == filter.DifficultyBand.Value);
-        if (!string.IsNullOrWhiteSpace(filter.ContextTag))
-        {
-            var needle = TagNeedle(filter.ContextTag);
-            query = query.Where(x => x.Entry.ContextTagsJson != null && x.Entry.ContextTagsJson.ToLower().Contains(needle));
-        }
-        if (!string.IsNullOrWhiteSpace(filter.FocusTag))
-        {
-            var needle = TagNeedle(filter.FocusTag);
-            query = query.Where(x => x.Entry.FocusTagsJson != null && x.Entry.FocusTagsJson.ToLower().Contains(needle));
-        }
-
-        if (!string.IsNullOrWhiteSpace(filter.SearchText))
-        {
-            var search = filter.SearchText.Trim().ToLowerInvariant();
-            query = query.Where(x =>
-                (x.Entry.TextType != null && x.Entry.TextType.ToLower().Contains(search))
-                || (x.Entry.DifficultyNotes != null && x.Entry.DifficultyNotes.ToLower().Contains(search))
-                || (x.Entry.ReferenceExcerpt != null && x.Entry.ReferenceExcerpt.ToLower().Contains(search)));
-        }
-
-        var loaded = await query.ToListAsync(ct);
-
-        return loaded
-            .Select(x => new UnifiedResourceBankItemDto(
-                x.Entry.Id, UnifiedResourceBankItemType.ReadingReference,
-                !string.IsNullOrWhiteSpace(x.Entry.TextType) ? x.Entry.TextType! : "Reading reference",
-                Truncate(x.Entry.ReferenceExcerpt, 160),
-                x.Entry.CefrLevel, "Reading", x.Entry.Subskill,
-                ParseJsonStringArray(x.Entry.ContextTagsJson), ParseJsonStringArray(x.Entry.FocusTagsJson),
-                x.Entry.DifficultyBand, x.Source.Id, x.Source.Name, null, "Published",
-                x.Entry.CreatedAt, null, nameof(CefrReadingReference), null,
-                null, null, null))
-            .ToList();
-    }
-
-    private async Task<List<UnifiedResourceBankItemDto>> BuildUnifiedReadingPassageAsync(
-        UnifiedResourceBankListFilter filter, CancellationToken ct)
-    {
-        var query =
-            from e in _db.CefrReadingPassages
-            join s in _db.CefrResourceSources on e.SourceId equals s.Id
-            select new { Entry = e, Source = s };
-
-        if (filter.SourceId.HasValue)
-            query = query.Where(x => x.Entry.SourceId == filter.SourceId.Value);
-        if (!string.IsNullOrWhiteSpace(filter.CefrLevel))
-            query = query.Where(x => x.Entry.CefrLevel == filter.CefrLevel);
-        if (!string.IsNullOrWhiteSpace(filter.Subskill))
-            query = query.Where(x => x.Entry.Subskill == filter.Subskill.Trim());
-        if (filter.DifficultyBand.HasValue)
-            query = query.Where(x => x.Entry.DifficultyBand == filter.DifficultyBand.Value);
-        if (!string.IsNullOrWhiteSpace(filter.ContextTag))
-        {
-            var needle = TagNeedle(filter.ContextTag);
-            query = query.Where(x => x.Entry.ContextTagsJson != null && x.Entry.ContextTagsJson.ToLower().Contains(needle));
-        }
-        if (!string.IsNullOrWhiteSpace(filter.FocusTag))
-        {
-            var needle = TagNeedle(filter.FocusTag);
-            query = query.Where(x => x.Entry.FocusTagsJson != null && x.Entry.FocusTagsJson.ToLower().Contains(needle));
-        }
-
-        if (!string.IsNullOrWhiteSpace(filter.SearchText))
-        {
-            var search = filter.SearchText.Trim().ToLowerInvariant();
-            query = query.Where(x =>
-                x.Entry.Title.ToLower().Contains(search)
-                || x.Entry.PassageText.ToLower().Contains(search)
-                || (x.Entry.Summary != null && x.Entry.Summary.ToLower().Contains(search)));
-        }
-
-        var loaded = await query.ToListAsync(ct);
-
-        return loaded
-            .Select(x => new UnifiedResourceBankItemDto(
-                x.Entry.Id, UnifiedResourceBankItemType.ReadingPassage, x.Entry.Title, x.Entry.Summary,
-                x.Entry.CefrLevel, x.Entry.PrimarySkill, x.Entry.Subskill,
-                ParseJsonStringArray(x.Entry.ContextTagsJson), ParseJsonStringArray(x.Entry.FocusTagsJson),
-                x.Entry.DifficultyBand, x.Source.Id, x.Source.Name, x.Entry.ContentFingerprint, "Published",
-                x.Entry.CreatedAt, x.Entry.UpdatedAtUtc, nameof(CefrReadingPassage), null,
-                null, null, null))
-            .ToList();
-    }
+            where e.Id == id && e.Type == type
+            select new QueryRow { Entry = e, Source = s })
+            .FirstOrDefaultAsync(ct);
 
     private static string? Truncate(string? text, int maxLength)
     {

@@ -5,8 +5,7 @@ namespace LinguaCoach.Domain.Entities;
 /// <summary>
 /// Provenance/license record for an external CEFR reference dataset (e.g. CEFR-J / Open
 /// Language Profiles, UniversalCEFR). Every content-bearing CEFR reference row
-/// (<see cref="CefrDescriptor"/>, <see cref="CefrVocabularyEntry"/>,
-/// <see cref="CefrGrammarProfileEntry"/>, <see cref="CefrReadingReference"/>) carries a
+/// (<see cref="CefrDescriptor"/>, <see cref="ResourceBankItem"/>) carries a
 /// SourceId FK to one of these rows, so license/provenance is traceable per-row, not just
 /// per-import.
 ///

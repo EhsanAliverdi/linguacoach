@@ -18,17 +18,17 @@ namespace LinguaCoach.Infrastructure.ResourceImport;
 /// Candidate-type support decisions made for this phase:
 /// <list type="bullet">
 /// <item><description><see cref="ResourceCandidateType.VocabularyEntry"/> and
-/// <see cref="ResourceCandidateType.GrammarProfileEntry"/> — fully supported. Their bank entities
-/// (<see cref="CefrVocabularyEntry"/>/<see cref="CefrGrammarProfileEntry"/>) need only a handful
-/// of fields that a staged candidate reliably carries.</description></item>
+/// <see cref="ResourceCandidateType.GrammarProfileEntry"/> — fully supported. Both publish into
+/// <see cref="ResourceBankItem"/> (Phase I0) and need only a handful of fields that a staged
+/// candidate reliably carries.</description></item>
 /// <item><description><see cref="ResourceCandidateType.ReadingPassage"/> — routes to one of two
-/// targets based on staged text length (see <see cref="MaxReadingExcerptLength"/>). Text at or
-/// under the threshold publishes to <see cref="CefrReadingReference"/> (short excerpt/citation
-/// only, per that entity's own doc comment). Text over the threshold — a genuine full-length
-/// passage — publishes to <see cref="CefrReadingPassage"/> (Phase E7), never silently truncated
-/// into <see cref="CefrReadingReference.ReferenceExcerpt"/> (that would be lossy and dishonest
-/// about what was actually published). Both targets still require CefrLevel and every publish
-/// gate above (English-only, source approval/license, validation, admin approval).</description></item>
+/// <see cref="ResourceBankItem"/> shapes based on staged text length (see
+/// <see cref="MaxReadingExcerptLength"/>). Text at or under the threshold publishes as a
+/// ReadingReference-typed row (short excerpt/citation only). Text over the threshold — a genuine
+/// full-length passage — publishes as a ReadingPassage-typed row, never silently truncated into a
+/// short excerpt (that would be lossy and dishonest about what was actually published). Both
+/// still require CefrLevel and every publish gate above (English-only, source approval/license,
+/// validation, admin approval).</description></item>
 /// <item><description><see cref="ResourceCandidateType.ActivityTemplateCandidate"/> — deferred
 /// entirely in this phase. <see cref="ActivityTemplate"/> is a much richer entity than the Cefr*
 /// ones: it needs a stable, unique <c>Key</c>, a curriculum-taxonomy-valid Skill/Subskill pair,
@@ -134,21 +134,7 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
         if (entity is null)
             return new ResourceCandidatePublishResult(false, null, null, null, mappingErrors);
 
-        switch (entity)
-        {
-            case CefrVocabularyEntry vocabularyEntry:
-                _db.CefrVocabularyEntries.Add(vocabularyEntry);
-                break;
-            case CefrGrammarProfileEntry grammarEntry:
-                _db.CefrGrammarProfileEntries.Add(grammarEntry);
-                break;
-            case CefrReadingReference readingReference:
-                _db.CefrReadingReferences.Add(readingReference);
-                break;
-            case CefrReadingPassage readingPassage:
-                _db.CefrReadingPassages.Add(readingPassage);
-                break;
-        }
+        _db.ResourceBankItems.Add((ResourceBankItem)entity);
 
         var publishedAtUtc = DateTimeOffset.UtcNow;
         candidate.MarkPublished(entityTypeName!, entity.Id, publishedAtUtc, publishedByUserId);
@@ -205,33 +191,25 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
 
         // Same field-name convention ResourceCandidatePreviewService's BuildVocabularyPreview
         // uses — reused via ResourceCandidateFieldHelper rather than duplicated.
-        var word = ResourceCandidateFieldHelper.GetFieldCI(fields, "word", "lemma") ?? candidate.CanonicalText;
-        var partOfSpeech = ResourceCandidateFieldHelper.GetFieldCI(fields, "partofspeech", "pos");
-        var notes = ResourceCandidateFieldHelper.GetFieldCI(fields, "definition", "meaning");
+        var word = (ResourceCandidateFieldHelper.GetFieldCI(fields, "word", "lemma") ?? candidate.CanonicalText).Trim();
+        var partOfSpeech = ResourceCandidateFieldHelper.GetFieldCI(fields, "partofspeech", "pos")?.Trim();
+        var notes = ResourceCandidateFieldHelper.GetFieldCI(fields, "definition", "meaning")?.Trim();
 
         try
         {
-            var entity = new CefrVocabularyEntry(sourceId, word, candidate.CefrLevel, partOfSpeech, notes);
-            ApplySelectionMetadata(candidate, entity.SetSelectionMetadata);
-            return (entity, nameof(CefrVocabularyEntry), errors);
+            var difficultyBand = candidate.DifficultyBand is >= 1 and <= 5 ? candidate.DifficultyBand : null;
+            var entity = new ResourceBankItem(
+                PublishedResourceType.Vocabulary, sourceId, candidate.CefrLevel,
+                ResourceBankItemContent.Serialize(new VocabularyContent(word, partOfSpeech, notes)),
+                candidate.Subskill, difficultyBand, candidate.ContextTagsJson, candidate.FocusTagsJson,
+                candidate.ContentFingerprint);
+            return (entity, "CefrVocabularyEntry", errors);
         }
         catch (ArgumentException ex)
         {
             errors.Add($"Could not construct a CefrVocabularyEntry: {ex.Message}");
             return (null, null, errors);
         }
-    }
-
-    /// <summary>Phase E9 — carries the candidate's context/focus/subskill/difficulty selection
-    /// metadata onto the freshly-constructed lean bank entity so it is no longer lost at publish
-    /// time. Difficulty band that falls outside 1-5 is dropped to null rather than blocking the
-    /// publish (the candidate's other gates already passed; a stray difficulty value must not fail
-    /// an otherwise-valid publish).</summary>
-    private static void ApplySelectionMetadata(
-        ResourceCandidate candidate, Action<string?, int?, string?, string?> setMetadata)
-    {
-        var difficultyBand = candidate.DifficultyBand is >= 1 and <= 5 ? candidate.DifficultyBand : null;
-        setMetadata(candidate.Subskill, difficultyBand, candidate.ContextTagsJson, candidate.FocusTagsJson);
     }
 
     private static (BaseEntity?, string?, List<string>) BuildGrammarProfileEntry(
@@ -243,14 +221,18 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
             return (null, null, errors);
         }
 
-        var grammarPoint = ResourceCandidateFieldHelper.GetFieldCI(fields, "grammarkey", "title") ?? candidate.CanonicalText;
-        var description = ResourceCandidateFieldHelper.GetFieldCI(fields, "explanation");
+        var grammarPoint = (ResourceCandidateFieldHelper.GetFieldCI(fields, "grammarkey", "title") ?? candidate.CanonicalText).Trim();
+        var description = ResourceCandidateFieldHelper.GetFieldCI(fields, "explanation")?.Trim();
 
         try
         {
-            var entity = new CefrGrammarProfileEntry(sourceId, candidate.CefrLevel, grammarPoint, description);
-            ApplySelectionMetadata(candidate, entity.SetSelectionMetadata);
-            return (entity, nameof(CefrGrammarProfileEntry), errors);
+            var difficultyBand = candidate.DifficultyBand is >= 1 and <= 5 ? candidate.DifficultyBand : null;
+            var entity = new ResourceBankItem(
+                PublishedResourceType.Grammar, sourceId, candidate.CefrLevel,
+                ResourceBankItemContent.Serialize(new GrammarContent(grammarPoint, description)),
+                candidate.Subskill, difficultyBand, candidate.ContextTagsJson, candidate.FocusTagsJson,
+                candidate.ContentFingerprint);
+            return (entity, "CefrGrammarProfileEntry", errors);
         }
         catch (ArgumentException ex)
         {
@@ -268,19 +250,23 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
             return (null, null, errors);
         }
 
-        var passage = ResourceCandidateFieldHelper.GetFieldCI(fields, "passage", "text") ?? candidate.CanonicalText;
-        var title = ResourceCandidateFieldHelper.GetFieldCI(fields, "title");
+        var passage = (ResourceCandidateFieldHelper.GetFieldCI(fields, "passage", "text") ?? candidate.CanonicalText).Trim();
+        var title = ResourceCandidateFieldHelper.GetFieldCI(fields, "title")?.Trim();
 
         if (passage.Length <= MaxReadingExcerptLength)
         {
-            var textType = ResourceCandidateFieldHelper.GetFieldCI(fields, "texttype", "type");
+            var textType = ResourceCandidateFieldHelper.GetFieldCI(fields, "texttype", "type")?.Trim();
             var difficultyNotes = title is null ? null : $"Title: {title}";
 
             try
             {
-                var entity = new CefrReadingReference(source.Id, candidate.CefrLevel, textType, difficultyNotes, passage);
-                ApplySelectionMetadata(candidate, entity.SetSelectionMetadata);
-                return (entity, nameof(CefrReadingReference), errors);
+                var difficultyBand = candidate.DifficultyBand is >= 1 and <= 5 ? candidate.DifficultyBand : null;
+                var entity = new ResourceBankItem(
+                    PublishedResourceType.ReadingReference, source.Id, candidate.CefrLevel,
+                    ResourceBankItemContent.Serialize(new ReadingReferenceContent(textType, difficultyNotes, passage)),
+                    candidate.Subskill, difficultyBand, candidate.ContextTagsJson, candidate.FocusTagsJson,
+                    candidate.ContentFingerprint);
+                return (entity, "CefrReadingReference", errors);
             }
             catch (ArgumentException ex)
             {
@@ -302,20 +288,18 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
 
         try
         {
-            var entity = new CefrReadingPassage(
-                sourceId: source.Id,
-                title: title,
-                passageText: passage,
-                cefrLevel: candidate.CefrLevel,
-                difficultyBand: candidate.DifficultyBand,
-                primarySkill: candidate.PrimarySkill ?? "Reading",
-                subskill: candidate.Subskill,
-                contextTagsJson: candidate.ContextTagsJson,
-                focusTagsJson: candidate.FocusTagsJson,
-                attributionText: source.AttributionText,
-                contentFingerprint: candidate.ContentFingerprint,
-                qualityScore: candidate.QualityScore);
-            return (entity, nameof(CefrReadingPassage), errors);
+            var difficultyBand = candidate.DifficultyBand is >= 1 and <= 5 ? candidate.DifficultyBand : null;
+            var wordCount = passage.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length;
+            var estimatedReadingMinutes = Math.Max(1, (int)Math.Round(wordCount / AssumedWordsPerMinute, MidpointRounding.AwayFromZero));
+
+            var entity = new ResourceBankItem(
+                PublishedResourceType.ReadingPassage, source.Id, candidate.CefrLevel,
+                ResourceBankItemContent.Serialize(new ReadingPassageContent(
+                    title, passage, Summary: null, candidate.PrimarySkill ?? "Reading", TopicTagsJson: null,
+                    wordCount, estimatedReadingMinutes, source.AttributionText, candidate.QualityScore)),
+                candidate.Subskill, difficultyBand, candidate.ContextTagsJson, candidate.FocusTagsJson,
+                candidate.ContentFingerprint);
+            return (entity, "CefrReadingPassage", errors);
         }
         catch (ArgumentException ex)
         {
@@ -323,4 +307,8 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
             return (null, null, errors);
         }
     }
+
+    // Assumed reading speed used to derive EstimatedReadingMinutes from WordCount — matches the
+    // value the retired CefrReadingPassage entity used.
+    private const double AssumedWordsPerMinute = 200;
 }

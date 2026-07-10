@@ -3,6 +3,7 @@ using System;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LinguaCoach.Persistence.Migrations
 {
     [DbContext(typeof(LinguaCoachDbContext))]
-    partial class LinguaCoachDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260710014144_Phase_I0_AddResourceBankItem")]
+    partial class Phase_I0_AddResourceBankItem
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1305,6 +1308,236 @@ namespace LinguaCoach.Persistence.Migrations
                     b.ToTable("cefr_descriptors", (string)null);
                 });
 
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.CefrGrammarProfileEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CefrLevel")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("cefr_level");
+
+                    b.Property<string>("ContextTagsJson")
+                        .HasColumnType("text")
+                        .HasColumnName("context_tags_json");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<int?>("DifficultyBand")
+                        .HasColumnType("integer")
+                        .HasColumnName("difficulty_band");
+
+                    b.Property<string>("FocusTagsJson")
+                        .HasColumnType("text")
+                        .HasColumnName("focus_tags_json");
+
+                    b.Property<string>("GrammarPoint")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("grammar_point");
+
+                    b.Property<Guid>("SourceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_id");
+
+                    b.Property<string>("Subskill")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("subskill");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SourceId");
+
+                    b.HasIndex("CefrLevel", "GrammarPoint")
+                        .HasDatabaseName("ix_cefr_grammar_profile_entries_level_point");
+
+                    b.ToTable("cefr_grammar_profile_entries", (string)null);
+                });
+
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.CefrReadingPassage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AttributionText")
+                        .HasColumnType("text")
+                        .HasColumnName("attribution_text");
+
+                    b.Property<string>("CefrLevel")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("cefr_level");
+
+                    b.Property<string>("ContentFingerprint")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("content_fingerprint");
+
+                    b.Property<string>("ContextTagsJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("context_tags_json");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<int?>("DifficultyBand")
+                        .HasColumnType("integer")
+                        .HasColumnName("difficulty_band");
+
+                    b.Property<int>("EstimatedReadingMinutes")
+                        .HasColumnType("integer")
+                        .HasColumnName("estimated_reading_minutes");
+
+                    b.Property<string>("FocusTagsJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("focus_tags_json");
+
+                    b.Property<string>("PassageText")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("passage_text");
+
+                    b.Property<string>("PrimarySkill")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("primary_skill");
+
+                    b.Property<double?>("QualityScore")
+                        .HasColumnType("double precision")
+                        .HasColumnName("quality_score");
+
+                    b.Property<Guid>("SourceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_id");
+
+                    b.Property<string>("Subskill")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("subskill");
+
+                    b.Property<string>("Summary")
+                        .HasColumnType("text")
+                        .HasColumnName("summary");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("title");
+
+                    b.Property<string>("TopicTagsJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("topic_tags_json");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<int>("WordCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("word_count");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CefrLevel")
+                        .HasDatabaseName("ix_cefr_reading_passages_level");
+
+                    b.HasIndex("ContentFingerprint")
+                        .HasDatabaseName("ix_cefr_reading_passages_fingerprint");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("ix_cefr_reading_passages_created_at");
+
+                    b.HasIndex("SourceId")
+                        .HasDatabaseName("ix_cefr_reading_passages_source");
+
+                    b.ToTable("cefr_reading_passages", (string)null);
+                });
+
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.CefrReadingReference", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CefrLevel")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("cefr_level");
+
+                    b.Property<string>("ContextTagsJson")
+                        .HasColumnType("text")
+                        .HasColumnName("context_tags_json");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<int?>("DifficultyBand")
+                        .HasColumnType("integer")
+                        .HasColumnName("difficulty_band");
+
+                    b.Property<string>("DifficultyNotes")
+                        .HasColumnType("text")
+                        .HasColumnName("difficulty_notes");
+
+                    b.Property<string>("FocusTagsJson")
+                        .HasColumnType("text")
+                        .HasColumnName("focus_tags_json");
+
+                    b.Property<string>("ReferenceExcerpt")
+                        .HasColumnType("text")
+                        .HasColumnName("reference_excerpt");
+
+                    b.Property<Guid>("SourceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_id");
+
+                    b.Property<string>("Subskill")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("subskill");
+
+                    b.Property<string>("TextType")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("text_type");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CefrLevel")
+                        .HasDatabaseName("ix_cefr_reading_references_level");
+
+                    b.HasIndex("SourceId");
+
+                    b.ToTable("cefr_reading_references", (string)null);
+                });
+
             modelBuilder.Entity("LinguaCoach.Domain.Entities.CefrResourceSource", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1394,6 +1627,71 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasDatabaseName("ix_cefr_resource_sources_name");
 
                     b.ToTable("cefr_resource_sources", (string)null);
+                });
+
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.CefrVocabularyEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CefrLevel")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("cefr_level");
+
+                    b.Property<string>("ContextTagsJson")
+                        .HasColumnType("text")
+                        .HasColumnName("context_tags_json");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<int?>("DifficultyBand")
+                        .HasColumnType("integer")
+                        .HasColumnName("difficulty_band");
+
+                    b.Property<string>("FocusTagsJson")
+                        .HasColumnType("text")
+                        .HasColumnName("focus_tags_json");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("PartOfSpeech")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("part_of_speech");
+
+                    b.Property<Guid>("SourceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_id");
+
+                    b.Property<string>("Subskill")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("subskill");
+
+                    b.Property<string>("Word")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("word");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SourceId");
+
+                    b.HasIndex("Word", "CefrLevel")
+                        .HasDatabaseName("ix_cefr_vocabulary_entries_word_level");
+
+                    b.ToTable("cefr_vocabulary_entries", (string)null);
                 });
 
             modelBuilder.Entity("LinguaCoach.Domain.Entities.CurriculumObjective", b =>
@@ -7444,6 +7742,42 @@ namespace LinguaCoach.Persistence.Migrations
                 });
 
             modelBuilder.Entity("LinguaCoach.Domain.Entities.CefrDescriptor", b =>
+                {
+                    b.HasOne("LinguaCoach.Domain.Entities.CefrResourceSource", null)
+                        .WithMany()
+                        .HasForeignKey("SourceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.CefrGrammarProfileEntry", b =>
+                {
+                    b.HasOne("LinguaCoach.Domain.Entities.CefrResourceSource", null)
+                        .WithMany()
+                        .HasForeignKey("SourceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.CefrReadingPassage", b =>
+                {
+                    b.HasOne("LinguaCoach.Domain.Entities.CefrResourceSource", null)
+                        .WithMany()
+                        .HasForeignKey("SourceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.CefrReadingReference", b =>
+                {
+                    b.HasOne("LinguaCoach.Domain.Entities.CefrResourceSource", null)
+                        .WithMany()
+                        .HasForeignKey("SourceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.CefrVocabularyEntry", b =>
                 {
                     b.HasOne("LinguaCoach.Domain.Entities.CefrResourceSource", null)
                         .WithMany()
