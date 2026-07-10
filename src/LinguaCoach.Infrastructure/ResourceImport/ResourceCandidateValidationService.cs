@@ -278,22 +278,43 @@ public sealed class ResourceCandidateValidationService : IResourceCandidateValid
             return;
         }
 
-        // Global cross-run/cross-source check. Deliberately NOT cross-checked against published
-        // Cefr* bank tables (CefrVocabularyEntry/CefrGrammarProfileEntry/CefrReadingReference) —
-        // those entities have no fingerprint-shaped column today (confirmed: they predate
-        // IActivityContentFingerprintService and were never retrofitted with one), and adding
-        // one is out of scope for E2 (that's a schema change to published tables, not a staging
-        // concern). A simpler direct-text cross-check was considered but rejected: it would need
-        // a different comparison per entity/candidate type (Word vs. GrammarKey vs. Passage
-        // text) and risks being a second, subtly different dedup heuristic living alongside the
-        // fingerprint one — left for a future phase if bank-side dedup becomes a real need.
+        // Global cross-run/cross-source check, against other still-pending candidates.
         var global = await _db.ResourceCandidates
             .Where(c => c.Id != candidate.Id && c.ContentFingerprint == candidate.ContentFingerprint)
             .Select(c => c.Id)
             .AnyAsync(ct);
 
         if (global)
+        {
             warnings.Add("Duplicate: another candidate with the same content fingerprint exists elsewhere in the candidate table (different run/source).");
+            return;
+        }
+
+        // Phase J1 — cross-check against the already-published Resource Bank (Phase I0 gave
+        // ResourceBankItem a real ContentFingerprint column for every type; this was previously
+        // skipped with a comment claiming published tables had no fingerprint column, which is no
+        // longer true). Advisory only, matching every other dedup gate above — flags NeedsReview,
+        // never blocks publish outright (product decision, 2026-07-10: re-importing content
+        // identical to something already live is a legitimate scenario, e.g. a corrected re-upload
+        // that happens to normalize to the same fingerprint, so a human reviews it rather than the
+        // system rejecting it automatically).
+        //
+        // Skipped once this exact candidate is already published: a candidate's own published
+        // counterpart always shares its fingerprint (PublishAsync copies it verbatim), so checking
+        // an already-published candidate against the bank would only ever "find" itself. Publish
+        // happens after this gate in the normal workflow, so IsPublished is false for the case this
+        // check actually exists to catch; it only becomes true on a later re-validation of a
+        // candidate that already went through PublishAsync (e.g. an idempotent reseed).
+        if (!candidate.IsPublished)
+        {
+            var publishedDuplicate = await _db.ResourceBankItems
+                .Where(b => b.ContentFingerprint == candidate.ContentFingerprint)
+                .Select(b => b.Id)
+                .AnyAsync(ct);
+
+            if (publishedDuplicate)
+                warnings.Add("Duplicate: an already-published Resource Bank item has the same content fingerprint.");
+        }
     }
 
     private static IReadOnlyList<string> ParseJsonStringArray(string? json)

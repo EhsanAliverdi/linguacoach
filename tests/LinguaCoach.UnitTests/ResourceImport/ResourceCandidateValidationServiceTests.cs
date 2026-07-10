@@ -238,6 +238,47 @@ public sealed class ResourceCandidateValidationServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Duplicate_of_already_published_resource_bank_item_is_flagged_needs_review()
+    {
+        var source = SeedSource();
+        var (_, raw) = SeedRunAndRaw(source);
+        var fingerprint = Fingerprint("hello", """{"word":"hello"}""");
+
+        var published = new ResourceBankItem(
+            PublishedResourceType.Vocabulary, source.Id, "A1", """{"word":"hello"}""",
+            contentFingerprint: fingerprint);
+        _db.ResourceBankItems.Add(published);
+        _db.SaveChanges();
+
+        var candidate = SeedCandidate(raw, canonicalText: "hello", normalizedJson: """{"word":"hello"}""");
+
+        var result = await _sut.ValidateAsync(candidate.Id);
+
+        result.Status.Should().Be(ResourceCandidateValidationStatus.NeedsReview.ToString());
+        result.Warnings.Should().Contain(w => w.Contains("Duplicate") && w.Contains("already-published"));
+    }
+
+    [Fact]
+    public async Task No_published_duplicate_warning_when_fingerprint_does_not_match_any_bank_item()
+    {
+        var source = SeedSource();
+        var (_, raw) = SeedRunAndRaw(source);
+
+        var published = new ResourceBankItem(
+            PublishedResourceType.Vocabulary, source.Id, "A1", """{"word":"goodbye"}""",
+            contentFingerprint: Fingerprint("goodbye", """{"word":"goodbye"}"""));
+        _db.ResourceBankItems.Add(published);
+        _db.SaveChanges();
+
+        var candidate = SeedCandidate(raw, canonicalText: "hello", normalizedJson: """{"word":"hello"}""");
+
+        var result = await _sut.ValidateAsync(candidate.Id);
+
+        result.Status.Should().Be(ResourceCandidateValidationStatus.Passed.ToString());
+        result.Warnings.Should().NotContain(w => w.Contains("already-published"));
+    }
+
+    [Fact]
     public async Task Safety_tag_present_fails_validation()
     {
         var source = SeedSource();

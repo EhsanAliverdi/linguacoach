@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-10 (Phase I4)
+lastUpdated: 2026-07-10 (Phase J1)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,21 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-10 (Phase I4)
+Last updated: 2026-07-10 (Phase J1)
+
+## Post-Audit Cleanup: J0/J1 (2026-07-10)
+
+Following the post-I4 product architecture audit
+(`docs/reviews/2026-07-10-ai-content-pipeline-product-architecture-audit.md`), two of its
+recommended phases are complete. **J0** (docs-only) synced this file with Phases I0-I4 (see below)
+and fixed a leftover "Daily Lessons" string in the admin Resource Bank page subtitle. **J1** closed
+the audit's "no duplicate detection against the published bank" gap: `ResourceCandidateValidationService`
+now also checks a staged candidate's content fingerprint against already-published
+`ResourceBankItem` rows (previously only checked against other pending candidates), advisory only
+(forces `NeedsReview`, does not block publish — explicit product decision). 3,426/3,426 backend
+tests pass (+2 new). Full detail: `docs/reviews/2026-07-10-phase-j1-published-bank-duplicate-detection-review.md`.
+Remaining phases (J2 AI-assisted generation, J3 admin preview-as-learner, J4 `short_answer` runtime
+support, J5 import content-type expansion) are not yet started.
 
 ## Today Plan Rename (Phase I4 Pass 3, 2026-07-10)
 
