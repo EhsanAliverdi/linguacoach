@@ -13,6 +13,13 @@ made in this phase. This document defines the intended product model, audits the
 against it, and proposes a safe phased implementation path (the H-track). It does not implement
 any of it.
 
+> **Naming note (2026-07-10, decided in Phase I2C, not yet implemented):** the terms this document
+> uses — `LearnItem`, `ActivityDefinition`, `ModuleDefinition`, "Daily Lesson" — are slated for a
+> rename to clearer product language (Lesson / Exercise / Module / Daily Plan or Today Plan). See
+> `docs/architecture/product-language-renaming-i4.md` and `TODO-I4-1`. This document keeps the old
+> names as the historical record of the H-track decisions; a future I4 phase updates the live
+> code, and forward-looking docs should adopt the new vocabulary once implemented.
+
 **Phase H1, 2026-07-09. Implemented.** H1 built the §4 Option B direction: `ResourceBankQueryService
 .ListUnifiedAsync` (new `UnifiedResourceBankContracts.cs` DTOs) aggregates the four typed published
 bank tables into one filtered/paginated view — no physical `ResourceBankItem` table, no schema/

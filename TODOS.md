@@ -962,3 +962,17 @@ revisiting this without real usage data to justify the cost.
 (Step 0 audit, point 6); `src/LinguaCoach.Domain/Entities/ActivityAttempt.cs`.
 **Deferred from:** Phase H10, 2026-07-10.
 **Deferred from:** Plan-Sync-After-H7, 2026-07-09.
+
+### TODO-I4-1 — Rename LearnItem/ActivityDefinition/ModuleDefinition/Daily Lesson to product language
+**What:** Rename `LearnItem`→Lesson, `ActivityDefinition`→Exercise, `ModuleDefinition`→Module, and
+the "Daily Lesson" pipeline/container→Daily Plan (or Today Plan, TBD) across backend entities/
+DTOs/routes/migrations and frontend pages/labels/routes. Composition model in the new language: a
+Module contains Lesson + Exercise + Feedback; a Daily Plan contains several Modules. Renaming only
+— no data-model change.
+**Why:** Decided 2026-07-10, right after I2 made bank-first Learn/Activity/Module the sole
+content-delivery model (no more legacy fallback standing behind these names) — the best moment to
+fix the names before I3 locks in a final admin IA and before I5 multiplies how many places they
+appear.
+**Context:** `docs/architecture/product-language-renaming-i4.md` (full scope survey, the
+`/admin/lessons` route-collision problem, open questions, suggested I4a-I4d implementation split).
+**Deferred from:** Phase I2C, 2026-07-10 (decision captured, not implemented).
