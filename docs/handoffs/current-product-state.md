@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-10 (Phase J1)
+lastUpdated: 2026-07-11 (Phase J2a)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,24 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-10 (Phase J1)
+Last updated: 2026-07-11 (Phase J2a)
+
+## AI-Assisted Lesson Generation (Phase J2a, 2026-07-11)
+
+The Lesson slice of Phase J2 (AI-assisted Lesson/Exercise/Module generation) is complete. Admins
+can now generate a Lesson draft two ways: the existing deterministic "Generate Learn" (unchanged,
+field-copies the selected Resource Bank row's own content), or a new "Generate Learn (AI)" action
+that calls an AI provider to write genuine teaching prose (title, body, examples, common mistakes,
+usage notes) about the selected resource(s) — metadata (CEFR/skill/subskill/tags/difficulty) stays
+deterministic either way. This is a deliberately separate action, not a toggle: if AI is unavailable
+or misconfigured, the AI action fails with a clear error and no draft is created — the deterministic
+action stays available regardless, per explicit product decision (2026-07-11). Both actions produce
+the same pending-review `Lesson` entity, going through the same admin approve/reject workflow.
+Reuses the existing AI provider/prompt/usage-tracking infrastructure (same `llm.generation` category
+already used by Exercise Pattern Engine generation features) — no new admin AI-config screen needed.
+Exercise (J2b) and Module (J2c) generation remain deterministic-only, planned as separate future
+passes. 3,433/3,433 backend tests pass (+7 new). Full detail:
+`docs/reviews/2026-07-11-phase-j2a-ai-lesson-generation-review.md`.
 
 ## Post-Audit Cleanup: J0/J1 (2026-07-10)
 

@@ -25,6 +25,7 @@ public static class DefaultAiSeeder
     public const string LearningPathGenerateAdaptiveKey = "learning_path_generate_adaptive";
     public const string VocabularyExtractFromAttemptKey = "vocabulary_extract_from_attempt";
     public const string LessonBatchPlanKey = "lesson_batch_plan";
+    public const string LessonGenerateFromResourcesKey = "lesson_generate_from_resources";
 
     // ── Exercise Pattern Engine — pattern-specific generation prompt keys ─────
     public const string ActivityGeneratePhraseMatchKey        = "activity_generate_phrase_match";
@@ -4429,6 +4430,51 @@ CEFR-aware pattern selection guidance:
 Use the learner's studentLevel from the summary to select patterns that are appropriately challenging.
 """;
 
+    // Phase J2a — AI-assisted "Generate Learn" composer. A deliberately separate action from the
+    // deterministic Lesson composer (see IGenerateLessonFromResourcesWithAiHandler's doc comment);
+    // this prompt only generates teaching prose — metadata (CEFR/skill/subskill/tags/difficulty)
+    // stays deterministic from the selected resources/request.
+    private const string LessonGenerateFromResourcesContent = """
+You are an expert English teacher writing a short teaching/explanation block for a workplace English learning platform.
+
+Selected source material (from the platform's own reviewed Resource Bank — teach from this, do not invent unrelated content):
+{{resourcesSummary}}
+
+Student level: {{cefrLevel}}
+Skill: {{skill}}
+Subskill: {{subskill}}
+Context tags: {{contextTags}}
+Focus tags: {{focusTags}}
+Admin notes: {{notes}}
+
+Write a clear teaching explanation of the source material above, suitable for a student at {{cefrLevel}}. Return ONLY valid JSON (no markdown, no text outside the JSON object):
+
+{
+  "title": "<short teaching title, 4-10 words>",
+  "body": "<2-5 short paragraphs teaching the concept clearly, appropriate for {{cefrLevel}}>",
+  "examples": ["<realistic example sentence or usage 1>", "<example 2>", "<example 3>"],
+  "commonMistakes": ["<a common mistake learners at this level make with this material>"],
+  "usageNotes": "<optional 1 sentence of extra usage guidance, or empty string>"
+}
+
+Rules:
+- Teach only the selected source material above — do not introduce unrelated grammar points, vocabulary, or topics.
+- body must be genuine teaching prose (explain the concept), not a restatement of the source material's raw fields.
+- examples must be complete, realistic sentences a learner could actually use or encounter — not single isolated words unless the source material is itself a single word, in which case show it in a full sentence.
+- commonMistakes may be an empty array if there is no well-known common mistake for this specific material.
+- Keep vocabulary and sentence complexity appropriate for {{cefrLevel}} (see the CEFR calibration table below).
+- Do not include real company names, real person names, phone numbers, or sensitive content.
+- Do not include any text outside the JSON object. No markdown fences.
+
+CEFR calibration for teaching prose:
+| Level | Sentence complexity           | Body length        |
+|-------|--------------------------------|---------------------|
+| A1    | Very short, simple sentences   | 2 short paragraphs  |
+| A2    | Short sentences, common words  | 2-3 short paragraphs|
+| B1    | Everyday connected sentences   | 3-4 paragraphs      |
+| B2    | More nuanced, some complexity  | 3-5 paragraphs      |
+""";
+
     private const string WritingPromptContent = """
 You are an expert English writing coach for {{sourceLanguageName}}-speaking professionals learning {{targetLanguageName}}.
 
@@ -4647,6 +4693,11 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             LessonBatchPlanKey, LessonBatchPlanContent,
             maxInputTokens: 1500, maxOutputTokens: 2500, ct);
+
+        // Phase J2a — AI-assisted "Generate Learn" composer.
+        await SeedOrUpgradePromptAsync(db, logger,
+            LessonGenerateFromResourcesKey, LessonGenerateFromResourcesContent,
+            maxInputTokens: 2200, maxOutputTokens: 1600, ct);
 
         // Exercise Pattern Engine — pattern-specific generation prompts
         await SeedOrUpgradePromptAsync(db, logger,

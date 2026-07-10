@@ -48,6 +48,10 @@ export class AdminLessonService {
     return this.http.post<GenerateLessonFromResourcesResult>(`${this.base}/generate-from-resources`, body);
   }
 
+  generateFromResourcesWithAi(body: GenerateLessonFromResourcesRequestBody): Observable<GenerateLessonFromResourcesResult> {
+    return this.http.post<GenerateLessonFromResourcesResult>(`${this.base}/generate-from-resources/ai`, body);
+  }
+
   update(id: string, body: UpdateLessonRequestBody): Observable<LessonDto> {
     return this.http.put<LessonDto>(`${this.base}/${id}`, body);
   }

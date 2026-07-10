@@ -24,6 +24,7 @@ public sealed class AdminLessonController : ControllerBase
     private readonly IAdminApproveLessonHandler _approveHandler;
     private readonly IAdminRejectLessonHandler _rejectHandler;
     private readonly IGenerateLessonFromResourcesHandler _generateHandler;
+    private readonly IGenerateLessonFromResourcesWithAiHandler _generateWithAiHandler;
 
     public AdminLessonController(
         IAdminLessonListQuery listQuery,
@@ -32,7 +33,8 @@ public sealed class AdminLessonController : ControllerBase
         IAdminUpdateLessonHandler updateHandler,
         IAdminApproveLessonHandler approveHandler,
         IAdminRejectLessonHandler rejectHandler,
-        IGenerateLessonFromResourcesHandler generateHandler)
+        IGenerateLessonFromResourcesHandler generateHandler,
+        IGenerateLessonFromResourcesWithAiHandler generateWithAiHandler)
     {
         _listQuery = listQuery;
         _getQuery = getQuery;
@@ -41,6 +43,7 @@ public sealed class AdminLessonController : ControllerBase
         _approveHandler = approveHandler;
         _rejectHandler = rejectHandler;
         _generateHandler = generateHandler;
+        _generateWithAiHandler = generateWithAiHandler;
     }
 
     // GET api/admin/lessons?page=&pageSize=&status=&cefrLevel=&skill=&subskill=&contextTag=&
@@ -94,6 +97,27 @@ public sealed class AdminLessonController : ControllerBase
         try
         {
             var result = await _generateHandler.HandleAsync(new GenerateLessonFromResourcesRequest(
+                body.Resources, body.Title, body.DefaultCefrLevel, body.DefaultSkill, body.DefaultSubskill,
+                body.DefaultContextTags, body.DefaultFocusTags, body.DefaultDifficultyBand, body.Notes,
+                GetCurrentUserId()), ct);
+            return Ok(result);
+        }
+        catch (LessonValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    // POST api/admin/lessons/generate-from-resources/ai
+    // Phase J2a — AI-assisted alternative to the deterministic action above. A separate action:
+    // the deterministic action is untouched and always available, regardless of AI availability.
+    [HttpPost("generate-from-resources/ai")]
+    public async Task<IActionResult> GenerateFromResourcesWithAi(
+        [FromBody] GenerateLessonFromResourcesRequestBody body, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _generateWithAiHandler.HandleAsync(new GenerateLessonFromResourcesRequest(
                 body.Resources, body.Title, body.DefaultCefrLevel, body.DefaultSkill, body.DefaultSubskill,
                 body.DefaultContextTags, body.DefaultFocusTags, body.DefaultDifficultyBand, body.Notes,
                 GetCurrentUserId()), ct);

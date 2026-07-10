@@ -100,6 +100,12 @@ export interface GenerateLessonFromResourcesResult {
   reviewRoute: string;
 }
 
+// Phase J2a — AI-assisted "Generate Learn". Same request/result shape as the deterministic
+// action above; a separate action, not a replacement (see backend
+// IGenerateLessonFromResourcesWithAiHandler doc comment). On AI unavailability the backend
+// returns a 400 with a clear error message rather than silently degrading to a deterministic
+// draft — the deterministic action stays available regardless.
+
 export const LESSON_REVIEW_STATUSES = ['NotRequired', 'PendingReview', 'Approved', 'Rejected'] as const;
 export const LESSON_SOURCE_MODES = ['Manual', 'GeneratedFromResources', 'Imported'] as const;
 export const LESSON_RESOURCE_ROLES = ['Primary', 'Supporting'] as const;

@@ -35,3 +35,22 @@ public interface IGenerateLessonFromResourcesHandler
 {
     Task<GenerateLessonFromResourcesResult> HandleAsync(GenerateLessonFromResourcesRequest request, CancellationToken ct = default);
 }
+
+/// <summary>
+/// Phase J2a — AI-assisted alternative to <see cref="IGenerateLessonFromResourcesHandler"/>. Same
+/// request/result shape and the same selected-resources input; the difference is entirely in how
+/// the teaching content (title/body/examples/commonMistakes/usageNotes) is produced — an AI
+/// provider call instead of direct field copying. Deliberately a separate action, not a
+/// replacement: the deterministic handler above is untouched and remains available regardless of
+/// AI availability (2026-07-10 product decision — see
+/// docs/reviews/2026-07-10-phase-j2a-ai-lesson-generation-review.md). On AI unavailability or
+/// unparseable output (after one retry), this handler throws <see cref="LessonValidationException"/>
+/// rather than silently falling back to a deterministic draft — the admin sees a clear error and
+/// can use the existing deterministic action instead. Metadata fields (CEFR/skill/subskill/tags/
+/// difficulty) stay deterministic from the selected resources/request, matching the deterministic
+/// handler — only the teaching prose itself is AI-generated.
+/// </summary>
+public interface IGenerateLessonFromResourcesWithAiHandler
+{
+    Task<GenerateLessonFromResourcesResult> HandleAsync(GenerateLessonFromResourcesRequest request, CancellationToken ct = default);
+}

@@ -536,6 +536,8 @@ public static class DependencyInjection
             LinguaCoach.Infrastructure.Lessons.AdminRejectLessonHandler>();
         services.AddScoped<LinguaCoach.Application.Lessons.IGenerateLessonFromResourcesHandler,
             LinguaCoach.Infrastructure.Lessons.LessonGenerationService>();
+        services.AddScoped<LinguaCoach.Application.Lessons.IGenerateLessonFromResourcesWithAiHandler,
+            LinguaCoach.Infrastructure.Lessons.AiLessonGenerationService>();
 
         // Phase H4 — Activity foundation (reviewable, editable practice task designs generated
         // from published Resource Bank rows or a Lesson).

@@ -121,6 +121,9 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
   generateError = signal('');
   lastGeneratedKind = signal<'learn' | 'activity' | 'module' | null>(null);
 
+  // ── Phase J2a — Generate Learn with AI (separate action, deterministic above is untouched) ──
+  generatingLearnAiId = signal<string | null>(null);
+
   // ── Phase H4 — Generate Activity ─────────────────────────────────────────
   generatingActivityId = signal<string | null>(null);
 
@@ -215,6 +218,10 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
         disabled: this.generatingLearnId() === item.id,
       },
       {
+        id: 'generate-learn-ai', label: 'Generate Learn (AI)', icon: 'sparkles', tone: 'default',
+        disabled: this.generatingLearnAiId() === item.id,
+      },
+      {
         id: 'generate-activity', label: 'Generate Activity', icon: 'sparkles', tone: 'default',
         disabled: this.generatingActivityId() === item.id,
       },
@@ -228,6 +235,7 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
   onRowAction(actionId: string, item: UnifiedResourceBankItemDto): void {
     if (actionId === 'view') this.openDrawer(item);
     if (actionId === 'generate-learn') this.generateLearn(item);
+    if (actionId === 'generate-learn-ai') this.generateLearnWithAi(item);
     if (actionId === 'generate-activity') this.generateActivity(item);
     if (actionId === 'generate-module') this.generateModule(item);
   }
@@ -257,6 +265,29 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
 
   goToLessons(): void {
     this.router.navigateByUrl('/admin/lesson-library');
+  }
+
+  /** Phase J2a — AI-assisted alternative to generateLearn(). A separate action: on AI
+   *  unavailability the backend returns a clear error and no draft is created — the deterministic
+   *  generateLearn() action above stays available regardless. */
+  generateLearnWithAi(item: UnifiedResourceBankItemDto): void {
+    this.generatingLearnAiId.set(item.id);
+    this.generateError.set('');
+    this.generateSuccess.set('');
+    this.lessonSvc.generateFromResourcesWithAi({
+      resources: [{ resourceType: RESOURCE_TYPE_TO_LESSON_TYPE[item.type], resourceId: item.id, role: 'Primary' }],
+    }).subscribe({
+      next: result => {
+        this.generatingLearnAiId.set(null);
+        this.lastGeneratedKind.set('learn');
+        this.generateSuccess.set(`AI-generated Lesson draft created from "${item.title}" — pending review.`);
+        this.loadAll();
+      },
+      error: err => {
+        this.generatingLearnAiId.set(null);
+        this.generateError.set(err.error?.error ?? 'Could not generate a Lesson with AI.');
+      },
+    });
   }
 
   /** Phase H4 — deterministic draft composer, one resource per call. The activity type is
