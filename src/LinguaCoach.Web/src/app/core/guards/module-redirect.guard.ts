@@ -1,8 +1,7 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { catchError, map, of, switchMap } from 'rxjs';
+import { catchError, map, of } from 'rxjs';
 import { ActivityService } from '../services/activity.service';
-import { SessionService } from '../services/session.service';
 
 /** Maps exact Practice Gym module keys to the canonical exerciseType route. */
 const GYM_MODULES: Record<string, Record<string, string>> = {
@@ -16,12 +15,17 @@ const GYM_MODULES: Record<string, Record<string, string>> = {
  * Resolves /module/:moduleRunId to the underlying /activity?... route.
  *
  * moduleRunId formats:
- *  - `session-{sessionId}-{exerciseId}` — a Today module backed by a session exercise.
  *  - `gym-{key}` — a Practice Gym module, where `key` is one of GYM_MODULES.
+ *
+ * Phase I2B — the `session-{sessionId}-{exerciseId}` branch (a Today module backed by a
+ * SessionExercise, routed through the now-deleted on-open activity-preparation endpoint) was
+ * removed: Today is module-only now and nothing generates `moduleRunId`s in that shape anymore
+ * (its only source was the deleted lesson-runner page). Any leftover/bookmarked `session-...`
+ * link now falls through to the default `/dashboard` redirect below. See
+ * docs/reviews/2026-07-10-phase-i2b-today-module-only-collapse-review.md.
  */
 export const moduleRedirectGuard: CanActivateFn = (route) => {
   const router = inject(Router);
-  const sessionService = inject(SessionService);
   const activityService = inject(ActivityService);
   const moduleRunId = route.paramMap.get('moduleRunId') ?? '';
 
@@ -42,42 +46,6 @@ export const moduleRedirectGuard: CanActivateFn = (route) => {
         });
       }),
       catchError(() => of(router.parseUrl('/practice'))),
-    );
-  }
-
-  if (moduleRunId.startsWith('session-')) {
-    const rest = moduleRunId.slice('session-'.length);
-    // UUIDs are 36 chars (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx). When both IDs
-    // are UUIDs the combined string is 73 chars with the separator at index 36.
-    // Using lastIndexOf('-') would incorrectly split inside the exerciseId UUID,
-    // so we detect the UUID-pair format and split at the known boundary instead.
-    const UUID_PAIR = /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i;
-    const uuidMatch = rest.match(UUID_PAIR);
-    const sessionId = uuidMatch ? uuidMatch[1] : rest.slice(0, rest.lastIndexOf('-'));
-    const exerciseId = uuidMatch ? uuidMatch[2] : rest.slice(rest.lastIndexOf('-') + 1);
-    if (!sessionId || !exerciseId) return router.parseUrl('/dashboard');
-
-    return sessionService.getById(sessionId).pipe(
-      switchMap(session => {
-        const exercise = session.exercises.find(e => e.exerciseId === exerciseId);
-        if (!exercise) return of(router.parseUrl(`/lesson/${sessionId}`));
-
-        if (exercise.learningActivityId) {
-          return of(router.createUrlTree(['/activity'], {
-            queryParams: { activityId: exercise.learningActivityId, returnTo: `/lesson/${sessionId}` },
-          }));
-        }
-
-        if (exercise.kind === 'review') {
-          return of(router.parseUrl(`/lesson/${sessionId}`));
-        }
-
-        return sessionService.prepareExercise(sessionId, exerciseId).pipe(
-          map(result => router.createUrlTree(['/activity'], {
-            queryParams: { activityId: result.activityId, returnTo: `/lesson/${sessionId}` },
-          })),
-        );
-      }),
     );
   }
 

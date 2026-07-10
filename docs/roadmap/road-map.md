@@ -1,20 +1,21 @@
 ---
 status: current
-lastUpdated: 2026-07-10 (Phase I2A)
+lastUpdated: 2026-07-10 (Phase I2B)
 owner: product / engineering
 ---
 
 # SpeakPath / LinguaCoach Roadmap
 
-**Accurate as of: 2026-07-10 (Phase I2A — see §19a for the current phase sequence).
+**Accurate as of: 2026-07-10 (Phase I2B — see §19a for the current phase sequence).
 The 2026-07-03 "Phase 20H" line below is the last entry confirmed live against speakpath.app;
 everything since then (Clean-A/A2, Phase B, Phase C1, Plan-Sync-After-C1, Phase C2, Plan-Sync-B2,
 Phase B2, Phase C3, Phase C-Final, Phase E0, Plan-Sync-PG-v2, Phase E1, Phase E2, Phase E3,
 Phase E4, Plan-Sync-After-E4, Phase E5, Plan-Sync-E6-Decision, Phase E6, Phase D1, Bugfix-D1A,
 Phase D2, Plan-Sync-After-D2, Phase E7, Plan-Sync-G0, Phase G0, Plan-Sync-After-G0, Phase G1,
 Phase D3, Plan-Sync-After-D3, Phase E8, Phase D4, Plan-Sync-After-D4, Phase E9, Phase D5, Plan-Sync-After-D5, Phase E10,
-Phase I0, Phase I1, Phase I2A) has been developed and tested locally but not yet deployed — see
-the "Current Project Status" and Decision Log sections below for what's actually landed.**
+Phase I0, Phase I1, Phase I2A, Phase I2B) has been developed and tested locally but not yet
+deployed — see the "Current Project Status" and Decision Log sections below for what's actually
+landed.**
 
 This is the canonical project memory document. It captures completed work, current state, known gaps, deferred items, and the recommended order of future phases.
 
@@ -26,7 +27,36 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest phase completed (local, not yet deployed):** Phase I2A — Practice Gym Legacy Fallback
+**Latest phase completed (local, not yet deployed):** Phase I2B — Today Module-Only Collapse,
+Pass B (2026-07-10). Per the same explicit user direction as Pass A, deleted the legacy
+per-exercise `LearningSession`/`SessionExercise` generation pipeline on Today's side —
+`LessonBatchGenerationJob`, `ActivityMaterializationJob`, `TtsAudioGenerationJob`,
+`LessonBufferRefillJob`, `ExercisePrepareHandler`/`IPrepareExerciseHandler`,
+`SessionGeneratorService`/`ISessionGeneratorService` — accepting that Today now serves only the
+bank-first Daily Lesson Module (H6's `IDailyLessonModuleSelectionService`) when one exists for the
+student, and a clear "nothing available yet" state when it doesn't. `SessionQueryHandler` rewritten
+to call only the module selector; `TodaysSessionResult` shrunk from the old 9-field session shape
+to `(bool Available, DailyLessonModuleSelectionResult? ModuleSection)`.
+`StudentDashboardSummaryHandler` and the dashboard's "Today's Lesson" card both updated to read the
+module shape instead. `GET /api/sessions/{id}` and the exercise `/prepare` action deleted (zero
+remaining frontend callers once the legacy lesson-runner page — `src/app/features/student/lesson/`
+— was also deleted; `lesson/:sessionId` now redirects to `/dashboard`).
+`AdminGenerationController`'s `RetryBatch`/`GenerateLessons` admin actions turned into honest `409`
+no-ops rather than deleted, since the surrounding "Today Delivery Health" admin page has substantial
+unrelated live functionality (readiness pool health, review scaffold pilot monitoring, mastery
+validation). Confirmed for Pass C: `IAiActivityGenerator.GenerateActivityContentAsync` now has zero
+remaining callers; `ReadinessPoolSource.LessonBatch` is fully orphaned (no writer left) while
+`ReadinessPoolSource.TodayLesson` is still written by the still-running
+`ReadinessPoolReplenishmentService` but has zero consumers on Today's live path — mirrors Pass A's
+identical finding for `PracticeGym`-sourced rows. No migration (no entity shape changed).
+3,640/3,640 backend tests pass (down from 3,734 — 94 fewer tests from deleted legacy-behavior test
+files/methods); frontend build clean (only the pre-existing bundle-size budget warning). The
+whole-suite frontend karma run (`ng test`) could not be executed due to 5 pre-existing, unrelated
+broken spec files (last touched in Phases 18b/19C, not this pass) — the two specs this pass
+rewrote were verified by manual review and via `ng build`'s clean type-check instead. Full detail:
+`docs/reviews/2026-07-10-phase-i2b-today-module-only-collapse-review.md`.
+
+**Previous phase completed (local, not yet deployed):** Phase I2A — Practice Gym Legacy Fallback
 Deletion, Pass A (2026-07-10). Per explicit user direction, deleted the legacy on-demand
 AI-generation pipeline on the Practice Gym side, accepting that Practice Gym now serves only the
 narrower bank-first content (`gap_fill`/`multiple_choice_single` over vocabulary/grammar, via the

@@ -41,14 +41,6 @@ public static class QuartzConfiguration
             }
             // else: default in-memory store (Development only).
 
-            // Periodic lesson buffer refill — every 15 minutes.
-            var refillKey = new JobKey(LessonBufferRefillJob.JobName);
-            q.AddJob<LessonBufferRefillJob>(opts => opts.WithIdentity(refillKey).StoreDurably());
-            q.AddTrigger(t => t
-                .ForJob(refillKey)
-                .WithIdentity($"{LessonBufferRefillJob.JobName}-trigger")
-                .WithSimpleSchedule(s => s.WithIntervalInMinutes(15).RepeatForever()));
-
             // Audio cleanup — daily.
             var cleanupKey = new JobKey(AudioCleanupJob.JobName);
             q.AddJob<AudioCleanupJob>(opts => opts.WithIdentity(cleanupKey).StoreDurably());
@@ -120,14 +112,6 @@ public static class QuartzConfiguration
                 .ForJob(pruneKey)
                 .WithIdentity($"{GenerationValidationFailurePruneJob.JobName}-trigger")
                 .WithSimpleSchedule(s => s.WithIntervalInHours(24).RepeatForever()));
-
-            // Durable jobs scheduled ad hoc by triggers.
-            q.AddJob<LessonBatchGenerationJob>(opts =>
-                opts.WithIdentity(LessonBatchGenerationJob.JobName).StoreDurably());
-            q.AddJob<ActivityMaterializationJob>(opts =>
-                opts.WithIdentity(ActivityMaterializationJob.JobName).StoreDurably());
-            q.AddJob<TtsAudioGenerationJob>(opts =>
-                opts.WithIdentity(TtsAudioGenerationJob.JobName).StoreDurably());
         });
 
         services.AddQuartzHostedService(opt => opt.WaitForJobsToComplete = true);

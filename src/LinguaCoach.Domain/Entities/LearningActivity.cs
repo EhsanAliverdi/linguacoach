@@ -39,7 +39,8 @@ public sealed class LearningActivity : BaseEntity
     /// <summary>
     /// The ExercisePatternKey this activity was generated from, when generated via a
     /// session exercise step. Null for Practice Gym activities generated without a pattern.
-    /// Set by ExercisePrepareHandler. Used for renderer dispatch and evaluation routing.
+    /// Historically set by ExercisePrepareHandler (deleted in Phase I2B along with the legacy
+    /// generation pipeline). Used for renderer dispatch and evaluation routing.
     /// </summary>
     public string? ExercisePatternKey { get; private set; }
 

@@ -12,8 +12,15 @@ namespace LinguaCoach.IntegrationTests.Api;
 
 /// <summary>
 /// Integration tests for SessionsController.
-/// Seeds a CourseReady student with an active LearningPath + LearningModule.
-/// All assertions use the deterministic template system — no real AI calls.
+///
+/// Phase I2B — Today is module-only now: GET /api/sessions/today no longer creates a
+/// LearningSession, and GET /api/sessions/{id} + the exercise /prepare action were deleted along
+/// with the legacy generation pipeline (their only frontend caller, the lesson-runner page, was
+/// also removed). Today's tests below assert the new honest `available`/`moduleSection` shape.
+/// Start/Complete/CompleteExercise/Reflection still operate on legitimate LearningSession/
+/// SessionExercise data via SessionLifecycleHandler (unaffected by this pass), so those tests now
+/// seed a session directly through the DbContext instead of obtaining one from Today.
+/// See docs/reviews/2026-07-10-phase-i2b-today-module-only-collapse-review.md.
 /// </summary>
 public sealed class SessionEndpointTests : IClassFixture<SessionTestFactory>
 {
@@ -42,7 +49,7 @@ public sealed class SessionEndpointTests : IClassFixture<SessionTestFactory>
     // ── GET /api/sessions/today ────────────────────────────────────────────────
 
     [Fact]
-    public async Task Today_CourseReadyStudent_ReturnsSessionWithExercises()
+    public async Task Today_CourseReadyStudent_ReturnsHonestShape()
     {
         var (token, _) = await _factory.CreateCourseReadyStudentAsync($"sess_today_{Guid.NewGuid():N}@test.com");
         var client = ClientWithToken(token);
@@ -51,101 +58,23 @@ public sealed class SessionEndpointTests : IClassFixture<SessionTestFactory>
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
 
         var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.True(body.GetProperty("sessionId").GetGuid() != Guid.Empty);
-        Assert.Equal("notStarted", body.GetProperty("status").GetString());
-        Assert.True(body.GetProperty("exercises").GetArrayLength() > 0);
+        Assert.True(body.TryGetProperty("available", out _));
+        Assert.True(body.TryGetProperty("moduleSection", out _));
     }
 
     [Fact]
-    public async Task Today_CalledTwice_ReturnsSameSessionId()
+    public async Task Today_NoCompatibleModule_ReturnsNotAvailable()
     {
-        var (token, _) = await _factory.CreateCourseReadyStudentAsync($"sess_idem_{Guid.NewGuid():N}@test.com");
-        var client = ClientWithToken(token);
-
-        var resp1 = await client.GetAsync("/api/sessions/today");
-        var resp2 = await client.GetAsync("/api/sessions/today");
-
-        var body1 = await resp1.Content.ReadFromJsonAsync<JsonElement>();
-        var body2 = await resp2.Content.ReadFromJsonAsync<JsonElement>();
-
-        Assert.Equal(
-            body1.GetProperty("sessionId").GetGuid(),
-            body2.GetProperty("sessionId").GetGuid());
-    }
-
-    [Fact]
-    public async Task Today_ExercisesAreOrdered_FirstIsVocabularyWarmup()
-    {
-        var (token, _) = await _factory.CreateCourseReadyStudentAsync($"sess_order_{Guid.NewGuid():N}@test.com");
+        // No ModuleDefinition is seeded for this fixture's CEFR/skill, so the bank-first
+        // Daily Lesson Module selector has nothing to offer — Today must report this honestly
+        // rather than falling back to any legacy or AI-generated content.
+        var (token, _) = await _factory.CreateCourseReadyStudentAsync($"sess_notavail_{Guid.NewGuid():N}@test.com");
         var client = ClientWithToken(token);
 
         var resp = await client.GetAsync("/api/sessions/today");
         var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
 
-        var exercises = body.GetProperty("exercises").EnumerateArray().ToList();
-        Assert.NotEmpty(exercises);
-        Assert.Equal(0, exercises[0].GetProperty("order").GetInt32());
-        Assert.Equal("vocabularyWarmup", exercises[0].GetProperty("kind").GetString());
-    }
-
-    [Fact]
-    public async Task Today_LastExerciseIsReview()
-    {
-        var (token, _) = await _factory.CreateCourseReadyStudentAsync($"sess_review_{Guid.NewGuid():N}@test.com");
-        var client = ClientWithToken(token);
-
-        var resp = await client.GetAsync("/api/sessions/today");
-        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
-
-        var exercises = body.GetProperty("exercises").EnumerateArray().ToList();
-        Assert.NotEmpty(exercises);
-        Assert.Equal("review", exercises[^1].GetProperty("kind").GetString());
-    }
-
-    // ── GET /api/sessions/{id} ─────────────────────────────────────────────────
-
-    [Fact]
-    public async Task GetById_OwnSession_ReturnsSessionDetail()
-    {
-        var (token, _) = await _factory.CreateCourseReadyStudentAsync($"sess_getid_{Guid.NewGuid():N}@test.com");
-        var client = ClientWithToken(token);
-
-        var todayResp = await client.GetAsync("/api/sessions/today");
-        var todayBody = await todayResp.Content.ReadFromJsonAsync<JsonElement>();
-        var sessionId = todayBody.GetProperty("sessionId").GetGuid();
-
-        var resp = await client.GetAsync($"/api/sessions/{sessionId}");
-        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
-
-        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.Equal(sessionId, body.GetProperty("sessionId").GetGuid());
-        Assert.True(body.GetProperty("exercises").GetArrayLength() > 0);
-    }
-
-    [Fact]
-    public async Task GetById_NonExistentSession_Returns404()
-    {
-        var (token, _) = await _factory.CreateCourseReadyStudentAsync($"sess_404_{Guid.NewGuid():N}@test.com");
-        var client = ClientWithToken(token);
-
-        var resp = await client.GetAsync($"/api/sessions/{Guid.NewGuid()}");
-        Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
-    }
-
-    [Fact]
-    public async Task GetById_AnotherStudentsSession_Returns403()
-    {
-        var (tokenA, _) = await _factory.CreateCourseReadyStudentAsync($"sess_403a_{Guid.NewGuid():N}@test.com");
-        var (tokenB, _) = await _factory.CreateCourseReadyStudentAsync($"sess_403b_{Guid.NewGuid():N}@test.com");
-
-        // Student A creates a session.
-        var todayResp = await ClientWithToken(tokenA).GetAsync("/api/sessions/today");
-        var sessionId = (await todayResp.Content.ReadFromJsonAsync<JsonElement>())
-            .GetProperty("sessionId").GetGuid();
-
-        // Student B tries to access it.
-        var resp = await ClientWithToken(tokenB).GetAsync($"/api/sessions/{sessionId}");
-        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
+        Assert.False(body.GetProperty("available").GetBoolean());
     }
 
     // ── POST /api/sessions/{id}/start ──────────────────────────────────────────
@@ -153,10 +82,9 @@ public sealed class SessionEndpointTests : IClassFixture<SessionTestFactory>
     [Fact]
     public async Task Start_NotStartedSession_ReturnsInProgress()
     {
-        var (token, _) = await _factory.CreateCourseReadyStudentAsync($"sess_start_{Guid.NewGuid():N}@test.com");
+        var (token, _, sessionId, _) = await _factory.CreateCourseReadyStudentWithSessionAsync(
+            $"sess_start_{Guid.NewGuid():N}@test.com");
         var client = ClientWithToken(token);
-
-        var sessionId = await GetTodaysSessionIdAsync(client);
 
         var resp = await client.PostAsync($"/api/sessions/{sessionId}/start", null);
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
@@ -169,11 +97,10 @@ public sealed class SessionEndpointTests : IClassFixture<SessionTestFactory>
     [Fact]
     public async Task Start_TransitionsLifecycleToCourseReady_ToInLesson()
     {
-        var email = $"sess_lifecycle_{Guid.NewGuid():N}@test.com";
-        var (token, userId) = await _factory.CreateCourseReadyStudentAsync(email);
+        var (token, userId, sessionId, _) = await _factory.CreateCourseReadyStudentWithSessionAsync(
+            $"sess_lifecycle_{Guid.NewGuid():N}@test.com");
         var client = ClientWithToken(token);
 
-        var sessionId = await GetTodaysSessionIdAsync(client);
         await client.PostAsync($"/api/sessions/{sessionId}/start", null);
 
         using var scope = _factory.Services.CreateScope();
@@ -185,10 +112,10 @@ public sealed class SessionEndpointTests : IClassFixture<SessionTestFactory>
     [Fact]
     public async Task Start_AlreadyStarted_IsIdempotent()
     {
-        var (token, _) = await _factory.CreateCourseReadyStudentAsync($"sess_idem_start_{Guid.NewGuid():N}@test.com");
+        var (token, _, sessionId, _) = await _factory.CreateCourseReadyStudentWithSessionAsync(
+            $"sess_idem_start_{Guid.NewGuid():N}@test.com");
         var client = ClientWithToken(token);
 
-        var sessionId = await GetTodaysSessionIdAsync(client);
         var resp1 = await client.PostAsync($"/api/sessions/{sessionId}/start", null);
         var resp2 = await client.PostAsync($"/api/sessions/{sessionId}/start", null);
 
@@ -205,10 +132,10 @@ public sealed class SessionEndpointTests : IClassFixture<SessionTestFactory>
     [Fact]
     public async Task Complete_AfterStart_ReturnsCompleted()
     {
-        var (token, _) = await _factory.CreateCourseReadyStudentAsync($"sess_complete_{Guid.NewGuid():N}@test.com");
+        var (token, _, sessionId, _) = await _factory.CreateCourseReadyStudentWithSessionAsync(
+            $"sess_complete_{Guid.NewGuid():N}@test.com");
         var client = ClientWithToken(token);
 
-        var sessionId = await GetTodaysSessionIdAsync(client);
         await client.PostAsync($"/api/sessions/{sessionId}/start", null);
 
         var resp = await client.PostAsync($"/api/sessions/{sessionId}/complete", null);
@@ -221,11 +148,10 @@ public sealed class SessionEndpointTests : IClassFixture<SessionTestFactory>
     [Fact]
     public async Task Complete_TransitionsLifecycleToActiveLearning()
     {
-        var email = $"sess_active_{Guid.NewGuid():N}@test.com";
-        var (token, userId) = await _factory.CreateCourseReadyStudentAsync(email);
+        var (token, userId, sessionId, _) = await _factory.CreateCourseReadyStudentWithSessionAsync(
+            $"sess_active_{Guid.NewGuid():N}@test.com");
         var client = ClientWithToken(token);
 
-        var sessionId = await GetTodaysSessionIdAsync(client);
         await client.PostAsync($"/api/sessions/{sessionId}/start", null);
         await client.PostAsync($"/api/sessions/{sessionId}/complete", null);
 
@@ -238,10 +164,10 @@ public sealed class SessionEndpointTests : IClassFixture<SessionTestFactory>
     [Fact]
     public async Task Complete_AlreadyCompleted_IsIdempotent()
     {
-        var (token, _) = await _factory.CreateCourseReadyStudentAsync($"sess_idem_comp_{Guid.NewGuid():N}@test.com");
+        var (token, _, sessionId, _) = await _factory.CreateCourseReadyStudentWithSessionAsync(
+            $"sess_idem_comp_{Guid.NewGuid():N}@test.com");
         var client = ClientWithToken(token);
 
-        var sessionId = await GetTodaysSessionIdAsync(client);
         await client.PostAsync($"/api/sessions/{sessionId}/start", null);
         var resp1 = await client.PostAsync($"/api/sessions/{sessionId}/complete", null);
         var resp2 = await client.PostAsync($"/api/sessions/{sessionId}/complete", null);
@@ -255,37 +181,31 @@ public sealed class SessionEndpointTests : IClassFixture<SessionTestFactory>
     [Fact]
     public async Task CompleteExercise_FirstExercise_ReturnsCompletedAndSessionNotComplete()
     {
-        var (token, _) = await _factory.CreateCourseReadyStudentAsync($"sess_ex1_{Guid.NewGuid():N}@test.com");
+        var (token, _, sessionId, exerciseIds) = await _factory.CreateCourseReadyStudentWithSessionAsync(
+            $"sess_ex1_{Guid.NewGuid():N}@test.com");
         var client = ClientWithToken(token);
 
-        var sessionId = await GetTodaysSessionIdAsync(client);
-        var exercises = await GetExercisesAsync(client, sessionId);
-        var firstId = exercises[0].GetProperty("exerciseId").GetGuid();
-
-        var resp = await client.PostAsync($"/api/sessions/{sessionId}/exercises/{firstId}/complete", null);
+        var resp = await client.PostAsync($"/api/sessions/{sessionId}/exercises/{exerciseIds[0]}/complete", null);
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
 
         var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal("completed", body.GetProperty("status").GetString());
 
         // Only one of N exercises complete — session is not done yet (unless N=1)
-        if (exercises.Count > 1)
+        if (exerciseIds.Count > 1)
             Assert.False(body.GetProperty("sessionComplete").GetBoolean());
     }
 
     [Fact]
     public async Task CompleteExercise_AllExercises_SessionCompleteIsTrue()
     {
-        var (token, _) = await _factory.CreateCourseReadyStudentAsync($"sess_exall_{Guid.NewGuid():N}@test.com");
+        var (token, _, sessionId, exerciseIds) = await _factory.CreateCourseReadyStudentWithSessionAsync(
+            $"sess_exall_{Guid.NewGuid():N}@test.com");
         var client = ClientWithToken(token);
 
-        var sessionId = await GetTodaysSessionIdAsync(client);
-        var exercises = await GetExercisesAsync(client, sessionId);
-
         JsonElement lastBody = default;
-        foreach (var ex in exercises)
+        foreach (var exId in exerciseIds)
         {
-            var exId = ex.GetProperty("exerciseId").GetGuid();
             var r = await client.PostAsync($"/api/sessions/{sessionId}/exercises/{exId}/complete", null);
             lastBody = await r.Content.ReadFromJsonAsync<JsonElement>();
         }
@@ -296,15 +216,12 @@ public sealed class SessionEndpointTests : IClassFixture<SessionTestFactory>
     [Fact]
     public async Task CompleteExercise_AlreadyCompleted_IsIdempotent()
     {
-        var (token, _) = await _factory.CreateCourseReadyStudentAsync($"sess_exidem_{Guid.NewGuid():N}@test.com");
+        var (token, _, sessionId, exerciseIds) = await _factory.CreateCourseReadyStudentWithSessionAsync(
+            $"sess_exidem_{Guid.NewGuid():N}@test.com");
         var client = ClientWithToken(token);
 
-        var sessionId = await GetTodaysSessionIdAsync(client);
-        var exercises = await GetExercisesAsync(client, sessionId);
-        var firstId = exercises[0].GetProperty("exerciseId").GetGuid();
-
-        var r1 = await client.PostAsync($"/api/sessions/{sessionId}/exercises/{firstId}/complete", null);
-        var r2 = await client.PostAsync($"/api/sessions/{sessionId}/exercises/{firstId}/complete", null);
+        var r1 = await client.PostAsync($"/api/sessions/{sessionId}/exercises/{exerciseIds[0]}/complete", null);
+        var r2 = await client.PostAsync($"/api/sessions/{sessionId}/exercises/{exerciseIds[0]}/complete", null);
 
         Assert.Equal(HttpStatusCode.OK, r1.StatusCode);
         Assert.Equal(HttpStatusCode.OK, r2.StatusCode);
@@ -313,10 +230,10 @@ public sealed class SessionEndpointTests : IClassFixture<SessionTestFactory>
     [Fact]
     public async Task CompleteExercise_NonExistentExercise_Returns400()
     {
-        var (token, _) = await _factory.CreateCourseReadyStudentAsync($"sess_exmiss_{Guid.NewGuid():N}@test.com");
+        var (token, _, sessionId, _) = await _factory.CreateCourseReadyStudentWithSessionAsync(
+            $"sess_exmiss_{Guid.NewGuid():N}@test.com");
         var client = ClientWithToken(token);
 
-        var sessionId = await GetTodaysSessionIdAsync(client);
         var resp = await client.PostAsync(
             $"/api/sessions/{sessionId}/exercises/{Guid.NewGuid()}/complete", null);
 
@@ -328,10 +245,10 @@ public sealed class SessionEndpointTests : IClassFixture<SessionTestFactory>
     [Fact]
     public async Task Reflection_Returns501()
     {
-        var (token, _) = await _factory.CreateCourseReadyStudentAsync($"sess_refl_{Guid.NewGuid():N}@test.com");
+        var (token, _, sessionId, _) = await _factory.CreateCourseReadyStudentWithSessionAsync(
+            $"sess_refl_{Guid.NewGuid():N}@test.com");
         var client = ClientWithToken(token);
 
-        var sessionId = await GetTodaysSessionIdAsync(client);
         var resp = await client.GetAsync($"/api/sessions/{sessionId}/reflection");
         Assert.Equal(HttpStatusCode.NotImplemented, resp.StatusCode);
     }
@@ -344,32 +261,20 @@ public sealed class SessionEndpointTests : IClassFixture<SessionTestFactory>
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return client;
     }
-
-    private async Task<Guid> GetTodaysSessionIdAsync(HttpClient client)
-    {
-        var resp = await client.GetAsync("/api/sessions/today");
-        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
-        return body.GetProperty("sessionId").GetGuid();
-    }
-
-    private async Task<List<JsonElement>> GetExercisesAsync(HttpClient client, Guid sessionId)
-    {
-        var resp = await client.GetAsync($"/api/sessions/{sessionId}");
-        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
-        return body.GetProperty("exercises").EnumerateArray().ToList();
-    }
 }
 
 /// <summary>
-/// Test factory that seeds a student ready for session generation.
+/// Test factory that seeds a CourseReady student, optionally with a historical LearningSession +
+/// SessionExercises seeded directly through the DbContext.
+///
+/// Phase I2B — Today no longer generates LearningSession/SessionExercise rows, so tests that need
+/// one (for Start/Complete/CompleteExercise/Reflection, which still operate on this legacy shape)
+/// seed it directly rather than obtaining it from GET /api/sessions/today.
 /// Uses ActivityTestFactory (FakeAiProvider) as the base so AI calls don't fail.
 /// </summary>
 public sealed class SessionTestFactory : ActivityTestFactory
 {
-    /// <summary>
-    /// Creates a student with lifecycle = CourseReady + an active LearningPath + LearningModule,
-    /// so the session generator can create today's session.
-    /// </summary>
+    /// <summary>Creates a student with lifecycle = CourseReady + an active LearningPath + LearningModule.</summary>
     public async Task<(string Token, Guid UserId)> CreateCourseReadyStudentAsync(
         string email = "sess_student@test.linguacoach.com")
     {
@@ -416,5 +321,38 @@ public sealed class SessionTestFactory : ActivityTestFactory
         await db.SaveChangesAsync();
 
         return (tokenSvc.GenerateToken(user.Id, user.Email!, user.Role), user.Id);
+    }
+
+    /// <summary>
+    /// Creates a CourseReady student (as above) plus a historical LearningSession with two ordered
+    /// SessionExercises, seeded directly — mirrors what LessonBatchGenerationJob used to produce,
+    /// for tests exercising the still-live Start/Complete/CompleteExercise/Reflection endpoints.
+    /// </summary>
+    public async Task<(string Token, Guid UserId, Guid SessionId, List<Guid> ExerciseIds)>
+        CreateCourseReadyStudentWithSessionAsync(string email)
+    {
+        var (token, userId) = await CreateCourseReadyStudentAsync(email);
+
+        using var scope = Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var profile = await db.StudentProfiles.FirstAsync(p => p.UserId == userId);
+        var module = await db.LearningModules.FirstAsync(m => m.LearningPathId ==
+            db.LearningPaths.Where(p => p.StudentProfileId == profile.Id).Select(p => p.Id).First());
+
+        var session = new LearningSession(
+            module.Id, "Softening manager requests", "Workplace communication",
+            "Practise softening language", 15, "Vocabulary", order: 0);
+        db.LearningSessions.Add(session);
+        await db.SaveChangesAsync();
+
+        var exerciseIds = new List<Guid>();
+        var ex1 = new SessionExercise(session.Id, 0, LinguaCoach.Domain.ExercisePatternKey.PhraseMatch, "Vocabulary", "Match the phrases.", 5);
+        var ex2 = new SessionExercise(session.Id, 1, LinguaCoach.Domain.ExercisePatternKey.LessonReflection, "Vocabulary", "Reflect on the lesson.", 3);
+        db.SessionExercises.AddRange(ex1, ex2);
+        await db.SaveChangesAsync();
+        exerciseIds.Add(ex1.Id);
+        exerciseIds.Add(ex2.Id);
+
+        return (token, userId, session.Id, exerciseIds);
     }
 }

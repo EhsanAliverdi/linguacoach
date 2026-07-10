@@ -8,7 +8,7 @@ import { PlacementResult, AdaptivePlacementSummary } from '../../../../core/mode
 import { StudentDashboardSummary } from '../../../../core/models/dashboard-summary.models';
 import { DashboardResponse } from '../../../../core/models/dashboard.models';
 import { StudentLearningMemory } from '../../../../core/models/learning-path.models';
-import { TodaysSessionResponse, DailyLessonModuleSection } from '../../../../core/models/session.models';
+import { DailyLessonModuleSection } from '../../../../core/models/session.models';
 import { PracticeGymSuggestionsResponse } from '../../../../core/services/practice-gym-suggestions.service';
 import { SessionService } from '../../../../core/services/session.service';
 
@@ -25,13 +25,18 @@ export class DashboardComponent implements OnInit {
   notice = signal('');
   memory = signal<StudentLearningMemory | null>(null);
   placementResult = signal<PlacementResult | null>(null);
-  todaysSession = signal<TodaysSessionResponse | null>(null);
-  sessionLoading = signal(false);
   practiceSuggestions = signal<PracticeGymSuggestionsResponse | null>(null);
   practiceLoading = signal(false);
-  /** Phase H6 — additive, best-effort. Null whenever no compatible approved Module exists;
-   * the primary Today's Lesson card above (from the summary endpoint) is unaffected either way. */
+  /**
+   * Phase I2B — Today is module-only now. `today.moduleSection` from GET /api/sessions/today is
+   * the single source of truth for the Today card: null while loading, populated once the
+   * request resolves. `todaySectionLoaded`/`todaySectionAvailable` distinguish "still loading"
+   * from "loaded but nothing available" so the template never shows a stale/legacy shape.
+   */
   dailyLessonModuleSection = signal<DailyLessonModuleSection | null>(null);
+  todaySectionLoading = signal(false);
+  todaySectionLoaded = signal(false);
+  todaySectionAvailable = signal(false);
 
   readonly howItWorks = [
     { n: 1, text: 'AI generates a realistic scenario for your goals and level.' },
@@ -80,12 +85,23 @@ export class DashboardComponent implements OnInit {
             error: () => this.placementResult.set(null),
           });
         }
-        // Phase H6 — additive, best-effort: a failed/empty module section must never affect
-        // the primary Today's Lesson card, so errors are swallowed and simply leave it null.
+        // Phase I2B — Today is module-only: a failed/empty module section is an honest
+        // "nothing available yet" state, not swallowed to null like the old additive H6 behavior.
         if (this.hasLessonAccess(summary.courseReadiness.lifecycleStatus)) {
+          this.todaySectionLoading.set(true);
           this.sessionService.getToday().subscribe({
-            next: today => this.dailyLessonModuleSection.set(today.moduleSection ?? null),
-            error: () => this.dailyLessonModuleSection.set(null),
+            next: today => {
+              this.dailyLessonModuleSection.set(today.moduleSection ?? null);
+              this.todaySectionAvailable.set(today.available);
+              this.todaySectionLoading.set(false);
+              this.todaySectionLoaded.set(true);
+            },
+            error: () => {
+              this.dailyLessonModuleSection.set(null);
+              this.todaySectionAvailable.set(false);
+              this.todaySectionLoading.set(false);
+              this.todaySectionLoaded.set(true);
+            },
           });
         }
       },
@@ -152,28 +168,6 @@ export class DashboardComponent implements OnInit {
       });
     }
 
-    // Synthesize TodaysSessionResponse from todaySession section.
-    const ts = s.todaySession;
-    if (ts.status !== 'Preparing' && ts.status !== 'NotAvailable' && ts.sessionId) {
-      const sessionStatus = ts.status === 'Completed' ? 'completed'
-        : ts.status === 'InProgress' ? 'inProgress'
-        : 'notStarted';
-      this.todaysSession.set({
-        sessionId: ts.sessionId,
-        title: ts.title ?? '',
-        topic: ts.topic ?? '',
-        sessionGoal: ts.sessionGoal ?? '',
-        durationMinutes: ts.durationMinutes ?? 0,
-        focusSkill: ts.focusSkill ?? '',
-        status: sessionStatus,
-        isResuming: ts.status === 'InProgress',
-        exercises: Array.from({ length: ts.exerciseCount ?? 0 }) as any,
-        // Phase H6 — this synthesized summary object never carries a real module section; the
-        // dedicated getToday() call below (dailyLessonModuleSection) is the source of truth for it.
-        moduleSection: null,
-      });
-    }
-
     // Synthesize PracticeGymSuggestionsResponse from practice section.
     // NotAvailable leaves the signal null so the template shows the "preparing" state.
     const p = s.practice;
@@ -219,36 +213,6 @@ export class DashboardComponent implements OnInit {
         moduleSuggestions: null,
       });
     }
-  }
-
-  /**
-   * Explicit Today-page state for the lesson card.
-   * PlacementRequired — student must complete placement first.
-   * Preparing         — session is being generated, no sessionId yet.
-   * Ready             — session exists and has not started.
-   * InProgress        — session is actively in progress.
-   * CompletedToday    — session was completed today.
-   * NotAvailable      — lifecycle stage does not support lessons.
-   * Error             — summary load failed.
-   */
-  todaySessionState(): 'PlacementRequired' | 'Preparing' | 'Ready' | 'InProgress' | 'CompletedToday' | 'NotAvailable' | 'Error' {
-    if (this.error()) return 'Error';
-    const stage = this.data()?.lifecycleStage ?? '';
-    if (stage === 'PlacementRequired' || stage === 'PlacementInProgress') return 'PlacementRequired';
-    if (!this.hasLessonAccess(stage) && stage !== '') return 'NotAvailable';
-    const s = this.todaysSession();
-    if (!s) return 'Preparing';
-    if (s.status === 'completed') return 'CompletedToday';
-    if (s.status === 'inProgress') return 'InProgress';
-    return 'Ready';
-  }
-
-  lessonButtonLabel(): string {
-    const s = this.todaysSession();
-    if (!s) return 'Start today\'s lesson';
-    if (s.status === 'completed') return 'Review today\'s lesson';
-    if (s.status === 'inProgress') return 'Resume lesson';
-    return 'Start today\'s lesson';
   }
 
   primaryMemoryFocus(): string | null {

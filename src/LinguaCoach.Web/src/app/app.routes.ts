@@ -294,10 +294,13 @@ export const routes: Routes = [
         path: 'profile',
         loadComponent: () => import('./features/student/profile/profile.component').then(m => m.ProfileComponent),
       },
+      // Phase I2B — Today is module-only now; the legacy per-exercise lesson-runner page was
+      // removed (nothing creates new LearningSession/SessionExercise rows anymore). Old
+      // bookmarks/links redirect to the dashboard instead (see
+      // docs/reviews/2026-07-10-phase-i2b-today-module-only-collapse-review.md).
       {
         path: 'lesson/:sessionId',
-        canActivate: [placementRequiredRedirectGuard],
-        loadComponent: () => import('./features/student/lesson/lesson.component').then(m => m.LessonComponent),
+        redirectTo: () => '/dashboard',
       },
     ],
   },

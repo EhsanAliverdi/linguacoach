@@ -1,25 +1,5 @@
 export type SessionStatus = 'notStarted' | 'inProgress' | 'completed';
 export type ExerciseStatus = 'notStarted' | 'inProgress' | 'completed' | 'skipped';
-export type ExerciseKind =
-  | 'vocabularyWarmup'
-  | 'contextInput'
-  | 'listeningInput'
-  | 'readingInput'
-  | 'writingTask'
-  | 'speakingTask'
-  | 'review';
-
-export interface SessionExercise {
-  exerciseId: string;
-  order: number;
-  kind: ExerciseKind;
-  exercisePatternKey: string;
-  primarySkill: string;
-  instructions: string;
-  estimatedMinutes: number;
-  status: ExerciseStatus;
-  learningActivityId: string | null;
-}
 
 /** Phase H6 — student-safe Learn Item projection within a Daily Lesson module section. */
 export interface DailyLessonLearnItemView {
@@ -69,33 +49,12 @@ export interface DailyLessonModuleSection {
   warnings: string[];
 }
 
-/** Returned by GET /api/sessions/today */
+/** Returned by GET /api/sessions/today. Phase I2B — Today is module-only: `available` is the
+ * single honest signal of whether there is anything to show; when false, `moduleSection` is null
+ * (or reports its own fallback state) and the UI must render a "nothing available yet" state. */
 export interface TodaysSessionResponse {
-  sessionId: string;
-  title: string;
-  topic: string;
-  sessionGoal: string;
-  durationMinutes: number;
-  focusSkill: string;
-  status: SessionStatus;
-  isResuming: boolean;
-  exercises: SessionExercise[];
+  available: boolean;
   moduleSection: DailyLessonModuleSection | null;
-}
-
-/** Returned by GET /api/sessions/{id} */
-export interface SessionDetailResponse {
-  sessionId: string;
-  title: string;
-  topic: string;
-  sessionGoal: string;
-  durationMinutes: number;
-  focusSkill: string;
-  cefrLevel: string | null;
-  status: SessionStatus;
-  startedAtUtc: string | null;
-  completedAtUtc: string | null;
-  exercises: SessionExercise[];
 }
 
 export interface StartSessionResponse {
@@ -115,12 +74,6 @@ export interface CompleteExerciseResponse {
   status: ExerciseStatus;
   completedAtUtc: string;
   sessionComplete: boolean;
-}
-
-export interface PrepareExerciseResponse {
-  activityId: string;
-  activityType: string | null;
-  isReview: boolean;
 }
 
 export interface SessionHistoryExercise {

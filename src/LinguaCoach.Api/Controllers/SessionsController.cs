@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using LinguaCoach.Application.Ai;
 using LinguaCoach.Application.Sessions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,6 +9,13 @@ namespace LinguaCoach.Api.Controllers;
 /// Student-facing session endpoints.
 /// Authenticated students can only access their own sessions.
 /// See: docs/sprints/2026-06-10-today-lesson-learning-session-sprint.md
+///
+/// Phase I2B — Today is module-only now. GET /{sessionId} (session detail) and the
+/// exercise /prepare action were removed: the legacy lesson-runner page that was their only
+/// frontend caller was deleted along with the legacy generation pipeline. Start/Complete/
+/// CompleteExercise/History remain — they operate on legitimate historical LearningSession data
+/// via SessionLifecycleHandler/SessionQueryHandler, which are unaffected by this pass. See
+/// docs/reviews/2026-07-10-phase-i2b-today-module-only-collapse-review.md.
 /// </summary>
 [ApiController]
 [Route("api/sessions")]
@@ -17,29 +23,23 @@ namespace LinguaCoach.Api.Controllers;
 public sealed class SessionsController : ControllerBase
 {
     private readonly IGetTodaysSessionHandler _today;
-    private readonly IGetSessionHandler _get;
     private readonly IGetSessionHistoryHandler _history;
     private readonly IStartSessionHandler _start;
     private readonly ICompleteSessionHandler _complete;
     private readonly ICompleteExerciseHandler _completeExercise;
-    private readonly IPrepareExerciseHandler _prepare;
 
     public SessionsController(
         IGetTodaysSessionHandler today,
-        IGetSessionHandler get,
         IGetSessionHistoryHandler history,
         IStartSessionHandler start,
         ICompleteSessionHandler complete,
-        ICompleteExerciseHandler completeExercise,
-        IPrepareExerciseHandler prepare)
+        ICompleteExerciseHandler completeExercise)
     {
         _today = today;
-        _get = get;
         _history = history;
         _start = start;
         _complete = complete;
         _completeExercise = completeExercise;
-        _prepare = prepare;
     }
 
     /// <summary>
@@ -60,28 +60,6 @@ public sealed class SessionsController : ControllerBase
         catch (InvalidOperationException ex)
         {
             return BadRequest(new { error = ex.Message });
-        }
-    }
-
-    /// <summary>Returns the full detail of a session including all ordered exercises.</summary>
-    [HttpGet("{sessionId:guid}")]
-    public async Task<IActionResult> Get(Guid sessionId, CancellationToken ct)
-    {
-        var userId = GetCurrentUserId();
-        if (userId == Guid.Empty) return Unauthorized();
-
-        try
-        {
-            var result = await _get.HandleAsync(new GetSessionQuery(userId, sessionId), ct);
-            return Ok(result);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Forbid();
         }
     }
 
@@ -144,37 +122,6 @@ public sealed class SessionsController : ControllerBase
             var result = await _completeExercise.HandleAsync(
                 new CompleteExerciseCommand(userId, sessionId, exerciseId), ct);
             return Ok(result);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Forbid();
-        }
-    }
-
-    /// <summary>
-    /// Generates (or retrieves) the LearningActivity for an exercise step.
-    /// Idempotent: calling twice returns the same activity.
-    /// Review steps return a lightweight reflection placeholder without AI generation.
-    /// </summary>
-    [HttpPost("{sessionId:guid}/exercises/{exerciseId:guid}/prepare")]
-    public async Task<IActionResult> PrepareExercise(Guid sessionId, Guid exerciseId, CancellationToken ct)
-    {
-        var userId = GetCurrentUserId();
-        if (userId == Guid.Empty) return Unauthorized();
-
-        try
-        {
-            var result = await _prepare.HandleAsync(
-                new PrepareExerciseCommand(userId, sessionId, exerciseId), ct);
-            return Ok(result);
-        }
-        catch (AiServiceUnavailableException ex)
-        {
-            return StatusCode(503, new { error = "The AI service is not available. Please try again shortly.", retryable = true, featureKey = ex.FeatureKey });
         }
         catch (InvalidOperationException ex)
         {

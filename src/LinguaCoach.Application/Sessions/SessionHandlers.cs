@@ -11,28 +11,6 @@ public interface IGetTodaysSessionHandler
     Task<TodaysSessionResult> HandleAsync(GetTodaysSessionQuery query, CancellationToken ct = default);
 }
 
-// ── Get session by id ──────────────────────────────────────────────────────────
-
-public sealed record GetSessionQuery(Guid UserId, Guid SessionId);
-
-public sealed record SessionDetailResult(
-    Guid SessionId,
-    string Title,
-    string Topic,
-    string SessionGoal,
-    int DurationMinutes,
-    string FocusSkill,
-    string? CefrLevel,
-    SessionStatus Status,
-    DateTime? StartedAtUtc,
-    DateTime? CompletedAtUtc,
-    IReadOnlyList<SessionExerciseResult> Exercises);
-
-public interface IGetSessionHandler
-{
-    Task<SessionDetailResult> HandleAsync(GetSessionQuery query, CancellationToken ct = default);
-}
-
 // ── Start session ──────────────────────────────────────────────────────────────
 
 public sealed record StartSessionCommand(Guid UserId, Guid SessionId);
@@ -104,19 +82,10 @@ public interface IGetSessionHistoryHandler
     Task<SessionHistoryResult> HandleAsync(GetSessionHistoryQuery query, CancellationToken ct = default);
 }
 
-// ── Prepare exercise (generate / attach LearningActivity) ─────────────────────
-
-public sealed record PrepareExerciseCommand(Guid UserId, Guid SessionId, Guid ExerciseId);
-
-/// <param name="ActivityId">The generated or pre-existing LearningActivity id.</param>
-/// <param name="ActivityType">Resolved ActivityType for the exercise kind.</param>
-/// <param name="IsReview">True when the exercise is a Review step (no full activity generated).</param>
-public sealed record PrepareExerciseResult(
-    Guid ActivityId,
-    Domain.Enums.ActivityType? ActivityType,
-    bool IsReview);
-
-public interface IPrepareExerciseHandler
-{
-    Task<PrepareExerciseResult> HandleAsync(PrepareExerciseCommand command, CancellationToken ct = default);
-}
+// ── Prepare exercise / get-session-by-id: removed in Phase I2B ────────────────
+// IPrepareExerciseHandler (ExercisePrepareHandler) and IGetSessionHandler (GetSessionQuery /
+// SessionDetailResult) were deleted along with the legacy generation pipeline and its
+// lesson-runner UI. Today is module-only now; nothing creates new SessionExercise rows that would
+// need on-open activity preparation, and GET /api/sessions/{id} had zero remaining frontend
+// callers once the lesson-runner page was removed. See
+// docs/reviews/2026-07-10-phase-i2b-today-module-only-collapse-review.md.

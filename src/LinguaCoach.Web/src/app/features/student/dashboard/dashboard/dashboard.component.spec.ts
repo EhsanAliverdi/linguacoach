@@ -6,24 +6,42 @@ import { DashboardComponent } from './dashboard.component';
 import { DashboardSummaryService } from '../../../../core/services/dashboard-summary.service';
 import { PlacementService } from '../../../../core/services/placement.service';
 import { AuthNoticeService } from '../../../../core/services/auth-notice.service';
-import {
-  StudentDashboardSummary,
-  DashboardSummaryTodaySession,
-} from '../../../../core/models/dashboard-summary.models';
-import { TodaysSessionResponse } from '../../../../core/models/session.models';
+import { SessionService } from '../../../../core/services/session.service';
+import { StudentDashboardSummary } from '../../../../core/models/dashboard-summary.models';
+import { TodaysSessionResponse, DailyLessonModuleSection } from '../../../../core/models/session.models';
 
 // ── Test fixtures ──────────────────────────────────────────────────────────────
 
-const TODAY_SESSION: TodaysSessionResponse = {
-  sessionId: 'sess-1',
-  title: 'Confident Meetings',
-  topic: 'Business meetings',
-  sessionGoal: 'Lead a team meeting',
-  durationMinutes: 20,
-  focusSkill: 'speaking',
-  status: 'notStarted',
-  isResuming: false,
-  exercises: [],
+const MODULE_SECTION: DailyLessonModuleSection = {
+  selectedModules: [{
+    moduleDefinitionId: 'mod-1',
+    title: 'Confident Meetings',
+    description: 'Lead a team meeting',
+    cefrLevel: 'B1',
+    skill: 'speaking',
+    subskill: null,
+    difficultyBand: 2,
+    estimatedMinutes: 20,
+    reason: 'matched',
+    linkedLearnItems: [],
+    linkedActivityDefinitions: [],
+  }],
+  fallbackRequired: false,
+  fallbackReason: null,
+  selectionReason: 'matched',
+  targetCefrLevel: 'B1',
+  totalEstimatedMinutes: 20,
+  warnings: [],
+};
+
+const TODAY_AVAILABLE: TodaysSessionResponse = {
+  available: true,
+  moduleSection: MODULE_SECTION,
+};
+
+const TODAY_NOT_AVAILABLE: TodaysSessionResponse = {
+  available: false,
+  moduleSection: null,
 };
 
 const EMPTY_SUGGESTIONS = {
@@ -46,7 +64,7 @@ const BASE_SUMMARY: StudentDashboardSummary = {
     learningPlanExists: true,
   },
   todaySession: {
-    status: 'Preparing',
+    status: 'NotAvailable',
     sessionId: null,
     title: null,
     topic: null,
@@ -99,46 +117,11 @@ const BASE_SUMMARY: StudentDashboardSummary = {
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-function sessionToSection(
-  session: TodaysSessionResponse | null | 'error'
-): DashboardSummaryTodaySession {
-  if (!session || session === 'error') {
-    return {
-      status: 'Preparing',
-      sessionId: null, title: null, topic: null,
-      sessionGoal: null, focusSkill: null,
-      durationMinutes: null, exerciseCount: null,
-      actionLabel: "Start today's lesson",
-    };
-  }
-  const status =
-    session.status === 'completed' ? 'Completed'
-    : session.status === 'inProgress' ? 'InProgress'
-    : 'Ready';
-  const label =
-    status === 'Completed' ? "Review today's lesson"
-    : status === 'InProgress' ? 'Resume lesson'
-    : "Start today's lesson";
-  return {
-    status,
-    sessionId: session.sessionId,
-    title: session.title,
-    topic: session.topic,
-    sessionGoal: session.sessionGoal,
-    focusSkill: session.focusSkill,
-    durationMinutes: session.durationMinutes,
-    exerciseCount: session.exercises.length,
-    actionLabel: label,
-  };
-}
-
 function makeServices(overrides: {
   dashboard?: unknown | null;
-  session?: TodaysSessionResponse | null | 'error';
+  today?: TodaysSessionResponse | 'error';
   suggestions?: object | 'error';
 } = {}) {
-  const todaySession = sessionToSection(overrides.session ?? null);
-
   let practiceStatus: 'Ready' | 'Preparing' | 'NotAvailable' = 'Preparing';
   let reviewQueueCount = 0;
 
@@ -153,7 +136,6 @@ function makeServices(overrides: {
 
   const summary: StudentDashboardSummary = {
     ...BASE_SUMMARY,
-    todaySession,
     practice: { status: practiceStatus, suggestedItem: null, reviewQueueCount, weakestSkill: null },
     quickStats: { ...BASE_SUMMARY.quickStats, reviewQueueCount },
     warnings: { ...BASE_SUMMARY.warnings, practiceUnavailable: practiceStatus === 'NotAvailable' },
@@ -166,8 +148,16 @@ function makeServices(overrides: {
         : of(summary),
   };
 
+  const sessionService = {
+    getToday: () =>
+      overrides.today === 'error'
+        ? throwError(() => ({ error: { error: 'fail' } }))
+        : of(overrides.today ?? TODAY_NOT_AVAILABLE),
+  };
+
   return {
     summaryService,
+    sessionService,
     placementService: { getAdaptiveCurrent: () => throwError(() => ({})) },
     authNotice: { consume: () => null },
   };
@@ -181,6 +171,7 @@ async function setup(overrides: Parameters<typeof makeServices>[0] = {}) {
       { provide: DashboardSummaryService, useValue: svc.summaryService },
       { provide: PlacementService, useValue: svc.placementService },
       { provide: AuthNoticeService, useValue: svc.authNotice },
+      { provide: SessionService, useValue: svc.sessionService },
     ],
   }).compileComponents();
 
@@ -201,49 +192,34 @@ describe('DashboardComponent', () => {
     expect(el.querySelector('[data-testid="today-page"]')).toBeTruthy();
   });
 
-  it('session 404 shows preparing state, not global error', async () => {
-    const fixture = await setup({ session: 'error' });
+  it('session error shows the nothing-available state, not a global error', async () => {
+    const fixture = await setup({ today: 'error' });
     const el: HTMLElement = fixture.nativeElement;
     expect(el.querySelector('.sp-alert-error')).toBeNull();
-    const lessonCard = el.querySelector('[data-testid="dashboard-todays-lesson"]');
-    expect(lessonCard).toBeTruthy();
-    expect(lessonCard!.textContent).toContain('being prepared');
+    const card = el.querySelector('[data-testid="dashboard-todays-lesson"]');
+    expect(card).toBeTruthy();
+    expect(el.querySelector('[data-testid="today-not-available"]')).toBeTruthy();
   });
 
-  it('session 404 does not replace dashboard with error state', async () => {
-    const fixture = await setup({ session: 'error' });
+  it('session error does not replace dashboard with a global error state', async () => {
+    const fixture = await setup({ today: 'error' });
     const el: HTMLElement = fixture.nativeElement;
     expect(el.querySelector('[data-testid="today-page"]')).toBeTruthy();
     expect(el.querySelector('[data-testid="stat-streak"]')).toBeTruthy();
   });
 
-  it('renders lesson card with real session data', async () => {
-    const fixture = await setup({ session: TODAY_SESSION });
+  it('renders the module card with real module data when available', async () => {
+    const fixture = await setup({ today: TODAY_AVAILABLE });
     const el: HTMLElement = fixture.nativeElement;
-    const card = el.querySelector('[data-testid="dashboard-todays-lesson"]');
+    const card = el.querySelector('[data-testid="daily-lesson-module-card"]');
     expect(card).toBeTruthy();
     expect(card!.textContent).toContain('Confident Meetings');
   });
 
-  it('lesson card shows Not started badge', async () => {
-    const fixture = await setup({ session: TODAY_SESSION });
+  it('shows the nothing-available state when Today has no module', async () => {
+    const fixture = await setup({ today: TODAY_NOT_AVAILABLE });
     const el: HTMLElement = fixture.nativeElement;
-    const badge = el.querySelector('[data-testid="session-status-badge"]');
-    expect(badge?.textContent?.trim()).toBe('Not started');
-  });
-
-  it('lesson card shows Completed badge', async () => {
-    const fixture = await setup({ session: { ...TODAY_SESSION, status: 'completed' as const } });
-    const el: HTMLElement = fixture.nativeElement;
-    const badge = el.querySelector('[data-testid="session-status-badge"]');
-    expect(badge?.textContent?.trim()).toBe('Completed');
-  });
-
-  it('lesson card shows In progress badge', async () => {
-    const fixture = await setup({ session: { ...TODAY_SESSION, status: 'inProgress' as const } });
-    const el: HTMLElement = fixture.nativeElement;
-    const badge = el.querySelector('[data-testid="session-status-badge"]');
-    expect(badge?.textContent?.trim()).toBe('In progress');
+    expect(el.querySelector('[data-testid="today-not-available"]')).toBeTruthy();
   });
 
   it('placement summary renders CEFR level', async () => {
@@ -291,7 +267,7 @@ describe('DashboardComponent', () => {
   });
 
   it('dashboard failure does not affect other widgets when session errors', async () => {
-    const fixture = await setup({ session: 'error', suggestions: 'error' });
+    const fixture = await setup({ today: 'error', suggestions: 'error' });
     const el: HTMLElement = fixture.nativeElement;
     expect(el.querySelector('[data-testid="today-learning-path"]')).toBeTruthy();
     expect(el.querySelector('[data-testid="stat-streak"]')).toBeTruthy();

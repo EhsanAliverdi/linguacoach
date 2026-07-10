@@ -76,10 +76,8 @@ public static class DependencyInjection
         services.AddSingleton<FakeFileStorageService>();
 
         // Background generation jobs (Quartz registers these by type; also scoped for DI).
-        services.AddScoped<Jobs.LessonBufferRefillJob>();
-        services.AddScoped<Jobs.LessonBatchGenerationJob>();
-        services.AddScoped<Jobs.ActivityMaterializationJob>();
-        services.AddScoped<Jobs.TtsAudioGenerationJob>();
+        // Phase I2B — LessonBufferRefillJob/LessonBatchGenerationJob/ActivityMaterializationJob/
+        // TtsAudioGenerationJob deleted: Today is module-only now, no legacy generation pipeline.
         services.AddScoped<Jobs.AudioCleanupJob>();
 
         // Secret protection (ASP.NET Core Data Protection)
@@ -365,18 +363,17 @@ public static class DependencyInjection
         services.AddScoped<ICreateSpeakingSessionHandler, SpeakingSessionHandler>();
         services.AddScoped<ISubmitSpeakingTurnHandler, SpeakingSessionHandler>();
 
-        // Session generator + session handlers
-        services.AddScoped<ISessionGeneratorService, SessionGeneratorService>();
+        // Session handlers — Phase I2B: Today is module-only. ISessionGeneratorService/
+        // SessionGeneratorService and IPrepareExerciseHandler/ExercisePrepareHandler were deleted
+        // along with the legacy generation pipeline; see docs/reviews/2026-07-10-phase-i2b-
+        // today-module-only-collapse-review.md.
         services.AddScoped<SessionQueryHandler>();
         services.AddScoped<IGetTodaysSessionHandler>(sp => sp.GetRequiredService<SessionQueryHandler>());
-        services.AddScoped<IGetSessionHandler>(sp => sp.GetRequiredService<SessionQueryHandler>());
         services.AddScoped<IGetSessionHistoryHandler>(sp => sp.GetRequiredService<SessionQueryHandler>());
         services.AddScoped<SessionLifecycleHandler>();
         services.AddScoped<IStartSessionHandler>(sp => sp.GetRequiredService<SessionLifecycleHandler>());
         services.AddScoped<ICompleteSessionHandler>(sp => sp.GetRequiredService<SessionLifecycleHandler>());
         services.AddScoped<ICompleteExerciseHandler>(sp => sp.GetRequiredService<SessionLifecycleHandler>());
-        services.AddScoped<ExercisePrepareHandler>();
-        services.AddScoped<IPrepareExerciseHandler>(sp => sp.GetRequiredService<ExercisePrepareHandler>());
         services.AddScoped<IExercisePatternRepository, ExercisePatternRepository>();
 
         // Curriculum syllabus (Phase 10K)

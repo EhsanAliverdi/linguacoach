@@ -12,6 +12,15 @@ namespace LinguaCoach.Api.Controllers;
 /// and background generation job visibility.
 ///
 /// Secrets are never returned: storage GET reports a masked "configured" state only.
+///
+/// Phase I2B — the legacy generation pipeline (LessonBatchGenerationJob) that RetryBatch and
+/// GenerateLessons used to trigger was deleted; Today is module-only now. Both actions below are
+/// kept (rather than deleted) because the surrounding "Today Delivery Health" admin page
+/// (admin-lessons.component.ts) has substantial unrelated live functionality — readiness pool
+/// health, review scaffold pilot monitoring, mastery validation — that would break if this whole
+/// controller/page were removed. They now return an honest "nothing to generate" response instead
+/// of silently doing nothing or erroring. See
+/// docs/reviews/2026-07-10-phase-i2b-today-module-only-collapse-review.md.
 /// </summary>
 [ApiController]
 [Route("api/admin")]
@@ -21,18 +30,15 @@ public sealed class AdminGenerationController : ControllerBase
     private readonly LinguaCoachDbContext _db;
     private readonly IConfiguration _config;
     private readonly IFileStorageService _storage;
-    private readonly global::Quartz.ISchedulerFactory? _schedulerFactory;
 
     public AdminGenerationController(
         LinguaCoachDbContext db,
         IConfiguration config,
-        IFileStorageService storage,
-        global::Quartz.ISchedulerFactory? schedulerFactory = null)
+        IFileStorageService storage)
     {
         _db = db;
         _config = config;
         _storage = storage;
-        _schedulerFactory = schedulerFactory;
     }
 
     // ── Generation settings (T9) ────────────────────────────────────────────────
@@ -187,48 +193,38 @@ public sealed class AdminGenerationController : ControllerBase
         return Ok(new { cancelled = true });
     }
 
+    /// <summary>
+    /// Phase I2B — retired. LessonBatchGenerationJob (the job this used to trigger) was deleted;
+    /// Today is module-only now and there is nothing left to regenerate. Kept as a stable,
+    /// honest endpoint (rather than deleted) for the still-live admin batches table's retry button.
+    /// </summary>
     [HttpPost("generation/batches/{id:guid}/retry")]
     public async Task<IActionResult> RetryBatch(Guid id, CancellationToken ct)
     {
         var batch = await _db.GenerationBatches.FirstOrDefaultAsync(b => b.Id == id, ct);
         if (batch is null) return NotFound();
-        if (batch.Status != GenerationBatchStatus.Failed && batch.Status != GenerationBatchStatus.Partial)
-            return BadRequest(new { error = "Only failed or partial batches can be retried." });
 
-        if (_schedulerFactory is null)
-            return StatusCode(503, new { error = "Background jobs are not enabled in this environment." });
-
-        var scheduler = await _schedulerFactory.GetScheduler(ct);
-        await LinguaCoach.Infrastructure.Jobs.LessonBatchGenerationJob.TriggerAsync(
-            scheduler, batch.StudentProfileId, GenerationTriggerReason.ManualAdmin,
-            Math.Max(1, batch.RequestedSessionCount - batch.CompletedSessionCount), ct);
-
-        return Ok(new { queued = true });
+        return Conflict(new
+        {
+            error = "Lesson batch generation has been retired. Today is module-only now — there is nothing left to regenerate."
+        });
     }
 
+    /// <summary>
+    /// Phase I2B — retired. LessonBatchGenerationJob (the job this used to trigger) was deleted;
+    /// Today is module-only now and there is nothing left to generate. Kept as a stable, honest
+    /// endpoint (rather than deleted) for the still-live admin "generate for student" form.
+    /// </summary>
     [HttpPost("students/{id:guid}/generate-lessons")]
     public async Task<IActionResult> GenerateLessons(Guid id, [FromQuery] int? count, CancellationToken ct)
     {
         var profileExists = await _db.StudentProfiles.AnyAsync(p => p.Id == id, ct);
         if (!profileExists) return NotFound();
 
-        if (_schedulerFactory is null)
-            return StatusCode(503, new { error = "Background jobs are not enabled in this environment." });
-
-        var hasActiveBatch = await _db.GenerationBatches.AnyAsync(
-            b => b.StudentProfileId == id
-                && (b.Status == GenerationBatchStatus.Queued || b.Status == GenerationBatchStatus.Running), ct);
-        if (hasActiveBatch)
-            return Conflict(new { error = "A lesson generation batch is already running for this student." });
-
-        var settings = await _db.LessonGenerationSettings.AsNoTracking().FirstOrDefaultAsync(ct);
-        var batchSize = count ?? settings?.RefillBatchSize ?? 4;
-
-        var scheduler = await _schedulerFactory.GetScheduler(ct);
-        await LinguaCoach.Infrastructure.Jobs.LessonBatchGenerationJob.TriggerAsync(
-            scheduler, id, GenerationTriggerReason.ManualAdmin, batchSize, ct);
-
-        return Accepted(new { queued = true, requestedCount = batchSize });
+        return Conflict(new
+        {
+            error = "Lesson batch generation has been retired. Today is module-only now — there is nothing left to generate."
+        });
     }
 
     private bool HasValue(string configKey, string envKey)

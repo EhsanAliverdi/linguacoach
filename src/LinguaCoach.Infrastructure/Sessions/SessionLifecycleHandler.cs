@@ -1,10 +1,8 @@
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Domain.Enums;
-using LinguaCoach.Infrastructure.Jobs;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Quartz;
 
 namespace LinguaCoach.Infrastructure.Sessions;
 
@@ -23,16 +21,13 @@ public sealed class SessionLifecycleHandler :
 {
     private readonly LinguaCoachDbContext _db;
     private readonly ILogger<SessionLifecycleHandler> _logger;
-    private readonly ISchedulerFactory? _schedulerFactory;
 
     public SessionLifecycleHandler(
         LinguaCoachDbContext db,
-        ILogger<SessionLifecycleHandler> logger,
-        ISchedulerFactory? schedulerFactory = null)
+        ILogger<SessionLifecycleHandler> logger)
     {
         _db = db;
         _logger = logger;
-        _schedulerFactory = schedulerFactory;
     }
 
     // ── Start session ──────────────────────────────────────────────────────────
@@ -96,44 +91,12 @@ public sealed class SessionLifecycleHandler :
 
         await _db.SaveChangesAsync(ct);
 
-        // Inline lesson-buffer refill check — never blocks the student response.
-        await TriggerBufferRefillAsync(profile.Id, ct);
+        // Phase I2B — the legacy lesson-buffer refill trigger (LessonBatchGenerationJob) was
+        // deleted along with the rest of the legacy generation pipeline. Today now re-selects a
+        // bank-first Daily Lesson Module live on next page load (IDailyLessonModuleSelectionService
+        // via SessionQueryHandler) — no background pre-generation to trigger here anymore.
 
         return new CompleteSessionResult(session.Id, session.Status, session.CompletedAtUtc!.Value);
-    }
-
-    /// <summary>
-    /// Best-effort: if the student's ready-lesson buffer is at/below the refill threshold,
-    /// queue a background batch generation. Failures are logged and swallowed so completing
-    /// a lesson never fails because of background generation.
-    /// </summary>
-    private async Task TriggerBufferRefillAsync(Guid studentProfileId, CancellationToken ct)
-    {
-        if (_schedulerFactory is null) return;
-        try
-        {
-            var settings = await _db.LessonGenerationSettings.AsNoTracking().FirstOrDefaultAsync(ct);
-            if (settings is null || !settings.EnableBackgroundGeneration) return;
-
-            var readyCount = await _db.LearningSessions.CountAsync(
-                s => s.StudentProfileId == studentProfileId
-                  && s.Status == SessionStatus.NotStarted
-                  && s.GenerationStatus == GenerationStatus.Ready, ct);
-
-            if (readyCount > settings.RefillThreshold) return;
-
-            var scheduler = await _schedulerFactory.GetScheduler(ct);
-            await LessonBatchGenerationJob.TriggerAsync(
-                scheduler, studentProfileId, GenerationTriggerReason.LessonCompleted, settings.RefillBatchSize, ct);
-
-            _logger.LogInformation(
-                "Lesson buffer low (ready={Ready} <= threshold={Threshold}); queued refill for student {ProfileId}.",
-                readyCount, settings.RefillThreshold, studentProfileId);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Lesson buffer refill trigger failed for student {ProfileId} (non-fatal).", studentProfileId);
-        }
     }
 
     // ── Complete exercise ──────────────────────────────────────────────────────

@@ -2,7 +2,6 @@ using LinguaCoach.Application.Dashboard;
 using LinguaCoach.Application.LearningPath;
 using LinguaCoach.Application.PracticeGym;
 using LinguaCoach.Application.Sessions;
-using LinguaCoach.Domain.Enums;
 
 namespace LinguaCoach.Infrastructure.Dashboard;
 
@@ -107,7 +106,7 @@ public sealed class StudentDashboardSummaryHandler : IStudentDashboardSummaryHan
 
         var warnings = new DashboardSummaryWarnings(
             MissingLearningPlan: core.LearningPath is null && isCourseActive,
-            MissingTodaySession: session is null && isCourseActive && !sessionFailed,
+            MissingTodaySession: isCourseActive && !sessionFailed && (session is null || !session.Available),
             PracticeUnavailable: practiceFailed,
             PlacementIncomplete: placementGated);
 
@@ -117,6 +116,14 @@ public sealed class StudentDashboardSummaryHandler : IStudentDashboardSummaryHan
             quickStats, warnings);
     }
 
+    /// <summary>
+    /// Phase I2B — Today is module-only now: <see cref="TodaysSessionResult"/> no longer carries a
+    /// LearningSession/SessionExercise shape, so this section is built from the Daily Lesson
+    /// Module selection instead. "Ready" only when a module was actually selected;
+    /// otherwise "NotAvailable" — never a stale/legacy shape. SessionId is always null (there is
+    /// no session concept left on this path); ExerciseCount reports the selected module's linked
+    /// Learn Items + Activity Definitions as a rough size indicator for the summary card.
+    /// </summary>
     private static DashboardSummaryTodaySession BuildTodaySession(
         TodaysSessionResult? session, bool failed, bool courseActive)
     {
@@ -130,29 +137,22 @@ public sealed class StudentDashboardSummaryHandler : IStudentDashboardSummaryHan
                 "Preparing", null, null, null, null, null, null, null,
                 "Start today's lesson");
 
-        var status = session.Status switch
-        {
-            SessionStatus.Completed => "Completed",
-            SessionStatus.InProgress => "InProgress",
-            _ => "Ready"
-        };
-        var label = session.Status switch
-        {
-            SessionStatus.Completed => "Review today's lesson",
-            SessionStatus.InProgress => "Resume lesson",
-            _ => "Start today's lesson"
-        };
+        var selected = session.ModuleSection?.SelectedModules.FirstOrDefault();
+        if (!session.Available || selected is null)
+            return new DashboardSummaryTodaySession(
+                "NotAvailable", null, null, null, null, null, null, null,
+                "Nothing available yet");
 
         return new DashboardSummaryTodaySession(
-            Status: status,
-            SessionId: session.SessionId,
-            Title: session.Title,
-            Topic: session.Topic,
-            SessionGoal: session.SessionGoal,
-            FocusSkill: session.FocusSkill,
-            DurationMinutes: session.DurationMinutes,
-            ExerciseCount: session.Exercises.Count,
-            ActionLabel: label);
+            Status: "Ready",
+            SessionId: null,
+            Title: selected.Title,
+            Topic: selected.Description,
+            SessionGoal: selected.Reason,
+            FocusSkill: selected.Skill,
+            DurationMinutes: selected.EstimatedMinutes,
+            ExerciseCount: selected.LinkedLearnItems.Count + selected.LinkedActivityDefinitions.Count,
+            ActionLabel: "Start today's lesson");
     }
 
     private static DashboardSummaryLearningPlan BuildLearningPlan(DashboardResult core)

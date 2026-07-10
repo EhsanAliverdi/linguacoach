@@ -106,25 +106,7 @@ public sealed class ExercisePatternPhase2UnitTests
         }
     }
 
-    // ── ExercisePrepareHandler.MapKindToActivityType — still correct ──────────
-
-    [Theory]
-    [InlineData(ExerciseKind.VocabularyWarmup, ActivityType.VocabularyPractice)]
-    [InlineData(ExerciseKind.ContextInput,     ActivityType.WritingScenario)]
-    [InlineData(ExerciseKind.ListeningInput,   ActivityType.ListeningComprehension)]
-    [InlineData(ExerciseKind.ReadingInput,     ActivityType.ReadingTask)]
-    [InlineData(ExerciseKind.WritingTask,      ActivityType.WritingScenario)]
-    [InlineData(ExerciseKind.SpeakingTask,     ActivityType.SpeakingRolePlay)]
-    public void MapKindToActivityType_ReturnsExpectedType(ExerciseKind kind, ActivityType expected)
-    {
-        var result = ExercisePrepareHandler.MapKindToActivityType(kind);
-        Assert.Equal(expected, result);
-    }
-
-    [Fact]
-    public void MapKindToActivityType_Review_ThrowsArgumentOutOfRange()
-    {
-        Assert.Throws<ArgumentOutOfRangeException>(() =>
-            ExercisePrepareHandler.MapKindToActivityType(ExerciseKind.Review));
-    }
+    // Phase I2B — the ExercisePrepareHandler.MapKindToActivityType coverage that used to live here
+    // was removed along with ExercisePrepareHandler itself (deleted with the legacy generation
+    // pipeline). See docs/reviews/2026-07-10-phase-i2b-today-module-only-collapse-review.md.
 }

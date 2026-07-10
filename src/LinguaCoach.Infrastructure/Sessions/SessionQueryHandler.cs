@@ -1,7 +1,5 @@
 using LinguaCoach.Application.DailyLessonModules;
 using LinguaCoach.Application.Sessions;
-using LinguaCoach.Domain;
-using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -9,25 +7,29 @@ using Microsoft.Extensions.Logging;
 namespace LinguaCoach.Infrastructure.Sessions;
 
 /// <summary>
-/// Handles read-only session queries: today's session and session detail.
+/// Handles read-only session queries: Today (module-only, Phase I2B) and session history.
+///
+/// Phase I2B — the legacy LearningSession/SessionExercise generation pipeline
+/// (ISessionGeneratorService/SessionGeneratorService) and the on-open activity preparation
+/// pipeline (IPrepareExerciseHandler/ExercisePrepareHandler) were deleted. Today now ONLY calls
+/// IDailyLessonModuleSelectionService — when it has nothing for the student, Today honestly
+/// reports "nothing available" (TodaysSessionResult.Available = false) rather than falling back to
+/// any AI generation. See docs/reviews/2026-07-10-phase-i2b-today-module-only-collapse-review.md.
 /// </summary>
-public sealed class SessionQueryHandler : IGetTodaysSessionHandler, IGetSessionHandler, IGetSessionHistoryHandler
+public sealed class SessionQueryHandler : IGetTodaysSessionHandler, IGetSessionHistoryHandler
 {
     private readonly LinguaCoachDbContext _db;
-    private readonly ISessionGeneratorService _generator;
     private readonly IDailyLessonModuleSelectionService _moduleSelector;
     private readonly IDailyLessonModuleAssignmentRecorder _moduleAssignmentRecorder;
     private readonly ILogger<SessionQueryHandler> _logger;
 
     public SessionQueryHandler(
         LinguaCoachDbContext db,
-        ISessionGeneratorService generator,
         IDailyLessonModuleSelectionService moduleSelector,
         IDailyLessonModuleAssignmentRecorder moduleAssignmentRecorder,
         ILogger<SessionQueryHandler> logger)
     {
         _db = db;
-        _generator = generator;
         _moduleSelector = moduleSelector;
         _moduleAssignmentRecorder = moduleAssignmentRecorder;
         _logger = logger;
@@ -39,14 +41,10 @@ public sealed class SessionQueryHandler : IGetTodaysSessionHandler, IGetSessionH
             .FirstOrDefaultAsync(p => p.UserId == query.UserId, ct)
             ?? throw new InvalidOperationException("Student profile not found.");
 
-        var result = await _generator.GetOrCreateTodaysSessionAsync(
-            new GetOrCreateTodaysSessionCommand(profile.Id), ct);
-
-        // Phase H6 — additive, best-effort: a Daily Lesson module selection failure must never
-        // break Today, so it is wrapped separately from the existing (already-safe) generator call.
+        DailyLessonModuleSelectionResult? moduleSection = null;
         try
         {
-            var moduleSection = await _moduleSelector.SelectAsync(
+            moduleSection = await _moduleSelector.SelectAsync(
                 new DailyLessonModuleSelectionRequest(
                     StudentId: profile.Id,
                     CefrLevel: profile.CefrLevel,
@@ -55,56 +53,14 @@ public sealed class SessionQueryHandler : IGetTodaysSessionHandler, IGetSessionH
                 ct);
 
             await _moduleAssignmentRecorder.RecordAsync(profile.Id, DateTime.UtcNow.Date, moduleSection, ct);
-
-            result = result with { ModuleSection = moduleSection };
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Daily Lesson module selection failed for student {StudentProfileId}; Today falls back to legacy content only.", profile.Id);
+            _logger.LogWarning(ex, "Daily Lesson module selection failed for student {StudentProfileId}; Today has nothing available.", profile.Id);
         }
 
-        return result;
-    }
-
-    public async Task<SessionDetailResult> HandleAsync(GetSessionQuery query, CancellationToken ct = default)
-    {
-        var profile = await _db.StudentProfiles
-            .FirstOrDefaultAsync(p => p.UserId == query.UserId, ct)
-            ?? throw new InvalidOperationException("Student profile not found.");
-
-        var session = await _db.LearningSessions
-            .FirstOrDefaultAsync(s => s.Id == query.SessionId, ct)
-            ?? throw new InvalidOperationException($"Session {query.SessionId} not found.");
-
-        // Ownership: the session must belong to a module on the student's active path.
-        await EnsureSessionBelongsToStudentAsync(session.LearningModuleId, profile.Id, ct);
-
-        var exercises = await _db.SessionExercises
-            .Where(e => e.LearningSessionId == session.Id)
-            .OrderBy(e => e.Order)
-            .ToListAsync(ct);
-
-        return new SessionDetailResult(
-            SessionId: session.Id,
-            Title: session.Title,
-            Topic: session.Topic,
-            SessionGoal: session.SessionGoal,
-            DurationMinutes: session.DurationMinutes,
-            FocusSkill: session.FocusSkill,
-            CefrLevel: profile.CefrLevel,
-            Status: session.Status,
-            StartedAtUtc: session.StartedAtUtc,
-            CompletedAtUtc: session.CompletedAtUtc,
-            Exercises: exercises.Select(e => new SessionExerciseResult(
-                ExerciseId: e.Id,
-                Order: e.Order,
-                Kind: ResolveKind(e.ExercisePatternKey),
-                ExercisePatternKey: e.ExercisePatternKey,
-                PrimarySkill: e.PrimarySkill,
-                Instructions: e.Instructions,
-                EstimatedMinutes: e.EstimatedMinutes,
-                Status: e.Status,
-                LearningActivityId: e.LearningActivityId)).ToList());
+        var available = moduleSection is { FallbackRequired: false } && moduleSection.SelectedModules.Count > 0;
+        return new TodaysSessionResult(available, moduleSection);
     }
 
     public async Task<SessionHistoryResult> HandleAsync(GetSessionHistoryQuery query, CancellationToken ct = default)
@@ -176,34 +132,4 @@ public sealed class SessionQueryHandler : IGetTodaysSessionHandler, IGetSessionH
 
         return new SessionHistoryResult(items, totalCount, query.Page, query.PageSize);
     }
-
-    private async Task EnsureSessionBelongsToStudentAsync(
-        Guid moduleId, Guid studentProfileId, CancellationToken ct)
-    {
-        var moduleOnStudentPath = await _db.LearningPaths
-            .Where(p => p.StudentProfileId == studentProfileId && p.IsActive)
-            .SelectMany(p => p.Modules)
-            .AnyAsync(m => m.Id == moduleId, ct);
-
-        if (!moduleOnStudentPath)
-            throw new UnauthorizedAccessException("Session does not belong to this student.");
-    }
-
-    private static ExerciseKind ResolveKind(string patternKey) => patternKey switch
-    {
-        ExercisePatternKey.PhraseMatch
-            or ExercisePatternKey.GapFillWorkplacePhrase => ExerciseKind.VocabularyWarmup,
-        ExercisePatternKey.ListenAndAnswer
-            or ExercisePatternKey.ListenAndGapFill => ExerciseKind.ListeningInput,
-        ExercisePatternKey.EmailReply
-            or ExercisePatternKey.TeamsChatSimulation
-            or "writing_response" => ExerciseKind.WritingTask,
-        ExercisePatternKey.SpokenResponseFromPrompt
-            or "speaking_role_play" => ExerciseKind.SpeakingTask,
-        ExercisePatternKey.LessonReflection => ExerciseKind.Review,
-        _ when patternKey.StartsWith("listen", StringComparison.OrdinalIgnoreCase) => ExerciseKind.ListeningInput,
-        _ when patternKey.StartsWith("speaking", StringComparison.OrdinalIgnoreCase) => ExerciseKind.SpeakingTask,
-        _ when patternKey.StartsWith("writing", StringComparison.OrdinalIgnoreCase) => ExerciseKind.WritingTask,
-        _ => ExerciseKind.ContextInput
-    };
 }

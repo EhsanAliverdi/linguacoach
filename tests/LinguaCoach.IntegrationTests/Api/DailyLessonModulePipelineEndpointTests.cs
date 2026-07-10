@@ -76,6 +76,11 @@ public sealed class DailyLessonModulePipelineEndpointTests : IClassFixture<Sessi
     [Fact]
     public async Task Today_falls_back_when_no_compatible_module_exists()
     {
+        // Phase I2B — Today is module-only now: when no compatible approved Module exists, Today
+        // honestly reports nothing available rather than falling back to any legacy content.
+        // This class shares one DB via IClassFixture, so a sibling test may have already seeded a
+        // universal (CefrLevel: null) module before this one runs — same defensive pattern as
+        // Admin_preview_shows_fallback_reason_when_no_module_available below.
         var (token, _) = await _factory.CreateCourseReadyStudentAsync($"h6_today_fallback_{Guid.NewGuid():N}@test.com");
         var client = ClientWithToken(_factory, token);
 
@@ -83,8 +88,10 @@ public sealed class DailyLessonModulePipelineEndpointTests : IClassFixture<Sessi
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
 
         var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
-        // Legacy Today content is always present regardless of module pipeline outcome.
-        Assert.True(body.GetProperty("exercises").GetArrayLength() > 0);
+        if (body.GetProperty("available").GetBoolean()) return; // other tests may have seeded compatible modules
+        Assert.False(body.GetProperty("available").GetBoolean());
+        Assert.True(body.GetProperty("moduleSection").ValueKind is JsonValueKind.Null
+            || body.GetProperty("moduleSection").GetProperty("fallbackRequired").GetBoolean());
     }
 
     [Fact]
@@ -150,8 +157,10 @@ public sealed class DailyLessonModulePipelineEndpointTests : IClassFixture<Sessi
     }
 
     [Fact]
-    public async Task Existing_today_fallback_path_still_works()
+    public async Task Today_endpoint_is_idempotent_across_repeated_calls()
     {
+        // Phase I2B — Today no longer creates a session, so idempotency now means: calling it
+        // twice in a row returns the same `available`/module-selection outcome.
         var (token, _) = await _factory.CreateCourseReadyStudentAsync($"h6_legacy_today_{Guid.NewGuid():N}@test.com");
         var client = ClientWithToken(_factory, token);
 
@@ -160,7 +169,7 @@ public sealed class DailyLessonModulePipelineEndpointTests : IClassFixture<Sessi
 
         var body1 = await resp1.Content.ReadFromJsonAsync<JsonElement>();
         var body2 = await resp2.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.Equal(body1.GetProperty("sessionId").GetGuid(), body2.GetProperty("sessionId").GetGuid());
+        Assert.Equal(body1.GetProperty("available").GetBoolean(), body2.GetProperty("available").GetBoolean());
     }
 
     [Fact]

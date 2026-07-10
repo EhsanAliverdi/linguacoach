@@ -4,7 +4,10 @@ namespace LinguaCoach.Application.Sessions;
 
 /// <summary>
 /// Compact, pre-fetched signals derived from the StudentLearningEvent ledger.
-/// Built once per session by SessionGeneratorService and passed to the selector.
+/// Historically built once per session by SessionGeneratorService (deleted in Phase I2B along
+/// with the legacy generation pipeline) and passed to DynamicPatternSelector. Both this type and
+/// DynamicPatternSelector are now orphaned (zero production callers) — left in place rather than
+/// deleted since removing them was out of this pass's scope; flagged for a future cleanup pass.
 /// Null = no ledger data available; selector falls back to 10A behaviour.
 /// </summary>
 public sealed record LedgerSignals(

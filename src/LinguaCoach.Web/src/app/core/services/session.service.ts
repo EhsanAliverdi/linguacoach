@@ -4,14 +4,18 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   TodaysSessionResponse,
-  SessionDetailResponse,
   StartSessionResponse,
   CompleteSessionResponse,
   CompleteExerciseResponse,
-  PrepareExerciseResponse,
   SessionHistoryResponse,
 } from '../models/session.models';
 
+/**
+ * Phase I2B — Today is module-only now. `getById`/`prepareExercise` were removed along with the
+ * legacy lesson-runner page (their only caller) and the backend actions/handlers behind them
+ * (GET /api/sessions/{id}, POST .../prepare). Start/complete/completeExercise/history remain —
+ * they still operate on legitimate historical LearningSession data.
+ */
 @Injectable({ providedIn: 'root' })
 export class SessionService {
   private readonly base = `${environment.apiUrl}/sessions`;
@@ -20,10 +24,6 @@ export class SessionService {
 
   getToday(): Observable<TodaysSessionResponse> {
     return this.http.get<TodaysSessionResponse>(`${this.base}/today`);
-  }
-
-  getById(sessionId: string): Observable<SessionDetailResponse> {
-    return this.http.get<SessionDetailResponse>(`${this.base}/${sessionId}`);
   }
 
   start(sessionId: string): Observable<StartSessionResponse> {
@@ -37,11 +37,6 @@ export class SessionService {
   completeExercise(sessionId: string, exerciseId: string): Observable<CompleteExerciseResponse> {
     return this.http.post<CompleteExerciseResponse>(
       `${this.base}/${sessionId}/exercises/${exerciseId}/complete`, null);
-  }
-
-  prepareExercise(sessionId: string, exerciseId: string): Observable<PrepareExerciseResponse> {
-    return this.http.post<PrepareExerciseResponse>(
-      `${this.base}/${sessionId}/exercises/${exerciseId}/prepare`, null);
   }
 
   getHistory(page = 1, pageSize = 20): Observable<SessionHistoryResponse> {
