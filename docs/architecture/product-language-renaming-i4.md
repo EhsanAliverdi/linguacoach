@@ -23,11 +23,29 @@ language:
 | `LearnItem` | **Lesson** |
 | `ActivityDefinition` | **Exercise** |
 | `ModuleDefinition` | **Module** |
-| Daily Lesson pipeline/container (H6) | **Daily Plan** or **Today Plan** (final pick TBD — see Open Questions) |
+| Daily Lesson pipeline/container (H6) | **Today Plan** (decided 2026-07-10 — "Daily Plan" rejected) |
 
 **Composition model in the new language:**
 - A **Module** contains: **Lesson** + **Exercise** + **Feedback**.
-- A **Daily Plan** contains several **Modules**.
+- A **Today Plan** contains several **Modules**.
+
+**File names must match, not just class/type/symbol names.** This rename is not "keep the old
+file names, just rename the C#/TS symbols inside them" — every file whose name currently encodes
+the old term gets renamed too, backend and Angular alike:
+- `src/LinguaCoach.Domain/Entities/LearnItem.cs` → `Lesson.cs` (and `LearnItemResourceLink.cs` →
+  `LessonResourceLink.cs`, etc. — every file in the `LearnItem*`/`ActivityDefinition*`/
+  `ModuleDefinition*` family)
+- `src/LinguaCoach.Web/src/app/features/admin/admin-learn-items/` →
+  `admin-lessons/` (component file names inside too: `admin-learn-items.component.ts` →
+  `admin-lessons.component.ts`), `admin-activities/` → `admin-exercises/`,
+  `admin-modules/` stays (already correctly named)
+- Any file with `DailyLesson` in its name → `TodayPlan` (e.g.
+  `DailyLessonModuleSelectionService.cs` → `TodayPlanModuleSelectionService.cs`,
+  `DailyLessonModuleSelectionContracts.cs` → `TodayPlanModuleSelectionContracts.cs`)
+- Folder names follow the same rule — `src/LinguaCoach.Application/DailyLessonModules/` →
+  `TodayPlanModules/`, `src/LinguaCoach.Infrastructure/DailyLessonModules/` → `TodayPlanModules/`
+- Test file names too: `LearnItemGenerationServiceTests.cs` → `LessonGenerationServiceTests.cs`,
+  etc., mirroring whatever the production file was renamed to.
 
 This is a renaming/relabeling decision, not a data-model change — the existing entity
 relationships (`ModuleDefinitionLearnItemLink`, `ModuleDefinitionActivityLink`, `FeedbackPlanJson`,
@@ -92,17 +110,20 @@ as one sitting:
   shim needed" convention used throughout the I-track).
 - **I4c** — Frontend rename (components, services, models, nav labels, routes) + the
   `/admin/lessons` collision resolution above.
-- **I4d** — "Daily Lesson" → Daily Plan/Today Plan rename (a smaller, more contained slice —
-  `IDailyLessonModuleSelectionService`, `TodaysSessionResult`, dashboard UI copy).
+- **I4d** — "Daily Lesson" → Today Plan rename (a smaller, more contained slice —
+  `IDailyLessonModuleSelectionService`/file, `TodaysSessionResult`, `DailyLessonModules/` folders,
+  dashboard UI copy).
+
+Every slice renames both symbols AND file/folder names in the same pass — a symbol rename that
+leaves the old file name behind (e.g. `class Lesson` inside `LearnItem.cs`) is not acceptable
+per this decision; file names must read as consistently as the code inside them.
 
 Each slice should get its own build/test verification pass and its own commit, matching the I0-I2
 pattern (small, verifiable, sequential changes rather than one giant unreviewable diff).
 
 ## Open questions (resolve before implementation starts)
 
-1. **Daily Plan vs. Today Plan** — final pick. "Today Plan" reads more naturally in-product
-   ("Here's your Today Plan"); "Daily Plan" is more generic/timeless. Needs a decision, not a
-   default.
+1. ~~**Daily Plan vs. Today Plan**~~ — **decided 2026-07-10: Today Plan.**
 2. **The `/admin/lessons` collision** (above) — retire/relocate "Today Delivery Health," or pick a
    different route for the renamed Learn Item page.
 3. **Database rename strategy** — rename tables/columns directly via migration (simplest, matches

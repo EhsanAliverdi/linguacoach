@@ -965,10 +965,12 @@ revisiting this without real usage data to justify the cost.
 
 ### TODO-I4-1 — Rename LearnItem/ActivityDefinition/ModuleDefinition/Daily Lesson to product language
 **What:** Rename `LearnItem`→Lesson, `ActivityDefinition`→Exercise, `ModuleDefinition`→Module, and
-the "Daily Lesson" pipeline/container→Daily Plan (or Today Plan, TBD) across backend entities/
-DTOs/routes/migrations and frontend pages/labels/routes. Composition model in the new language: a
-Module contains Lesson + Exercise + Feedback; a Daily Plan contains several Modules. Renaming only
-— no data-model change.
+the "Daily Lesson" pipeline/container→**Today Plan** (decided) across backend entities/DTOs/routes/
+migrations and frontend pages/labels/routes — **including file and folder names**, not just class/
+type/symbol names (e.g. `LearnItem.cs`→`Lesson.cs`, `admin-learn-items/`→`admin-lessons/`,
+`DailyLessonModuleSelectionService.cs`→`TodayPlanModuleSelectionService.cs`). Composition model in
+the new language: a Module contains Lesson + Exercise + Feedback; a Today Plan contains several
+Modules. Renaming only — no data-model change.
 **Why:** Decided 2026-07-10, right after I2 made bank-first Learn/Activity/Module the sole
 content-delivery model (no more legacy fallback standing behind these names) — the best moment to
 fix the names before I3 locks in a final admin IA and before I5 multiplies how many places they
