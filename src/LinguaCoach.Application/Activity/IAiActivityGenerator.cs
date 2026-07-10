@@ -3,21 +3,17 @@ using LinguaCoach.Domain.Enums;
 namespace LinguaCoach.Application.Activity;
 
 /// <summary>
-/// Generates activity content and evaluates student attempts using AI.
-/// Infrastructure implements this. Application defines the contract.
-/// If AI generation fails, the caller falls back to a SystemFallback activity — never throws to the controller.
+/// Evaluates student attempts using AI. Infrastructure implements this. Application defines the
+/// contract. Throws on AI call failure — callers must catch and return a graceful error response.
+/// Phase I2C: narrowed from IAiActivityGenerator's original generate+evaluate contract —
+/// GenerateActivityContentAsync (and ActivityGenerationContext) were removed once the last
+/// callers (the readiness-pool/legacy-generation pipelines deleted in Passes A/B/C) were gone.
+/// The interface/class name is a mild misnomer now (it only evaluates), left unchanged rather
+/// than churn every reference for a single remaining method — see
+/// docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
 /// </summary>
 public interface IAiActivityGenerator
 {
-    /// <summary>
-    /// Generates the JSONB content payload for a new activity of the given type.
-    /// Returns the JSON string to be stored in LearningActivity.AiGeneratedContentJson.
-    /// Throws if AI call fails — callers must catch and fall back to SystemFallback.
-    /// </summary>
-    Task<string> GenerateActivityContentAsync(
-        ActivityGenerationContext context,
-        CancellationToken ct = default);
-
     /// <summary>
     /// Evaluates a student's submission and returns structured feedback JSON.
     /// Returns the JSON string to be stored in ActivityAttempt.FeedbackJson.
@@ -27,58 +23,6 @@ public interface IAiActivityGenerator
         ActivityEvaluationContext context,
         CancellationToken ct = default);
 }
-
-public sealed record ActivityGenerationContext(
-    ActivityType ActivityType,
-    string CefrLevel,
-    string CareerContext,
-    string LanguagePairCode,
-    string SourceLanguageName,
-    string TargetLanguageName,
-    string? RecentMistakesSummary = null,
-    string? TopicHint = null,
-    /// <summary>
-    /// When set, overrides the broad ActivityType-based prompt key with a pattern-specific one.
-    /// AiGeneratePromptKey from the ExercisePatternDefinition.
-    /// </summary>
-    string? OverridePromptKey = null,
-    /// <summary>
-    /// The canonical exercise pattern key (e.g. "email_reply"). Stored on LearningActivity.
-    /// </summary>
-    string? ExercisePatternKey = null,
-    /// <summary>
-    /// Compact, bounded learner preference context for AI generation.
-    /// </summary>
-    string? LearnerPreferenceContext = null,
-    /// <summary>
-    /// Compact goal label for ledger and adaptive selection.
-    /// </summary>
-    string? LearningGoalContext = null,
-    /// <summary>
-    /// Compact routing context for AI prompt (objective title, context tags, reason).
-    /// Built from CurriculumRoutingRecommendation.RoutingContextSummary.
-    /// </summary>
-    string? RoutingContext = null,
-    /// <summary>
-    /// Routing reason label injected into AI prompt ("normal", "review", "scaffold", etc.).
-    /// </summary>
-    string? RoutingReason = null,
-    /// <summary>
-    /// When true, AI prompt should treat this as review/scaffold/remediation content.
-    /// </summary>
-    bool IsReviewOrScaffold = false,
-    /// <summary>
-    /// Curriculum objective key if routing was objective-driven. Threaded into diagnostic failure records.
-    /// </summary>
-    string? ObjectiveKey = null,
-    /// <summary>
-    /// Student profile that triggered generation. Null for batch/pool generation.
-    /// </summary>
-    Guid? StudentProfileId = null,
-    /// <summary>
-    /// Source context label for diagnostics: Today, PracticeGym, ReadinessPool, LessonBatch, ManualAdmin.
-    /// </summary>
-    string? GenerationSource = null);
 
 public sealed record ActivityEvaluationContext(
     ActivityType ActivityType,

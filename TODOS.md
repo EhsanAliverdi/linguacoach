@@ -58,41 +58,53 @@ Each item includes context, motivation, and the phase where it was deferred.
 
 ---
 
-## Readiness Pool (Phase 10M/10N foundation — serving deferred to 10O)
+## Readiness Pool (Phase 10M/10N foundation — serving deferred to 10O) — **REMOVED in Phase I2C**
 
-### ~~TODO-007~~ — Pool replenishment background engine — **DONE in Phase 10N**
+**All open TODOs in this section (008, 009, 011, 012, 013) are now MOOT** — `StudentActivityReadinessItem`/
+`IStudentActivityReadinessPoolService`/`ReadinessPoolReplenishmentService` were deleted entirely in
+Phase I2C (2026-07-10), after Passes A and B (I2A/I2B) confirmed both Today's and Practice Gym's
+serving paths had zero consumers of the pool. See
+`docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md`. Kept below for historical
+record; do not action.
 
-`ReadinessPoolReplenishmentService` + `ReadinessPoolReplenishmentJob` implemented. Sweeps, recovers, retries, and fills shortfalls for all active students every 20 minutes.
+### ~~TODO-007~~ — Pool replenishment background engine — **DONE in Phase 10N, removed in Phase I2C**
 
-### TODO-008 — Serve from pool on Today and Practice Gym page load (Phase 10O)
-**What:** Update `ActivityGetHandler` and `ExercisePrepareHandler` to check the readiness pool for a suitable ready item before falling back to on-demand generation.
-**Why:** Phase 10N creates and maintains pool items but does not change page-load serving. The pool is populated and healthy but never consumed by students.
+`ReadinessPoolReplenishmentService` + `ReadinessPoolReplenishmentJob` implemented. Sweeps, recovers, retries, and fills shortfalls for all active students every 20 minutes. Deleted in Phase I2C.
+
+### ~~TODO-008~~ — Serve from pool on Today and Practice Gym page load (Phase 10O) — MOOT
+**What (original):** Update `ActivityGetHandler` and `ExercisePrepareHandler` to check the readiness pool for a suitable ready item before falling back to on-demand generation.
+**Why (original):** Phase 10N creates and maintains pool items but does not change page-load serving. The pool is populated and healthy but never consumed by students.
+**Resolution:** Moot as of Phase I2C — `ExercisePrepareHandler` was itself deleted in Phase I2B, and the readiness pool it would have served from is deleted in Phase I2C. Today and Practice Gym are now served exclusively by the bank-first Module pipeline.
 **Context:** `IStudentActivityReadinessPoolService.ReserveNextReadyAsync` is safe and ready. Integration points: `ActivityGetHandler.HandlePatternKeyedAsync` (Practice Gym), `ExercisePrepareHandler.HandleAsync` (Today lessons). Existing on-demand fallback must remain intact.
 **Deferred from:** Phase 10M/10N, 2026-06-17.
 
-### TODO-009 — Enable `AllowReviewOrScaffold=true` based on mastery signals (Phase 10O+)
-**What:** Wire mastery/ledger signals so that `CurriculumRoutingRequestFactory.Build` passes `allowReviewOrScaffold=true` when a student has demonstrated mastery of the target objective.
-**Why:** `EnableReviewScaffoldGeneration=false` by default in Phase 10N. The routing service supports review/scaffold routing but it is never activated in production.
+### ~~TODO-009~~ — Enable `AllowReviewOrScaffold=true` based on mastery signals (Phase 10O+) — MOOT
+**What (original):** Wire mastery/ledger signals so that `CurriculumRoutingRequestFactory.Build` passes `allowReviewOrScaffold=true` when a student has demonstrated mastery of the target objective.
+**Why (original):** `EnableReviewScaffoldGeneration=false` by default in Phase 10N. The routing service supports review/scaffold routing but it is never activated in production.
+**Resolution:** Moot as of Phase I2C — `EnableReviewScaffoldGeneration` and the review/scaffold generation feature gate group it belonged to were deleted along with the readiness pool.
 **Context:** Requires mastery engine or reliable ledger query. `GetWeakEventsAsync` exists but is a conservative signal only. Phase 10N keeps the flag false until the signal is validated.
 **Deferred from:** Phase 10L/10M/10N, 2026-06-17.
 
-### ~~TODO-010~~ — Sweep orphaned Generating pool items — **DONE in Phase 10N**
+### ~~TODO-010~~ — Sweep orphaned Generating pool items — **DONE in Phase 10N, removed in Phase I2C**
 
-`ReadinessPoolReplenishmentService.RecoverOrphanedGeneratingAsync` marks generating items past `GeneratingTimeoutMinutes` as Failed. Retry picks them up if under `MaxGenerationAttempts`.
+`ReadinessPoolReplenishmentService.RecoverOrphanedGeneratingAsync` marks generating items past `GeneratingTimeoutMinutes` as Failed. Retry picks them up if under `MaxGenerationAttempts`. Deleted in Phase I2C.
 
-### TODO-011 — Move ReadinessPoolReplenishmentOptions to DB-backed admin config (Phase 10O+)
-**What:** Expose `TodayLessonPoolTargetCount`, `PracticeGymPoolTargetCount`, `MaxItemsGeneratedPerRun`, `ReadyItemExpiryDays` etc. in the admin UI so they can be tuned without a redeploy.
-**Why:** Currently bound from `appsettings.json`. Target counts and expiry windows are operational decisions that should be tunable by admin without code changes.
+### ~~TODO-011~~ — Move ReadinessPoolReplenishmentOptions to DB-backed admin config (Phase 10O+) — MOOT
+**What (original):** Expose `TodayLessonPoolTargetCount`, `PracticeGymPoolTargetCount`, `MaxItemsGeneratedPerRun`, `ReadyItemExpiryDays` etc. in the admin UI so they can be tuned without a redeploy.
+**Why (original):** Currently bound from `appsettings.json`. Target counts and expiry windows are operational decisions that should be tunable by admin without code changes.
+**Resolution:** Moot as of Phase I2C — `ReadinessPoolReplenishmentOptions` was deleted along with the readiness pool it configured.
 **Deferred from:** Phase 10N, 2026-06-17.
 
-### TODO-012 — Ledger-weighted skill rotation in replenishment (Phase 10O+)
-**What:** Weight skill selection in `FillShortfallAsync` toward skills with low `StudentSkillProfile.ScorePercent` instead of round-robin rotation.
-**Why:** Round-robin creates equal distribution. Weighted selection would prioritise weak skills and make the pool more useful for adaptive learning.
+### ~~TODO-012~~ — Ledger-weighted skill rotation in replenishment (Phase 10O+) — MOOT
+**What (original):** Weight skill selection in `FillShortfallAsync` toward skills with low `StudentSkillProfile.ScorePercent` instead of round-robin rotation.
+**Why (original):** Round-robin creates equal distribution. Weighted selection would prioritise weak skills and make the pool more useful for adaptive learning.
+**Resolution:** Moot as of Phase I2C — `FillShortfallAsync`/`ReadinessPoolReplenishmentService` deleted.
 **Deferred from:** Phase 10N, 2026-06-17.
 
-### TODO-013 — Per-student review/scaffold signal instead of global flag (Phase 10O+)
-**What:** Replace `EnableReviewScaffoldGeneration` global flag with a per-student check: allow review/scaffold for a specific student × skill when `StudentSkillProfile.ScorePercent < threshold` for a prerequisite objective.
-**Why:** Global flag is too coarse. A B1-weak B2 student should get review content for B1 prerequisites, not all students globally.
+### ~~TODO-013~~ — Per-student review/scaffold signal instead of global flag (Phase 10O+) — MOOT
+**What (original):** Replace `EnableReviewScaffoldGeneration` global flag with a per-student check: allow review/scaffold for a specific student × skill when `StudentSkillProfile.ScorePercent < threshold` for a prerequisite objective.
+**Why (original):** Global flag is too coarse. A B1-weak B2 student should get review content for B1 prerequisites, not all students globally.
+**Resolution:** Moot as of Phase I2C — `EnableReviewScaffoldGeneration` and the whole review/scaffold generation mechanism deleted along with the readiness pool.
 **Deferred from:** Phase 10N, 2026-06-17.
 
 ### TODO-016 — CEFR auto-promotion/demotion using multi-skill progress signals (Phase 10P+)
@@ -326,9 +338,13 @@ Dashboard stat card now calls `listAiCategories()` and shows "Configured" / "N/M
 
 ---
 
-### TODO-UI-09 — Admin integrations: add readiness pool replenishment status (P2)
-**What:** Add a readiness pool health summary to `/admin/integrations` page. May require a new aggregate endpoint.
-**Why:** Integrations page shows lesson generation batch status but not practice gym pool health. Admins cannot tell if the background replenishment job is working.
+### ~~TODO-UI-09~~ — Admin integrations: add readiness pool replenishment status (P2) — MOOT
+**What (original):** Add a readiness pool health summary to `/admin/integrations` page. May require a new aggregate endpoint.
+**Why (original):** Integrations page shows lesson generation batch status but not practice gym pool health. Admins cannot tell if the background replenishment job is working.
+**Resolution:** Moot as of Phase I2C (2026-07-10) — `StudentActivityReadinessItem`/
+`IStudentActivityReadinessPoolService`/`ReadinessPoolReplenishmentService` were deleted entirely;
+there is no readiness pool or replenishment job left to show status for. See
+`docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md`.
 **Deferred from:** Phase 10UI-AUDIT-0, 2026-06-23.
 
 ---
@@ -520,9 +536,13 @@ Audit: docs/reviews/2026-06-24-phase-10ui-visual-final-admin-visual-fidelity-aud
 ### TODO-20B-1 — Wire `RuntimeSettingOverride` into `ReadinessPoolReplenishmentService`'s live read path
 **Status: RESOLVED in Phase 20C (2026-07-02).** `IEffectiveReadinessPoolSettingsProvider` (`Application/ReadinessPool/`, implemented in `Infrastructure/ReadinessPool/EffectiveReadinessPoolSettingsProvider.cs`) now resolves appsettings + active `RuntimeSettingOverride` rows, and both `ReadinessPoolReplenishmentService` and `PracticeGymSuggestionService` depend on it instead of `IOptions<ReadinessPoolReplenishmentOptions>` directly. Admin edits to review-scaffold/Practice-Gym-pilot settings now take effect on the next job run/request with no redeploy. See `docs/architecture/runtime-settings-and-feature-gates.md` ("Runtime-effective wiring") and the Phase 20C review doc.
 
-### TODO-20B-2 — Make `ReadinessPoolReplenishmentOptions` buffer/threshold fields admin-editable
-**What:** Extend the feature-gate registry so `TodayLessonPoolTargetCount`, `PracticeGymPoolTargetCount`, `MinimumReadyThreshold`, `MaxBufferCount`, `ReadyItemExpiryDays`, `ReservedItemExpiryHours`, `GeneratingTimeoutMinutes`, `FailedRetryDelayMinutes`, and `MaxItemsGeneratedPerRun` are runtime-editable (currently read-only/observational in the registry).
-**Why:** These weren't in the phase's required editable list (that list mapped to `LessonGenerationSettings` fields instead), so they were left read-only to keep scope tight.
+### ~~TODO-20B-2~~ — Make `ReadinessPoolReplenishmentOptions` buffer/threshold fields admin-editable — MOOT
+**What (original):** Extend the feature-gate registry so `TodayLessonPoolTargetCount`, `PracticeGymPoolTargetCount`, `MinimumReadyThreshold`, `MaxBufferCount`, `ReadyItemExpiryDays`, `ReservedItemExpiryHours`, `GeneratingTimeoutMinutes`, `FailedRetryDelayMinutes`, and `MaxItemsGeneratedPerRun` are runtime-editable (currently read-only/observational in the registry).
+**Why (original):** These weren't in the phase's required editable list (that list mapped to `LessonGenerationSettings` fields instead), so they were left read-only to keep scope tight.
+**Resolution:** Moot as of Phase I2C (2026-07-10) — `ReadinessPoolReplenishmentOptions` and the
+`review-scaffold-generation`/`practice-gym-review-scaffold-pilot` feature-gate groups it backed
+were deleted along with the readiness pool. See
+`docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md`.
 **Context:** Would reuse the same `RuntimeSettingOverride` table and `review-scaffold-generation`-style group pattern already built in this phase.
 **Deferred from:** Phase 20B engineering review, 2026-07-02.
 
@@ -659,9 +679,11 @@ progress is always computed live from the ledger.
 **Context:** `docs/reviews/2026-07-03-phase-20i-full-live-student-admin-qa-data-audit-review.md`, Part B/C.
 **Deferred from:** Phase 20I, 2026-07-03 (product decision needed, not a code bug).
 
-### TODO-20I-2 — Practice Gym readiness-pool queue backlog (1614 queued items) for `pilot.student.20e`
-**What:** Admin readiness audit for `pilot.student.20e` shows Practice Gym pool health: 177 ready (target 10), **1614 queued**, 35 failed, 7 expired. The queued count is disproportionate for a single student and wasn't root-caused.
-**Why:** Could indicate a runaway enqueue loop in the readiness replenishment job, or could be expected steady-state behavior — not distinguished this pass.
+### ~~TODO-20I-2~~ — Practice Gym readiness-pool queue backlog (1614 queued items) for `pilot.student.20e` — MOOT
+**What (original):** Admin readiness audit for `pilot.student.20e` shows Practice Gym pool health: 177 ready (target 10), **1614 queued**, 35 failed, 7 expired. The queued count is disproportionate for a single student and wasn't root-caused.
+**Why (original):** Could indicate a runaway enqueue loop in the readiness replenishment job, or could be expected steady-state behavior — not distinguished this pass.
+**Resolution:** Moot as of Phase I2C (2026-07-10) — the readiness pool (and its replenishment
+job/queue) was deleted entirely. See `docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md`.
 **Context:** `docs/reviews/2026-07-03-phase-20i-full-live-student-admin-qa-data-audit-review.md`, Part J.
 **Deferred from:** Phase 20I, 2026-07-03 (needs a DB/job-log investigation before scaling pilot beyond one student).
 

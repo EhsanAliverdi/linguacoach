@@ -5,7 +5,7 @@ import { AdminStudentDetailComponent } from './admin-student-detail.component';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import { UsageGovernanceService, StudentEffectivePolicy, UsagePolicy } from '../../../core/services/usage-governance.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { StudentListItem, AdminStudentLearningMemory, AdminActivityHistoryItem, AdminStudentDetail, StudentOnboardingProgressInfo, StudentAuditHistoryItem, StudentReadinessPoolHealth, AdminMasteryPoolSummary, AdminPlacementLatestResponse, AdminStudentPracticeSummary, AdminLearningPlanProgress, AdminStudentProgressSummary, AdminStudentSpeakingAttemptsResult, StudentReadinessSummary, StudentReadinessRepairResult } from '../../../core/models/admin.models';
+import { StudentListItem, AdminStudentLearningMemory, AdminActivityHistoryItem, AdminStudentDetail, StudentOnboardingProgressInfo, StudentAuditHistoryItem, AdminPlacementLatestResponse, AdminStudentPracticeSummary, AdminLearningPlanProgress, AdminStudentProgressSummary, AdminStudentSpeakingAttemptsResult, StudentReadinessSummary, StudentReadinessRepairResult } from '../../../core/models/admin.models';
 
 function makeReadinessSummary(overrides: Partial<StudentReadinessSummary> = {}): StudentReadinessSummary {
   return {
@@ -42,33 +42,9 @@ function makeRepairResult(overrides: Partial<StudentReadinessRepairResult> = {})
   };
 }
 
-function makePoolHealth(overrides: Partial<StudentReadinessPoolHealth> = {}): StudentReadinessPoolHealth {
-  return {
-    studentId: 'student-1',
-    todayLesson: {
-      source: 'TodayLesson', targetCount: 5, readyCount: 5, reservedCount: 0,
-      queuedOrGeneratingCount: 0, failedCount: 0, staleCount: 0,
-      expiredCount: 0, skippedCount: 0, reviewOnlyCount: 0, shortfallCount: 0, needsReplenishment: false,
-    },
-    practiceGym: {
-      source: 'PracticeGym', targetCount: 8, readyCount: 8, reservedCount: 0,
-      queuedOrGeneratingCount: 0, failedCount: 0, staleCount: 0,
-      expiredCount: 0, skippedCount: 0, reviewOnlyCount: 0, shortfallCount: 0, needsReplenishment: false,
-    },
-    ...overrides,
-  };
-}
-
-function makeMasteryPoolSummary(overrides: Partial<AdminMasteryPoolSummary> = {}): AdminMasteryPoolSummary {
-  return {
-    studentId: 'student-1',
-    queuedCount: 0, generatingCount: 0, readyCount: 5, reservedCount: 0,
-    consumedCount: 0, expiredCount: 0, failedCount: 0, staleCount: 0,
-    skippedCount: 0, reviewOnlyCount: 0, masteredCount: 0, needsReviewCount: 0,
-    lastEvaluatedAtUtc: null,
-    ...overrides,
-  };
-}
+// Phase I2C: makePoolHealth/makeMasteryPoolSummary removed — StudentReadinessPoolHealth and
+// AdminMasteryPoolSummary were deleted along with the readiness pool. See
+// docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
 
 function makePracticeSummary(overrides: Partial<AdminStudentPracticeSummary> = {}): AdminStudentPracticeSummary {
   return {
@@ -263,7 +239,7 @@ describe('AdminStudentDetailComponent — usage policy section', () => {
   beforeEach(() => {
     adminApi = jasmine.createSpyObj('AdminApiService', [
       'getStudent', 'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
-      'getStudentAuditHistory', 'getStudentReadinessPoolHealth', 'getStudentMasteryPoolSummary', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
+      'getStudentAuditHistory', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
       'getStudentReadiness', 'repairStudentReadiness', 'repairAllSafeStudentReadiness',
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
       'getLatestPlacement', 'getPlacementProgress', 'startPlacement', 'completePlacement',
@@ -278,9 +254,7 @@ describe('AdminStudentDetailComponent — usage policy section', () => {
     adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
     adminApi.getActivityHistory.and.returnValue(of([] as AdminActivityHistoryItem[]));
     adminApi.getStudentAuditHistory.and.returnValue(of([] as StudentAuditHistoryItem[]));
-    adminApi.getStudentReadinessPoolHealth.and.returnValue(of(makePoolHealth()));
     adminApi.getStudentReadiness.and.returnValue(of(makeReadinessSummary()));
-    adminApi.getStudentMasteryPoolSummary.and.returnValue(of(makeMasteryPoolSummary()));
     adminApi.getStudentPracticeSummary.and.returnValue(of(makePracticeSummary()));
     adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
     adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));
@@ -433,7 +407,7 @@ describe('AdminStudentDetailComponent — student preferences section', () => {
   beforeEach(() => {
     adminApi = jasmine.createSpyObj('AdminApiService', [
       'getStudent', 'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
-      'getStudentAuditHistory', 'getStudentReadinessPoolHealth', 'getStudentMasteryPoolSummary', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
+      'getStudentAuditHistory', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
       'getStudentReadiness', 'repairStudentReadiness', 'repairAllSafeStudentReadiness',
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
       'getLatestPlacement', 'getPlacementProgress', 'startPlacement', 'completePlacement',
@@ -447,9 +421,7 @@ describe('AdminStudentDetailComponent — student preferences section', () => {
     adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
     adminApi.getActivityHistory.and.returnValue(of([] as AdminActivityHistoryItem[]));
     adminApi.getStudentAuditHistory.and.returnValue(of([] as StudentAuditHistoryItem[]));
-    adminApi.getStudentReadinessPoolHealth.and.returnValue(of(makePoolHealth()));
     adminApi.getStudentReadiness.and.returnValue(of(makeReadinessSummary()));
-    adminApi.getStudentMasteryPoolSummary.and.returnValue(of(makeMasteryPoolSummary()));
     adminApi.getStudentPracticeSummary.and.returnValue(of(makePracticeSummary()));
     adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
     adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));
@@ -625,7 +597,7 @@ describe('AdminStudentDetailComponent — dedicated getStudent endpoint', () => 
   function setup(overrides: Partial<AdminStudentDetail> = {}) {
     adminApi = jasmine.createSpyObj('AdminApiService', [
       'getStudent', 'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
-      'getStudentAuditHistory', 'getStudentReadinessPoolHealth', 'getStudentMasteryPoolSummary', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
+      'getStudentAuditHistory', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
       'getStudentReadiness', 'repairStudentReadiness', 'repairAllSafeStudentReadiness',
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
       'getLatestPlacement', 'getPlacementProgress', 'startPlacement', 'completePlacement',
@@ -640,9 +612,7 @@ describe('AdminStudentDetailComponent — dedicated getStudent endpoint', () => 
     adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
     adminApi.getActivityHistory.and.returnValue(of([] as AdminActivityHistoryItem[]));
     adminApi.getStudentAuditHistory.and.returnValue(of([] as StudentAuditHistoryItem[]));
-    adminApi.getStudentReadinessPoolHealth.and.returnValue(of(makePoolHealth()));
     adminApi.getStudentReadiness.and.returnValue(of(makeReadinessSummary()));
-    adminApi.getStudentMasteryPoolSummary.and.returnValue(of(makeMasteryPoolSummary()));
     adminApi.getStudentPracticeSummary.and.returnValue(of(makePracticeSummary()));
     adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
     adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));
@@ -681,7 +651,7 @@ describe('AdminStudentDetailComponent — dedicated getStudent endpoint', () => 
   it('shows loading state before response', () => {
     adminApi = jasmine.createSpyObj('AdminApiService', [
       'getStudent', 'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
-      'getStudentAuditHistory', 'getStudentReadinessPoolHealth', 'getStudentMasteryPoolSummary', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
+      'getStudentAuditHistory', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
       'getStudentReadiness', 'repairStudentReadiness', 'repairAllSafeStudentReadiness',
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
       'getLatestPlacement', 'getPlacementProgress', 'startPlacement', 'completePlacement',
@@ -697,9 +667,7 @@ describe('AdminStudentDetailComponent — dedicated getStudent endpoint', () => 
     adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
     adminApi.getActivityHistory.and.returnValue(of([] as AdminActivityHistoryItem[]));
     adminApi.getStudentAuditHistory.and.returnValue(of([] as StudentAuditHistoryItem[]));
-    adminApi.getStudentReadinessPoolHealth.and.returnValue(of(makePoolHealth()));
     adminApi.getStudentReadiness.and.returnValue(of(makeReadinessSummary()));
-    adminApi.getStudentMasteryPoolSummary.and.returnValue(of(makeMasteryPoolSummary()));
     adminApi.getStudentPracticeSummary.and.returnValue(of(makePracticeSummary()));
     adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
     adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));
@@ -727,7 +695,7 @@ describe('AdminStudentDetailComponent — dedicated getStudent endpoint', () => 
   it('shows error state when getStudent fails', () => {
     adminApi = jasmine.createSpyObj('AdminApiService', [
       'getStudent', 'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
-      'getStudentAuditHistory', 'getStudentReadinessPoolHealth', 'getStudentMasteryPoolSummary', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
+      'getStudentAuditHistory', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
       'getStudentReadiness', 'repairStudentReadiness', 'repairAllSafeStudentReadiness',
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
       'getLatestPlacement', 'getPlacementProgress', 'startPlacement', 'completePlacement',
@@ -742,9 +710,7 @@ describe('AdminStudentDetailComponent — dedicated getStudent endpoint', () => 
     adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
     adminApi.getActivityHistory.and.returnValue(of([] as AdminActivityHistoryItem[]));
     adminApi.getStudentAuditHistory.and.returnValue(of([] as StudentAuditHistoryItem[]));
-    adminApi.getStudentReadinessPoolHealth.and.returnValue(of(makePoolHealth()));
     adminApi.getStudentReadiness.and.returnValue(of(makeReadinessSummary()));
-    adminApi.getStudentMasteryPoolSummary.and.returnValue(of(makeMasteryPoolSummary()));
     adminApi.getStudentPracticeSummary.and.returnValue(of(makePracticeSummary()));
     adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
     adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));
@@ -772,7 +738,7 @@ describe('AdminStudentDetailComponent — dedicated getStudent endpoint', () => 
   it('shows 404 error message when student not found', () => {
     adminApi = jasmine.createSpyObj('AdminApiService', [
       'getStudent', 'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
-      'getStudentAuditHistory', 'getStudentReadinessPoolHealth', 'getStudentMasteryPoolSummary', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
+      'getStudentAuditHistory', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
       'getStudentReadiness', 'repairStudentReadiness', 'repairAllSafeStudentReadiness',
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
       'getLatestPlacement', 'getPlacementProgress', 'startPlacement', 'completePlacement',
@@ -787,9 +753,7 @@ describe('AdminStudentDetailComponent — dedicated getStudent endpoint', () => 
     adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
     adminApi.getActivityHistory.and.returnValue(of([] as AdminActivityHistoryItem[]));
     adminApi.getStudentAuditHistory.and.returnValue(of([] as StudentAuditHistoryItem[]));
-    adminApi.getStudentReadinessPoolHealth.and.returnValue(of(makePoolHealth()));
     adminApi.getStudentReadiness.and.returnValue(of(makeReadinessSummary()));
-    adminApi.getStudentMasteryPoolSummary.and.returnValue(of(makeMasteryPoolSummary()));
     adminApi.getStudentPracticeSummary.and.returnValue(of(makePracticeSummary()));
     adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
     adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));
@@ -875,7 +839,7 @@ describe('AdminStudentDetailComponent — admin CEFR management', () => {
   function setup(cefrLevel: string | null = 'B2') {
     adminApi = jasmine.createSpyObj('AdminApiService', [
       'getStudent', 'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
-      'getStudentAuditHistory', 'getStudentReadinessPoolHealth', 'getStudentMasteryPoolSummary', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
+      'getStudentAuditHistory', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
       'getStudentReadiness', 'repairStudentReadiness', 'repairAllSafeStudentReadiness',
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
       'reactivateStudent', 'pauseStudent', 'unpauseStudent', 'updateStudentCefr',
@@ -891,9 +855,7 @@ describe('AdminStudentDetailComponent — admin CEFR management', () => {
     adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
     adminApi.getActivityHistory.and.returnValue(of([] as AdminActivityHistoryItem[]));
     adminApi.getStudentAuditHistory.and.returnValue(of([] as StudentAuditHistoryItem[]));
-    adminApi.getStudentReadinessPoolHealth.and.returnValue(of(makePoolHealth()));
     adminApi.getStudentReadiness.and.returnValue(of(makeReadinessSummary()));
-    adminApi.getStudentMasteryPoolSummary.and.returnValue(of(makeMasteryPoolSummary()));
     adminApi.getStudentPracticeSummary.and.returnValue(of(makePracticeSummary()));
     adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
     adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));
@@ -1034,7 +996,7 @@ describe('AdminStudentDetailComponent — lifecycle controls', () => {
   function setup(lifecycleStage = 'CourseReady') {
     adminApi = jasmine.createSpyObj('AdminApiService', [
       'getStudent', 'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
-      'getStudentAuditHistory', 'getStudentReadinessPoolHealth', 'getStudentMasteryPoolSummary', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
+      'getStudentAuditHistory', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
       'getStudentReadiness', 'repairStudentReadiness', 'repairAllSafeStudentReadiness',
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
       'reactivateStudent', 'pauseStudent', 'unpauseStudent',
@@ -1050,9 +1012,7 @@ describe('AdminStudentDetailComponent — lifecycle controls', () => {
     adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
     adminApi.getActivityHistory.and.returnValue(of([] as AdminActivityHistoryItem[]));
     adminApi.getStudentAuditHistory.and.returnValue(of([] as StudentAuditHistoryItem[]));
-    adminApi.getStudentReadinessPoolHealth.and.returnValue(of(makePoolHealth()));
     adminApi.getStudentReadiness.and.returnValue(of(makeReadinessSummary()));
-    adminApi.getStudentMasteryPoolSummary.and.returnValue(of(makeMasteryPoolSummary()));
     adminApi.getStudentPracticeSummary.and.returnValue(of(makePracticeSummary()));
     adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
     adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));
@@ -1233,7 +1193,7 @@ describe('AdminStudentDetailComponent — audit history section', () => {
   function setup(auditItems: StudentAuditHistoryItem[] = [], auditError = false) {
     adminApi = jasmine.createSpyObj('AdminApiService', [
       'getStudent', 'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
-      'getStudentAuditHistory', 'getStudentReadinessPoolHealth', 'getStudentMasteryPoolSummary', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
+      'getStudentAuditHistory', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
       'getStudentReadiness', 'repairStudentReadiness', 'repairAllSafeStudentReadiness',
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
       'reactivateStudent', 'pauseStudent', 'unpauseStudent', 'updateStudentCefr',
@@ -1248,9 +1208,7 @@ describe('AdminStudentDetailComponent — audit history section', () => {
     adminApi.getStudent.and.returnValue(of(makeStudentDetail()));
     adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
     adminApi.getActivityHistory.and.returnValue(of([] as AdminActivityHistoryItem[]));
-    adminApi.getStudentReadinessPoolHealth.and.returnValue(of(makePoolHealth()));
     adminApi.getStudentReadiness.and.returnValue(of(makeReadinessSummary()));
-    adminApi.getStudentMasteryPoolSummary.and.returnValue(of(makeMasteryPoolSummary()));
     adminApi.getStudentPracticeSummary.and.returnValue(of(makePracticeSummary()));
     adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
     adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));
@@ -1361,7 +1319,7 @@ describe('AdminStudentDetailComponent — 10X-L: Set CEFR slide-over', () => {
   function setup() {
     adminApi = jasmine.createSpyObj('AdminApiService', [
       'getStudent', 'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
-      'getStudentAuditHistory', 'getStudentReadinessPoolHealth', 'getStudentMasteryPoolSummary', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
+      'getStudentAuditHistory', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
       'getStudentReadiness', 'repairStudentReadiness', 'repairAllSafeStudentReadiness',
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
       'reactivateStudent', 'pauseStudent', 'unpauseStudent', 'updateStudentCefr',
@@ -1377,9 +1335,7 @@ describe('AdminStudentDetailComponent — 10X-L: Set CEFR slide-over', () => {
     adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
     adminApi.getActivityHistory.and.returnValue(of([] as AdminActivityHistoryItem[]));
     adminApi.getStudentAuditHistory.and.returnValue(of([] as StudentAuditHistoryItem[]));
-    adminApi.getStudentReadinessPoolHealth.and.returnValue(of(makePoolHealth()));
     adminApi.getStudentReadiness.and.returnValue(of(makeReadinessSummary()));
-    adminApi.getStudentMasteryPoolSummary.and.returnValue(of(makeMasteryPoolSummary()));
     adminApi.getStudentPracticeSummary.and.returnValue(of(makePracticeSummary()));
     adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
     adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));
@@ -1505,7 +1461,7 @@ describe('AdminStudentDetailComponent — REDESIGN-3 hero section', () => {
   function setup(overrides: Partial<AdminStudentDetail> = {}) {
     adminApi = jasmine.createSpyObj('AdminApiService', [
       'getStudent', 'getStudentLearningMemory', 'getActivityHistory',
-      'getStudentAuditHistory', 'getStudentReadinessPoolHealth', 'getStudentMasteryPoolSummary', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
+      'getStudentAuditHistory', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
       'getStudentReadiness', 'repairStudentReadiness', 'repairAllSafeStudentReadiness',
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
       'reactivateStudent', 'pauseStudent', 'unpauseStudent', 'updateStudentCefr',
@@ -1522,9 +1478,7 @@ describe('AdminStudentDetailComponent — REDESIGN-3 hero section', () => {
     adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
     adminApi.getActivityHistory.and.returnValue(of([]));
     adminApi.getStudentAuditHistory.and.returnValue(of([]));
-    adminApi.getStudentReadinessPoolHealth.and.returnValue(of(makePoolHealth()));
     adminApi.getStudentReadiness.and.returnValue(of(makeReadinessSummary()));
-    adminApi.getStudentMasteryPoolSummary.and.returnValue(of(makeMasteryPoolSummary()));
     adminApi.getStudentPracticeSummary.and.returnValue(of(makePracticeSummary()));
     adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
     adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));
@@ -1677,7 +1631,7 @@ describe('AdminStudentDetailComponent — REDESIGN-3 danger zone', () => {
   function setup(lifecycleStage: string = 'CourseReady') {
     adminApi = jasmine.createSpyObj('AdminApiService', [
       'getStudent', 'getStudentLearningMemory', 'getActivityHistory',
-      'getStudentAuditHistory', 'getStudentReadinessPoolHealth', 'getStudentMasteryPoolSummary', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
+      'getStudentAuditHistory', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
       'getStudentReadiness', 'repairStudentReadiness', 'repairAllSafeStudentReadiness',
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
       'reactivateStudent', 'pauseStudent', 'unpauseStudent', 'updateStudentCefr',
@@ -1694,9 +1648,7 @@ describe('AdminStudentDetailComponent — REDESIGN-3 danger zone', () => {
     adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
     adminApi.getActivityHistory.and.returnValue(of([]));
     adminApi.getStudentAuditHistory.and.returnValue(of([]));
-    adminApi.getStudentReadinessPoolHealth.and.returnValue(of(makePoolHealth()));
     adminApi.getStudentReadiness.and.returnValue(of(makeReadinessSummary()));
-    adminApi.getStudentMasteryPoolSummary.and.returnValue(of(makeMasteryPoolSummary()));
     adminApi.getStudentPracticeSummary.and.returnValue(of(makePracticeSummary()));
     adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
     adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));
@@ -1808,7 +1760,7 @@ describe('AdminStudentDetailComponent — overview stats strip', () => {
   function setup(overrides: Partial<AdminStudentDetail> = {}) {
     const adminApi = jasmine.createSpyObj('AdminApiService', [
       'getStudent', 'getStudentLearningMemory', 'getActivityHistory',
-      'getStudentAuditHistory', 'getStudentReadinessPoolHealth', 'getStudentMasteryPoolSummary', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
+      'getStudentAuditHistory', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
       'getStudentReadiness', 'repairStudentReadiness', 'repairAllSafeStudentReadiness',
       'getLatestPlacement', 'getPlacementProgress', 'startPlacement', 'completePlacement',
       'getStudentSpeakingAttempts',
@@ -1822,9 +1774,7 @@ describe('AdminStudentDetailComponent — overview stats strip', () => {
     adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
     adminApi.getActivityHistory.and.returnValue(of([]));
     adminApi.getStudentAuditHistory.and.returnValue(of([]));
-    adminApi.getStudentReadinessPoolHealth.and.returnValue(of(makePoolHealth()));
     adminApi.getStudentReadiness.and.returnValue(of(makeReadinessSummary()));
-    adminApi.getStudentMasteryPoolSummary.and.returnValue(of(makeMasteryPoolSummary()));
     adminApi.getStudentPracticeSummary.and.returnValue(of(makePracticeSummary()));
     adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
     adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));
@@ -1872,137 +1822,15 @@ describe('AdminStudentDetailComponent — overview stats strip', () => {
     expect(fixture.nativeElement.textContent).toContain('Not set');
   });
 
-  it('overview tab shows pool health status', () => {
-    setup();
-    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
-    fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Healthy');
-  });
+  // Phase I2C: "overview tab shows pool health status" removed — it checked the "Healthy" badge
+  // on the deleted Assignment / Delivery Queue health card. See
+  // docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
 });
 
-// ── Readiness pool health section ─────────────────────────────────────────────
-
-describe('AdminStudentDetailComponent — readiness pool health section', () => {
-  let adminApi: jasmine.SpyObj<AdminApiService>;
-  let governance: jasmine.SpyObj<UsageGovernanceService>;
-  let toast: jasmine.SpyObj<ToastService>;
-
-  function setup(poolResult: StudentReadinessPoolHealth | 'error' = makePoolHealth()) {
-    adminApi = jasmine.createSpyObj('AdminApiService', [
-      'getStudent', 'getStudentLearningMemory', 'getActivityHistory',
-      'getStudentAuditHistory', 'getStudentReadinessPoolHealth', 'getStudentMasteryPoolSummary', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
-      'getStudentReadiness', 'repairStudentReadiness', 'repairAllSafeStudentReadiness',
-      'getLatestPlacement', 'getPlacementProgress', 'startPlacement', 'completePlacement',
-      'getStudentSpeakingAttempts',
-    ]);
-    governance = jasmine.createSpyObj('UsageGovernanceService', [
-      'getStudentEffectivePolicy', 'listUsagePolicies', 'assignStudentPolicy', 'removeStudentPolicy',
-    ]);
-    toast = jasmine.createSpyObj('ToastService', ['success', 'error']);
-
-    adminApi.getStudent.and.returnValue(of(makeStudentDetail()));
-    adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
-    adminApi.getActivityHistory.and.returnValue(of([]));
-    adminApi.getStudentAuditHistory.and.returnValue(of([]));
-    adminApi.getStudentReadinessPoolHealth.and.returnValue(
-      poolResult === 'error' ? throwError(() => new Error('network')) : of(poolResult)
-    );
-    adminApi.getStudentReadiness.and.returnValue(of(makeReadinessSummary()));
-    adminApi.getStudentMasteryPoolSummary.and.returnValue(of(makeMasteryPoolSummary()));
-    adminApi.getStudentPracticeSummary.and.returnValue(of(makePracticeSummary()));
-    adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
-    adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));
-    adminApi.getStudentSpeakingAttempts.and.returnValue(of(makeSpeakingAttempts()));
-    adminApi.getLatestPlacement.and.returnValue(of(null as unknown as AdminPlacementLatestResponse));
-    governance.getStudentEffectivePolicy.and.returnValue(of(makeEffectivePolicy()));
-    governance.listUsagePolicies.and.returnValue(of([]));
-
-    TestBed.configureTestingModule({
-      imports: [AdminStudentDetailComponent],
-      providers: [
-        { provide: AdminApiService, useValue: adminApi },
-        { provide: UsageGovernanceService, useValue: governance },
-        { provide: ToastService, useValue: toast },
-        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'student-1' } } } },
-      ],
-    });
-  }
-
-  it('renders Assignment / Delivery Queue health section heading', () => {
-    setup();
-    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
-    fixture.detectChanges();
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Assignment / Delivery Queue health');
-  });
-
-  it('shows today lesson ready count', () => {
-    setup(makePoolHealth());
-    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
-    fixture.detectChanges();
-    const text = (fixture.nativeElement as HTMLElement).textContent!;
-    expect(text).toContain("Today's lesson");
-    expect(text).toContain('5 / 5');
-  });
-
-  it('shows practice gym ready count', () => {
-    setup(makePoolHealth());
-    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
-    fixture.detectChanges();
-    const text = (fixture.nativeElement as HTMLElement).textContent!;
-    expect(text).toContain('Practice gym');
-    expect(text).toContain('8 / 8');
-  });
-
-  it('shows Healthy badge when pool does not need replenishment', () => {
-    setup(makePoolHealth());
-    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
-    fixture.detectChanges();
-    const badges = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-badge'));
-    const healthyBadges = badges.filter(b => b.textContent?.trim() === 'Healthy');
-    expect(healthyBadges.length).toBe(2);
-  });
-
-  it('shows Needs replenishment badge when pool needs replenishment', () => {
-    const ph = makePoolHealth();
-    (ph.todayLesson as any).needsReplenishment = true;
-    (ph.todayLesson as any).shortfallCount = 3;
-    setup(ph);
-    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
-    fixture.detectChanges();
-    const badges = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('sp-admin-badge'));
-    expect(badges.some(b => b.textContent?.trim() === 'Needs replenishment')).toBeTrue();
-  });
-
-  it('shows error state when pool health load fails', () => {
-    setup('error');
-    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
-    fixture.detectChanges();
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Could not load delivery queue health.');
-  });
-
-  it('calls getStudentReadinessPoolHealth on init', () => {
-    setup();
-    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
-    fixture.detectChanges();
-    expect(adminApi.getStudentReadinessPoolHealth).toHaveBeenCalledWith('student-1');
-  });
-
-  it('KPI strip shows Healthy label when both pools are healthy', () => {
-    setup(makePoolHealth());
-    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
-    fixture.detectChanges();
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Healthy');
-  });
-
-  it('shows Needs replenishment badge when today lesson needs fill', () => {
-    const ph = makePoolHealth();
-    (ph.todayLesson as any).needsReplenishment = true;
-    setup(ph);
-    const fixture = TestBed.createComponent(AdminStudentDetailComponent);
-    fixture.detectChanges();
-    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Needs replenishment');
-  });
-});
+// Phase I2C: the "readiness pool health section" describe block (Assignment / Delivery Queue
+// health card, today-lesson/practice-gym pool ready counts, replenishment badges) was removed —
+// it tested UI that read from StudentReadinessPoolHealth, which was deleted along with the
+// readiness pool. See docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
 
 describe('AdminStudentDetailComponent — Practice Gym summary', () => {
   let adminApi: jasmine.SpyObj<any>;
@@ -2012,7 +1840,7 @@ describe('AdminStudentDetailComponent — Practice Gym summary', () => {
   function setup(practiceResult: AdminStudentPracticeSummary | 'error' = makePracticeSummary()) {
     adminApi = jasmine.createSpyObj('AdminApiService', [
       'getStudent', 'getStudentLearningMemory', 'getActivityHistory',
-      'getStudentAuditHistory', 'getStudentReadinessPoolHealth', 'getStudentMasteryPoolSummary', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
+      'getStudentAuditHistory', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
       'getStudentReadiness', 'repairStudentReadiness', 'repairAllSafeStudentReadiness',
       'getLatestPlacement', 'getPlacementProgress', 'startPlacement', 'completePlacement',
       'getStudentSpeakingAttempts',
@@ -2026,9 +1854,7 @@ describe('AdminStudentDetailComponent — Practice Gym summary', () => {
     adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
     adminApi.getActivityHistory.and.returnValue(of([]));
     adminApi.getStudentAuditHistory.and.returnValue(of([]));
-    adminApi.getStudentReadinessPoolHealth.and.returnValue(of(makePoolHealth()));
     adminApi.getStudentReadiness.and.returnValue(of(makeReadinessSummary()));
-    adminApi.getStudentMasteryPoolSummary.and.returnValue(of(makeMasteryPoolSummary()));
     adminApi.getStudentPracticeSummary.and.returnValue(
       practiceResult === 'error' ? throwError(() => new Error('network')) : of(practiceResult)
     );
@@ -2115,7 +1941,7 @@ describe('AdminStudentDetailComponent — Speaking Submissions', () => {
   function setup(speakingResult: AdminStudentSpeakingAttemptsResult | 'error' = makeSpeakingAttempts()) {
     adminApi = jasmine.createSpyObj('AdminApiService', [
       'getStudent', 'listStudents', 'getStudentLearningMemory', 'getActivityHistory',
-      'getStudentAuditHistory', 'getStudentReadinessPoolHealth', 'getStudentMasteryPoolSummary', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
+      'getStudentAuditHistory', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
       'getStudentReadiness', 'repairStudentReadiness', 'repairAllSafeStudentReadiness',
       'updateStudent', 'archiveStudent', 'resetStudentPassword', 'resetStudent',
       'getLatestPlacement', 'getPlacementProgress', 'startPlacement', 'completePlacement',
@@ -2130,9 +1956,7 @@ describe('AdminStudentDetailComponent — Speaking Submissions', () => {
     adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
     adminApi.getActivityHistory.and.returnValue(of([] as AdminActivityHistoryItem[]));
     adminApi.getStudentAuditHistory.and.returnValue(of([] as StudentAuditHistoryItem[]));
-    adminApi.getStudentReadinessPoolHealth.and.returnValue(of(makePoolHealth()));
     adminApi.getStudentReadiness.and.returnValue(of(makeReadinessSummary()));
-    adminApi.getStudentMasteryPoolSummary.and.returnValue(of(makeMasteryPoolSummary()));
     adminApi.getStudentPracticeSummary.and.returnValue(of(makePracticeSummary()));
     adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
     adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));
@@ -2303,7 +2127,7 @@ describe('AdminStudentDetailComponent — pilot readiness panel', () => {
   function setup(readinessResult: StudentReadinessSummary | 'error' = makeReadinessSummary()) {
     adminApi = jasmine.createSpyObj('AdminApiService', [
       'getStudent', 'getStudentLearningMemory', 'getActivityHistory',
-      'getStudentAuditHistory', 'getStudentReadinessPoolHealth', 'getStudentMasteryPoolSummary', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
+      'getStudentAuditHistory', 'getStudentPracticeSummary', 'getStudentProgressSummary', 'getLearningPlanProgress',
       'getStudentReadiness', 'repairStudentReadiness', 'repairAllSafeStudentReadiness',
       'getLatestPlacement', 'getPlacementProgress', 'startPlacement', 'completePlacement',
       'getStudentSpeakingAttempts', 'getStudentWritingEvaluations',
@@ -2317,8 +2141,6 @@ describe('AdminStudentDetailComponent — pilot readiness panel', () => {
     adminApi.getStudentLearningMemory.and.returnValue(of(makeMemory()));
     adminApi.getActivityHistory.and.returnValue(of([]));
     adminApi.getStudentAuditHistory.and.returnValue(of([]));
-    adminApi.getStudentReadinessPoolHealth.and.returnValue(of(makePoolHealth()));
-    adminApi.getStudentMasteryPoolSummary.and.returnValue(of(makeMasteryPoolSummary()));
     adminApi.getStudentPracticeSummary.and.returnValue(of(makePracticeSummary()));
     adminApi.getStudentProgressSummary.and.returnValue(of(makeProgressSummary()));
     adminApi.getLearningPlanProgress.and.returnValue(of(makeLearningPlanProgress()));

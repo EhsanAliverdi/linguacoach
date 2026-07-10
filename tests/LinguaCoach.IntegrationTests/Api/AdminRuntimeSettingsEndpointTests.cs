@@ -6,6 +6,16 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace LinguaCoach.IntegrationTests.Api;
 
+/// <summary>
+/// Phase I2C: the "review-scaffold-generation" and "practice-gym-review-scaffold-pilot" feature
+/// gate groups this file originally exercised were removed along with the readiness pool — see
+/// docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md. Tests that used them were
+/// rewritten against "activity-feedback-policy" (the only remaining group on the same
+/// ReadinessPoolOverride backing store). No remaining group has RequiresConfirmation=true, so the
+/// high-risk-confirmation coverage (Update_HighRiskWithoutConfirmation_Returns400/
+/// Update_HighRiskWithConfirmation_Succeeds) has no group left to exercise it against and was
+/// removed — flagged as a residual coverage gap in the review doc.
+/// </summary>
 public sealed class AdminRuntimeSettingsEndpointTests : IClassFixture<ApiTestFactory>
 {
     private readonly ApiTestFactory _factory;
@@ -44,8 +54,7 @@ public sealed class AdminRuntimeSettingsEndpointTests : IClassFixture<ApiTestFac
         var groups = await response.Content.ReadFromJsonAsync<JsonElement>();
         var keys = groups.EnumerateArray().Select(g => g.GetProperty("groupKey").GetString()).ToList();
 
-        Assert.Contains("review-scaffold-generation", keys);
-        Assert.Contains("practice-gym-review-scaffold-pilot", keys);
+        Assert.Contains("activity-feedback-policy", keys);
         Assert.Contains("lesson-generation-buffer", keys);
         Assert.Contains("ai-signal-safety-speaking", keys);
         Assert.Contains("ai-signal-safety-writing", keys);
@@ -62,21 +71,21 @@ public sealed class AdminRuntimeSettingsEndpointTests : IClassFixture<ApiTestFac
     }
 
     [Fact]
-    public async Task GetByKey_PracticeGymPilot_IncludesSourceAndDefault()
+    public async Task GetByKey_ActivityFeedbackPolicy_IncludesSourceAndDefault()
     {
         var token = await _factory.CreateAdminAndGetTokenAsync();
         var response = await ClientWithToken(token)
-            .GetAsync("/api/admin/runtime-settings/feature-gates/practice-gym-review-scaffold-pilot");
+            .GetAsync("/api/admin/runtime-settings/feature-gates/activity-feedback-policy");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var group = await response.Content.ReadFromJsonAsync<JsonElement>();
         var settings = group.GetProperty("settings").EnumerateArray().ToList();
-        var pilotEnabled = settings.First(s => s.GetProperty("key").GetString() == "ReadinessPool.PracticeGymPilotEnabled");
+        var todayPolicy = settings.First(s => s.GetProperty("key").GetString() == "ActivityFeedback.TodayPolicy");
 
-        Assert.True(pilotEnabled.TryGetProperty("effectiveValueJson", out _));
-        Assert.True(pilotEnabled.TryGetProperty("defaultValueJson", out _));
-        Assert.True(pilotEnabled.TryGetProperty("valueSource", out _));
-        Assert.True(pilotEnabled.GetProperty("isEditableAtRuntime").GetBoolean());
+        Assert.True(todayPolicy.TryGetProperty("effectiveValueJson", out _));
+        Assert.True(todayPolicy.TryGetProperty("defaultValueJson", out _));
+        Assert.True(todayPolicy.TryGetProperty("valueSource", out _));
+        Assert.True(todayPolicy.GetProperty("isEditableAtRuntime").GetBoolean());
     }
 
     [Fact]
@@ -110,39 +119,39 @@ public sealed class AdminRuntimeSettingsEndpointTests : IClassFixture<ApiTestFac
         var client = ClientWithToken(token);
 
         var response = await client.PutAsJsonAsync(
-            "/api/admin/runtime-settings/feature-gates/practice-gym-review-scaffold-pilot/settings",
+            "/api/admin/runtime-settings/feature-gates/activity-feedback-policy/settings",
             new
             {
                 values = new Dictionary<string, object>
                 {
-                    ["ReadinessPool.MaxStudentVisibleScaffoldSuggestions"] = 3,
+                    ["ActivityFeedback.TodayPolicy"] = "Required",
                 },
-                reason = "Integration test tuning max visible suggestions.",
+                reason = "Integration test tuning today feedback policy.",
             });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var group = await response.Content.ReadFromJsonAsync<JsonElement>();
         var setting = group.GetProperty("settings").EnumerateArray()
-            .First(s => s.GetProperty("key").GetString() == "ReadinessPool.MaxStudentVisibleScaffoldSuggestions");
-        Assert.Equal("3", setting.GetProperty("effectiveValueJson").GetString());
+            .First(s => s.GetProperty("key").GetString() == "ActivityFeedback.TodayPolicy");
+        Assert.Equal("\"Required\"", setting.GetProperty("effectiveValueJson").GetString());
         Assert.Equal("databaseOverride", setting.GetProperty("valueSource").GetString());
 
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
         var audited = db.AdminAuditLogs.Any(a =>
-            a.Action == "UpdateFeatureGate" && a.EntityId == "ReadinessPool.MaxStudentVisibleScaffoldSuggestions");
+            a.Action == "UpdateFeatureGate" && a.EntityId == "ActivityFeedback.TodayPolicy");
         Assert.True(audited);
     }
 
     [Fact]
-    public async Task Update_OutOfRangeValue_Returns400()
+    public async Task Update_DisallowedValue_Returns400()
     {
         var token = await _factory.CreateAdminAndGetTokenAsync();
         var response = await ClientWithToken(token).PutAsJsonAsync(
-            "/api/admin/runtime-settings/feature-gates/practice-gym-review-scaffold-pilot/settings",
+            "/api/admin/runtime-settings/feature-gates/activity-feedback-policy/settings",
             new
             {
-                values = new Dictionary<string, object> { ["ReadinessPool.MaxStudentVisibleScaffoldSuggestions"] = 99 },
+                values = new Dictionary<string, object> { ["ActivityFeedback.TodayPolicy"] = "NotAllowed" },
                 reason = "Should be rejected.",
             });
 
@@ -154,7 +163,7 @@ public sealed class AdminRuntimeSettingsEndpointTests : IClassFixture<ApiTestFac
     {
         var token = await _factory.CreateAdminAndGetTokenAsync();
         var response = await ClientWithToken(token).PutAsJsonAsync(
-            "/api/admin/runtime-settings/feature-gates/practice-gym-review-scaffold-pilot/settings",
+            "/api/admin/runtime-settings/feature-gates/activity-feedback-policy/settings",
             new
             {
                 values = new Dictionary<string, object> { ["NotARealKey"] = true },
@@ -180,45 +189,14 @@ public sealed class AdminRuntimeSettingsEndpointTests : IClassFixture<ApiTestFac
     }
 
     [Fact]
-    public async Task Update_HighRiskWithoutConfirmation_Returns400()
-    {
-        var token = await _factory.CreateAdminAndGetTokenAsync();
-        var response = await ClientWithToken(token).PutAsJsonAsync(
-            "/api/admin/runtime-settings/feature-gates/review-scaffold-generation/settings",
-            new
-            {
-                values = new Dictionary<string, object> { ["ReadinessPool.EnableReviewScaffoldGeneration"] = true },
-                reason = "Trying to enable without confirmation.",
-            });
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task Update_HighRiskWithConfirmation_Succeeds()
-    {
-        var token = await _factory.CreateAdminAndGetTokenAsync();
-        var response = await ClientWithToken(token).PutAsJsonAsync(
-            "/api/admin/runtime-settings/feature-gates/review-scaffold-generation/settings",
-            new
-            {
-                values = new Dictionary<string, object> { ["ReadinessPool.EnableReviewScaffoldGeneration"] = true },
-                reason = "Confirmed high-risk enable for test.",
-                confirmationText = "CONFIRM",
-            });
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-    }
-
-    [Fact]
     public async Task Update_MissingReason_Returns400()
     {
         var token = await _factory.CreateAdminAndGetTokenAsync();
         var response = await ClientWithToken(token).PutAsJsonAsync(
-            "/api/admin/runtime-settings/feature-gates/practice-gym-review-scaffold-pilot/settings",
+            "/api/admin/runtime-settings/feature-gates/activity-feedback-policy/settings",
             new
             {
-                values = new Dictionary<string, object> { ["ReadinessPool.MaxStudentVisibleScaffoldSuggestions"] = 1 },
+                values = new Dictionary<string, object> { ["ActivityFeedback.TodayPolicy"] = "Off" },
                 reason = "",
             });
 
@@ -234,15 +212,15 @@ public sealed class AdminRuntimeSettingsEndpointTests : IClassFixture<ApiTestFac
         var client = ClientWithToken(token);
 
         await client.PutAsJsonAsync(
-            "/api/admin/runtime-settings/feature-gates/practice-gym-review-scaffold-pilot/settings",
+            "/api/admin/runtime-settings/feature-gates/activity-feedback-policy/settings",
             new
             {
-                values = new Dictionary<string, object> { ["ReadinessPool.PracticeGymPilotLabel"] = "Custom label" },
-                reason = "Set custom label before reset test.",
+                values = new Dictionary<string, object> { ["ActivityFeedback.PracticeGymPolicy"] = "Required" },
+                reason = "Set custom policy before reset test.",
             });
 
         var resetRequest = new HttpRequestMessage(
-            HttpMethod.Delete, "/api/admin/runtime-settings/feature-gates/practice-gym-review-scaffold-pilot/override")
+            HttpMethod.Delete, "/api/admin/runtime-settings/feature-gates/activity-feedback-policy/override")
         {
             Content = JsonContent.Create(new { reason = "Rolling back to default for test." }),
         };
@@ -251,7 +229,7 @@ public sealed class AdminRuntimeSettingsEndpointTests : IClassFixture<ApiTestFac
         Assert.Equal(HttpStatusCode.OK, resetResponse.StatusCode);
         var group = await resetResponse.Content.ReadFromJsonAsync<JsonElement>();
         var setting = group.GetProperty("settings").EnumerateArray()
-            .First(s => s.GetProperty("key").GetString() == "ReadinessPool.PracticeGymPilotLabel");
+            .First(s => s.GetProperty("key").GetString() == "ActivityFeedback.PracticeGymPolicy");
         Assert.Equal("appSettings", setting.GetProperty("valueSource").GetString());
 
         using var scope = _factory.Services.CreateScope();

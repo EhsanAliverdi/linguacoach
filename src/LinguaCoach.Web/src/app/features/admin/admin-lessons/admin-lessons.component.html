@@ -76,58 +76,9 @@
     }
   </sp-admin-card>
 
-  <!-- Delivery queue — aggregate health -->
-  <div class="sp-admin-table-section" aria-label="Delivery queue — aggregate health">
-    <div class="sp-admin-table-section-header sp-admin-table-section-header--no-divider">
-      <h2 class="sp-admin-table-section-title">Delivery queue — aggregate health</h2>
-      <sp-admin-button size="xs" appearance="ghost" variant="neutral" [disabled]="poolHealthLoading()" (clicked)="refreshPoolHealth()">
-        Refresh
-      </sp-admin-button>
-    </div>
-    @if (poolHealthLoading()) {
-      <div class="sp-admin-card-body-md">
-        <sp-admin-loading-state message="Loading delivery queue health" />
-      </div>
-    } @else if (poolHealthError()) {
-      <div class="sp-admin-card-body-md">
-        <sp-admin-error-state title="Delivery queue health unavailable" [message]="poolHealthError()" />
-      </div>
-    } @else if (poolHealth()) {
-      <div class="sp-admin-card-grid-3-equal">
-        <sp-admin-card title="Students ready">
-          <sp-admin-ring-metric
-            [pct]="poolReadyRingPct()"
-            [label]="poolReadyRingPct() + '%'"
-            sublabel="have ≥1 ready item"
-            [tone]="poolReadyRingPct() >= 90 ? 'green' : poolReadyRingPct() >= 60 ? 'amber' : 'danger'" />
-        </sp-admin-card>
-        <sp-admin-card title="Delivery status distribution">
-          @if (poolStatusItems().length > 0) {
-            <sp-admin-breakdown-bars [items]="poolStatusItems()" [showPct]="true" />
-          } @else {
-            <sp-admin-visual-placeholder state="not-available" title="Delivery status distribution" message="No delivery queue items yet" />
-          }
-        </sp-admin-card>
-        <sp-admin-card title="Needs attention">
-          @if (poolAttentionItems().length > 0) {
-            <sp-admin-breakdown-bars [items]="poolAttentionItems()" [showPct]="true" />
-          } @else {
-            <sp-admin-visual-placeholder state="not-available" title="Needs attention" message="No students currently need attention" />
-          }
-        </sp-admin-card>
-      </div>
-      @if (poolHealth()!.totalFailed > 0) {
-        <sp-admin-alert variant="warning">
-          {{ poolHealth()!.studentsWithFailedItems }} student(s) have failed delivery queue items. Check generation logs.
-        </sp-admin-alert>
-      }
-      <p class="sp-admin-section-sub" style="margin-top:0.5rem">
-        {{ poolHealth()!.totalStudentsWithItems }} students with items,
-        {{ poolHealth()!.averageReadyPerStudent | number:'1.1-1' }} avg ready per student.
-        Last refreshed: {{ poolHealth()!.generatedAt | date:'HH:mm:ss' }}
-      </p>
-    }
-  </div>
+  <!-- Phase I2C: "Delivery queue — aggregate health" section removed — read from the readiness
+       pool (AggregatePoolHealthSummary), which was deleted. See
+       docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md. -->
 
   <!-- Ready lesson buffer per student -->
   <sp-admin-card title="Ready lesson buffer per student">
@@ -242,50 +193,12 @@
     }
   </sp-admin-card>
 
-  <!-- Review scaffold funnel + mastery validation -->
+  <!-- Mastery validation -->
   <div class="sp-admin-two-col-start">
 
-    <sp-admin-graph-card title="Review scaffold generation"
-      subtitle="Controlled by the Review scaffold generation feature gate."
-      [status]="scaffoldDryRunLoading() ? 'loading' : scaffoldDryRunError() ? 'unavailable' : (scaffoldDryRun()?.status === 'Enabled' ? 'live' : scaffoldDryRun()?.status === 'DryRun' ? 'partial' : 'unavailable')">
-      <sp-admin-button size="xs" appearance="outline" variant="neutral"
-        routerLink="/admin/settings/feature-gates" [queryParams]="{ gate: 'review-scaffold-generation' }">
-        Configure
-      </sp-admin-button>
-      @if (scaffoldDryRunLoading()) {
-        <sp-admin-visual-placeholder state="not-available" skeleton="chart" title="Review scaffold generation" message="Loading..." />
-      } @else if (scaffoldDryRunError()) {
-        <sp-admin-error-state title="Dry-run unavailable" [message]="scaffoldDryRunError()" />
-      } @else if (scaffoldDryRun()) {
-        <div class="sp-admin-kpi-row">
-          <sp-admin-badge
-            [tone]="scaffoldDryRun()!.status === 'Enabled' ? 'success' : scaffoldDryRun()!.status === 'DryRun' ? 'info' : 'neutral'"
-            appearance="soft" size="sm">
-            {{ scaffoldDryRun()!.status }}
-          </sp-admin-badge>
-          <span class="sp-admin-section-sub">{{ scaffoldDryRun()!.studentsConsidered }} students considered</span>
-        </div>
-        @if (scaffoldFunnelItems().length > 0) {
-          <sp-admin-breakdown-bars [items]="scaffoldFunnelItems()" [showPct]="false" />
-        } @else {
-          <sp-admin-visual-placeholder state="not-available" title="Review scaffold generation" message="No review scaffold activity in this run" />
-        }
-        <p class="sp-admin-section-sub" style="margin-top:0.75rem">
-          Config: require admin review = <strong>{{ scaffoldDryRun()!.requireAdminReview ? 'yes' : 'no' }}</strong>,
-          max per student/day = <strong>{{ scaffoldDryRun()!.maxScaffoldItemsPerStudentPerDay }}</strong>,
-          allowed sources = <strong>{{ scaffoldDryRun()!.scaffoldAllowedSources.join(', ') }}</strong>,
-          Today lesson insertion = <strong>{{ scaffoldDryRun()!.allowTodayLessonInsertion ? 'allowed' : 'blocked' }}</strong>,
-          minimum confidence = <strong>{{ scaffoldDryRun()!.minimumConfidenceForReviewNeed }}</strong>.
-        </p>
-        @for (warning of scaffoldDryRun()!.warnings; track warning) {
-          <sp-admin-alert variant="warning">{{ warning }}</sp-admin-alert>
-        }
-        <p class="sp-admin-section-sub" style="margin-top:0.5rem">
-          Last refreshed: {{ scaffoldDryRun()!.generatedAt | date:'HH:mm:ss' }}
-          <sp-admin-button size="xs" appearance="ghost" variant="neutral" (clicked)="refreshScaffoldDryRun()">Refresh</sp-admin-button>
-        </p>
-      }
-    </sp-admin-graph-card>
+    <!-- Phase I2C: "Review scaffold generation" graph-card removed here — read from the
+         readiness pool (ReviewScaffoldDryRunSummary), which was deleted. See
+         docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md. -->
 
     <sp-admin-graph-card title="Mastery validation"
       subtitle="System-wide diagnostic across active students. No AI calls, read-only."
@@ -317,144 +230,9 @@
 
   </div>
 
-  <!-- Review scaffold approval (Phase 19B) -->
-  <sp-admin-card title="Review scaffold — approval">
-    <p class="sp-admin-section-sub">
-      Items generated while <code>ReadinessPool:RequireAdminReview</code> is true. Each item needs a
-      per-item admin decision before it can reach a student. Approving/rejecting never changes CEFR,
-      completes objectives, or regenerates the Learning Plan.
-    </p>
-    @if (scaffoldActionError()) {
-      <sp-admin-alert variant="error">{{ scaffoldActionError() }}</sp-admin-alert>
-    }
-    @if (scaffoldPendingLoading()) {
-      <sp-admin-loading-state message="Loading review scaffold items" />
-    } @else if (scaffoldPendingError()) {
-      <sp-admin-error-state title="Review scaffold list unavailable" [message]="scaffoldPendingError()" />
-    } @else if (scaffoldPending().length > 0) {
-      <sp-admin-table variant="data" density="compact" layout="first-column-fluid" minWidth="900px">
-        <table>
-          <thead>
-            <tr>
-              <th>Student</th>
-              <th>Skill / objective</th>
-              <th>CEFR</th>
-              <th>Pattern</th>
-              <th>Review status</th>
-              <th>Visibility</th>
-              <th>Created</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (item of scaffoldPending(); track item.id) {
-              <tr>
-                <td class="sp-admin-mono-cell">{{ item.studentId }}</td>
-                <td>
-                  {{ item.primarySkill ?? '—' }}
-                  <div class="sp-admin-section-sub">{{ item.curriculumObjectiveTitle ?? item.curriculumObjectiveKey ?? '—' }}</div>
-                </td>
-                <td>{{ item.targetCefrLevel }}</td>
-                <td>{{ item.patternKey ?? item.activityType ?? '—' }}</td>
-                <td>
-                  @if (item.adminReviewStatus === 'PendingReview') {
-                    <sp-admin-badge tone="warning">Pending review</sp-admin-badge>
-                  } @else if (item.adminReviewStatus === 'Approved') {
-                    <sp-admin-badge tone="success">Approved</sp-admin-badge>
-                  } @else if (item.adminReviewStatus === 'Rejected') {
-                    <sp-admin-badge tone="danger">Rejected</sp-admin-badge>
-                  } @else {
-                    <sp-admin-badge tone="neutral">Not required</sp-admin-badge>
-                  }
-                  @if (item.adminReviewReason) {
-                    <div class="sp-admin-section-sub">{{ item.adminReviewReason }}</div>
-                  }
-                </td>
-                <td>
-                  @if (item.isStudentVisible) {
-                    <sp-admin-badge tone="success" appearance="outline">Visible to student</sp-admin-badge>
-                  } @else {
-                    <sp-admin-badge tone="neutral" appearance="outline">Hidden from student</sp-admin-badge>
-                  }
-                  @if (item.isPracticeGymEligible) {
-                    <div><sp-admin-badge tone="info" appearance="outline">Practice Gym eligible</sp-admin-badge></div>
-                  }
-                </td>
-                <td>{{ item.createdAt | date:'short' }}</td>
-                <td>
-                  @if (item.adminReviewStatus === 'PendingReview') {
-                    <sp-admin-button size="xs" variant="success" [loading]="scaffoldActionPendingId() === item.id"
-                      [disabled]="scaffoldActionPendingId() === item.id" (clicked)="approveScaffoldItem(item)">
-                      Approve
-                    </sp-admin-button>
-                    <sp-admin-button size="xs" variant="danger" appearance="outline" [loading]="scaffoldActionPendingId() === item.id"
-                      [disabled]="scaffoldActionPendingId() === item.id" (clicked)="rejectScaffoldItem(item)">
-                      Reject
-                    </sp-admin-button>
-                  } @else if (item.adminReviewStatus === 'Approved' && item.status !== 'Consumed') {
-                    <sp-admin-button size="xs" variant="danger" appearance="outline" [loading]="scaffoldActionPendingId() === item.id"
-                      [disabled]="scaffoldActionPendingId() === item.id" (clicked)="rejectScaffoldItem(item)">
-                      Reject
-                    </sp-admin-button>
-                  } @else if (item.adminReviewStatus === 'Rejected' && item.status !== 'Consumed') {
-                    <sp-admin-button size="xs" variant="secondary" appearance="outline" [loading]="scaffoldActionPendingId() === item.id"
-                      [disabled]="scaffoldActionPendingId() === item.id" (clicked)="reopenScaffoldItem(item)">
-                      Reopen
-                    </sp-admin-button>
-                  } @else {
-                    <span class="sp-admin-section-sub">—</span>
-                  }
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </sp-admin-table>
-    } @else {
-      <sp-admin-not-implemented-state title="Nothing to review">
-        No review scaffold items exist yet.
-      </sp-admin-not-implemented-state>
-    }
-    <p class="sp-admin-section-sub" style="margin-top:0.5rem">
-      <sp-admin-button size="xs" appearance="ghost" variant="neutral" (clicked)="refreshScaffoldPendingReview()">Refresh</sp-admin-button>
-    </p>
-  </sp-admin-card>
-
-  <!-- Practice Gym review scaffold pilot (Phase 19C) -->
-  <sp-admin-graph-card title="Practice Gym review scaffold pilot" data-testid="pilot-status-card"
-    subtitle="Controlled by the Practice Gym review scaffold pilot feature gate."
-    [status]="pilotSummaryLoading() ? 'loading' : pilotSummaryError() ? 'unavailable' : (pilotSummary()?.practiceGymPilotEnabled ? 'live' : 'partial')">
-    <sp-admin-button size="xs" appearance="outline" variant="neutral" data-testid="pilot-configure-cta"
-      routerLink="/admin/settings/feature-gates" [queryParams]="{ gate: 'practice-gym-review-scaffold-pilot' }">
-      Configure
-    </sp-admin-button>
-    @if (pilotSummaryLoading()) {
-      <sp-admin-visual-placeholder state="not-available" skeleton="chart" title="Pilot status" message="Loading..." />
-    } @else if (pilotSummaryError()) {
-      <sp-admin-error-state title="Pilot summary unavailable" [message]="pilotSummaryError()" />
-    } @else if (pilotSummary()) {
-      <div class="sp-admin-kpi-row" data-testid="pilot-status-badges">
-        <sp-admin-badge [tone]="pilotSummary()!.practiceGymPilotEnabled ? 'success' : 'neutral'" appearance="soft" size="sm">
-          Pilot {{ pilotSummary()!.practiceGymPilotEnabled ? 'enabled' : 'disabled' }}
-        </sp-admin-badge>
-        <sp-admin-badge [tone]="pilotSummary()!.allowTodayLessonInsertion ? 'danger' : 'success'" appearance="soft" size="sm">
-          Today lesson insertion {{ pilotSummary()!.allowTodayLessonInsertion ? 'allowed' : 'disabled' }}
-        </sp-admin-badge>
-      </div>
-      @if (pilotStatusItems().length > 0) {
-        <sp-admin-breakdown-bars [items]="pilotStatusItems()" [showPct]="false" />
-      } @else {
-        <sp-admin-visual-placeholder state="not-available" title="Pilot status" message="No review scaffold items yet" />
-      }
-      <p class="sp-admin-section-sub" style="margin-top:0.75rem">
-        Max visible per response = <strong>{{ pilotSummary()!.maxStudentVisibleScaffoldSuggestions }}</strong>,
-        require admin review = <strong>{{ pilotSummary()!.requireAdminReview ? 'yes' : 'no' }}</strong>.
-      </p>
-      <p class="sp-admin-section-sub" style="margin-top:0.5rem">
-        Last refreshed: {{ pilotSummary()!.generatedAt | date:'HH:mm:ss' }}
-        <sp-admin-button size="xs" appearance="ghost" variant="neutral" (clicked)="refreshPilotSummary()">Refresh</sp-admin-button>
-      </p>
-    }
-  </sp-admin-graph-card>
+  <!-- Phase I2C: "Review scaffold — approval" and "Practice Gym review scaffold pilot" cards
+       removed here — both read from / acted on the readiness pool (StudentActivityReadinessItem,
+       ReviewScaffoldPilotSummary), which was deleted. See
+       docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md. -->
 
 </sp-admin-page-body>

@@ -1,17 +1,23 @@
 using System.Net;
 using System.Net.Http.Headers;
 using LinguaCoach.Application.PracticeGym;
-using LinguaCoach.Application.ReadinessPool;
-using LinguaCoach.Domain.Enums;
 using LinguaCoach.IntegrationTests.Api;
-using LinguaCoach.Persistence;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LinguaCoach.IntegrationTests.PracticeGym;
 
 /// <summary>
 /// Integration tests for Phase 10O Practice Gym suggestion service and API endpoints.
+///
+/// Phase I2A (legacy fallback deletion): SuggestedItems/ContinueItems/ReviewItems no longer
+/// read the readiness pool for Practice-Gym-sourced rows — that generation path was removed. See
+/// docs/reviews/2026-07-10-phase-i2a-practice-gym-legacy-deletion-review.md.
+///
+/// Phase I2C: the readiness pool itself was deleted, so tests that seeded
+/// StudentActivityReadinessItem rows via IStudentActivityReadinessPoolService were removed —
+/// there is nothing left to seed. /start and /complete are now permanently no-ops (see
+/// PracticeGymSuggestionService's class doc comment); tests below assert that behavior directly.
+/// See docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
 /// </summary>
 public sealed class PracticeGymSuggestionIntegrationTests : IClassFixture<ApiTestFactory>
 {
@@ -41,138 +47,39 @@ public sealed class PracticeGymSuggestionIntegrationTests : IClassFixture<ApiTes
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadAsStringAsync();
-        Assert.Contains("suggestedItems", body);
-        Assert.Contains("continueItems", body);
-        Assert.Contains("reviewItems", body);
-    }
-
-    // Phase I2A (legacy fallback deletion): SuggestedItems/ContinueItems/ReviewItems no longer
-    // read the readiness pool for Practice-Gym-sourced rows — that generation path was removed.
-    // These three tests now assert the sections stay empty even when matching pool rows exist.
-    // See docs/reviews/2026-07-10-phase-i2a-practice-gym-legacy-deletion-review.md.
-
-    // 3. GET suggestions never surfaces ready readiness-pool items in SuggestedItems.
-    [Fact]
-    public async Task GetSuggestions_ReadyItemsDoNotAppearInSuggestedSection()
-    {
-        var (token, userId) = await _factory.CreateStudentAndGetTokenAsync("suggestion-ready@test.com");
-        var profileId = await GetProfileIdAsync(userId);
-
-        await CreateReadyItemAsync(profileId, ReadinessPoolSource.PracticeGym, RoutingReason.Normal, isLower: false);
-
-        var client = _factory.CreateClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        var response = await client.GetAsync("/api/practice-gym/suggestions");
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-        var body = await response.Content.ReadAsStringAsync();
         Assert.Contains("\"suggestedItems\":[]", body.Replace(" ", ""));
-    }
-
-    // 4. GET suggestions never surfaces reserved readiness-pool items in ContinueItems.
-    [Fact]
-    public async Task GetSuggestions_ReservedItemsDoNotAppearInContinueSection()
-    {
-        var (token, userId) = await _factory.CreateStudentAndGetTokenAsync("suggestion-continue@test.com");
-        var profileId = await GetProfileIdAsync(userId);
-
-        await CreateReservedItemAsync(profileId, ReadinessPoolSource.PracticeGym,
-            expiresAt: DateTime.UtcNow.AddHours(2));
-
-        var client = _factory.CreateClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        var response = await client.GetAsync("/api/practice-gym/suggestions");
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-        var body = await response.Content.ReadAsStringAsync();
         Assert.Contains("\"continueItems\":[]", body.Replace(" ", ""));
-    }
-
-    // 5. GET suggestions never surfaces ReviewOnly readiness-pool items in ReviewItems.
-    [Fact]
-    public async Task GetSuggestions_ReviewOnlyItemsDoNotAppearInReviewSection()
-    {
-        var (token, userId) = await _factory.CreateStudentAndGetTokenAsync("suggestion-review@test.com");
-        var profileId = await GetProfileIdAsync(userId);
-
-        await CreateItemWithStatusAsync(profileId, ReadinessPoolStatus.ReviewOnly,
-            RoutingReason.Review, isLower: true);
-
-        var client = _factory.CreateClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        var response = await client.GetAsync("/api/practice-gym/suggestions");
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-        var body = await response.Content.ReadAsStringAsync();
         Assert.Contains("\"reviewItems\":[]", body.Replace(" ", ""));
     }
 
-    // 6. POST start reserves a ready item and returns navigation target.
+    // 3. POST start is a permanent no-op — no readiness item can ever exist to reserve.
     [Fact]
-    public async Task PostStart_ReservesReadyItem_ReturnsSuccess()
+    public async Task PostStart_AlwaysReturnsNotFound()
     {
-        var (token, userId) = await _factory.CreateStudentAndGetTokenAsync("suggestion-start@test.com");
-        var profileId = await GetProfileIdAsync(userId);
-
-        var itemId = await CreateReadyItemAsync(profileId, ReadinessPoolSource.PracticeGym,
-            RoutingReason.Normal, isLower: false);
-
+        var (token, _) = await _factory.CreateStudentAndGetTokenAsync("suggestion-start@test.com");
         var client = _factory.CreateClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var response = await client.PostAsync($"/api/practice-gym/suggestions/{itemId}/start", null);
+        var response = await client.PostAsync($"/api/practice-gym/suggestions/{Guid.NewGuid()}/start", null);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var body = await response.Content.ReadAsStringAsync();
-        Assert.Contains("\"success\":true", body.Replace(" ", ""));
+        Assert.Contains("\"success\":false", body.Replace(" ", ""));
     }
 
-    // 7. POST start is idempotent — already reserved item returns AlreadyReserved=true.
+    // 4. POST complete is a permanent no-op — always returns 204 without touching any data.
     [Fact]
-    public async Task PostStart_AlreadyReserved_ReturnsAlreadyReserved()
+    public async Task PostComplete_AlwaysReturnsNoContent()
     {
-        var (token, userId) = await _factory.CreateStudentAndGetTokenAsync("suggestion-idem@test.com");
-        var profileId = await GetProfileIdAsync(userId);
-
-        var itemId = await CreateReservedItemAsync(profileId, ReadinessPoolSource.PracticeGym,
-            expiresAt: DateTime.UtcNow.AddHours(2));
-
+        var (token, _) = await _factory.CreateStudentAndGetTokenAsync("suggestion-complete@test.com");
         var client = _factory.CreateClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var response = await client.PostAsync($"/api/practice-gym/suggestions/{itemId}/start", null);
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-        var body = await response.Content.ReadAsStringAsync();
-        Assert.Contains("\"alreadyReserved\":true", body.Replace(" ", ""));
-    }
-
-    // 8. POST complete marks a reserved item consumed.
-    [Fact]
-    public async Task PostComplete_MarksReservedItemConsumed()
-    {
-        var (token, userId) = await _factory.CreateStudentAndGetTokenAsync("suggestion-complete@test.com");
-        var profileId = await GetProfileIdAsync(userId);
-
-        var itemId = await CreateReservedItemAsync(profileId, ReadinessPoolSource.PracticeGym,
-            expiresAt: DateTime.UtcNow.AddHours(2));
-
-        var client = _factory.CreateClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        var response = await client.PostAsync($"/api/practice-gym/suggestions/{itemId}/complete", null);
+        var response = await client.PostAsync($"/api/practice-gym/suggestions/{Guid.NewGuid()}/complete", null);
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
-
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
-        var item = await db.StudentActivityReadinessItems.FindAsync(itemId);
-        Assert.Equal(ReadinessPoolStatus.Consumed, item!.Status);
     }
 
-    // 9. Existing /api/activity/practice-gym/next smoke test — still works after Phase 10O.
+    // 5. Existing /api/activity/practice-gym/next smoke test — still works after Phase 10O.
     [Fact]
     public async Task ExistingPracticeGymNext_StillWorks()
     {
@@ -188,108 +95,24 @@ public sealed class PracticeGymSuggestionIntegrationTests : IClassFixture<ApiTes
             $"Unexpected status: {response.StatusCode}");
     }
 
-    // 10. Admin readiness pool endpoints remain read-only (no write routes added).
+    // 6. Phase I2C: AdminReadinessPoolController (and every "/api/admin/readiness-pool/..."
+    // route it exposed) was deleted along with the readiness pool. Confirms the route is
+    // genuinely gone rather than merely read-only.
     [Fact]
-    public async Task AdminReadinessPool_NoWriteEndpointsAdded()
+    public async Task AdminReadinessPoolRoutes_AreGone()
     {
         var adminToken = await _factory.CreateAdminAndGetTokenAsync();
         var client = _factory.CreateClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
 
-        // POST to admin pool should 404 or 405 — no write endpoint registered.
         var someId = Guid.NewGuid();
-        var response = await client.PostAsync($"/api/admin/students/{someId}/readiness-pool", null);
+        var getResponse = await client.GetAsync($"/api/admin/students/{someId}/readiness-pool");
+        Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
+
+        var postResponse = await client.PostAsync($"/api/admin/students/{someId}/readiness-pool", null);
         Assert.True(
-            response.StatusCode == HttpStatusCode.NotFound ||
-            response.StatusCode == HttpStatusCode.MethodNotAllowed,
-            $"Expected no write endpoint, got: {response.StatusCode}");
-    }
-
-    // --- helpers ---
-
-    private async Task<Guid> GetProfileIdAsync(Guid userId)
-    {
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
-        var profile = await db.StudentProfiles.FirstOrDefaultAsync(p => p.UserId == userId);
-        return profile?.Id ?? userId;
-    }
-
-    private async Task<Guid> CreateReadyItemAsync(
-        Guid profileId,
-        ReadinessPoolSource source,
-        RoutingReason routingReason,
-        bool isLower)
-    {
-        using var scope = _factory.Services.CreateScope();
-        var poolSvc = scope.ServiceProvider.GetRequiredService<IStudentActivityReadinessPoolService>();
-
-        var id = await poolSvc.CreateQueuedAsync(new CreateReadinessItemRequest
-        {
-            StudentId           = profileId,
-            Source              = source,
-            TargetCefrLevel     = "B2",
-            RoutingReason       = routingReason,
-            IsLowerLevelContent = isLower,
-            ContextTagsJson     = "[\"general_english\"]",
-            GeneratedBy         = "integration-test"
-        });
-        await poolSvc.MarkGeneratingAsync(id);
-        await poolSvc.MarkReadyAsync(id);
-        return id;
-    }
-
-    private async Task<Guid> CreateReservedItemAsync(
-        Guid profileId,
-        ReadinessPoolSource source,
-        DateTime? expiresAt = null)
-    {
-        using var scope = _factory.Services.CreateScope();
-        var poolSvc = scope.ServiceProvider.GetRequiredService<IStudentActivityReadinessPoolService>();
-
-        var id = await poolSvc.CreateQueuedAsync(new CreateReadinessItemRequest
-        {
-            StudentId           = profileId,
-            Source              = source,
-            TargetCefrLevel     = "B2",
-            RoutingReason       = RoutingReason.Normal,
-            IsLowerLevelContent = false,
-            ContextTagsJson     = "[\"general_english\"]",
-            ExpiresAt           = expiresAt,
-            GeneratedBy         = "integration-test"
-        });
-        await poolSvc.MarkGeneratingAsync(id);
-        await poolSvc.MarkReadyAsync(id);
-
-        // Reserve directly via the pool service.
-        await poolSvc.ReserveNextReadyAsync(profileId, source);
-        return id;
-    }
-
-    private async Task<Guid> CreateItemWithStatusAsync(
-        Guid profileId,
-        ReadinessPoolStatus status,
-        RoutingReason routingReason,
-        bool isLower)
-    {
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
-
-        var item = new LinguaCoach.Domain.Entities.StudentActivityReadinessItem(
-            studentId: profileId,
-            source: ReadinessPoolSource.PracticeGym,
-            targetCefrLevel: "B1",
-            routingReason: routingReason,
-            isLowerLevelContent: isLower,
-            contextTagsJson: "[\"general_english\"]");
-
-        // Force status via EF shadow property workaround — set via reflection.
-        typeof(LinguaCoach.Domain.Entities.StudentActivityReadinessItem)
-            .GetProperty(nameof(LinguaCoach.Domain.Entities.StudentActivityReadinessItem.Status))!
-            .SetValue(item, status);
-
-        db.StudentActivityReadinessItems.Add(item);
-        await db.SaveChangesAsync();
-        return item.Id;
+            postResponse.StatusCode == HttpStatusCode.NotFound ||
+            postResponse.StatusCode == HttpStatusCode.MethodNotAllowed,
+            $"Expected no write endpoint, got: {postResponse.StatusCode}");
     }
 }

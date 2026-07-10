@@ -3,7 +3,6 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using LinguaCoach.Application.Admin.StudentReadiness;
-using LinguaCoach.Application.ReadinessPool;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
@@ -14,6 +13,11 @@ namespace LinguaCoach.IntegrationTests.Api;
 
 /// <summary>
 /// Phase 20D: integration tests for the student pilot-readiness audit + repair endpoints.
+/// Phase I2C: scenarios that seeded StudentActivityReadinessItem rows or exercised the
+/// readiness-pool-specific repair actions (ExpireInvalidReadinessItems, ExpireStaleReservedItems)
+/// were rewritten to use the surviving GenerateLearningPlanIfMissing action and the
+/// learningplan.exists check instead — see
+/// docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
 /// </summary>
 public sealed class AdminStudentReadinessEndpointTests : IClassFixture<ApiTestFactory>
 {
@@ -89,7 +93,7 @@ public sealed class AdminStudentReadinessEndpointTests : IClassFixture<ApiTestFa
 
         var response = await ClientWithToken(adminToken).PostAsJsonAsync(
             $"/api/admin/students/{profileId}/readiness/repair",
-            new { actionKey = StudentReadinessRepairActions.ExpireStaleReservedItems, dryRun = true });
+            new { actionKey = StudentReadinessRepairActions.GenerateLearningPlanIfMissing, dryRun = true });
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
@@ -105,7 +109,7 @@ public sealed class AdminStudentReadinessEndpointTests : IClassFixture<ApiTestFa
 
         var response = await ClientWithToken(adminToken).PostAsJsonAsync(
             $"/api/admin/students/{profileId}/readiness/repair",
-            new { actionKey = StudentReadinessRepairActions.ExpireStaleReservedItems, dryRun = false });
+            new { actionKey = StudentReadinessRepairActions.GenerateLearningPlanIfMissing, dryRun = false });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -120,48 +124,40 @@ public sealed class AdminStudentReadinessEndpointTests : IClassFixture<ApiTestFa
         using (var scope = _factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
-            var item = new StudentActivityReadinessItem(
-                studentId: profileId, source: ReadinessPoolSource.PracticeGym, targetCefrLevel: "B2",
-                routingReason: RoutingReason.Normal, isLowerLevelContent: false);
-            db.StudentActivityReadinessItems.Add(item);
-            item.MarkGenerating();
-            item.MarkReady();
-            item.Reserve();
-            await db.SaveChangesAsync();
-            typeof(StudentActivityReadinessItem).GetProperty(nameof(StudentActivityReadinessItem.ReservedAt))!
-                .SetValue(item, DateTime.UtcNow.AddHours(-10));
+            var profile = await db.StudentProfiles.FirstAsync(p => p.Id == profileId);
+            profile.SetLifecycleStage(StudentLifecycleStage.CourseReady);
+            typeof(StudentProfile).GetProperty(nameof(StudentProfile.OnboardingStatus))!
+                .SetValue(profile, OnboardingStatus.Complete);
             await db.SaveChangesAsync();
         }
 
         var client = ClientWithToken(adminToken);
         var before = await client.GetFromJsonAsync<JsonElement>($"/api/admin/students/{profileId}/readiness");
         var beforeCheck = before.GetProperty("checks").EnumerateArray()
-            .First(c => c.GetProperty("key").GetString() == "feedback.no_stuck_reserved");
-        Assert.Equal("warning", beforeCheck.GetProperty("status").GetString());
+            .First(c => c.GetProperty("key").GetString() == "learningplan.exists");
+        Assert.Equal("fail", beforeCheck.GetProperty("status").GetString());
 
         var repairResponse = await client.PostAsJsonAsync(
             $"/api/admin/students/{profileId}/readiness/repair",
             new
             {
-                actionKey = StudentReadinessRepairActions.ExpireStaleReservedItems,
+                actionKey = StudentReadinessRepairActions.GenerateLearningPlanIfMissing,
                 dryRun = false,
-                reason = "Cleaning up stale reservation for pilot test.",
+                reason = "Generating a missing plan for pilot test.",
             });
         Assert.Equal(HttpStatusCode.OK, repairResponse.StatusCode);
 
         var after = await client.GetFromJsonAsync<JsonElement>($"/api/admin/students/{profileId}/readiness");
         var afterCheck = after.GetProperty("checks").EnumerateArray()
-            .First(c => c.GetProperty("key").GetString() == "feedback.no_stuck_reserved");
+            .First(c => c.GetProperty("key").GetString() == "learningplan.exists");
         Assert.Equal("pass", afterCheck.GetProperty("status").GetString());
     }
 
     [Fact]
-    public async Task GetReadiness_ProductionLikeDuplicateAndMismatchedActivityShape_Returns200WithStructuredChecks()
+    public async Task GetReadiness_ProductionLikeDuplicateActivityShape_Returns200WithStructuredChecks()
     {
-        // TODO-20G-3 regression: reproduces the reported production shape — many duplicate
-        // readiness rows for the same objective, plus a "speaking" objective mapped to a
-        // ListeningComprehension-typed activity via an unusual pattern. The audit must return
-        // 200 with structured checks regardless, never a raw 500.
+        // TODO-20G-3 regression: the audit must return 200 with structured checks regardless of
+        // unusual underlying data shape, never a raw 500.
         var adminToken = await _factory.CreateAdminAndGetTokenAsync();
         var (_, userId) = await _factory.CreateStudentAndGetTokenAsync($"readinessprodshape_{Guid.NewGuid():N}@t.com");
         var profileId = await GetProfileIdAsync(userId);
@@ -170,21 +166,11 @@ public sealed class AdminStudentReadinessEndpointTests : IClassFixture<ApiTestFa
         {
             var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
 
-            var activity = new LearningActivity(
-                ActivityType.ListeningComprehension, ActivitySource.AiGenerated, "Listening practice", "B2",
-                "{\"transcript\":\"hi\"}");
-            db.LearningActivities.Add(activity);
-
             for (var i = 0; i < 49; i++)
             {
-                var item = new StudentActivityReadinessItem(
-                    studentId: profileId, source: ReadinessPoolSource.PracticeGym, targetCefrLevel: "B2",
-                    routingReason: RoutingReason.Normal, isLowerLevelContent: false,
-                    curriculumObjectiveKey: "speaking.fluency", primarySkill: "speaking",
-                    patternKey: "listening_multiple_choice_single");
-                db.StudentActivityReadinessItems.Add(item);
-                item.MarkGenerating();
-                item.MarkReady(learningActivityId: activity.Id);
+                db.LearningActivities.Add(new LearningActivity(
+                    ActivityType.ListeningComprehension, ActivitySource.AiGenerated, "Listening practice", "B2",
+                    "{\"transcript\":\"hi\"}"));
             }
 
             await db.SaveChangesAsync();

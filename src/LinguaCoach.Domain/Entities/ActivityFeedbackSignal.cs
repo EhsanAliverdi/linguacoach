@@ -19,7 +19,6 @@ public sealed class ActivityFeedbackSignal : BaseEntity
     public Guid LearningActivityId { get; private set; }
     public Guid? ActivityAttemptId { get; private set; }
     public Guid? StudentActivityUsageLogId { get; private set; }
-    public Guid? StudentActivityReadinessItemId { get; private set; }
     public Guid? SourceTemplateId { get; private set; }
     public Guid? SourceBankItemId { get; private set; }
 
@@ -52,7 +51,6 @@ public sealed class ActivityFeedbackSignal : BaseEntity
         ActivityFeedbackRepeatPreference repeatPreference,
         Guid? activityAttemptId = null,
         Guid? studentActivityUsageLogId = null,
-        Guid? studentActivityReadinessItemId = null,
         Guid? sourceTemplateId = null,
         Guid? sourceBankItemId = null,
         string? patternKey = null,
@@ -72,7 +70,6 @@ public sealed class ActivityFeedbackSignal : BaseEntity
         LearningActivityId = learningActivityId;
         ActivityAttemptId = activityAttemptId;
         StudentActivityUsageLogId = studentActivityUsageLogId;
-        StudentActivityReadinessItemId = studentActivityReadinessItemId;
         SourceTemplateId = sourceTemplateId;
         SourceBankItemId = sourceBankItemId;
         PatternKey = patternKey?.Trim();
@@ -97,7 +94,6 @@ public sealed class ActivityFeedbackSignal : BaseEntity
         ActivityFeedbackRepeatPreference repeatPreference,
         string? optionalComment,
         Guid? studentActivityUsageLogId,
-        Guid? studentActivityReadinessItemId,
         Guid? sourceTemplateId,
         Guid? sourceBankItemId,
         string? patternKey,
@@ -116,7 +112,6 @@ public sealed class ActivityFeedbackSignal : BaseEntity
 
         // Backfill provenance only when not already known — never overwrite a known value with null.
         StudentActivityUsageLogId ??= studentActivityUsageLogId;
-        StudentActivityReadinessItemId ??= studentActivityReadinessItemId;
         SourceTemplateId ??= sourceTemplateId;
         SourceBankItemId ??= sourceBankItemId;
         PatternKey ??= patternKey?.Trim();

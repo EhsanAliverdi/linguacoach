@@ -1,6 +1,5 @@
 using FluentAssertions;
 using LinguaCoach.Application.Mastery;
-using LinguaCoach.Application.ReadinessPool;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.Mastery;
@@ -13,8 +12,10 @@ namespace LinguaCoach.UnitTests.Mastery;
 
 /// <summary>
 /// Edge-case tests for Phase 12B mastery signal validation.
-/// Covers boundary values for classification thresholds,
-/// ReviewOnly exclusion from shortfall, and suspicious pattern detection.
+/// Covers boundary values for classification thresholds and suspicious pattern detection.
+/// Phase I2C: the readiness-pool-dependent tests (ReviewOnly shortfall exclusion,
+/// EvaluateReadinessItemFitAsync demotion decisions) were removed along with
+/// StudentActivityReadinessItem — see docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
 /// </summary>
 public sealed class StudentMasteryClassificationEdgeCaseTests : IDisposable
 {
@@ -36,7 +37,6 @@ public sealed class StudentMasteryClassificationEdgeCaseTests : IDisposable
 
         var opts = Options.Create(new MasteryOptions());
         _sut = new StudentMasteryEvaluationService(
-            _db,
             _ledger,
             opts,
             NullLogger<StudentMasteryEvaluationService>.Instance);
@@ -195,64 +195,6 @@ public sealed class StudentMasteryClassificationEdgeCaseTests : IDisposable
         signal.MasteryStatus.Should().Be(MasteryStatus.InsufficientEvidence);
         signal.EvidenceCount.Should().Be(0);
         signal.LastSeenUtc.Should().BeNull();
-    }
-
-    // ── ReviewOnly items are excluded from ShortfallCount ────────────────────
-
-    [Fact]
-    public void ReviewOnlyItems_ExcludedFromShortfallCount()
-    {
-        // ShortfallCount = max(0, Target - Ready - QueuedOrGenerating)
-        // ReviewOnly does NOT count toward shortfall — this is intentional.
-        var health = new PoolHealthSummary
-        {
-            StudentId = _studentId,
-            Source = ReadinessPoolSource.TodayLesson,
-            TargetCount = 10,
-            ReadyCount = 0,
-            QueuedOrGeneratingCount = 0,
-            ReviewOnlyCount = 5,
-            FailedCount = 0,
-            StaleCount = 0,
-            ExpiredCount = 0,
-            SkippedCount = 0,
-            ReservedCount = 0
-        };
-
-        health.ShortfallCount.Should().Be(10); // ReviewOnly ignored
-        health.NeedsReplenishment.Should().BeTrue();
-    }
-
-    // ── Mastered item with no review eligibility → Skip (not ReviewOnly) ─────
-
-    [Fact]
-    public async Task MasteredNonReviewEligibleItem_GetsSkipDecision()
-    {
-        var item = new StudentActivityReadinessItem(
-            studentId: _studentId,
-            source: ReadinessPoolSource.TodayLesson,
-            targetCefrLevel: "B1",
-            routingReason: RoutingReason.Normal,
-            isLowerLevelContent: false,
-            patternKey: "grammar",
-            primarySkill: "grammar");
-        item.MarkGenerating();
-        item.MarkReady();
-
-        _db.Set<StudentActivityReadinessItem>().Add(item);
-        await _db.SaveChangesAsync();
-
-        _ledger.SetEvents(_studentId, [
-            MakeEvent("grammar", LearningEventOutcome.Mastered,  90),
-            MakeEvent("grammar", LearningEventOutcome.Practised, 88),
-            MakeEvent("grammar", LearningEventOutcome.Practised, 85),
-            MakeEvent("grammar", LearningEventOutcome.Practised, 82),
-            MakeEvent("grammar", LearningEventOutcome.Practised, 80)
-        ]);
-
-        var decision = await _sut.EvaluateReadinessItemFitAsync(_studentId, item.Id);
-
-        decision.Should().Be(ReadinessDemotionDecision.Skip);
     }
 
     // ── A single failure (not 2) → not AtRisk ────────────────────────────────

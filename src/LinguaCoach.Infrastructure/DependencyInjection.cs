@@ -43,8 +43,6 @@ using LinguaCoach.Infrastructure.Speaking;
 using LinguaCoach.Application.Curriculum;
 using LinguaCoach.Infrastructure.Curriculum;
 using LinguaCoach.Application.PracticeGym;
-using LinguaCoach.Application.ReadinessPool;
-using LinguaCoach.Infrastructure.ReadinessPool;
 using Microsoft.Extensions.Options;
 using LinguaCoach.Application.Profile;
 using LinguaCoach.Application.Storage;
@@ -390,19 +388,8 @@ public static class DependencyInjection
         // Curriculum validation (Phase 11B)
         services.AddScoped<ICurriculumValidationService, CurriculumValidationService>();
 
-        // Student activity readiness pool (Phase 10M)
-        services.AddScoped<IStudentActivityReadinessPoolService, StudentActivityReadinessPoolService>();
-
-        // Readiness pool replenishment (Phase 10N)
-        if (configuration is not null)
-            services.Configure<ReadinessPoolReplenishmentOptions>(
-                configuration.GetSection(ReadinessPoolReplenishmentOptions.SectionName));
-        else
-            services.Configure<ReadinessPoolReplenishmentOptions>(_ => { });
-        services.AddScoped<LinguaCoach.Application.ReadinessPool.IEffectiveReadinessPoolSettingsProvider,
-            LinguaCoach.Infrastructure.ReadinessPool.EffectiveReadinessPoolSettingsProvider>();
-        services.AddScoped<IReadinessPoolReplenishmentService, ReadinessPoolReplenishmentService>();
-        services.AddScoped<Jobs.ReadinessPoolReplenishmentJob>();
+        // Phase I2C: the student activity readiness pool (Phase 10M) and its replenishment engine
+        // (Phase 10N) were deleted — see docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
         services.AddScoped<Jobs.NotificationDispatchJob>();
 
         // Practice Gym suggestion service (Phase 10O)

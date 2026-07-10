@@ -6,11 +6,15 @@ import { AdminFeatureGatesComponent } from './admin-feature-gates.component';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import { FeatureGateGroup } from '../../../core/models/admin.models';
 
+// Phase I2C: this mock used to represent "practice-gym-review-scaffold-pilot" (deleted along
+// with the readiness pool); rebuilt to represent the surviving "activity-feedback-policy" group
+// on the same ReadinessPoolOverride backing store. See
+// docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
 const PILOT_GROUP: FeatureGateGroup = {
-  groupKey: 'practice-gym-review-scaffold-pilot',
-  displayName: 'Practice Gym review scaffold pilot',
-  description: 'Surfaces admin-approved review/scaffold items to students in Practice Gym.',
-  category: 'reviewScaffoldPracticeGymPilot',
+  groupKey: 'activity-feedback-policy',
+  displayName: 'Activity feedback policy',
+  description: 'Controls whether students are prompted for feedback after completing an activity.',
+  category: 'readinessPoolLessonGeneration',
   isReadOnly: false,
   requiresRestart: false,
   productionChangeAllowed: true,
@@ -18,12 +22,12 @@ const PILOT_GROUP: FeatureGateGroup = {
   warningText: 'Turning this off is the fastest rollback.',
   settings: [
     {
-      key: 'ReadinessPool.PracticeGymPilotEnabled',
-      displayName: 'Pilot enabled',
-      description: 'When on, approved items are surfaced to students.',
-      dataType: 'boolean',
-      effectiveValueJson: 'false',
-      defaultValueJson: 'false',
+      key: 'ActivityFeedback.TodayPolicy',
+      displayName: 'Today lesson feedback policy',
+      description: 'Whether Today-lesson completions prompt the student for feedback.',
+      dataType: 'string',
+      effectiveValueJson: '"Optional"',
+      defaultValueJson: '"Optional"',
       valueSource: 'appSettings',
       isEditableAtRuntime: true,
       isRuntimeEffective: true,
@@ -32,24 +36,24 @@ const PILOT_GROUP: FeatureGateGroup = {
       minValue: null,
       maxValue: null,
       maxLength: null,
-      allowedValues: null,
+      allowedValues: ['Off', 'Optional', 'Required'],
     },
     {
-      key: 'ReadinessPool.MaxStudentVisibleScaffoldSuggestions',
-      displayName: 'Max visible suggestions',
-      description: 'Maximum items shown per response.',
-      dataType: 'integer',
-      effectiveValueJson: '2',
-      defaultValueJson: '2',
+      key: 'ActivityFeedback.PracticeGymPolicy',
+      displayName: 'Practice Gym feedback policy',
+      description: 'Whether Practice Gym completions prompt the student for feedback.',
+      dataType: 'string',
+      effectiveValueJson: '"Optional"',
+      defaultValueJson: '"Optional"',
       valueSource: 'appSettings',
       isEditableAtRuntime: true,
       isRuntimeEffective: true,
       riskLevel: 'low',
       requiresConfirmation: false,
-      minValue: 0,
-      maxValue: 4,
+      minValue: null,
+      maxValue: null,
       maxLength: null,
-      allowedValues: null,
+      allowedValues: ['Off', 'Optional', 'Required'],
     },
   ],
   lastChangedByUserId: null,
@@ -171,15 +175,15 @@ describe('AdminFeatureGatesComponent', () => {
 
   it('filters by search text matching displayName', async () => {
     await setup();
-    component.searchText.set('practice gym');
-    expect(component.filteredGroups().map((g) => g.groupKey)).toEqual(['practice-gym-review-scaffold-pilot']);
+    component.searchText.set('activity feedback');
+    expect(component.filteredGroups().map((g) => g.groupKey)).toEqual(['activity-feedback-policy']);
   });
 
   it('clicking a card opens the drawer', async () => {
     await setup();
     component.openDrawer(PILOT_GROUP);
     expect(component.drawerOpen()).toBeTrue();
-    expect(component.selectedGroup()?.groupKey).toBe('practice-gym-review-scaffold-pilot');
+    expect(component.selectedGroup()?.groupKey).toBe('activity-feedback-policy');
   });
 
   it('drawer shows effective value, source, risk, and dependencies for an editable group', async () => {
@@ -187,17 +191,16 @@ describe('AdminFeatureGatesComponent', () => {
     component.openDrawer(PILOT_GROUP);
     fixture.detectChanges();
     const text = fixture.nativeElement.textContent;
-    expect(text).toContain('Pilot enabled');
+    expect(text).toContain('Today lesson feedback policy');
     expect(text).toContain('RequireAdminReview should be true');
     expect(text).toContain('medium risk');
   });
 
-  it('renders editable fields for the Practice Gym pilot group', async () => {
+  it('renders editable fields for the activity feedback policy group', async () => {
     await setup();
     component.openDrawer(PILOT_GROUP);
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('sp-admin-toggle')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('sp-admin-number-input')).toBeTruthy();
+    expect(fixture.nativeElement.querySelectorAll('sp-admin-select').length).toBeGreaterThan(3);
   });
 
   it('shows a Runtime effective badge for runtime-wired editable settings', async () => {
@@ -230,7 +233,7 @@ describe('AdminFeatureGatesComponent', () => {
     component.reason.set('Turning on pilot for a controlled rollout.');
     component.save();
     expect(api.updateFeatureGate).toHaveBeenCalledWith(
-      'practice-gym-review-scaffold-pilot',
+      'activity-feedback-policy',
       jasmine.objectContaining({ reason: 'Turning on pilot for a controlled rollout.' }),
     );
   });
@@ -241,7 +244,7 @@ describe('AdminFeatureGatesComponent', () => {
     component.reason.set('Rolling back to default.');
     component.resetToDefault();
     expect(api.resetFeatureGateOverride).toHaveBeenCalledWith(
-      'practice-gym-review-scaffold-pilot',
+      'activity-feedback-policy',
       { reason: 'Rolling back to default.' },
     );
   });

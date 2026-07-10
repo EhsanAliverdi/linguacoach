@@ -1,19 +1,19 @@
 ---
 status: current
-lastUpdated: 2026-07-10 (Phase I2B)
+lastUpdated: 2026-07-10 (Phase I2C)
 owner: product / engineering
 ---
 
 # SpeakPath / LinguaCoach Roadmap
 
-**Accurate as of: 2026-07-10 (Phase I2B — see §19a for the current phase sequence).
+**Accurate as of: 2026-07-10 (Phase I2C — see §19a for the current phase sequence).
 The 2026-07-03 "Phase 20H" line below is the last entry confirmed live against speakpath.app;
 everything since then (Clean-A/A2, Phase B, Phase C1, Plan-Sync-After-C1, Phase C2, Plan-Sync-B2,
 Phase B2, Phase C3, Phase C-Final, Phase E0, Plan-Sync-PG-v2, Phase E1, Phase E2, Phase E3,
 Phase E4, Plan-Sync-After-E4, Phase E5, Plan-Sync-E6-Decision, Phase E6, Phase D1, Bugfix-D1A,
 Phase D2, Plan-Sync-After-D2, Phase E7, Plan-Sync-G0, Phase G0, Plan-Sync-After-G0, Phase G1,
 Phase D3, Plan-Sync-After-D3, Phase E8, Phase D4, Plan-Sync-After-D4, Phase E9, Phase D5, Plan-Sync-After-D5, Phase E10,
-Phase I0, Phase I1, Phase I2A, Phase I2B) has been developed and tested locally but not yet
+Phase I0, Phase I1, Phase I2A, Phase I2B, Phase I2C) has been developed and tested locally but not yet
 deployed — see the "Current Project Status" and Decision Log sections below for what's actually
 landed.**
 
@@ -27,7 +27,36 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest phase completed (local, not yet deployed):** Phase I2B — Today Module-Only Collapse,
+**Latest phase completed (local, not yet deployed):** Phase I2C — Readiness Pool Removal, Pass C
+(2026-07-10, final pass of I2). Deleted `StudentActivityReadinessItem`/
+`IStudentActivityReadinessPoolService`/`ReadinessPoolReplenishmentService` entirely now that Passes
+A and B confirmed zero live consumers on either Today's or Practice Gym's serving path, and
+narrowed `IAiActivityGenerator` to `EvaluateAttemptAsync` only (`GenerateActivityContentAsync`/
+`ActivityGenerationContext` removed — zero remaining callers). The blast radius went well beyond
+the pool's own service: surgically stripped readiness-pool-dependent parts out of
+`AdminAiOperationsController`, the runtime feature-gate registry (deleted the
+`review-scaffold-generation`/`practice-gym-review-scaffold-pilot` groups), `StudentReadinessAuditService`/
+`StudentPilotReadinessRepairService` (Phase 20D — kept alive, only their readiness-pool checks/actions
+removed), `LearningPlanService` (one already-dead touchpoint, zero behavior change), and
+`StudentMasteryEvaluationService` (removed the readiness-item demotion side effect, core mastery
+classification untouched). `AdminReadinessPoolController` deleted; its one still-called route
+(`GetMasteryValidationSummary`) relocated to a new `AdminMasteryController`.
+`PracticeGymSuggestionService.StartSuggestionAsync`/`TryMarkConsumedAsync` gutted to permanent
+no-ops (kept for API-contract stability — flagged as a residual). Four admin frontend pages
+(`admin-lessons`, `admin-student-detail`, `admin-ai-operations`, `admin-feature-gates`) had their
+readiness-pool-derived UI sections removed. One EF migration drops the
+`student_activity_readiness_items` table and the FK columns on
+`student_activity_usage_logs`/`activity_feedback_signals` that referenced it. 3,428/3,428 backend
+tests pass (down from 3,640 — 212 fewer tests from deleted readiness-pool test files/methods,
+offset by ~10 rewritten tests for surviving/relocated functionality); frontend build clean (only
+the pre-existing bundle-size budget warning). **I2 phase closing summary:** Today and Practice Gym
+are now served exclusively by the bank-first pipeline (Modules → the H10 launch bridge, for
+`gap_fill`/`multiple_choice_single` vocab/grammar content only) — every surface that used to paper
+over gaps with AI-generation fallback now honestly reports "nothing available." Expanding bank-first
+coverage to the other ~31 exercise types is deferred to a future phase (I5). Full detail:
+`docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md`.
+
+**Previous phase completed (local, not yet deployed):** Phase I2B — Today Module-Only Collapse,
 Pass B (2026-07-10). Per the same explicit user direction as Pass A, deleted the legacy
 per-exercise `LearningSession`/`SessionExercise` generation pipeline on Today's side —
 `LessonBatchGenerationJob`, `ActivityMaterializationJob`, `TtsAudioGenerationJob`,

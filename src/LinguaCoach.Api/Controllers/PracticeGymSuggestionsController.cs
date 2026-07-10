@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using LinguaCoach.Application.ActivityDefinitionLaunch;
 using LinguaCoach.Application.PracticeGym;
-using LinguaCoach.Application.ReadinessPool;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
 using Microsoft.AspNetCore.Authorization;

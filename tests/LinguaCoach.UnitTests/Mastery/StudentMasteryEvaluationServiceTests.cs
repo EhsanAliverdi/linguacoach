@@ -15,6 +15,9 @@ namespace LinguaCoach.UnitTests.Mastery;
 /// Unit tests for StudentMasteryEvaluationService (Phase 10Z).
 /// Uses SQLite in-memory for DB and a hand-rolled FakeLedger for learning events.
 /// No AI calls; all rules are deterministic.
+/// Phase I2C: the readiness-pool demotion tests (EvaluateReadinessItemFitAsync/
+/// EvaluateAndDemoteReadinessItemsAsync) were removed along with StudentActivityReadinessItem —
+/// see docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
 /// </summary>
 public sealed class StudentMasteryEvaluationServiceTests : IDisposable
 {
@@ -36,7 +39,6 @@ public sealed class StudentMasteryEvaluationServiceTests : IDisposable
 
         var opts = Options.Create(new MasteryOptions());
         _sut = new StudentMasteryEvaluationService(
-            _db,
             _ledger,
             opts,
             NullLogger<StudentMasteryEvaluationService>.Instance);
@@ -130,119 +132,6 @@ public sealed class StudentMasteryEvaluationServiceTests : IDisposable
     }
 
     // -------------------------------------------------------------------------
-    // 5. ReadinessItem converted to ReviewOnly when objective mastered
-    // -------------------------------------------------------------------------
-    [Fact]
-    public async Task ReadinessItem_ConvertedToReviewOnly_WhenObjectiveMastered()
-    {
-        // Item is lower-level content (review eligible)
-        var item = MakeReadyItem(isLowerLevel: true, routingReason: RoutingReason.Review, patternKey: "speaking");
-        _db.Set<StudentActivityReadinessItem>().Add(item);
-        await _db.SaveChangesAsync();
-
-        // Mastered signal
-        _ledger.SetEvents(_studentId, MasteredEvents("speaking"));
-
-        var decision = await _sut.EvaluateReadinessItemFitAsync(_studentId, item.Id);
-
-        decision.Should().Be(ReadinessDemotionDecision.ConvertToReviewOnly);
-    }
-
-    // -------------------------------------------------------------------------
-    // 6. ReadinessItem skipped when mastered and not useful for review
-    // -------------------------------------------------------------------------
-    [Fact]
-    public async Task ReadinessItem_Skipped_WhenMasteredAndNotUsefulForReview()
-    {
-        var item = MakeReadyItem(isLowerLevel: false, routingReason: RoutingReason.Normal, patternKey: "writing");
-        _db.Set<StudentActivityReadinessItem>().Add(item);
-        await _db.SaveChangesAsync();
-
-        _ledger.SetEvents(_studentId, MasteredEvents("writing"));
-
-        var decision = await _sut.EvaluateReadinessItemFitAsync(_studentId, item.Id);
-
-        decision.Should().Be(ReadinessDemotionDecision.Skip);
-    }
-
-    // -------------------------------------------------------------------------
-    // 7. ReadinessItem kept ready when skill is AtRisk
-    // -------------------------------------------------------------------------
-    [Fact]
-    public async Task ReadinessItem_KeepReady_WhenAtRisk()
-    {
-        var item = MakeReadyItem(isLowerLevel: false, routingReason: RoutingReason.Normal, patternKey: "listening");
-        _db.Set<StudentActivityReadinessItem>().Add(item);
-        await _db.SaveChangesAsync();
-
-        _ledger.SetEvents(_studentId, [
-            MakeEvent("listening", LearningEventOutcome.Failed, 20),
-            MakeEvent("listening", LearningEventOutcome.Failed, 15),
-            MakeEvent("listening", LearningEventOutcome.Practised, 40)
-        ]);
-
-        var decision = await _sut.EvaluateReadinessItemFitAsync(_studentId, item.Id);
-
-        decision.Should().Be(ReadinessDemotionDecision.KeepReady);
-    }
-
-    // -------------------------------------------------------------------------
-    // 8. No change for terminal state items
-    // -------------------------------------------------------------------------
-    [Fact]
-    public async Task ReadinessItem_NoChange_WhenTerminalState()
-    {
-        var item = MakeReadyItem(isLowerLevel: false, routingReason: RoutingReason.Normal, patternKey: "speaking");
-        // MakeReadyItem leaves item in Ready state — advance to Consumed (terminal)
-        item.Reserve();
-        item.MarkConsumed();
-        _db.Set<StudentActivityReadinessItem>().Add(item);
-        await _db.SaveChangesAsync();
-
-        _ledger.SetEvents(_studentId, MasteredEvents("speaking"));
-
-        var decision = await _sut.EvaluateReadinessItemFitAsync(_studentId, item.Id);
-
-        decision.Should().Be(ReadinessDemotionDecision.NoChange);
-    }
-
-    // -------------------------------------------------------------------------
-    // 9. EvaluateAndDemote is idempotent (calling twice gives same count)
-    // -------------------------------------------------------------------------
-    [Fact]
-    public async Task EvaluateAndDemote_IsIdempotent()
-    {
-        // No items — both calls return 0
-        var first = await _sut.EvaluateAndDemoteReadinessItemsAsync(_studentId);
-        var second = await _sut.EvaluateAndDemoteReadinessItemsAsync(_studentId);
-
-        first.Should().Be(0);
-        second.Should().Be(0);
-    }
-
-    // -------------------------------------------------------------------------
-    // 10. EvaluateAndDemote updates LastEvaluatedAtUtc
-    // -------------------------------------------------------------------------
-    [Fact]
-    public async Task EvaluateAndDemote_UpdatesLastEvaluatedAtUtc()
-    {
-        var item = MakeReadyItem(isLowerLevel: false, routingReason: RoutingReason.Normal, patternKey: "speaking");
-        _db.Set<StudentActivityReadinessItem>().Add(item);
-        await _db.SaveChangesAsync();
-
-        item.LastEvaluatedAtUtc.Should().BeNull();
-
-        _ledger.SetEvents(_studentId, []);
-
-        await _sut.EvaluateAndDemoteReadinessItemsAsync(_studentId);
-
-        var updated = await _db.Set<StudentActivityReadinessItem>()
-            .FirstAsync(i => i.Id == item.Id);
-        updated.LastEvaluatedAtUtc.Should().NotBeNull();
-        updated.LastEvaluatedAtUtc.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
-    }
-
-    // -------------------------------------------------------------------------
     // 11. EvaluateStudent returns mastered count
     // -------------------------------------------------------------------------
     [Fact]
@@ -314,23 +203,6 @@ public sealed class StudentMasteryEvaluationServiceTests : IDisposable
         MakeEvent(skill, LearningEventOutcome.Practised, 84)
     ];
 
-    private StudentActivityReadinessItem MakeReadyItem(
-        bool isLowerLevel,
-        RoutingReason routingReason,
-        string patternKey)
-    {
-        var item = new StudentActivityReadinessItem(
-            studentId: _studentId,
-            source: ReadinessPoolSource.PracticeGym,
-            targetCefrLevel: "B2",
-            routingReason: routingReason,
-            isLowerLevelContent: isLowerLevel,
-            patternKey: patternKey,
-            primarySkill: patternKey);
-        item.MarkGenerating();
-        item.MarkReady();
-        return item;
-    }
 }
 
 // ---------------------------------------------------------------------------

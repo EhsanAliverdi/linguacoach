@@ -9,7 +9,7 @@ import {
   AiConfigCategoryItem, UpdateAiCategoryRequest, CategoryTestResult,
   ResetStudentRequest, ResetStudentResponse, AdminStats, AdminActivityHistoryItem,
   AdminStudentDetail,
-  StudentAuditHistoryItem, StudentReadinessPoolHealth, AdminMasteryPoolSummary,
+  StudentAuditHistoryItem,
   AdminDailyLessonModulePreview, AdminPracticeGymModulePreview,
   AdminGenerationSettings, AdminUpdateGenerationSettingsRequest,
   AdminGenerationBatchesResponse, AdminGenerateLessonsResponse,
@@ -24,11 +24,6 @@ import {
   AdminSecuritySettings, AdminAuthEventItem, AdminAuthEventListQuery,
   AdminDashboardActivityTrendResponse, AdminDashboardScoreDistributionResponse,
   AdminAiUsageTrendResponse, AdminAiUsageCategoryBreakdownResponse,
-  AggregatePoolHealthSummary,
-  ReviewScaffoldDryRunSummary,
-  ReviewScaffoldPendingItem,
-  ReviewScaffoldItemDetail,
-  ReviewScaffoldReviewActionRequest,
   MasteryValidationSummary,
   AdminPlacementLatestResponse,
   AdminPlacementHistoryItem,
@@ -47,7 +42,6 @@ import {
   WritingEvaluationWithDryRunDto,
   WritingSignalApplicationSummaryDto,
   WritingSignalSafetySummaryDto,
-  ReviewScaffoldPilotSummary,
   AdminAiOperationsSummary,
   FeatureGateGroup,
   UpdateFeatureGateRequest,
@@ -165,9 +159,6 @@ export class AdminApiService {
     return this.http.get<AdminLearningPlanProgress>(`${this.api}/students/${studentId}/learning-plan-progress`);
   }
 
-  getStudentReadinessPoolHealth(studentProfileId: string): Observable<StudentReadinessPoolHealth> {
-    return this.http.get<StudentReadinessPoolHealth>(`${this.api}/students/${studentProfileId}/readiness-pool/health`);
-  }
   /** Phase H6 — preview which approved Modules the Daily Lesson selector would choose today. Read-only. */
   getDailyLessonModulePreview(studentProfileId: string): Observable<AdminDailyLessonModulePreview> {
     return this.http.get<AdminDailyLessonModulePreview>(`${this.api}/daily-lesson/modules/preview?studentId=${studentProfileId}`);
@@ -176,32 +167,8 @@ export class AdminApiService {
   getPracticeGymModulePreview(studentProfileId: string): Observable<AdminPracticeGymModulePreview> {
     return this.http.get<AdminPracticeGymModulePreview>(`${this.api}/practice-gym/modules/preview?studentId=${studentProfileId}&maxSuggestions=100`);
   }
-  getStudentMasteryPoolSummary(studentProfileId: string): Observable<AdminMasteryPoolSummary> {
-    return this.http.get<AdminMasteryPoolSummary>(`${this.api}/students/${studentProfileId}/readiness-pool`);
-  }
-  getAggregatePoolHealth(): Observable<AggregatePoolHealthSummary> {
-    return this.http.get<AggregatePoolHealthSummary>(`${this.api}/readiness-pool/health`);
-  }
-  getReviewScaffoldDryRun(): Observable<ReviewScaffoldDryRunSummary> {
-    return this.http.get<ReviewScaffoldDryRunSummary>(`${this.api}/readiness-pool/review-scaffold/dry-run`);
-  }
-  getReviewScaffoldPendingReview(): Observable<ReviewScaffoldItemDetail[]> {
-    return this.http.get<ReviewScaffoldItemDetail[]>(`${this.api}/readiness-pool/review-scaffold/pending-review`);
-  }
-  getReviewScaffoldPilotSummary(): Observable<ReviewScaffoldPilotSummary> {
-    return this.http.get<ReviewScaffoldPilotSummary>(`${this.api}/readiness-pool/review-scaffold/pilot-summary`);
-  }
   getAiOperationsSummary(): Observable<AdminAiOperationsSummary> {
     return this.http.get<AdminAiOperationsSummary>(`${this.api}/ai-operations/summary`);
-  }
-  approveReviewScaffoldItem(itemId: string): Observable<ReviewScaffoldItemDetail> {
-    return this.http.post<ReviewScaffoldItemDetail>(`${this.api}/readiness-pool/review-scaffold/${itemId}/approve`, {});
-  }
-  rejectReviewScaffoldItem(itemId: string, request: ReviewScaffoldReviewActionRequest): Observable<ReviewScaffoldItemDetail> {
-    return this.http.post<ReviewScaffoldItemDetail>(`${this.api}/readiness-pool/review-scaffold/${itemId}/reject`, request);
-  }
-  reopenReviewScaffoldItem(itemId: string, request?: ReviewScaffoldReviewActionRequest): Observable<ReviewScaffoldItemDetail> {
-    return this.http.post<ReviewScaffoldItemDetail>(`${this.api}/readiness-pool/review-scaffold/${itemId}/reopen`, request ?? {});
   }
   getMasteryValidationSummary(): Observable<MasteryValidationSummary> {
     return this.http.get<MasteryValidationSummary>(`${this.api}/mastery/validation-summary`);

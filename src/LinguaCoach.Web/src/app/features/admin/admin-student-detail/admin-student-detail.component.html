@@ -226,64 +226,9 @@
         </sp-admin-card>
       </div>
 
-      <!-- Assignment / delivery queue health — full width -->
-      <sp-admin-card title="Assignment / Delivery Queue health">
-        @if (poolHealthLoading()) {
-          <sp-admin-loading-state message="Loading delivery queue health" />
-        } @else if (poolHealthError()) {
-          <sp-admin-error-state title="Delivery queue health unavailable" [message]="poolHealthError()" />
-        } @else if (poolHealth()) {
-          @let ph = poolHealth()!;
-          <div class="sp-admin-card-grid-2">
-            <div>
-              <div class="sp-admin-section-title">Today's lesson</div>
-              <div class="sp-admin-metric-strip sp-admin-mt-3">
-                <sp-admin-ring-metric
-                  [pct]="lessonRingPct()"
-                  label="Ready"
-                  [sub]="ph.todayLesson.readyCount + ' / ' + ph.todayLesson.targetCount"
-                  [tone]="ph.todayLesson.needsReplenishment ? 'amber' : 'green'"
-                  [size]="64"
-                  ariaLabel="Lesson pool ready ring" />
-                @if (lessonPoolBreakdown().length > 0) {
-                  <div class="sp-admin-metric-strip-body">
-                    <sp-admin-breakdown-bars [items]="lessonPoolBreakdown()" [showPct]="false" />
-                  </div>
-                }
-              </div>
-              <div class="sp-admin-mt-3">
-                <sp-admin-badge [tone]="ph.todayLesson.needsReplenishment ? 'warning' : 'success'">
-                  {{ ph.todayLesson.needsReplenishment ? 'Needs replenishment' : 'Healthy' }}
-                </sp-admin-badge>
-              </div>
-            </div>
-            <div>
-              <div class="sp-admin-section-title">Practice gym</div>
-              <div class="sp-admin-metric-strip sp-admin-mt-3">
-                <sp-admin-ring-metric
-                  [pct]="gymRingPct()"
-                  label="Ready"
-                  [sub]="ph.practiceGym.readyCount + ' / ' + ph.practiceGym.targetCount"
-                  [tone]="ph.practiceGym.needsReplenishment ? 'amber' : 'green'"
-                  [size]="64"
-                  ariaLabel="Gym pool ready ring" />
-                @if (gymPoolBreakdown().length > 0) {
-                  <div class="sp-admin-metric-strip-body">
-                    <sp-admin-breakdown-bars [items]="gymPoolBreakdown()" [showPct]="false" />
-                  </div>
-                }
-              </div>
-              <div class="sp-admin-mt-3">
-                <sp-admin-badge [tone]="ph.practiceGym.needsReplenishment ? 'warning' : 'success'">
-                  {{ ph.practiceGym.needsReplenishment ? 'Needs replenishment' : 'Healthy' }}
-                </sp-admin-badge>
-              </div>
-            </div>
-          </div>
-        } @else {
-          <sp-admin-empty-state message="Delivery queue health data not available." />
-        }
-      </sp-admin-card>
+      <!-- Phase I2C: "Assignment / Delivery Queue health" card removed — read from the readiness
+           pool (StudentReadinessPoolHealth), which was deleted. See
+           docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md. -->
 
       <!-- Daily Lesson module selection diagnostic — Phase H6 -->
       <sp-admin-card title="Daily Lesson module selection" data-testid="daily-lesson-module-preview-card">
@@ -746,44 +691,10 @@
         }
       </sp-admin-card>
 
-      <!-- Mastery evaluation summary — full width -->
-      <sp-admin-card title="Mastery evaluation">
-        @if (masteryPoolSummaryLoading()) {
-          <sp-admin-loading-state message="Loading mastery summary" />
-        } @else if (masteryPoolSummaryError()) {
-          <sp-admin-error-state title="Mastery summary unavailable" [message]="masteryPoolSummaryError()" />
-        } @else if (masteryPoolSummary()) {
-          @let ms = masteryPoolSummary()!;
-          <div class="sp-admin-card-grid-2">
-            <div>
-              <div class="sp-admin-section-title">Objective status</div>
-              <dl class="sp-admin-detail-list sp-admin-mt-3">
-                <dt>Mastered</dt>
-                <dd><sp-admin-badge tone="success">{{ ms.masteredCount }}</sp-admin-badge></dd>
-                <dt>Needs review</dt>
-                <dd><sp-admin-badge tone="warning">{{ ms.needsReviewCount }}</sp-admin-badge></dd>
-                <dt>Review only</dt>
-                <dd><sp-admin-badge tone="primary">{{ ms.reviewOnlyCount }}</sp-admin-badge></dd>
-                <dt>Skipped</dt>
-                <dd><sp-admin-badge tone="neutral">{{ ms.skippedCount }}</sp-admin-badge></dd>
-              </dl>
-            </div>
-            <div>
-              <div class="sp-admin-section-title">Evaluation metadata</div>
-              <dl class="sp-admin-detail-list sp-admin-mt-3">
-                <dt>Last evaluated</dt>
-                <dd class="sp-admin-text-muted">{{ ms.lastEvaluatedAtUtc ? (ms.lastEvaluatedAtUtc | date:'medium') : 'Never' }}</dd>
-                <dt>Expired items</dt>
-                <dd class="sp-admin-text-muted">{{ ms.expiredCount }}</dd>
-                <dt>Stale items</dt>
-                <dd class="sp-admin-text-muted">{{ ms.staleCount }}</dd>
-              </dl>
-            </div>
-          </div>
-        } @else {
-          <sp-admin-empty-state message="No mastery evaluation data available." />
-        }
-      </sp-admin-card>
+      <!-- Phase I2C: "Mastery evaluation" card removed — read from the readiness pool
+           (AdminMasteryPoolSummary), which was deleted. Global mastery diagnostics survive via
+           AdminMasteryController (docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md);
+           this card was a per-student, per-item view of the deleted pool specifically. -->
 
       <!-- Adaptive Placement Assessment — Phase 13A+13B -->
       <sp-admin-card title="Adaptive placement assessment">

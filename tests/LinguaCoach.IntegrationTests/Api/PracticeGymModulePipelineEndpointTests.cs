@@ -234,8 +234,12 @@ public sealed class PracticeGymModulePipelineEndpointTests : IClassFixture<ApiTe
         Assert.NotEqual(HttpStatusCode.InternalServerError, resp.StatusCode);
     }
 
+    // Phase I2C: Existing_readiness_pool_endpoint_not_broken removed — the readiness pool and
+    // AdminReadinessPoolController it exercised were deleted. Replaced with a check that H7's
+    // module pipeline doesn't break the surviving student-readiness-audit endpoint instead. See
+    // docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
     [Fact]
-    public async Task Existing_readiness_pool_endpoint_not_broken()
+    public async Task Existing_student_readiness_endpoint_not_broken()
     {
         var (_, studentUserId) = await _factory.CreateStudentAndGetTokenAsync($"h7_readiness_{Guid.NewGuid():N}@test.com");
         var studentProfileId = await GetProfileIdAsync(studentUserId);
@@ -243,7 +247,7 @@ public sealed class PracticeGymModulePipelineEndpointTests : IClassFixture<ApiTe
         var adminToken = await _factory.CreateAdminAndGetTokenAsync();
         var client = ClientWithToken(_factory, adminToken);
 
-        var resp = await client.GetAsync($"/api/admin/students/{studentProfileId}/readiness-pool");
+        var resp = await client.GetAsync($"/api/admin/students/{studentProfileId}/readiness");
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
     }
 }

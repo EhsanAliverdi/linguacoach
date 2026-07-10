@@ -35,8 +35,9 @@ import {
 type StatusFilter = 'all' | 'editable' | 'locked' | 'overridden';
 type EditValue = boolean | number | string | string[];
 
+// Phase I2C: 'reviewScaffoldPracticeGymPilot' removed — the readiness-pool feature gate groups
+// on that category were deleted. See docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
 const CATEGORY_LABELS: Record<FeatureGateCategory, string> = {
-  reviewScaffoldPracticeGymPilot: 'Review Scaffold & Practice Gym Pilot',
   readinessPoolLessonGeneration: 'Readiness Pool / Lesson Generation',
   aiSignalSafety: 'AI Signal Safety',
 };
@@ -112,7 +113,6 @@ export class AdminFeatureGatesComponent implements OnInit {
 
   categoryOptions: SpAdminSelectOption[] = [
     { value: 'all', label: 'All categories' },
-    { value: 'reviewScaffoldPracticeGymPilot', label: CATEGORY_LABELS.reviewScaffoldPracticeGymPilot },
     { value: 'readinessPoolLessonGeneration', label: CATEGORY_LABELS.readinessPoolLessonGeneration },
     { value: 'aiSignalSafety', label: CATEGORY_LABELS.aiSignalSafety },
   ];

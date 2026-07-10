@@ -11,8 +11,6 @@ public static class StudentReadinessRepairActions
     public const string GenerateLearningPlanIfMissing = "generate_learning_plan_if_missing";
     public const string RefillTodayLessonIfEmpty = "refill_today_lesson_if_empty";
     public const string RefillPracticeGymIfEmpty = "refill_practice_gym_if_empty";
-    public const string ExpireInvalidReadinessItems = "expire_invalid_readiness_items";
-    public const string ExpireStaleReservedItems = "expire_stale_reserved_items";
     public const string BackfillMissingActivityMetadata = "backfill_missing_activity_metadata";
     public const string RegenerateMissingTtsForListeningIfSupported = "regenerate_missing_tts_for_listening_if_supported";
     public const string NormalizeStudentLifecycleIfSafe = "normalize_student_lifecycle_if_safe";
@@ -47,24 +45,6 @@ public static class StudentReadinessRepairActions
             Category = "Practice Gym",
             RiskLevel = ReadinessRepairRiskLevel.Medium,
             IsImplemented = false,
-        },
-        new()
-        {
-            ActionKey = ExpireInvalidReadinessItems,
-            DisplayName = "Expire invalid readiness items",
-            Description = "Marks Ready/Reserved readiness items whose target CEFR level no longer matches the student's current level as Stale (same rule as the background CEFR-mismatch sweep, scoped to one student). Never deletes rows.",
-            Category = "Activity content validity",
-            RiskLevel = ReadinessRepairRiskLevel.Low,
-            IsImplemented = true,
-        },
-        new()
-        {
-            ActionKey = ExpireStaleReservedItems,
-            DisplayName = "Expire stale reserved items",
-            Description = "Expires Reserved readiness items stuck past the effective reservation-expiry window (same rule as the background expiry sweep, scoped to one student). Never deletes rows.",
-            Category = "Feedback/completion",
-            RiskLevel = ReadinessRepairRiskLevel.Low,
-            IsImplemented = true,
         },
         new()
         {
@@ -107,7 +87,7 @@ public static class StudentReadinessRepairActions
         {
             ActionKey = RunAllSafeRepairs,
             DisplayName = "Run all safe repairs",
-            Description = "Runs every implemented repair action in sequence (Generate Learning Plan, Refill Today lesson, Expire invalid readiness items, Expire stale reserved items) and aggregates the results.",
+            Description = "Runs every implemented repair action in sequence (Generate Learning Plan, Refill Today lesson) and aggregates the results.",
             Category = "General",
             RiskLevel = ReadinessRepairRiskLevel.Low,
             IsImplemented = true,

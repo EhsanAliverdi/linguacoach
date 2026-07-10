@@ -1,6 +1,5 @@
 using LinguaCoach.Application.Admin.StudentReadiness;
 using LinguaCoach.Application.LearningPlan;
-using LinguaCoach.Application.ReadinessPool;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
@@ -15,6 +14,10 @@ namespace LinguaCoach.UnitTests.Admin;
 /// <summary>
 /// Unit tests for StudentPilotReadinessRepairService (Phase 20D). Proves dry-run/reason/audit/
 /// idempotency requirements and that repairs never touch attempts/submissions/evaluations.
+/// Phase I2C: the readiness-pool-specific repair actions (ExpireInvalidReadinessItems,
+/// ExpireStaleReservedItems) were removed along with StudentActivityReadinessItem — see
+/// docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md. Remaining coverage
+/// exercises the two surviving actions (GenerateLearningPlanIfMissing, RefillTodayLessonIfEmpty).
 /// </summary>
 public sealed class StudentPilotReadinessRepairServiceTests : IDisposable
 {
@@ -39,58 +42,44 @@ public sealed class StudentPilotReadinessRepairServiceTests : IDisposable
         _db.Dispose();
     }
 
-    private StudentPilotReadinessRepairService BuildSut(ReadinessPoolReplenishmentOptions? opts = null) => new(
-        _db, _learningPlan, _todaysSession, new FakeSettingsProvider(opts ?? new ReadinessPoolReplenishmentOptions()),
+    private StudentPilotReadinessRepairService BuildSut() => new(
+        _db, _learningPlan, _todaysSession,
         NullLogger<StudentPilotReadinessRepairService>.Instance);
 
-    private (StudentProfile student, StudentActivityReadinessItem item) SeedStaleReservedScenario()
+    private StudentProfile SeedStudent()
     {
         var student = new StudentProfile(Guid.NewGuid());
         _db.StudentProfiles.Add(student);
-
-        var item = new StudentActivityReadinessItem(
-            studentId: student.Id, source: ReadinessPoolSource.PracticeGym, targetCefrLevel: "B2",
-            routingReason: RoutingReason.Normal, isLowerLevelContent: false);
-        _db.StudentActivityReadinessItems.Add(item);
-        item.MarkGenerating();
-        item.MarkReady();
-        item.Reserve();
         _db.SaveChanges();
-
-        typeof(StudentActivityReadinessItem).GetProperty(nameof(StudentActivityReadinessItem.ReservedAt))!
-            .SetValue(item, DateTime.UtcNow.AddHours(-10));
-        _db.SaveChanges();
-
-        return (student, item);
+        return student;
     }
 
     [Fact]
     public async Task DryRun_MakesNoDbChanges()
     {
-        var (student, item) = SeedStaleReservedScenario();
+        var student = SeedStudent();
         var sut = BuildSut();
 
         var result = await sut.RepairAsync(student.Id, AdminId, new StudentReadinessRepairRequestDto
         {
-            ActionKey = StudentReadinessRepairActions.ExpireStaleReservedItems,
+            ActionKey = StudentReadinessRepairActions.GenerateLearningPlanIfMissing,
             DryRun = true,
         });
 
         Assert.Equal(1, result.ChangedCount);
-        await _db.Entry(item).ReloadAsync();
-        Assert.Equal(ReadinessPoolStatus.Reserved, item.Status); // unchanged
         Assert.False(_db.AdminAuditLogs.Any());
+        Assert.False(_learningPlan.WasCalled);
     }
 
     [Fact]
     public async Task RealRepair_WithoutReason_Throws()
     {
-        var (student, _) = SeedStaleReservedScenario();
+        var student = SeedStudent();
         var sut = BuildSut();
 
         await Assert.ThrowsAsync<ArgumentException>(() => sut.RepairAsync(student.Id, AdminId, new StudentReadinessRepairRequestDto
         {
-            ActionKey = StudentReadinessRepairActions.ExpireStaleReservedItems,
+            ActionKey = StudentReadinessRepairActions.GenerateLearningPlanIfMissing,
             DryRun = false,
             Reason = "",
         }));
@@ -99,14 +88,14 @@ public sealed class StudentPilotReadinessRepairServiceTests : IDisposable
     [Fact]
     public async Task RealRepair_WritesOneAuditLog()
     {
-        var (student, item) = SeedStaleReservedScenario();
+        var student = SeedStudent();
         var sut = BuildSut();
 
         var result = await sut.RepairAsync(student.Id, AdminId, new StudentReadinessRepairRequestDto
         {
-            ActionKey = StudentReadinessRepairActions.ExpireStaleReservedItems,
+            ActionKey = StudentReadinessRepairActions.GenerateLearningPlanIfMissing,
             DryRun = false,
-            Reason = "Cleaning up for pilot test.",
+            Reason = "Generating for pilot test.",
         });
 
         Assert.Equal(1, result.ChangedCount);
@@ -114,19 +103,19 @@ public sealed class StudentPilotReadinessRepairServiceTests : IDisposable
         var logs = _db.AdminAuditLogs.Where(a => a.TargetStudentId == student.Id).ToList();
         Assert.Single(logs);
         Assert.Equal("RepairStudentReadiness", logs[0].Action);
-
-        await _db.Entry(item).ReloadAsync();
-        Assert.Equal(ReadinessPoolStatus.Expired, item.Status);
+        Assert.True(_learningPlan.WasCalled);
     }
 
     [Fact]
     public async Task Repair_IsIdempotent()
     {
-        var (student, _) = SeedStaleReservedScenario();
+        var student = SeedStudent();
+        _db.StudentLearningPlans.Add(new StudentLearningPlan(student.Id, "B2", "initial_generation"));
+        _db.SaveChanges();
         var sut = BuildSut();
         var request = new StudentReadinessRepairRequestDto
         {
-            ActionKey = StudentReadinessRepairActions.ExpireStaleReservedItems,
+            ActionKey = StudentReadinessRepairActions.GenerateLearningPlanIfMissing,
             DryRun = false,
             Reason = "First run.",
         };
@@ -134,14 +123,16 @@ public sealed class StudentPilotReadinessRepairServiceTests : IDisposable
         var first = await sut.RepairAsync(student.Id, AdminId, request);
         var second = await sut.RepairAsync(student.Id, AdminId, request with { Reason = "Second run." });
 
-        Assert.Equal(1, first.ChangedCount);
+        Assert.Equal(0, first.ChangedCount);
+        Assert.Equal(1, first.SkippedCount);
         Assert.Equal(0, second.ChangedCount);
+        Assert.Equal(1, second.SkippedCount);
     }
 
     [Fact]
     public async Task Repair_NeverTouchesAttemptsOrAudioAssets()
     {
-        var (student, item) = SeedStaleReservedScenario();
+        var student = SeedStudent();
         var activity = new LearningActivity(ActivityType.ListeningComprehension, ActivitySource.AiGenerated, "Listening", "B2", "{}");
         _db.LearningActivities.Add(activity);
         _db.ActivityAttempts.Add(new ActivityAttempt(student.Id, activity.Id, "answer", "{}", "prompt_key"));
@@ -153,7 +144,7 @@ public sealed class StudentPilotReadinessRepairServiceTests : IDisposable
         var sut = BuildSut();
         await sut.RepairAsync(student.Id, AdminId, new StudentReadinessRepairRequestDto
         {
-            ActionKey = StudentReadinessRepairActions.ExpireStaleReservedItems,
+            ActionKey = StudentReadinessRepairActions.GenerateLearningPlanIfMissing,
             DryRun = false,
             Reason = "Verify no collateral damage.",
         });
@@ -163,29 +154,22 @@ public sealed class StudentPilotReadinessRepairServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task RunAllSafeRepairs_OnlyRunsTheFourImplementedActions()
+    public async Task RunAllSafeRepairs_OnlyRunsTheTwoImplementedActions()
     {
-        var student = new StudentProfile(Guid.NewGuid());
-        _db.StudentProfiles.Add(student);
-        _db.SaveChanges();
-
+        var student = SeedStudent();
         var sut = BuildSut();
         var results = await sut.RunAllSafeRepairsAsync(student.Id, AdminId, "Run all safe repairs.", dryRun: true);
 
-        Assert.Equal(4, results.Count);
+        Assert.Equal(2, results.Count);
         Assert.Contains(results, r => r.ActionKey == StudentReadinessRepairActions.GenerateLearningPlanIfMissing);
         Assert.Contains(results, r => r.ActionKey == StudentReadinessRepairActions.RefillTodayLessonIfEmpty);
-        Assert.Contains(results, r => r.ActionKey == StudentReadinessRepairActions.ExpireInvalidReadinessItems);
-        Assert.Contains(results, r => r.ActionKey == StudentReadinessRepairActions.ExpireStaleReservedItems);
         Assert.DoesNotContain(results, r => r.ActionKey == StudentReadinessRepairActions.RefillPracticeGymIfEmpty);
     }
 
     [Fact]
     public async Task UnimplementedAction_Throws()
     {
-        var student = new StudentProfile(Guid.NewGuid());
-        _db.StudentProfiles.Add(student);
-        _db.SaveChanges();
+        var student = SeedStudent();
         var sut = BuildSut();
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => sut.RepairAsync(student.Id, AdminId, new StudentReadinessRepairRequestDto
@@ -198,8 +182,7 @@ public sealed class StudentPilotReadinessRepairServiceTests : IDisposable
     [Fact]
     public async Task GenerateLearningPlan_AlreadyExists_IsIdempotentNoOp()
     {
-        var student = new StudentProfile(Guid.NewGuid());
-        _db.StudentProfiles.Add(student);
+        var student = SeedStudent();
         _db.StudentLearningPlans.Add(new StudentLearningPlan(student.Id, "B2", "initial_generation"));
         _db.SaveChanges();
 
@@ -258,10 +241,5 @@ public sealed class StudentPilotReadinessRepairServiceTests : IDisposable
     {
         public Task<TodaysSessionResult> HandleAsync(GetTodaysSessionQuery query, CancellationToken ct = default) =>
             throw new InvalidOperationException("No enabled ready exercise types are available for today's lesson.");
-    }
-
-    private sealed class FakeSettingsProvider(ReadinessPoolReplenishmentOptions opts) : IEffectiveReadinessPoolSettingsProvider
-    {
-        public Task<ReadinessPoolReplenishmentOptions> GetEffectiveAsync(CancellationToken ct = default) => Task.FromResult(opts);
     }
 }

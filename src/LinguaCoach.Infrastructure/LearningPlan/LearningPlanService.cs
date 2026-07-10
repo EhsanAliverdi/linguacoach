@@ -251,11 +251,10 @@ public sealed class LearningPlanService : ILearningPlanService
             nextObjectiveKey = activeOrdered.Skip(1).FirstOrDefault()?.ObjectiveKey;
         }
 
-        // Count ready lessons in the pool as queue length.
-        var queueLength = await _db.StudentActivityReadinessItems
-            .CountAsync(i => i.StudentId == studentProfileId
-                && i.Source == ReadinessPoolSource.LessonBatch
-                && i.Status == ReadinessPoolStatus.Ready, ct);
+        // Phase I2C: the readiness pool (and its LessonBatch source, already dead since Pass B)
+        // was removed — see docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
+        // There is no lesson queue to count anymore; always 0.
+        var queueLength = 0;
 
         return new LearningPlanProgressSummary(
             StudentProfileId: studentProfileId,

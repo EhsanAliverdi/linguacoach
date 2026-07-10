@@ -159,34 +159,9 @@
       }
     </sp-admin-card>
 
-    <!-- ── Delivery queue / review scaffold AI generation ──────────────────────── -->
-    <sp-admin-card title="Delivery queue / review scaffold AI generation" variant="section" padding="md" data-testid="ai-ops-readiness-pool">
-      <div class="sp-admin-kpi-row">
-        <sp-admin-badge [tone]="s.readinessPoolAiSummary.enableReviewScaffoldGeneration ? 'warning' : 'success'" appearance="soft" size="sm">
-          Generation {{ s.readinessPoolAiSummary.enableReviewScaffoldGeneration ? 'enabled' : 'disabled' }}
-        </sp-admin-badge>
-        <sp-admin-badge [tone]="s.readinessPoolAiSummary.dryRunOnly ? 'success' : 'warning'" appearance="soft" size="sm">
-          Dry-run {{ s.readinessPoolAiSummary.dryRunOnly ? 'only' : 'off' }}
-        </sp-admin-badge>
-        <sp-admin-badge [tone]="s.readinessPoolAiSummary.requireAdminReview ? 'success' : 'warning'" appearance="soft" size="sm">
-          Admin review {{ s.readinessPoolAiSummary.requireAdminReview ? 'required' : 'not required' }}
-        </sp-admin-badge>
-        <sp-admin-badge [tone]="s.readinessPoolAiSummary.practiceGymPilotEnabled ? 'warning' : 'success'" appearance="soft" size="sm">
-          Practice Gym pilot {{ s.readinessPoolAiSummary.practiceGymPilotEnabled ? 'enabled' : 'disabled' }}
-        </sp-admin-badge>
-        <sp-admin-badge [tone]="s.readinessPoolAiSummary.allowTodayLessonInsertion ? 'danger' : 'success'" appearance="soft" size="sm">
-          Today insertion {{ s.readinessPoolAiSummary.allowTodayLessonInsertion ? 'allowed' : 'disabled' }}
-        </sp-admin-badge>
-      </div>
-      <sp-admin-status-grid [columns]="2" style="margin-top: 0.75rem">
-        <sp-admin-status-card label="Pending review" [value]="s.readinessPoolAiSummary.pendingReviewCount" tone="neutral" />
-        <sp-admin-status-card label="Approved" [value]="s.readinessPoolAiSummary.approvedCount" tone="success" />
-      </sp-admin-status-grid>
-      <p class="sp-admin-section-sub" style="margin-top: 0.5rem">
-        See the Lessons page for full review scaffold approval and pilot monitoring detail — this card is a
-        high-level status summary only.
-      </p>
-    </sp-admin-card>
+    <!-- Phase I2C: the "Delivery queue / review scaffold AI generation" card was removed here —
+         readinessPoolAiSummary was deleted along with the readiness pool. See
+         docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md. -->
 
     <!-- ── Signal safety gates ──────────────────────────────────────────────────── -->
     <sp-admin-card title="Signal safety gates" variant="section" padding="md" data-testid="ai-ops-safety-gates">

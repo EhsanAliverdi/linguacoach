@@ -262,9 +262,6 @@ public sealed class ActivityFallbackTestFactory : ActivityTestFactory
 /// <summary>Fake IAiActivityGenerator that always throws to force the SystemFallback code path.</summary>
 internal sealed class AlwaysFailingAiActivityGenerator : IAiActivityGenerator
 {
-    public Task<string> GenerateActivityContentAsync(ActivityGenerationContext context, CancellationToken ct)
-        => throw new InvalidOperationException("Simulated AI generation failure (test).");
-
     public Task<string> EvaluateAttemptAsync(ActivityEvaluationContext context, CancellationToken ct)
         => throw new InvalidOperationException("Simulated AI evaluation failure (test).");
 }

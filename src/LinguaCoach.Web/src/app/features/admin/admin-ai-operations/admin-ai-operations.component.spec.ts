@@ -58,16 +58,6 @@ const SUMMARY: AdminAiOperationsSummary = {
     providerBreakdown: [],
     latestFailures: [],
   },
-  readinessPoolAiSummary: {
-    enableReviewScaffoldGeneration: false,
-    dryRunOnly: true,
-    requireAdminReview: true,
-    practiceGymPilotEnabled: false,
-    allowTodayLessonInsertion: false,
-    maxStudentVisibleScaffoldSuggestions: 2,
-    pendingReviewCount: 0,
-    approvedCount: 0,
-  },
   signalGateSummary: {
     speakingCefrUpdatesEnabled: false,
     writingCefrUpdatesEnabled: false,
@@ -221,12 +211,9 @@ describe('AdminAiOperationsComponent', () => {
     expect(text).not.toContain('system prompt');
   });
 
-  it('renders review scaffold / pilot AI generation state', async () => {
-    await setup();
-    const card = fixture.nativeElement.querySelector('[data-testid="ai-ops-readiness-pool"]');
-    expect(card.textContent).toContain('Practice Gym pilot disabled');
-    expect(card.textContent).toContain('Today insertion disabled');
-  });
+  // Phase I2C: "renders review scaffold / pilot AI generation state" removed — the card it
+  // checked (data-testid="ai-ops-readiness-pool") was deleted along with readinessPoolAiSummary.
+  // See docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
 
   it('refresh button reloads the summary', async () => {
     await setup();

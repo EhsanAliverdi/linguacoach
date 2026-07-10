@@ -1,6 +1,5 @@
 using LinguaCoach.Application.Admin.StudentReadiness;
 using LinguaCoach.Application.LearningPlan;
-using LinguaCoach.Application.ReadinessPool;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
@@ -14,28 +13,26 @@ namespace LinguaCoach.Infrastructure.Admin;
 /// Phase 20D: explicit, admin-triggered repair actions for one student's pilot readiness.
 /// Every action reuses an existing, already-safe service method or entity mutator — nothing
 /// here invents new generation/mutation logic. Never deletes attempts/submissions/evaluations.
+/// Phase I2C: the readiness-pool-specific repair actions (ExpireInvalidReadinessItems,
+/// ExpireStaleReservedItems) were removed along with StudentActivityReadinessItem — see
+/// docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
 /// </summary>
 public sealed class StudentPilotReadinessRepairService : IStudentPilotReadinessRepairService
 {
-    private static readonly string[] CefrOrder = ["A1", "A2", "B1", "B2", "C1", "C2"];
-
     private readonly LinguaCoachDbContext _db;
     private readonly ILearningPlanService _learningPlan;
     private readonly IGetTodaysSessionHandler _todaysSessionHandler;
-    private readonly IEffectiveReadinessPoolSettingsProvider _settingsProvider;
     private readonly ILogger<StudentPilotReadinessRepairService> _logger;
 
     public StudentPilotReadinessRepairService(
         LinguaCoachDbContext db,
         ILearningPlanService learningPlan,
         IGetTodaysSessionHandler todaysSessionHandler,
-        IEffectiveReadinessPoolSettingsProvider settingsProvider,
         ILogger<StudentPilotReadinessRepairService> logger)
     {
         _db = db;
         _learningPlan = learningPlan;
         _todaysSessionHandler = todaysSessionHandler;
-        _settingsProvider = settingsProvider;
         _logger = logger;
     }
 
@@ -76,10 +73,6 @@ public sealed class StudentPilotReadinessRepairService : IStudentPilotReadinessR
                 await RepairGenerateLearningPlanAsync(profile, request.DryRun, ct),
             StudentReadinessRepairActions.RefillTodayLessonIfEmpty =>
                 await RepairRefillTodayLessonAsync(profile, request.DryRun, ct),
-            StudentReadinessRepairActions.ExpireInvalidReadinessItems =>
-                await RepairExpireInvalidReadinessItemsAsync(profile, request.DryRun, ct),
-            StudentReadinessRepairActions.ExpireStaleReservedItems =>
-                await RepairExpireStaleReservedItemsAsync(profile, request.DryRun, ct),
             _ => throw new InvalidOperationException($"'{def.DisplayName}' has no repair implementation wired up."),
         };
 
@@ -113,8 +106,6 @@ public sealed class StudentPilotReadinessRepairService : IStudentPilotReadinessR
         {
             StudentReadinessRepairActions.GenerateLearningPlanIfMissing,
             StudentReadinessRepairActions.RefillTodayLessonIfEmpty,
-            StudentReadinessRepairActions.ExpireInvalidReadinessItems,
-            StudentReadinessRepairActions.ExpireStaleReservedItems,
         };
 
         var results = new List<StudentReadinessRepairResultDto>();
@@ -273,145 +264,4 @@ public sealed class StudentPilotReadinessRepairService : IStudentPilotReadinessR
         }
     }
 
-    private async Task<StudentReadinessRepairResultDto> RepairExpireInvalidReadinessItemsAsync(
-        StudentProfile profile, bool dryRun, CancellationToken ct)
-    {
-        if (profile.CefrLevel is null)
-        {
-            return new StudentReadinessRepairResultDto
-            {
-                ActionKey = StudentReadinessRepairActions.ExpireInvalidReadinessItems,
-                DryRun = dryRun,
-                ChangedCount = 0,
-                SkippedCount = 0,
-                Warnings = [],
-                Errors = [],
-                BeforeSummary = "No CEFR level set — nothing to compare",
-                AfterSummary = "No CEFR level set — nothing to compare",
-            };
-        }
-
-        var candidates = await _db.StudentActivityReadinessItems
-            .Where(i => i.StudentId == profile.Id
-                && (i.Status == ReadinessPoolStatus.Ready || i.Status == ReadinessPoolStatus.Reserved)
-                && i.RoutingReason == RoutingReason.Normal
-                && !i.IsLowerLevelContent)
-            .ToListAsync(ct);
-
-        var mismatched = candidates.Where(i => IsBelowCurrentLevel(i.TargetCefrLevel, profile.CefrLevel)).ToList();
-
-        if (mismatched.Count == 0)
-        {
-            return new StudentReadinessRepairResultDto
-            {
-                ActionKey = StudentReadinessRepairActions.ExpireInvalidReadinessItems,
-                DryRun = dryRun,
-                ChangedCount = 0,
-                SkippedCount = 0,
-                Warnings = [],
-                Errors = [],
-                BeforeSummary = "No CEFR-mismatched readiness items",
-                AfterSummary = "No CEFR-mismatched readiness items",
-            };
-        }
-
-        if (dryRun)
-        {
-            return new StudentReadinessRepairResultDto
-            {
-                ActionKey = StudentReadinessRepairActions.ExpireInvalidReadinessItems,
-                DryRun = true,
-                ChangedCount = mismatched.Count,
-                SkippedCount = 0,
-                Warnings = [],
-                Errors = [],
-                BeforeSummary = $"{mismatched.Count} CEFR-mismatched item(s) found",
-                AfterSummary = $"Would mark {mismatched.Count} item(s) Stale",
-            };
-        }
-
-        foreach (var item in mismatched)
-            item.MarkStale($"Readiness audit repair: target level {item.TargetCefrLevel} below current level {profile.CefrLevel}.");
-        await _db.SaveChangesAsync(ct);
-
-        return new StudentReadinessRepairResultDto
-        {
-            ActionKey = StudentReadinessRepairActions.ExpireInvalidReadinessItems,
-            DryRun = false,
-            ChangedCount = mismatched.Count,
-            SkippedCount = 0,
-            Warnings = [],
-            Errors = [],
-            BeforeSummary = $"{mismatched.Count} CEFR-mismatched item(s) found",
-            AfterSummary = $"Marked {mismatched.Count} item(s) Stale",
-        };
-    }
-
-    private async Task<StudentReadinessRepairResultDto> RepairExpireStaleReservedItemsAsync(
-        StudentProfile profile, bool dryRun, CancellationToken ct)
-    {
-        var effective = await _settingsProvider.GetEffectiveAsync(ct);
-        var cutoff = DateTime.UtcNow.AddHours(-effective.ReservedItemExpiryHours);
-
-        var candidates = await _db.StudentActivityReadinessItems
-            .Where(i => i.StudentId == profile.Id
-                && i.Status == ReadinessPoolStatus.Reserved
-                && i.ReservedAt != null && i.ReservedAt < cutoff)
-            .ToListAsync(ct);
-
-        if (candidates.Count == 0)
-        {
-            return new StudentReadinessRepairResultDto
-            {
-                ActionKey = StudentReadinessRepairActions.ExpireStaleReservedItems,
-                DryRun = dryRun,
-                ChangedCount = 0,
-                SkippedCount = 0,
-                Warnings = [],
-                Errors = [],
-                BeforeSummary = "No stale reserved items",
-                AfterSummary = "No stale reserved items",
-            };
-        }
-
-        if (dryRun)
-        {
-            return new StudentReadinessRepairResultDto
-            {
-                ActionKey = StudentReadinessRepairActions.ExpireStaleReservedItems,
-                DryRun = true,
-                ChangedCount = candidates.Count,
-                SkippedCount = 0,
-                Warnings = [],
-                Errors = [],
-                BeforeSummary = $"{candidates.Count} stale reserved item(s) found",
-                AfterSummary = $"Would expire {candidates.Count} item(s)",
-            };
-        }
-
-        foreach (var item in candidates)
-            item.Expire("Readiness audit repair: reservation expired past the effective expiry window.");
-        await _db.SaveChangesAsync(ct);
-
-        return new StudentReadinessRepairResultDto
-        {
-            ActionKey = StudentReadinessRepairActions.ExpireStaleReservedItems,
-            DryRun = false,
-            ChangedCount = candidates.Count,
-            SkippedCount = 0,
-            Warnings = [],
-            Errors = [],
-            BeforeSummary = $"{candidates.Count} stale reserved item(s) found",
-            AfterSummary = $"Expired {candidates.Count} item(s)",
-        };
-    }
-
-    private static bool IsBelowCurrentLevel(string targetLevel, string currentLevel)
-    {
-        var targetCore = targetLevel.TrimEnd('+', '-');
-        var currentCore = currentLevel.TrimEnd('+', '-');
-        var targetIndex = Array.IndexOf(CefrOrder, targetCore.ToUpperInvariant());
-        var currentIndex = Array.IndexOf(CefrOrder, currentCore.ToUpperInvariant());
-        return targetIndex >= 0 && currentIndex >= 0 && targetIndex < currentIndex;
-    }
 }

@@ -437,27 +437,9 @@ public sealed class AdminCurriculumObjectivesIntegrationTests : IClassFixture<Ap
         Assert.DoesNotContain(tags, t => t == "workplace" && tags.Count == 1);
     }
 
-    [Fact]
-    public async Task RoutingPreview_DoesNotCreateReadinessItems()
-    {
-        await AuthAsAdmin();
-        using var scopeBefore = _factory.Services.CreateScope();
-        var db = scopeBefore.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
-        var countBefore = db.StudentActivityReadinessItems.Count();
-
-        var request = new
-        {
-            cefrLevelOverride = "B2",
-            allowReviewOrScaffold = false,
-        };
-        await _client.PostAsJsonAsync("/api/admin/curriculum/routing-preview", request);
-
-        using var scopeAfter = _factory.Services.CreateScope();
-        var db2 = scopeAfter.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
-        var countAfter = db2.StudentActivityReadinessItems.Count();
-
-        Assert.Equal(countBefore, countAfter);
-    }
+    // Phase I2C: RoutingPreview_DoesNotCreateReadinessItems removed — the readiness pool
+    // (StudentActivityReadinessItem) it asserted was untouched no longer exists. See
+    // docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
 
     // ── Seeder: seed-only-missing strategy ───────────────────────────────────
 

@@ -4,7 +4,6 @@ using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.Learning;
 using LinguaCoach.Application.LearningPlan;
 using LinguaCoach.Application.Memory;
-using LinguaCoach.Application.PracticeGym;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Application.Vocabulary;
 using LinguaCoach.Application.Writing;
@@ -32,7 +31,6 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
     private readonly IStudentLearningLedger _learningLedger;
     private readonly ILearningPlanService _learningPlan;
     private readonly ILearningGoalContextResolver _goalContextResolver;
-    private readonly IPracticeGymSuggestionService _practiceGymSuggestions;
     private readonly IWritingEvaluationService _writingEvaluation;
     private readonly IActivityContentFingerprintService _fingerprintService;
     private readonly IActivityFeedbackPolicyProvider _feedbackPolicyProvider;
@@ -52,7 +50,6 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         IStudentLearningLedger learningLedger,
         ILearningPlanService learningPlan,
         ILearningGoalContextResolver goalContextResolver,
-        IPracticeGymSuggestionService practiceGymSuggestions,
         IWritingEvaluationService writingEvaluation,
         IActivityContentFingerprintService fingerprintService,
         IActivityFeedbackPolicyProvider feedbackPolicyProvider,
@@ -71,7 +68,6 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         _learningLedger = learningLedger;
         _learningPlan = learningPlan;
         _goalContextResolver = goalContextResolver;
-        _practiceGymSuggestions = practiceGymSuggestions;
         _writingEvaluation = writingEvaluation;
         _fingerprintService = fingerprintService;
         _feedbackPolicyProvider = feedbackPolicyProvider;
@@ -160,7 +156,6 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
 
             // Memory update not needed for vocabulary practice (it's not a writing attempt)
             // Vocabulary extraction not needed (no AI feedback to extract from)
-            await TryConsumeReadinessItemAsync(command.UserId, profile.Id, activity.Id, ct);
             return ParseVocabularyFeedback(vpAttempt.Id, vpFeedbackJson, vpScore);
         }
 
@@ -190,7 +185,6 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             _logger.LogInformation("ListeningComprehension attempt saved AttemptId={AttemptId} Score={Score}",
                 listeningAttempt.Id, listeningScore);
 
-            await TryConsumeReadinessItemAsync(command.UserId, profile.Id, activity.Id, ct);
             return ParseListeningFeedback(listeningAttempt.Id, listeningFeedbackJson, listeningScore);
         }
 
@@ -267,7 +261,8 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
                 : LearningEventOutcome.Practised;
 
         var legacyGoalContext = _goalContextResolver.Resolve(profile, new LearningGoalResolutionContext { Source = "ActivitySubmitHandler.Legacy" });
-        var legacyObjectiveKey = await TryGetReadinessObjectiveKeyAsync(profile.Id, activity.Id, ct);
+        // Readiness pool removed (Phase I2C) — objective key snapshot no longer available here.
+        string? legacyObjectiveKey = null;
         var legacyEvent = new StudentLearningEvent(
             studentProfileId: profile.Id,
             source: legacySource,
@@ -320,8 +315,6 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             ImprovedVersion: improvedVersion,
             CorrelationId: null), ct);
 
-        // Best-effort readiness consumption — must not block or fail the response.
-        await TryConsumeReadinessItemAsync(command.UserId, profile.Id, activity.Id, ct);
         await TryWriteUsageLogAsync(profile, activity, primarySkill: null, curriculumObjectiveKey: legacyObjectiveKey, ct);
 
         var legacyFeedback = ParseFeedback(attempt.Id, feedbackJson, score);
@@ -455,7 +448,8 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             : null;
 
         var patternGoalContext = _goalContextResolver.Resolve(profile, new LearningGoalResolutionContext { Source = "ActivitySubmitHandler.Pattern" });
-        var patternObjectiveKey = await TryGetReadinessObjectiveKeyAsync(profile.Id, activity.Id, ct);
+        // Readiness pool removed (Phase I2C) — objective key snapshot no longer available here.
+        string? patternObjectiveKey = null;
         var learningEvent = new StudentLearningEvent(
             studentProfileId: profile.Id,
             source: ledgerSource,
@@ -510,10 +504,8 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
                 attempt.Id, activity.ExercisePatternKey);
         }
 
-        // Best-effort readiness consumption — must not block or fail the response.
         if (evalResult.Completed)
         {
-            await TryConsumeReadinessItemAsync(command.UserId, profile.Id, activity.Id, ct);
             await TryWriteUsageLogAsync(profile, activity, primarySkillKey, patternObjectiveKey, ct);
         }
 
@@ -571,67 +563,6 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
     }
 
     /// <summary>
-    /// Best-effort lookup of the CurriculumObjectiveKey snapshot on the readiness item linked to
-    /// this activity, if any — read before consumption (item must still be Reserved). Returns
-    /// null on any failure or when no linked item exists; never throws. See
-    /// docs/reviews/2026-07-07-ai-bank-assessment-architecture-plan.md, Phase 8.
-    /// </summary>
-    private async Task<string?> TryGetReadinessObjectiveKeyAsync(Guid profileId, Guid activityId, CancellationToken ct)
-    {
-        try
-        {
-            return await _db.StudentActivityReadinessItems
-                .AsNoTracking()
-                .Where(i => i.StudentId == profileId
-                         && i.LearningActivityId == activityId
-                         && i.Status == Domain.Enums.ReadinessPoolStatus.Reserved)
-                .Select(i => i.CurriculumObjectiveKey)
-                .FirstOrDefaultAsync(ct);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex,
-                "Best-effort readiness objective key lookup failed ActivityId={ActivityId} — event recorded without it",
-                activityId);
-            return null;
-        }
-    }
-
-    /// <summary>
-    /// Builds a short human-readable summary of the student's current standing on the
-    /// skill primarily targeted by this exercise pattern, for AI evaluation prompts to
-    /// Looks up a Reserved readiness item linked to the completed activity and marks it
-    /// consumed. Best-effort: logs and swallows any exception so completion is never blocked.
-    /// <paramref name="userId"/> is the auth user ID passed to TryMarkConsumedAsync for profile resolution.
-    /// <paramref name="profileId"/> is the StudentProfile.Id used to scope the DB lookup.
-    private async Task TryConsumeReadinessItemAsync(Guid userId, Guid profileId, Guid activityId, CancellationToken ct)
-    {
-        try
-        {
-            var item = await _db.StudentActivityReadinessItems
-                .FirstOrDefaultAsync(
-                    i => i.StudentId == profileId
-                      && i.LearningActivityId == activityId
-                      && i.Status == Domain.Enums.ReadinessPoolStatus.Reserved,
-                    ct);
-
-            if (item is null) return;
-
-            await _practiceGymSuggestions.TryMarkConsumedAsync(userId, item.Id, ct);
-
-            _logger.LogInformation(
-                "ReadinessItem consumed ActivityId={ActivityId} ReadinessItemId={ReadinessItemId}",
-                activityId, item.Id);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex,
-                "Best-effort readiness consumption failed ActivityId={ActivityId} — completion not affected",
-                activityId);
-        }
-    }
-
-    /// <summary>
     /// Writes a StudentActivityUsageLog for a completed activity — the real content-usage
     /// history the Phase B repetition/novelty foundation relies on (see
     /// docs/architecture/repetition-and-novelty.md). Best-effort: logs and swallows any
@@ -660,21 +591,17 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
                 : ActivityContentShape.ModuleStageSchema;
             var contentJson = isFormIoContent ? activity.FormIoSchemaJson : activity.AiGeneratedContentJson;
 
-            var item = await _db.StudentActivityReadinessItems
-                .AsNoTracking()
-                .Where(i => i.StudentId == profile.Id && i.LearningActivityId == activity.Id)
-                .OrderByDescending(i => i.UpdatedAt)
-                .FirstOrDefaultAsync(ct);
-
-            var isIntentionalReview = item?.RoutingReason is
-                RoutingReason.Review or RoutingReason.Scaffold or RoutingReason.Remediation;
+            // Readiness pool removed (Phase I2C) — the routing/subskill/context-tag snapshot that
+            // used to come from StudentActivityReadinessItem is permanently unavailable now, same
+            // as SourceTemplateId/SourceBankItemId already being permanently null since Pass A.
+            const bool isIntentionalReview = false;
 
             var fingerprint = _fingerprintService.ComputeFingerprint(new ActivityContentFingerprintRequest(
                 ContentJson: contentJson,
                 ContentShape: contentShape,
                 PatternKey: activity.ExercisePatternKey,
                 Skill: primarySkill,
-                Subskill: item?.Subskill,
+                Subskill: null,
                 CefrLevel: profile.CefrLevel));
 
             var usageLog = new Domain.Entities.StudentActivityUsageLog(
@@ -682,19 +609,18 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
                 contentFingerprint: fingerprint,
                 consumedAtUtc: DateTime.UtcNow,
                 learningActivityId: activity.Id,
-                studentActivityReadinessItemId: item?.Id,
-                sourceTemplateId: item?.SourceTemplateId,
-                sourceBankItemId: item?.SourceBankItemId,
+                sourceTemplateId: null,
+                sourceBankItemId: null,
                 patternKey: activity.ExercisePatternKey,
                 activityType: activity.ActivityType.ToString(),
                 skill: primarySkill,
-                subskill: item?.Subskill,
+                subskill: null,
                 cefrLevel: profile.CefrLevel,
                 curriculumObjectiveKey: curriculumObjectiveKey,
-                contextTagsJson: item?.ContextTagsJson,
-                focusTagsJson: item?.FocusTagsJson,
+                contextTagsJson: null,
+                focusTagsJson: null,
                 isIntentionalReview: isIntentionalReview,
-                reviewReason: isIntentionalReview ? item?.RoutingExplanation : null);
+                reviewReason: null);
 
             _db.StudentActivityUsageLogs.Add(usageLog);
             await _db.SaveChangesAsync(ct);
@@ -711,8 +637,11 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         }
     }
 
-    /// reference (so coachSummary can be grounded in student progress, not generic).
-    /// Only meaningful for AI-marked patterns — returns null for deterministic ones.
+    /// <summary>
+    /// Builds a short human-readable summary of the student's current standing on the skill
+    /// primarily targeted by this exercise pattern, for AI evaluation prompts to reference (so
+    /// coachSummary can be grounded in student progress, not generic). Only meaningful for
+    /// AI-marked patterns — returns null for deterministic ones.
     /// </summary>
     private async Task<string?> BuildStudentSkillContextAsync(
         Guid studentProfileId, string? exercisePatternKey, MarkingMode markingMode, CancellationToken ct)

@@ -135,25 +135,10 @@ public sealed class ExercisePatternPhase2DbTests : IDisposable
         }
     }
 
-    // ── ActivityGenerationContext carries OverridePromptKey ───────────────────
-
-    [Fact]
-    public async Task ActivityGenerationContext_WithOverridePromptKey_StoresEmailReplyKey()
-    {
-        var pattern = await _db.ExercisePatterns.SingleAsync(p => p.Key == ExercisePatternKey.EmailReply);
-        var ctx = new Application.Activity.ActivityGenerationContext(
-            ActivityType: pattern.ActivityType,
-            CefrLevel: "B1",
-            CareerContext: "Tech",
-            LanguagePairCode: "fa-en",
-            SourceLanguageName: "Persian",
-            TargetLanguageName: "English",
-            OverridePromptKey: pattern.AiGeneratePromptKey,
-            ExercisePatternKey: pattern.Key);
-
-        Assert.Equal(pattern.AiGeneratePromptKey, ctx.OverridePromptKey);
-        Assert.Equal(ExercisePatternKey.EmailReply, ctx.ExercisePatternKey);
-    }
+    // Phase I2C: ActivityGenerationContext_WithOverridePromptKey_StoresEmailReplyKey removed —
+    // ActivityGenerationContext was deleted along with IAiActivityGenerator.GenerateActivityContentAsync
+    // (its last caller was in the legacy generation pipeline removed across Passes A/B/C). See
+    // docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
 
     // ── LearningActivity.ExercisePatternKey persists correctly ────────────────
 

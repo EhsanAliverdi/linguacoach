@@ -1,6 +1,5 @@
 using System.Text.Json;
 using LinguaCoach.Application.Admin.RuntimeSettings;
-using LinguaCoach.Application.ReadinessPool;
 using LinguaCoach.Application.Speaking;
 using LinguaCoach.Application.Writing;
 using LinguaCoach.Domain.Entities;
@@ -14,20 +13,17 @@ public sealed class RuntimeSettingsService : IRuntimeSettingsService
 {
     private readonly LinguaCoachDbContext _db;
     private readonly IFeatureGateRegistry _registry;
-    private readonly ReadinessPoolReplenishmentOptions _readinessPool;
     private readonly SpeakingEvaluationOptions _speaking;
     private readonly WritingEvaluationOptions _writing;
 
     public RuntimeSettingsService(
         LinguaCoachDbContext db,
         IFeatureGateRegistry registry,
-        IOptions<ReadinessPoolReplenishmentOptions> readinessPool,
         IOptions<SpeakingEvaluationOptions> speaking,
         IOptions<WritingEvaluationOptions> writing)
     {
         _db = db;
         _registry = registry;
-        _readinessPool = readinessPool.Value;
         _speaking = speaking.Value;
         _writing = writing.Value;
     }
@@ -168,7 +164,7 @@ public sealed class RuntimeSettingsService : IRuntimeSettingsService
         {
             var settingDef = def.Settings.First(s => s.Key == key);
             var row = existing.FirstOrDefault(o => o.Key == key);
-            var oldValueJson = row is { IsActive: true } ? row.ValueJson : GetReadinessPoolCurrentJson(key);
+            var oldValueJson = row is { IsActive: true } ? row.ValueJson : GetGenericOverrideCurrentJson(key);
 
             if (row is null)
             {
@@ -281,7 +277,7 @@ public sealed class RuntimeSettingsService : IRuntimeSettingsService
                 }
                 else
                 {
-                    effectiveJson = GetReadinessPoolCurrentJson(s.Key);
+                    effectiveJson = GetGenericOverrideCurrentJson(s.Key);
                     source = FeatureGateValueSource.AppSettings;
                 }
                 break;
@@ -333,25 +329,23 @@ public sealed class RuntimeSettingsService : IRuntimeSettingsService
         };
     }
 
-    private string GetReadinessPoolCurrentJson(string key) => key switch
+    /// <summary>
+    /// Handles keys backed by <see cref="FeatureGateBackingStore.ReadinessPoolOverride"/> that have
+    /// no typed options class of their own — generic RuntimeSettingOverride rows only, with a
+    /// hardcoded default fallback. Phase I2C: every key that used to read from
+    /// ReadinessPoolReplenishmentOptions was removed along with the readiness pool — see
+    /// docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md. Despite the enum name,
+    /// this backing store is no longer readiness-pool-specific; ActivityFeedbackPolicy is its only
+    /// remaining consumer.
+    /// </summary>
+    private static string GetGenericOverrideCurrentJson(string key) => key switch
     {
-        "ReadinessPool.EnableReviewScaffoldGeneration" => Bool(_readinessPool.EnableReviewScaffoldGeneration),
-        "ReadinessPool.DryRunOnly" => Bool(_readinessPool.DryRunOnly),
-        "ReadinessPool.RequireAdminReview" => Bool(_readinessPool.RequireAdminReview),
-        "ReadinessPool.MaxScaffoldItemsPerStudentPerDay" => _readinessPool.MaxScaffoldItemsPerStudentPerDay.ToString(),
-        "ReadinessPool.ScaffoldAllowedSources" => JsonSerializer.Serialize(_readinessPool.ScaffoldAllowedSources),
-        "ReadinessPool.AllowTodayLessonInsertion" => Bool(_readinessPool.AllowTodayLessonInsertion),
-        "ReadinessPool.MinimumConfidenceForReviewNeed" => JsonSerializer.Serialize(_readinessPool.MinimumConfidenceForReviewNeed),
-        "ReadinessPool.PracticeGymPilotEnabled" => Bool(_readinessPool.PracticeGymPilotEnabled),
-        "ReadinessPool.PracticeGymPilotLabel" => JsonSerializer.Serialize(_readinessPool.PracticeGymPilotLabel),
-        "ReadinessPool.PracticeGymPilotReason" => JsonSerializer.Serialize(_readinessPool.PracticeGymPilotReason),
-        "ReadinessPool.MaxStudentVisibleScaffoldSuggestions" => _readinessPool.MaxStudentVisibleScaffoldSuggestions.ToString(),
         // AI Bank-First Teaching Architecture pilot — no typed options class, generic RuntimeSettingOverride only.
         "PracticeGymFormIoPilot.Enabled" => Bool(false),
         // Phase B2 — Activity feedback policy: no typed options class, generic RuntimeSettingOverride only.
         "ActivityFeedback.TodayPolicy" => JsonSerializer.Serialize("Optional"),
         "ActivityFeedback.PracticeGymPolicy" => JsonSerializer.Serialize("Optional"),
-        _ => throw new KeyNotFoundException($"Unknown ReadinessPool key '{key}'."),
+        _ => throw new KeyNotFoundException($"Unknown generic-override key '{key}'."),
     };
 
     private static string GetLessonGenerationCurrentJson(string key, LessonGenerationSettings s) => key switch

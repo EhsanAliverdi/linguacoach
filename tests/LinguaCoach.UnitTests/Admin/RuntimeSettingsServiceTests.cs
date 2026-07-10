@@ -1,6 +1,5 @@
 using System.Text.Json;
 using LinguaCoach.Application.Admin.RuntimeSettings;
-using LinguaCoach.Application.ReadinessPool;
 using LinguaCoach.Application.Speaking;
 using LinguaCoach.Application.Writing;
 using LinguaCoach.Infrastructure.Admin;
@@ -13,6 +12,11 @@ namespace LinguaCoach.UnitTests.Admin;
 /// <summary>
 /// Unit tests for RuntimeSettingsService using SQLite in-memory DbContext and default
 /// (appsettings-shaped) options values.
+/// Phase I2C: the "review-scaffold-generation" and "practice-gym-review-scaffold-pilot" groups
+/// were removed along with the readiness pool — see
+/// docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md. Tests that previously
+/// exercised the ReadinessPoolOverride backing store now use "activity-feedback-policy", the
+/// only remaining group on that backing store.
 /// </summary>
 public sealed class RuntimeSettingsServiceTests : IDisposable
 {
@@ -32,7 +36,6 @@ public sealed class RuntimeSettingsServiceTests : IDisposable
         _service = new RuntimeSettingsService(
             _db,
             new FeatureGateRegistryService(),
-            Microsoft.Extensions.Options.Options.Create(new ReadinessPoolReplenishmentOptions()),
             Microsoft.Extensions.Options.Options.Create(new SpeakingEvaluationOptions()),
             Microsoft.Extensions.Options.Options.Create(new WritingEvaluationOptions()));
     }
@@ -48,36 +51,36 @@ public sealed class RuntimeSettingsServiceTests : IDisposable
     [Fact]
     public async Task GetByKey_NoOverride_ReturnsAppSettingsDefault()
     {
-        var group = await _service.GetByKeyAsync("practice-gym-review-scaffold-pilot", CancellationToken.None);
+        var group = await _service.GetByKeyAsync("activity-feedback-policy", CancellationToken.None);
 
         Assert.NotNull(group);
-        var setting = group!.Settings.First(s => s.Key == "ReadinessPool.PracticeGymPilotEnabled");
-        Assert.Equal("false", setting.EffectiveValueJson);
+        var setting = group!.Settings.First(s => s.Key == "ActivityFeedback.TodayPolicy");
+        Assert.Equal("\"Optional\"", setting.EffectiveValueJson);
         Assert.Equal(FeatureGateValueSource.AppSettings, setting.ValueSource);
     }
 
     [Fact]
-    public async Task Update_ValidBoolean_CreatesActiveOverride()
+    public async Task Update_ValidString_CreatesActiveOverride()
     {
         var command = new UpdateFeatureGateGroupCommand(
-            "practice-gym-review-scaffold-pilot", AdminId,
-            new Dictionary<string, JsonElement> { ["ReadinessPool.PracticeGymPilotEnabled"] = Json("true") },
+            "activity-feedback-policy", AdminId,
+            new Dictionary<string, JsonElement> { ["ActivityFeedback.TodayPolicy"] = Json("\"Required\"") },
             "Enabling for test.", null);
 
         var group = await _service.UpdateAsync(command, CancellationToken.None);
 
-        var setting = group.Settings.First(s => s.Key == "ReadinessPool.PracticeGymPilotEnabled");
-        Assert.Equal("true", setting.EffectiveValueJson);
+        var setting = group.Settings.First(s => s.Key == "ActivityFeedback.TodayPolicy");
+        Assert.Equal("\"Required\"", setting.EffectiveValueJson);
         Assert.Equal(FeatureGateValueSource.DatabaseOverride, setting.ValueSource);
         Assert.True(group.HasActiveOverride);
     }
 
     [Fact]
-    public async Task Update_OutOfRangeInteger_ThrowsArgumentException()
+    public async Task Update_DisallowedStringValue_ThrowsArgumentException()
     {
         var command = new UpdateFeatureGateGroupCommand(
-            "practice-gym-review-scaffold-pilot", AdminId,
-            new Dictionary<string, JsonElement> { ["ReadinessPool.MaxStudentVisibleScaffoldSuggestions"] = Json("99") },
+            "activity-feedback-policy", AdminId,
+            new Dictionary<string, JsonElement> { ["ActivityFeedback.TodayPolicy"] = Json("\"NotAllowed\"") },
             "Should fail.", null);
 
         await Assert.ThrowsAsync<ArgumentException>(() => _service.UpdateAsync(command, CancellationToken.None));
@@ -87,7 +90,7 @@ public sealed class RuntimeSettingsServiceTests : IDisposable
     public async Task Update_UnknownKey_ThrowsKeyNotFoundException()
     {
         var command = new UpdateFeatureGateGroupCommand(
-            "practice-gym-review-scaffold-pilot", AdminId,
+            "activity-feedback-policy", AdminId,
             new Dictionary<string, JsonElement> { ["NotReal"] = Json("true") },
             "Should fail.", null);
 
@@ -117,35 +120,11 @@ public sealed class RuntimeSettingsServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task Update_HighRiskWithoutConfirmation_ThrowsArgumentException()
-    {
-        var command = new UpdateFeatureGateGroupCommand(
-            "review-scaffold-generation", AdminId,
-            new Dictionary<string, JsonElement> { ["ReadinessPool.EnableReviewScaffoldGeneration"] = Json("true") },
-            "Missing confirmation.", null);
-
-        await Assert.ThrowsAsync<ArgumentException>(() => _service.UpdateAsync(command, CancellationToken.None));
-    }
-
-    [Fact]
-    public async Task Update_HighRiskWithConfirmation_Succeeds()
-    {
-        var command = new UpdateFeatureGateGroupCommand(
-            "review-scaffold-generation", AdminId,
-            new Dictionary<string, JsonElement> { ["ReadinessPool.EnableReviewScaffoldGeneration"] = Json("true") },
-            "Confirmed enable.", "CONFIRM");
-
-        var group = await _service.UpdateAsync(command, CancellationToken.None);
-        var setting = group.Settings.First(s => s.Key == "ReadinessPool.EnableReviewScaffoldGeneration");
-        Assert.Equal("true", setting.EffectiveValueJson);
-    }
-
-    [Fact]
     public async Task Update_EmptyReason_ThrowsArgumentException()
     {
         var command = new UpdateFeatureGateGroupCommand(
-            "practice-gym-review-scaffold-pilot", AdminId,
-            new Dictionary<string, JsonElement> { ["ReadinessPool.PracticeGymPilotEnabled"] = Json("true") },
+            "activity-feedback-policy", AdminId,
+            new Dictionary<string, JsonElement> { ["ActivityFeedback.TodayPolicy"] = Json("\"Required\"") },
             "", null);
 
         await Assert.ThrowsAsync<ArgumentException>(() => _service.UpdateAsync(command, CancellationToken.None));
@@ -155,17 +134,17 @@ public sealed class RuntimeSettingsServiceTests : IDisposable
     public async Task Reset_AfterOverride_RestoresAppSettingsSource()
     {
         var updateCommand = new UpdateFeatureGateGroupCommand(
-            "practice-gym-review-scaffold-pilot", AdminId,
-            new Dictionary<string, JsonElement> { ["ReadinessPool.PracticeGymPilotEnabled"] = Json("true") },
+            "activity-feedback-policy", AdminId,
+            new Dictionary<string, JsonElement> { ["ActivityFeedback.TodayPolicy"] = Json("\"Required\"") },
             "Enable for reset test.", null);
         await _service.UpdateAsync(updateCommand, CancellationToken.None);
 
         var resetCommand = new ResetFeatureGateGroupCommand(
-            "practice-gym-review-scaffold-pilot", AdminId, "Rolling back for test.");
+            "activity-feedback-policy", AdminId, "Rolling back for test.");
         var group = await _service.ResetAsync(resetCommand, CancellationToken.None);
 
-        var setting = group.Settings.First(s => s.Key == "ReadinessPool.PracticeGymPilotEnabled");
-        Assert.Equal("false", setting.EffectiveValueJson);
+        var setting = group.Settings.First(s => s.Key == "ActivityFeedback.TodayPolicy");
+        Assert.Equal("\"Optional\"", setting.EffectiveValueJson);
         Assert.Equal(FeatureGateValueSource.AppSettings, setting.ValueSource);
     }
 

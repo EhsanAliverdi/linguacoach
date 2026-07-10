@@ -3,7 +3,6 @@ using LinguaCoach.Application.Admin.StudentReadiness;
 using LinguaCoach.Application.LearningPlan;
 using LinguaCoach.Application.Memory;
 using LinguaCoach.Application.Progress;
-using LinguaCoach.Application.ReadinessPool;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
@@ -19,6 +18,10 @@ namespace LinguaCoach.Infrastructure.Admin;
 /// documented/confirmed safe to call without side effects. Deliberately never calls
 /// IGetTodaysSessionHandler or ILearningPlanService.GetOrCreatePlanAsync/RegeneratePlanAsync,
 /// both of which mutate state — plan/session existence is checked via direct queries instead.
+/// Phase I2C: the readiness-pool-dependent checks (Practice Gym pool health/pilot gate,
+/// activity-content pattern/malformed-content validity, listening-audio-for-ready-items, and the
+/// stale/pending-reserved-item feedback checks) were removed along with StudentActivityReadinessItem
+/// — see docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
 /// </summary>
 public sealed class StudentReadinessAuditService : IStudentReadinessAuditService
 {
@@ -26,9 +29,7 @@ public sealed class StudentReadinessAuditService : IStudentReadinessAuditService
     private readonly ILearningPlanService _learningPlan;
     private readonly IStudentProgressSummaryHandler _progressHandler;
     private readonly IStudentLearningLedger _ledger;
-    private readonly IReadinessPoolReplenishmentService _replenishment;
     private readonly IExerciseTypeRegistry _exerciseTypeRegistry;
-    private readonly IEffectiveReadinessPoolSettingsProvider _settingsProvider;
     private readonly ILogger<StudentReadinessAuditService> _logger;
 
     private static readonly StudentLifecycleStage[] LearningReadyStages =
@@ -44,18 +45,14 @@ public sealed class StudentReadinessAuditService : IStudentReadinessAuditService
         ILearningPlanService learningPlan,
         IStudentProgressSummaryHandler progressHandler,
         IStudentLearningLedger ledger,
-        IReadinessPoolReplenishmentService replenishment,
         IExerciseTypeRegistry exerciseTypeRegistry,
-        IEffectiveReadinessPoolSettingsProvider settingsProvider,
         ILogger<StudentReadinessAuditService> logger)
     {
         _db = db;
         _learningPlan = learningPlan;
         _progressHandler = progressHandler;
         _ledger = ledger;
-        _replenishment = replenishment;
         _exerciseTypeRegistry = exerciseTypeRegistry;
-        _settingsProvider = settingsProvider;
         _logger = logger;
     }
 
@@ -73,10 +70,8 @@ public sealed class StudentReadinessAuditService : IStudentReadinessAuditService
         await AddLearningPlanChecksAsync(checks, profile, now, ct);
         AddCourseReadinessCheck(checks, profile, now);
         await AddTodayLessonChecksAsync(checks, profile, now, ct);
-        await AddPracticeGymChecksAsync(checks, profile, now, ct);
-        await AddActivityContentChecksAsync(checks, profile, now, ct);
+        AddPracticeGymCheck(checks, now);
         await AddAudioTtsChecksAsync(checks, profile, now, ct);
-        await AddFeedbackAndReviewScaffoldChecksAsync(checks, profile, now, ct);
         await AddProgressChecksAsync(checks, profile, now, ct);
 
         var blocking = checks.Count(c => c.Status == ReadinessCheckStatus.Fail && c.Severity == ReadinessCheckSeverity.Blocking);
@@ -364,122 +359,20 @@ public sealed class StudentReadinessAuditService : IStudentReadinessAuditService
 
     // --- 6. Practice Gym ---
 
-    private async Task AddPracticeGymChecksAsync(List<StudentReadinessCheckDto> checks, StudentProfile profile, DateTime now, CancellationToken ct)
+    /// <summary>
+    /// Phase I2C: the readiness-pool health/pilot-gate checks that used to live here were removed
+    /// along with StudentActivityReadinessItem. Practice Gym content is now served exclusively by
+    /// the H7 module-selection pipeline (deterministic, no per-student pool to report health on) —
+    /// see docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
+    /// </summary>
+    private static void AddPracticeGymCheck(List<StudentReadinessCheckDto> checks, DateTime now)
     {
         const string category = "Practice Gym";
-
-        if (profile.LifecycleStage < StudentLifecycleStage.CourseReady)
-        {
-            checks.Add(Check("practicegym.pool_health", "Pool health", category, ReadinessCheckStatus.NotApplicable, ReadinessCheckSeverity.Info,
-                "Practice Gym is not expected before CourseReady.", now));
-            return;
-        }
-
-        try
-        {
-            await AddPracticeGymChecksCoreAsync(checks, profile, now, ct);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Readiness audit: Practice Gym checks failed for student {StudentId}.", profile.Id);
-            checks.Add(Check("practicegym.check_failed", "Practice Gym checks completed", category, ReadinessCheckStatus.Warning, ReadinessCheckSeverity.Warning,
-                "Could not fully evaluate Practice Gym readiness for this student.", now, technicalDetail: ex.GetType().Name));
-        }
+        checks.Add(Check("practicegym.module_based", "Practice Gym content source", category, ReadinessCheckStatus.NotApplicable, ReadinessCheckSeverity.Info,
+            "Practice Gym is served by the module-selection pipeline (Phase H7); there is no per-student readiness pool to audit.", now));
     }
 
-    private async Task AddPracticeGymChecksCoreAsync(List<StudentReadinessCheckDto> checks, StudentProfile profile, DateTime now, CancellationToken ct)
-    {
-        const string category = "Practice Gym";
-
-        var health = await _replenishment.GetHealthAsync(profile.Id, ReadinessPoolSource.PracticeGym, ct);
-        // Nothing ready and nothing in flight, but failures are piling up — replenishment isn't
-        // recovering on its own. NeedsReplenishment is not a useful signal here: with a nonzero
-        // target and zero ready/in-flight items it is almost always true, so it can't distinguish
-        // "healthy, about to replenish" from "stuck failing" on its own.
-        var looksStuck = health.ReadyCount == 0 && health.QueuedOrGeneratingCount == 0 && health.FailedCount > 0;
-
-        checks.Add(looksStuck
-            ? Check("practicegym.pool_health", "Pool health", category, ReadinessCheckStatus.Warning, ReadinessCheckSeverity.Warning,
-                $"Practice Gym has {health.FailedCount} failed item(s) and nothing ready, but replenishment isn't recommended — generation may be stuck.", now,
-                recommendedActionKey: StudentReadinessRepairActions.RefillPracticeGymIfEmpty,
-                repairRiskLevel: ReadinessRepairRiskLevel.Medium)
-            : Check("practicegym.pool_health", "Pool health", category, ReadinessCheckStatus.Pass, ReadinessCheckSeverity.Warning,
-                health.ReadyCount > 0
-                    ? $"{health.ReadyCount} ready Practice Gym item(s)."
-                    : "No ready items yet, but the pool is healthy and being replenished.", now));
-
-        var effective = await _settingsProvider.GetEffectiveAsync(ct);
-        checks.Add(Check("practicegym.pilot_gate_visibility", "Practice Gym pilot gate", category, ReadinessCheckStatus.Pass, ReadinessCheckSeverity.Info,
-            $"Practice Gym review-scaffold pilot is currently {(effective.PracticeGymPilotEnabled ? "enabled" : "disabled")}.", now));
-    }
-
-    // --- 7. Activity content validity ---
-
-    private async Task AddActivityContentChecksAsync(List<StudentReadinessCheckDto> checks, StudentProfile profile, DateTime now, CancellationToken ct)
-    {
-        const string category = "Activity content validity";
-
-        try
-        {
-            await AddActivityContentChecksCoreAsync(checks, profile, now, ct);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Readiness audit: activity content checks failed for student {StudentId}.", profile.Id);
-            checks.Add(Check("activities.check_failed", "Activity content checks completed", category, ReadinessCheckStatus.Warning, ReadinessCheckSeverity.Warning,
-                "Could not fully evaluate activity content validity for this student.", now, technicalDetail: ex.GetType().Name));
-        }
-    }
-
-    private async Task AddActivityContentChecksCoreAsync(List<StudentReadinessCheckDto> checks, StudentProfile profile, DateTime now, CancellationToken ct)
-    {
-        const string category = "Activity content validity";
-
-        var activeItems = await _db.StudentActivityReadinessItems.AsNoTracking()
-            .Where(i => i.StudentId == profile.Id
-                && (i.Status == ReadinessPoolStatus.Ready || i.Status == ReadinessPoolStatus.Reserved)
-                && i.PatternKey != null)
-            .Select(i => i.PatternKey!)
-            .Distinct()
-            .ToListAsync(ct);
-
-        var invalidPatternCount = 0;
-        if (activeItems.Count > 0)
-        {
-            var knownKeys = await _db.ExercisePatterns.AsNoTracking()
-                .Where(p => activeItems.Contains(p.Key))
-                .Select(p => p.Key)
-                .ToListAsync(ct);
-            invalidPatternCount = activeItems.Count(k => !knownKeys.Contains(k));
-        }
-
-        checks.Add(invalidPatternCount == 0
-            ? Check("activities.pattern_keys_valid", "Ready items reference valid patterns", category, ReadinessCheckStatus.Pass, ReadinessCheckSeverity.Warning,
-                "All ready/reserved readiness items reference a known exercise pattern.", now)
-            : Check("activities.pattern_keys_valid", "Ready items reference valid patterns", category, ReadinessCheckStatus.Warning, ReadinessCheckSeverity.Warning,
-                $"{invalidPatternCount} ready/reserved item(s) reference an unrecognized exercise pattern.", now,
-                recommendedActionKey: StudentReadinessRepairActions.ExpireInvalidReadinessItems,
-                repairRiskLevel: ReadinessRepairRiskLevel.Low));
-
-        var activityIds = await _db.StudentActivityReadinessItems.AsNoTracking()
-            .Where(i => i.StudentId == profile.Id
-                && (i.Status == ReadinessPoolStatus.Ready || i.Status == ReadinessPoolStatus.Reserved)
-                && i.LearningActivityId != null)
-            .Select(i => i.LearningActivityId!.Value)
-            .Distinct()
-            .ToListAsync(ct);
-
-        var malformedCount = activityIds.Count == 0 ? 0 : await _db.LearningActivities.AsNoTracking()
-            .CountAsync(a => activityIds.Contains(a.Id) && (a.AiGeneratedContentJson == null || a.AiGeneratedContentJson == "" || a.AiGeneratedContentJson == "{}"), ct);
-
-        checks.Add(malformedCount == 0
-            ? Check("activities.content_present", "Materialized activities have content", category, ReadinessCheckStatus.Pass, ReadinessCheckSeverity.Warning,
-                "No materialized activities with empty generated content were found.", now)
-            : Check("activities.content_present", "Materialized activities have content", category, ReadinessCheckStatus.Warning, ReadinessCheckSeverity.Warning,
-                $"{malformedCount} materialized activity/activities have empty/missing generated content.", now));
-    }
-
-    // --- 8. Audio/TTS ---
+    // --- 7. Audio/TTS ---
 
     private async Task AddAudioTtsChecksAsync(List<StudentReadinessCheckDto> checks, StudentProfile profile, DateTime now, CancellationToken ct)
     {
@@ -507,111 +400,13 @@ public sealed class StudentReadinessAuditService : IStudentReadinessAuditService
         checks.Add(Check("audio.tts_setting", "TTS generation setting", category, ReadinessCheckStatus.Pass, ReadinessCheckSeverity.Info,
             $"TTS generation is currently {(ttsEnabled ? "enabled" : "disabled")}.", now));
 
-        var listeningActivityIds = await (
-            from item in _db.StudentActivityReadinessItems.AsNoTracking()
-            join activity in _db.LearningActivities.AsNoTracking() on item.LearningActivityId equals activity.Id
-            where item.StudentId == profile.Id
-                && (item.Status == ReadinessPoolStatus.Ready || item.Status == ReadinessPoolStatus.Reserved)
-                && activity.ActivityType == ActivityType.ListeningComprehension
-            select activity.Id).Distinct().ToListAsync(ct);
-
-        if (listeningActivityIds.Count == 0)
-        {
-            checks.Add(Check("audio.missing_for_listening", "Listening activities have audio", category, ReadinessCheckStatus.Pass, ReadinessCheckSeverity.Warning,
-                "No ready/reserved listening activities to check.", now));
-            return;
-        }
-
-        var readyAudioActivityIds = await _db.AudioAssets.AsNoTracking()
-            .Where(a => a.LearningActivityId != null
-                && listeningActivityIds.Contains(a.LearningActivityId.Value)
-                && a.AssetType == AssetType.ListeningTts
-                && a.GenerationStatus == GenerationStatus.Ready)
-            .Select(a => a.LearningActivityId!.Value)
-            .Distinct()
-            .ToListAsync(ct);
-
-        var missingCount = listeningActivityIds.Count(id => !readyAudioActivityIds.Contains(id));
-
-        checks.Add(missingCount == 0
-            ? Check("audio.missing_for_listening", "Listening activities have audio", category, ReadinessCheckStatus.Pass, ReadinessCheckSeverity.Warning,
-                "All ready/reserved listening activities have generated audio.", now)
-            : Check("audio.missing_for_listening", "Listening activities have audio", category,
-                ttsEnabled ? ReadinessCheckStatus.Warning : ReadinessCheckStatus.NotApplicable,
-                ttsEnabled ? ReadinessCheckSeverity.Warning : ReadinessCheckSeverity.Info,
-                ttsEnabled
-                    ? $"{missingCount} listening activity/activities have no ready audio asset."
-                    : $"{missingCount} listening activity/activities have no audio, but TTS generation is disabled by setting.", now));
+        // Phase I2C: the "listening activities linked to ready/reserved readiness items have
+        // audio" check was removed along with StudentActivityReadinessItem — there are no
+        // ready/reserved readiness items to check anymore. See
+        // docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
     }
 
-    // --- 9. Feedback/completion & review scaffold ---
-
-    private async Task AddFeedbackAndReviewScaffoldChecksAsync(List<StudentReadinessCheckDto> checks, StudentProfile profile, DateTime now, CancellationToken ct)
-    {
-        const string category = "Feedback/completion";
-
-        try
-        {
-            await AddFeedbackAndReviewScaffoldChecksCoreAsync(checks, profile, now, ct);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Readiness audit: feedback/review scaffold checks failed for student {StudentId}.", profile.Id);
-            checks.Add(Check("feedback.check_failed", "Feedback/review scaffold checks completed", category, ReadinessCheckStatus.Warning, ReadinessCheckSeverity.Warning,
-                "Could not fully evaluate feedback/review scaffold state for this student.", now, technicalDetail: ex.GetType().Name));
-        }
-    }
-
-    private async Task AddFeedbackAndReviewScaffoldChecksCoreAsync(List<StudentReadinessCheckDto> checks, StudentProfile profile, DateTime now, CancellationToken ct)
-    {
-        const string category = "Feedback/completion";
-        var effective = await _settingsProvider.GetEffectiveAsync(ct);
-        var reservedCutoff = now.AddHours(-effective.ReservedItemExpiryHours);
-
-        var staleReserved = await _db.StudentActivityReadinessItems.AsNoTracking()
-            .CountAsync(i => i.StudentId == profile.Id
-                && i.Status == ReadinessPoolStatus.Reserved
-                && i.ReservedAt != null && i.ReservedAt < reservedCutoff, ct);
-
-        checks.Add(staleReserved == 0
-            ? Check("feedback.no_stuck_reserved", "No stuck reserved items", category, ReadinessCheckStatus.Pass, ReadinessCheckSeverity.Warning,
-                "No reserved items are past the reservation-expiry window.", now)
-            : Check("feedback.no_stuck_reserved", "No stuck reserved items", category, ReadinessCheckStatus.Warning, ReadinessCheckSeverity.Warning,
-                $"{staleReserved} reserved item(s) are past the reservation-expiry window.", now,
-                recommendedActionKey: StudentReadinessRepairActions.ExpireStaleReservedItems,
-                repairRiskLevel: ReadinessRepairRiskLevel.Low));
-
-        var staleCount = await _db.StudentActivityReadinessItems.AsNoTracking()
-            .CountAsync(i => i.StudentId == profile.Id && i.Status == ReadinessPoolStatus.Stale, ct);
-
-        checks.Add(staleCount == 0
-            ? Check("reviewscaffold.stale_items", "No stale readiness items", "Review scaffold/readiness", ReadinessCheckStatus.Pass, ReadinessCheckSeverity.Info,
-                "No stale readiness items found.", now)
-            : Check("reviewscaffold.stale_items", "No stale readiness items", "Review scaffold/readiness", ReadinessCheckStatus.Warning, ReadinessCheckSeverity.Info,
-                $"{staleCount} readiness item(s) are marked Stale.", now,
-                recommendedActionKey: StudentReadinessRepairActions.ExpireInvalidReadinessItems,
-                repairRiskLevel: ReadinessRepairRiskLevel.Low));
-
-        // PendingReview/Rejected items legitimately exist in Ready/ReviewOnly/Reserved status while
-        // queued for admin decision — that's expected, not a bug. PassesAdminReviewGate is a computed
-        // property (NotRequired/Approved only), so it can never itself report such an item as visible.
-        // This check is deliberately informational only — it must never report a "not visible" item
-        // as a Warning/Fail, per the requirement that the audit itself never marks pending/rejected
-        // scaffold as student-visible.
-        var pendingOrRejectedCount = await _db.StudentActivityReadinessItems.AsNoTracking()
-            .CountAsync(i => i.StudentId == profile.Id
-                && (i.Status == ReadinessPoolStatus.Ready || i.Status == ReadinessPoolStatus.ReviewOnly || i.Status == ReadinessPoolStatus.Reserved)
-                && i.RequiresAdminReview
-                && (i.AdminReviewStatus == AdminReviewStatus.PendingReview || i.AdminReviewStatus == AdminReviewStatus.Rejected), ct);
-
-        checks.Add(Check("reviewscaffold.pending_not_visible", "Pending/rejected scaffold not visible", "Review scaffold/readiness", ReadinessCheckStatus.Pass, ReadinessCheckSeverity.Info,
-            pendingOrRejectedCount == 0
-                ? "No pending/rejected review-scaffold items are queued for this student."
-                : $"{pendingOrRejectedCount} pending/rejected review-scaffold item(s) queued — correctly hidden from the student by the admin-review gate.",
-            now));
-    }
-
-    // --- 10. Progress/mastery ---
+    // --- 8. Progress/mastery ---
 
     private async Task AddProgressChecksAsync(List<StudentReadinessCheckDto> checks, StudentProfile profile, DateTime now, CancellationToken ct)
     {

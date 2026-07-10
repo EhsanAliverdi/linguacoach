@@ -12,7 +12,10 @@ namespace LinguaCoach.Domain.Entities;
 /// docs/reviews/2026-07-08-bank-first-ai-teaching-clean-architecture-plan.md (Phase B). The
 /// Practice Gym pre-generation queue-slot fingerprint this used to be contrasted against
 /// (<c>PracticeActivityCache.ContentFingerprint</c>) was removed in Phase I2A; see
-/// docs/reviews/2026-07-10-phase-i2a-practice-gym-legacy-deletion-review.md.
+/// docs/reviews/2026-07-10-phase-i2a-practice-gym-legacy-deletion-review.md. The
+/// StudentActivityReadinessItemId FK (readiness-pool provenance snapshot) was removed in
+/// Phase I2C along with the readiness pool itself; see
+/// docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
 ///
 /// Append-only — never mutated after creation. One row per real consumption event, not per
 /// generation attempt.
@@ -23,7 +26,6 @@ public sealed class StudentActivityUsageLog : BaseEntity
 
     // --- What was consumed ---
     public Guid? LearningActivityId { get; private set; }
-    public Guid? StudentActivityReadinessItemId { get; private set; }
     public Guid? SourceTemplateId { get; private set; }
     public Guid? SourceBankItemId { get; private set; }
 
@@ -67,7 +69,6 @@ public sealed class StudentActivityUsageLog : BaseEntity
         string contentFingerprint,
         DateTime consumedAtUtc,
         Guid? learningActivityId = null,
-        Guid? studentActivityReadinessItemId = null,
         Guid? sourceTemplateId = null,
         Guid? sourceBankItemId = null,
         string? patternKey = null,
@@ -94,7 +95,6 @@ public sealed class StudentActivityUsageLog : BaseEntity
         ContentFingerprint = contentFingerprint.Trim();
         ConsumedAtUtc = consumedAtUtc;
         LearningActivityId = learningActivityId;
-        StudentActivityReadinessItemId = studentActivityReadinessItemId;
         SourceTemplateId = sourceTemplateId;
         SourceBankItemId = sourceBankItemId;
         PatternKey = patternKey?.Trim();

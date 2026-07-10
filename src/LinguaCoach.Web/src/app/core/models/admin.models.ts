@@ -655,45 +655,6 @@ export interface AdminAuthEventListQuery {
   to?: string;
 }
 
-export interface ReadinessPoolSourceHealth {
-  source: string;
-  targetCount: number;
-  readyCount: number;
-  reservedCount: number;
-  queuedOrGeneratingCount: number;
-  failedCount: number;
-  staleCount: number;
-  expiredCount: number;
-  skippedCount: number;
-  reviewOnlyCount: number;
-  shortfallCount: number;
-  needsReplenishment: boolean;
-}
-
-// Full pool summary returned by /readiness-pool (includes mastery engine fields from Phase 10Z)
-export interface AdminMasteryPoolSummary {
-  studentId: string;
-  queuedCount: number;
-  generatingCount: number;
-  readyCount: number;
-  reservedCount: number;
-  consumedCount: number;
-  expiredCount: number;
-  failedCount: number;
-  staleCount: number;
-  skippedCount: number;
-  reviewOnlyCount: number;
-  masteredCount: number;
-  needsReviewCount: number;
-  lastEvaluatedAtUtc: string | null;
-}
-
-export interface StudentReadinessPoolHealth {
-  studentId: string;
-  todayLesson: ReadinessPoolSourceHealth;
-  practiceGym: ReadinessPoolSourceHealth;
-}
-
 /** Phase H6 — admin preview of the Daily Lesson module selector's decision for a student. */
 export interface AdminDailyLessonSelectedModule {
   moduleDefinitionId: string;
@@ -740,28 +701,6 @@ export interface AdminPracticeGymModulePreview {
   warnings: string[];
 }
 
-export interface AggregatePoolHealthSummary {
-  totalStudentsWithItems: number;
-  totalQueued: number;
-  totalGenerating: number;
-  totalReady: number;
-  totalReserved: number;
-  totalConsumed: number;
-  totalExpired: number;
-  totalFailed: number;
-  totalStale: number;
-  totalReviewOnly: number;
-  totalSkipped: number;
-  studentsWithNoReadyItems: number;
-  studentsWithFailedItems: number;
-  studentsWithStaleItems: number;
-  studentsBelowMinimumThreshold: number;
-  averageReadyPerStudent: number;
-  oldestReadyItemCreatedAt: string | null;
-  newestItemCreatedAt: string | null;
-  generatedAt: string;
-}
-
 // ── Admin student practice summary ────────────────────────────────────────────
 
 export interface AdminStudentPracticeSuggestionItem {
@@ -799,100 +738,6 @@ export interface AdminStudentProgressSummary {
   weakSkillsCount: number;
   lastLearningActivityAt: string | null;
   currentLearningPhase: string;
-}
-
-// ── Review scaffold dry-run / mastery diagnostics ────────────────────────────
-
-export interface ReviewScaffoldDryRunSummary {
-  generationEnabled: boolean;
-  dryRunOnly: boolean;
-  status: 'Disabled' | 'DryRun' | 'Enabled';
-  studentsConsidered: number;
-  studentsEligibleForReview: number;
-  estimatedReviewOnlyConversions: number;
-  blockedDuplicates: number;
-  blockedInactiveObjectives: number;
-  estimatedNetNewReviewItems: number;
-  requireAdminReview: boolean;
-  maxScaffoldItemsPerStudentPerDay: number;
-  scaffoldAllowedSources: string[];
-  allowTodayLessonInsertion: boolean;
-  minimumConfidenceForReviewNeed: string;
-  adminReviewRequiredCount: number;
-  generatedTodayCount: number;
-  warnings: string[];
-  generatedAt: string;
-}
-
-export interface ReviewScaffoldPendingItem {
-  id: string;
-  studentId: string;
-  source: string;
-  status: string;
-  targetCefrLevel: string;
-  primarySkill: string | null;
-  curriculumObjectiveKey: string | null;
-  curriculumObjectiveTitle: string | null;
-  routingReason: string;
-  createdAt: string;
-}
-
-export type AdminReviewStatus = 'NotRequired' | 'PendingReview' | 'Approved' | 'Rejected';
-
-/** Phase 19B — full detail row for a review scaffold item, including per-item admin approval state. */
-export interface ReviewScaffoldItemDetail {
-  id: string;
-  studentId: string;
-  activityId: string | null;
-  source: string;
-  status: string;
-  targetCefrLevel: string;
-  primarySkill: string | null;
-  curriculumObjectiveKey: string | null;
-  curriculumObjectiveTitle: string | null;
-  patternKey: string | null;
-  activityType: string | null;
-  routingReason: string;
-  adminReviewStatus: AdminReviewStatus;
-  adminReviewedByUserId: string | null;
-  adminReviewedAtUtc: string | null;
-  adminReviewReason: string | null;
-  adminReviewNotes: string | null;
-  isStudentVisible: boolean;
-  isPracticeGymEligible: boolean;
-  createdAt: string;
-}
-
-export interface ReviewScaffoldReviewActionRequest {
-  reason?: string;
-  notes?: string;
-}
-
-/** Phase 19C — brief row used in the pilot summary's recent-items lists. */
-export interface ReviewScaffoldPilotItem {
-  id: string;
-  studentId: string;
-  primarySkill: string | null;
-  curriculumObjectiveTitle: string | null;
-  status: string;
-  createdAt: string;
-}
-
-/** Phase 19C — Practice Gym review scaffold pilot admin monitoring summary. */
-export interface ReviewScaffoldPilotSummary {
-  practiceGymPilotEnabled: boolean;
-  allowTodayLessonInsertion: boolean;
-  requireAdminReview: boolean;
-  maxStudentVisibleScaffoldSuggestions: number;
-  approvedCount: number;
-  studentVisibleCount: number;
-  pendingReviewCount: number;
-  rejectedCount: number;
-  consumedCount: number;
-  skippedOrExpiredCount: number;
-  recentStudentVisibleItems: ReviewScaffoldPilotItem[];
-  recentConsumedItems: ReviewScaffoldPilotItem[];
-  generatedAt: string;
 }
 
 // ── Phase 20A — Admin AI Operations Dashboard ────────────────────────────────
@@ -1001,17 +846,6 @@ export interface AiOperationsGenerationQualitySummary {
   latestFailures: AiOperationsValidationFailureItem[];
 }
 
-export interface AiOperationsReadinessPoolSummary {
-  enableReviewScaffoldGeneration: boolean;
-  dryRunOnly: boolean;
-  requireAdminReview: boolean;
-  practiceGymPilotEnabled: boolean;
-  allowTodayLessonInsertion: boolean;
-  maxStudentVisibleScaffoldSuggestions: number;
-  pendingReviewCount: number;
-  approvedCount: number;
-}
-
 export interface AiOperationsSignalGateSummary {
   speakingCefrUpdatesEnabled: boolean;
   writingCefrUpdatesEnabled: boolean;
@@ -1046,7 +880,6 @@ export interface AdminAiOperationsSummary {
   speakingEvaluationSummary: AiOperationsSpeakingSummary;
   writingEvaluationSummary: AiOperationsWritingSummary;
   generationQualitySummary: AiOperationsGenerationQualitySummary;
-  readinessPoolAiSummary: AiOperationsReadinessPoolSummary;
   signalGateSummary: AiOperationsSignalGateSummary;
   recentFailures: AiOperationsRecentFailureItem[];
 }
@@ -1589,7 +1422,10 @@ export interface WritingSignalSafetySummaryDto {
 
 // ── Runtime settings / feature gates (Phase 20B) ───────────────────────────────
 
-export type FeatureGateCategory = 'reviewScaffoldPracticeGymPilot' | 'readinessPoolLessonGeneration' | 'aiSignalSafety';
+// Phase I2C: 'reviewScaffoldPracticeGymPilot' removed from this union — the readiness-pool
+// feature gate groups on that category were deleted. 'activityFeedback' (a legitimate backend
+// FeatureGateCategory value, pre-existing) is not listed here either — out of scope for this pass.
+export type FeatureGateCategory = 'readinessPoolLessonGeneration' | 'aiSignalSafety';
 export type FeatureGateDataType = 'boolean' | 'integer' | 'string' | 'stringArray';
 export type FeatureGateRiskLevel = 'low' | 'medium' | 'high' | 'critical';
 export type FeatureGateValueSource = 'appSettings' | 'databaseOverride' | 'default' | 'hardcoded';

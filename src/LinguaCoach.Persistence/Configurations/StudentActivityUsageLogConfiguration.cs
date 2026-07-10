@@ -19,7 +19,6 @@ internal sealed class StudentActivityUsageLogConfiguration
         builder.Property(e => e.StudentProfileId).HasColumnName("student_profile_id").IsRequired();
 
         builder.Property(e => e.LearningActivityId).HasColumnName("learning_activity_id");
-        builder.Property(e => e.StudentActivityReadinessItemId).HasColumnName("student_activity_readiness_item_id");
         builder.Property(e => e.SourceTemplateId).HasColumnName("source_template_id");
         builder.Property(e => e.SourceBankItemId).HasColumnName("source_bank_item_id");
 
@@ -55,10 +54,8 @@ internal sealed class StudentActivityUsageLogConfiguration
             .HasForeignKey(e => e.LearningActivityId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne<StudentActivityReadinessItem>()
-            .WithMany()
-            .HasForeignKey(e => e.StudentActivityReadinessItemId)
-            .OnDelete(DeleteBehavior.Restrict);
+        // Note: StudentActivityReadinessItemId column/FK removed in Phase I2C along with the
+        // readiness pool — see docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
 
         // Note: SourceTemplateId no longer has a FK relation — the ActivityTemplate entity/table
         // was removed in Phase I2A (legacy fallback deletion). The column and the novelty-policy

@@ -351,6 +351,5 @@ public sealed class ModuleGenerationServiceTests : IDisposable
         (await _db.StudentProfiles.CountAsync()).Should().Be(0);
         (await _db.LearningActivities.CountAsync()).Should().Be(0);
         (await _db.LearningModules.CountAsync()).Should().Be(0);
-        (await _db.StudentActivityReadinessItems.CountAsync()).Should().Be(0);
     }
 }

@@ -6,7 +6,7 @@ import { AdminApiService } from '../../../core/services/admin.api.service';
 import {
   UpdateStudentProfileRequest, ResetStudentRequest, StudentLifecycleStageName,
   AdminStudentLearningMemory, ResetStudentResponse, AdminActivityHistoryItem,
-  AdminStudentDetail, StudentAuditHistoryItem, StudentReadinessPoolHealth, AdminMasteryPoolSummary,
+  AdminStudentDetail, StudentAuditHistoryItem,
   AdminDailyLessonModulePreview, AdminPracticeGymModulePreview,
   AdminPlacementLatestResponse, AdminPlacementProgress, AdminStudentPracticeSummary,
   AdminLearningPlanProgress, AdminStudentProgressSummary, AdminStudentSpeakingAttemptsResult,
@@ -19,7 +19,6 @@ import {
   SpAdminAlertComponent,
   SpAdminAvatarComponent,
   SpAdminBadgeComponent,
-  SpAdminBreakdownBarsComponent,
   SpAdminButtonComponent,
   SpAdminButtonGroupComponent,
   SpAdminButtonGroupAction,
@@ -36,12 +35,10 @@ import {
   SpAdminNativeSelectOption,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
-  SpAdminRingMetricComponent,
   SpAdminSlideOverComponent,
   SpAdminTableComponent,
   SpAdminTextareaComponent,
 } from '../../../design-system/admin';
-import { BreakdownBarItem } from '../../../design-system/admin';
 import { lifecycleLabel, lifecycleTone, onboardingLabel, onboardingTone } from '../../../design-system/admin/utils/admin-badge.utils';
 import { SpAdminBadgeTone } from '../../../design-system/admin/components/badge/sp-admin-badge.component';
 
@@ -66,7 +63,6 @@ interface StudentEditForm {
     SpAdminAlertComponent,
     SpAdminAvatarComponent,
     SpAdminBadgeComponent,
-    SpAdminBreakdownBarsComponent,
     SpAdminButtonComponent,
     SpAdminButtonGroupComponent,
     SpAdminCardComponent,
@@ -81,7 +77,6 @@ interface StudentEditForm {
     SpAdminNativeSelectComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
-    SpAdminRingMetricComponent,
     SpAdminSlideOverComponent,
     SpAdminTableComponent,
     SpAdminTextareaComponent,
@@ -156,10 +151,6 @@ export class AdminStudentDetailComponent implements OnInit {
     ...this.experienceLevels.map(l => ({ value: l.value, label: l.label })),
   ];
 
-  poolHealth = signal<StudentReadinessPoolHealth | null>(null);
-  poolHealthLoading = signal(true);
-  poolHealthError = signal('');
-
   // Phase H6 — Daily Lesson module selection diagnostic (read-only preview)
   dailyLessonModulePreview = signal<AdminDailyLessonModulePreview | null>(null);
   dailyLessonModulePreviewLoading = signal(true);
@@ -200,10 +191,6 @@ export class AdminStudentDetailComponent implements OnInit {
     }
   });
 
-  masteryPoolSummary = signal<AdminMasteryPoolSummary | null>(null);
-  masteryPoolSummaryLoading = signal(true);
-  masteryPoolSummaryError = signal('');
-
   practiceSummary = signal<AdminStudentPracticeSummary | null>(null);
   practiceSummaryLoading = signal(true);
   practiceSummaryError = signal('');
@@ -239,51 +226,9 @@ export class AdminStudentDetailComponent implements OnInit {
   expiringPlacement = signal(false);
   placementActionError = signal('');
 
-  readonly lessonRingPct = computed(() => {
-    const ph = this.poolHealth();
-    if (!ph) return 0;
-    const t = ph.todayLesson.targetCount;
-    return t > 0 ? Math.round((ph.todayLesson.readyCount / t) * 100) : 0;
-  });
-
-  readonly gymRingPct = computed(() => {
-    const ph = this.poolHealth();
-    if (!ph) return 0;
-    const t = ph.practiceGym.targetCount;
-    return t > 0 ? Math.round((ph.practiceGym.readyCount / t) * 100) : 0;
-  });
-
-  readonly lessonPoolBreakdown = computed<BreakdownBarItem[]>(() => {
-    const ph = this.poolHealth();
-    if (!ph) return [];
-    const l = ph.todayLesson;
-    const tot = l.targetCount || 1;
-    return ([
-      { label: 'Ready',       value: l.readyCount,              pct: Math.round((l.readyCount              / tot) * 100), tone: 'green'  as const },
-      { label: 'Review only', value: l.reviewOnlyCount,         pct: Math.round((l.reviewOnlyCount         / tot) * 100), tone: 'teal'   as const },
-      { label: 'Queued',      value: l.queuedOrGeneratingCount, pct: Math.round((l.queuedOrGeneratingCount / tot) * 100), tone: 'indigo' as const },
-      { label: 'Shortfall',   value: l.shortfallCount,          pct: Math.round((l.shortfallCount          / tot) * 100), tone: 'amber'  as const },
-      { label: 'Skipped',     value: l.skippedCount,            pct: Math.round((l.skippedCount            / tot) * 100), tone: 'slate'   as const },
-      { label: 'Failed',      value: l.failedCount,             pct: Math.round((l.failedCount             / tot) * 100), tone: 'danger' as const },
-      { label: 'Stale',       value: l.staleCount,              pct: Math.round((l.staleCount              / tot) * 100), tone: 'slate'  as const },
-    ] as BreakdownBarItem[]).filter(i => i.value > 0);
-  });
-
-  readonly gymPoolBreakdown = computed<BreakdownBarItem[]>(() => {
-    const ph = this.poolHealth();
-    if (!ph) return [];
-    const g = ph.practiceGym;
-    const tot = g.targetCount || 1;
-    return ([
-      { label: 'Ready',       value: g.readyCount,              pct: Math.round((g.readyCount              / tot) * 100), tone: 'green'  as const },
-      { label: 'Review only', value: g.reviewOnlyCount,         pct: Math.round((g.reviewOnlyCount         / tot) * 100), tone: 'teal'   as const },
-      { label: 'Queued',      value: g.queuedOrGeneratingCount, pct: Math.round((g.queuedOrGeneratingCount / tot) * 100), tone: 'indigo' as const },
-      { label: 'Shortfall',   value: g.shortfallCount,          pct: Math.round((g.shortfallCount          / tot) * 100), tone: 'amber'  as const },
-      { label: 'Skipped',     value: g.skippedCount,            pct: Math.round((g.skippedCount            / tot) * 100), tone: 'slate'   as const },
-      { label: 'Failed',      value: g.failedCount,             pct: Math.round((g.failedCount             / tot) * 100), tone: 'danger' as const },
-      { label: 'Stale',       value: g.staleCount,              pct: Math.round((g.staleCount              / tot) * 100), tone: 'slate'  as const },
-    ] as BreakdownBarItem[]).filter(i => i.value > 0);
-  });
+  // Phase I2C: lessonRingPct/gymRingPct/lessonPoolBreakdown/gymPoolBreakdown removed here — they
+  // read from the readiness pool (StudentReadinessPoolHealth), which was deleted. See
+  // docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
 
   readonly lifecycleLabel = lifecycleLabel;
   readonly lifecycleTone = lifecycleTone;
@@ -348,9 +293,8 @@ export class AdminStudentDetailComponent implements OnInit {
     this.loadHistory(id);
     this.loadAuditHistory(id);
     this.loadPolicy(id);
-    this.loadPoolHealth(id);
+    this.loadStudentDiagnostics(id);
     this.loadReadiness(id);
-    this.loadMasteryPoolSummary(id);
     this.loadPlacement(id);
     this.loadSpeakingAttempts(id);
     this.loadWritingEvaluations(id);
@@ -368,14 +312,10 @@ export class AdminStudentDetailComponent implements OnInit {
     });
   }
 
-  private loadPoolHealth(id: string): void {
-    this.poolHealthLoading.set(true);
-    this.poolHealthError.set('');
-    this.adminApi.getStudentReadinessPoolHealth(id).subscribe({
-      next: ph => { this.poolHealth.set(ph); this.poolHealthLoading.set(false); },
-      error: () => { this.poolHealthError.set('Could not load delivery queue health.'); this.poolHealthLoading.set(false); },
-    });
-
+  // Phase I2C: renamed from loadPoolHealth — the getStudentReadinessPoolHealth call was removed
+  // (readiness pool deleted); this method still loads the other per-student diagnostics it
+  // always bundled. See docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
+  private loadStudentDiagnostics(id: string): void {
     this.adminApi.getStudentPracticeSummary(id).subscribe({
       next: ps => { this.practiceSummary.set(ps); this.practiceSummaryLoading.set(false); },
       error: () => { this.practiceSummaryError.set('Could not load practice summary.'); this.practiceSummaryLoading.set(false); },
@@ -592,15 +532,6 @@ export class AdminStudentDetailComponent implements OnInit {
         this.expiringPlacement.set(false);
         this.placementActionError.set(err.error?.error ?? 'Could not expire placement.');
       },
-    });
-  }
-
-  private loadMasteryPoolSummary(id: string): void {
-    this.masteryPoolSummaryLoading.set(true);
-    this.masteryPoolSummaryError.set('');
-    this.adminApi.getStudentMasteryPoolSummary(id).subscribe({
-      next: s => { this.masteryPoolSummary.set(s); this.masteryPoolSummaryLoading.set(false); },
-      error: () => { this.masteryPoolSummaryError.set('Could not load mastery summary.'); this.masteryPoolSummaryLoading.set(false); },
     });
   }
 

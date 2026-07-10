@@ -1,10 +1,7 @@
 using LinguaCoach.Application.Mastery;
 using LinguaCoach.Application.Memory;
-using LinguaCoach.Domain.Constants;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
-using LinguaCoach.Persistence;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -16,7 +13,6 @@ namespace LinguaCoach.Infrastructure.Mastery;
 /// </summary>
 public sealed class StudentMasteryEvaluationService : IStudentMasteryEvaluationService
 {
-    private readonly LinguaCoachDbContext _db;
     private readonly IStudentLearningLedger _ledger;
     private readonly MasteryOptions _opts;
     private readonly ILogger<StudentMasteryEvaluationService> _logger;
@@ -35,22 +31,11 @@ public sealed class StudentMasteryEvaluationService : IStudentMasteryEvaluationS
         LearningEventOutcome.NeedsReview
     ];
 
-    // Terminal readiness statuses — never demote further.
-    private static readonly HashSet<ReadinessPoolStatus> TerminalStatuses =
-    [
-        ReadinessPoolStatus.Consumed,
-        ReadinessPoolStatus.Expired,
-        ReadinessPoolStatus.Failed,
-        ReadinessPoolStatus.Skipped
-    ];
-
     public StudentMasteryEvaluationService(
-        LinguaCoachDbContext db,
         IStudentLearningLedger ledger,
         IOptions<MasteryOptions> opts,
         ILogger<StudentMasteryEvaluationService> logger)
     {
-        _db = db;
         _ledger = ledger;
         _opts = opts.Value;
         _logger = logger;
@@ -100,10 +85,9 @@ public sealed class StudentMasteryEvaluationService : IStudentMasteryEvaluationS
             }
         }
 
-        var demoted = await EvaluateAndDemoteReadinessItemsAsync(studentId, ct);
-
-        // Count demotion breakdown from the log (approximated from demoted total here;
-        // detailed counts are tracked inside EvaluateAndDemoteReadinessItemsAsync).
+        // Phase I2C: the readiness-pool demotion sweep that used to run here was removed along
+        // with StudentActivityReadinessItem. DemotedCount/SkippedCount/MarkedReviewOnlyCount are
+        // always 0 now — see docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
         return new StudentMasteryReport
         {
             StudentId = studentId,
@@ -113,9 +97,9 @@ public sealed class StudentMasteryEvaluationService : IStudentMasteryEvaluationS
             CompletedObjectiveKeys = completed,
             WeakObjectiveKeys = weak,
             AtRiskObjectiveKeys = atRisk,
-            DemotedCount = demoted,
-            SkippedCount = 0,          // Per-item breakdown not tracked at report level.
-            MarkedReviewOnlyCount = 0  // Same — see EvaluateAndDemoteReadinessItemsAsync logs.
+            DemotedCount = 0,
+            SkippedCount = 0,
+            MarkedReviewOnlyCount = 0
         };
     }
 
@@ -131,62 +115,6 @@ public sealed class StudentMasteryEvaluationService : IStudentMasteryEvaluationS
             .ToList();
 
         return ComputeSignal(objectiveKey, relevant);
-    }
-
-    public async Task<ReadinessDemotionDecision> EvaluateReadinessItemFitAsync(
-        Guid studentId,
-        Guid readinessItemId,
-        CancellationToken ct = default)
-    {
-        var item = await _db.Set<StudentActivityReadinessItem>()
-            .FirstOrDefaultAsync(i => i.Id == readinessItemId && i.StudentId == studentId, ct);
-
-        if (item is null)
-            return ReadinessDemotionDecision.NoChange;
-
-        return await DecideDemotionAsync(studentId, item, ct);
-    }
-
-    public async Task<int> EvaluateAndDemoteReadinessItemsAsync(
-        Guid studentId,
-        CancellationToken ct = default)
-    {
-        var items = await _db.Set<StudentActivityReadinessItem>()
-            .Where(i => i.StudentId == studentId)
-            .ToListAsync(ct);
-
-        var changed = 0;
-
-        foreach (var item in items)
-        {
-            if (ct.IsCancellationRequested) break;
-
-            try
-            {
-                var decision = await DecideDemotionAsync(studentId, item, ct);
-                ApplyDecision(item, decision);
-                item.RecordEvaluation();
-
-                if (decision != ReadinessDemotionDecision.NoChange &&
-                    decision != ReadinessDemotionDecision.KeepReady)
-                    changed++;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex,
-                    "Mastery demotion failed for item {ItemId} student {StudentId}.",
-                    item.Id, studentId);
-            }
-        }
-
-        if (changed > 0)
-            await _db.SaveChangesAsync(ct);
-
-        _logger.LogInformation(
-            "Mastery demotion sweep complete for student {StudentId}. Items changed: {Changed}.",
-            studentId, changed);
-
-        return changed;
     }
 
     // -------------------------------------------------------------------------
@@ -285,96 +213,6 @@ public sealed class StudentMasteryEvaluationService : IStudentMasteryEvaluationS
         return MasteryStatus.NeedsPractice;
     }
 
-    private async Task<ReadinessDemotionDecision> DecideDemotionAsync(
-        Guid studentId,
-        StudentActivityReadinessItem item,
-        CancellationToken ct)
-    {
-        // Terminal states — never touch.
-        if (TerminalStatuses.Contains(item.Status))
-            return ReadinessDemotionDecision.NoChange;
-
-        // Age check: old + never consumed → Expire
-        var ageDays = (DateTime.UtcNow - item.CreatedAt).TotalDays;
-        if (ageDays > _opts.StaleDaysThreshold && item.ConsumedAt is null)
-            return ReadinessDemotionDecision.Expire;
-
-        // CEFR mismatch check
-        var studentCefr = await GetStudentCefrAsync(studentId, ct);
-        if (studentCefr is not null && item.TargetCefrLevel is not null)
-        {
-            var allLevels = CefrLevelConstants.All.ToList();
-            var itemIdx = allLevels.IndexOf(item.TargetCefrLevel.ToUpperInvariant());
-            var studentIdx = allLevels.IndexOf(studentCefr.ToUpperInvariant());
-            if (itemIdx >= 0 && studentIdx >= 0 && Math.Abs(itemIdx - studentIdx) > 1)
-                return ReadinessDemotionDecision.MarkStale;
-        }
-
-        // Mastery check
-        var objectiveKey = item.CurriculumObjectiveKey ?? item.PrimarySkill;
-        if (objectiveKey is null)
-            return ReadinessDemotionDecision.KeepReady;
-
-        var signal = await EvaluateObjectiveMasteryAsync(studentId, objectiveKey, ct);
-
-        if (signal.MasteryStatus == MasteryStatus.Mastered)
-        {
-            // Review-eligible: item has IsLowerLevelContent or ReviewOnly routing
-            var isReviewEligible = item.IsLowerLevelContent
-                || item.RoutingReason == RoutingReason.Review
-                || item.Status == ReadinessPoolStatus.ReviewOnly;
-
-            return isReviewEligible
-                ? ReadinessDemotionDecision.ConvertToReviewOnly
-                : ReadinessDemotionDecision.Skip;
-        }
-
-        if (signal.MasteryStatus is MasteryStatus.AtRisk or MasteryStatus.NeedsPractice)
-            return ReadinessDemotionDecision.KeepReady;
-
-        return ReadinessDemotionDecision.KeepReady;
-    }
-
-    private void ApplyDecision(StudentActivityReadinessItem item, ReadinessDemotionDecision decision)
-    {
-        switch (decision)
-        {
-            case ReadinessDemotionDecision.ConvertToReviewOnly:
-                if (item.Status is ReadinessPoolStatus.Ready or ReadinessPoolStatus.Reserved)
-                    item.MarkReviewOnly("Objective mastered — converted to review only.");
-                break;
-
-            case ReadinessDemotionDecision.Skip:
-                if (item.Status is not (ReadinessPoolStatus.Consumed
-                    or ReadinessPoolStatus.Expired
-                    or ReadinessPoolStatus.Skipped))
-                    item.MarkSkipped("Objective mastered — not useful for review.");
-                break;
-
-            case ReadinessDemotionDecision.MarkStale:
-                if (item.Status is ReadinessPoolStatus.Ready or ReadinessPoolStatus.Reserved)
-                    item.MarkStale("CEFR level mismatch exceeds 1 level.");
-                break;
-
-            case ReadinessDemotionDecision.Expire:
-                if (item.Status is not (ReadinessPoolStatus.Consumed or ReadinessPoolStatus.Expired))
-                    item.Expire("Item exceeded stale-days threshold without being consumed.");
-                break;
-
-            case ReadinessDemotionDecision.KeepReady:
-            case ReadinessDemotionDecision.NoChange:
-            default:
-                break;
-        }
-    }
-
-    private async Task<string?> GetStudentCefrAsync(Guid studentId, CancellationToken ct)
-    {
-        return await _db.Set<StudentProfile>()
-            .Where(p => p.Id == studentId)
-            .Select(p => p.CefrLevel)
-            .FirstOrDefaultAsync(ct);
-    }
 }
 
 /// <summary>Extension to extract the curriculum objective key from a learning event.</summary>

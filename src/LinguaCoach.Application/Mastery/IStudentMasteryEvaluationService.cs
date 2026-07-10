@@ -1,18 +1,17 @@
-using LinguaCoach.Domain.Enums;
-
 namespace LinguaCoach.Application.Mastery;
 
 /// <summary>
 /// Evaluates mastery for students based on their learning event history.
-/// Deterministic and side-effect-free (read path) except for EvaluateAndDemoteReadinessItemsAsync
-/// which writes demotion state back to the readiness pool.
-/// No AI calls — all rules are rule-based thresholds.
+/// Deterministic and side-effect-free — all rules are rule-based thresholds, no AI calls.
+/// Phase I2C: the readiness-pool demotion side effect (EvaluateReadinessItemFitAsync /
+/// EvaluateAndDemoteReadinessItemsAsync) was removed along with StudentActivityReadinessItem —
+/// see docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md. This service is now
+/// purely a read path.
 /// </summary>
 public interface IStudentMasteryEvaluationService
 {
     /// <summary>
     /// Evaluates mastery across all skills/objectives the student has touched.
-    /// Also calls EvaluateAndDemoteReadinessItemsAsync internally.
     /// </summary>
     Task<StudentMasteryReport> EvaluateStudentAsync(
         Guid studentId,
@@ -26,22 +25,5 @@ public interface IStudentMasteryEvaluationService
     Task<ObjectiveMasterySignal> EvaluateObjectiveMasteryAsync(
         Guid studentId,
         string objectiveKey,
-        CancellationToken ct = default);
-
-    /// <summary>
-    /// Determines what demotion action (if any) should be applied to a single readiness item.
-    /// Does NOT mutate the item — call EvaluateAndDemoteReadinessItemsAsync to apply.
-    /// </summary>
-    Task<ReadinessDemotionDecision> EvaluateReadinessItemFitAsync(
-        Guid studentId,
-        Guid readinessItemId,
-        CancellationToken ct = default);
-
-    /// <summary>
-    /// Evaluates all active readiness pool items for the student and applies demotion decisions.
-    /// Calls RecordEvaluation() on each item and saves. Returns the total number of items changed.
-    /// </summary>
-    Task<int> EvaluateAndDemoteReadinessItemsAsync(
-        Guid studentId,
         CancellationToken ct = default);
 }

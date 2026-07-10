@@ -61,9 +61,6 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     // CefrGrammarProfileEntry/CefrReadingReference/CefrReadingPassage (dropped this phase).
     public DbSet<ResourceBankItem> ResourceBankItems => Set<ResourceBankItem>();
 
-    // Phase 10M — Student activity readiness pool
-    public DbSet<StudentActivityReadinessItem> StudentActivityReadinessItems => Set<StudentActivityReadinessItem>();
-
     // Phase B — Repetition/novelty foundation (real content-usage history)
     public DbSet<StudentActivityUsageLog> StudentActivityUsageLogs => Set<StudentActivityUsageLog>();
 
@@ -156,13 +153,6 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
         if (Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true)
         {
             modelBuilder.Entity<LearningPath>()
-                .Property<uint>("xmin")
-                .HasColumnName("xmin")
-                .HasColumnType("xid")
-                .ValueGeneratedOnAddOrUpdate()
-                .IsConcurrencyToken();
-
-            modelBuilder.Entity<StudentActivityReadinessItem>()
                 .Property<uint>("xmin")
                 .HasColumnName("xmin")
                 .HasColumnType("xid")

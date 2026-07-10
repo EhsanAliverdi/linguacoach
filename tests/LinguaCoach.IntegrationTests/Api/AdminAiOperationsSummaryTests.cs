@@ -12,8 +12,10 @@ namespace LinguaCoach.IntegrationTests.Api;
 /// <summary>
 /// Phase 20A — read-only admin AI operations dashboard summary endpoint.
 /// Verifies: auth guards, safe empty-database response, correct operational counts
-/// once speaking/writing evaluations exist, review-scaffold/signal-gate state visibility,
+/// once speaking/writing evaluations exist, signal-gate state visibility,
 /// and that no raw prompt/provider payload/secret text ever leaks into the response.
+/// Phase I2C: the readinessPoolAiSummary section was removed along with the readiness pool —
+/// see docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
 /// </summary>
 public sealed class AdminAiOperationsSummaryTests : IClassFixture<ApiTestFactory>
 {
@@ -65,7 +67,6 @@ public sealed class AdminAiOperationsSummaryTests : IClassFixture<ApiTestFactory
         Assert.True(body.TryGetProperty("speakingEvaluationSummary", out _));
         Assert.True(body.TryGetProperty("writingEvaluationSummary", out _));
         Assert.True(body.TryGetProperty("generationQualitySummary", out _));
-        Assert.True(body.TryGetProperty("readinessPoolAiSummary", out _));
         Assert.True(body.TryGetProperty("signalGateSummary", out _));
         Assert.True(body.TryGetProperty("recentFailures", out _));
         Assert.True(body.TryGetProperty("unavailableSections", out _));
@@ -159,25 +160,9 @@ public sealed class AdminAiOperationsSummaryTests : IClassFixture<ApiTestFactory
         Assert.Contains(recentFailures, f => f.GetProperty("area").GetString() == "Writing");
     }
 
-    // ── Review scaffold / pilot config state ─────────────────────────────────
-
-    [Fact]
-    public async Task Summary_IncludesReviewScaffoldAndPilotConfigState()
-    {
-        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
-        var response = await ClientWithToken(adminToken).GetAsync("/api/admin/ai-operations/summary");
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadFromJsonAsync<JsonElement>(
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-        var readiness = body.GetProperty("readinessPoolAiSummary");
-        // Defaults must remain conservative — this endpoint must never report them as on.
-        Assert.False(readiness.GetProperty("enableReviewScaffoldGeneration").GetBoolean());
-        Assert.False(readiness.GetProperty("practiceGymPilotEnabled").GetBoolean());
-        Assert.False(readiness.GetProperty("allowTodayLessonInsertion").GetBoolean());
-        Assert.True(readiness.GetProperty("requireAdminReview").GetBoolean());
-    }
+    // Phase I2C: Summary_IncludesReviewScaffoldAndPilotConfigState removed — the
+    // readinessPoolAiSummary section it verified was deleted along with the readiness pool. See
+    // docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
 
     // ── Signal gate state ─────────────────────────────────────────────────────
 

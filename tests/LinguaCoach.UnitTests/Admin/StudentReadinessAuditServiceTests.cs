@@ -3,7 +3,6 @@ using LinguaCoach.Application.Admin.StudentReadiness;
 using LinguaCoach.Application.LearningPlan;
 using LinguaCoach.Application.Memory;
 using LinguaCoach.Application.Progress;
-using LinguaCoach.Application.ReadinessPool;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.Admin;
@@ -19,6 +18,11 @@ namespace LinguaCoach.UnitTests.Admin;
 /// Unit tests for StudentReadinessAuditService (Phase 20D). Uses SQLite in-memory for real
 /// data queries and lightweight fakes for the collaborating services so specific readiness
 /// scenarios can be triggered deterministically.
+/// Phase I2C: the readiness-pool-dependent checks (Practice Gym pool health/pilot gate,
+/// activity-content pattern/malformed-content validity, listening-audio-for-ready-items, and the
+/// stale/pending-reserved-item feedback checks) were removed along with StudentActivityReadinessItem
+/// — see docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md. Tests that exercised
+/// those checks were removed with them.
 /// </summary>
 public sealed class StudentReadinessAuditServiceTests : IDisposable
 {
@@ -26,9 +30,7 @@ public sealed class StudentReadinessAuditServiceTests : IDisposable
     private FakeLearningPlanService _learningPlan = new();
     private FakeProgressHandler _progressHandler = new();
     private FakeLedger _ledger = new();
-    private FakeReplenishment _replenishment = new();
     private FakeExerciseTypeRegistry _exerciseTypes = new();
-    private FakeSettingsProvider _settingsProvider = new(new ReadinessPoolReplenishmentOptions());
 
     public StudentReadinessAuditServiceTests()
     {
@@ -47,7 +49,7 @@ public sealed class StudentReadinessAuditServiceTests : IDisposable
     }
 
     private StudentReadinessAuditService BuildSut() => new(
-        _db, _learningPlan, _progressHandler, _ledger, _replenishment, _exerciseTypes, _settingsProvider,
+        _db, _learningPlan, _progressHandler, _ledger, _exerciseTypes,
         NullLogger<StudentReadinessAuditService>.Instance);
 
     private StudentProfile SeedCourseReadyStudent(string cefr = "B2")
@@ -137,157 +139,32 @@ public sealed class StudentReadinessAuditServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task PracticeGymEmptyButReplenishing_IsPass()
+    public async Task PracticeGymCheck_IsModuleBasedNotApplicable()
     {
         _exerciseTypes.ForToday = [MakeExerciseType()];
         var student = SeedCourseReadyStudent();
-        _replenishment.Health = new PoolHealthSummary
-        {
-            StudentId = student.Id, Source = ReadinessPoolSource.PracticeGym, TargetCount = 10,
-            ReadyCount = 0, ReservedCount = 0, QueuedOrGeneratingCount = 2, FailedCount = 0,
-            StaleCount = 0, ExpiredCount = 0, SkippedCount = 0, ReviewOnlyCount = 0,
-        };
 
         var sut = BuildSut();
         var summary = await sut.GetReadinessAsync(student.Id);
 
-        var check = summary!.Checks.Single(c => c.Key == "practicegym.pool_health");
-        Assert.Equal(ReadinessCheckStatus.Pass, check.Status);
+        var check = summary!.Checks.Single(c => c.Key == "practicegym.module_based");
+        Assert.Equal(ReadinessCheckStatus.NotApplicable, check.Status);
+        Assert.Equal(ReadinessCheckSeverity.Info, check.Severity);
     }
 
     [Fact]
-    public async Task PracticeGymEmptyAndFailedAndNotReplenishing_IsWarning()
+    public async Task TtsSetting_ReportsCurrentValue()
     {
         _exerciseTypes.ForToday = [MakeExerciseType()];
         var student = SeedCourseReadyStudent();
-        _replenishment.Health = new PoolHealthSummary
-        {
-            StudentId = student.Id, Source = ReadinessPoolSource.PracticeGym, TargetCount = 10,
-            ReadyCount = 0, ReservedCount = 0, QueuedOrGeneratingCount = 0, FailedCount = 3,
-            StaleCount = 0, ExpiredCount = 0, SkippedCount = 0, ReviewOnlyCount = 0,
-        };
-
-        var sut = BuildSut();
-        var summary = await sut.GetReadinessAsync(student.Id);
-
-        var check = summary!.Checks.Single(c => c.Key == "practicegym.pool_health");
-        Assert.Equal(ReadinessCheckStatus.Warning, check.Status);
-        Assert.Equal(StudentReadinessRepairActions.RefillPracticeGymIfEmpty, check.RecommendedActionKey);
-    }
-
-    [Fact]
-    public async Task InvalidPatternKeyedReadinessItem_IsDetected()
-    {
-        _exerciseTypes.ForToday = [MakeExerciseType()];
-        var student = SeedCourseReadyStudent();
-        _db.StudentActivityReadinessItems.Add(new StudentActivityReadinessItem(
-            studentId: student.Id, source: ReadinessPoolSource.PracticeGym, targetCefrLevel: "B2",
-            routingReason: RoutingReason.Normal, isLowerLevelContent: false, patternKey: "unknown_pattern_key"));
-        var item = _db.StudentActivityReadinessItems.Local.First();
-        item.MarkGenerating();
-        item.MarkReady();
-        _db.SaveChanges();
-
-        var sut = BuildSut();
-        var summary = await sut.GetReadinessAsync(student.Id);
-
-        var check = summary!.Checks.Single(c => c.Key == "activities.pattern_keys_valid");
-        Assert.Equal(ReadinessCheckStatus.Warning, check.Status);
-    }
-
-    [Fact]
-    public async Task MissingTtsAudio_OnlyFlaggedWhenTtsEnabled()
-    {
-        _exerciseTypes.ForToday = [MakeExerciseType()];
-        var student = SeedCourseReadyStudent();
-
-        var activity = new LearningActivity(
-            ActivityType.ListeningComprehension, ActivitySource.AiGenerated, "Listening practice", "B2",
-            "{\"transcript\":\"hi\"}");
-        _db.LearningActivities.Add(activity);
-        _db.StudentActivityReadinessItems.Add(new StudentActivityReadinessItem(
-            studentId: student.Id, source: ReadinessPoolSource.TodayLesson, targetCefrLevel: "B2",
-            routingReason: RoutingReason.Normal, isLowerLevelContent: false));
-        var item = _db.StudentActivityReadinessItems.Local.First();
-        item.MarkGenerating();
-        item.MarkReady(learningActivityId: activity.Id);
         _db.LessonGenerationSettings.Add(new LessonGenerationSettings());
         _db.SaveChanges();
 
         var sut = BuildSut();
         var summary = await sut.GetReadinessAsync(student.Id);
 
-        var check = summary!.Checks.Single(c => c.Key == "audio.missing_for_listening");
-        Assert.Equal(ReadinessCheckStatus.Warning, check.Status); // TTS enabled by default
-    }
-
-    [Fact]
-    public async Task StaleReservedItem_IsDetected()
-    {
-        _exerciseTypes.ForToday = [MakeExerciseType()];
-        var student = SeedCourseReadyStudent();
-        var item = new StudentActivityReadinessItem(
-            studentId: student.Id, source: ReadinessPoolSource.PracticeGym, targetCefrLevel: "B2",
-            routingReason: RoutingReason.Normal, isLowerLevelContent: false);
-        _db.StudentActivityReadinessItems.Add(item);
-        item.MarkGenerating();
-        item.MarkReady();
-        item.Reserve();
-        _db.SaveChanges();
-
-        // Force ReservedAt into the past via reflection (test-only, mirrors pattern used elsewhere in this suite).
-        typeof(StudentActivityReadinessItem).GetProperty(nameof(StudentActivityReadinessItem.ReservedAt))!
-            .SetValue(item, DateTime.UtcNow.AddHours(-10));
-        _db.SaveChanges();
-
-        var sut = BuildSut();
-        var summary = await sut.GetReadinessAsync(student.Id);
-
-        var check = summary!.Checks.Single(c => c.Key == "feedback.no_stuck_reserved");
-        Assert.Equal(ReadinessCheckStatus.Warning, check.Status);
-        Assert.Equal(StudentReadinessRepairActions.ExpireStaleReservedItems, check.RecommendedActionKey);
-    }
-
-    [Fact]
-    public async Task PendingReviewScaffoldItem_NeverReportedVisible()
-    {
-        _exerciseTypes.ForToday = [MakeExerciseType()];
-        var student = SeedCourseReadyStudent();
-        var item = new StudentActivityReadinessItem(
-            studentId: student.Id, source: ReadinessPoolSource.PracticeGym, targetCefrLevel: "A1",
-            routingReason: RoutingReason.Review, isLowerLevelContent: true, requiresAdminReview: true);
-        _db.StudentActivityReadinessItems.Add(item);
-        item.MarkGenerating();
-        item.MarkReady();
-        item.MarkReviewOnly("weak signal");
-        _db.SaveChanges();
-
-        var sut = BuildSut();
-        var summary = await sut.GetReadinessAsync(student.Id);
-
-        var check = summary!.Checks.Single(c => c.Key == "reviewscaffold.pending_not_visible");
-        Assert.Equal(ReadinessCheckStatus.Pass, check.Status);
-    }
-
-    [Fact]
-    public async Task SettingsProviderThrows_FeedbackChecksReturnWarning_NotException()
-    {
-        // TODO-20G-3 regression: the audit must never propagate an unhandled exception from a
-        // single check category. AddFeedbackAndReviewScaffoldChecksAsync depends on
-        // IEffectiveReadinessPoolSettingsProvider — simulate the kind of unexpected failure
-        // (bad data shape, transient dependency failure) production hit for one specific student.
-        _exerciseTypes.ForToday = [MakeExerciseType()];
-        var student = SeedCourseReadyStudent();
-        _settingsProvider = new FakeSettingsProvider(new ReadinessPoolReplenishmentOptions()) { ShouldThrow = true };
-
-        var sut = BuildSut();
-        var summary = await sut.GetReadinessAsync(student.Id);
-
-        Assert.NotNull(summary);
-        var check = summary!.Checks.Single(c => c.Key == "feedback.check_failed");
-        Assert.Equal(ReadinessCheckStatus.Warning, check.Status);
-        Assert.Equal(ReadinessCheckSeverity.Warning, check.Severity);
-        Assert.DoesNotContain("Exception", check.Message);
+        var check = summary!.Checks.Single(c => c.Key == "audio.tts_setting");
+        Assert.Equal(ReadinessCheckStatus.Pass, check.Status); // TTS enabled by default
     }
 
     [Fact]
@@ -379,35 +256,6 @@ public sealed class StudentReadinessAuditServiceTests : IDisposable
             Task.FromResult<IReadOnlyList<StudentLearningEvent>>([]);
     }
 
-    private sealed class FakeReplenishment : IReadinessPoolReplenishmentService
-    {
-        public PoolHealthSummary Health { get; set; } = new()
-        {
-            StudentId = Guid.Empty, Source = ReadinessPoolSource.PracticeGym, TargetCount = 10,
-            ReadyCount = 0, ReservedCount = 0, QueuedOrGeneratingCount = 0, FailedCount = 0,
-            StaleCount = 0, ExpiredCount = 0, SkippedCount = 0, ReviewOnlyCount = 0,
-        };
-
-        public Task<ReplenishmentRunSummary> RunAsync(CancellationToken ct = default) =>
-            throw new NotSupportedException("Not used by the audit service.");
-
-        public Task<PoolHealthSummary> GetHealthAsync(Guid studentId, ReadinessPoolSource source, CancellationToken ct = default) =>
-            Task.FromResult(new PoolHealthSummary
-            {
-                StudentId = studentId,
-                Source = source,
-                TargetCount = Health.TargetCount,
-                ReadyCount = Health.ReadyCount,
-                ReservedCount = Health.ReservedCount,
-                QueuedOrGeneratingCount = Health.QueuedOrGeneratingCount,
-                FailedCount = Health.FailedCount,
-                StaleCount = Health.StaleCount,
-                ExpiredCount = Health.ExpiredCount,
-                SkippedCount = Health.SkippedCount,
-                ReviewOnlyCount = Health.ReviewOnlyCount,
-            });
-    }
-
     private sealed class FakeExerciseTypeRegistry : IExerciseTypeRegistry
     {
         public IReadOnlyList<ExerciseTypeRegistryEntry> ForToday { get; set; } = [];
@@ -437,16 +285,5 @@ public sealed class StudentReadinessAuditServiceTests : IDisposable
             throw new NotSupportedException();
         public Task<string?> ResolveExercisePatternKeyAsync(string exerciseTypeKey, CancellationToken ct = default) =>
             throw new NotSupportedException();
-    }
-
-    private sealed class FakeSettingsProvider(ReadinessPoolReplenishmentOptions opts) : IEffectiveReadinessPoolSettingsProvider
-    {
-        public bool ShouldThrow { get; set; }
-
-        public Task<ReadinessPoolReplenishmentOptions> GetEffectiveAsync(CancellationToken ct = default)
-        {
-            if (ShouldThrow) throw new InvalidOperationException("simulated settings provider failure");
-            return Task.FromResult(opts);
-        }
     }
 }

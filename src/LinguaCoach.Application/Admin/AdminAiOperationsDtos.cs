@@ -2,9 +2,11 @@ namespace LinguaCoach.Application.Admin;
 
 /// <summary>
 /// Phase 20A — read-only admin AI operations dashboard summary. Aggregates existing
-/// speaking/writing evaluation, generation quality, AI usage, and readiness-pool/review-scaffold
-/// data sources into one operational view. Never adds new AI behaviour, scoring, CEFR mutation,
-/// objective completion, or Learning Plan regeneration — it only reads existing state.
+/// speaking/writing evaluation, generation quality, and AI usage data sources into one
+/// operational view. Never adds new AI behaviour, scoring, CEFR mutation, objective completion,
+/// or Learning Plan regeneration — it only reads existing state.
+/// Phase I2C: the readiness-pool/review-scaffold section was removed along with
+/// StudentActivityReadinessItem — see docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
 /// </summary>
 public sealed record AdminAiOperationsSummaryDto(
     DateTime GeneratedAtUtc,
@@ -15,7 +17,6 @@ public sealed record AdminAiOperationsSummaryDto(
     AiOperationsSpeakingSummary SpeakingEvaluationSummary,
     AiOperationsWritingSummary WritingEvaluationSummary,
     AiOperationsGenerationQualitySummary GenerationQualitySummary,
-    AiOperationsReadinessPoolSummary ReadinessPoolAiSummary,
     AiOperationsSignalGateSummary SignalGateSummary,
     IReadOnlyList<AiOperationsRecentFailureItem> RecentFailures);
 
@@ -64,16 +65,6 @@ public sealed record AiOperationsGenerationQualitySummary(
     IReadOnlyList<CefrFailureBreakdownItem> CefrBreakdown,
     IReadOnlyList<ProviderModelBreakdownItem> ProviderBreakdown,
     IReadOnlyList<ValidationFailureItem> LatestFailures);
-
-public sealed record AiOperationsReadinessPoolSummary(
-    bool EnableReviewScaffoldGeneration,
-    bool DryRunOnly,
-    bool RequireAdminReview,
-    bool PracticeGymPilotEnabled,
-    bool AllowTodayLessonInsertion,
-    int MaxStudentVisibleScaffoldSuggestions,
-    int PendingReviewCount,
-    int ApprovedCount);
 
 /// <summary>
 /// Speaking and writing signal gates are tracked per-pipeline (they are configured

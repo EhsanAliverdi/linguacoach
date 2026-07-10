@@ -49,13 +49,8 @@ public static class QuartzConfiguration
                 .WithIdentity($"{AudioCleanupJob.JobName}-trigger")
                 .WithSimpleSchedule(s => s.WithIntervalInHours(24).RepeatForever()));
 
-            // Readiness pool replenishment — every 20 minutes.
-            var replenishKey = new JobKey(ReadinessPoolReplenishmentJob.JobName);
-            q.AddJob<ReadinessPoolReplenishmentJob>(opts => opts.WithIdentity(replenishKey).StoreDurably());
-            q.AddTrigger(t => t
-                .ForJob(replenishKey)
-                .WithIdentity($"{ReadinessPoolReplenishmentJob.JobName}-trigger")
-                .WithSimpleSchedule(s => s.WithIntervalInMinutes(20).RepeatForever()));
+            // Phase I2C: readiness pool replenishment job removed along with the readiness pool —
+            // see docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
 
             // Notification dispatch — every 2 minutes.
             var dispatchKey = new JobKey(NotificationDispatchJob.JobName);

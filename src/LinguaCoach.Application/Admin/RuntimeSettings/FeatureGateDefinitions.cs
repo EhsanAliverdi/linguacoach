@@ -14,8 +14,6 @@ public static class FeatureGateDefinitions
 
     private static IReadOnlyList<FeatureGateGroupDefinition> BuildAll() =>
     [
-        ReviewScaffoldGeneration,
-        PracticeGymReviewScaffoldPilot,
         LessonGenerationBuffer,
         TtsGeneration,
         PracticeGymGenerationPerType,
@@ -25,158 +23,12 @@ public static class FeatureGateDefinitions
         ActivityFeedbackPolicy,
     ];
 
-    public static readonly FeatureGateGroupDefinition ReviewScaffoldGeneration = new()
-    {
-        GroupKey = "review-scaffold-generation",
-        DisplayName = "Review scaffold generation",
-        Description = "Controls whether the readiness pool replenishment engine may generate lower-level review/scaffold activities when weakness signals are detected.",
-        Category = FeatureGateCategory.ReviewScaffoldPracticeGymPilot,
-        BackingStore = FeatureGateBackingStore.ReadinessPoolOverride,
-        WarningText = "Enabling generation changes what content is created for students. Keep DryRunOnly on until the effect has been reviewed.",
-        Settings =
-        [
-            new FeatureGateSettingDefinition
-            {
-                Key = "ReadinessPool.EnableReviewScaffoldGeneration",
-                DisplayName = "Enable review scaffold generation",
-                Description = "When on, replenishment may generate review/scaffold items when weakness signals are detected.",
-                DataType = FeatureGateDataType.Boolean,
-                DefaultValueJson = "false",
-                IsEditableAtRuntime = true,
-                RiskLevel = FeatureGateRiskLevel.High,
-                RequiresConfirmation = true,
-            },
-            new FeatureGateSettingDefinition
-            {
-                Key = "ReadinessPool.DryRunOnly",
-                DisplayName = "Dry-run only",
-                Description = "When on, generation logic runs but never writes to the database. Must be off for generation to take effect.",
-                DataType = FeatureGateDataType.Boolean,
-                DefaultValueJson = "true",
-                IsEditableAtRuntime = true,
-                RiskLevel = FeatureGateRiskLevel.Medium,
-            },
-            new FeatureGateSettingDefinition
-            {
-                Key = "ReadinessPool.RequireAdminReview",
-                DisplayName = "Require admin review",
-                Description = "When on, generated review/scaffold items stay hidden from students until an admin approves them.",
-                DataType = FeatureGateDataType.Boolean,
-                DefaultValueJson = "true",
-                IsEditableAtRuntime = true,
-                RiskLevel = FeatureGateRiskLevel.Medium,
-            },
-            new FeatureGateSettingDefinition
-            {
-                Key = "ReadinessPool.MaxScaffoldItemsPerStudentPerDay",
-                DisplayName = "Max scaffold items per student per day",
-                Description = "Maximum review/scaffold items created for a single student in a calendar day (UTC).",
-                DataType = FeatureGateDataType.Integer,
-                DefaultValueJson = "3",
-                IsEditableAtRuntime = true,
-                RiskLevel = FeatureGateRiskLevel.Low,
-                MinValue = 0,
-                MaxValue = 10,
-            },
-            new FeatureGateSettingDefinition
-            {
-                Key = "ReadinessPool.ScaffoldAllowedSources",
-                DisplayName = "Allowed sources",
-                Description = "Readiness pool sources allowed to receive review/scaffold generation.",
-                DataType = FeatureGateDataType.StringArray,
-                DefaultValueJson = "[\"PracticeGym\"]",
-                IsEditableAtRuntime = true,
-                RiskLevel = FeatureGateRiskLevel.Medium,
-                AllowedValues = ["TodayLesson", "PracticeGym", "LessonBatch", "Review"],
-            },
-            new FeatureGateSettingDefinition
-            {
-                Key = "ReadinessPool.AllowTodayLessonInsertion",
-                DisplayName = "Allow Today lesson insertion",
-                Description = "Explicit override required (in addition to ScaffoldAllowedSources containing TodayLesson) before review/scaffold items may be generated for the Today lesson pool.",
-                DataType = FeatureGateDataType.Boolean,
-                DefaultValueJson = "false",
-                IsEditableAtRuntime = true,
-                RiskLevel = FeatureGateRiskLevel.Critical,
-                RequiresConfirmation = true,
-            },
-            new FeatureGateSettingDefinition
-            {
-                Key = "ReadinessPool.MinimumConfidenceForReviewNeed",
-                DisplayName = "Minimum confidence for review need",
-                Description = "Minimum ReviewNeedConfidence band required before a weak-event signal is allowed to trigger review/scaffold generation.",
-                DataType = FeatureGateDataType.String,
-                DefaultValueJson = "\"Medium\"",
-                IsEditableAtRuntime = true,
-                RiskLevel = FeatureGateRiskLevel.Low,
-                AllowedValues = ["Low", "Medium", "High"],
-            },
-        ],
-    };
-
-    public static readonly FeatureGateGroupDefinition PracticeGymReviewScaffoldPilot = new()
-    {
-        GroupKey = "practice-gym-review-scaffold-pilot",
-        DisplayName = "Practice Gym review scaffold pilot",
-        Description = "Phase 19C pilot gate: surfaces admin-approved review/scaffold items to students in Practice Gym.",
-        Category = FeatureGateCategory.ReviewScaffoldPracticeGymPilot,
-        BackingStore = FeatureGateBackingStore.ReadinessPoolOverride,
-        Dependencies =
-        [
-            "RequireAdminReview should be true",
-            "EnableReviewScaffoldGeneration should be true for new generation",
-            "DryRunOnly must be false for real generation",
-            "AllowTodayLessonInsertion remains false unless intentionally enabled",
-        ],
-        WarningText = "Turning this off is the fastest rollback: it hides all approved-but-unconsumed scaffold items from students without deleting any data.",
-        Settings =
-        [
-            new FeatureGateSettingDefinition
-            {
-                Key = "ReadinessPool.PracticeGymPilotEnabled",
-                DisplayName = "Pilot enabled",
-                Description = "When on, admin-approved review/scaffold items are surfaced to students in Practice Gym.",
-                DataType = FeatureGateDataType.Boolean,
-                DefaultValueJson = "false",
-                IsEditableAtRuntime = true,
-                RiskLevel = FeatureGateRiskLevel.Medium,
-            },
-            new FeatureGateSettingDefinition
-            {
-                Key = "ReadinessPool.PracticeGymPilotLabel",
-                DisplayName = "Student-facing label",
-                Description = "Label shown on Practice Gym cards for approved review/scaffold items during the pilot.",
-                DataType = FeatureGateDataType.String,
-                DefaultValueJson = "\"Review\"",
-                IsEditableAtRuntime = true,
-                RiskLevel = FeatureGateRiskLevel.Low,
-                MaxLength = 60,
-            },
-            new FeatureGateSettingDefinition
-            {
-                Key = "ReadinessPool.PracticeGymPilotReason",
-                DisplayName = "Student-facing reason",
-                Description = "Reason text shown on Practice Gym cards for approved review/scaffold items during the pilot. Must avoid negative wording.",
-                DataType = FeatureGateDataType.String,
-                DefaultValueJson = "\"This helps you practise a skill you are building.\"",
-                IsEditableAtRuntime = true,
-                RiskLevel = FeatureGateRiskLevel.Low,
-                MaxLength = 200,
-            },
-            new FeatureGateSettingDefinition
-            {
-                Key = "ReadinessPool.MaxStudentVisibleScaffoldSuggestions",
-                DisplayName = "Max visible suggestions per response",
-                Description = "Maximum number of approved review/scaffold items shown to a single student in one Practice Gym response during the pilot.",
-                DataType = FeatureGateDataType.Integer,
-                DefaultValueJson = "2",
-                IsEditableAtRuntime = true,
-                RiskLevel = FeatureGateRiskLevel.Low,
-                MinValue = 0,
-                MaxValue = 4,
-            },
-        ],
-    };
+    // Phase I2C (readiness-pool removal): the "Review scaffold generation" and "Practice Gym
+    // review scaffold pilot" feature gate groups were removed here — every setting they exposed
+    // was a property on ReadinessPoolReplenishmentOptions, which no longer exists along with the
+    // rest of the readiness pool. Any pre-existing RuntimeSettingOverride rows for their
+    // "ReadinessPool.*" keys are now orphaned but harmless (nothing reads them). See
+    // docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
 
     // Phase I2A (legacy fallback deletion): the "Practice Gym Form.io template pilot" feature
     // gate group (GroupKey "practice-gym-formio-template-pilot", setting key

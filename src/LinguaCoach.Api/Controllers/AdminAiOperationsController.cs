@@ -1,5 +1,4 @@
 using LinguaCoach.Application.Admin;
-using LinguaCoach.Application.ReadinessPool;
 using LinguaCoach.Application.Speaking;
 using LinguaCoach.Application.Writing;
 using LinguaCoach.Domain.Enums;
@@ -7,16 +6,16 @@ using LinguaCoach.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 namespace LinguaCoach.Api.Controllers;
 
 /// <summary>
 /// Phase 20A — read-only admin AI operations dashboard. Aggregates existing speaking/writing
-/// evaluation, generation quality, AI usage, and readiness-pool/review-scaffold data sources
-/// into one operational summary. Purely additive read layer over existing services — never
-/// mutates state, never adds AI behaviour, and never touches CEFR, objective completion, or
-/// the Learning Plan.
+/// evaluation, generation quality, and AI usage data sources into one operational summary.
+/// Purely additive read layer over existing services — never mutates state, never adds AI
+/// behaviour, and never touches CEFR, objective completion, or the Learning Plan.
+/// Phase I2C: the readiness-pool/review-scaffold section was removed along with
+/// StudentActivityReadinessItem — see docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
 /// </summary>
 [ApiController]
 [Authorize(Roles = nameof(UserRole.Admin))]
@@ -30,7 +29,6 @@ public sealed class AdminAiOperationsController : ControllerBase
     private readonly IAdminWritingEvaluationQuery _writingQuery;
     private readonly IWritingEvaluationSignalApplicationService _writingSignals;
     private readonly IAdminGenerationQualityHandler _generationQuality;
-    private readonly ReadinessPoolReplenishmentOptions _readinessOpts;
     private readonly LinguaCoachDbContext _db;
 
     public AdminAiOperationsController(
@@ -41,7 +39,6 @@ public sealed class AdminAiOperationsController : ControllerBase
         IAdminWritingEvaluationQuery writingQuery,
         IWritingEvaluationSignalApplicationService writingSignals,
         IAdminGenerationQualityHandler generationQuality,
-        IOptions<ReadinessPoolReplenishmentOptions> readinessOpts,
         LinguaCoachDbContext db)
     {
         _aiUsage = aiUsage;
@@ -51,7 +48,6 @@ public sealed class AdminAiOperationsController : ControllerBase
         _writingQuery = writingQuery;
         _writingSignals = writingSignals;
         _generationQuality = generationQuality;
-        _readinessOpts = readinessOpts.Value;
         _db = db;
     }
 
@@ -70,11 +66,6 @@ public sealed class AdminAiOperationsController : ControllerBase
         var writingQuality = await _writingQuery.GetQualitySummaryAsync(ct);
         var writingSafety = await _writingSignals.GetSignalSafetySummaryAsync(ct);
         var generationQuality = await _generationQuality.GetSummaryAsync(recentDays: 30, ct: ct);
-
-        var pendingReviewCount = await _db.StudentActivityReadinessItems
-            .CountAsync(i => i.RequiresAdminReview && i.AdminReviewStatus == AdminReviewStatus.PendingReview, ct);
-        var approvedCount = await _db.StudentActivityReadinessItems
-            .CountAsync(i => i.RequiresAdminReview && i.AdminReviewStatus == AdminReviewStatus.Approved, ct);
 
         var now = DateTime.UtcNow;
 
@@ -184,11 +175,6 @@ public sealed class AdminAiOperationsController : ControllerBase
                 generationQuality.RecentFailureCount, generationQuality.RetentionDays,
                 generationQuality.PatternBreakdown, generationQuality.CefrBreakdown,
                 generationQuality.ProviderBreakdown, generationQuality.LatestFailures.Take(5).ToList()),
-            ReadinessPoolAiSummary: new AiOperationsReadinessPoolSummary(
-                _readinessOpts.EnableReviewScaffoldGeneration, _readinessOpts.DryRunOnly,
-                _readinessOpts.RequireAdminReview, _readinessOpts.PracticeGymPilotEnabled,
-                _readinessOpts.AllowTodayLessonInsertion, _readinessOpts.MaxStudentVisibleScaffoldSuggestions,
-                pendingReviewCount, approvedCount),
             SignalGateSummary: signalGates,
             RecentFailures: recentFailures);
 
