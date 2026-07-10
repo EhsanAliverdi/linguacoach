@@ -11,15 +11,16 @@ using Microsoft.Extensions.DependencyInjection;
 namespace LinguaCoach.IntegrationTests.Api;
 
 /// <summary>
-/// Phase H6 — Daily Lesson Module Pipeline. Reuses <see cref="SessionTestFactory"/> (seeds a
-/// CourseReady student with an active LearningPath + LearningModule) so <c>GET /api/sessions/today</c>
-/// works, plus directly-seeded approved Modules to exercise the module selection path.
+/// Phase H6 (renamed I4 Pass 3) — Today Plan Module Pipeline. Reuses <see cref="SessionTestFactory"/>
+/// (seeds a CourseReady student with an active LearningPath + LearningModule) so
+/// <c>GET /api/sessions/today</c> works, plus directly-seeded approved Modules to exercise the
+/// module selection path.
 /// </summary>
-public sealed class DailyLessonModulePipelineEndpointTests : IClassFixture<SessionTestFactory>
+public sealed class TodayPlanModulePipelineEndpointTests : IClassFixture<SessionTestFactory>
 {
     private readonly SessionTestFactory _factory;
 
-    public DailyLessonModulePipelineEndpointTests(SessionTestFactory factory) => _factory = factory;
+    public TodayPlanModulePipelineEndpointTests(SessionTestFactory factory) => _factory = factory;
 
     private static HttpClient ClientWithToken(SessionTestFactory factory, string token)
     {
@@ -67,10 +68,10 @@ public sealed class DailyLessonModulePipelineEndpointTests : IClassFixture<Sessi
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
 
         var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.True(body.TryGetProperty("moduleSection", out var moduleSection));
-        Assert.False(moduleSection.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined);
-        Assert.False(moduleSection.GetProperty("fallbackRequired").GetBoolean());
-        Assert.True(moduleSection.GetProperty("selectedModules").GetArrayLength() > 0);
+        Assert.True(body.TryGetProperty("todayPlan", out var todayPlan));
+        Assert.False(todayPlan.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined);
+        Assert.False(todayPlan.GetProperty("fallbackRequired").GetBoolean());
+        Assert.True(todayPlan.GetProperty("selectedModules").GetArrayLength() > 0);
     }
 
     [Fact]
@@ -90,8 +91,8 @@ public sealed class DailyLessonModulePipelineEndpointTests : IClassFixture<Sessi
         var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
         if (body.GetProperty("available").GetBoolean()) return; // other tests may have seeded compatible modules
         Assert.False(body.GetProperty("available").GetBoolean());
-        Assert.True(body.GetProperty("moduleSection").ValueKind is JsonValueKind.Null
-            || body.GetProperty("moduleSection").GetProperty("fallbackRequired").GetBoolean());
+        Assert.True(body.GetProperty("todayPlan").ValueKind is JsonValueKind.Null
+            || body.GetProperty("todayPlan").GetProperty("fallbackRequired").GetBoolean());
     }
 
     [Fact]
@@ -125,7 +126,7 @@ public sealed class DailyLessonModulePipelineEndpointTests : IClassFixture<Sessi
         var adminToken = await _factory.CreateAdminAndGetTokenAsync();
         var client = ClientWithToken(_factory, adminToken);
 
-        var resp = await client.GetAsync($"/api/admin/daily-lesson/modules/preview?studentId={studentProfileId}&maxModules=100");
+        var resp = await client.GetAsync($"/api/admin/today-plan/modules/preview?studentId={studentProfileId}&maxModules=100");
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
 
         var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
@@ -149,7 +150,7 @@ public sealed class DailyLessonModulePipelineEndpointTests : IClassFixture<Sessi
         var adminToken = await _factory.CreateAdminAndGetTokenAsync();
         var client = ClientWithToken(_factory, adminToken);
 
-        var resp = await client.GetAsync($"/api/admin/daily-lesson/modules/preview?studentId={studentProfileId}");
+        var resp = await client.GetAsync($"/api/admin/today-plan/modules/preview?studentId={studentProfileId}");
         var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
 
         if (!body.GetProperty("fallbackRequired").GetBoolean()) return; // other tests may have seeded compatible modules
@@ -218,7 +219,7 @@ public sealed class DailyLessonModulePipelineEndpointTests : IClassFixture<Sessi
         var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"h6_nonadmin_{Guid.NewGuid():N}@test.com");
         var client = ClientWithToken(_factory, token);
 
-        var resp = await client.GetAsync($"/api/admin/daily-lesson/modules/preview?studentId={Guid.NewGuid()}");
+        var resp = await client.GetAsync($"/api/admin/today-plan/modules/preview?studentId={Guid.NewGuid()}");
         Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
     }
 

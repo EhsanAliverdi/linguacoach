@@ -17,7 +17,7 @@
   <!-- Page heading -->
   <div data-testid="today-page" style="margin-bottom:20px">
     <p class="sp-eyebrow" style="margin-bottom:4px">Your day</p>
-    <h1 data-testid="today-page-heading" style="font-size:26px;font-weight:850;color:var(--sp-ink);line-height:1.15;margin:0">Today's Lesson</h1>
+    <h1 data-testid="today-page-heading" style="font-size:26px;font-weight:850;color:var(--sp-ink);line-height:1.15;margin:0">Today's Plan</h1>
   </div>
 
   @if (isPlacementRequired()) {
@@ -94,19 +94,20 @@
       </section>
     }
 
-    <!-- Today's Lesson — Phase I2B: module-only. A single honest card: loading, the selected
-         bank-first Daily Lesson Module, or a clear "nothing available yet" state. No legacy
-         exercise-count session card and no AI-generation fallback. -->
+    <!-- Today's Plan — Phase I2B: module-only. A single honest card: loading, the selected
+         bank-first Today Plan Module, or a clear "nothing available yet" state. No legacy
+         exercise-count session card and no AI-generation fallback.
+         Renamed from "Today's Lesson"/"Daily Lesson Module" in Phase I4 Pass 3. -->
     @if (showTodaysLesson()) {
       <section class="sp-card" data-testid="dashboard-todays-lesson" style="margin-bottom:22px;padding:16px;border-color:var(--sp-border2)">
-        <p style="font-size:12px;font-weight:800;color:var(--sp-muted);text-transform:uppercase;margin-bottom:8px">Today's lesson</p>
+        <p style="font-size:12px;font-weight:800;color:var(--sp-muted);text-transform:uppercase;margin-bottom:8px">Today's plan</p>
 
         @if (todaySectionLoading() || !todaySectionLoaded()) {
           <div class="sp-skeleton" style="height:64px"></div>
 
-        } @else if (dailyLessonModuleSection() && todaySectionAvailable() && dailyLessonModuleSection()!.selectedModules.length > 0) {
-          @for (module of dailyLessonModuleSection()!.selectedModules; track module.moduleId) {
-            <div data-testid="daily-lesson-module-card" style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--sp-border)">
+        } @else if (todayPlan() && todaySectionAvailable() && todayPlan()!.selectedModules.length > 0) {
+          @for (module of todayPlan()!.selectedModules; track module.moduleId) {
+            <div data-testid="today-plan-module-card" style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--sp-border)">
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
                 <span style="font-size:14px;font-weight:700;color:var(--sp-ink)">{{ module.title }}</span>
                 @if (module.cefrLevel) {

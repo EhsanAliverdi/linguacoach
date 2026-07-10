@@ -8,11 +8,11 @@ import { PlacementService } from '../../../../core/services/placement.service';
 import { AuthNoticeService } from '../../../../core/services/auth-notice.service';
 import { SessionService } from '../../../../core/services/session.service';
 import { StudentDashboardSummary } from '../../../../core/models/dashboard-summary.models';
-import { TodaysSessionResponse, DailyLessonModuleSection } from '../../../../core/models/session.models';
+import { TodaysSessionResponse, TodayPlanModuleSection } from '../../../../core/models/session.models';
 
 // ── Test fixtures ──────────────────────────────────────────────────────────────
 
-const MODULE_SECTION: DailyLessonModuleSection = {
+const MODULE_SECTION: TodayPlanModuleSection = {
   selectedModules: [{
     moduleId: 'mod-1',
     title: 'Confident Meetings',
@@ -36,12 +36,12 @@ const MODULE_SECTION: DailyLessonModuleSection = {
 
 const TODAY_AVAILABLE: TodaysSessionResponse = {
   available: true,
-  moduleSection: MODULE_SECTION,
+  todayPlan: MODULE_SECTION,
 };
 
 const TODAY_NOT_AVAILABLE: TodaysSessionResponse = {
   available: false,
-  moduleSection: null,
+  todayPlan: null,
 };
 
 const EMPTY_SUGGESTIONS = {
@@ -211,7 +211,7 @@ describe('DashboardComponent', () => {
   it('renders the module card with real module data when available', async () => {
     const fixture = await setup({ today: TODAY_AVAILABLE });
     const el: HTMLElement = fixture.nativeElement;
-    const card = el.querySelector('[data-testid="daily-lesson-module-card"]');
+    const card = el.querySelector('[data-testid="today-plan-module-card"]');
     expect(card).toBeTruthy();
     expect(card!.textContent).toContain('Confident Meetings');
   });

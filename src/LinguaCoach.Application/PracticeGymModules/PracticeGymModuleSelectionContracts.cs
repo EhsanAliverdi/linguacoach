@@ -4,7 +4,7 @@ namespace LinguaCoach.Application.PracticeGymModules;
 /// Phase H7 — input to the deterministic Practice Gym module selector. Pure read-only signal set;
 /// the selector never mutates a <c>Module</c>/<c>Lesson</c>/<c>Exercise</c>
 /// and never creates Module attempts, mastery updates, or Practice Gym runtime records. Mirrors
-/// H6's <c>DailyLessonModuleSelectionRequest</c>, extended with Practice Gym-specific
+/// H6's <c>TodayPlanModuleSelectionRequest</c>, extended with Practice Gym-specific
 /// self-directed signals (a student can request a skill/subskill/objective directly, unlike
 /// Today's fully automatic selection).
 /// </summary>

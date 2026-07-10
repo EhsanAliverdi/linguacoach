@@ -27,7 +27,37 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest phase completed (local, not yet deployed):** Phase I3 — Final Nav Consolidation
+**Latest phase completed (local, not yet deployed):** Phase I4 — Product Language Rename, all 3
+passes (2026-07-10). Renames the internal/admin vocabulary that grew out of the H-track's
+bank-first model into product-friendly language, decided in
+`docs/architecture/product-language-renaming-i4.md`: `LearnItem`→**Lesson**,
+`ActivityDefinition`→**Exercise**, `ModuleDefinition`→**Module**, and the "Daily Lesson"
+pipeline/container→**Today Plan**. Pure rename, no data-model change, delivered as 3 independently
+verified commits: **Pass 1** (backend — entities, EF configs, one migration, Application
+contracts, Infrastructure services, API routes/controllers, doc comments; 3,424/3,424 tests, exact
+baseline match), **Pass 2** (frontend — Angular component/service/model/route renames, the
+`/admin/lessons` route-collision resolved by relocating the pre-existing "Today Delivery Health"
+page to `admin-today-delivery-health/` and giving the renamed Lesson page `/admin/lesson-library`;
+production build clean), **Pass 3** (the "Daily Lesson"→"Today Plan" slice —
+`IDailyLessonModuleSelectionService`→`ITodayPlanModuleSelectionService` and its
+`DailyLessonModules/`→`TodayPlanModules/` folders on both Application and Infrastructure,
+`AdminDailyLessonModuleController`→`AdminTodayPlanModuleController` with routes moved to
+`api/admin/today-plan/...`, `StudentDailyModuleAssignment`→`StudentTodayPlanModuleAssignment`
+(table `student_daily_module_assignments`→`student_today_plan_module_assignments`),
+`TodaysSessionResult.ModuleSection`→`.TodayPlan`, and the student-facing dashboard card relabeled
+"Today's Lesson"→"Today's Plan"). Every table/column/index rename across all 3 passes used
+`RenameTable`/`RenameColumn`/`RenameIndex` only — verified via `dotnet ef migrations script`
+producing clean `ALTER TABLE/COLUMN/INDEX RENAME` SQL, no data loss. **File and folder names match
+symbol names throughout** (e.g. `LearnItem.cs`→`Lesson.cs`,
+`DailyLessonModuleSelectionService.cs`→`TodayPlanModuleSelectionService.cs`), per the phase's
+explicit requirement. Composition model in the new language: a **Module** contains **Lesson** +
+**Exercise** + **Feedback**; a **Today Plan** contains several **Modules**. Full detail:
+`docs/reviews/2026-07-10-phase-i4-pass1-backend-rename-review.md`,
+`docs/reviews/2026-07-10-phase-i4-pass2-frontend-rename-review.md`,
+`docs/reviews/2026-07-10-phase-i4-pass3-today-plan-rename-review.md` (the last of these also closes
+out the full Phase I4 summary).
+
+**Previous phase completed (local, not yet deployed):** Phase I3 — Final Nav Consolidation
 (2026-07-10). Closes the structural half of the I-track (I0-I3). Lands the 7-item Content Studio
 target: **Import Content → Resource Bank → Learn Items → Activities → Modules → Onboarding →
 Placement**, one section, no second "Content Ops" tier. Onboarding/Placement promoted in; Review
@@ -39,11 +69,12 @@ future cleanup candidate, out of this phase's scope). 3,424/3,424 backend tests 
 the deleted Review Queue endpoint tests, no lost coverage). Frontend build clean. **The admin
 content model is now genuinely unified: one bank, one import pipeline, one nav section, no legacy
 fallback.** Remaining I-track work is language/coverage, not structure — I4 (rename to
-Lesson/Exercise/Module/Today Plan, decided not implemented), I5 (expand bank-first coverage beyond
-vocab/grammar gap_fill/multiple_choice_single), I6 (real AI-driven generation). Full detail:
+Lesson/Exercise/Module/Today Plan, decided not implemented at the time; now implemented, see the
+Phase I4 entry above), I5 (expand bank-first coverage beyond vocab/grammar
+gap_fill/multiple_choice_single), I6 (real AI-driven generation). Full detail:
 `docs/reviews/2026-07-10-phase-i3-final-nav-consolidation-review.md`.
 
-**Previous phase completed (local, not yet deployed):** Phase I2C — Readiness Pool Removal, Pass C
+**Earlier phase completed (local, not yet deployed):** Phase I2C — Readiness Pool Removal, Pass C
 (2026-07-10, final pass of I2). Deleted `StudentActivityReadinessItem`/
 `IStudentActivityReadinessPoolService`/`ReadinessPoolReplenishmentService` entirely now that Passes
 A and B confirmed zero live consumers on either Today's or Practice Gym's serving path, and

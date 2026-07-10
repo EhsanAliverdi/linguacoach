@@ -93,7 +93,7 @@ public sealed class SessionLifecycleHandler :
 
         // Phase I2B — the legacy lesson-buffer refill trigger (LessonBatchGenerationJob) was
         // deleted along with the rest of the legacy generation pipeline. Today now re-selects a
-        // bank-first Daily Lesson Module live on next page load (IDailyLessonModuleSelectionService
+        // bank-first Today Plan Module live on next page load (ITodayPlanModuleSelectionService
         // via SessionQueryHandler) — no background pre-generation to trigger here anymore.
 
         return new CompleteSessionResult(session.Id, session.Status, session.CompletedAtUtc!.Value);

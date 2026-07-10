@@ -4,6 +4,6 @@ namespace LinguaCoach.Domain.Enums;
 public enum ExerciseLaunchSource
 {
     PracticeGym = 0,
-    DailyLesson = 1,
+    TodayPlan = 1,
     AdminPreview = 2
 }

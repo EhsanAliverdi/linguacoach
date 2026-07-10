@@ -126,9 +126,9 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<ModuleLessonLink> ModuleLessonLinks => Set<ModuleLessonLink>();
     public DbSet<ModuleExerciseLink> ModuleExerciseLinks => Set<ModuleExerciseLink>();
 
-    // Phase H6 — Daily Lesson Module Pipeline (additive bookkeeping: which Module, if
-    // any, the deterministic selector chose for a student on a given date)
-    public DbSet<StudentDailyModuleAssignment> StudentDailyModuleAssignments => Set<StudentDailyModuleAssignment>();
+    // Phase H6 (renamed I4 Pass 3) — Today Plan Module Pipeline (additive bookkeeping: which
+    // Module, if any, the deterministic selector chose for a student on a given date)
+    public DbSet<StudentTodayPlanModuleAssignment> StudentTodayPlanModuleAssignments => Set<StudentTodayPlanModuleAssignment>();
 
     // Phase H7 — Practice Gym Module Pipeline (additive bookkeeping: which Module, if
     // any, the deterministic selector suggested to a student)

@@ -8,7 +8,7 @@ import { PlacementResult, AdaptivePlacementSummary } from '../../../../core/mode
 import { StudentDashboardSummary } from '../../../../core/models/dashboard-summary.models';
 import { DashboardResponse } from '../../../../core/models/dashboard.models';
 import { StudentLearningMemory } from '../../../../core/models/learning-path.models';
-import { DailyLessonModuleSection } from '../../../../core/models/session.models';
+import { TodayPlanModuleSection } from '../../../../core/models/session.models';
 import { PracticeGymSuggestionsResponse } from '../../../../core/services/practice-gym-suggestions.service';
 import { SessionService } from '../../../../core/services/session.service';
 
@@ -28,12 +28,13 @@ export class DashboardComponent implements OnInit {
   practiceSuggestions = signal<PracticeGymSuggestionsResponse | null>(null);
   practiceLoading = signal(false);
   /**
-   * Phase I2B — Today is module-only now. `today.moduleSection` from GET /api/sessions/today is
+   * Phase I2B — Today is module-only now. `today.todayPlan` from GET /api/sessions/today is
    * the single source of truth for the Today card: null while loading, populated once the
    * request resolves. `todaySectionLoaded`/`todaySectionAvailable` distinguish "still loading"
    * from "loaded but nothing available" so the template never shows a stale/legacy shape.
+   * Renamed from `dailyLessonModuleSection` in Phase I4 Pass 3 ("Daily Lesson" -> "Today Plan").
    */
-  dailyLessonModuleSection = signal<DailyLessonModuleSection | null>(null);
+  todayPlan = signal<TodayPlanModuleSection | null>(null);
   todaySectionLoading = signal(false);
   todaySectionLoaded = signal(false);
   todaySectionAvailable = signal(false);
@@ -91,13 +92,13 @@ export class DashboardComponent implements OnInit {
           this.todaySectionLoading.set(true);
           this.sessionService.getToday().subscribe({
             next: today => {
-              this.dailyLessonModuleSection.set(today.moduleSection ?? null);
+              this.todayPlan.set(today.todayPlan ?? null);
               this.todaySectionAvailable.set(today.available);
               this.todaySectionLoading.set(false);
               this.todaySectionLoaded.set(true);
             },
             error: () => {
-              this.dailyLessonModuleSection.set(null);
+              this.todayPlan.set(null);
               this.todaySectionAvailable.set(false);
               this.todaySectionLoading.set(false);
               this.todaySectionLoaded.set(true);

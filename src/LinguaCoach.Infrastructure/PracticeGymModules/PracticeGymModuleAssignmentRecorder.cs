@@ -9,7 +9,7 @@ namespace LinguaCoach.Infrastructure.PracticeGymModules;
 /// <summary>
 /// Phase H7 — the one write path for the Practice Gym module pipeline: records a
 /// <see cref="StudentPracticeGymModuleAssignment"/> row per suggested Module. Idempotent per
-/// student per calendar day (same convention as H6's <c>DailyLessonModuleAssignmentRecorder</c>)
+/// student per calendar day (same convention as H6's <c>TodayPlanModuleAssignmentRecorder</c>)
 /// — Practice Gym suggestions are recomputed on every page load, so without this the table would
 /// grow unbounded and a module suggested seconds ago would immediately look "recently suggested"
 /// to the 14-day reuse guard.

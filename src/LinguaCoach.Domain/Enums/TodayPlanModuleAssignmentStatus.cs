@@ -1,9 +1,10 @@
 namespace LinguaCoach.Domain.Enums;
 
-/// <summary>Phase H6 — lifecycle of a <see cref="Entities.StudentDailyModuleAssignment"/>. A
-/// lightweight bookkeeping/diagnostic record, not a student attempt/score record — no scoring or
-/// mastery state is tracked here.</summary>
-public enum DailyModuleAssignmentStatus
+/// <summary>Phase H6 (renamed I4 Pass 3) — lifecycle of a
+/// <see cref="Entities.StudentTodayPlanModuleAssignment"/>. A lightweight bookkeeping/diagnostic
+/// record, not a student attempt/score record — no scoring or mastery state is tracked
+/// here.</summary>
+public enum TodayPlanModuleAssignmentStatus
 {
     /// <summary>Chosen by the deterministic selector and recorded for this student/date.</summary>
     Selected = 0,

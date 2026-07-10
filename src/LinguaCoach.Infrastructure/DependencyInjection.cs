@@ -581,12 +581,12 @@ public static class DependencyInjection
         services.AddScoped<LinguaCoach.Application.Modules.IGenerateModuleFromExerciseHandler>(
             sp => sp.GetRequiredService<LinguaCoach.Infrastructure.Modules.ModuleGenerationService>());
 
-        // Phase H6 — Daily Lesson Module Pipeline (deterministic, read-only module selection for
-        // Today + the one write path for its assignment bookkeeping).
-        services.AddScoped<LinguaCoach.Application.DailyLessonModules.IDailyLessonModuleSelectionService,
-            LinguaCoach.Infrastructure.DailyLessonModules.DailyLessonModuleSelectionService>();
-        services.AddScoped<LinguaCoach.Application.DailyLessonModules.IDailyLessonModuleAssignmentRecorder,
-            LinguaCoach.Infrastructure.DailyLessonModules.DailyLessonModuleAssignmentRecorder>();
+        // Phase H6 (renamed I4 Pass 3) — Today Plan Module Pipeline (deterministic, read-only
+        // module selection for Today + the one write path for its assignment bookkeeping).
+        services.AddScoped<LinguaCoach.Application.TodayPlanModules.ITodayPlanModuleSelectionService,
+            LinguaCoach.Infrastructure.TodayPlanModules.TodayPlanModuleSelectionService>();
+        services.AddScoped<LinguaCoach.Application.TodayPlanModules.ITodayPlanModuleAssignmentRecorder,
+            LinguaCoach.Infrastructure.TodayPlanModules.TodayPlanModuleAssignmentRecorder>();
 
         // Phase E2 — AI analysis (advisory), deterministic rule validation, and dedup/fingerprint
         // gates over staged candidates.

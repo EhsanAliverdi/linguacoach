@@ -230,14 +230,14 @@
            pool (StudentReadinessPoolHealth), which was deleted. See
            docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md. -->
 
-      <!-- Daily Lesson module selection diagnostic — Phase H6 -->
-      <sp-admin-card title="Daily Lesson module selection" data-testid="daily-lesson-module-preview-card">
-        @if (dailyLessonModulePreviewLoading()) {
-          <sp-admin-loading-state message="Loading Daily Lesson module preview" />
-        } @else if (dailyLessonModulePreviewError()) {
-          <sp-admin-error-state title="Daily Lesson module preview unavailable" [message]="dailyLessonModulePreviewError()" />
-        } @else if (dailyLessonModulePreview()) {
-          @let preview = dailyLessonModulePreview()!;
+      <!-- Today Plan module selection diagnostic — Phase H6 (renamed I4 Pass 3) -->
+      <sp-admin-card title="Today Plan module selection" data-testid="today-plan-module-preview-card">
+        @if (todayPlanModulePreviewLoading()) {
+          <sp-admin-loading-state message="Loading Today Plan module preview" />
+        } @else if (todayPlanModulePreviewError()) {
+          <sp-admin-error-state title="Today Plan module preview unavailable" [message]="todayPlanModulePreviewError()" />
+        } @else if (todayPlanModulePreview()) {
+          @let preview = todayPlanModulePreview()!;
           @if (preview.fallbackRequired) {
             <sp-admin-badge tone="warning">Fallback used</sp-admin-badge>
             <p class="sp-admin-mt-2 sp-admin-text-xs sp-admin-text-muted">{{ preview.fallbackReason }}</p>
@@ -250,7 +250,7 @@
             </ul>
           }
         } @else {
-          <sp-admin-empty-state message="Daily Lesson module preview not available." />
+          <sp-admin-empty-state message="Today Plan module preview not available." />
         }
       </sp-admin-card>
 

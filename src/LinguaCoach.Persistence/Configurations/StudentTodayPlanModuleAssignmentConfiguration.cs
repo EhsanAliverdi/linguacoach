@@ -4,11 +4,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace LinguaCoach.Persistence.Configurations;
 
-internal sealed class StudentDailyModuleAssignmentConfiguration : IEntityTypeConfiguration<StudentDailyModuleAssignment>
+internal sealed class StudentTodayPlanModuleAssignmentConfiguration : IEntityTypeConfiguration<StudentTodayPlanModuleAssignment>
 {
-    public void Configure(EntityTypeBuilder<StudentDailyModuleAssignment> builder)
+    public void Configure(EntityTypeBuilder<StudentTodayPlanModuleAssignment> builder)
     {
-        builder.ToTable("student_daily_module_assignments");
+        builder.ToTable("student_today_plan_module_assignments");
 
         builder.HasKey(e => e.Id);
         builder.Property(e => e.Id).HasColumnName("id");
@@ -32,9 +32,9 @@ internal sealed class StudentDailyModuleAssignmentConfiguration : IEntityTypeCon
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(e => new { e.StudentId, e.AssignedForDate })
-            .HasDatabaseName("ix_daily_module_assignments_student_date");
+            .HasDatabaseName("ix_today_plan_module_assignments_student_date");
         builder.HasIndex(e => new { e.StudentId, e.ModuleId })
-            .HasDatabaseName("ix_daily_module_assignments_student_module");
-        builder.HasIndex(e => e.Status).HasDatabaseName("ix_daily_module_assignments_status");
+            .HasDatabaseName("ix_today_plan_module_assignments_student_module");
+        builder.HasIndex(e => e.Status).HasDatabaseName("ix_today_plan_module_assignments_status");
     }
 }

@@ -1,33 +1,33 @@
 using System.Text.Json;
-using LinguaCoach.Application.DailyLessonModules;
+using LinguaCoach.Application.TodayPlanModules;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace LinguaCoach.Infrastructure.DailyLessonModules;
+namespace LinguaCoach.Infrastructure.TodayPlanModules;
 
 /// <summary>
-/// Phase H6 — deterministic (no AI) Daily Lesson module selector. Pure/read-only: never writes to
-/// the database, never mutates a <see cref="Module"/>/<see cref="Lesson"/>/
+/// Phase H6 (renamed I4 Pass 3) — deterministic (no AI) Today Plan module selector. Pure/read-only:
+/// never writes to the database, never mutates a <see cref="Module"/>/<see cref="Lesson"/>/
 /// <see cref="Exercise"/>, never creates Practice Gym or attempt records. Never throws
-/// for "no suitable content" — degrades to <see cref="DailyLessonModuleSelectionResult.FallbackRequired"/>
+/// for "no suitable content" — degrades to <see cref="TodayPlanModuleSelectionResult.FallbackRequired"/>
 /// instead, and the outer try/catch guarantees the same for any unexpected error, so a caller can
 /// always safely fall back to legacy Today content.
 /// </summary>
-public sealed class DailyLessonModuleSelectionService : IDailyLessonModuleSelectionService
+public sealed class TodayPlanModuleSelectionService : ITodayPlanModuleSelectionService
 {
     private static readonly TimeSpan ReuseCooldown = TimeSpan.FromDays(14);
 
     private readonly LinguaCoachDbContext _db;
 
-    public DailyLessonModuleSelectionService(LinguaCoachDbContext db)
+    public TodayPlanModuleSelectionService(LinguaCoachDbContext db)
     {
         _db = db;
     }
 
-    public async Task<DailyLessonModuleSelectionResult> SelectAsync(
-        DailyLessonModuleSelectionRequest request, CancellationToken ct = default)
+    public async Task<TodayPlanModuleSelectionResult> SelectAsync(
+        TodayPlanModuleSelectionRequest request, CancellationToken ct = default)
     {
         var warnings = new List<string>();
 
@@ -72,7 +72,7 @@ public sealed class DailyLessonModuleSelectionService : IDailyLessonModuleSelect
 
             var cooldownStart = targetDate.Subtract(ReuseCooldown);
             var recentModuleIds = new HashSet<Guid>(
-                await _db.StudentDailyModuleAssignments
+                await _db.StudentTodayPlanModuleAssignments
                     .AsNoTracking()
                     .Where(a => a.StudentId == request.StudentId
                         && a.ModuleId != null
@@ -188,7 +188,7 @@ public sealed class DailyLessonModuleSelectionService : IDailyLessonModuleSelect
             if (selected.Count == 0)
                 return Fallback(targetCefr, warnings, "No Module could be selected after scoring.");
 
-            return new DailyLessonModuleSelectionResult(
+            return new TodayPlanModuleSelectionResult(
                 SelectedModules: selected,
                 FallbackRequired: false,
                 FallbackReason: null,
@@ -205,7 +205,7 @@ public sealed class DailyLessonModuleSelectionService : IDailyLessonModuleSelect
         }
     }
 
-    private static DailyLessonModuleSelectionResult Fallback(string? targetCefr, List<string> warnings, string reason) => new(
+    private static TodayPlanModuleSelectionResult Fallback(string? targetCefr, List<string> warnings, string reason) => new(
         SelectedModules: [],
         FallbackRequired: true,
         FallbackReason: reason,
@@ -214,7 +214,7 @@ public sealed class DailyLessonModuleSelectionService : IDailyLessonModuleSelect
         TotalEstimatedMinutes: 0,
         Warnings: warnings);
 
-    private static double ScoreModule(Module module, DailyLessonModuleSelectionRequest request)
+    private static double ScoreModule(Module module, TodayPlanModuleSelectionRequest request)
     {
         double score = 0;
 
@@ -245,7 +245,7 @@ public sealed class DailyLessonModuleSelectionService : IDailyLessonModuleSelect
         return score;
     }
 
-    private static string BuildReason(Module module, DailyLessonModuleSelectionRequest request, bool usedBroadenedCefr)
+    private static string BuildReason(Module module, TodayPlanModuleSelectionRequest request, bool usedBroadenedCefr)
     {
         var parts = new List<string>();
 
@@ -264,7 +264,7 @@ public sealed class DailyLessonModuleSelectionService : IDailyLessonModuleSelect
             parts.Add($"matches requested skill {module.Skill}");
 
         if (parts.Count == 0)
-            parts.Add("selected by deterministic Daily Lesson module selector");
+            parts.Add("selected by deterministic Today Plan module selector");
 
         return string.Join("; ", parts);
     }
@@ -287,7 +287,7 @@ public sealed class DailyLessonModuleSelectionService : IDailyLessonModuleSelect
         }
     }
 
-    private static DailyLessonLessonView ToLessonView(Lesson item) => new(
+    private static TodayPlanLessonView ToLessonView(Lesson item) => new(
         LessonId: item.Id,
         Title: item.Title,
         Body: item.Body,
@@ -295,7 +295,7 @@ public sealed class DailyLessonModuleSelectionService : IDailyLessonModuleSelect
         CommonMistakes: SafeParseStringArray(item.CommonMistakesJson),
         UsageNotes: item.UsageNotes);
 
-    private static DailyLessonActivityView ToActivityView(Exercise activity) => new(
+    private static TodayPlanActivityView ToActivityView(Exercise activity) => new(
         ExerciseId: activity.Id,
         Title: activity.Title,
         Description: activity.Description,

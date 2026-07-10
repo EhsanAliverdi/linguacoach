@@ -10,7 +10,7 @@ namespace LinguaCoach.UnitTests.PracticeGymModules;
 
 /// <summary>
 /// Phase H7 — deterministic Practice Gym module selector. Uses SQLite in-memory (matches H6's
-/// <c>DailyLessonModuleSelectionServiceTests</c> conventions) with directly-seeded Module
+/// <c>TodayPlanModuleSelectionServiceTests</c> conventions) with directly-seeded Module
 /// Definitions/Lessons/Exercises. All fixture content is synthetic.
 /// </summary>
 public sealed class PracticeGymModuleSelectionServiceTests : IDisposable
@@ -382,13 +382,13 @@ public sealed class PracticeGymModuleSelectionServiceTests : IDisposable
     {
         var studentId = Guid.NewGuid();
         var module = SeedModule();
-        _db.StudentDailyModuleAssignments.Add(new StudentDailyModuleAssignment(
-            studentId, module.Id, DateTime.UtcNow.Date, DailyModuleAssignmentStatus.Selected));
+        _db.StudentTodayPlanModuleAssignments.Add(new StudentTodayPlanModuleAssignment(
+            studentId, module.Id, DateTime.UtcNow.Date, TodayPlanModuleAssignmentStatus.Selected));
         _db.SaveChanges();
 
         await _sut.SelectAsync(Request(studentId));
 
-        (await _db.StudentDailyModuleAssignments.CountAsync()).Should().Be(1);
+        (await _db.StudentTodayPlanModuleAssignments.CountAsync()).Should().Be(1);
     }
 
     // ── Phase H10 — CanLaunch precomputation ─────────────────────────────────

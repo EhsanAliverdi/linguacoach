@@ -16,7 +16,7 @@ namespace LinguaCoach.IntegrationTests.Api;
 /// Phase I2B — Today is module-only now: GET /api/sessions/today no longer creates a
 /// LearningSession, and GET /api/sessions/{id} + the exercise /prepare action were deleted along
 /// with the legacy generation pipeline (their only frontend caller, the lesson-runner page, was
-/// also removed). Today's tests below assert the new honest `available`/`moduleSection` shape.
+/// also removed). Today's tests below assert the new honest `available`/`todayPlan` shape.
 /// Start/Complete/CompleteExercise/Reflection still operate on legitimate LearningSession/
 /// SessionExercise data via SessionLifecycleHandler (unaffected by this pass), so those tests now
 /// seed a session directly through the DbContext instead of obtaining one from Today.
@@ -59,14 +59,14 @@ public sealed class SessionEndpointTests : IClassFixture<SessionTestFactory>
 
         var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
         Assert.True(body.TryGetProperty("available", out _));
-        Assert.True(body.TryGetProperty("moduleSection", out _));
+        Assert.True(body.TryGetProperty("todayPlan", out _));
     }
 
     [Fact]
     public async Task Today_NoCompatibleModule_ReturnsNotAvailable()
     {
         // No Module is seeded for this fixture's CEFR/skill, so the bank-first
-        // Daily Lesson Module selector has nothing to offer — Today must report this honestly
+        // Today Plan Module selector has nothing to offer — Today must report this honestly
         // rather than falling back to any legacy or AI-generated content.
         var (token, _) = await _factory.CreateCourseReadyStudentAsync($"sess_notavail_{Guid.NewGuid():N}@test.com");
         var client = ClientWithToken(token);

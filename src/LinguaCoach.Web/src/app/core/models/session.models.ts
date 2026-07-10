@@ -1,8 +1,8 @@
 export type SessionStatus = 'notStarted' | 'inProgress' | 'completed';
 export type ExerciseStatus = 'notStarted' | 'inProgress' | 'completed' | 'skipped';
 
-/** Phase H6 — student-safe Lesson projection within a Daily Lesson module section. */
-export interface DailyLessonLessonView {
+/** Phase H6 (renamed I4 Pass 3) — student-safe Lesson projection within a Today Plan module section. */
+export interface TodayPlanLessonView {
   lessonId: string;
   title: string;
   body: string;
@@ -11,9 +11,9 @@ export interface DailyLessonLessonView {
   usageNotes: string | null;
 }
 
-/** Phase H6 — student-safe Exercise projection. Never carries an answer key or
+/** Phase H6 (renamed I4 Pass 3) — student-safe Exercise projection. Never carries an answer key or
  * scoring rules — those are backend-only per Exercise's own contract. */
-export interface DailyLessonActivityView {
+export interface TodayPlanActivityView {
   exerciseId: string;
   title: string;
   description: string | null;
@@ -23,7 +23,7 @@ export interface DailyLessonActivityView {
   estimatedMinutes: number | null;
 }
 
-export interface SelectedDailyLessonModule {
+export interface SelectedTodayPlanModule {
   moduleId: string;
   title: string;
   description: string | null;
@@ -33,14 +33,14 @@ export interface SelectedDailyLessonModule {
   difficultyBand: number | null;
   estimatedMinutes: number | null;
   reason: string;
-  linkedLessons: DailyLessonLessonView[];
-  linkedExercises: DailyLessonActivityView[];
+  linkedLessons: TodayPlanLessonView[];
+  linkedExercises: TodayPlanActivityView[];
 }
 
-/** Phase H6 — additive, optional. Null when no compatible approved Module exists; the
- * `exercises` above remain the source of truth in that case. */
-export interface DailyLessonModuleSection {
-  selectedModules: SelectedDailyLessonModule[];
+/** Phase H6 (renamed I4 Pass 3) — additive, optional. Null when no compatible approved Module
+ * exists; the `exercises` above remain the source of truth in that case. */
+export interface TodayPlanModuleSection {
+  selectedModules: SelectedTodayPlanModule[];
   fallbackRequired: boolean;
   fallbackReason: string | null;
   selectionReason: string | null;
@@ -50,11 +50,12 @@ export interface DailyLessonModuleSection {
 }
 
 /** Returned by GET /api/sessions/today. Phase I2B — Today is module-only: `available` is the
- * single honest signal of whether there is anything to show; when false, `moduleSection` is null
- * (or reports its own fallback state) and the UI must render a "nothing available yet" state. */
+ * single honest signal of whether there is anything to show; when false, `todayPlan` is null
+ * (or reports its own fallback state) and the UI must render a "nothing available yet" state.
+ * Field renamed from `moduleSection` to `todayPlan` in Phase I4 Pass 3. */
 export interface TodaysSessionResponse {
   available: boolean;
-  moduleSection: DailyLessonModuleSection | null;
+  todayPlan: TodayPlanModuleSection | null;
 }
 
 export interface StartSessionResponse {

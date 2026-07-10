@@ -1,9 +1,12 @@
 ---
-status: in-progress
+status: implemented
 lastUpdated: 2026-07-10
 owner: product / engineering
 ---
 
+> **Phase I4 fully implemented, 2026-07-10, across 3 passes.** This document remains the
+> decision + scope record; see the pass-specific review docs for the full implementation record:
+>
 > **Pass 1 (backend) complete 2026-07-10.** See
 > `docs/reviews/2026-07-10-phase-i4-pass1-backend-rename-review.md` for the full implementation
 > record (files renamed, migration, judgment calls).
@@ -16,9 +19,21 @@ owner: product / engineering
 > (`admin-today-delivery-health/`, route unchanged at `/admin/lessons`) and the renamed
 > Lesson-library page took the new route `/admin/lesson-library`.
 >
-> "Daily Lesson" → "Today Plan" (Pass 3/I4d) is still pending — the rest of this document still
-> describes the pre-implementation decision/scope survey and remains accurate for that
-> unimplemented part.
+> **Pass 3 ("Daily Lesson" → "Today Plan") complete 2026-07-10.** See
+> `docs/reviews/2026-07-10-phase-i4-pass3-today-plan-rename-review.md` for the full implementation
+> record and the closing summary for all 3 passes together. `IDailyLessonModuleSelectionService`→
+> `ITodayPlanModuleSelectionService`, `DailyLessonModules/`→`TodayPlanModules/` (both Application
+> and Infrastructure), `AdminDailyLessonModuleController`→`AdminTodayPlanModuleController` (routes
+> moved to `api/admin/today-plan/...`), `StudentDailyModuleAssignment`→
+> `StudentTodayPlanModuleAssignment` (table `student_daily_module_assignments`→
+> `student_today_plan_module_assignments`), `TodaysSessionResult.ModuleSection`→`.TodayPlan`
+> (judgment call — see the Pass 3 review for why), and the student dashboard card relabeled
+> "Today's Lesson"→"Today's Plan". `StudentPracticeGymModuleAssignment`/
+> `IPracticeGymModuleSelectionService` (H7 — a different concept from Today's daily selection) were
+> confirmed untouched.
+>
+> The rest of this document (below) is the original pre-implementation decision/scope survey,
+> retained as historical record — it is no longer a forward-looking TODO.
 
 # Phase I4 — Product Language Cleanup (Rename)
 

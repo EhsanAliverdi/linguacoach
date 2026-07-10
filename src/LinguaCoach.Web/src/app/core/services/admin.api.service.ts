@@ -10,7 +10,7 @@ import {
   ResetStudentRequest, ResetStudentResponse, AdminStats, AdminActivityHistoryItem,
   AdminStudentDetail,
   StudentAuditHistoryItem,
-  AdminDailyLessonModulePreview, AdminPracticeGymModulePreview,
+  AdminTodayPlanModulePreview, AdminPracticeGymModulePreview,
   AdminGenerationSettings, AdminUpdateGenerationSettingsRequest,
   AdminGenerationBatchesResponse, AdminGenerateLessonsResponse,
   StudentListQuery, PagedResponse, AiModelPricingItem,
@@ -159,9 +159,10 @@ export class AdminApiService {
     return this.http.get<AdminLearningPlanProgress>(`${this.api}/students/${studentId}/learning-plan-progress`);
   }
 
-  /** Phase H6 — preview which approved Modules the Daily Lesson selector would choose today. Read-only. */
-  getDailyLessonModulePreview(studentProfileId: string): Observable<AdminDailyLessonModulePreview> {
-    return this.http.get<AdminDailyLessonModulePreview>(`${this.api}/daily-lesson/modules/preview?studentId=${studentProfileId}`);
+  /** Phase H6 (renamed I4 Pass 3) — preview which approved Modules the Today Plan selector would
+   * choose today. Read-only. */
+  getTodayPlanModulePreview(studentProfileId: string): Observable<AdminTodayPlanModulePreview> {
+    return this.http.get<AdminTodayPlanModulePreview>(`${this.api}/today-plan/modules/preview?studentId=${studentProfileId}`);
   }
   /** Phase H7 — preview which approved Modules the Practice Gym selector would suggest. Read-only. */
   getPracticeGymModulePreview(studentProfileId: string): Observable<AdminPracticeGymModulePreview> {

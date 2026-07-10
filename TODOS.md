@@ -963,7 +963,7 @@ revisiting this without real usage data to justify the cost.
 **Deferred from:** Phase H10, 2026-07-10.
 **Deferred from:** Plan-Sync-After-H7, 2026-07-09.
 
-### TODO-I4-1 — Rename LearnItem/ActivityDefinition/ModuleDefinition/Daily Lesson to product language
+### ~~TODO-I4-1~~ — Rename LearnItem/ActivityDefinition/ModuleDefinition/Daily Lesson to product language — **DONE in Phase I4**
 **What:** Rename `LearnItem`→Lesson, `ActivityDefinition`→Exercise, `ModuleDefinition`→Module, and
 the "Daily Lesson" pipeline/container→**Today Plan** (decided) across backend entities/DTOs/routes/
 migrations and frontend pages/labels/routes — **including file and folder names**, not just class/
@@ -971,10 +971,24 @@ type/symbol names (e.g. `LearnItem.cs`→`Lesson.cs`, `admin-learn-items/`→`ad
 `DailyLessonModuleSelectionService.cs`→`TodayPlanModuleSelectionService.cs`). Composition model in
 the new language: a Module contains Lesson + Exercise + Feedback; a Today Plan contains several
 Modules. Renaming only — no data-model change.
-**Why:** Decided 2026-07-10, right after I2 made bank-first Learn/Activity/Module the sole
-content-delivery model (no more legacy fallback standing behind these names) — the best moment to
-fix the names before I3 locks in a final admin IA and before I5 multiplies how many places they
-appear.
-**Context:** `docs/architecture/product-language-renaming-i4.md` (full scope survey, the
-`/admin/lessons` route-collision problem, open questions, suggested I4a-I4d implementation split).
-**Deferred from:** Phase I2C, 2026-07-10 (decision captured, not implemented).
+**Resolution:** Delivered as 3 independently-verified passes, all complete 2026-07-10. Pass 1
+(backend: `LearnItem`→Lesson, `ActivityDefinition`→Exercise, `ModuleDefinition`→Module across
+entities/EF configs/one migration/Application contracts/Infrastructure services/API routes) — see
+`docs/reviews/2026-07-10-phase-i4-pass1-backend-rename-review.md`. Pass 2 (frontend: Angular
+component/service/model/route renames, resolved the `/admin/lessons` route collision by relocating
+the pre-existing "Today Delivery Health" page and giving the renamed Lesson page
+`/admin/lesson-library`) — see `docs/reviews/2026-07-10-phase-i4-pass2-frontend-rename-review.md`.
+Pass 3 ("Daily Lesson"→"Today Plan": `IDailyLessonModuleSelectionService`→
+`ITodayPlanModuleSelectionService` and its `DailyLessonModules/`→`TodayPlanModules/` folders,
+`AdminDailyLessonModuleController`→`AdminTodayPlanModuleController`,
+`StudentDailyModuleAssignment`→`StudentTodayPlanModuleAssignment`,
+`TodaysSessionResult.ModuleSection`→`.TodayPlan`, dashboard UI copy "Today's Lesson"→"Today's
+Plan") — see `docs/reviews/2026-07-10-phase-i4-pass3-today-plan-rename-review.md`. Every table/
+column/index rename verified via `dotnet ef migrations script` to produce clean
+`RenameTable`/`RenameColumn`/`RenameIndex` SQL, no data loss. File/folder names match symbol names
+throughout, per the phase's explicit requirement. `StudentPracticeGymModuleAssignment`/
+`IPracticeGymModuleSelectionService` (H7, a different concept) deliberately left untouched.
+**Context:** `docs/architecture/product-language-renaming-i4.md` (decision + scope survey, now
+marked `status: implemented`).
+**Deferred from:** Phase I2C, 2026-07-10 (decision captured, not implemented). **Resolved:** Phase
+I4, 2026-07-10.

@@ -1,11 +1,11 @@
-namespace LinguaCoach.Application.DailyLessonModules;
+namespace LinguaCoach.Application.TodayPlanModules;
 
 /// <summary>
-/// Phase H6 — input to the deterministic Daily Lesson module selector. Pure read-only signal set;
-/// the selector never mutates a <c>Module</c>/<c>Lesson</c>/<c>Exercise</c>
+/// Phase H6 (renamed I4 Pass 3) — input to the deterministic Today Plan module selector. Pure
+/// read-only signal set; the selector never mutates a <c>Module</c>/<c>Lesson</c>/<c>Exercise</c>
 /// and never creates Practice Gym or attempt records.
 /// </summary>
-public sealed record DailyLessonModuleSelectionRequest(
+public sealed record TodayPlanModuleSelectionRequest(
     Guid StudentId,
     string? CefrLevel,
     Guid? LearningPlanId,
@@ -19,10 +19,10 @@ public sealed record DailyLessonModuleSelectionRequest(
     bool AllowFallback = true,
     int MaxModules = 1);
 
-/// <summary>Phase H6 — result of Daily Lesson module selection. When <see cref="FallbackRequired"/>
-/// is true, <see cref="SelectedModules"/> is empty and the caller must fall back to existing Today
-/// behavior — this type never represents a hard failure.</summary>
-public sealed record DailyLessonModuleSelectionResult(
+/// <summary>Phase H6 (renamed I4 Pass 3) — result of Today Plan module selection. When
+/// <see cref="FallbackRequired"/> is true, <see cref="SelectedModules"/> is empty and the caller
+/// must fall back to existing Today behavior — this type never represents a hard failure.</summary>
+public sealed record TodayPlanModuleSelectionResult(
     IReadOnlyList<SelectedModuleResult> SelectedModules,
     bool FallbackRequired,
     string? FallbackReason,
@@ -41,11 +41,11 @@ public sealed record SelectedModuleResult(
     int? DifficultyBand,
     int? EstimatedMinutes,
     string Reason,
-    IReadOnlyList<DailyLessonLessonView> LinkedLessons,
-    IReadOnlyList<DailyLessonActivityView> LinkedExercises);
+    IReadOnlyList<TodayPlanLessonView> LinkedLessons,
+    IReadOnlyList<TodayPlanActivityView> LinkedExercises);
 
 /// <summary>Student-safe projection of a <c>Lesson</c> — no admin-only fields.</summary>
-public sealed record DailyLessonLessonView(
+public sealed record TodayPlanLessonView(
     Guid LessonId,
     string Title,
     string Body,
@@ -56,7 +56,7 @@ public sealed record DailyLessonLessonView(
 /// <summary>Student-safe projection of an <c>Exercise</c>. Deliberately excludes
 /// <c>AnswerKeyJson</c> and <c>ScoringRulesJson</c> — those are backend-only per
 /// <c>Exercise</c>'s own doc comments and must never reach this view.</summary>
-public sealed record DailyLessonActivityView(
+public sealed record TodayPlanActivityView(
     Guid ExerciseId,
     string Title,
     string? Description,
@@ -65,22 +65,23 @@ public sealed record DailyLessonActivityView(
     string? FormSchemaJson,
     int? EstimatedMinutes);
 
-public interface IDailyLessonModuleSelectionService
+public interface ITodayPlanModuleSelectionService
 {
     /// <summary>Pure/read-only: performs no database writes. Never throws for "no suitable content"
-    /// — returns <see cref="DailyLessonModuleSelectionResult.FallbackRequired"/> instead.</summary>
-    Task<DailyLessonModuleSelectionResult> SelectAsync(
-        DailyLessonModuleSelectionRequest request, CancellationToken ct = default);
+    /// — returns <see cref="TodayPlanModuleSelectionResult.FallbackRequired"/> instead.</summary>
+    Task<TodayPlanModuleSelectionResult> SelectAsync(
+        TodayPlanModuleSelectionRequest request, CancellationToken ct = default);
 }
 
-/// <summary>Phase H6 — the one write path for the Daily Lesson module pipeline: idempotent per-day
-/// upsert of a <c>StudentDailyModuleAssignment</c> bookkeeping row. Kept separate from
-/// <see cref="IDailyLessonModuleSelectionService"/> so the selector itself stays pure/read-only.</summary>
-public interface IDailyLessonModuleAssignmentRecorder
+/// <summary>Phase H6 (renamed I4 Pass 3) — the one write path for the Today Plan module pipeline:
+/// idempotent per-day upsert of a <c>StudentTodayPlanModuleAssignment</c> bookkeeping row. Kept
+/// separate from <see cref="ITodayPlanModuleSelectionService"/> so the selector itself stays
+/// pure/read-only.</summary>
+public interface ITodayPlanModuleAssignmentRecorder
 {
     Task RecordAsync(
         Guid studentId,
         DateTime targetDate,
-        DailyLessonModuleSelectionResult selectionResult,
+        TodayPlanModuleSelectionResult selectionResult,
         CancellationToken ct = default);
 }

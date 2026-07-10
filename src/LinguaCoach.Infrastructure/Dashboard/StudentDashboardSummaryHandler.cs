@@ -118,11 +118,12 @@ public sealed class StudentDashboardSummaryHandler : IStudentDashboardSummaryHan
 
     /// <summary>
     /// Phase I2B — Today is module-only now: <see cref="TodaysSessionResult"/> no longer carries a
-    /// LearningSession/SessionExercise shape, so this section is built from the Daily Lesson
-    /// Module selection instead. "Ready" only when a module was actually selected;
-    /// otherwise "NotAvailable" — never a stale/legacy shape. SessionId is always null (there is
-    /// no session concept left on this path); ExerciseCount reports the selected module's linked
-    /// Lessons + Exercises as a rough size indicator for the summary card.
+    /// LearningSession/SessionExercise shape, so this section is built from the Today Plan
+    /// Module selection instead (renamed from "Daily Lesson" in Phase I4 Pass 3). "Ready" only
+    /// when a module was actually selected; otherwise "NotAvailable" — never a stale/legacy shape.
+    /// SessionId is always null (there is no session concept left on this path); ExerciseCount
+    /// reports the selected module's linked Lessons + Exercises as a rough size indicator for the
+    /// summary card.
     /// </summary>
     private static DashboardSummaryTodaySession BuildTodaySession(
         TodaysSessionResult? session, bool failed, bool courseActive)
@@ -137,7 +138,7 @@ public sealed class StudentDashboardSummaryHandler : IStudentDashboardSummaryHan
                 "Preparing", null, null, null, null, null, null, null,
                 "Start today's lesson");
 
-        var selected = session.ModuleSection?.SelectedModules.FirstOrDefault();
+        var selected = session.TodayPlan?.SelectedModules.FirstOrDefault();
         if (!session.Available || selected is null)
             return new DashboardSummaryTodaySession(
                 "NotAvailable", null, null, null, null, null, null, null,

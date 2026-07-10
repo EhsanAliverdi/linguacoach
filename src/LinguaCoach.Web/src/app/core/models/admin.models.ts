@@ -655,8 +655,9 @@ export interface AdminAuthEventListQuery {
   to?: string;
 }
 
-/** Phase H6 — admin preview of the Daily Lesson module selector's decision for a student. */
-export interface AdminDailyLessonSelectedModule {
+/** Phase H6 (renamed I4 Pass 3) — admin preview of the Today Plan module selector's decision for
+ * a student. */
+export interface AdminTodayPlanSelectedModule {
   moduleId: string;
   title: string;
   cefrLevel: string | null;
@@ -665,8 +666,8 @@ export interface AdminDailyLessonSelectedModule {
   reason: string;
 }
 
-export interface AdminDailyLessonModulePreview {
-  selectedModules: AdminDailyLessonSelectedModule[];
+export interface AdminTodayPlanModulePreview {
+  selectedModules: AdminTodayPlanSelectedModule[];
   fallbackRequired: boolean;
   fallbackReason: string | null;
   selectionReason: string | null;

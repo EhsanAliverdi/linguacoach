@@ -1,24 +1,24 @@
 using FluentAssertions;
-using LinguaCoach.Application.DailyLessonModules;
+using LinguaCoach.Application.TodayPlanModules;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
-using LinguaCoach.Infrastructure.DailyLessonModules;
+using LinguaCoach.Infrastructure.TodayPlanModules;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace LinguaCoach.UnitTests.DailyLessonModules;
+namespace LinguaCoach.UnitTests.TodayPlanModules;
 
 /// <summary>
-/// Phase H6 — deterministic Daily Lesson module selector. Uses SQLite in-memory (matches H3/H4/H5
-/// generation test conventions) with directly-seeded Modules/Lessons/Activity
+/// Phase H6 (renamed I4 Pass 3) — deterministic Today Plan module selector. Uses SQLite in-memory
+/// (matches H3/H4/H5 generation test conventions) with directly-seeded Modules/Lessons/Activity
 /// Definitions. All fixture content is synthetic.
 /// </summary>
-public sealed class DailyLessonModuleSelectionServiceTests : IDisposable
+public sealed class TodayPlanModuleSelectionServiceTests : IDisposable
 {
     private readonly LinguaCoachDbContext _db;
-    private readonly DailyLessonModuleSelectionService _sut;
+    private readonly TodayPlanModuleSelectionService _sut;
 
-    public DailyLessonModuleSelectionServiceTests()
+    public TodayPlanModuleSelectionServiceTests()
     {
         var options = new DbContextOptionsBuilder<LinguaCoachDbContext>()
             .UseSqlite("DataSource=:memory:")
@@ -27,7 +27,7 @@ public sealed class DailyLessonModuleSelectionServiceTests : IDisposable
         _db.Database.OpenConnection();
         _db.Database.EnsureCreated();
 
-        _sut = new DailyLessonModuleSelectionService(_db);
+        _sut = new TodayPlanModuleSelectionService(_db);
     }
 
     public void Dispose()
@@ -85,7 +85,7 @@ public sealed class DailyLessonModuleSelectionServiceTests : IDisposable
         return module;
     }
 
-    private static DailyLessonModuleSelectionRequest Request(
+    private static TodayPlanModuleSelectionRequest Request(
         Guid studentId, string? cefr = "B1", string? skill = null, int? preferredMinutes = null,
         IReadOnlyList<string>? focusAreas = null, IReadOnlyList<string>? contextTags = null,
         IReadOnlyList<Guid>? recentIds = null, bool allowFallback = true, int maxModules = 1) =>
@@ -224,8 +224,8 @@ public sealed class DailyLessonModuleSelectionServiceTests : IDisposable
     {
         var studentId = Guid.NewGuid();
         var module = SeedModule();
-        _db.StudentDailyModuleAssignments.Add(new StudentDailyModuleAssignment(
-            studentId, module.Id, DateTime.UtcNow.Date.AddDays(-3), DailyModuleAssignmentStatus.Selected));
+        _db.StudentTodayPlanModuleAssignments.Add(new StudentTodayPlanModuleAssignment(
+            studentId, module.Id, DateTime.UtcNow.Date.AddDays(-3), TodayPlanModuleAssignmentStatus.Selected));
         _db.SaveChanges();
 
         var result = await _sut.SelectAsync(Request(studentId));

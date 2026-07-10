@@ -7,7 +7,7 @@ import {
   UpdateStudentProfileRequest, ResetStudentRequest, StudentLifecycleStageName,
   AdminStudentLearningMemory, ResetStudentResponse, AdminActivityHistoryItem,
   AdminStudentDetail, StudentAuditHistoryItem,
-  AdminDailyLessonModulePreview, AdminPracticeGymModulePreview,
+  AdminTodayPlanModulePreview, AdminPracticeGymModulePreview,
   AdminPlacementLatestResponse, AdminPlacementProgress, AdminStudentPracticeSummary,
   AdminLearningPlanProgress, AdminStudentProgressSummary, AdminStudentSpeakingAttemptsResult,
   AdminWritingEvaluationItemDto, StudentReadinessSummary, StudentReadinessRepairRequest,
@@ -151,10 +151,10 @@ export class AdminStudentDetailComponent implements OnInit {
     ...this.experienceLevels.map(l => ({ value: l.value, label: l.label })),
   ];
 
-  // Phase H6 — Daily Lesson module selection diagnostic (read-only preview)
-  dailyLessonModulePreview = signal<AdminDailyLessonModulePreview | null>(null);
-  dailyLessonModulePreviewLoading = signal(true);
-  dailyLessonModulePreviewError = signal('');
+  // Phase H6 (renamed I4 Pass 3) — Today Plan module selection diagnostic (read-only preview)
+  todayPlanModulePreview = signal<AdminTodayPlanModulePreview | null>(null);
+  todayPlanModulePreviewLoading = signal(true);
+  todayPlanModulePreviewError = signal('');
 
   // Phase H7 — Practice Gym module selection diagnostic (read-only preview)
   practiceGymModulePreview = signal<AdminPracticeGymModulePreview | null>(null);
@@ -331,9 +331,9 @@ export class AdminStudentDetailComponent implements OnInit {
       error: () => { this.progressSummaryError.set('Could not load progress summary.'); this.progressSummaryLoading.set(false); },
     });
 
-    this.adminApi.getDailyLessonModulePreview(id).subscribe({
-      next: p => { this.dailyLessonModulePreview.set(p); this.dailyLessonModulePreviewLoading.set(false); },
-      error: () => { this.dailyLessonModulePreviewError.set('Could not load Daily Lesson module preview.'); this.dailyLessonModulePreviewLoading.set(false); },
+    this.adminApi.getTodayPlanModulePreview(id).subscribe({
+      next: p => { this.todayPlanModulePreview.set(p); this.todayPlanModulePreviewLoading.set(false); },
+      error: () => { this.todayPlanModulePreviewError.set('Could not load Today Plan module preview.'); this.todayPlanModulePreviewLoading.set(false); },
     });
 
     this.adminApi.getPracticeGymModulePreview(id).subscribe({

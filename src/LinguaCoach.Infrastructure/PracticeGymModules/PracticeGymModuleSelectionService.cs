@@ -16,7 +16,7 @@ namespace LinguaCoach.Infrastructure.PracticeGymModules;
 /// <see cref="PracticeGymModuleSelectionResult.FallbackRequired"/> instead, and the outer
 /// try/catch guarantees the same for any unexpected error, so a caller can always safely fall
 /// back to the existing readiness-pool-backed Practice Gym suggestions. Mirrors H6's
-/// <c>DailyLessonModuleSelectionService</c>, extended for Practice Gym's self-directed
+/// <c>TodayPlanModuleSelectionService</c>, extended for Practice Gym's self-directed
 /// skill/subskill/objective request and weakness-signal soft preferences.
 /// </summary>
 public sealed class PracticeGymModuleSelectionService : IPracticeGymModuleSelectionService

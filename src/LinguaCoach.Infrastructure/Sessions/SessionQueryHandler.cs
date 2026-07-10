@@ -1,4 +1,4 @@
-using LinguaCoach.Application.DailyLessonModules;
+using LinguaCoach.Application.TodayPlanModules;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -12,21 +12,21 @@ namespace LinguaCoach.Infrastructure.Sessions;
 /// Phase I2B — the legacy LearningSession/SessionExercise generation pipeline
 /// (ISessionGeneratorService/SessionGeneratorService) and the on-open activity preparation
 /// pipeline (IPrepareExerciseHandler/ExercisePrepareHandler) were deleted. Today now ONLY calls
-/// IDailyLessonModuleSelectionService — when it has nothing for the student, Today honestly
+/// ITodayPlanModuleSelectionService — when it has nothing for the student, Today honestly
 /// reports "nothing available" (TodaysSessionResult.Available = false) rather than falling back to
 /// any AI generation. See docs/reviews/2026-07-10-phase-i2b-today-module-only-collapse-review.md.
 /// </summary>
 public sealed class SessionQueryHandler : IGetTodaysSessionHandler, IGetSessionHistoryHandler
 {
     private readonly LinguaCoachDbContext _db;
-    private readonly IDailyLessonModuleSelectionService _moduleSelector;
-    private readonly IDailyLessonModuleAssignmentRecorder _moduleAssignmentRecorder;
+    private readonly ITodayPlanModuleSelectionService _moduleSelector;
+    private readonly ITodayPlanModuleAssignmentRecorder _moduleAssignmentRecorder;
     private readonly ILogger<SessionQueryHandler> _logger;
 
     public SessionQueryHandler(
         LinguaCoachDbContext db,
-        IDailyLessonModuleSelectionService moduleSelector,
-        IDailyLessonModuleAssignmentRecorder moduleAssignmentRecorder,
+        ITodayPlanModuleSelectionService moduleSelector,
+        ITodayPlanModuleAssignmentRecorder moduleAssignmentRecorder,
         ILogger<SessionQueryHandler> logger)
     {
         _db = db;
@@ -41,26 +41,26 @@ public sealed class SessionQueryHandler : IGetTodaysSessionHandler, IGetSessionH
             .FirstOrDefaultAsync(p => p.UserId == query.UserId, ct)
             ?? throw new InvalidOperationException("Student profile not found.");
 
-        DailyLessonModuleSelectionResult? moduleSection = null;
+        TodayPlanModuleSelectionResult? todayPlan = null;
         try
         {
-            moduleSection = await _moduleSelector.SelectAsync(
-                new DailyLessonModuleSelectionRequest(
+            todayPlan = await _moduleSelector.SelectAsync(
+                new TodayPlanModuleSelectionRequest(
                     StudentId: profile.Id,
                     CefrLevel: profile.CefrLevel,
                     LearningPlanId: null,
                     TargetDate: DateTime.UtcNow.Date),
                 ct);
 
-            await _moduleAssignmentRecorder.RecordAsync(profile.Id, DateTime.UtcNow.Date, moduleSection, ct);
+            await _moduleAssignmentRecorder.RecordAsync(profile.Id, DateTime.UtcNow.Date, todayPlan, ct);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Daily Lesson module selection failed for student {StudentProfileId}; Today has nothing available.", profile.Id);
+            _logger.LogWarning(ex, "Today Plan module selection failed for student {StudentProfileId}; Today has nothing available.", profile.Id);
         }
 
-        var available = moduleSection is { FallbackRequired: false } && moduleSection.SelectedModules.Count > 0;
-        return new TodaysSessionResult(available, moduleSection);
+        var available = todayPlan is { FallbackRequired: false } && todayPlan.SelectedModules.Count > 0;
+        return new TodaysSessionResult(available, todayPlan);
     }
 
     public async Task<SessionHistoryResult> HandleAsync(GetSessionHistoryQuery query, CancellationToken ct = default)
