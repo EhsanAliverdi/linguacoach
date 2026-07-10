@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-11 (Phase J2c)
+lastUpdated: 2026-07-11 (Phase J3)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,24 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-11 (Phase J2c)
+Last updated: 2026-07-11 (Phase J3)
+
+## Admin "Preview as Learner" for Modules (Phase J3, 2026-07-11)
+
+Admins can now preview a Module exactly as a learner would — see the Lesson, complete the Exercise,
+get a real score and feedback message — entirely **before approving it**. A new "Preview as
+Learner" button on the Module admin page's detail drawer opens the Module's linked Lesson and
+Exercise (student-safe schema only, no answer key), rendered with the same shared Form.io renderer
+component the student app uses. Submitting an answer scores it with the exact same
+`ComponentAnswerScorer`/`ExerciseLaunchEligibility` logic the real student runtime uses — no
+separate/simplified scoring path. **Deliberately does not create any `LearningActivity`/
+`ActivityAttempt`/`StudentExerciseLaunch` row** — a pure read/score-only diagnostic, entirely
+separate from the real student launch path (`IExerciseLaunchService`, which still requires an
+Approved Module + real student). This closes the second of the architecture audit's two Critical
+product gaps (the first, AI-assisted generation, closed by Phase J2). 3,457/3,457 backend tests
+pass (+9 new, including a dedicated test proving no runtime rows are created). Not yet manually
+verified in a live browser session. Full detail:
+`docs/reviews/2026-07-11-phase-j3-admin-module-preview-review.md`.
 
 ## AI-Assisted Module Generation (Phase J2c, 2026-07-11) — closes Phase J2
 

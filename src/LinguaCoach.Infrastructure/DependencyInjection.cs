@@ -586,6 +586,11 @@ public static class DependencyInjection
             sp => sp.GetRequiredService<LinguaCoach.Infrastructure.Modules.ModuleGenerationService>());
         services.AddScoped<LinguaCoach.Application.Modules.IGenerateModuleFromResourceWithAiHandler,
             LinguaCoach.Infrastructure.Modules.AiModuleGenerationService>();
+        services.AddScoped<LinguaCoach.Infrastructure.Modules.AdminModulePreviewService>();
+        services.AddScoped<LinguaCoach.Application.Modules.IAdminModulePreviewQuery>(
+            sp => sp.GetRequiredService<LinguaCoach.Infrastructure.Modules.AdminModulePreviewService>());
+        services.AddScoped<LinguaCoach.Application.Modules.IAdminModulePreviewSubmitHandler>(
+            sp => sp.GetRequiredService<LinguaCoach.Infrastructure.Modules.AdminModulePreviewService>());
 
         // Phase H6 (renamed I4 Pass 3) — Today Plan Module Pipeline (deterministic, read-only
         // module selection for Today + the one write path for its assignment bookkeeping).

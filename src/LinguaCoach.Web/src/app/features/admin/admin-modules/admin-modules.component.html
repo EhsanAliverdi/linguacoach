@@ -149,6 +149,9 @@
   @if (detail(); as footerItem) {
     <div slot="footer">
       <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeDrawer()">Close</sp-admin-button>
+      <sp-admin-button variant="secondary" appearance="outline" (clicked)="openPreview(footerItem)">
+        Preview as Learner
+      </sp-admin-button>
       @if (footerItem.reviewStatus !== 'Approved') {
         <sp-admin-button variant="primary" [disabled]="approving()" (clicked)="approveSelected()">
           {{ approving() ? 'Approving…' : 'Approve' }}
@@ -194,6 +197,87 @@
     <sp-admin-button variant="primary" [disabled]="generating()" (clicked)="submitGenerateFromItems()">
       {{ generating() ? 'Generating…' : 'Generate' }}
     </sp-admin-button>
+  </div>
+
+</sp-admin-modal>
+
+<!-- ── Phase J3 — Preview as Learner modal ─────────────────────────────── -->
+<sp-admin-modal
+  [open]="previewModalOpen()"
+  title="Preview as Learner"
+  variant="form"
+  (closed)="closePreview()">
+
+  @if (previewLoading()) {
+    <sp-admin-loading-state message="Loading preview" />
+  } @else {
+    @if (previewData(); as p) {
+      <div class="sp-admin-form-stack">
+
+        <sp-admin-alert variant="info">
+          This is exactly what a student would see and complete — nothing here affects any student
+          account, and this Module's review status ({{ p.moduleReviewStatus }}) is unaffected.
+        </sp-admin-alert>
+
+        @if (p.lesson; as lesson) {
+          <sp-admin-form-field label="Learn">
+            <h4>{{ lesson.title }}</h4>
+            <p>{{ lesson.body }}</p>
+            @if (lesson.examples.length > 0) {
+              <p class="sp-admin-text-muted"><strong>Examples:</strong></p>
+              <ul>
+                @for (ex of lesson.examples; track ex) { <li>{{ ex }}</li> }
+              </ul>
+            }
+            @if (lesson.usageNotes) { <p class="sp-admin-text-muted">{{ lesson.usageNotes }}</p> }
+          </sp-admin-form-field>
+        }
+
+        @if (p.exercise; as exercise) {
+          <sp-admin-form-field label="Practice">
+            <h4>{{ exercise.title }}</h4>
+            <p>{{ exercise.instructions }}</p>
+
+            @if (!exercise.canScore) {
+              <sp-admin-alert variant="warning">
+                {{ exercise.unscorableReason }} You can still see the activity below, but it will not
+                be auto-scored in this preview.
+              </sp-admin-alert>
+            }
+
+            @if (previewSchema()) {
+              <app-formio-renderer
+                [schema]="previewSchema()"
+                [disabled]="previewSubmitting()"
+                (submit)="onPreviewExerciseSubmit($event)" />
+            } @else {
+              <sp-admin-alert variant="warning">This Exercise has no renderable schema.</sp-admin-alert>
+            }
+          </sp-admin-form-field>
+        } @else {
+          <sp-admin-alert variant="warning">This Module has no linked Exercise to preview.</sp-admin-alert>
+        }
+
+        @if (previewResult(); as result) {
+          <sp-admin-form-field label="Feedback">
+            @if (result.scored) {
+              <sp-admin-alert [variant]="result.allCorrect ? 'success' : 'warning'">
+                Score: {{ result.scorePercent }}% — {{ result.feedbackMessage }}
+              </sp-admin-alert>
+            } @else {
+              <sp-admin-alert variant="info">{{ result.unscorableReason }}</sp-admin-alert>
+            }
+          </sp-admin-form-field>
+        }
+
+      </div>
+    }
+  }
+
+  @if (previewError()) { <sp-admin-alert variant="error">{{ previewError() }}</sp-admin-alert> }
+
+  <div slot="footer">
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closePreview()">Close</sp-admin-button>
   </div>
 
 </sp-admin-modal>

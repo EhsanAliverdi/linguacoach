@@ -5,8 +5,11 @@ import { ActivatedRoute } from '@angular/router';
 import { AdminModuleService } from '../../../core/services/admin-module.service';
 import {
   ModuleDto,
+  ModulePreviewResult,
+  ModulePreviewSubmitResult,
   MODULE_REVIEW_STATUSES,
 } from '../../../core/models/admin-module.models';
+import { FormioRendererComponent } from '../../../shared/formio/formio-renderer.component';
 import { RESOURCE_BANK_CEFR_LEVELS } from '../../../core/models/admin-resource-import.models';
 import {
   SpAdminAlertComponent,
@@ -60,6 +63,7 @@ const PAGE_SIZE = 20;
     SpAdminTableComponent,
     SpAdminTableFooterComponent,
     SpAdminTextareaComponent,
+    FormioRendererComponent,
   ],
   templateUrl: './admin-modules.component.html',
 })
@@ -95,6 +99,15 @@ export class AdminModulesComponent implements OnInit {
   generateLessonId = '';
   generateExerciseId = '';
   generateTitle = '';
+
+  // ── Phase J3 — Preview as Learner modal ─────────────────────────────────
+  previewModalOpen = signal(false);
+  previewLoading = signal(false);
+  previewError = signal('');
+  previewData = signal<ModulePreviewResult | null>(null);
+  previewSchema = signal<any>(null);
+  previewSubmitting = signal(false);
+  previewResult = signal<ModulePreviewSubmitResult | null>(null);
 
   constructor(private moduleSvc: AdminModuleService, private route: ActivatedRoute) {}
 
@@ -245,6 +258,61 @@ export class AdminModulesComponent implements OnInit {
       error: err => {
         this.generating.set(false);
         this.actionError.set(err.error?.error ?? 'Could not generate a Module.');
+      },
+    });
+  }
+
+  /** Phase J3 — loads this Module's linked Lesson + Exercise for rendering, regardless of the
+   *  Module's own review status (the whole point is previewing BEFORE approval). Never creates
+   *  a LearningActivity/attempt — read/score-only, separate from the real student runtime. */
+  openPreview(item: ModuleDto): void {
+    this.previewLoading.set(true);
+    this.previewError.set('');
+    this.previewData.set(null);
+    this.previewSchema.set(null);
+    this.previewResult.set(null);
+    this.previewModalOpen.set(true);
+
+    this.moduleSvc.preview(item.id).subscribe({
+      next: result => {
+        this.previewLoading.set(false);
+        this.previewData.set(result);
+        if (result.exercise?.formSchemaJson) {
+          try {
+            this.previewSchema.set(JSON.parse(result.exercise.formSchemaJson));
+          } catch {
+            this.previewSchema.set(null);
+          }
+        }
+      },
+      error: err => {
+        this.previewLoading.set(false);
+        this.previewError.set(err.error?.error ?? 'Could not load the preview.');
+      },
+    });
+  }
+
+  closePreview(): void {
+    this.previewModalOpen.set(false);
+  }
+
+  /** Fired by the FormioRendererComponent's (submit) output with the submission's data object
+   *  (component key -> submitted value). Scores it using the same engine the real student runtime
+   *  uses — never a simplified/separate scoring path. */
+  onPreviewExerciseSubmit(answers: Record<string, unknown>): void {
+    const module = this.previewData();
+    if (!module) return;
+
+    this.previewSubmitting.set(true);
+    this.previewError.set('');
+    this.moduleSvc.previewSubmit(module.moduleId, { answers }).subscribe({
+      next: result => {
+        this.previewSubmitting.set(false);
+        this.previewResult.set(result);
+      },
+      error: err => {
+        this.previewSubmitting.set(false);
+        this.previewError.set(err.error?.error ?? 'Could not score the preview submission.');
       },
     });
   }

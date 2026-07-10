@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.Json;
 using LinguaCoach.Application.Modules;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -30,6 +31,8 @@ public sealed class AdminModuleController : ControllerBase
     private readonly IGenerateModuleFromLessonHandler _generateFromLessonHandler;
     private readonly IGenerateModuleFromExerciseHandler _generateFromExerciseHandler;
     private readonly IGenerateModuleFromResourceWithAiHandler _generateFromResourceWithAiHandler;
+    private readonly IAdminModulePreviewQuery _previewQuery;
+    private readonly IAdminModulePreviewSubmitHandler _previewSubmitHandler;
 
     public AdminModuleController(
         IAdminModuleListQuery listQuery,
@@ -42,7 +45,9 @@ public sealed class AdminModuleController : ControllerBase
         IGenerateModuleFromResourceHandler generateFromResourceHandler,
         IGenerateModuleFromLessonHandler generateFromLessonHandler,
         IGenerateModuleFromExerciseHandler generateFromExerciseHandler,
-        IGenerateModuleFromResourceWithAiHandler generateFromResourceWithAiHandler)
+        IGenerateModuleFromResourceWithAiHandler generateFromResourceWithAiHandler,
+        IAdminModulePreviewQuery previewQuery,
+        IAdminModulePreviewSubmitHandler previewSubmitHandler)
     {
         _listQuery = listQuery;
         _getQuery = getQuery;
@@ -55,6 +60,8 @@ public sealed class AdminModuleController : ControllerBase
         _generateFromLessonHandler = generateFromLessonHandler;
         _generateFromExerciseHandler = generateFromExerciseHandler;
         _generateFromResourceWithAiHandler = generateFromResourceWithAiHandler;
+        _previewQuery = previewQuery;
+        _previewSubmitHandler = previewSubmitHandler;
     }
 
     // GET api/admin/modules?page=&pageSize=&status=&cefrLevel=&skill=&subskill=&contextTag=&
@@ -72,6 +79,35 @@ public sealed class AdminModuleController : ControllerBase
             page, pageSize, status, cefrLevel, skill, subskill, contextTag, focusTag,
             difficultyBand, lessonId, exerciseId, search), ct);
         return Ok(result);
+    }
+
+    // GET api/admin/modules/{id}/preview
+    // Phase J3 — admin "preview as a learner": loads this Module's linked Lesson + Exercise for
+    // rendering regardless of the Module's own review status (preview happens before approval).
+    // Never exposes AnswerKeyJson/ScoringRulesJson.
+    [HttpGet("{id:guid}/preview")]
+    public async Task<IActionResult> Preview(Guid id, CancellationToken ct)
+    {
+        var result = await _previewQuery.HandleAsync(id, ct);
+        return result is null ? NotFound() : Ok(result);
+    }
+
+    // POST api/admin/modules/{id}/preview/submit  { answers: { [componentKey]: value } }
+    // Phase J3 — scores a preview submission using the same scoring engine the real student
+    // runtime uses. Never creates a LearningActivity/ActivityAttempt — read/score-only.
+    [HttpPost("{id:guid}/preview/submit")]
+    public async Task<IActionResult> PreviewSubmit(Guid id, [FromBody] ModulePreviewSubmitRequestBody body, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _previewSubmitHandler.HandleAsync(
+                new ModulePreviewSubmitRequest(id, body.Answers ?? new Dictionary<string, JsonElement>()), ct);
+            return Ok(result);
+        }
+        catch (ModuleValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
     }
 
     // GET api/admin/modules/{id}
@@ -267,4 +303,6 @@ public sealed class AdminModuleController : ControllerBase
 
     public sealed record ApproveModuleRequestBody(string? Notes = null);
     public sealed record RejectModuleRequestBody(string Reason);
+
+    public sealed record ModulePreviewSubmitRequestBody(Dictionary<string, JsonElement>? Answers = null);
 }

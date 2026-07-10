@@ -98,6 +98,61 @@ export interface GenerateModuleResult {
   reviewRoute: string;
 }
 
+// Phase J3 — admin "preview as a learner". Lets an admin render a Module's Lesson + Exercise
+// exactly as a student would, submit an answer, and see a real score/feedback — before the
+// Module is approved. Never exposes an answer key or scoring rules.
+
+export interface ModulePreviewLessonDto {
+  lessonId: string;
+  title: string;
+  body: string;
+  examples: string[];
+  commonMistakes: string[];
+  usageNotes: string | null;
+}
+
+export interface ModulePreviewExerciseDto {
+  exerciseId: string;
+  title: string;
+  instructions: string;
+  activityType: string;
+  rendererType: string;
+  formSchemaJson: string | null;
+  estimatedMinutes: number | null;
+  canScore: boolean;
+  unscorableReason: string | null;
+}
+
+export interface ModulePreviewResult {
+  moduleId: string;
+  moduleTitle: string;
+  moduleDescription: string | null;
+  moduleReviewStatus: string;
+  lesson: ModulePreviewLessonDto | null;
+  exercise: ModulePreviewExerciseDto | null;
+  moduleFeedbackPlanJson: string | null;
+}
+
+export interface ModulePreviewSubmitRequestBody {
+  answers: Record<string, unknown>;
+}
+
+export interface ModulePreviewComponentResult {
+  componentKey: string;
+  isCorrect: boolean;
+  pointsEarned: number;
+  maxPoints: number;
+}
+
+export interface ModulePreviewSubmitResult {
+  scored: boolean;
+  unscorableReason: string | null;
+  scorePercent: number | null;
+  allCorrect: boolean | null;
+  components: ModulePreviewComponentResult[];
+  feedbackMessage: string | null;
+}
+
 export const MODULE_REVIEW_STATUSES = ['NotRequired', 'PendingReview', 'Approved', 'Rejected'] as const;
 export const MODULE_SOURCE_MODES = ['Manual', 'GeneratedFromLessonAndExercises', 'GeneratedFromResources', 'Imported'] as const;
 export const MODULE_LESSON_ROLES = ['Primary', 'Supporting'] as const;

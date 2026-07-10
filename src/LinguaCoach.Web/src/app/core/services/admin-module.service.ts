@@ -10,6 +10,9 @@ import {
   GenerateModuleFromLessonRequestBody,
   GenerateModuleFromExerciseRequestBody,
   GenerateModuleResult,
+  ModulePreviewResult,
+  ModulePreviewSubmitRequestBody,
+  ModulePreviewSubmitResult,
 } from '../models/admin-module.models';
 
 @Injectable({ providedIn: 'root' })
@@ -39,6 +42,14 @@ export class AdminModuleService {
 
   get(id: string): Observable<ModuleDto> {
     return this.http.get<ModuleDto>(`${this.base}/${id}`);
+  }
+
+  preview(id: string): Observable<ModulePreviewResult> {
+    return this.http.get<ModulePreviewResult>(`${this.base}/${id}/preview`);
+  }
+
+  previewSubmit(id: string, body: ModulePreviewSubmitRequestBody): Observable<ModulePreviewSubmitResult> {
+    return this.http.post<ModulePreviewSubmitResult>(`${this.base}/${id}/preview/submit`, body);
   }
 
   generateFromItems(body: GenerateModuleFromItemsRequestBody): Observable<GenerateModuleResult> {
