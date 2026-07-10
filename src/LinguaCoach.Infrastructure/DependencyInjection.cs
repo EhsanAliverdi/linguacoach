@@ -402,11 +402,11 @@ public static class DependencyInjection
         services.AddScoped<LinguaCoach.Application.PracticeGymModules.IPracticeGymModuleAssignmentRecorder,
             LinguaCoach.Infrastructure.PracticeGymModules.PracticeGymModuleAssignmentRecorder>();
 
-        // Phase H10 — ActivityDefinition Runtime Launch Path / Attempt Bridge (materializes an
-        // approved, launch-eligible Activity Definition into a real LearningActivity, reusing the
+        // Phase H10 — Exercise Runtime Launch Path / Attempt Bridge (materializes an
+        // approved, launch-eligible Exercise into a real LearningActivity, reusing the
         // existing scoring/attempt/ledger pipeline unchanged).
-        services.AddScoped<LinguaCoach.Application.ActivityDefinitionLaunch.IActivityDefinitionLaunchService,
-            LinguaCoach.Infrastructure.ActivityDefinitionLaunch.ActivityDefinitionLaunchService>();
+        services.AddScoped<LinguaCoach.Application.ExerciseLaunch.IExerciseLaunchService,
+            LinguaCoach.Infrastructure.ExerciseLaunch.ExerciseLaunchService>();
 
         // Admin runtime settings / feature gate registry (Phase 20B)
         services.AddSingleton<IFeatureGateRegistry, LinguaCoach.Infrastructure.Admin.FeatureGateRegistryService>();
@@ -520,66 +520,66 @@ public static class DependencyInjection
         services.AddScoped<LinguaCoach.Application.ResourceImport.IContentImportService,
             LinguaCoach.Infrastructure.ResourceImport.ContentImportService>();
 
-        // Phase H3 — Learn Item foundation (reviewable teaching/explanation blocks generated from
+        // Phase H3 — Lesson foundation (reviewable teaching/explanation blocks generated from
         // published Resource Bank rows).
-        services.AddScoped<LinguaCoach.Application.LearnItems.IAdminLearnItemListQuery,
-            LinguaCoach.Infrastructure.LearnItems.AdminLearnItemListQueryHandler>();
-        services.AddScoped<LinguaCoach.Application.LearnItems.IAdminLearnItemGetQuery,
-            LinguaCoach.Infrastructure.LearnItems.AdminLearnItemGetQueryHandler>();
-        services.AddScoped<LinguaCoach.Application.LearnItems.IAdminCreateLearnItemHandler,
-            LinguaCoach.Infrastructure.LearnItems.AdminCreateLearnItemHandler>();
-        services.AddScoped<LinguaCoach.Application.LearnItems.IAdminUpdateLearnItemHandler,
-            LinguaCoach.Infrastructure.LearnItems.AdminUpdateLearnItemHandler>();
-        services.AddScoped<LinguaCoach.Application.LearnItems.IAdminApproveLearnItemHandler,
-            LinguaCoach.Infrastructure.LearnItems.AdminApproveLearnItemHandler>();
-        services.AddScoped<LinguaCoach.Application.LearnItems.IAdminRejectLearnItemHandler,
-            LinguaCoach.Infrastructure.LearnItems.AdminRejectLearnItemHandler>();
-        services.AddScoped<LinguaCoach.Application.LearnItems.IGenerateLearnItemFromResourcesHandler,
-            LinguaCoach.Infrastructure.LearnItems.LearnItemGenerationService>();
+        services.AddScoped<LinguaCoach.Application.Lessons.IAdminLessonListQuery,
+            LinguaCoach.Infrastructure.Lessons.AdminLessonListQueryHandler>();
+        services.AddScoped<LinguaCoach.Application.Lessons.IAdminLessonGetQuery,
+            LinguaCoach.Infrastructure.Lessons.AdminLessonGetQueryHandler>();
+        services.AddScoped<LinguaCoach.Application.Lessons.IAdminCreateLessonHandler,
+            LinguaCoach.Infrastructure.Lessons.AdminCreateLessonHandler>();
+        services.AddScoped<LinguaCoach.Application.Lessons.IAdminUpdateLessonHandler,
+            LinguaCoach.Infrastructure.Lessons.AdminUpdateLessonHandler>();
+        services.AddScoped<LinguaCoach.Application.Lessons.IAdminApproveLessonHandler,
+            LinguaCoach.Infrastructure.Lessons.AdminApproveLessonHandler>();
+        services.AddScoped<LinguaCoach.Application.Lessons.IAdminRejectLessonHandler,
+            LinguaCoach.Infrastructure.Lessons.AdminRejectLessonHandler>();
+        services.AddScoped<LinguaCoach.Application.Lessons.IGenerateLessonFromResourcesHandler,
+            LinguaCoach.Infrastructure.Lessons.LessonGenerationService>();
 
         // Phase H4 — Activity foundation (reviewable, editable practice task designs generated
-        // from published Resource Bank rows or a Learn Item).
-        services.AddScoped<LinguaCoach.Application.ActivityDefinitions.IAdminActivityDefinitionListQuery,
-            LinguaCoach.Infrastructure.ActivityDefinitions.AdminActivityDefinitionListQueryHandler>();
-        services.AddScoped<LinguaCoach.Application.ActivityDefinitions.IAdminActivityDefinitionGetQuery,
-            LinguaCoach.Infrastructure.ActivityDefinitions.AdminActivityDefinitionGetQueryHandler>();
-        services.AddScoped<LinguaCoach.Application.ActivityDefinitions.IAdminCreateActivityDefinitionHandler,
-            LinguaCoach.Infrastructure.ActivityDefinitions.AdminCreateActivityDefinitionHandler>();
-        services.AddScoped<LinguaCoach.Application.ActivityDefinitions.IAdminUpdateActivityDefinitionHandler,
-            LinguaCoach.Infrastructure.ActivityDefinitions.AdminUpdateActivityDefinitionHandler>();
-        services.AddScoped<LinguaCoach.Application.ActivityDefinitions.IAdminApproveActivityDefinitionHandler,
-            LinguaCoach.Infrastructure.ActivityDefinitions.AdminApproveActivityDefinitionHandler>();
-        services.AddScoped<LinguaCoach.Application.ActivityDefinitions.IAdminRejectActivityDefinitionHandler,
-            LinguaCoach.Infrastructure.ActivityDefinitions.AdminRejectActivityDefinitionHandler>();
-        services.AddScoped<LinguaCoach.Infrastructure.ActivityDefinitions.ActivityGenerationService>();
-        services.AddScoped<LinguaCoach.Application.ActivityDefinitions.IGenerateActivityFromResourcesHandler>(
-            sp => sp.GetRequiredService<LinguaCoach.Infrastructure.ActivityDefinitions.ActivityGenerationService>());
-        services.AddScoped<LinguaCoach.Application.ActivityDefinitions.IGenerateActivityFromLearnItemHandler>(
-            sp => sp.GetRequiredService<LinguaCoach.Infrastructure.ActivityDefinitions.ActivityGenerationService>());
+        // from published Resource Bank rows or a Lesson).
+        services.AddScoped<LinguaCoach.Application.Exercises.IAdminExerciseListQuery,
+            LinguaCoach.Infrastructure.Exercises.AdminExerciseListQueryHandler>();
+        services.AddScoped<LinguaCoach.Application.Exercises.IAdminExerciseGetQuery,
+            LinguaCoach.Infrastructure.Exercises.AdminExerciseGetQueryHandler>();
+        services.AddScoped<LinguaCoach.Application.Exercises.IAdminCreateExerciseHandler,
+            LinguaCoach.Infrastructure.Exercises.AdminCreateExerciseHandler>();
+        services.AddScoped<LinguaCoach.Application.Exercises.IAdminUpdateExerciseHandler,
+            LinguaCoach.Infrastructure.Exercises.AdminUpdateExerciseHandler>();
+        services.AddScoped<LinguaCoach.Application.Exercises.IAdminApproveExerciseHandler,
+            LinguaCoach.Infrastructure.Exercises.AdminApproveExerciseHandler>();
+        services.AddScoped<LinguaCoach.Application.Exercises.IAdminRejectExerciseHandler,
+            LinguaCoach.Infrastructure.Exercises.AdminRejectExerciseHandler>();
+        services.AddScoped<LinguaCoach.Infrastructure.Exercises.ActivityGenerationService>();
+        services.AddScoped<LinguaCoach.Application.Exercises.IGenerateActivityFromResourcesHandler>(
+            sp => sp.GetRequiredService<LinguaCoach.Infrastructure.Exercises.ActivityGenerationService>());
+        services.AddScoped<LinguaCoach.Application.Exercises.IGenerateActivityFromLessonHandler>(
+            sp => sp.GetRequiredService<LinguaCoach.Infrastructure.Exercises.ActivityGenerationService>());
 
-        // Phase H5 — Module Definition foundation (reusable, reviewable learning units combining
-        // Learn Items + Activity Definitions + a module-level feedback plan).
-        services.AddScoped<LinguaCoach.Application.ModuleDefinitions.IAdminModuleDefinitionListQuery,
-            LinguaCoach.Infrastructure.ModuleDefinitions.AdminModuleDefinitionListQueryHandler>();
-        services.AddScoped<LinguaCoach.Application.ModuleDefinitions.IAdminModuleDefinitionGetQuery,
-            LinguaCoach.Infrastructure.ModuleDefinitions.AdminModuleDefinitionGetQueryHandler>();
-        services.AddScoped<LinguaCoach.Application.ModuleDefinitions.IAdminCreateModuleDefinitionHandler,
-            LinguaCoach.Infrastructure.ModuleDefinitions.AdminCreateModuleDefinitionHandler>();
-        services.AddScoped<LinguaCoach.Application.ModuleDefinitions.IAdminUpdateModuleDefinitionHandler,
-            LinguaCoach.Infrastructure.ModuleDefinitions.AdminUpdateModuleDefinitionHandler>();
-        services.AddScoped<LinguaCoach.Application.ModuleDefinitions.IAdminApproveModuleDefinitionHandler,
-            LinguaCoach.Infrastructure.ModuleDefinitions.AdminApproveModuleDefinitionHandler>();
-        services.AddScoped<LinguaCoach.Application.ModuleDefinitions.IAdminRejectModuleDefinitionHandler,
-            LinguaCoach.Infrastructure.ModuleDefinitions.AdminRejectModuleDefinitionHandler>();
-        services.AddScoped<LinguaCoach.Infrastructure.ModuleDefinitions.ModuleGenerationService>();
-        services.AddScoped<LinguaCoach.Application.ModuleDefinitions.IGenerateModuleFromItemsHandler>(
-            sp => sp.GetRequiredService<LinguaCoach.Infrastructure.ModuleDefinitions.ModuleGenerationService>());
-        services.AddScoped<LinguaCoach.Application.ModuleDefinitions.IGenerateModuleFromResourceHandler>(
-            sp => sp.GetRequiredService<LinguaCoach.Infrastructure.ModuleDefinitions.ModuleGenerationService>());
-        services.AddScoped<LinguaCoach.Application.ModuleDefinitions.IGenerateModuleFromLearnItemHandler>(
-            sp => sp.GetRequiredService<LinguaCoach.Infrastructure.ModuleDefinitions.ModuleGenerationService>());
-        services.AddScoped<LinguaCoach.Application.ModuleDefinitions.IGenerateModuleFromActivityHandler>(
-            sp => sp.GetRequiredService<LinguaCoach.Infrastructure.ModuleDefinitions.ModuleGenerationService>());
+        // Phase H5 — Module foundation (reusable, reviewable learning units combining
+        // Lessons + Exercises + a module-level feedback plan).
+        services.AddScoped<LinguaCoach.Application.Modules.IAdminModuleListQuery,
+            LinguaCoach.Infrastructure.Modules.AdminModuleListQueryHandler>();
+        services.AddScoped<LinguaCoach.Application.Modules.IAdminModuleGetQuery,
+            LinguaCoach.Infrastructure.Modules.AdminModuleGetQueryHandler>();
+        services.AddScoped<LinguaCoach.Application.Modules.IAdminCreateModuleHandler,
+            LinguaCoach.Infrastructure.Modules.AdminCreateModuleHandler>();
+        services.AddScoped<LinguaCoach.Application.Modules.IAdminUpdateModuleHandler,
+            LinguaCoach.Infrastructure.Modules.AdminUpdateModuleHandler>();
+        services.AddScoped<LinguaCoach.Application.Modules.IAdminApproveModuleHandler,
+            LinguaCoach.Infrastructure.Modules.AdminApproveModuleHandler>();
+        services.AddScoped<LinguaCoach.Application.Modules.IAdminRejectModuleHandler,
+            LinguaCoach.Infrastructure.Modules.AdminRejectModuleHandler>();
+        services.AddScoped<LinguaCoach.Infrastructure.Modules.ModuleGenerationService>();
+        services.AddScoped<LinguaCoach.Application.Modules.IGenerateModuleFromItemsHandler>(
+            sp => sp.GetRequiredService<LinguaCoach.Infrastructure.Modules.ModuleGenerationService>());
+        services.AddScoped<LinguaCoach.Application.Modules.IGenerateModuleFromResourceHandler>(
+            sp => sp.GetRequiredService<LinguaCoach.Infrastructure.Modules.ModuleGenerationService>());
+        services.AddScoped<LinguaCoach.Application.Modules.IGenerateModuleFromLessonHandler>(
+            sp => sp.GetRequiredService<LinguaCoach.Infrastructure.Modules.ModuleGenerationService>());
+        services.AddScoped<LinguaCoach.Application.Modules.IGenerateModuleFromExerciseHandler>(
+            sp => sp.GetRequiredService<LinguaCoach.Infrastructure.Modules.ModuleGenerationService>());
 
         // Phase H6 — Daily Lesson Module Pipeline (deterministic, read-only module selection for
         // Today + the one write path for its assignment bookkeeping).

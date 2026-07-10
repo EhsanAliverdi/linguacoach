@@ -13,7 +13,7 @@ namespace LinguaCoach.IntegrationTests.Api;
 /// <summary>
 /// Phase H6 — Daily Lesson Module Pipeline. Reuses <see cref="SessionTestFactory"/> (seeds a
 /// CourseReady student with an active LearningPath + LearningModule) so <c>GET /api/sessions/today</c>
-/// works, plus directly-seeded approved Module Definitions to exercise the module selection path.
+/// works, plus directly-seeded approved Modules to exercise the module selection path.
 /// </summary>
 public sealed class DailyLessonModulePipelineEndpointTests : IClassFixture<SessionTestFactory>
 {
@@ -33,24 +33,24 @@ public sealed class DailyLessonModulePipelineEndpointTests : IClassFixture<Sessi
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
 
-        var learnItem = new LearnItem($"Learn {Guid.NewGuid():N}", "Body text.", LearnItemSourceMode.Manual, cefrLevel, "Vocabulary");
-        learnItem.Approve(null);
-        db.LearnItems.Add(learnItem);
+        var lesson = new Lesson($"Learn {Guid.NewGuid():N}", "Body text.", LessonSourceMode.Manual, cefrLevel, "Vocabulary");
+        lesson.Approve(null);
+        db.Lessons.Add(lesson);
 
-        var activity = new ActivityDefinition($"Activity {Guid.NewGuid():N}", "Instructions.", "gap_fill",
-            ActivityRendererType.Formio, ActivitySourceMode.Manual, cefrLevel: cefrLevel, skill: "Vocabulary",
+        var activity = new Exercise($"Activity {Guid.NewGuid():N}", "Instructions.", "gap_fill",
+            ExerciseRendererType.Formio, ExerciseSourceMode.Manual, cefrLevel: cefrLevel, skill: "Vocabulary",
             formSchemaJson: "{\"components\":[]}", answerKeyJson: "{\"word_answer\":\"secret\"}",
             scoringRulesJson: "{\"word\":{\"kind\":\"exact\"}}");
         activity.Approve(null);
-        db.ActivityDefinitions.Add(activity);
+        db.Exercises.Add(activity);
 
-        var module = new ModuleDefinition($"Module {Guid.NewGuid():N}", ModuleSourceMode.Manual, cefrLevel: cefrLevel, skill: "Vocabulary");
+        var module = new Module($"Module {Guid.NewGuid():N}", ModuleSourceMode.Manual, cefrLevel: cefrLevel, skill: "Vocabulary");
         module.Approve(null);
-        db.ModuleDefinitions.Add(module);
+        db.Modules.Add(module);
         await db.SaveChangesAsync();
 
-        db.ModuleDefinitionLearnItemLinks.Add(new ModuleDefinitionLearnItemLink(module.Id, learnItem.Id, LearnItemResourceRole.Primary, 0));
-        db.ModuleDefinitionActivityLinks.Add(new ModuleDefinitionActivityLink(module.Id, activity.Id, ModuleActivityRole.PrimaryPractice, 0));
+        db.ModuleLessonLinks.Add(new ModuleLessonLink(module.Id, lesson.Id, LessonResourceRole.Primary, 0));
+        db.ModuleExerciseLinks.Add(new ModuleExerciseLink(module.Id, activity.Id, ModuleExerciseRole.PrimaryPractice, 0));
         await db.SaveChangesAsync();
 
         return module.Id;
@@ -131,7 +131,7 @@ public sealed class DailyLessonModulePipelineEndpointTests : IClassFixture<Sessi
         var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
         Assert.False(body.GetProperty("fallbackRequired").GetBoolean());
         var selected = body.GetProperty("selectedModules").EnumerateArray().ToList();
-        Assert.Contains(selected, m => m.GetProperty("moduleDefinitionId").GetGuid() == moduleId);
+        Assert.Contains(selected, m => m.GetProperty("moduleId").GetGuid() == moduleId);
     }
 
     [Fact]
@@ -183,12 +183,12 @@ public sealed class DailyLessonModulePipelineEndpointTests : IClassFixture<Sessi
     }
 
     [Fact]
-    public async Task H3_learn_items_endpoint_still_works()
+    public async Task H3_lessons_endpoint_still_works()
     {
         var adminToken = await _factory.CreateAdminAndGetTokenAsync();
         var client = ClientWithToken(_factory, adminToken);
 
-        var resp = await client.GetAsync("/api/admin/learn-items");
+        var resp = await client.GetAsync("/api/admin/lessons");
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
     }
 
@@ -198,7 +198,7 @@ public sealed class DailyLessonModulePipelineEndpointTests : IClassFixture<Sessi
         var adminToken = await _factory.CreateAdminAndGetTokenAsync();
         var client = ClientWithToken(_factory, adminToken);
 
-        var resp = await client.GetAsync("/api/admin/activities");
+        var resp = await client.GetAsync("/api/admin/exercises");
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
     }
 

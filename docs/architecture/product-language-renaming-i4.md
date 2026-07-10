@@ -1,8 +1,14 @@
 ---
-status: planned
+status: in-progress
 lastUpdated: 2026-07-10
 owner: product / engineering
 ---
+
+> **Pass 1 (backend) complete 2026-07-10.** See
+> `docs/reviews/2026-07-10-phase-i4-pass1-backend-rename-review.md` for the full implementation
+> record (files renamed, migration, judgment calls). Frontend (Pass 2/3) and "Daily Lesson" →
+> "Today Plan" (Pass 4/I4d) are still pending — the rest of this document still describes the
+> pre-implementation decision/scope survey and remains accurate for that unimplemented part.
 
 # Phase I4 — Product Language Cleanup (Rename)
 

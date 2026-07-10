@@ -1,5 +1,5 @@
 using System.Security.Claims;
-using LinguaCoach.Application.ActivityDefinitionLaunch;
+using LinguaCoach.Application.ExerciseLaunch;
 using LinguaCoach.Application.PracticeGym;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
@@ -21,16 +21,16 @@ namespace LinguaCoach.Api.Controllers;
 public sealed class PracticeGymSuggestionsController : ControllerBase
 {
     private readonly IPracticeGymSuggestionService _suggestions;
-    private readonly IActivityDefinitionLaunchService _activityDefinitionLaunch;
+    private readonly IExerciseLaunchService _exerciseLaunch;
     private readonly LinguaCoachDbContext _db;
 
     public PracticeGymSuggestionsController(
         IPracticeGymSuggestionService suggestions,
-        IActivityDefinitionLaunchService activityDefinitionLaunch,
+        IExerciseLaunchService exerciseLaunch,
         LinguaCoachDbContext db)
     {
         _suggestions = suggestions;
-        _activityDefinitionLaunch = activityDefinitionLaunch;
+        _exerciseLaunch = exerciseLaunch;
         _db = db;
     }
 
@@ -80,13 +80,13 @@ public sealed class PracticeGymSuggestionsController : ControllerBase
     }
 
     /// <summary>
-    /// Phase H10 — launches an approved, launch-eligible Activity Definition from an approved
+    /// Phase H10 — launches an approved, launch-eligible Exercise from an approved
     /// Module suggestion into a real, runnable practice attempt. Returns 200 with
     /// Success=false and UnsupportedReason for every non-launchable case (safe, non-throw) — the
     /// existing Practice Gym suggestions above remain the fallback either way.
     /// </summary>
-    [HttpPost("module-suggestions/{moduleDefinitionId:guid}/start")]
-    public async Task<IActionResult> StartModuleSuggestion(Guid moduleDefinitionId, CancellationToken ct)
+    [HttpPost("module-suggestions/{moduleId:guid}/start")]
+    public async Task<IActionResult> StartModuleSuggestion(Guid moduleId, CancellationToken ct)
     {
         var userId = GetCurrentUserId();
         if (userId == Guid.Empty) return Unauthorized();
@@ -94,8 +94,8 @@ public sealed class PracticeGymSuggestionsController : ControllerBase
         var profile = await _db.StudentProfiles.AsNoTracking().FirstOrDefaultAsync(p => p.UserId == userId, ct);
         if (profile is null) return Unauthorized();
 
-        var result = await _activityDefinitionLaunch.LaunchAsync(
-            new ActivityDefinitionLaunchRequest(profile.Id, moduleDefinitionId, ActivityDefinitionLaunchSource.PracticeGym),
+        var result = await _exerciseLaunch.LaunchAsync(
+            new ExerciseLaunchRequest(profile.Id, moduleId, ExerciseLaunchSource.PracticeGym),
             ct);
         return Ok(result);
     }

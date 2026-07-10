@@ -122,7 +122,7 @@ public sealed class StudentDashboardSummaryHandler : IStudentDashboardSummaryHan
     /// Module selection instead. "Ready" only when a module was actually selected;
     /// otherwise "NotAvailable" — never a stale/legacy shape. SessionId is always null (there is
     /// no session concept left on this path); ExerciseCount reports the selected module's linked
-    /// Learn Items + Activity Definitions as a rough size indicator for the summary card.
+    /// Lessons + Exercises as a rough size indicator for the summary card.
     /// </summary>
     private static DashboardSummaryTodaySession BuildTodaySession(
         TodaysSessionResult? session, bool failed, bool courseActive)
@@ -151,7 +151,7 @@ public sealed class StudentDashboardSummaryHandler : IStudentDashboardSummaryHan
             SessionGoal: selected.Reason,
             FocusSkill: selected.Skill,
             DurationMinutes: selected.EstimatedMinutes,
-            ExerciseCount: selected.LinkedLearnItems.Count + selected.LinkedActivityDefinitions.Count,
+            ExerciseCount: selected.LinkedLessons.Count + selected.LinkedExercises.Count,
             ActionLabel: "Start today's lesson");
     }
 

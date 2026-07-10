@@ -11,7 +11,7 @@ namespace LinguaCoach.UnitTests.PracticeGymModules;
 /// <summary>
 /// Phase H7 — deterministic Practice Gym module selector. Uses SQLite in-memory (matches H6's
 /// <c>DailyLessonModuleSelectionServiceTests</c> conventions) with directly-seeded Module
-/// Definitions/Learn Items/Activity Definitions. All fixture content is synthetic.
+/// Definitions/Lessons/Exercises. All fixture content is synthetic.
 /// </summary>
 public sealed class PracticeGymModuleSelectionServiceTests : IDisposable
 {
@@ -36,29 +36,29 @@ public sealed class PracticeGymModuleSelectionServiceTests : IDisposable
         _db.Dispose();
     }
 
-    private LearnItem SeedLearnItem(bool approved, string cefrLevel = "B1", string skill = "Vocabulary")
+    private Lesson SeedLesson(bool approved, string cefrLevel = "B1", string skill = "Vocabulary")
     {
-        var item = new LearnItem("Resilient", "Resilient means able to recover quickly.", LearnItemSourceMode.Manual, cefrLevel, skill,
+        var item = new Lesson("Resilient", "Resilient means able to recover quickly.", LessonSourceMode.Manual, cefrLevel, skill,
             examplesJson: "[\"She is resilient.\"]", commonMistakesJson: "[\"resilent\"]");
         if (approved) item.Approve(null);
-        _db.LearnItems.Add(item);
+        _db.Lessons.Add(item);
         _db.SaveChanges();
         return item;
     }
 
-    private ActivityDefinition SeedActivity(bool approved, string cefrLevel = "B1", string skill = "Vocabulary")
+    private Exercise SeedActivity(bool approved, string cefrLevel = "B1", string skill = "Vocabulary")
     {
-        var activity = new ActivityDefinition("Gap fill: resilient", "Type the missing word.", "gap_fill", ActivityRendererType.Formio,
-            ActivitySourceMode.Manual, cefrLevel: cefrLevel, skill: skill, estimatedMinutes: 5,
+        var activity = new Exercise("Gap fill: resilient", "Type the missing word.", "gap_fill", ExerciseRendererType.Formio,
+            ExerciseSourceMode.Manual, cefrLevel: cefrLevel, skill: skill, estimatedMinutes: 5,
             formSchemaJson: "{\"components\":[]}", answerKeyJson: "{\"word_answer\":\"resilient\"}",
             scoringRulesJson: "{\"word\":{\"kind\":\"exact\"}}");
         if (approved) activity.Approve(null);
-        _db.ActivityDefinitions.Add(activity);
+        _db.Exercises.Add(activity);
         _db.SaveChanges();
         return activity;
     }
 
-    private ModuleDefinition SeedModule(
+    private Module SeedModule(
         bool approved = true,
         string? cefrLevel = "B1",
         string? skill = "Vocabulary",
@@ -68,22 +68,22 @@ public sealed class PracticeGymModuleSelectionServiceTests : IDisposable
         int? estimatedMinutes = 10,
         string contextTagsJson = "[]",
         string focusTagsJson = "[]",
-        bool linkApprovedLearnItem = true,
+        bool linkApprovedLesson = true,
         bool linkApprovedActivity = true)
     {
-        var module = new ModuleDefinition("Resilience Module", ModuleSourceMode.Manual,
+        var module = new Module("Resilience Module", ModuleSourceMode.Manual,
             objectiveKey: objectiveKey, cefrLevel: cefrLevel, skill: skill, subskill: subskill,
             estimatedMinutes: estimatedMinutes, contextTagsJson: contextTagsJson, focusTagsJson: focusTagsJson,
             difficultyBand: difficultyBand);
         if (approved) module.Approve(null);
-        _db.ModuleDefinitions.Add(module);
+        _db.Modules.Add(module);
         _db.SaveChanges();
 
-        var learnItem = SeedLearnItem(linkApprovedLearnItem, cefrLevel ?? "B1", skill ?? "Vocabulary");
+        var lesson = SeedLesson(linkApprovedLesson, cefrLevel ?? "B1", skill ?? "Vocabulary");
         var activity = SeedActivity(linkApprovedActivity, cefrLevel ?? "B1", skill ?? "Vocabulary");
 
-        _db.ModuleDefinitionLearnItemLinks.Add(new ModuleDefinitionLearnItemLink(module.Id, learnItem.Id, LearnItemResourceRole.Primary, 0));
-        _db.ModuleDefinitionActivityLinks.Add(new ModuleDefinitionActivityLink(module.Id, activity.Id, ModuleActivityRole.PrimaryPractice, 0));
+        _db.ModuleLessonLinks.Add(new ModuleLessonLink(module.Id, lesson.Id, LessonResourceRole.Primary, 0));
+        _db.ModuleExerciseLinks.Add(new ModuleExerciseLink(module.Id, activity.Id, ModuleExerciseRole.PrimaryPractice, 0));
         _db.SaveChanges();
 
         return module;
@@ -98,7 +98,7 @@ public sealed class PracticeGymModuleSelectionServiceTests : IDisposable
         new(studentId, cefr, RequestedSkill: skill, RequestedSubskill: subskill,
             RequestedObjectiveKey: objectiveKey, RequestedDifficulty: difficulty,
             FocusAreas: focusAreas, ContextTags: contextTags, WeaknessSignals: weaknessSignals,
-            RecentSuggestedModuleDefinitionIds: recentIds, AllowFallback: allowFallback, MaxSuggestions: maxSuggestions);
+            RecentSuggestedModuleIds: recentIds, AllowFallback: allowFallback, MaxSuggestions: maxSuggestions);
 
     [Fact]
     public async Task Approved_module_selected_for_matching_skill_and_cefr()
@@ -108,7 +108,7 @@ public sealed class PracticeGymModuleSelectionServiceTests : IDisposable
         var result = await _sut.SelectAsync(Request(Guid.NewGuid(), cefr: "B1", skill: "Vocabulary"));
 
         result.FallbackRequired.Should().BeFalse();
-        result.Suggestions.Should().ContainSingle(s => s.ModuleDefinitionId == module.Id);
+        result.Suggestions.Should().ContainSingle(s => s.ModuleId == module.Id);
     }
 
     [Fact]
@@ -125,9 +125,9 @@ public sealed class PracticeGymModuleSelectionServiceTests : IDisposable
     [Fact]
     public async Task Rejected_module_not_selected()
     {
-        var module = new ModuleDefinition("Bad Module", ModuleSourceMode.Manual, cefrLevel: "B1", skill: "Vocabulary");
+        var module = new Module("Bad Module", ModuleSourceMode.Manual, cefrLevel: "B1", skill: "Vocabulary");
         module.Reject("not good enough", null);
-        _db.ModuleDefinitions.Add(module);
+        _db.Modules.Add(module);
         _db.SaveChanges();
 
         var result = await _sut.SelectAsync(Request(Guid.NewGuid()));
@@ -136,18 +136,18 @@ public sealed class PracticeGymModuleSelectionServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task Approved_module_with_pending_learn_item_not_selected()
+    public async Task Approved_module_with_pending_lesson_not_selected()
     {
-        SeedModule(linkApprovedLearnItem: false);
+        SeedModule(linkApprovedLesson: false);
 
         var result = await _sut.SelectAsync(Request(Guid.NewGuid()));
 
         result.FallbackRequired.Should().BeTrue();
-        result.FallbackReason.Should().Contain("approved Learn Item");
+        result.FallbackReason.Should().Contain("approved Lesson");
     }
 
     [Fact]
-    public async Task Approved_module_with_pending_activity_definition_not_selected()
+    public async Task Approved_module_with_pending_exercise_not_selected()
     {
         SeedModule(linkApprovedActivity: false);
 
@@ -165,7 +165,7 @@ public sealed class PracticeGymModuleSelectionServiceTests : IDisposable
         var result = await _sut.SelectAsync(Request(Guid.NewGuid(), cefr: "B1"));
 
         result.FallbackRequired.Should().BeFalse();
-        result.Suggestions.Should().ContainSingle(s => s.ModuleDefinitionId == b1Module.Id);
+        result.Suggestions.Should().ContainSingle(s => s.ModuleId == b1Module.Id);
     }
 
     [Fact]
@@ -176,7 +176,7 @@ public sealed class PracticeGymModuleSelectionServiceTests : IDisposable
         var result = await _sut.SelectAsync(Request(Guid.NewGuid(), cefr: "B1"));
 
         result.FallbackRequired.Should().BeFalse();
-        var suggestion = result.Suggestions.Should().ContainSingle(s => s.ModuleDefinitionId == a2Module.Id).Subject;
+        var suggestion = result.Suggestions.Should().ContainSingle(s => s.ModuleId == a2Module.Id).Subject;
         suggestion.Reason.Should().ContainAny("review", "scaffold", "remediation", "fallback");
         suggestion.IsReview.Should().BeTrue();
     }
@@ -189,7 +189,7 @@ public sealed class PracticeGymModuleSelectionServiceTests : IDisposable
 
         var result = await _sut.SelectAsync(Request(Guid.NewGuid(), skill: "Writing"));
 
-        result.Suggestions.Should().ContainSingle(s => s.ModuleDefinitionId == writingModule.Id);
+        result.Suggestions.Should().ContainSingle(s => s.ModuleId == writingModule.Id);
     }
 
     [Fact]
@@ -200,8 +200,8 @@ public sealed class PracticeGymModuleSelectionServiceTests : IDisposable
 
         var result = await _sut.SelectAsync(Request(Guid.NewGuid(), skill: "Writing", subskill: "Reports"));
 
-        result.Suggestions.Should().Contain(s => s.ModuleDefinitionId == reportsModule.Id);
-        result.Suggestions[0].ModuleDefinitionId.Should().Be(reportsModule.Id);
+        result.Suggestions.Should().Contain(s => s.ModuleId == reportsModule.Id);
+        result.Suggestions[0].ModuleId.Should().Be(reportsModule.Id);
     }
 
     [Fact]
@@ -213,7 +213,7 @@ public sealed class PracticeGymModuleSelectionServiceTests : IDisposable
         var result = await _sut.SelectAsync(Request(Guid.NewGuid(), weaknessSignals: ["Writing"], maxSuggestions: 1));
 
         var suggestion = result.Suggestions.Should().ContainSingle().Subject;
-        suggestion.ModuleDefinitionId.Should().Be(writingModule.Id);
+        suggestion.ModuleId.Should().Be(writingModule.Id);
         suggestion.IsRemediation.Should().BeTrue();
     }
 
@@ -226,7 +226,7 @@ public sealed class PracticeGymModuleSelectionServiceTests : IDisposable
         var result = await _sut.SelectAsync(Request(Guid.NewGuid(),
             focusAreas: ["reported_speech"], contextTags: ["travel"], maxSuggestions: 1));
 
-        result.Suggestions.Should().ContainSingle(s => s.ModuleDefinitionId == matching.Id);
+        result.Suggestions.Should().ContainSingle(s => s.ModuleId == matching.Id);
     }
 
     [Fact]
@@ -237,7 +237,7 @@ public sealed class PracticeGymModuleSelectionServiceTests : IDisposable
 
         var result = await _sut.SelectAsync(Request(Guid.NewGuid(), difficulty: 2, maxSuggestions: 1));
 
-        result.Suggestions.Should().ContainSingle(s => s.ModuleDefinitionId == closeFit.Id);
+        result.Suggestions.Should().ContainSingle(s => s.ModuleId == closeFit.Id);
     }
 
     [Fact]
@@ -340,7 +340,7 @@ public sealed class PracticeGymModuleSelectionServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task Selection_does_not_mutate_module_definition()
+    public async Task Selection_does_not_mutate_module()
     {
         var module = SeedModule();
         var titleBefore = module.Title;
@@ -348,32 +348,32 @@ public sealed class PracticeGymModuleSelectionServiceTests : IDisposable
 
         await _sut.SelectAsync(Request(Guid.NewGuid()));
 
-        var reloaded = await _db.ModuleDefinitions.AsNoTracking().SingleAsync(m => m.Id == module.Id);
+        var reloaded = await _db.Modules.AsNoTracking().SingleAsync(m => m.Id == module.Id);
         reloaded.Title.Should().Be(titleBefore);
         reloaded.UpdatedAtUtc.Should().Be(updatedAtBefore);
     }
 
     [Fact]
-    public async Task Selection_does_not_mutate_learn_item()
+    public async Task Selection_does_not_mutate_lesson()
     {
         SeedModule();
-        var learnItem = await _db.LearnItems.AsNoTracking().SingleAsync();
+        var lesson = await _db.Lessons.AsNoTracking().SingleAsync();
 
         await _sut.SelectAsync(Request(Guid.NewGuid()));
 
-        var reloaded = await _db.LearnItems.AsNoTracking().SingleAsync(i => i.Id == learnItem.Id);
-        reloaded.UpdatedAtUtc.Should().Be(learnItem.UpdatedAtUtc);
+        var reloaded = await _db.Lessons.AsNoTracking().SingleAsync(i => i.Id == lesson.Id);
+        reloaded.UpdatedAtUtc.Should().Be(lesson.UpdatedAtUtc);
     }
 
     [Fact]
-    public async Task Selection_does_not_mutate_activity_definition()
+    public async Task Selection_does_not_mutate_exercise()
     {
         SeedModule();
-        var activity = await _db.ActivityDefinitions.AsNoTracking().SingleAsync();
+        var activity = await _db.Exercises.AsNoTracking().SingleAsync();
 
         await _sut.SelectAsync(Request(Guid.NewGuid()));
 
-        var reloaded = await _db.ActivityDefinitions.AsNoTracking().SingleAsync(a => a.Id == activity.Id);
+        var reloaded = await _db.Exercises.AsNoTracking().SingleAsync(a => a.Id == activity.Id);
         reloaded.UpdatedAtUtc.Should().Be(activity.UpdatedAtUtc);
     }
 
@@ -410,22 +410,22 @@ public sealed class PracticeGymModuleSelectionServiceTests : IDisposable
     [Fact]
     public async Task Suggestion_reports_can_launch_true_for_launch_eligible_activity()
     {
-        var module = new ModuleDefinition("Launchable Module", ModuleSourceMode.Manual, cefrLevel: "B1", skill: "Vocabulary");
+        var module = new Module("Launchable Module", ModuleSourceMode.Manual, cefrLevel: "B1", skill: "Vocabulary");
         module.Approve(null);
-        _db.ModuleDefinitions.Add(module);
+        _db.Modules.Add(module);
         _db.SaveChanges();
 
-        var learnItem = SeedLearnItem(true);
-        var activity = new ActivityDefinition("Gap fill: launchable", "Type the missing word.", "gap_fill", ActivityRendererType.Formio,
-            ActivitySourceMode.Manual, cefrLevel: "B1", skill: "Vocabulary", estimatedMinutes: 5,
+        var lesson = SeedLesson(true);
+        var activity = new Exercise("Gap fill: launchable", "Type the missing word.", "gap_fill", ExerciseRendererType.Formio,
+            ExerciseSourceMode.Manual, cefrLevel: "B1", skill: "Vocabulary", estimatedMinutes: 5,
             formSchemaJson: "{\"components\":[{\"key\":\"answer\",\"type\":\"textfield\"}]}",
             scoringRulesJson: "{\"Components\":{\"answer\":{\"Kind\":\"text_normalized\",\"CorrectAnswer\":\"resilient\"}}}");
         activity.Approve(null);
-        _db.ActivityDefinitions.Add(activity);
+        _db.Exercises.Add(activity);
         _db.SaveChanges();
 
-        _db.ModuleDefinitionLearnItemLinks.Add(new ModuleDefinitionLearnItemLink(module.Id, learnItem.Id, LearnItemResourceRole.Primary, 0));
-        _db.ModuleDefinitionActivityLinks.Add(new ModuleDefinitionActivityLink(module.Id, activity.Id, ModuleActivityRole.PrimaryPractice, 0));
+        _db.ModuleLessonLinks.Add(new ModuleLessonLink(module.Id, lesson.Id, LessonResourceRole.Primary, 0));
+        _db.ModuleExerciseLinks.Add(new ModuleExerciseLink(module.Id, activity.Id, ModuleExerciseRole.PrimaryPractice, 0));
         _db.SaveChanges();
 
         var result = await _sut.SelectAsync(Request(Guid.NewGuid()));

@@ -17,7 +17,7 @@ namespace LinguaCoach.Infrastructure.Activity;
 
 /// <summary>
 /// Resolves an activity by id (<see cref="IGetActivityByIdHandler"/>) — used for existing
-/// LearningActivity rows, including those launched via the H10 ActivityDefinition runtime
+/// LearningActivity rows, including those launched via the H10 Exercise runtime
 /// launch bridge.
 ///
 /// Phase I2A (legacy fallback deletion): this class previously also implemented

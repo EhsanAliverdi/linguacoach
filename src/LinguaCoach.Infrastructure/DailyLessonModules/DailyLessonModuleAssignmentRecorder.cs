@@ -43,7 +43,7 @@ public sealed class DailyLessonModuleAssignmentRecorder : IDailyLessonModuleAssi
         {
             _db.StudentDailyModuleAssignments.Add(new StudentDailyModuleAssignment(
                 studentId,
-                module.ModuleDefinitionId,
+                module.ModuleId,
                 date,
                 DailyModuleAssignmentStatus.Selected,
                 selectionReason: module.Reason,

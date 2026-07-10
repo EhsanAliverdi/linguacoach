@@ -4,7 +4,7 @@ using LinguaCoach.Domain.Enums;
 namespace LinguaCoach.Domain.Entities;
 
 /// <summary>
-/// Phase H7 — a lightweight, additive bookkeeping record of which <see cref="ModuleDefinition"/>
+/// Phase H7 — a lightweight, additive bookkeeping record of which <see cref="Module"/>
 /// (if any) the deterministic Practice Gym module selector suggested to a student, or that no
 /// suitable Module existed and legacy Practice Gym suggestions were used instead
 /// (<see cref="PracticeGymModuleAssignmentStatus.FallbackOnly"/>). Exists purely for admin
@@ -21,7 +21,7 @@ public sealed class StudentPracticeGymModuleAssignment : BaseEntity
     /// <summary>Null only when <see cref="Status"/> is
     /// <see cref="PracticeGymModuleAssignmentStatus.FallbackOnly"/> — no Module was suggested,
     /// so there is nothing to link to.</summary>
-    public Guid? ModuleDefinitionId { get; private set; }
+    public Guid? ModuleId { get; private set; }
 
     public DateTimeOffset SuggestedAt { get; private set; }
 
@@ -37,7 +37,7 @@ public sealed class StudentPracticeGymModuleAssignment : BaseEntity
 
     public StudentPracticeGymModuleAssignment(
         Guid studentId,
-        Guid? moduleDefinitionId,
+        Guid? moduleId,
         DateTimeOffset suggestedAt,
         PracticeGymModuleAssignmentStatus status,
         string? selectionReason = null,
@@ -45,13 +45,13 @@ public sealed class StudentPracticeGymModuleAssignment : BaseEntity
     {
         if (studentId == Guid.Empty)
             throw new ArgumentException("StudentId must not be empty.", nameof(studentId));
-        if (moduleDefinitionId == Guid.Empty)
-            throw new ArgumentException("ModuleDefinitionId must not be empty when provided.", nameof(moduleDefinitionId));
-        if (moduleDefinitionId is null && status != PracticeGymModuleAssignmentStatus.FallbackOnly)
-            throw new ArgumentException("ModuleDefinitionId is required unless status is FallbackOnly.", nameof(moduleDefinitionId));
+        if (moduleId == Guid.Empty)
+            throw new ArgumentException("ModuleId must not be empty when provided.", nameof(moduleId));
+        if (moduleId is null && status != PracticeGymModuleAssignmentStatus.FallbackOnly)
+            throw new ArgumentException("ModuleId is required unless status is FallbackOnly.", nameof(moduleId));
 
         StudentId = studentId;
-        ModuleDefinitionId = moduleDefinitionId;
+        ModuleId = moduleId;
         SuggestedAt = suggestedAt;
         Status = status;
         SelectionReason = selectionReason?.Trim();

@@ -4,7 +4,7 @@ using LinguaCoach.Domain.Enums;
 namespace LinguaCoach.Domain.Entities;
 
 /// <summary>
-/// Phase H6 — a lightweight, additive bookkeeping record of which <see cref="ModuleDefinition"/>
+/// Phase H6 — a lightweight, additive bookkeeping record of which <see cref="Module"/>
 /// (if any) the deterministic Daily Lesson module selector chose for a student on a given date,
 /// or that no suitable Module existed and legacy Today content was used instead
 /// (<see cref="DailyModuleAssignmentStatus.FallbackOnly"/>). Exists purely for admin diagnostics
@@ -19,7 +19,7 @@ public sealed class StudentDailyModuleAssignment : BaseEntity
 
     /// <summary>Null only when <see cref="Status"/> is <see cref="DailyModuleAssignmentStatus.FallbackOnly"/>
     /// — no Module was selected that day, so there is nothing to link to.</summary>
-    public Guid? ModuleDefinitionId { get; private set; }
+    public Guid? ModuleId { get; private set; }
 
     /// <summary>UTC date (time component zeroed) this assignment is for.</summary>
     public DateTime AssignedForDate { get; private set; }
@@ -34,7 +34,7 @@ public sealed class StudentDailyModuleAssignment : BaseEntity
 
     public StudentDailyModuleAssignment(
         Guid studentId,
-        Guid? moduleDefinitionId,
+        Guid? moduleId,
         DateTime assignedForDate,
         DailyModuleAssignmentStatus status,
         string? selectionReason = null,
@@ -43,13 +43,13 @@ public sealed class StudentDailyModuleAssignment : BaseEntity
     {
         if (studentId == Guid.Empty)
             throw new ArgumentException("StudentId must not be empty.", nameof(studentId));
-        if (moduleDefinitionId == Guid.Empty)
-            throw new ArgumentException("ModuleDefinitionId must not be empty when provided.", nameof(moduleDefinitionId));
-        if (moduleDefinitionId is null && status != DailyModuleAssignmentStatus.FallbackOnly)
-            throw new ArgumentException("ModuleDefinitionId is required unless status is FallbackOnly.", nameof(moduleDefinitionId));
+        if (moduleId == Guid.Empty)
+            throw new ArgumentException("ModuleId must not be empty when provided.", nameof(moduleId));
+        if (moduleId is null && status != DailyModuleAssignmentStatus.FallbackOnly)
+            throw new ArgumentException("ModuleId is required unless status is FallbackOnly.", nameof(moduleId));
 
         StudentId = studentId;
-        ModuleDefinitionId = moduleDefinitionId;
+        ModuleId = moduleId;
         AssignedForDate = assignedForDate.Date;
         Status = status;
         SelectionReason = selectionReason?.Trim();

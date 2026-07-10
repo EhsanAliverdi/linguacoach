@@ -65,7 +65,7 @@ public sealed class SessionEndpointTests : IClassFixture<SessionTestFactory>
     [Fact]
     public async Task Today_NoCompatibleModule_ReturnsNotAvailable()
     {
-        // No ModuleDefinition is seeded for this fixture's CEFR/skill, so the bank-first
+        // No Module is seeded for this fixture's CEFR/skill, so the bank-first
         // Daily Lesson Module selector has nothing to offer — Today must report this honestly
         // rather than falling back to any legacy or AI-generated content.
         var (token, _) = await _factory.CreateCourseReadyStudentAsync($"sess_notavail_{Guid.NewGuid():N}@test.com");

@@ -9,8 +9,8 @@ namespace LinguaCoach.Infrastructure.DailyLessonModules;
 
 /// <summary>
 /// Phase H6 — deterministic (no AI) Daily Lesson module selector. Pure/read-only: never writes to
-/// the database, never mutates a <see cref="ModuleDefinition"/>/<see cref="LearnItem"/>/
-/// <see cref="ActivityDefinition"/>, never creates Practice Gym or attempt records. Never throws
+/// the database, never mutates a <see cref="Module"/>/<see cref="Lesson"/>/
+/// <see cref="Exercise"/>, never creates Practice Gym or attempt records. Never throws
 /// for "no suitable content" — degrades to <see cref="DailyLessonModuleSelectionResult.FallbackRequired"/>
 /// instead, and the outer try/catch guarantees the same for any unexpected error, so a caller can
 /// always safely fall back to legacy Today content.
@@ -36,83 +36,83 @@ public sealed class DailyLessonModuleSelectionService : IDailyLessonModuleSelect
             var targetCefr = NormalizeCefr(request.CefrLevel);
             var targetDate = request.TargetDate.Date;
 
-            var candidateModules = await _db.ModuleDefinitions
+            var candidateModules = await _db.Modules
                 .AsNoTracking()
                 .Where(m => m.ReviewStatus == AdminReviewStatus.Approved)
                 .ToListAsync(ct);
 
             if (candidateModules.Count == 0)
-                return Fallback(targetCefr, warnings, "No approved Module Definitions exist yet.");
+                return Fallback(targetCefr, warnings, "No approved Modules exist yet.");
 
             var moduleIds = candidateModules.Select(m => m.Id).ToList();
 
-            var learnLinks = await _db.ModuleDefinitionLearnItemLinks
+            var lessonLinks = await _db.ModuleLessonLinks
                 .AsNoTracking()
-                .Where(l => moduleIds.Contains(l.ModuleDefinitionId))
+                .Where(l => moduleIds.Contains(l.ModuleId))
                 .ToListAsync(ct);
-            var activityLinks = await _db.ModuleDefinitionActivityLinks
+            var exerciseLinks = await _db.ModuleExerciseLinks
                 .AsNoTracking()
-                .Where(l => moduleIds.Contains(l.ModuleDefinitionId))
+                .Where(l => moduleIds.Contains(l.ModuleId))
                 .ToListAsync(ct);
 
-            var learnItemIds = learnLinks.Select(l => l.LearnItemId).Distinct().ToList();
-            var activityDefIds = activityLinks.Select(l => l.ActivityDefinitionId).Distinct().ToList();
+            var lessonIds = lessonLinks.Select(l => l.LessonId).Distinct().ToList();
+            var exerciseIds = exerciseLinks.Select(l => l.ExerciseId).Distinct().ToList();
 
-            var learnItemsById = await _db.LearnItems
+            var lessonsById = await _db.Lessons
                 .AsNoTracking()
-                .Where(i => learnItemIds.Contains(i.Id))
+                .Where(i => lessonIds.Contains(i.Id))
                 .ToDictionaryAsync(i => i.Id, ct);
-            var activityDefsById = await _db.ActivityDefinitions
+            var activityDefsById = await _db.Exercises
                 .AsNoTracking()
-                .Where(a => activityDefIds.Contains(a.Id))
+                .Where(a => exerciseIds.Contains(a.Id))
                 .ToDictionaryAsync(a => a.Id, ct);
 
-            var learnLinksByModule = learnLinks.ToLookup(l => l.ModuleDefinitionId);
-            var activityLinksByModule = activityLinks.ToLookup(l => l.ModuleDefinitionId);
+            var lessonLinksByModule = lessonLinks.ToLookup(l => l.ModuleId);
+            var exerciseLinksByModule = exerciseLinks.ToLookup(l => l.ModuleId);
 
             var cooldownStart = targetDate.Subtract(ReuseCooldown);
             var recentModuleIds = new HashSet<Guid>(
                 await _db.StudentDailyModuleAssignments
                     .AsNoTracking()
                     .Where(a => a.StudentId == request.StudentId
-                        && a.ModuleDefinitionId != null
+                        && a.ModuleId != null
                         && a.AssignedForDate >= cooldownStart
                         && a.AssignedForDate < targetDate)
-                    .Select(a => a.ModuleDefinitionId!.Value)
+                    .Select(a => a.ModuleId!.Value)
                     .ToListAsync(ct));
 
-            if (request.RecentAssignedModuleDefinitionIds is not null)
-                foreach (var id in request.RecentAssignedModuleDefinitionIds)
+            if (request.RecentAssignedModuleIds is not null)
+                foreach (var id in request.RecentAssignedModuleIds)
                     recentModuleIds.Add(id);
 
-            var eligible = new List<(ModuleDefinition Module, List<LearnItem> Learns, List<ActivityDefinition> Activities)>();
+            var eligible = new List<(Module Module, List<Lesson> Learns, List<Exercise> Activities)>();
 
             foreach (var module in candidateModules)
             {
                 if (recentModuleIds.Contains(module.Id))
                     continue;
 
-                var approvedLearns = learnLinksByModule[module.Id]
-                    .Select(l => learnItemsById.GetValueOrDefault(l.LearnItemId))
+                var approvedLessons = lessonLinksByModule[module.Id]
+                    .Select(l => lessonsById.GetValueOrDefault(l.LessonId))
                     .Where(i => i is not null && i.ReviewStatus == AdminReviewStatus.Approved)
                     .Select(i => i!)
                     .ToList();
 
-                var approvedActivities = activityLinksByModule[module.Id]
-                    .Select(l => activityDefsById.GetValueOrDefault(l.ActivityDefinitionId))
+                var approvedActivities = exerciseLinksByModule[module.Id]
+                    .Select(l => activityDefsById.GetValueOrDefault(l.ExerciseId))
                     .Where(a => a is not null && a.ReviewStatus == AdminReviewStatus.Approved)
                     .Select(a => a!)
                     .ToList();
 
-                if (approvedLearns.Count == 0 || approvedActivities.Count == 0)
+                if (approvedLessons.Count == 0 || approvedActivities.Count == 0)
                     continue;
 
-                eligible.Add((module, approvedLearns, approvedActivities));
+                eligible.Add((module, approvedLessons, approvedActivities));
             }
 
             if (eligible.Count == 0)
                 return Fallback(targetCefr, warnings,
-                    "No approved Module has both an approved Learn Item and an approved Activity Definition available (or every compatible Module was recently used).");
+                    "No approved Module has both an approved Lesson and an approved Exercise available (or every compatible Module was recently used).");
 
             var pool = eligible;
             var usedBroadenedCefr = false;
@@ -160,7 +160,7 @@ public sealed class DailyLessonModuleSelectionService : IDailyLessonModuleSelect
                 {
                     var moreDiverseOptionRemains = scored.Any(s =>
                         s.Entry.Module.Id != entry.Module.Id
-                        && !selected.Exists(sel => sel.ModuleDefinitionId == s.Entry.Module.Id)
+                        && !selected.Exists(sel => sel.ModuleId == s.Entry.Module.Id)
                         && (s.Entry.Module.Skill is null || !usedSkills.Contains(s.Entry.Module.Skill)));
 
                     if (moreDiverseOptionRemains)
@@ -168,7 +168,7 @@ public sealed class DailyLessonModuleSelectionService : IDailyLessonModuleSelect
                 }
 
                 selected.Add(new SelectedModuleResult(
-                    ModuleDefinitionId: entry.Module.Id,
+                    ModuleId: entry.Module.Id,
                     Title: entry.Module.Title,
                     Description: entry.Module.Description,
                     CefrLevel: entry.Module.CefrLevel,
@@ -177,8 +177,8 @@ public sealed class DailyLessonModuleSelectionService : IDailyLessonModuleSelect
                     DifficultyBand: entry.Module.DifficultyBand,
                     EstimatedMinutes: entry.Module.EstimatedMinutes,
                     Reason: BuildReason(entry.Module, request, usedBroadenedCefr),
-                    LinkedLearnItems: entry.Learns.Select(ToLearnItemView).ToList(),
-                    LinkedActivityDefinitions: entry.Activities.Select(ToActivityView).ToList()));
+                    LinkedLessons: entry.Learns.Select(ToLessonView).ToList(),
+                    LinkedExercises: entry.Activities.Select(ToActivityView).ToList()));
 
                 if (entry.Module.Skill is not null)
                     usedSkills.Add(entry.Module.Skill);
@@ -214,7 +214,7 @@ public sealed class DailyLessonModuleSelectionService : IDailyLessonModuleSelect
         TotalEstimatedMinutes: 0,
         Warnings: warnings);
 
-    private static double ScoreModule(ModuleDefinition module, DailyLessonModuleSelectionRequest request)
+    private static double ScoreModule(Module module, DailyLessonModuleSelectionRequest request)
     {
         double score = 0;
 
@@ -245,7 +245,7 @@ public sealed class DailyLessonModuleSelectionService : IDailyLessonModuleSelect
         return score;
     }
 
-    private static string BuildReason(ModuleDefinition module, DailyLessonModuleSelectionRequest request, bool usedBroadenedCefr)
+    private static string BuildReason(Module module, DailyLessonModuleSelectionRequest request, bool usedBroadenedCefr)
     {
         var parts = new List<string>();
 
@@ -287,16 +287,16 @@ public sealed class DailyLessonModuleSelectionService : IDailyLessonModuleSelect
         }
     }
 
-    private static DailyLessonLearnItemView ToLearnItemView(LearnItem item) => new(
-        LearnItemId: item.Id,
+    private static DailyLessonLessonView ToLessonView(Lesson item) => new(
+        LessonId: item.Id,
         Title: item.Title,
         Body: item.Body,
         Examples: SafeParseStringArray(item.ExamplesJson),
         CommonMistakes: SafeParseStringArray(item.CommonMistakesJson),
         UsageNotes: item.UsageNotes);
 
-    private static DailyLessonActivityView ToActivityView(ActivityDefinition activity) => new(
-        ActivityDefinitionId: activity.Id,
+    private static DailyLessonActivityView ToActivityView(Exercise activity) => new(
+        ExerciseId: activity.Id,
         Title: activity.Title,
         Description: activity.Description,
         Instructions: activity.Instructions,

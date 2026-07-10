@@ -2,7 +2,7 @@ namespace LinguaCoach.Application.PracticeGymModules;
 
 /// <summary>
 /// Phase H7 — input to the deterministic Practice Gym module selector. Pure read-only signal set;
-/// the selector never mutates a <c>ModuleDefinition</c>/<c>LearnItem</c>/<c>ActivityDefinition</c>
+/// the selector never mutates a <c>Module</c>/<c>Lesson</c>/<c>Exercise</c>
 /// and never creates Module attempts, mastery updates, or Practice Gym runtime records. Mirrors
 /// H6's <c>DailyLessonModuleSelectionRequest</c>, extended with Practice Gym-specific
 /// self-directed signals (a student can request a skill/subskill/objective directly, unlike
@@ -23,7 +23,7 @@ public sealed record PracticeGymModuleSelectionRequest(
     IReadOnlyList<string>? WeaknessSignals = null,
     /// <summary>Module ids recently suggested to this student (in addition to the selector's own
     /// 14-day lookback via <c>StudentPracticeGymModuleAssignment</c>).</summary>
-    IReadOnlyList<Guid>? RecentSuggestedModuleDefinitionIds = null,
+    IReadOnlyList<Guid>? RecentSuggestedModuleIds = null,
     bool AllowFallback = true,
     int MaxSuggestions = 4);
 
@@ -39,7 +39,7 @@ public sealed record PracticeGymModuleSelectionResult(
     IReadOnlyList<string> Warnings);
 
 public sealed record PracticeGymModuleSuggestion(
-    Guid ModuleDefinitionId,
+    Guid ModuleId,
     string Title,
     string? Description,
     string? CefrLevel,
@@ -53,11 +53,11 @@ public sealed record PracticeGymModuleSuggestion(
     bool IsReview,
     bool IsScaffold,
     bool IsRemediation,
-    IReadOnlyList<PracticeGymModuleLearnItemSummary> LinkedLearnItemSummaries,
+    IReadOnlyList<PracticeGymModuleLessonSummary> LinkedLessonSummaries,
     IReadOnlyList<PracticeGymModuleActivitySummary> LinkedActivitySummaries,
-    /// <summary>Phase H10 — true when at least one linked Activity Definition can actually be
+    /// <summary>Phase H10 — true when at least one linked Exercise can actually be
     /// launched into a real, runnable practice attempt right now (see
-    /// <c>ActivityDefinitionLaunch.ActivityDefinitionLaunchEligibility</c>). False for every
+    /// <c>ExerciseLaunch.ExerciseLaunchEligibility</c>). False for every
     /// suggestion before H10; the student Practice Gym UI shows "Start" only when this is true.</summary>
     bool CanLaunch = false,
     /// <summary>Student-safe explanation for why <see cref="CanLaunch"/> is false — e.g. "This
@@ -65,20 +65,20 @@ public sealed record PracticeGymModuleSuggestion(
     /// <see cref="CanLaunch"/> is true.</summary>
     string? UnsupportedReason = null);
 
-/// <summary>Student-safe projection of a <c>LearnItem</c> — no admin-only fields.</summary>
-public sealed record PracticeGymModuleLearnItemSummary(
-    Guid LearnItemId,
+/// <summary>Student-safe projection of a <c>Lesson</c> — no admin-only fields.</summary>
+public sealed record PracticeGymModuleLessonSummary(
+    Guid LessonId,
     string Title,
     string Body,
     IReadOnlyList<string> Examples,
     IReadOnlyList<string> CommonMistakes,
     string? UsageNotes);
 
-/// <summary>Student-safe projection of an <c>ActivityDefinition</c>. Deliberately excludes
+/// <summary>Student-safe projection of an <c>Exercise</c>. Deliberately excludes
 /// <c>AnswerKeyJson</c> and <c>ScoringRulesJson</c> — those are backend-only per
-/// <c>ActivityDefinition</c>'s own doc comments and must never reach this view.</summary>
+/// <c>Exercise</c>'s own doc comments and must never reach this view.</summary>
 public sealed record PracticeGymModuleActivitySummary(
-    Guid ActivityDefinitionId,
+    Guid ExerciseId,
     string Title,
     string? Description,
     string Instructions,

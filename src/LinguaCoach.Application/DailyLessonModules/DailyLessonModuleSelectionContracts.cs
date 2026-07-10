@@ -2,7 +2,7 @@ namespace LinguaCoach.Application.DailyLessonModules;
 
 /// <summary>
 /// Phase H6 — input to the deterministic Daily Lesson module selector. Pure read-only signal set;
-/// the selector never mutates a <c>ModuleDefinition</c>/<c>LearnItem</c>/<c>ActivityDefinition</c>
+/// the selector never mutates a <c>Module</c>/<c>Lesson</c>/<c>Exercise</c>
 /// and never creates Practice Gym or attempt records.
 /// </summary>
 public sealed record DailyLessonModuleSelectionRequest(
@@ -15,7 +15,7 @@ public sealed record DailyLessonModuleSelectionRequest(
     IReadOnlyList<string>? LearningGoals = null,
     IReadOnlyList<string>? FocusAreas = null,
     IReadOnlyList<string>? ContextTags = null,
-    IReadOnlyList<Guid>? RecentAssignedModuleDefinitionIds = null,
+    IReadOnlyList<Guid>? RecentAssignedModuleIds = null,
     bool AllowFallback = true,
     int MaxModules = 1);
 
@@ -32,7 +32,7 @@ public sealed record DailyLessonModuleSelectionResult(
     IReadOnlyList<string> Warnings);
 
 public sealed record SelectedModuleResult(
-    Guid ModuleDefinitionId,
+    Guid ModuleId,
     string Title,
     string? Description,
     string? CefrLevel,
@@ -41,23 +41,23 @@ public sealed record SelectedModuleResult(
     int? DifficultyBand,
     int? EstimatedMinutes,
     string Reason,
-    IReadOnlyList<DailyLessonLearnItemView> LinkedLearnItems,
-    IReadOnlyList<DailyLessonActivityView> LinkedActivityDefinitions);
+    IReadOnlyList<DailyLessonLessonView> LinkedLessons,
+    IReadOnlyList<DailyLessonActivityView> LinkedExercises);
 
-/// <summary>Student-safe projection of a <c>LearnItem</c> — no admin-only fields.</summary>
-public sealed record DailyLessonLearnItemView(
-    Guid LearnItemId,
+/// <summary>Student-safe projection of a <c>Lesson</c> — no admin-only fields.</summary>
+public sealed record DailyLessonLessonView(
+    Guid LessonId,
     string Title,
     string Body,
     IReadOnlyList<string> Examples,
     IReadOnlyList<string> CommonMistakes,
     string? UsageNotes);
 
-/// <summary>Student-safe projection of an <c>ActivityDefinition</c>. Deliberately excludes
+/// <summary>Student-safe projection of an <c>Exercise</c>. Deliberately excludes
 /// <c>AnswerKeyJson</c> and <c>ScoringRulesJson</c> — those are backend-only per
-/// <c>ActivityDefinition</c>'s own doc comments and must never reach this view.</summary>
+/// <c>Exercise</c>'s own doc comments and must never reach this view.</summary>
 public sealed record DailyLessonActivityView(
-    Guid ActivityDefinitionId,
+    Guid ExerciseId,
     string Title,
     string? Description,
     string Instructions,

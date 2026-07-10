@@ -116,184 +116,6 @@ namespace LinguaCoach.Persistence.Migrations
                     b.ToTable("activity_attempts", (string)null);
                 });
 
-            modelBuilder.Entity("LinguaCoach.Domain.Entities.ActivityDefinition", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("ActivityType")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
-                        .HasColumnName("activity_type");
-
-                    b.Property<string>("AnswerKeyJson")
-                        .HasColumnType("text")
-                        .HasColumnName("answer_key_json");
-
-                    b.Property<DateTimeOffset?>("ApprovedAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("approved_at_utc");
-
-                    b.Property<string>("CefrLevel")
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)")
-                        .HasColumnName("cefr_level");
-
-                    b.Property<string>("ContextTagsJson")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("[]")
-                        .HasColumnName("context_tags_json");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<Guid?>("CreatedByUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("created_by_user_id");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text")
-                        .HasColumnName("description");
-
-                    b.Property<int?>("DifficultyBand")
-                        .HasColumnType("integer")
-                        .HasColumnName("difficulty_band");
-
-                    b.Property<int?>("EstimatedMinutes")
-                        .HasColumnType("integer")
-                        .HasColumnName("estimated_minutes");
-
-                    b.Property<string>("FeedbackPlanJson")
-                        .HasColumnType("text")
-                        .HasColumnName("feedback_plan_json");
-
-                    b.Property<string>("FocusTagsJson")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("[]")
-                        .HasColumnName("focus_tags_json");
-
-                    b.Property<string>("FormSchemaJson")
-                        .HasColumnType("text")
-                        .HasColumnName("form_schema_json");
-
-                    b.Property<string>("GenerationModel")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("generation_model");
-
-                    b.Property<string>("GenerationProvider")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("generation_provider");
-
-                    b.Property<string>("Instructions")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("instructions");
-
-                    b.Property<Guid?>("LearnItemId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("learn_item_id");
-
-                    b.Property<string>("PatternKey")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)")
-                        .HasColumnName("pattern_key");
-
-                    b.Property<DateTimeOffset?>("RejectedAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("rejected_at_utc");
-
-                    b.Property<string>("RejectionReason")
-                        .HasColumnType("text")
-                        .HasColumnName("rejection_reason");
-
-                    b.Property<string>("RendererType")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)")
-                        .HasColumnName("renderer_type");
-
-                    b.Property<string>("ReviewNotes")
-                        .HasColumnType("text")
-                        .HasColumnName("review_notes");
-
-                    b.Property<string>("ReviewStatus")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)")
-                        .HasColumnName("review_status");
-
-                    b.Property<Guid?>("ReviewedByUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("reviewed_by_user_id");
-
-                    b.Property<string>("ScoringRulesJson")
-                        .HasColumnType("text")
-                        .HasColumnName("scoring_rules_json");
-
-                    b.Property<string>("Skill")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("skill");
-
-                    b.Property<string>("SourceMode")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)")
-                        .HasColumnName("source_mode");
-
-                    b.Property<string>("Subskill")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)")
-                        .HasColumnName("subskill");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)")
-                        .HasColumnName("title");
-
-                    b.Property<DateTime>("UpdatedAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at_utc");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ActivityType")
-                        .HasDatabaseName("ix_activity_definitions_activity_type");
-
-                    b.HasIndex("CefrLevel")
-                        .HasDatabaseName("ix_activity_definitions_cefr_level");
-
-                    b.HasIndex("CreatedAt")
-                        .HasDatabaseName("ix_activity_definitions_created_at");
-
-                    b.HasIndex("LearnItemId")
-                        .HasDatabaseName("ix_activity_definitions_learn_item");
-
-                    b.HasIndex("ReviewStatus")
-                        .HasDatabaseName("ix_activity_definitions_review_status");
-
-                    b.HasIndex("Skill")
-                        .HasDatabaseName("ix_activity_definitions_skill");
-
-                    b.HasIndex("Subskill")
-                        .HasDatabaseName("ix_activity_definitions_subskill");
-
-                    b.ToTable("activity_definitions", (string)null);
-                });
-
             modelBuilder.Entity("LinguaCoach.Domain.Entities.ActivityFeedbackSignal", b =>
                 {
                     b.Property<Guid>("Id")
@@ -413,60 +235,6 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasDatabaseName("ix_feedback_signals_student_pattern");
 
                     b.ToTable("activity_feedback_signals", (string)null);
-                });
-
-            modelBuilder.Entity("LinguaCoach.Domain.Entities.ActivityResourceLink", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<Guid>("ActivityDefinitionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("activity_definition_id");
-
-                    b.Property<string>("ContentFingerprint")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)")
-                        .HasColumnName("content_fingerprint");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<Guid>("ResourceId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("resource_id");
-
-                    b.Property<string>("ResourceType")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)")
-                        .HasColumnName("resource_type");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)")
-                        .HasColumnName("role");
-
-                    b.Property<string>("SnapshotTitle")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("snapshot_title");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ActivityDefinitionId")
-                        .HasDatabaseName("ix_activity_resource_links_activity");
-
-                    b.HasIndex("ResourceType", "ResourceId")
-                        .HasDatabaseName("ix_activity_resource_links_resource");
-
-                    b.ToTable("activity_resource_links", (string)null);
                 });
 
             modelBuilder.Entity("LinguaCoach.Domain.Entities.AdminAuditLog", b =>
@@ -1433,6 +1201,184 @@ namespace LinguaCoach.Persistence.Migrations
                     b.ToTable("curriculum_word_lists", (string)null);
                 });
 
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.Exercise", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ActivityType")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("activity_type");
+
+                    b.Property<string>("AnswerKeyJson")
+                        .HasColumnType("text")
+                        .HasColumnName("answer_key_json");
+
+                    b.Property<DateTimeOffset?>("ApprovedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("approved_at_utc");
+
+                    b.Property<string>("CefrLevel")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("cefr_level");
+
+                    b.Property<string>("ContextTagsJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("[]")
+                        .HasColumnName("context_tags_json");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<int?>("DifficultyBand")
+                        .HasColumnType("integer")
+                        .HasColumnName("difficulty_band");
+
+                    b.Property<int?>("EstimatedMinutes")
+                        .HasColumnType("integer")
+                        .HasColumnName("estimated_minutes");
+
+                    b.Property<string>("FeedbackPlanJson")
+                        .HasColumnType("text")
+                        .HasColumnName("feedback_plan_json");
+
+                    b.Property<string>("FocusTagsJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("[]")
+                        .HasColumnName("focus_tags_json");
+
+                    b.Property<string>("FormSchemaJson")
+                        .HasColumnType("text")
+                        .HasColumnName("form_schema_json");
+
+                    b.Property<string>("GenerationModel")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("generation_model");
+
+                    b.Property<string>("GenerationProvider")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("generation_provider");
+
+                    b.Property<string>("Instructions")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("instructions");
+
+                    b.Property<Guid?>("LessonId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lesson_id");
+
+                    b.Property<string>("PatternKey")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("pattern_key");
+
+                    b.Property<DateTimeOffset?>("RejectedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("rejected_at_utc");
+
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("text")
+                        .HasColumnName("rejection_reason");
+
+                    b.Property<string>("RendererType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("renderer_type");
+
+                    b.Property<string>("ReviewNotes")
+                        .HasColumnType("text")
+                        .HasColumnName("review_notes");
+
+                    b.Property<string>("ReviewStatus")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("review_status");
+
+                    b.Property<Guid?>("ReviewedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reviewed_by_user_id");
+
+                    b.Property<string>("ScoringRulesJson")
+                        .HasColumnType("text")
+                        .HasColumnName("scoring_rules_json");
+
+                    b.Property<string>("Skill")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("skill");
+
+                    b.Property<string>("SourceMode")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("source_mode");
+
+                    b.Property<string>("Subskill")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("subskill");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("title");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActivityType")
+                        .HasDatabaseName("ix_exercises_activity_type");
+
+                    b.HasIndex("CefrLevel")
+                        .HasDatabaseName("ix_exercises_cefr_level");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("ix_exercises_created_at");
+
+                    b.HasIndex("LessonId")
+                        .HasDatabaseName("ix_exercises_lesson");
+
+                    b.HasIndex("ReviewStatus")
+                        .HasDatabaseName("ix_exercises_review_status");
+
+                    b.HasIndex("Skill")
+                        .HasDatabaseName("ix_exercises_skill");
+
+                    b.HasIndex("Subskill")
+                        .HasDatabaseName("ix_exercises_subskill");
+
+                    b.ToTable("exercises", (string)null);
+                });
+
             modelBuilder.Entity("LinguaCoach.Domain.Entities.ExercisePatternDefinition", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1530,6 +1476,60 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasDatabaseName("ix_exercise_patterns_key");
 
                     b.ToTable("exercise_patterns", (string)null);
+                });
+
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.ExerciseResourceLink", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ContentFingerprint")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("content_fingerprint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid>("ExerciseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("exercise_id");
+
+                    b.Property<Guid>("ResourceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("resource_id");
+
+                    b.Property<string>("ResourceType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("resource_type");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("role");
+
+                    b.Property<string>("SnapshotTitle")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("snapshot_title");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExerciseId")
+                        .HasDatabaseName("ix_exercise_resource_links_activity");
+
+                    b.HasIndex("ResourceType", "ResourceId")
+                        .HasDatabaseName("ix_exercise_resource_links_resource");
+
+                    b.ToTable("exercise_resource_links", (string)null);
                 });
 
             modelBuilder.Entity("LinguaCoach.Domain.Entities.ExerciseTypeDefinition", b =>
@@ -2068,209 +2068,6 @@ namespace LinguaCoach.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("LinguaCoach.Domain.Entities.LearnItem", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTimeOffset?>("ApprovedAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("approved_at_utc");
-
-                    b.Property<string>("Body")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("body");
-
-                    b.Property<string>("CefrLevel")
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)")
-                        .HasColumnName("cefr_level");
-
-                    b.Property<string>("CommonMistakesJson")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("[]")
-                        .HasColumnName("common_mistakes_json");
-
-                    b.Property<string>("ContextTagsJson")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("[]")
-                        .HasColumnName("context_tags_json");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<Guid?>("CreatedByUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("created_by_user_id");
-
-                    b.Property<int?>("DifficultyBand")
-                        .HasColumnType("integer")
-                        .HasColumnName("difficulty_band");
-
-                    b.Property<int?>("EstimatedMinutes")
-                        .HasColumnType("integer")
-                        .HasColumnName("estimated_minutes");
-
-                    b.Property<string>("ExamplesJson")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("[]")
-                        .HasColumnName("examples_json");
-
-                    b.Property<string>("FocusTagsJson")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("[]")
-                        .HasColumnName("focus_tags_json");
-
-                    b.Property<string>("GenerationModel")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("generation_model");
-
-                    b.Property<string>("GenerationProvider")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("generation_provider");
-
-                    b.Property<DateTimeOffset?>("RejectedAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("rejected_at_utc");
-
-                    b.Property<string>("RejectionReason")
-                        .HasColumnType("text")
-                        .HasColumnName("rejection_reason");
-
-                    b.Property<string>("ReviewNotes")
-                        .HasColumnType("text")
-                        .HasColumnName("review_notes");
-
-                    b.Property<string>("ReviewStatus")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)")
-                        .HasColumnName("review_status");
-
-                    b.Property<Guid?>("ReviewedByUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("reviewed_by_user_id");
-
-                    b.Property<string>("Skill")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("skill");
-
-                    b.Property<string>("SourceMode")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)")
-                        .HasColumnName("source_mode");
-
-                    b.Property<string>("Subskill")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)")
-                        .HasColumnName("subskill");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)")
-                        .HasColumnName("title");
-
-                    b.Property<DateTime>("UpdatedAtUtc")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at_utc");
-
-                    b.Property<string>("UsageNotes")
-                        .HasColumnType("text")
-                        .HasColumnName("usage_notes");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CefrLevel")
-                        .HasDatabaseName("ix_learn_items_cefr_level");
-
-                    b.HasIndex("CreatedAt")
-                        .HasDatabaseName("ix_learn_items_created_at");
-
-                    b.HasIndex("ReviewStatus")
-                        .HasDatabaseName("ix_learn_items_review_status");
-
-                    b.HasIndex("Skill")
-                        .HasDatabaseName("ix_learn_items_skill");
-
-                    b.HasIndex("Subskill")
-                        .HasDatabaseName("ix_learn_items_subskill");
-
-                    b.ToTable("learn_items", (string)null);
-                });
-
-            modelBuilder.Entity("LinguaCoach.Domain.Entities.LearnItemResourceLink", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("ContentFingerprint")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)")
-                        .HasColumnName("content_fingerprint");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<Guid>("LearnItemId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("learn_item_id");
-
-                    b.Property<Guid>("ResourceId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("resource_id");
-
-                    b.Property<string>("ResourceType")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)")
-                        .HasColumnName("resource_type");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)")
-                        .HasColumnName("role");
-
-                    b.Property<string>("SnapshotTitle")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("snapshot_title");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("LearnItemId")
-                        .HasDatabaseName("ix_learn_item_resource_links_learn_item");
-
-                    b.HasIndex("ResourceType", "ResourceId")
-                        .HasDatabaseName("ix_learn_item_resource_links_resource");
-
-                    b.ToTable("learn_item_resource_links", (string)null);
-                });
-
             modelBuilder.Entity("LinguaCoach.Domain.Entities.LearningActivity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2568,6 +2365,155 @@ namespace LinguaCoach.Persistence.Migrations
                     b.ToTable("learning_sessions", (string)null);
                 });
 
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.Lesson", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("ApprovedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("approved_at_utc");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("body");
+
+                    b.Property<string>("CefrLevel")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("cefr_level");
+
+                    b.Property<string>("CommonMistakesJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("[]")
+                        .HasColumnName("common_mistakes_json");
+
+                    b.Property<string>("ContextTagsJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("[]")
+                        .HasColumnName("context_tags_json");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<int?>("DifficultyBand")
+                        .HasColumnType("integer")
+                        .HasColumnName("difficulty_band");
+
+                    b.Property<int?>("EstimatedMinutes")
+                        .HasColumnType("integer")
+                        .HasColumnName("estimated_minutes");
+
+                    b.Property<string>("ExamplesJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("[]")
+                        .HasColumnName("examples_json");
+
+                    b.Property<string>("FocusTagsJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("[]")
+                        .HasColumnName("focus_tags_json");
+
+                    b.Property<string>("GenerationModel")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("generation_model");
+
+                    b.Property<string>("GenerationProvider")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("generation_provider");
+
+                    b.Property<DateTimeOffset?>("RejectedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("rejected_at_utc");
+
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("text")
+                        .HasColumnName("rejection_reason");
+
+                    b.Property<string>("ReviewNotes")
+                        .HasColumnType("text")
+                        .HasColumnName("review_notes");
+
+                    b.Property<string>("ReviewStatus")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("review_status");
+
+                    b.Property<Guid?>("ReviewedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reviewed_by_user_id");
+
+                    b.Property<string>("Skill")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("skill");
+
+                    b.Property<string>("SourceMode")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("source_mode");
+
+                    b.Property<string>("Subskill")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("subskill");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("title");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at_utc");
+
+                    b.Property<string>("UsageNotes")
+                        .HasColumnType("text")
+                        .HasColumnName("usage_notes");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CefrLevel")
+                        .HasDatabaseName("ix_lessons_cefr_level");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("ix_lessons_created_at");
+
+                    b.HasIndex("ReviewStatus")
+                        .HasDatabaseName("ix_lessons_review_status");
+
+                    b.HasIndex("Skill")
+                        .HasDatabaseName("ix_lessons_skill");
+
+                    b.HasIndex("Subskill")
+                        .HasDatabaseName("ix_lessons_subskill");
+
+                    b.ToTable("lessons", (string)null);
+                });
+
             modelBuilder.Entity("LinguaCoach.Domain.Entities.LessonGenerationSettings", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2642,6 +2588,60 @@ namespace LinguaCoach.Persistence.Migrations
                     b.ToTable("lesson_generation_settings", (string)null);
                 });
 
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.LessonResourceLink", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("ContentFingerprint")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("content_fingerprint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid>("LessonId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lesson_id");
+
+                    b.Property<Guid>("ResourceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("resource_id");
+
+                    b.Property<string>("ResourceType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("resource_type");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("role");
+
+                    b.Property<string>("SnapshotTitle")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("snapshot_title");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LessonId")
+                        .HasDatabaseName("ix_lesson_resource_links_lesson");
+
+                    b.HasIndex("ResourceType", "ResourceId")
+                        .HasDatabaseName("ix_lesson_resource_links_resource");
+
+                    b.ToTable("lesson_resource_links", (string)null);
+                });
+
             modelBuilder.Entity("LinguaCoach.Domain.Entities.LessonVocabularyLog", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2684,7 +2684,7 @@ namespace LinguaCoach.Persistence.Migrations
                     b.ToTable("lesson_vocabulary_logs", (string)null);
                 });
 
-            modelBuilder.Entity("LinguaCoach.Domain.Entities.ModuleDefinition", b =>
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.Module", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -2806,33 +2806,29 @@ namespace LinguaCoach.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CefrLevel")
-                        .HasDatabaseName("ix_module_definitions_cefr_level");
+                        .HasDatabaseName("ix_modules_cefr_level");
 
                     b.HasIndex("CreatedAt")
-                        .HasDatabaseName("ix_module_definitions_created_at");
+                        .HasDatabaseName("ix_modules_created_at");
 
                     b.HasIndex("ReviewStatus")
-                        .HasDatabaseName("ix_module_definitions_review_status");
+                        .HasDatabaseName("ix_modules_review_status");
 
                     b.HasIndex("Skill")
-                        .HasDatabaseName("ix_module_definitions_skill");
+                        .HasDatabaseName("ix_modules_skill");
 
                     b.HasIndex("Subskill")
-                        .HasDatabaseName("ix_module_definitions_subskill");
+                        .HasDatabaseName("ix_modules_subskill");
 
-                    b.ToTable("module_definitions", (string)null);
+                    b.ToTable("modules", (string)null);
                 });
 
-            modelBuilder.Entity("LinguaCoach.Domain.Entities.ModuleDefinitionActivityLink", b =>
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.ModuleExerciseLink", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    b.Property<Guid>("ActivityDefinitionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("activity_definition_id");
 
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
@@ -2840,9 +2836,13 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("now()");
 
-                    b.Property<Guid>("ModuleDefinitionId")
+                    b.Property<Guid>("ExerciseId")
                         .HasColumnType("uuid")
-                        .HasColumnName("module_definition_id");
+                        .HasColumnName("exercise_id");
+
+                    b.Property<Guid>("ModuleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("module_id");
 
                     b.Property<bool>("Required")
                         .ValueGeneratedOnAdd()
@@ -2867,16 +2867,16 @@ namespace LinguaCoach.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ActivityDefinitionId")
-                        .HasDatabaseName("ix_module_definition_activity_links_activity");
+                    b.HasIndex("ExerciseId")
+                        .HasDatabaseName("ix_module_exercise_links_activity");
 
-                    b.HasIndex("ModuleDefinitionId")
-                        .HasDatabaseName("ix_module_definition_activity_links_module");
+                    b.HasIndex("ModuleId")
+                        .HasDatabaseName("ix_module_exercise_links_module");
 
-                    b.ToTable("module_definition_activity_links", (string)null);
+                    b.ToTable("module_exercise_links", (string)null);
                 });
 
-            modelBuilder.Entity("LinguaCoach.Domain.Entities.ModuleDefinitionLearnItemLink", b =>
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.ModuleLessonLink", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -2889,13 +2889,13 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("now()");
 
-                    b.Property<Guid>("LearnItemId")
+                    b.Property<Guid>("LessonId")
                         .HasColumnType("uuid")
-                        .HasColumnName("learn_item_id");
+                        .HasColumnName("lesson_id");
 
-                    b.Property<Guid>("ModuleDefinitionId")
+                    b.Property<Guid>("ModuleId")
                         .HasColumnType("uuid")
-                        .HasColumnName("module_definition_id");
+                        .HasColumnName("module_id");
 
                     b.Property<string>("Role")
                         .IsRequired()
@@ -2914,13 +2914,13 @@ namespace LinguaCoach.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("LearnItemId")
-                        .HasDatabaseName("ix_module_definition_learn_item_links_learn_item");
+                    b.HasIndex("LessonId")
+                        .HasDatabaseName("ix_module_lesson_links_lesson");
 
-                    b.HasIndex("ModuleDefinitionId")
-                        .HasDatabaseName("ix_module_definition_learn_item_links_module");
+                    b.HasIndex("ModuleId")
+                        .HasDatabaseName("ix_module_lesson_links_module");
 
-                    b.ToTable("module_definition_learn_item_links", (string)null);
+                    b.ToTable("module_lesson_links", (string)null);
                 });
 
             modelBuilder.Entity("LinguaCoach.Domain.Entities.Notification", b =>
@@ -4641,69 +4641,6 @@ namespace LinguaCoach.Persistence.Migrations
                     b.ToTable("speaking_turns", (string)null);
                 });
 
-            modelBuilder.Entity("LinguaCoach.Domain.Entities.StudentActivityDefinitionLaunch", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<Guid>("ActivityDefinitionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("activity_definition_id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("now()");
-
-                    b.Property<DateTimeOffset>("LaunchedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("launched_at");
-
-                    b.Property<Guid?>("LearnItemId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("learn_item_id");
-
-                    b.Property<Guid>("LearningActivityId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("learning_activity_id");
-
-                    b.Property<Guid>("ModuleDefinitionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("module_definition_id");
-
-                    b.Property<string>("Source")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)")
-                        .HasColumnName("source");
-
-                    b.Property<Guid>("StudentId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("student_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ActivityDefinitionId")
-                        .HasDatabaseName("ix_activity_definition_launches_activity");
-
-                    b.HasIndex("LearnItemId");
-
-                    b.HasIndex("LearningActivityId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_activity_definition_launches_learning_activity");
-
-                    b.HasIndex("ModuleDefinitionId")
-                        .HasDatabaseName("ix_activity_definition_launches_module");
-
-                    b.HasIndex("StudentId", "LaunchedAt")
-                        .HasDatabaseName("ix_activity_definition_launches_student_launched");
-
-                    b.ToTable("student_activity_definition_launches", (string)null);
-                });
-
             modelBuilder.Entity("LinguaCoach.Domain.Entities.StudentActivityUsageLog", b =>
                 {
                     b.Property<Guid>("Id")
@@ -4873,9 +4810,9 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("fallback_reason");
 
-                    b.Property<Guid?>("ModuleDefinitionId")
+                    b.Property<Guid?>("ModuleId")
                         .HasColumnType("uuid")
-                        .HasColumnName("module_definition_id");
+                        .HasColumnName("module_id");
 
                     b.Property<string>("SelectionReason")
                         .HasColumnType("text")
@@ -4893,7 +4830,7 @@ namespace LinguaCoach.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ModuleDefinitionId");
+                    b.HasIndex("ModuleId");
 
                     b.HasIndex("Status")
                         .HasDatabaseName("ix_daily_module_assignments_status");
@@ -4901,10 +4838,73 @@ namespace LinguaCoach.Persistence.Migrations
                     b.HasIndex("StudentId", "AssignedForDate")
                         .HasDatabaseName("ix_daily_module_assignments_student_date");
 
-                    b.HasIndex("StudentId", "ModuleDefinitionId")
+                    b.HasIndex("StudentId", "ModuleId")
                         .HasDatabaseName("ix_daily_module_assignments_student_module");
 
                     b.ToTable("student_daily_module_assignments", (string)null);
+                });
+
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.StudentExerciseLaunch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid>("ExerciseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("exercise_id");
+
+                    b.Property<DateTimeOffset>("LaunchedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("launched_at");
+
+                    b.Property<Guid>("LearningActivityId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("learning_activity_id");
+
+                    b.Property<Guid?>("LessonId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("lesson_id");
+
+                    b.Property<Guid>("ModuleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("module_id");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("source");
+
+                    b.Property<Guid>("StudentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("student_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExerciseId")
+                        .HasDatabaseName("ix_exercise_launches_activity");
+
+                    b.HasIndex("LearningActivityId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_exercise_launches_learning_activity");
+
+                    b.HasIndex("LessonId");
+
+                    b.HasIndex("ModuleId")
+                        .HasDatabaseName("ix_exercise_launches_module");
+
+                    b.HasIndex("StudentId", "LaunchedAt")
+                        .HasDatabaseName("ix_exercise_launches_student_launched");
+
+                    b.ToTable("student_exercise_launches", (string)null);
                 });
 
             modelBuilder.Entity("LinguaCoach.Domain.Entities.StudentFlowSubmission", b =>
@@ -5446,9 +5446,9 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("fallback_reason");
 
-                    b.Property<Guid?>("ModuleDefinitionId")
+                    b.Property<Guid?>("ModuleId")
                         .HasColumnType("uuid")
-                        .HasColumnName("module_definition_id");
+                        .HasColumnName("module_id");
 
                     b.Property<DateTimeOffset?>("SelectedAt")
                         .HasColumnType("timestamp with time zone")
@@ -5474,12 +5474,12 @@ namespace LinguaCoach.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ModuleDefinitionId");
+                    b.HasIndex("ModuleId");
 
                     b.HasIndex("Status")
                         .HasDatabaseName("ix_pg_module_assignments_status");
 
-                    b.HasIndex("StudentId", "ModuleDefinitionId")
+                    b.HasIndex("StudentId", "ModuleId")
                         .HasDatabaseName("ix_pg_module_assignments_student_module");
 
                     b.HasIndex("StudentId", "SuggestedAt")
@@ -6879,15 +6879,6 @@ namespace LinguaCoach.Persistence.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("LinguaCoach.Domain.Entities.ActivityResourceLink", b =>
-                {
-                    b.HasOne("LinguaCoach.Domain.Entities.ActivityDefinition", null)
-                        .WithMany()
-                        .HasForeignKey("ActivityDefinitionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("LinguaCoach.Domain.Entities.AiUsageLog", b =>
                 {
                     b.HasOne("LinguaCoach.Domain.Entities.StudentProfile", null)
@@ -6931,6 +6922,15 @@ namespace LinguaCoach.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.ExerciseResourceLink", b =>
+                {
+                    b.HasOne("LinguaCoach.Domain.Entities.Exercise", null)
+                        .WithMany()
+                        .HasForeignKey("ExerciseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("LinguaCoach.Domain.Entities.GenerationJobItem", b =>
                 {
                     b.HasOne("LinguaCoach.Domain.Entities.GenerationBatch", null)
@@ -6957,15 +6957,6 @@ namespace LinguaCoach.Persistence.Migrations
                     b.Navigation("SourceLanguage");
 
                     b.Navigation("TargetLanguage");
-                });
-
-            modelBuilder.Entity("LinguaCoach.Domain.Entities.LearnItemResourceLink", b =>
-                {
-                    b.HasOne("LinguaCoach.Domain.Entities.LearnItem", null)
-                        .WithMany()
-                        .HasForeignKey("LearnItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("LinguaCoach.Domain.Entities.LearningActivity", b =>
@@ -7003,6 +6994,15 @@ namespace LinguaCoach.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.LessonResourceLink", b =>
+                {
+                    b.HasOne("LinguaCoach.Domain.Entities.Lesson", null)
+                        .WithMany()
+                        .HasForeignKey("LessonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("LinguaCoach.Domain.Entities.LessonVocabularyLog", b =>
                 {
                     b.HasOne("LinguaCoach.Domain.Entities.StudentProfile", null)
@@ -7018,20 +7018,20 @@ namespace LinguaCoach.Persistence.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("LinguaCoach.Domain.Entities.ModuleDefinitionActivityLink", b =>
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.ModuleExerciseLink", b =>
                 {
-                    b.HasOne("LinguaCoach.Domain.Entities.ModuleDefinition", null)
+                    b.HasOne("LinguaCoach.Domain.Entities.Module", null)
                         .WithMany()
-                        .HasForeignKey("ModuleDefinitionId")
+                        .HasForeignKey("ModuleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("LinguaCoach.Domain.Entities.ModuleDefinitionLearnItemLink", b =>
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.ModuleLessonLink", b =>
                 {
-                    b.HasOne("LinguaCoach.Domain.Entities.ModuleDefinition", null)
+                    b.HasOne("LinguaCoach.Domain.Entities.Module", null)
                         .WithMany()
-                        .HasForeignKey("ModuleDefinitionId")
+                        .HasForeignKey("ModuleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -7160,32 +7160,6 @@ namespace LinguaCoach.Persistence.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("LinguaCoach.Domain.Entities.StudentActivityDefinitionLaunch", b =>
-                {
-                    b.HasOne("LinguaCoach.Domain.Entities.ActivityDefinition", null)
-                        .WithMany()
-                        .HasForeignKey("ActivityDefinitionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("LinguaCoach.Domain.Entities.LearnItem", null)
-                        .WithMany()
-                        .HasForeignKey("LearnItemId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("LinguaCoach.Domain.Entities.LearningActivity", null)
-                        .WithMany()
-                        .HasForeignKey("LearningActivityId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("LinguaCoach.Domain.Entities.ModuleDefinition", null)
-                        .WithMany()
-                        .HasForeignKey("ModuleDefinitionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("LinguaCoach.Domain.Entities.StudentActivityUsageLog", b =>
                 {
                     b.HasOne("LinguaCoach.Domain.Entities.LearningActivity", null)
@@ -7207,10 +7181,36 @@ namespace LinguaCoach.Persistence.Migrations
 
             modelBuilder.Entity("LinguaCoach.Domain.Entities.StudentDailyModuleAssignment", b =>
                 {
-                    b.HasOne("LinguaCoach.Domain.Entities.ModuleDefinition", null)
+                    b.HasOne("LinguaCoach.Domain.Entities.Module", null)
                         .WithMany()
-                        .HasForeignKey("ModuleDefinitionId")
+                        .HasForeignKey("ModuleId")
                         .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.StudentExerciseLaunch", b =>
+                {
+                    b.HasOne("LinguaCoach.Domain.Entities.Exercise", null)
+                        .WithMany()
+                        .HasForeignKey("ExerciseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LinguaCoach.Domain.Entities.LearningActivity", null)
+                        .WithMany()
+                        .HasForeignKey("LearningActivityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LinguaCoach.Domain.Entities.Lesson", null)
+                        .WithMany()
+                        .HasForeignKey("LessonId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("LinguaCoach.Domain.Entities.Module", null)
+                        .WithMany()
+                        .HasForeignKey("ModuleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("LinguaCoach.Domain.Entities.StudentFlowTemplateVersion", b =>
@@ -7263,9 +7263,9 @@ namespace LinguaCoach.Persistence.Migrations
 
             modelBuilder.Entity("LinguaCoach.Domain.Entities.StudentPracticeGymModuleAssignment", b =>
                 {
-                    b.HasOne("LinguaCoach.Domain.Entities.ModuleDefinition", null)
+                    b.HasOne("LinguaCoach.Domain.Entities.Module", null)
                         .WithMany()
-                        .HasForeignKey("ModuleDefinitionId")
+                        .HasForeignKey("ModuleId")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 

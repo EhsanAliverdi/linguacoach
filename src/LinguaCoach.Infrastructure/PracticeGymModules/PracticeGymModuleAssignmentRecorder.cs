@@ -37,24 +37,24 @@ public sealed class PracticeGymModuleAssignmentRecorder : IPracticeGymModuleAssi
         // SQLite's EF provider cannot translate DateTimeOffset comparisons server-side, so this
         // student's rows are fetched first and today's window applied client-side.
         var studentAssignments = await _db.StudentPracticeGymModuleAssignments
-            .Where(a => a.StudentId == studentId && a.ModuleDefinitionId != null)
+            .Where(a => a.StudentId == studentId && a.ModuleId != null)
             .ToListAsync(ct);
         var alreadyRecordedModuleIds = new HashSet<Guid>(
             studentAssignments
                 .Where(a => a.SuggestedAt >= today && a.SuggestedAt < tomorrow)
-                .Select(a => a.ModuleDefinitionId!.Value));
+                .Select(a => a.ModuleId!.Value));
 
         var now = DateTimeOffset.UtcNow;
         var anyNew = false;
 
         foreach (var suggestion in selectionResult.Suggestions)
         {
-            if (alreadyRecordedModuleIds.Contains(suggestion.ModuleDefinitionId))
+            if (alreadyRecordedModuleIds.Contains(suggestion.ModuleId))
                 continue;
 
             _db.StudentPracticeGymModuleAssignments.Add(new StudentPracticeGymModuleAssignment(
                 studentId,
-                suggestion.ModuleDefinitionId,
+                suggestion.ModuleId,
                 now,
                 PracticeGymModuleAssignmentStatus.Suggested,
                 selectionReason: suggestion.Reason,

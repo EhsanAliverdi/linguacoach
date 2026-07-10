@@ -369,9 +369,9 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
     };
 
     /// <summary>Phase H3/H4/H5 — populates <see cref="UnifiedResourceBankItemDto.LinkedLearnCount"/>
-    /// from <c>LearnItemResourceLink</c>, <see cref="UnifiedResourceBankItemDto.LinkedActivityCount"/>
-    /// from <c>ActivityResourceLink</c>, and <see cref="UnifiedResourceBankItemDto.LinkedModuleCount"/>
-    /// from the distinct set of Modules reachable via either link chain (resource → Learn Item →
+    /// from <c>LessonResourceLink</c>, <see cref="UnifiedResourceBankItemDto.LinkedActivityCount"/>
+    /// from <c>ExerciseResourceLink</c>, and <see cref="UnifiedResourceBankItemDto.LinkedModuleCount"/>
+    /// from the distinct set of Modules reachable via either link chain (resource → Lesson →
     /// Module, or resource → Activity → Module) — 0 when nothing references the row, never null
     /// once this runs.</summary>
     private async Task<List<UnifiedResourceBankItemDto>> WithLinkedCountsAsync(
@@ -380,32 +380,32 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
         if (items.Count == 0) return items;
 
         var ids = items.Select(i => i.Id).ToList();
-        var learnCounts = await _db.LearnItemResourceLinks
+        var learnCounts = await _db.LessonResourceLinks
             .Where(l => ids.Contains(l.ResourceId))
             .GroupBy(l => new { l.ResourceType, l.ResourceId })
-            .Select(g => new { g.Key.ResourceType, g.Key.ResourceId, Count = g.Select(l => l.LearnItemId).Distinct().Count() })
+            .Select(g => new { g.Key.ResourceType, g.Key.ResourceId, Count = g.Select(l => l.LessonId).Distinct().Count() })
             .ToListAsync(ct);
-        var activityCounts = await _db.ActivityResourceLinks
+        var activityCounts = await _db.ExerciseResourceLinks
             .Where(l => ids.Contains(l.ResourceId))
             .GroupBy(l => new { l.ResourceType, l.ResourceId })
-            .Select(g => new { g.Key.ResourceType, g.Key.ResourceId, Count = g.Select(l => l.ActivityDefinitionId).Distinct().Count() })
+            .Select(g => new { g.Key.ResourceType, g.Key.ResourceId, Count = g.Select(l => l.ExerciseId).Distinct().Count() })
             .ToListAsync(ct);
 
-        var moduleViaLearnItem = await
-            (from rl in _db.LearnItemResourceLinks
+        var moduleViaLesson = await
+            (from rl in _db.LessonResourceLinks
              where ids.Contains(rl.ResourceId)
-             join ml in _db.ModuleDefinitionLearnItemLinks on rl.LearnItemId equals ml.LearnItemId
-             select new { rl.ResourceType, rl.ResourceId, ml.ModuleDefinitionId })
+             join ml in _db.ModuleLessonLinks on rl.LessonId equals ml.LessonId
+             select new { rl.ResourceType, rl.ResourceId, ml.ModuleId })
             .ToListAsync(ct);
         var moduleViaActivity = await
-            (from rl in _db.ActivityResourceLinks
+            (from rl in _db.ExerciseResourceLinks
              where ids.Contains(rl.ResourceId)
-             join ml in _db.ModuleDefinitionActivityLinks on rl.ActivityDefinitionId equals ml.ActivityDefinitionId
-             select new { rl.ResourceType, rl.ResourceId, ml.ModuleDefinitionId })
+             join ml in _db.ModuleExerciseLinks on rl.ExerciseId equals ml.ExerciseId
+             select new { rl.ResourceType, rl.ResourceId, ml.ModuleId })
             .ToListAsync(ct);
-        var moduleCounts = moduleViaLearnItem.Concat(moduleViaActivity)
+        var moduleCounts = moduleViaLesson.Concat(moduleViaActivity)
             .GroupBy(x => new { x.ResourceType, x.ResourceId })
-            .Select(g => new { g.Key.ResourceType, g.Key.ResourceId, Count = g.Select(x => x.ModuleDefinitionId).Distinct().Count() })
+            .Select(g => new { g.Key.ResourceType, g.Key.ResourceId, Count = g.Select(x => x.ModuleId).Distinct().Count() })
             .ToList();
 
         return items

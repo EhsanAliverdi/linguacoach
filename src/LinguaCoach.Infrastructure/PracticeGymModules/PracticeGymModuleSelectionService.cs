@@ -10,8 +10,8 @@ namespace LinguaCoach.Infrastructure.PracticeGymModules;
 
 /// <summary>
 /// Phase H7 — deterministic (no AI) Practice Gym module selector. Pure/read-only: never writes to
-/// the database, never mutates a <see cref="ModuleDefinition"/>/<see cref="LearnItem"/>/
-/// <see cref="ActivityDefinition"/>, never creates Module attempts or mastery updates. Never
+/// the database, never mutates a <see cref="Module"/>/<see cref="Lesson"/>/
+/// <see cref="Exercise"/>, never creates Module attempts or mastery updates. Never
 /// throws for "no suitable content" — degrades to
 /// <see cref="PracticeGymModuleSelectionResult.FallbackRequired"/> instead, and the outer
 /// try/catch guarantees the same for any unexpected error, so a caller can always safely fall
@@ -40,39 +40,39 @@ public sealed class PracticeGymModuleSelectionService : IPracticeGymModuleSelect
             var targetCefr = NormalizeCefr(request.CefrLevel);
             var now = DateTimeOffset.UtcNow;
 
-            var candidateModules = await _db.ModuleDefinitions
+            var candidateModules = await _db.Modules
                 .AsNoTracking()
                 .Where(m => m.ReviewStatus == AdminReviewStatus.Approved)
                 .ToListAsync(ct);
 
             if (candidateModules.Count == 0)
-                return Fallback(targetCefr, warnings, "No approved Module Definitions exist yet.");
+                return Fallback(targetCefr, warnings, "No approved Modules exist yet.");
 
             var moduleIds = candidateModules.Select(m => m.Id).ToList();
 
-            var learnLinks = await _db.ModuleDefinitionLearnItemLinks
+            var lessonLinks = await _db.ModuleLessonLinks
                 .AsNoTracking()
-                .Where(l => moduleIds.Contains(l.ModuleDefinitionId))
+                .Where(l => moduleIds.Contains(l.ModuleId))
                 .ToListAsync(ct);
-            var activityLinks = await _db.ModuleDefinitionActivityLinks
+            var exerciseLinks = await _db.ModuleExerciseLinks
                 .AsNoTracking()
-                .Where(l => moduleIds.Contains(l.ModuleDefinitionId))
+                .Where(l => moduleIds.Contains(l.ModuleId))
                 .ToListAsync(ct);
 
-            var learnItemIds = learnLinks.Select(l => l.LearnItemId).Distinct().ToList();
-            var activityDefIds = activityLinks.Select(l => l.ActivityDefinitionId).Distinct().ToList();
+            var lessonIds = lessonLinks.Select(l => l.LessonId).Distinct().ToList();
+            var exerciseIds = exerciseLinks.Select(l => l.ExerciseId).Distinct().ToList();
 
-            var learnItemsById = await _db.LearnItems
+            var lessonsById = await _db.Lessons
                 .AsNoTracking()
-                .Where(i => learnItemIds.Contains(i.Id))
+                .Where(i => lessonIds.Contains(i.Id))
                 .ToDictionaryAsync(i => i.Id, ct);
-            var activityDefsById = await _db.ActivityDefinitions
+            var activityDefsById = await _db.Exercises
                 .AsNoTracking()
-                .Where(a => activityDefIds.Contains(a.Id))
+                .Where(a => exerciseIds.Contains(a.Id))
                 .ToDictionaryAsync(a => a.Id, ct);
 
-            var learnLinksByModule = learnLinks.ToLookup(l => l.ModuleDefinitionId);
-            var activityLinksByModule = activityLinks.ToLookup(l => l.ModuleDefinitionId);
+            var lessonLinksByModule = lessonLinks.ToLookup(l => l.ModuleId);
+            var exerciseLinksByModule = exerciseLinks.ToLookup(l => l.ModuleId);
 
             var cooldownStart = now.Subtract(ReuseCooldown);
             // SQLite's EF provider cannot translate DateTimeOffset comparisons server-side, so
@@ -80,45 +80,45 @@ public sealed class PracticeGymModuleSelectionService : IPracticeGymModuleSelect
             // fetched first and the cooldown window applied client-side.
             var studentAssignments = await _db.StudentPracticeGymModuleAssignments
                 .AsNoTracking()
-                .Where(a => a.StudentId == request.StudentId && a.ModuleDefinitionId != null)
+                .Where(a => a.StudentId == request.StudentId && a.ModuleId != null)
                 .ToListAsync(ct);
             var recentModuleIds = new HashSet<Guid>(
                 studentAssignments
                     .Where(a => a.SuggestedAt >= cooldownStart)
-                    .Select(a => a.ModuleDefinitionId!.Value));
+                    .Select(a => a.ModuleId!.Value));
 
-            if (request.RecentSuggestedModuleDefinitionIds is not null)
-                foreach (var id in request.RecentSuggestedModuleDefinitionIds)
+            if (request.RecentSuggestedModuleIds is not null)
+                foreach (var id in request.RecentSuggestedModuleIds)
                     recentModuleIds.Add(id);
 
-            var eligible = new List<(ModuleDefinition Module, List<LearnItem> Learns, List<ActivityDefinition> Activities)>();
+            var eligible = new List<(Module Module, List<Lesson> Learns, List<Exercise> Activities)>();
 
             foreach (var module in candidateModules)
             {
                 if (recentModuleIds.Contains(module.Id))
                     continue;
 
-                var approvedLearns = learnLinksByModule[module.Id]
-                    .Select(l => learnItemsById.GetValueOrDefault(l.LearnItemId))
+                var approvedLessons = lessonLinksByModule[module.Id]
+                    .Select(l => lessonsById.GetValueOrDefault(l.LessonId))
                     .Where(i => i is not null && i.ReviewStatus == AdminReviewStatus.Approved)
                     .Select(i => i!)
                     .ToList();
 
-                var approvedActivities = activityLinksByModule[module.Id]
-                    .Select(l => activityDefsById.GetValueOrDefault(l.ActivityDefinitionId))
+                var approvedActivities = exerciseLinksByModule[module.Id]
+                    .Select(l => activityDefsById.GetValueOrDefault(l.ExerciseId))
                     .Where(a => a is not null && a.ReviewStatus == AdminReviewStatus.Approved)
                     .Select(a => a!)
                     .ToList();
 
-                if (approvedLearns.Count == 0 || approvedActivities.Count == 0)
+                if (approvedLessons.Count == 0 || approvedActivities.Count == 0)
                     continue;
 
-                eligible.Add((module, approvedLearns, approvedActivities));
+                eligible.Add((module, approvedLessons, approvedActivities));
             }
 
             if (eligible.Count == 0)
                 return Fallback(targetCefr, warnings,
-                    "No approved Module has both an approved Learn Item and an approved Activity Definition available (or every compatible Module was recently suggested).");
+                    "No approved Module has both an approved Lesson and an approved Exercise available (or every compatible Module was recently suggested).");
 
             // Requested skill/subskill/objective narrow the pool when the student picked one
             // explicitly (self-directed Practice Gym) — but only when doing so still leaves at
@@ -200,7 +200,7 @@ public sealed class PracticeGymModuleSelectionService : IPracticeGymModuleSelect
                 {
                     var moreDiverseOptionRemains = scored.Any(s =>
                         s.Entry.Module.Id != entry.Module.Id
-                        && !suggestions.Exists(sug => sug.ModuleDefinitionId == s.Entry.Module.Id)
+                        && !suggestions.Exists(sug => sug.ModuleId == s.Entry.Module.Id)
                         && (s.Entry.Module.Skill is null || !usedSkills.Contains(s.Entry.Module.Skill)));
 
                     if (moreDiverseOptionRemains)
@@ -215,13 +215,13 @@ public sealed class PracticeGymModuleSelectionService : IPracticeGymModuleSelect
                 // Phase H10 — precompute launch eligibility so the client can show Start/disabled
                 // without an extra round trip. Re-validated fresh at actual launch time too.
                 var launchEligibility = entry.Activities
-                    .Select(Application.ActivityDefinitionLaunch.ActivityDefinitionLaunchEligibility.Evaluate)
+                    .Select(Application.ExerciseLaunch.ExerciseLaunchEligibility.Evaluate)
                     .FirstOrDefault(e => e.CanLaunch)
-                    ?? entry.Activities.Select(Application.ActivityDefinitionLaunch.ActivityDefinitionLaunchEligibility.Evaluate).FirstOrDefault()
-                    ?? new Application.ActivityDefinitionLaunch.ActivityDefinitionLaunchEligibilityResult(false, "This module has no launchable practice activity.");
+                    ?? entry.Activities.Select(Application.ExerciseLaunch.ExerciseLaunchEligibility.Evaluate).FirstOrDefault()
+                    ?? new Application.ExerciseLaunch.ExerciseLaunchEligibilityResult(false, "This module has no launchable practice activity.");
 
                 suggestions.Add(new PracticeGymModuleSuggestion(
-                    ModuleDefinitionId: entry.Module.Id,
+                    ModuleId: entry.Module.Id,
                     Title: entry.Module.Title,
                     Description: entry.Module.Description,
                     CefrLevel: entry.Module.CefrLevel,
@@ -235,7 +235,7 @@ public sealed class PracticeGymModuleSelectionService : IPracticeGymModuleSelect
                     IsReview: isLowerLevel,
                     IsScaffold: usedBroadenedCefr && entry.Module.CefrLevel is null,
                     IsRemediation: isRemediation,
-                    LinkedLearnItemSummaries: entry.Learns.Select(ToLearnItemSummary).ToList(),
+                    LinkedLessonSummaries: entry.Learns.Select(ToLessonSummary).ToList(),
                     LinkedActivitySummaries: entry.Activities.Select(ToActivitySummary).ToList(),
                     CanLaunch: launchEligibility.CanLaunch,
                     UnsupportedReason: launchEligibility.UnsupportedReason));
@@ -271,7 +271,7 @@ public sealed class PracticeGymModuleSelectionService : IPracticeGymModuleSelect
         TargetCefrLevel: targetCefr,
         Warnings: warnings);
 
-    private static double ScoreModule(ModuleDefinition module, PracticeGymModuleSelectionRequest request)
+    private static double ScoreModule(Module module, PracticeGymModuleSelectionRequest request)
     {
         double score = 0;
 
@@ -315,7 +315,7 @@ public sealed class PracticeGymModuleSelectionService : IPracticeGymModuleSelect
     }
 
     private static string BuildReason(
-        ModuleDefinition module, PracticeGymModuleSelectionRequest request, bool usedBroadenedCefr, bool isRemediation)
+        Module module, PracticeGymModuleSelectionRequest request, bool usedBroadenedCefr, bool isRemediation)
     {
         var parts = new List<string>();
 
@@ -374,16 +374,16 @@ public sealed class PracticeGymModuleSelectionService : IPracticeGymModuleSelect
         }
     }
 
-    private static PracticeGymModuleLearnItemSummary ToLearnItemSummary(LearnItem item) => new(
-        LearnItemId: item.Id,
+    private static PracticeGymModuleLessonSummary ToLessonSummary(Lesson item) => new(
+        LessonId: item.Id,
         Title: item.Title,
         Body: item.Body,
         Examples: SafeParseStringArray(item.ExamplesJson),
         CommonMistakes: SafeParseStringArray(item.CommonMistakesJson),
         UsageNotes: item.UsageNotes);
 
-    private static PracticeGymModuleActivitySummary ToActivitySummary(ActivityDefinition activity) => new(
-        ActivityDefinitionId: activity.Id,
+    private static PracticeGymModuleActivitySummary ToActivitySummary(Exercise activity) => new(
+        ExerciseId: activity.Id,
         Title: activity.Title,
         Description: activity.Description,
         Instructions: activity.Instructions,

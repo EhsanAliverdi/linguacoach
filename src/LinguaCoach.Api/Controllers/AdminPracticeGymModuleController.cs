@@ -72,12 +72,12 @@ public sealed class AdminPracticeGymModuleController : ControllerBase
             .ToListAsync(ct);
 
         var moduleIds = assignments
-            .Where(a => a.ModuleDefinitionId.HasValue)
-            .Select(a => a.ModuleDefinitionId!.Value)
+            .Where(a => a.ModuleId.HasValue)
+            .Select(a => a.ModuleId!.Value)
             .Distinct()
             .ToList();
 
-        var titlesById = await _db.ModuleDefinitions
+        var titlesById = await _db.Modules
             .AsNoTracking()
             .Where(m => moduleIds.Contains(m.Id))
             .Select(m => new { m.Id, m.Title })
@@ -87,8 +87,8 @@ public sealed class AdminPracticeGymModuleController : ControllerBase
         {
             a.Id,
             a.SuggestedAt,
-            ModuleDefinitionId = a.ModuleDefinitionId,
-            ModuleTitle = a.ModuleDefinitionId.HasValue ? titlesById.GetValueOrDefault(a.ModuleDefinitionId.Value) : null,
+            ModuleId = a.ModuleId,
+            ModuleTitle = a.ModuleId.HasValue ? titlesById.GetValueOrDefault(a.ModuleId.Value) : null,
             Status = a.Status.ToString(),
             a.SelectionReason,
             a.FallbackReason,

@@ -60,7 +60,7 @@ public sealed class ResourceBankItem : BaseEntity
     }
 
     /// <summary>Phase I0 backfill only — constructs a row preserving the original typed table's Id,
-    /// so LearnItemResourceLink/ActivityResourceLink's existing ResourceId values keep resolving
+    /// so LessonResourceLink/ExerciseResourceLink's existing ResourceId values keep resolving
     /// with no link-table migration needed.</summary>
     public static ResourceBankItem Reconstitute(
         Guid id,

@@ -109,34 +109,34 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<ResourceRawRecord> ResourceRawRecords => Set<ResourceRawRecord>();
     public DbSet<ResourceCandidate> ResourceCandidates => Set<ResourceCandidate>();
 
-    // Phase H3 — Learn Item foundation (reviewable teaching/explanation blocks generated from
+    // Phase H3 — Lesson foundation (reviewable teaching/explanation blocks generated from
     // published Resource Bank rows; the "Learn" half of a future Module)
-    public DbSet<LearnItem> LearnItems => Set<LearnItem>();
-    public DbSet<LearnItemResourceLink> LearnItemResourceLinks => Set<LearnItemResourceLink>();
+    public DbSet<Lesson> Lessons => Set<Lesson>();
+    public DbSet<LessonResourceLink> LessonResourceLinks => Set<LessonResourceLink>();
 
     // Phase H4 — Activity foundation (reviewable, editable practice task designs generated from
-    // published Resource Bank rows or a Learn Item; the "Practice" half of a future Module)
-    public DbSet<ActivityDefinition> ActivityDefinitions => Set<ActivityDefinition>();
-    public DbSet<ActivityResourceLink> ActivityResourceLinks => Set<ActivityResourceLink>();
+    // published Resource Bank rows or a Lesson; the "Practice" half of a future Module)
+    public DbSet<Exercise> Exercises => Set<Exercise>();
+    public DbSet<ExerciseResourceLink> ExerciseResourceLinks => Set<ExerciseResourceLink>();
 
-    // Phase H5 — Module Definition foundation (reusable, reviewable learning units combining
-    // Learn Items + Activity Definitions + a module-level feedback plan; not wired into any
-    // runtime path — see ModuleDefinition's doc comment for the distinction from LearningModule)
-    public DbSet<ModuleDefinition> ModuleDefinitions => Set<ModuleDefinition>();
-    public DbSet<ModuleDefinitionLearnItemLink> ModuleDefinitionLearnItemLinks => Set<ModuleDefinitionLearnItemLink>();
-    public DbSet<ModuleDefinitionActivityLink> ModuleDefinitionActivityLinks => Set<ModuleDefinitionActivityLink>();
+    // Phase H5 — Module foundation (reusable, reviewable learning units combining
+    // Lessons + Exercises + a module-level feedback plan; not wired into any
+    // runtime path — see Module's doc comment for the distinction from LearningModule)
+    public DbSet<Module> Modules => Set<Module>();
+    public DbSet<ModuleLessonLink> ModuleLessonLinks => Set<ModuleLessonLink>();
+    public DbSet<ModuleExerciseLink> ModuleExerciseLinks => Set<ModuleExerciseLink>();
 
-    // Phase H6 — Daily Lesson Module Pipeline (additive bookkeeping: which ModuleDefinition, if
+    // Phase H6 — Daily Lesson Module Pipeline (additive bookkeeping: which Module, if
     // any, the deterministic selector chose for a student on a given date)
     public DbSet<StudentDailyModuleAssignment> StudentDailyModuleAssignments => Set<StudentDailyModuleAssignment>();
 
-    // Phase H7 — Practice Gym Module Pipeline (additive bookkeeping: which ModuleDefinition, if
+    // Phase H7 — Practice Gym Module Pipeline (additive bookkeeping: which Module, if
     // any, the deterministic selector suggested to a student)
     public DbSet<StudentPracticeGymModuleAssignment> StudentPracticeGymModuleAssignments => Set<StudentPracticeGymModuleAssignment>();
 
-    // Phase H10 — ActivityDefinition Runtime Launch Path / Attempt Bridge (traceability: which
-    // ModuleDefinition/ActivityDefinition/LearnItem a materialized LearningActivity came from)
-    public DbSet<StudentActivityDefinitionLaunch> StudentActivityDefinitionLaunches => Set<StudentActivityDefinitionLaunch>();
+    // Phase H10 — Exercise Runtime Launch Path / Attempt Bridge (traceability: which
+    // Module/Exercise/Lesson a materialized LearningActivity came from)
+    public DbSet<StudentExerciseLaunch> StudentExerciseLaunches => Set<StudentExerciseLaunch>();
 
     // Phase 10W — Enterprise notification platform
     public DbSet<Notification> Notifications => Set<Notification>();
