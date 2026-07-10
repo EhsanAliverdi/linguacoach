@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-10 (Phase H9A)
+lastUpdated: 2026-07-10 (Phase H9B)
 owner: product
 supersedes:
 supersededBy:
@@ -342,6 +342,28 @@ Gym fallback, or ActivityDefinition launch bridge touched. Full detail:
 `docs/roadmap/road-map.md` §1, and
 `docs/reviews/2026-07-10-phase-h9a-legacy-admin-code-path-removal-review.md`.
 
+**Phase H9B, 2026-07-10. Implemented (docs/design-only).** Answered the question H9A left open:
+should the 4 typed published bank tables be physically consolidated into one `ResourceBankItem`
+table? **Recommendation: no — keep the typed tables and the existing unified admin read model**
+(Option A, converging toward Option E, from a 5-option comparison against B/C/D). A code-level
+audit of the 4 typed entities, `ResourceCandidatePublishService`'s publish routing,
+`ResourceBankQueryService.ListUnifiedAsync`'s in-memory unification, every caller of typed
+resource methods (found `TodayBankResourceSelector`, `LearnItemResourceLookup`, and
+`ActivityGenerationService` all bypass `ResourceBankQueryService` and query typed tables/methods
+directly), the `LearnItemResourceLink`/`ActivityResourceLink` polymorphic link pattern
+(`ResourceType`+`ResourceId`, already working), and every seeder (confirmed none writes typed
+tables directly, bypassing the candidate pipeline) found the 4 types hold genuinely different
+field shapes (`CefrReadingPassage` alone has 8 fields none of the others have), and the one real
+pain point (`ListUnifiedAsync`'s per-type in-memory scan, not a genuine DB-side union) has a
+materially cheaper fix than a physical table — a SQL `UNION ALL` view (new `TODO-H11-1`). A full
+target schema (hybrid columns + `ContentJson`), link-migration strategy, publish-flow strategy,
+selector migration order, and removal safety gate checklist are documented for a future
+re-evaluation but **not implemented**. No EF migration, no new table, no data migration, no typed
+table/API removal, no `ResourceBankQueryService`/selector/import-publish rewrite. `TODO-H9B-1`
+closed; `TODO-H9C-1`/`TODO-H9D-1` re-scoped as conditional placeholders; `TODO-H11-1` added. Full
+detail: `docs/roadmap/road-map.md` §1, and
+`docs/reviews/2026-07-10-phase-h9b-resourcebankitem-consolidation-decision.md`.
+
 ---
 
 ## 1. Why this phase exists
@@ -656,9 +678,10 @@ pages exist to populate "Content Studio." Not implemented in H0.
 | **H7 — Practice Gym Module Pipeline** `Done (2026-07-09)` | Deterministic, read-only `IPracticeGymModuleSelectionService` suggests Approved Modules (with Approved linked Learn Item/Activity Definition) for Practice Gym, attached additively as an optional `PracticeGymSuggestionsDto.ModuleSuggestions`; adds self-directed skill/subskill/objective/difficulty/weakness-signal preferences on top of H6's shape; no student "start" flow yet (display-only). | H6 |
 | **H8 — Content Studio/Admin IA Cleanup and Removal Readiness** `Done (2026-07-10)` | Frontend/docs-only. Split admin nav into Content Studio (Import → Bank → Learn Items → Activities → Modules) and Content Ops (staging/support pages); removed the four typed resource-bank nav entries (navigation only — routes/tables/APIs untouched); updated stale "future Modules" page copy. No table/API/route/component deletion. | H1–H7 substantially landed, Plan-Sync-After-H7 |
 | **H9A — Legacy Admin/API/Code Path Removal Safety Pass** `Done (2026-07-10)` | First H9 cleanup phase. Frontend/admin cleanup only — removed the four typed admin bank Angular pages/routes/components (already unreachable via nav since H8), the orphaned `AdminResourceBankService`, and 12 dead model interfaces; old routes redirect to the unified Resource Bank with a matching `?type=` filter; nulled a dead-link `DetailRoute` value backend-side. No typed table/data/service-method/runtime-dependency removed. | H8 |
-| **H9B — Physical ResourceBankItem Consolidation Decision and Design** `Planned` | Decide whether to pursue physical `ResourceBankItem` consolidation (§4 Option A) or keep the current read-model approach (Option B) permanently; design the new table if Option A is chosen. See `TODO-H9B-1`. | H9A |
-| **H9C — Data Migration/Compatibility Adapters** `Planned` | If H9B selects consolidation, migrate the 4 typed Cefr* tables into the new table, with compatibility adapters for `TodayBankResourceSelector`. See `TODO-H9C-1`. | H9B |
-| **H9D — Typed Table/API Removal After Migration Is Proven Safe** `Planned` | Remove the old typed tables/controller actions/service methods only after H9C's migration has soaked in production. See `TODO-H9D-1`. | H9C |
+| **H9B — Physical ResourceBankItem Consolidation Decision and Design** `Done (2026-07-10)` | Docs/design-only. Audited the 4 typed tables' field shapes, all typed-method callers, the polymorphic link pattern, and every seeder. **Recommended against physical consolidation** (Option A, converging toward Option E) — type-specific field shapes, a cheaper fix exists for the one real pain point (SQL view, `TODO-H11-1`), current content volume doesn't justify migration risk. Full schema/migration/gate design documented for a future re-evaluation, not implemented. See `TODO-H9B-1`. | H9A |
+| **H9C — Data Migration/Compatibility Adapters** `Not scheduled — consolidation not recommended` | H9B found no justification to start this; kept as a conditional placeholder only. See `TODO-H9C-1`. | H9B |
+| **H9D — Typed Table/API Removal** `Not scheduled — blocked on H9C, itself not recommended` | See `TODO-H9D-1`. | H9C |
+| **H11 — Strengthen ResourceBankQueryService with a SQL-side unified view** `Planned` | Lightweight alternative to physical consolidation — a SQL `UNION ALL` view over the 4 typed tables for real DB-side pagination on the unified admin Resource Bank page. Zero data migration, zero change to any typed table or its writers/readers. Only pursue if `ListUnifiedAsync`'s in-memory scan becomes a measured performance problem. See `TODO-H11-1`. | H9B |
 | **H10 — ActivityDefinition Runtime Launch Path / Attempt Bridge** `Done (2026-07-10)` | Chose (C) hybrid, executed via (B)'s mechanism: materializes an eligible Activity Definition into a real `LearningActivity` via `SetFormIoContent` (same as `ActivityTemplate`'s pilot), reusing the entire existing scoring/attempt/ledger pipeline unchanged. New additive `StudentActivityDefinitionLaunch` bridge table for traceability. Practice Gym Start button now live for `gap_fill`/`multiple_choice_single` suggestions. | H7 |
 
 **Not scheduled by this phase:** destructive cleanup of any kind. Phase F (legacy generation
@@ -742,11 +765,18 @@ detail.
 phase; frontend/admin cleanup only. See
 `docs/reviews/2026-07-10-phase-h9a-legacy-admin-code-path-removal-review.md`.
 
-**Recommended next: H9B — Physical ResourceBankItem Consolidation Decision and Design**, deciding
-whether physical consolidation is worth pursuing or whether the read-model approach should be
-permanent. The PG-v2 track remains a separate, still-open decision not resolved by this phase.
-`TODO-H10-2` (Today module launch) and `TODO-H10-3` (native ActivityDefinition attempt runtime) are smaller,
-independent follow-ups that can proceed in parallel.
+**H9B — Physical ResourceBankItem Consolidation Decision and Design — done (2026-07-10,
+docs/design-only).** Recommended against physical consolidation — see
+`docs/reviews/2026-07-10-phase-h9b-resourcebankitem-consolidation-decision.md`.
+
+**No H9C/H9D implementation scheduled.** H9B found no current justification for physical
+consolidation, so the migration chain it would have gated (H9C data migration, H9D typed
+table/API removal) has nothing to build. **Recommended next: H11 — Strengthen
+ResourceBankQueryService with a SQL-side unified view**, only if `ListUnifiedAsync`'s in-memory
+scan ever becomes a measured performance problem. The PG-v2 track remains a separate, still-open
+decision not resolved by this phase. `TODO-H10-2` (Today module launch) and `TODO-H10-3` (native
+ActivityDefinition attempt runtime) are smaller, independent follow-ups that can proceed in
+parallel.
 
 ---
 

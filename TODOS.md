@@ -833,41 +833,83 @@ audit table); `docs/architecture/product-model-realignment-h0.md` §4 (Option A/
 `docs/reviews/2026-07-10-phase-h9a-legacy-admin-code-path-removal-review.md`.
 **Deferred from:** Plan-Sync-After-H7, 2026-07-09. **Partially resolved:** Phase H9A, 2026-07-10.
 
-### TODO-H9B-1 — Physical ResourceBankItem consolidation decision and design
+### ~~TODO-H9B-1~~ — Physical ResourceBankItem consolidation decision and design — **DONE in Phase H9B**
 **What:** Decide whether to pursue physical `ResourceBankItem` consolidation (H0 §4 Option A) or
 keep the current read-model approach (Option B, what H1/H9A both assume) permanently. If Option A
 is chosen, design the new additive table before any migration work starts.
+**Resolution:** Phase H9B (2026-07-10) — **recommended Option A, converging toward Option E: do
+not build a physical `ResourceBankItem` table.** The 4 typed tables hold genuinely different field
+shapes (not superficial naming differences — `CefrReadingPassage` alone has 8 fields none of the
+others have); the only concretely-identified pain point (`ResourceBankQueryService.ListUnifiedAsync`'s
+in-memory per-type scan) has a materially cheaper fix than a physical table (a SQL `UNION ALL`
+view, see `TODO-H11-1`); the polymorphic-link pattern (`LearnItemResourceLink`/
+`ActivityResourceLink`'s `ResourceType`+`ResourceId`) already works and would only partially
+simplify under consolidation; and current content volume (internal seed packs, dozens of rows per
+type) doesn't justify the migration/dual-write/4-call-site-rewrite risk. Full target schema
+(hybrid columns + `ContentJson`), link-migration strategy, publish-flow strategy, selector
+migration order, and removal safety gates are documented for a future re-evaluation, not
+implemented. See
+`docs/reviews/2026-07-10-phase-h9b-resourcebankitem-consolidation-decision.md`.
 **Why:** H9A deliberately did not attempt this — it stayed frontend/admin-only per its own scope
 boundary. The decision has architectural weight (new table, dual-write period, cutover strategy)
-and needs its own audit, not a rider on a cleanup phase.
+and needed its own audit, not a rider on a cleanup phase.
 **Context:** `docs/architecture/product-model-realignment-h0.md` §4 (Option A/B);
-`docs/reviews/2026-07-10-phase-h9a-legacy-admin-code-path-removal-review.md`.
-**Deferred from:** Phase H9A, 2026-07-10.
+`docs/reviews/2026-07-10-phase-h9a-legacy-admin-code-path-removal-review.md`;
+`docs/reviews/2026-07-10-phase-h9b-resourcebankitem-consolidation-decision.md`.
+**Deferred from:** Phase H9A, 2026-07-10. **Resolved:** Phase H9B, 2026-07-10.
 
-### TODO-H9C-1 — Data migration/compatibility adapters if consolidation is chosen
-**What:** If TODO-H9B-1 selects physical `ResourceBankItem` consolidation, build the migration
-path from the 4 typed Cefr* tables into the new table, plus any compatibility adapters needed to
-keep `TodayBankResourceSelector` and the typed backend service methods working during the
-transition.
-**Why:** Blocked on TODO-H9B-1's decision; migrating live student-facing data (Today's bank
-selection depends on `IResourceBankQueryService`'s typed methods) needs its own safety/rollback
-plan, not folded into the design phase.
+### TODO-H9C-1 — Data migration/compatibility adapters — **not scheduled; consolidation not recommended**
+**What:** If a future re-evaluation reverses H9B's recommendation and selects physical
+`ResourceBankItem` consolidation, build the migration path from the 4 typed Cefr* tables into the
+new table, plus any compatibility adapters needed to keep `TodayBankResourceSelector` and the
+typed backend service methods working during the transition. The target design (publish via a
+same-transaction projector, not dual-write; preserve old row Ids 1:1 to avoid needing a dual-link
+period) is already documented in
+`docs/reviews/2026-07-10-phase-h9b-resourcebankitem-consolidation-decision.md`.
+**Why:** H9B (2026-07-10) found no evidence justifying physical consolidation at current content
+volume — this item stays open only as a placeholder in case that evidence changes (see the
+"revisit" trigger condition in the H9B review's Risks section), not as active planned work.
 **Context:** `src/LinguaCoach.Infrastructure/Activity/TodayBankResourceSelector.cs`;
-`src/LinguaCoach.Infrastructure/ResourceImport/ResourceBankQueryService.cs`.
-**Deferred from:** Phase H9A, 2026-07-10.
+`src/LinguaCoach.Infrastructure/ResourceImport/ResourceBankQueryService.cs`;
+`docs/reviews/2026-07-10-phase-h9b-resourcebankitem-consolidation-decision.md`.
+**Deferred from:** Phase H9A, 2026-07-10. **Re-scoped:** Phase H9B, 2026-07-10 (not recommended
+for implementation; kept open only as a conditional placeholder).
 
-### TODO-H9D-1 — Remove old typed tables/APIs only after migration is proven safe
-**What:** Once TODO-H9C-1's migration has run and been verified in production for a sufficient
-soak period, remove the 4 typed Cefr* tables, the 8 typed `AdminResourceBankController` actions
-(kept in H9A as "compatibility only"), and the 8 typed `IResourceBankQueryService` methods —
-replacing `TodayBankResourceSelector`'s typed calls with calls against the new consolidated table.
+### TODO-H9D-1 — Remove old typed tables/APIs — **not scheduled; blocked on TODO-H9C-1, which is itself not recommended**
+**What:** Once (if ever) TODO-H9C-1's migration has run and been verified in production for a
+sufficient soak period, remove the 4 typed Cefr* tables, the 8 typed `AdminResourceBankController`
+actions (kept in H9A as "compatibility only"), and the 8 typed `IResourceBankQueryService` methods
+— replacing `TodayBankResourceSelector`'s typed calls with calls against the new consolidated
+table. The full removal safety gate checklist is documented in
+`docs/reviews/2026-07-10-phase-h9b-resourcebankitem-consolidation-decision.md`.
 **Why:** H9A explicitly classified the typed controller actions and service methods "keep long
 term / keep for compatibility" — removing them before the underlying data has moved would break
-Today's bank-resource selection, a live student-facing feature.
+Today's bank-resource selection, a live student-facing feature. H9B found no current justification
+for starting this chain at all.
 **Context:** `src/LinguaCoach.Api/Controllers/AdminResourceBankController.cs`;
 `src/LinguaCoach.Infrastructure/ResourceImport/ResourceBankQueryService.cs`;
-`src/LinguaCoach.Infrastructure/Activity/TodayBankResourceSelector.cs`.
-**Deferred from:** Phase H9A, 2026-07-10.
+`src/LinguaCoach.Infrastructure/Activity/TodayBankResourceSelector.cs`;
+`docs/reviews/2026-07-10-phase-h9b-resourcebankitem-consolidation-decision.md`.
+**Deferred from:** Phase H9A, 2026-07-10. **Re-scoped:** Phase H9B, 2026-07-10 (not recommended
+for implementation).
+
+### TODO-H11-1 — Strengthen ResourceBankQueryService with a SQL-side unified view
+**What:** If `ResourceBankQueryService.ListUnifiedAsync`'s in-memory per-type scan (pulls the
+entire filtered result set for each of the 4 typed tables into memory, concatenates/sorts/pages in
+application code) ever becomes a measured admin-page performance problem, replace it with a SQL
+`UNION ALL` database view (or an EF-mapped keyless entity over one) spanning the 4 typed tables,
+giving real DB-side pagination for the unified admin Resource Bank page.
+**Why:** H9B (2026-07-10) identified this as the one concretely-real pain point behind the
+physical `ResourceBankItem` consolidation question, but found it has a strictly cheaper fix than a
+physical table: zero data migration, zero dual-write/projector risk, zero change to any of the 4
+typed tables, their writer (`ResourceCandidatePublishService`), or their 3 direct-query readers
+(`TodayBankResourceSelector`, `LearnItemResourceLookup`, `ActivityGenerationService`). Not started
+— current content volume (internal seed packs, dozens of rows per type) does not yet make this a
+real problem.
+**Context:** `src/LinguaCoach.Infrastructure/ResourceImport/ResourceBankQueryService.cs`
+(`ListUnifiedAsync`, `BuildUnified*Async` helpers);
+`docs/reviews/2026-07-10-phase-h9b-resourcebankitem-consolidation-decision.md`.
+**Deferred from:** Phase H9B, 2026-07-10.
 
 ### ~~TODO-H10-1~~ — Decide/build ActivityDefinition runtime launch path or bridge — **DONE in Phase H10**
 **What:** H7 shipped Practice Gym module suggestions as **display-only** — there was no launch

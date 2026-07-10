@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-10 (Phase H9A)
+lastUpdated: 2026-07-10 (Phase H9B)
 owner: product
 supersedes:
 supersededBy:
@@ -14,7 +14,7 @@ Items are grouped by theme. Each item is a discrete unit of work; sub-bullets ar
 
 ---
 
-## Product Model Realignment — Phase H0-H10 `H0-H8+H9A+H10 Done, H9B-D Planned` (2026-07-10)
+## Product Model Realignment — Phase H0-H10 `H0-H8+H9A+H9B+H10 Done, H9C/H9D not scheduled, H11 Planned` (2026-07-10)
 
 **Phase H0 (docs-only, done 2026-07-09)** defined the intended product model — `Resource Bank Item
 → Learn Item/Activity → Module → Daily Lesson/Practice Gym → Attempt → Feedback + Rating →
@@ -139,16 +139,31 @@ E1-E10/D1-D6 substrate, and G2/G3/PG-v2 remain valid, separately-scoped tracks.
   3,925 backend tests still pass; frontend production build clean (only the pre-existing
   bundle-size warning). See
   `docs/reviews/2026-07-10-phase-h9a-legacy-admin-code-path-removal-review.md`.
-- [ ] **Phase H9B — Physical ResourceBankItem consolidation decision and design** `Planned` —
-  decide whether to pursue physical `ResourceBankItem` consolidation (H0 §4 Option A) or keep the
-  current read-model approach (Option B) permanently; design the new table if Option A is chosen.
-  See `TODO-H9B-1`.
-- [ ] **Phase H9C — Data migration/compatibility adapters if consolidation is chosen** `Planned` —
-  blocked on H9B's decision; migrate the 4 typed Cefr* tables into the new table if consolidation
-  is chosen, with compatibility adapters for `TodayBankResourceSelector`. See `TODO-H9C-1`.
-- [ ] **Phase H9D — Typed table/API removal after migration is proven safe** `Planned` — blocked
-  on H9C; remove the old typed tables/controller actions/service methods only after the migration
-  has soaked in production. See `TODO-H9D-1`.
+- [x] **Phase H9B — Physical ResourceBankItem Consolidation Decision and Design** `Done`
+  (2026-07-10, docs/design-only) — audited the 4 typed tables' field shapes (found genuinely
+  type-specific, not superficial naming — `CefrReadingPassage` alone has 8 fields none of the
+  others have), every caller of typed resource methods (found 3 production classes bypass
+  `ResourceBankQueryService` entirely: `TodayBankResourceSelector`, `LearnItemResourceLookup`,
+  `ActivityGenerationService`), the polymorphic link pattern (`LearnItemResourceLink`/
+  `ActivityResourceLink`'s `ResourceType`+`ResourceId`, already working), and every seeder
+  (confirmed none does direct final-table writes). **Recommended: do not build a physical
+  `ResourceBankItem` table** (Option A, converging toward Option E) — the one real pain point
+  (`ListUnifiedAsync`'s in-memory per-type scan) has a materially cheaper fix (a SQL view,
+  `TODO-H11-1`) than a physical table, and current content volume doesn't justify migration risk.
+  Full target schema/link-migration/publish-flow/selector-order/removal-gate design documented for
+  a future re-evaluation, not implemented. No EF migration, no table, no data migration, no typed
+  table/API removal, no `ResourceBankQueryService`/selector/import-publish rewrite. `TODO-H9B-1`
+  closed. See `docs/reviews/2026-07-10-phase-h9b-resourcebankitem-consolidation-decision.md`.
+- [ ] **Phase H9C — Data migration/compatibility adapters** `Not scheduled — consolidation not
+  recommended` — H9B found no justification to start this; kept only as a conditional placeholder
+  in case future content-volume growth reverses the H9B recommendation. See `TODO-H9C-1`.
+- [ ] **Phase H9D — Typed table/API removal** `Not scheduled — blocked on H9C, itself not
+  recommended` — see `TODO-H9D-1`.
+- [ ] **Phase H11 — Strengthen ResourceBankQueryService with a SQL-side unified view** `Planned` —
+  lightweight alternative to physical consolidation: a SQL `UNION ALL` view (or EF-mapped keyless
+  entity) over the 4 typed tables for real DB-side pagination on the admin unified Resource Bank
+  page. Zero data migration, zero change to any typed table or its writers/readers. Only pursue if
+  `ListUnifiedAsync`'s in-memory scan becomes a measured performance problem. See `TODO-H11-1`.
 - [x] **Phase H10 — ActivityDefinition Runtime Launch Path / Attempt Bridge** `Done` (2026-07-10)
   — resolved H7's known limitation. **Chosen: (C) hybrid bridge**, executed via (B)'s mechanism —
   materializes an eligible `ActivityDefinition` into a real `LearningActivity` via

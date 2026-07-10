@@ -1,12 +1,12 @@
 ---
 status: current
-lastUpdated: 2026-07-10 (Phase H9A)
+lastUpdated: 2026-07-10 (Phase H9B)
 owner: product / engineering
 ---
 
 # SpeakPath / LinguaCoach Roadmap
 
-**Accurate as of: 2026-07-10 (Phase H9A — see §19a for the current phase sequence).
+**Accurate as of: 2026-07-10 (Phase H9B — see §19a for the current phase sequence).
 The 2026-07-03 "Phase 20H" line below is the last entry confirmed live against speakpath.app;
 everything since then (Clean-A/A2, Phase B, Phase C1, Plan-Sync-After-C1, Phase C2, Plan-Sync-B2,
 Phase B2, Phase C3, Phase C-Final, Phase E0, Plan-Sync-PG-v2, Phase E1, Phase E2, Phase E3,
@@ -26,7 +26,29 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest phase completed (local, not yet deployed):** Phase H9A — Legacy Admin/API/Code Path
+**Latest phase completed (local, not yet deployed):** Phase H9B — Physical ResourceBankItem
+Consolidation Decision and Design (2026-07-10, docs/design-only). Answered the question left open
+by H9A: should the 4 typed published bank tables (`CefrVocabularyEntry`/`CefrGrammarProfileEntry`/
+`CefrReadingReference`/`CefrReadingPassage`) be physically consolidated into one
+`ResourceBankItem` table? **Recommendation: no — keep the typed tables and the existing unified
+admin read model (Option A, converging toward Option E).** A full code-level audit found the 4
+types hold genuinely different field shapes (not superficial naming — `CefrReadingPassage` alone
+has 8 fields none of the others have), the one concretely-identified pain point
+(`ResourceBankQueryService.ListUnifiedAsync`'s in-memory per-type scan, since it isn't a real
+DB-side union) has a materially cheaper fix than a physical table (a SQL `UNION ALL` view — new
+`TODO-H11-1`), the existing polymorphic-link pattern (`LearnItemResourceLink`/
+`ActivityResourceLink`'s `ResourceType`+`ResourceId`) already works, and current content volume
+doesn't justify the migration/dual-write/4-call-site-rewrite risk any physical consolidation would
+require. A full target schema, link-migration strategy, publish-flow strategy, selector migration
+order, and removal safety gate checklist are documented for a future re-evaluation but **not
+implemented** — this was a decision phase only. **No EF migration, no new table, no data
+migration, no typed table/API removal, no `ResourceBankQueryService`/selector/import-publish
+rewrite.** `TODO-H9B-1` closed; `TODO-H9C-1`/`TODO-H9D-1` re-scoped as conditional placeholders
+(not active work); `TODO-H11-1` added as the recommended lightweight alternative if/when the
+in-memory scan becomes a real problem. Full detail:
+`docs/reviews/2026-07-10-phase-h9b-resourcebankitem-consolidation-decision.md`.
+
+**Previous phase completed (local, not yet deployed):** Phase H9A — Legacy Admin/API/Code Path
 Removal Safety Pass (2026-07-10). First H9 cleanup phase (split H9A/H9B/H9C/H9D) — safe,
 incremental, frontend/admin-only. Removed the 4 legacy typed admin bank Angular pages/components
 (vocabulary/grammar/reading-references/reading-passages — nav links to them were already gone
@@ -1990,9 +2012,10 @@ Preferred order, each phase gated on the previous one's completion review:
 20p. ~~**Phase H8 — Content Studio/Admin IA Cleanup and Removal Readiness**~~ — done (2026-07-10): split the admin sidebar's "Content Banks" section into Content Studio/Advanced-Diagnostics/Learning Setup and removed the four typed resource-bank nav entries (routes/components/tables untouched). See `docs/reviews/2026-07-10-phase-h8-content-studio-admin-ia-cleanup-review.md` and the Decision Log entry above.
 20p2. ~~**Phase H10 — ActivityDefinition Runtime Launch Path / Attempt Bridge**~~ — done (2026-07-10): gave an approved `ActivityDefinition` its first real launch/attempt/scoring path via a hybrid bridge into `LearningActivity`. See `docs/reviews/2026-07-10-phase-h10-activitydefinition-runtime-launch-bridge-review.md` and the Decision Log entry above.
 20p3. ~~**Phase H9A — Legacy Admin/API/Code Path Removal Safety Pass**~~ — done (2026-07-10): first H9 cleanup phase (split H9A/H9B/H9C/H9D); removed the four now-unreachable typed admin bank Angular pages/routes/components, the orphaned `AdminResourceBankService`, and 12 dead model interfaces; old routes redirect to the unified Resource Bank with a matching type filter; no typed bank tables/data/backend service methods/runtime dependencies touched. See `docs/reviews/2026-07-10-phase-h9a-legacy-admin-code-path-removal-review.md` and the Decision Log entry above.
-20p4. **Phase H9B — Physical ResourceBankItem consolidation decision and design** `Planned, not started` — decide whether to pursue physical consolidation (H0 §4 Option A) or keep the read-model approach permanently; see `TODO-H9B-1`.
-20p5. **Phase H9C — Data migration/compatibility adapters if consolidation is chosen** `Planned, not started` — blocked on H9B's decision; see `TODO-H9C-1`.
-20p6. **Phase H9D — Typed table/API removal after migration is proven safe** `Planned, not started` — blocked on H9C; see `TODO-H9D-1`.
+20p4. ~~**Phase H9B — Physical ResourceBankItem Consolidation Decision and Design**~~ — done (2026-07-10, docs/design-only): **recommended against physical consolidation** (Option A, converging toward Option E) — the 4 typed tables' fields are genuinely type-specific, the one real pain point (`ListUnifiedAsync`'s in-memory scan) has a cheaper fix (`TODO-H11-1`, a SQL view), and current content volume doesn't justify migration risk. Full schema/migration/gate design documented for a future re-evaluation, not implemented. See `docs/reviews/2026-07-10-phase-h9b-resourcebankitem-consolidation-decision.md` and the Decision Log entry above.
+20p5. **Phase H9C — Data migration/compatibility adapters** `Not scheduled — consolidation not recommended` — H9B found no justification to start this; kept only as a conditional placeholder. See `TODO-H9C-1`.
+20p6. **Phase H9D — Typed table/API removal** `Not scheduled — blocked on H9C, which is itself not recommended` — see `TODO-H9D-1`.
+20p7. **Phase H11 — Strengthen ResourceBankQueryService with a SQL-side unified view** `Planned, not started` — lightweight alternative to physical consolidation; only pursue if `ListUnifiedAsync`'s in-memory scan becomes a measured performance problem. See `TODO-H11-1`.
 21. **Phase PG-v2A** — backend skill/objective-first Practice Gym selector (planned, not started; see `docs/backlog/product-backlog.md`). Sequenced after Phase E5-E8, not immediately after C-Final — a good skill-first selector needs enough published bank/resource content and search/selector coverage to have real options to choose from.
 22. **Phase PG-v2B** — student Practice Gym UI simplified around skills, weak areas, review, challenge, recommended practice (planned, not started).
 23. **Phase PG-v2C** — admin capability-registry cleanup / internal pattern management, reframing `ExerciseTypeDefinition`/`ExercisePatternDefinition` as internal capability config rather than the student-facing model (planned, not started; these entities are **not deleted** at any point in this sequence).

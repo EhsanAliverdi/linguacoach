@@ -99,6 +99,43 @@ model). One small, non-destructive value fix: `UnifiedResourceBankItemDto.Detail
 admin routes; it is now always `null` instead of a dead link. See
 `docs/reviews/2026-07-10-phase-h9a-legacy-admin-code-path-removal-review.md`.
 
+**Phase H9B (2026-07-10, docs/design-only)** ran a full code-level audit of this platform's
+physical data model to answer the question left open since H0/H1: should the 4 typed published
+tables be physically consolidated into one `ResourceBankItem` table? **Recommendation: no.**
+Findings specific to this platform:
+- The 4 typed entities (`CefrVocabularyEntry`/`CefrGrammarProfileEntry`/`CefrReadingReference`/
+  `CefrReadingPassage`) hold genuinely different field shapes — `CefrReadingPassage` alone has 8
+  fields (`Title`, `PassageText`, `Summary`, `WordCount`, `EstimatedReadingMinutes`,
+  `AttributionText`, `ContentFingerprint`, `QualityScore`, `UpdatedAtUtc`) none of the other 3
+  have. A single flat table would need either a wide mostly-null schema or a `ContentJson` blob.
+- `ResourceBankQueryService.ListUnifiedAsync` (Phase H1) was confirmed to be an **in-memory**
+  per-type scan, not a real DB-side union — its own code comments already anticipated this exact
+  question and suggested a DB view as the fix if it ever becomes a real bottleneck. H9B agreed: a
+  SQL `UNION ALL` view is a strictly cheaper fix than a physical table (new `TODO-H11-1`,
+  Phase H11), since it needs zero data migration and zero change to `ResourceCandidatePublishService`
+  or any reader.
+- Three production classes bypass `ResourceBankQueryService` and query the 4 typed tables/methods
+  directly: `TodayBankResourceSelector` (student-facing, this platform's "Relationship to Today"
+  integration), `LearnItemResourceLookup` (H3), and `ActivityGenerationService` (H4, distractor
+  generation). Any future consolidation would have to migrate all 3, plus
+  `ResourceCandidatePublishService`'s write switch, in lockstep.
+- The `LearnItemResourceLink`/`ActivityResourceLink` polymorphic `ResourceType`+`ResourceId`
+  pattern already works and would only partially simplify under consolidation (the type
+  discriminator stays, only what `ResourceId` points at would change).
+- EF configuration was found to have an existing inconsistency worth flagging independent of this
+  decision: `CefrReadingPassage` stores its tag JSON columns as `jsonb`, while the other 3 tables
+  store the same shape as plain `text` (a deliberate portability choice for SQLite test
+  compatibility) — and no table in this subsystem has a unique constraint on `ContentFingerprint`.
+- Every seeder (`InternalResourceSeedPackSeeder`, `InternalResourceSeedPackE8Seeder`,
+  `PublishedBankMetadataBackfillSeeder`, `InternalBankMetadataDepthSeeder`) was re-confirmed to
+  flow through the `ResourceCandidate` publish pipeline or only repair existing published rows'
+  metadata — none does direct final-table content insertion.
+
+**No table, migration, API, service, or selector in this platform changed.** A full target schema,
+link-migration strategy, publish-flow strategy, and removal safety gate checklist are documented
+for a future re-evaluation but not implemented. See
+`docs/reviews/2026-07-10-phase-h9b-resourcebankitem-consolidation-decision.md`.
+
 **Date planned:** 2026-07-08 (Plan-Sync-After-C1), **finalized:** 2026-07-08 (Phase E0),
 **E1 implemented:** 2026-07-08, **E2 implemented:** 2026-07-08, **E3 implemented:** 2026-07-08,
 **E4 implemented:** 2026-07-08, **Plan-Sync-After-E4:** 2026-07-08, **E5 implemented:** 2026-07-08,

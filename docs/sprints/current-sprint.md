@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-10 (Phase H9A)
+lastUpdated: 2026-07-10 (Phase H9B)
 owner: engineering
 supersedes:
 supersededBy:
@@ -14,7 +14,56 @@ Last updated: 2026-07-10
 
 ## Active sprint
 
-**Phase H9A — Legacy Admin/API/Code Path Removal Safety Pass (2026-07-10)** — complete
+**Phase H9B — Physical ResourceBankItem Consolidation Decision and Design (2026-07-10)** — complete
+
+Docs/design-only phase answering the question H9A deliberately left open: should the 4 typed
+published bank tables be physically consolidated into one `ResourceBankItem` table?
+
+- **Recommendation: no.** Keep the typed tables (`CefrVocabularyEntry`/`CefrGrammarProfileEntry`/
+  `CefrReadingReference`/`CefrReadingPassage`) and the existing unified admin read model
+  (`ResourceBankQueryService.ListUnifiedAsync`) — Option A, converging toward Option E.
+- **Why:** a full code-level audit found the 4 types hold genuinely different field shapes (not
+  superficial naming — `CefrReadingPassage` alone has 8 fields none of the others have); the one
+  concretely-identified pain point (`ListUnifiedAsync` is an in-memory per-type scan, not a real
+  DB-side union) has a materially cheaper fix than a physical table (a SQL `UNION ALL` view — new
+  `TODO-H11-1`); the existing polymorphic-link pattern (`LearnItemResourceLink`/
+  `ActivityResourceLink`'s `ResourceType`+`ResourceId`) already works; and current content volume
+  (internal seed packs, dozens of rows per type) doesn't justify the migration/dual-write/
+  4-call-site-rewrite risk any physical consolidation would require.
+- **Audit covered:** the 4 typed entities' field diffs, the `ResourceCandidate` publish routing
+  path, `ResourceBankQueryService`'s in-memory unification, all callers of typed methods (found 3
+  production classes bypass the query service entirely: `TodayBankResourceSelector`,
+  `LearnItemResourceLookup`, `ActivityGenerationService`), the polymorphic link pattern, EF
+  configuration (found tag-storage inconsistency and no fingerprint uniqueness anywhere), and every
+  seeder (confirmed none does direct final-table writes bypassing the candidate pipeline).
+- **Documented for a future re-evaluation, not implemented:** a target hybrid schema (common
+  columns + `ContentJson`), a link-migration strategy (reuse `PublishedResourceType`, preserve old
+  row Ids 1:1 to avoid a dual-link period), a publish-flow strategy (same-transaction projector,
+  not dual-write), a selector migration order (admin unified view first, `TodayBankResourceSelector`
+  last since it's the only student-facing real-time path), and a full removal safety gate
+  checklist for any future H9D.
+
+**No EF migration, no `ResourceBankItem` table, no data migration, no typed table/API removal, no
+`ResourceBankQueryService`/selector/import-publish rewrite. `ActivityTemplate`,
+`PracticeActivityCache`, `StudentActivityReadinessItem`, the runtime session entities, and every
+Today/Practice Gym fallback are all untouched — this phase touched docs only.**
+
+**Validation:** `git diff --check` clean; `git status --short` confirmed docs/TODO-only diff (no
+application code changed). Since no code changed, the backend/frontend build/test gates were not
+re-run — the H9A baseline (3,925 backend tests passing, frontend production build clean except the
+pre-existing bundle-size issue) is unaffected by this phase.
+
+**TODOs:** `TODO-H9B-1` closed; `TODO-H9C-1`/`TODO-H9D-1` re-scoped as conditional placeholders
+(not active work, kept open only in case future evidence reverses this recommendation);
+`TODO-H11-1` added as the recommended lightweight alternative. `TODO-H8-2` (Karma bundle blocker)
+remains open, untouched by this phase.
+
+See `docs/reviews/2026-07-10-phase-h9b-resourcebankitem-consolidation-decision.md` for full detail.
+
+---
+
+**Previous phase completed:** Phase H9A — Legacy Admin/API/Code Path Removal Safety Pass
+(2026-07-10) — complete
 
 First H9 cleanup phase (split H9A/H9B/H9C/H9D per `TODO-H9-1`). Safe, incremental, **frontend/
 admin-only** — no backend/data/runtime removal.

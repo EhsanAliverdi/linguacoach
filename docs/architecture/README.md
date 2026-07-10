@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-10 (Phase H9A)
+lastUpdated: 2026-07-10 (Phase H9B)
 owner: architecture
 supersedes:
 supersededBy:
@@ -552,9 +552,27 @@ load-bearing for `TodayBankResourceSelector` (a student-facing Today feature). +
 tests (Karma bundle still blocked by `TODO-H8-2`). All 3,925 backend tests pass; frontend
 production build clean (only the pre-existing bundle-size warning). No typed bank
 table/data/service-method/runtime-dependency touched, no physical `ResourceBankItem`
-consolidation. **Recommended next: H9B — Physical ResourceBankItem Consolidation Decision and
-Design**, starting with its own fresh safety audit. See
+consolidation. See
 `docs/reviews/2026-07-10-phase-h9a-legacy-admin-code-path-removal-review.md`.
+
+**Phase H9B (2026-07-10, docs/design-only)** — Physical ResourceBankItem Consolidation Decision
+and Design. Answered the question H9A left open: should the 4 typed published tables be
+physically consolidated into one `ResourceBankItem` table? **Recommended: no** (Option A,
+converging toward Option E, from a 5-option comparison). A code-level audit found the 4 types hold
+genuinely different field shapes (`CefrReadingPassage` alone has 8 unique fields), the one real
+pain point (`ListUnifiedAsync`'s in-memory per-type scan, not a genuine DB-side union) has a
+materially cheaper fix than a physical table (a SQL `UNION ALL` view — new `TODO-H11-1`), 3
+production classes (`TodayBankResourceSelector`, `LearnItemResourceLookup`,
+`ActivityGenerationService`) already bypass `ResourceBankQueryService` and would all need
+migrating in lockstep under any consolidation, and current content volume doesn't justify the
+migration/dual-write risk. Full target schema, link-migration strategy, publish-flow strategy,
+selector migration order, and removal safety gate checklist documented for a future re-evaluation,
+not implemented. **No EF migration, no new table, no data migration, no typed table/API removal,
+no `ResourceBankQueryService`/selector/import-publish rewrite.** `TODO-H9B-1` closed;
+`TODO-H9C-1`/`TODO-H9D-1` re-scoped as conditional placeholders; `TODO-H11-1` added.
+**Recommended next: H11 — Strengthen ResourceBankQueryService with a SQL-side unified view**, only
+if the in-memory scan becomes a measured performance problem. See
+`docs/reviews/2026-07-10-phase-h9b-resourcebankitem-consolidation-decision.md`.
 
 ---
 

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-10 (Phase H9A)
+lastUpdated: 2026-07-10 (Phase H9B)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,30 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-10 (Phase H9A)
+Last updated: 2026-07-10 (Phase H9B)
+
+## Physical ResourceBankItem Consolidation Decision (Phase H9B, 2026-07-10)
+
+No product-facing behavior changed in this phase — it was a written decision, not an
+implementation. The question was whether the backend should physically merge its four separate
+published-content tables (vocabulary, grammar, reading references, reading passages) into one
+table, to match how the admin Resource Bank page already presents them as one unified list.
+
+**Decision: not now, and probably not ever unless content volume grows substantially.** The four
+content types turn out to have real structural differences — a reading passage carries word
+counts, reading-time estimates, and quality scores that vocabulary/grammar entries simply don't
+need — so merging them into one table would mean either a lot of unused columns or a JSON blob
+that loses some of the direct filtering the system uses today. The one real friction point found
+(the admin Resource Bank page's "show everything" view loads all matching rows into memory before
+paging, instead of asking the database to page directly) has a much simpler fix available if it
+ever becomes a real slowdown — a database view, not a new table — and that's the recommended next
+step if this becomes a measured problem rather than a hypothetical one.
+
+Nothing about how content is imported, published, searched, or served to students changed. Full
+detail: `docs/reviews/2026-07-10-phase-h9b-resourcebankitem-consolidation-decision.md`; roadmap:
+`docs/roadmap/road-map.md` §1.
+
+---
 
 ## Legacy Admin/API/Code Path Removal Safety Pass (Phase H9A, 2026-07-10)
 

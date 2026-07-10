@@ -111,6 +111,16 @@ supersededBy:
 > `PracticeGymGenerationJob`, `ActivityTemplate`, `PracticeActivityCache`, and
 > `StudentActivityReadinessItem` are all unchanged. See
 > `docs/reviews/2026-07-10-phase-h9a-legacy-admin-code-path-removal-review.md`.
+>
+> **Phase H9B note (2026-07-10, docs/design-only):** H9B recommended **against** physically
+> consolidating the 4 typed published resource-bank tables into one `ResourceBankItem` table. Its
+> audit noted, for completeness, that `ActivityGenerationService.FindDistractorDefinitionsAsync`
+> (used when auto-generating multiple-choice `ActivityDefinition` distractors) queries
+> `CefrVocabularyEntry`/`CefrGrammarProfileEntry` directly — this is unrelated to the
+> `LearningActivity`/`ActivityAttempt` runtime this document describes (it's part of H4's
+> `ActivityDefinition` authoring pipeline, not the runtime scoring path), and nothing about it
+> changed in H9B. See
+> `docs/reviews/2026-07-10-phase-h9b-resourcebankitem-consolidation-decision.md`.
 
 ## Why `LearningActivity` is the Centre of the Product
 
