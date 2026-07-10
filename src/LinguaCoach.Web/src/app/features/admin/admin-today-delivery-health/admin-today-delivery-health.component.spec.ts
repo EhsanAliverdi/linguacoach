@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
-import { AdminLessonsComponent } from './admin-lessons.component';
+import { AdminTodayDeliveryHealthComponent } from './admin-today-delivery-health.component';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import { AdminGenerationBatchesResponse, AdminGenerationSettings, AdminGenerateLessonsResponse, MasteryValidationSummary } from '../../../core/models/admin.models';
 
@@ -63,9 +63,9 @@ function makeApi(
   };
 }
 
-describe('AdminLessonsComponent', () => {
-  let fixture: ComponentFixture<AdminLessonsComponent>;
-  let component: AdminLessonsComponent;
+describe('AdminTodayDeliveryHealthComponent', () => {
+  let fixture: ComponentFixture<AdminTodayDeliveryHealthComponent>;
+  let component: AdminTodayDeliveryHealthComponent;
   let api: ReturnType<typeof makeApi>;
 
   async function setup(
@@ -74,22 +74,22 @@ describe('AdminLessonsComponent', () => {
   ) {
     api = makeApi(settings, batches);
     await TestBed.configureTestingModule({
-      imports: [AdminLessonsComponent],
+      imports: [AdminTodayDeliveryHealthComponent],
       providers: [
         provideRouter([]),
         { provide: AdminApiService, useValue: api },
       ],
     }).compileComponents();
-    fixture = TestBed.createComponent(AdminLessonsComponent);
+    fixture = TestBed.createComponent(AdminTodayDeliveryHealthComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
     await fixture.whenStable();
     fixture.detectChanges();
   }
 
-  it('renders the lessons page', async () => {
+  it('renders the today delivery health page', async () => {
     await setup();
-    expect(fixture.nativeElement.textContent).toContain('Lessons');
+    expect(fixture.nativeElement.textContent).toContain('Today Delivery Health');
   });
 
   it('calls getGenerationSettings and getGenerationBatches on init', async () => {
@@ -176,10 +176,10 @@ describe('AdminLessonsComponent', () => {
     api = makeApi();
     api.getMasteryValidationSummary.and.returnValue(throwError(() => new Error('fail')));
     await TestBed.configureTestingModule({
-      imports: [AdminLessonsComponent],
+      imports: [AdminTodayDeliveryHealthComponent],
       providers: [provideRouter([]), { provide: AdminApiService, useValue: api }],
     }).compileComponents();
-    fixture = TestBed.createComponent(AdminLessonsComponent);
+    fixture = TestBed.createComponent(AdminTodayDeliveryHealthComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
     await fixture.whenStable();
@@ -198,10 +198,10 @@ describe('AdminLessonsComponent', () => {
       countAtRisk: 2,
     }));
     await TestBed.configureTestingModule({
-      imports: [AdminLessonsComponent],
+      imports: [AdminTodayDeliveryHealthComponent],
       providers: [provideRouter([]), { provide: AdminApiService, useValue: api }],
     }).compileComponents();
-    fixture = TestBed.createComponent(AdminLessonsComponent);
+    fixture = TestBed.createComponent(AdminTodayDeliveryHealthComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
     await fixture.whenStable();

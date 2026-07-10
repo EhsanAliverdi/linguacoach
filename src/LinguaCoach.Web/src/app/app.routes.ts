@@ -101,7 +101,7 @@ export const routes: Routes = [
       },
       {
         path: 'lessons',
-        loadComponent: () => import('./features/admin/admin-lessons/admin-lessons.component').then(m => m.AdminLessonsComponent),
+        loadComponent: () => import('./features/admin/admin-today-delivery-health/admin-today-delivery-health.component').then(m => m.AdminTodayDeliveryHealthComponent),
       },
       {
         path: 'usage-analytics',
@@ -132,15 +132,15 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/admin-placement-item-editor/admin-placement-item-editor.component').then(m => m.AdminPlacementItemEditorComponent),
       },
       // Phase I2A — the legacy ActivityTemplate Form.io-pilot admin pages were removed; old
-      // bookmarks/links redirect to H4's ActivityDefinition admin page instead (see
+      // bookmarks/links redirect to H4's Exercise admin page instead (see
       // docs/reviews/2026-07-10-phase-i2a-practice-gym-legacy-deletion-review.md).
       {
         path: 'activity-templates',
-        redirectTo: () => '/admin/activities',
+        redirectTo: () => '/admin/exercises',
       },
       {
         path: 'activity-templates/:templateId',
-        redirectTo: () => '/admin/activities',
+        redirectTo: () => '/admin/exercises',
       },
       // Phase I3 — Review Queue removed: it only ever covered PlacementItemDefinition review
       // (ActivityTemplate removed in I2A), which the standalone Placement Items page already
@@ -172,16 +172,27 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/admin-resource-bank-unified/admin-resource-bank-unified.component').then(m => m.AdminResourceBankUnifiedComponent),
       },
       {
-        path: 'learn-items',
-        loadComponent: () => import('./features/admin/admin-learn-items/admin-learn-items.component').then(m => m.AdminLearnItemsComponent),
+        path: 'lesson-library',
+        loadComponent: () => import('./features/admin/admin-lessons/admin-lessons.component').then(m => m.AdminLessonsComponent),
       },
       {
-        path: 'activities',
-        loadComponent: () => import('./features/admin/admin-activities/admin-activities.component').then(m => m.AdminActivitiesComponent),
+        path: 'exercises',
+        loadComponent: () => import('./features/admin/admin-exercises/admin-exercises.component').then(m => m.AdminExercisesComponent),
       },
       {
         path: 'modules',
         loadComponent: () => import('./features/admin/admin-modules/admin-modules.component').then(m => m.AdminModulesComponent),
+      },
+      // Phase I4 Pass 2 — Learn Items/Activities renamed to Lessons/Exercises; the Lessons page
+      // moved off /admin/lessons (now Today Delivery Health, see above) to /admin/lesson-library
+      // to resolve the route-name collision. Old bookmarks/links redirect there.
+      {
+        path: 'learn-items',
+        redirectTo: () => '/admin/lesson-library',
+      },
+      {
+        path: 'activities',
+        redirectTo: () => '/admin/exercises',
       },
       // Phase H9A — the typed resource-bank pages were removed; old bookmarks/links redirect to
       // the unified Resource Bank with a matching type filter (see admin-resource-bank-unified).

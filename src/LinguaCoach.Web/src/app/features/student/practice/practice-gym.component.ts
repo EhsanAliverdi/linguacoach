@@ -211,9 +211,9 @@ export class PracticeGymComponent implements OnInit {
   startModuleSuggestion(module: PracticeGymModuleSuggestion): void {
     if (!module.canLaunch || this.startingModuleId() !== null) return;
     this.suggestionMessage.set(null);
-    this.startingModuleId.set(module.moduleDefinitionId);
+    this.startingModuleId.set(module.moduleId);
 
-    this.practiceGymSuggestionsService.startModuleSuggestion(module.moduleDefinitionId).subscribe({
+    this.practiceGymSuggestionsService.startModuleSuggestion(module.moduleId).subscribe({
       next: result => {
         this.startingModuleId.set(null);
         if (!result.success || !result.learningActivityId) {
@@ -231,8 +231,8 @@ export class PracticeGymComponent implements OnInit {
     });
   }
 
-  isStartingModule(moduleDefinitionId: string): boolean {
-    return this.startingModuleId() === moduleDefinitionId;
+  isStartingModule(moduleId: string): boolean {
+    return this.startingModuleId() === moduleId;
   }
 
   isStartingSuggestion(id: string): boolean {

@@ -6,9 +6,19 @@ owner: product / engineering
 
 > **Pass 1 (backend) complete 2026-07-10.** See
 > `docs/reviews/2026-07-10-phase-i4-pass1-backend-rename-review.md` for the full implementation
-> record (files renamed, migration, judgment calls). Frontend (Pass 2/3) and "Daily Lesson" →
-> "Today Plan" (Pass 4/I4d) are still pending — the rest of this document still describes the
-> pre-implementation decision/scope survey and remains accurate for that unimplemented part.
+> record (files renamed, migration, judgment calls).
+>
+> **Pass 2 (frontend) complete 2026-07-10.** See
+> `docs/reviews/2026-07-10-phase-i4-pass2-frontend-rename-review.md` for the full implementation
+> record (Angular component/service/model renames, the `/admin/lessons` route-collision
+> resolution, nav label decisions, H10 launch-bridge DTO field renames). This also resolves open
+> question 2 below: "Today Delivery Health" was relocated internally
+> (`admin-today-delivery-health/`, route unchanged at `/admin/lessons`) and the renamed
+> Lesson-library page took the new route `/admin/lesson-library`.
+>
+> "Daily Lesson" → "Today Plan" (Pass 3/I4d) is still pending — the rest of this document still
+> describes the pre-implementation decision/scope survey and remains accurate for that
+> unimplemented part.
 
 # Phase I4 — Product Language Cleanup (Rename)
 

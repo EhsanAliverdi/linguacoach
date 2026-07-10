@@ -1,241 +1,295 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { AdminLessonService } from '../../../core/services/admin-lesson.service';
+import { AdminExerciseService } from '../../../core/services/admin-exercise.service';
+import { AdminModuleService } from '../../../core/services/admin-module.service';
+import {
+  LessonDto,
+  LESSON_REVIEW_STATUSES,
+} from '../../../core/models/admin-lesson.models';
+import { RESOURCE_BANK_CEFR_LEVELS } from '../../../core/models/admin-resource-import.models';
 import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
   SpAdminButtonComponent,
-  SpAdminCardComponent,
+  SpAdminDrawerComponent,
+  SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
+  SpAdminFilterBarComponent,
   SpAdminFormFieldComponent,
-  SpAdminFormGridComponent,
   SpAdminInputComponent,
-  SpAdminKpiCardComponent,
   SpAdminLoadingStateComponent,
-  SpAdminNumberInputComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
+  SpAdminPaginationComponent,
+  SpAdminSelectComponent,
   SpAdminTableComponent,
-  SpAdminToggleComponent,
+  SpAdminTableFooterComponent,
+  SpAdminTextareaComponent,
 } from '../../../design-system/admin';
-import { SpAdminNotImplementedStateComponent } from '../../../design-system/admin/components/not-implemented-state/sp-admin-not-implemented-state.component';
-import { SpAdminRingMetricComponent } from '../../../design-system/admin/components/ring-metric/sp-admin-ring-metric.component';
-import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design-system/admin/components/breakdown-bars/sp-admin-breakdown-bars.component';
-import { SpAdminGraphCardComponent } from '../../../design-system/admin/components/graph-card/sp-admin-graph-card.component';
-import { SpAdminVisualPlaceholderComponent } from '../../../design-system/admin/components/visual-placeholder/sp-admin-visual-placeholder.component';
-import { AdminApiService } from '../../../core/services/admin.api.service';
-import { AdminGenerationBatchesResponse, MasteryValidationSummary } from '../../../core/models/admin.models';
 
+const PAGE_SIZE = 20;
+
+function parseJsonArray(json: string | null | undefined): string[] {
+  if (!json) return [];
+  try {
+    const parsed = JSON.parse(json);
+    return Array.isArray(parsed) ? parsed.filter(v => typeof v === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Phase H3 — Lesson foundation admin page. Reviewable teaching/explanation blocks generated
+ * from (or manually authored about) published Resource Bank rows — the "Learn" half of a future
+ * Module. Nothing here creates an Exercise/Module row or assigns anything to a student.
+ */
 @Component({
   selector: 'app-admin-lessons',
   standalone: true,
-  templateUrl: './admin-lessons.component.html',
   imports: [
     CommonModule,
     FormsModule,
-    RouterLink,
     SpAdminAlertComponent,
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
-    SpAdminCardComponent,
+    SpAdminDrawerComponent,
+    SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
+    SpAdminFilterBarComponent,
     SpAdminFormFieldComponent,
-    SpAdminFormGridComponent,
     SpAdminInputComponent,
-    SpAdminKpiCardComponent,
     SpAdminLoadingStateComponent,
-    SpAdminNotImplementedStateComponent,
-    SpAdminNumberInputComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
+    SpAdminPaginationComponent,
+    SpAdminSelectComponent,
     SpAdminTableComponent,
-    SpAdminToggleComponent,
-    SpAdminRingMetricComponent,
-    SpAdminBreakdownBarsComponent,
-    SpAdminGraphCardComponent,
-    SpAdminVisualPlaceholderComponent,
+    SpAdminTableFooterComponent,
+    SpAdminTextareaComponent,
   ],
+  templateUrl: './admin-lessons.component.html',
 })
 export class AdminLessonsComponent implements OnInit {
-  constructor(private adminApi: AdminApiService) {}
+  items = signal<LessonDto[]>([]);
+  loading = signal(true);
+  error = signal('');
+  actionError = signal('');
+  actionSuccess = signal('');
 
-  // ── Settings load state ───────────────────────────────────────────────────
-  settingsLoading = signal(false);
-  settingsError = signal('');
-  settingsUpdatedAt = signal<string | null>(null);
+  searchQuery = signal('');
+  statusFilter = signal<string>('all');
+  cefrLevelFilter = signal<string>('all');
+  page = signal(1);
 
-  // Form fields — plain properties for ngModel / CVA binding
-  readyLessonBufferSize: number | null = 5;
-  refillThreshold: number | null = 2;
-  refillBatchSize: number | null = 3;
-  maxGenerationAttempts: number | null = 3;
-  generationTimeoutSeconds: number | null = 120;
-  ttsTimeoutSeconds: number | null = 60;
-  maxConcurrentGenerationJobs: number | null = 2;
-  maxConcurrentTtsJobs: number | null = 4;
-  practiceGymReadyExercisesPerType: number | null = 3;
-  practiceGymRefillThresholdPerType: number | null = 1;
-  practiceGymRefillCountPerType: number | null = 2;
-  bgGenEnabled = signal(true);
-  ttsEnabled = signal(true);
+  readonly pageSize = PAGE_SIZE;
+  totalCount = signal(0);
+  readonly totalPages = computed(() => Math.max(1, Math.ceil(this.totalCount() / this.pageSize)));
 
-  saveStatus = signal('');
-  savePending = signal(false);
+  readonly statusOptions = [{ value: 'all', label: 'All statuses' }, ...LESSON_REVIEW_STATUSES.map(s => ({ value: s, label: s }))];
+  readonly cefrLevelOptions = [{ value: 'all', label: 'All levels' }, ...RESOURCE_BANK_CEFR_LEVELS.map(l => ({ value: l, label: l }))];
 
-  // ── Batches / buffer table ────────────────────────────────────────────────
-  batchesLoading = signal(false);
-  batchesError = signal('');
-  batches = signal<AdminGenerationBatchesResponse | null>(null);
+  // ── Detail drawer ────────────────────────────────────────────────────────
+  drawerOpen = signal(false);
+  detail = signal<LessonDto | null>(null);
+  rejectReasonDraft = '';
+  approving = signal(false);
+  rejecting = signal(false);
 
-  totalReady = computed(() =>
-    this.batches()?.readyBufferPerStudent.reduce((s, e) => s + e.readyCount, 0) ?? null
-  );
-  studentsBuffered = computed(() =>
-    this.batches()?.readyBufferPerStudent.filter(e => e.readyCount > 0).length ?? null
-  );
+  // ── Phase H4 — Generate Exercise from this Lesson ───────────────────────
+  generatingActivity = signal(false);
+  lastActionKind = signal<'activity' | 'module' | null>(null);
 
-  // Phase I2C: aggregate pool health, review scaffold dry-run, review scaffold pending admin
-  // review, and the Phase 19C pilot monitoring sections were removed here — the readiness pool
-  // and AdminReadinessPoolController they read from were deleted. See
-  // docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
+  // ── Phase H5 — Generate Module from this Lesson ─────────────────────────
+  generatingModule = signal(false);
 
-  // ── Mastery validation (system-wide diagnostic) ───────────────────────────
-  masteryLoading = signal(false);
-  masteryError = signal('');
-  masteryValidation = signal<MasteryValidationSummary | null>(null);
-
-  // ── Generate for student ──────────────────────────────────────────────────
-  studentProfileId = '';
-  generatePending = signal(false);
-  generateStatus = signal('');
-  generateError = signal('');
+  constructor(
+    private lessonSvc: AdminLessonService,
+    private exerciseSvc: AdminExerciseService,
+    private moduleSvc: AdminModuleService,
+    private route: ActivatedRoute,
+    private router: Router,
+  ) {}
 
   ngOnInit(): void {
-    this.loadSettings();
-    this.loadBatches();
-    this.loadMasteryValidation();
+    this.loadAll();
+
+    const deepLinkId = this.route.snapshot.queryParamMap.get('id');
+    if (deepLinkId) this.openDrawerById(deepLinkId);
   }
 
-  // ── Mastery validation — chart data ─────────────────────────────────────────
+  loadAll(): void {
+    this.loading.set(true);
+    this.error.set('');
+    const status = this.statusFilter() === 'all' ? undefined : this.statusFilter();
+    const cefrLevel = this.cefrLevelFilter() === 'all' ? undefined : this.cefrLevelFilter();
+    this.lessonSvc
+      .list(this.page(), this.pageSize, status, cefrLevel, undefined, undefined, undefined, undefined, undefined, this.searchQuery() || undefined)
+      .subscribe({
+        next: result => {
+          this.items.set(result.items);
+          this.totalCount.set(result.totalCount);
+          this.loading.set(false);
+        },
+        error: err => { this.loading.set(false); this.error.set(err.error?.error ?? 'Could not load Lessons.'); },
+      });
+  }
 
-  masteryBreakdownItems = computed<BreakdownBarItem[]>(() => {
-    const m = this.masteryValidation();
-    if (!m) return [];
-    const values: [string, number, BreakdownBarItem['tone']][] = [
-      ['Mastered', m.countMastered, 'green'],
-      ['Needs review', m.countNeedsReview, 'amber'],
-      ['At risk', m.countAtRisk, 'danger'],
-      ['Insufficient evidence', m.countInsufficientEvidence, 'slate'],
-    ];
-    const max = Math.max(...values.map(v => v[1]), 1);
-    return values
-      .filter(([, value]) => value > 0)
-      .map(([label, value, tone]) => ({ label, value, pct: Math.round((value / max) * 100), tone }));
-  });
+  private searchDebounce?: ReturnType<typeof setTimeout>;
 
-  private loadMasteryValidation(): void {
-    this.masteryLoading.set(true);
-    this.masteryError.set('');
-    this.adminApi.getMasteryValidationSummary().subscribe({
-      next: m => { this.masteryValidation.set(m); this.masteryLoading.set(false); },
+  onSearch(event: Event): void {
+    this.searchQuery.set((event.target as HTMLInputElement).value);
+    this.page.set(1);
+    clearTimeout(this.searchDebounce);
+    this.searchDebounce = setTimeout(() => this.loadAll(), 300);
+  }
+
+  onStatusFilterChange(value: string): void {
+    this.statusFilter.set(value);
+    this.page.set(1);
+    this.loadAll();
+  }
+
+  onCefrLevelFilterChange(value: string): void {
+    this.cefrLevelFilter.set(value);
+    this.page.set(1);
+    this.loadAll();
+  }
+
+  onPageChange(page: number): void {
+    this.page.set(page);
+    this.loadAll();
+  }
+
+  openDrawer(item: LessonDto): void {
+    this.detail.set(item);
+    this.rejectReasonDraft = '';
+    this.actionError.set('');
+    this.drawerOpen.set(true);
+  }
+
+  openDrawerById(id: string): void {
+    this.lessonSvc.get(id).subscribe({
+      next: item => this.openDrawer(item),
+      error: () => { /* deep-linked item no longer exists — ignore, list still loads */ },
+    });
+  }
+
+  closeDrawer(): void {
+    this.drawerOpen.set(false);
+  }
+
+  examplesFor(item: LessonDto): string[] {
+    return parseJsonArray(item.examplesJson);
+  }
+
+  commonMistakesFor(item: LessonDto): string[] {
+    return parseJsonArray(item.commonMistakesJson);
+  }
+
+  contextTagsFor(item: LessonDto): string[] {
+    return parseJsonArray(item.contextTagsJson);
+  }
+
+  focusTagsFor(item: LessonDto): string[] {
+    return parseJsonArray(item.focusTagsJson);
+  }
+
+  statusTone(status: string): 'success' | 'neutral' | 'danger' | 'warning' {
+    if (status === 'Approved') return 'success';
+    if (status === 'Rejected') return 'danger';
+    if (status === 'PendingReview') return 'warning';
+    return 'neutral';
+  }
+
+  approveSelected(): void {
+    const item = this.detail();
+    if (!item) return;
+    this.approving.set(true);
+    this.actionError.set('');
+    this.lessonSvc.approve(item.id).subscribe({
+      next: updated => {
+        this.approving.set(false);
+        this.lastActionKind.set(null);
+        this.detail.set(updated);
+        this.actionSuccess.set('Lesson approved.');
+        this.loadAll();
+      },
+      error: err => { this.approving.set(false); this.actionError.set(err.error?.error ?? 'Could not approve.'); },
+    });
+  }
+
+  rejectSelected(): void {
+    const item = this.detail();
+    if (!item) return;
+    if (!this.rejectReasonDraft.trim()) {
+      this.actionError.set('A rejection reason is required.');
+      return;
+    }
+    this.rejecting.set(true);
+    this.actionError.set('');
+    this.lessonSvc.reject(item.id, this.rejectReasonDraft.trim()).subscribe({
+      next: updated => {
+        this.rejecting.set(false);
+        this.lastActionKind.set(null);
+        this.detail.set(updated);
+        this.actionSuccess.set('Lesson rejected.');
+        this.loadAll();
+      },
+      error: err => { this.rejecting.set(false); this.actionError.set(err.error?.error ?? 'Could not reject.'); },
+    });
+  }
+
+  /** Phase H4 — generates an Exercise from this Lesson's own linked resources, using its
+   *  own CEFR/skill/subskill/tags as defaults. Always stages a pending-review Exercise; the Lesson
+   *  itself is never modified. */
+  generateActivity(): void {
+    const item = this.detail();
+    if (!item) return;
+    this.generatingActivity.set(true);
+    this.actionError.set('');
+    this.exerciseSvc.generateFromLesson({ lessonId: item.id }).subscribe({
+      next: () => {
+        this.generatingActivity.set(false);
+        this.lastActionKind.set('activity');
+        this.actionSuccess.set('Exercise draft generated from this Lesson — pending review.');
+      },
       error: err => {
-        this.masteryError.set(err?.error?.error ?? err?.message ?? 'Failed to load mastery validation summary.');
-        this.masteryLoading.set(false);
+        this.generatingActivity.set(false);
+        this.actionError.set(err.error?.error ?? 'Could not generate an Exercise.');
       },
     });
   }
 
-  refreshMasteryValidation(): void { this.loadMasteryValidation(); }
+  goToExercises(): void {
+    this.router.navigateByUrl('/admin/exercises');
+  }
 
-  private loadSettings(): void {
-    this.settingsLoading.set(true);
-    this.settingsError.set('');
-    this.adminApi.getGenerationSettings().subscribe({
-      next: s => {
-        this.readyLessonBufferSize = s.readyLessonBufferSize;
-        this.refillThreshold = s.refillThreshold;
-        this.refillBatchSize = s.refillBatchSize;
-        this.maxGenerationAttempts = s.maxGenerationAttempts;
-        this.generationTimeoutSeconds = s.generationTimeoutSeconds;
-        this.ttsTimeoutSeconds = s.ttsTimeoutSeconds;
-        this.maxConcurrentGenerationJobs = s.maxConcurrentGenerationJobs;
-        this.maxConcurrentTtsJobs = s.maxConcurrentTtsJobs;
-        this.practiceGymReadyExercisesPerType = s.practiceGymReadyExercisesPerType;
-        this.practiceGymRefillThresholdPerType = s.practiceGymRefillThresholdPerType;
-        this.practiceGymRefillCountPerType = s.practiceGymRefillCountPerType;
-        this.bgGenEnabled.set(s.enableBackgroundGeneration);
-        this.ttsEnabled.set(s.enableTtsGeneration);
-        this.settingsUpdatedAt.set(s.updatedAtUtc);
-        this.settingsLoading.set(false);
+  /** Phase H5 — generates a Module from this (approved) Lesson's compatible approved
+   *  Exercise(s). Rejected with a clear message if the Lesson itself isn't approved yet, or
+   *  no compatible approved Exercise exists. */
+  generateModule(): void {
+    const item = this.detail();
+    if (!item) return;
+    this.generatingModule.set(true);
+    this.actionError.set('');
+    this.moduleSvc.generateFromLesson({ lessonId: item.id }).subscribe({
+      next: () => {
+        this.generatingModule.set(false);
+        this.lastActionKind.set('module');
+        this.actionSuccess.set('Module draft generated from this Lesson — pending review.');
       },
       error: err => {
-        this.settingsError.set(err?.error?.error ?? err?.message ?? 'Failed to load generation settings.');
-        this.settingsLoading.set(false);
+        this.generatingModule.set(false);
+        this.actionError.set(err.error?.error ?? 'Could not generate a Module.');
       },
     });
   }
 
-  private loadBatches(): void {
-    this.batchesLoading.set(true);
-    this.batchesError.set('');
-    this.adminApi.getGenerationBatches().subscribe({
-      next: b => { this.batches.set(b); this.batchesLoading.set(false); },
-      error: err => {
-        this.batchesError.set(err?.error?.error ?? err?.message ?? 'Failed to load generation batches.');
-        this.batchesLoading.set(false);
-      },
-    });
+  goToModules(): void {
+    this.router.navigateByUrl('/admin/modules');
   }
-
-  generateLessons(): void {
-    const id = this.studentProfileId.trim();
-    if (!id) { this.generateError.set('Enter a student profile ID.'); return; }
-    this.generatePending.set(true);
-    this.generateStatus.set('');
-    this.generateError.set('');
-    this.adminApi.generateLessonsForStudent(id).subscribe({
-      next: res => {
-        this.generateStatus.set(`Queued — ${res.requestedCount} lesson(s) requested.`);
-        this.generatePending.set(false);
-        this.loadBatches();
-      },
-      error: err => {
-        this.generateError.set(err?.error?.error ?? err?.message ?? 'Generation request failed.');
-        this.generatePending.set(false);
-      },
-    });
-  }
-
-  saveSettings(): void {
-    this.savePending.set(true);
-    this.saveStatus.set('');
-    this.adminApi.updateGenerationSettings({
-      readyLessonBufferSize: this.readyLessonBufferSize ?? 5,
-      refillThreshold: this.refillThreshold ?? 2,
-      refillBatchSize: this.refillBatchSize ?? 3,
-      maxGenerationAttempts: this.maxGenerationAttempts ?? 3,
-      generationTimeoutSeconds: this.generationTimeoutSeconds ?? 120,
-      ttsTimeoutSeconds: this.ttsTimeoutSeconds ?? 60,
-      maxConcurrentGenerationJobs: this.maxConcurrentGenerationJobs ?? 2,
-      maxConcurrentTtsJobs: this.maxConcurrentTtsJobs ?? 4,
-      enableBackgroundGeneration: this.bgGenEnabled(),
-      enableTtsGeneration: this.ttsEnabled(),
-      practiceGymReadyExercisesPerType: this.practiceGymReadyExercisesPerType ?? 3,
-      practiceGymRefillThresholdPerType: this.practiceGymRefillThresholdPerType ?? 1,
-      practiceGymRefillCountPerType: this.practiceGymRefillCountPerType ?? 2,
-    }).subscribe({
-      next: s => {
-        this.settingsUpdatedAt.set(s.updatedAtUtc);
-        this.saveStatus.set('Settings saved.');
-        this.savePending.set(false);
-      },
-      error: err => {
-        this.saveStatus.set(err?.error?.error ?? err?.message ?? 'Save failed.');
-        this.savePending.set(false);
-      },
-    });
-  }
-
-  refreshBatches(): void { this.loadBatches(); }
 }

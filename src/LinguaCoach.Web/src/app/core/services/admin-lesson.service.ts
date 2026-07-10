@@ -3,17 +3,17 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
-  LearnItemDto,
-  LearnItemListResult,
-  CreateLearnItemRequestBody,
-  UpdateLearnItemRequestBody,
-  GenerateLearnItemFromResourcesRequestBody,
-  GenerateLearnItemFromResourcesResult,
-} from '../models/admin-learn-item.models';
+  LessonDto,
+  LessonListResult,
+  CreateLessonRequestBody,
+  UpdateLessonRequestBody,
+  GenerateLessonFromResourcesRequestBody,
+  GenerateLessonFromResourcesResult,
+} from '../models/admin-lesson.models';
 
 @Injectable({ providedIn: 'root' })
-export class AdminLearnItemService {
-  private readonly base = `${environment.apiUrl}/admin/learn-items`;
+export class AdminLessonService {
+  private readonly base = `${environment.apiUrl}/admin/lessons`;
 
   constructor(private http: HttpClient) {}
 
@@ -21,7 +21,7 @@ export class AdminLearnItemService {
     page: number, pageSize: number, status?: string, cefrLevel?: string, skill?: string, subskill?: string,
     contextTag?: string, focusTag?: string, difficultyBand?: number, search?: string,
     resourceType?: string, resourceId?: string,
-  ): Observable<LearnItemListResult> {
+  ): Observable<LessonListResult> {
     let params = new HttpParams().set('page', page).set('pageSize', pageSize);
     if (status && status !== 'all') params = params.set('status', status);
     if (cefrLevel && cefrLevel !== 'all') params = params.set('cefrLevel', cefrLevel);
@@ -33,30 +33,30 @@ export class AdminLearnItemService {
     if (search) params = params.set('search', search);
     if (resourceType) params = params.set('resourceType', resourceType);
     if (resourceId) params = params.set('resourceId', resourceId);
-    return this.http.get<LearnItemListResult>(this.base, { params });
+    return this.http.get<LessonListResult>(this.base, { params });
   }
 
-  get(id: string): Observable<LearnItemDto> {
-    return this.http.get<LearnItemDto>(`${this.base}/${id}`);
+  get(id: string): Observable<LessonDto> {
+    return this.http.get<LessonDto>(`${this.base}/${id}`);
   }
 
-  create(body: CreateLearnItemRequestBody): Observable<LearnItemDto> {
-    return this.http.post<LearnItemDto>(this.base, body);
+  create(body: CreateLessonRequestBody): Observable<LessonDto> {
+    return this.http.post<LessonDto>(this.base, body);
   }
 
-  generateFromResources(body: GenerateLearnItemFromResourcesRequestBody): Observable<GenerateLearnItemFromResourcesResult> {
-    return this.http.post<GenerateLearnItemFromResourcesResult>(`${this.base}/generate-from-resources`, body);
+  generateFromResources(body: GenerateLessonFromResourcesRequestBody): Observable<GenerateLessonFromResourcesResult> {
+    return this.http.post<GenerateLessonFromResourcesResult>(`${this.base}/generate-from-resources`, body);
   }
 
-  update(id: string, body: UpdateLearnItemRequestBody): Observable<LearnItemDto> {
-    return this.http.put<LearnItemDto>(`${this.base}/${id}`, body);
+  update(id: string, body: UpdateLessonRequestBody): Observable<LessonDto> {
+    return this.http.put<LessonDto>(`${this.base}/${id}`, body);
   }
 
-  approve(id: string, notes?: string | null): Observable<LearnItemDto> {
-    return this.http.post<LearnItemDto>(`${this.base}/${id}/approve`, { notes: notes ?? null });
+  approve(id: string, notes?: string | null): Observable<LessonDto> {
+    return this.http.post<LessonDto>(`${this.base}/${id}/approve`, { notes: notes ?? null });
   }
 
-  reject(id: string, reason: string): Observable<LearnItemDto> {
-    return this.http.post<LearnItemDto>(`${this.base}/${id}/reject`, { reason });
+  reject(id: string, reason: string): Observable<LessonDto> {
+    return this.http.post<LessonDto>(`${this.base}/${id}/reject`, { reason });
   }
 }

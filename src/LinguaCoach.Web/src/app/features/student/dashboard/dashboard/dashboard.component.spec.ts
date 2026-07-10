@@ -14,7 +14,7 @@ import { TodaysSessionResponse, DailyLessonModuleSection } from '../../../../cor
 
 const MODULE_SECTION: DailyLessonModuleSection = {
   selectedModules: [{
-    moduleDefinitionId: 'mod-1',
+    moduleId: 'mod-1',
     title: 'Confident Meetings',
     description: 'Lead a team meeting',
     cefrLevel: 'B1',
@@ -23,8 +23,8 @@ const MODULE_SECTION: DailyLessonModuleSection = {
     difficultyBand: 2,
     estimatedMinutes: 20,
     reason: 'matched',
-    linkedLearnItems: [],
-    linkedActivityDefinitions: [],
+    linkedLessons: [],
+    linkedExercises: [],
   }],
   fallbackRequired: false,
   fallbackReason: null,

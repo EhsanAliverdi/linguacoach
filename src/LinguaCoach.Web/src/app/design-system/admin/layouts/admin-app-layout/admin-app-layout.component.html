@@ -97,10 +97,10 @@
         <li><sp-admin-sidebar-nav-item label="Resource Bank" route="/admin/resource-bank" [collapsed]="false" (itemClick)="closeDrawer()">
           <sp-admin-icon name="database" />
         </sp-admin-sidebar-nav-item></li>
-        <li><sp-admin-sidebar-nav-item label="Learn Items" route="/admin/learn-items" [collapsed]="false" (itemClick)="closeDrawer()">
+        <li><sp-admin-sidebar-nav-item label="Lessons" route="/admin/lesson-library" [collapsed]="false" (itemClick)="closeDrawer()">
           <sp-admin-icon name="book-open" />
         </sp-admin-sidebar-nav-item></li>
-        <li><sp-admin-sidebar-nav-item label="Activities" route="/admin/activities" [collapsed]="false" (itemClick)="closeDrawer()">
+        <li><sp-admin-sidebar-nav-item label="Exercises" route="/admin/exercises" [collapsed]="false" (itemClick)="closeDrawer()">
           <sp-admin-icon name="list" />
         </sp-admin-sidebar-nav-item></li>
         <li><sp-admin-sidebar-nav-item label="Modules" route="/admin/modules" [collapsed]="false" (itemClick)="closeDrawer()">
@@ -244,7 +244,7 @@
       </div>
 
       <!-- CONTENT STUDIO (Phase I3 — the full I-track target: Import -> Resource Bank ->
-           Learn Items -> Activities -> Modules -> Onboarding -> Placement, one section, no
+           Lessons -> Exercises -> Modules -> Onboarding -> Placement, one section, no
            second "Ops" tier. Review Queue removed — it only ever covered PlacementItemDefinition
            review (ActivityTemplate was deleted in I2A), which Placement's own page already does
            with no unique capability lost. See
@@ -258,10 +258,10 @@
           <li><sp-admin-sidebar-nav-item label="Resource Bank" route="/admin/resource-bank" [collapsed]="collapsed()">
             <sp-admin-icon name="database" />
           </sp-admin-sidebar-nav-item></li>
-          <li><sp-admin-sidebar-nav-item label="Learn Items" route="/admin/learn-items" [collapsed]="collapsed()">
+          <li><sp-admin-sidebar-nav-item label="Lessons" route="/admin/lesson-library" [collapsed]="collapsed()">
             <sp-admin-icon name="book-open" />
           </sp-admin-sidebar-nav-item></li>
-          <li><sp-admin-sidebar-nav-item label="Activities" route="/admin/activities" [collapsed]="collapsed()">
+          <li><sp-admin-sidebar-nav-item label="Exercises" route="/admin/exercises" [collapsed]="collapsed()">
             <sp-admin-icon name="list" />
           </sp-admin-sidebar-nav-item></li>
           <li><sp-admin-sidebar-nav-item label="Modules" route="/admin/modules" [collapsed]="collapsed()">

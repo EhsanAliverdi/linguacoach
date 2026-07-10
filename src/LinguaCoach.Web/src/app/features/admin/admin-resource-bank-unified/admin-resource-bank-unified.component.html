@@ -1,6 +1,6 @@
 <sp-admin-page-header
   title="Resource Bank"
-  subtitle="Unified view of approved typed learning resources used to generate Learn items, Activities, Modules, Daily Lessons, and Practice Gym content.">
+  subtitle="Unified view of approved typed learning resources used to generate Lessons, Exercises, Modules, Daily Lessons, and Practice Gym content.">
   <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="loadAll()">
     Refresh
   </sp-admin-button>
@@ -16,11 +16,11 @@
     <sp-admin-alert variant="success">
       {{ generateSuccess() }}
       @if (lastGeneratedKind() === 'activity') {
-        <a (click)="goToActivities()" style="cursor:pointer; text-decoration:underline;">Review in Activities</a>
+        <a (click)="goToActivities()" style="cursor:pointer; text-decoration:underline;">Review in Exercises</a>
       } @else if (lastGeneratedKind() === 'module') {
         <a (click)="goToModules()" style="cursor:pointer; text-decoration:underline;">Review in Modules</a>
       } @else {
-        <a (click)="goToLearnItems()" style="cursor:pointer; text-decoration:underline;">Review in Learn Items</a>
+        <a (click)="goToLessons()" style="cursor:pointer; text-decoration:underline;">Review in Lessons</a>
       }
     </sp-admin-alert>
   }

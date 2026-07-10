@@ -1,6 +1,6 @@
 <sp-admin-page-header
   title="Modules"
-  subtitle="Reviewable learning units that combine Learn Items, Activities, and a feedback plan. Approved Modules can now be suggested to students by Daily Lesson and Practice Gym, with automatic fallback when no suitable Module exists. Students cannot yet start a Module attempt from a suggestion (planned for Phase H10).">
+  subtitle="Reviewable learning units that combine Lessons, Exercises, and a feedback plan. Approved Modules can now be suggested to students by Today and Practice Gym, with automatic fallback when no suitable Module exists. Students cannot yet start a Module attempt from a suggestion (planned for Phase H10).">
   <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="loadAll()">
     Refresh
   </sp-admin-button>
@@ -37,7 +37,7 @@
     </sp-admin-filter-bar>
 
     @if (items().length === 0) {
-      <sp-admin-empty-state title="No Modules" message="Use Generate Module to compose the first draft from an approved Learn Item and Activity." />
+      <sp-admin-empty-state title="No Modules" message="Use Generate Module to compose the first draft from an approved Lesson and Exercise." />
     } @else {
       <sp-admin-table layout="first-column-fluid">
         <table>
@@ -46,8 +46,8 @@
               <th>Title</th>
               <th>Level</th>
               <th>Skill / Subskill</th>
-              <th>Learn Items</th>
-              <th>Activities</th>
+              <th>Lessons</th>
+              <th>Exercises</th>
               <th>Est. minutes</th>
               <th>Source</th>
               <th>Status</th>
@@ -62,8 +62,8 @@
                   {{ item.skill ?? '—' }}
                   @if (item.subskill) { <div class="sp-admin-text-muted">{{ item.subskill }}</div> }
                 </td>
-                <td>{{ item.learnItemLinks.length }}</td>
-                <td>{{ item.activityLinks.length }}</td>
+                <td>{{ item.lessonLinks.length }}</td>
+                <td>{{ item.exerciseLinks.length }}</td>
                 <td>{{ item.estimatedMinutes ?? '—' }}</td>
                 <td><sp-admin-badge tone="neutral">{{ item.sourceMode }}</sp-admin-badge></td>
                 <td><sp-admin-badge [tone]="statusTone(item.reviewStatus)">{{ item.reviewStatus }}</sp-admin-badge></td>
@@ -106,21 +106,21 @@
       <sp-admin-form-field label="Difficulty band">{{ d.difficultyBand ?? '—' }}</sp-admin-form-field>
       <sp-admin-form-field label="Estimated minutes">{{ d.estimatedMinutes ?? '—' }}</sp-admin-form-field>
 
-      <sp-admin-form-field label="Linked Learn Items" [hint]="d.learnItemLinks.length === 0 ? 'None linked' : ''">
-        @for (link of d.learnItemLinks; track link.linkId) {
+      <sp-admin-form-field label="Linked Lessons" [hint]="d.lessonLinks.length === 0 ? 'None linked' : ''">
+        @for (link of d.lessonLinks; track link.linkId) {
           <div>
             <sp-admin-badge tone="info" appearance="soft">{{ link.role }}</sp-admin-badge>
-            {{ link.snapshotTitle ?? link.learnItemId }}
+            {{ link.snapshotTitle ?? link.lessonId }}
           </div>
         }
       </sp-admin-form-field>
 
-      <sp-admin-form-field label="Linked Activities" [hint]="d.activityLinks.length === 0 ? 'None linked' : ''">
-        @for (link of d.activityLinks; track link.linkId) {
+      <sp-admin-form-field label="Linked Exercises" [hint]="d.exerciseLinks.length === 0 ? 'None linked' : ''">
+        @for (link of d.exerciseLinks; track link.linkId) {
           <div>
             <sp-admin-badge tone="info" appearance="soft">{{ link.role }}</sp-admin-badge>
             @if (!link.required) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">optional</sp-admin-badge> }
-            {{ link.snapshotTitle ?? link.activityDefinitionId }}
+            {{ link.snapshotTitle ?? link.exerciseId }}
           </div>
         }
       </sp-admin-form-field>
@@ -173,17 +173,17 @@
 
   <div class="sp-admin-form-stack">
     <p class="sp-admin-hint">
-      Both the Learn Item and the Activity Definition must already be approved. Find their ids on
-      the Learn Items / Activities pages.
+      Both the Lesson and the Exercise must already be approved. Find their ids on
+      the Lessons / Exercises pages.
     </p>
-    <sp-admin-form-field label="Title" hint="Optional — defaults to the Learn Item's title">
+    <sp-admin-form-field label="Title" hint="Optional — defaults to the Lesson's title">
       <sp-admin-input [(ngModel)]="generateTitle" name="generateTitle" placeholder="e.g. Present perfect module" />
     </sp-admin-form-field>
-    <sp-admin-form-field label="Learn Item id" [required]="true">
-      <sp-admin-input [(ngModel)]="generateLearnItemId" name="generateLearnItemId" placeholder="Approved Learn Item id" />
+    <sp-admin-form-field label="Lesson id" [required]="true">
+      <sp-admin-input [(ngModel)]="generateLessonId" name="generateLessonId" placeholder="Approved Lesson id" />
     </sp-admin-form-field>
-    <sp-admin-form-field label="Activity Definition id" [required]="true">
-      <sp-admin-input [(ngModel)]="generateActivityId" name="generateActivityId" placeholder="Approved Activity Definition id" />
+    <sp-admin-form-field label="Exercise id" [required]="true">
+      <sp-admin-input [(ngModel)]="generateExerciseId" name="generateExerciseId" placeholder="Approved Exercise id" />
     </sp-admin-form-field>
   </div>
 

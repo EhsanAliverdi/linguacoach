@@ -3,9 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AdminUnifiedResourceBankService } from '../../../core/services/admin-resource-import.service';
-import { AdminLearnItemService } from '../../../core/services/admin-learn-item.service';
-import { AdminActivityDefinitionService } from '../../../core/services/admin-activity-definition.service';
-import { AdminModuleDefinitionService } from '../../../core/services/admin-module-definition.service';
+import { AdminLessonService } from '../../../core/services/admin-lesson.service';
+import { AdminExerciseService } from '../../../core/services/admin-exercise.service';
+import { AdminModuleService } from '../../../core/services/admin-module.service';
 import {
   UnifiedResourceBankItemDto,
   UnifiedResourceBankItemType,
@@ -34,8 +34,8 @@ import {
 import type { SpAdminRowAction } from '../../../design-system/admin';
 
 /** Phase H3 — UnifiedResourceBankItemType's member names match PublishedResourceType (backend
- *  Domain enum) and LearnItemResourceLinkInput's ResourceType 1:1 — no translation table needed. */
-const RESOURCE_TYPE_TO_LEARN_ITEM_TYPE: Record<UnifiedResourceBankItemType, string> = {
+ *  Domain enum) and LessonResourceLinkInput's ResourceType 1:1 — no translation table needed. */
+const RESOURCE_TYPE_TO_LESSON_TYPE: Record<UnifiedResourceBankItemType, string> = {
   vocabulary: 'Vocabulary',
   grammar: 'Grammar',
   readingReference: 'ReadingReference',
@@ -54,10 +54,10 @@ const PAGE_SIZE = 20;
  * replaces as the primary entry point remain reachable and fully functional.
  *
  * Phase H3 — "Generate Learn" is a real row action (deterministic draft composer, see
- * AdminLearnItemService). Phase H4 — "Generate Activity" is real too (see
- * AdminActivityDefinitionService). Phase H5 — "Generate Module" is now real too: it only
- * succeeds when an already-approved Learn Item AND an already-approved Activity Definition are
- * both linked to this resource (see AdminModuleDefinitionService.generateFromResource) — a clear
+ * AdminLessonService). Phase H4 — "Generate Activity" is real too (see
+ * AdminExerciseService). Phase H5 — "Generate Module" is now real too: it only
+ * succeeds when an already-approved Lesson AND an already-approved Exercise are
+ * both linked to this resource (see AdminModuleService.generateFromResource) — a clear
  * validation error explains what's missing otherwise, never a silent no-op.
  */
 @Component({
@@ -129,9 +129,9 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
 
   constructor(
     private bankSvc: AdminUnifiedResourceBankService,
-    private learnItemSvc: AdminLearnItemService,
-    private activitySvc: AdminActivityDefinitionService,
-    private moduleSvc: AdminModuleDefinitionService,
+    private lessonSvc: AdminLessonService,
+    private exerciseSvc: AdminExerciseService,
+    private moduleSvc: AdminModuleService,
     private router: Router,
     private route: ActivatedRoute,
   ) {}
@@ -233,30 +233,30 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
   }
 
   /** Phase H3 — deterministic draft composer, one resource per call (multi-select is a future
-   *  enhancement, not needed for this foundation phase). Always stages a pending-review Learn
-   *  Item — never publishes, never assigns anything to a student. */
+   *  enhancement, not needed for this foundation phase). Always stages a pending-review Lesson
+   *  — never publishes, never assigns anything to a student. */
   generateLearn(item: UnifiedResourceBankItemDto): void {
     this.generatingLearnId.set(item.id);
     this.generateError.set('');
     this.generateSuccess.set('');
-    this.learnItemSvc.generateFromResources({
-      resources: [{ resourceType: RESOURCE_TYPE_TO_LEARN_ITEM_TYPE[item.type], resourceId: item.id, role: 'Primary' }],
+    this.lessonSvc.generateFromResources({
+      resources: [{ resourceType: RESOURCE_TYPE_TO_LESSON_TYPE[item.type], resourceId: item.id, role: 'Primary' }],
     }).subscribe({
       next: result => {
         this.generatingLearnId.set(null);
         this.lastGeneratedKind.set('learn');
-        this.generateSuccess.set(`Learn Item draft created from "${item.title}" — pending review.`);
+        this.generateSuccess.set(`Lesson draft created from "${item.title}" — pending review.`);
         this.loadAll();
       },
       error: err => {
         this.generatingLearnId.set(null);
-        this.generateError.set(err.error?.error ?? 'Could not generate a Learn Item.');
+        this.generateError.set(err.error?.error ?? 'Could not generate a Lesson.');
       },
     });
   }
 
-  goToLearnItems(): void {
-    this.router.navigateByUrl('/admin/learn-items');
+  goToLessons(): void {
+    this.router.navigateByUrl('/admin/lesson-library');
   }
 
   /** Phase H4 — deterministic draft composer, one resource per call. The activity type is
@@ -268,34 +268,34 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
     this.generatingActivityId.set(item.id);
     this.generateError.set('');
     this.generateSuccess.set('');
-    this.activitySvc.generateFromResources({
-      resources: [{ resourceType: RESOURCE_TYPE_TO_LEARN_ITEM_TYPE[item.type], resourceId: item.id, role: 'Primary' }],
+    this.exerciseSvc.generateFromResources({
+      resources: [{ resourceType: RESOURCE_TYPE_TO_LESSON_TYPE[item.type], resourceId: item.id, role: 'Primary' }],
     }).subscribe({
       next: result => {
         this.generatingActivityId.set(null);
         this.lastGeneratedKind.set('activity');
-        this.generateSuccess.set(`Activity draft created from "${item.title}" — pending review.`);
+        this.generateSuccess.set(`Exercise draft created from "${item.title}" — pending review.`);
         this.loadAll();
       },
       error: err => {
         this.generatingActivityId.set(null);
-        this.generateError.set(err.error?.error ?? 'Could not generate an Activity.');
+        this.generateError.set(err.error?.error ?? 'Could not generate an Exercise.');
       },
     });
   }
 
   goToActivities(): void {
-    this.router.navigateByUrl('/admin/activities');
+    this.router.navigateByUrl('/admin/exercises');
   }
 
-  /** Phase H5 — only succeeds when an already-approved Learn Item AND an already-approved
-   *  Activity Definition are both linked to this resource; never cascade-generates either. */
+  /** Phase H5 — only succeeds when an already-approved Lesson AND an already-approved
+   *  Exercise are both linked to this resource; never cascade-generates either. */
   generateModule(item: UnifiedResourceBankItemDto): void {
     this.generatingModuleId.set(item.id);
     this.generateError.set('');
     this.generateSuccess.set('');
     this.moduleSvc.generateFromResource({
-      resourceType: RESOURCE_TYPE_TO_LEARN_ITEM_TYPE[item.type],
+      resourceType: RESOURCE_TYPE_TO_LESSON_TYPE[item.type],
       resourceId: item.id,
     }).subscribe({
       next: result => {

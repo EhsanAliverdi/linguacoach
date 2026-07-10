@@ -2,11 +2,11 @@ import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { AdminModuleDefinitionService } from '../../../core/services/admin-module-definition.service';
+import { AdminModuleService } from '../../../core/services/admin-module.service';
 import {
-  ModuleDefinitionDto,
+  ModuleDto,
   MODULE_REVIEW_STATUSES,
-} from '../../../core/models/admin-module-definition.models';
+} from '../../../core/models/admin-module.models';
 import { RESOURCE_BANK_CEFR_LEVELS } from '../../../core/models/admin-resource-import.models';
 import {
   SpAdminAlertComponent,
@@ -32,8 +32,8 @@ import {
 const PAGE_SIZE = 20;
 
 /**
- * Phase H5 — Module Definition foundation admin page. Reusable, reviewable learning units
- * combining Learn Items + Activity Definitions + a module-level feedback plan. Nothing here
+ * Phase H5 — Module foundation admin page. Reusable, reviewable learning units
+ * combining Lessons + Exercises + a module-level feedback plan. Nothing here
  * assigns anything to a student or changes Today/Practice Gym runtime selection.
  */
 @Component({
@@ -64,7 +64,7 @@ const PAGE_SIZE = 20;
   templateUrl: './admin-modules.component.html',
 })
 export class AdminModulesComponent implements OnInit {
-  items = signal<ModuleDefinitionDto[]>([]);
+  items = signal<ModuleDto[]>([]);
   loading = signal(true);
   error = signal('');
   actionError = signal('');
@@ -84,19 +84,19 @@ export class AdminModulesComponent implements OnInit {
 
   // ── Detail drawer ────────────────────────────────────────────────────────
   drawerOpen = signal(false);
-  detail = signal<ModuleDefinitionDto | null>(null);
+  detail = signal<ModuleDto | null>(null);
   rejectReasonDraft = '';
   approving = signal(false);
   rejecting = signal(false);
 
-  // ── Generate-from-items modal (simple: admin types Learn Item + Activity ids) ──
+  // ── Generate-from-items modal (simple: admin types Lesson + Exercise ids) ──
   generateModalOpen = signal(false);
   generating = signal(false);
-  generateLearnItemId = '';
-  generateActivityId = '';
+  generateLessonId = '';
+  generateExerciseId = '';
   generateTitle = '';
 
-  constructor(private moduleSvc: AdminModuleDefinitionService, private route: ActivatedRoute) {}
+  constructor(private moduleSvc: AdminModuleService, private route: ActivatedRoute) {}
 
   ngOnInit(): void {
     this.loadAll();
@@ -149,7 +149,7 @@ export class AdminModulesComponent implements OnInit {
     this.loadAll();
   }
 
-  openDrawer(item: ModuleDefinitionDto): void {
+  openDrawer(item: ModuleDto): void {
     this.detail.set(item);
     this.rejectReasonDraft = '';
     this.actionError.set('');
@@ -211,8 +211,8 @@ export class AdminModulesComponent implements OnInit {
   }
 
   openGenerateModal(): void {
-    this.generateLearnItemId = '';
-    this.generateActivityId = '';
+    this.generateLessonId = '';
+    this.generateExerciseId = '';
     this.generateTitle = '';
     this.actionError.set('');
     this.generateModalOpen.set(true);
@@ -222,18 +222,18 @@ export class AdminModulesComponent implements OnInit {
     this.generateModalOpen.set(false);
   }
 
-  /** Phase H5 — simple selection form: admin types an approved Learn Item id and an approved
-   *  Activity Definition id. Both must already be Approved — the backend rejects otherwise. */
+  /** Phase H5 — simple selection form: admin types an approved Lesson id and an approved
+   *  Exercise id. Both must already be Approved — the backend rejects otherwise. */
   submitGenerateFromItems(): void {
-    if (!this.generateLearnItemId.trim() || !this.generateActivityId.trim()) {
-      this.actionError.set('Both a Learn Item id and an Activity Definition id are required.');
+    if (!this.generateLessonId.trim() || !this.generateExerciseId.trim()) {
+      this.actionError.set('Both a Lesson id and an Exercise id are required.');
       return;
     }
     this.generating.set(true);
     this.actionError.set('');
     this.moduleSvc.generateFromItems({
-      learnItemLinks: [{ learnItemId: this.generateLearnItemId.trim(), role: 'Primary' }],
-      activityLinks: [{ activityDefinitionId: this.generateActivityId.trim(), role: 'PrimaryPractice' }],
+      lessonLinks: [{ lessonId: this.generateLessonId.trim(), role: 'Primary' }],
+      exerciseLinks: [{ exerciseId: this.generateExerciseId.trim(), role: 'PrimaryPractice' }],
       title: this.generateTitle.trim() || null,
     }).subscribe({
       next: () => {

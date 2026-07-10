@@ -79,12 +79,12 @@
 
     <!-- Phase H7/H10 — Recommended module practice: additive, shown only when the backend
          suggested an approved Module. Start is enabled only when the backend says the module's
-         Activity Definition can actually be launched (H10); otherwise a clear disabled state. -->
+         Exercise can actually be launched (H10); otherwise a clear disabled state. -->
     @if (moduleSuggestions().length > 0) {
       <section class="sp-practice-section" data-testid="module-suggestions-section">
         <p class="sp-eyebrow sp-practice-section-label">Recommended module practice</p>
         <div class="sp-suggestion-grid" data-testid="module-suggestions-grid">
-          @for (module of moduleSuggestions(); track module.moduleDefinitionId) {
+          @for (module of moduleSuggestions(); track module.moduleId) {
             <div class="sp-suggestion-card" data-testid="module-suggestion-card">
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
                 <span style="font-weight:700">{{ module.title }}</span>
@@ -109,7 +109,7 @@
                   data-testid="module-suggestion-start"
                   [disabled]="startingModuleId() !== null"
                   (click)="startModuleSuggestion(module)">
-                  {{ isStartingModule(module.moduleDefinitionId) ? 'Starting…' : 'Start' }}
+                  {{ isStartingModule(module.moduleId) ? 'Starting…' : 'Start' }}
                 </button>
               } @else {
                 <span style="font-size:11px;font-weight:700;color:var(--sp-muted)" data-testid="module-suggestion-unsupported">

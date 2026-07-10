@@ -1,9 +1,9 @@
-// Phase H3 — Learn Item foundation. Reviewable teaching/explanation blocks generated from (or
+// Phase H3 — Lesson foundation. Reviewable teaching/explanation blocks generated from (or
 // manually authored about) selected published Resource Bank rows — the "Learn" half of a future
 // Module. Every create/generate action stages a pending-review row; nothing here creates an
-// Activity/Module row or assigns anything to a student.
+// Exercise/Module row or assigns anything to a student.
 
-export interface LearnItemResourceLinkDto {
+export interface LessonResourceLinkDto {
   linkId: string;
   resourceType: string;
   resourceId: string;
@@ -12,7 +12,7 @@ export interface LearnItemResourceLinkDto {
   contentFingerprint: string | null;
 }
 
-export interface LearnItemDto {
+export interface LessonDto {
   id: string;
   title: string;
   body: string;
@@ -38,21 +38,21 @@ export interface LearnItemDto {
   reviewNotes: string | null;
   createdAt: string;
   updatedAtUtc: string;
-  links: LearnItemResourceLinkDto[];
+  links: LessonResourceLinkDto[];
 }
 
-export interface LearnItemListResult {
-  items: LearnItemDto[];
+export interface LessonListResult {
+  items: LessonDto[];
   totalCount: number;
 }
 
-export interface LearnItemResourceLinkInput {
+export interface LessonResourceLinkInput {
   resourceType: string;
   resourceId: string;
   role: string;
 }
 
-export interface CreateLearnItemRequestBody {
+export interface CreateLessonRequestBody {
   title: string;
   body: string;
   cefrLevel?: string | null;
@@ -65,10 +65,10 @@ export interface CreateLearnItemRequestBody {
   usageNotes?: string | null;
   difficultyBand?: number | null;
   estimatedMinutes?: number | null;
-  links?: LearnItemResourceLinkInput[] | null;
+  links?: LessonResourceLinkInput[] | null;
 }
 
-export interface UpdateLearnItemRequestBody {
+export interface UpdateLessonRequestBody {
   title: string;
   body: string;
   examples?: string[] | null;
@@ -83,8 +83,8 @@ export interface UpdateLearnItemRequestBody {
   estimatedMinutes?: number | null;
 }
 
-export interface GenerateLearnItemFromResourcesRequestBody {
-  resources: LearnItemResourceLinkInput[];
+export interface GenerateLessonFromResourcesRequestBody {
+  resources: LessonResourceLinkInput[];
   title?: string | null;
   defaultCefrLevel?: string | null;
   defaultSkill?: string | null;
@@ -95,11 +95,11 @@ export interface GenerateLearnItemFromResourcesRequestBody {
   notes?: string | null;
 }
 
-export interface GenerateLearnItemFromResourcesResult {
-  learnItem: LearnItemDto;
+export interface GenerateLessonFromResourcesResult {
+  lesson: LessonDto;
   reviewRoute: string;
 }
 
-export const LEARN_ITEM_REVIEW_STATUSES = ['NotRequired', 'PendingReview', 'Approved', 'Rejected'] as const;
-export const LEARN_ITEM_SOURCE_MODES = ['Manual', 'GeneratedFromResources', 'Imported'] as const;
-export const LEARN_ITEM_RESOURCE_ROLES = ['Primary', 'Supporting'] as const;
+export const LESSON_REVIEW_STATUSES = ['NotRequired', 'PendingReview', 'Approved', 'Rejected'] as const;
+export const LESSON_SOURCE_MODES = ['Manual', 'GeneratedFromResources', 'Imported'] as const;
+export const LESSON_RESOURCE_ROLES = ['Primary', 'Supporting'] as const;

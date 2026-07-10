@@ -5,9 +5,9 @@ import { AdminResourceBankUnifiedComponent } from './admin-resource-bank-unified
 import {
   AdminUnifiedResourceBankService,
 } from '../../../core/services/admin-resource-import.service';
-import { AdminLearnItemService } from '../../../core/services/admin-learn-item.service';
-import { AdminActivityDefinitionService } from '../../../core/services/admin-activity-definition.service';
-import { AdminModuleDefinitionService } from '../../../core/services/admin-module-definition.service';
+import { AdminLessonService } from '../../../core/services/admin-lesson.service';
+import { AdminExerciseService } from '../../../core/services/admin-exercise.service';
+import { AdminModuleService } from '../../../core/services/admin-module.service';
 import { UnifiedResourceBankListResult } from '../../../core/models/admin-resource-import.models';
 
 const EMPTY_RESULT: UnifiedResourceBankListResult = { items: [], totalCount: 0 };
@@ -24,9 +24,9 @@ describe('AdminResourceBankUnifiedComponent', () => {
       providers: [
         provideRouter([]),
         { provide: AdminUnifiedResourceBankService, useValue: bankSvc },
-        { provide: AdminLearnItemService, useValue: {} },
-        { provide: AdminActivityDefinitionService, useValue: {} },
-        { provide: AdminModuleDefinitionService, useValue: {} },
+        { provide: AdminLessonService, useValue: {} },
+        { provide: AdminExerciseService, useValue: {} },
+        { provide: AdminModuleService, useValue: {} },
         {
           provide: ActivatedRoute,
           useValue: {

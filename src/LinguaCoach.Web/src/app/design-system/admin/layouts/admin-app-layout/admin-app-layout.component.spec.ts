@@ -172,8 +172,8 @@ describe('AdminAppLayoutComponent — nav links and shell (Phase 10UI-FIX-2)', (
     const { host } = setup();
     const links = getAllNavLinks(host);
     const routes = links.map(l => l.getAttribute('ng-reflect-router-link') ?? l.getAttribute('routerLink'));
-    const required = ['/admin/content/import', '/admin/resource-bank', '/admin/learn-items',
-      '/admin/activities', '/admin/modules'];
+    const required = ['/admin/content/import', '/admin/resource-bank', '/admin/lesson-library',
+      '/admin/exercises', '/admin/modules'];
     for (const r of required) {
       expect(routes).withContext(`route ${r} missing from Content Studio nav`).toContain(r);
     }

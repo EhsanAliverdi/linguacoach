@@ -1,9 +1,9 @@
 export type SessionStatus = 'notStarted' | 'inProgress' | 'completed';
 export type ExerciseStatus = 'notStarted' | 'inProgress' | 'completed' | 'skipped';
 
-/** Phase H6 — student-safe Learn Item projection within a Daily Lesson module section. */
-export interface DailyLessonLearnItemView {
-  learnItemId: string;
+/** Phase H6 — student-safe Lesson projection within a Daily Lesson module section. */
+export interface DailyLessonLessonView {
+  lessonId: string;
   title: string;
   body: string;
   examples: string[];
@@ -11,10 +11,10 @@ export interface DailyLessonLearnItemView {
   usageNotes: string | null;
 }
 
-/** Phase H6 — student-safe Activity Definition projection. Never carries an answer key or
- * scoring rules — those are backend-only per ActivityDefinition's own contract. */
+/** Phase H6 — student-safe Exercise projection. Never carries an answer key or
+ * scoring rules — those are backend-only per Exercise's own contract. */
 export interface DailyLessonActivityView {
-  activityDefinitionId: string;
+  exerciseId: string;
   title: string;
   description: string | null;
   instructions: string;
@@ -24,7 +24,7 @@ export interface DailyLessonActivityView {
 }
 
 export interface SelectedDailyLessonModule {
-  moduleDefinitionId: string;
+  moduleId: string;
   title: string;
   description: string | null;
   cefrLevel: string | null;
@@ -33,8 +33,8 @@ export interface SelectedDailyLessonModule {
   difficultyBand: number | null;
   estimatedMinutes: number | null;
   reason: string;
-  linkedLearnItems: DailyLessonLearnItemView[];
-  linkedActivityDefinitions: DailyLessonActivityView[];
+  linkedLessons: DailyLessonLessonView[];
+  linkedExercises: DailyLessonActivityView[];
 }
 
 /** Phase H6 — additive, optional. Null when no compatible approved Module exists; the

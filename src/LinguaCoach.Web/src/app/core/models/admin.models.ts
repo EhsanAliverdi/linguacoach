@@ -657,7 +657,7 @@ export interface AdminAuthEventListQuery {
 
 /** Phase H6 — admin preview of the Daily Lesson module selector's decision for a student. */
 export interface AdminDailyLessonSelectedModule {
-  moduleDefinitionId: string;
+  moduleId: string;
   title: string;
   cefrLevel: string | null;
   skill: string | null;
@@ -677,7 +677,7 @@ export interface AdminDailyLessonModulePreview {
 
 /** Phase H7 — admin preview of the Practice Gym module selector's decision for a student. */
 export interface AdminPracticeGymSuggestedModule {
-  moduleDefinitionId: string;
+  moduleId: string;
   title: string;
   cefrLevel: string | null;
   skill: string | null;
@@ -687,7 +687,7 @@ export interface AdminPracticeGymSuggestedModule {
   isReview: boolean;
   isScaffold: boolean;
   isRemediation: boolean;
-  /** Phase H10 — whether this suggestion's Activity Definition can actually be launched right now. */
+  /** Phase H10 — whether this suggestion's Exercise can actually be launched right now. */
   canLaunch: boolean;
   unsupportedReason: string | null;
 }

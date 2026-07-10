@@ -30,9 +30,9 @@ export interface PracticeGymSuggestionItem {
   linkedSessionExerciseId: string | null;
 }
 
-/** Phase H7 — student-safe Learn Item projection within a Practice Gym module suggestion. */
-export interface PracticeGymModuleLearnItemSummary {
-  learnItemId: string;
+/** Phase H7 — student-safe Lesson projection within a Practice Gym module suggestion. */
+export interface PracticeGymModuleLessonSummary {
+  lessonId: string;
   title: string;
   body: string;
   examples: string[];
@@ -40,10 +40,10 @@ export interface PracticeGymModuleLearnItemSummary {
   usageNotes: string | null;
 }
 
-/** Phase H7 — student-safe Activity Definition projection. Never carries an answer key or
- * scoring rules — those are backend-only per ActivityDefinition's own contract. */
+/** Phase H7 — student-safe Exercise projection. Never carries an answer key or
+ * scoring rules — those are backend-only per Exercise's own contract. */
 export interface PracticeGymModuleActivitySummary {
-  activityDefinitionId: string;
+  exerciseId: string;
   title: string;
   description: string | null;
   instructions: string;
@@ -53,7 +53,7 @@ export interface PracticeGymModuleActivitySummary {
 }
 
 export interface PracticeGymModuleSuggestion {
-  moduleDefinitionId: string;
+  moduleId: string;
   title: string;
   description: string | null;
   cefrLevel: string | null;
@@ -67,7 +67,7 @@ export interface PracticeGymModuleSuggestion {
   isReview: boolean;
   isScaffold: boolean;
   isRemediation: boolean;
-  linkedLearnItemSummaries: PracticeGymModuleLearnItemSummary[];
+  linkedLessonSummaries: PracticeGymModuleLessonSummary[];
   linkedActivitySummaries: PracticeGymModuleActivitySummary[];
   /** Phase H10 — true when this suggestion can actually be started right now. False (with
    * unsupportedReason set) for activity types/renderers not yet supported by the launch bridge. */
@@ -113,8 +113,8 @@ export interface StartSuggestionResult {
 export interface ModuleSuggestionStartResult {
   success: boolean;
   unsupportedReason: string | null;
-  moduleDefinitionId: string;
-  activityDefinitionId: string | null;
+  moduleId: string;
+  exerciseId: string | null;
   learningActivityId: string | null;
   title: string | null;
   instructions: string | null;
@@ -125,7 +125,7 @@ export interface ModuleSuggestionStartResult {
   subskill: string | null;
   cefrLevel: string | null;
   canSubmit: boolean;
-  learnItem: PracticeGymModuleLearnItemSummary | null;
+  lesson: PracticeGymModuleLessonSummary | null;
 }
 
 /** Student-friendly label for each routing reason. */
@@ -167,9 +167,9 @@ export class PracticeGymSuggestionsService {
   /** Phase H10 — starts a module-based suggestion. On success, navigate to
    * `/activity?activityId=<learningActivityId>` — the existing Practice Gym launch/submit flow
    * handles the rest unchanged. */
-  startModuleSuggestion(moduleDefinitionId: string): Observable<ModuleSuggestionStartResult> {
+  startModuleSuggestion(moduleId: string): Observable<ModuleSuggestionStartResult> {
     return this.http.post<ModuleSuggestionStartResult>(
-      `${this.base}/module-suggestions/${moduleDefinitionId}/start`,
+      `${this.base}/module-suggestions/${moduleId}/start`,
       null
     );
   }

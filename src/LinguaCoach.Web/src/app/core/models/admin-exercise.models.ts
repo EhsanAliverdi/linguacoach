@@ -1,10 +1,10 @@
-// Phase H4 — Activity foundation. Reviewable, editable practice task designs generated from (or
-// authored about) selected published Resource Bank rows, optionally linked to a Learn Item — the
+// Phase H4 — Exercise foundation. Reviewable, editable practice task designs generated from (or
+// authored about) selected published Resource Bank rows, optionally linked to a Lesson — the
 // "Practice" half of a future Module. Distinct from the existing runtime LearningActivity
-// (per-student delivery record) and ActivityTemplate (already wired into the live Practice Gym
-// Form.io pilot). Every create/generate action stages a pending-review row.
+// (per-student delivery record) and the legacy ActivityTemplate Form.io pilot (removed in I2A).
+// Every create/generate action stages a pending-review row.
 
-export interface ActivityResourceLinkDto {
+export interface ExerciseResourceLinkDto {
   linkId: string;
   resourceType: string;
   resourceId: string;
@@ -13,7 +13,7 @@ export interface ActivityResourceLinkDto {
   contentFingerprint: string | null;
 }
 
-export interface ActivityDefinitionDto {
+export interface ExerciseDto {
   id: string;
   title: string;
   description: string | null;
@@ -32,7 +32,7 @@ export interface ActivityDefinitionDto {
   focusTagsJson: string;
   difficultyBand: number | null;
   estimatedMinutes: number | null;
-  learnItemId: string | null;
+  lessonId: string | null;
   sourceMode: string;
   generationProvider: string | null;
   generationModel: string | null;
@@ -45,22 +45,22 @@ export interface ActivityDefinitionDto {
   reviewNotes: string | null;
   createdAt: string;
   updatedAtUtc: string;
-  links: ActivityResourceLinkDto[];
+  links: ExerciseResourceLinkDto[];
 }
 
-export interface ActivityDefinitionListResult {
-  items: ActivityDefinitionDto[];
+export interface ExerciseListResult {
+  items: ExerciseDto[];
   totalCount: number;
 }
 
-export interface ActivityResourceLinkInput {
+export interface ExerciseResourceLinkInput {
   resourceType: string;
   resourceId: string;
   role: string;
 }
 
 export interface GenerateActivityFromResourcesRequestBody {
-  resources: ActivityResourceLinkInput[];
+  resources: ExerciseResourceLinkInput[];
   requestedActivityType?: string | null;
   title?: string | null;
   defaultCefrLevel?: string | null;
@@ -72,19 +72,19 @@ export interface GenerateActivityFromResourcesRequestBody {
   notes?: string | null;
 }
 
-export interface GenerateActivityFromLearnItemRequestBody {
-  learnItemId: string;
+export interface GenerateActivityFromLessonRequestBody {
+  lessonId: string;
   requestedActivityType?: string | null;
   title?: string | null;
   notes?: string | null;
 }
 
-export interface GenerateActivityDefinitionResult {
-  activity: ActivityDefinitionDto;
+export interface GenerateExerciseResult {
+  activity: ExerciseDto;
   reviewRoute: string;
 }
 
 export const ACTIVITY_REVIEW_STATUSES = ['NotRequired', 'PendingReview', 'Approved', 'Rejected'] as const;
-export const ACTIVITY_SOURCE_MODES = ['Manual', 'GeneratedFromResources', 'GeneratedFromLearnItem', 'Imported'] as const;
+export const ACTIVITY_SOURCE_MODES = ['Manual', 'GeneratedFromResources', 'GeneratedFromLesson', 'Imported'] as const;
 export const ACTIVITY_RENDERER_TYPES = ['Formio', 'Custom', 'Legacy'] as const;
 export const ACTIVITY_TYPES = ['gap_fill', 'multiple_choice_single', 'short_answer'] as const;
