@@ -606,10 +606,6 @@ public static class DependencyInjection
         services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceBankQueryService,
             LinguaCoach.Infrastructure.ResourceImport.ResourceBankQueryService>();
 
-        // AI Bank-First Teaching Architecture Phase 9 — cross-entity admin review queue
-        services.AddScoped<LinguaCoach.Application.Admin.ReviewQueue.IAdminReviewQueueQuery,
-            LinguaCoach.Infrastructure.Admin.ReviewQueue.AdminReviewQueueQueryHandler>();
-
         // Phase 16F/16G — Speaking Evaluation Foundation + Provider-Backed Evaluation
         if (configuration is not null)
             services.Configure<LinguaCoach.Application.Speaking.SpeakingEvaluationOptions>(

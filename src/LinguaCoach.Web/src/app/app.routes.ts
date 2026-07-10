@@ -142,9 +142,12 @@ export const routes: Routes = [
         path: 'activity-templates/:templateId',
         redirectTo: () => '/admin/activities',
       },
+      // Phase I3 — Review Queue removed: it only ever covered PlacementItemDefinition review
+      // (ActivityTemplate removed in I2A), which the standalone Placement Items page already
+      // does with no unique capability lost. Old bookmarks redirect there.
       {
         path: 'review-queue',
-        loadComponent: () => import('./features/admin/admin-review-queue/admin-review-queue.component').then(m => m.AdminReviewQueueComponent),
+        redirectTo: () => '/admin/placement-items',
       },
       {
         path: 'content/import',

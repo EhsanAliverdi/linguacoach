@@ -1,12 +1,12 @@
 ---
 status: current
-lastUpdated: 2026-07-10 (Phase I2C)
+lastUpdated: 2026-07-10 (Phase I3)
 owner: product / engineering
 ---
 
 # SpeakPath / LinguaCoach Roadmap
 
-**Accurate as of: 2026-07-10 (Phase I2C — see §19a for the current phase sequence).
+**Accurate as of: 2026-07-10 (Phase I3 — see §19a for the current phase sequence).
 The 2026-07-03 "Phase 20H" line below is the last entry confirmed live against speakpath.app;
 everything since then (Clean-A/A2, Phase B, Phase C1, Plan-Sync-After-C1, Phase C2, Plan-Sync-B2,
 Phase B2, Phase C3, Phase C-Final, Phase E0, Plan-Sync-PG-v2, Phase E1, Phase E2, Phase E3,
@@ -27,7 +27,23 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest phase completed (local, not yet deployed):** Phase I2C — Readiness Pool Removal, Pass C
+**Latest phase completed (local, not yet deployed):** Phase I3 — Final Nav Consolidation
+(2026-07-10). Closes the structural half of the I-track (I0-I3). Lands the 7-item Content Studio
+target: **Import Content → Resource Bank → Learn Items → Activities → Modules → Onboarding →
+Placement**, one section, no second "Content Ops" tier. Onboarding/Placement promoted in; Review
+Queue deleted entirely (controller/handler/frontend) — it only covered `PlacementItemDefinition`
+after I2A removed `ActivityTemplate`, and the standalone Placement Items page already does
+everything it did, so nothing was lost; old `/admin/review-queue` bookmarks redirect to
+`/admin/placement-items`. "Today Delivery Health" left untouched (now mostly inert per I2B, a
+future cleanup candidate, out of this phase's scope). 3,424/3,424 backend tests pass (down 4 —
+the deleted Review Queue endpoint tests, no lost coverage). Frontend build clean. **The admin
+content model is now genuinely unified: one bank, one import pipeline, one nav section, no legacy
+fallback.** Remaining I-track work is language/coverage, not structure — I4 (rename to
+Lesson/Exercise/Module/Today Plan, decided not implemented), I5 (expand bank-first coverage beyond
+vocab/grammar gap_fill/multiple_choice_single), I6 (real AI-driven generation). Full detail:
+`docs/reviews/2026-07-10-phase-i3-final-nav-consolidation-review.md`.
+
+**Previous phase completed (local, not yet deployed):** Phase I2C — Readiness Pool Removal, Pass C
 (2026-07-10, final pass of I2). Deleted `StudentActivityReadinessItem`/
 `IStudentActivityReadinessPoolService`/`ReadinessPoolReplenishmentService` entirely now that Passes
 A and B confirmed zero live consumers on either Today's or Practice Gym's serving path, and
@@ -2148,7 +2164,7 @@ Preferred order, each phase gated on the previous one's completion review:
 32. ~~**Phase I2A — Practice Gym Legacy Fallback Deletion, Pass A**~~ — done (2026-07-10): see `docs/reviews/2026-07-10-phase-i2a-practice-gym-legacy-deletion-review.md`. Deletes the legacy on-demand AI-generation path on the Practice Gym side only.
 33. ~~**Phase I2B — Today Legacy Fallback Deletion**~~ — done (2026-07-10): see `docs/reviews/2026-07-10-phase-i2b-today-module-only-collapse-review.md`. Deletes `LessonBatchGenerationJob`/`ActivityMaterializationJob`/`ExercisePrepareHandler`/`LessonBufferRefillJob`/`SessionGeneratorService`; Today now serves the bank-first Daily Lesson Module only.
 33b. ~~**Phase I2C — Readiness Pool Removal**~~ — done (2026-07-10): see item under §1 "Latest phase completed" and `docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md`. Deletes `StudentActivityReadinessItem`/the pool service/its admin controller now that both Today and Practice Gym are confirmed off it; narrows `IAiActivityGenerator` to evaluation-only. Closes Phase I2.
-34. **Phase I3 — Final Nav Consolidation** `Planned, not started` — the last structural item of the I-track; scope not yet detailed.
+34. ~~**Phase I3 — Final Nav Consolidation**~~ — done (2026-07-10): see item under §1 "Latest phase completed" and `docs/reviews/2026-07-10-phase-i3-final-nav-consolidation-review.md`. Closes the structural half of the I-track; lands the 7-item Content Studio nav target, deletes Review Queue.
 35. **Phase I4 — Product Language Cleanup (Rename)** `Planned, not started` — rename `LearnItem`→Lesson, `ActivityDefinition`→Exercise, `ModuleDefinition`→Module, and the "Daily Lesson" pipeline/container→**Today Plan** (decided) across backend entities/DTOs/routes/migrations and frontend pages/labels — **file and folder names included, not just symbols** — per the 2026-07-10 product-language decision. Design/scope doc: `docs/architecture/product-language-renaming-i4.md`. Decision only — nothing renamed yet.
 
 **Phase E has now reached E6, and Phase D1 has started and is complete.** The original

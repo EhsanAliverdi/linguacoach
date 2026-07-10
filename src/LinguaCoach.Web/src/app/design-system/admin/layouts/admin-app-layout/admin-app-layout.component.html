@@ -86,6 +86,9 @@
       </ul>
     </div>
     <div class="mb-2">
+      <!-- Phase I3 — the full I-track target: one Content Studio section, no second "Ops" tier.
+           Onboarding/Placement promoted in; Review Queue removed (redundant with Placement Items
+           once ActivityTemplate was deleted in I2A). -->
       <sp-admin-sidebar-section label="Content Studio" [collapsed]="false" />
       <ul class="flex flex-col gap-1">
         <li><sp-admin-sidebar-nav-item label="Import Content" route="/admin/content/import" [collapsed]="false" (itemClick)="closeDrawer()">
@@ -103,19 +106,11 @@
         <li><sp-admin-sidebar-nav-item label="Modules" route="/admin/modules" [collapsed]="false" (itemClick)="closeDrawer()">
           <sp-admin-icon name="grid" />
         </sp-admin-sidebar-nav-item></li>
-      </ul>
-    </div>
-    <div class="mb-2">
-      <sp-admin-sidebar-section label="Content Ops" [collapsed]="false" />
-      <ul class="flex flex-col gap-1">
-        <li><sp-admin-sidebar-nav-item label="Review queue" route="/admin/review-queue" [collapsed]="false" (itemClick)="closeDrawer()">
-          <sp-admin-icon name="alert-circle" />
-        </sp-admin-sidebar-nav-item></li>
-        <li><sp-admin-sidebar-nav-item label="Placement items" route="/admin/placement-items" [collapsed]="false" (itemClick)="closeDrawer()">
-          <sp-admin-icon name="filter" />
-        </sp-admin-sidebar-nav-item></li>
         <li><sp-admin-sidebar-nav-item label="Onboarding" route="/admin/onboarding" [collapsed]="false" (itemClick)="closeDrawer()">
           <sp-admin-icon name="send" />
+        </sp-admin-sidebar-nav-item></li>
+        <li><sp-admin-sidebar-nav-item label="Placement" route="/admin/placement-items" [collapsed]="false" (itemClick)="closeDrawer()">
+          <sp-admin-icon name="filter" />
         </sp-admin-sidebar-nav-item></li>
       </ul>
     </div>
@@ -248,8 +243,12 @@
         </ul>
       </div>
 
-      <!-- CONTENT STUDIO (primary bank-first content-authoring flow: Import -> Resource Bank
-           -> Learn Items -> Activities -> Modules) -->
+      <!-- CONTENT STUDIO (Phase I3 — the full I-track target: Import -> Resource Bank ->
+           Learn Items -> Activities -> Modules -> Onboarding -> Placement, one section, no
+           second "Ops" tier. Review Queue removed — it only ever covered PlacementItemDefinition
+           review (ActivityTemplate was deleted in I2A), which Placement's own page already does
+           with no unique capability lost. See
+           docs/reviews/2026-07-10-phase-i3-final-nav-consolidation-review.md) -->
       <div class="mb-2">
         <sp-admin-sidebar-section label="Content Studio" [collapsed]="collapsed()" />
         <ul class="flex flex-col gap-1">
@@ -268,25 +267,11 @@
           <li><sp-admin-sidebar-nav-item label="Modules" route="/admin/modules" [collapsed]="collapsed()">
             <sp-admin-icon name="grid" />
           </sp-admin-sidebar-nav-item></li>
-        </ul>
-      </div>
-
-      <!-- CONTENT OPS (staging/support pages and the typed bank views — not the primary
-           authoring flow; typed bank pages remain reachable by direct route for deep-link
-           compatibility, browsing, and legacy bookmarks, but are no longer promoted as the
-           primary way to manage bank content — see Resource Bank instead. See
-           docs/reviews/2026-07-10-phase-h8-content-studio-admin-ia-cleanup-review.md) -->
-      <div class="mb-2">
-        <sp-admin-sidebar-section label="Content Ops" [collapsed]="collapsed()" />
-        <ul class="flex flex-col gap-1">
-          <li><sp-admin-sidebar-nav-item label="Review queue" route="/admin/review-queue" [collapsed]="collapsed()">
-            <sp-admin-icon name="alert-circle" />
-          </sp-admin-sidebar-nav-item></li>
-          <li><sp-admin-sidebar-nav-item label="Placement items" route="/admin/placement-items" [collapsed]="collapsed()">
-            <sp-admin-icon name="filter" />
-          </sp-admin-sidebar-nav-item></li>
           <li><sp-admin-sidebar-nav-item label="Onboarding" route="/admin/onboarding" [collapsed]="collapsed()">
             <sp-admin-icon name="send" />
+          </sp-admin-sidebar-nav-item></li>
+          <li><sp-admin-sidebar-nav-item label="Placement" route="/admin/placement-items" [collapsed]="collapsed()">
+            <sp-admin-icon name="filter" />
           </sp-admin-sidebar-nav-item></li>
         </ul>
       </div>
