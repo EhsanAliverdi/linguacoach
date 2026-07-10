@@ -27,6 +27,7 @@ public static class DefaultAiSeeder
     public const string LessonBatchPlanKey = "lesson_batch_plan";
     public const string LessonGenerateFromResourcesKey = "lesson_generate_from_resources";
     public const string ExerciseGenerateFromResourcesKey = "exercise_generate_from_resources";
+    public const string ModuleGenerateFromResourceKey = "module_generate_from_resource";
 
     // ── Exercise Pattern Engine — pattern-specific generation prompt keys ─────
     public const string ActivityGeneratePhraseMatchKey        = "activity_generate_phrase_match";
@@ -4521,6 +4522,46 @@ General rules:
 - Do not include any text outside the JSON object. No markdown fences.
 """;
 
+    // Phase J2c — AI-assisted "Generate Module" composer, "from resource" entry point only. AI
+    // supplies only the module's own descriptive framing — no answer key/scoring at this level.
+    private const string ModuleGenerateFromResourceContent = """
+You are writing the descriptive framing for a Module on a workplace English learning platform. A
+Module combines an existing, already-approved Lesson (teaching content) with an existing,
+already-approved Exercise (practice task) — you are NOT creating either of those; you are only
+writing the module's own title, description, and student-facing completion feedback.
+
+The Lesson (already written, already approved):
+Title: {{lessonTitle}}
+Content: {{lessonBody}}
+
+The Exercise (already written, already approved):
+Title: {{exerciseTitle}}
+Instructions: {{exerciseInstructions}}
+Type: {{activityType}}
+
+Student level: {{cefrLevel}}
+Skill: {{skill}}
+Admin notes: {{notes}}
+
+Return ONLY valid JSON (no markdown, no text outside the JSON object):
+
+{
+  "title": "<short module title, 4-10 words, describing what the student will learn and practice>",
+  "description": "<1-2 sentences describing what this module helps the student practice, referencing the actual Lesson and Exercise content above>",
+  "feedbackPlan": {
+    "completionMessage": "<one warm, specific sentence shown to the student when they finish this module>",
+    "evaluationCriteria": ["<criterion 1>", "<criterion 2>"],
+    "feedbackFocus": "<one sentence: what post-completion feedback for this module should focus on>"
+  }
+}
+
+Rules:
+- Reference the actual Lesson/Exercise content above — do not write generic filler that could apply to any module.
+- Do not invent new teaching content, new practice tasks, or a new correct answer — you are only writing framing/coaching copy around the existing Lesson and Exercise.
+- Do not include real company names, real person names, phone numbers, or sensitive content.
+- Do not include any text outside the JSON object. No markdown fences.
+""";
+
     private const string WritingPromptContent = """
 You are an expert English writing coach for {{sourceLanguageName}}-speaking professionals learning {{targetLanguageName}}.
 
@@ -4749,6 +4790,11 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             ExerciseGenerateFromResourcesKey, ExerciseGenerateFromResourcesContent,
             maxInputTokens: 1200, maxOutputTokens: 700, ct);
+
+        // Phase J2c — AI-assisted "Generate Module" composer.
+        await SeedOrUpgradePromptAsync(db, logger,
+            ModuleGenerateFromResourceKey, ModuleGenerateFromResourceContent,
+            maxInputTokens: 2200, maxOutputTokens: 700, ct);
 
         // Exercise Pattern Engine — pattern-specific generation prompts
         await SeedOrUpgradePromptAsync(db, logger,

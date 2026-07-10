@@ -49,6 +49,10 @@ export class AdminModuleService {
     return this.http.post<GenerateModuleResult>(`${this.base}/generate-from-resource`, body);
   }
 
+  generateFromResourceWithAi(body: GenerateModuleFromResourceRequestBody): Observable<GenerateModuleResult> {
+    return this.http.post<GenerateModuleResult>(`${this.base}/generate-from-resource/ai`, body);
+  }
+
   generateFromLesson(body: GenerateModuleFromLessonRequestBody): Observable<GenerateModuleResult> {
     return this.http.post<GenerateModuleResult>(`${this.base}/generate-from-lesson`, body);
   }

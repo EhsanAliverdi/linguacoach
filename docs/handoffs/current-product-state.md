@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-11 (Phase J2b)
+lastUpdated: 2026-07-11 (Phase J2c)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,28 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-11 (Phase J2b)
+Last updated: 2026-07-11 (Phase J2c)
+
+## AI-Assisted Module Generation (Phase J2c, 2026-07-11) — closes Phase J2
+
+The Module slice of Phase J2 is complete, closing the entire Phase J2 AI-generation effort (J2a
+Lesson, J2b Exercise, J2c Module — all committed 2026-07-11). Admins can now generate a Module
+draft two ways: the existing deterministic "Generate Module" (unchanged), or a new "Generate
+Module (AI)" action (resource entry point only) that writes the module's own title, description,
+and feedback-plan copy (completion message, evaluation criteria, feedback focus) referencing the
+actual linked Lesson and Exercise content. **AI still only composes EXISTING, already-approved
+Lesson(s)/Exercise(s)** — it never cascade-generates a new one, the same hard invariant the
+deterministic composer enforces. There is no answer key or scoring rule at the Module level, so
+this carries the same low risk as J2a's Lesson generation, unlike J2b's Exercise generation.
+3,448/3,448 backend tests pass (+6 new). Full detail:
+`docs/reviews/2026-07-11-phase-j2c-ai-module-generation-review.md`.
+
+**Phase J2 summary:** all three content types (Lesson, Exercise, Module) can now be generated with
+genuine AI assistance, each as a separate action alongside its untouched deterministic composer, no
+silent AI-then-deterministic fallback anywhere. Safety-critical invariants — no AI-supplied correct
+answers at the Exercise level, no AI-cascaded content creation at the Module level — are preserved
+and test-verified. Remaining audit phases: J3 (admin preview-as-learner for Modules), J4
+(`short_answer` runtime support), J5 (import content-type expansion).
 
 ## AI-Assisted Exercise Generation (Phase J2b, 2026-07-11)
 

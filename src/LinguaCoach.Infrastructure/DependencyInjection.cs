@@ -584,6 +584,8 @@ public static class DependencyInjection
             sp => sp.GetRequiredService<LinguaCoach.Infrastructure.Modules.ModuleGenerationService>());
         services.AddScoped<LinguaCoach.Application.Modules.IGenerateModuleFromExerciseHandler>(
             sp => sp.GetRequiredService<LinguaCoach.Infrastructure.Modules.ModuleGenerationService>());
+        services.AddScoped<LinguaCoach.Application.Modules.IGenerateModuleFromResourceWithAiHandler,
+            LinguaCoach.Infrastructure.Modules.AiModuleGenerationService>();
 
         // Phase H6 (renamed I4 Pass 3) — Today Plan Module Pipeline (deterministic, read-only
         // module selection for Today + the one write path for its assignment bookkeeping).

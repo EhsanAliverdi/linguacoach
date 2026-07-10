@@ -127,6 +127,9 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
   // ── Phase J2b — Generate Activity with AI (separate action, deterministic above is untouched) ──
   generatingActivityAiId = signal<string | null>(null);
 
+  // ── Phase J2c — Generate Module with AI (separate action, deterministic above is untouched) ──
+  generatingModuleAiId = signal<string | null>(null);
+
   // ── Phase H4 — Generate Activity ─────────────────────────────────────────
   generatingActivityId = signal<string | null>(null);
 
@@ -236,6 +239,10 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
         id: 'generate-module', label: 'Generate Module', icon: 'sparkles', tone: 'default',
         disabled: this.generatingModuleId() === item.id,
       },
+      {
+        id: 'generate-module-ai', label: 'Generate Module (AI)', icon: 'sparkles', tone: 'default',
+        disabled: this.generatingModuleAiId() === item.id,
+      },
     ];
   }
 
@@ -246,6 +253,7 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
     if (actionId === 'generate-activity') this.generateActivity(item);
     if (actionId === 'generate-activity-ai') this.generateActivityWithAi(item);
     if (actionId === 'generate-module') this.generateModule(item);
+    if (actionId === 'generate-module-ai') this.generateModuleWithAi(item);
   }
 
   /** Phase H3 — deterministic draft composer, one resource per call (multi-select is a future
@@ -375,5 +383,31 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
 
   goToModules(): void {
     this.router.navigateByUrl('/admin/modules');
+  }
+
+  /** Phase J2c — AI-assisted alternative to generateModule(). Still only succeeds when an
+   *  already-approved Lesson AND an already-approved Exercise are both linked to this resource —
+   *  AI never cascade-generates either, same hard invariant as the deterministic action. A
+   *  separate action: on AI unavailability the backend returns a clear error and no draft is
+   *  created — the deterministic generateModule() action above stays available regardless. */
+  generateModuleWithAi(item: UnifiedResourceBankItemDto): void {
+    this.generatingModuleAiId.set(item.id);
+    this.generateError.set('');
+    this.generateSuccess.set('');
+    this.moduleSvc.generateFromResourceWithAi({
+      resourceType: RESOURCE_TYPE_TO_LESSON_TYPE[item.type],
+      resourceId: item.id,
+    }).subscribe({
+      next: result => {
+        this.generatingModuleAiId.set(null);
+        this.lastGeneratedKind.set('module');
+        this.generateSuccess.set(`AI-generated Module draft created from "${item.title}" — pending review.`);
+        this.loadAll();
+      },
+      error: err => {
+        this.generatingModuleAiId.set(null);
+        this.generateError.set(err.error?.error ?? 'Could not generate a Module with AI.');
+      },
+    });
   }
 }

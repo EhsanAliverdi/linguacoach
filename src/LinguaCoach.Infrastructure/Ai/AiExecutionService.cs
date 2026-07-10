@@ -267,6 +267,7 @@ public sealed class AiExecutionService
             "activity_generate_lesson_reflection" => "llm.generation",
             "lesson_generate_from_resources" => "llm.generation",
             "exercise_generate_from_resources" => "llm.generation",
+            "module_generate_from_resource" => "llm.generation",
             "activity_evaluate_writing" => "llm.evaluation",
             "activity_evaluate_speaking_roleplay" => "llm.evaluation",
             "activity_evaluate_phrase_match" => "llm.evaluation",

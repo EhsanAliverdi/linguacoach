@@ -29,6 +29,7 @@ public sealed class AdminModuleController : ControllerBase
     private readonly IGenerateModuleFromResourceHandler _generateFromResourceHandler;
     private readonly IGenerateModuleFromLessonHandler _generateFromLessonHandler;
     private readonly IGenerateModuleFromExerciseHandler _generateFromExerciseHandler;
+    private readonly IGenerateModuleFromResourceWithAiHandler _generateFromResourceWithAiHandler;
 
     public AdminModuleController(
         IAdminModuleListQuery listQuery,
@@ -40,7 +41,8 @@ public sealed class AdminModuleController : ControllerBase
         IGenerateModuleFromItemsHandler generateFromItemsHandler,
         IGenerateModuleFromResourceHandler generateFromResourceHandler,
         IGenerateModuleFromLessonHandler generateFromLessonHandler,
-        IGenerateModuleFromExerciseHandler generateFromExerciseHandler)
+        IGenerateModuleFromExerciseHandler generateFromExerciseHandler,
+        IGenerateModuleFromResourceWithAiHandler generateFromResourceWithAiHandler)
     {
         _listQuery = listQuery;
         _getQuery = getQuery;
@@ -52,6 +54,7 @@ public sealed class AdminModuleController : ControllerBase
         _generateFromResourceHandler = generateFromResourceHandler;
         _generateFromLessonHandler = generateFromLessonHandler;
         _generateFromExerciseHandler = generateFromExerciseHandler;
+        _generateFromResourceWithAiHandler = generateFromResourceWithAiHandler;
     }
 
     // GET api/admin/modules?page=&pageSize=&status=&cefrLevel=&skill=&subskill=&contextTag=&
@@ -120,6 +123,24 @@ public sealed class AdminModuleController : ControllerBase
         try
         {
             var result = await _generateFromResourceHandler.HandleAsync(new GenerateModuleFromResourceRequest(
+                body.ResourceType, body.ResourceId, body.Title, body.Notes, GetCurrentUserId()), ct);
+            return Ok(result);
+        }
+        catch (ModuleValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    // POST api/admin/modules/generate-from-resource/ai
+    // Phase J2c — AI-assisted alternative to the deterministic action above. A separate action:
+    // the deterministic action is untouched and always available, regardless of AI availability.
+    [HttpPost("generate-from-resource/ai")]
+    public async Task<IActionResult> GenerateFromResourceWithAi([FromBody] GenerateModuleFromResourceRequestBody body, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _generateFromResourceWithAiHandler.HandleAsync(new GenerateModuleFromResourceRequest(
                 body.ResourceType, body.ResourceId, body.Title, body.Notes, GetCurrentUserId()), ct);
             return Ok(result);
         }

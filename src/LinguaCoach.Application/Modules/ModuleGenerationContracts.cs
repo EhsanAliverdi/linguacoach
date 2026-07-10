@@ -71,3 +71,22 @@ public interface IGenerateModuleFromExerciseHandler
 {
     Task<GenerateModuleResult> HandleAsync(GenerateModuleFromExerciseRequest request, CancellationToken ct = default);
 }
+
+/// <summary>
+/// Phase J2c — AI-assisted alternative to <see cref="IGenerateModuleFromResourceHandler"/>. Same
+/// request/result shape; a deliberately separate action, not a replacement — the deterministic
+/// handler stays untouched and available regardless of AI availability (same 2026-07-10/11
+/// product decision as Phases J2a/J2b — see
+/// docs/reviews/2026-07-11-phase-j2c-ai-module-generation-review.md). Still only combines
+/// EXISTING Approved Lesson(s)/Exercise(s) found via the resource link — never cascade-generates
+/// a new Lesson or Exercise, same hard invariant as the deterministic composer. AI supplies only
+/// the module's own descriptive framing (title/description/feedback-plan copy) — there is no
+/// answer key or scoring rule at the Module level, so this carries the same (low) risk profile as
+/// Phase J2a's Lesson generation, not J2b's Exercise generation. Only the "generate from
+/// resource" entry point has an AI variant this phase; "generate from items/Lesson/Exercise"
+/// remain deterministic-only, deferred to keep this pass small, matching J2b's precedent.
+/// </summary>
+public interface IGenerateModuleFromResourceWithAiHandler
+{
+    Task<GenerateModuleResult> HandleAsync(GenerateModuleFromResourceRequest request, CancellationToken ct = default);
+}
