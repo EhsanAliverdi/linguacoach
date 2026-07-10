@@ -39,14 +39,19 @@ public sealed class ContentImportService : IContentImportService
         var source = await _db.CefrResourceSources.FirstOrDefaultAsync(s => s.Name == sourceName, ct);
         if (source is null)
         {
+            // Phase I1 — admin-uploaded content is first-party: it's created by an authenticated
+            // admin and still gated by the per-candidate approve+publish review before anything
+            // reaches a student. Defaulting these true (unlike an external licensed dataset, where
+            // false is the safe default) removes the "publish silently blocked until someone edits
+            // the source's license flags on a separate page" trap the H9B/I0 audits both flagged.
             source = new CefrResourceSource(
                 sourceName,
                 licenseType: "AdminUpload",
                 sourceUrl: null,
                 usageRestrictionNotes: "Created automatically by the Import Content admin flow.",
                 languageCode: CefrResourceSource.RequiredLanguageCode,
-                allowsStudentDisplay: false,
-                allowsCommercialUse: false);
+                allowsStudentDisplay: true,
+                allowsCommercialUse: true);
             source.ApproveForImport("Auto-approved: admin-initiated Import Content run.");
             _db.CefrResourceSources.Add(source);
             await _db.SaveChangesAsync(ct);

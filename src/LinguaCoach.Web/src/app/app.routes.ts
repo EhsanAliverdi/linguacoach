@@ -147,17 +147,19 @@ export const routes: Routes = [
         path: 'content/import',
         loadComponent: () => import('./features/admin/admin-content-import/admin-content-import.component').then(m => m.AdminContentImportComponent),
       },
+      // Phase I1 — the standalone import/review/publish pages were merged into one unified
+      // pipeline page at content/import; old bookmarks/links redirect there (see AGENTS.md I1).
       {
         path: 'resource-sources',
-        loadComponent: () => import('./features/admin/admin-resource-sources/admin-resource-sources.component').then(m => m.AdminResourceSourcesComponent),
+        redirectTo: () => '/admin/content/import',
       },
       {
         path: 'resource-import-runs',
-        loadComponent: () => import('./features/admin/admin-resource-import-runs/admin-resource-import-runs.component').then(m => m.AdminResourceImportRunsComponent),
+        redirectTo: () => '/admin/content/import',
       },
       {
         path: 'resource-candidates',
-        loadComponent: () => import('./features/admin/admin-resource-candidates/admin-resource-candidates.component').then(m => m.AdminResourceCandidatesComponent),
+        redirectTo: () => '/admin/content/import',
       },
       {
         path: 'resource-bank',

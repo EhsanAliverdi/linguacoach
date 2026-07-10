@@ -1,12 +1,12 @@
 ---
 status: current
-lastUpdated: 2026-07-10 (Phase I0)
+lastUpdated: 2026-07-10 (Phase I1)
 owner: product / engineering
 ---
 
 # SpeakPath / LinguaCoach Roadmap
 
-**Accurate as of: 2026-07-10 (Phase I0 — see §19a for the current phase sequence).
+**Accurate as of: 2026-07-10 (Phase I1 — see §19a for the current phase sequence).
 The 2026-07-03 "Phase 20H" line below is the last entry confirmed live against speakpath.app;
 everything since then (Clean-A/A2, Phase B, Phase C1, Plan-Sync-After-C1, Phase C2, Plan-Sync-B2,
 Phase B2, Phase C3, Phase C-Final, Phase E0, Plan-Sync-PG-v2, Phase E1, Phase E2, Phase E3,
@@ -26,7 +26,19 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest phase completed (local, not yet deployed):** Phase I0 — Physical ResourceBankItem
+**Latest phase completed (local, not yet deployed):** Phase I1 — Unified Import/Publish Pipeline
+(2026-07-10). Merges the Resource Sources / Resource Import Runs / Resource Candidates admin pages
+into one — **Import Content** (`/admin/content/import`) — paste or file-upload, pick a type, review
+candidates (preview/analyze/reject), and a new merged **Approve & Publish** action
+(`POST api/admin/resource-candidates/{id}/approve-and-publish`, idempotent-approve then publish in
+one click). Admin-uploaded sources now default `AllowsStudentDisplay`/`AllowsCommercialUse` to
+`true` (previously `false`, a silent publish-blocking trap). The 3 old pages/routes redirect to
+Import Content. Backend controllers were deliberately *not* physically merged into one class — the
+one-page admin experience is what was asked for, not a single HTTP controller; no added risk for
+no user-visible benefit. 3,858/3,858 backend tests pass (+4 for the new endpoint); frontend build
+clean. Full detail: `docs/reviews/2026-07-10-phase-i1-unified-import-pipeline-review.md`.
+
+**Previous phase completed (local, not yet deployed):** Phase I0 — Physical ResourceBankItem
 Consolidation, implemented (2026-07-10). Reverses Phase H9B's "do not consolidate" recommendation,
 per explicit user direction to unify the content pipeline (Import → Bank → Learn → Activities →
 Modules → Onboarding → Placement) into one physical Resource Bank table. The 4 typed tables

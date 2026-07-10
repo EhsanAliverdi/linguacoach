@@ -311,6 +311,27 @@ public sealed class AdminResourceCandidateController : ControllerBase
         }
     }
 
+    // POST api/admin/resource-candidates/{candidateId}/approve-and-publish  { notes? }
+    // Phase I1 — the single-click unified pipeline action: approves (idempotent — a no-op re-set
+    // of ReviewStatus if already Approved) then immediately publishes. PublishAsync already
+    // re-validates every other gate live (English-only, source approval/license, deterministic
+    // validation), so approval was the only precondition a separate click used to gate — this
+    // collapses that into one admin action without skipping any check.
+    [HttpPost("{candidateId:guid}/approve-and-publish")]
+    public async Task<IActionResult> ApproveAndPublish(Guid candidateId, [FromBody] ApproveCandidateRequest request, CancellationToken ct)
+    {
+        try
+        {
+            await _approveHandler.HandleAsync(new ApproveResourceCandidateCommand(candidateId, request.Notes), ct);
+            var result = await _publishService.PublishAsync(candidateId, GetCurrentUserId(), ct);
+            return Ok(result);
+        }
+        catch (ResourceImportValidationException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
     private Guid? GetCurrentUserId()
     {
         var raw = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");

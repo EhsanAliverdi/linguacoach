@@ -158,6 +158,13 @@ export class AdminResourceCandidateService {
   publish(candidateId: string): Observable<ResourceCandidatePublishResult> {
     return this.http.post<ResourceCandidatePublishResult>(`${this.base}/${candidateId}/publish`, {});
   }
+
+  /** Phase I1 — the single-click unified pipeline action: approves then immediately publishes.
+   *  Same result shape/semantics as publish() — a failed attempt returns 200 with a reasons list. */
+  approveAndPublish(candidateId: string, notes?: string | null): Observable<ResourceCandidatePublishResult> {
+    return this.http.post<ResourceCandidatePublishResult>(
+      `${this.base}/${candidateId}/approve-and-publish`, { notes: notes ?? null });
+  }
 }
 
 /** Phase H1 — unified read model over all four typed published bank tables above. Read-only; no

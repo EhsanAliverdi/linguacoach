@@ -362,4 +362,116 @@ public sealed class AdminResourceImportEndpointTests : IClassFixture<ApiTestFact
         var response = await client.PostAsync($"/api/admin/resource-candidates/{Guid.NewGuid()}/publish", null);
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+
+    // ── Phase I1 — merged approve-and-publish endpoint ──────────────────────────────
+
+    [Fact]
+    public async Task ApproveAndPublish_Unauthenticated_Returns401()
+    {
+        var client = _factory.CreateClient();
+        var response = await client.PostAsJsonAsync($"/api/admin/resource-candidates/{Guid.NewGuid()}/approve-and-publish", new { });
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ApproveAndPublish_NonAdmin_Returns403()
+    {
+        var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"student-{Guid.NewGuid():N}@test.linguacoach.com");
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var response = await client.PostAsJsonAsync($"/api/admin/resource-candidates/{Guid.NewGuid()}/approve-and-publish", new { });
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ApproveAndPublish_NonexistentCandidate_Returns404()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var response = await client.PostAsJsonAsync($"/api/admin/resource-candidates/{Guid.NewGuid()}/approve-and-publish", new { });
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ApproveAndPublish_UnapprovedButOtherwiseValidCandidate_PublishesInOneCall()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        // Judgment call: licenseType intentionally does NOT contain "BY" (unlike SourceBody's
+        // default "CC-BY-4.0") so ValidateAttribution never fires its "requires attribution"
+        // warning — that warning alone would force ValidationStatus to NeedsReview instead of
+        // Passed, and PublishAsync requires Passed. Mirrors the frontend's own AdminUpload
+        // default license (see AdminContentImportComponent.createSource).
+        var name = $"I1 Test Source {Guid.NewGuid():N}";
+        var addResp = await client.PostAsJsonAsync("/api/admin/resource-sources", new
+        {
+            name,
+            licenseType = "AdminUpload",
+            sourceUrl = (string?)null,
+            usageRestrictionNotes = (string?)null,
+            languageCode = "en",
+            allowsStudentDisplay = true,
+            allowsCommercialUse = true,
+            attributionText = (string?)null,
+            sourceVersion = "v1",
+            downloadUrl = (string?)null,
+        });
+        Assert.Equal(HttpStatusCode.OK, addResp.StatusCode);
+        var addBody = await addResp.Content.ReadFromJsonAsync<JsonElement>();
+        var sourceId = addBody.GetProperty("sourceId").GetGuid();
+
+        var approveSourceResp = await client.PostAsJsonAsync(
+            $"/api/admin/resource-sources/{sourceId}/approve", new { reason = "cleared for test" });
+        Assert.Equal(HttpStatusCode.OK, approveSourceResp.StatusCode);
+
+        // Judgment call: the word must be unique across the whole test run — ResourceCandidateValidationService's
+        // dedup gate checks content fingerprints globally (not just within this source/run), and
+        // other tests in this file/class also import a plain "hello" row. A collision there would
+        // add a "Duplicate" warning, forcing NeedsReview instead of Passed.
+        var uniqueWord = $"contentpipelineword{Guid.NewGuid():N}";
+        using var form = new MultipartFormDataContent
+        {
+            { new StringContent(sourceId.ToString()), "sourceId" },
+            { new StringContent("Csv"), "importMode" },
+        };
+        // Column must be named "cefrLevel" (ResourceImportService.CefrLevelField), not "cefr" —
+        // a plain "cefr" column is not recognized and CefrLevel is required to publish a
+        // VocabularyEntry candidate.
+        form.Add(new ByteArrayContent(Encoding.UTF8.GetBytes($"word,cefrLevel\n{uniqueWord},A1\n")), "file", "vocab.csv");
+
+        var importResp = await client.PostAsync("/api/admin/resource-import-runs", form);
+        Assert.Equal(HttpStatusCode.OK, importResp.StatusCode);
+        var importBody = await importResp.Content.ReadFromJsonAsync<JsonElement>();
+        var runId = importBody.GetProperty("runId").GetGuid();
+
+        var candidatesResp = await client.GetAsync($"/api/admin/resource-candidates?importRunId={runId}");
+        var candidatesBody = await candidatesResp.Content.ReadFromJsonAsync<JsonElement>();
+        var candidateId = candidatesBody.GetProperty("items")[0].GetProperty("candidateId").GetGuid();
+
+        // Deterministic re-validation only (no AI call) — should pass cleanly for this row.
+        var validateResp = await client.PostAsJsonAsync($"/api/admin/resource-candidates/{candidateId}/validate", new { });
+        Assert.Equal(HttpStatusCode.OK, validateResp.StatusCode);
+        var validateBody = await validateResp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("Passed", validateBody.GetProperty("status").GetString());
+
+        // The candidate has NOT been approved yet — approve-and-publish must do both in one call.
+        var approveAndPublishResp = await client.PostAsJsonAsync(
+            $"/api/admin/resource-candidates/{candidateId}/approve-and-publish", new { });
+        Assert.Equal(HttpStatusCode.OK, approveAndPublishResp.StatusCode);
+        var publishBody = await approveAndPublishResp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(publishBody.GetProperty("success").GetBoolean());
+        Assert.Equal("CefrVocabularyEntry", publishBody.GetProperty("publishedEntityType").GetString());
+        Assert.NotEqual(Guid.Empty, publishBody.GetProperty("publishedEntityId").GetGuid());
+
+        var candidateResp = await client.GetAsync($"/api/admin/resource-candidates/{candidateId}");
+        Assert.Equal(HttpStatusCode.OK, candidateResp.StatusCode);
+        var candidateBody = await candidateResp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("Approved", candidateBody.GetProperty("reviewStatus").GetString());
+        Assert.True(candidateBody.GetProperty("isPublished").GetBoolean());
+    }
 }

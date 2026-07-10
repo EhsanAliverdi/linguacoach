@@ -1,98 +1,488 @@
 <sp-admin-page-header
   title="Import Content"
-  subtitle="Import files or pasted datasets into the Resource Bank as pending review candidates.">
+  subtitle="Import files or pasted datasets into the Resource Bank, then review and publish staged candidates — all in one pipeline.">
 </sp-admin-page-header>
 
 <sp-admin-page-body>
 
-  @if (result(); as importResult) {
-    <sp-admin-section-card title="Import complete">
-      <sp-admin-alert [variant]="importResult.warningCount > 0 ? 'warning' : 'success'">
-        Import {{ importResult.status }}: {{ importResult.candidateCount }} candidate(s) staged from
-        {{ importResult.rawRecordCount }} row(s), {{ importResult.warningCount }} warning(s).
-      </sp-admin-alert>
-      @if (importResult.errorSummary) {
-        <sp-admin-alert variant="error">{{ importResult.errorSummary }}</sp-admin-alert>
-      }
-      <p class="sp-admin-hint">
-        These rows are pending review — nothing has been published to the Resource Bank yet.
-      </p>
-      <div class="sp-admin-form-actions">
-        <sp-admin-button variant="primary" (clicked)="goToReview()">Review candidates</sp-admin-button>
-        <sp-admin-button variant="neutral" appearance="outline" (clicked)="goToResourceBank()">Go to Resource Bank</sp-admin-button>
-        <sp-admin-button variant="neutral" appearance="outline" (clicked)="startAnotherImport()">Import more content</sp-admin-button>
+  @if (recentRuns().length > 0) {
+    <sp-admin-section-card title="Recent import runs" [dashed]="true">
+      <div class="sp-admin-form-actions" style="flex-wrap:wrap;">
+        @for (run of recentRuns(); track run.runId) {
+          <sp-admin-button
+            variant="neutral"
+            [appearance]="currentRunId() === run.runId ? 'solid' : 'outline'"
+            size="sm"
+            (clicked)="selectRun(run.runId)">
+            {{ run.sourceName }} · {{ run.fileName }} ({{ run.succeededCount }}/{{ run.totalRecordCount }})
+          </sp-admin-button>
+        }
       </div>
     </sp-admin-section-card>
-  } @else {
+  }
 
-    @if (error()) { <sp-admin-alert variant="error">{{ error() }}</sp-admin-alert> }
-
-    <sp-admin-section-card title="Source / details">
-      <div class="sp-admin-form-stack">
-        <sp-admin-form-field label="Source name" [required]="true" hint="Reused if a source with this exact name already exists.">
-          <sp-admin-input [(ngModel)]="sourceName" name="sourceName" placeholder="e.g. Internal B1 vocabulary pack" />
-        </sp-admin-form-field>
-        <sp-admin-form-field label="Notes">
-          <sp-admin-textarea [(ngModel)]="notes" placeholder="Optional note about this import" />
-        </sp-admin-form-field>
-      </div>
-    </sp-admin-section-card>
-
-    <sp-admin-section-card title="Content type">
-      <div class="sp-admin-form-stack">
-        <sp-admin-form-field label="Resource type" [required]="true" hint="The admin-selected type is applied to every row in this import.">
-          <sp-admin-native-select [(ngModel)]="resourceType" name="resourceType" [options]="resourceTypeOptions" />
-        </sp-admin-form-field>
-        <p class="sp-admin-hint">
-          Coming soon: {{ comingSoonTypes.join(', ') }} — AI structure detection is not yet implemented (see roadmap).
-        </p>
-      </div>
-    </sp-admin-section-card>
-
-    <sp-admin-section-card title="Defaults" [dashed]="true">
-      <p class="sp-admin-hint">
-        Applied only when a row doesn't already carry its own value — a row's own column always wins.
-      </p>
-      <sp-admin-form-grid [columns]="2">
-        <sp-admin-form-field label="Default CEFR level">
-          <sp-admin-native-select [(ngModel)]="defaultCefrLevel" name="defaultCefrLevel" [options]="cefrOptions" />
-        </sp-admin-form-field>
-        <sp-admin-form-field label="Default skill">
-          <sp-admin-input [(ngModel)]="defaultSkill" name="defaultSkill" placeholder="e.g. Vocabulary" />
-        </sp-admin-form-field>
-        <sp-admin-form-field label="Default subskill">
-          <sp-admin-input [(ngModel)]="defaultSubskill" name="defaultSubskill" placeholder="e.g. CoreWords" />
-        </sp-admin-form-field>
-        <sp-admin-form-field label="Default difficulty band" hint="1 (easiest) – 5 (hardest)">
-          <sp-admin-number-input [(ngModel)]="defaultDifficultyBand" name="defaultDifficultyBand" [min]="1" [max]="5" />
-        </sp-admin-form-field>
-        <sp-admin-form-field label="Default context tags" hint="Comma-separated">
-          <sp-admin-input [(ngModel)]="defaultContextTags" name="defaultContextTags" placeholder="travel, work" />
-        </sp-admin-form-field>
-        <sp-admin-form-field label="Default focus tags" hint="Comma-separated">
-          <sp-admin-input [(ngModel)]="defaultFocusTags" name="defaultFocusTags" placeholder="greetings, small-talk" />
-        </sp-admin-form-field>
-      </sp-admin-form-grid>
-    </sp-admin-section-card>
-
-    <sp-admin-section-card title="Input">
-      <div class="sp-admin-form-stack">
-        <sp-admin-form-field label="Input mode" [required]="true">
-          <sp-admin-native-select [(ngModel)]="inputMode" name="inputMode" [options]="inputModeOptions" />
-        </sp-admin-form-field>
-        <p class="sp-admin-hint">{{ inputHint }}</p>
-        <sp-admin-form-field label="Content" [required]="true">
-          <sp-admin-textarea [(ngModel)]="content" [rows]="12" placeholder="Paste content here…" />
-        </sp-admin-form-field>
-      </div>
-    </sp-admin-section-card>
-
-    <div class="sp-admin-form-actions">
-      <sp-admin-button variant="primary" [disabled]="submitting()" (clicked)="submit()">
-        {{ submitting() ? 'Importing…' : 'Import as pending candidates' }}
+  <!-- ── Import section ─────────────────────────────────────────────────── -->
+  <sp-admin-section-card title="Import">
+    <div class="sp-admin-form-actions" style="margin-bottom:1rem;">
+      <sp-admin-button variant="neutral" [appearance]="entryMode() === 'paste' ? 'solid' : 'outline'" size="sm" (clicked)="entryMode.set('paste')">
+        Paste text / CSV / JSON
+      </sp-admin-button>
+      <sp-admin-button variant="neutral" [appearance]="entryMode() === 'file' ? 'solid' : 'outline'" size="sm" (clicked)="entryMode.set('file')">
+        Upload file
       </sp-admin-button>
     </div>
 
+    @if (entryMode() === 'paste') {
+      @if (result(); as importResult) {
+        <sp-admin-alert [variant]="importResult.warningCount > 0 ? 'warning' : 'success'">
+          Import {{ importResult.status }}: {{ importResult.candidateCount }} candidate(s) staged from
+          {{ importResult.rawRecordCount }} row(s), {{ importResult.warningCount }} warning(s).
+        </sp-admin-alert>
+        @if (importResult.errorSummary) {
+          <sp-admin-alert variant="error">{{ importResult.errorSummary }}</sp-admin-alert>
+        }
+        <p class="sp-admin-hint">Review the staged candidates in the pipeline section below.</p>
+        <div class="sp-admin-form-actions">
+          <sp-admin-button variant="neutral" appearance="outline" (clicked)="goToResourceBank()">Go to Resource Bank</sp-admin-button>
+          <sp-admin-button variant="neutral" appearance="outline" (clicked)="startAnotherPasteImport()">Import more content</sp-admin-button>
+        </div>
+      } @else {
+
+        @if (error()) { <sp-admin-alert variant="error">{{ error() }}</sp-admin-alert> }
+
+        <div class="sp-admin-form-stack">
+          <sp-admin-form-field label="Source name" [required]="true" hint="Reused if a source with this exact name already exists.">
+            <sp-admin-input [(ngModel)]="sourceName" name="sourceName" placeholder="e.g. Internal B1 vocabulary pack" />
+          </sp-admin-form-field>
+          <sp-admin-form-field label="Notes">
+            <sp-admin-textarea [(ngModel)]="notes" placeholder="Optional note about this import" />
+          </sp-admin-form-field>
+          <sp-admin-form-field label="Resource type" [required]="true" hint="The admin-selected type is applied to every row in this import.">
+            <sp-admin-native-select [(ngModel)]="resourceType" name="resourceType" [options]="resourceTypeOptions" />
+          </sp-admin-form-field>
+          <p class="sp-admin-hint">
+            Coming soon: {{ comingSoonTypes.join(', ') }} — AI structure detection is not yet implemented (see roadmap).
+          </p>
+        </div>
+
+        <sp-admin-section-card title="Defaults" [dashed]="true">
+          <p class="sp-admin-hint">
+            Applied only when a row doesn't already carry its own value — a row's own column always wins.
+          </p>
+          <sp-admin-form-grid [columns]="2">
+            <sp-admin-form-field label="Default CEFR level">
+              <sp-admin-native-select [(ngModel)]="defaultCefrLevel" name="defaultCefrLevel" [options]="cefrOptions" />
+            </sp-admin-form-field>
+            <sp-admin-form-field label="Default skill">
+              <sp-admin-input [(ngModel)]="defaultSkill" name="defaultSkill" placeholder="e.g. Vocabulary" />
+            </sp-admin-form-field>
+            <sp-admin-form-field label="Default subskill">
+              <sp-admin-input [(ngModel)]="defaultSubskill" name="defaultSubskill" placeholder="e.g. CoreWords" />
+            </sp-admin-form-field>
+            <sp-admin-form-field label="Default difficulty band" hint="1 (easiest) – 5 (hardest)">
+              <sp-admin-number-input [(ngModel)]="defaultDifficultyBand" name="defaultDifficultyBand" [min]="1" [max]="5" />
+            </sp-admin-form-field>
+            <sp-admin-form-field label="Default context tags" hint="Comma-separated">
+              <sp-admin-input [(ngModel)]="defaultContextTags" name="defaultContextTags" placeholder="travel, work" />
+            </sp-admin-form-field>
+            <sp-admin-form-field label="Default focus tags" hint="Comma-separated">
+              <sp-admin-input [(ngModel)]="defaultFocusTags" name="defaultFocusTags" placeholder="greetings, small-talk" />
+            </sp-admin-form-field>
+          </sp-admin-form-grid>
+        </sp-admin-section-card>
+
+        <sp-admin-section-card title="Input">
+          <div class="sp-admin-form-stack">
+            <sp-admin-form-field label="Input mode" [required]="true">
+              <sp-admin-native-select [(ngModel)]="inputMode" name="inputMode" [options]="inputModeOptions" />
+            </sp-admin-form-field>
+            <p class="sp-admin-hint">{{ inputHint }}</p>
+            <sp-admin-form-field label="Content" [required]="true">
+              <sp-admin-textarea [(ngModel)]="content" [rows]="12" placeholder="Paste content here…" />
+            </sp-admin-form-field>
+          </div>
+        </sp-admin-section-card>
+
+        <div class="sp-admin-form-actions">
+          <sp-admin-button variant="primary" [disabled]="submitting()" (clicked)="submitPaste()">
+            {{ submitting() ? 'Importing…' : 'Import as pending candidates' }}
+          </sp-admin-button>
+        </div>
+      }
+    }
+
+    @if (entryMode() === 'file') {
+      @if (fileResult(); as importResult) {
+        <sp-admin-alert [variant]="importResult.warningCount > 0 ? 'warning' : 'success'">
+          Import {{ importResult.status }}: {{ importResult.succeededCount }} of {{ importResult.totalRecordCount }} row(s) staged,
+          {{ importResult.warningCount }} warning(s), {{ importResult.rejectedCount }} rejected.
+        </sp-admin-alert>
+        @if (importResult.errorSummary) {
+          <sp-admin-alert variant="error">{{ importResult.errorSummary }}</sp-admin-alert>
+        }
+        <p class="sp-admin-hint">Review the staged candidates in the pipeline section below.</p>
+        <div class="sp-admin-form-actions">
+          <sp-admin-button variant="neutral" appearance="outline" (clicked)="goToResourceBank()">Go to Resource Bank</sp-admin-button>
+          <sp-admin-button variant="neutral" appearance="outline" (clicked)="startAnotherFileImport()">Import another file</sp-admin-button>
+        </div>
+      } @else {
+
+        @if (fileError()) { <sp-admin-alert variant="error">{{ fileError() }}</sp-admin-alert> }
+
+        <div class="sp-admin-form-stack">
+          <sp-admin-form-field label="Source" [required]="true" hint="Licensing/provenance registry entry this file's rows will be attributed to.">
+            <sp-admin-native-select
+              [(ngModel)]="fileSourceId" name="fileSourceId"
+              [options]="sourceOptions()" placeholder="Select a source" />
+          </sp-admin-form-field>
+          <div class="sp-admin-form-actions">
+            <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="openNewSourceModal()">+ New source</sp-admin-button>
+          </div>
+          @if (sources().length === 0 && !loadingSources()) {
+            <sp-admin-alert variant="warning">No sources yet — create one to continue.</sp-admin-alert>
+          }
+          <sp-admin-form-field label="Import mode" [required]="true">
+            <sp-admin-native-select
+              [(ngModel)]="fileImportMode" name="fileImportMode"
+              [options]="fileImportModeOptions" />
+          </sp-admin-form-field>
+          <sp-admin-form-field label="File" [required]="true" hint="CSV, JSON array/object, or JSONL — max 5MB">
+            <input type="file" accept=".csv,.json,.jsonl,.txt" (change)="onFileSelected($event)" />
+          </sp-admin-form-field>
+          <sp-admin-form-field label="Notes">
+            <sp-admin-textarea [(ngModel)]="fileNotes" placeholder="Optional note about this import run" />
+          </sp-admin-form-field>
+        </div>
+
+        <div class="sp-admin-form-actions">
+          <sp-admin-button variant="primary" [disabled]="fileSubmitting()" (clicked)="submitFile()">
+            {{ fileSubmitting() ? 'Importing…' : 'Import file' }}
+          </sp-admin-button>
+        </div>
+      }
+    }
+  </sp-admin-section-card>
+
+  <!-- ── Pipeline/review section ────────────────────────────────────────── -->
+  @if (showPipeline()) {
+    <sp-admin-section-card title="Pipeline — review staged candidates">
+      <sp-admin-button slot="header-action" variant="neutral" appearance="outline" size="sm" (clicked)="loadCandidates()">
+        Refresh
+      </sp-admin-button>
+
+      @if (actionSuccess()) { <sp-admin-alert variant="success">{{ actionSuccess() }}</sp-admin-alert> }
+      @if (actionError()) { <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert> }
+      @if (candidatesError()) { <sp-admin-error-state title="Could not load candidates" [message]="candidatesError()" /> }
+
+      @if (candidatesLoading()) {
+        <sp-admin-loading-state message="Loading staged candidates" />
+      } @else if (candidates().length === 0) {
+        <sp-admin-empty-state title="No candidates" message="This import run has no staged candidates." />
+      } @else {
+        <sp-admin-table layout="first-column-fluid">
+          <table>
+            <thead>
+              <tr>
+                <th>Text</th>
+                <th>Type</th>
+                <th>CEFR</th>
+                <th>Validation</th>
+                <th>Review</th>
+                <th>Published</th>
+                <th class="sp-admin-th-actions"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of candidates(); track item.candidateId) {
+                <tr>
+                  <td>{{ item.canonicalText }}</td>
+                  <td><sp-admin-badge tone="neutral">{{ item.candidateType }}</sp-admin-badge></td>
+                  <td>{{ item.cefrLevel ?? '—' }}</td>
+                  <td><sp-admin-badge [tone]="validationStatusTone(item.validationStatus)">{{ item.validationStatus }}</sp-admin-badge></td>
+                  <td><sp-admin-badge tone="neutral">{{ item.reviewStatus }}</sp-admin-badge></td>
+                  <td>
+                    @if (item.isPublished) {
+                      <sp-admin-badge tone="success">{{ item.publishedEntityType }}</sp-admin-badge>
+                    } @else {
+                      <sp-admin-badge tone="neutral">Not published</sp-admin-badge>
+                    }
+                  </td>
+                  <td>
+                    <div class="sp-admin-form-actions" style="flex-wrap:nowrap;">
+                      @if (!item.isPublished) {
+                        <sp-admin-button
+                          variant="primary" size="sm"
+                          [disabled]="publishingId() === item.candidateId"
+                          (clicked)="approveAndPublish(item)">
+                          {{ publishingId() === item.candidateId ? 'Publishing…' : 'Approve & Publish' }}
+                        </sp-admin-button>
+                      }
+                      <sp-admin-table-actions
+                        mode="dropdown"
+                        [richActions]="rowActions(item)"
+                        (actionSelected)="onRowAction($event, item)" />
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          <sp-admin-table-footer>
+            {{ candidatesTotal() }} candidate{{ candidatesTotal() !== 1 ? 's' : '' }} for this import run
+          </sp-admin-table-footer>
+        </sp-admin-table>
+      }
+
+      @if (lastPublishResult(); as publishResult) {
+        @if (!publishResult.success) {
+          <sp-admin-alert variant="error">
+            Publish failed:
+            <ul>
+              @for (e of publishResult.errors; track e) { <li>{{ e }}</li> }
+            </ul>
+          </sp-admin-alert>
+        }
+      }
+    </sp-admin-section-card>
   }
 
 </sp-admin-page-body>
+
+<!-- ── New source modal ─────────────────────────────────────────────────── -->
+<sp-admin-modal
+  [open]="newSourceModalOpen()"
+  title="New source"
+  variant="form"
+  (closed)="closeNewSourceModal()">
+
+  <div class="sp-admin-form-stack">
+    <sp-admin-form-field label="Name" [required]="true">
+      <sp-admin-input [(ngModel)]="newSourceName" placeholder="e.g. Admin upload — July batch" />
+    </sp-admin-form-field>
+    <p class="sp-admin-hint">
+      Created with sensible defaults for an admin-uploaded source: license "AdminUpload", English,
+      student display and commercial use allowed, and auto-approved for import.
+    </p>
+  </div>
+
+  @if (newSourceError()) { <sp-admin-alert variant="error">{{ newSourceError() }}</sp-admin-alert> }
+
+  <div slot="footer">
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeNewSourceModal()">Cancel</sp-admin-button>
+    <sp-admin-button variant="primary" [disabled]="creatingSource()" (clicked)="createSource()">
+      {{ creatingSource() ? 'Creating…' : 'Create source' }}
+    </sp-admin-button>
+  </div>
+
+</sp-admin-modal>
+
+<!-- ── Reject modal ─────────────────────────────────────────────────────── -->
+<sp-admin-modal
+  [open]="rejectModalOpen()"
+  title="Reject candidate"
+  variant="form"
+  (closed)="closeReject()">
+
+  <div class="sp-admin-form-stack">
+    <sp-admin-form-field label="Reason" [required]="true" hint="Required — shown to admins reviewing this candidate later">
+      <sp-admin-textarea [(ngModel)]="rejectReasonDraft" placeholder="Why this candidate is being rejected" />
+    </sp-admin-form-field>
+  </div>
+
+  @if (actionError()) { <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert> }
+
+  <div slot="footer">
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeReject()">Cancel</sp-admin-button>
+    <sp-admin-button variant="danger" [disabled]="rejecting()" (clicked)="confirmReject()">
+      {{ rejecting() ? 'Rejecting…' : 'Reject' }}
+    </sp-admin-button>
+  </div>
+
+</sp-admin-modal>
+
+<!-- ── Preview drawer (ported from AdminResourceCandidatesComponent, Phase E3) ─ -->
+<sp-admin-drawer
+  [open]="previewDrawerOpen()"
+  [title]="preview()?.title ?? 'Candidate preview'"
+  side="right"
+  size="xl"
+  (closed)="closePreview()">
+
+  <sp-admin-alert variant="warning">
+    Read-only preview. Use Approve &amp; Publish or Reject in the pipeline table, not here.
+  </sp-admin-alert>
+
+  @if (previewLoading()) {
+    <sp-admin-loading-state message="Loading preview" />
+  }
+  @if (previewError()) {
+    <sp-admin-error-state title="Could not load preview" [message]="previewError()" />
+  }
+
+  @if (preview(); as p) {
+    @if (!p.canPreview) {
+      <sp-admin-alert variant="warning">
+        This candidate could not be fully rendered.
+        @for (w of p.previewWarnings; track w) { <div>{{ w }}</div> }
+      </sp-admin-alert>
+    }
+
+    <!-- What the student would see ──────────────────────────────────────── -->
+    <section class="sp-e3-preview-panel sp-e3-preview-panel--student">
+      <h3 class="sp-e3-preview-panel-title">What the student would see</h3>
+
+      @switch (p.renderedPreviewModel.kind) {
+        @case ('VocabularyEntry') {
+          <div class="sp-admin-form-stack">
+            <sp-admin-form-field label="Word"><strong>{{ p.renderedPreviewModel.word }}</strong></sp-admin-form-field>
+            @if (p.renderedPreviewModel.partOfSpeech) {
+              <sp-admin-form-field label="Part of speech">{{ p.renderedPreviewModel.partOfSpeech }}</sp-admin-form-field>
+            }
+            @if (p.renderedPreviewModel.definition) {
+              <sp-admin-form-field label="Definition">{{ p.renderedPreviewModel.definition }}</sp-admin-form-field>
+            }
+            @if (p.renderedPreviewModel.example) {
+              <sp-admin-form-field label="Example">{{ p.renderedPreviewModel.example }}</sp-admin-form-field>
+            }
+          </div>
+        }
+        @case ('GrammarProfileEntry') {
+          <div class="sp-admin-form-stack">
+            <sp-admin-form-field label="Grammar point"><strong>{{ p.renderedPreviewModel.grammarTitle }}</strong></sp-admin-form-field>
+            @if (p.renderedPreviewModel.explanation) {
+              <sp-admin-form-field label="Explanation">{{ p.renderedPreviewModel.explanation }}</sp-admin-form-field>
+            }
+            @if (p.renderedPreviewModel.grammarExamples?.length) {
+              <sp-admin-form-field label="Examples">
+                <ul>
+                  @for (ex of p.renderedPreviewModel.grammarExamples; track ex) { <li>{{ ex }}</li> }
+                </ul>
+              </sp-admin-form-field>
+            }
+          </div>
+        }
+        @case ('ReadingPassage') {
+          <div class="sp-admin-form-stack">
+            <sp-admin-form-field label="Title"><strong>{{ p.renderedPreviewModel.title }}</strong></sp-admin-form-field>
+            @if (p.renderedPreviewModel.passageText) {
+              <sp-admin-form-field
+                [label]="(p.renderedPreviewModel.wordCount ?? 0) + ' words · ~' + (p.renderedPreviewModel.estimatedReadingMinutes ?? 0) + ' min read'">
+                <p class="sp-e3-passage-text">{{ p.renderedPreviewModel.passageText }}</p>
+              </sp-admin-form-field>
+            }
+          </div>
+        }
+        @case ('ActivityTemplateCandidate') {
+          @if (p.renderedPreviewModel.studentVisibleFormIoSchemaJson) {
+            <app-formio-renderer [schema]="parsedFormIoSchema(p.renderedPreviewModel.studentVisibleFormIoSchemaJson)" [disabled]="true" />
+          } @else {
+            <sp-admin-empty-state title="No student-safe schema available" message="This candidate's Form.io schema could not be rendered — see the warnings above." />
+          }
+        }
+        @default {
+          <sp-admin-form-field label="Generic field summary" hint="This candidate type has no specialized preview yet.">
+            <ul>
+              @for (f of p.renderedPreviewModel.fieldSummary; track f) { <li>{{ f }}</li> }
+            </ul>
+          </sp-admin-form-field>
+        }
+      }
+    </section>
+
+    <!-- Admin-only ────────────────────────────────────────────────────────── -->
+    <section class="sp-e3-preview-panel sp-e3-preview-panel--admin">
+      <h3 class="sp-e3-preview-panel-title">Admin-only</h3>
+
+      <div class="sp-admin-form-stack">
+        <sp-admin-form-field label="Source">
+          {{ p.source.sourceName }} · <code>{{ p.source.licenseType }}</code>
+          @if (!p.source.allowsStudentDisplay || !p.source.allowsCommercialUse) {
+            <sp-admin-badge tone="warning">Restricted use</sp-admin-badge>
+          }
+        </sp-admin-form-field>
+        @if (p.source.attributionText) {
+          <sp-admin-form-field label="Attribution">{{ p.source.attributionText }}</sp-admin-form-field>
+        }
+        @if (p.source.sourceUrl || p.source.downloadUrl) {
+          <sp-admin-form-field label="Links">
+            @if (p.source.sourceUrl) { <div><a [href]="p.source.sourceUrl" target="_blank" rel="noopener">Source</a></div> }
+            @if (p.source.downloadUrl) { <div><a [href]="p.source.downloadUrl" target="_blank" rel="noopener">Download</a></div> }
+          </sp-admin-form-field>
+        }
+
+        <sp-admin-form-field label="Validation status">
+          <sp-admin-badge [tone]="validationStatusTone(p.validationStatus)">{{ p.validationStatus }}</sp-admin-badge>
+          · Review: {{ p.reviewStatus }}
+        </sp-admin-form-field>
+        @if (p.validationErrors.length > 0) {
+          <sp-admin-form-field label="Validation errors">
+            <ul>@for (e of p.validationErrors; track e) { <li>{{ e }}</li> }</ul>
+          </sp-admin-form-field>
+        }
+        @if (p.validationWarnings.length > 0) {
+          <sp-admin-form-field label="Validation warnings">
+            <ul>@for (w of p.validationWarnings; track w) { <li>{{ w }}</li> }</ul>
+          </sp-admin-form-field>
+        }
+        @if (p.duplicateIndicators.length > 0) {
+          <sp-admin-form-field label="Duplicate indicators">
+            <ul>@for (d of p.duplicateIndicators; track d) { <li>{{ d }}</li> }</ul>
+          </sp-admin-form-field>
+        }
+
+        <sp-admin-form-field label="CEFR / skill">
+          {{ p.cefrLevel ?? '—' }} @if (p.cefrConfidence !== null) { ({{ (p.cefrConfidence * 100).toFixed(0) }}%) }
+          @if (p.primarySkill) { · {{ p.primarySkill }} @if (p.subskill) { / {{ p.subskill }} } }
+        </sp-admin-form-field>
+        @if (p.qualityScore !== null) {
+          <sp-admin-form-field label="Quality score">{{ (p.qualityScore * 100).toFixed(0) }}%</sp-admin-form-field>
+        }
+        @if (p.safetyIssues.length > 0) {
+          <sp-admin-form-field label="Safety issues">
+            <sp-admin-badge tone="danger">{{ p.safetyIssues.join(', ') }}</sp-admin-badge>
+          </sp-admin-form-field>
+        }
+
+        @if (p.aiAnalysisSummary; as ai) {
+          <sp-admin-form-field label="AI analysis summary (advisory only)">
+            CEFR {{ ai.cefrLevel ?? '—' }}
+            @if (ai.cefrConfidence !== null) { ({{ (ai.cefrConfidence * 100).toFixed(0) }}%) }
+            · {{ ai.primarySkill ?? '—' }} @if (ai.subskill) { / {{ ai.subskill }} }
+          </sp-admin-form-field>
+        }
+
+        <sp-admin-form-field label="Content fingerprint"><code>{{ p.contentFingerprint }}</code></sp-admin-form-field>
+        <sp-admin-form-field label="Raw record">
+          {{ p.rawRecordSummary.extractionStatus }} — {{ p.rawRecordSummary.excerpt }}
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Import run">
+          {{ p.importRunSummary.status }} (started {{ p.importRunSummary.startedAtUtc | date:'short' }})
+        </sp-admin-form-field>
+
+        <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="previewRawJsonOpen.set(!previewRawJsonOpen())">
+          {{ previewRawJsonOpen() ? 'Hide' : 'Show' }} raw/normalized JSON
+        </sp-admin-button>
+        @if (previewRawJsonOpen()) {
+          <sp-admin-form-field label="Normalized content">
+            <pre>{{ p.normalizedContent | json }}</pre>
+          </sp-admin-form-field>
+          @if (p.adminOnlyActivityMetadataJson) {
+            <sp-admin-form-field label="Admin-only activity metadata (scoring/rubric — never student-visible)">
+              <pre>{{ p.adminOnlyActivityMetadataJson }}</pre>
+            </sp-admin-form-field>
+          }
+          @if (p.aiAnalysisDetailsJson) {
+            <sp-admin-form-field label="Raw AI analysis (admin-only)">
+              <pre>{{ p.aiAnalysisDetailsJson }}</pre>
+            </sp-admin-form-field>
+          }
+        }
+      </div>
+    </section>
+  }
+
+  <div slot="footer">
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closePreview()">Close</sp-admin-button>
+  </div>
+
+</sp-admin-drawer>
