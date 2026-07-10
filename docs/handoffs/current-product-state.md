@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-10 (Phase H9B)
+lastUpdated: 2026-07-10 (Phase I4)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,146 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-10 (Phase H9B)
+Last updated: 2026-07-10 (Phase I4)
+
+## Today Plan Rename (Phase I4 Pass 3, 2026-07-10)
+
+Final pass of the Phase I4 product-language rename. "Daily Lesson" (the H6 bank-first daily
+content selection concept) becomes "Today Plan" throughout: `IDailyLessonModuleSelectionService`
+-> `ITodayPlanModuleSelectionService`, `AdminDailyLessonModuleController` -> `AdminTodayPlanModuleController`
+(routes `api/admin/daily-lesson/...` -> `api/admin/today-plan/...`), `StudentDailyModuleAssignment`
+-> `StudentTodayPlanModuleAssignment` (lossless table/index rename), `TodaysSessionResult.ModuleSection`
+-> `.TodayPlan`, and the student-facing dashboard copy ("Today's Lesson" -> "Today's Plan").
+`StudentPracticeGymModuleAssignment`/`IPracticeGymModuleSelectionService` (H7's own, unrelated
+concept) were deliberately left untouched. 3,424/3,424 backend tests pass; frontend production
+build clean. This closes Phase I4 (Passes 1-3) as a whole: `LearnItem`->`Lesson`,
+`ActivityDefinition`->`Exercise`, `ModuleDefinition`->`Module`, `Daily Lesson`->`Today Plan`, across
+every backend layer, file/folder name, API route, and frontend page/component/nav label. Full
+detail: `docs/reviews/2026-07-10-phase-i4-pass3-today-plan-rename-review.md`.
+
+## Frontend Rename (Phase I4 Pass 2, 2026-07-10)
+
+Angular frontend slice of the I4 rename, making the admin frontend consistent with Pass 1's
+backend rename. Notably, the rename required a route-collision resolution: the pre-existing
+"Today Delivery Health" diagnostics page (previously `admin-lessons`, at `/admin/lessons`) was
+renamed to `AdminTodayDeliveryHealthComponent` so the `admin-lessons`/`AdminLessonsComponent`
+name/folder could be freed up for the new Lesson-library page (previously `admin-learn-items`,
+moved to `/admin/lesson-library`). `admin-activities` -> `admin-exercises` (route `/admin/exercises`).
+Every admin page/service/model under `features/admin/`, `core/services/`, `core/models/`, plus the
+student-facing dashboard/practice-gym pages that consume the renamed backend DTOs, were updated.
+Full detail: `docs/reviews/2026-07-10-phase-i4-pass2-frontend-rename-review.md`.
+
+## Backend Rename (Phase I4 Pass 1, 2026-07-10)
+
+Backend-only slice of the I4 product-language rename decided in
+`docs/architecture/product-language-renaming-i4.md`: pure rename, no data-model change —
+`LearnItem` -> `Lesson`, `ActivityDefinition` -> `Exercise`, `ModuleDefinition` -> `Module`
+(dropping the "Definition" suffix), applied consistently to file names, class/type/enum names,
+DTOs, EF configurations, table/column names (`learn_items` -> `lessons`, etc.), API routes
+(`api/admin/learn-items` -> `api/admin/lessons`, etc.), and doc comments across `src/` and
+`tests/`. Historical EF migration files were deliberately left untouched as a historical schema
+record, consistent with every prior I-track migration. Full detail:
+`docs/reviews/2026-07-10-phase-i4-pass1-backend-rename-review.md`.
+
+## Final Nav Consolidation (Phase I3, 2026-07-10)
+
+Landed the 7-item Content Studio nav target set out in the I-track plan: **Import Content ->
+Resource Bank -> Learn Items -> Activities -> Modules -> Onboarding -> Placement** (pre-I4 names;
+renamed by I4 above), one section, no second "Content Ops" tier. Onboarding and Placement
+("Placement items" -> "Placement") were promoted out of "Content Ops" into "Content Studio."
+**Review Queue was deleted entirely** (controller, contracts, query handler, DI registration,
+frontend component/service/models) — it only ever covered `PlacementItemDefinition` review after
+Phase I2A deleted `ActivityTemplate` (the other half of what it used to cover), and the standalone
+Placement Items page already does everything Review Queue did for that entity. Old
+`/admin/review-queue` bookmarks redirect to `/admin/placement-items`. The now-empty "Content Ops"
+section was removed from both desktop sidebar and mobile-drawer nav trees. "Today Delivery Health"
+(`/admin/lessons`) was left untouched — flagged as a residual cleanup candidate for a future pass
+now that its generation-retry actions are inert no-ops post-I2B, but out of this phase's scope.
+3,424/3,424 backend tests pass (down 4 from pre-phase baseline — the deleted
+`AdminReviewQueueEndpointTests.cs`, no lost coverage elsewhere); frontend production build clean.
+Full detail: `docs/reviews/2026-07-10-phase-i3-final-nav-consolidation-review.md`.
+
+## Readiness Pool Removal (Phase I2C, final pass of I2, 2026-07-10)
+
+With Today and Practice Gym confirmed to have zero readers of the readiness pool after Passes A
+and B (below), this pass deletes `StudentActivityReadinessItem`/
+`IStudentActivityReadinessPoolService`/`ReadinessPoolReplenishmentService` entirely — a larger
+blast radius than the readiness pool's own service/entity, with tendrils into
+`AdminAiOperationsController`, the runtime feature-gate registry, `StudentReadinessAuditService`/
+`StudentPilotReadinessRepairService`, `LearningPlanService`, `StudentMasteryEvaluationService`,
+`PracticeGymSuggestionService`, and several admin frontend pages — each updated to remove its
+readiness-pool dependency without losing unrelated functionality. `IAiActivityGenerator` was
+narrowed to the one method it still needs (`EvaluateAttemptAsync` — attempt scoring/feedback,
+unrelated to content generation). Full detail:
+`docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md`.
+
+## Today Module-Only Collapse (Phase I2B, Pass B of I2, 2026-07-10)
+
+Today (the student's daily lesson feature) had two content-delivery paths layered on top of each
+other: the legacy per-exercise `LearningSession`/`SessionExercise` generation pipeline
+(`LessonBatchGenerationJob` -> `ActivityMaterializationJob` -> `TtsAudioGenerationJob`, plus
+on-demand `ExercisePrepareHandler`/`SessionGeneratorService`), and the newer bank-first Daily
+Lesson Module pipeline (H6's selection service, additive since it shipped). **Collapsed Today to
+Module-only**: the entire legacy job pipeline was deleted
+(`LessonBufferRefillJob`, `LessonBatchGenerationJob`, `ActivityMaterializationJob`,
+`TtsAudioGenerationJob`, `GenerationHashing`, `ExercisePrepareHandler`, `SessionGeneratorService`,
+their Quartz triggers/DI registrations). Today now calls only the Module selection service; when
+it has nothing for the student, Today honestly reports "nothing available" — never an
+AI-generation fallback. Full detail:
+`docs/reviews/2026-07-10-phase-i2b-today-module-only-collapse-review.md`.
+
+## Practice Gym Legacy Fallback Deletion (Phase I2A, Pass A of I2, 2026-07-10)
+
+The product had two content-delivery systems: a legacy AI-generation pipeline (on-demand,
+per-request AI calls producing ~89% of exercise types) and the new bank-first pipeline (Learn
+Item -> Activity Definition -> Module -> H10 launch bridge, covering `gap_fill`/
+`multiple_choice_single` over vocabulary/grammar only). **Deleted the legacy `ActivityTemplate`
+entity system entirely** (the Form.io-pilot template system, distinct from H4's
+`ActivityDefinition`): domain entity, EF config/seeder, all Infrastructure/Application files, the
+admin controller, the two admin frontend pages and their routes/nav item, and the now-dead
+`PracticeGymFormIoPilot` feature-gate group. Practice Gym now serves only bank-first content;
+when nothing eligible exists it returns a clean "nothing available" response, never an AI-generation
+fallback. `AdminReviewQueueComponent`/Controller/QueryHandler were rewritten (not deleted) to drop
+their now-dead `ActivityTemplates` union branch. Full detail:
+`docs/reviews/2026-07-10-phase-i2a-practice-gym-legacy-deletion-review.md`.
+
+## Unified Import/Publish Pipeline (Phase I1, 2026-07-10)
+
+Three separate admin pages — Resource Sources, Resource Import Runs, Resource Candidates — were
+merged into one: **Import Content** (`/admin/content/import`), with two sections: Import (paste
+form + new file-upload mode, with an inline "+ New source" picker) and Pipeline/review (candidates
+for the current or a selected past import run, with inline Preview/Analyze/**Approve & Publish**/
+Reject actions). New backend action `POST api/admin/resource-candidates/{id}/approve-and-publish`
+collapses two admin clicks into one without skipping any validation gate (publish still
+re-validates every gate live). Source defaults fixed: auto-created sources now default
+`AllowsStudentDisplay`/`AllowsCommercialUse` to `true` (previously `false`), closing a workflow
+trap where publish was silently blocked until someone manually edited a source's license flags on
+a separate page. Backend controllers were not physically merged — the one-page admin experience
+calls three existing controllers under the hood; a full controller merge was scoped out as
+unnecessary risk for no additional user-visible benefit. Old Resource Sources/Import Runs/
+Candidates routes redirect to `/admin/content/import`. 3,858/3,858 backend tests passing (+4 new).
+Full detail: `docs/reviews/2026-07-10-phase-i1-unified-import-pipeline-review.md`.
+
+## Physical ResourceBankItem Consolidation (Phase I0, 2026-07-10)
+
+**Reverses Phase H9B's "do not consolidate" recommendation**, per explicit user direction: build
+one unified content pipeline (Import -> Bank -> Learn -> Activities -> Modules -> Onboarding ->
+Placement) with a single physical Resource Bank table, deleting legacy fallback infrastructure
+rather than keeping it as a safety net. The four typed published bank tables
+(`CefrVocabularyEntry`/`CefrGrammarProfileEntry`/`CefrReadingReference`/`CefrReadingPassage`) are
+replaced by one physical table, `resource_bank_items` (entity `ResourceBankItem`): common/
+DB-filterable fields (`Type`, `CefrLevel`, `Subskill`, `DifficultyBand`, `ContextTagsJson`,
+`FocusTagsJson`, `SourceId`, `ContentFingerprint`) are real columns; type-specific payload is
+packed into a `ContentJson` column deserialized per-`Type`. `ContentFingerprint` is now populated
+for all 4 types (previously only reading passages had it). Original row IDs were preserved 1:1
+during migration so existing resource links kept resolving with zero link-table migration needed.
+`ResourceBankQueryService.ListUnifiedAsync` is now a real single-table DB-paginated query
+(previously an in-memory 4-way scan/concat/sort/page). The 4 typed entity classes, their EF
+configs, and the 8 typed admin API routes were deleted (their only caller, the typed admin bank
+pages, was already removed in Phase H9A). Full detail:
+`docs/reviews/2026-07-10-phase-i0-resourcebankitem-physical-consolidation-review.md`.
+
+---
 
 ## Physical ResourceBankItem Consolidation Decision (Phase H9B, 2026-07-10)
 
