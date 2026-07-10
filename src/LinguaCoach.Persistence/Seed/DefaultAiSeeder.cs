@@ -26,6 +26,7 @@ public static class DefaultAiSeeder
     public const string VocabularyExtractFromAttemptKey = "vocabulary_extract_from_attempt";
     public const string LessonBatchPlanKey = "lesson_batch_plan";
     public const string LessonGenerateFromResourcesKey = "lesson_generate_from_resources";
+    public const string ExerciseGenerateFromResourcesKey = "exercise_generate_from_resources";
 
     // ── Exercise Pattern Engine — pattern-specific generation prompt keys ─────
     public const string ActivityGeneratePhraseMatchKey        = "activity_generate_phrase_match";
@@ -4475,6 +4476,51 @@ CEFR calibration for teaching prose:
 | B2    | More nuanced, some complexity  | 3-5 paragraphs      |
 """;
 
+    // Phase J2b — AI-assisted "Generate Activity" composer. AI supplies only framing content
+    // (gap-fill sentence / multiple-choice distractors / comprehension question) — the correct
+    // answer, scoring rule, and answer key always stay deterministic (see
+    // IGenerateActivityFromResourcesWithAiHandler's doc comment).
+    private const string ExerciseGenerateFromResourcesContent = """
+You are an expert English exercise writer creating ONE practice item for a workplace English learning platform.
+
+Resource being practiced: {{resourceTitle}} ({{resourceType}})
+Definition/description: {{resourceDefinition}}
+Requested exercise type: {{activityType}}
+Student level: {{cefrLevel}}
+Skill: {{skill}}
+Admin notes: {{notes}}
+
+Return ONLY valid JSON (no markdown, no text outside the JSON object):
+
+{
+  "promptText": "<see rules below for this exercise type>",
+  "distractors": ["<see rules below>"]
+}
+
+Rules by exercise type:
+
+If the requested exercise type is "gap_fill":
+- promptText must be exactly one natural, realistic sentence that uses "{{resourceTitle}}" in context, with "{{resourceTitle}}" itself replaced by the blank marker "___" (three underscores).
+- promptText must NOT contain the word or phrase "{{resourceTitle}}" anywhere else in the sentence — only the "___" marker.
+- distractors must be an empty array [].
+
+If the requested exercise type is "multiple_choice_single":
+- promptText may be left as an empty string "" — it is not used for this exercise type.
+- distractors must contain exactly 3 short, plausible-but-clearly-INCORRECT alternative definitions for "{{resourceTitle}}", written in the same style and length as the real definition above.
+- distractors must NOT be synonyms, paraphrases, or partial restatements of the real definition above — each must describe a genuinely different meaning.
+- Never include the real definition, or anything close to it, as one of the distractors.
+
+If the requested exercise type is "short_answer":
+- promptText must be one specific comprehension question about the passage/excerpt content above, answerable in 1-2 sentences.
+- promptText must reference something specific from the excerpt, not a generic question that could apply to any passage.
+- distractors must be an empty array [].
+
+General rules:
+- Keep language appropriate for {{cefrLevel}}.
+- Do not include real company names, real person names, phone numbers, or sensitive content.
+- Do not include any text outside the JSON object. No markdown fences.
+""";
+
     private const string WritingPromptContent = """
 You are an expert English writing coach for {{sourceLanguageName}}-speaking professionals learning {{targetLanguageName}}.
 
@@ -4698,6 +4744,11 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             LessonGenerateFromResourcesKey, LessonGenerateFromResourcesContent,
             maxInputTokens: 2200, maxOutputTokens: 1600, ct);
+
+        // Phase J2b — AI-assisted "Generate Activity" composer.
+        await SeedOrUpgradePromptAsync(db, logger,
+            ExerciseGenerateFromResourcesKey, ExerciseGenerateFromResourcesContent,
+            maxInputTokens: 1200, maxOutputTokens: 700, ct);
 
         // Exercise Pattern Engine — pattern-specific generation prompts
         await SeedOrUpgradePromptAsync(db, logger,

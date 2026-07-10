@@ -49,3 +49,26 @@ public interface IGenerateActivityFromLessonHandler
 {
     Task<GenerateExerciseResult> HandleAsync(GenerateActivityFromLessonRequest request, CancellationToken ct = default);
 }
+
+/// <summary>
+/// Phase J2b — AI-assisted alternative to <see cref="IGenerateActivityFromResourcesHandler"/>. Same
+/// request/result shape; a deliberately separate action, not a replacement — the deterministic
+/// handler stays untouched and available regardless of AI availability (2026-07-10/11 product
+/// decision, same as Phase J2a's Lesson equivalent — see
+/// docs/reviews/2026-07-11-phase-j2b-ai-exercise-generation-review.md). Narrower than a full "AI
+/// writes the exercise" feature by deliberate design: AI only supplies framing content (a natural
+/// gap-fill sentence for "gap_fill", plausible-but-wrong distractor definitions for
+/// "multiple_choice_single", a tailored comprehension question for "short_answer") — the actual
+/// correct answer, scoring rule, and answer key always stay deterministically derived from the
+/// resource's own fields, never AI-supplied, matching the existing project precedent that AI must
+/// never be trusted to decide "which option/value is correct" (see the 2026-07-08 ActivityTemplate
+/// generation-instructions decision in docs/roadmap/road-map.md's Decision Log). Only the
+/// "generate from resources" entry point has an AI variant this phase; "generate from Lesson"
+/// remains deterministic-only, deferred to keep this pass small. On AI unavailability or
+/// unparseable/unsafe output (after one retry — including a leak check on gap_fill sentences),
+/// throws <see cref="ExerciseValidationException"/> rather than silently degrading.
+/// </summary>
+public interface IGenerateActivityFromResourcesWithAiHandler
+{
+    Task<GenerateExerciseResult> HandleAsync(GenerateActivityFromResourcesRequest request, CancellationToken ct = default);
+}

@@ -124,6 +124,9 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
   // ── Phase J2a — Generate Learn with AI (separate action, deterministic above is untouched) ──
   generatingLearnAiId = signal<string | null>(null);
 
+  // ── Phase J2b — Generate Activity with AI (separate action, deterministic above is untouched) ──
+  generatingActivityAiId = signal<string | null>(null);
+
   // ── Phase H4 — Generate Activity ─────────────────────────────────────────
   generatingActivityId = signal<string | null>(null);
 
@@ -226,6 +229,10 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
         disabled: this.generatingActivityId() === item.id,
       },
       {
+        id: 'generate-activity-ai', label: 'Generate Activity (AI)', icon: 'sparkles', tone: 'default',
+        disabled: this.generatingActivityAiId() === item.id,
+      },
+      {
         id: 'generate-module', label: 'Generate Module', icon: 'sparkles', tone: 'default',
         disabled: this.generatingModuleId() === item.id,
       },
@@ -237,6 +244,7 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
     if (actionId === 'generate-learn') this.generateLearn(item);
     if (actionId === 'generate-learn-ai') this.generateLearnWithAi(item);
     if (actionId === 'generate-activity') this.generateActivity(item);
+    if (actionId === 'generate-activity-ai') this.generateActivityWithAi(item);
     if (actionId === 'generate-module') this.generateModule(item);
   }
 
@@ -317,6 +325,29 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
 
   goToActivities(): void {
     this.router.navigateByUrl('/admin/exercises');
+  }
+
+  /** Phase J2b — AI-assisted alternative to generateActivity(). A separate action: on AI
+   *  unavailability the backend returns a clear error and no draft is created — the deterministic
+   *  generateActivity() action above stays available regardless. */
+  generateActivityWithAi(item: UnifiedResourceBankItemDto): void {
+    this.generatingActivityAiId.set(item.id);
+    this.generateError.set('');
+    this.generateSuccess.set('');
+    this.exerciseSvc.generateFromResourcesWithAi({
+      resources: [{ resourceType: RESOURCE_TYPE_TO_LESSON_TYPE[item.type], resourceId: item.id, role: 'Primary' }],
+    }).subscribe({
+      next: result => {
+        this.generatingActivityAiId.set(null);
+        this.lastGeneratedKind.set('activity');
+        this.generateSuccess.set(`AI-generated Exercise draft created from "${item.title}" — pending review.`);
+        this.loadAll();
+      },
+      error: err => {
+        this.generatingActivityAiId.set(null);
+        this.generateError.set(err.error?.error ?? 'Could not generate an Exercise with AI.');
+      },
+    });
   }
 
   /** Phase H5 — only succeeds when an already-approved Lesson AND an already-approved

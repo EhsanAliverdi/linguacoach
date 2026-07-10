@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-11 (Phase J2a)
+lastUpdated: 2026-07-11 (Phase J2b)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,25 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-11 (Phase J2a)
+Last updated: 2026-07-11 (Phase J2b)
+
+## AI-Assisted Exercise Generation (Phase J2b, 2026-07-11)
+
+The Exercise slice of Phase J2 is complete, following the same pattern as J2a's Lesson slice but
+deliberately narrower given the real correctness/security stakes of an answer key. Admins can now
+generate an Exercise draft two ways: the existing deterministic "Generate Activity" (unchanged), or
+a new "Generate Activity (AI)" action (resources entry point only — "generate from Lesson" has no AI
+variant yet) that calls AI for framing content only — a natural gap-fill sentence, plausible-but-
+wrong multiple-choice distractors, or a tailored comprehension question. **The correct answer and
+scoring rule are never AI-supplied for any activity type** — always deterministically derived from
+the resource's own fields, the same design constraint the 2026-07-08 `ActivityTemplate` generation-
+instructions decision established. A new defensive check rejects any AI gap-fill sentence that
+leaks the answer term outside the blank marker. Both actions produce the same pending-review
+`Exercise` entity, same admin approve/reject workflow, same runtime launch-eligibility rules
+(`short_answer` still isn't launchable regardless of generation method). Module generation (J2c)
+remains deterministic-only. 3,442/3,442 backend tests pass (+9 new, including a dedicated
+answer-leak-rejection test). Full detail:
+`docs/reviews/2026-07-11-phase-j2b-ai-exercise-generation-review.md`.
 
 ## AI-Assisted Lesson Generation (Phase J2a, 2026-07-11)
 

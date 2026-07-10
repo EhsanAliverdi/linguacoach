@@ -558,6 +558,8 @@ public static class DependencyInjection
             sp => sp.GetRequiredService<LinguaCoach.Infrastructure.Exercises.ActivityGenerationService>());
         services.AddScoped<LinguaCoach.Application.Exercises.IGenerateActivityFromLessonHandler>(
             sp => sp.GetRequiredService<LinguaCoach.Infrastructure.Exercises.ActivityGenerationService>());
+        services.AddScoped<LinguaCoach.Application.Exercises.IGenerateActivityFromResourcesWithAiHandler,
+            LinguaCoach.Infrastructure.Exercises.AiExerciseGenerationService>();
 
         // Phase H5 — Module foundation (reusable, reviewable learning units combining
         // Lessons + Exercises + a module-level feedback plan).

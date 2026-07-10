@@ -30,6 +30,7 @@ public sealed class AdminExerciseController : ControllerBase
     private readonly IAdminRejectExerciseHandler _rejectHandler;
     private readonly IGenerateActivityFromResourcesHandler _generateFromResourcesHandler;
     private readonly IGenerateActivityFromLessonHandler _generateFromLessonHandler;
+    private readonly IGenerateActivityFromResourcesWithAiHandler _generateFromResourcesWithAiHandler;
 
     public AdminExerciseController(
         IAdminExerciseListQuery listQuery,
@@ -39,7 +40,8 @@ public sealed class AdminExerciseController : ControllerBase
         IAdminApproveExerciseHandler approveHandler,
         IAdminRejectExerciseHandler rejectHandler,
         IGenerateActivityFromResourcesHandler generateFromResourcesHandler,
-        IGenerateActivityFromLessonHandler generateFromLessonHandler)
+        IGenerateActivityFromLessonHandler generateFromLessonHandler,
+        IGenerateActivityFromResourcesWithAiHandler generateFromResourcesWithAiHandler)
     {
         _listQuery = listQuery;
         _getQuery = getQuery;
@@ -49,6 +51,7 @@ public sealed class AdminExerciseController : ControllerBase
         _rejectHandler = rejectHandler;
         _generateFromResourcesHandler = generateFromResourcesHandler;
         _generateFromLessonHandler = generateFromLessonHandler;
+        _generateFromResourcesWithAiHandler = generateFromResourcesWithAiHandler;
     }
 
     // GET api/admin/exercises?page=&pageSize=&status=&activityType=&rendererType=&cefrLevel=&
@@ -123,6 +126,27 @@ public sealed class AdminExerciseController : ControllerBase
         {
             var result = await _generateFromLessonHandler.HandleAsync(new GenerateActivityFromLessonRequest(
                 body.LessonId, body.RequestedActivityType, body.Title, body.Notes, GetCurrentUserId()), ct);
+            return Ok(result);
+        }
+        catch (ExerciseValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    // POST api/admin/exercises/generate-from-resources/ai
+    // Phase J2b — AI-assisted alternative to the deterministic action above. A separate action:
+    // the deterministic action is untouched and always available, regardless of AI availability.
+    [HttpPost("generate-from-resources/ai")]
+    public async Task<IActionResult> GenerateFromResourcesWithAi(
+        [FromBody] GenerateActivityFromResourcesRequestBody body, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _generateFromResourcesWithAiHandler.HandleAsync(new GenerateActivityFromResourcesRequest(
+                body.Resources, body.RequestedActivityType, body.Title, body.DefaultCefrLevel, body.DefaultSkill,
+                body.DefaultSubskill, body.DefaultContextTags, body.DefaultFocusTags, body.DefaultDifficultyBand,
+                body.Notes, GetCurrentUserId()), ct);
             return Ok(result);
         }
         catch (ExerciseValidationException ex)

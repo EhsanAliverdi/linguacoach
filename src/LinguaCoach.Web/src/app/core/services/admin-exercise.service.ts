@@ -44,6 +44,10 @@ export class AdminExerciseService {
     return this.http.post<GenerateExerciseResult>(`${this.base}/generate-from-resources`, body);
   }
 
+  generateFromResourcesWithAi(body: GenerateActivityFromResourcesRequestBody): Observable<GenerateExerciseResult> {
+    return this.http.post<GenerateExerciseResult>(`${this.base}/generate-from-resources/ai`, body);
+  }
+
   generateFromLesson(body: GenerateActivityFromLessonRequestBody): Observable<GenerateExerciseResult> {
     return this.http.post<GenerateExerciseResult>(`${this.base}/generate-from-lesson`, body);
   }
