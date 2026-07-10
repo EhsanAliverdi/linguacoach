@@ -261,15 +261,15 @@ public sealed class PatternEvaluationSubmitTests : IClassFixture<PatternEvaluati
     [Fact]
     public async Task DefaultWritingScenario_Submit_ReturnsPatternEvaluation()
     {
-        var (token, _) = await _factory.CreateOnboardedStudentAsync($"writing_{Guid.NewGuid():N}@test.com");
+        // Phase I2A (legacy fallback deletion): GET /api/activity/next was removed — the
+        // WritingScenario default cadence used to lazily generate this activity on demand. Seed
+        // an open_writing_task-keyed WritingScenario activity directly instead; the evaluation
+        // behaviour under test (patternEvaluation.exercisePatternKey) is unaffected.
+        var (token, _, activityId) = await _factory.CreatePatternActivityAsync(
+            "open_writing_task",
+            """{"situation":"test","learningGoal":"test","targetPhrases":[],"targetVocabulary":[],"exampleText":"","commonMistakeToAvoid":"","instructionInSourceLanguage":""}""",
+            ActivityType.WritingScenario);
         var client = ClientWithToken(token);
-
-        // Get the default WritingScenario activity — now routed through open_writing_task.
-        var nextResp = await client.GetAsync("/api/activity/next");
-        Assert.Equal(HttpStatusCode.OK, nextResp.StatusCode);
-        var nextBody = await nextResp.Content.ReadFromJsonAsync<JsonElement>(JsonOptions);
-        var activityId = nextBody.GetProperty("activityId").GetGuid();
-        Assert.Equal("open_writing_task", nextBody.GetProperty("exercisePatternKey").GetString());
 
         var submitResp = await client.PostAsJsonAsync($"/api/activity/{activityId}/attempt",
             new { submittedContent = "I wanted to follow up on the pending approval." });

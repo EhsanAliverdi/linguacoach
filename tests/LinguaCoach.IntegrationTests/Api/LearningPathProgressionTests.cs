@@ -96,6 +96,30 @@ public sealed class LearningPathProgressionTests : IClassFixture<ActivityTestFac
         Assert.Null(focus);
     }
 
+    /// <summary>
+    /// Phase I2A: GET /api/activity/next (on-demand AI generation, which also lazily created a
+    /// LearningPath as a side effect) was removed. Tests that need a valid activityId now seed a
+    /// LearningActivity directly; tests that additionally need a path/module still probe
+    /// /api/learning-path and skip gracefully via the existing NotFound short-circuits below —
+    /// consistent with this pass narrowing coverage to bank-first content only.
+    /// </summary>
+    private async Task<string> SeedWritingActivityAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var scenario = db.WritingScenarios.First();
+        var activity = new LinguaCoach.Domain.Entities.LearningActivity(
+            activityType: ActivityType.WritingScenario,
+            source: ActivitySource.AiGenerated,
+            title: "Test writing activity",
+            difficulty: "B1",
+            aiGeneratedContentJson: """{"situation":"test","learningGoal":"test","targetPhrases":[],"targetVocabulary":[],"exampleText":"","commonMistakeToAvoid":"","instructionInSourceLanguage":""}""",
+            sourceWritingScenarioId: scenario.Id);
+        db.LearningActivities.Add(activity);
+        await db.SaveChangesAsync();
+        return activity.Id.ToString();
+    }
+
     // ── StudentProgressService: module progress via real path data ─────────────
 
     [Fact]
@@ -104,11 +128,7 @@ public sealed class LearningPathProgressionTests : IClassFixture<ActivityTestFac
         var (token, userId) = await _factory.CreateOnboardedStudentAsync($"retrycount_{Guid.NewGuid():N}@test.com");
         var client = ClientWithToken(token);
 
-        // Generate path by requesting activity
-        var nextResp = await client.GetAsync("/api/activity/next");
-        Assert.Equal(HttpStatusCode.OK, nextResp.StatusCode);
-        var nextBody = await nextResp.Content.ReadFromJsonAsync<JsonElement>();
-        var activityId = nextBody.GetProperty("activityId").GetString()!;
+        var activityId = await SeedWritingActivityAsync();
 
         // Submit the same activity 3 times (retries)
         for (int i = 0; i < 3; i++)
@@ -203,8 +223,7 @@ public sealed class LearningPathProgressionTests : IClassFixture<ActivityTestFac
         var client = ClientWithToken(token);
 
         // Submit an attempt
-        var nextBody = await (await client.GetAsync("/api/activity/next")).Content.ReadFromJsonAsync<JsonElement>();
-        var activityId = nextBody.GetProperty("activityId").GetString()!;
+        var activityId = await SeedWritingActivityAsync();
         await client.PostAsJsonAsync($"/api/activity/{activityId}/attempt",
             new { submittedContent = "Dear Manager, I am writing to follow up on the pending approval." });
 
@@ -227,8 +246,7 @@ public sealed class LearningPathProgressionTests : IClassFixture<ActivityTestFac
         var (token, _) = await _factory.CreateOnboardedStudentAsync($"dash_stats_{Guid.NewGuid():N}@test.com");
         var client = ClientWithToken(token);
 
-        var nextBody = await (await client.GetAsync("/api/activity/next")).Content.ReadFromJsonAsync<JsonElement>();
-        var activityId = nextBody.GetProperty("activityId").GetString()!;
+        var activityId = await SeedWritingActivityAsync();
         await client.PostAsJsonAsync($"/api/activity/{activityId}/attempt",
             new { submittedContent = "Dear Manager, this is my response." });
 

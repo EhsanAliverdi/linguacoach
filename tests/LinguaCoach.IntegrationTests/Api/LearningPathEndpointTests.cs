@@ -121,34 +121,9 @@ public sealed class LearningPathEndpointTests : IClassFixture<LearningPathTestFa
         Assert.Equal(JsonValueKind.Null, body.GetProperty("learningPath").ValueKind);
     }
 
-    [Fact]
-    public async Task GeneratePath_WhenAiPathGeneratorFails_StillAllowsActivityRequest()
-    {
-        // With AlwaysFailingPathGenerator, student ends up with no path.
-        // ActivityGetHandler's lazy-generate also fails → activity falls back to SystemFallback.
-        var (token, _) = await _factory.CreateOnboardedStudentAsync($"gen_fail_{Guid.NewGuid():N}@test.com");
-
-        // Seed a SystemFallback activity so the fallback path works.
-        using (var scope = _factory.Services.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
-            if (!db.LearningActivities.Any(a => a.Source == LinguaCoach.Domain.Enums.ActivitySource.SystemFallback))
-            {
-                db.LearningActivities.Add(new LinguaCoach.Domain.Entities.LearningActivity(
-                    activityType: LinguaCoach.Domain.Enums.ActivityType.WritingScenario,
-                    source: LinguaCoach.Domain.Enums.ActivitySource.SystemFallback,
-                    title: "Fallback activity",
-                    difficulty: "B1",
-                    aiGeneratedContentJson: """{"situation":"Test","learningGoal":"Test","targetPhrases":[],"targetVocabulary":[],"exampleText":"","commonMistakeToAvoid":"","instructionInSourceLanguage":""}"""));
-                await db.SaveChangesAsync();
-            }
-        }
-
-        var client = ClientWithToken(token);
-        var response = await client.GetAsync("/api/activity/next");
-        // Still returns 200 even though path generation failed
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-    }
+    // Phase I2A (legacy fallback deletion): GET /api/activity/next (and the lazy path-generation
+    // + SystemFallback behaviour it exercised when AI path generation failed) was removed. See
+    // docs/reviews/2026-07-10-phase-i2a-practice-gym-legacy-deletion-review.md.
 
     private HttpClient ClientWithToken(string token)
     {

@@ -602,10 +602,6 @@ public sealed class AdminHandler :
             }
             coursesAndSessionsCleared = sessions.Count > 0;
 
-            await _db.PracticeActivityCache
-                .Where(c => c.StudentProfileId == command.StudentProfileId)
-                .ExecuteDeleteAsync(ct);
-
             var batchIds = await _db.GenerationBatches
                 .Where(b => b.StudentProfileId == command.StudentProfileId)
                 .Select(b => b.Id)

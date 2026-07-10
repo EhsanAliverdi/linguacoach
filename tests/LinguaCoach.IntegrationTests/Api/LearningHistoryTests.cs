@@ -3,6 +3,10 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using LinguaCoach.Application.Ai;
+using LinguaCoach.Domain.Enums;
+using LinguaCoach.Persistence;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace LinguaCoach.IntegrationTests.Api;
 
@@ -15,6 +19,27 @@ public sealed class LearningHistoryTests : IClassFixture<ActivityTestFactory>
 
     public LearningHistoryTests(ActivityTestFactory factory) => _factory = factory;
 
+    /// <summary>
+    /// Phase I2A: GET /api/activity/next (on-demand AI generation) was removed. Tests that used
+    /// to call it purely to obtain a valid activityId now seed a LearningActivity directly.
+    /// </summary>
+    private async Task<Guid> SeedWritingActivityAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var scenario = db.WritingScenarios.First();
+        var activity = new LinguaCoach.Domain.Entities.LearningActivity(
+            activityType: ActivityType.WritingScenario,
+            source: ActivitySource.AiGenerated,
+            title: "Test writing activity",
+            difficulty: "B1",
+            aiGeneratedContentJson: """{"situation":"test","learningGoal":"test","targetPhrases":[],"targetVocabulary":[],"exampleText":"","commonMistakeToAvoid":"","instructionInSourceLanguage":""}""",
+            sourceWritingScenarioId: scenario.Id);
+        db.LearningActivities.Add(activity);
+        await db.SaveChangesAsync();
+        return activity.Id;
+    }
+
     // ── Learning history — module activities endpoint ─────────────────────────
 
     [Fact]
@@ -22,9 +47,6 @@ public sealed class LearningHistoryTests : IClassFixture<ActivityTestFactory>
     {
         var (token, userId) = await _factory.CreateOnboardedStudentAsync($"hist_{Guid.NewGuid():N}@test.com");
         var client = ClientWithToken(token);
-
-        // Generate a path
-        await client.GetAsync("/api/activity/next");
 
         var pathResp = await client.GetAsync("/api/learning-path");
         if (pathResp.StatusCode == HttpStatusCode.NotFound) return;
@@ -61,8 +83,7 @@ public sealed class LearningHistoryTests : IClassFixture<ActivityTestFactory>
         var client = ClientWithToken(token);
 
         // Submit an attempt
-        var nextBody = await (await client.GetAsync("/api/activity/next")).Content.ReadFromJsonAsync<JsonElement>();
-        var activityId = nextBody.GetProperty("activityId").GetString()!;
+        var activityId = await SeedWritingActivityAsync();
         await client.PostAsJsonAsync($"/api/activity/{activityId}/attempt",
             new { submittedContent = "Dear Manager, I am following up on the document approval." });
 
@@ -87,8 +108,7 @@ public sealed class LearningHistoryTests : IClassFixture<ActivityTestFactory>
         var (token, _) = await _factory.CreateOnboardedStudentAsync($"retry_{Guid.NewGuid():N}@test.com");
         var client = ClientWithToken(token);
 
-        var nextBody = await (await client.GetAsync("/api/activity/next")).Content.ReadFromJsonAsync<JsonElement>();
-        var activityId = nextBody.GetProperty("activityId").GetString()!;
+        var activityId = await SeedWritingActivityAsync();
 
         // Submit twice
         await client.PostAsJsonAsync($"/api/activity/{activityId}/attempt",
@@ -112,8 +132,7 @@ public sealed class LearningHistoryTests : IClassFixture<ActivityTestFactory>
         var (token2, _) = await _factory.CreateOnboardedStudentAsync($"s2_{Guid.NewGuid():N}@test.com");
 
         var client1 = ClientWithToken(token1);
-        var nextBody = await (await client1.GetAsync("/api/activity/next")).Content.ReadFromJsonAsync<JsonElement>();
-        var activityId = nextBody.GetProperty("activityId").GetString()!;
+        var activityId = await SeedWritingActivityAsync();
         await client1.PostAsJsonAsync($"/api/activity/{activityId}/attempt",
             new { submittedContent = "Student 1 attempt." });
 

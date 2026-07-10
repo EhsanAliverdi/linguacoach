@@ -15,39 +15,12 @@ public sealed class ListeningComprehensionActivityTests : IClassFixture<Activity
 
     public ListeningComprehensionActivityTests(ActivityTestFactory factory) => _factory = factory;
 
-    [Fact]
-    public async Task GetNext_AtEveryFifthAttempt_ReturnsListeningWithoutTranscriptOrExpectedAnswers()
-    {
-        var (token, userId) = await _factory.CreateOnboardedStudentAsync($"listen_next_{Guid.NewGuid():N}@test.com");
-        using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
-        var profile = db.StudentProfiles.First(p => p.UserId == userId);
-        var activity = db.LearningActivities.First();
-
-        for (var i = 0; i < 5; i++)
-        {
-            db.ActivityAttempts.Add(new ActivityAttempt(
-                profile.Id, activity.Id, $"Attempt {i}", "{}", "activity_evaluate_writing", score: 70));
-        }
-        await db.SaveChangesAsync();
-
-        var resp = await ClientWithToken(token).GetAsync("/api/activity/next");
-        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
-
-        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.Equal("listeningComprehension", body.GetProperty("activityType").GetString());
-        Assert.True(body.TryGetProperty("listeningQuestions", out var questions));
-        Assert.True(questions.GetArrayLength() >= 2);
-        // audioAvailable is false in tests because TTS is not configured (no real TTS provider).
-        // The field must be present in the response; the value depends on TTS availability.
-        Assert.True(body.TryGetProperty("audioAvailable", out _));
-        Assert.True(body.TryGetProperty("audioUrl", out _));
-        Assert.False(body.TryGetProperty("audioScript", out _));
-        Assert.False(body.TryGetProperty("transcript", out _));
-        Assert.False(body.ToString().Contains("StorageKey", StringComparison.OrdinalIgnoreCase));
-        foreach (var q in questions.EnumerateArray())
-            Assert.False(q.TryGetProperty("expectedAnswer", out _));
-    }
+    // Phase I2A (legacy fallback deletion): GET /api/activity/next was removed — the "every 5th
+    // attempt returns ListeningComprehension" cadence and typed-request routing it used to
+    // exercise no longer exist (on-demand AI generation is gone). Coverage of the
+    // listeningQuestions/audio/expectedAnswer response shape now lives in the directly-seeded
+    // tests below (SubmitListeningAttempt_*, AudioEndpoint_*). See
+    // docs/reviews/2026-07-10-phase-i2a-practice-gym-legacy-deletion-review.md.
 
     [Fact]
     public async Task AudioEndpoint_RequiresAuth()
@@ -187,48 +160,6 @@ public sealed class ListeningComprehensionActivityTests : IClassFixture<Activity
             await db.SaveChangesAsync();
         }
         return activity.Id;
-    }
-
-    // ── Typed request: ListeningComprehension never silently falls back to WritingScenario ──
-
-    [Fact]
-    public async Task GetNext_TypedListeningComprehension_ReturnsListeningNotWritingScenario()
-    {
-        // Regression: typed request must return the requested type, not silently switch to WritingScenario.
-        var (token, _) = await _factory.CreateOnboardedStudentAsync($"listen_typed_{Guid.NewGuid():N}@test.com");
-        var client = ClientWithToken(token);
-
-        var resp = await client.GetAsync("/api/activity/next?type=ListeningComprehension");
-        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
-
-        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
-        var actType = body.GetProperty("activityType").GetString();
-        Assert.Equal("listeningComprehension", actType);
-        // Must not be writing
-        Assert.NotEqual("writingScenario", actType);
-    }
-
-    [Fact]
-    public async Task GetNext_TypedWritingScenario_ReturnsWritingScenario()
-    {
-        var (token, _) = await _factory.CreateOnboardedStudentAsync($"writing_typed_{Guid.NewGuid():N}@test.com");
-        var client = ClientWithToken(token);
-
-        var resp = await client.GetAsync("/api/activity/next?type=WritingScenario");
-        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
-
-        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.Equal("writingScenario", body.GetProperty("activityType").GetString());
-    }
-
-    [Fact]
-    public async Task GetNext_InvalidType_Returns400()
-    {
-        var (token, _) = await _factory.CreateOnboardedStudentAsync($"invalid_type_{Guid.NewGuid():N}@test.com");
-        var client = ClientWithToken(token);
-
-        var resp = await client.GetAsync("/api/activity/next?type=NonExistentType");
-        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
     }
 
     private HttpClient ClientWithToken(string token)

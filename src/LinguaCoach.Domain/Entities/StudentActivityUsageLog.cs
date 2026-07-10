@@ -5,12 +5,14 @@ namespace LinguaCoach.Domain.Entities;
 /// <summary>
 /// Records that a student actually consumed (completed) a piece of activity content, with
 /// enough content-identifying metadata to detect and prevent repetition later. This is the
-/// real content-usage history that Practice Gym's queue-slot fingerprint
-/// (<see cref="PracticeActivityCache.ContentFingerprint"/>) and the various pattern-key/topic
-/// prompt hints (<c>DynamicPatternSelector</c>, <c>LessonBatchGenerationJob</c>'s
+/// real content-usage history that the various pattern-key/topic prompt hints
+/// (<c>DynamicPatternSelector</c>, <c>LessonBatchGenerationJob</c>'s
 /// avoidRepeating/coveredScenarios) do NOT provide — see
 /// docs/architecture/repetition-and-novelty.md and
-/// docs/reviews/2026-07-08-bank-first-ai-teaching-clean-architecture-plan.md (Phase B).
+/// docs/reviews/2026-07-08-bank-first-ai-teaching-clean-architecture-plan.md (Phase B). The
+/// Practice Gym pre-generation queue-slot fingerprint this used to be contrasted against
+/// (<c>PracticeActivityCache.ContentFingerprint</c>) was removed in Phase I2A; see
+/// docs/reviews/2026-07-10-phase-i2a-practice-gym-legacy-deletion-review.md.
 ///
 /// Append-only — never mutated after creation. One row per real consumption event, not per
 /// generation attempt.
@@ -35,8 +37,8 @@ public sealed class StudentActivityUsageLog : BaseEntity
 
     // --- Content identity ---
     /// <summary>Deterministic content fingerprint from <c>IActivityContentFingerprintService</c>.
-    /// Distinct from <see cref="PracticeActivityCache.ContentFingerprint"/>, which is a
-    /// queue-slot uniqueness key computed before any content exists.</summary>
+    /// Distinct from the now-removed <c>PracticeActivityCache.ContentFingerprint</c> (Phase I2A),
+    /// which was a queue-slot uniqueness key computed before any content existed.</summary>
     public string ContentFingerprint { get; private set; }
 
     public string? TopicKey { get; private set; }

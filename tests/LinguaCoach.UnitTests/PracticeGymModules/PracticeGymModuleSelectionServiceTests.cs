@@ -378,22 +378,6 @@ public sealed class PracticeGymModuleSelectionServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task Selection_does_not_delete_or_replace_practice_gym_cache_records()
-    {
-        var studentProfileId = Guid.NewGuid();
-        SeedModule();
-        var cache = new PracticeActivityCache(studentProfileId, "gap_fill", "B1", "1", "fingerprint-1");
-        _db.PracticeActivityCache.Add(cache);
-        _db.SaveChanges();
-
-        await _sut.SelectAsync(Request(Guid.NewGuid()));
-
-        (await _db.PracticeActivityCache.CountAsync()).Should().Be(1);
-        var reloaded = await _db.PracticeActivityCache.AsNoTracking().SingleAsync();
-        reloaded.Status.Should().Be(PracticeCacheStatus.Pending);
-    }
-
-    [Fact]
     public async Task Today_module_pipeline_remains_unaffected()
     {
         var studentId = Guid.NewGuid();

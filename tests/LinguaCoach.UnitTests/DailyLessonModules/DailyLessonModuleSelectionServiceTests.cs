@@ -326,13 +326,12 @@ public sealed class DailyLessonModuleSelectionServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task Selection_creates_no_practice_gym_records()
+    public async Task Selection_creates_no_learning_activity_records()
     {
         SeedModule();
 
         await _sut.SelectAsync(Request(Guid.NewGuid()));
 
         (await _db.LearningActivities.CountAsync()).Should().Be(0);
-        (await _db.PracticeActivityCache.CountAsync()).Should().Be(0);
     }
 }

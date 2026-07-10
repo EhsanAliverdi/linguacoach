@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AdminReviewQueueService } from '../../../core/services/admin-review-queue.service';
-import { AdminActivityTemplateService } from '../../../core/services/admin-activity-template.service';
 import { AdminPlacementItemService } from '../../../core/services/admin-placement-item.service';
 import { AdminReviewQueueItemDto } from '../../../core/models/admin-review-queue.models';
 import {
@@ -27,8 +26,12 @@ const PAGE_SIZE = 20;
 
 /**
  * Phase 9 of the AI bank-first teaching architecture — a single admin surface listing bank
- * content (ActivityTemplate + PlacementItemDefinition) awaiting review, with quick
- * approve/reject actions so an admin doesn't have to visit each entity's own list to triage.
+ * content awaiting review, with quick approve/reject actions so an admin doesn't have to visit
+ * each entity's own list to triage.
+ *
+ * Phase I2A (legacy fallback deletion): the legacy ActivityTemplate entity was removed, so this
+ * now covers PlacementItemDefinition only. See
+ * docs/reviews/2026-07-10-phase-i2a-practice-gym-legacy-deletion-review.md.
  */
 @Component({
   selector: 'app-admin-review-queue',
@@ -73,7 +76,6 @@ export class AdminReviewQueueComponent implements OnInit {
 
   readonly entityTypeOptions = [
     { value: 'all', label: 'All types' },
-    { value: 'ActivityTemplate', label: 'Activity templates' },
     { value: 'PlacementItem', label: 'Placement items' },
   ];
 
@@ -86,7 +88,6 @@ export class AdminReviewQueueComponent implements OnInit {
 
   constructor(
     private svc: AdminReviewQueueService,
-    private templateSvc: AdminActivityTemplateService,
     private placementSvc: AdminPlacementItemService,
     private router: Router,
   ) {}
@@ -133,9 +134,7 @@ export class AdminReviewQueueComponent implements OnInit {
   }
 
   viewRoute(item: AdminReviewQueueItemDto): string[] {
-    return item.entityType === 'ActivityTemplate'
-      ? ['/admin/activity-templates', item.entityId]
-      : ['/admin/placement-items', item.entityId];
+    return ['/admin/placement-items', item.entityId];
   }
 
   approve(item: AdminReviewQueueItemDto): void {
@@ -143,11 +142,7 @@ export class AdminReviewQueueComponent implements OnInit {
     const onSuccess = () => { this.actionSuccess.set(`Approved "${item.displayKey}".`); this.loadAll(); };
     const onError = (err: { error?: { error?: string } }) => this.actionError.set(err.error?.error ?? 'Could not approve item.');
 
-    if (item.entityType === 'ActivityTemplate') {
-      this.templateSvc.setReviewStatus(item.entityId, { action: 'approve' }).subscribe({ next: onSuccess, error: onError });
-    } else {
-      this.placementSvc.setReviewStatus(item.entityId, { action: 'approve' }).subscribe({ next: onSuccess, error: onError });
-    }
+    this.placementSvc.setReviewStatus(item.entityId, { action: 'approve' }).subscribe({ next: onSuccess, error: onError });
   }
 
   reject(item: AdminReviewQueueItemDto): void {
@@ -158,10 +153,6 @@ export class AdminReviewQueueComponent implements OnInit {
     const onSuccess = () => { this.actionSuccess.set(`Rejected "${item.displayKey}".`); this.loadAll(); };
     const onError = (err: { error?: { error?: string } }) => this.actionError.set(err.error?.error ?? 'Could not reject item.');
 
-    if (item.entityType === 'ActivityTemplate') {
-      this.templateSvc.setReviewStatus(item.entityId, { action: 'reject', reason }).subscribe({ next: onSuccess, error: onError });
-    } else {
-      this.placementSvc.setReviewStatus(item.entityId, { action: 'reject', reason }).subscribe({ next: onSuccess, error: onError });
-    }
+    this.placementSvc.setReviewStatus(item.entityId, { action: 'reject', reason }).subscribe({ next: onSuccess, error: onError });
   }
 }

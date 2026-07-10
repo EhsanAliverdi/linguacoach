@@ -16,7 +16,6 @@ public static class FeatureGateDefinitions
     [
         ReviewScaffoldGeneration,
         PracticeGymReviewScaffoldPilot,
-        PracticeGymFormIoTemplatePilot,
         LessonGenerationBuffer,
         TtsGeneration,
         PracticeGymGenerationPerType,
@@ -179,34 +178,14 @@ public static class FeatureGateDefinitions
         ],
     };
 
-    public static readonly FeatureGateGroupDefinition PracticeGymFormIoTemplatePilot = new()
-    {
-        GroupKey = "practice-gym-formio-template-pilot",
-        DisplayName = "Practice Gym Form.io template pilot",
-        Description = "AI Bank-First Teaching Architecture pilot: when on, PracticeGymGenerationJob personalizes the dedicated 'formio_practice_gym_pilot' pattern from a published, approved ActivityTemplate instead of free-form AI generation, and renders it via Form.io. Inert unless the pattern's ExerciseTypeDefinition is also promoted from 'planned' to 'ready' by an admin — this flag alone does not make it live.",
-        Category = FeatureGateCategory.PracticeGymFormIoTemplatePilot,
-        BackingStore = FeatureGateBackingStore.ReadinessPoolOverride,
-        Dependencies =
-        [
-            "ExerciseTypeDefinition for 'formio_practice_gym_pilot' must be promoted to ImplementationStatus=ready",
-            "At least one published, Approved ActivityTemplate with PatternKey='formio_practice_gym_pilot' must exist",
-        ],
-        WarningText = "Turning this off is the fastest rollback — generation immediately falls back to the pattern being inert (planned exercise type), no student-facing content is affected.",
-        Settings =
-        [
-            new FeatureGateSettingDefinition
-            {
-                Key = "PracticeGymFormIoPilot.Enabled",
-                DisplayName = "Pilot enabled",
-                Description = "When on, the Form.io template pilot pattern personalizes from ActivityTemplate instead of free-form AI generation.",
-                DataType = FeatureGateDataType.Boolean,
-                DefaultValueJson = "false",
-                IsEditableAtRuntime = true,
-                RiskLevel = FeatureGateRiskLevel.High,
-                RequiresConfirmation = true,
-            },
-        ],
-    };
+    // Phase I2A (legacy fallback deletion): the "Practice Gym Form.io template pilot" feature
+    // gate group (GroupKey "practice-gym-formio-template-pilot", setting key
+    // "PracticeGymFormIoPilot.Enabled") was removed here — it toggled behavior in
+    // PracticeGymGenerationJob and IPracticeGymFormIoTemplatePilotSettingsProvider, both of which
+    // were deleted along with the ActivityTemplate entity. Any pre-existing
+    // RuntimeSettingOverride row for "PracticeGymFormIoPilot.Enabled" is now orphaned but
+    // harmless (nothing reads that key). See
+    // docs/reviews/2026-07-10-phase-i2a-practice-gym-legacy-deletion-review.md.
 
     public static readonly FeatureGateGroupDefinition LessonGenerationBuffer = new()
     {

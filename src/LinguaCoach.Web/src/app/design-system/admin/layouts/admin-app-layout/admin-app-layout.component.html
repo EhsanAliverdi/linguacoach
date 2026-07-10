@@ -108,9 +108,6 @@
     <div class="mb-2">
       <sp-admin-sidebar-section label="Content Ops" [collapsed]="false" />
       <ul class="flex flex-col gap-1">
-        <li><sp-admin-sidebar-nav-item label="Activity templates" route="/admin/activity-templates" [collapsed]="false" (itemClick)="closeDrawer()">
-          <sp-admin-icon name="list" />
-        </sp-admin-sidebar-nav-item></li>
         <li><sp-admin-sidebar-nav-item label="Review queue" route="/admin/review-queue" [collapsed]="false" (itemClick)="closeDrawer()">
           <sp-admin-icon name="alert-circle" />
         </sp-admin-sidebar-nav-item></li>
@@ -282,9 +279,6 @@
       <div class="mb-2">
         <sp-admin-sidebar-section label="Content Ops" [collapsed]="collapsed()" />
         <ul class="flex flex-col gap-1">
-          <li><sp-admin-sidebar-nav-item label="Activity templates" route="/admin/activity-templates" [collapsed]="collapsed()">
-            <sp-admin-icon name="list" />
-          </sp-admin-sidebar-nav-item></li>
           <li><sp-admin-sidebar-nav-item label="Review queue" route="/admin/review-queue" [collapsed]="collapsed()">
             <sp-admin-icon name="alert-circle" />
           </sp-admin-sidebar-nav-item></li>

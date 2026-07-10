@@ -4,10 +4,11 @@ namespace LinguaCoach.Application.ActivityDefinitions;
 // (or authored about) one or more published Resource Bank rows, optionally linked to a Learn
 // Item — the "Practice" half of a future Module (Resource Bank Item → Learn Item/Activity →
 // Module, see docs/architecture/product-model-realignment-h0.md). Distinct from the existing
-// runtime LearningActivity (per-student delivery record) and ActivityTemplate (already wired into
-// the live Practice Gym Form.io pilot) — see ActivityDefinition's doc comment. Nothing here
-// creates a Module row, assigns anything to a student, or auto-publishes — every Activity starts
-// pending review and only an explicit admin approve/reject changes that. ──
+// runtime LearningActivity (per-student delivery record) — see ActivityDefinition's doc comment.
+// The legacy ActivityTemplate Form.io pilot this used to be contrasted against was removed in
+// Phase I2A; see docs/reviews/2026-07-10-phase-i2a-practice-gym-legacy-deletion-review.md.
+// Nothing here creates a Module row, assigns anything to a student, or auto-publishes — every
+// Activity starts pending review and only an explicit admin approve/reject changes that. ──
 
 public sealed record ActivityResourceLinkDto(
     Guid LinkId,

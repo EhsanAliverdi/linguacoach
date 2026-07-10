@@ -22,7 +22,6 @@ namespace LinguaCoach.Api.Controllers;
 [Authorize]
 public sealed class ActivityController : ControllerBase
 {
-    private readonly IGetNextActivityHandler _getNextActivity;
     private readonly IGetActivityByIdHandler _getActivityById;
     private readonly ISubmitActivityAttemptHandler _submitAttempt;
     private readonly ISubmitActivityFeedbackHandler _submitFeedback;
@@ -34,7 +33,6 @@ public sealed class ActivityController : ControllerBase
     private readonly IPatternEvaluationRouter _patternRouter;
     private readonly LinguaCoach.Application.Admin.IExerciseTypeCatalogService _exerciseTypes;
     private readonly IExerciseTypeRegistry _exerciseTypeRegistry;
-    private readonly IPracticeGymPoolService _practiceGymPool;
     private readonly LinguaCoach.Application.Storage.IFileStorageService _storage;
     private readonly ISpeakingEvaluationService _speakingEvaluation;
     private readonly IWritingEvaluationService _writingEvaluation;
@@ -43,7 +41,6 @@ public sealed class ActivityController : ControllerBase
     private static readonly TimeSpan SignedUrlExpiry = TimeSpan.FromMinutes(5);
 
     public ActivityController(
-        IGetNextActivityHandler getNextActivity,
         IGetActivityByIdHandler getActivityById,
         ISubmitActivityAttemptHandler submitAttempt,
         ISubmitActivityFeedbackHandler submitFeedback,
@@ -55,13 +52,11 @@ public sealed class ActivityController : ControllerBase
         IPatternEvaluationRouter patternRouter,
         LinguaCoach.Application.Admin.IExerciseTypeCatalogService exerciseTypes,
         IExerciseTypeRegistry exerciseTypeRegistry,
-        IPracticeGymPoolService practiceGymPool,
         LinguaCoach.Application.Storage.IFileStorageService storage,
         ISpeakingEvaluationService speakingEvaluation,
         IWritingEvaluationService writingEvaluation,
         ILogger<ActivityController> logger)
     {
-        _getNextActivity = getNextActivity;
         _getActivityById = getActivityById;
         _submitAttempt = submitAttempt;
         _submitFeedback = submitFeedback;
@@ -73,7 +68,6 @@ public sealed class ActivityController : ControllerBase
         _patternRouter = patternRouter;
         _exerciseTypes = exerciseTypes;
         _exerciseTypeRegistry = exerciseTypeRegistry;
-        _practiceGymPool = practiceGymPool;
         _storage = storage;
         _speakingEvaluation = speakingEvaluation;
         _writingEvaluation = writingEvaluation;
@@ -130,106 +124,28 @@ public sealed class ActivityController : ControllerBase
     }
 
     /// <summary>
-    /// Practice Gym start flow: checks the pre-generated pool first for a ready
-    /// activity (exact exercise type, or any registry-eligible type for the
-    /// given skill), and falls back to on-demand generation via
-    /// <see cref="IGetNextActivityHandler"/> if the pool has nothing ready.
+    /// Practice Gym start flow. Phase I2A (legacy fallback deletion): the pre-generated
+    /// <c>PracticeActivityCache</c> pool and the on-demand AI-generation fallback were both
+    /// removed — Practice Gym now serves bank-first content only (gap_fill /
+    /// multiple_choice_single over vocabulary/grammar, via the H10 launch bridge and H7 module
+    /// suggestions). This endpoint no longer generates content; it honestly reports nothing
+    /// available so the client can route the student to
+    /// <see cref="PracticeGymSuggestionsController"/>'s module-suggestions flow instead. See
+    /// docs/reviews/2026-07-10-phase-i2a-practice-gym-legacy-deletion-review.md.
     /// </summary>
     [HttpGet("practice-gym/next")]
     [EnableRateLimiting("WritingAi")]
-    public async Task<IActionResult> GetPracticeGymNext(
+    public Task<IActionResult> GetPracticeGymNext(
         [FromQuery] string? skill = null,
         [FromQuery] string? exerciseType = null,
         CancellationToken ct = default)
     {
         var userId = GetCurrentUserId();
-        if (userId == Guid.Empty) return Unauthorized();
+        if (userId == Guid.Empty) return Task.FromResult<IActionResult>(Unauthorized());
 
-        if (string.IsNullOrWhiteSpace(skill) && string.IsNullOrWhiteSpace(exerciseType))
-            return Ok(new PracticeGymNextResponse(false, null, null, null, null, reason: "Choose a skill or exercise type before starting practice."));
-
-        var profile = await _db.StudentProfiles.FirstOrDefaultAsync(p => p.UserId == userId, ct);
-        if (profile is null) return Unauthorized();
-
-        var poolItem = !string.IsNullOrWhiteSpace(exerciseType)
-            ? await _practiceGymPool.FindReadyForExerciseTypeAsync(profile.Id, exerciseType.Trim(), ct)
-            : await _practiceGymPool.FindReadyForSkillAsync(profile.Id, skill!.Trim(), ct);
-
-        if (poolItem is not null)
-        {
-            _logger.LogInformation(
-                "PracticeGym start served from pool PoolItemId={PoolItemId} ExerciseType={ExerciseType} ActivityId={ActivityId}",
-                poolItem.PoolItemId, poolItem.ExerciseTypeKey, poolItem.LearningActivityId);
-
-            return Ok(new PracticeGymNextResponse(
-                true, poolItem.LearningActivityId, poolItem.ExerciseTypeKey, poolItem.PrimarySkill, "pool", poolItem.PoolItemId));
-        }
-
-        // Fallback: on-demand generation via the existing /api/activity/next path.
-        var query = !string.IsNullOrWhiteSpace(exerciseType)
-            ? new GetNextActivityQuery(userId, PreferredExerciseTypeKey: exerciseType.Trim())
-            : null;
-
-        if (query is null)
-        {
-            var selected = await _exerciseTypeRegistry.SelectForPracticeGymSkillAsync(skill!.Trim(), ct);
-            if (selected is null)
-                return Ok(new PracticeGymNextResponse(false, null, null, null, null, reason: $"No ready Practice Gym exercise is available for {skill!.Trim()} yet."));
-
-            query = new GetNextActivityQuery(userId, PreferredExerciseTypeKey: selected.Key);
-        }
-
-        try
-        {
-            var result = await _getNextActivity.HandleAsync(query, ct);
-            _logger.LogInformation(
-                "PracticeGym start served from on-demand fallback ActivityId={ActivityId} ExercisePatternKey={PatternKey}",
-                result.ActivityId, result.ExercisePatternKey);
-
-            return Ok(new PracticeGymNextResponse(
-                true, result.ActivityId, result.ExercisePatternKey, null, "onDemandFallback", null));
-        }
-        catch (AiServiceUnavailableException ex)
-        {
-            return StatusCode(503, new { error = "The AI service is not available. Please try again shortly.", retryable = true, featureKey = ex.FeatureKey });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return Ok(new PracticeGymNextResponse(false, null, null, null, null, reason: ex.Message));
-        }
-    }
-
-    [HttpGet("next")]
-    [EnableRateLimiting("WritingAi")]
-    public async Task<IActionResult> GetNext(
-        [FromQuery] ActivityType? type = null,
-        [FromQuery] string? pattern = null,
-        [FromQuery] string? exerciseType = null,
-        CancellationToken ct = default)
-    {
-        var userId = GetCurrentUserId();
-        if (userId == Guid.Empty) return Unauthorized();
-
-        // pattern takes precedence over type when both are supplied.
-        var query = !string.IsNullOrWhiteSpace(exerciseType)
-            ? new GetNextActivityQuery(userId, PreferredExerciseTypeKey: exerciseType.Trim())
-            : !string.IsNullOrWhiteSpace(pattern)
-                ? new GetNextActivityQuery(userId, PreferredPatternKey: pattern.Trim())
-                : new GetNextActivityQuery(userId, PreferredType: type);
-
-        try
-        {
-            var result = await _getNextActivity.HandleAsync(query, ct);
-            return Ok(ToActivityResponse(result));
-        }
-        catch (AiServiceUnavailableException ex)
-        {
-            return StatusCode(503, new { error = "The AI service is not available. Please try again shortly.", retryable = true, featureKey = ex.FeatureKey });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
+        return Task.FromResult<IActionResult>(Ok(new PracticeGymNextResponse(
+            false, null, null, null, null,
+            reason: "On-demand Practice Gym generation is no longer available. Use the recommended module practice suggestions instead.")));
     }
 
     /// <summary>Returns a specific activity by ID. Used by the lesson page to load a prepared activity.</summary>

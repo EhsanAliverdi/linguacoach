@@ -9,8 +9,10 @@ namespace LinguaCoach.Api.Controllers;
 /// Phase H4 — Activity foundation. Reviewable, editable practice task designs generated from (or
 /// manually authored about) selected published Resource Bank rows, optionally linked to a Learn
 /// Item — the "Practice" half of a future Module. Distinct from the existing runtime
-/// <c>LearningActivity</c> (per-student delivery record) and <c>ActivityTemplate</c> (already
-/// wired into the live Practice Gym Form.io pilot) — see <c>ActivityDefinition</c>'s doc comment.
+/// <c>LearningActivity</c> (per-student delivery record) — see <c>ActivityDefinition</c>'s doc
+/// comment. The legacy <c>ActivityTemplate</c> Form.io pilot this used to be contrasted against
+/// was removed in Phase I2A; see
+/// docs/reviews/2026-07-10-phase-i2a-practice-gym-legacy-deletion-review.md.
 /// Every create/generate action stages a pending-review row; only <see cref="Approve"/>/
 /// <see cref="Reject"/> change that. Never creates a Module row, never assigns anything to a
 /// student, never changes Today/Practice Gym runtime selection.

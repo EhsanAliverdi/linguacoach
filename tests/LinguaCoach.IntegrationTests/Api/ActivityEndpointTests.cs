@@ -24,25 +24,9 @@ public sealed class ActivityFallbackTests : IClassFixture<ActivityFallbackTestFa
         _factory = factory;
     }
 
-    [Fact]
-    public async Task GetNextActivity_WhenAiUnavailable_Returns503()
-    {
-        var (token, _) = await _factory.CreateOnboardedStudentAsync($"activity_fallback_{Guid.NewGuid():N}@test.com");
-        var client = ClientWithToken(token);
-
-        var response = await client.GetAsync("/api/activity/next");
-
-        // No fallback: AI unavailable → 503 ServiceUnavailable
-        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task GetNextActivity_Unauthenticated_Returns401()
-    {
-        var client = _factory.CreateClient();
-        var response = await client.GetAsync("/api/activity/next");
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-    }
+    // Phase I2A (legacy fallback deletion): GET /api/activity/next was removed — Practice Gym no
+    // longer generates on demand. The 503/401 coverage this used to provide for the deleted
+    // endpoint no longer applies; see docs/reviews/2026-07-10-phase-i2a-practice-gym-legacy-deletion-review.md.
 
     [Fact]
     public async Task SubmitAttempt_WhenAiEvaluationFails_SavesAttemptAndReturns200()
@@ -128,6 +112,23 @@ public sealed class ActivityStructuredFeedbackTests : IClassFixture<ActivityTest
         _factory = factory;
     }
 
+    private async Task<string> SeedWritingActivityAsync()
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var scenario = db.WritingScenarios.First();
+        var activity = new LinguaCoach.Domain.Entities.LearningActivity(
+            activityType: ActivityType.WritingScenario,
+            source: ActivitySource.AiGenerated,
+            title: "Test writing activity",
+            difficulty: "B1",
+            aiGeneratedContentJson: """{"situation":"test","learningGoal":"test","targetPhrases":[],"targetVocabulary":[],"exampleText":"","commonMistakeToAvoid":"","instructionInSourceLanguage":""}""",
+            sourceWritingScenarioId: scenario.Id);
+        db.LearningActivities.Add(activity);
+        await db.SaveChangesAsync();
+        return activity.Id.ToString();
+    }
+
     [Fact]
     public async Task SubmitAttempt_TwiceForSameActivity_CreatesTwoSeparateAttempts()
     {
@@ -135,8 +136,7 @@ public sealed class ActivityStructuredFeedbackTests : IClassFixture<ActivityTest
         var client = _factory.CreateClient();
         client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-        var nextBody = await (await client.GetAsync("/api/activity/next")).Content.ReadFromJsonAsync<JsonElement>();
-        var activityId = nextBody.GetProperty("activityId").GetString()!;
+        var activityId = await SeedWritingActivityAsync();
 
         // First attempt
         var resp1 = await client.PostAsJsonAsync(
@@ -183,8 +183,7 @@ public sealed class ActivityStructuredFeedbackTests : IClassFixture<ActivityTest
         var client = _factory.CreateClient();
         client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-        var nextBody = await (await client.GetAsync("/api/activity/next")).Content.ReadFromJsonAsync<JsonElement>();
-        var activityId = nextBody.GetProperty("activityId").GetString()!;
+        var activityId = await SeedWritingActivityAsync();
 
         var resp = await client.PostAsJsonAsync(
             $"/api/activity/{activityId}/attempt",

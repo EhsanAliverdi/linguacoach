@@ -378,7 +378,6 @@ public sealed class ResourceCandidatePublishServiceTests : IDisposable
 
         result.Success.Should().BeFalse();
         result.Errors.Should().Contain(e => e.Contains("deferred in Phase E4"));
-        (await _db.ActivityTemplates.CountAsync()).Should().Be(0);
     }
 
     [Fact]

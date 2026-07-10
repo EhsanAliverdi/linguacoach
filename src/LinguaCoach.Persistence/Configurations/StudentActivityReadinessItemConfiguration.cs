@@ -82,10 +82,10 @@ internal sealed class StudentActivityReadinessItemConfiguration
         builder.Property(e => e.ValidationStatus).HasColumnName("validation_status")
             .HasConversion<string>().HasMaxLength(50);
 
-        builder.HasOne<ActivityTemplate>()
-            .WithMany()
-            .HasForeignKey(e => e.SourceTemplateId)
-            .OnDelete(DeleteBehavior.Restrict);
+        // Note: SourceTemplateId no longer has a FK relation — the ActivityTemplate entity/table
+        // was removed in Phase I2A (legacy fallback deletion). The column remains as plain data
+        // for historical rows; no new writes populate it. StudentActivityReadinessItem itself is
+        // otherwise untouched this pass (Today still uses the readiness pool).
 
         builder.HasOne<PlacementItemDefinition>()
             .WithMany()

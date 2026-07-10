@@ -48,13 +48,12 @@ public sealed class ActivityNoveltyPolicyTests : IDisposable
         _db.Dispose();
     }
 
-    private Guid SeedTemplate()
-    {
-        var template = new ActivityTemplate("tmpl_" + Guid.NewGuid().ToString("N")[..8], "writing", "B1", "WritingScenario");
-        _db.ActivityTemplates.Add(template);
-        _db.SaveChanges();
-        return template.Id;
-    }
+    /// <summary>
+    /// SourceTemplateId no longer has a FK relation (the ActivityTemplate entity/table was
+    /// removed in Phase I2A) — it's a plain nullable Guid column read by ActivityNoveltyPolicy's
+    /// cooldown check. Any Guid exercises the same code path.
+    /// </summary>
+    private Guid SeedTemplate() => Guid.NewGuid();
 
     private void SeedUsageLog(
         string fingerprint,

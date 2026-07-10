@@ -1,4 +1,6 @@
-export const REVIEW_QUEUE_ENTITY_TYPES = ['ActivityTemplate', 'PlacementItem'] as const;
+// Phase I2A — the legacy ActivityTemplate entity was removed; the review queue now covers
+// PlacementItem only. See docs/reviews/2026-07-10-phase-i2a-practice-gym-legacy-deletion-review.md.
+export const REVIEW_QUEUE_ENTITY_TYPES = ['PlacementItem'] as const;
 export type ReviewQueueEntityType = (typeof REVIEW_QUEUE_ENTITY_TYPES)[number];
 
 export interface AdminReviewQueueItemDto {

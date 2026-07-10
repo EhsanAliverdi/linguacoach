@@ -131,13 +131,16 @@ export const routes: Routes = [
         path: 'placement-items/:itemId',
         loadComponent: () => import('./features/admin/admin-placement-item-editor/admin-placement-item-editor.component').then(m => m.AdminPlacementItemEditorComponent),
       },
+      // Phase I2A — the legacy ActivityTemplate Form.io-pilot admin pages were removed; old
+      // bookmarks/links redirect to H4's ActivityDefinition admin page instead (see
+      // docs/reviews/2026-07-10-phase-i2a-practice-gym-legacy-deletion-review.md).
       {
         path: 'activity-templates',
-        loadComponent: () => import('./features/admin/admin-activity-templates/admin-activity-templates.component').then(m => m.AdminActivityTemplatesComponent),
+        redirectTo: () => '/admin/activities',
       },
       {
         path: 'activity-templates/:templateId',
-        loadComponent: () => import('./features/admin/admin-activity-template-editor/admin-activity-template-editor.component').then(m => m.AdminActivityTemplateEditorComponent),
+        redirectTo: () => '/admin/activities',
       },
       {
         path: 'review-queue',

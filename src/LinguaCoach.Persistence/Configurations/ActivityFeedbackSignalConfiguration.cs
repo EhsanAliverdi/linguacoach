@@ -67,10 +67,9 @@ internal sealed class ActivityFeedbackSignalConfiguration
             .HasForeignKey(e => e.StudentActivityReadinessItemId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne<ActivityTemplate>()
-            .WithMany()
-            .HasForeignKey(e => e.SourceTemplateId)
-            .OnDelete(DeleteBehavior.Restrict);
+        // Note: SourceTemplateId no longer has a FK relation — the ActivityTemplate entity/table
+        // was removed in Phase I2A (legacy fallback deletion). The column remains as plain data
+        // for historical rows; no new writes populate it.
 
         builder.HasOne<PlacementItemDefinition>()
             .WithMany()

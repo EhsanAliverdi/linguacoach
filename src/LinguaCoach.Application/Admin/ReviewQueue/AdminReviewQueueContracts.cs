@@ -6,24 +6,23 @@ namespace LinguaCoach.Application.Admin.ReviewQueue;
 /// listing content across every bank entity that carries an <c>AdminReviewStatus</c>, so an
 /// admin doesn't have to visit each entity's own list to find what needs reviewing.
 ///
-/// Scope: <c>ActivityTemplate</c> and <c>PlacementItemDefinition</c> — the two bank-content
-/// entities with an ad hoc approve/reject action bar added in earlier phases. Deliberately
+/// Scope: <c>PlacementItemDefinition</c> only, as of Phase I2A (the legacy
+/// <c>ActivityTemplate</c> entity was removed; see
+/// docs/reviews/2026-07-10-phase-i2a-practice-gym-legacy-deletion-review.md). Deliberately
 /// excludes <c>StudentActivityReadinessItem</c>'s review-scaffold pilot, which is a per-student
 /// generated-instance lifecycle with its own dedicated pilot admin surface, not bank curation.
 /// </summary>
 public static class ReviewQueueEntityType
 {
-    public const string ActivityTemplate = "ActivityTemplate";
     public const string PlacementItem = "PlacementItem";
 
-    public static readonly IReadOnlyList<string> All = [ActivityTemplate, PlacementItem];
+    public static readonly IReadOnlyList<string> All = [PlacementItem];
 }
 
 public sealed record AdminReviewQueueItemDto(
     string EntityType,
     Guid EntityId,
-    /// <summary>Stable identifier — ActivityTemplate.Key, or a derived label for placement items
-    /// (which have no natural key).</summary>
+    /// <summary>Derived label for placement items (which have no natural key).</summary>
     string DisplayKey,
     string Skill,
     string CefrLevel,

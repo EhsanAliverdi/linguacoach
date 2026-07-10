@@ -33,17 +33,25 @@ public sealed class AdminRuntimeSettingsEffectiveWiringTests : IClassFixture<Api
         return client;
     }
 
+    // Phase I2A (legacy fallback deletion): PracticeGymSuggestionService no longer reads the
+    // readiness pool for ReviewItems (or SuggestedItems/ContinueItems) at all — the Practice Gym
+    // review/scaffold pilot's student-visible surface is gone regardless of the
+    // ReadinessPool.PracticeGymPilotEnabled toggle. These tests now assert the toggle has no
+    // effect on the suggestions response instead of asserting it makes an item visible. The
+    // toggle/label/reason runtime settings themselves are untouched (still settable) — only their
+    // former consumer (PracticeGymSuggestionService's ReviewItems) is gone. See
+    // docs/reviews/2026-07-10-phase-i2a-practice-gym-legacy-deletion-review.md.
+
     [Fact]
-    public async Task Update_PracticeGymPilotEnabled_MakesApprovedScaffoldItemVisible()
+    public async Task Update_PracticeGymPilotEnabled_DoesNotMakeApprovedScaffoldItemVisible()
     {
         var adminToken = await _factory.CreateAdminAndGetTokenAsync();
         var (studentToken, userId) = await _factory.CreateStudentAndGetTokenAsync($"wiring-pilot-on_{Guid.NewGuid():N}@t.com");
         var profileId = await GetProfileIdAsync(userId);
         await CreateApprovedScaffoldItemAsync(profileId);
 
-        // Before enabling the pilot, the approved scaffold item must stay hidden.
         var before = await ClientWithToken(studentToken).GetAsync("/api/practice-gym/suggestions");
-        Assert.DoesNotContain("\"reviewItems\":[{", (await before.Content.ReadAsStringAsync()).Replace(" ", ""));
+        Assert.Contains("\"reviewItems\":[]", (await before.Content.ReadAsStringAsync()).Replace(" ", ""));
 
         var update = await ClientWithToken(adminToken).PutAsJsonAsync(
             "/api/admin/runtime-settings/feature-gates/practice-gym-review-scaffold-pilot/settings",
@@ -56,66 +64,7 @@ public sealed class AdminRuntimeSettingsEffectiveWiringTests : IClassFixture<Api
 
         var after = await ClientWithToken(studentToken).GetAsync("/api/practice-gym/suggestions");
         Assert.Equal(HttpStatusCode.OK, after.StatusCode);
-        Assert.Contains("\"reviewItems\":[{", (await after.Content.ReadAsStringAsync()).Replace(" ", ""));
-    }
-
-    [Fact]
-    public async Task Update_PracticeGymPilotLabelAndReason_ReflectedInSuggestionDto()
-    {
-        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
-        var (studentToken, userId) = await _factory.CreateStudentAndGetTokenAsync($"wiring-pilot-label_{Guid.NewGuid():N}@t.com");
-        var profileId = await GetProfileIdAsync(userId);
-        await CreateApprovedScaffoldItemAsync(profileId);
-
-        await ClientWithToken(adminToken).PutAsJsonAsync(
-            "/api/admin/runtime-settings/feature-gates/practice-gym-review-scaffold-pilot/settings",
-            new
-            {
-                values = new Dictionary<string, object>
-                {
-                    ["ReadinessPool.PracticeGymPilotEnabled"] = true,
-                    ["ReadinessPool.PracticeGymPilotLabel"] = "Custom Label",
-                    ["ReadinessPool.PracticeGymPilotReason"] = "Custom reason text.",
-                },
-                reason = "Effective-wiring test: custom label/reason.",
-            });
-
-        var response = await ClientWithToken(studentToken).GetAsync("/api/practice-gym/suggestions");
-        var body = await response.Content.ReadAsStringAsync();
-        Assert.Contains("Custom Label", body);
-        Assert.Contains("Custom reason text.", body);
-    }
-
-    [Fact]
-    public async Task ResetOverride_RestoresAppSettingsDefault_HidesScaffoldItemAgain()
-    {
-        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
-        var (studentToken, userId) = await _factory.CreateStudentAndGetTokenAsync($"wiring-pilot-reset_{Guid.NewGuid():N}@t.com");
-        var profileId = await GetProfileIdAsync(userId);
-        await CreateApprovedScaffoldItemAsync(profileId);
-        var client = ClientWithToken(adminToken);
-
-        await client.PutAsJsonAsync(
-            "/api/admin/runtime-settings/feature-gates/practice-gym-review-scaffold-pilot/settings",
-            new
-            {
-                values = new Dictionary<string, object> { ["ReadinessPool.PracticeGymPilotEnabled"] = true },
-                reason = "Enable before reset test.",
-            });
-
-        var enabled = await ClientWithToken(studentToken).GetAsync("/api/practice-gym/suggestions");
-        Assert.Contains("\"reviewItems\":[{", (await enabled.Content.ReadAsStringAsync()).Replace(" ", ""));
-
-        var resetRequest = new HttpRequestMessage(
-            HttpMethod.Delete, "/api/admin/runtime-settings/feature-gates/practice-gym-review-scaffold-pilot/override")
-        {
-            Content = JsonContent.Create(new { reason = "Reverting to appsettings default." }),
-        };
-        var resetResponse = await client.SendAsync(resetRequest);
-        Assert.Equal(HttpStatusCode.OK, resetResponse.StatusCode);
-
-        var afterReset = await ClientWithToken(studentToken).GetAsync("/api/practice-gym/suggestions");
-        Assert.DoesNotContain("\"reviewItems\":[{", (await afterReset.Content.ReadAsStringAsync()).Replace(" ", ""));
+        Assert.Contains("\"reviewItems\":[]", (await after.Content.ReadAsStringAsync()).Replace(" ", ""));
     }
 
     [Fact]

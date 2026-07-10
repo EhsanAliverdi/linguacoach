@@ -45,7 +45,6 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<GenerationBatch> GenerationBatches => Set<GenerationBatch>();
     public DbSet<GenerationJobItem> GenerationJobItems => Set<GenerationJobItem>();
     public DbSet<GenerationValidationFailure> GenerationValidationFailures => Set<GenerationValidationFailure>();
-    public DbSet<PracticeActivityCache> PracticeActivityCache => Set<PracticeActivityCache>();
     public DbSet<StudentLearningEvent> StudentLearningEvents => Set<StudentLearningEvent>();
 
     // T47 — Onboarding v2
@@ -55,7 +54,6 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
 
     // Phase 10K — Curriculum syllabus foundation
     public DbSet<CurriculumObjective> CurriculumObjectives => Set<CurriculumObjective>();
-    public DbSet<ActivityTemplate> ActivityTemplates => Set<ActivityTemplate>();
     public DbSet<CefrResourceSource> CefrResourceSources => Set<CefrResourceSource>();
     public DbSet<CefrDescriptor> CefrDescriptors => Set<CefrDescriptor>();
 
@@ -158,13 +156,6 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
         if (Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true)
         {
             modelBuilder.Entity<LearningPath>()
-                .Property<uint>("xmin")
-                .HasColumnName("xmin")
-                .HasColumnType("xid")
-                .ValueGeneratedOnAddOrUpdate()
-                .IsConcurrencyToken();
-
-            modelBuilder.Entity<PracticeActivityCache>()
                 .Property<uint>("xmin")
                 .HasColumnName("xmin")
                 .HasColumnType("xid")

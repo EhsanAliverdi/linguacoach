@@ -2,18 +2,6 @@ using LinguaCoach.Domain.Enums;
 
 namespace LinguaCoach.Application.Activity;
 
-// ── Get next activity ──────────────────────────────────────────────────────────
-
-public sealed record GetNextActivityQuery(
-    Guid UserId,
-    ActivityType? PreferredType = null,
-    /// <summary>
-    /// When set, bypasses the broad ActivityType routing and generates an activity using the
-    /// specified exercise pattern definition. PreferredType is ignored when this is supplied.
-    /// </summary>
-    string? PreferredPatternKey = null,
-    string? PreferredExerciseTypeKey = null);
-
 public sealed record ActivityDto(
     Guid ActivityId,
     ActivityType ActivityType,
@@ -89,10 +77,6 @@ public sealed record ListeningResponseTaskDto(
     string Prompt,
     string? ExpectedFocus = null);
 
-public interface IGetNextActivityHandler
-{
-    Task<ActivityDto> HandleAsync(GetNextActivityQuery query, CancellationToken ct = default);
-}
 
 // ── Get activity by id ─────────────────────────────────────────────────────────
 

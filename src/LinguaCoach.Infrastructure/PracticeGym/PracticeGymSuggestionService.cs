@@ -11,57 +11,56 @@ using Microsoft.Extensions.Logging;
 namespace LinguaCoach.Infrastructure.PracticeGym;
 
 /// <summary>
-/// Builds personalised Practice Gym suggestion lists from the student readiness pool.
+/// Phase I2A (legacy fallback deletion): SuggestedItems/ContinueItems/ReviewItems no longer read
+/// the student readiness pool for Practice-Gym-sourced (<see cref="ReadinessPoolSource.PracticeGym"/>)
+/// rows — that generation path (readiness-pool-backed Practice Gym content, including the
+/// review/scaffold pilot described below) was removed. Those three lists are now always empty.
+/// <see cref="PracticeGymSuggestionsDto.ModuleSuggestions"/> (Phase H7, computed via
+/// <see cref="IPracticeGymModuleSelectionService"/>) is unaffected — it was already independent
+/// of the readiness pool and is now the sole real content in this DTO. See
+/// docs/reviews/2026-07-10-phase-i2a-practice-gym-legacy-deletion-review.md.
 ///
-/// Ranking order: focus-area match → goal/context match → routing priority → expiry urgency → FIFO.
+/// StartSuggestionAsync/TryMarkConsumedAsync are unchanged — Today still writes/reserves
+/// readiness-pool items directly, and these methods operate generically on a given
+/// readinessItemId (no PracticeGym-source filter of their own), out of scope for this pass.
 ///
-/// Guardrails (defence-in-depth):
-///   - Consumed / expired / failed / stale / queued / generating items excluded entirely.
-///   - Items with RequiresAdminReview=true are excluded unless per-item AdminReviewStatus=Approved
-///     (Phase 19B). PendingReview and Rejected items are excluded entirely.
-///   - ReviewOnly status items go to ReviewItems only, never SuggestedItems.
-///   - RoutingReason.Review / Scaffold / Remediation items with Ready status
-///     go to ReviewItems if IsLowerLevelContent, otherwise may appear in Suggested.
-///   - Reserved valid items go to ContinueItems.
-///   - general_english is fallback context — workplace is never default.
-///
-/// Phase 19C pilot gate:
-///   - Approved review/scaffold items (RequiresAdminReview=true) are further gated on
-///     PracticeGymPilotEnabled. When the pilot is off, they are excluded from ReviewItems
-///     entirely — even though generation and admin approval (19A/19B) may already be running.
-///   - When the pilot is on, visible scaffold items are capped at MaxStudentVisibleScaffoldSuggestions
-///     and their CallToAction/Explanation are replaced with the configured friendly pilot
-///     label/reason so wording stays non-negative regardless of RoutingReason.
+/// The doc comment below describes the pre-I2A ranking/guardrail behaviour for historical
+/// context; it no longer applies to Practice Gym now that the three lists are always empty:
+///   Ranking order: focus-area match → goal/context match → routing priority → expiry urgency → FIFO.
+///   Guardrails (defence-in-depth):
+///     - Consumed / expired / failed / stale / queued / generating items excluded entirely.
+///     - Items with RequiresAdminReview=true are excluded unless per-item AdminReviewStatus=Approved
+///       (Phase 19B). PendingReview and Rejected items are excluded entirely.
+///     - ReviewOnly status items go to ReviewItems only, never SuggestedItems.
+///     - RoutingReason.Review / Scaffold / Remediation items with Ready status
+///       go to ReviewItems if IsLowerLevelContent, otherwise may appear in Suggested.
+///     - Reserved valid items go to ContinueItems.
+///     - general_english is fallback context — workplace is never default.
+///   Phase 19C pilot gate:
+///     - Approved review/scaffold items (RequiresAdminReview=true) are further gated on
+///       PracticeGymPilotEnabled. When the pilot is off, they are excluded from ReviewItems
+///       entirely — even though generation and admin approval (19A/19B) may already be running.
+///     - When the pilot is on, visible scaffold items are capped at MaxStudentVisibleScaffoldSuggestions
+///       and their CallToAction/Explanation are replaced with the configured friendly pilot
+///       label/reason so wording stays non-negative regardless of RoutingReason.
 /// </summary>
 public sealed class PracticeGymSuggestionService : IPracticeGymSuggestionService
 {
     private readonly LinguaCoachDbContext _db;
     private readonly IReadinessPoolReplenishmentService _replenishment;
-    private readonly IEffectiveReadinessPoolSettingsProvider _settingsProvider;
     private readonly IPracticeGymModuleSelectionService _moduleSelector;
     private readonly IPracticeGymModuleAssignmentRecorder _moduleAssignmentRecorder;
-
-    // Resolved fresh at the top of GetSuggestionsForStudentAsync — see below.
-    private ReadinessPoolReplenishmentOptions _opts = new();
-    private Dictionary<Guid, LearningActivity> _linkedActivities = new();
-    private Dictionary<string, ExercisePatternDefinition> _patternsByKey = new(StringComparer.OrdinalIgnoreCase);
     private readonly ILogger<PracticeGymSuggestionService> _logger;
-
-    private const int MaxSuggested = 6;
-    private const int MaxContinue  = 3;
-    private const int MaxReview    = 4;
 
     public PracticeGymSuggestionService(
         LinguaCoachDbContext db,
         IReadinessPoolReplenishmentService replenishment,
-        IEffectiveReadinessPoolSettingsProvider settingsProvider,
         IPracticeGymModuleSelectionService moduleSelector,
         IPracticeGymModuleAssignmentRecorder moduleAssignmentRecorder,
         ILogger<PracticeGymSuggestionService> logger)
     {
         _db = db;
         _replenishment = replenishment;
-        _settingsProvider = settingsProvider;
         _moduleSelector = moduleSelector;
         _moduleAssignmentRecorder = moduleAssignmentRecorder;
         _logger = logger;
@@ -71,121 +70,19 @@ public sealed class PracticeGymSuggestionService : IPracticeGymSuggestionService
         Guid studentId,
         CancellationToken ct = default)
     {
-        _opts = await _settingsProvider.GetEffectiveAsync(ct);
-
         var (profile, profileId) = await ResolveProfileAsync(studentId, ct);
 
         var focusTags   = profile?.FocusAreas   ?? [];
         var contextTags = profile?.LearningGoals ?? [];
 
-        var rawItems = await _db.StudentActivityReadinessItems
-            .AsNoTracking()
-            .Where(i => i.StudentId == profileId
-                     && i.Source == ReadinessPoolSource.PracticeGym
-                     && i.Status != ReadinessPoolStatus.Consumed
-                     && i.Status != ReadinessPoolStatus.Expired
-                     && i.Status != ReadinessPoolStatus.Failed
-                     && i.Status != ReadinessPoolStatus.Stale
-                     && i.Status != ReadinessPoolStatus.Skipped
-                     && i.Status != ReadinessPoolStatus.Queued
-                     && i.Status != ReadinessPoolStatus.Generating
-                     && (!i.RequiresAdminReview || i.AdminReviewStatus == AdminReviewStatus.Approved))
-            .ToListAsync(ct);
-
-        // Batch-load the real materialized activity for each linked item so ToDto can prefer its
-        // actual Title/ActivityType/Difficulty over the pre-generation routing snapshot — the
-        // snapshot's CurriculumObjectiveTitle/TargetCefrLevel come from a routing recommendation
-        // that isn't guaranteed to match what was actually generated for the pattern requested.
-        var linkedActivityIds = rawItems
-            .Where(i => i.LearningActivityId.HasValue)
-            .Select(i => i.LearningActivityId!.Value)
-            .Distinct()
-            .ToList();
-
-        _linkedActivities = linkedActivityIds.Count == 0
-            ? new Dictionary<Guid, LearningActivity>()
-            : await _db.LearningActivities
-                .AsNoTracking()
-                .Where(a => linkedActivityIds.Contains(a.Id))
-                .ToDictionaryAsync(a => a.Id, ct);
-
-        // PatternKey is set at queue time and is reliable (it drives what actually gets
-        // generated), unlike PrimarySkill/CurriculumObjectiveTitle which are snapshotted from a
-        // curriculum-routing recommendation that can pick a different objective/skill than the
-        // pattern actually requested — e.g. a "speaking" objective queued alongside a
-        // listening_multiple_choice_single pattern. Look up the pattern's own PrimarySkill so the
-        // card's skill chip always matches what the activity actually trains.
-        var patternKeys = rawItems
-            .Where(i => !string.IsNullOrWhiteSpace(i.PatternKey))
-            .Select(i => i.PatternKey!)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        _patternsByKey = patternKeys.Count == 0
-            ? new Dictionary<string, ExercisePatternDefinition>(StringComparer.OrdinalIgnoreCase)
-            : (await _db.ExercisePatterns
-                .AsNoTracking()
-                .Where(p => patternKeys.Contains(p.Key))
-                .ToListAsync(ct))
-                .ToDictionary(p => p.Key, StringComparer.OrdinalIgnoreCase);
-
-        // ContinueItems: reserved, not expired. Scaffold items stay pilot-gated so rollback
-        // (PracticeGymPilotEnabled=false) hides approved-but-unconsumed scaffold items too.
-        // Deduped by underlying activity/objective identity — Continue is populated first so it
-        // always wins ties against Suggested/Review below.
-        var continueCandidates = DedupeByIdentity(rawItems
-            .Where(i => i.Status == ReadinessPoolStatus.Reserved
-                     && (i.ExpiresAt == null || i.ExpiresAt > DateTime.UtcNow)
-                     && (!i.RequiresAdminReview || _opts.PracticeGymPilotEnabled)));
-
-        var continueItems = continueCandidates
-            .Take(MaxContinue)
-            .Select(ToDto)
-            .ToList();
-
-        var claimedKeys = continueCandidates.Select(ItemIdentityKey).ToHashSet();
-
-        // ReviewItems: ReviewOnly status OR Ready+lower-level with review/scaffold/remediation reason.
-        // Phase 19C: items that required admin review (i.e. came through the review/scaffold
-        // generation pipeline) are pilot-gated on top of the existing per-item approval gate —
-        // they only reach students when PracticeGymPilotEnabled=true, and are capped separately.
-        var reviewCandidates = DedupeByIdentity(rawItems
-            .Where(i => i.Status == ReadinessPoolStatus.ReviewOnly
-                     || (i.Status == ReadinessPoolStatus.Ready
-                         && i.IsLowerLevelContent
-                         && i.RoutingReason != RoutingReason.Normal
-                         && i.RoutingReason != RoutingReason.Fallback))
-            .Where(i => !i.RequiresAdminReview || _opts.PracticeGymPilotEnabled)
-            .Where(i => !claimedKeys.Contains(ItemIdentityKey(i))));
-
-        var nonScaffoldReview = reviewCandidates.Where(i => !i.RequiresAdminReview);
-        var scaffoldReview = reviewCandidates
-            .Where(i => i.RequiresAdminReview)
-            .Take(_opts.MaxStudentVisibleScaffoldSuggestions);
-
-        var reviewKept = nonScaffoldReview
-            .Concat(scaffoldReview)
-            .Take(MaxReview)
-            .ToList();
-
-        var reviewItems = reviewKept.Select(ToDto).ToList();
-
-        claimedKeys.UnionWith(reviewKept.Select(ItemIdentityKey));
-
-        // SuggestedItems: Ready, not lower-level-only review content. Defence-in-depth:
-        // scaffold-origin items never appear here even if a future routing change stops
-        // pairing them with IsLowerLevelContent — the pilot gate still applies. Also excludes
-        // anything already placed in Continue/Review so a single item never appears twice.
-        var suggestable = DedupeByIdentity(rawItems
-            .Where(i => i.Status == ReadinessPoolStatus.Ready
-                     && !(i.IsLowerLevelContent && i.RoutingReason != RoutingReason.Normal && i.RoutingReason != RoutingReason.Fallback)
-                     && (!i.RequiresAdminReview || _opts.PracticeGymPilotEnabled))
-            .Where(i => !claimedKeys.Contains(ItemIdentityKey(i))));
-
-        var ranked = RankSuggestions(suggestable, focusTags, contextTags)
-            .Take(MaxSuggested)
-            .Select(ToDto)
-            .ToList();
+        // Phase I2A: SuggestedItems/ContinueItems/ReviewItems no longer read the readiness pool
+        // for Practice-Gym-sourced rows — that generation path was removed. They are always
+        // empty now; ModuleSuggestions (below) is the sole real content in this DTO. Health is
+        // still queried (ReadyCount/ReviewOnlyCount/IsReplenishmentRecommended) since it reports
+        // on pool state generically and wasn't part of this pass's scope to change.
+        IReadOnlyList<PracticeGymSuggestionItemDto> continueItems = [];
+        IReadOnlyList<PracticeGymSuggestionItemDto> reviewItems = [];
+        IReadOnlyList<PracticeGymSuggestionItemDto> ranked = [];
 
         var health = await _replenishment.GetHealthAsync(profileId, ReadinessPoolSource.PracticeGym, ct);
 
@@ -207,7 +104,7 @@ public sealed class PracticeGymSuggestionService : IPracticeGymSuggestionService
         catch (Exception ex)
         {
             _logger.LogWarning(ex,
-                "Practice Gym module selection failed for student {StudentProfileId}; suggestions fall back to legacy readiness-pool content only.",
+                "Practice Gym module selection failed for student {StudentProfileId}; ModuleSuggestions will be empty for this request.",
                 profileId);
         }
 
@@ -218,7 +115,7 @@ public sealed class PracticeGymSuggestionService : IPracticeGymSuggestionService
             ReviewItems                = reviewItems,
             ReadyCount                 = health.ReadyCount,
             ReviewOnlyCount            = health.ReviewOnlyCount,
-            ReservedCount              = rawItems.Count(i => i.Status == ReadinessPoolStatus.Reserved),
+            ReservedCount              = 0,
             IsReplenishmentRecommended = health.NeedsReplenishment,
             GeneratedAtUtc             = DateTime.UtcNow,
             ModuleSuggestions          = moduleSuggestions
@@ -347,173 +244,5 @@ public sealed class PracticeGymSuggestionService : IPracticeGymSuggestionService
 
         var profileId = profile?.Id ?? studentId;
         return (profile, profileId);
-    }
-
-    // Identity used to dedupe suggestion cards, in priority order:
-    //   1. objective key + pattern key + activity type — the strongest signal for what a student
-    //      actually sees as "the same card": title/CTA/explanation are all derived from these
-    //      fields (see ToDto/BuildTitle/BuildCallToAction below), so several readiness-pool rows
-    //      queued for one objective (e.g. before ReadinessPoolReplenishmentService.DuplicateKey's
-    //      own dedup fix caught up) read as identical cards even though each has a distinct
-    //      LearningActivityId — they must collapse to one visible suggestion. This also subsumes
-    //      the same-activity case (same activity implies same objective/pattern/type).
-    //   2. otherwise materialized activity id, if objective/pattern metadata is missing but the
-    //      item is materialized — still a meaningful identity to dedupe on.
-    //   3. otherwise the readiness item's own id — no stronger signal to group on, so it stands
-    //      alone (never over-dedupe genuinely unrelated content just because metadata is sparse).
-    private static string ItemIdentityKey(StudentActivityReadinessItem i)
-    {
-        if (i.CurriculumObjectiveKey is { Length: > 0 } objectiveKey && i.PatternKey is { Length: > 0 } patternKey)
-            return $"objective:{objectiveKey}|{patternKey}|{i.ActivityType}";
-        if (i.LearningActivityId is { } activityId)
-            return $"activity:{activityId}";
-        return $"item:{i.Id}";
-    }
-
-    // Removes items that share an identity key, keeping the first occurrence (callers pass
-    // already-priority-ordered sequences, e.g. reserved-before-others, oldest-first).
-    private static List<StudentActivityReadinessItem> DedupeByIdentity(IEnumerable<StudentActivityReadinessItem> items)
-    {
-        var seen = new HashSet<string>();
-        var result = new List<StudentActivityReadinessItem>();
-        foreach (var item in items)
-        {
-            if (seen.Add(ItemIdentityKey(item)))
-                result.Add(item);
-        }
-        return result;
-    }
-
-    private static IEnumerable<StudentActivityReadinessItem> RankSuggestions(
-        IEnumerable<StudentActivityReadinessItem> items,
-        IReadOnlyList<string> focusTags,
-        IReadOnlyList<string> contextTags)
-    {
-        return items
-            .OrderByDescending(i =>
-            {
-                var itemFocus   = ParseJsonStringArray(i.FocusTagsJson);
-                var itemContext = ParseJsonStringArray(i.ContextTagsJson);
-                int focusScore   = itemFocus.Count(t => focusTags.Contains(t, StringComparer.OrdinalIgnoreCase));
-                int contextScore = itemContext.Count(t => contextTags.Contains(t, StringComparer.OrdinalIgnoreCase));
-                return focusScore * 100 + contextScore * 10;
-            })
-            .ThenBy(i => i.Priority)
-            .ThenBy(i => i.ExpiresAt ?? DateTime.MaxValue)
-            .ThenBy(i => i.CreatedAt);
-    }
-
-    private PracticeGymSuggestionItemDto ToDto(StudentActivityReadinessItem i)
-    {
-        // Once materialized, the linked LearningActivity's own AI-generated title and real
-        // CefrLevel are ground truth — the readiness-item snapshot was taken from a curriculum
-        // routing recommendation *before* generation and isn't guaranteed to match what the
-        // pattern actually produced (see Fix 1 in the 2026-07-03 pilot-student audit).
-        LearningActivity? linkedActivity = i.LearningActivityId.HasValue
-            ? _linkedActivities.GetValueOrDefault(i.LearningActivityId.Value)
-            : null;
-
-        // PatternKey is set at queue time and drives what actually gets generated — unlike
-        // PrimarySkill/CurriculumObjectiveTitle, which are snapshotted from a curriculum-routing
-        // recommendation that can pick a different objective/skill than the pattern requested
-        // (e.g. a "speaking" objective queued alongside a listening_multiple_choice_single
-        // pattern). Prefer the pattern definition's own PrimarySkill whenever available so the
-        // card's skill chip and CTA text always match what the activity actually trains.
-        var pattern = !string.IsNullOrWhiteSpace(i.PatternKey)
-            ? _patternsByKey.GetValueOrDefault(i.PatternKey)
-            : null;
-        var displayPrimarySkill = !string.IsNullOrWhiteSpace(pattern?.PrimarySkill)
-            ? pattern!.PrimarySkill
-            : i.PrimarySkill;
-
-        var displayTitle = linkedActivity is not null && !string.IsNullOrWhiteSpace(linkedActivity.Title)
-            ? linkedActivity.Title
-            : BuildTitle(displayPrimarySkill, i.ActivityType, i.CurriculumObjectiveTitle);
-
-        var displayActivityType = linkedActivity?.ActivityType.ToString()
-            ?? pattern?.ActivityType.ToString()
-            ?? i.ActivityType;
-        var displayCefrLevel = !string.IsNullOrWhiteSpace(linkedActivity?.Difficulty)
-            ? linkedActivity!.Difficulty
-            : i.TargetCefrLevel;
-
-        var (callToAction, explanation) = i.RequiresAdminReview
-            ? (_opts.PracticeGymPilotLabel, _opts.PracticeGymPilotReason)
-            : BuildCallToAction(i.RoutingReason, i.IsLowerLevelContent, displayPrimarySkill, i.CurriculumObjectiveTitle);
-
-        return new PracticeGymSuggestionItemDto
-        {
-            ReadinessItemId          = i.Id,
-            Title                    = displayTitle,
-            Description              = explanation,
-            PrimarySkill             = displayPrimarySkill,
-            SecondarySkills          = !string.IsNullOrWhiteSpace(pattern?.SecondarySkillsJson)
-                                           ? ParseJsonStringArray(pattern!.SecondarySkillsJson)
-                                           : ParseJsonStringArray(i.SecondarySkillsJson),
-            PatternKey               = i.PatternKey,
-            ActivityType             = displayActivityType,
-            TargetCefrLevel          = displayCefrLevel,
-            StudentCefrLevelSnapshot = i.OriginalCefrLevelSnapshot,
-            CurriculumObjectiveKey   = i.CurriculumObjectiveKey,
-            CurriculumObjectiveTitle = i.CurriculumObjectiveTitle,
-            ContextTags              = ParseJsonStringArray(i.ContextTagsJson),
-            FocusTags                = ParseJsonStringArray(i.FocusTagsJson),
-            RoutingReason            = i.RoutingReason.ToString(),
-            IsLowerLevelContent      = i.IsLowerLevelContent,
-            DifficultyBand           = i.DifficultyBand,
-            EstimatedDurationMinutes = i.PreferredSessionDurationMinutes,
-            SupportLanguageName      = i.SupportLanguageName,
-            Status                   = i.Status.ToString(),
-            CallToAction             = callToAction,
-            Explanation              = explanation,
-            LinkedLearningActivityId = i.LearningActivityId,
-            LinkedLearningSessionId  = i.LearningSessionId,
-            LinkedSessionExerciseId  = i.SessionExerciseId
-        };
-    }
-
-    private static string BuildTitle(string? skill, string? activityType, string? objectiveTitle)
-    {
-        if (!string.IsNullOrWhiteSpace(objectiveTitle))
-            return objectiveTitle;
-
-        var parts = new List<string>();
-        if (!string.IsNullOrWhiteSpace(skill))      parts.Add(Capitalise(skill));
-        if (!string.IsNullOrWhiteSpace(activityType)) parts.Add(Capitalise(activityType));
-        return parts.Count > 0 ? string.Join(" — ", parts) : "Practice activity";
-    }
-
-    private static (string callToAction, string explanation) BuildCallToAction(
-        RoutingReason reason, bool isLower, string? skill, string? objectiveTitle)
-    {
-        var skillLabel = string.IsNullOrWhiteSpace(skill) ? "this skill" : Capitalise(skill);
-        return reason switch
-        {
-            RoutingReason.Normal      => ("Recommended for your current goal",
-                                         string.IsNullOrWhiteSpace(objectiveTitle)
-                                             ? $"Practice {skillLabel} at your current level."
-                                             : $"Practice: {objectiveTitle}"),
-            RoutingReason.Review      => ("Review",
-                                         $"Revisit {skillLabel} to reinforce what you've learned."),
-            RoutingReason.Scaffold    => ("Step back to strengthen basics",
-                                         $"Build a stronger foundation in {skillLabel} before moving up."),
-            RoutingReason.Remediation => ("Targeted fix",
-                                         $"Address a specific gap in {skillLabel}."),
-            RoutingReason.Fallback    => ("General practice",
-                                         $"General {skillLabel} practice activity."),
-            _                         => ("Practice", $"Practice {skillLabel}.")
-        };
-    }
-
-    private static string Capitalise(string s) =>
-        string.IsNullOrWhiteSpace(s) ? s :
-        char.ToUpperInvariant(s[0]) + s[1..].Replace('_', ' ');
-
-    private static IReadOnlyList<string> ParseJsonStringArray(string? json)
-    {
-        if (string.IsNullOrWhiteSpace(json) || json == "[]")
-            return [];
-        try { return JsonSerializer.Deserialize<List<string>>(json) ?? []; }
-        catch { return []; }
     }
 }

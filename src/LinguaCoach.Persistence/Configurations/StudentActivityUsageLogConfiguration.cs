@@ -60,10 +60,11 @@ internal sealed class StudentActivityUsageLogConfiguration
             .HasForeignKey(e => e.StudentActivityReadinessItemId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne<ActivityTemplate>()
-            .WithMany()
-            .HasForeignKey(e => e.SourceTemplateId)
-            .OnDelete(DeleteBehavior.Restrict);
+        // Note: SourceTemplateId no longer has a FK relation — the ActivityTemplate entity/table
+        // was removed in Phase I2A (legacy fallback deletion). The column and the novelty-policy
+        // cooldown check that reads it (ActivityNoveltyPolicy) remain; it is now permanently null
+        // going forward (no writer populates it), mirroring how it was already inert for legacy
+        // freeform-generated content.
 
         builder.HasOne<PlacementItemDefinition>()
             .WithMany()

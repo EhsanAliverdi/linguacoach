@@ -25,22 +25,11 @@ public sealed class AdminReviewQueueQueryHandler : IAdminReviewQueueQuery
                 ? parsed
                 : (AdminReviewStatus?)null;
 
-        var includeTemplates = query.EntityType is null
-            || string.Equals(query.EntityType, ReviewQueueEntityType.ActivityTemplate, StringComparison.OrdinalIgnoreCase);
+        // Phase I2A: the legacy ActivityTemplate entity/table was removed, so the review queue
+        // now covers PlacementItemDefinition only. query.EntityType is retained on the contract
+        // for API compatibility, but only PlacementItem is a meaningful value going forward.
         var includeItems = query.EntityType is null
             || string.Equals(query.EntityType, ReviewQueueEntityType.PlacementItem, StringComparison.OrdinalIgnoreCase);
-
-        var templateItems = new List<AdminReviewQueueItemDto>();
-        if (includeTemplates)
-        {
-            var templatesQuery = _db.ActivityTemplates.AsQueryable();
-            if (reviewStatus.HasValue) templatesQuery = templatesQuery.Where(t => t.ReviewStatus == reviewStatus.Value);
-
-            var templates = await templatesQuery.ToListAsync(ct);
-            templateItems.AddRange(templates.Select(t => new AdminReviewQueueItemDto(
-                ReviewQueueEntityType.ActivityTemplate, t.Id, t.Key, t.Skill, t.CefrLevel,
-                t.ReviewStatus.ToString(), t.CreatedAt)));
-        }
 
         var placementItems = new List<AdminReviewQueueItemDto>();
         if (includeItems)
@@ -54,18 +43,16 @@ public sealed class AdminReviewQueueQueryHandler : IAdminReviewQueueQuery
                 i.Skill, i.CefrLevel, i.ReviewStatus.ToString(), i.CreatedAt)));
         }
 
-        var combined = templateItems.Concat(placementItems)
+        var combined = placementItems
             .OrderBy(d => d.CreatedAt)
             .ToList();
 
         var totalCount = combined.Count;
 
-        // Always-unfiltered pending count across both entity types, for the KPI strip —
-        // independent of this request's own ReviewStatus filter (mirrors the
-        // OverallTotalCount/PublishedCount convention used by the other admin list endpoints).
-        var pendingTemplates = await _db.ActivityTemplates.CountAsync(t => t.ReviewStatus == AdminReviewStatus.PendingReview, ct);
-        var pendingItems = await _db.PlacementItemDefinitions.CountAsync(i => i.ReviewStatus == AdminReviewStatus.PendingReview, ct);
-        var pendingCount = pendingTemplates + pendingItems;
+        // Always-unfiltered pending count, for the KPI strip — independent of this request's own
+        // ReviewStatus filter (mirrors the OverallTotalCount/PublishedCount convention used by the
+        // other admin list endpoints).
+        var pendingCount = await _db.PlacementItemDefinitions.CountAsync(i => i.ReviewStatus == AdminReviewStatus.PendingReview, ct);
 
         var pageItems = combined.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 

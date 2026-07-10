@@ -5,7 +5,6 @@ public enum FeatureGateCategory
     ReviewScaffoldPracticeGymPilot,
     ReadinessPoolLessonGeneration,
     AiSignalSafety,
-    PracticeGymFormIoTemplatePilot,
     ActivityFeedback,
 }
 

@@ -81,8 +81,6 @@ public static class DependencyInjection
         services.AddScoped<Jobs.ActivityMaterializationJob>();
         services.AddScoped<Jobs.TtsAudioGenerationJob>();
         services.AddScoped<Jobs.AudioCleanupJob>();
-        services.AddScoped<Jobs.PracticeGymBufferRefillJob>();
-        services.AddScoped<Jobs.PracticeGymGenerationJob>();
 
         // Secret protection (ASP.NET Core Data Protection)
         // Keys are persisted to a configurable directory (DataProtection:KeysPath).
@@ -229,7 +227,6 @@ public static class DependencyInjection
         services.AddScoped<IAiPricingResolver, AiPricingResolver>();
         services.AddScoped<IExerciseTypeCatalogService, ExerciseTypeCatalogService>();
         services.AddScoped<IExerciseTypeRegistry, ExerciseTypeRegistry>();
-        services.AddScoped<IPracticeGymPoolService, PracticeGymPoolService>();
 
         // Onboarding
         services.AddScoped<IOnboardingHandler, OnboardingHandler>();
@@ -334,7 +331,6 @@ public static class DependencyInjection
         services.AddScoped<SpeakingAudioService>();
         services.AddScoped<SpeakingRolePlayEvaluator>();
         services.AddScoped<ActivityGetHandler>();
-        services.AddScoped<IGetNextActivityHandler>(sp => sp.GetRequiredService<ActivityGetHandler>());
         services.AddScoped<IGetActivityByIdHandler>(sp => sp.GetRequiredService<ActivityGetHandler>());
         services.AddScoped<ISubmitActivityAttemptHandler, ActivitySubmitHandler>();
 
@@ -408,8 +404,6 @@ public static class DependencyInjection
             services.Configure<ReadinessPoolReplenishmentOptions>(_ => { });
         services.AddScoped<LinguaCoach.Application.ReadinessPool.IEffectiveReadinessPoolSettingsProvider,
             LinguaCoach.Infrastructure.ReadinessPool.EffectiveReadinessPoolSettingsProvider>();
-        services.AddScoped<LinguaCoach.Application.PracticeGym.IPracticeGymFormIoTemplatePilotSettingsProvider,
-            LinguaCoach.Infrastructure.PracticeGym.PracticeGymFormIoTemplatePilotSettingsProvider>();
         services.AddScoped<IReadinessPoolReplenishmentService, ReadinessPoolReplenishmentService>();
         services.AddScoped<Jobs.ReadinessPoolReplenishmentJob>();
         services.AddScoped<Jobs.NotificationDispatchJob>();
@@ -426,7 +420,7 @@ public static class DependencyInjection
 
         // Phase H10 — ActivityDefinition Runtime Launch Path / Attempt Bridge (materializes an
         // approved, launch-eligible Activity Definition into a real LearningActivity, reusing the
-        // existing ActivityTemplate Form.io pilot's scoring/attempt/ledger pipeline unchanged).
+        // existing scoring/attempt/ledger pipeline unchanged).
         services.AddScoped<LinguaCoach.Application.ActivityDefinitionLaunch.IActivityDefinitionLaunchService,
             LinguaCoach.Infrastructure.ActivityDefinitionLaunch.ActivityDefinitionLaunchService>();
 
@@ -504,24 +498,6 @@ public static class DependencyInjection
             LinguaCoach.Infrastructure.Placement.AdminPlacementItemReviewHandler>();
         services.AddScoped<LinguaCoach.Application.Placement.IAdminPlacementItemCalibrationHandler,
             LinguaCoach.Infrastructure.Placement.AdminPlacementItemCalibrationHandler>();
-
-        // AI Bank-First Teaching Architecture Phase 4 — Admin-configurable ActivityTemplate bank
-        services.AddScoped<LinguaCoach.Application.ActivityTemplates.IAdminActivityTemplateListQuery,
-            LinguaCoach.Infrastructure.ActivityTemplates.AdminActivityTemplateListQueryHandler>();
-        services.AddScoped<LinguaCoach.Application.ActivityTemplates.IAdminActivityTemplateGetQuery,
-            LinguaCoach.Infrastructure.ActivityTemplates.AdminActivityTemplateGetQueryHandler>();
-        services.AddScoped<LinguaCoach.Application.ActivityTemplates.IAdminAddActivityTemplateHandler,
-            LinguaCoach.Infrastructure.ActivityTemplates.AdminAddActivityTemplateHandler>();
-        services.AddScoped<LinguaCoach.Application.ActivityTemplates.IAdminUpdateActivityTemplateHandler,
-            LinguaCoach.Infrastructure.ActivityTemplates.AdminUpdateActivityTemplateHandler>();
-        services.AddScoped<LinguaCoach.Application.ActivityTemplates.IAdminRemoveActivityTemplateHandler,
-            LinguaCoach.Infrastructure.ActivityTemplates.AdminRemoveActivityTemplateHandler>();
-        services.AddScoped<LinguaCoach.Application.ActivityTemplates.IAdminActivityTemplateReviewHandler,
-            LinguaCoach.Infrastructure.ActivityTemplates.AdminActivityTemplateReviewHandler>();
-        services.AddScoped<LinguaCoach.Application.ActivityTemplates.IAdminActivityTemplatePublishHandler,
-            LinguaCoach.Infrastructure.ActivityTemplates.AdminActivityTemplatePublishHandler>();
-        services.AddScoped<LinguaCoach.Application.ActivityTemplates.IActivityTemplateInstanceGenerator,
-            LinguaCoach.Infrastructure.ActivityTemplates.ActivityTemplateInstanceGenerator>();
 
         // Phase E1 — English resource import staging (source registry, import runs, raw
         // records, candidate staging)

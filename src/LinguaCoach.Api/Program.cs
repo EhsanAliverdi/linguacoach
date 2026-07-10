@@ -290,7 +290,6 @@ if (!app.Environment.IsEnvironment("Testing"))
     await LinguaCoach.Persistence.Seed.UsageGovernanceSeeder.SeedAsync(db);
     await LinguaCoach.Persistence.Seed.NotificationTemplateSeeder.SeedAsync(db, seederLogger);
     await LinguaCoach.Persistence.Seed.OnboardingTemplateSeeder.SeedAsync(db, seederLogger);
-    await LinguaCoach.Persistence.Seed.ActivityTemplateSeeder.SeedAsync(db, seederLogger);
     await LinguaCoach.Persistence.Seed.InternalResourceSeedPackSeeder.SeedAsync(
         db,
         scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.ResourceImport.IResourceImportService>(),

@@ -1,20 +1,20 @@
 ---
 status: current
-lastUpdated: 2026-07-10 (Phase I1)
+lastUpdated: 2026-07-10 (Phase I2A)
 owner: product / engineering
 ---
 
 # SpeakPath / LinguaCoach Roadmap
 
-**Accurate as of: 2026-07-10 (Phase I1 — see §19a for the current phase sequence).
+**Accurate as of: 2026-07-10 (Phase I2A — see §19a for the current phase sequence).
 The 2026-07-03 "Phase 20H" line below is the last entry confirmed live against speakpath.app;
 everything since then (Clean-A/A2, Phase B, Phase C1, Plan-Sync-After-C1, Phase C2, Plan-Sync-B2,
 Phase B2, Phase C3, Phase C-Final, Phase E0, Plan-Sync-PG-v2, Phase E1, Phase E2, Phase E3,
 Phase E4, Plan-Sync-After-E4, Phase E5, Plan-Sync-E6-Decision, Phase E6, Phase D1, Bugfix-D1A,
 Phase D2, Plan-Sync-After-D2, Phase E7, Plan-Sync-G0, Phase G0, Plan-Sync-After-G0, Phase G1,
-Phase D3, Plan-Sync-After-D3, Phase E8, Phase D4, Plan-Sync-After-D4, Phase E9, Phase D5, Plan-Sync-After-D5, Phase E10) has
-been developed and tested locally but not yet deployed — see the "Current Project Status" and
-Decision Log sections below for what's actually landed.**
+Phase D3, Plan-Sync-After-D3, Phase E8, Phase D4, Plan-Sync-After-D4, Phase E9, Phase D5, Plan-Sync-After-D5, Phase E10,
+Phase I0, Phase I1, Phase I2A) has been developed and tested locally but not yet deployed — see
+the "Current Project Status" and Decision Log sections below for what's actually landed.**
 
 This is the canonical project memory document. It captures completed work, current state, known gaps, deferred items, and the recommended order of future phases.
 
@@ -26,7 +26,33 @@ This is the canonical project memory document. It captures completed work, curre
 
 ## 1. Current Project Status
 
-**Latest phase completed (local, not yet deployed):** Phase I1 — Unified Import/Publish Pipeline
+**Latest phase completed (local, not yet deployed):** Phase I2A — Practice Gym Legacy Fallback
+Deletion, Pass A (2026-07-10). Per explicit user direction, deleted the legacy on-demand
+AI-generation pipeline on the Practice Gym side, accepting that Practice Gym now serves only the
+narrower bank-first content (`gap_fill`/`multiple_choice_single` over vocabulary/grammar, via the
+H10 launch bridge and H7 module suggestions) until a future phase expands bank coverage — Today's
+side is a separate, later pass (I2B or similar). Deleted entirely: the legacy `ActivityTemplate`
+Form.io-pilot entity/handlers/controller/frontend pages/seeder (distinct from H4's
+`ActivityDefinition`, untouched), `PracticeActivityCache` and its two Quartz jobs
+(`PracticeGymBufferRefillJob`, `PracticeGymGenerationJob`), `IPracticeGymPoolService`, the
+`IGetNextActivityHandler`/`GetNextActivityQuery` contract and `GET /api/activity/next` (zero
+frontend callers, confirmed by grep), and the orphaned
+`IPracticeGymFormIoTemplatePilotSettingsProvider` + its feature-gate group.
+`ActivityController.GetPracticeGymNext` now always honestly reports `hasActivity: false` with a
+reason instead of falling back to generation; `PracticeGymSuggestionService`'s
+`SuggestedItems`/`ContinueItems`/`ReviewItems` are now always empty (readiness-pool query for
+`ReadinessPoolSource.PracticeGym` removed), with `ModuleSuggestions` (H7) as the sole remaining
+real content. `AdminReviewQueueComponent`/Controller/QueryHandler narrowed to
+`PlacementItemDefinition` only (Placement Item review unaffected). One EF migration drops the
+`activity_templates`/`practice_activity_cache` tables and 3 now-orphaned FK constraints/indexes
+(the `source_template_id` *columns* on 3 other entities are kept as inert historical data, not
+dropped — avoids touching `StudentActivityReadinessItem`'s table this pass). 3,734/3,734 backend
+tests pass (down from 3,858 — 124 fewer tests from deleted legacy-behavior test files/methods, not
+a coverage loss on surviving functionality); frontend build clean (only the pre-existing bundle-size
+budget warning, unrelated to this change). Full detail:
+`docs/reviews/2026-07-10-phase-i2a-practice-gym-legacy-deletion-review.md`.
+
+**Previous phase completed (local, not yet deployed):** Phase I1 — Unified Import/Publish Pipeline
 (2026-07-10). Merges the Resource Sources / Resource Import Runs / Resource Candidates admin pages
 into one — **Import Content** (`/admin/content/import`) — paste or file-upload, pick a type, review
 candidates (preview/analyze/reject), and a new merged **Approve & Publish** action
@@ -2058,6 +2084,11 @@ Preferred order, each phase gated on the previous one's completion review:
 27. ~~**Phase G1 — Admin Information Architecture Cleanup**~~ — **done (2026-07-09); see item 17d above** for the delivered scope. (This item was promoted to near-term by Plan-Sync-After-G0 and completed by Phase G1.)
 28. **Phase G2 — Backend Legacy Surface Cleanup** — act on Phase G0's "remove-later"/"merge" classifications for backend code (jobs, services, dead admin API routes, and any namespace/entity/route renames only if proven safe). Sequenced late (after Phase F) per Plan-Sync-After-G0 — G1 does the near-term labels/nav work; G2 does the riskier backend churn only once its replacements are proven. Not started.
 29. **Phase G3 — Delivery/Bank/AI Diagnostics Consolidation** — consolidate the "keep as diagnostics" pieces identified by G0 (readiness/pool→delivery-queue health, AI-generation cost/quality visibility, mastery/audit surfaces) into one coherent diagnostics area. Sequenced late (after Phase F) per Plan-Sync-After-G0. Not started.
+30. ~~**Phase I0 — Physical ResourceBankItem Consolidation**~~ — done (2026-07-10): see item under §1 "Previous phase completed" and `docs/reviews/2026-07-10-phase-i0-resourcebankitem-physical-consolidation-review.md`. First of the I-track (Import pipeline unification → legacy-fallback deletion → final nav consolidation).
+31. ~~**Phase I1 — Unified Import/Publish Pipeline**~~ — done (2026-07-10): see item under §1 "Previous phase completed" and `docs/reviews/2026-07-10-phase-i1-unified-import-pipeline-review.md`.
+32. ~~**Phase I2A — Practice Gym Legacy Fallback Deletion, Pass A**~~ — done (2026-07-10): see item under §1 "Latest phase completed" and `docs/reviews/2026-07-10-phase-i2a-practice-gym-legacy-deletion-review.md`. Deletes the legacy on-demand AI-generation path on the Practice Gym side only.
+33. **Phase I2B — Today Legacy Fallback Deletion** `Planned, not started` — the Today-side counterpart to I2A: `LessonBatchGenerationJob`, `ActivityMaterializationJob`, `ExercisePrepareHandler`, `LessonBufferRefillJob`, `SessionGeneratorService`, `SessionQueryHandler`, and everything under `src/LinguaCoach.Infrastructure/Sessions/`. Should resolve I2A's open question about the readiness pool's continued `ReadinessPoolSource.PracticeGym`-sourced write path before starting, since this pass touches the same pool from the Today side.
+34. **Phase I3 — Final Nav Consolidation** `Planned, not started` — the last item of the I-track; scope not yet detailed.
 
 **Phase E has now reached E6, and Phase D1 has started and is complete.** The original
 "E0-E4 before D1" gate, the Plan-Sync-After-E4 "E5 closes the browsing/search gap" gate, and the

@@ -21,67 +21,11 @@ public sealed class SpeakingRolePlayActivityTests : IClassFixture<SpeakingRolePl
 
     public SpeakingRolePlayActivityTests(SpeakingRolePlayTestFactory factory) => _factory = factory;
 
-    // ── GET /api/activity/next?type=SpeakingRolePlay ───────────────────────
-
-    [Fact]
-    public async Task GetNext_SpeakingRolePlay_ReturnsSpeakingRolePlayType()
-    {
-        var (token, _) = await _factory.CreateOnboardedStudentAsync($"spr_get_{Guid.NewGuid():N}@t.com");
-
-        var resp = await ClientWithToken(token).GetAsync("/api/activity/next?type=SpeakingRolePlay");
-
-        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
-        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.Equal("speakingRolePlay", body.GetProperty("activityType").GetString());
-    }
-
-    [Fact]
-    public async Task GetNext_SpeakingRolePlay_DoesNotReturnAnotherType()
-    {
-        var (token, _) = await _factory.CreateOnboardedStudentAsync($"spr_typed_{Guid.NewGuid():N}@t.com");
-
-        var resp = await ClientWithToken(token).GetAsync("/api/activity/next?type=SpeakingRolePlay");
-
-        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
-        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
-        var type = body.GetProperty("activityType").GetString();
-        Assert.Equal("speakingRolePlay", type);
-        Assert.NotEqual("writingScenario", type);
-        Assert.NotEqual("listeningComprehension", type);
-        Assert.NotEqual("vocabularyPractice", type);
-    }
-
-    [Fact]
-    public async Task GetNext_SpeakingRolePlay_HasExpectedContentFields()
-    {
-        var (token, _) = await _factory.CreateOnboardedStudentAsync($"spr_fields_{Guid.NewGuid():N}@t.com");
-
-        var resp = await ClientWithToken(token).GetAsync("/api/activity/next?type=SpeakingRolePlay");
-
-        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
-        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.Equal("speakingRolePlay", body.GetProperty("activityType").GetString());
-        // speaking content fields must be present
-        Assert.True(body.TryGetProperty("speakingScenario", out _));
-        Assert.True(body.TryGetProperty("speakingPrompt", out _));
-        Assert.True(body.TryGetProperty("maxDurationSeconds", out _));
-        // transcript must NOT be exposed before submit
-        Assert.False(body.TryGetProperty("transcript", out _));
-    }
-
-    [Fact]
-    public async Task GetNext_SpeakingRolePlay_FallbackReturnsCorrectType()
-    {
-        // Use the malformed AI provider test factory to trigger fallback
-        var (token, _) = await _factory.CreateOnboardedStudentAsync($"spr_fallback_{Guid.NewGuid():N}@t.com");
-
-        // Regardless of AI success/failure the type must be SpeakingRolePlay
-        var resp = await ClientWithToken(token).GetAsync("/api/activity/next?type=SpeakingRolePlay");
-
-        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
-        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.Equal("speakingRolePlay", body.GetProperty("activityType").GetString());
-    }
+    // Phase I2A (legacy fallback deletion): GET /api/activity/next was removed — on-demand AI
+    // generation of SpeakingRolePlay activities no longer exists. Coverage that used to live here
+    // (activityType shape, content fields, AI-fallback behaviour) is superseded by the
+    // directly-seeded tests below, which exercise the same DTO via CreateSpeakingActivityAsync.
+    // See docs/reviews/2026-07-10-phase-i2a-practice-gym-legacy-deletion-review.md.
 
     // ── POST /api/activity/{id}/speaking-attempt ──────────────────────────
 

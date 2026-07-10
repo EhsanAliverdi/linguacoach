@@ -46,9 +46,14 @@ public sealed class PracticeGymSuggestionIntegrationTests : IClassFixture<ApiTes
         Assert.Contains("reviewItems", body);
     }
 
-    // 3. GET suggestions returns personalized ready items in SuggestedItems section.
+    // Phase I2A (legacy fallback deletion): SuggestedItems/ContinueItems/ReviewItems no longer
+    // read the readiness pool for Practice-Gym-sourced rows — that generation path was removed.
+    // These three tests now assert the sections stay empty even when matching pool rows exist.
+    // See docs/reviews/2026-07-10-phase-i2a-practice-gym-legacy-deletion-review.md.
+
+    // 3. GET suggestions never surfaces ready readiness-pool items in SuggestedItems.
     [Fact]
-    public async Task GetSuggestions_ReadyItemsAppearInSuggestedSection()
+    public async Task GetSuggestions_ReadyItemsDoNotAppearInSuggestedSection()
     {
         var (token, userId) = await _factory.CreateStudentAndGetTokenAsync("suggestion-ready@test.com");
         var profileId = await GetProfileIdAsync(userId);
@@ -62,13 +67,12 @@ public sealed class PracticeGymSuggestionIntegrationTests : IClassFixture<ApiTes
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var body = await response.Content.ReadAsStringAsync();
-        // Should have a non-empty suggestedItems array.
-        Assert.DoesNotContain("\"suggestedItems\":[]", body.Replace(" ", ""));
+        Assert.Contains("\"suggestedItems\":[]", body.Replace(" ", ""));
     }
 
-    // 4. GET suggestions returns reserved valid items in ContinueItems section.
+    // 4. GET suggestions never surfaces reserved readiness-pool items in ContinueItems.
     [Fact]
-    public async Task GetSuggestions_ReservedItemsAppearInContinueSection()
+    public async Task GetSuggestions_ReservedItemsDoNotAppearInContinueSection()
     {
         var (token, userId) = await _factory.CreateStudentAndGetTokenAsync("suggestion-continue@test.com");
         var profileId = await GetProfileIdAsync(userId);
@@ -83,12 +87,12 @@ public sealed class PracticeGymSuggestionIntegrationTests : IClassFixture<ApiTes
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var body = await response.Content.ReadAsStringAsync();
-        Assert.DoesNotContain("\"continueItems\":[]", body.Replace(" ", ""));
+        Assert.Contains("\"continueItems\":[]", body.Replace(" ", ""));
     }
 
-    // 5. GET suggestions returns ReviewOnly items in ReviewItems section.
+    // 5. GET suggestions never surfaces ReviewOnly readiness-pool items in ReviewItems.
     [Fact]
-    public async Task GetSuggestions_ReviewOnlyItemsAppearInReviewSection()
+    public async Task GetSuggestions_ReviewOnlyItemsDoNotAppearInReviewSection()
     {
         var (token, userId) = await _factory.CreateStudentAndGetTokenAsync("suggestion-review@test.com");
         var profileId = await GetProfileIdAsync(userId);
@@ -103,7 +107,7 @@ public sealed class PracticeGymSuggestionIntegrationTests : IClassFixture<ApiTes
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var body = await response.Content.ReadAsStringAsync();
-        Assert.DoesNotContain("\"reviewItems\":[]", body.Replace(" ", ""));
+        Assert.Contains("\"reviewItems\":[]", body.Replace(" ", ""));
     }
 
     // 6. POST start reserves a ready item and returns navigation target.

@@ -258,20 +258,6 @@ public sealed class ActivityDefinitionLaunchServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task Launch_failure_does_not_delete_practice_gym_cache_records()
-    {
-        var studentProfileId = Guid.NewGuid();
-        var module = SeedModule(approved: false);
-        var cache = new PracticeActivityCache(studentProfileId, "gap_fill", "B1", "1", "fingerprint-1");
-        _db.PracticeActivityCache.Add(cache);
-        _db.SaveChanges();
-
-        await _sut.LaunchAsync(Request(module.Id, Guid.NewGuid()));
-
-        (await _db.PracticeActivityCache.CountAsync()).Should().Be(1);
-    }
-
-    [Fact]
     public async Task Launch_failure_does_not_mutate_module_definition()
     {
         var module = SeedModule(approved: false);

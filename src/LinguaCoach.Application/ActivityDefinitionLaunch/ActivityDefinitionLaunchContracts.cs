@@ -40,11 +40,9 @@ public interface IActivityDefinitionLaunchService
 {
     /// <summary>Re-validates eligibility fresh (approval/content can change between suggestion
     /// and click) and, only if eligible, materializes the Activity Definition into a real
-    /// <see cref="Domain.Entities.LearningActivity"/> — the same mechanism the existing
-    /// ActivityTemplate Form.io pilot already uses — then records a traceability bridge row.
+    /// <see cref="Domain.Entities.LearningActivity"/>, then records a traceability bridge row.
     /// Never throws for "not launchable" — returns <see cref="ActivityDefinitionLaunchResult.Success"/>
-    /// = false instead, and the existing Practice Gym/Today fallback remains available either
-    /// way.</summary>
+    /// = false instead.</summary>
     Task<ActivityDefinitionLaunchResult> LaunchAsync(
         ActivityDefinitionLaunchRequest request, CancellationToken ct = default);
 }
