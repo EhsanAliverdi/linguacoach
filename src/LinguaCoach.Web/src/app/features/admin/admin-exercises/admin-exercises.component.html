@@ -1,6 +1,6 @@
 <sp-admin-page-header
   title="Exercises"
-  subtitle="Reviewable practice task designs generated from approved Resource Bank rows or Lessons. Approved Exercises combine with Lessons into Modules. Launching a scored attempt from an Exercise is not implemented yet (planned for Phase H10).">
+  subtitle="Reviewable practice task designs generated from approved Resource Bank rows or Lessons. Approved Exercises combine with Lessons into Modules. Only gap_fill and multiple_choice_single can currently launch a real, scored student attempt — other types (e.g. short_answer) are reviewable and reusable in Modules, but have no runtime launch path yet.">
   <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="loadAll()">
     Refresh
   </sp-admin-button>
@@ -64,7 +64,14 @@
             @for (item of items(); track item.id) {
               <tr (click)="openDrawer(item)" style="cursor:pointer">
                 <td><strong>{{ item.title }}</strong></td>
-                <td><sp-admin-badge tone="neutral">{{ item.activityType }}</sp-admin-badge></td>
+                <td>
+                  <sp-admin-badge tone="neutral">{{ item.activityType }}</sp-admin-badge>
+                  @if (!item.canLaunchOnceApproved) {
+                    <sp-admin-badge tone="warning" appearance="soft" size="sm" [title]="item.launchUnsupportedReason">
+                      Not launchable yet
+                    </sp-admin-badge>
+                  }
+                </td>
                 <td>{{ item.rendererType }}</td>
                 <td>{{ item.cefrLevel ?? '—' }}</td>
                 <td>{{ item.lessonId ? 'Linked' : '—' }}</td>
@@ -107,6 +114,15 @@
       <sp-admin-form-field label="Activity type / Renderer">
         <sp-admin-badge tone="neutral">{{ d.activityType }}</sp-admin-badge>
         <sp-admin-badge tone="info" appearance="soft">{{ d.rendererType }}</sp-admin-badge>
+      </sp-admin-form-field>
+
+      <sp-admin-form-field label="Student launch support">
+        @if (d.canLaunchOnceApproved) {
+          <sp-admin-badge tone="success" appearance="soft">Launchable once approved</sp-admin-badge>
+        } @else {
+          <sp-admin-badge tone="warning" appearance="soft">Not launchable yet</sp-admin-badge>
+          <p class="sp-admin-text-muted">{{ d.launchUnsupportedReason }}</p>
+        }
       </sp-admin-form-field>
 
       @if (d.formSchemaJson) {

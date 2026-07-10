@@ -46,6 +46,13 @@ export interface ExerciseDto {
   createdAt: string;
   updatedAtUtc: string;
   links: ExerciseResourceLinkDto[];
+  /** Phase J4 — whether this activity type/content would be launchable to a student once
+   *  approved, independent of this Exercise's own current review status. A draft can be
+   *  canLaunchOnceApproved=false (e.g. "short_answer" has no auto-scoring path yet) while still
+   *  being a legitimate, reviewable, approvable draft — this only tells the admin honestly
+   *  whether it will ever reach a student. */
+  canLaunchOnceApproved: boolean;
+  launchUnsupportedReason: string | null;
 }
 
 export interface ExerciseListResult {

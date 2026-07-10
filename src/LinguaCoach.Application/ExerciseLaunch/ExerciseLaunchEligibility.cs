@@ -26,6 +26,19 @@ public static class ExerciseLaunchEligibility
         if (exercise.ReviewStatus != AdminReviewStatus.Approved)
             return NotEligible("This activity has not been approved yet.");
 
+        return EvaluateContentSupport(exercise);
+    }
+
+    /// <summary>
+    /// Phase J4 — same checks as <see cref="Evaluate"/> except the approval-status gate. Lets
+    /// admin authoring surfaces (generation results, the Exercises list/detail, approval results)
+    /// honestly show "would this be launchable once approved" for a not-yet-approved draft,
+    /// without <see cref="Evaluate"/>'s trivial "not approved yet" reason masking a real content-
+    /// support gap (e.g. a "short_answer" draft will never be launchable no matter how it's
+    /// reviewed, until a later phase adds manual/AI-assisted grading).
+    /// </summary>
+    public static ExerciseLaunchEligibilityResult EvaluateContentSupport(Exercise exercise)
+    {
         if (exercise.RendererType != ExerciseRendererType.Formio)
             return NotEligible("This module contains an activity type that is not launchable yet.");
 

@@ -51,7 +51,15 @@ public sealed record ExerciseDto(
     string? ReviewNotes,
     DateTime CreatedAt,
     DateTime UpdatedAtUtc,
-    IReadOnlyList<ExerciseResourceLinkDto> Links
+    IReadOnlyList<ExerciseResourceLinkDto> Links,
+    /// <summary>Phase J4 — whether this activity type/content shape would be launchable to a
+    /// student once approved, per <see cref="ExerciseLaunch.ExerciseLaunchEligibility.EvaluateContentSupport"/>.
+    /// Independent of this Exercise's own current review status — a draft can be
+    /// <c>CanLaunchOnceApproved = false</c> (e.g. "short_answer" has no auto-scoring path yet)
+    /// while still being a legitimate, reviewable, approvable draft; this only tells the admin
+    /// honestly whether it will ever reach a student, so they aren't surprised later.</summary>
+    bool CanLaunchOnceApproved = true,
+    string? LaunchUnsupportedReason = null
 );
 
 public sealed record ListExercisesQuery(

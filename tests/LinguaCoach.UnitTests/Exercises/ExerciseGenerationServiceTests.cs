@@ -194,6 +194,37 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         result.Activity.ScoringRulesJson.Should().Contain("RequiresManualOrAiEvaluation").And.Contain("true");
     }
 
+    // ── Phase J4 — honest "will this ever launch" flag, independent of review status ──────────
+
+    [Fact]
+    public async Task Generated_gap_fill_draft_is_flagged_as_launchable_once_approved()
+    {
+        var source = SeedSource();
+        var vocab = SeedVocabulary(source.Id);
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") },
+            RequestedActivityType: "gap_fill"));
+
+        result.Activity.ReviewStatus.Should().Be("PendingReview");
+        result.Activity.CanLaunchOnceApproved.Should().BeTrue();
+        result.Activity.LaunchUnsupportedReason.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Generated_short_answer_draft_is_flagged_as_not_launchable_with_a_reason_even_while_pending()
+    {
+        var source = SeedSource();
+        var reference = SeedReadingReference(source.Id);
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("ReadingReference", reference.Id, "Primary") }));
+
+        result.Activity.ReviewStatus.Should().Be("PendingReview");
+        result.Activity.CanLaunchOnceApproved.Should().BeFalse();
+        result.Activity.LaunchUnsupportedReason.Should().Contain("not launchable yet");
+    }
+
     [Fact]
     public async Task Generate_links_to_reading_passage_resource()
     {

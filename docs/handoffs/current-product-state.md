@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-11 (Phase J3)
+lastUpdated: 2026-07-11 (Phase J4)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,26 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-11 (Phase J3)
+Last updated: 2026-07-11 (Phase J4)
+
+## Honest Launch-Support Signaling for Exercises (Phase J4, 2026-07-11) — closes J0-J4
+
+Closes the audit's last recommended phase (J5, import content-type expansion, remains open as
+lower priority). `short_answer` Exercises can be generated, reviewed, and approved, but still have
+no runtime launch path (only `gap_fill`/`multiple_choice_single` do) — decided (explicit product
+decision) to make this honestly visible everywhere rather than build new AI grading infrastructure
+this phase. `ExerciseDto` now carries `canLaunchOnceApproved`/`launchUnsupportedReason`, computed
+centrally so every Exercise-returning endpoint gets it automatically; the admin Exercises list and
+detail drawer both show it. No real runtime behavior changed — the full pre-existing backend test
+suite passed unmodified. 3,459/3,459 backend tests pass (+2 new). Full detail:
+`docs/reviews/2026-07-11-phase-j4-exercise-launch-support-honesty-review.md`.
+
+**Audit summary (J0-J4 all closed):** the 2026-07-10 product architecture audit's five recommended
+phases are now complete — docs sync (J0), published-bank duplicate detection (J1), AI-assisted
+Lesson/Exercise/Module generation (J2a/b/c), admin Module preview-as-learner (J3), and honest
+Exercise launch-support signaling (J4). Only J5 (import content-type expansion) remains open. Two
+manual browser smoke tests are still pending from this work: the J3 preview modal and the J4 launch-
+support badges — neither has been visually confirmed in a running dev server yet.
 
 ## Admin "Preview as Learner" for Modules (Phase J3, 2026-07-11)
 
