@@ -305,8 +305,21 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
             PublishedResourceType.Grammar => MapGrammar(entry, source),
             PublishedResourceType.ReadingReference => MapReadingReference(entry, source),
             PublishedResourceType.ReadingPassage => MapReadingPassage(entry, source),
+            PublishedResourceType.Writing => MapWritingPrompt(entry, source),
             _ => throw new InvalidOperationException($"Unknown PublishedResourceType '{entry.Type}'."),
         };
+    }
+
+    private static UnifiedResourceBankItemDto MapWritingPrompt(ResourceBankItem entry, CefrResourceSource source)
+    {
+        var c = ResourceBankItemContent.Deserialize<WritingPromptContent>(entry.ContentJson);
+        return new UnifiedResourceBankItemDto(
+            entry.Id, UnifiedResourceBankItemType.Writing, c.Title, Truncate(c.PromptText, 160),
+            entry.CefrLevel, "Writing", entry.Subskill,
+            ParseJsonStringArray(entry.ContextTagsJson), ParseJsonStringArray(entry.FocusTagsJson),
+            entry.DifficultyBand, source.Id, source.Name, entry.ContentFingerprint, "Published",
+            entry.CreatedAt, entry.UpdatedAt, "CefrWritingPrompt", null,
+            null, null, null);
     }
 
     private static UnifiedResourceBankItemDto MapVocabulary(ResourceBankItem entry, CefrResourceSource source)
@@ -365,6 +378,7 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
         UnifiedResourceBankItemType.Grammar => PublishedResourceType.Grammar,
         UnifiedResourceBankItemType.ReadingReference => PublishedResourceType.ReadingReference,
         UnifiedResourceBankItemType.ReadingPassage => PublishedResourceType.ReadingPassage,
+        UnifiedResourceBankItemType.Writing => PublishedResourceType.Writing,
         _ => throw new ArgumentOutOfRangeException(nameof(type)),
     };
 
@@ -434,6 +448,7 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
             (PublishedResourceType.Grammar, UnifiedResourceBankItemType.Grammar) => true,
             (PublishedResourceType.ReadingReference, UnifiedResourceBankItemType.ReadingReference) => true,
             (PublishedResourceType.ReadingPassage, UnifiedResourceBankItemType.ReadingPassage) => true,
+            (PublishedResourceType.Writing, UnifiedResourceBankItemType.Writing) => true,
             _ => false
         };
 

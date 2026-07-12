@@ -44,8 +44,10 @@ public sealed class ResourceImportService : IResourceImportService
     private static readonly string[] ReadingFields = { "passage", "text" };
     private static readonly string[] TemplateFields = { "formio", "schema", "template" };
     private static readonly string[] TitleFields = { "title" };
+    // Phase J5a
+    private static readonly string[] WritingFields = { "prompt" };
     private static readonly string[] AnyContentFields =
-        { "word", "lemma", "text", "passage", "title", "grammarkey", "explanation", "formio", "schema", "template" };
+        { "word", "lemma", "text", "passage", "title", "grammarkey", "explanation", "formio", "schema", "template", "prompt" };
 
     // Phase E6 — optional deterministic classification columns. When present on a row, their
     // values are copied directly onto the staged candidate (see ProcessRow) instead of being left
@@ -259,6 +261,8 @@ public sealed class ResourceImportService : IResourceImportService
                 GetField(row, "title") ?? GetField(row, "passage") ?? GetField(row, "text"),
             ResourceCandidateType.ActivityTemplateCandidate =>
                 GetField(row, "title") ?? GetField(row, "formio") ?? GetField(row, "schema") ?? GetField(row, "template") ?? GetField(row, "text"),
+            ResourceCandidateType.WritingPrompt =>
+                GetField(row, "title") ?? GetField(row, "prompt") ?? GetField(row, "text"),
             _ => GetField(row, "title") ?? GetField(row, "text"),
         };
 
@@ -400,6 +404,10 @@ public sealed class ResourceImportService : IResourceImportService
         if (ReadingFields.Any(f => HasField(row, f)))
             return (ResourceCandidateType.ReadingPassage,
                 GetField(row, "passage") ?? GetField(row, "text")!);
+
+        // Phase J5a — checked before TemplateFields since neither field set overlaps.
+        if (WritingFields.Any(f => HasField(row, f)))
+            return (ResourceCandidateType.WritingPrompt, GetField(row, "title") ?? GetField(row, "prompt")!);
 
         if (TemplateFields.Any(f => HasField(row, f)))
             return (ResourceCandidateType.ActivityTemplateCandidate,

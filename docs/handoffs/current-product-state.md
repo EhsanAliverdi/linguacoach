@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-13 (Phase J4B)
+lastUpdated: 2026-07-13 (Phase J5a)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,28 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-13 (Phase J4B)
+Last updated: 2026-07-13 (Phase J5a)
+
+## Phase J5a: Writing content-type import (2026-07-13)
+
+First pass of Phase J5 (import content-type expansion). Sequenced as four small passes, easiest
+first: **J5a Writing (done) → J5b Mixed → J5c Listening (real audio upload, user-selected) → J5d
+Speaking**.
+
+Import Content's "Content type" dropdown now has a fourth option, **Writing** — a staged writing
+prompt (title + task instructions + optional genre/suggested word count, no rubric/answer key).
+Writing candidates flow through the exact same staging → AI-analyze → deterministic-validate →
+approve → publish pipeline as Vocabulary/Grammar/Reading, publishing into the same
+`ResourceBankItem` table under a new `PublishedResourceType.Writing` discriminator, browsable on
+`/admin/resource-bank` alongside the other types.
+
+**Deliberately not wired into Lesson/Exercise/Module generation yet** — that consumption path
+(`LessonResourceLookup`) doesn't recognize `Writing` yet, so the Resource Bank page's Generate
+Learn/Activity/Module row actions are hidden for Writing rows (not shown-then-erroring). A future
+phase would wire generation once there's a concrete plan for how Writing prompts become student
+exercises.
+
+Full detail: `docs/reviews/2026-07-13-phase-j5a-writing-content-import-review.md`.
 
 ## Phase J4B follow-up: Import Content tabs, run-candidates page, pagination (2026-07-13)
 

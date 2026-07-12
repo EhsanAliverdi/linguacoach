@@ -11,5 +11,8 @@ public enum PublishedResourceType
     Vocabulary = 0,
     Grammar = 1,
     ReadingReference = 2,
-    ReadingPassage = 3
+    ReadingPassage = 3,
+    // Phase J5a — a published writing prompt (title + task instructions + optional genre/word
+    // count target). No answer key/rubric — this is content, not a scoring implementation.
+    Writing = 4
 }

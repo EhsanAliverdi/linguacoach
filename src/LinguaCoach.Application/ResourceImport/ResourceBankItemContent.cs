@@ -26,6 +26,16 @@ public sealed record ReadingPassageContent(
     string? AttributionText,
     double? QualityScore);
 
+/// <summary>Phase J5a — a published writing prompt. Deliberately content-only: no rubric/answer-key
+/// field, matching <see cref="ResourceCandidatePublishService"/>'s existing precedent (see its
+/// ActivityTemplateCandidate bullet) of never publishing something that implies a scoring
+/// capability this codebase doesn't actually have yet.</summary>
+public sealed record WritingPromptContent(
+    string Title,
+    string PromptText,
+    string? Genre,
+    int? SuggestedMinWords);
+
 public static class ResourceBankItemContent
 {
     private static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web);

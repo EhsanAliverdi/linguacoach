@@ -152,6 +152,7 @@ public sealed class ResourceCandidatePreviewService : IResourceCandidatePreviewS
             ResourceCandidateType.GrammarProfileEntry => BuildGrammarPreview(candidate, normalized, previewWarnings),
             ResourceCandidateType.ReadingPassage => BuildReadingPreview(candidate, normalized, previewWarnings),
             ResourceCandidateType.ActivityTemplateCandidate => BuildActivityTemplatePreview(candidate, previewWarnings),
+            ResourceCandidateType.WritingPrompt => BuildWritingPreview(candidate, normalized, previewWarnings),
             _ => BuildUnknownPreview(candidate, normalized, previewWarnings),
         };
 
@@ -249,6 +250,28 @@ public sealed class ResourceCandidatePreviewService : IResourceCandidatePreviewS
             PassageText: passage,
             WordCount: wordCount,
             EstimatedReadingMinutes: readingMinutes), true);
+    }
+
+    private static (ResourceCandidateRenderedPreviewDto, bool) BuildWritingPreview(
+        ResourceCandidate candidate, IReadOnlyDictionary<string, string?> normalized, List<string> previewWarnings)
+    {
+        var promptText = GetFieldCI(normalized, "prompt");
+        if (promptText is null)
+        {
+            previewWarnings.Add("WritingPrompt candidate has no 'prompt' field to render — falling back to its canonical text.");
+            return (new ResourceCandidateRenderedPreviewDto(
+                Kind: ResourceCandidateType.WritingPrompt.ToString(), Title: candidate.CanonicalText), false);
+        }
+
+        var title = GetFieldCI(normalized, "title") ?? candidate.CanonicalText;
+        var minWords = int.TryParse(GetFieldCI(normalized, "minwords", "suggestedminwords"), out var w) && w > 0 ? w : (int?)null;
+
+        return (new ResourceCandidateRenderedPreviewDto(
+            Kind: ResourceCandidateType.WritingPrompt.ToString(),
+            Title: title,
+            PromptText: promptText,
+            Genre: GetFieldCI(normalized, "genre", "tasktype"),
+            SuggestedMinWords: minWords), true);
     }
 
     /// <summary>

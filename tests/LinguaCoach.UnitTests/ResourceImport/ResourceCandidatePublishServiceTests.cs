@@ -365,6 +365,48 @@ public sealed class ResourceCandidatePublishServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Publishing_writing_prompt_candidate_creates_exactly_one_row_with_mapped_fields()
+    {
+        var source = SeedSource();
+        var rawJson = """{"title":"Email reply","prompt":"Write a reply to your manager about a scheduling conflict.","genre":"Email","minWords":"80"}""";
+        var (_, raw) = SeedRunAndRaw(source, rawJson);
+        var candidate = SeedCandidate(raw, ResourceCandidateType.WritingPrompt, "Email reply", rawJson);
+        MakePublishReady(candidate, primarySkill: "writing");
+
+        var result = await _sut.PublishAsync(candidate.Id, null);
+
+        result.Success.Should().BeTrue();
+        result.PublishedEntityType.Should().Be("CefrWritingPrompt");
+
+        var rows = await _db.ResourceBankItems.Where(x => x.Type == PublishedResourceType.Writing).ToListAsync();
+        rows.Should().HaveCount(1);
+        var content = ResourceBankItemContent.Deserialize<WritingPromptContent>(rows[0].ContentJson);
+        content.Title.Should().Be("Email reply");
+        content.PromptText.Should().Be("Write a reply to your manager about a scheduling conflict.");
+        content.Genre.Should().Be("Email");
+        content.SuggestedMinWords.Should().Be(80);
+        rows[0].CefrLevel.Should().Be("A1");
+        rows[0].SourceId.Should().Be(source.Id);
+    }
+
+    [Fact]
+    public async Task Writing_prompt_without_a_title_derives_one_from_the_prompt_text()
+    {
+        var source = SeedSource();
+        var rawJson = """{"prompt":"Describe your typical morning routine."}""";
+        var (_, raw) = SeedRunAndRaw(source, rawJson);
+        var candidate = SeedCandidate(raw, ResourceCandidateType.WritingPrompt, "Describe your typical morning routine.", rawJson);
+        MakePublishReady(candidate, primarySkill: "writing");
+
+        var result = await _sut.PublishAsync(candidate.Id, null);
+
+        result.Success.Should().BeTrue();
+        var rows = await _db.ResourceBankItems.Where(x => x.Type == PublishedResourceType.Writing).ToListAsync();
+        var content = ResourceBankItemContent.Deserialize<WritingPromptContent>(rows[0].ContentJson);
+        content.Title.Should().Be("Describe your typical morning routine.");
+    }
+
+    [Fact]
     public async Task ActivityTemplateCandidate_publish_is_deferred_and_blocked()
     {
         var source = SeedSource();

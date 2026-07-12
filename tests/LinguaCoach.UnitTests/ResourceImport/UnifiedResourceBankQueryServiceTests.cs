@@ -98,6 +98,18 @@ public sealed class UnifiedResourceBankQueryServiceTests : IDisposable
         return e;
     }
 
+    private ResourceBankItem SeedWriting(
+        string title, string cefr = "B1", string? subskill = null, int? difficulty = null,
+        string? contextTagsJson = null, string? focusTagsJson = null)
+    {
+        var e = new ResourceBankItem(
+            PublishedResourceType.Writing, _sourceId, cefr,
+            ResourceBankItemContent.Serialize(new WritingPromptContent(title, "Write about something.", null, null)),
+            subskill, difficulty, contextTagsJson, focusTagsJson);
+        _db.ResourceBankItems.Add(e);
+        return e;
+    }
+
     // ── Aggregation across all four tables ────────────────────────────────────────
 
     [Fact]
@@ -146,21 +158,34 @@ public sealed class UnifiedResourceBankQueryServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task Unified_aggregates_all_four_types_in_one_call()
+    public async Task Unified_returns_writing_prompt_rows()
+    {
+        SeedWriting("Email reply");
+        _db.SaveChanges();
+
+        var result = await _query.ListUnifiedAsync(new UnifiedResourceBankListFilter());
+
+        result.Items.Should().ContainSingle(i => i.Type == UnifiedResourceBankItemType.Writing && i.Title == "Email reply");
+    }
+
+    [Fact]
+    public async Task Unified_aggregates_all_five_types_in_one_call()
     {
         SeedVocab("garden");
         SeedGrammar("present perfect");
         SeedReference("narrative");
         SeedPassage("A Trip to the Market");
+        SeedWriting("Email reply");
         _db.SaveChanges();
 
         var result = await _query.ListUnifiedAsync(new UnifiedResourceBankListFilter(PageSize: 200));
 
-        result.TotalCount.Should().Be(4);
+        result.TotalCount.Should().Be(5);
         result.Items.Select(i => i.Type).Should().BeEquivalentTo(new[]
         {
             UnifiedResourceBankItemType.Vocabulary, UnifiedResourceBankItemType.Grammar,
-            UnifiedResourceBankItemType.ReadingReference, UnifiedResourceBankItemType.ReadingPassage
+            UnifiedResourceBankItemType.ReadingReference, UnifiedResourceBankItemType.ReadingPassage,
+            UnifiedResourceBankItemType.Writing
         });
     }
 

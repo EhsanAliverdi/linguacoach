@@ -11,5 +11,8 @@ public enum ResourceCandidateType
     VocabularyEntry = 1,
     GrammarProfileEntry = 2,
     ReadingPassage = 3,
-    ActivityTemplateCandidate = 4
+    ActivityTemplateCandidate = 4,
+    // Phase J5a — a staged writing prompt (task instructions a student would respond to in free
+    // text), recognized from a row's "prompt" field.
+    WritingPrompt = 5
 }

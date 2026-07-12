@@ -17,7 +17,9 @@ public enum UnifiedResourceBankItemType
     Vocabulary,
     Grammar,
     ReadingReference,
-    ReadingPassage
+    ReadingPassage,
+    // Phase J5a
+    Writing
 }
 
 public sealed record UnifiedResourceBankListFilter(

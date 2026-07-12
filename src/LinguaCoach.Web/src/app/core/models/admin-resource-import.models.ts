@@ -239,6 +239,10 @@ export interface ResourceCandidateRenderedPreviewDto {
   wordCount: number | null;
   estimatedReadingMinutes: number | null;
   studentVisibleFormIoSchemaJson: string | null;
+  // WritingPrompt (Phase J5a)
+  promptText: string | null;
+  genre: string | null;
+  suggestedMinWords: number | null;
   fieldSummary: string[] | null;
 }
 
@@ -282,7 +286,7 @@ export interface ResourceCandidatePreviewDto {
  *  genuine excerpt (server-side length gate), ActivityTemplateCandidate/Unknown are deferred
  *  entirely. The Publish button stays visible for every type so the server's specific error
  *  message is always what tells the admin why, rather than this list silently hiding the action. */
-export const RESOURCE_PUBLISH_SUPPORTED_TYPES = ['VocabularyEntry', 'GrammarProfileEntry', 'ReadingPassage'] as const;
+export const RESOURCE_PUBLISH_SUPPORTED_TYPES = ['VocabularyEntry', 'GrammarProfileEntry', 'ReadingPassage', 'WritingPrompt'] as const;
 
 export interface ResourceCandidatePublishResult {
   success: boolean;
@@ -297,7 +301,7 @@ export interface ResourceCandidatePublishResult {
 // see docs/architecture/product-model-realignment-h0.md §4 (Option B). Read-only, same as the
 // typed views above: mutation still only happens through Resource Candidates (E4). ──
 
-export type UnifiedResourceBankItemType = 'vocabulary' | 'grammar' | 'readingReference' | 'readingPassage';
+export type UnifiedResourceBankItemType = 'vocabulary' | 'grammar' | 'readingReference' | 'readingPassage' | 'writing';
 
 /** One row of the unified Resource Bank view. `linkedLearnCount`/`linkedActivityCount`/
  *  `linkedModuleCount` are always null in H1 — Learn Item/Activity/Module don't exist yet
@@ -337,6 +341,7 @@ export const UNIFIED_RESOURCE_BANK_TYPES: { value: UnifiedResourceBankItemType; 
   { value: 'grammar', label: 'Grammar' },
   { value: 'readingReference', label: 'Reading reference' },
   { value: 'readingPassage', label: 'Reading passage' },
+  { value: 'writing', label: 'Writing' },
 ];
 
 export const RESOURCE_BANK_CEFR_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
@@ -346,18 +351,19 @@ export const RESOURCE_BANK_CEFR_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as
 // back pending ResourceCandidate rows. No AI structure detection — see the "Coming soon" types
 // below. Never publishes anything — review still happens on the Resource Candidates page. ──
 
-export type ContentImportResourceType = 'vocabulary' | 'grammar' | 'reading';
+export type ContentImportResourceType = 'vocabulary' | 'grammar' | 'reading' | 'writing';
 export type ContentImportInputMode = 'pasted_text' | 'csv_text' | 'json_text';
 
-/** Only these three are implemented in H2 — ResourceCandidateType has no Listening/Speaking/
- *  Writing/Mixed shape yet (see docs/architecture/product-model-realignment-h0.md). */
+/** Phase J5a adds 'writing' — ResourceCandidateType still has no Listening/Speaking/Mixed shape
+ *  yet (see docs/architecture/product-model-realignment-h0.md and the J5 roadmap entries). */
 export const CONTENT_IMPORT_RESOURCE_TYPES: { value: ContentImportResourceType; label: string }[] = [
   { value: 'vocabulary', label: 'Vocabulary' },
   { value: 'grammar', label: 'Grammar' },
   { value: 'reading', label: 'Reading' },
+  { value: 'writing', label: 'Writing' },
 ];
 
-export const CONTENT_IMPORT_COMING_SOON_TYPES = ['Listening', 'Speaking', 'Writing', 'Mixed / AI detect'];
+export const CONTENT_IMPORT_COMING_SOON_TYPES = ['Listening', 'Speaking', 'Mixed / AI detect'];
 
 export const CONTENT_IMPORT_INPUT_MODES: { value: ContentImportInputMode; label: string; hint: string }[] = [
   { value: 'pasted_text', label: 'Pasted text (one item per line)', hint: 'Each non-empty line becomes one candidate.' },
@@ -392,7 +398,7 @@ export interface ContentImportResult {
 
 export const RESOURCE_IMPORT_MODES = ['Csv', 'Json', 'Jsonl'] as const;
 export const RESOURCE_CANDIDATE_TYPES = [
-  'Unknown', 'VocabularyEntry', 'GrammarProfileEntry', 'ReadingPassage', 'ActivityTemplateCandidate',
+  'Unknown', 'VocabularyEntry', 'GrammarProfileEntry', 'ReadingPassage', 'ActivityTemplateCandidate', 'WritingPrompt',
 ] as const;
 export const RESOURCE_VALIDATION_STATUSES = ['Pending', 'Passed', 'Failed', 'NeedsReview'] as const;
 export const RESOURCE_REVIEW_STATUSES = ['NotRequired', 'PendingReview', 'Approved', 'Rejected'] as const;

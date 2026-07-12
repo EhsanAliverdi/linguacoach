@@ -40,7 +40,16 @@ const RESOURCE_TYPE_TO_LESSON_TYPE: Record<UnifiedResourceBankItemType, string> 
   grammar: 'Grammar',
   readingReference: 'ReadingReference',
   readingPassage: 'ReadingPassage',
+  writing: 'Writing',
 };
+
+/** Phase J5a — Lesson/Exercise/Module generation (LessonResourceLookup et al.) only knows how to
+ *  read Vocabulary/Grammar/ReadingReference/ReadingPassage resources so far; Writing resources can
+ *  be imported and published, but Generate Learn/Activity/Module aren't wired to consume them yet
+ *  (a separate future phase). Hiding those actions here is more honest than showing a button that
+ *  would fail server-side with a generic "not found in Resource Bank" error. */
+const TYPES_SUPPORTING_GENERATION: ReadonlySet<UnifiedResourceBankItemType> =
+  new Set(['vocabulary', 'grammar', 'readingReference', 'readingPassage']);
 
 const PAGE_SIZE = 20;
 
@@ -109,6 +118,7 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
     { value: 'Vocabulary', label: 'Vocabulary' },
     { value: 'Grammar', label: 'Grammar' },
     { value: 'Reading', label: 'Reading' },
+    { value: 'Writing', label: 'Writing' },
   ];
 
   // ── Detail drawer (uses the already-loaded row — no extra fetch needed) ────
@@ -217,8 +227,10 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
   }
 
   rowActions(item: UnifiedResourceBankItemDto): SpAdminRowAction[] {
-    return [
-      { id: 'view', label: 'View', icon: 'view', tone: 'default' },
+    const actions: SpAdminRowAction[] = [{ id: 'view', label: 'View', icon: 'view', tone: 'default' }];
+    if (!TYPES_SUPPORTING_GENERATION.has(item.type)) return actions;
+
+    actions.push(
       {
         id: 'generate-learn', label: 'Generate Learn', icon: 'sparkles', tone: 'default', dividerBefore: true,
         disabled: this.generatingLearnId() === item.id,
@@ -243,7 +255,8 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
         id: 'generate-module-ai', label: 'Generate Module (AI)', icon: 'sparkles', tone: 'default',
         disabled: this.generatingModuleAiId() === item.id,
       },
-    ];
+    );
+    return actions;
   }
 
   onRowAction(actionId: string, item: UnifiedResourceBankItemDto): void {

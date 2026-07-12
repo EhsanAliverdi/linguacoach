@@ -50,10 +50,10 @@ public sealed record ResourceCandidateImportRunSummaryDto(
     string Status);
 
 /// <summary>
-/// One flexible rendered-preview projection covering all five candidate-type shapes
-/// (VocabularyEntry/GrammarProfileEntry/ReadingPassage/ActivityTemplateCandidate/Unknown) — only
-/// the fields relevant to <see cref="Kind"/> are populated. A single flexible shape is simpler
-/// than five separate DTOs for a preview projection that is never persisted.
+/// One flexible rendered-preview projection covering all candidate-type shapes
+/// (VocabularyEntry/GrammarProfileEntry/ReadingPassage/ActivityTemplateCandidate/WritingPrompt/
+/// Unknown) — only the fields relevant to <see cref="Kind"/> are populated. A single flexible shape
+/// is simpler than one separate DTO per type for a preview projection that is never persisted.
 ///
 /// <see cref="StudentVisibleFormIoSchemaJson"/> is the ONLY slot ever surfaced to a "what the
 /// student would see" panel for an ActivityTemplateCandidate row. Nothing scoring/rubric-shaped
@@ -78,6 +78,10 @@ public sealed record ResourceCandidateRenderedPreviewDto(
     int? EstimatedReadingMinutes = null,
     // ActivityTemplateCandidate — student-visible slot only, never leaked scoring/rubric data
     string? StudentVisibleFormIoSchemaJson = null,
+    // WritingPrompt (Phase J5a)
+    string? PromptText = null,
+    string? Genre = null,
+    int? SuggestedMinWords = null,
     // Unknown / generic fallback
     IReadOnlyList<string>? FieldSummary = null);
 

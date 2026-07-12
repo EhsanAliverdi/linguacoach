@@ -40,6 +40,10 @@ namespace LinguaCoach.Infrastructure.ResourceImport;
 /// left for a future phase once/if a real staging shape for this candidate type exists.</description></item>
 /// <item><description><see cref="ResourceCandidateType.Unknown"/> — always blocked; there is no
 /// bank table it could possibly map to.</description></item>
+/// <item><description><see cref="ResourceCandidateType.WritingPrompt"/> (Phase J5a) — fully
+/// supported, mirrors VocabularyEntry/GrammarProfileEntry's simple field-count needs. Publishes
+/// content only (title/prompt/genre/suggested word count) — no rubric/answer-key field, since this
+/// codebase has no writing-scoring implementation wired to the Resource Bank yet.</description></item>
 /// </list>
 /// </summary>
 public sealed class ResourceCandidatePublishService : IResourceCandidatePublishService
@@ -164,6 +168,9 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
             case ResourceCandidateType.ReadingPassage:
                 return BuildReadingReferenceOrPassage(candidate, source, fields, errors);
 
+            case ResourceCandidateType.WritingPrompt:
+                return BuildWritingPromptEntity(candidate, source.Id, fields, errors);
+
             case ResourceCandidateType.ActivityTemplateCandidate:
                 errors.Add(
                     "ActivityTemplateCandidate publishing is deferred in Phase E4: ActivityTemplate requires a " +
@@ -240,6 +247,42 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
             return (null, null, errors);
         }
     }
+
+    private static (BaseEntity?, string?, List<string>) BuildWritingPromptEntity(
+        ResourceCandidate candidate, Guid sourceId, IReadOnlyDictionary<string, string?> fields, List<string> errors)
+    {
+        if (string.IsNullOrWhiteSpace(candidate.CefrLevel))
+        {
+            errors.Add("CefrLevel is required to publish a WritingPrompt candidate but is not set.");
+            return (null, null, errors);
+        }
+
+        var promptText = (ResourceCandidateFieldHelper.GetFieldCI(fields, "prompt") ?? candidate.CanonicalText).Trim();
+        var title = ResourceCandidateFieldHelper.GetFieldCI(fields, "title")?.Trim()
+            ?? (promptText.Length <= 80 ? promptText : promptText[..80].Trim() + "…");
+        var genre = ResourceCandidateFieldHelper.GetFieldCI(fields, "genre", "tasktype")?.Trim();
+        var suggestedMinWords = ParseSuggestedMinWords(
+            ResourceCandidateFieldHelper.GetFieldCI(fields, "minwords", "suggestedminwords"));
+
+        try
+        {
+            var difficultyBand = candidate.DifficultyBand is >= 1 and <= 5 ? candidate.DifficultyBand : null;
+            var entity = new ResourceBankItem(
+                PublishedResourceType.Writing, sourceId, candidate.CefrLevel,
+                ResourceBankItemContent.Serialize(new WritingPromptContent(title, promptText, genre, suggestedMinWords)),
+                candidate.Subskill, difficultyBand, candidate.ContextTagsJson, candidate.FocusTagsJson,
+                candidate.ContentFingerprint);
+            return (entity, "CefrWritingPrompt", errors);
+        }
+        catch (ArgumentException ex)
+        {
+            errors.Add($"Could not construct a CefrWritingPrompt: {ex.Message}");
+            return (null, null, errors);
+        }
+    }
+
+    private static int? ParseSuggestedMinWords(string? raw) =>
+        int.TryParse(raw?.Trim(), out var value) && value > 0 ? value : null;
 
     private static (BaseEntity?, string?, List<string>) BuildReadingReferenceOrPassage(
         ResourceCandidate candidate, CefrResourceSource source, IReadOnlyDictionary<string, string?> fields, List<string> errors)

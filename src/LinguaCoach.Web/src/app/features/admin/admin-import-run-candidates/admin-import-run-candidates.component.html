@@ -206,6 +206,20 @@
             <sp-admin-empty-state title="No student-safe schema available" message="This candidate's Form.io schema could not be rendered — see the warnings above." />
           }
         }
+        @case ('WritingPrompt') {
+          <div class="sp-admin-form-stack">
+            <sp-admin-form-field label="Title"><strong>{{ p.renderedPreviewModel.title }}</strong></sp-admin-form-field>
+            @if (p.renderedPreviewModel.promptText) {
+              <sp-admin-form-field label="Prompt">{{ p.renderedPreviewModel.promptText }}</sp-admin-form-field>
+            }
+            @if (p.renderedPreviewModel.genre) {
+              <sp-admin-form-field label="Genre">{{ p.renderedPreviewModel.genre }}</sp-admin-form-field>
+            }
+            @if (p.renderedPreviewModel.suggestedMinWords) {
+              <sp-admin-form-field label="Suggested minimum words">{{ p.renderedPreviewModel.suggestedMinWords }}</sp-admin-form-field>
+            }
+          </div>
+        }
         @default {
           <sp-admin-form-field label="Generic field summary" hint="This candidate type has no specialized preview yet.">
             <ul>

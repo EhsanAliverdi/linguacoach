@@ -368,4 +368,36 @@ public sealed class ResourceImportServiceTests : IDisposable
         var candidate = await _db.ResourceCandidates.SingleAsync();
         candidate.PrimarySkill.Should().Be("Reading");
     }
+
+    // ── Phase J5a — WritingPrompt candidate type ────────────────────────────────
+
+    [Fact]
+    public async Task Row_with_prompt_field_infers_as_WritingPrompt()
+    {
+        var source = SeedApprovedSource();
+        var csv = "title,prompt\nEmail reply,Write a reply to your manager about a scheduling conflict.\n";
+
+        var result = await _sut.ImportAsync(new ResourceImportRequest(
+            source.Id, ToStream(csv), "writing.csv", ResourceImportMode.Csv));
+
+        result.SucceededCount.Should().Be(1);
+        var candidate = await _db.ResourceCandidates.SingleAsync();
+        candidate.CandidateType.Should().Be(ResourceCandidateType.WritingPrompt);
+        candidate.CanonicalText.Should().Be("Email reply");
+    }
+
+    [Fact]
+    public async Task DefaultCandidateType_WritingPrompt_extracts_canonical_text_from_prompt_when_no_title()
+    {
+        var source = SeedApprovedSource();
+        var csv = "prompt\nDescribe your typical morning routine.\n";
+
+        await _sut.ImportAsync(new ResourceImportRequest(
+            source.Id, ToStream(csv), "writing-no-title.csv", ResourceImportMode.Csv,
+            DefaultCandidateType: ResourceCandidateType.WritingPrompt));
+
+        var candidate = await _db.ResourceCandidates.SingleAsync();
+        candidate.CandidateType.Should().Be(ResourceCandidateType.WritingPrompt);
+        candidate.CanonicalText.Should().Be("Describe your typical morning routine.");
+    }
 }
