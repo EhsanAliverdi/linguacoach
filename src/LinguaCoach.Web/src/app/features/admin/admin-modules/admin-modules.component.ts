@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, ViewChild, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -108,6 +108,12 @@ export class AdminModulesComponent implements OnInit {
   previewSchema = signal<any>(null);
   previewSubmitting = signal(false);
   previewResult = signal<ModulePreviewSubmitResult | null>(null);
+
+  /** The generated Form.io schemas (gap_fill/multiple_choice_single, both deterministic and
+   *  AI-generated) don't include their own submit button component, and this app's convention
+   *  (see PlacementComponent) is for the host page to trigger submission externally via
+   *  FormioRendererComponent.submitForm() rather than relying on Form.io to render one. */
+  @ViewChild(FormioRendererComponent) previewFormioRenderer?: FormioRendererComponent;
 
   constructor(private moduleSvc: AdminModuleService, private route: ActivatedRoute) {}
 
@@ -294,6 +300,12 @@ export class AdminModulesComponent implements OnInit {
 
   closePreview(): void {
     this.previewModalOpen.set(false);
+  }
+
+  /** Triggers Form.io's own submission pipeline (validation + the 'submit' event)
+   *  programmatically, since the rendered schema has no submit button of its own. */
+  submitPreviewAnswer(): void {
+    this.previewFormioRenderer?.submitForm();
   }
 
   /** Fired by the FormioRendererComponent's (submit) output with the submission's data object

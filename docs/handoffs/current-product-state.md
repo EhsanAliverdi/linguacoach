@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-11 (Phase J4)
+lastUpdated: 2026-07-13 (J3/J4 smoke test)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,25 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-11 (Phase J4)
+Last updated: 2026-07-13 (J3/J4 smoke test)
+
+## Live Browser Smoke Test: J3/J4 Confirmed, One Bug Fixed, One Hypothesis Flagged (2026-07-13)
+
+Phases J3 (Module preview) and J4 (Exercise launch-support badges) were manually verified end-to-end
+in a live browser session, closing the "not yet manually verified" caveat both carried. **One real
+bug was found and fixed**: the J3 preview modal had no way to actually submit an answer — the
+generated Form.io schemas (`gap_fill`/`multiple_choice_single`) don't include their own submit
+button, and the modal wasn't calling `FormioRendererComponent.submitForm()` externally (the pattern
+`PlacementComponent` already uses for the same reason). Fixed with a "Submit Answer" button; verified
+working for both correct (100%, "Correct!") and incorrect (0%, "Not quite...") answers.
+
+**Flagged, not fixed:** the same missing-submit-button condition may affect the real student
+`/activity` page for these two activity types — `exercise-renderer.component.ts`/`.html` has no
+external submit trigger either, and H10's own tests call the attempt API directly (bypassing the
+UI), so they would not have caught a frontend-only gap. **This is an unconfirmed hypothesis, not a
+verified bug** — it was inferred from reading the shared component code, not from a live
+student-account click-through. Recommended as the next thing to verify, ahead of J5. Full detail:
+`docs/reviews/2026-07-13-j3-j4-live-browser-smoke-test-review.md`.
 
 ## Honest Launch-Support Signaling for Exercises (Phase J4, 2026-07-11) — closes J0-J4
 

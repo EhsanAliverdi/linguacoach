@@ -250,6 +250,9 @@
                 [schema]="previewSchema()"
                 [disabled]="previewSubmitting()"
                 (submit)="onPreviewExerciseSubmit($event)" />
+              <sp-admin-button variant="primary" size="sm" [disabled]="previewSubmitting()" (clicked)="submitPreviewAnswer()">
+                {{ previewSubmitting() ? 'Submitting…' : 'Submit Answer' }}
+              </sp-admin-button>
             } @else {
               <sp-admin-alert variant="warning">This Exercise has no renderable schema.</sp-admin-alert>
             }
