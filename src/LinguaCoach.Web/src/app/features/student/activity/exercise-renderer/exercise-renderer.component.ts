@@ -1,4 +1,4 @@
-﻿import { Component, EventEmitter, Input, Output } from '@angular/core';
+﻿import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivityDto, InteractionMode } from '../../../../core/models/activity.models';
 import { ReadOnlyContent, ReadOnlyStepComponent } from '../renderers/read-only-step/read-only-step.component';
@@ -99,6 +99,14 @@ export class ExerciseRendererComponent {
   @Output() answerSubmitted = new EventEmitter<ExerciseAnswerPayload>();
   @Output() readOnlyDone = new EventEmitter<void>();
 
+  /** The generated Form.io schemas (gap_fill/multiple_choice_single, both deterministic and
+   *  AI-generated) don't include their own submit button component, and Formio.createForm()
+   *  doesn't add one for this schema shape by default. This app's established pattern for that
+   *  case (see PlacementComponent) is for the host to trigger submission externally via
+   *  FormioRendererComponent.submitForm() rather than relying on Form.io to render one — same fix
+   *  applied to the admin Module preview modal (Phase J3). */
+  @ViewChild(FormioRendererComponent) formioRenderer?: FormioRendererComponent;
+
   get mode(): InteractionMode {
     return this.activity.interactionMode ?? 'freeTextEntry';
   }
@@ -112,6 +120,10 @@ export class ExerciseRendererComponent {
     } catch {
       return null;
     }
+  }
+
+  submitFormIoAnswer(): void {
+    this.formioRenderer?.submitForm();
   }
 
   onFormIoSubmitted(submissionData: Record<string, unknown>): void {

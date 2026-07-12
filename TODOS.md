@@ -992,3 +992,32 @@ throughout, per the phase's explicit requirement. `StudentPracticeGymModuleAssig
 marked `status: implemented`).
 **Deferred from:** Phase I2C, 2026-07-10 (decision captured, not implemented). **Resolved:** Phase
 I4, 2026-07-10.
+
+---
+
+### TODO-025 — Live student-account verification of the /activity Form.io submit fix
+
+**What:** Phase J4B fixed a missing submit trigger for Form.io-rendered `gap_fill`/
+`multiple_choice_single` exercises in `exercise-renderer.component.ts`/`.html` (the student-facing
+`/activity` page), mirroring the identical, already browser-verified fix from Phase J3's admin
+Module preview modal. The fix itself was **not** verified against a real, logged-in student session
+in a live browser this phase.
+
+**Why:** Creating a new test student account and resetting an existing student's password were both
+blocked by the auto-mode classifier as unauthorized writes to the shared, persistent dev database.
+Asked the user how to proceed; they chose to rely on code-level verification (identical fix pattern
+to the already-verified J3 case, confirmed via grep that no other code path in the student runtime
+calls `FormioRendererComponent.submitForm()`, full backend/frontend build+test suite green) rather
+than live student click-through.
+
+**Context:** `exercise-renderer.component.ts` (`submitFormIoAnswer()` + `@ViewChild(FormioRendererComponent)`),
+`exercise-renderer.component.html` ("Submit answer" button in the `formIoSchema` branch). See
+`docs/reviews/2026-07-13-phase-j4b-student-submit-import-tabs-nav-fix-review.md` for the full
+investigation and the AskUserQuestion decision record.
+
+**Depends on:** A test student account (either a new throwaway one created with explicit
+authorization, or provided credentials for an existing non-production test account) and a real
+Module with an approved `gap_fill`/`multiple_choice_single` Exercise launched via the H10
+`IExerciseLaunchService` bridge (`POST api/practice-gym/module-suggestions/{moduleId}/start`).
+
+**Deferred from:** Phase J4B, 2026-07-13.

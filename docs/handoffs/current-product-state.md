@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-13 (J3/J4 smoke test)
+lastUpdated: 2026-07-13 (Phase J4B)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,29 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-13 (J3/J4 smoke test)
+Last updated: 2026-07-13 (Phase J4B)
+
+## Phase J4B: Student Submit Fix, Import Content Tabs, Nav Fix (2026-07-13)
+
+Follow-up to the J3/J4 smoke test's findings. **Confirmed** (not just hypothesized) that the student
+`/activity` page had the same missing-Form.io-submit-button gap as the J3 admin preview modal, and
+fixed `exercise-renderer.component.ts`/`.html` with the identical `FormioRendererComponent.submitForm()`
+pattern — no scoring change, no new scoring path, reuses the existing `POST api/activity/{id}/attempt`
+submission flow unchanged. **Not verified against a real logged-in student** — creating a test
+account and resetting an existing student's password were both blocked as unauthorized shared-
+database writes; the user chose to accept code-level/pattern-reuse evidence over live testing
+(tracked as `TODO-025` in `TODOS.md`).
+
+Also redesigned Import Content around two tabs ("New Import" / "Import History") — the confusing
+top-of-page "recent import" chips are gone, replaced by a proper history table where selecting a run
+shows its candidates in that same tab (previously behavior was ambiguous about which surface a
+click would update). No backend/API change. And fixed the admin mobile drawer's missing
+`aria-hidden`/`inert` state, the actual root cause of the admin nav appearing "duplicated many
+times" to DOM-text-reading tools (confirmed via every screenshot this session that the visually
+rendered sidebar was never actually duplicated).
+
+3,459/3,459 backend tests pass (unchanged — no backend files touched this phase). Full detail:
+`docs/reviews/2026-07-13-phase-j4b-student-submit-import-tabs-nav-fix-review.md`.
 
 ## Live Browser Smoke Test: J3/J4 Confirmed, One Bug Fixed, One Hypothesis Flagged (2026-07-13)
 

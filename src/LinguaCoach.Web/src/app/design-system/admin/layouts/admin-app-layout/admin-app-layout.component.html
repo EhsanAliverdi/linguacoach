@@ -11,6 +11,8 @@
   style="background:#fff;border-right:1px solid var(--sp-admin-border);"
   [class.-translate-x-full]="!drawerOpen()"
   [class.translate-x-0]="drawerOpen()"
+  [attr.aria-hidden]="!drawerOpen()"
+  [attr.inert]="!drawerOpen() ? '' : null"
   (touchstart)="onDrawerTouchStart($event)"
   (touchmove)="onDrawerTouchMove($event)"
   (touchend)="onDrawerTouchEnd()"

@@ -4,6 +4,13 @@
     [disabled]="disabled"
     (submit)="onFormIoSubmitted($event)"
   />
+  <button (click)="submitFormIoAnswer()"
+    [disabled]="disabled"
+    class="sp-button-primary"
+    style="width:100%"
+    data-testid="formio-submit-btn">
+    @if (disabled) { Checking answer… } @else { Submit answer }
+  </button>
 } @else {
 @switch (mode) {
   @case ('readOnly') {

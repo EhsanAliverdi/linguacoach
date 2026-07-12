@@ -51,6 +51,12 @@ import {
 import type { SpAdminRowAction } from '../../../design-system/admin';
 
 type ImportEntryMode = 'paste' | 'file';
+type ImportPageTab = 'new' | 'history';
+/** Which tab last loaded the currently-selected import run's candidates — keeps the pipeline
+ *  review panel from bleeding into the wrong tab (Phase J4B). A run just created on "New Import"
+ *  shows its candidates there; a run selected from "Import History" shows its candidates there,
+ *  never both at once. */
+type PipelineContext = 'new' | 'history' | null;
 
 const CANDIDATES_PAGE_SIZE = 50;
 const RECENT_RUNS_PAGE_SIZE = 10;
@@ -58,8 +64,14 @@ const RECENT_RUNS_PAGE_SIZE = 10;
 /**
  * Phase I1 — the unified content pipeline page. Merges what used to be three separate admin
  * pages (Import Content, Resource Import Runs, Resource Candidates) into one workflow: import
- * (paste or file upload) at the top, staged-candidate review/approve-and-publish below. See
- * docs/architecture for the Phase I1 pipeline unification note.
+ * (paste or file upload), staged-candidate review, and approve-and-publish. See docs/architecture
+ * for the Phase I1 pipeline unification note.
+ *
+ * Phase J4B — restructured around two tabs ("New Import" / "Import History") after admin feedback
+ * that mixing recent-run chips above the import form made it unclear where a freshly-imported
+ * run's candidates would appear versus a historical run's. "New Import" now reads as one linear
+ * flow (add content -> staged candidates -> review -> approve & publish); "Import History" is a
+ * separate browse/review surface for past runs. No backend behavior changed.
  */
 @Component({
   selector: 'app-admin-content-import',
@@ -97,6 +109,11 @@ export class AdminContentImportComponent implements OnInit {
   readonly cefrOptions = [{ value: '', label: 'No default' }, ...RESOURCE_BANK_CEFR_LEVELS.map(l => ({ value: l, label: l }))];
   readonly comingSoonTypes = CONTENT_IMPORT_COMING_SOON_TYPES;
   readonly fileImportModeOptions = RESOURCE_IMPORT_MODES.map(m => ({ value: m, label: m }));
+
+  // ── Page tabs (Phase J4B) ────────────────────────────────────────────────
+  activeTab = signal<ImportPageTab>('new');
+  pipelineContext = signal<PipelineContext>(null);
+  advancedDefaultsOpen = signal(false);
 
   // ── Import entry mode toggle ────────────────────────────────────────────
   entryMode = signal<ImportEntryMode>('paste');
@@ -143,6 +160,8 @@ export class AdminContentImportComponent implements OnInit {
   // ── Pipeline/review section ─────────────────────────────────────────────
   currentRunId = signal<string | null>(null);
   readonly showPipeline = computed(() => this.currentRunId() !== null);
+  readonly showPipelineInNewTab = computed(() => this.showPipeline() && this.pipelineContext() === 'new');
+  readonly showPipelineInHistoryTab = computed(() => this.showPipeline() && this.pipelineContext() === 'history');
 
   recentRuns = signal<AdminResourceImportRunDto[]>([]);
   loadingRecentRuns = signal(false);
@@ -185,11 +204,19 @@ export class AdminContentImportComponent implements OnInit {
     this.loadSources();
     this.loadRecentRuns();
 
+    // A deep link to a specific run (e.g. from a past session) is always a "look up this run's
+    // history" intent, never a "just imported" one — land on Import History with it selected.
     const importRunId = this.route.snapshot.queryParamMap.get('importRunId');
     if (importRunId) {
+      this.activeTab.set('history');
       this.currentRunId.set(importRunId);
+      this.pipelineContext.set('history');
       this.loadCandidates();
     }
+  }
+
+  selectTab(tab: ImportPageTab): void {
+    this.activeTab.set(tab);
   }
 
   // ── Source picker ────────────────────────────────────────────────────────
@@ -299,6 +326,7 @@ export class AdminContentImportComponent implements OnInit {
         this.submitting.set(false);
         this.result.set(result);
         this.currentRunId.set(result.importRunId);
+        this.pipelineContext.set('new');
         this.loadCandidates();
         this.loadRecentRuns();
       },
@@ -313,6 +341,8 @@ export class AdminContentImportComponent implements OnInit {
     this.content = '';
     this.result.set(null);
     this.error.set('');
+    this.currentRunId.set(null);
+    this.pipelineContext.set(null);
   }
 
   goToResourceBank(): void {
@@ -345,6 +375,7 @@ export class AdminContentImportComponent implements OnInit {
         this.fileSubmitting.set(false);
         this.fileResult.set(result);
         this.currentRunId.set(result.runId);
+        this.pipelineContext.set('new');
         this.loadCandidates();
         this.loadRecentRuns();
       },
@@ -359,9 +390,11 @@ export class AdminContentImportComponent implements OnInit {
     this.selectedFile = null;
     this.fileResult.set(null);
     this.fileError.set('');
+    this.currentRunId.set(null);
+    this.pipelineContext.set(null);
   }
 
-  // ── Recent import runs ───────────────────────────────────────────────────
+  // ── Import History tab ───────────────────────────────────────────────────
 
   loadRecentRuns(): void {
     this.loadingRecentRuns.set(true);
@@ -371,10 +404,20 @@ export class AdminContentImportComponent implements OnInit {
     });
   }
 
+  /** Selecting a run from Import History shows its candidates inline within the History tab —
+   *  never bleeds into "New Import" (Phase J4B; previously this loaded into a shared table that
+   *  could appear under either section depending on what the admin clicked last). */
   selectRun(runId: string): void {
     this.currentRunId.set(runId);
+    this.pipelineContext.set('history');
     this.router.navigate([], { relativeTo: this.route, queryParams: { importRunId: runId }, queryParamsHandling: 'merge' });
     this.loadCandidates();
+  }
+
+  closeHistoryRun(): void {
+    this.currentRunId.set(null);
+    this.pipelineContext.set(null);
+    this.router.navigate([], { relativeTo: this.route, queryParams: { importRunId: null }, queryParamsHandling: 'merge' });
   }
 
   // ── Candidate pipeline/review ────────────────────────────────────────────
