@@ -42,6 +42,7 @@ import {
   SpAdminNumberInputComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
+  SpAdminPaginationComponent,
   SpAdminSectionCardComponent,
   SpAdminTableActionsComponent,
   SpAdminTableComponent,
@@ -52,11 +53,6 @@ import type { SpAdminRowAction } from '../../../design-system/admin';
 
 type ImportEntryMode = 'paste' | 'file';
 type ImportPageTab = 'new' | 'history';
-/** Which tab last loaded the currently-selected import run's candidates — keeps the pipeline
- *  review panel from bleeding into the wrong tab (Phase J4B). A run just created on "New Import"
- *  shows its candidates there; a run selected from "Import History" shows its candidates there,
- *  never both at once. */
-type PipelineContext = 'new' | 'history' | null;
 
 const CANDIDATES_PAGE_SIZE = 50;
 const RECENT_RUNS_PAGE_SIZE = 10;
@@ -72,6 +68,11 @@ const RECENT_RUNS_PAGE_SIZE = 10;
  * run's candidates would appear versus a historical run's. "New Import" now reads as one linear
  * flow (add content -> staged candidates -> review -> approve & publish); "Import History" is a
  * separate browse/review surface for past runs. No backend behavior changed.
+ *
+ * Phase J4B (follow-up) — tabs now use the shared sp-admin-tab-bar pattern (see admin-ai-config
+ * for the reference usage) instead of a bespoke button pair; selecting a run in Import History
+ * navigates to its own page (/admin/content/import/runs/:runId) instead of expanding inline; both
+ * the runs table and the run-candidates table are frontend+backend paginated.
  */
 @Component({
   selector: 'app-admin-content-import',
@@ -94,6 +95,7 @@ const RECENT_RUNS_PAGE_SIZE = 10;
     SpAdminNumberInputComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
+    SpAdminPaginationComponent,
     SpAdminSectionCardComponent,
     SpAdminTableActionsComponent,
     SpAdminTableComponent,
@@ -112,7 +114,6 @@ export class AdminContentImportComponent implements OnInit {
 
   // ── Page tabs (Phase J4B) ────────────────────────────────────────────────
   activeTab = signal<ImportPageTab>('new');
-  pipelineContext = signal<PipelineContext>(null);
   advancedDefaultsOpen = signal(false);
 
   // ── Import entry mode toggle ────────────────────────────────────────────
@@ -157,19 +158,25 @@ export class AdminContentImportComponent implements OnInit {
   creatingSource = signal(false);
   newSourceError = signal('');
 
-  // ── Pipeline/review section ─────────────────────────────────────────────
+  // ── Pipeline/review section (New Import tab only — Phase J4B follow-up moved the Import
+  // History "candidates for selected run" view to its own page) ──────────────────────────
   currentRunId = signal<string | null>(null);
   readonly showPipeline = computed(() => this.currentRunId() !== null);
-  readonly showPipelineInNewTab = computed(() => this.showPipeline() && this.pipelineContext() === 'new');
-  readonly showPipelineInHistoryTab = computed(() => this.showPipeline() && this.pipelineContext() === 'history');
 
   recentRuns = signal<AdminResourceImportRunDto[]>([]);
   loadingRecentRuns = signal(false);
+  runsPage = signal(1);
+  readonly runsPageSize = RECENT_RUNS_PAGE_SIZE;
+  runsTotalCount = signal(0);
+  readonly runsTotalPages = computed(() => Math.max(1, Math.ceil(this.runsTotalCount() / this.runsPageSize)));
 
   candidates = signal<AdminResourceCandidateDto[]>([]);
   candidatesLoading = signal(false);
   candidatesError = signal('');
   candidatesTotal = signal(0);
+  candidatesPage = signal(1);
+  readonly candidatesPageSize = CANDIDATES_PAGE_SIZE;
+  readonly candidatesTotalPages = computed(() => Math.max(1, Math.ceil(this.candidatesTotal() / this.candidatesPageSize)));
 
   actionError = signal('');
   actionSuccess = signal('');
@@ -204,14 +211,17 @@ export class AdminContentImportComponent implements OnInit {
     this.loadSources();
     this.loadRecentRuns();
 
-    // A deep link to a specific run (e.g. from a past session) is always a "look up this run's
-    // history" intent, never a "just imported" one — land on Import History with it selected.
+    // A deep link to a specific run (e.g. from a past session, or an old bookmark) is always a
+    // "look up this run's history" intent — send it straight to that run's own candidates page
+    // (Phase J4B follow-up) rather than reviving the old inline-in-History-tab behavior.
     const importRunId = this.route.snapshot.queryParamMap.get('importRunId');
     if (importRunId) {
+      this.router.navigate(['/admin/content/import/runs', importRunId], { replaceUrl: true });
+      return;
+    }
+
+    if (this.route.snapshot.queryParamMap.get('tab') === 'history') {
       this.activeTab.set('history');
-      this.currentRunId.set(importRunId);
-      this.pipelineContext.set('history');
-      this.loadCandidates();
     }
   }
 
@@ -326,7 +336,7 @@ export class AdminContentImportComponent implements OnInit {
         this.submitting.set(false);
         this.result.set(result);
         this.currentRunId.set(result.importRunId);
-        this.pipelineContext.set('new');
+        this.candidatesPage.set(1);
         this.loadCandidates();
         this.loadRecentRuns();
       },
@@ -342,7 +352,6 @@ export class AdminContentImportComponent implements OnInit {
     this.result.set(null);
     this.error.set('');
     this.currentRunId.set(null);
-    this.pipelineContext.set(null);
   }
 
   goToResourceBank(): void {
@@ -375,7 +384,7 @@ export class AdminContentImportComponent implements OnInit {
         this.fileSubmitting.set(false);
         this.fileResult.set(result);
         this.currentRunId.set(result.runId);
-        this.pipelineContext.set('new');
+        this.candidatesPage.set(1);
         this.loadCandidates();
         this.loadRecentRuns();
       },
@@ -391,43 +400,41 @@ export class AdminContentImportComponent implements OnInit {
     this.fileResult.set(null);
     this.fileError.set('');
     this.currentRunId.set(null);
-    this.pipelineContext.set(null);
   }
 
   // ── Import History tab ───────────────────────────────────────────────────
 
   loadRecentRuns(): void {
     this.loadingRecentRuns.set(true);
-    this.importRunSvc.list(1, RECENT_RUNS_PAGE_SIZE).subscribe({
-      next: result => { this.recentRuns.set(result.items); this.loadingRecentRuns.set(false); },
+    this.importRunSvc.list(this.runsPage(), this.runsPageSize).subscribe({
+      next: result => {
+        this.recentRuns.set(result.items);
+        this.runsTotalCount.set(result.totalCount);
+        this.loadingRecentRuns.set(false);
+      },
       error: () => { this.loadingRecentRuns.set(false); },
     });
   }
 
-  /** Selecting a run from Import History shows its candidates inline within the History tab —
-   *  never bleeds into "New Import" (Phase J4B; previously this loaded into a shared table that
-   *  could appear under either section depending on what the admin clicked last). */
+  onRunsPageChange(page: number): void {
+    this.runsPage.set(page);
+    this.loadRecentRuns();
+  }
+
+  /** Selecting a run from Import History navigates to that run's own candidates page (Phase J4B
+   *  follow-up) instead of expanding a review panel inline below the runs table. */
   selectRun(runId: string): void {
-    this.currentRunId.set(runId);
-    this.pipelineContext.set('history');
-    this.router.navigate([], { relativeTo: this.route, queryParams: { importRunId: runId }, queryParamsHandling: 'merge' });
-    this.loadCandidates();
+    this.router.navigate(['/admin/content/import/runs', runId]);
   }
 
-  closeHistoryRun(): void {
-    this.currentRunId.set(null);
-    this.pipelineContext.set(null);
-    this.router.navigate([], { relativeTo: this.route, queryParams: { importRunId: null }, queryParamsHandling: 'merge' });
-  }
-
-  // ── Candidate pipeline/review ────────────────────────────────────────────
+  // ── Candidate pipeline/review (New Import tab) ──────────────────────────
 
   loadCandidates(): void {
     const runId = this.currentRunId();
     if (!runId) return;
     this.candidatesLoading.set(true);
     this.candidatesError.set('');
-    this.candidateSvc.list(1, CANDIDATES_PAGE_SIZE, undefined, runId).subscribe({
+    this.candidateSvc.list(this.candidatesPage(), this.candidatesPageSize, undefined, runId).subscribe({
       next: result => {
         this.candidates.set(result.items);
         this.candidatesTotal.set(result.totalCount);
@@ -438,6 +445,11 @@ export class AdminContentImportComponent implements OnInit {
         this.candidatesError.set(err.error?.error ?? 'Could not load candidates for this import run.');
       },
     });
+  }
+
+  onCandidatesPageChange(page: number): void {
+    this.candidatesPage.set(page);
+    this.loadCandidates();
   }
 
   validationStatusTone(status: string): 'success' | 'neutral' | 'danger' | 'warning' {

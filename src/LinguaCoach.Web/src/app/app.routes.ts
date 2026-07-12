@@ -153,6 +153,12 @@ export const routes: Routes = [
         path: 'content/import',
         loadComponent: () => import('./features/admin/admin-content-import/admin-content-import.component').then(m => m.AdminContentImportComponent),
       },
+      // Phase J4B (follow-up) — candidates for a selected import run get their own page instead of
+      // expanding inline below the runs table on content/import.
+      {
+        path: 'content/import/runs/:runId',
+        loadComponent: () => import('./features/admin/admin-import-run-candidates/admin-import-run-candidates.component').then(m => m.AdminImportRunCandidatesComponent),
+      },
       // Phase I1 — the standalone import/review/publish pages were merged into one unified
       // pipeline page at content/import; old bookmarks/links redirect there (see AGENTS.md I1).
       {

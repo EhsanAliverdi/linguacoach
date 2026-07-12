@@ -10,6 +10,27 @@ supersededBy:
 
 Last updated: 2026-07-13 (Phase J4B)
 
+## Phase J4B follow-up: Import Content tabs, run-candidates page, pagination (2026-07-13)
+
+Direct user UI correction of the J4B Import Content redesign below, given while smoke-testing it
+live. Three fixes, all frontend-only, no backend change:
+
+1. **Tabs now use the shared admin design system.** Replaced the ad-hoc `sp-admin-button`
+   solid/outline toggle pair with the same `sp-admin-tab-bar`/`sp-admin-tab` CSS-class pattern
+   already used by AI Config, Notifications, and Student Detail — visually identical underline-tab
+   style across all four pages now.
+2. **Selecting a run in Import History navigates to its own page**, not an inline panel on the
+   same URL. New route `/admin/content/import/runs/:runId` → new
+   `AdminImportRunCandidatesComponent`, with a run summary card, its own candidates table, and a
+   "Back to Import History" button. The New Import tab's own just-imported-candidates pipeline
+   stays inline (a direct continuation of the action just taken, not a browse-history pattern).
+3. **Both the runs table and the run-candidates table are now frontend+backend paginated**
+   (`sp-admin-pagination` wired to real `page`/`totalPages` state) — the list endpoints
+   (`AdminResourceImportRunService.list()`, `AdminResourceCandidateService.list()`) were already
+   page-aware server-side, this was pure frontend wiring.
+
+Full detail: `docs/reviews/2026-07-13-phase-j4b-import-content-tabs-pagination-followup-review.md`.
+
 ## Phase J4B: Student Submit Fix, Import Content Tabs, Nav Fix (2026-07-13)
 
 Follow-up to the J3/J4 smoke test's findings. **Confirmed** (not just hypothesized) that the student

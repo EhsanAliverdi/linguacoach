@@ -1,0 +1,315 @@
+<sp-admin-page-header
+  title="Candidates for import run"
+  [subtitle]="run() ? (run()!.sourceName + ' · ' + run()!.fileName) : 'Loading…'">
+  <sp-admin-button variant="neutral" appearance="outline" (clicked)="backToHistory()">
+    ← Back to Import History
+  </sp-admin-button>
+</sp-admin-page-header>
+
+<sp-admin-page-body>
+
+  @if (runError()) { <sp-admin-error-state title="Could not load import run" [message]="runError()" /> }
+
+  @if (run(); as r) {
+    <sp-admin-section-card title="Run summary">
+      <div class="sp-admin-form-stack">
+        <sp-admin-form-field label="Source">{{ r.sourceName }}</sp-admin-form-field>
+        <sp-admin-form-field label="File">{{ r.fileName }}</sp-admin-form-field>
+        <sp-admin-form-field label="Staged">{{ r.succeededCount }} / {{ r.totalRecordCount }}</sp-admin-form-field>
+      </div>
+    </sp-admin-section-card>
+  }
+
+  <sp-admin-section-card title="Candidates">
+    <sp-admin-button slot="header-action" variant="neutral" appearance="outline" size="sm" (clicked)="loadCandidates()">
+      Refresh
+    </sp-admin-button>
+
+    @if (actionSuccess()) { <sp-admin-alert variant="success">{{ actionSuccess() }}</sp-admin-alert> }
+    @if (actionError()) { <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert> }
+    @if (candidatesError()) { <sp-admin-error-state title="Could not load candidates" [message]="candidatesError()" /> }
+
+    @if (candidatesLoading()) {
+      <sp-admin-loading-state message="Loading staged candidates" />
+    } @else if (candidates().length === 0) {
+      <sp-admin-empty-state title="No candidates" message="This import run has no staged candidates." />
+    } @else {
+      <sp-admin-table layout="first-column-fluid">
+        <table>
+          <thead>
+            <tr>
+              <th>Text</th>
+              <th>Type</th>
+              <th>CEFR</th>
+              <th>Validation</th>
+              <th>Review</th>
+              <th>Published</th>
+              <th class="sp-admin-th-actions"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of candidates(); track item.candidateId) {
+              <tr>
+                <td>{{ item.canonicalText }}</td>
+                <td><sp-admin-badge tone="neutral">{{ item.candidateType }}</sp-admin-badge></td>
+                <td>{{ item.cefrLevel ?? '—' }}</td>
+                <td><sp-admin-badge [tone]="validationStatusTone(item.validationStatus)">{{ item.validationStatus }}</sp-admin-badge></td>
+                <td><sp-admin-badge tone="neutral">{{ item.reviewStatus }}</sp-admin-badge></td>
+                <td>
+                  @if (item.isPublished) {
+                    <sp-admin-badge tone="success">{{ item.publishedEntityType }}</sp-admin-badge>
+                  } @else {
+                    <sp-admin-badge tone="neutral">Not published</sp-admin-badge>
+                  }
+                </td>
+                <td>
+                  <div class="sp-admin-form-actions" style="flex-wrap:nowrap;">
+                    @if (!item.isPublished) {
+                      <sp-admin-button
+                        variant="primary" size="sm"
+                        [disabled]="publishingId() === item.candidateId"
+                        (clicked)="approveAndPublish(item)">
+                        {{ publishingId() === item.candidateId ? 'Publishing…' : 'Approve & Publish' }}
+                      </sp-admin-button>
+                    }
+                    <sp-admin-table-actions
+                      mode="dropdown"
+                      [richActions]="rowActions(item)"
+                      (actionSelected)="onRowAction($event, item)" />
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        <sp-admin-table-footer>
+          Page {{ page() }} of {{ totalPages() }} · {{ totalCount() }} candidate{{ totalCount() !== 1 ? 's' : '' }}
+          <sp-admin-pagination slot="actions" [page]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
+        </sp-admin-table-footer>
+      </sp-admin-table>
+    }
+
+    @if (lastPublishResult(); as publishResult) {
+      @if (!publishResult.success) {
+        <sp-admin-alert variant="error">
+          Publish failed:
+          <ul>
+            @for (e of publishResult.errors; track e) { <li>{{ e }}</li> }
+          </ul>
+        </sp-admin-alert>
+      }
+    }
+  </sp-admin-section-card>
+
+</sp-admin-page-body>
+
+<!-- ── Reject modal ─────────────────────────────────────────────────────── -->
+<sp-admin-modal
+  [open]="rejectModalOpen()"
+  title="Reject candidate"
+  variant="form"
+  (closed)="closeReject()">
+
+  <div class="sp-admin-form-stack">
+    <sp-admin-form-field label="Reason" [required]="true" hint="Required — shown to admins reviewing this candidate later">
+      <sp-admin-textarea [(ngModel)]="rejectReasonDraft" placeholder="Why this candidate is being rejected" />
+    </sp-admin-form-field>
+  </div>
+
+  @if (actionError()) { <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert> }
+
+  <div slot="footer">
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeReject()">Cancel</sp-admin-button>
+    <sp-admin-button variant="danger" [disabled]="rejecting()" (clicked)="confirmReject()">
+      {{ rejecting() ? 'Rejecting…' : 'Reject' }}
+    </sp-admin-button>
+  </div>
+
+</sp-admin-modal>
+
+<!-- ── Preview drawer (ported from AdminResourceCandidatesComponent, Phase E3) ─ -->
+<sp-admin-drawer
+  [open]="previewDrawerOpen()"
+  [title]="preview()?.title ?? 'Candidate preview'"
+  side="right"
+  size="xl"
+  (closed)="closePreview()">
+
+  <sp-admin-alert variant="warning">
+    Read-only preview. Use Approve &amp; Publish or Reject in the candidates table, not here.
+  </sp-admin-alert>
+
+  @if (previewLoading()) {
+    <sp-admin-loading-state message="Loading preview" />
+  }
+  @if (previewError()) {
+    <sp-admin-error-state title="Could not load preview" [message]="previewError()" />
+  }
+
+  @if (preview(); as p) {
+    @if (!p.canPreview) {
+      <sp-admin-alert variant="warning">
+        This candidate could not be fully rendered.
+        @for (w of p.previewWarnings; track w) { <div>{{ w }}</div> }
+      </sp-admin-alert>
+    }
+
+    <!-- What the student would see ──────────────────────────────────────── -->
+    <section class="sp-e3-preview-panel sp-e3-preview-panel--student">
+      <h3 class="sp-e3-preview-panel-title">What the student would see</h3>
+
+      @switch (p.renderedPreviewModel.kind) {
+        @case ('VocabularyEntry') {
+          <div class="sp-admin-form-stack">
+            <sp-admin-form-field label="Word"><strong>{{ p.renderedPreviewModel.word }}</strong></sp-admin-form-field>
+            @if (p.renderedPreviewModel.partOfSpeech) {
+              <sp-admin-form-field label="Part of speech">{{ p.renderedPreviewModel.partOfSpeech }}</sp-admin-form-field>
+            }
+            @if (p.renderedPreviewModel.definition) {
+              <sp-admin-form-field label="Definition">{{ p.renderedPreviewModel.definition }}</sp-admin-form-field>
+            }
+            @if (p.renderedPreviewModel.example) {
+              <sp-admin-form-field label="Example">{{ p.renderedPreviewModel.example }}</sp-admin-form-field>
+            }
+          </div>
+        }
+        @case ('GrammarProfileEntry') {
+          <div class="sp-admin-form-stack">
+            <sp-admin-form-field label="Grammar point"><strong>{{ p.renderedPreviewModel.grammarTitle }}</strong></sp-admin-form-field>
+            @if (p.renderedPreviewModel.explanation) {
+              <sp-admin-form-field label="Explanation">{{ p.renderedPreviewModel.explanation }}</sp-admin-form-field>
+            }
+            @if (p.renderedPreviewModel.grammarExamples?.length) {
+              <sp-admin-form-field label="Examples">
+                <ul>
+                  @for (ex of p.renderedPreviewModel.grammarExamples; track ex) { <li>{{ ex }}</li> }
+                </ul>
+              </sp-admin-form-field>
+            }
+          </div>
+        }
+        @case ('ReadingPassage') {
+          <div class="sp-admin-form-stack">
+            <sp-admin-form-field label="Title"><strong>{{ p.renderedPreviewModel.title }}</strong></sp-admin-form-field>
+            @if (p.renderedPreviewModel.passageText) {
+              <sp-admin-form-field
+                [label]="(p.renderedPreviewModel.wordCount ?? 0) + ' words · ~' + (p.renderedPreviewModel.estimatedReadingMinutes ?? 0) + ' min read'">
+                <p class="sp-e3-passage-text">{{ p.renderedPreviewModel.passageText }}</p>
+              </sp-admin-form-field>
+            }
+          </div>
+        }
+        @case ('ActivityTemplateCandidate') {
+          @if (p.renderedPreviewModel.studentVisibleFormIoSchemaJson) {
+            <app-formio-renderer [schema]="parsedFormIoSchema(p.renderedPreviewModel.studentVisibleFormIoSchemaJson)" [disabled]="true" />
+          } @else {
+            <sp-admin-empty-state title="No student-safe schema available" message="This candidate's Form.io schema could not be rendered — see the warnings above." />
+          }
+        }
+        @default {
+          <sp-admin-form-field label="Generic field summary" hint="This candidate type has no specialized preview yet.">
+            <ul>
+              @for (f of p.renderedPreviewModel.fieldSummary; track f) { <li>{{ f }}</li> }
+            </ul>
+          </sp-admin-form-field>
+        }
+      }
+    </section>
+
+    <!-- Admin-only ────────────────────────────────────────────────────────── -->
+    <section class="sp-e3-preview-panel sp-e3-preview-panel--admin">
+      <h3 class="sp-e3-preview-panel-title">Admin-only</h3>
+
+      <div class="sp-admin-form-stack">
+        <sp-admin-form-field label="Source">
+          {{ p.source.sourceName }} · <code>{{ p.source.licenseType }}</code>
+          @if (!p.source.allowsStudentDisplay || !p.source.allowsCommercialUse) {
+            <sp-admin-badge tone="warning">Restricted use</sp-admin-badge>
+          }
+        </sp-admin-form-field>
+        @if (p.source.attributionText) {
+          <sp-admin-form-field label="Attribution">{{ p.source.attributionText }}</sp-admin-form-field>
+        }
+        @if (p.source.sourceUrl || p.source.downloadUrl) {
+          <sp-admin-form-field label="Links">
+            @if (p.source.sourceUrl) { <div><a [href]="p.source.sourceUrl" target="_blank" rel="noopener">Source</a></div> }
+            @if (p.source.downloadUrl) { <div><a [href]="p.source.downloadUrl" target="_blank" rel="noopener">Download</a></div> }
+          </sp-admin-form-field>
+        }
+
+        <sp-admin-form-field label="Validation status">
+          <sp-admin-badge [tone]="validationStatusTone(p.validationStatus)">{{ p.validationStatus }}</sp-admin-badge>
+          · Review: {{ p.reviewStatus }}
+        </sp-admin-form-field>
+        @if (p.validationErrors.length > 0) {
+          <sp-admin-form-field label="Validation errors">
+            <ul>@for (e of p.validationErrors; track e) { <li>{{ e }}</li> }</ul>
+          </sp-admin-form-field>
+        }
+        @if (p.validationWarnings.length > 0) {
+          <sp-admin-form-field label="Validation warnings">
+            <ul>@for (w of p.validationWarnings; track w) { <li>{{ w }}</li> }</ul>
+          </sp-admin-form-field>
+        }
+        @if (p.duplicateIndicators.length > 0) {
+          <sp-admin-form-field label="Duplicate indicators">
+            <ul>@for (d of p.duplicateIndicators; track d) { <li>{{ d }}</li> }</ul>
+          </sp-admin-form-field>
+        }
+
+        <sp-admin-form-field label="CEFR / skill">
+          {{ p.cefrLevel ?? '—' }} @if (p.cefrConfidence !== null) { ({{ (p.cefrConfidence * 100).toFixed(0) }}%) }
+          @if (p.primarySkill) { · {{ p.primarySkill }} @if (p.subskill) { / {{ p.subskill }} } }
+        </sp-admin-form-field>
+        @if (p.qualityScore !== null) {
+          <sp-admin-form-field label="Quality score">{{ (p.qualityScore * 100).toFixed(0) }}%</sp-admin-form-field>
+        }
+        @if (p.safetyIssues.length > 0) {
+          <sp-admin-form-field label="Safety issues">
+            <sp-admin-badge tone="danger">{{ p.safetyIssues.join(', ') }}</sp-admin-badge>
+          </sp-admin-form-field>
+        }
+
+        @if (p.aiAnalysisSummary; as ai) {
+          <sp-admin-form-field label="AI analysis summary (advisory only)">
+            CEFR {{ ai.cefrLevel ?? '—' }}
+            @if (ai.cefrConfidence !== null) { ({{ (ai.cefrConfidence * 100).toFixed(0) }}%) }
+            · {{ ai.primarySkill ?? '—' }} @if (ai.subskill) { / {{ ai.subskill }} }
+          </sp-admin-form-field>
+        }
+
+        <sp-admin-form-field label="Content fingerprint"><code>{{ p.contentFingerprint }}</code></sp-admin-form-field>
+        <sp-admin-form-field label="Raw record">
+          {{ p.rawRecordSummary.extractionStatus }} — {{ p.rawRecordSummary.excerpt }}
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Import run">
+          {{ p.importRunSummary.status }} (started {{ p.importRunSummary.startedAtUtc | date:'short' }})
+        </sp-admin-form-field>
+
+        <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="previewRawJsonOpen.set(!previewRawJsonOpen())">
+          {{ previewRawJsonOpen() ? 'Hide' : 'Show' }} raw/normalized JSON
+        </sp-admin-button>
+        @if (previewRawJsonOpen()) {
+          <sp-admin-form-field label="Normalized content">
+            <pre>{{ p.normalizedContent | json }}</pre>
+          </sp-admin-form-field>
+          @if (p.adminOnlyActivityMetadataJson) {
+            <sp-admin-form-field label="Admin-only activity metadata (scoring/rubric — never student-visible)">
+              <pre>{{ p.adminOnlyActivityMetadataJson }}</pre>
+            </sp-admin-form-field>
+          }
+          @if (p.aiAnalysisDetailsJson) {
+            <sp-admin-form-field label="Raw AI analysis (admin-only)">
+              <pre>{{ p.aiAnalysisDetailsJson }}</pre>
+            </sp-admin-form-field>
+          }
+        }
+      </div>
+    </section>
+  }
+
+  <div slot="footer">
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closePreview()">Close</sp-admin-button>
+  </div>
+
+</sp-admin-drawer>

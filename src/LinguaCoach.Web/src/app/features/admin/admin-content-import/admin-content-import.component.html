@@ -5,14 +5,12 @@
 
 <sp-admin-page-body>
 
-  <!-- ── Page tabs (Phase J4B) ─────────────────────────────────────────── -->
-  <div class="sp-admin-form-actions" style="margin-bottom:1rem;">
-    <sp-admin-button variant="neutral" [appearance]="activeTab() === 'new' ? 'solid' : 'outline'" (clicked)="selectTab('new')">
-      New Import
-    </sp-admin-button>
-    <sp-admin-button variant="neutral" [appearance]="activeTab() === 'history' ? 'solid' : 'outline'" (clicked)="selectTab('history')">
-      Import History
-    </sp-admin-button>
+  <!-- ── Page tabs (Phase J4B follow-up — shared sp-admin-tab-bar pattern) ──── -->
+  <div class="sp-admin-tab-bar" role="tablist" aria-label="Import content sections">
+    <button type="button" role="tab" class="sp-admin-tab" [class.sp-admin-tab--active]="activeTab() === 'new'"
+      [attr.aria-selected]="activeTab() === 'new'" (click)="selectTab('new')">New Import</button>
+    <button type="button" role="tab" class="sp-admin-tab" [class.sp-admin-tab--active]="activeTab() === 'history'"
+      [attr.aria-selected]="activeTab() === 'history'" (click)="selectTab('history')">Import History</button>
   </div>
 
   <!-- ══════════════════════════════════════════════════════════════════ -->
@@ -172,7 +170,7 @@
       }
     </sp-admin-section-card>
 
-    @if (showPipelineInNewTab()) {
+    @if (showPipeline()) {
       <sp-admin-section-card title="Review candidates">
         <sp-admin-button slot="header-action" variant="neutral" appearance="outline" size="sm" (clicked)="loadCandidates()">
           Refresh
@@ -235,52 +233,18 @@
                   <td>{{ run.sourceName }}</td>
                   <td>{{ run.fileName }}</td>
                   <td>{{ run.succeededCount }} / {{ run.totalRecordCount }}</td>
-                  <td>
-                    <sp-admin-badge [tone]="currentRunId() === run.runId ? 'info' : 'neutral'">
-                      {{ currentRunId() === run.runId ? 'Selected' : 'View' }}
-                    </sp-admin-badge>
-                  </td>
+                  <td><sp-admin-badge tone="neutral">View</sp-admin-badge></td>
                 </tr>
               }
             </tbody>
           </table>
+          <sp-admin-table-footer>
+            Page {{ runsPage() }} of {{ runsTotalPages() }} · {{ runsTotalCount() }} run{{ runsTotalCount() !== 1 ? 's' : '' }}
+            <sp-admin-pagination slot="actions" [page]="runsPage()" [totalPages]="runsTotalPages()" (pageChange)="onRunsPageChange($event)" />
+          </sp-admin-table-footer>
         </sp-admin-table>
       }
     </sp-admin-section-card>
-
-    @if (showPipelineInHistoryTab()) {
-      <sp-admin-section-card title="Candidates for selected run">
-        <sp-admin-button slot="header-action" variant="neutral" appearance="outline" size="sm" (clicked)="loadCandidates()">
-          Refresh
-        </sp-admin-button>
-        <sp-admin-button slot="header-action" variant="neutral" appearance="outline" size="sm" (clicked)="closeHistoryRun()">
-          Close
-        </sp-admin-button>
-
-        @if (actionSuccess()) { <sp-admin-alert variant="success">{{ actionSuccess() }}</sp-admin-alert> }
-        @if (actionError()) { <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert> }
-        @if (candidatesError()) { <sp-admin-error-state title="Could not load candidates" [message]="candidatesError()" /> }
-
-        @if (candidatesLoading()) {
-          <sp-admin-loading-state message="Loading staged candidates" />
-        } @else if (candidates().length === 0) {
-          <sp-admin-empty-state title="No candidates" message="This import run has no staged candidates." />
-        } @else {
-          <ng-container *ngTemplateOutlet="candidatesTable" />
-        }
-
-        @if (lastPublishResult(); as publishResult) {
-          @if (!publishResult.success) {
-            <sp-admin-alert variant="error">
-              Publish failed:
-              <ul>
-                @for (e of publishResult.errors; track e) { <li>{{ e }}</li> }
-              </ul>
-            </sp-admin-alert>
-          }
-        }
-      </sp-admin-section-card>
-    }
   }
 
 </sp-admin-page-body>
@@ -336,7 +300,8 @@
       </tbody>
     </table>
     <sp-admin-table-footer>
-      {{ candidatesTotal() }} candidate{{ candidatesTotal() !== 1 ? 's' : '' }} for this import run
+      Page {{ candidatesPage() }} of {{ candidatesTotalPages() }} · {{ candidatesTotal() }} candidate{{ candidatesTotal() !== 1 ? 's' : '' }}
+      <sp-admin-pagination slot="actions" [page]="candidatesPage()" [totalPages]="candidatesTotalPages()" (pageChange)="onCandidatesPageChange($event)" />
     </sp-admin-table-footer>
   </sp-admin-table>
 </ng-template>
