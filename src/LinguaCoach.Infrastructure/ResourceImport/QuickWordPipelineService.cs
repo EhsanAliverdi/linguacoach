@@ -1,0 +1,138 @@
+using LinguaCoach.Application.Activity;
+using LinguaCoach.Application.Exercises;
+using LinguaCoach.Application.Lessons;
+using LinguaCoach.Application.Modules;
+using LinguaCoach.Application.ResourceImport;
+using LinguaCoach.Domain.Constants;
+using LinguaCoach.Domain.Entities;
+using LinguaCoach.Domain.Enums;
+using LinguaCoach.Infrastructure.Activity;
+using LinguaCoach.Persistence;
+using Microsoft.EntityFrameworkCore;
+
+namespace LinguaCoach.Infrastructure.ResourceImport;
+
+/// <summary>
+/// Phase K3 — see <see cref="IQuickWordPipelineService"/>'s doc comment for the full rationale.
+/// Every stage re-uses the same handlers the admin UI's individual Generate buttons call — this
+/// service only sequences them and auto-approves the intermediate Lesson/Exercise, it never
+/// duplicates their generation logic.
+/// </summary>
+public sealed class QuickWordPipelineService : IQuickWordPipelineService
+{
+    // Judgment call: a single well-known, always-approved, admin-owned source for every word run
+    // through this shortcut — mirrors AdminContentImportComponent's "+ New source" quick-create
+    // convention (LicenseType "AdminUpload", English, student display + commercial use allowed,
+    // auto-approved). Reused across calls rather than creating a new source per word.
+    private const string SourceName = "Admin Quick Word Pipeline";
+
+    private readonly LinguaCoachDbContext _db;
+    private readonly IGenerateLessonFromResourcesHandler _generateLesson;
+    private readonly IAdminApproveLessonHandler _approveLesson;
+    private readonly IGenerateActivityFromResourcesHandler _generateExercise;
+    private readonly IAdminApproveExerciseHandler _approveExercise;
+    private readonly IGenerateModuleFromResourceHandler _generateModule;
+    private readonly ActivityContentFingerprintService _fingerprint = new();
+
+    public QuickWordPipelineService(
+        LinguaCoachDbContext db,
+        IGenerateLessonFromResourcesHandler generateLesson,
+        IAdminApproveLessonHandler approveLesson,
+        IGenerateActivityFromResourcesHandler generateExercise,
+        IAdminApproveExerciseHandler approveExercise,
+        IGenerateModuleFromResourceHandler generateModule)
+    {
+        _db = db;
+        _generateLesson = generateLesson;
+        _approveLesson = approveLesson;
+        _generateExercise = generateExercise;
+        _approveExercise = approveExercise;
+        _generateModule = generateModule;
+    }
+
+    public async Task<QuickWordPipelineResult> RunAsync(QuickWordPipelineRequest request, CancellationToken ct = default)
+    {
+        var word = request.Word?.Trim();
+        if (string.IsNullOrWhiteSpace(word))
+            throw new ResourceImportValidationException("Word is required.");
+        if (!CefrLevelConstants.IsValid(request.CefrLevel))
+            throw new ResourceImportValidationException($"CefrLevel '{request.CefrLevel}' is not a recognized CEFR level.");
+
+        var source = await GetOrCreateSourceAsync(ct);
+        var resourceItem = await PublishVocabularyItemAsync(source, word, request.CefrLevel, request.PartOfSpeech, request.Definition, ct);
+
+        GenerateLessonFromResourcesResult lessonResult;
+        try
+        {
+            lessonResult = await _generateLesson.HandleAsync(new GenerateLessonFromResourcesRequest(
+                Resources: new[] { new LessonResourceLinkInput("Vocabulary", resourceItem.Id, "Primary") },
+                DefaultCefrLevel: request.CefrLevel,
+                CreatedByUserId: request.CreatedByUserId), ct);
+        }
+        catch (Exception ex) when (ex is not ResourceImportValidationException)
+        {
+            throw new ResourceImportValidationException($"Could not generate a Lesson for '{word}': {ex.Message}");
+        }
+
+        await _approveLesson.HandleAsync(new ApproveLessonCommand(lessonResult.Lesson.Id, request.CreatedByUserId, "Auto-approved by the quick word pipeline."), ct);
+
+        GenerateExerciseResult exerciseResult;
+        try
+        {
+            exerciseResult = await _generateExercise.HandleAsync(new GenerateActivityFromResourcesRequest(
+                Resources: new[] { new ExerciseResourceLinkInput("Vocabulary", resourceItem.Id, "Primary") },
+                DefaultCefrLevel: request.CefrLevel,
+                CreatedByUserId: request.CreatedByUserId), ct);
+        }
+        catch (Exception ex) when (ex is not ResourceImportValidationException)
+        {
+            throw new ResourceImportValidationException($"Could not generate an Exercise for '{word}': {ex.Message}");
+        }
+
+        await _approveExercise.HandleAsync(new ApproveExerciseCommand(exerciseResult.Activity.Id, request.CreatedByUserId, "Auto-approved by the quick word pipeline."), ct);
+
+        GenerateModuleResult moduleResult;
+        try
+        {
+            moduleResult = await _generateModule.HandleAsync(new GenerateModuleFromResourceRequest(
+                "Vocabulary", resourceItem.Id, Title: null, Notes: "Generated by the quick word pipeline.",
+                CreatedByUserId: request.CreatedByUserId), ct);
+        }
+        catch (Exception ex) when (ex is not ResourceImportValidationException)
+        {
+            throw new ResourceImportValidationException($"Could not generate a Module for '{word}': {ex.Message}");
+        }
+
+        return new QuickWordPipelineResult(resourceItem.Id, lessonResult.Lesson.Id, exerciseResult.Activity.Id, moduleResult.Module.Id);
+    }
+
+    private async Task<CefrResourceSource> GetOrCreateSourceAsync(CancellationToken ct)
+    {
+        var existing = await _db.CefrResourceSources.FirstOrDefaultAsync(s => s.Name == SourceName, ct);
+        if (existing is not null) return existing;
+
+        var source = new CefrResourceSource(
+            SourceName, "AdminUpload", sourceUrl: null, usageRestrictionNotes: null, languageCode: "en",
+            allowsStudentDisplay: true, allowsCommercialUse: true, attributionText: null);
+        source.ApproveForImport("Admin quick word pipeline — always approved.");
+        _db.CefrResourceSources.Add(source);
+        await _db.SaveChangesAsync(ct);
+        return source;
+    }
+
+    private async Task<ResourceBankItem> PublishVocabularyItemAsync(
+        CefrResourceSource source, string word, string cefrLevel, string? partOfSpeech, string? definition, CancellationToken ct)
+    {
+        var contentJson = ResourceBankItemContent.Serialize(new VocabularyContent(word, partOfSpeech, definition));
+        var fingerprint = _fingerprint.ComputeFingerprint(new ActivityContentFingerprintRequest(
+            contentJson, ActivityContentShape.Unknown, cefrLevel, word));
+
+        var item = new ResourceBankItem(
+            PublishedResourceType.Vocabulary, source.Id, cefrLevel, contentJson,
+            subskill: null, difficultyBand: null, contextTagsJson: "[]", focusTagsJson: "[]",
+            contentFingerprint: fingerprint);
+        _db.ResourceBankItems.Add(item);
+        await _db.SaveChangesAsync(ct);
+        return item;
+    }
+}

@@ -1,0 +1,132 @@
+<sp-admin-page-header
+  [title]="item()?.title ?? 'Resource Bank item'"
+  [subtitle]="item() ? typeLabel(item()!.type) + ' · ' + item()!.cefrLevel : 'Loading…'">
+  <sp-admin-button variant="neutral" appearance="outline" (clicked)="backToList()">
+    ← Back to Resource Bank
+  </sp-admin-button>
+</sp-admin-page-header>
+
+<sp-admin-page-body>
+
+  @if (error()) { <sp-admin-error-state title="Could not load this item" [message]="error()" /> }
+
+  @if (loading()) {
+    <sp-admin-loading-state message="Loading Resource Bank item" />
+  } @else if (item()) {
+  @let d = item()!;
+
+    @if (d.isArchived) {
+      <sp-admin-alert variant="warning">
+        This item is archived — hidden from the default Resource Bank list. It is still fully
+        intact and any Lesson/Exercise/Module already linked to it keeps working.
+      </sp-admin-alert>
+    }
+
+    @if (generateSuccess()) {
+      <sp-admin-alert variant="success">
+        {{ generateSuccess() }}
+        @if (lastGeneratedKind() === 'activity') {
+          <a (click)="goToActivities()" style="cursor:pointer; text-decoration:underline;">Review in Exercises</a>
+        } @else if (lastGeneratedKind() === 'module') {
+          <a (click)="goToModules()" style="cursor:pointer; text-decoration:underline;">Review in Modules</a>
+        } @else if (lastGeneratedKind() === 'learn') {
+          <a (click)="goToLessons()" style="cursor:pointer; text-decoration:underline;">Review in Lessons</a>
+        }
+      </sp-admin-alert>
+    }
+    @if (generateError()) { <sp-admin-alert variant="error">{{ generateError() }}</sp-admin-alert> }
+
+    <sp-admin-section-card title="Details">
+      <div class="sp-admin-form-stack">
+        <sp-admin-form-field label="Type"><sp-admin-badge tone="info" appearance="soft">{{ typeLabel(d.type) }}</sp-admin-badge></sp-admin-form-field>
+        <sp-admin-form-field label="Title"><strong>{{ d.title }}</strong></sp-admin-form-field>
+        @if (d.summary) { <sp-admin-form-field label="Summary">{{ d.summary }}</sp-admin-form-field> }
+        <sp-admin-form-field label="CEFR level"><sp-admin-badge tone="neutral">{{ d.cefrLevel }}</sp-admin-badge></sp-admin-form-field>
+        @if (d.skill) { <sp-admin-form-field label="Skill">{{ d.skill }}</sp-admin-form-field> }
+        @if (d.subskill) { <sp-admin-form-field label="Subskill">{{ d.subskill }}</sp-admin-form-field> }
+        @if (d.contextTags.length > 0) {
+          <sp-admin-form-field label="Context tags">
+            @for (tag of d.contextTags; track tag) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
+          </sp-admin-form-field>
+        }
+        @if (d.focusTags.length > 0) {
+          <sp-admin-form-field label="Focus tags">
+            @for (tag of d.focusTags; track tag) { <sp-admin-badge tone="purple" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
+          </sp-admin-form-field>
+        }
+        @if (d.difficultyBand !== null) { <sp-admin-form-field label="Difficulty band">{{ d.difficultyBand }}</sp-admin-form-field> }
+        <sp-admin-form-field label="Status">
+          <sp-admin-badge [tone]="d.isArchived ? 'neutral' : 'success'" appearance="soft">{{ d.isArchived ? 'Archived' : (d.status ?? 'Published') }}</sp-admin-badge>
+        </sp-admin-form-field>
+        @if (d.sourceName) { <sp-admin-form-field label="Source">{{ d.sourceName }}</sp-admin-form-field> }
+        @if (d.contentFingerprint) {
+          <sp-admin-form-field label="Content fingerprint"><code>{{ d.contentFingerprint }}</code></sp-admin-form-field>
+        }
+        <sp-admin-form-field label="Created">{{ d.createdAt | date:'medium' }}</sp-admin-form-field>
+        @if (d.updatedAt) { <sp-admin-form-field label="Updated">{{ d.updatedAt | date:'medium' }}</sp-admin-form-field> }
+        <sp-admin-form-field label="Source table"><code>{{ d.sourceTable }}</code></sp-admin-form-field>
+
+        <sp-admin-form-field label="Learn / Activity / Module">
+          @if (d.linkedLearnCount) {
+            <sp-admin-badge tone="success" appearance="soft">{{ d.linkedLearnCount }} Learn Item(s)</sp-admin-badge>
+          } @else {
+            <sp-admin-badge tone="neutral" appearance="outline">No Learn Item yet</sp-admin-badge>
+          }
+          @if (d.linkedActivityCount) {
+            <sp-admin-badge tone="success" appearance="soft">{{ d.linkedActivityCount }} Activity(ies)</sp-admin-badge>
+          } @else {
+            <sp-admin-badge tone="neutral" appearance="outline">No Activity yet</sp-admin-badge>
+          }
+          @if (d.linkedModuleCount) {
+            <sp-admin-badge tone="success" appearance="soft">{{ d.linkedModuleCount }} Module(s)</sp-admin-badge>
+          } @else {
+            <sp-admin-badge tone="neutral" appearance="outline">No Module yet</sp-admin-badge>
+          }
+        </sp-admin-form-field>
+      </div>
+    </sp-admin-section-card>
+
+    @if (supportsGeneration(d)) {
+      <sp-admin-section-card title="Generate">
+        <div class="sp-admin-form-actions" style="flex-wrap:wrap;">
+          <sp-admin-button variant="primary" [disabled]="generatingLearn()" (clicked)="generateLearn()">
+            {{ generatingLearn() ? 'Generating…' : 'Generate Learn' }}
+          </sp-admin-button>
+          <sp-admin-button variant="primary" appearance="outline" [disabled]="generatingLearnAi()" (clicked)="generateLearnWithAi()">
+            {{ generatingLearnAi() ? 'Generating…' : 'Generate Learn (AI)' }}
+          </sp-admin-button>
+          <sp-admin-button variant="primary" [disabled]="generatingActivity()" (clicked)="generateActivity()">
+            {{ generatingActivity() ? 'Generating…' : 'Generate Activity' }}
+          </sp-admin-button>
+          <sp-admin-button variant="primary" appearance="outline" [disabled]="generatingActivityAi()" (clicked)="generateActivityWithAi()">
+            {{ generatingActivityAi() ? 'Generating…' : 'Generate Activity (AI)' }}
+          </sp-admin-button>
+          <sp-admin-button variant="primary" [disabled]="generatingModule()" (clicked)="generateModule()">
+            {{ generatingModule() ? 'Generating…' : 'Generate Module' }}
+          </sp-admin-button>
+          <sp-admin-button variant="primary" appearance="outline" [disabled]="generatingModuleAi()" (clicked)="generateModuleWithAi()">
+            {{ generatingModuleAi() ? 'Generating…' : 'Generate Module (AI)' }}
+          </sp-admin-button>
+        </div>
+      </sp-admin-section-card>
+    }
+
+    <sp-admin-section-card title="Manage">
+      <div class="sp-admin-form-actions">
+        @if (d.isArchived) {
+          <sp-admin-button variant="neutral" appearance="outline" [disabled]="archiving()" (clicked)="unarchive()">
+            {{ archiving() ? 'Working…' : 'Unarchive' }}
+          </sp-admin-button>
+        } @else {
+          <sp-admin-button variant="danger" appearance="outline" [disabled]="archiving()" (clicked)="archive()">
+            {{ archiving() ? 'Working…' : 'Archive' }}
+          </sp-admin-button>
+        }
+      </div>
+    </sp-admin-section-card>
+
+  } @else {
+    <sp-admin-empty-state title="Not found" message="This Resource Bank item could not be found." />
+  }
+
+</sp-admin-page-body>

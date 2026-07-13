@@ -26,6 +26,12 @@ public sealed class ResourceBankItem : BaseEntity
     public string ContentJson { get; private set; } = "{}";
     public DateTime? UpdatedAt { get; private set; }
 
+    /// <summary>Phase K3 — admin-facing soft-delete. Archived items are excluded from the default
+    /// Resource Bank list/browse views but the row and every link into it (LessonResourceLink,
+    /// ExerciseResourceLink) stay intact — archiving never breaks a Lesson/Exercise/Module that
+    /// already references this resource, it only hides the row from new authoring flows.</summary>
+    public bool IsArchived { get; private set; }
+
     private ResourceBankItem() { }
 
     public ResourceBankItem(
@@ -83,5 +89,17 @@ public sealed class ResourceBankItem : BaseEntity
         item.CreatedAt = createdAt;
         item.UpdatedAt = updatedAt;
         return item;
+    }
+
+    public void Archive()
+    {
+        IsArchived = true;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Unarchive()
+    {
+        IsArchived = false;
+        UpdatedAt = DateTime.UtcNow;
     }
 }

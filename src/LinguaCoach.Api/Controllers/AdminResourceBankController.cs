@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using LinguaCoach.Application.ResourceImport;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,10 +18,16 @@ namespace LinguaCoach.Api.Controllers;
 public sealed class AdminResourceBankController : ControllerBase
 {
     private readonly IResourceBankQueryService _bankQueryService;
+    private readonly IResourceBankArchiveHandler _archiveHandler;
+    private readonly IQuickWordPipelineService _quickWordPipeline;
 
-    public AdminResourceBankController(IResourceBankQueryService bankQueryService)
+    public AdminResourceBankController(
+        IResourceBankQueryService bankQueryService, IResourceBankArchiveHandler archiveHandler,
+        IQuickWordPipelineService quickWordPipeline)
     {
         _bankQueryService = bankQueryService;
+        _archiveHandler = archiveHandler;
+        _quickWordPipeline = quickWordPipeline;
     }
 
     // GET api/admin/resource-bank?type=&cefrLevel=&skill=&subskill=&contextTag=&focusTag=
@@ -46,4 +53,60 @@ public sealed class AdminResourceBankController : ControllerBase
             ct);
         return Ok(result);
     }
+
+    // GET api/admin/resource-bank/{id}
+    // Phase K3 — single-row lookup backing the admin "view as its own page" detail route.
+    [HttpGet("api/admin/resource-bank/{id:guid}")]
+    public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
+    {
+        var result = await _bankQueryService.GetUnifiedByIdAsync(id, ct);
+        return result is null ? NotFound(new { error = $"Resource Bank item '{id}' was not found." }) : Ok(result);
+    }
+
+    // POST api/admin/resource-bank/archive  { ids: [...] }
+    // Phase K3 — soft-delete: hides the row(s) from the default list/browse view without breaking
+    // any Lesson/Exercise/Module that already links to them.
+    [HttpPost("api/admin/resource-bank/archive")]
+    public async Task<IActionResult> Archive([FromBody] ResourceBankIdsRequest request, CancellationToken ct)
+    {
+        var result = await _archiveHandler.ArchiveAsync(new ArchiveResourceBankItemsCommand(request.Ids), ct);
+        return Ok(result);
+    }
+
+    // POST api/admin/resource-bank/unarchive  { ids: [...] }
+    [HttpPost("api/admin/resource-bank/unarchive")]
+    public async Task<IActionResult> Unarchive([FromBody] ResourceBankIdsRequest request, CancellationToken ct)
+    {
+        var result = await _archiveHandler.UnarchiveAsync(new UnarchiveResourceBankItemsCommand(request.Ids), ct);
+        return Ok(result);
+    }
+
+    // POST api/admin/resource-bank/quick-word  { word, cefrLevel, partOfSpeech?, definition? }
+    // Phase K3 — one-click cascade: publishes a Vocabulary Resource Bank item then generates and
+    // auto-approves a Lesson and Exercise, then generates a Module from them. See
+    // IQuickWordPipelineService's doc comment — this bypasses the normal import/review workflow,
+    // it's an admin dev/testing shortcut, not a replacement for it.
+    [HttpPost("api/admin/resource-bank/quick-word")]
+    public async Task<IActionResult> QuickWord([FromBody] QuickWordRequest request, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _quickWordPipeline.RunAsync(new QuickWordPipelineRequest(
+                request.Word, request.CefrLevel, request.PartOfSpeech, request.Definition, GetCurrentUserId()), ct);
+            return Ok(result);
+        }
+        catch (ResourceImportValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    private Guid? GetCurrentUserId()
+    {
+        var raw = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        return Guid.TryParse(raw, out var id) ? id : null;
+    }
+
+    public sealed record ResourceBankIdsRequest(IReadOnlyList<Guid> Ids);
+    public sealed record QuickWordRequest(string Word, string CefrLevel, string? PartOfSpeech = null, string? Definition = null);
 }

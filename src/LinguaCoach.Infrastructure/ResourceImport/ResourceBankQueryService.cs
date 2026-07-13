@@ -238,6 +238,7 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
         var query =
             from e in _db.ResourceBankItems
             join s in _db.CefrResourceSources on e.SourceId equals s.Id
+            where !e.IsArchived
             select new QueryRow { Entry = e, Source = s };
 
         if (filter.Type.HasValue)
@@ -321,7 +322,7 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
             ParseJsonStringArray(entry.ContextTagsJson), ParseJsonStringArray(entry.FocusTagsJson),
             entry.DifficultyBand, source.Id, source.Name, entry.ContentFingerprint, "Published",
             entry.CreatedAt, entry.UpdatedAt, "CefrListeningPassage", null,
-            null, null, null);
+            null, null, null, entry.IsArchived);
     }
 
     private static UnifiedResourceBankItemDto MapSpeaking(ResourceBankItem entry, CefrResourceSource source)
@@ -333,7 +334,7 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
             ParseJsonStringArray(entry.ContextTagsJson), ParseJsonStringArray(entry.FocusTagsJson),
             entry.DifficultyBand, source.Id, source.Name, entry.ContentFingerprint, "Published",
             entry.CreatedAt, entry.UpdatedAt, "CefrSpeakingPrompt", null,
-            null, null, null);
+            null, null, null, entry.IsArchived);
     }
 
     private static UnifiedResourceBankItemDto MapWritingPrompt(ResourceBankItem entry, CefrResourceSource source)
@@ -345,7 +346,7 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
             ParseJsonStringArray(entry.ContextTagsJson), ParseJsonStringArray(entry.FocusTagsJson),
             entry.DifficultyBand, source.Id, source.Name, entry.ContentFingerprint, "Published",
             entry.CreatedAt, entry.UpdatedAt, "CefrWritingPrompt", null,
-            null, null, null);
+            null, null, null, entry.IsArchived);
     }
 
     private static UnifiedResourceBankItemDto MapVocabulary(ResourceBankItem entry, CefrResourceSource source)
@@ -357,7 +358,7 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
             ParseJsonStringArray(entry.ContextTagsJson), ParseJsonStringArray(entry.FocusTagsJson),
             entry.DifficultyBand, source.Id, source.Name, entry.ContentFingerprint, "Published",
             entry.CreatedAt, entry.UpdatedAt, "CefrVocabularyEntry", null,
-            null, null, null);
+            null, null, null, entry.IsArchived);
     }
 
     private static UnifiedResourceBankItemDto MapGrammar(ResourceBankItem entry, CefrResourceSource source)
@@ -369,7 +370,7 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
             ParseJsonStringArray(entry.ContextTagsJson), ParseJsonStringArray(entry.FocusTagsJson),
             entry.DifficultyBand, source.Id, source.Name, entry.ContentFingerprint, "Published",
             entry.CreatedAt, entry.UpdatedAt, "CefrGrammarProfileEntry", null,
-            null, null, null);
+            null, null, null, entry.IsArchived);
     }
 
     private static UnifiedResourceBankItemDto MapReadingReference(ResourceBankItem entry, CefrResourceSource source)
@@ -383,7 +384,7 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
             ParseJsonStringArray(entry.ContextTagsJson), ParseJsonStringArray(entry.FocusTagsJson),
             entry.DifficultyBand, source.Id, source.Name, entry.ContentFingerprint, "Published",
             entry.CreatedAt, entry.UpdatedAt, "CefrReadingReference", null,
-            null, null, null);
+            null, null, null, entry.IsArchived);
     }
 
     private static UnifiedResourceBankItemDto MapReadingPassage(ResourceBankItem entry, CefrResourceSource source)
@@ -395,7 +396,26 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
             ParseJsonStringArray(entry.ContextTagsJson), ParseJsonStringArray(entry.FocusTagsJson),
             entry.DifficultyBand, source.Id, source.Name, entry.ContentFingerprint, "Published",
             entry.CreatedAt, entry.UpdatedAt, "CefrReadingPassage", null,
-            null, null, null);
+            null, null, null, entry.IsArchived);
+    }
+
+    /// <summary>Phase K3 — single-row lookup, including archived rows (see interface doc). Powers
+    /// the admin detail-page route so a direct link/reload always resolves the item, even one that
+    /// was archived after being linked from elsewhere.</summary>
+    public async Task<UnifiedResourceBankItemDto?> GetUnifiedByIdAsync(Guid id, CancellationToken ct = default)
+    {
+        var row = await (
+            from e in _db.ResourceBankItems
+            join s in _db.CefrResourceSources on e.SourceId equals s.Id
+            where e.Id == id
+            select new QueryRow { Entry = e, Source = s })
+            .FirstOrDefaultAsync(ct);
+
+        if (row is null) return null;
+
+        var dto = ToUnifiedDto(row);
+        var withCounts = await WithLinkedCountsAsync(new List<UnifiedResourceBankItemDto> { dto }, ct);
+        return withCounts[0];
     }
 
     private static PublishedResourceType ToDomainType(UnifiedResourceBankItemType type) => type switch

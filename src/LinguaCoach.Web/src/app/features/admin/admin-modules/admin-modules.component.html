@@ -4,8 +4,8 @@
   <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="loadAll()">
     Refresh
   </sp-admin-button>
-  <sp-admin-button variant="primary" size="sm" (clicked)="openGenerateModal()">
-    Generate Module
+  <sp-admin-button variant="primary" size="sm" (clicked)="openCreateModal()">
+    Create Module
   </sp-admin-button>
 </sp-admin-page-header>
 
@@ -37,7 +37,7 @@
     </sp-admin-filter-bar>
 
     @if (items().length === 0) {
-      <sp-admin-empty-state title="No Modules" message="Use Generate Module to compose the first draft from an approved Lesson and Exercise." />
+      <sp-admin-empty-state title="No Modules" message="Use Create Module to compose the first draft from a Lesson and Exercise." />
     } @else {
       <sp-admin-table layout="first-column-fluid">
         <table>
@@ -167,35 +167,74 @@
 
 </sp-admin-drawer>
 
-<!-- ── Generate-from-items modal ────────────────────────────────────────── -->
+<!-- ── Phase K3 — real Create Module modal: searchable pickers instead of pasted GUIDs ────── -->
 <sp-admin-modal
-  [open]="generateModalOpen()"
-  title="Generate Module"
+  [open]="createModalOpen()"
+  title="Create Module"
   variant="form"
-  (closed)="closeGenerateModal()">
+  (closed)="closeCreateModal()">
 
   <div class="sp-admin-form-stack">
-    <p class="sp-admin-hint">
-      Both the Lesson and the Exercise must already be approved. Find their ids on
-      the Lessons / Exercises pages.
-    </p>
-    <sp-admin-form-field label="Title" hint="Optional — defaults to the Lesson's title">
-      <sp-admin-input [(ngModel)]="generateTitle" name="generateTitle" placeholder="e.g. Present perfect module" />
+    <sp-admin-form-field label="Title" [required]="true">
+      <sp-admin-input [(ngModel)]="createTitle" name="createTitle" placeholder="e.g. Present perfect module" />
     </sp-admin-form-field>
-    <sp-admin-form-field label="Lesson id" [required]="true">
-      <sp-admin-input [(ngModel)]="generateLessonId" name="generateLessonId" placeholder="Approved Lesson id" />
+    <sp-admin-form-field label="CEFR level">
+      <sp-admin-select [ngModel]="createCefrLevel" (ngModelChange)="createCefrLevel = $event" [options]="cefrLevelOptions.slice(1)" placeholder="No level" />
     </sp-admin-form-field>
-    <sp-admin-form-field label="Exercise id" [required]="true">
-      <sp-admin-input [(ngModel)]="generateExerciseId" name="generateExerciseId" placeholder="Approved Exercise id" />
+
+    <sp-admin-form-field label="Lesson" [required]="true">
+      @if (selectedLesson(); as lesson) {
+        <div class="sp-admin-form-actions" style="align-items:center;">
+          <sp-admin-badge tone="info" appearance="soft">{{ lesson.title }}</sp-admin-badge>
+          <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="clearLesson()">Change</sp-admin-button>
+        </div>
+      } @else {
+        <sp-admin-input [ngModel]="lessonSearchQuery" (input)="onLessonSearch($event)" placeholder="Search Lessons by title…" />
+        @if (lessonSearching()) { <span class="sp-admin-hint">Searching…</span> }
+        @if (lessonResults().length > 0) {
+          <ul class="sp-admin-form-stack" style="margin-top:0.35rem;">
+            @for (l of lessonResults(); track l.id) {
+              <li>
+                <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="pickLesson(l)">
+                  {{ l.title }} <span class="sp-admin-text-muted">· {{ l.cefrLevel ?? '—' }} · {{ l.reviewStatus }}</span>
+                </sp-admin-button>
+              </li>
+            }
+          </ul>
+        }
+      }
+    </sp-admin-form-field>
+
+    <sp-admin-form-field label="Exercise" [required]="true">
+      @if (selectedExercise(); as exercise) {
+        <div class="sp-admin-form-actions" style="align-items:center;">
+          <sp-admin-badge tone="info" appearance="soft">{{ exercise.title }}</sp-admin-badge>
+          <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="clearExercise()">Change</sp-admin-button>
+        </div>
+      } @else {
+        <sp-admin-input [ngModel]="exerciseSearchQuery" (input)="onExerciseSearch($event)" placeholder="Search Exercises by title…" />
+        @if (exerciseSearching()) { <span class="sp-admin-hint">Searching…</span> }
+        @if (exerciseResults().length > 0) {
+          <ul class="sp-admin-form-stack" style="margin-top:0.35rem;">
+            @for (e of exerciseResults(); track e.id) {
+              <li>
+                <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="pickExercise(e)">
+                  {{ e.title }}
+                </sp-admin-button>
+              </li>
+            }
+          </ul>
+        }
+      }
     </sp-admin-form-field>
   </div>
 
   @if (actionError()) { <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert> }
 
   <div slot="footer">
-    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeGenerateModal()">Cancel</sp-admin-button>
-    <sp-admin-button variant="primary" [disabled]="generating()" (clicked)="submitGenerateFromItems()">
-      {{ generating() ? 'Generating…' : 'Generate' }}
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeCreateModal()">Cancel</sp-admin-button>
+    <sp-admin-button variant="primary" [disabled]="creating()" (clicked)="submitCreateModule()">
+      {{ creating() ? 'Creating…' : 'Create' }}
     </sp-admin-button>
   </div>
 

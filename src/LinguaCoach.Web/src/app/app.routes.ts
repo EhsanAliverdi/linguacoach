@@ -178,8 +178,16 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/admin-resource-bank-unified/admin-resource-bank-unified.component').then(m => m.AdminResourceBankUnifiedComponent),
       },
       {
+        path: 'resource-bank/:id',
+        loadComponent: () => import('./features/admin/admin-resource-bank-detail/admin-resource-bank-detail.component').then(m => m.AdminResourceBankDetailComponent),
+      },
+      {
         path: 'lesson-library',
         loadComponent: () => import('./features/admin/admin-lessons/admin-lessons.component').then(m => m.AdminLessonsComponent),
+      },
+      {
+        path: 'lesson-library/:id',
+        loadComponent: () => import('./features/admin/admin-lesson-detail/admin-lesson-detail.component').then(m => m.AdminLessonDetailComponent),
       },
       {
         path: 'exercises',

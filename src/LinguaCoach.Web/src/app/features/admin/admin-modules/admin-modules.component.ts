@@ -3,12 +3,16 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { AdminModuleService } from '../../../core/services/admin-module.service';
+import { AdminLessonService } from '../../../core/services/admin-lesson.service';
+import { AdminExerciseService } from '../../../core/services/admin-exercise.service';
 import {
   ModuleDto,
   ModulePreviewResult,
   ModulePreviewSubmitResult,
   MODULE_REVIEW_STATUSES,
 } from '../../../core/models/admin-module.models';
+import { LessonDto } from '../../../core/models/admin-lesson.models';
+import { ExerciseDto } from '../../../core/models/admin-exercise.models';
 import { FormioRendererComponent } from '../../../shared/formio/formio-renderer.component';
 import { RESOURCE_BANK_CEFR_LEVELS } from '../../../core/models/admin-resource-import.models';
 import {
@@ -93,12 +97,25 @@ export class AdminModulesComponent implements OnInit {
   approving = signal(false);
   rejecting = signal(false);
 
-  // ── Generate-from-items modal (simple: admin types Lesson + Exercise ids) ──
-  generateModalOpen = signal(false);
-  generating = signal(false);
-  generateLessonId = '';
-  generateExerciseId = '';
-  generateTitle = '';
+  // ── Phase K3 — real Create Module modal: searchable Lesson/Exercise dropdowns instead of
+  // pasting raw GUIDs. Backed by moduleSvc.create() (POST /api/admin/modules), which — unlike
+  // generate-from-items — does NOT require the Lesson/Exercise to already be approved. ─────────
+  createModalOpen = signal(false);
+  creating = signal(false);
+  createTitle = '';
+  createCefrLevel = '';
+
+  lessonSearchQuery = '';
+  lessonResults = signal<LessonDto[]>([]);
+  lessonSearching = signal(false);
+  selectedLesson = signal<LessonDto | null>(null);
+  private lessonSearchDebounce?: ReturnType<typeof setTimeout>;
+
+  exerciseSearchQuery = '';
+  exerciseResults = signal<ExerciseDto[]>([]);
+  exerciseSearching = signal(false);
+  selectedExercise = signal<ExerciseDto | null>(null);
+  private exerciseSearchDebounce?: ReturnType<typeof setTimeout>;
 
   // ── Phase J3 — Preview as Learner modal ─────────────────────────────────
   previewModalOpen = signal(false);
@@ -115,7 +132,12 @@ export class AdminModulesComponent implements OnInit {
    *  FormioRendererComponent.submitForm() rather than relying on Form.io to render one. */
   @ViewChild(FormioRendererComponent) previewFormioRenderer?: FormioRendererComponent;
 
-  constructor(private moduleSvc: AdminModuleService, private route: ActivatedRoute) {}
+  constructor(
+    private moduleSvc: AdminModuleService,
+    private lessonSvc: AdminLessonService,
+    private exerciseSvc: AdminExerciseService,
+    private route: ActivatedRoute,
+  ) {}
 
   ngOnInit(): void {
     this.loadAll();
@@ -229,41 +251,107 @@ export class AdminModulesComponent implements OnInit {
     });
   }
 
-  openGenerateModal(): void {
-    this.generateLessonId = '';
-    this.generateExerciseId = '';
-    this.generateTitle = '';
+  openCreateModal(): void {
+    this.createTitle = '';
+    this.createCefrLevel = '';
+    this.lessonSearchQuery = '';
+    this.lessonResults.set([]);
+    this.selectedLesson.set(null);
+    this.exerciseSearchQuery = '';
+    this.exerciseResults.set([]);
+    this.selectedExercise.set(null);
     this.actionError.set('');
-    this.generateModalOpen.set(true);
+    this.createModalOpen.set(true);
   }
 
-  closeGenerateModal(): void {
-    this.generateModalOpen.set(false);
+  closeCreateModal(): void {
+    this.createModalOpen.set(false);
   }
 
-  /** Phase H5 — simple selection form: admin types an approved Lesson id and an approved
-   *  Exercise id. Both must already be Approved — the backend rejects otherwise. */
-  submitGenerateFromItems(): void {
-    if (!this.generateLessonId.trim() || !this.generateExerciseId.trim()) {
-      this.actionError.set('Both a Lesson id and an Exercise id are required.');
+  onLessonSearch(event: Event): void {
+    this.lessonSearchQuery = (event.target as HTMLInputElement).value;
+    clearTimeout(this.lessonSearchDebounce);
+    this.lessonSearchDebounce = setTimeout(() => this.runLessonSearch(), 250);
+  }
+
+  private runLessonSearch(): void {
+    const query = this.lessonSearchQuery.trim();
+    if (!query) { this.lessonResults.set([]); return; }
+    this.lessonSearching.set(true);
+    this.lessonSvc.list(1, 10, undefined, undefined, undefined, undefined, undefined, undefined, undefined, query).subscribe({
+      next: result => { this.lessonSearching.set(false); this.lessonResults.set(result.items); },
+      error: () => { this.lessonSearching.set(false); this.lessonResults.set([]); },
+    });
+  }
+
+  pickLesson(lesson: LessonDto): void {
+    this.selectedLesson.set(lesson);
+    this.lessonResults.set([]);
+    this.lessonSearchQuery = '';
+  }
+
+  clearLesson(): void {
+    this.selectedLesson.set(null);
+  }
+
+  onExerciseSearch(event: Event): void {
+    this.exerciseSearchQuery = (event.target as HTMLInputElement).value;
+    clearTimeout(this.exerciseSearchDebounce);
+    this.exerciseSearchDebounce = setTimeout(() => this.runExerciseSearch(), 250);
+  }
+
+  private runExerciseSearch(): void {
+    const query = this.exerciseSearchQuery.trim();
+    if (!query) { this.exerciseResults.set([]); return; }
+    this.exerciseSearching.set(true);
+    this.exerciseSvc.list(1, 10, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, query).subscribe({
+      next: result => { this.exerciseSearching.set(false); this.exerciseResults.set(result.items); },
+      error: () => { this.exerciseSearching.set(false); this.exerciseResults.set([]); },
+    });
+  }
+
+  pickExercise(exercise: ExerciseDto): void {
+    this.selectedExercise.set(exercise);
+    this.exerciseResults.set([]);
+    this.exerciseSearchQuery = '';
+  }
+
+  clearExercise(): void {
+    this.selectedExercise.set(null);
+  }
+
+  /** Phase K3 — real create: a Lesson and an Exercise picked from live search dropdowns (not
+   *  pasted GUIDs), submitted to the previously-unreachable POST /api/admin/modules endpoint.
+   *  Neither needs to already be approved — that's the create handler's own design (see
+   *  AdminCreateModuleHandler's requireApproved: false), distinct from generate-from-* actions. */
+  submitCreateModule(): void {
+    if (!this.createTitle.trim()) {
+      this.actionError.set('A title is required.');
       return;
     }
-    this.generating.set(true);
+    const lesson = this.selectedLesson();
+    const exercise = this.selectedExercise();
+    if (!lesson || !exercise) {
+      this.actionError.set('Both a Lesson and an Exercise must be selected.');
+      return;
+    }
+    this.creating.set(true);
     this.actionError.set('');
-    this.moduleSvc.generateFromItems({
-      lessonLinks: [{ lessonId: this.generateLessonId.trim(), role: 'Primary' }],
-      exerciseLinks: [{ exerciseId: this.generateExerciseId.trim(), role: 'PrimaryPractice' }],
-      title: this.generateTitle.trim() || null,
+    this.moduleSvc.create({
+      title: this.createTitle.trim(),
+      lessonLinks: [{ lessonId: lesson.id, role: 'Primary' }],
+      exerciseLinks: [{ exerciseId: exercise.id, role: 'PrimaryPractice', required: true }],
+      cefrLevel: this.createCefrLevel || null,
     }).subscribe({
       next: () => {
-        this.generating.set(false);
-        this.generateModalOpen.set(false);
-        this.actionSuccess.set('Module draft generated — pending review.');
+        this.creating.set(false);
+        this.createModalOpen.set(false);
+        this.actionSuccess.set('Module created — pending review.');
         this.loadAll();
       },
       error: err => {
-        this.generating.set(false);
-        this.actionError.set(err.error?.error ?? 'Could not generate a Module.');
+        this.creating.set(false);
+        this.actionError.set(err.error?.error ?? 'Could not create the Module.');
       },
     });
   }

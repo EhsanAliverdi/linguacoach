@@ -19,7 +19,11 @@ import {
   ResourceCandidatePreviewDto,
   ResourceCandidatePublishResult,
   UnifiedResourceBankListResult,
+  UnifiedResourceBankItemDto,
   UnifiedResourceBankItemType,
+  ResourceBankArchiveResult,
+  QuickWordRequest,
+  QuickWordResult,
   ContentImportInputMode,
   ContentImportRequestBody,
   ContentImportResult,
@@ -272,6 +276,27 @@ export class AdminUnifiedResourceBankService {
     if (search) params = params.set('search', search);
     if (sourceId) params = params.set('sourceId', sourceId);
     return this.http.get<UnifiedResourceBankListResult>(this.base, { params });
+  }
+
+  /** Phase K3 — single-row lookup backing the "view as its own page" detail route. */
+  get(id: string): Observable<UnifiedResourceBankItemDto> {
+    return this.http.get<UnifiedResourceBankItemDto>(`${this.base}/${id}`);
+  }
+
+  /** Phase K3 — soft-delete: hides the row(s) from the default list without breaking any
+   *  Lesson/Exercise/Module that already links to them. */
+  archive(ids: string[]): Observable<ResourceBankArchiveResult> {
+    return this.http.post<ResourceBankArchiveResult>(`${this.base}/archive`, { ids });
+  }
+
+  unarchive(ids: string[]): Observable<ResourceBankArchiveResult> {
+    return this.http.post<ResourceBankArchiveResult>(`${this.base}/unarchive`, { ids });
+  }
+
+  /** Phase K3 — one word in, one Lesson + one Exercise + one Module out. Bypasses the normal
+   *  import/review workflow — an admin dev/testing shortcut, not a replacement for it. */
+  quickWord(request: QuickWordRequest): Observable<QuickWordResult> {
+    return this.http.post<QuickWordResult>(`${this.base}/quick-word`, request);
   }
 }
 

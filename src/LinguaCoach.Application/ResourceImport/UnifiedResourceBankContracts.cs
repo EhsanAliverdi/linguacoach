@@ -68,10 +68,32 @@ public sealed record UnifiedResourceBankItemDto(
     string? DetailRoute,
     int? LinkedLearnCount,
     int? LinkedActivityCount,
-    int? LinkedModuleCount
+    int? LinkedModuleCount,
+    bool IsArchived
 );
 
 public sealed record UnifiedResourceBankListResult(
     IReadOnlyList<UnifiedResourceBankItemDto> Items,
     int TotalCount
 );
+
+// ── Phase K3 — admin archive/unarchive (soft-delete). Single-item and bulk variants both funnel
+// through the same handler; bulk is continue-on-error per id, mirroring the Resource Candidates
+// batch-action convention (see IResourceCandidateBatchActionService). ──
+
+public sealed record ArchiveResourceBankItemsCommand(IReadOnlyList<Guid> Ids);
+public sealed record UnarchiveResourceBankItemsCommand(IReadOnlyList<Guid> Ids);
+
+public sealed record ResourceBankArchiveItemResult(Guid Id, bool Success, string? Error);
+
+public sealed record ResourceBankArchiveResult(
+    int RequestedCount,
+    int SucceededCount,
+    int FailedCount,
+    IReadOnlyList<ResourceBankArchiveItemResult> Items);
+
+public interface IResourceBankArchiveHandler
+{
+    Task<ResourceBankArchiveResult> ArchiveAsync(ArchiveResourceBankItemsCommand command, CancellationToken ct = default);
+    Task<ResourceBankArchiveResult> UnarchiveAsync(UnarchiveResourceBankItemsCommand command, CancellationToken ct = default);
+}

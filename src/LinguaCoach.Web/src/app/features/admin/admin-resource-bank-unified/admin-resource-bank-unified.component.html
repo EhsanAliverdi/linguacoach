@@ -4,6 +4,9 @@
   <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="loadAll()">
     Refresh
   </sp-admin-button>
+  <sp-admin-button variant="primary" size="sm" (clicked)="openQuickWord()">
+    + Quick word
+  </sp-admin-button>
 </sp-admin-page-header>
 
 <sp-admin-page-body>
@@ -25,6 +28,9 @@
     </sp-admin-alert>
   }
   @if (generateError()) { <sp-admin-alert variant="error">{{ generateError() }}</sp-admin-alert> }
+  @if (bulkResultSummary()) {
+    <sp-admin-alert [variant]="bulkResultSummary().includes('failed') ? 'warning' : 'success'">{{ bulkResultSummary() }}</sp-admin-alert>
+  }
 
   @if (loading()) {
     <sp-admin-loading-state message="Loading resource bank" />
@@ -52,10 +58,39 @@
     @if (items().length === 0) {
       <sp-admin-empty-state title="No resources" message="No published resources match these filters." />
     } @else {
+
+      <!-- Phase K3 — bulk toolbar. Generate actions only apply to selected rows whose type
+           supports generation (see selectedSupportGeneration); archive applies to every selection. -->
+      @if (selectedCount() > 0) {
+        <div class="sp-admin-form-actions" style="flex-wrap:wrap;align-items:center;margin-bottom:0.75rem;">
+          <span class="sp-admin-hint">{{ selectedCount() }} selected</span>
+          <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="clearSelection()">Clear</sp-admin-button>
+          <sp-admin-button
+            variant="neutral" size="sm" [disabled]="bulkRunning() || selectedSupportGeneration().length === 0"
+            (clicked)="bulkGenerateLearn()">
+            {{ bulkRunning() ? 'Working…' : 'Generate Learn (' + selectedSupportGeneration().length + ')' }}
+          </sp-admin-button>
+          <sp-admin-button
+            variant="neutral" size="sm" [disabled]="bulkRunning() || selectedSupportGeneration().length === 0"
+            (clicked)="bulkGenerateActivity()">
+            {{ bulkRunning() ? 'Working…' : 'Generate Activity (' + selectedSupportGeneration().length + ')' }}
+          </sp-admin-button>
+          <sp-admin-button
+            variant="neutral" size="sm" [disabled]="bulkRunning() || selectedSupportGeneration().length === 0"
+            (clicked)="bulkGenerateModule()">
+            {{ bulkRunning() ? 'Working…' : 'Generate Module (' + selectedSupportGeneration().length + ')' }}
+          </sp-admin-button>
+          <sp-admin-button variant="danger" appearance="outline" size="sm" [disabled]="bulkRunning()" (clicked)="bulkArchive()">
+            {{ bulkRunning() ? 'Working…' : 'Archive selected' }}
+          </sp-admin-button>
+        </div>
+      }
+
       <sp-admin-table layout="first-column-fluid">
         <table>
           <thead>
             <tr>
+              <th><input type="checkbox" [checked]="allVisibleSelected()" (change)="toggleSelectAllVisible()" aria-label="Select all visible" /></th>
               <th>Type</th>
               <th>Title</th>
               <th>Level</th>
@@ -63,18 +98,18 @@
               <th>Context</th>
               <th>Focus</th>
               <th>Difficulty</th>
-              <th>Source</th>
               <th>Learn / Activity / Module</th>
-              <th class="sp-admin-th-actions"></th>
             </tr>
           </thead>
           <tbody>
             @for (item of items(); track item.id) {
-              <tr>
+              <tr (click)="openDetail(item)" style="cursor:pointer">
+                <td><input type="checkbox" [checked]="isSelected(item.id)" (click)="toggleSelected(item.id, $event)" aria-label="Select resource" /></td>
                 <td><sp-admin-badge tone="info" appearance="soft">{{ typeLabel(item.type) }}</sp-admin-badge></td>
                 <td>
                   <strong>{{ item.title }}</strong>
                   @if (item.summary) { <div class="sp-admin-text-muted">{{ item.summary }}</div> }
+                  @if (item.isArchived) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">Archived</sp-admin-badge> }
                 </td>
                 <td><sp-admin-badge tone="neutral">{{ item.cefrLevel }}</sp-admin-badge></td>
                 <td>
@@ -92,7 +127,6 @@
                   } @else { — }
                 </td>
                 <td>{{ item.difficultyBand ?? '—' }}</td>
-                <td>{{ item.sourceName ?? '—' }}</td>
                 <td>
                   @if (item.linkedLearnCount) {
                     <sp-admin-badge tone="success" appearance="soft">{{ item.linkedLearnCount }} Learn</sp-admin-badge>
@@ -102,12 +136,6 @@
                   @if (item.linkedModuleCount) {
                     <sp-admin-badge tone="success" appearance="soft">{{ item.linkedModuleCount }} Module</sp-admin-badge>
                   }
-                </td>
-                <td>
-                  <sp-admin-table-actions
-                    mode="dropdown"
-                    [richActions]="rowActions(item)"
-                    (actionSelected)="onRowAction($event, item)" />
                 </td>
               </tr>
             }
@@ -123,75 +151,49 @@
 
 </sp-admin-page-body>
 
-<!-- ── Detail drawer (read-only, uses the already-loaded row) ─────────────── -->
-<sp-admin-drawer
-  [open]="drawerOpen()"
-  [title]="detail()?.title ?? 'Resource'"
-  side="right"
-  size="lg"
-  (closed)="closeDrawer()">
+<!-- ── Phase K3 — quick word modal ─────────────────────────────────────────── -->
+<sp-admin-modal
+  [open]="quickWordModalOpen()"
+  title="Quick word"
+  variant="form"
+  (closed)="closeQuickWord()">
 
-  @if (detail(); as d) {
-    <div class="sp-admin-form-stack">
-      <sp-admin-form-field label="Type"><sp-admin-badge tone="info" appearance="soft">{{ typeLabel(d.type) }}</sp-admin-badge></sp-admin-form-field>
-      <sp-admin-form-field label="Title"><strong>{{ d.title }}</strong></sp-admin-form-field>
-      @if (d.summary) { <sp-admin-form-field label="Summary">{{ d.summary }}</sp-admin-form-field> }
-      <sp-admin-form-field label="CEFR level"><sp-admin-badge tone="neutral">{{ d.cefrLevel }}</sp-admin-badge></sp-admin-form-field>
-      @if (d.skill) { <sp-admin-form-field label="Skill">{{ d.skill }}</sp-admin-form-field> }
-      @if (d.subskill) { <sp-admin-form-field label="Subskill">{{ d.subskill }}</sp-admin-form-field> }
-      @if (d.contextTags.length > 0) {
-        <sp-admin-form-field label="Context tags">
-          @for (tag of d.contextTags; track tag) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
-        </sp-admin-form-field>
-      }
-      @if (d.focusTags.length > 0) {
-        <sp-admin-form-field label="Focus tags">
-          @for (tag of d.focusTags; track tag) { <sp-admin-badge tone="purple" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
-        </sp-admin-form-field>
-      }
-      @if (d.difficultyBand !== null) { <sp-admin-form-field label="Difficulty band">{{ d.difficultyBand }}</sp-admin-form-field> }
-      <sp-admin-form-field label="Status"><sp-admin-badge tone="success" appearance="soft">{{ d.status ?? 'Published' }}</sp-admin-badge></sp-admin-form-field>
-      @if (d.sourceName) { <sp-admin-form-field label="Source">{{ d.sourceName }}</sp-admin-form-field> }
-      @if (d.contentFingerprint) {
-        <sp-admin-form-field label="Content fingerprint"><code>{{ d.contentFingerprint }}</code></sp-admin-form-field>
-      }
-      <sp-admin-form-field label="Created">{{ d.createdAt | date:'medium' }}</sp-admin-form-field>
-      @if (d.updatedAt) { <sp-admin-form-field label="Updated">{{ d.updatedAt | date:'medium' }}</sp-admin-form-field> }
-      <sp-admin-form-field label="Source table"><code>{{ d.sourceTable }}</code></sp-admin-form-field>
+  <div class="sp-admin-form-stack">
+    <p class="sp-admin-hint">
+      Publishes one Vocabulary Resource Bank item, then generates and auto-approves a Lesson and
+      an Exercise, then generates a Module from them — one word in, one of each out. Bypasses the
+      normal import/review workflow; a dev/testing shortcut.
+    </p>
+    <sp-admin-form-field label="Word" [required]="true">
+      <sp-admin-input [(ngModel)]="quickWordWord" name="quickWordWord" placeholder="e.g. serendipity" />
+    </sp-admin-form-field>
+    <sp-admin-form-field label="CEFR level" [required]="true">
+      <sp-admin-select [ngModel]="quickWordCefrLevel" (ngModelChange)="quickWordCefrLevel = $event" [options]="quickWordCefrOptions" />
+    </sp-admin-form-field>
+    <sp-admin-form-field label="Part of speech" hint="Optional">
+      <sp-admin-input [(ngModel)]="quickWordPartOfSpeech" name="quickWordPartOfSpeech" placeholder="e.g. noun" />
+    </sp-admin-form-field>
+    <sp-admin-form-field label="Definition" hint="Optional">
+      <sp-admin-input [(ngModel)]="quickWordDefinition" name="quickWordDefinition" placeholder="e.g. a fortunate discovery by chance" />
+    </sp-admin-form-field>
+  </div>
 
-      <sp-admin-form-field label="Learn / Activity / Module">
-        @if (d.linkedLearnCount) {
-          <sp-admin-badge tone="success" appearance="soft">{{ d.linkedLearnCount }} Learn Item(s)</sp-admin-badge>
-        } @else {
-          <sp-admin-badge tone="neutral" appearance="outline">No Learn Item yet</sp-admin-badge>
-        }
-        @if (d.linkedActivityCount) {
-          <sp-admin-badge tone="success" appearance="soft">{{ d.linkedActivityCount }} Activity(ies)</sp-admin-badge>
-        } @else {
-          <sp-admin-badge tone="neutral" appearance="outline">No Activity yet</sp-admin-badge>
-        }
-        @if (d.linkedModuleCount) {
-          <sp-admin-badge tone="success" appearance="soft">{{ d.linkedModuleCount }} Module(s)</sp-admin-badge>
-        } @else {
-          <sp-admin-badge tone="neutral" appearance="outline">No Module yet</sp-admin-badge>
-        }
-      </sp-admin-form-field>
-    </div>
+  @if (quickWordError()) { <sp-admin-alert variant="error">{{ quickWordError() }}</sp-admin-alert> }
+  @if (quickWordResult(); as r) {
+    <sp-admin-alert variant="success">
+      Created 1 Resource Bank item, 1 Lesson, 1 Exercise, 1 Module.
+      <a routerLink="/admin/resource-bank/{{ r.resourceBankItemId }}" style="text-decoration:underline;">View resource</a> ·
+      <a routerLink="/admin/lesson-library/{{ r.lessonId }}" style="text-decoration:underline;">View Lesson</a> ·
+      <a (click)="closeQuickWord()" [routerLink]="['/admin/exercises']" [queryParams]="{ id: r.exerciseId }" style="text-decoration:underline;">View Exercise</a> ·
+      <a (click)="closeQuickWord()" [routerLink]="['/admin/modules']" [queryParams]="{ id: r.moduleId }" style="text-decoration:underline;">View Module</a>
+    </sp-admin-alert>
   }
 
   <div slot="footer">
-    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeDrawer()">Close</sp-admin-button>
-    @if (detail(); as d) {
-      <sp-admin-button variant="primary" [disabled]="generatingLearnId() === d.id" (clicked)="generateLearn(d)">
-        {{ generatingLearnId() === d.id ? 'Generating…' : 'Generate Learn' }}
-      </sp-admin-button>
-      <sp-admin-button variant="primary" appearance="outline" [disabled]="generatingActivityId() === d.id" (clicked)="generateActivity(d)">
-        {{ generatingActivityId() === d.id ? 'Generating…' : 'Generate Activity' }}
-      </sp-admin-button>
-      <sp-admin-button variant="primary" appearance="outline" [disabled]="generatingModuleId() === d.id" (clicked)="generateModule(d)">
-        {{ generatingModuleId() === d.id ? 'Generating…' : 'Generate Module' }}
-      </sp-admin-button>
-    }
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeQuickWord()">Close</sp-admin-button>
+    <sp-admin-button variant="primary" [disabled]="quickWordSubmitting()" (clicked)="submitQuickWord()">
+      {{ quickWordSubmitting() ? 'Working…' : 'Generate' }}
+    </sp-admin-button>
   </div>
 
-</sp-admin-drawer>
+</sp-admin-modal>

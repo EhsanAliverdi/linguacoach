@@ -74,6 +74,25 @@ export interface GenerateModuleFromItemsRequestBody {
   notes?: string | null;
 }
 
+/** Phase K3 — manual "author a Module by hand" create. Unlike the generate-* actions, the
+ *  backend create handler does NOT require the linked Lesson/Exercise to already be approved
+ *  (see AdminCreateModuleHandler's requireApproved: false). */
+export interface CreateModuleRequestBody {
+  title: string;
+  lessonLinks: ModuleLessonLinkInput[];
+  exerciseLinks: ModuleExerciseLinkInput[];
+  description?: string | null;
+  objectiveKey?: string | null;
+  cefrLevel?: string | null;
+  skill?: string | null;
+  subskill?: string | null;
+  contextTags?: string[] | null;
+  focusTags?: string[] | null;
+  difficultyBand?: number | null;
+  estimatedMinutes?: number | null;
+  feedbackPlanJson?: string | null;
+}
+
 export interface GenerateModuleFromResourceRequestBody {
   resourceType: string;
   resourceId: string;

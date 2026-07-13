@@ -379,11 +379,43 @@ export interface UnifiedResourceBankItemDto {
   linkedLearnCount: number | null;
   linkedActivityCount: number | null;
   linkedModuleCount: number | null;
+  isArchived: boolean;
 }
 
 export interface UnifiedResourceBankListResult {
   items: UnifiedResourceBankItemDto[];
   totalCount: number;
+}
+
+// ── Phase K3 — admin archive/unarchive (soft-delete) ────────────────────────────
+
+export interface ResourceBankArchiveItemResult {
+  id: string;
+  success: boolean;
+  error: string | null;
+}
+
+export interface ResourceBankArchiveResult {
+  requestedCount: number;
+  succeededCount: number;
+  failedCount: number;
+  items: ResourceBankArchiveItemResult[];
+}
+
+// ── Phase K3 — one-word cascade pipeline ────────────────────────────────────────
+
+export interface QuickWordRequest {
+  word: string;
+  cefrLevel: string;
+  partOfSpeech?: string | null;
+  definition?: string | null;
+}
+
+export interface QuickWordResult {
+  resourceBankItemId: string;
+  lessonId: string;
+  exerciseId: string;
+  moduleId: string;
 }
 
 export const UNIFIED_RESOURCE_BANK_TYPES: { value: UnifiedResourceBankItemType; label: string }[] = [

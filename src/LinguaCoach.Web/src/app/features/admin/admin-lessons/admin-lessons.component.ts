@@ -1,7 +1,8 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
+import { Observable, catchError, concatMap, from, map, of, toArray } from 'rxjs';
 import { AdminLessonService } from '../../../core/services/admin-lesson.service';
 import { AdminExerciseService } from '../../../core/services/admin-exercise.service';
 import { AdminModuleService } from '../../../core/services/admin-module.service';
@@ -14,13 +15,13 @@ import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
   SpAdminButtonComponent,
-  SpAdminDrawerComponent,
   SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
   SpAdminFilterBarComponent,
   SpAdminFormFieldComponent,
   SpAdminInputComponent,
   SpAdminLoadingStateComponent,
+  SpAdminModalComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminPaginationComponent,
@@ -32,15 +33,7 @@ import {
 
 const PAGE_SIZE = 20;
 
-function parseJsonArray(json: string | null | undefined): string[] {
-  if (!json) return [];
-  try {
-    const parsed = JSON.parse(json);
-    return Array.isArray(parsed) ? parsed.filter(v => typeof v === 'string') : [];
-  } catch {
-    return [];
-  }
-}
+interface BulkItemResult { success: boolean; title: string; error: string | null; }
 
 /**
  * Phase H3 — Lesson foundation admin page. Reviewable teaching/explanation blocks generated
@@ -56,13 +49,13 @@ function parseJsonArray(json: string | null | undefined): string[] {
     SpAdminAlertComponent,
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
-    SpAdminDrawerComponent,
     SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
     SpAdminFilterBarComponent,
     SpAdminFormFieldComponent,
     SpAdminInputComponent,
     SpAdminLoadingStateComponent,
+    SpAdminModalComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
     SpAdminPaginationComponent,
@@ -92,33 +85,29 @@ export class AdminLessonsComponent implements OnInit {
   readonly statusOptions = [{ value: 'all', label: 'All statuses' }, ...LESSON_REVIEW_STATUSES.map(s => ({ value: s, label: s }))];
   readonly cefrLevelOptions = [{ value: 'all', label: 'All levels' }, ...RESOURCE_BANK_CEFR_LEVELS.map(l => ({ value: l, label: l }))];
 
-  // ── Detail drawer ────────────────────────────────────────────────────────
-  drawerOpen = signal(false);
-  detail = signal<LessonDto | null>(null);
-  rejectReasonDraft = '';
-  approving = signal(false);
-  rejecting = signal(false);
+  // ── Phase K3 — bulk selection + bulk actions (client-side sequential loop over the existing
+  // single-item endpoints, continue-on-error per item) ────────────────────────────────────────
+  selectedIds = signal<Set<string>>(new Set());
+  bulkRunning = signal(false);
+  bulkResultSummary = signal('');
+  bulkRejectModalOpen = signal(false);
+  bulkRejectReasonDraft = '';
 
-  // ── Phase H4 — Generate Exercise from this Lesson ───────────────────────
-  generatingActivity = signal(false);
-  lastActionKind = signal<'activity' | 'module' | null>(null);
-
-  // ── Phase H5 — Generate Module from this Lesson ─────────────────────────
-  generatingModule = signal(false);
+  readonly selectedCount = computed(() => this.selectedIds().size);
+  readonly allVisibleSelected = computed(() => {
+    const items = this.items();
+    return items.length > 0 && items.every(i => this.selectedIds().has(i.id));
+  });
 
   constructor(
     private lessonSvc: AdminLessonService,
     private exerciseSvc: AdminExerciseService,
     private moduleSvc: AdminModuleService,
-    private route: ActivatedRoute,
     private router: Router,
   ) {}
 
   ngOnInit(): void {
     this.loadAll();
-
-    const deepLinkId = this.route.snapshot.queryParamMap.get('id');
-    if (deepLinkId) this.openDrawerById(deepLinkId);
   }
 
   loadAll(): void {
@@ -161,41 +150,12 @@ export class AdminLessonsComponent implements OnInit {
 
   onPageChange(page: number): void {
     this.page.set(page);
+    this.selectedIds.set(new Set());
     this.loadAll();
   }
 
-  openDrawer(item: LessonDto): void {
-    this.detail.set(item);
-    this.rejectReasonDraft = '';
-    this.actionError.set('');
-    this.drawerOpen.set(true);
-  }
-
-  openDrawerById(id: string): void {
-    this.lessonSvc.get(id).subscribe({
-      next: item => this.openDrawer(item),
-      error: () => { /* deep-linked item no longer exists — ignore, list still loads */ },
-    });
-  }
-
-  closeDrawer(): void {
-    this.drawerOpen.set(false);
-  }
-
-  examplesFor(item: LessonDto): string[] {
-    return parseJsonArray(item.examplesJson);
-  }
-
-  commonMistakesFor(item: LessonDto): string[] {
-    return parseJsonArray(item.commonMistakesJson);
-  }
-
-  contextTagsFor(item: LessonDto): string[] {
-    return parseJsonArray(item.contextTagsJson);
-  }
-
-  focusTagsFor(item: LessonDto): string[] {
-    return parseJsonArray(item.focusTagsJson);
+  openDetail(item: LessonDto): void {
+    this.router.navigate(['/admin/lesson-library', item.id]);
   }
 
   statusTone(status: string): 'success' | 'neutral' | 'danger' | 'warning' {
@@ -205,91 +165,93 @@ export class AdminLessonsComponent implements OnInit {
     return 'neutral';
   }
 
-  approveSelected(): void {
-    const item = this.detail();
-    if (!item) return;
-    this.approving.set(true);
+  // ── Selection ────────────────────────────────────────────────────────────────
+
+  isSelected(id: string): boolean {
+    return this.selectedIds().has(id);
+  }
+
+  toggleSelected(id: string, event: Event): void {
+    event.stopPropagation();
+    const next = new Set(this.selectedIds());
+    if (next.has(id)) next.delete(id); else next.add(id);
+    this.selectedIds.set(next);
+  }
+
+  toggleSelectAllVisible(): void {
+    if (this.allVisibleSelected()) {
+      this.selectedIds.set(new Set());
+      return;
+    }
+    this.selectedIds.set(new Set(this.items().map(i => i.id)));
+  }
+
+  clearSelection(): void {
+    this.selectedIds.set(new Set());
+  }
+
+  // ── Bulk actions ─────────────────────────────────────────────────────────────
+
+  private selectedItems(): LessonDto[] {
+    const ids = this.selectedIds();
+    return this.items().filter(i => ids.has(i.id));
+  }
+
+  private runBulk(verb: string, call: (item: LessonDto) => Observable<unknown>): void {
+    const targets = this.selectedItems();
+    if (targets.length === 0) return;
+    this.bulkRunning.set(true);
     this.actionError.set('');
-    this.lessonSvc.approve(item.id).subscribe({
-      next: updated => {
-        this.approving.set(false);
-        this.lastActionKind.set(null);
-        this.detail.set(updated);
-        this.actionSuccess.set('Lesson approved.');
-        this.loadAll();
-      },
-      error: err => { this.approving.set(false); this.actionError.set(err.error?.error ?? 'Could not approve.'); },
+    this.bulkResultSummary.set('');
+
+    from(targets).pipe(
+      concatMap(item => call(item).pipe(
+        map((): BulkItemResult => ({ success: true, title: item.title, error: null })),
+        catchError((err: { error?: { error?: string } }) =>
+          of<BulkItemResult>({ success: false, title: item.title, error: err.error?.error ?? 'failed' })),
+      )),
+      toArray(),
+    ).subscribe(results => {
+      this.bulkRunning.set(false);
+      const succeeded = results.filter(r => r.success).length;
+      const failed = results.length - succeeded;
+      this.bulkResultSummary.set(
+        `${succeeded} of ${results.length} ${verb} succeeded` +
+        (failed > 0 ? ` — ${failed} failed: ${results.filter(r => !r.success).map(r => r.title + ' (' + r.error + ')').join('; ')}` : '.'));
+      this.selectedIds.set(new Set());
+      this.loadAll();
     });
   }
 
-  rejectSelected(): void {
-    const item = this.detail();
-    if (!item) return;
-    if (!this.rejectReasonDraft.trim()) {
+  bulkApprove(): void {
+    this.runBulk('approvals', item => this.lessonSvc.approve(item.id));
+  }
+
+  openBulkReject(): void {
+    if (this.selectedCount() === 0) return;
+    this.bulkRejectReasonDraft = '';
+    this.actionError.set('');
+    this.bulkRejectModalOpen.set(true);
+  }
+
+  closeBulkReject(): void {
+    this.bulkRejectModalOpen.set(false);
+  }
+
+  confirmBulkReject(): void {
+    if (!this.bulkRejectReasonDraft.trim()) {
       this.actionError.set('A rejection reason is required.');
       return;
     }
-    this.rejecting.set(true);
-    this.actionError.set('');
-    this.lessonSvc.reject(item.id, this.rejectReasonDraft.trim()).subscribe({
-      next: updated => {
-        this.rejecting.set(false);
-        this.lastActionKind.set(null);
-        this.detail.set(updated);
-        this.actionSuccess.set('Lesson rejected.');
-        this.loadAll();
-      },
-      error: err => { this.rejecting.set(false); this.actionError.set(err.error?.error ?? 'Could not reject.'); },
-    });
+    this.bulkRejectModalOpen.set(false);
+    this.runBulk('rejections', item => this.lessonSvc.reject(item.id, this.bulkRejectReasonDraft.trim()));
   }
 
-  /** Phase H4 — generates an Exercise from this Lesson's own linked resources, using its
-   *  own CEFR/skill/subskill/tags as defaults. Always stages a pending-review Exercise; the Lesson
-   *  itself is never modified. */
-  generateActivity(): void {
-    const item = this.detail();
-    if (!item) return;
-    this.generatingActivity.set(true);
-    this.actionError.set('');
-    this.exerciseSvc.generateFromLesson({ lessonId: item.id }).subscribe({
-      next: () => {
-        this.generatingActivity.set(false);
-        this.lastActionKind.set('activity');
-        this.actionSuccess.set('Exercise draft generated from this Lesson — pending review.');
-      },
-      error: err => {
-        this.generatingActivity.set(false);
-        this.actionError.set(err.error?.error ?? 'Could not generate an Exercise.');
-      },
-    });
+  bulkGenerateActivity(): void {
+    this.runBulk('Exercise generations', item => this.exerciseSvc.generateFromLesson({ lessonId: item.id }));
   }
 
-  goToExercises(): void {
-    this.router.navigateByUrl('/admin/exercises');
-  }
-
-  /** Phase H5 — generates a Module from this (approved) Lesson's compatible approved
-   *  Exercise(s). Rejected with a clear message if the Lesson itself isn't approved yet, or
-   *  no compatible approved Exercise exists. */
-  generateModule(): void {
-    const item = this.detail();
-    if (!item) return;
-    this.generatingModule.set(true);
-    this.actionError.set('');
-    this.moduleSvc.generateFromLesson({ lessonId: item.id }).subscribe({
-      next: () => {
-        this.generatingModule.set(false);
-        this.lastActionKind.set('module');
-        this.actionSuccess.set('Module draft generated from this Lesson — pending review.');
-      },
-      error: err => {
-        this.generatingModule.set(false);
-        this.actionError.set(err.error?.error ?? 'Could not generate a Module.');
-      },
-    });
-  }
-
-  goToModules(): void {
-    this.router.navigateByUrl('/admin/modules');
+  bulkGenerateModule(): void {
+    this.runBulk('Module generations', item => this.moduleSvc.generateFromLesson({ lessonId: item.id }));
   }
 }

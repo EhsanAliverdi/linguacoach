@@ -5,6 +5,7 @@ import { environment } from '../../../environments/environment';
 import {
   ModuleDto,
   ModuleListResult,
+  CreateModuleRequestBody,
   GenerateModuleFromItemsRequestBody,
   GenerateModuleFromResourceRequestBody,
   GenerateModuleFromLessonRequestBody,
@@ -42,6 +43,11 @@ export class AdminModuleService {
 
   get(id: string): Observable<ModuleDto> {
     return this.http.get<ModuleDto>(`${this.base}/${id}`);
+  }
+
+  /** Phase K3 — manual create, wired to the backend's previously-unreachable POST endpoint. */
+  create(body: CreateModuleRequestBody): Observable<ModuleDto> {
+    return this.http.post<ModuleDto>(this.base, body);
   }
 
   preview(id: string): Observable<ModulePreviewResult> {

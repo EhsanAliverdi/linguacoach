@@ -219,4 +219,10 @@ public interface IResourceBankQueryService
     // Phase H1 — unified read model over all four typed bank tables. See
     // UnifiedResourceBankContracts.cs for the DTO/filter shapes and their rationale.
     Task<UnifiedResourceBankListResult> ListUnifiedAsync(UnifiedResourceBankListFilter filter, CancellationToken ct = default);
+
+    /// <summary>Phase K3 — single-row lookup by <see cref="Domain.Entities.ResourceBankItem.Id"/>,
+    /// backing the admin "view as its own page" detail route. Null when no row with that id exists
+    /// (including an archived row — archived items are still real rows, just excluded from the
+    /// default list, so this still returns them for a direct-by-id lookup).</summary>
+    Task<UnifiedResourceBankItemDto?> GetUnifiedByIdAsync(Guid id, CancellationToken ct = default);
 }

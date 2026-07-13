@@ -620,6 +620,13 @@ public static class DependencyInjection
         // Phase E5 — read-only browse/search over the published Cefr* bank tables.
         services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceBankQueryService,
             LinguaCoach.Infrastructure.ResourceImport.ResourceBankQueryService>();
+        // Phase K3 — admin archive/unarchive (soft-delete) for Resource Bank rows.
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceBankArchiveHandler,
+            LinguaCoach.Infrastructure.ResourceImport.ResourceBankArchiveHandler>();
+        // Phase K3 — one-word cascade: publish a Vocabulary Resource Bank item then generate +
+        // auto-approve a Lesson/Exercise and generate a Module, all from one admin action.
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IQuickWordPipelineService,
+            LinguaCoach.Infrastructure.ResourceImport.QuickWordPipelineService>();
         // Phase J5c — real audio-file upload/storage for ListeningPassage candidates.
         services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceCandidateAudioService,
             LinguaCoach.Infrastructure.ResourceImport.ResourceCandidateAudioService>();

@@ -27,6 +27,7 @@ internal sealed class ResourceBankItemConfiguration : IEntityTypeConfiguration<R
         builder.Property(e => e.ContentFingerprint).HasColumnName("content_fingerprint").HasMaxLength(200);
         builder.Property(e => e.ContentJson).HasColumnName("content_json").IsRequired();
         builder.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+        builder.Property(e => e.IsArchived).HasColumnName("is_archived").IsRequired().HasDefaultValue(false);
 
         builder.HasOne<CefrResourceSource>()
             .WithMany()
