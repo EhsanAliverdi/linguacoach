@@ -108,9 +108,34 @@ public sealed class AdminContentImportEndpointTests : IClassFixture<ApiTestFacto
         var client = _factory.CreateClient();
         client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
+        // Phase J5d closed the J5 type-expansion roadmap item — no genuinely "coming soon" type
+        // remains, so this now asserts against a made-up type instead of a real future one.
         var response = await client.PostAsJsonAsync("/api/admin/content-imports",
-            Body("Not Yet Supported Source", "speaking", "pasted_text", "hello"));
+            Body("Not A Real Type Source", "video", "pasted_text", "hello"));
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    // ── Phase J5d — "speaking" resource type ────────────────────────────────────
+
+    [Fact]
+    public async Task Speaking_resource_type_stages_a_text_only_reference_prompt()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var sourceName = $"Speaking Type Source {Guid.NewGuid():N}";
+        var response = await client.PostAsJsonAsync("/api/admin/content-imports",
+            Body(sourceName, "speaking", "csv_text", "title,scenario\nDeadline negotiation,Role-play: negotiate a deadline extension with your manager."));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(1, body.GetProperty("candidateCount").GetInt32());
+        var runId = body.GetProperty("importRunId").GetGuid();
+
+        var candidatesResp = await client.GetAsync($"/api/admin/resource-candidates?importRunId={runId}");
+        var candidatesBody = await candidatesResp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("SpeakingPrompt", candidatesBody.GetProperty("items")[0].GetProperty("candidateType").GetString());
     }
 
     // ── Phase J5b — "mixed" resource type ────────────────────────────────────────

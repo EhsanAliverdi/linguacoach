@@ -42,13 +42,15 @@ const RESOURCE_TYPE_TO_LESSON_TYPE: Record<UnifiedResourceBankItemType, string> 
   readingPassage: 'ReadingPassage',
   writing: 'Writing',
   listening: 'Listening',
+  speaking: 'Speaking',
 };
 
-/** Phase J5a/J5c — Lesson/Exercise/Module generation (LessonResourceLookup et al.) only knows how
- *  to read Vocabulary/Grammar/ReadingReference/ReadingPassage resources so far; Writing/Listening
- *  resources can be imported and published, but Generate Learn/Activity/Module aren't wired to
- *  consume them yet (a separate future phase). Hiding those actions here is more honest than
- *  showing a button that would fail server-side with a generic "not found in Resource Bank" error. */
+/** Phase J5a/J5c/J5d — Lesson/Exercise/Module generation (LessonResourceLookup et al.) only knows
+ *  how to read Vocabulary/Grammar/ReadingReference/ReadingPassage resources so far; Writing/
+ *  Listening/Speaking resources can be imported and published, but Generate Learn/Activity/Module
+ *  aren't wired to consume them yet (a separate future phase). Hiding those actions here is more
+ *  honest than showing a button that would fail server-side with a generic "not found in Resource
+ *  Bank" error. */
 const TYPES_SUPPORTING_GENERATION: ReadonlySet<UnifiedResourceBankItemType> =
   new Set(['vocabulary', 'grammar', 'readingReference', 'readingPassage']);
 
@@ -121,6 +123,7 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
     { value: 'Reading', label: 'Reading' },
     { value: 'Writing', label: 'Writing' },
     { value: 'Listening', label: 'Listening' },
+    { value: 'Speaking', label: 'Speaking' },
   ];
 
   // ── Detail drawer (uses the already-loaded row — no extra fetch needed) ────

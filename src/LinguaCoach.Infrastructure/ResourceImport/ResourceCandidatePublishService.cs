@@ -50,6 +50,9 @@ namespace LinguaCoach.Infrastructure.ResourceImport;
 /// publishing a Listening resource with no actual audio would be dishonest about what was
 /// published (same "don't publish something incomplete" reasoning as the ActivityTemplateCandidate
 /// bullet below).</description></item>
+/// <item><description><see cref="ResourceCandidateType.SpeakingPrompt"/> (Phase J5d) — fully
+/// supported, text-only (no reference audio — see the J5d scope decision), mirrors WritingPrompt's
+/// simple field-count needs.</description></item>
 /// </list>
 /// </summary>
 public sealed class ResourceCandidatePublishService : IResourceCandidatePublishService
@@ -179,6 +182,9 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
 
             case ResourceCandidateType.ListeningPassage:
                 return BuildListeningEntity(candidate, source, fields, errors);
+
+            case ResourceCandidateType.SpeakingPrompt:
+                return BuildSpeakingPromptEntity(candidate, source.Id, fields, errors);
 
             case ResourceCandidateType.ActivityTemplateCandidate:
                 errors.Add(
@@ -329,6 +335,41 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
             return (null, null, errors);
         }
     }
+
+    private static (BaseEntity?, string?, List<string>) BuildSpeakingPromptEntity(
+        ResourceCandidate candidate, Guid sourceId, IReadOnlyDictionary<string, string?> fields, List<string> errors)
+    {
+        if (string.IsNullOrWhiteSpace(candidate.CefrLevel))
+        {
+            errors.Add("CefrLevel is required to publish a SpeakingPrompt candidate but is not set.");
+            return (null, null, errors);
+        }
+
+        var promptText = (ResourceCandidateFieldHelper.GetFieldCI(fields, "scenario") ?? candidate.CanonicalText).Trim();
+        var title = ResourceCandidateFieldHelper.GetFieldCI(fields, "title")?.Trim()
+            ?? (promptText.Length <= 80 ? promptText : promptText[..80].Trim() + "…");
+        var suggestedDurationSeconds = ParseSuggestedDurationSeconds(
+            ResourceCandidateFieldHelper.GetFieldCI(fields, "durationseconds", "suggesteddurationseconds"));
+
+        try
+        {
+            var difficultyBand = candidate.DifficultyBand is >= 1 and <= 5 ? candidate.DifficultyBand : null;
+            var entity = new ResourceBankItem(
+                PublishedResourceType.Speaking, sourceId, candidate.CefrLevel,
+                ResourceBankItemContent.Serialize(new SpeakingPromptContent(title, promptText, suggestedDurationSeconds)),
+                candidate.Subskill, difficultyBand, candidate.ContextTagsJson, candidate.FocusTagsJson,
+                candidate.ContentFingerprint);
+            return (entity, "CefrSpeakingPrompt", errors);
+        }
+        catch (ArgumentException ex)
+        {
+            errors.Add($"Could not construct a CefrSpeakingPrompt: {ex.Message}");
+            return (null, null, errors);
+        }
+    }
+
+    private static int? ParseSuggestedDurationSeconds(string? raw) =>
+        int.TryParse(raw?.Trim(), out var value) && value > 0 ? value : null;
 
     private static (BaseEntity?, string?, List<string>) BuildReadingReferenceOrPassage(
         ResourceCandidate candidate, CefrResourceSource source, IReadOnlyDictionary<string, string?> fields, List<string> errors)

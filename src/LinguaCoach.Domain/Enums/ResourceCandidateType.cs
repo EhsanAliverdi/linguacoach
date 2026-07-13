@@ -18,5 +18,9 @@ public enum ResourceCandidateType
     // Phase J5c — a staged listening passage: title/transcript metadata plus a real uploaded
     // audio file attached separately after staging (see ResourceCandidate.AudioStorageKey).
     // Recognized from a row's "transcript" field.
-    ListeningPassage = 6
+    ListeningPassage = 6,
+    // Phase J5d — a staged speaking reference prompt (a role-play/task scenario the student
+    // speaks a response to, text-only — no reference audio, matching WritingPrompt's shape).
+    // Recognized from a row's "scenario" field.
+    SpeakingPrompt = 7
 }

@@ -451,6 +451,47 @@ public sealed class ResourceCandidatePublishServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Publishing_speaking_prompt_candidate_creates_exactly_one_row_with_mapped_fields()
+    {
+        var source = SeedSource();
+        var rawJson = """{"title":"Deadline negotiation","scenario":"Role-play: negotiate a deadline extension with your manager.","durationSeconds":"60"}""";
+        var (_, raw) = SeedRunAndRaw(source, rawJson);
+        var candidate = SeedCandidate(raw, ResourceCandidateType.SpeakingPrompt, "Deadline negotiation", rawJson);
+        MakePublishReady(candidate, primarySkill: "speaking");
+
+        var result = await _sut.PublishAsync(candidate.Id, null);
+
+        result.Success.Should().BeTrue();
+        result.PublishedEntityType.Should().Be("CefrSpeakingPrompt");
+
+        var rows = await _db.ResourceBankItems.Where(x => x.Type == PublishedResourceType.Speaking).ToListAsync();
+        rows.Should().HaveCount(1);
+        var content = ResourceBankItemContent.Deserialize<SpeakingPromptContent>(rows[0].ContentJson);
+        content.Title.Should().Be("Deadline negotiation");
+        content.PromptText.Should().Be("Role-play: negotiate a deadline extension with your manager.");
+        content.SuggestedDurationSeconds.Should().Be(60);
+        rows[0].CefrLevel.Should().Be("A1");
+        rows[0].SourceId.Should().Be(source.Id);
+    }
+
+    [Fact]
+    public async Task Speaking_prompt_without_a_title_derives_one_from_the_scenario_text()
+    {
+        var source = SeedSource();
+        var rawJson = """{"scenario":"Order food at a restaurant and ask about allergens."}""";
+        var (_, raw) = SeedRunAndRaw(source, rawJson);
+        var candidate = SeedCandidate(raw, ResourceCandidateType.SpeakingPrompt, "Order food at a restaurant and ask about allergens.", rawJson);
+        MakePublishReady(candidate, primarySkill: "speaking");
+
+        var result = await _sut.PublishAsync(candidate.Id, null);
+
+        result.Success.Should().BeTrue();
+        var rows = await _db.ResourceBankItems.Where(x => x.Type == PublishedResourceType.Speaking).ToListAsync();
+        var content = ResourceBankItemContent.Deserialize<SpeakingPromptContent>(rows[0].ContentJson);
+        content.Title.Should().Be("Order food at a restaurant and ask about allergens.");
+    }
+
+    [Fact]
     public async Task ActivityTemplateCandidate_publish_is_deferred_and_blocked()
     {
         var source = SeedSource();

@@ -21,7 +21,9 @@ public enum UnifiedResourceBankItemType
     // Phase J5a
     Writing,
     // Phase J5c
-    Listening
+    Listening,
+    // Phase J5d
+    Speaking
 }
 
 public sealed record UnifiedResourceBankListFilter(

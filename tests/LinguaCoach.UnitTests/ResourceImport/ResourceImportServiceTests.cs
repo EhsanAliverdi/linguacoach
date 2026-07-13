@@ -433,4 +433,36 @@ public sealed class ResourceImportServiceTests : IDisposable
         candidate.CandidateType.Should().Be(ResourceCandidateType.ListeningPassage);
         candidate.CanonicalText.Should().Be("An interview about remote work habits.");
     }
+
+    // ── Phase J5d — SpeakingPrompt candidate type ───────────────────────────────
+
+    [Fact]
+    public async Task Row_with_scenario_field_infers_as_SpeakingPrompt()
+    {
+        var source = SeedApprovedSource();
+        var csv = "title,scenario\nDeadline negotiation,Role-play: negotiate a deadline extension with your manager.\n";
+
+        var result = await _sut.ImportAsync(new ResourceImportRequest(
+            source.Id, ToStream(csv), "speaking.csv", ResourceImportMode.Csv));
+
+        result.SucceededCount.Should().Be(1);
+        var candidate = await _db.ResourceCandidates.SingleAsync();
+        candidate.CandidateType.Should().Be(ResourceCandidateType.SpeakingPrompt);
+        candidate.CanonicalText.Should().Be("Deadline negotiation");
+    }
+
+    [Fact]
+    public async Task DefaultCandidateType_SpeakingPrompt_extracts_canonical_text_from_scenario_when_no_title()
+    {
+        var source = SeedApprovedSource();
+        var csv = "scenario\nOrder food at a restaurant and ask about allergens.\n";
+
+        await _sut.ImportAsync(new ResourceImportRequest(
+            source.Id, ToStream(csv), "speaking-no-title.csv", ResourceImportMode.Csv,
+            DefaultCandidateType: ResourceCandidateType.SpeakingPrompt));
+
+        var candidate = await _db.ResourceCandidates.SingleAsync();
+        candidate.CandidateType.Should().Be(ResourceCandidateType.SpeakingPrompt);
+        candidate.CanonicalText.Should().Be("Order food at a restaurant and ask about allergens.");
+    }
 }

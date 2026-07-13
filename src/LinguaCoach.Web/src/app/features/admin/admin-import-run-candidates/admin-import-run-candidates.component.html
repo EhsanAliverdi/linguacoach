@@ -244,6 +244,17 @@
             </sp-admin-form-field>
           </div>
         }
+        @case ('SpeakingPrompt') {
+          <div class="sp-admin-form-stack">
+            <sp-admin-form-field label="Title"><strong>{{ p.renderedPreviewModel.title }}</strong></sp-admin-form-field>
+            @if (p.renderedPreviewModel.promptText) {
+              <sp-admin-form-field label="Scenario">{{ p.renderedPreviewModel.promptText }}</sp-admin-form-field>
+            }
+            @if (p.renderedPreviewModel.suggestedDurationSeconds) {
+              <sp-admin-form-field label="Suggested response duration">{{ p.renderedPreviewModel.suggestedDurationSeconds }}s</sp-admin-form-field>
+            }
+          </div>
+        }
         @default {
           <sp-admin-form-field label="Generic field summary" hint="This candidate type has no specialized preview yet.">
             <ul>

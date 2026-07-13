@@ -123,6 +123,18 @@ public sealed class UnifiedResourceBankQueryServiceTests : IDisposable
         return e;
     }
 
+    private ResourceBankItem SeedSpeaking(
+        string title, string cefr = "B1", string? subskill = null, int? difficulty = null,
+        string? contextTagsJson = null, string? focusTagsJson = null)
+    {
+        var e = new ResourceBankItem(
+            PublishedResourceType.Speaking, _sourceId, cefr,
+            ResourceBankItemContent.Serialize(new SpeakingPromptContent(title, "Role-play about something.", null)),
+            subskill, difficulty, contextTagsJson, focusTagsJson);
+        _db.ResourceBankItems.Add(e);
+        return e;
+    }
+
     // ── Aggregation across all four tables ────────────────────────────────────────
 
     [Fact]
@@ -193,7 +205,18 @@ public sealed class UnifiedResourceBankQueryServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task Unified_aggregates_all_six_types_in_one_call()
+    public async Task Unified_returns_speaking_prompt_rows()
+    {
+        SeedSpeaking("Deadline negotiation");
+        _db.SaveChanges();
+
+        var result = await _query.ListUnifiedAsync(new UnifiedResourceBankListFilter());
+
+        result.Items.Should().ContainSingle(i => i.Type == UnifiedResourceBankItemType.Speaking && i.Title == "Deadline negotiation");
+    }
+
+    [Fact]
+    public async Task Unified_aggregates_all_seven_types_in_one_call()
     {
         SeedVocab("garden");
         SeedGrammar("present perfect");
@@ -201,16 +224,17 @@ public sealed class UnifiedResourceBankQueryServiceTests : IDisposable
         SeedPassage("A Trip to the Market");
         SeedWriting("Email reply");
         SeedListening("Morning News");
+        SeedSpeaking("Deadline negotiation");
         _db.SaveChanges();
 
         var result = await _query.ListUnifiedAsync(new UnifiedResourceBankListFilter(PageSize: 200));
 
-        result.TotalCount.Should().Be(6);
+        result.TotalCount.Should().Be(7);
         result.Items.Select(i => i.Type).Should().BeEquivalentTo(new[]
         {
             UnifiedResourceBankItemType.Vocabulary, UnifiedResourceBankItemType.Grammar,
             UnifiedResourceBankItemType.ReadingReference, UnifiedResourceBankItemType.ReadingPassage,
-            UnifiedResourceBankItemType.Writing, UnifiedResourceBankItemType.Listening
+            UnifiedResourceBankItemType.Writing, UnifiedResourceBankItemType.Listening, UnifiedResourceBankItemType.Speaking
         });
     }
 

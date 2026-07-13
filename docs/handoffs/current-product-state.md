@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-13 (Phase J5c)
+lastUpdated: 2026-07-13 (Phase J5d — closes Phase J5)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,23 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-13 (Phase J5c)
+Last updated: 2026-07-13 (Phase J5d — closes Phase J5)
+
+## Phase J5d: Speaking content-type import — closes Phase J5 (2026-07-13)
+
+Last of four small J5 passes (Writing → Mixed → Listening → **Speaking, done**). Content Import's
+dropdown now has a seventh option, **Speaking** — a text-only role-play/task reference prompt (the
+student reads it and speaks a response; only the student's own spoken answer is audio, scored
+separately and unrelated to import — user's explicit scope decision, same shape as Writing plus a
+suggested response duration). No schema change needed.
+
+**Phase J5 ("import content-type expansion") is now closed in full.** All four types named in the
+original 2026-07-10 architecture audit — Writing, Mixed, Listening, Speaking — are importable,
+staged, previewable, and publishable through the same pipeline as the original Vocabulary/Grammar/
+Reading types. None of the three new content types (Writing/Listening/Speaking) are wired into
+Lesson/Exercise/Module generation yet — that's new, unscoped future work, not a J5 continuation.
+
+Full detail: `docs/reviews/2026-07-13-phase-j5d-speaking-prompt-import-review.md`.
 
 ## Phase J5c: Listening content-type import — real audio upload (2026-07-13)
 

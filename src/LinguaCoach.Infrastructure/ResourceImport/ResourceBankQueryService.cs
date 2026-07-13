@@ -307,6 +307,7 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
             PublishedResourceType.ReadingPassage => MapReadingPassage(entry, source),
             PublishedResourceType.Writing => MapWritingPrompt(entry, source),
             PublishedResourceType.Listening => MapListening(entry, source),
+            PublishedResourceType.Speaking => MapSpeaking(entry, source),
             _ => throw new InvalidOperationException($"Unknown PublishedResourceType '{entry.Type}'."),
         };
     }
@@ -320,6 +321,18 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
             ParseJsonStringArray(entry.ContextTagsJson), ParseJsonStringArray(entry.FocusTagsJson),
             entry.DifficultyBand, source.Id, source.Name, entry.ContentFingerprint, "Published",
             entry.CreatedAt, entry.UpdatedAt, "CefrListeningPassage", null,
+            null, null, null);
+    }
+
+    private static UnifiedResourceBankItemDto MapSpeaking(ResourceBankItem entry, CefrResourceSource source)
+    {
+        var c = ResourceBankItemContent.Deserialize<SpeakingPromptContent>(entry.ContentJson);
+        return new UnifiedResourceBankItemDto(
+            entry.Id, UnifiedResourceBankItemType.Speaking, c.Title, Truncate(c.PromptText, 160),
+            entry.CefrLevel, "Speaking", entry.Subskill,
+            ParseJsonStringArray(entry.ContextTagsJson), ParseJsonStringArray(entry.FocusTagsJson),
+            entry.DifficultyBand, source.Id, source.Name, entry.ContentFingerprint, "Published",
+            entry.CreatedAt, entry.UpdatedAt, "CefrSpeakingPrompt", null,
             null, null, null);
     }
 
@@ -393,6 +406,7 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
         UnifiedResourceBankItemType.ReadingPassage => PublishedResourceType.ReadingPassage,
         UnifiedResourceBankItemType.Writing => PublishedResourceType.Writing,
         UnifiedResourceBankItemType.Listening => PublishedResourceType.Listening,
+        UnifiedResourceBankItemType.Speaking => PublishedResourceType.Speaking,
         _ => throw new ArgumentOutOfRangeException(nameof(type)),
     };
 
@@ -464,6 +478,7 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
             (PublishedResourceType.ReadingPassage, UnifiedResourceBankItemType.ReadingPassage) => true,
             (PublishedResourceType.Writing, UnifiedResourceBankItemType.Writing) => true,
             (PublishedResourceType.Listening, UnifiedResourceBankItemType.Listening) => true,
+            (PublishedResourceType.Speaking, UnifiedResourceBankItemType.Speaking) => true,
             _ => false
         };
 

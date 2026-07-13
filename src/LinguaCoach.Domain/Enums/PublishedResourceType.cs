@@ -17,5 +17,8 @@ public enum PublishedResourceType
     Writing = 4,
     // Phase J5c — a published listening passage (title + optional transcript + a real uploaded
     // audio file's storage key/content type).
-    Listening = 5
+    Listening = 5,
+    // Phase J5d — a published speaking reference prompt (title + task/scenario text + optional
+    // suggested response duration). Text-only, no reference audio.
+    Speaking = 6
 }

@@ -57,9 +57,11 @@
             <sp-admin-form-field label="Content type" [required]="true" [hint]="resourceTypeHint">
               <sp-admin-native-select [(ngModel)]="resourceType" name="resourceType" [options]="resourceTypeOptions" />
             </sp-admin-form-field>
-            <p class="sp-admin-hint">
-              Coming soon: {{ comingSoonTypes.join(', ') }} — AI structure detection is not yet implemented (see roadmap).
-            </p>
+            @if (comingSoonTypes.length > 0) {
+              <p class="sp-admin-hint">
+                Coming soon: {{ comingSoonTypes.join(', ') }} — AI structure detection is not yet implemented (see roadmap).
+              </p>
+            }
             <sp-admin-form-field label="Input mode" [required]="true">
               <sp-admin-native-select [(ngModel)]="inputMode" name="inputMode" [options]="inputModeOptions" />
             </sp-admin-form-field>
@@ -473,6 +475,17 @@
               </div>
               @if (audioUploadError()) { <sp-admin-alert variant="error">{{ audioUploadError() }}</sp-admin-alert> }
             </sp-admin-form-field>
+          </div>
+        }
+        @case ('SpeakingPrompt') {
+          <div class="sp-admin-form-stack">
+            <sp-admin-form-field label="Title"><strong>{{ p.renderedPreviewModel.title }}</strong></sp-admin-form-field>
+            @if (p.renderedPreviewModel.promptText) {
+              <sp-admin-form-field label="Scenario">{{ p.renderedPreviewModel.promptText }}</sp-admin-form-field>
+            }
+            @if (p.renderedPreviewModel.suggestedDurationSeconds) {
+              <sp-admin-form-field label="Suggested response duration">{{ p.renderedPreviewModel.suggestedDurationSeconds }}s</sp-admin-form-field>
+            }
           </div>
         }
         @default {

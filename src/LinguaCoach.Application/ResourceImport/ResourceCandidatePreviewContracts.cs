@@ -87,6 +87,9 @@ public sealed record ResourceCandidateRenderedPreviewDto(
     // publish time — see ResourceCandidatePublishService's audio-required gate).
     string? Transcript = null,
     bool HasAudio = false,
+    // SpeakingPrompt (Phase J5d) — reuses PromptText/Title above (same shape as WritingPrompt);
+    // this is the only field genuinely new to this type.
+    int? SuggestedDurationSeconds = null,
     // Unknown / generic fallback
     IReadOnlyList<string>? FieldSummary = null);
 

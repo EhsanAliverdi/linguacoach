@@ -31,6 +31,8 @@ public sealed class AdminContentImportController : ControllerBase
             ["writing"] = ResourceCandidateType.WritingPrompt,
             // Phase J5c
             ["listening"] = ResourceCandidateType.ListeningPassage,
+            // Phase J5d
+            ["speaking"] = ResourceCandidateType.SpeakingPrompt,
             // Phase J5b
             ["mixed"] = null,
         };
@@ -57,10 +59,10 @@ public sealed class AdminContentImportController : ControllerBase
     // resourceType: "vocabulary" | "grammar" | "reading" | "writing" (Phase J5a) | "listening"
     // (Phase J5c — staged here as title/transcript text; the actual audio file is uploaded
     // separately per-candidate, see AdminResourceCandidateController's audio endpoints) |
-    // "mixed" (Phase J5b — no forced type, each row is classified independently by its own
-    // fields) — Speaking is not yet modeled by ResourceCandidateType and is rejected here (Coming
-    // soon in the UI); see docs/architecture/product-model-realignment-h0.md for the H2 scope
-    // decision and the J5 roadmap entries for the phased type expansion.
+    // "speaking" (Phase J5d — text-only reference prompt, no reference audio) | "mixed"
+    // (Phase J5b — no forced type, each row is classified independently by its own fields).
+    // Closes the J5 "import content-type expansion" roadmap item; see
+    // docs/architecture/product-model-realignment-h0.md for the original H2 scope decision.
     // inputMode: "pasted_text" | "csv_text" | "json_text" — file upload already exists as its own
     // flow (POST api/admin/resource-import-runs) and is out of scope for this endpoint.
     [HttpPost]
@@ -70,7 +72,7 @@ public sealed class AdminContentImportController : ControllerBase
             return BadRequest(new { error = "Source name is required." });
 
         if (!SupportedResourceTypes.TryGetValue(body.ResourceType ?? string.Empty, out var resourceType))
-            return BadRequest(new { error = $"Unsupported or not-yet-implemented resource type '{body.ResourceType}'. Use vocabulary, grammar, reading, writing, listening, or mixed." });
+            return BadRequest(new { error = $"Unsupported resource type '{body.ResourceType}'. Use vocabulary, grammar, reading, writing, listening, speaking, or mixed." });
 
         if (!SupportedInputModes.TryGetValue(body.InputMode ?? string.Empty, out var inputMode))
             return BadRequest(new { error = $"Unsupported input mode '{body.InputMode}'. Use pasted_text, csv_text, or json_text." });

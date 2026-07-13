@@ -154,6 +154,7 @@ public sealed class ResourceCandidatePreviewService : IResourceCandidatePreviewS
             ResourceCandidateType.ActivityTemplateCandidate => BuildActivityTemplatePreview(candidate, previewWarnings),
             ResourceCandidateType.WritingPrompt => BuildWritingPreview(candidate, normalized, previewWarnings),
             ResourceCandidateType.ListeningPassage => BuildListeningPreview(candidate, normalized, previewWarnings),
+            ResourceCandidateType.SpeakingPrompt => BuildSpeakingPreview(candidate, normalized, previewWarnings),
             _ => BuildUnknownPreview(candidate, normalized, previewWarnings),
         };
 
@@ -273,6 +274,27 @@ public sealed class ResourceCandidatePreviewService : IResourceCandidatePreviewS
             PromptText: promptText,
             Genre: GetFieldCI(normalized, "genre", "tasktype"),
             SuggestedMinWords: minWords), true);
+    }
+
+    private static (ResourceCandidateRenderedPreviewDto, bool) BuildSpeakingPreview(
+        ResourceCandidate candidate, IReadOnlyDictionary<string, string?> normalized, List<string> previewWarnings)
+    {
+        var promptText = GetFieldCI(normalized, "scenario");
+        if (promptText is null)
+        {
+            previewWarnings.Add("SpeakingPrompt candidate has no 'scenario' field to render — falling back to its canonical text.");
+            return (new ResourceCandidateRenderedPreviewDto(
+                Kind: ResourceCandidateType.SpeakingPrompt.ToString(), Title: candidate.CanonicalText), false);
+        }
+
+        var title = GetFieldCI(normalized, "title") ?? candidate.CanonicalText;
+        var duration = int.TryParse(GetFieldCI(normalized, "durationseconds", "suggesteddurationseconds"), out var d) && d > 0 ? d : (int?)null;
+
+        return (new ResourceCandidateRenderedPreviewDto(
+            Kind: ResourceCandidateType.SpeakingPrompt.ToString(),
+            Title: title,
+            PromptText: promptText,
+            SuggestedDurationSeconds: duration), true);
     }
 
     private static (ResourceCandidateRenderedPreviewDto, bool) BuildListeningPreview(

@@ -47,6 +47,15 @@ public sealed record ListeningPassageContent(
     string AudioContentType,
     string? AttributionText);
 
+/// <summary>Phase J5d — a published speaking reference prompt: a role-play/task scenario the
+/// student speaks a response to. Text-only, matching WritingPromptContent's shape — no reference
+/// audio (see the J5d scope decision: the student's own spoken response is scored via SpeakingTurn
+/// elsewhere, unrelated to import).</summary>
+public sealed record SpeakingPromptContent(
+    string Title,
+    string PromptText,
+    int? SuggestedDurationSeconds);
+
 public static class ResourceBankItemContent
 {
     private static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web);

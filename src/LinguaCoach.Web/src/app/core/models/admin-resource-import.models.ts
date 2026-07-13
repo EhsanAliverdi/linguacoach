@@ -246,6 +246,8 @@ export interface ResourceCandidateRenderedPreviewDto {
   // ListeningPassage (Phase J5c)
   transcript: string | null;
   hasAudio: boolean;
+  // SpeakingPrompt (Phase J5d) — reuses promptText/title above
+  suggestedDurationSeconds: number | null;
   fieldSummary: string[] | null;
 }
 
@@ -290,7 +292,7 @@ export interface ResourceCandidatePreviewDto {
  *  entirely. The Publish button stays visible for every type so the server's specific error
  *  message is always what tells the admin why, rather than this list silently hiding the action. */
 export const RESOURCE_PUBLISH_SUPPORTED_TYPES =
-  ['VocabularyEntry', 'GrammarProfileEntry', 'ReadingPassage', 'WritingPrompt', 'ListeningPassage'] as const;
+  ['VocabularyEntry', 'GrammarProfileEntry', 'ReadingPassage', 'WritingPrompt', 'ListeningPassage', 'SpeakingPrompt'] as const;
 
 // ── Phase J5c — real audio-file upload for ListeningPassage candidates ─────────────────────────
 
@@ -318,7 +320,7 @@ export interface ResourceCandidatePublishResult {
 // typed views above: mutation still only happens through Resource Candidates (E4). ──
 
 export type UnifiedResourceBankItemType =
-  'vocabulary' | 'grammar' | 'readingReference' | 'readingPassage' | 'writing' | 'listening';
+  'vocabulary' | 'grammar' | 'readingReference' | 'readingPassage' | 'writing' | 'listening' | 'speaking';
 
 /** One row of the unified Resource Bank view. `linkedLearnCount`/`linkedActivityCount`/
  *  `linkedModuleCount` are always null in H1 — Learn Item/Activity/Module don't exist yet
@@ -360,6 +362,7 @@ export const UNIFIED_RESOURCE_BANK_TYPES: { value: UnifiedResourceBankItemType; 
   { value: 'readingPassage', label: 'Reading passage' },
   { value: 'writing', label: 'Writing' },
   { value: 'listening', label: 'Listening' },
+  { value: 'speaking', label: 'Speaking' },
 ];
 
 export const RESOURCE_BANK_CEFR_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
@@ -369,25 +372,30 @@ export const RESOURCE_BANK_CEFR_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as
 // back pending ResourceCandidate rows. No AI structure detection — see the "Coming soon" types
 // below. Never publishes anything — review still happens on the Resource Candidates page. ──
 
-export type ContentImportResourceType = 'vocabulary' | 'grammar' | 'reading' | 'writing' | 'listening' | 'mixed';
+export type ContentImportResourceType =
+  'vocabulary' | 'grammar' | 'reading' | 'writing' | 'listening' | 'speaking' | 'mixed';
 export type ContentImportInputMode = 'pasted_text' | 'csv_text' | 'json_text';
 
 /** Phase J5a added 'writing'; Phase J5b added 'mixed' (no forced type, each row is classified
- *  independently from its own fields); Phase J5c adds 'listening' — staged here as title/
- *  transcript text only, the real audio file is uploaded separately per-candidate from the
- *  candidate preview drawer once the row is staged (see uploadCandidateAudio()). Speaking is not
- *  modeled by ResourceCandidateType yet (see docs/architecture/product-model-realignment-h0.md
- *  and the J5 roadmap entries). */
+ *  independently from its own fields); Phase J5c added 'listening' (staged as title/transcript
+ *  text, the real audio file is uploaded separately per-candidate from the preview drawer);
+ *  Phase J5d adds 'speaking' — a text-only reference prompt (role-play/task scenario), no
+ *  reference audio (see the J5d scope decision — the student's own spoken response is scored via
+ *  SpeakingTurn elsewhere, unrelated to import). Closes the J5 "import content-type expansion"
+ *  roadmap item — see docs/architecture/product-model-realignment-h0.md for the original H2 scope
+ *  decision and the J5 roadmap entries for the full phased expansion. */
 export const CONTENT_IMPORT_RESOURCE_TYPES: { value: ContentImportResourceType; label: string }[] = [
   { value: 'vocabulary', label: 'Vocabulary' },
   { value: 'grammar', label: 'Grammar' },
   { value: 'reading', label: 'Reading' },
   { value: 'writing', label: 'Writing' },
   { value: 'listening', label: 'Listening' },
+  { value: 'speaking', label: 'Speaking' },
   { value: 'mixed', label: 'Mixed (auto-detect per row)' },
 ];
 
-export const CONTENT_IMPORT_COMING_SOON_TYPES = ['Speaking'];
+/** Empty as of Phase J5d — every content type from the original J5 scope is now implemented. */
+export const CONTENT_IMPORT_COMING_SOON_TYPES: string[] = [];
 
 export const CONTENT_IMPORT_INPUT_MODES: { value: ContentImportInputMode; label: string; hint: string }[] = [
   { value: 'pasted_text', label: 'Pasted text (one item per line)', hint: 'Each non-empty line becomes one candidate.' },
@@ -423,7 +431,7 @@ export interface ContentImportResult {
 export const RESOURCE_IMPORT_MODES = ['Csv', 'Json', 'Jsonl'] as const;
 export const RESOURCE_CANDIDATE_TYPES = [
   'Unknown', 'VocabularyEntry', 'GrammarProfileEntry', 'ReadingPassage', 'ActivityTemplateCandidate',
-  'WritingPrompt', 'ListeningPassage',
+  'WritingPrompt', 'ListeningPassage', 'SpeakingPrompt',
 ] as const;
 export const RESOURCE_VALIDATION_STATUSES = ['Pending', 'Passed', 'Failed', 'NeedsReview'] as const;
 export const RESOURCE_REVIEW_STATUSES = ['NotRequired', 'PendingReview', 'Approved', 'Rejected'] as const;
