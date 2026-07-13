@@ -16,6 +16,7 @@ public static class DefaultAiSeeder
     public const string ActivityGenerateWritingKey = "activity_generate_writing";
     public const string ActivityTemplateGenerateInstanceKey = "activity_template_generate_instance";
     public const string ResourceCandidateAnalyzeKey = "resource_candidate_analyze";
+    public const string ResourceImportProposeColumnMappingKey = "resource_import_propose_column_mapping";
     public const string ActivityGenerateListeningKey = "activity_generate_listening";
     public const string ActivityGenerateSpeakingRolePlayKey = "activity_generate_speaking_roleplay";
     public const string ActivityEvaluateWritingKey = "activity_evaluate_writing";
@@ -4678,6 +4679,37 @@ Rules:
 - Do not include any text outside the JSON object. No markdown fences.
 """;
 
+    // Phase K1 — proposes a column-rename mapping for an admin's uploaded/pasted import file.
+    // Advisory only: the admin always reviews/confirms before it's applied, and the caller drops
+    // any suggested field name that isn't in the recognized set — this prompt cannot change what a
+    // "recognized field" means, it can only suggest which of the file's own columns matches one.
+    private const string ResourceImportProposeColumnMappingContent = """
+You are proposing a column-rename mapping for an admin importing English-language learning content. You do NOT decide anything final — an admin reviews and confirms your suggestion before it is ever applied.
+
+The file's column names: {{columns}}
+
+The recognized field names this import pipeline understands: {{recognizedFields}}
+
+A small sample of the file's rows (bounded, may not include every column):
+{{sampleRowsJson}}
+
+For EACH of the file's own column names listed above, suggest which recognized field name (if any) it most likely corresponds to, based on the column name itself and the sample data. Only suggest a field from the recognized list — never invent a new field name. If a column doesn't clearly correspond to any recognized field (e.g. it's metadata like "CoreInventory" or "Threshold" that this pipeline doesn't use), set its field to null.
+
+Return ONLY valid JSON (no markdown, no text outside the JSON object) matching this exact shape:
+
+{
+  "mapping": {
+    "<exact column name as given>": { "field": "<one of the recognized field names, or null>", "confidence": <number 0-1> }
+  }
+}
+
+Rules:
+- Include every one of the file's columns as a key in "mapping", even if its field is null.
+- Never suggest a field name that isn't in the recognized field list given above.
+- Prefer null over a low-confidence guess — an admin can always map it manually.
+- Do not include any text outside the JSON object. No markdown fences.
+""";
+
     public static async Task SeedAsync(
         LinguaCoachDbContext db,
         ILogger logger,
@@ -4749,6 +4781,11 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             ResourceCandidateAnalyzeKey, ResourceCandidateAnalyzeContent,
             maxInputTokens: 3200, maxOutputTokens: 1400, ct);
+
+        // Phase K1 — AI-assisted import column-mapping proposal (advisory only)
+        await SeedOrUpgradePromptAsync(db, logger,
+            ResourceImportProposeColumnMappingKey, ResourceImportProposeColumnMappingContent,
+            maxInputTokens: 1600, maxOutputTokens: 1200, ct);
 
         // Activity evaluation prompts
         await SeedOrUpgradePromptAsync(db, logger,

@@ -37,7 +37,10 @@ public sealed record ContentImportRequest(
     IReadOnlyList<string>? DefaultFocusTags = null,
     int? DefaultDifficultyBand = null,
     string? Notes = null,
-    Guid? ImportedByUserId = null
+    Guid? ImportedByUserId = null,
+    /// <summary>Phase K1 — an admin-confirmed column rename map, forwarded verbatim to
+    /// <see cref="ResourceImportRequest.ColumnRenames"/>.</summary>
+    IReadOnlyDictionary<string, string>? ColumnRenames = null
 );
 
 public sealed record ContentImportResult(
@@ -54,4 +57,9 @@ public sealed record ContentImportResult(
 public interface IContentImportService
 {
     Task<ContentImportResult> ImportContentAsync(ContentImportRequest request, CancellationToken ct = default);
+
+    /// <summary>Phase K1 — converts pasted content into the same (fileText, mode) shape
+    /// <see cref="ImportContentAsync"/> uses internally, for the AI column-mapping "propose"
+    /// endpoint. Pure conversion, no DB access.</summary>
+    (string FileText, ResourceImportMode Mode) ConvertForPreview(ContentImportInputMode inputMode, string content);
 }

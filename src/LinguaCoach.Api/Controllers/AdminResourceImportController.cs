@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.Json;
 using LinguaCoach.Application.ResourceImport;
 using LinguaCoach.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
@@ -22,6 +23,7 @@ public sealed class AdminResourceImportController : ControllerBase
     private readonly IAdminResourceRawRecordGetQuery _rawRecordGetQuery;
     private readonly IResourceImportService _importService;
     private readonly IResourceCandidateBatchAnalysisService _batchAnalysisService;
+    private readonly IResourceImportColumnMappingService _columnMappingService;
 
     public AdminResourceImportController(
         IAdminResourceImportRunListQuery runListQuery,
@@ -29,7 +31,8 @@ public sealed class AdminResourceImportController : ControllerBase
         IAdminResourceRawRecordListQuery rawRecordListQuery,
         IAdminResourceRawRecordGetQuery rawRecordGetQuery,
         IResourceImportService importService,
-        IResourceCandidateBatchAnalysisService batchAnalysisService)
+        IResourceCandidateBatchAnalysisService batchAnalysisService,
+        IResourceImportColumnMappingService columnMappingService)
     {
         _runListQuery = runListQuery;
         _runGetQuery = runGetQuery;
@@ -37,6 +40,7 @@ public sealed class AdminResourceImportController : ControllerBase
         _rawRecordGetQuery = rawRecordGetQuery;
         _importService = importService;
         _batchAnalysisService = batchAnalysisService;
+        _columnMappingService = columnMappingService;
     }
 
     // GET api/admin/resource-import-runs?page=1&pageSize=20&sourceId=...&status=Completed
@@ -57,12 +61,13 @@ public sealed class AdminResourceImportController : ControllerBase
         return result is null ? NotFound() : Ok(result);
     }
 
-    // POST api/admin/resource-import-runs  multipart/form-data: sourceId, importMode, file, notes?
+    // POST api/admin/resource-import-runs  multipart/form-data: sourceId, importMode, file, notes?,
+    // columnRenamesJson? (Phase K1 — an admin-confirmed {"sourceColumn":"recognizedField",...} map)
     [HttpPost]
     [RequestSizeLimit(LinguaCoach.Infrastructure.ResourceImport.ResourceImportService.MaxFileSizeBytes)]
     public async Task<IActionResult> Import(
         [FromForm] Guid sourceId, [FromForm] string importMode, IFormFile file,
-        [FromForm] string? notes, CancellationToken ct)
+        [FromForm] string? notes, [FromForm] string? columnRenamesJson, CancellationToken ct)
     {
         if (file is null || file.Length == 0)
             return BadRequest(new { error = "File is required." });
@@ -70,11 +75,21 @@ public sealed class AdminResourceImportController : ControllerBase
         if (!Enum.TryParse<ResourceImportMode>(importMode, ignoreCase: true, out var mode))
             return BadRequest(new { error = $"Unsupported import mode '{importMode}'. Use Csv, Json, or Jsonl." });
 
+        IReadOnlyDictionary<string, string>? columnRenames;
+        try
+        {
+            columnRenames = ParseColumnRenames(columnRenamesJson);
+        }
+        catch (JsonException)
+        {
+            return BadRequest(new { error = "columnRenamesJson is not valid JSON." });
+        }
+
         try
         {
             await using var stream = file.OpenReadStream();
             var result = await _importService.ImportAsync(new ResourceImportRequest(
-                sourceId, stream, file.FileName, mode, GetCurrentUserId(), notes), ct);
+                sourceId, stream, file.FileName, mode, GetCurrentUserId(), notes, ColumnRenames: columnRenames), ct);
             return Ok(result);
         }
         catch (ResourceImportValidationException ex)
@@ -82,6 +97,43 @@ public sealed class AdminResourceImportController : ControllerBase
             return BadRequest(new { error = ex.Message });
         }
     }
+
+    // POST api/admin/resource-import-runs/propose-mapping  multipart/form-data: importMode, file
+    // Phase K1 — AI-assisted column-mapping proposal. Parses only the header + a bounded sample of
+    // rows, never stages anything, never writes to the database. The admin reviews/confirms the
+    // result before it's ever sent back as columnRenamesJson on the real Import call above.
+    [HttpPost("propose-mapping")]
+    [RequestSizeLimit(LinguaCoach.Infrastructure.ResourceImport.ResourceImportService.MaxFileSizeBytes)]
+    public async Task<IActionResult> ProposeMapping(
+        [FromForm] string importMode, IFormFile file, CancellationToken ct)
+    {
+        if (file is null || file.Length == 0)
+            return BadRequest(new { error = "File is required." });
+
+        if (!Enum.TryParse<ResourceImportMode>(importMode, ignoreCase: true, out var mode))
+            return BadRequest(new { error = $"Unsupported import mode '{importMode}'. Use Csv, Json, or Jsonl." });
+
+        string fileText;
+        using (var reader = new StreamReader(file.OpenReadStream()))
+            fileText = await reader.ReadToEndAsync(ct);
+
+        (IReadOnlyList<string> Columns, IReadOnlyList<IReadOnlyDictionary<string, string?>> SampleRows) sample;
+        try
+        {
+            sample = _importService.ParseSample(fileText, mode);
+        }
+        catch (Exception ex) when (ex is JsonException or FormatException)
+        {
+            return BadRequest(new { error = $"File could not be parsed as {mode}: {ex.Message}" });
+        }
+
+        var result = await _columnMappingService.ProposeMappingAsync(
+            new ResourceImportColumnMappingRequest(sample.Columns, sample.SampleRows), ct);
+        return Ok(result);
+    }
+
+    private static IReadOnlyDictionary<string, string>? ParseColumnRenames(string? json) =>
+        string.IsNullOrWhiteSpace(json) ? null : JsonSerializer.Deserialize<Dictionary<string, string>>(json);
 
     // GET api/admin/resource-import-runs/{runId}/raw-records?page=1&pageSize=50&extractionStatus=Rejected
     [HttpGet("{runId:guid}/raw-records")]

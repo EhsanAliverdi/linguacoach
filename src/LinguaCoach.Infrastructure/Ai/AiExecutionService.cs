@@ -257,6 +257,7 @@ public sealed class AiExecutionService
             "activity_generate_speaking_roleplay" => "llm.generation",
             "activity_template_generate_instance" => "llm.generation",
             "resource_candidate_analyze" => "llm.evaluation",
+            "resource_import_propose_column_mapping" => "llm.evaluation",
             "activity_generate_phrase_match" => "llm.generation",
             "activity_generate_gap_fill_workplace_phrase" => "llm.generation",
             "activity_generate_listen_and_answer" => "llm.generation",

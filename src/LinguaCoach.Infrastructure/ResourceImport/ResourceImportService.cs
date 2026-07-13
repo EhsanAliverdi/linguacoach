@@ -132,6 +132,12 @@ public sealed class ResourceImportService : IResourceImportService
             return ToResult(run);
         }
 
+        // Phase K1 — an admin-confirmed column rename, applied as a pure header rewrite before any
+        // gate runs. Every downstream gate/inference/publish path is completely unchanged by this —
+        // it only ever sees rows whose keys already use the recognized field names.
+        if (request.ColumnRenames is { Count: > 0 })
+            rows = rows.Select(row => ApplyColumnRenames(row, request.ColumnRenames)).ToList();
+
         var total = 0;
         var succeeded = 0;
         var rejected = 0;
@@ -193,7 +199,10 @@ public sealed class ResourceImportService : IResourceImportService
         // Gate — within-run duplicate detection.
         if (!seenHashesInRun.Add(rawHash))
         {
-            RejectRow(runId, row, rawJson, rawHash, "duplicate", "Duplicate row within this import run.",
+            var preview = row.Values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
+            var previewSuffix = preview is null ? "" : $" (matches an earlier row starting with \"{Truncate(preview, 60)}\").";
+            RejectRow(runId, row, rawJson, rawHash, "duplicate",
+                $"Duplicate row within this import run — every field is identical to a row already staged from this file{previewSuffix}",
                 ref rejected, ref warnings);
             return;
         }
@@ -501,6 +510,37 @@ public sealed class ResourceImportService : IResourceImportService
         return new LanguageVerdict(true, "en", null);
     }
 
+    // Phase K1 — parses just the header + a bounded sample of rows, for the AI column-mapping
+    // "propose" endpoints. Never stages anything, never touches the database — pure parsing reuse
+    // over the exact same ParseRows the real import uses, so a proposal is always based on the
+    // file's actual parsed shape, not a second, potentially-divergent parser.
+    public (IReadOnlyList<string> Columns, IReadOnlyList<IReadOnlyDictionary<string, string?>> SampleRows) ParseSample(
+        string fileText, ResourceImportMode mode, int sampleSize = 5)
+    {
+        var rows = ParseRows(fileText, mode);
+        var columns = rows.Count > 0
+            ? rows[0].Keys.ToList()
+            : new List<string>();
+        return (columns, rows.Take(sampleSize).ToList());
+    }
+
+    private static IReadOnlyDictionary<string, string?> ApplyColumnRenames(
+        IReadOnlyDictionary<string, string?> row, IReadOnlyDictionary<string, string> renames)
+    {
+        var renamesCI = new Dictionary<string, string>(renames, StringComparer.OrdinalIgnoreCase);
+        var result = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+        foreach (var kv in row)
+        {
+            var key = renamesCI.TryGetValue(kv.Key, out var renamed) ? renamed : kv.Key;
+            // A rename must never silently drop a column when two source columns map to the same
+            // target — the first (original row order) wins, matching Dictionary's natural
+            // first-write-wins semantics here since we only set if not already present.
+            if (!result.ContainsKey(key))
+                result[key] = kv.Value;
+        }
+        return result;
+    }
+
     private static List<IReadOnlyDictionary<string, string?>> ParseRows(string fileText, ResourceImportMode mode)
     {
         return mode switch
@@ -586,6 +626,9 @@ public sealed class ResourceImportService : IResourceImportService
     }
 
     private static string NormalizeForHash(string rawJson) => rawJson.Trim().ToLowerInvariant();
+
+    private static string Truncate(string value, int maxLength) =>
+        value.Length <= maxLength ? value : value[..maxLength] + "…";
 
     private static ResourceImportResult ToResult(ResourceImportRun run) => new(
         run.Id, run.Status.ToString(), run.TotalRecordCount, run.SucceededCount,

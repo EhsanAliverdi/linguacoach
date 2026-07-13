@@ -214,7 +214,13 @@ public sealed record ResourceImportRequest(
     string? DefaultSubskill = null,
     IReadOnlyList<string>? DefaultContextTags = null,
     IReadOnlyList<string>? DefaultFocusTags = null,
-    int? DefaultDifficultyBand = null
+    int? DefaultDifficultyBand = null,
+    /// <summary>Phase K1 — an admin-confirmed column rename map (source column name, case-
+    /// insensitive → recognized field name), applied as a pure header rewrite on every parsed row
+    /// before any gate runs. Never AI-applied automatically — this is only ever populated from an
+    /// admin's confirmed choice in the mapping-review UI. Null/empty means "no renames," the exact
+    /// pre-K1 behavior.</summary>
+    IReadOnlyDictionary<string, string>? ColumnRenames = null
 );
 
 public sealed record ResourceImportResult(
@@ -230,6 +236,11 @@ public sealed record ResourceImportResult(
 public interface IResourceImportService
 {
     Task<ResourceImportResult> ImportAsync(ResourceImportRequest request, CancellationToken ct = default);
+
+    /// <summary>Phase K1 — parses just the header + a bounded sample of rows (no staging, no DB
+    /// writes), used by the AI column-mapping "propose" endpoints.</summary>
+    (IReadOnlyList<string> Columns, IReadOnlyList<IReadOnlyDictionary<string, string?>> SampleRows) ParseSample(
+        string fileText, ResourceImportMode mode, int sampleSize = 5);
 }
 
 public sealed class ResourceImportValidationException : Exception

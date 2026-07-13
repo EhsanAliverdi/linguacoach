@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-13 (Phase J5d — closes Phase J5)
+lastUpdated: 2026-07-13 (Phase K1)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,31 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-13 (Phase J5d — closes Phase J5)
+Last updated: 2026-07-13 (Phase K1)
+
+## Phase K1: AI-assisted import column-mapping + better error messages (2026-07-13)
+
+Triggered by a real bug: an admin's real CSV (the published CEFR-J Vocabulary Profile) got 0 of
+7,799 rows staged because its `headword`/`CEFR` column names weren't in the fixed set
+`ResourceImportService` recognized. Fixed directly (added those as recognized aliases; re-import
+now stages 7,798/7,799), then the user asked for something bigger: AI-assisted detection of a
+file's column structure instead of an ever-growing hardcoded list.
+
+**Both** the file-upload and paste-based Content Import flows now show a column-mapping review
+step before every CSV/JSON import: a bounded AI call (header row + a few sample rows only)
+proposes which of the file's columns maps to which recognized field, and the admin reviews/edits
+the proposal in a modal before clicking "Confirm and Import." Every suggested field is validated
+against the real recognized-field list — an AI-hallucinated field name is dropped, never trusted.
+The confirmed mapping is applied as a plain column rename *before* the existing, completely
+unchanged deterministic import pipeline runs — same gates, same validation, same publish path,
+just now able to read a file's own header names it wasn't taught to recognize verbatim. Always
+shown (per user decision), skipped only for pasted line-based text, which has no header row to
+review.
+
+Also: duplicate-row rejection now names which earlier row it collides with, and Gate 3's
+rejection message lists a row's actual columns instead of a generic fixed list.
+
+Full detail: `docs/reviews/2026-07-13-phase-k1-ai-column-mapping-implementation.md`.
 
 ## Phase J5d: Speaking content-type import — closes Phase J5 (2026-07-13)
 

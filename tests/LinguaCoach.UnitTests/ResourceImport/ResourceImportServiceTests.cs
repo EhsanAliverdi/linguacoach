@@ -469,6 +469,42 @@ public sealed class ResourceImportServiceTests : IDisposable
         rawRecord.ExtractionWarningsJson.Should().Contain("headword");
     }
 
+    // ── Phase K1 — admin-confirmed column renames applied before any gate runs ──────────────────
+
+    [Fact]
+    public async Task ColumnRenames_maps_an_unrecognized_column_onto_a_recognized_field()
+    {
+        var source = SeedApprovedSource();
+        // "term" isn't a recognized field on its own — without the rename this row would be
+        // rejected by Gate 3 entirely.
+        var csv = "term,level\nabandon,B1\n";
+
+        var result = await _sut.ImportAsync(new ResourceImportRequest(
+            source.Id, ToStream(csv), "renamed.csv", ResourceImportMode.Csv,
+            ColumnRenames: new Dictionary<string, string> { ["term"] = "word", ["level"] = "cefrLevel" }));
+
+        result.SucceededCount.Should().Be(1);
+        result.RejectedCount.Should().Be(0);
+        var candidate = await _db.ResourceCandidates.SingleAsync();
+        candidate.CandidateType.Should().Be(ResourceCandidateType.VocabularyEntry);
+        candidate.CanonicalText.Should().Be("abandon");
+        candidate.CefrLevel.Should().Be("B1");
+    }
+
+    [Fact]
+    public async Task ColumnRenames_is_case_insensitive_on_the_source_column_name()
+    {
+        var source = SeedApprovedSource();
+        var csv = "Term\nabandon\n";
+
+        await _sut.ImportAsync(new ResourceImportRequest(
+            source.Id, ToStream(csv), "renamed-case.csv", ResourceImportMode.Csv,
+            ColumnRenames: new Dictionary<string, string> { ["term"] = "word" }));
+
+        var candidate = await _db.ResourceCandidates.SingleAsync();
+        candidate.CandidateType.Should().Be(ResourceCandidateType.VocabularyEntry);
+    }
+
     // ── Phase J5d — SpeakingPrompt candidate type ───────────────────────────────
 
     [Fact]

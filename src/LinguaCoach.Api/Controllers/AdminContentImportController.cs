@@ -46,10 +46,17 @@ public sealed class AdminContentImportController : ControllerBase
         };
 
     private readonly IContentImportService _contentImportService;
+    private readonly IResourceImportService _importService;
+    private readonly IResourceImportColumnMappingService _columnMappingService;
 
-    public AdminContentImportController(IContentImportService contentImportService)
+    public AdminContentImportController(
+        IContentImportService contentImportService,
+        IResourceImportService importService,
+        IResourceImportColumnMappingService columnMappingService)
     {
         _contentImportService = contentImportService;
+        _importService = importService;
+        _columnMappingService = columnMappingService;
     }
 
     // POST api/admin/content-imports
@@ -100,7 +107,8 @@ public sealed class AdminContentImportController : ControllerBase
                 DefaultFocusTags: body.DefaultFocusTags,
                 DefaultDifficultyBand: body.DefaultDifficultyBand,
                 Notes: body.Notes,
-                ImportedByUserId: GetCurrentUserId()), ct);
+                ImportedByUserId: GetCurrentUserId(),
+                ColumnRenames: body.ColumnRenames), ct);
 
             return Ok(result);
         }
@@ -108,6 +116,40 @@ public sealed class AdminContentImportController : ControllerBase
         {
             return BadRequest(new { error = ex.Message });
         }
+    }
+
+    // POST api/admin/content-imports/propose-mapping  { inputMode, content }
+    // Phase K1 — AI-assisted column-mapping proposal for pasted CSV/JSON content. Not offered for
+    // "pasted_text" input mode — that's synthetic single-column {"text": line} rows with no header
+    // ambiguity to resolve. Never stages anything; the admin reviews/confirms before the result is
+    // ever sent back as columnRenames on the real Import call above.
+    [HttpPost("propose-mapping")]
+    public async Task<IActionResult> ProposeMapping([FromBody] ProposeMappingRequestBody body, CancellationToken ct)
+    {
+        if (!SupportedInputModes.TryGetValue(body.InputMode ?? string.Empty, out var inputMode))
+            return BadRequest(new { error = $"Unsupported input mode '{body.InputMode}'. Use pasted_text, csv_text, or json_text." });
+
+        if (string.IsNullOrWhiteSpace(body.Content))
+            return BadRequest(new { error = "Content is required." });
+
+        if (inputMode == ContentImportInputMode.PastedText)
+            return Ok(new ResourceImportColumnMappingResult(true, Array.Empty<ColumnMappingSuggestion>(), null));
+
+        var (fileText, mode) = _contentImportService.ConvertForPreview(inputMode, body.Content);
+
+        (IReadOnlyList<string> Columns, IReadOnlyList<IReadOnlyDictionary<string, string?>> SampleRows) sample;
+        try
+        {
+            sample = _importService.ParseSample(fileText, mode);
+        }
+        catch (Exception ex) when (ex is System.Text.Json.JsonException or FormatException)
+        {
+            return BadRequest(new { error = $"Content could not be parsed as {mode}: {ex.Message}" });
+        }
+
+        var result = await _columnMappingService.ProposeMappingAsync(
+            new ResourceImportColumnMappingRequest(sample.Columns, sample.SampleRows), ct);
+        return Ok(result);
     }
 
     private Guid? GetCurrentUserId()
@@ -127,6 +169,9 @@ public sealed class AdminContentImportController : ControllerBase
         IReadOnlyList<string>? DefaultContextTags = null,
         IReadOnlyList<string>? DefaultFocusTags = null,
         int? DefaultDifficultyBand = null,
-        string? Notes = null
+        string? Notes = null,
+        IReadOnlyDictionary<string, string>? ColumnRenames = null
     );
+
+    public sealed record ProposeMappingRequestBody(string InputMode, string Content);
 }

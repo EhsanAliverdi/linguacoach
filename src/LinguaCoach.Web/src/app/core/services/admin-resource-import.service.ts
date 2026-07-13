@@ -20,10 +20,12 @@ import {
   ResourceCandidatePublishResult,
   UnifiedResourceBankListResult,
   UnifiedResourceBankItemType,
+  ContentImportInputMode,
   ContentImportRequestBody,
   ContentImportResult,
   ResourceCandidateAudioUploadResult,
   ResourceCandidateAudioUrlResult,
+  ResourceImportColumnMappingResult,
 } from '../models/admin-resource-import.models';
 
 @Injectable({ providedIn: 'root' })
@@ -79,13 +81,26 @@ export class AdminResourceImportRunService {
     return this.http.get<AdminResourceImportRunDto>(`${this.base}/${runId}`);
   }
 
-  import(sourceId: string, importMode: string, file: File, notes?: string): Observable<ResourceImportResult> {
+  import(
+    sourceId: string, importMode: string, file: File, notes?: string,
+    columnRenames?: Record<string, string> | null,
+  ): Observable<ResourceImportResult> {
     const form = new FormData();
     form.append('sourceId', sourceId);
     form.append('importMode', importMode);
     form.append('file', file, file.name);
     if (notes) form.append('notes', notes);
+    if (columnRenames && Object.keys(columnRenames).length > 0) form.append('columnRenamesJson', JSON.stringify(columnRenames));
     return this.http.post<ResourceImportResult>(this.base, form);
+  }
+
+  /** Phase K1 — AI-assisted column-mapping proposal for an uploaded file. Never stages anything;
+   *  the admin reviews/confirms before the mapping is ever sent back via import()'s columnRenames. */
+  proposeMapping(importMode: string, file: File): Observable<ResourceImportColumnMappingResult> {
+    const form = new FormData();
+    form.append('importMode', importMode);
+    form.append('file', file, file.name);
+    return this.http.post<ResourceImportColumnMappingResult>(`${this.base}/propose-mapping`, form);
   }
 
   listRawRecords(runId: string, page = 1, pageSize = 50, extractionStatus?: string): Observable<AdminResourceRawRecordListResult> {
@@ -238,5 +253,13 @@ export class AdminContentImportService {
 
   import(body: ContentImportRequestBody): Observable<ContentImportResult> {
     return this.http.post<ContentImportResult>(this.base, body);
+  }
+
+  /** Phase K1 — AI-assisted column-mapping proposal for pasted CSV/JSON content. Never stages
+   *  anything; the admin reviews/confirms before the mapping is ever sent back via import()'s
+   *  columnRenames. Not meaningful for 'pasted_text' mode — the backend returns a trivial success
+   *  with no suggestions for that case rather than making an AI call. */
+  proposeMapping(inputMode: ContentImportInputMode, content: string): Observable<ResourceImportColumnMappingResult> {
+    return this.http.post<ResourceImportColumnMappingResult>(`${this.base}/propose-mapping`, { inputMode, content });
   }
 }

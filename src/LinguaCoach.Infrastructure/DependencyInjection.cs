@@ -619,6 +619,9 @@ public static class DependencyInjection
         // Phase J5c — real audio-file upload/storage for ListeningPassage candidates.
         services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceCandidateAudioService,
             LinguaCoach.Infrastructure.ResourceImport.ResourceCandidateAudioService>();
+        // Phase K1 — AI-assisted import column-mapping proposal.
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceImportColumnMappingService,
+            LinguaCoach.Infrastructure.ResourceImport.ResourceImportColumnMappingService>();
 
         // Phase 16F/16G — Speaking Evaluation Foundation + Provider-Backed Evaluation
         if (configuration is not null)

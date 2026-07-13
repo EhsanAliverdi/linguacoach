@@ -360,6 +360,67 @@
 
 </sp-admin-modal>
 
+<!-- ── Column-mapping review modal (Phase K1) ──────────────────────────────
+     Always shown for CSV/JSON (paste or file-upload) before the import actually runs. The AI's
+     suggestion is advisory only — every row is editable, and "Confirm and Import" is the only
+     action that ever applies a rename. ── -->
+<sp-admin-modal
+  [open]="mappingModalOpen()"
+  title="Review column mapping"
+  variant="form"
+  (closed)="cancelMapping()">
+
+  <p class="sp-admin-hint" style="margin-bottom:1rem;">
+    An AI suggestion for how this file's columns map to recognized fields — review and adjust before importing.
+    Columns left "Leave as-is" import unchanged.
+  </p>
+
+  @if (mappingLoading()) {
+    <sp-admin-loading-state message="Getting an AI mapping suggestion" />
+  } @else {
+    @if (mappingError()) { <sp-admin-alert variant="warning">{{ mappingError() }}</sp-admin-alert> }
+
+    @if (mappingRows().length === 0 && !mappingError()) {
+      <sp-admin-empty-state title="No columns to map" message="This content has no header row to review." />
+    } @else if (mappingRows().length > 0) {
+      <sp-admin-table layout="first-column-fluid">
+        <table>
+          <thead>
+            <tr>
+              <th>File column</th>
+              <th>Maps to</th>
+              <th>AI confidence</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of mappingRows(); track row.column; let i = $index) {
+              <tr>
+                <td><code>{{ row.column }}</code></td>
+                <td>
+                  <select [value]="row.field" (change)="onMappingFieldChange(i, $any($event.target).value)">
+                    @for (opt of recognizedFieldOptions; track opt.value) {
+                      <option [value]="opt.value">{{ opt.label }}</option>
+                    }
+                  </select>
+                </td>
+                <td>{{ row.confidence !== null ? (row.confidence * 100).toFixed(0) + '%' : '—' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </sp-admin-table>
+    }
+  }
+
+  <div slot="footer">
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="cancelMapping()">Cancel</sp-admin-button>
+    <sp-admin-button variant="primary" [disabled]="mappingLoading()" (clicked)="confirmMapping()">
+      Confirm and Import
+    </sp-admin-button>
+  </div>
+
+</sp-admin-modal>
+
 <!-- ── Preview drawer (ported from AdminResourceCandidatesComponent, Phase E3) ─ -->
 <sp-admin-drawer
   [open]="previewDrawerOpen()"

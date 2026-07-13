@@ -415,6 +415,8 @@ export interface ContentImportRequestBody {
   defaultFocusTags?: string[] | null;
   defaultDifficultyBand?: number | null;
   notes?: string | null;
+  /** Phase K1 — an admin-confirmed column rename map. */
+  columnRenames?: Record<string, string> | null;
 }
 
 export interface ContentImportResult {
@@ -427,6 +429,48 @@ export interface ContentImportResult {
   errorSummary: string | null;
   reviewRoute: string;
 }
+
+// ── Phase K1 — AI-assisted import column-mapping proposal. AI proposes, the admin always reviews/
+// confirms before it's applied — see the mapping-review step in AdminContentImportComponent. ──
+
+export interface ColumnMappingSuggestion {
+  sourceColumn: string;
+  suggestedField: string | null;
+  confidence: number | null;
+}
+
+export interface ResourceImportColumnMappingResult {
+  success: boolean;
+  suggestions: ColumnMappingSuggestion[];
+  errorMessage: string | null;
+}
+
+/** Mirrors ResourceImportRecognizedFields.All (backend) — kept here so the admin review UI can
+ *  offer a dropdown of every field a column could be mapped to, grouped loosely by what each is
+ *  used for. */
+export const RESOURCE_IMPORT_RECOGNIZED_FIELDS: { value: string; label: string }[] = [
+  { value: 'word', label: 'word (Vocabulary)' },
+  { value: 'lemma', label: 'lemma (Vocabulary)' },
+  { value: 'headword', label: 'headword (Vocabulary)' },
+  { value: 'grammarkey', label: 'grammarKey (Grammar)' },
+  { value: 'explanation', label: 'explanation (Grammar)' },
+  { value: 'passage', label: 'passage (Reading)' },
+  { value: 'text', label: 'text (Reading/generic)' },
+  { value: 'title', label: 'title' },
+  { value: 'prompt', label: 'prompt (Writing)' },
+  { value: 'transcript', label: 'transcript (Listening)' },
+  { value: 'scenario', label: 'scenario (Speaking)' },
+  { value: 'formio', label: 'formio (Activity template)' },
+  { value: 'schema', label: 'schema (Activity template)' },
+  { value: 'template', label: 'template (Activity template)' },
+  { value: 'cefrlevel', label: 'cefrLevel' },
+  { value: 'cefr', label: 'cefr' },
+  { value: 'skill', label: 'skill' },
+  { value: 'subskill', label: 'subskill' },
+  { value: 'tags', label: 'tags' },
+  { value: 'focustags', label: 'focusTags' },
+  { value: 'difficultyband', label: 'difficultyBand' },
+];
 
 export const RESOURCE_IMPORT_MODES = ['Csv', 'Json', 'Jsonl'] as const;
 export const RESOURCE_CANDIDATE_TYPES = [

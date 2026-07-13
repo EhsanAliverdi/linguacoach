@@ -81,7 +81,8 @@ public sealed class ContentImportService : IContentImportService
             DefaultSubskill: request.DefaultSubskill,
             DefaultContextTags: request.DefaultContextTags,
             DefaultFocusTags: request.DefaultFocusTags,
-            DefaultDifficultyBand: request.DefaultDifficultyBand);
+            DefaultDifficultyBand: request.DefaultDifficultyBand,
+            ColumnRenames: request.ColumnRenames);
 
         var result = await _importService.ImportAsync(importRequest, ct);
 
@@ -94,6 +95,14 @@ public sealed class ContentImportService : IContentImportService
             Status: result.Status,
             ErrorSummary: result.ErrorSummary,
             ReviewRoute: $"/admin/resource-candidates?importRunId={result.RunId}");
+    }
+
+    /// <summary>Phase K1 — public wrapper over <see cref="ConvertContent"/> for the AI column-
+    /// mapping "propose" endpoint. Drops the fileName (only relevant to the real import call).</summary>
+    public (string FileText, ResourceImportMode Mode) ConvertForPreview(ContentImportInputMode inputMode, string content)
+    {
+        var (fileText, mode, _) = ConvertContent(inputMode, content);
+        return (fileText, mode);
     }
 
     /// <summary>Converts pasted content into the (text, ImportMode, fileName) shape

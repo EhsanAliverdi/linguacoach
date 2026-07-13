@@ -12,6 +12,7 @@ import {
   AdminResourceCandidateDto,
   AdminResourceImportRunDto,
   AdminResourceSourceDto,
+  ColumnMappingSuggestion,
   CONTENT_IMPORT_COMING_SOON_TYPES,
   CONTENT_IMPORT_INPUT_MODES,
   CONTENT_IMPORT_RESOURCE_TYPES,
@@ -20,6 +21,7 @@ import {
   ContentImportResult,
   RESOURCE_BANK_CEFR_LEVELS,
   RESOURCE_IMPORT_MODES,
+  RESOURCE_IMPORT_RECOGNIZED_FIELDS,
   ResourceCandidatePreviewDto,
   ResourceCandidatePublishResult,
   ResourceImportResult,
@@ -147,6 +149,15 @@ export class AdminContentImportComponent implements OnInit {
   submitting = signal(false);
   error = signal('');
   result = signal<ContentImportResult | null>(null);
+
+  // ── Phase K1 — AI-assisted column-mapping review (always shown for CSV/JSON, both paste and
+  // file-upload flows; skipped for 'pasted_text' mode, which has no columns to map) ─────────────
+  readonly recognizedFieldOptions = [{ value: '', label: 'Leave as-is' }, ...RESOURCE_IMPORT_RECOGNIZED_FIELDS];
+  mappingModalOpen = signal(false);
+  mappingLoading = signal(false);
+  mappingError = signal('');
+  mappingRows = signal<{ column: string; field: string; confidence: number | null }[]>([]);
+  private pendingSubmitKind: 'paste' | 'file' | null = null;
 
   // ── File-upload import (Phase I1 — new) ─────────────────────────────────
   sources = signal<AdminResourceSourceDto[]>([]);
@@ -320,6 +331,9 @@ export class AdminContentImportComponent implements OnInit {
     return tags.length > 0 ? tags : null;
   }
 
+  /** Phase K1 — was submitPaste()'s entire body. Pasted-line mode ('pasted_text') has no columns
+   *  to map, so it goes straight through unchanged; CSV/JSON text always routes through the
+   *  mapping-review step first (see openMappingReview()), matching file-upload's same treatment. */
   submitPaste(): void {
     this.error.set('');
     this.result.set(null);
@@ -333,6 +347,22 @@ export class AdminContentImportComponent implements OnInit {
       return;
     }
 
+    if (this.inputMode === 'pasted_text') {
+      this.runPasteImport(null);
+      return;
+    }
+
+    this.pendingSubmitKind = 'paste';
+    this.mappingError.set('');
+    this.mappingLoading.set(true);
+    this.mappingModalOpen.set(true);
+    this.importSvc.proposeMapping(this.inputMode, this.content).subscribe({
+      next: result => { this.mappingLoading.set(false); this.applyMappingResult(result); },
+      error: err => { this.mappingLoading.set(false); this.mappingError.set(err.error?.error ?? 'Could not get an AI mapping suggestion.'); this.mappingRows.set([]); },
+    });
+  }
+
+  private runPasteImport(columnRenames: Record<string, string> | null): void {
     this.submitting.set(true);
     this.importSvc.import({
       sourceName: this.sourceName.trim(),
@@ -346,6 +376,7 @@ export class AdminContentImportComponent implements OnInit {
       defaultFocusTags: this.parseTags(this.defaultFocusTags),
       defaultDifficultyBand: this.defaultDifficultyBand,
       notes: this.notes.trim() || null,
+      columnRenames,
     }).subscribe({
       next: result => {
         this.submitting.set(false);
@@ -380,6 +411,8 @@ export class AdminContentImportComponent implements OnInit {
     this.selectedFile = input.files && input.files.length > 0 ? input.files[0] : null;
   }
 
+  /** Phase K1 — file uploads always route through the mapping-review step first (every file
+   *  format this endpoint accepts — Csv/Json/Jsonl — has real column ambiguity to review). */
   submitFile(): void {
     this.fileError.set('');
     this.fileResult.set(null);
@@ -393,8 +426,21 @@ export class AdminContentImportComponent implements OnInit {
       return;
     }
 
+    this.pendingSubmitKind = 'file';
+    this.mappingError.set('');
+    this.mappingLoading.set(true);
+    this.mappingModalOpen.set(true);
+    this.importRunSvc.proposeMapping(this.fileImportMode, this.selectedFile).subscribe({
+      next: result => { this.mappingLoading.set(false); this.applyMappingResult(result); },
+      error: err => { this.mappingLoading.set(false); this.mappingError.set(err.error?.error ?? 'Could not get an AI mapping suggestion.'); this.mappingRows.set([]); },
+    });
+  }
+
+  private runFileImport(columnRenames: Record<string, string> | null): void {
     this.fileSubmitting.set(true);
-    this.importRunSvc.import(this.fileSourceId, this.fileImportMode, this.selectedFile, this.fileNotes.trim() || undefined).subscribe({
+    this.importRunSvc.import(
+      this.fileSourceId, this.fileImportMode, this.selectedFile!, this.fileNotes.trim() || undefined, columnRenames,
+    ).subscribe({
       next: result => {
         this.fileSubmitting.set(false);
         this.fileResult.set(result);
@@ -408,6 +454,40 @@ export class AdminContentImportComponent implements OnInit {
         this.fileError.set(err.error?.error ?? 'File import failed.');
       },
     });
+  }
+
+  // ── Phase K1 — mapping-review modal (shared by both paste-CSV/JSON and file-upload flows) ────
+
+  private applyMappingResult(result: { success: boolean; suggestions: ColumnMappingSuggestion[]; errorMessage: string | null }): void {
+    if (!result.success) {
+      this.mappingError.set(result.errorMessage ?? 'AI suggestion unavailable — you can still map columns manually below, or import unchanged.');
+    }
+    this.mappingRows.set(result.suggestions.map(s => ({
+      column: s.sourceColumn,
+      field: s.suggestedField ?? '',
+      confidence: s.confidence,
+    })));
+  }
+
+  onMappingFieldChange(index: number, field: string): void {
+    this.mappingRows.update(rows => rows.map((r, i) => i === index ? { ...r, field } : r));
+  }
+
+  confirmMapping(): void {
+    const renames: Record<string, string> = {};
+    for (const row of this.mappingRows()) {
+      if (row.field) renames[row.column] = row.field;
+    }
+    this.mappingModalOpen.set(false);
+    const kind = this.pendingSubmitKind;
+    this.pendingSubmitKind = null;
+    if (kind === 'paste') this.runPasteImport(Object.keys(renames).length > 0 ? renames : null);
+    if (kind === 'file') this.runFileImport(Object.keys(renames).length > 0 ? renames : null);
+  }
+
+  cancelMapping(): void {
+    this.mappingModalOpen.set(false);
+    this.pendingSubmitKind = null;
   }
 
   startAnotherFileImport(): void {
