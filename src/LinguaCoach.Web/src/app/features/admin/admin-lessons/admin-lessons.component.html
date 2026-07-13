@@ -64,8 +64,8 @@
         <table>
           <thead>
             <tr>
-              <th><input type="checkbox" [checked]="allVisibleSelected()" (change)="toggleSelectAllVisible()" aria-label="Select all visible" /></th>
-              <th>Title</th>
+              <th style="width:40px;"><input type="checkbox" [checked]="allVisibleSelected()" (change)="toggleSelectAllVisible()" aria-label="Select all visible" /></th>
+              <th class="sp-admin-fluid-col">Title</th>
               <th>Level</th>
               <th>Skill / Subskill</th>
               <th>Source</th>
@@ -76,8 +76,8 @@
           <tbody>
             @for (item of items(); track item.id) {
               <tr (click)="openDetail(item)" style="cursor:pointer">
-                <td><input type="checkbox" [checked]="isSelected(item.id)" (click)="toggleSelected(item.id, $event)" aria-label="Select lesson" /></td>
-                <td><strong>{{ item.title }}</strong></td>
+                <td style="width:40px;"><input type="checkbox" [checked]="isSelected(item.id)" (click)="toggleSelected(item.id, $event)" aria-label="Select lesson" /></td>
+                <td class="sp-admin-fluid-col"><strong>{{ item.title }}</strong></td>
                 <td>{{ item.cefrLevel ?? '—' }}</td>
                 <td>
                   {{ item.skill ?? '—' }}

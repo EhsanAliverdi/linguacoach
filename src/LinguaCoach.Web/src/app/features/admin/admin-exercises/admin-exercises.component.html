@@ -16,13 +16,10 @@
     <sp-admin-loading-state message="Loading Exercises" />
   } @else {
 
-    @if (actionSuccess()) {
-      <sp-admin-alert variant="success">
-        {{ actionSuccess() }}
-        @if (lastActionWasGenerateModule()) {
-          <a (click)="goToModules()" style="cursor:pointer; text-decoration:underline;">Review in Modules</a>
-        }
-      </sp-admin-alert>
+    @if (actionSuccess()) { <sp-admin-alert variant="success">{{ actionSuccess() }}</sp-admin-alert> }
+    @if (actionError()) { <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert> }
+    @if (bulkResultSummary()) {
+      <sp-admin-alert [variant]="bulkResultSummary().includes('failed') ? 'warning' : 'success'">{{ bulkResultSummary() }}</sp-admin-alert>
     }
 
     <sp-admin-filter-bar>
@@ -47,11 +44,29 @@
     @if (items().length === 0) {
       <sp-admin-empty-state title="No Exercises" message="Use Generate Exercise on a Resource Bank row or Lesson to create the first draft." />
     } @else {
+
+      @if (selectedCount() > 0) {
+        <div class="sp-admin-form-actions" style="flex-wrap:wrap;align-items:center;margin-bottom:0.75rem;">
+          <span class="sp-admin-hint">{{ selectedCount() }} selected</span>
+          <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="clearSelection()">Clear</sp-admin-button>
+          <sp-admin-button variant="neutral" size="sm" [disabled]="bulkRunning()" (clicked)="bulkApprove()">
+            {{ bulkRunning() ? 'Working…' : 'Approve selected' }}
+          </sp-admin-button>
+          <sp-admin-button variant="danger" appearance="outline" size="sm" [disabled]="bulkRunning()" (clicked)="openBulkReject()">
+            Reject selected
+          </sp-admin-button>
+          <sp-admin-button variant="primary" appearance="outline" size="sm" [disabled]="bulkRunning()" (clicked)="bulkGenerateModule()">
+            {{ bulkRunning() ? 'Working…' : 'Generate Module' }}
+          </sp-admin-button>
+        </div>
+      }
+
       <sp-admin-table layout="first-column-fluid">
         <table>
           <thead>
             <tr>
-              <th>Title</th>
+              <th style="width:40px;"><input type="checkbox" [checked]="allVisibleSelected()" (change)="toggleSelectAllVisible()" aria-label="Select all visible" /></th>
+              <th class="sp-admin-fluid-col">Title</th>
               <th>Type</th>
               <th>Renderer</th>
               <th>Level</th>
@@ -62,8 +77,9 @@
           </thead>
           <tbody>
             @for (item of items(); track item.id) {
-              <tr (click)="openDrawer(item)" style="cursor:pointer">
-                <td><strong>{{ item.title }}</strong></td>
+              <tr (click)="openDetail(item)" style="cursor:pointer">
+                <td style="width:40px;"><input type="checkbox" [checked]="isSelected(item.id)" (click)="toggleSelected(item.id, $event)" aria-label="Select exercise" /></td>
+                <td class="sp-admin-fluid-col"><strong>{{ item.title }}</strong></td>
                 <td>
                   <sp-admin-badge tone="neutral">{{ item.activityType }}</sp-admin-badge>
                   @if (!item.canLaunchOnceApproved) {
@@ -91,111 +107,24 @@
 
 </sp-admin-page-body>
 
-<!-- ── Detail drawer ────────────────────────────────────────────────────── -->
-<sp-admin-drawer
-  [open]="drawerOpen()"
-  [title]="detail()?.title ?? 'Exercise'"
-  side="right"
-  size="lg"
-  (closed)="closeDrawer()">
+<!-- ── Bulk reject modal ────────────────────────────────────────────────── -->
+<sp-admin-modal
+  [open]="bulkRejectModalOpen()"
+  title="Reject selected Exercises"
+  variant="form"
+  (closed)="closeBulkReject()">
 
-  @if (detail(); as d) {
-    <div class="sp-admin-form-stack">
-      <sp-admin-form-field label="Status">
-        <sp-admin-badge [tone]="statusTone(d.reviewStatus)">{{ d.reviewStatus }}</sp-admin-badge>
-      </sp-admin-form-field>
-      <sp-admin-form-field label="Source">
-        <sp-admin-badge tone="neutral">{{ d.sourceMode }}</sp-admin-badge>
-        @if (d.generationProvider) { <span class="sp-admin-text-muted"> · {{ d.generationProvider }} ({{ d.generationModel }})</span> }
-      </sp-admin-form-field>
-      <sp-admin-form-field label="Title"><strong>{{ d.title }}</strong></sp-admin-form-field>
-      @if (d.description) { <sp-admin-form-field label="Description">{{ d.description }}</sp-admin-form-field> }
-      <sp-admin-form-field label="Instructions"><pre>{{ d.instructions }}</pre></sp-admin-form-field>
-      <sp-admin-form-field label="Activity type / Renderer">
-        <sp-admin-badge tone="neutral">{{ d.activityType }}</sp-admin-badge>
-        <sp-admin-badge tone="info" appearance="soft">{{ d.rendererType }}</sp-admin-badge>
-      </sp-admin-form-field>
+  <div class="sp-admin-form-stack">
+    <sp-admin-form-field label="Reason" [required]="true" hint="Applied to every selected Exercise">
+      <sp-admin-textarea [(ngModel)]="bulkRejectReasonDraft" placeholder="Why these Exercises are being rejected" />
+    </sp-admin-form-field>
+  </div>
 
-      <sp-admin-form-field label="Student launch support">
-        @if (d.canLaunchOnceApproved) {
-          <sp-admin-badge tone="success" appearance="soft">Launchable once approved</sp-admin-badge>
-        } @else {
-          <sp-admin-badge tone="warning" appearance="soft">Not launchable yet</sp-admin-badge>
-          <p class="sp-admin-text-muted">{{ d.launchUnsupportedReason }}</p>
-        }
-      </sp-admin-form-field>
+  @if (actionError()) { <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert> }
 
-      @if (d.formSchemaJson) {
-        <sp-admin-form-field label="Form.io schema (student-safe)">
-          <pre>{{ d.formSchemaJson }}</pre>
-        </sp-admin-form-field>
-      }
-      @if (d.answerKeyJson) {
-        <sp-admin-form-field label="Answer key (backend-only)">
-          <pre>{{ d.answerKeyJson }}</pre>
-        </sp-admin-form-field>
-      }
-      @if (d.scoringRulesJson) {
-        <sp-admin-form-field label="Scoring rules (backend-only)">
-          <pre>{{ d.scoringRulesJson }}</pre>
-        </sp-admin-form-field>
-      }
-      @if (d.feedbackPlanJson) {
-        <sp-admin-form-field label="Feedback plan">
-          <pre>{{ d.feedbackPlanJson }}</pre>
-        </sp-admin-form-field>
-      }
+  <div slot="footer">
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeBulkReject()">Cancel</sp-admin-button>
+    <sp-admin-button variant="danger" (clicked)="confirmBulkReject()">Reject selected</sp-admin-button>
+  </div>
 
-      <sp-admin-form-field label="CEFR level">{{ d.cefrLevel ?? '—' }}</sp-admin-form-field>
-      <sp-admin-form-field label="Skill / subskill">{{ d.skill ?? '—' }} @if (d.subskill) { / {{ d.subskill }} }</sp-admin-form-field>
-      <sp-admin-form-field label="Difficulty band">{{ d.difficultyBand ?? '—' }}</sp-admin-form-field>
-
-      <sp-admin-form-field label="Linked Lesson" [hint]="d.lessonId ? '' : 'Not linked to a Lesson'">
-        @if (d.lessonId) { <code>{{ d.lessonId }}</code> }
-      </sp-admin-form-field>
-
-      <sp-admin-form-field label="Linked resources" [hint]="d.links.length === 0 ? 'No linked resources' : ''">
-        @for (link of d.links; track link.linkId) {
-          <div>
-            <sp-admin-badge tone="info" appearance="soft">{{ link.resourceType }}</sp-admin-badge>
-            <sp-admin-badge tone="neutral" appearance="outline" size="sm">{{ link.role }}</sp-admin-badge>
-            {{ link.snapshotTitle ?? link.resourceId }}
-          </div>
-        }
-      </sp-admin-form-field>
-
-      @if (d.reviewStatus === 'Rejected' && d.rejectionReason) {
-        <sp-admin-form-field label="Rejection reason"><sp-admin-badge tone="danger">{{ d.rejectionReason }}</sp-admin-badge></sp-admin-form-field>
-      }
-      <sp-admin-form-field label="Created">{{ d.createdAt | date:'medium' }}</sp-admin-form-field>
-
-      @if (d.reviewStatus !== 'Rejected') {
-        <sp-admin-form-field label="Rejection reason" hint="Required only if you use Reject below">
-          <sp-admin-textarea [(ngModel)]="rejectReasonDraft" placeholder="Why this Exercise is being rejected" />
-        </sp-admin-form-field>
-      }
-    </div>
-
-    @if (actionError()) { <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert> }
-  }
-
-  @if (detail(); as footerItem) {
-    <div slot="footer">
-      <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeDrawer()">Close</sp-admin-button>
-      @if (footerItem.reviewStatus !== 'Approved') {
-        <sp-admin-button variant="primary" [disabled]="approving()" (clicked)="approveSelected()">
-          {{ approving() ? 'Approving…' : 'Approve' }}
-        </sp-admin-button>
-      }
-      @if (footerItem.reviewStatus !== 'Rejected') {
-        <sp-admin-button variant="danger" appearance="outline" [disabled]="rejecting()" (clicked)="rejectSelected()">
-          {{ rejecting() ? 'Rejecting…' : 'Reject' }}
-        </sp-admin-button>
-      }
-      <sp-admin-button variant="primary" appearance="outline" [disabled]="generatingModule()" (clicked)="generateModule()">
-        {{ generatingModule() ? 'Generating…' : 'Generate Module' }}
-      </sp-admin-button>
-    </div>
-  }
-
-</sp-admin-drawer>
+</sp-admin-modal>

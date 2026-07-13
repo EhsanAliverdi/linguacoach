@@ -20,6 +20,10 @@
   } @else {
 
     @if (actionSuccess()) { <sp-admin-alert variant="success">{{ actionSuccess() }}</sp-admin-alert> }
+    @if (actionError()) { <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert> }
+    @if (bulkResultSummary()) {
+      <sp-admin-alert [variant]="bulkResultSummary().includes('failed') ? 'warning' : 'success'">{{ bulkResultSummary() }}</sp-admin-alert>
+    }
 
     <sp-admin-filter-bar>
       <sp-admin-input
@@ -39,11 +43,26 @@
     @if (items().length === 0) {
       <sp-admin-empty-state title="No Modules" message="Use Create Module to compose the first draft from a Lesson and Exercise." />
     } @else {
+
+      @if (selectedCount() > 0) {
+        <div class="sp-admin-form-actions" style="flex-wrap:wrap;align-items:center;margin-bottom:0.75rem;">
+          <span class="sp-admin-hint">{{ selectedCount() }} selected</span>
+          <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="clearSelection()">Clear</sp-admin-button>
+          <sp-admin-button variant="neutral" size="sm" [disabled]="bulkRunning()" (clicked)="bulkApprove()">
+            {{ bulkRunning() ? 'Working…' : 'Approve selected' }}
+          </sp-admin-button>
+          <sp-admin-button variant="danger" appearance="outline" size="sm" [disabled]="bulkRunning()" (clicked)="openBulkReject()">
+            Reject selected
+          </sp-admin-button>
+        </div>
+      }
+
       <sp-admin-table layout="first-column-fluid">
         <table>
           <thead>
             <tr>
-              <th>Title</th>
+              <th style="width:40px;"><input type="checkbox" [checked]="allVisibleSelected()" (change)="toggleSelectAllVisible()" aria-label="Select all visible" /></th>
+              <th class="sp-admin-fluid-col">Title</th>
               <th>Level</th>
               <th>Skill / Subskill</th>
               <th>Lessons</th>
@@ -55,8 +74,9 @@
           </thead>
           <tbody>
             @for (item of items(); track item.id) {
-              <tr (click)="openDrawer(item)" style="cursor:pointer">
-                <td><strong>{{ item.title }}</strong></td>
+              <tr (click)="openDetail(item)" style="cursor:pointer">
+                <td style="width:40px;"><input type="checkbox" [checked]="isSelected(item.id)" (click)="toggleSelected(item.id, $event)" aria-label="Select module" /></td>
+                <td class="sp-admin-fluid-col"><strong>{{ item.title }}</strong></td>
                 <td>{{ item.cefrLevel ?? '—' }}</td>
                 <td>
                   {{ item.skill ?? '—' }}
@@ -80,92 +100,6 @@
   }
 
 </sp-admin-page-body>
-
-<!-- ── Detail drawer ────────────────────────────────────────────────────── -->
-<sp-admin-drawer
-  [open]="drawerOpen()"
-  [title]="detail()?.title ?? 'Module'"
-  side="right"
-  size="lg"
-  (closed)="closeDrawer()">
-
-  @if (detail(); as d) {
-    <div class="sp-admin-form-stack">
-      <sp-admin-form-field label="Status">
-        <sp-admin-badge [tone]="statusTone(d.reviewStatus)">{{ d.reviewStatus }}</sp-admin-badge>
-      </sp-admin-form-field>
-      <sp-admin-form-field label="Source">
-        <sp-admin-badge tone="neutral">{{ d.sourceMode }}</sp-admin-badge>
-        @if (d.generationProvider) { <span class="sp-admin-text-muted"> · {{ d.generationProvider }}</span> }
-      </sp-admin-form-field>
-      <sp-admin-form-field label="Title"><strong>{{ d.title }}</strong></sp-admin-form-field>
-      @if (d.description) { <sp-admin-form-field label="Description">{{ d.description }}</sp-admin-form-field> }
-
-      <sp-admin-form-field label="CEFR level">{{ d.cefrLevel ?? '—' }}</sp-admin-form-field>
-      <sp-admin-form-field label="Skill / subskill">{{ d.skill ?? '—' }} @if (d.subskill) { / {{ d.subskill }} }</sp-admin-form-field>
-      <sp-admin-form-field label="Difficulty band">{{ d.difficultyBand ?? '—' }}</sp-admin-form-field>
-      <sp-admin-form-field label="Estimated minutes">{{ d.estimatedMinutes ?? '—' }}</sp-admin-form-field>
-
-      <sp-admin-form-field label="Linked Lessons" [hint]="d.lessonLinks.length === 0 ? 'None linked' : ''">
-        @for (link of d.lessonLinks; track link.linkId) {
-          <div>
-            <sp-admin-badge tone="info" appearance="soft">{{ link.role }}</sp-admin-badge>
-            {{ link.snapshotTitle ?? link.lessonId }}
-          </div>
-        }
-      </sp-admin-form-field>
-
-      <sp-admin-form-field label="Linked Exercises" [hint]="d.exerciseLinks.length === 0 ? 'None linked' : ''">
-        @for (link of d.exerciseLinks; track link.linkId) {
-          <div>
-            <sp-admin-badge tone="info" appearance="soft">{{ link.role }}</sp-admin-badge>
-            @if (!link.required) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">optional</sp-admin-badge> }
-            {{ link.snapshotTitle ?? link.exerciseId }}
-          </div>
-        }
-      </sp-admin-form-field>
-
-      @if (d.feedbackPlanJson) {
-        <sp-admin-form-field label="Feedback plan">
-          <pre>{{ d.feedbackPlanJson }}</pre>
-        </sp-admin-form-field>
-      }
-
-      @if (d.reviewStatus === 'Rejected' && d.rejectionReason) {
-        <sp-admin-form-field label="Rejection reason"><sp-admin-badge tone="danger">{{ d.rejectionReason }}</sp-admin-badge></sp-admin-form-field>
-      }
-      <sp-admin-form-field label="Created">{{ d.createdAt | date:'medium' }}</sp-admin-form-field>
-
-      @if (d.reviewStatus !== 'Rejected') {
-        <sp-admin-form-field label="Rejection reason" hint="Required only if you use Reject below">
-          <sp-admin-textarea [(ngModel)]="rejectReasonDraft" placeholder="Why this Module is being rejected" />
-        </sp-admin-form-field>
-      }
-    </div>
-
-    @if (actionError()) { <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert> }
-  }
-
-  @if (detail(); as footerItem) {
-    <div slot="footer">
-      <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeDrawer()">Close</sp-admin-button>
-      <sp-admin-button variant="secondary" appearance="outline" (clicked)="openPreview(footerItem)">
-        Preview as Learner
-      </sp-admin-button>
-      @if (footerItem.reviewStatus !== 'Approved') {
-        <sp-admin-button variant="primary" [disabled]="approving()" (clicked)="approveSelected()">
-          {{ approving() ? 'Approving…' : 'Approve' }}
-        </sp-admin-button>
-      }
-      @if (footerItem.reviewStatus !== 'Rejected') {
-        <sp-admin-button variant="danger" appearance="outline" [disabled]="rejecting()" (clicked)="rejectSelected()">
-          {{ rejecting() ? 'Rejecting…' : 'Reject' }}
-        </sp-admin-button>
-      }
-    </div>
-  }
-
-</sp-admin-drawer>
 
 <!-- ── Phase K3 — real Create Module modal: searchable pickers instead of pasted GUIDs ────── -->
 <sp-admin-modal
@@ -240,86 +174,24 @@
 
 </sp-admin-modal>
 
-<!-- ── Phase J3 — Preview as Learner modal ─────────────────────────────── -->
+<!-- ── Bulk reject modal ────────────────────────────────────────────────── -->
 <sp-admin-modal
-  [open]="previewModalOpen()"
-  title="Preview as Learner"
+  [open]="bulkRejectModalOpen()"
+  title="Reject selected Modules"
   variant="form"
-  (closed)="closePreview()">
+  (closed)="closeBulkReject()">
 
-  @if (previewLoading()) {
-    <sp-admin-loading-state message="Loading preview" />
-  } @else {
-    @if (previewData(); as p) {
-      <div class="sp-admin-form-stack">
+  <div class="sp-admin-form-stack">
+    <sp-admin-form-field label="Reason" [required]="true" hint="Applied to every selected Module">
+      <sp-admin-textarea [(ngModel)]="bulkRejectReasonDraft" placeholder="Why these Modules are being rejected" />
+    </sp-admin-form-field>
+  </div>
 
-        <sp-admin-alert variant="info">
-          This is exactly what a student would see and complete — nothing here affects any student
-          account, and this Module's review status ({{ p.moduleReviewStatus }}) is unaffected.
-        </sp-admin-alert>
-
-        @if (p.lesson; as lesson) {
-          <sp-admin-form-field label="Learn">
-            <h4>{{ lesson.title }}</h4>
-            <p>{{ lesson.body }}</p>
-            @if (lesson.examples.length > 0) {
-              <p class="sp-admin-text-muted"><strong>Examples:</strong></p>
-              <ul>
-                @for (ex of lesson.examples; track ex) { <li>{{ ex }}</li> }
-              </ul>
-            }
-            @if (lesson.usageNotes) { <p class="sp-admin-text-muted">{{ lesson.usageNotes }}</p> }
-          </sp-admin-form-field>
-        }
-
-        @if (p.exercise; as exercise) {
-          <sp-admin-form-field label="Practice">
-            <h4>{{ exercise.title }}</h4>
-            <p>{{ exercise.instructions }}</p>
-
-            @if (!exercise.canScore) {
-              <sp-admin-alert variant="warning">
-                {{ exercise.unscorableReason }} You can still see the activity below, but it will not
-                be auto-scored in this preview.
-              </sp-admin-alert>
-            }
-
-            @if (previewSchema()) {
-              <app-formio-renderer
-                [schema]="previewSchema()"
-                [disabled]="previewSubmitting()"
-                (submit)="onPreviewExerciseSubmit($event)" />
-              <sp-admin-button variant="primary" size="sm" [disabled]="previewSubmitting()" (clicked)="submitPreviewAnswer()">
-                {{ previewSubmitting() ? 'Submitting…' : 'Submit Answer' }}
-              </sp-admin-button>
-            } @else {
-              <sp-admin-alert variant="warning">This Exercise has no renderable schema.</sp-admin-alert>
-            }
-          </sp-admin-form-field>
-        } @else {
-          <sp-admin-alert variant="warning">This Module has no linked Exercise to preview.</sp-admin-alert>
-        }
-
-        @if (previewResult(); as result) {
-          <sp-admin-form-field label="Feedback">
-            @if (result.scored) {
-              <sp-admin-alert [variant]="result.allCorrect ? 'success' : 'warning'">
-                Score: {{ result.scorePercent }}% — {{ result.feedbackMessage }}
-              </sp-admin-alert>
-            } @else {
-              <sp-admin-alert variant="info">{{ result.unscorableReason }}</sp-admin-alert>
-            }
-          </sp-admin-form-field>
-        }
-
-      </div>
-    }
-  }
-
-  @if (previewError()) { <sp-admin-alert variant="error">{{ previewError() }}</sp-admin-alert> }
+  @if (actionError()) { <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert> }
 
   <div slot="footer">
-    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closePreview()">Close</sp-admin-button>
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeBulkReject()">Cancel</sp-admin-button>
+    <sp-admin-button variant="danger" (clicked)="confirmBulkReject()">Reject selected</sp-admin-button>
   </div>
 
 </sp-admin-modal>

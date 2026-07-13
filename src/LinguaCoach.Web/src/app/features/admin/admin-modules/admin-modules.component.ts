@@ -1,25 +1,22 @@
-import { Component, OnInit, ViewChild, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { Router } from '@angular/router';
+import { Observable, catchError, concatMap, from, map, of, toArray } from 'rxjs';
 import { AdminModuleService } from '../../../core/services/admin-module.service';
 import { AdminLessonService } from '../../../core/services/admin-lesson.service';
 import { AdminExerciseService } from '../../../core/services/admin-exercise.service';
 import {
   ModuleDto,
-  ModulePreviewResult,
-  ModulePreviewSubmitResult,
   MODULE_REVIEW_STATUSES,
 } from '../../../core/models/admin-module.models';
 import { LessonDto } from '../../../core/models/admin-lesson.models';
 import { ExerciseDto } from '../../../core/models/admin-exercise.models';
-import { FormioRendererComponent } from '../../../shared/formio/formio-renderer.component';
 import { RESOURCE_BANK_CEFR_LEVELS } from '../../../core/models/admin-resource-import.models';
 import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
   SpAdminButtonComponent,
-  SpAdminDrawerComponent,
   SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
   SpAdminFilterBarComponent,
@@ -38,6 +35,8 @@ import {
 
 const PAGE_SIZE = 20;
 
+interface BulkItemResult { success: boolean; title: string; error: string | null; }
+
 /**
  * Phase H5 — Module foundation admin page. Reusable, reviewable learning units
  * combining Lessons + Exercises + a module-level feedback plan. Nothing here
@@ -52,7 +51,6 @@ const PAGE_SIZE = 20;
     SpAdminAlertComponent,
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
-    SpAdminDrawerComponent,
     SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
     SpAdminFilterBarComponent,
@@ -67,7 +65,6 @@ const PAGE_SIZE = 20;
     SpAdminTableComponent,
     SpAdminTableFooterComponent,
     SpAdminTextareaComponent,
-    FormioRendererComponent,
   ],
   templateUrl: './admin-modules.component.html',
 })
@@ -90,12 +87,18 @@ export class AdminModulesComponent implements OnInit {
   readonly statusOptions = [{ value: 'all', label: 'All statuses' }, ...MODULE_REVIEW_STATUSES.map(s => ({ value: s, label: s }))];
   readonly cefrLevelOptions = [{ value: 'all', label: 'All levels' }, ...RESOURCE_BANK_CEFR_LEVELS.map(l => ({ value: l, label: l }))];
 
-  // ── Detail drawer ────────────────────────────────────────────────────────
-  drawerOpen = signal(false);
-  detail = signal<ModuleDto | null>(null);
-  rejectReasonDraft = '';
-  approving = signal(false);
-  rejecting = signal(false);
+  // ── Phase K4 — bulk selection + bulk actions ────────────────────────────────
+  selectedIds = signal<Set<string>>(new Set());
+  bulkRunning = signal(false);
+  bulkResultSummary = signal('');
+  bulkRejectModalOpen = signal(false);
+  bulkRejectReasonDraft = '';
+
+  readonly selectedCount = computed(() => this.selectedIds().size);
+  readonly allVisibleSelected = computed(() => {
+    const items = this.items();
+    return items.length > 0 && items.every(i => this.selectedIds().has(i.id));
+  });
 
   // ── Phase K3 — real Create Module modal: searchable Lesson/Exercise dropdowns instead of
   // pasting raw GUIDs. Backed by moduleSvc.create() (POST /api/admin/modules), which — unlike
@@ -117,33 +120,15 @@ export class AdminModulesComponent implements OnInit {
   selectedExercise = signal<ExerciseDto | null>(null);
   private exerciseSearchDebounce?: ReturnType<typeof setTimeout>;
 
-  // ── Phase J3 — Preview as Learner modal ─────────────────────────────────
-  previewModalOpen = signal(false);
-  previewLoading = signal(false);
-  previewError = signal('');
-  previewData = signal<ModulePreviewResult | null>(null);
-  previewSchema = signal<any>(null);
-  previewSubmitting = signal(false);
-  previewResult = signal<ModulePreviewSubmitResult | null>(null);
-
-  /** The generated Form.io schemas (gap_fill/multiple_choice_single, both deterministic and
-   *  AI-generated) don't include their own submit button component, and this app's convention
-   *  (see PlacementComponent) is for the host page to trigger submission externally via
-   *  FormioRendererComponent.submitForm() rather than relying on Form.io to render one. */
-  @ViewChild(FormioRendererComponent) previewFormioRenderer?: FormioRendererComponent;
-
   constructor(
     private moduleSvc: AdminModuleService,
     private lessonSvc: AdminLessonService,
     private exerciseSvc: AdminExerciseService,
-    private route: ActivatedRoute,
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
     this.loadAll();
-
-    const deepLinkId = this.route.snapshot.queryParamMap.get('id');
-    if (deepLinkId) this.openDrawerById(deepLinkId);
   }
 
   loadAll(): void {
@@ -187,25 +172,12 @@ export class AdminModulesComponent implements OnInit {
 
   onPageChange(page: number): void {
     this.page.set(page);
+    this.selectedIds.set(new Set());
     this.loadAll();
   }
 
-  openDrawer(item: ModuleDto): void {
-    this.detail.set(item);
-    this.rejectReasonDraft = '';
-    this.actionError.set('');
-    this.drawerOpen.set(true);
-  }
-
-  openDrawerById(id: string): void {
-    this.moduleSvc.get(id).subscribe({
-      next: item => this.openDrawer(item),
-      error: () => { /* deep-linked item no longer exists — ignore, list still loads */ },
-    });
-  }
-
-  closeDrawer(): void {
-    this.drawerOpen.set(false);
+  openDetail(item: ModuleDto): void {
+    this.router.navigate(['/admin/modules', item.id]);
   }
 
   statusTone(status: string): 'success' | 'neutral' | 'danger' | 'warning' {
@@ -215,40 +187,86 @@ export class AdminModulesComponent implements OnInit {
     return 'neutral';
   }
 
-  approveSelected(): void {
-    const item = this.detail();
-    if (!item) return;
-    this.approving.set(true);
+  // ── Selection ────────────────────────────────────────────────────────────────
+
+  isSelected(id: string): boolean {
+    return this.selectedIds().has(id);
+  }
+
+  toggleSelected(id: string, event: Event): void {
+    event.stopPropagation();
+    const next = new Set(this.selectedIds());
+    if (next.has(id)) next.delete(id); else next.add(id);
+    this.selectedIds.set(next);
+  }
+
+  toggleSelectAllVisible(): void {
+    if (this.allVisibleSelected()) {
+      this.selectedIds.set(new Set());
+      return;
+    }
+    this.selectedIds.set(new Set(this.items().map(i => i.id)));
+  }
+
+  clearSelection(): void {
+    this.selectedIds.set(new Set());
+  }
+
+  // ── Bulk actions ─────────────────────────────────────────────────────────────
+
+  private selectedItems(): ModuleDto[] {
+    const ids = this.selectedIds();
+    return this.items().filter(i => ids.has(i.id));
+  }
+
+  private runBulk(verb: string, call: (item: ModuleDto) => Observable<unknown>): void {
+    const targets = this.selectedItems();
+    if (targets.length === 0) return;
+    this.bulkRunning.set(true);
     this.actionError.set('');
-    this.moduleSvc.approve(item.id).subscribe({
-      next: updated => {
-        this.approving.set(false);
-        this.detail.set(updated);
-        this.actionSuccess.set('Module approved.');
-        this.loadAll();
-      },
-      error: err => { this.approving.set(false); this.actionError.set(err.error?.error ?? 'Could not approve.'); },
+    this.bulkResultSummary.set('');
+
+    from(targets).pipe(
+      concatMap(item => call(item).pipe(
+        map((): BulkItemResult => ({ success: true, title: item.title, error: null })),
+        catchError((err: { error?: { error?: string } }) =>
+          of<BulkItemResult>({ success: false, title: item.title, error: err.error?.error ?? 'failed' })),
+      )),
+      toArray(),
+    ).subscribe(results => {
+      this.bulkRunning.set(false);
+      const succeeded = results.filter(r => r.success).length;
+      const failed = results.length - succeeded;
+      this.bulkResultSummary.set(
+        `${succeeded} of ${results.length} ${verb} succeeded` +
+        (failed > 0 ? ` — ${failed} failed: ${results.filter(r => !r.success).map(r => r.title + ' (' + r.error + ')').join('; ')}` : '.'));
+      this.selectedIds.set(new Set());
+      this.loadAll();
     });
   }
 
-  rejectSelected(): void {
-    const item = this.detail();
-    if (!item) return;
-    if (!this.rejectReasonDraft.trim()) {
+  bulkApprove(): void {
+    this.runBulk('approvals', item => this.moduleSvc.approve(item.id));
+  }
+
+  openBulkReject(): void {
+    if (this.selectedCount() === 0) return;
+    this.bulkRejectReasonDraft = '';
+    this.actionError.set('');
+    this.bulkRejectModalOpen.set(true);
+  }
+
+  closeBulkReject(): void {
+    this.bulkRejectModalOpen.set(false);
+  }
+
+  confirmBulkReject(): void {
+    if (!this.bulkRejectReasonDraft.trim()) {
       this.actionError.set('A rejection reason is required.');
       return;
     }
-    this.rejecting.set(true);
-    this.actionError.set('');
-    this.moduleSvc.reject(item.id, this.rejectReasonDraft.trim()).subscribe({
-      next: updated => {
-        this.rejecting.set(false);
-        this.detail.set(updated);
-        this.actionSuccess.set('Module rejected.');
-        this.loadAll();
-      },
-      error: err => { this.rejecting.set(false); this.actionError.set(err.error?.error ?? 'Could not reject.'); },
-    });
+    this.bulkRejectModalOpen.set(false);
+    this.runBulk('rejections', item => this.moduleSvc.reject(item.id, this.bulkRejectReasonDraft.trim()));
   }
 
   openCreateModal(): void {
@@ -356,64 +374,4 @@ export class AdminModulesComponent implements OnInit {
     });
   }
 
-  /** Phase J3 — loads this Module's linked Lesson + Exercise for rendering, regardless of the
-   *  Module's own review status (the whole point is previewing BEFORE approval). Never creates
-   *  a LearningActivity/attempt — read/score-only, separate from the real student runtime. */
-  openPreview(item: ModuleDto): void {
-    this.previewLoading.set(true);
-    this.previewError.set('');
-    this.previewData.set(null);
-    this.previewSchema.set(null);
-    this.previewResult.set(null);
-    this.previewModalOpen.set(true);
-
-    this.moduleSvc.preview(item.id).subscribe({
-      next: result => {
-        this.previewLoading.set(false);
-        this.previewData.set(result);
-        if (result.exercise?.formSchemaJson) {
-          try {
-            this.previewSchema.set(JSON.parse(result.exercise.formSchemaJson));
-          } catch {
-            this.previewSchema.set(null);
-          }
-        }
-      },
-      error: err => {
-        this.previewLoading.set(false);
-        this.previewError.set(err.error?.error ?? 'Could not load the preview.');
-      },
-    });
-  }
-
-  closePreview(): void {
-    this.previewModalOpen.set(false);
-  }
-
-  /** Triggers Form.io's own submission pipeline (validation + the 'submit' event)
-   *  programmatically, since the rendered schema has no submit button of its own. */
-  submitPreviewAnswer(): void {
-    this.previewFormioRenderer?.submitForm();
-  }
-
-  /** Fired by the FormioRendererComponent's (submit) output with the submission's data object
-   *  (component key -> submitted value). Scores it using the same engine the real student runtime
-   *  uses — never a simplified/separate scoring path. */
-  onPreviewExerciseSubmit(answers: Record<string, unknown>): void {
-    const module = this.previewData();
-    if (!module) return;
-
-    this.previewSubmitting.set(true);
-    this.previewError.set('');
-    this.moduleSvc.previewSubmit(module.moduleId, { answers }).subscribe({
-      next: result => {
-        this.previewSubmitting.set(false);
-        this.previewResult.set(result);
-      },
-      error: err => {
-        this.previewSubmitting.set(false);
-        this.previewError.set(err.error?.error ?? 'Could not score the preview submission.');
-      },
-    });
-  }
 }

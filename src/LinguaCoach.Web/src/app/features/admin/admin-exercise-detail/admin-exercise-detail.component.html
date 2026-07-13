@@ -1,0 +1,126 @@
+<sp-admin-page-header
+  [title]="item()?.title ?? 'Exercise'"
+  [subtitle]="item() ? (item()!.cefrLevel ?? '—') + ' · ' + item()!.reviewStatus : 'Loading…'">
+  <sp-admin-button variant="neutral" appearance="outline" (clicked)="backToList()">
+    ← Back to Exercises
+  </sp-admin-button>
+</sp-admin-page-header>
+
+<sp-admin-page-body>
+
+  @if (error()) { <sp-admin-error-state title="Could not load this Exercise" [message]="error()" /> }
+
+  @if (loading()) {
+    <sp-admin-loading-state message="Loading Exercise" />
+  } @else if (item()) {
+  @let d = item()!;
+
+    @if (actionSuccess()) {
+      <sp-admin-alert variant="success">
+        {{ actionSuccess() }}
+        @if (lastActionWasGenerateModule()) {
+          <a (click)="goToModules()" style="cursor:pointer; text-decoration:underline;">Review in Modules</a>
+        }
+      </sp-admin-alert>
+    }
+    @if (actionError()) { <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert> }
+
+    <sp-admin-section-card title="Details">
+      <div class="sp-admin-form-stack">
+        <sp-admin-form-field label="Status">
+          <sp-admin-badge [tone]="statusTone(d.reviewStatus)">{{ d.reviewStatus }}</sp-admin-badge>
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Source">
+          <sp-admin-badge tone="neutral">{{ d.sourceMode }}</sp-admin-badge>
+          @if (d.generationProvider) { <span class="sp-admin-text-muted"> · {{ d.generationProvider }} ({{ d.generationModel }})</span> }
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Title"><strong>{{ d.title }}</strong></sp-admin-form-field>
+        @if (d.description) { <sp-admin-form-field label="Description">{{ d.description }}</sp-admin-form-field> }
+        <sp-admin-form-field label="Instructions"><pre>{{ d.instructions }}</pre></sp-admin-form-field>
+        <sp-admin-form-field label="Activity type / Renderer">
+          <sp-admin-badge tone="neutral">{{ d.activityType }}</sp-admin-badge>
+          <sp-admin-badge tone="info" appearance="soft">{{ d.rendererType }}</sp-admin-badge>
+        </sp-admin-form-field>
+
+        <sp-admin-form-field label="Student launch support">
+          @if (d.canLaunchOnceApproved) {
+            <sp-admin-badge tone="success" appearance="soft">Launchable once approved</sp-admin-badge>
+          } @else {
+            <sp-admin-badge tone="warning" appearance="soft">Not launchable yet</sp-admin-badge>
+            <p class="sp-admin-text-muted">{{ d.launchUnsupportedReason }}</p>
+          }
+        </sp-admin-form-field>
+
+        @if (d.formSchemaJson) {
+          <sp-admin-form-field label="Form.io schema (student-safe)">
+            <pre>{{ d.formSchemaJson }}</pre>
+          </sp-admin-form-field>
+        }
+        @if (d.answerKeyJson) {
+          <sp-admin-form-field label="Answer key (backend-only)">
+            <pre>{{ d.answerKeyJson }}</pre>
+          </sp-admin-form-field>
+        }
+        @if (d.scoringRulesJson) {
+          <sp-admin-form-field label="Scoring rules (backend-only)">
+            <pre>{{ d.scoringRulesJson }}</pre>
+          </sp-admin-form-field>
+        }
+        @if (d.feedbackPlanJson) {
+          <sp-admin-form-field label="Feedback plan">
+            <pre>{{ d.feedbackPlanJson }}</pre>
+          </sp-admin-form-field>
+        }
+
+        <sp-admin-form-field label="CEFR level">{{ d.cefrLevel ?? '—' }}</sp-admin-form-field>
+        <sp-admin-form-field label="Skill / subskill">{{ d.skill ?? '—' }} @if (d.subskill) { / {{ d.subskill }} }</sp-admin-form-field>
+        <sp-admin-form-field label="Difficulty band">{{ d.difficultyBand ?? '—' }}</sp-admin-form-field>
+
+        <sp-admin-form-field label="Linked Lesson" [hint]="d.lessonId ? '' : 'Not linked to a Lesson'">
+          @if (d.lessonId) { <code>{{ d.lessonId }}</code> }
+        </sp-admin-form-field>
+
+        <sp-admin-form-field label="Linked resources" [hint]="d.links.length === 0 ? 'No linked resources' : ''">
+          @for (link of d.links; track link.linkId) {
+            <div>
+              <sp-admin-badge tone="info" appearance="soft">{{ link.resourceType }}</sp-admin-badge>
+              <sp-admin-badge tone="neutral" appearance="outline" size="sm">{{ link.role }}</sp-admin-badge>
+              {{ link.snapshotTitle ?? link.resourceId }}
+            </div>
+          }
+        </sp-admin-form-field>
+
+        @if (d.reviewStatus === 'Rejected' && d.rejectionReason) {
+          <sp-admin-form-field label="Rejection reason"><sp-admin-badge tone="danger">{{ d.rejectionReason }}</sp-admin-badge></sp-admin-form-field>
+        }
+        <sp-admin-form-field label="Created">{{ d.createdAt | date:'medium' }}</sp-admin-form-field>
+
+        @if (d.reviewStatus !== 'Rejected') {
+          <sp-admin-form-field label="Rejection reason" hint="Required only if you use Reject below">
+            <sp-admin-textarea [(ngModel)]="rejectReasonDraft" placeholder="Why this Exercise is being rejected" />
+          </sp-admin-form-field>
+        }
+      </div>
+    </sp-admin-section-card>
+
+    <sp-admin-section-card title="Actions">
+      <div class="sp-admin-form-actions" style="flex-wrap:wrap;">
+        @if (d.reviewStatus !== 'Approved') {
+          <sp-admin-button variant="primary" [disabled]="approving()" (clicked)="approveSelected()">
+            {{ approving() ? 'Approving…' : 'Approve' }}
+          </sp-admin-button>
+        }
+        @if (d.reviewStatus !== 'Rejected') {
+          <sp-admin-button variant="danger" appearance="outline" [disabled]="rejecting()" (clicked)="rejectSelected()">
+            {{ rejecting() ? 'Rejecting…' : 'Reject' }}
+          </sp-admin-button>
+        }
+        <sp-admin-button variant="primary" appearance="outline" [disabled]="generatingModule()" (clicked)="generateModule()">
+          {{ generatingModule() ? 'Generating…' : 'Generate Module' }}
+        </sp-admin-button>
+      </div>
+    </sp-admin-section-card>
+
+  }
+
+</sp-admin-page-body>

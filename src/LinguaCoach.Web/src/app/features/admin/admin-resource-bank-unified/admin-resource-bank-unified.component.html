@@ -90,9 +90,9 @@
         <table>
           <thead>
             <tr>
-              <th><input type="checkbox" [checked]="allVisibleSelected()" (change)="toggleSelectAllVisible()" aria-label="Select all visible" /></th>
+              <th style="width:40px;"><input type="checkbox" [checked]="allVisibleSelected()" (change)="toggleSelectAllVisible()" aria-label="Select all visible" /></th>
               <th>Type</th>
-              <th>Title</th>
+              <th class="sp-admin-fluid-col">Title</th>
               <th>Level</th>
               <th>Skill / Subskill</th>
               <th>Context</th>
@@ -104,9 +104,9 @@
           <tbody>
             @for (item of items(); track item.id) {
               <tr (click)="openDetail(item)" style="cursor:pointer">
-                <td><input type="checkbox" [checked]="isSelected(item.id)" (click)="toggleSelected(item.id, $event)" aria-label="Select resource" /></td>
+                <td style="width:40px;"><input type="checkbox" [checked]="isSelected(item.id)" (click)="toggleSelected(item.id, $event)" aria-label="Select resource" /></td>
                 <td><sp-admin-badge tone="info" appearance="soft">{{ typeLabel(item.type) }}</sp-admin-badge></td>
-                <td>
+                <td class="sp-admin-fluid-col">
                   <strong>{{ item.title }}</strong>
                   @if (item.summary) { <div class="sp-admin-text-muted">{{ item.summary }}</div> }
                   @if (item.isArchived) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">Archived</sp-admin-badge> }

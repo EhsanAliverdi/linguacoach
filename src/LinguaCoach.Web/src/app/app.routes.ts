@@ -194,8 +194,16 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/admin-exercises/admin-exercises.component').then(m => m.AdminExercisesComponent),
       },
       {
+        path: 'exercises/:id',
+        loadComponent: () => import('./features/admin/admin-exercise-detail/admin-exercise-detail.component').then(m => m.AdminExerciseDetailComponent),
+      },
+      {
         path: 'modules',
         loadComponent: () => import('./features/admin/admin-modules/admin-modules.component').then(m => m.AdminModulesComponent),
+      },
+      {
+        path: 'modules/:id',
+        loadComponent: () => import('./features/admin/admin-module-detail/admin-module-detail.component').then(m => m.AdminModuleDetailComponent),
       },
       // Phase I4 Pass 2 — Learn Items/Activities renamed to Lessons/Exercises; the Lessons page
       // moved off /admin/lessons (now Today Delivery Health, see above) to /admin/lesson-library
