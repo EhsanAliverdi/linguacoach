@@ -127,12 +127,43 @@ export interface AdminResourceCandidateDto {
   publishedEntityType: string | null;
   publishedEntityId: string | null;
   publishedByUserId: string | null;
+  /** Phase K2 — Passed/NeedsReview (warning-only) = true, Failed/Pending (hard-blocked) = false.
+   *  Advisory only — the real gate is re-checked server-side by publish/approve-and-publish. */
+  canAttemptPublish: boolean;
+  /** Non-null only when canAttemptPublish is false and the candidate isn't already published. */
+  publishBlockReason: string | null;
 }
 
 export interface AdminResourceCandidateListResult {
   items: AdminResourceCandidateDto[];
   totalCount: number;
   overallTotalCount: number;
+}
+
+// ── Phase K2 — review-state summary + batch approve/publish actions ────────────
+
+export interface AdminResourceCandidateReviewSummaryDto {
+  totalCount: number;
+  publishedCount: number;
+  passedCount: number;
+  needsReviewCount: number;
+  blockedCount: number;
+  publishableCount: number;
+}
+
+export interface BatchResourceCandidateActionItemResult {
+  candidateId: string;
+  success: boolean;
+  error: string | null;
+}
+
+export interface BatchResourceCandidateActionResult {
+  requestedCount: number;
+  succeededCount: number;
+  failedCount: number;
+  alreadyPublishedCount: number;
+  batchLimitReached: boolean;
+  items: BatchResourceCandidateActionItemResult[];
 }
 
 // ── Phase E2 — AI analysis / rule validation trigger results ───────────────────

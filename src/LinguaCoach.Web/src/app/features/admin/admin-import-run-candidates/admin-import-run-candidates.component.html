@@ -20,6 +20,25 @@
     </sp-admin-section-card>
   }
 
+  <!-- Phase K2 — review-state summary: replaces the misleading "Analysis complete" implying
+       ready-to-publish. Distinguishes warning-only NeedsReview (still publishable) from hard-
+       blocked Failed/Pending candidates. -->
+  @if (summary(); as s) {
+    <sp-admin-section-card title="Review status">
+      <div class="sp-admin-form-stack" style="flex-direction:row;flex-wrap:wrap;gap:0.75rem;">
+        <sp-admin-badge tone="success">{{ s.passedCount }} passed</sp-admin-badge>
+        <sp-admin-badge tone="warning">{{ s.needsReviewCount }} need review (warnings only, publishable)</sp-admin-badge>
+        <sp-admin-badge tone="danger">{{ s.blockedCount }} blocked (fix before publish)</sp-admin-badge>
+        <sp-admin-badge tone="neutral">{{ s.publishedCount }} published</sp-admin-badge>
+      </div>
+      @if (s.publishableCount > 0) {
+        <p class="sp-admin-hint" style="margin-top:0.5rem;">
+          {{ s.publishableCount }} candidate(s) can be approved &amp; published right now (passed or warning-only).
+        </p>
+      }
+    </sp-admin-section-card>
+  }
+
   <sp-admin-section-card title="Candidates">
     <sp-admin-button slot="header-action" variant="neutral" appearance="outline" size="sm" (clicked)="loadCandidates()">
       Refresh
@@ -28,6 +47,44 @@
     @if (actionSuccess()) { <sp-admin-alert variant="success">{{ actionSuccess() }}</sp-admin-alert> }
     @if (actionError()) { <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert> }
     @if (candidatesError()) { <sp-admin-error-state title="Could not load candidates" [message]="candidatesError()" /> }
+
+    @if (!candidatesLoading() && candidates().length > 0) {
+      <!-- Phase K2 — batch toolbar. Actions apply only to the checked rows on this page (not the
+           whole run) — "Select all publishable (this page)" makes that scope explicit. -->
+      <div class="sp-admin-form-actions" style="flex-wrap:wrap;align-items:center;margin-bottom:0.75rem;">
+        <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="selectAllPublishableVisible()">
+          Select all publishable (this page)
+        </sp-admin-button>
+        @if (selectedCount() > 0) {
+          <span class="sp-admin-hint">{{ selectedCount() }} selected</span>
+          <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="clearSelection()">Clear</sp-admin-button>
+          <sp-admin-button variant="neutral" size="sm" [disabled]="batchActionRunning()" (clicked)="batchApproveSelected()">
+            Approve selected
+          </sp-admin-button>
+          <sp-admin-button variant="neutral" size="sm" [disabled]="batchActionRunning()" (clicked)="batchPublishSelected()">
+            Publish selected
+          </sp-admin-button>
+          <sp-admin-button variant="primary" size="sm" [disabled]="batchActionRunning()" (clicked)="batchApproveAndPublishSelected()">
+            {{ batchActionRunning() ? 'Working…' : 'Approve & Publish selected' }}
+          </sp-admin-button>
+        }
+      </div>
+
+      @if (lastBatchResult(); as br) {
+        <sp-admin-alert [variant]="br.failedCount > 0 ? 'warning' : 'success'">
+          {{ br.succeededCount + br.alreadyPublishedCount }} of {{ br.requestedCount }} succeeded
+          @if (br.failedCount > 0) { — {{ br.failedCount }} failed: }
+          @if (br.failedCount > 0) {
+            <ul>
+              @for (i of br.items; track i.candidateId) {
+                @if (!i.success) { <li>{{ i.error }}</li> }
+              }
+            </ul>
+          }
+          @if (br.batchLimitReached) { <div>Selection exceeded the per-call limit — only the first batch was processed.</div> }
+        </sp-admin-alert>
+      }
+    }
 
     @if (candidatesLoading()) {
       <sp-admin-loading-state message="Loading staged candidates" />
@@ -38,6 +95,7 @@
         <table>
           <thead>
             <tr>
+              <th><input type="checkbox" [checked]="allVisibleSelected()" (change)="toggleSelectAllVisible()" aria-label="Select all visible" /></th>
               <th>Text</th>
               <th>Type</th>
               <th>CEFR</th>
@@ -50,7 +108,13 @@
           <tbody>
             @for (item of candidates(); track item.candidateId) {
               <tr>
-                <td>{{ item.canonicalText }}</td>
+                <td><input type="checkbox" [checked]="isSelected(item.candidateId)" (change)="toggleSelected(item.candidateId)" aria-label="Select candidate" /></td>
+                <td>
+                  {{ item.canonicalText }}
+                  @if (!item.isPublished && !item.canAttemptPublish && item.publishBlockReason) {
+                    <div class="sp-admin-hint" style="color:var(--sp-admin-danger,#b91c1c);">{{ item.publishBlockReason }}</div>
+                  }
+                </td>
                 <td><sp-admin-badge tone="neutral">{{ item.candidateType }}</sp-admin-badge></td>
                 <td>{{ item.cefrLevel ?? '—' }}</td>
                 <td><sp-admin-badge [tone]="validationStatusTone(item.validationStatus)">{{ item.validationStatus }}</sp-admin-badge></td>
@@ -64,7 +128,7 @@
                 </td>
                 <td>
                   <div class="sp-admin-form-actions" style="flex-wrap:nowrap;">
-                    @if (!item.isPublished) {
+                    @if (!item.isPublished && item.canAttemptPublish) {
                       <sp-admin-button
                         variant="primary" size="sm"
                         [disabled]="publishingId() === item.candidateId"

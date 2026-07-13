@@ -1,6 +1,7 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Observable } from 'rxjs';
 import {
   AdminResourceCandidateService,
   AdminResourceImportRunService,
@@ -8,6 +9,8 @@ import {
 import {
   AdminResourceCandidateDto,
   AdminResourceImportRunDto,
+  AdminResourceCandidateReviewSummaryDto,
+  BatchResourceCandidateActionResult,
   ResourceCandidatePreviewDto,
   ResourceCandidatePublishResult,
 } from '../../../core/models/admin-resource-import.models';
@@ -90,6 +93,19 @@ export class AdminImportRunCandidatesComponent implements OnInit {
   publishingId = signal<string | null>(null);
   lastPublishResult = signal<ResourceCandidatePublishResult | null>(null);
 
+  // ── Phase K2 — review-state summary + batch selection/actions ──────────────
+  summary = signal<AdminResourceCandidateReviewSummaryDto | null>(null);
+  summaryLoading = signal(false);
+  selectedIds = signal<Set<string>>(new Set());
+  batchActionRunning = signal(false);
+  lastBatchResult = signal<BatchResourceCandidateActionResult | null>(null);
+
+  readonly selectedCount = computed(() => this.selectedIds().size);
+  readonly allVisibleSelected = computed(() => {
+    const items = this.candidates();
+    return items.length > 0 && items.every(c => this.selectedIds().has(c.candidateId));
+  });
+
   // ── Reject modal ─────────────────────────────────────────────────────────
   rejectModalOpen = signal(false);
   rejectTargetId = signal<string | null>(null);
@@ -122,6 +138,7 @@ export class AdminImportRunCandidatesComponent implements OnInit {
     if (!this.runId) return;
     this.loadRun();
     this.loadCandidates();
+    this.loadSummary();
   }
 
   backToHistory(): void {
@@ -153,9 +170,95 @@ export class AdminImportRunCandidatesComponent implements OnInit {
     });
   }
 
+  loadSummary(): void {
+    this.summaryLoading.set(true);
+    this.candidateSvc.summary(this.runId).subscribe({
+      next: result => { this.summaryLoading.set(false); this.summary.set(result); },
+      error: () => { this.summaryLoading.set(false); },
+    });
+  }
+
+  private refreshAfterAction(): void {
+    this.loadCandidates();
+    this.loadSummary();
+  }
+
   onPageChange(page: number): void {
     this.page.set(page);
+    this.selectedIds.set(new Set());
     this.loadCandidates();
+  }
+
+  // ── Phase K2 — selection ────────────────────────────────────────────────────
+
+  isSelected(candidateId: string): boolean {
+    return this.selectedIds().has(candidateId);
+  }
+
+  toggleSelected(candidateId: string): void {
+    const next = new Set(this.selectedIds());
+    if (next.has(candidateId)) next.delete(candidateId); else next.add(candidateId);
+    this.selectedIds.set(next);
+  }
+
+  toggleSelectAllVisible(): void {
+    if (this.allVisibleSelected()) {
+      this.selectedIds.set(new Set());
+      return;
+    }
+    this.selectedIds.set(new Set(this.candidates().map(c => c.candidateId)));
+  }
+
+  /** Selects only the publishable (Passed/NeedsReview, not-yet-published) rows on this page. */
+  selectAllPublishableVisible(): void {
+    const ids = this.candidates().filter(c => c.canAttemptPublish && !c.isPublished).map(c => c.candidateId);
+    this.selectedIds.set(new Set(ids));
+  }
+
+  clearSelection(): void {
+    this.selectedIds.set(new Set());
+  }
+
+  // ── Phase K2 — batch actions (operate on the current selection — see the page-scope hint in
+  // the template next to the batch toolbar). ──────────────────────────────────
+
+  batchApproveSelected(): void {
+    const ids = Array.from(this.selectedIds());
+    if (ids.length === 0) return;
+    this.runBatchAction(this.candidateSvc.batchApprove(ids), 'approved');
+  }
+
+  batchPublishSelected(): void {
+    const ids = Array.from(this.selectedIds());
+    if (ids.length === 0) return;
+    this.runBatchAction(this.candidateSvc.batchPublish(ids), 'published');
+  }
+
+  batchApproveAndPublishSelected(): void {
+    const ids = Array.from(this.selectedIds());
+    if (ids.length === 0) return;
+    this.runBatchAction(this.candidateSvc.batchApproveAndPublish(ids), 'approved & published');
+  }
+
+  private runBatchAction(obs: Observable<BatchResourceCandidateActionResult>, verb: string): void {
+    this.batchActionRunning.set(true);
+    this.actionError.set('');
+    this.lastBatchResult.set(null);
+    obs.subscribe({
+      next: result => {
+        this.batchActionRunning.set(false);
+        this.lastBatchResult.set(result);
+        this.actionSuccess.set(
+          `${result.succeededCount + result.alreadyPublishedCount} of ${result.requestedCount} candidate(s) ${verb}` +
+          (result.failedCount > 0 ? ` — ${result.failedCount} failed, see details below.` : '.'));
+        this.selectedIds.set(new Set());
+        this.refreshAfterAction();
+      },
+      error: err => {
+        this.batchActionRunning.set(false);
+        this.actionError.set(err.error?.error ?? `Could not ${verb.replace('&', 'and')} the selected candidates.`);
+      },
+    });
   }
 
   validationStatusTone(status: string): 'success' | 'neutral' | 'danger' | 'warning' {
@@ -171,7 +274,11 @@ export class AdminImportRunCandidatesComponent implements OnInit {
       { id: 'analyze', label: 'Analyze', icon: 'sparkles', tone: 'default' },
     ];
     if (!item.isPublished) {
-      actions.push({ id: 'approve-and-publish', label: 'Approve & Publish', icon: 'check', tone: 'default' });
+      // Phase K2 — hard-blocked candidates (Failed/Pending ValidationStatus) never show the
+      // publish action; the specific blocker (item.publishBlockReason) is shown inline instead.
+      if (item.canAttemptPublish) {
+        actions.push({ id: 'approve-and-publish', label: 'Approve & Publish', icon: 'check', tone: 'default' });
+      }
       if (item.reviewStatus !== 'Rejected') actions.push({ id: 'reject', label: 'Reject', icon: 'delete', tone: 'danger' });
     }
     return actions;
@@ -191,8 +298,10 @@ export class AdminImportRunCandidatesComponent implements OnInit {
       next: response => {
         this.analyzingId.set(null);
         this.actionSuccess.set(
-          response.analysis.success ? 'Analysis complete.' : `Analysis could not complete: ${response.analysis.errorMessage}`);
-        this.loadCandidates();
+          response.analysis.success
+            ? `Analysis complete — validation: ${response.validation.status}.`
+            : `Analysis could not complete: ${response.analysis.errorMessage}`);
+        this.refreshAfterAction();
       },
       error: err => { this.analyzingId.set(null); this.actionError.set(err.error?.error ?? 'Could not analyze candidate.'); },
     });
@@ -208,7 +317,7 @@ export class AdminImportRunCandidatesComponent implements OnInit {
         this.lastPublishResult.set(result);
         if (result.success) {
           this.actionSuccess.set(`Published as ${result.publishedEntityType}.`);
-          this.loadCandidates();
+          this.refreshAfterAction();
         } else {
           this.actionError.set(`Could not publish "${item.canonicalText}": ${result.errors.join('; ')}`);
         }
@@ -241,7 +350,7 @@ export class AdminImportRunCandidatesComponent implements OnInit {
         this.rejecting.set(false);
         this.rejectModalOpen.set(false);
         this.actionSuccess.set('Candidate rejected.');
-        this.loadCandidates();
+        this.refreshAfterAction();
       },
       error: err => { this.rejecting.set(false); this.actionError.set(err.error?.error ?? 'Could not reject candidate.'); },
     });

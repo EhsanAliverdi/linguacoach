@@ -251,4 +251,39 @@ describe('AdminAppLayoutComponent — nav links and shell (Phase 10UI-FIX-2)', (
     expect(host.querySelector('router-outlet')).toBeTruthy();
   });
 
+  // Phase K2 — regression guard for the reported "sidebar sections appear repeated many times"
+  // bug. There are legitimately two nav trees in the DOM (the mobile drawer and the desktop
+  // sidebar — a standard responsive slide-out pattern), but only one is ever meant to be visible
+  // at a given viewport width. Live-browser testing (1024/1279/1280/1281/1440/1920px, drawer
+  // open/closed, resize transitions) found no reproducible on-screen duplication — this test locks
+  // in the CSS contract that keeps it that way: exactly one nav-bearing <aside> is CSS-gated to
+  // desktop-only (`xl:hidden`) and the other to always-translated-in at desktop width
+  // (`-translate-x-full xl:translate-x-0`), so they can never both be on-screen simultaneously.
+  it('exactly one of the two nav-bearing <aside> elements is CSS-gated per breakpoint (never both visible)', () => {
+    const { host } = setup();
+    const asides = Array.from(host.querySelectorAll('aside')) as HTMLElement[];
+    expect(asides.length).toBe(2);
+
+    const mobileDrawer = asides.find(a => a.classList.contains('xl:hidden'));
+    const desktopSidebar = asides.find(a => a.classList.contains('-translate-x-full'));
+
+    expect(mobileDrawer).withContext('mobile drawer must be xl:hidden (hidden at desktop widths)').toBeTruthy();
+    expect(desktopSidebar).withContext('desktop sidebar must translate on/off canvas by breakpoint').toBeTruthy();
+    expect(desktopSidebar!.classList.contains('xl:translate-x-0'))
+      .withContext('desktop sidebar must translate back on-screen at xl width').toBeTrue();
+    expect(mobileDrawer).not.toBe(desktopSidebar);
+  });
+
+  it('each sidebar section heading appears exactly once per nav tree (desktop and mobile)', () => {
+    const { host } = setup();
+    const asides = Array.from(host.querySelectorAll('aside')) as HTMLElement[];
+    for (const aside of asides) {
+      const headingText = aside.textContent ?? '';
+      for (const section of ['Learning Setup', 'Curriculum', 'Exercise Types']) {
+        const occurrences = headingText.split(section).length - 1;
+        expect(occurrences).withContext(`"${section}" should appear exactly once in ${aside.getAttribute('aria-label') ?? aside.className}`).toBe(1);
+      }
+    }
+  });
+
 });

@@ -135,7 +135,18 @@ public sealed record AdminResourceCandidateDto(
     DateTimeOffset? PublishedAtUtc,
     string? PublishedEntityType,
     Guid? PublishedEntityId,
-    Guid? PublishedByUserId
+    Guid? PublishedByUserId,
+    /// <summary>
+    /// Client-facing summary of whether Approve &amp; Publish can even be attempted, derived from
+    /// ValidationStatus alone (Passed/NeedsReview = attemptable, Failed/Pending = hard-blocked —
+    /// see ResourceCandidatePublishService's gate). This is advisory, not authoritative: other live
+    /// gates (source approval/license, entity-mapping fields) are only ever re-checked by the
+    /// actual publish call, so a "true" here can still fail server-side with a specific error.
+    /// </summary>
+    bool CanAttemptPublish,
+    /// <summary>Non-null only when <see cref="CanAttemptPublish"/> is false and the candidate isn't
+    /// already published — the specific hard-error reason(s) from the last validation run.</summary>
+    string? PublishBlockReason
 );
 
 public sealed record ListAdminResourceCandidatesQuery(
@@ -148,7 +159,13 @@ public sealed record ListAdminResourceCandidatesQuery(
     string? ReviewStatus = null,
     string? LanguageCode = null,
     string? CefrLevel = null,
-    string? Search = null
+    string? Search = null,
+    /// <summary>Phase K2 — when true, restricts to not-yet-published candidates whose
+    /// ValidationStatus is Passed or NeedsReview (i.e. CanAttemptPublish — see
+    /// AdminResourceCandidateDto), independent of whatever ValidationStatus filter is also
+    /// set. Powers the Import Content page's "select all publishable" batch action, which needs
+    /// the two-value OR that a single ValidationStatus filter can't express on its own.</summary>
+    bool? PublishableOnly = null
 );
 
 public sealed record AdminResourceCandidateListResult(
@@ -167,6 +184,29 @@ public sealed record GetAdminResourceCandidateQuery(Guid CandidateId);
 public interface IAdminResourceCandidateGetQuery
 {
     Task<AdminResourceCandidateDto?> HandleAsync(GetAdminResourceCandidateQuery query, CancellationToken ct = default);
+}
+
+/// <summary>
+/// Phase K2 — review-state summary for the Import Content page's candidate table, scoped to one
+/// import run (or one source, or globally when both are null). Distinguishes "warning-only,
+/// still publishable" (NeedsReview) from "hard-blocked" (Failed/Pending) so the UI's headline
+/// counts never conflate the two — see the review/publish UX fix's semantics doc.
+/// </summary>
+public sealed record AdminResourceCandidateReviewSummaryDto(
+    int TotalCount,
+    int PublishedCount,
+    int PassedCount,
+    int NeedsReviewCount,
+    int BlockedCount,
+    int PublishableCount
+);
+
+public sealed record GetAdminResourceCandidateReviewSummaryQuery(Guid? ImportRunId = null, Guid? SourceId = null);
+
+public interface IAdminResourceCandidateReviewSummaryQuery
+{
+    Task<AdminResourceCandidateReviewSummaryDto> HandleAsync(
+        GetAdminResourceCandidateReviewSummaryQuery query, CancellationToken ct = default);
 }
 
 public sealed record SetResourceCandidateAdminNotesCommand(Guid CandidateId, string? AdminNotes);

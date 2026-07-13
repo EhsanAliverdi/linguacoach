@@ -140,6 +140,29 @@ public sealed class ResourceCandidateValidationServiceTests : IDisposable
         result.Status.Should().Be(ResourceCandidateValidationStatus.NeedsReview.ToString());
         result.NeedsHumanReview.Should().BeTrue();
         result.Warnings.Should().Contain(w => w.Contains("confidence"));
+
+        // Phase K2 root-cause regression: NeedsReview (warning-only) must enter the same admin
+        // review queue Passed does — previously only Passed promoted NotRequired->PendingReview,
+        // so a NeedsReview candidate never became a real Approve & Publish candidate.
+        var reloaded = await _db.ResourceCandidates.FirstAsync(c => c.Id == candidate.Id);
+        reloaded.ReviewStatus.Should().Be(AdminReviewStatus.PendingReview);
+    }
+
+    [Fact]
+    public async Task Failed_candidate_review_status_stays_NotRequired_not_promoted_to_PendingReview()
+    {
+        // Contrast case for the above: a true hard failure must NOT enter the review queue the
+        // same way NeedsReview does — Failed candidates need a fix + re-validation, not an admin
+        // approve-override.
+        var source = SeedSource();
+        var (_, raw) = SeedRunAndRaw(source);
+        var candidate = SeedCandidate(raw, canonicalText: "سلام", normalizedJson: """{"word":"سلام"}""");
+
+        await _sut.ValidateAsync(candidate.Id);
+
+        var reloaded = await _db.ResourceCandidates.FirstAsync(c => c.Id == candidate.Id);
+        reloaded.ValidationStatus.Should().Be(ResourceCandidateValidationStatus.Failed);
+        reloaded.ReviewStatus.Should().Be(AdminReviewStatus.NotRequired);
     }
 
     [Fact]

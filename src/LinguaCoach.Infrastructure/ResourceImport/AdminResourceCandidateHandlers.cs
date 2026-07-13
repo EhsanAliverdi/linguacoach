@@ -52,6 +52,13 @@ public sealed class AdminResourceCandidateListQueryHandler : IAdminResourceCandi
         if (!string.IsNullOrWhiteSpace(query.Search))
             joined = joined.Where(x => x.Candidate.SearchText.Contains(query.Search.Trim().ToLowerInvariant()));
 
+        if (query.PublishableOnly == true)
+        {
+            joined = joined.Where(x => !x.Candidate.IsPublished
+                && (x.Candidate.ValidationStatus == ResourceCandidateValidationStatus.Passed
+                    || x.Candidate.ValidationStatus == ResourceCandidateValidationStatus.NeedsReview));
+        }
+
         var totalCount = await joined.CountAsync(ct);
         var overallTotalCount = await _db.ResourceCandidates.CountAsync(ct);
 
@@ -66,6 +73,50 @@ public sealed class AdminResourceCandidateListQueryHandler : IAdminResourceCandi
             .ToList();
 
         return new AdminResourceCandidateListResult(items, totalCount, overallTotalCount);
+    }
+}
+
+/// <summary>Phase K2 — review-state summary powering the Import Content page's headline counts
+/// (see AdminResourceCandidateReviewSummaryDto's doc comment for why Passed/NeedsReview/Blocked
+/// are reported separately).</summary>
+public sealed class AdminResourceCandidateReviewSummaryQueryHandler : IAdminResourceCandidateReviewSummaryQuery
+{
+    private readonly LinguaCoachDbContext _db;
+
+    public AdminResourceCandidateReviewSummaryQueryHandler(LinguaCoachDbContext db) => _db = db;
+
+    public async Task<AdminResourceCandidateReviewSummaryDto> HandleAsync(
+        GetAdminResourceCandidateReviewSummaryQuery query, CancellationToken ct = default)
+    {
+        var candidates =
+            from c in _db.ResourceCandidates
+            join r in _db.ResourceRawRecords on c.ResourceRawRecordId equals r.Id
+            join run in _db.ResourceImportRuns on r.ResourceImportRunId equals run.Id
+            select new { Candidate = c, Run = run };
+
+        if (query.ImportRunId.HasValue)
+            candidates = candidates.Where(x => x.Run.Id == query.ImportRunId.Value);
+
+        if (query.SourceId.HasValue)
+            candidates = candidates.Where(x => x.Run.CefrResourceSourceId == query.SourceId.Value);
+
+        var rows = await candidates
+            .Select(x => new { x.Candidate.IsPublished, x.Candidate.ValidationStatus })
+            .ToListAsync(ct);
+
+        var publishedCount = rows.Count(r => r.IsPublished);
+        var passedCount = rows.Count(r => !r.IsPublished && r.ValidationStatus == ResourceCandidateValidationStatus.Passed);
+        var needsReviewCount = rows.Count(r => !r.IsPublished && r.ValidationStatus == ResourceCandidateValidationStatus.NeedsReview);
+        var blockedCount = rows.Count(r => !r.IsPublished
+            && r.ValidationStatus is ResourceCandidateValidationStatus.Failed or ResourceCandidateValidationStatus.Pending);
+
+        return new AdminResourceCandidateReviewSummaryDto(
+            TotalCount: rows.Count,
+            PublishedCount: publishedCount,
+            PassedCount: passedCount,
+            NeedsReviewCount: needsReviewCount,
+            BlockedCount: blockedCount,
+            PublishableCount: passedCount + needsReviewCount);
     }
 }
 

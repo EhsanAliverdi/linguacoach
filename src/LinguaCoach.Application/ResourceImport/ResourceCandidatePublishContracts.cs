@@ -31,3 +31,39 @@ public interface IResourceCandidatePublishService
     /// </summary>
     Task<ResourceCandidatePublishResult> PublishAsync(Guid candidateId, Guid? publishedByUserId, CancellationToken ct = default);
 }
+
+// ── Phase K2 — batch approve/publish over an explicit set of candidate ids (the current page's
+// selection, or a "select all publishable" sweep — see ListAdminResourceCandidatesQuery's
+// PublishableOnly filter). Every item is processed independently and continue-on-error, mirroring
+// IResourceCandidateBatchAnalysisService's per-row discipline: one candidate's failure never
+// aborts the rest of the batch. Never throws for a per-item failure — see
+// BatchResourceCandidateActionResult.Items for the per-candidate outcome. ──
+
+public sealed record BatchResourceCandidateActionItemResult(Guid CandidateId, bool Success, string? Error);
+
+public sealed record BatchResourceCandidateActionResult(
+    int RequestedCount,
+    int SucceededCount,
+    int FailedCount,
+    /// <summary>Already-published candidates in the request are treated as a safe no-op, counted
+    /// here (not as a failure) and excluded from <see cref="Items"/> beyond a Success=true entry —
+    /// mirrors PublishAsync's own idempotent-republish behavior.</summary>
+    int AlreadyPublishedCount,
+    bool BatchLimitReached,
+    IReadOnlyList<BatchResourceCandidateActionItemResult> Items);
+
+public sealed record BatchApproveResourceCandidatesCommand(IReadOnlyList<Guid> CandidateIds, string? Notes = null);
+public sealed record BatchPublishResourceCandidatesCommand(IReadOnlyList<Guid> CandidateIds);
+public sealed record BatchApproveAndPublishResourceCandidatesCommand(IReadOnlyList<Guid> CandidateIds, string? Notes = null);
+
+public interface IResourceCandidateBatchActionService
+{
+    Task<BatchResourceCandidateActionResult> ApproveAsync(
+        BatchApproveResourceCandidatesCommand command, CancellationToken ct = default);
+
+    Task<BatchResourceCandidateActionResult> PublishAsync(
+        BatchPublishResourceCandidatesCommand command, Guid? publishedByUserId, CancellationToken ct = default);
+
+    Task<BatchResourceCandidateActionResult> ApproveAndPublishAsync(
+        BatchApproveAndPublishResourceCandidatesCommand command, Guid? publishedByUserId, CancellationToken ct = default);
+}

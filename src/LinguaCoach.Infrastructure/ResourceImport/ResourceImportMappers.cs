@@ -95,6 +95,8 @@ internal static class ResourceImportMappers
         candidate.PublishedAtUtc,
         candidate.PublishedEntityType,
         candidate.PublishedEntityId,
-        candidate.PublishedByUserId
+        candidate.PublishedByUserId,
+        ResourceCandidatePublishGateHelper.CanAttemptPublish(candidate),
+        ResourceCandidatePublishGateHelper.DescribeHardBlock(candidate)
     );
 }

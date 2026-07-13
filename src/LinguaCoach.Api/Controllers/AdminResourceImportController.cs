@@ -185,6 +185,7 @@ public sealed class AdminResourceCandidateController : ControllerBase
 {
     private readonly IAdminResourceCandidateListQuery _listQuery;
     private readonly IAdminResourceCandidateGetQuery _getQuery;
+    private readonly IAdminResourceCandidateReviewSummaryQuery _reviewSummaryQuery;
     private readonly IAdminResourceCandidateNotesHandler _notesHandler;
     private readonly IResourceCandidateAnalysisService _analysisService;
     private readonly IResourceCandidateValidationService _validationService;
@@ -192,11 +193,13 @@ public sealed class AdminResourceCandidateController : ControllerBase
     private readonly IAdminResourceCandidateApproveHandler _approveHandler;
     private readonly IAdminResourceCandidateRejectHandler _rejectHandler;
     private readonly IResourceCandidatePublishService _publishService;
+    private readonly IResourceCandidateBatchActionService _batchActionService;
     private readonly IResourceCandidateAudioService _audioService;
 
     public AdminResourceCandidateController(
         IAdminResourceCandidateListQuery listQuery,
         IAdminResourceCandidateGetQuery getQuery,
+        IAdminResourceCandidateReviewSummaryQuery reviewSummaryQuery,
         IAdminResourceCandidateNotesHandler notesHandler,
         IResourceCandidateAnalysisService analysisService,
         IResourceCandidateValidationService validationService,
@@ -204,10 +207,12 @@ public sealed class AdminResourceCandidateController : ControllerBase
         IAdminResourceCandidateApproveHandler approveHandler,
         IAdminResourceCandidateRejectHandler rejectHandler,
         IResourceCandidatePublishService publishService,
+        IResourceCandidateBatchActionService batchActionService,
         IResourceCandidateAudioService audioService)
     {
         _listQuery = listQuery;
         _getQuery = getQuery;
+        _reviewSummaryQuery = reviewSummaryQuery;
         _notesHandler = notesHandler;
         _analysisService = analysisService;
         _validationService = validationService;
@@ -215,22 +220,35 @@ public sealed class AdminResourceCandidateController : ControllerBase
         _approveHandler = approveHandler;
         _rejectHandler = rejectHandler;
         _publishService = publishService;
+        _batchActionService = batchActionService;
         _audioService = audioService;
     }
 
     // GET api/admin/resource-candidates?page=1&pageSize=20&sourceId=&importRunId=&candidateType=&
-    //   validationStatus=&reviewStatus=&languageCode=&cefrLevel=&search=
+    //   validationStatus=&reviewStatus=&languageCode=&cefrLevel=&search=&publishableOnly=
     [HttpGet]
     public async Task<IActionResult> List(
         [FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] Guid? sourceId = null,
         [FromQuery] Guid? importRunId = null, [FromQuery] string? candidateType = null,
         [FromQuery] string? validationStatus = null, [FromQuery] string? reviewStatus = null,
         [FromQuery] string? languageCode = null, [FromQuery] string? cefrLevel = null,
-        [FromQuery] string? search = null, CancellationToken ct = default)
+        [FromQuery] string? search = null, [FromQuery] bool? publishableOnly = null, CancellationToken ct = default)
     {
         var result = await _listQuery.HandleAsync(new ListAdminResourceCandidatesQuery(
             page, pageSize, sourceId, importRunId, candidateType, validationStatus, reviewStatus,
-            languageCode, cefrLevel, search), ct);
+            languageCode, cefrLevel, search, publishableOnly), ct);
+        return Ok(result);
+    }
+
+    // GET api/admin/resource-candidates/summary?importRunId=&sourceId=
+    // Phase K2 — headline review-state counts for the Import Content page (passed / needs review /
+    // blocked / published), so "Analysis complete" no longer has to stand in for "ready to publish."
+    [HttpGet("summary")]
+    public async Task<IActionResult> Summary(
+        [FromQuery] Guid? importRunId = null, [FromQuery] Guid? sourceId = null, CancellationToken ct = default)
+    {
+        var result = await _reviewSummaryQuery.HandleAsync(
+            new GetAdminResourceCandidateReviewSummaryQuery(importRunId, sourceId), ct);
         return Ok(result);
     }
 
@@ -436,6 +454,42 @@ public sealed class AdminResourceCandidateController : ControllerBase
         }
     }
 
+    // POST api/admin/resource-candidates/batch/approve  { candidateIds: [...], notes? }
+    // Phase K2 — batch admin approval over an explicit set of candidates (the current filtered
+    // page's selection). Never publishes anything by itself.
+    [HttpPost("batch/approve")]
+    public async Task<IActionResult> BatchApprove([FromBody] BatchCandidateIdsRequest request, CancellationToken ct)
+    {
+        var result = await _batchActionService.ApproveAsync(
+            new BatchApproveResourceCandidatesCommand(request.CandidateIds, request.Notes), ct);
+        return Ok(result);
+    }
+
+    // POST api/admin/resource-candidates/batch/publish  { candidateIds: [...] }
+    // Phase K2 — batch publish over an explicit set of already-approved candidates. Already-
+    // published candidates in the request are treated as a safe no-op (see
+    // BatchResourceCandidateActionResult.AlreadyPublishedCount), never a duplicate bank row.
+    [HttpPost("batch/publish")]
+    public async Task<IActionResult> BatchPublish([FromBody] BatchCandidateIdsRequest request, CancellationToken ct)
+    {
+        var result = await _batchActionService.PublishAsync(
+            new BatchPublishResourceCandidatesCommand(request.CandidateIds), GetCurrentUserId(), ct);
+        return Ok(result);
+    }
+
+    // POST api/admin/resource-candidates/batch/approve-and-publish  { candidateIds: [...], notes? }
+    // Phase K2 — the batch equivalent of the single-item approve-and-publish action: approves then
+    // immediately publishes each candidate, continue-on-error per item. A candidate whose
+    // ValidationStatus is Failed/Pending fails its own item with the specific blocking error — see
+    // ResourceCandidatePublishService's gate — it never silently skips or force-publishes it.
+    [HttpPost("batch/approve-and-publish")]
+    public async Task<IActionResult> BatchApproveAndPublish([FromBody] BatchCandidateIdsRequest request, CancellationToken ct)
+    {
+        var result = await _batchActionService.ApproveAndPublishAsync(
+            new BatchApproveAndPublishResourceCandidatesCommand(request.CandidateIds, request.Notes), GetCurrentUserId(), ct);
+        return Ok(result);
+    }
+
     private Guid? GetCurrentUserId()
     {
         var raw = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
@@ -445,4 +499,5 @@ public sealed class AdminResourceCandidateController : ControllerBase
     public sealed record SetCandidateNotesRequest(string? AdminNotes);
     public sealed record ApproveCandidateRequest(string? Notes = null);
     public sealed record RejectCandidateRequest(string Reason);
+    public sealed record BatchCandidateIdsRequest(IReadOnlyList<Guid> CandidateIds, string? Notes = null);
 }

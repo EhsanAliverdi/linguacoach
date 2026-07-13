@@ -96,22 +96,77 @@ public sealed class ResourceCandidatePublishServiceTests : IDisposable
     // ── Gate tests ──────────────────────────────────────────────────────────────
 
     [Fact]
-    public async Task Cannot_publish_before_validation_passed()
+    public async Task Cannot_publish_a_Failed_candidate_even_if_approved()
     {
+        // Phase K2 semantics: Failed (hard validation error) always blocks publish, regardless of
+        // admin approval — this is the "true hard block" case Approve & Publish must refuse.
         var source = SeedSource();
         var (_, raw) = SeedRunAndRaw(source, """{"word":"hello"}""");
         var candidate = SeedCandidate(raw, ResourceCandidateType.VocabularyEntry, "hello", """{"word":"hello"}""");
         candidate.ApplyAnalysis(
             """{}""", "A1", 0.95, "vocabulary", null, 1, "[]", "[]", null, null, null, null, null, 0.9, "hello");
+        candidate.ApplyValidation(ResourceCandidateValidationStatus.Failed, """{"errors":["Safety concern(s) reported: flagged"],"warnings":[]}""");
         candidate.Approve();
         _db.SaveChanges();
-        // ValidationStatus is still NeedsReview (never explicitly passed).
 
         var result = await _sut.PublishAsync(candidate.Id, null);
 
         result.Success.Should().BeFalse();
         result.Errors.Should().Contain(e => e.Contains("ValidationStatus"));
+        result.Errors.Should().Contain(e => e.Contains("Blocking error(s)") && e.Contains("Safety concern"));
         (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.Vocabulary)).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Cannot_publish_a_never_validated_Pending_candidate_even_if_approved()
+    {
+        var source = SeedSource();
+        var (_, raw) = SeedRunAndRaw(source, """{"word":"hello"}""");
+        // Constructed directly at Pending (SeedCandidate's helper always starts at NeedsReview,
+        // matching real import behavior — Pending only exists as a defensive gate case).
+        var candidate = new ResourceCandidate(
+            raw.Id, ResourceCandidateType.VocabularyEntry, "hello", """{"word":"hello"}""", "en",
+            "hello", Fingerprint("hello", """{"word":"hello"}"""), ResourceCandidateValidationStatus.Pending);
+        _db.ResourceCandidates.Add(candidate);
+        _db.SaveChanges();
+        candidate.ApplyAnalysis(
+            """{}""", "A1", 0.95, "vocabulary", null, 1, "[]", "[]", null, null, null, null, null, 0.9, "hello");
+        candidate.Approve();
+        _db.SaveChanges();
+        // ValidationStatus is still Pending — never validated at all.
+
+        var result = await _sut.PublishAsync(candidate.Id, null);
+
+        result.Success.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("ValidationStatus"));
+        result.Errors.Should().Contain(e => e.Contains("has not been validated yet"));
+        (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.Vocabulary)).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task NeedsReview_candidate_with_only_advisory_warnings_publishes_successfully_once_approved()
+    {
+        // Phase K2 — root-cause regression test for the reported bug: NeedsReview must be
+        // publishable after admin approval (warnings are advisory, not a hard block). Before the
+        // fix, PublishAsync's gate required ValidationStatus == Passed exactly, so an
+        // Approve & Publish click on a warning-only candidate always failed with
+        // "ValidationStatus must be Passed to publish; current: NeedsReview."
+        var source = SeedSource();
+        var (_, raw) = SeedRunAndRaw(source, """{"word":"hello"}""");
+        var candidate = SeedCandidate(raw, ResourceCandidateType.VocabularyEntry, "hello", """{"word":"hello"}""");
+        candidate.ApplyAnalysis(
+            """{}""", "A1", 0.95, "vocabulary", null, 1, "[]", "[]", null, null, null, null, null, 0.9, "hello");
+        candidate.ApplyValidation(
+            ResourceCandidateValidationStatus.NeedsReview,
+            """{"errors":[],"warnings":["Duplicate: another candidate with the same content fingerprint exists elsewhere from the same source."]}""");
+        candidate.Approve("advisory warning only, override approved");
+        _db.SaveChanges();
+
+        var result = await _sut.PublishAsync(candidate.Id, null);
+
+        result.Success.Should().BeTrue();
+        result.PublishedEntityType.Should().Be("CefrVocabularyEntry");
+        (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.Vocabulary)).Should().Be(1);
     }
 
     [Fact]

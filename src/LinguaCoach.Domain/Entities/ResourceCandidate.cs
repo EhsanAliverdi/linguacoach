@@ -188,16 +188,19 @@ public sealed class ResourceCandidate : BaseEntity
     /// <see cref="RejectReason"/> (reused rather than adding a new column/entity — see that
     /// field's doc comment). Passing validation promotes <see cref="ReviewStatus"/> from
     /// <see cref="AdminReviewStatus.NotRequired"/> to <see cref="AdminReviewStatus.PendingReview"/>
-    /// — only a fully-passed candidate is a real candidate for an eventual admin publish decision
-    /// (Phase E4); Failed/NeedsReview candidates are not yet ready for that queue and are left at
-    /// NotRequired until they pass a later re-validation.
+    /// — a Passed OR warning-only NeedsReview candidate is a real candidate for an eventual admin
+    /// publish decision (Phase E4): NeedsReview means advisory warnings only (duplicate content,
+    /// low-confidence CEFR, missing attribution, etc.) — never a hard block, that's what Failed is
+    /// for — so it enters the same review queue Passed does, letting an admin approve-and-override
+    /// it. Failed candidates are not ready for that queue and are left at NotRequired until they
+    /// pass a later re-validation.
     /// </summary>
     public void ApplyValidation(ResourceCandidateValidationStatus status, string? validationSummaryJson)
     {
         ValidationStatus = status;
         RejectReason = string.IsNullOrWhiteSpace(validationSummaryJson) ? null : validationSummaryJson;
 
-        if (status == ResourceCandidateValidationStatus.Passed
+        if (status is ResourceCandidateValidationStatus.Passed or ResourceCandidateValidationStatus.NeedsReview
             && ReviewStatus == AdminReviewStatus.NotRequired)
         {
             ReviewStatus = AdminReviewStatus.PendingReview;

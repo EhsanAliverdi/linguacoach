@@ -2,6 +2,7 @@ import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Observable } from 'rxjs';
 import {
   AdminContentImportService,
   AdminResourceCandidateService,
@@ -11,6 +12,8 @@ import {
 import {
   AdminResourceCandidateDto,
   AdminResourceImportRunDto,
+  AdminResourceCandidateReviewSummaryDto,
+  BatchResourceCandidateActionResult,
   AdminResourceSourceDto,
   ColumnMappingSuggestion,
   CONTENT_IMPORT_COMING_SOON_TYPES,
@@ -202,6 +205,18 @@ export class AdminContentImportComponent implements OnInit {
   analyzingId = signal<string | null>(null);
   publishingId = signal<string | null>(null);
 
+  // ── Phase K2 — review-state summary + batch selection/actions ──────────────
+  summary = signal<AdminResourceCandidateReviewSummaryDto | null>(null);
+  selectedIds = signal<Set<string>>(new Set());
+  batchActionRunning = signal(false);
+  lastBatchResult = signal<BatchResourceCandidateActionResult | null>(null);
+
+  readonly selectedCount = computed(() => this.selectedIds().size);
+  readonly allVisibleSelected = computed(() => {
+    const items = this.candidates();
+    return items.length > 0 && items.every(c => this.selectedIds().has(c.candidateId));
+  });
+
   // ── Reject modal ─────────────────────────────────────────────────────────
   rejectModalOpen = signal(false);
   rejectTargetId = signal<string | null>(null);
@@ -384,6 +399,7 @@ export class AdminContentImportComponent implements OnInit {
         this.currentRunId.set(result.importRunId);
         this.candidatesPage.set(1);
         this.loadCandidates();
+        this.loadSummary();
         this.loadRecentRuns();
       },
       error: err => {
@@ -398,6 +414,8 @@ export class AdminContentImportComponent implements OnInit {
     this.result.set(null);
     this.error.set('');
     this.currentRunId.set(null);
+    this.summary.set(null);
+    this.selectedIds.set(new Set());
   }
 
   goToResourceBank(): void {
@@ -447,6 +465,7 @@ export class AdminContentImportComponent implements OnInit {
         this.currentRunId.set(result.runId);
         this.candidatesPage.set(1);
         this.loadCandidates();
+        this.loadSummary();
         this.loadRecentRuns();
       },
       error: err => {
@@ -495,6 +514,8 @@ export class AdminContentImportComponent implements OnInit {
     this.fileResult.set(null);
     this.fileError.set('');
     this.currentRunId.set(null);
+    this.summary.set(null);
+    this.selectedIds.set(new Set());
   }
 
   // ── Import History tab ───────────────────────────────────────────────────
@@ -542,9 +563,92 @@ export class AdminContentImportComponent implements OnInit {
     });
   }
 
+  loadSummary(): void {
+    const runId = this.currentRunId();
+    if (!runId) return;
+    this.candidateSvc.summary(runId).subscribe({ next: result => this.summary.set(result), error: () => {} });
+  }
+
+  private refreshAfterAction(): void {
+    this.loadCandidates();
+    this.loadSummary();
+  }
+
   onCandidatesPageChange(page: number): void {
     this.candidatesPage.set(page);
+    this.selectedIds.set(new Set());
     this.loadCandidates();
+  }
+
+  // ── Phase K2 — selection ────────────────────────────────────────────────────
+
+  isSelected(candidateId: string): boolean {
+    return this.selectedIds().has(candidateId);
+  }
+
+  toggleSelected(candidateId: string): void {
+    const next = new Set(this.selectedIds());
+    if (next.has(candidateId)) next.delete(candidateId); else next.add(candidateId);
+    this.selectedIds.set(next);
+  }
+
+  toggleSelectAllVisible(): void {
+    if (this.allVisibleSelected()) {
+      this.selectedIds.set(new Set());
+      return;
+    }
+    this.selectedIds.set(new Set(this.candidates().map(c => c.candidateId)));
+  }
+
+  /** Selects only the publishable (Passed/NeedsReview, not-yet-published) rows on this page. */
+  selectAllPublishableVisible(): void {
+    const ids = this.candidates().filter(c => c.canAttemptPublish && !c.isPublished).map(c => c.candidateId);
+    this.selectedIds.set(new Set(ids));
+  }
+
+  clearSelection(): void {
+    this.selectedIds.set(new Set());
+  }
+
+  // ── Phase K2 — batch actions (operate on the current page's checked selection) ──────────────
+
+  batchApproveSelected(): void {
+    const ids = Array.from(this.selectedIds());
+    if (ids.length === 0) return;
+    this.runBatchAction(this.candidateSvc.batchApprove(ids), 'approved');
+  }
+
+  batchPublishSelected(): void {
+    const ids = Array.from(this.selectedIds());
+    if (ids.length === 0) return;
+    this.runBatchAction(this.candidateSvc.batchPublish(ids), 'published');
+  }
+
+  batchApproveAndPublishSelected(): void {
+    const ids = Array.from(this.selectedIds());
+    if (ids.length === 0) return;
+    this.runBatchAction(this.candidateSvc.batchApproveAndPublish(ids), 'approved & published');
+  }
+
+  private runBatchAction(obs: Observable<BatchResourceCandidateActionResult>, verb: string): void {
+    this.batchActionRunning.set(true);
+    this.actionError.set('');
+    this.lastBatchResult.set(null);
+    obs.subscribe({
+      next: result => {
+        this.batchActionRunning.set(false);
+        this.lastBatchResult.set(result);
+        this.actionSuccess.set(
+          `${result.succeededCount + result.alreadyPublishedCount} of ${result.requestedCount} candidate(s) ${verb}` +
+          (result.failedCount > 0 ? ` — ${result.failedCount} failed, see details below.` : '.'));
+        this.selectedIds.set(new Set());
+        this.refreshAfterAction();
+      },
+      error: err => {
+        this.batchActionRunning.set(false);
+        this.actionError.set(err.error?.error ?? `Could not ${verb.replace('&', 'and')} the selected candidates.`);
+      },
+    });
   }
 
   validationStatusTone(status: string): 'success' | 'neutral' | 'danger' | 'warning' {
@@ -560,7 +664,11 @@ export class AdminContentImportComponent implements OnInit {
       { id: 'analyze', label: 'Analyze', icon: 'sparkles', tone: 'default' },
     ];
     if (!item.isPublished) {
-      actions.push({ id: 'approve-and-publish', label: 'Approve & Publish', icon: 'check', tone: 'default' });
+      // Phase K2 — hard-blocked candidates (Failed/Pending ValidationStatus) never show the
+      // publish action; the specific blocker (item.publishBlockReason) is shown inline instead.
+      if (item.canAttemptPublish) {
+        actions.push({ id: 'approve-and-publish', label: 'Approve & Publish', icon: 'check', tone: 'default' });
+      }
       if (item.reviewStatus !== 'Rejected') actions.push({ id: 'reject', label: 'Reject', icon: 'delete', tone: 'danger' });
     }
     return actions;
@@ -580,8 +688,10 @@ export class AdminContentImportComponent implements OnInit {
       next: response => {
         this.analyzingId.set(null);
         this.actionSuccess.set(
-          response.analysis.success ? 'Analysis complete.' : `Analysis could not complete: ${response.analysis.errorMessage}`);
-        this.loadCandidates();
+          response.analysis.success
+            ? `Analysis complete — validation: ${response.validation.status}.`
+            : `Analysis could not complete: ${response.analysis.errorMessage}`);
+        this.refreshAfterAction();
       },
       error: err => { this.analyzingId.set(null); this.actionError.set(err.error?.error ?? 'Could not analyze candidate.'); },
     });
@@ -599,7 +709,7 @@ export class AdminContentImportComponent implements OnInit {
         this.lastPublishResult.set(result);
         if (result.success) {
           this.actionSuccess.set(`Published as ${result.publishedEntityType}.`);
-          this.loadCandidates();
+          this.refreshAfterAction();
         } else {
           this.actionError.set(`Could not publish "${item.canonicalText}": ${result.errors.join('; ')}`);
         }
@@ -632,7 +742,7 @@ export class AdminContentImportComponent implements OnInit {
         this.rejecting.set(false);
         this.rejectModalOpen.set(false);
         this.actionSuccess.set('Candidate rejected.');
-        this.loadCandidates();
+        this.refreshAfterAction();
       },
       error: err => { this.rejecting.set(false); this.actionError.set(err.error?.error ?? 'Could not reject candidate.'); },
     });

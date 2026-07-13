@@ -128,10 +128,15 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
             errors.Add($"Source '{loaded.Source.Name}' does not allow commercial use — cannot publish to a paying-student bank.");
         }
 
-        // ── Gate: deterministic validation must have passed. ──
-        if (candidate.ValidationStatus != ResourceCandidateValidationStatus.Passed)
+        // ── Gate: deterministic validation must have passed, or at worst produced only advisory
+        // warnings (NeedsReview) — see ResourceCandidateValidationStatus's doc comment. NeedsReview
+        // is never a hard block; an admin approving it is exactly the override that's supposed to
+        // let it through. Failed (hard errors) and Pending (never validated) both still block. ──
+        if (candidate.ValidationStatus is not (ResourceCandidateValidationStatus.Passed or ResourceCandidateValidationStatus.NeedsReview))
         {
-            errors.Add($"ValidationStatus must be 'Passed' to publish (current: '{candidate.ValidationStatus}').");
+            errors.Add(
+                $"ValidationStatus must be 'Passed' or 'NeedsReview' (warning-only) to publish — current: " +
+                $"'{candidate.ValidationStatus}'. {ResourceCandidatePublishGateHelper.DescribeHardBlock(candidate)}");
         }
 
         // ── Gate: admin approval — separate from validation. ──

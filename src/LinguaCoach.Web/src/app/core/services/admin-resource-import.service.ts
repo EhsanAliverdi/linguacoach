@@ -26,6 +26,8 @@ import {
   ResourceCandidateAudioUploadResult,
   ResourceCandidateAudioUrlResult,
   ResourceImportColumnMappingResult,
+  AdminResourceCandidateReviewSummaryDto,
+  BatchResourceCandidateActionResult,
 } from '../models/admin-resource-import.models';
 
 @Injectable({ providedIn: 'root' })
@@ -125,6 +127,7 @@ export class AdminResourceCandidateService {
   list(
     page: number, pageSize: number, sourceId?: string, importRunId?: string, candidateType?: string,
     validationStatus?: string, reviewStatus?: string, languageCode?: string, cefrLevel?: string, search?: string,
+    publishableOnly?: boolean,
   ): Observable<AdminResourceCandidateListResult> {
     let params = new HttpParams().set('page', page).set('pageSize', pageSize);
     if (sourceId) params = params.set('sourceId', sourceId);
@@ -135,7 +138,17 @@ export class AdminResourceCandidateService {
     if (languageCode) params = params.set('languageCode', languageCode);
     if (cefrLevel) params = params.set('cefrLevel', cefrLevel);
     if (search) params = params.set('search', search);
+    if (publishableOnly) params = params.set('publishableOnly', publishableOnly);
     return this.http.get<AdminResourceCandidateListResult>(this.base, { params });
+  }
+
+  /** Phase K2 — headline review-state counts (passed / needs review / blocked / published),
+   *  scoped to one import run when provided. */
+  summary(importRunId?: string, sourceId?: string): Observable<AdminResourceCandidateReviewSummaryDto> {
+    let params = new HttpParams();
+    if (importRunId) params = params.set('importRunId', importRunId);
+    if (sourceId) params = params.set('sourceId', sourceId);
+    return this.http.get<AdminResourceCandidateReviewSummaryDto>(`${this.base}/summary`, { params });
   }
 
   get(candidateId: string): Observable<AdminResourceCandidateDto> {
@@ -204,6 +217,25 @@ export class AdminResourceCandidateService {
   getAudioBlobUrl(candidateId: string): Observable<string> {
     return this.http.get(`${this.base}/${candidateId}/audio`, { responseType: 'blob' }).pipe(
       map(blob => URL.createObjectURL(blob)));
+  }
+
+  /** Phase K2 — batch admin approval over an explicit set of candidates. */
+  batchApprove(candidateIds: string[], notes?: string | null): Observable<BatchResourceCandidateActionResult> {
+    return this.http.post<BatchResourceCandidateActionResult>(
+      `${this.base}/batch/approve`, { candidateIds, notes: notes ?? null });
+  }
+
+  /** Phase K2 — batch publish over an explicit set of already-approved candidates. Already-
+   *  published candidates in the request are a safe no-op (see result.alreadyPublishedCount). */
+  batchPublish(candidateIds: string[]): Observable<BatchResourceCandidateActionResult> {
+    return this.http.post<BatchResourceCandidateActionResult>(`${this.base}/batch/publish`, { candidateIds });
+  }
+
+  /** Phase K2 — the batch equivalent of approveAndPublish(): approves then publishes each
+   *  candidate, continue-on-error per item — see result.items for per-candidate outcomes. */
+  batchApproveAndPublish(candidateIds: string[], notes?: string | null): Observable<BatchResourceCandidateActionResult> {
+    return this.http.post<BatchResourceCandidateActionResult>(
+      `${this.base}/batch/approve-and-publish`, { candidateIds, notes: notes ?? null });
   }
 }
 

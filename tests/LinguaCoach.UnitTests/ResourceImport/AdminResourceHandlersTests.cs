@@ -96,4 +96,95 @@ public sealed class AdminResourceHandlersTests : IDisposable
             new ListAdminResourceCandidatesQuery(ValidationStatus: "NeedsReview"));
         byValidation.Items.Should().HaveCount(2);
     }
+
+    // ── Phase K2 — CanAttemptPublish/PublishBlockReason DTO mapping, PublishableOnly filter,
+    // review-state summary ──────────────────────────────────────────────────────────────────
+
+    private static ResourceCandidate SeedCandidateAt(
+        LinguaCoachDbContext db, ResourceRawRecord raw, string word, ResourceCandidateValidationStatus status)
+    {
+        var candidate = new ResourceCandidate(
+            raw.Id, ResourceCandidateType.VocabularyEntry, word, $$"""{"word":"{{word}}"}""", "en",
+            word, $"fp-{Guid.NewGuid():N}", ResourceCandidateValidationStatus.NeedsReview);
+        db.ResourceCandidates.Add(candidate);
+        db.SaveChanges();
+        candidate.ApplyValidation(status, status == ResourceCandidateValidationStatus.Failed
+            ? """{"errors":["Safety concern(s) reported: flagged"],"warnings":[]}"""
+            : """{"errors":[],"warnings":[]}""");
+        db.SaveChanges();
+        return candidate;
+    }
+
+    private async Task<(CefrResourceSource Source, ResourceRawRecord Raw)> SeedSourceAndRawAsync()
+    {
+        var source = new CefrResourceSource("Summary Test Source", "CC-BY-4.0");
+        source.ApproveForImport();
+        _db.CefrResourceSources.Add(source);
+        await _db.SaveChangesAsync();
+
+        var run = new ResourceImportRun(source.Id, ResourceImportMode.Json, "f.json", $"hash-{Guid.NewGuid():N}", DateTimeOffset.UtcNow);
+        _db.ResourceImportRuns.Add(run);
+        await _db.SaveChangesAsync();
+
+        var raw = new ResourceRawRecord(run.Id, $"rh-{Guid.NewGuid():N}", "en", "row", rawJson: "{}");
+        raw.MarkParsed();
+        _db.ResourceRawRecords.Add(raw);
+        await _db.SaveChangesAsync();
+
+        return (source, raw);
+    }
+
+    [Fact]
+    public async Task Dto_CanAttemptPublish_is_true_for_Passed_and_NeedsReview_false_for_Failed_and_Pending()
+    {
+        var (source, raw) = await SeedSourceAndRawAsync();
+        var passed = SeedCandidateAt(_db, raw, "a", ResourceCandidateValidationStatus.Passed);
+        var needsReview = SeedCandidateAt(_db, raw, "b", ResourceCandidateValidationStatus.NeedsReview);
+        var failed = SeedCandidateAt(_db, raw, "c", ResourceCandidateValidationStatus.Failed);
+
+        var getQuery = new AdminResourceCandidateGetQueryHandler(_db);
+
+        (await getQuery.HandleAsync(new GetAdminResourceCandidateQuery(passed.Id)))!.CanAttemptPublish.Should().BeTrue();
+        (await getQuery.HandleAsync(new GetAdminResourceCandidateQuery(needsReview.Id)))!.CanAttemptPublish.Should().BeTrue();
+
+        var failedDto = await getQuery.HandleAsync(new GetAdminResourceCandidateQuery(failed.Id));
+        failedDto!.CanAttemptPublish.Should().BeFalse();
+        failedDto.PublishBlockReason.Should().Contain("Safety concern");
+    }
+
+    [Fact]
+    public async Task PublishableOnly_filter_returns_only_not_yet_published_Passed_or_NeedsReview_candidates()
+    {
+        var (source, raw) = await SeedSourceAndRawAsync();
+        var passed = SeedCandidateAt(_db, raw, "a", ResourceCandidateValidationStatus.Passed);
+        var needsReview = SeedCandidateAt(_db, raw, "b", ResourceCandidateValidationStatus.NeedsReview);
+        SeedCandidateAt(_db, raw, "c", ResourceCandidateValidationStatus.Failed);
+        SeedCandidateAt(_db, raw, "d", ResourceCandidateValidationStatus.Pending);
+
+        var listQuery = new AdminResourceCandidateListQueryHandler(_db);
+        var result = await listQuery.HandleAsync(new ListAdminResourceCandidatesQuery(PublishableOnly: true));
+
+        result.Items.Select(i => i.CandidateId).Should().BeEquivalentTo(new[] { passed.Id, needsReview.Id });
+    }
+
+    [Fact]
+    public async Task Review_summary_reports_passed_needsReview_blocked_and_published_counts_separately()
+    {
+        var (source, raw) = await SeedSourceAndRawAsync();
+        SeedCandidateAt(_db, raw, "a", ResourceCandidateValidationStatus.Passed);
+        SeedCandidateAt(_db, raw, "b", ResourceCandidateValidationStatus.NeedsReview);
+        SeedCandidateAt(_db, raw, "c", ResourceCandidateValidationStatus.NeedsReview);
+        SeedCandidateAt(_db, raw, "d", ResourceCandidateValidationStatus.Failed);
+        SeedCandidateAt(_db, raw, "e", ResourceCandidateValidationStatus.Pending);
+
+        var summaryQuery = new AdminResourceCandidateReviewSummaryQueryHandler(_db);
+        var summary = await summaryQuery.HandleAsync(new GetAdminResourceCandidateReviewSummaryQuery());
+
+        summary.TotalCount.Should().Be(5);
+        summary.PassedCount.Should().Be(1);
+        summary.NeedsReviewCount.Should().Be(2);
+        summary.BlockedCount.Should().Be(2); // Failed + Pending
+        summary.PublishedCount.Should().Be(0);
+        summary.PublishableCount.Should().Be(3); // Passed + NeedsReview
+    }
 }
