@@ -616,6 +616,9 @@ public static class DependencyInjection
         // Phase E5 — read-only browse/search over the published Cefr* bank tables.
         services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceBankQueryService,
             LinguaCoach.Infrastructure.ResourceImport.ResourceBankQueryService>();
+        // Phase J5c — real audio-file upload/storage for ListeningPassage candidates.
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceCandidateAudioService,
+            LinguaCoach.Infrastructure.ResourceImport.ResourceCandidateAudioService>();
 
         // Phase 16F/16G — Speaking Evaluation Foundation + Provider-Backed Evaluation
         if (configuration is not null)

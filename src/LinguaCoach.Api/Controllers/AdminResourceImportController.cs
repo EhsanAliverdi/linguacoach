@@ -140,6 +140,7 @@ public sealed class AdminResourceCandidateController : ControllerBase
     private readonly IAdminResourceCandidateApproveHandler _approveHandler;
     private readonly IAdminResourceCandidateRejectHandler _rejectHandler;
     private readonly IResourceCandidatePublishService _publishService;
+    private readonly IResourceCandidateAudioService _audioService;
 
     public AdminResourceCandidateController(
         IAdminResourceCandidateListQuery listQuery,
@@ -150,7 +151,8 @@ public sealed class AdminResourceCandidateController : ControllerBase
         IResourceCandidatePreviewService previewService,
         IAdminResourceCandidateApproveHandler approveHandler,
         IAdminResourceCandidateRejectHandler rejectHandler,
-        IResourceCandidatePublishService publishService)
+        IResourceCandidatePublishService publishService,
+        IResourceCandidateAudioService audioService)
     {
         _listQuery = listQuery;
         _getQuery = getQuery;
@@ -161,6 +163,7 @@ public sealed class AdminResourceCandidateController : ControllerBase
         _approveHandler = approveHandler;
         _rejectHandler = rejectHandler;
         _publishService = publishService;
+        _audioService = audioService;
     }
 
     // GET api/admin/resource-candidates?page=1&pageSize=20&sourceId=&importRunId=&candidateType=&
@@ -255,6 +258,55 @@ public sealed class AdminResourceCandidateController : ControllerBase
         return result is null
             ? NotFound(new { error = $"Resource candidate '{candidateId}' was not found." })
             : Ok(result);
+    }
+
+    // POST api/admin/resource-candidates/{candidateId}/audio  multipart/form-data: audioFile
+    // Phase J5c — uploads the real audio file backing a ListeningPassage candidate. Separate from
+    // staging (which only carries title/transcript text) — publish is blocked until this has run.
+    [HttpPost("{candidateId:guid}/audio")]
+    [RequestSizeLimit(20 * 1024 * 1024)] // 20 MB hard ceiling, matches the speaking-audio precedent.
+    public async Task<IActionResult> UploadAudio(Guid candidateId, IFormFile audioFile, CancellationToken ct)
+    {
+        if (audioFile is null || audioFile.Length == 0)
+            return BadRequest(new { error = "Audio file is required." });
+
+        var mimeType = audioFile.ContentType?.Split(';')[0].Trim() ?? string.Empty;
+        if (!_audioService.IsAllowedMimeType(mimeType))
+            return BadRequest(new { error = $"Audio format '{mimeType}' is not supported. Use webm, wav, mp3, mp4, m4a, or ogg." });
+
+        if (audioFile.Length > _audioService.GetMaxAudioBytes())
+            return BadRequest(new { error = $"Audio file is too large. Maximum size is {_audioService.GetMaxAudioBytes() / (1024 * 1024)} MB." });
+
+        try
+        {
+            await using var stream = audioFile.OpenReadStream();
+            var result = await _audioService.UploadAsync(candidateId, stream, mimeType, ct);
+            return Ok(result);
+        }
+        catch (ResourceImportValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    // GET api/admin/resource-candidates/{candidateId}/audio-url
+    // Phase J5c — short-lived signed URL (or, for local storage, the authenticated streaming
+    // endpoint below) for a ListeningPassage candidate's uploaded audio. Response: { url, expiresAt }.
+    [HttpGet("{candidateId:guid}/audio-url")]
+    public async Task<IActionResult> GetAudioUrl(Guid candidateId, CancellationToken ct)
+    {
+        var result = await _audioService.GetAudioUrlAsync(candidateId, ct);
+        return result is null ? NotFound(new { error = "No audio file has been uploaded for this candidate." }) : Ok(result);
+    }
+
+    // GET api/admin/resource-candidates/{candidateId}/audio
+    // Phase J5c — raw audio stream, used as the local-storage fallback when GetAudioUrl's signed
+    // URL isn't a directly-fetchable client URL (see IFileStorageService.GenerateSignedUrlAsync).
+    [HttpGet("{candidateId:guid}/audio")]
+    public async Task<IActionResult> GetAudio(Guid candidateId, CancellationToken ct)
+    {
+        var result = await _audioService.GetAudioStreamAsync(candidateId, ct);
+        return result is null ? NotFound() : File(result.Bytes, result.ContentType);
     }
 
     // POST api/admin/resource-candidates/{candidateId}/approve  { notes? }

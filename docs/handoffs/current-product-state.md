@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-13 (Phase J5b)
+lastUpdated: 2026-07-13 (Phase J5c)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,30 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-13 (Phase J5b)
+Last updated: 2026-07-13 (Phase J5c)
+
+## Phase J5c: Listening content-type import — real audio upload (2026-07-13)
+
+Third of four small J5 passes (Writing done → Mixed done → **Listening done** → Speaking).
+Content Import's dropdown now has a sixth option, **Listening** — staged as title/transcript text
+first (same as any other type), then an admin uploads the real audio file separately from the
+candidate's preview drawer (file input + inline `<audio>` player once uploaded). Publish is
+**hard-blocked** until an audio file is attached — a Listening resource with no actual audio would
+be dishonest about what was published.
+
+This is the biggest J5 pass so far: it needed a real schema change (two new nullable columns on
+`ResourceCandidate` — `AudioStorageKey`/`AudioContentType`, via a proper EF migration) and new
+upload/playback endpoints, reusing the existing `IFileStorageService` (MinIO/local/fake) storage
+abstraction and the exact same single-file multipart pattern the student speaking-attempt
+endpoint already uses. Not wired into Lesson/Exercise/Module generation yet, same as Writing (J5a)
+— the Resource Bank page hides those actions for Listening rows.
+
+Found and fixed a real playback bug during live testing: a plain HTML `<audio src>` can't send an
+auth token, so local-storage-backed audio (the dev default) 401'd. Fixed by fetching it as an
+authenticated blob first and playing that instead — the same fix pattern already used elsewhere in
+this app for the identical problem.
+
+Full detail: `docs/reviews/2026-07-13-phase-j5c-listening-audio-import-review.md`.
 
 ## Phase J5b: Mixed content-type import (2026-07-13)
 

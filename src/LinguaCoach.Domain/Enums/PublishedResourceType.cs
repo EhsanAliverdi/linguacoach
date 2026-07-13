@@ -14,5 +14,8 @@ public enum PublishedResourceType
     ReadingPassage = 3,
     // Phase J5a — a published writing prompt (title + task instructions + optional genre/word
     // count target). No answer key/rubric — this is content, not a scoring implementation.
-    Writing = 4
+    Writing = 4,
+    // Phase J5c — a published listening passage (title + optional transcript + a real uploaded
+    // audio file's storage key/content type).
+    Listening = 5
 }

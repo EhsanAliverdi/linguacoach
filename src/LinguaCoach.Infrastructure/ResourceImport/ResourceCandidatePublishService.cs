@@ -44,6 +44,12 @@ namespace LinguaCoach.Infrastructure.ResourceImport;
 /// supported, mirrors VocabularyEntry/GrammarProfileEntry's simple field-count needs. Publishes
 /// content only (title/prompt/genre/suggested word count) — no rubric/answer-key field, since this
 /// codebase has no writing-scoring implementation wired to the Resource Bank yet.</description></item>
+/// <item><description><see cref="ResourceCandidateType.ListeningPassage"/> (Phase J5c) — requires
+/// <see cref="Domain.Entities.ResourceCandidate.AudioStorageKey"/> to already be set (via
+/// IResourceCandidateAudioService.UploadAsync) — blocked with a clear error otherwise, since
+/// publishing a Listening resource with no actual audio would be dishonest about what was
+/// published (same "don't publish something incomplete" reasoning as the ActivityTemplateCandidate
+/// bullet below).</description></item>
 /// </list>
 /// </summary>
 public sealed class ResourceCandidatePublishService : IResourceCandidatePublishService
@@ -171,6 +177,9 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
             case ResourceCandidateType.WritingPrompt:
                 return BuildWritingPromptEntity(candidate, source.Id, fields, errors);
 
+            case ResourceCandidateType.ListeningPassage:
+                return BuildListeningEntity(candidate, source, fields, errors);
+
             case ResourceCandidateType.ActivityTemplateCandidate:
                 errors.Add(
                     "ActivityTemplateCandidate publishing is deferred in Phase E4: ActivityTemplate requires a " +
@@ -283,6 +292,43 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
 
     private static int? ParseSuggestedMinWords(string? raw) =>
         int.TryParse(raw?.Trim(), out var value) && value > 0 ? value : null;
+
+    private static (BaseEntity?, string?, List<string>) BuildListeningEntity(
+        ResourceCandidate candidate, CefrResourceSource source, IReadOnlyDictionary<string, string?> fields, List<string> errors)
+    {
+        if (string.IsNullOrWhiteSpace(candidate.CefrLevel))
+        {
+            errors.Add("CefrLevel is required to publish a ListeningPassage candidate but is not set.");
+            return (null, null, errors);
+        }
+        if (string.IsNullOrWhiteSpace(candidate.AudioStorageKey) || string.IsNullOrWhiteSpace(candidate.AudioContentType))
+        {
+            errors.Add(
+                "An audio file is required to publish a ListeningPassage candidate — upload one via the candidate's " +
+                "audio upload action before publishing.");
+            return (null, null, errors);
+        }
+
+        var title = ResourceCandidateFieldHelper.GetFieldCI(fields, "title")?.Trim() ?? candidate.CanonicalText.Trim();
+        var transcript = ResourceCandidateFieldHelper.GetFieldCI(fields, "transcript")?.Trim();
+
+        try
+        {
+            var difficultyBand = candidate.DifficultyBand is >= 1 and <= 5 ? candidate.DifficultyBand : null;
+            var entity = new ResourceBankItem(
+                PublishedResourceType.Listening, source.Id, candidate.CefrLevel,
+                ResourceBankItemContent.Serialize(new ListeningPassageContent(
+                    title, transcript, candidate.AudioStorageKey, candidate.AudioContentType, source.AttributionText)),
+                candidate.Subskill, difficultyBand, candidate.ContextTagsJson, candidate.FocusTagsJson,
+                candidate.ContentFingerprint);
+            return (entity, "CefrListeningPassage", errors);
+        }
+        catch (ArgumentException ex)
+        {
+            errors.Add($"Could not construct a CefrListeningPassage: {ex.Message}");
+            return (null, null, errors);
+        }
+    }
 
     private static (BaseEntity?, string?, List<string>) BuildReadingReferenceOrPassage(
         ResourceCandidate candidate, CefrResourceSource source, IReadOnlyDictionary<string, string?> fields, List<string> errors)

@@ -46,8 +46,13 @@ public sealed class ResourceImportService : IResourceImportService
     private static readonly string[] TitleFields = { "title" };
     // Phase J5a
     private static readonly string[] WritingFields = { "prompt" };
+    // Phase J5c
+    private static readonly string[] ListeningFields = { "transcript" };
     private static readonly string[] AnyContentFields =
-        { "word", "lemma", "text", "passage", "title", "grammarkey", "explanation", "formio", "schema", "template", "prompt" };
+        {
+            "word", "lemma", "text", "passage", "title", "grammarkey", "explanation", "formio", "schema", "template",
+            "prompt", "transcript",
+        };
 
     // Phase E6 — optional deterministic classification columns. When present on a row, their
     // values are copied directly onto the staged candidate (see ProcessRow) instead of being left
@@ -263,6 +268,8 @@ public sealed class ResourceImportService : IResourceImportService
                 GetField(row, "title") ?? GetField(row, "formio") ?? GetField(row, "schema") ?? GetField(row, "template") ?? GetField(row, "text"),
             ResourceCandidateType.WritingPrompt =>
                 GetField(row, "title") ?? GetField(row, "prompt") ?? GetField(row, "text"),
+            ResourceCandidateType.ListeningPassage =>
+                GetField(row, "title") ?? GetField(row, "transcript") ?? GetField(row, "text"),
             _ => GetField(row, "title") ?? GetField(row, "text"),
         };
 
@@ -405,9 +412,12 @@ public sealed class ResourceImportService : IResourceImportService
             return (ResourceCandidateType.ReadingPassage,
                 GetField(row, "passage") ?? GetField(row, "text")!);
 
-        // Phase J5a — checked before TemplateFields since neither field set overlaps.
+        // Phase J5a/J5c — checked before TemplateFields since neither field set overlaps.
         if (WritingFields.Any(f => HasField(row, f)))
             return (ResourceCandidateType.WritingPrompt, GetField(row, "title") ?? GetField(row, "prompt")!);
+
+        if (ListeningFields.Any(f => HasField(row, f)))
+            return (ResourceCandidateType.ListeningPassage, GetField(row, "title") ?? GetField(row, "transcript")!);
 
         if (TemplateFields.Any(f => HasField(row, f)))
             return (ResourceCandidateType.ActivityTemplateCandidate,

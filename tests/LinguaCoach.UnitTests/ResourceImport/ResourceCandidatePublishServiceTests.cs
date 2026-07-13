@@ -407,6 +407,50 @@ public sealed class ResourceCandidatePublishServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Listening_candidate_without_uploaded_audio_cannot_publish()
+    {
+        var source = SeedSource();
+        var rawJson = """{"title":"Morning News","transcript":"Good morning and welcome to the daily news."}""";
+        var (_, raw) = SeedRunAndRaw(source, rawJson);
+        var candidate = SeedCandidate(raw, ResourceCandidateType.ListeningPassage, "Morning News", rawJson);
+        MakePublishReady(candidate, primarySkill: "listening");
+        // No AttachAudio call — this candidate has no uploaded audio file.
+
+        var result = await _sut.PublishAsync(candidate.Id, null);
+
+        result.Success.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("audio file is required"));
+        (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.Listening)).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Publishing_listening_candidate_with_audio_creates_exactly_one_row_with_mapped_fields()
+    {
+        var source = SeedSource();
+        var rawJson = """{"title":"Morning News","transcript":"Good morning and welcome to the daily news."}""";
+        var (_, raw) = SeedRunAndRaw(source, rawJson);
+        var candidate = SeedCandidate(raw, ResourceCandidateType.ListeningPassage, "Morning News", rawJson);
+        MakePublishReady(candidate, primarySkill: "listening");
+        candidate.AttachAudio("resource-import-audio/abc123.mp3", "audio/mpeg");
+        _db.SaveChanges();
+
+        var result = await _sut.PublishAsync(candidate.Id, null);
+
+        result.Success.Should().BeTrue();
+        result.PublishedEntityType.Should().Be("CefrListeningPassage");
+
+        var rows = await _db.ResourceBankItems.Where(x => x.Type == PublishedResourceType.Listening).ToListAsync();
+        rows.Should().HaveCount(1);
+        var content = ResourceBankItemContent.Deserialize<ListeningPassageContent>(rows[0].ContentJson);
+        content.Title.Should().Be("Morning News");
+        content.Transcript.Should().Be("Good morning and welcome to the daily news.");
+        content.AudioStorageKey.Should().Be("resource-import-audio/abc123.mp3");
+        content.AudioContentType.Should().Be("audio/mpeg");
+        rows[0].CefrLevel.Should().Be("A1");
+        rows[0].SourceId.Should().Be(source.Id);
+    }
+
+    [Fact]
     public async Task ActivityTemplateCandidate_publish_is_deferred_and_blocked()
     {
         var source = SeedSource();

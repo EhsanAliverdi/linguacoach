@@ -306,8 +306,21 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
             PublishedResourceType.ReadingReference => MapReadingReference(entry, source),
             PublishedResourceType.ReadingPassage => MapReadingPassage(entry, source),
             PublishedResourceType.Writing => MapWritingPrompt(entry, source),
+            PublishedResourceType.Listening => MapListening(entry, source),
             _ => throw new InvalidOperationException($"Unknown PublishedResourceType '{entry.Type}'."),
         };
+    }
+
+    private static UnifiedResourceBankItemDto MapListening(ResourceBankItem entry, CefrResourceSource source)
+    {
+        var c = ResourceBankItemContent.Deserialize<ListeningPassageContent>(entry.ContentJson);
+        return new UnifiedResourceBankItemDto(
+            entry.Id, UnifiedResourceBankItemType.Listening, c.Title, Truncate(c.Transcript, 160),
+            entry.CefrLevel, "Listening", entry.Subskill,
+            ParseJsonStringArray(entry.ContextTagsJson), ParseJsonStringArray(entry.FocusTagsJson),
+            entry.DifficultyBand, source.Id, source.Name, entry.ContentFingerprint, "Published",
+            entry.CreatedAt, entry.UpdatedAt, "CefrListeningPassage", null,
+            null, null, null);
     }
 
     private static UnifiedResourceBankItemDto MapWritingPrompt(ResourceBankItem entry, CefrResourceSource source)
@@ -379,6 +392,7 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
         UnifiedResourceBankItemType.ReadingReference => PublishedResourceType.ReadingReference,
         UnifiedResourceBankItemType.ReadingPassage => PublishedResourceType.ReadingPassage,
         UnifiedResourceBankItemType.Writing => PublishedResourceType.Writing,
+        UnifiedResourceBankItemType.Listening => PublishedResourceType.Listening,
         _ => throw new ArgumentOutOfRangeException(nameof(type)),
     };
 
@@ -449,6 +463,7 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
             (PublishedResourceType.ReadingReference, UnifiedResourceBankItemType.ReadingReference) => true,
             (PublishedResourceType.ReadingPassage, UnifiedResourceBankItemType.ReadingPassage) => true,
             (PublishedResourceType.Writing, UnifiedResourceBankItemType.Writing) => true,
+            (PublishedResourceType.Listening, UnifiedResourceBankItemType.Listening) => true,
             _ => false
         };
 

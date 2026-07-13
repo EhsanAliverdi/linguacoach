@@ -400,4 +400,37 @@ public sealed class ResourceImportServiceTests : IDisposable
         candidate.CandidateType.Should().Be(ResourceCandidateType.WritingPrompt);
         candidate.CanonicalText.Should().Be("Describe your typical morning routine.");
     }
+
+    // ── Phase J5c — ListeningPassage candidate type ─────────────────────────────
+
+    [Fact]
+    public async Task Row_with_transcript_field_infers_as_ListeningPassage()
+    {
+        var source = SeedApprovedSource();
+        var csv = "title,transcript\nMorning News,Good morning and welcome to the daily news.\n";
+
+        var result = await _sut.ImportAsync(new ResourceImportRequest(
+            source.Id, ToStream(csv), "listening.csv", ResourceImportMode.Csv));
+
+        result.SucceededCount.Should().Be(1);
+        var candidate = await _db.ResourceCandidates.SingleAsync();
+        candidate.CandidateType.Should().Be(ResourceCandidateType.ListeningPassage);
+        candidate.CanonicalText.Should().Be("Morning News");
+        candidate.AudioStorageKey.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task DefaultCandidateType_ListeningPassage_extracts_canonical_text_from_transcript_when_no_title()
+    {
+        var source = SeedApprovedSource();
+        var csv = "transcript\nAn interview about remote work habits.\n";
+
+        await _sut.ImportAsync(new ResourceImportRequest(
+            source.Id, ToStream(csv), "listening-no-title.csv", ResourceImportMode.Csv,
+            DefaultCandidateType: ResourceCandidateType.ListeningPassage));
+
+        var candidate = await _db.ResourceCandidates.SingleAsync();
+        candidate.CandidateType.Should().Be(ResourceCandidateType.ListeningPassage);
+        candidate.CanonicalText.Should().Be("An interview about remote work habits.");
+    }
 }

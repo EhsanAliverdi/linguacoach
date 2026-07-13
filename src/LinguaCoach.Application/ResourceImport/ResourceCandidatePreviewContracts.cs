@@ -82,6 +82,11 @@ public sealed record ResourceCandidateRenderedPreviewDto(
     string? PromptText = null,
     string? Genre = null,
     int? SuggestedMinWords = null,
+    // ListeningPassage (Phase J5c) — Transcript reuses Explanation-shaped free text; HasAudio
+    // tells the admin UI whether an audio file has been uploaded yet (never null/empty at
+    // publish time — see ResourceCandidatePublishService's audio-required gate).
+    string? Transcript = null,
+    bool HasAudio = false,
     // Unknown / generic fallback
     IReadOnlyList<string>? FieldSummary = null);
 

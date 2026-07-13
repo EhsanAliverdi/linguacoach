@@ -109,7 +109,7 @@ public sealed class AdminContentImportEndpointTests : IClassFixture<ApiTestFacto
         client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
         var response = await client.PostAsJsonAsync("/api/admin/content-imports",
-            Body("Not Yet Supported Source", "listening", "pasted_text", "hello"));
+            Body("Not Yet Supported Source", "speaking", "pasted_text", "hello"));
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 

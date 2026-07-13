@@ -153,6 +153,7 @@ public sealed class ResourceCandidatePreviewService : IResourceCandidatePreviewS
             ResourceCandidateType.ReadingPassage => BuildReadingPreview(candidate, normalized, previewWarnings),
             ResourceCandidateType.ActivityTemplateCandidate => BuildActivityTemplatePreview(candidate, previewWarnings),
             ResourceCandidateType.WritingPrompt => BuildWritingPreview(candidate, normalized, previewWarnings),
+            ResourceCandidateType.ListeningPassage => BuildListeningPreview(candidate, normalized, previewWarnings),
             _ => BuildUnknownPreview(candidate, normalized, previewWarnings),
         };
 
@@ -272,6 +273,25 @@ public sealed class ResourceCandidatePreviewService : IResourceCandidatePreviewS
             PromptText: promptText,
             Genre: GetFieldCI(normalized, "genre", "tasktype"),
             SuggestedMinWords: minWords), true);
+    }
+
+    private static (ResourceCandidateRenderedPreviewDto, bool) BuildListeningPreview(
+        ResourceCandidate candidate, IReadOnlyDictionary<string, string?> normalized, List<string> previewWarnings)
+    {
+        var title = GetFieldCI(normalized, "title") ?? candidate.CanonicalText;
+        var transcript = GetFieldCI(normalized, "transcript");
+        var hasAudio = !string.IsNullOrWhiteSpace(candidate.AudioStorageKey);
+
+        if (!hasAudio)
+            previewWarnings.Add("No audio file has been uploaded for this ListeningPassage candidate yet — it cannot be published until one is.");
+        if (transcript is null)
+            previewWarnings.Add("ListeningPassage candidate has no 'transcript' field — the audio will have no written transcript.");
+
+        return (new ResourceCandidateRenderedPreviewDto(
+            Kind: ResourceCandidateType.ListeningPassage.ToString(),
+            Title: title,
+            Transcript: transcript,
+            HasAudio: hasAudio), hasAudio);
     }
 
     /// <summary>

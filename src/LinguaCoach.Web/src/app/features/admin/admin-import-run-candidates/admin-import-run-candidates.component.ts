@@ -102,6 +102,13 @@ export class AdminImportRunCandidatesComponent implements OnInit {
   previewError = signal('');
   preview = signal<ResourceCandidatePreviewDto | null>(null);
   previewRawJsonOpen = signal(false);
+  previewCandidateId = signal<string | null>(null);
+
+  // ── ListeningPassage audio (Phase J5c) ──────────────────────────────────────
+  audioUrl = signal<string | null>(null);
+  audioLoading = signal(false);
+  audioUploading = signal(false);
+  audioUploadError = signal('');
 
   constructor(
     private importRunSvc: AdminResourceImportRunService,
@@ -244,16 +251,69 @@ export class AdminImportRunCandidatesComponent implements OnInit {
     this.previewError.set('');
     this.previewRawJsonOpen.set(false);
     this.preview.set(null);
+    this.previewCandidateId.set(candidateId);
     this.previewDrawerOpen.set(true);
     this.previewLoading.set(true);
+    this.audioUrl.set(null);
+    this.audioUploadError.set('');
     this.candidateSvc.preview(candidateId).subscribe({
-      next: result => { this.previewLoading.set(false); this.preview.set(result); },
+      next: result => {
+        this.previewLoading.set(false);
+        this.preview.set(result);
+        if (result.renderedPreviewModel.kind === 'ListeningPassage' && result.renderedPreviewModel.hasAudio) {
+          this.loadAudioUrl(candidateId);
+        }
+      },
       error: err => { this.previewLoading.set(false); this.previewError.set(err.error?.error ?? 'Could not load preview.'); },
     });
   }
 
   closePreview(): void {
     this.previewDrawerOpen.set(false);
+  }
+
+  // ── ListeningPassage audio (Phase J5c) ──────────────────────────────────────
+
+  /** A signed MinIO URL (absolute http(s)) can be bound directly to `<audio src>`. The local-
+   *  storage streaming fallback is a same-origin `/api/...` path behind admin auth — a plain
+   *  `<audio src>` can't send a Bearer token, so that case is fetched as an authenticated blob
+   *  instead (see AdminResourceCandidateService.getAudioBlobUrl). */
+  loadAudioUrl(candidateId: string): void {
+    this.audioLoading.set(true);
+    this.candidateSvc.getAudioUrl(candidateId).subscribe({
+      next: r => {
+        if (/^https?:\/\//i.test(r.url)) {
+          this.audioLoading.set(false);
+          this.audioUrl.set(r.url);
+          return;
+        }
+        this.candidateSvc.getAudioBlobUrl(candidateId).subscribe({
+          next: blobUrl => { this.audioLoading.set(false); this.audioUrl.set(blobUrl); },
+          error: () => { this.audioLoading.set(false); this.audioUrl.set(null); },
+        });
+      },
+      error: () => { this.audioLoading.set(false); this.audioUrl.set(null); },
+    });
+  }
+
+  onAudioFileSelected(event: Event): void {
+    const candidateId = this.previewCandidateId();
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!candidateId || !file) return;
+
+    this.audioUploading.set(true);
+    this.audioUploadError.set('');
+    this.candidateSvc.uploadAudio(candidateId, file).subscribe({
+      next: () => {
+        this.audioUploading.set(false);
+        this.loadAudioUrl(candidateId);
+        this.openPreview(candidateId);
+        this.loadCandidates();
+      },
+      error: err => { this.audioUploading.set(false); this.audioUploadError.set(err.error?.error ?? 'Could not upload audio.'); },
+    });
   }
 
   parsedFormIoSchema(schemaJson: string | null): unknown {

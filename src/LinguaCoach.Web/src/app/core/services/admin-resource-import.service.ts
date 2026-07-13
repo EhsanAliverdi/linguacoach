@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import {
   AdminResourceSourceDto,
@@ -21,6 +22,8 @@ import {
   UnifiedResourceBankItemType,
   ContentImportRequestBody,
   ContentImportResult,
+  ResourceCandidateAudioUploadResult,
+  ResourceCandidateAudioUrlResult,
 } from '../models/admin-resource-import.models';
 
 @Injectable({ providedIn: 'root' })
@@ -164,6 +167,28 @@ export class AdminResourceCandidateService {
   approveAndPublish(candidateId: string, notes?: string | null): Observable<ResourceCandidatePublishResult> {
     return this.http.post<ResourceCandidatePublishResult>(
       `${this.base}/${candidateId}/approve-and-publish`, { notes: notes ?? null });
+  }
+
+  /** Phase J5c — uploads the real audio file backing a ListeningPassage candidate. Publish is
+   *  blocked server-side until this has run at least once. */
+  uploadAudio(candidateId: string, audioFile: File): Observable<ResourceCandidateAudioUploadResult> {
+    const form = new FormData();
+    form.append('audioFile', audioFile, audioFile.name);
+    return this.http.post<ResourceCandidateAudioUploadResult>(`${this.base}/${candidateId}/audio`, form);
+  }
+
+  /** Phase J5c — short-lived signed URL (or local-storage streaming endpoint) for playback. */
+  getAudioUrl(candidateId: string): Observable<ResourceCandidateAudioUrlResult> {
+    return this.http.get<ResourceCandidateAudioUrlResult>(`${this.base}/${candidateId}/audio-url`);
+  }
+
+  /** Phase J5c — fetches the local-storage streaming fallback as an authenticated blob and
+   *  returns an object URL. A plain `<audio src>` binding can't send a Bearer token, so a signed
+   *  MinIO URL is used directly (see AdminResourceCandidateComponent.loadAudioUrl) while this path
+   *  is only for the local-storage-endpoint fallback — same pattern as ActivityService.getAudioBlobUrl. */
+  getAudioBlobUrl(candidateId: string): Observable<string> {
+    return this.http.get(`${this.base}/${candidateId}/audio`, { responseType: 'blob' }).pipe(
+      map(blob => URL.createObjectURL(blob)));
   }
 }
 

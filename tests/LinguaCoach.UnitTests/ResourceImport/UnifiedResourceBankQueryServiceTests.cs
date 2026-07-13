@@ -110,6 +110,19 @@ public sealed class UnifiedResourceBankQueryServiceTests : IDisposable
         return e;
     }
 
+    private ResourceBankItem SeedListening(
+        string title, string cefr = "B1", string? subskill = null, int? difficulty = null,
+        string? contextTagsJson = null, string? focusTagsJson = null)
+    {
+        var e = new ResourceBankItem(
+            PublishedResourceType.Listening, _sourceId, cefr,
+            ResourceBankItemContent.Serialize(new ListeningPassageContent(
+                title, "A transcript.", "resource-import-audio/test.mp3", "audio/mpeg", null)),
+            subskill, difficulty, contextTagsJson, focusTagsJson);
+        _db.ResourceBankItems.Add(e);
+        return e;
+    }
+
     // ── Aggregation across all four tables ────────────────────────────────────────
 
     [Fact]
@@ -169,23 +182,35 @@ public sealed class UnifiedResourceBankQueryServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task Unified_aggregates_all_five_types_in_one_call()
+    public async Task Unified_returns_listening_passage_rows()
+    {
+        SeedListening("Morning News");
+        _db.SaveChanges();
+
+        var result = await _query.ListUnifiedAsync(new UnifiedResourceBankListFilter());
+
+        result.Items.Should().ContainSingle(i => i.Type == UnifiedResourceBankItemType.Listening && i.Title == "Morning News");
+    }
+
+    [Fact]
+    public async Task Unified_aggregates_all_six_types_in_one_call()
     {
         SeedVocab("garden");
         SeedGrammar("present perfect");
         SeedReference("narrative");
         SeedPassage("A Trip to the Market");
         SeedWriting("Email reply");
+        SeedListening("Morning News");
         _db.SaveChanges();
 
         var result = await _query.ListUnifiedAsync(new UnifiedResourceBankListFilter(PageSize: 200));
 
-        result.TotalCount.Should().Be(5);
+        result.TotalCount.Should().Be(6);
         result.Items.Select(i => i.Type).Should().BeEquivalentTo(new[]
         {
             UnifiedResourceBankItemType.Vocabulary, UnifiedResourceBankItemType.Grammar,
             UnifiedResourceBankItemType.ReadingReference, UnifiedResourceBankItemType.ReadingPassage,
-            UnifiedResourceBankItemType.Writing
+            UnifiedResourceBankItemType.Writing, UnifiedResourceBankItemType.Listening
         });
     }
 

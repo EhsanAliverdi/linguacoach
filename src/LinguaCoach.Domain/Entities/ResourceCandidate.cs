@@ -75,6 +75,13 @@ public sealed class ResourceCandidate : BaseEntity
     /// publish handler, mirroring <see cref="ResourceImportRun.ImportedByUserId"/>'s convention.</summary>
     public Guid? PublishedByUserId { get; private set; }
 
+    // ── Phase J5c — uploaded audio (ListeningPassage candidates only) ──────────────
+    /// <summary>The IFileStorageService object key for this candidate's uploaded audio file.
+    /// Null until an admin uploads one via <see cref="AttachAudio"/> — staging a
+    /// ListeningPassage candidate from an imported row never sets this by itself.</summary>
+    public string? AudioStorageKey { get; private set; }
+    public string? AudioContentType { get; private set; }
+
     private ResourceCandidate() { }
 
     public ResourceCandidate(
@@ -256,6 +263,28 @@ public sealed class ResourceCandidate : BaseEntity
         PublishedEntityId = publishedEntityId;
         PublishedAtUtc = publishedAtUtc;
         PublishedByUserId = publishedByUserId;
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Phase J5c — attaches (or replaces) this candidate's uploaded audio file reference. The
+    /// actual bytes are written to storage by the caller (see IResourceCandidateAudioService)
+    /// before this is called — this method only records the resulting key. Blocked once the
+    /// candidate is published: published content is immutable, mirroring <see cref="Reject"/>'s
+    /// same guard, so an admin can't silently swap the audio backing a live bank row.
+    /// </summary>
+    public void AttachAudio(string storageKey, string contentType)
+    {
+        if (string.IsNullOrWhiteSpace(storageKey))
+            throw new ArgumentException("StorageKey is required.", nameof(storageKey));
+        if (string.IsNullOrWhiteSpace(contentType))
+            throw new ArgumentException("ContentType is required.", nameof(contentType));
+        if (IsPublished)
+            throw new InvalidOperationException(
+                "Cannot change the audio file on a resource candidate that has already been published.");
+
+        AudioStorageKey = storageKey.Trim();
+        AudioContentType = contentType.Trim();
         UpdatedAtUtc = DateTime.UtcNow;
     }
 }

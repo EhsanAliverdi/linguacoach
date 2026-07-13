@@ -451,6 +451,30 @@
             }
           </div>
         }
+        @case ('ListeningPassage') {
+          <div class="sp-admin-form-stack">
+            <sp-admin-form-field label="Title"><strong>{{ p.renderedPreviewModel.title }}</strong></sp-admin-form-field>
+            @if (p.renderedPreviewModel.transcript) {
+              <sp-admin-form-field label="Transcript">{{ p.renderedPreviewModel.transcript }}</sp-admin-form-field>
+            }
+            <sp-admin-form-field label="Audio">
+              @if (p.renderedPreviewModel.hasAudio) {
+                @if (audioLoading()) {
+                  <sp-admin-loading-state message="Loading audio" />
+                } @else if (audioUrl()) {
+                  <audio controls [src]="audioUrl()!" style="width:100%;"></audio>
+                }
+              } @else {
+                <sp-admin-alert variant="warning">No audio file uploaded yet — this candidate cannot be published until one is.</sp-admin-alert>
+              }
+              <div style="margin-top:0.5rem;">
+                <input type="file" accept="audio/*" (change)="onAudioFileSelected($event)" [disabled]="audioUploading()" />
+                @if (audioUploading()) { <span class="sp-admin-hint">Uploading…</span> }
+              </div>
+              @if (audioUploadError()) { <sp-admin-alert variant="error">{{ audioUploadError() }}</sp-admin-alert> }
+            </sp-admin-form-field>
+          </div>
+        }
         @default {
           <sp-admin-form-field label="Generic field summary" hint="This candidate type has no specialized preview yet.">
             <ul>

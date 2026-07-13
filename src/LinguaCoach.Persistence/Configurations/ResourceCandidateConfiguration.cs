@@ -53,6 +53,9 @@ internal sealed class ResourceCandidateConfiguration : IEntityTypeConfiguration<
         builder.Property(e => e.PublishedEntityId).HasColumnName("published_entity_id");
         builder.Property(e => e.PublishedByUserId).HasColumnName("published_by_user_id");
 
+        builder.Property(e => e.AudioStorageKey).HasColumnName("audio_storage_key").HasMaxLength(500);
+        builder.Property(e => e.AudioContentType).HasColumnName("audio_content_type").HasMaxLength(100);
+
         builder.HasOne<ResourceRawRecord>()
             .WithMany()
             .HasForeignKey(e => e.ResourceRawRecordId)

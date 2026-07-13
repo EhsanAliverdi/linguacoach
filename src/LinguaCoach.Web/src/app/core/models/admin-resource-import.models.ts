@@ -243,6 +243,9 @@ export interface ResourceCandidateRenderedPreviewDto {
   promptText: string | null;
   genre: string | null;
   suggestedMinWords: number | null;
+  // ListeningPassage (Phase J5c)
+  transcript: string | null;
+  hasAudio: boolean;
   fieldSummary: string[] | null;
 }
 
@@ -286,7 +289,20 @@ export interface ResourceCandidatePreviewDto {
  *  genuine excerpt (server-side length gate), ActivityTemplateCandidate/Unknown are deferred
  *  entirely. The Publish button stays visible for every type so the server's specific error
  *  message is always what tells the admin why, rather than this list silently hiding the action. */
-export const RESOURCE_PUBLISH_SUPPORTED_TYPES = ['VocabularyEntry', 'GrammarProfileEntry', 'ReadingPassage', 'WritingPrompt'] as const;
+export const RESOURCE_PUBLISH_SUPPORTED_TYPES =
+  ['VocabularyEntry', 'GrammarProfileEntry', 'ReadingPassage', 'WritingPrompt', 'ListeningPassage'] as const;
+
+// ── Phase J5c — real audio-file upload for ListeningPassage candidates ─────────────────────────
+
+export interface ResourceCandidateAudioUploadResult {
+  candidateId: string;
+  audioContentType: string;
+}
+
+export interface ResourceCandidateAudioUrlResult {
+  url: string;
+  expiresAt: string;
+}
 
 export interface ResourceCandidatePublishResult {
   success: boolean;
@@ -301,7 +317,8 @@ export interface ResourceCandidatePublishResult {
 // see docs/architecture/product-model-realignment-h0.md §4 (Option B). Read-only, same as the
 // typed views above: mutation still only happens through Resource Candidates (E4). ──
 
-export type UnifiedResourceBankItemType = 'vocabulary' | 'grammar' | 'readingReference' | 'readingPassage' | 'writing';
+export type UnifiedResourceBankItemType =
+  'vocabulary' | 'grammar' | 'readingReference' | 'readingPassage' | 'writing' | 'listening';
 
 /** One row of the unified Resource Bank view. `linkedLearnCount`/`linkedActivityCount`/
  *  `linkedModuleCount` are always null in H1 — Learn Item/Activity/Module don't exist yet
@@ -342,6 +359,7 @@ export const UNIFIED_RESOURCE_BANK_TYPES: { value: UnifiedResourceBankItemType; 
   { value: 'readingReference', label: 'Reading reference' },
   { value: 'readingPassage', label: 'Reading passage' },
   { value: 'writing', label: 'Writing' },
+  { value: 'listening', label: 'Listening' },
 ];
 
 export const RESOURCE_BANK_CEFR_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
@@ -351,23 +369,25 @@ export const RESOURCE_BANK_CEFR_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as
 // back pending ResourceCandidate rows. No AI structure detection — see the "Coming soon" types
 // below. Never publishes anything — review still happens on the Resource Candidates page. ──
 
-export type ContentImportResourceType = 'vocabulary' | 'grammar' | 'reading' | 'writing' | 'mixed';
+export type ContentImportResourceType = 'vocabulary' | 'grammar' | 'reading' | 'writing' | 'listening' | 'mixed';
 export type ContentImportInputMode = 'pasted_text' | 'csv_text' | 'json_text';
 
-/** Phase J5a added 'writing'; Phase J5b adds 'mixed' — no forced type, each row is classified
- *  independently from its own fields (word/lemma → Vocabulary, grammarKey/explanation → Grammar,
- *  passage/text → Reading, prompt → Writing). ResourceCandidateType still has no Listening/
- *  Speaking shape yet (see docs/architecture/product-model-realignment-h0.md and the J5 roadmap
- *  entries). */
+/** Phase J5a added 'writing'; Phase J5b added 'mixed' (no forced type, each row is classified
+ *  independently from its own fields); Phase J5c adds 'listening' — staged here as title/
+ *  transcript text only, the real audio file is uploaded separately per-candidate from the
+ *  candidate preview drawer once the row is staged (see uploadCandidateAudio()). Speaking is not
+ *  modeled by ResourceCandidateType yet (see docs/architecture/product-model-realignment-h0.md
+ *  and the J5 roadmap entries). */
 export const CONTENT_IMPORT_RESOURCE_TYPES: { value: ContentImportResourceType; label: string }[] = [
   { value: 'vocabulary', label: 'Vocabulary' },
   { value: 'grammar', label: 'Grammar' },
   { value: 'reading', label: 'Reading' },
   { value: 'writing', label: 'Writing' },
+  { value: 'listening', label: 'Listening' },
   { value: 'mixed', label: 'Mixed (auto-detect per row)' },
 ];
 
-export const CONTENT_IMPORT_COMING_SOON_TYPES = ['Listening', 'Speaking'];
+export const CONTENT_IMPORT_COMING_SOON_TYPES = ['Speaking'];
 
 export const CONTENT_IMPORT_INPUT_MODES: { value: ContentImportInputMode; label: string; hint: string }[] = [
   { value: 'pasted_text', label: 'Pasted text (one item per line)', hint: 'Each non-empty line becomes one candidate.' },
@@ -402,7 +422,8 @@ export interface ContentImportResult {
 
 export const RESOURCE_IMPORT_MODES = ['Csv', 'Json', 'Jsonl'] as const;
 export const RESOURCE_CANDIDATE_TYPES = [
-  'Unknown', 'VocabularyEntry', 'GrammarProfileEntry', 'ReadingPassage', 'ActivityTemplateCandidate', 'WritingPrompt',
+  'Unknown', 'VocabularyEntry', 'GrammarProfileEntry', 'ReadingPassage', 'ActivityTemplateCandidate',
+  'WritingPrompt', 'ListeningPassage',
 ] as const;
 export const RESOURCE_VALIDATION_STATUSES = ['Pending', 'Passed', 'Failed', 'NeedsReview'] as const;
 export const RESOURCE_REVIEW_STATUSES = ['NotRequired', 'PendingReview', 'Approved', 'Rejected'] as const;

@@ -36,6 +36,17 @@ public sealed record WritingPromptContent(
     string? Genre,
     int? SuggestedMinWords);
 
+/// <summary>Phase J5c — a published listening passage. <see cref="AudioStorageKey"/>/
+/// <see cref="AudioContentType"/> are copied verbatim from the source
+/// <see cref="Domain.Entities.ResourceCandidate"/> at publish time — the publish gate requires
+/// them to already be set (see ResourceCandidatePublishService), so they are never null here.</summary>
+public sealed record ListeningPassageContent(
+    string Title,
+    string? Transcript,
+    string AudioStorageKey,
+    string AudioContentType,
+    string? AttributionText);
+
 public static class ResourceBankItemContent
 {
     private static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web);

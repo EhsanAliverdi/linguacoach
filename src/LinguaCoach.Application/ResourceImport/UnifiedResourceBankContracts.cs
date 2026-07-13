@@ -19,7 +19,9 @@ public enum UnifiedResourceBankItemType
     ReadingReference,
     ReadingPassage,
     // Phase J5a
-    Writing
+    Writing,
+    // Phase J5c
+    Listening
 }
 
 public sealed record UnifiedResourceBankListFilter(
