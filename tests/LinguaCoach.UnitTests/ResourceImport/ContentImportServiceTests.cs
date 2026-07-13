@@ -137,6 +137,24 @@ public sealed class ContentImportServiceTests : IDisposable
         (await _db.ResourceImportRuns.CountAsync()).Should().Be(0);
     }
 
+    // ── Phase J5b — "Mixed" (null ResourceType) ─────────────────────────────────
+
+    [Fact]
+    public async Task Null_resource_type_lets_each_row_be_classified_independently()
+    {
+        var json = """[{"word":"hello"},{"grammarKey":"present perfect","explanation":"habitual actions"},{"prompt":"Describe your day."}]""";
+
+        var result = await _sut.ImportContentAsync(new ContentImportRequest(
+            "Mixed Source", ResourceType: null, ContentImportInputMode.JsonText, json));
+
+        result.CandidateCount.Should().Be(3);
+        var types = await _db.ResourceCandidates.Select(c => c.CandidateType).ToListAsync();
+        types.Should().BeEquivalentTo(new[]
+        {
+            ResourceCandidateType.VocabularyEntry, ResourceCandidateType.GrammarProfileEntry, ResourceCandidateType.WritingPrompt,
+        });
+    }
+
     [Fact]
     public async Task No_student_assignment_or_learning_records_are_created()
     {

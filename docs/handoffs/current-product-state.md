@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-13 (Phase J5a)
+lastUpdated: 2026-07-13 (Phase J5b)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,21 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-13 (Phase J5a)
+Last updated: 2026-07-13 (Phase J5b)
+
+## Phase J5b: Mixed content-type import (2026-07-13)
+
+Second of four small J5 passes (Writing done → **Mixed done** → Listening → Speaking). Content
+Import's "Content type" dropdown now has a fifth option, **Mixed (auto-detect per row)** —
+selecting it doesn't force a single type onto every imported row; instead each row is classified
+from its own fields (word/lemma → Vocabulary, grammarKey/explanation → Grammar, passage/text →
+Reading, prompt → Writing), reusing `ResourceImportService`'s existing per-row inference that the
+older file-upload import flow already relied on. A single CSV/JSON import can now stage a mix of
+candidate types in one run. No new classification logic was built — no actual AI-based detection,
+despite the option's old placeholder label ("Mixed / AI detect"); the label now accurately reads
+"auto-detect per row."
+
+Full detail: `docs/reviews/2026-07-13-phase-j5b-mixed-content-import-review.md`.
 
 ## Phase J5a: Writing content-type import (2026-07-13)
 

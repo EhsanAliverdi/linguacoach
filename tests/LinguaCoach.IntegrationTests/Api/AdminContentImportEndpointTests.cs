@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -108,7 +109,34 @@ public sealed class AdminContentImportEndpointTests : IClassFixture<ApiTestFacto
         client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
         var response = await client.PostAsJsonAsync("/api/admin/content-imports",
-            Body("Mixed Type Source", "mixed", "pasted_text", "hello"));
+            Body("Not Yet Supported Source", "listening", "pasted_text", "hello"));
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    // ── Phase J5b — "mixed" resource type ────────────────────────────────────────
+
+    [Fact]
+    public async Task Mixed_resource_type_classifies_each_row_independently()
+    {
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var sourceName = $"Mixed Type Source {Guid.NewGuid():N}";
+        var json = """[{"word":"hello"},{"grammarKey":"present perfect","explanation":"habitual actions"}]""";
+        var response = await client.PostAsJsonAsync("/api/admin/content-imports",
+            Body(sourceName, "mixed", "json_text", json));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(2, body.GetProperty("candidateCount").GetInt32());
+        var runId = body.GetProperty("importRunId").GetGuid();
+
+        var candidatesResp = await client.GetAsync($"/api/admin/resource-candidates?importRunId={runId}");
+        var candidatesBody = await candidatesResp.Content.ReadFromJsonAsync<JsonElement>();
+        var types = candidatesBody.GetProperty("items").EnumerateArray()
+            .Select(i => i.GetProperty("candidateType").GetString()).ToList();
+        Assert.Contains("VocabularyEntry", types);
+        Assert.Contains("GrammarProfileEntry", types);
     }
 }

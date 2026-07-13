@@ -351,19 +351,23 @@ export const RESOURCE_BANK_CEFR_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as
 // back pending ResourceCandidate rows. No AI structure detection — see the "Coming soon" types
 // below. Never publishes anything — review still happens on the Resource Candidates page. ──
 
-export type ContentImportResourceType = 'vocabulary' | 'grammar' | 'reading' | 'writing';
+export type ContentImportResourceType = 'vocabulary' | 'grammar' | 'reading' | 'writing' | 'mixed';
 export type ContentImportInputMode = 'pasted_text' | 'csv_text' | 'json_text';
 
-/** Phase J5a adds 'writing' — ResourceCandidateType still has no Listening/Speaking/Mixed shape
- *  yet (see docs/architecture/product-model-realignment-h0.md and the J5 roadmap entries). */
+/** Phase J5a added 'writing'; Phase J5b adds 'mixed' — no forced type, each row is classified
+ *  independently from its own fields (word/lemma → Vocabulary, grammarKey/explanation → Grammar,
+ *  passage/text → Reading, prompt → Writing). ResourceCandidateType still has no Listening/
+ *  Speaking shape yet (see docs/architecture/product-model-realignment-h0.md and the J5 roadmap
+ *  entries). */
 export const CONTENT_IMPORT_RESOURCE_TYPES: { value: ContentImportResourceType; label: string }[] = [
   { value: 'vocabulary', label: 'Vocabulary' },
   { value: 'grammar', label: 'Grammar' },
   { value: 'reading', label: 'Reading' },
   { value: 'writing', label: 'Writing' },
+  { value: 'mixed', label: 'Mixed (auto-detect per row)' },
 ];
 
-export const CONTENT_IMPORT_COMING_SOON_TYPES = ['Listening', 'Speaking', 'Mixed / AI detect'];
+export const CONTENT_IMPORT_COMING_SOON_TYPES = ['Listening', 'Speaking'];
 
 export const CONTENT_IMPORT_INPUT_MODES: { value: ContentImportInputMode; label: string; hint: string }[] = [
   { value: 'pasted_text', label: 'Pasted text (one item per line)', hint: 'Each non-empty line becomes one candidate.' },

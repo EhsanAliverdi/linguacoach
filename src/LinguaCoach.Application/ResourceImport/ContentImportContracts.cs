@@ -24,7 +24,10 @@ public enum ContentImportInputMode
 
 public sealed record ContentImportRequest(
     string SourceName,
-    ResourceCandidateType ResourceType,
+    /// <summary>Phase J5b — null means "Mixed": don't force a type, let
+    /// <see cref="IResourceImportService"/>'s existing per-row field-name inference
+    /// (<c>InferCandidateType</c>) classify each row independently.</summary>
+    ResourceCandidateType? ResourceType,
     ContentImportInputMode InputMode,
     string Content,
     string? DefaultCefrLevel = null,

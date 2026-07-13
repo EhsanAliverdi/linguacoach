@@ -136,6 +136,14 @@ export class AdminContentImportComponent implements OnInit {
     return CONTENT_IMPORT_INPUT_MODES.find(m => m.value === this.inputMode)?.hint ?? '';
   }
 
+  /** Phase J5b — "Mixed" doesn't force one type onto every row, so the field's default
+   *  "Applied to every item in this import" hint would be actively wrong for it. */
+  get resourceTypeHint(): string {
+    return this.resourceType === 'mixed'
+      ? 'Each row is classified from its own fields — word/lemma → Vocabulary, grammarKey/explanation → Grammar, passage/text → Reading, prompt → Writing.'
+      : 'Applied to every item in this import.';
+  }
+
   submitting = signal(false);
   error = signal('');
   result = signal<ContentImportResult | null>(null);

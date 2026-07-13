@@ -16,6 +16,9 @@ namespace LinguaCoach.Infrastructure.ResourceImport;
 /// request's Phase H2 default fields. Deterministic only — "AI structure analysis" is explicitly
 /// not implemented in this phase (see docs/architecture/product-model-realignment-h0.md); nothing
 /// here guesses CEFR/tags beyond what a row's own columns or the admin's explicit defaults say.
+/// A null <see cref="ContentImportRequest.ResourceType"/> (Phase J5b "Mixed") is passed straight
+/// through as <see cref="ResourceImportRequest.DefaultCandidateType"/> — the underlying pipeline
+/// already supports this exact case (per-row field-name inference).
 /// </summary>
 public sealed class ContentImportService : IContentImportService
 {

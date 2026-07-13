@@ -54,7 +54,7 @@
             <sp-admin-form-field label="Source name" [required]="true" hint="Reused if a source with this exact name already exists.">
               <sp-admin-input [(ngModel)]="sourceName" name="sourceName" placeholder="e.g. Internal B1 vocabulary pack" />
             </sp-admin-form-field>
-            <sp-admin-form-field label="Content type" [required]="true" hint="Applied to every item in this import.">
+            <sp-admin-form-field label="Content type" [required]="true" [hint]="resourceTypeHint">
               <sp-admin-native-select [(ngModel)]="resourceType" name="resourceType" [options]="resourceTypeOptions" />
             </sp-admin-form-field>
             <p class="sp-admin-hint">

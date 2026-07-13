@@ -19,14 +19,18 @@ namespace LinguaCoach.Api.Controllers;
 [Authorize(Roles = "Admin")]
 public sealed class AdminContentImportController : ControllerBase
 {
-    private static readonly IReadOnlyDictionary<string, ResourceCandidateType> SupportedResourceTypes =
-        new Dictionary<string, ResourceCandidateType>(StringComparer.OrdinalIgnoreCase)
+    // Phase J5b — a null value means "Mixed": don't force a type, let ResourceImportService's
+    // existing per-row field-name inference classify each row independently.
+    private static readonly IReadOnlyDictionary<string, ResourceCandidateType?> SupportedResourceTypes =
+        new Dictionary<string, ResourceCandidateType?>(StringComparer.OrdinalIgnoreCase)
         {
             ["vocabulary"] = ResourceCandidateType.VocabularyEntry,
             ["grammar"] = ResourceCandidateType.GrammarProfileEntry,
             ["reading"] = ResourceCandidateType.ReadingPassage,
             // Phase J5a
             ["writing"] = ResourceCandidateType.WritingPrompt,
+            // Phase J5b
+            ["mixed"] = null,
         };
 
     private static readonly IReadOnlyDictionary<string, ContentImportInputMode> SupportedInputModes =
@@ -48,10 +52,11 @@ public sealed class AdminContentImportController : ControllerBase
     // { sourceName, resourceType, inputMode, content, defaultCefrLevel?, defaultSkill?,
     //   defaultSubskill?, defaultContextTags?, defaultFocusTags?, defaultDifficultyBand?, notes? }
     //
-    // resourceType: "vocabulary" | "grammar" | "reading" | "writing" (Phase J5a) — Listening/
-    // Speaking/Mixed are not yet modeled by ResourceCandidateType and are rejected here (Coming
-    // soon in the UI); see docs/architecture/product-model-realignment-h0.md for the H2 scope
-    // decision and the J5 roadmap entries for the phased type expansion.
+    // resourceType: "vocabulary" | "grammar" | "reading" | "writing" (Phase J5a) |
+    // "mixed" (Phase J5b — no forced type, each row is classified independently by its own
+    // fields) — Listening/Speaking are not yet modeled by ResourceCandidateType and are rejected
+    // here (Coming soon in the UI); see docs/architecture/product-model-realignment-h0.md for the
+    // H2 scope decision and the J5 roadmap entries for the phased type expansion.
     // inputMode: "pasted_text" | "csv_text" | "json_text" — file upload already exists as its own
     // flow (POST api/admin/resource-import-runs) and is out of scope for this endpoint.
     [HttpPost]
@@ -61,7 +66,7 @@ public sealed class AdminContentImportController : ControllerBase
             return BadRequest(new { error = "Source name is required." });
 
         if (!SupportedResourceTypes.TryGetValue(body.ResourceType ?? string.Empty, out var resourceType))
-            return BadRequest(new { error = $"Unsupported or not-yet-implemented resource type '{body.ResourceType}'. Use vocabulary, grammar, reading, or writing." });
+            return BadRequest(new { error = $"Unsupported or not-yet-implemented resource type '{body.ResourceType}'. Use vocabulary, grammar, reading, writing, or mixed." });
 
         if (!SupportedInputModes.TryGetValue(body.InputMode ?? string.Empty, out var inputMode))
             return BadRequest(new { error = $"Unsupported input mode '{body.InputMode}'. Use pasted_text, csv_text, or json_text." });
