@@ -39,7 +39,9 @@ public sealed class ResourceImportService : IResourceImportService
     private static readonly string[] ExplicitLanguageFieldNames = { "languagecode", "language", "lang" };
     private static readonly string[] AllowedExplicitLanguageValues = { "en", "eng", "en-us", "en-gb" };
 
-    private static readonly string[] VocabularyFields = { "word", "lemma" };
+    // "headword" recognized alongside "word"/"lemma" — the standard column name in published
+    // CEFR word lists (e.g. the CEFR-J Vocabulary Profile), found to be unrecognized in practice.
+    private static readonly string[] VocabularyFields = { "word", "lemma", "headword" };
     private static readonly string[] GrammarFields = { "grammarkey", "explanation" };
     private static readonly string[] ReadingFields = { "passage", "text" };
     private static readonly string[] TemplateFields = { "formio", "schema", "template" };
@@ -52,14 +54,16 @@ public sealed class ResourceImportService : IResourceImportService
     private static readonly string[] SpeakingFields = { "scenario" };
     private static readonly string[] AnyContentFields =
         {
-            "word", "lemma", "text", "passage", "title", "grammarkey", "explanation", "formio", "schema", "template",
-            "prompt", "transcript", "scenario",
+            "word", "lemma", "headword", "text", "passage", "title", "grammarkey", "explanation", "formio", "schema",
+            "template", "prompt", "transcript", "scenario",
         };
 
     // Phase E6 — optional deterministic classification columns. When present on a row, their
     // values are copied directly onto the staged candidate (see ProcessRow) instead of being left
     // null for Phase E2's AI analysis to fill in later.
-    private const string CefrLevelField = "cefrlevel";
+    // "cefr" recognized alongside "cefrlevel" — the standard column name in published CEFR word
+    // lists (e.g. the CEFR-J Vocabulary Profile), found to be unrecognized in practice.
+    private static readonly string[] CefrLevelFieldNames = { "cefrlevel", "cefr" };
     private const string SkillField = "skill";
     private const string SubskillField = "subskill";
     private const string TagsField = "tags";
@@ -203,11 +207,20 @@ public sealed class ResourceImportService : IResourceImportService
             return;
         }
 
-        // Gate 3 — must have at least one recognizable content field.
+        // Gate 3 — must have at least one recognizable content field. The message lists the row's
+        // own column names (not just the recognized set) so an admin importing a file with an
+        // unfamiliar header convention (e.g. a published word list using "headword" instead of
+        // "word") can immediately see the mismatch and either rename a column or pick a different
+        // input shape, rather than deciphering it from a generic list of accepted names alone.
         if (!AnyContentFields.Any(f => HasField(row, f)))
         {
+            var actualColumns = row.Keys.Where(k => !string.IsNullOrWhiteSpace(k)).ToList();
+            var columnsSummary = actualColumns.Count > 0 ? string.Join(", ", actualColumns) : "(no columns)";
             RejectRow(runId, row, rawJson, rawHash, languageVerdict.DetectedLanguageCode,
-                "No recognizable content field (word/lemma/text/passage/title/grammarKey/formIo/schema/template).",
+                $"None of this row's columns ({columnsSummary}) match a recognized content field. Expected one of: " +
+                "word/lemma/headword (vocabulary), grammarKey/explanation (grammar), passage/text (reading), " +
+                "prompt (writing), transcript (listening), scenario (speaking), formIo/schema/template (activity), " +
+                "or title. Rename a column to match, or use a different content type.",
                 ref rejected, ref warnings);
             return;
         }
@@ -261,7 +274,7 @@ public sealed class ResourceImportService : IResourceImportService
         string? text = type switch
         {
             ResourceCandidateType.VocabularyEntry =>
-                GetField(row, "word") ?? GetField(row, "lemma") ?? GetField(row, "text"),
+                GetField(row, "word") ?? GetField(row, "lemma") ?? GetField(row, "headword") ?? GetField(row, "text"),
             ResourceCandidateType.GrammarProfileEntry =>
                 GetField(row, "grammarkey") ?? GetField(row, "title") ?? GetField(row, "explanation") ?? GetField(row, "text"),
             ResourceCandidateType.ReadingPassage =>
@@ -303,7 +316,7 @@ public sealed class ResourceImportService : IResourceImportService
     {
         var warnings = new List<string>();
 
-        var rowCefr = GetField(row, CefrLevelField);
+        var rowCefr = GetFieldAny(row, CefrLevelFieldNames);
         string? cefrLevel;
         if (rowCefr is not null)
         {
@@ -403,7 +416,7 @@ public sealed class ResourceImportService : IResourceImportService
         IReadOnlyDictionary<string, string?> row)
     {
         if (VocabularyFields.Any(f => HasField(row, f)))
-            return (ResourceCandidateType.VocabularyEntry, GetField(row, "word") ?? GetField(row, "lemma")!);
+            return (ResourceCandidateType.VocabularyEntry, GetField(row, "word") ?? GetField(row, "lemma") ?? GetField(row, "headword")!);
 
         if (GrammarFields.Any(f => HasField(row, f)) || (HasField(row, "title") && HasField(row, "explanation")))
             return (ResourceCandidateType.GrammarProfileEntry,
@@ -441,6 +454,16 @@ public sealed class ResourceImportService : IResourceImportService
 
     private static bool HasField(IReadOnlyDictionary<string, string?> row, string fieldNameLower) =>
         !string.IsNullOrWhiteSpace(GetField(row, fieldNameLower));
+
+    private static string? GetFieldAny(IReadOnlyDictionary<string, string?> row, IReadOnlyList<string> fieldNamesLower)
+    {
+        foreach (var name in fieldNamesLower)
+        {
+            var value = GetField(row, name);
+            if (!string.IsNullOrWhiteSpace(value)) return value;
+        }
+        return null;
+    }
 
     private static string? GetField(IReadOnlyDictionary<string, string?> row, string fieldNameLower)
     {

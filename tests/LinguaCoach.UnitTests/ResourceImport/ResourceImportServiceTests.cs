@@ -434,6 +434,41 @@ public sealed class ResourceImportServiceTests : IDisposable
         candidate.CanonicalText.Should().Be("An interview about remote work habits.");
     }
 
+    // ── Real-world CSV header compatibility (found importing the CEFR-J Vocabulary Profile) ────
+
+    [Fact]
+    public async Task Row_with_headword_and_CEFR_columns_is_recognized_as_vocabulary()
+    {
+        // Matches the CEFR-J Vocabulary Profile's actual header shape: headword,pos,CEFR,...
+        var source = SeedApprovedSource();
+        var csv = "headword,pos,CEFR\nabandon,verb,B1\n";
+
+        var result = await _sut.ImportAsync(new ResourceImportRequest(
+            source.Id, ToStream(csv), "cefrj.csv", ResourceImportMode.Csv));
+
+        result.SucceededCount.Should().Be(1);
+        result.RejectedCount.Should().Be(0);
+        var candidate = await _db.ResourceCandidates.SingleAsync();
+        candidate.CandidateType.Should().Be(ResourceCandidateType.VocabularyEntry);
+        candidate.CanonicalText.Should().Be("abandon");
+        candidate.CefrLevel.Should().Be("B1");
+    }
+
+    [Fact]
+    public async Task Row_with_only_unrecognized_columns_produces_an_actionable_rejection_message()
+    {
+        var source = SeedApprovedSource();
+        var csv = "foo,bar\nsomething,else\n";
+
+        var result = await _sut.ImportAsync(new ResourceImportRequest(
+            source.Id, ToStream(csv), "unrecognized.csv", ResourceImportMode.Csv));
+
+        result.RejectedCount.Should().Be(1);
+        var rawRecord = await _db.ResourceRawRecords.SingleAsync();
+        rawRecord.ExtractionWarningsJson.Should().Contain("foo").And.Contain("bar");
+        rawRecord.ExtractionWarningsJson.Should().Contain("headword");
+    }
+
     // ── Phase J5d — SpeakingPrompt candidate type ───────────────────────────────
 
     [Fact]

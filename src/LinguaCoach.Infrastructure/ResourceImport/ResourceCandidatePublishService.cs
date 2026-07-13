@@ -213,7 +213,7 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
 
         // Same field-name convention ResourceCandidatePreviewService's BuildVocabularyPreview
         // uses — reused via ResourceCandidateFieldHelper rather than duplicated.
-        var word = (ResourceCandidateFieldHelper.GetFieldCI(fields, "word", "lemma") ?? candidate.CanonicalText).Trim();
+        var word = (ResourceCandidateFieldHelper.GetFieldCI(fields, "word", "lemma", "headword") ?? candidate.CanonicalText).Trim();
         var partOfSpeech = ResourceCandidateFieldHelper.GetFieldCI(fields, "partofspeech", "pos")?.Trim();
         var notes = ResourceCandidateFieldHelper.GetFieldCI(fields, "definition", "meaning")?.Trim();
 

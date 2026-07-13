@@ -117,7 +117,11 @@ public sealed class AdminResourceImportEndpointTests : IClassFixture<ApiTestFact
             { new StringContent(sourceId.ToString()), "sourceId" },
             { new StringContent("Csv"), "importMode" },
         };
-        form.Add(new ByteArrayContent(Encoding.UTF8.GetBytes("word,cefr\nhello,A1\n")), "file", "vocab.csv");
+        // No cefr column here on purpose — several tests using this helper rely on the resulting
+        // candidate being genuinely "pending" (AiAnalysisJson == null) for AnalyzePendingCandidates
+        // to pick up. A recognized cefr column would set it deterministically at import time
+        // (Phase E6), which is correct behavior but would make this fixture stop being "pending".
+        form.Add(new ByteArrayContent(Encoding.UTF8.GetBytes($"word\n{Guid.NewGuid():N}\n")), "file", "vocab.csv");
 
         var importResp = await client.PostAsync("/api/admin/resource-import-runs", form);
         var importBody = await importResp.Content.ReadFromJsonAsync<JsonElement>();

@@ -161,10 +161,10 @@ public sealed class ResourceCandidatePreviewService : IResourceCandidatePreviewS
     private static (ResourceCandidateRenderedPreviewDto, bool) BuildVocabularyPreview(
         ResourceCandidate candidate, IReadOnlyDictionary<string, string?> normalized, List<string> previewWarnings)
     {
-        var word = GetFieldCI(normalized, "word", "lemma");
+        var word = GetFieldCI(normalized, "word", "lemma", "headword");
         if (word is null)
         {
-            previewWarnings.Add("VocabularyEntry candidate has no 'word'/'lemma' field to render — falling back to its canonical text.");
+            previewWarnings.Add("VocabularyEntry candidate has no 'word'/'lemma'/'headword' field to render — falling back to its canonical text.");
             return (new ResourceCandidateRenderedPreviewDto(
                 Kind: ResourceCandidateType.VocabularyEntry.ToString(), Word: candidate.CanonicalText), false);
         }
@@ -401,7 +401,7 @@ public sealed class ResourceCandidatePreviewService : IResourceCandidatePreviewS
 
     private static string DeriveTitle(ResourceCandidate candidate, IReadOnlyDictionary<string, string?> normalized) =>
         GetFieldCI(normalized, "title")
-        ?? GetFieldCI(normalized, "word", "lemma")
+        ?? GetFieldCI(normalized, "word", "lemma", "headword")
         ?? GetFieldCI(normalized, "grammarkey")
         ?? candidate.CanonicalText;
 
