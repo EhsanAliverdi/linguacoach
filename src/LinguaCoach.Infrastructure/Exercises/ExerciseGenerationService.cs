@@ -154,6 +154,13 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
     public const string ActivityTypeSpeakingRoleplayTurn = "speaking_roleplay_turn";
     public const string ActivityTypeReadAloud = "read_aloud";
 
+    /// <summary>Phase K20 — deterministic, Speaking resources only, and only when the resource
+    /// has <see cref="LinguaCoach.Application.ResourceImport.SpeakingPromptContent.ImageUrl"/>
+    /// set. Rejects (does not degrade) when absent — most existing Speaking resources have no
+    /// image, since it was added specifically to unblock this type rather than being a
+    /// universally-required field.</summary>
+    public const string ActivityTypeDescribeImage = "describe_image";
+
     /// <summary>Phase K18 — deterministic, Listening resources only. Reuses
     /// <see cref="ComposeWritingPrompt"/>/<see cref="ComposeSpeakingPrompt"/> unchanged — these
     /// are resource-agnostic (they just show <c>primary.Body</c> verbatim), so no new compose
@@ -187,6 +194,17 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
     /// datagrid's rows from the schema's <c>defaultValue</c> the way this composer assumes —
     /// flagged for manual verification, not silently trusted.</summary>
     public const string ActivityTypeReorderParagraphs = "reorder_paragraphs";
+
+    /// <summary>Phase K19 — the one Exercise type sourced from the Lesson's own Body, not a
+    /// Resource Bank row at all — decided this phase (previously an open K19 product question).
+    /// Bypasses the normal resource-linking requirement in
+    /// <see cref="HandleAsync(GenerateActivityFromLessonRequest, CancellationToken)"/> entirely
+    /// (there is no primary resource to resolve), and is therefore not offered by
+    /// <see cref="IGenerateActivityFromResourcesHandler"/> — it only exists via the
+    /// Lesson-generation entry point. Not skill-gated like every other type (the Lesson picker
+    /// treats this one specially, always offering it regardless of the Lesson's own skill, since
+    /// reflection is meta to the Lesson content, not skill-specific).</summary>
+    public const string ActivityTypeLessonReflection = "lesson_reflection";
 
     private const int MaxClozeBlanks = 4;
     private const int MinClozeWordLength = 5;
@@ -245,6 +263,11 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
         var lesson = await _db.Lessons.FirstOrDefaultAsync(l => l.Id == request.LessonId, ct)
             ?? throw new ExerciseValidationException($"Lesson '{request.LessonId}' was not found.");
 
+        // Phase K19 — lesson_reflection has no primary resource at all (see its constant's doc
+        // comment), so it bypasses the "must have linked resources" requirement below entirely.
+        if (string.Equals(request.RequestedActivityType?.Trim(), ActivityTypeLessonReflection, StringComparison.OrdinalIgnoreCase))
+            return await ComposeAndSaveLessonReflectionAsync(lesson, request.Title, request.Notes, request.CreatedByUserId, ct);
+
         var lessonLinks = await _db.LessonResourceLinks
             .Where(l => l.LessonId == lesson.Id).ToListAsync(ct);
         if (lessonLinks.Count == 0)
@@ -268,6 +291,68 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
             lesson.CefrLevel, lesson.Skill, lesson.Subskill,
             ParseTags(lesson.ContextTagsJson), ParseTags(lesson.FocusTagsJson), lesson.DifficultyBand,
             request.Notes, request.CreatedByUserId, lessonId: lesson.Id, ct);
+    }
+
+    /// <summary>Phase K19 — the only Exercise composer sourced from a Lesson's own Body/Title
+    /// instead of a Resource Bank row; see <see cref="ActivityTypeLessonReflection"/>'s doc
+    /// comment. Deterministic, open-ended, honestly marked
+    /// <see cref="ComponentScoringRule.RequiresManualOrAiEvaluation"/> — reflection has no
+    /// "correct answer" by nature. Creates zero <see cref="ExerciseResourceLink"/> rows (there is
+    /// no resource this Exercise is derived from).</summary>
+    private async Task<GenerateExerciseResult> ComposeAndSaveLessonReflectionAsync(
+        Lesson lesson, string? title, string? notes, Guid? createdByUserId, CancellationToken ct)
+    {
+        // No "is Body empty" guard here — Lesson's own constructor already guarantees a
+        // non-whitespace Body (ValidateAuthorableFields), so that state can't occur.
+        var lessonBody = lesson.Body.Trim();
+        var instructions = "Reflect on what you just learned in this Lesson.";
+        var formSchemaJson = JsonSerializer.Serialize(new
+        {
+            components = new object[]
+            {
+                new { type = "content", key = "lesson", html = $"<p>{System.Net.WebUtility.HtmlEncode(lessonBody)}</p>" },
+                new { type = "textarea", key = "answer", label = "What was the key takeaway for you, and how will you use it?", input = true },
+            }
+        });
+        var answerKeyJson = JsonSerializer.Serialize(new Dictionary<string, string?> { ["answer"] = null });
+        var scoringRulesJson = JsonSerializer.Serialize(new ScoringRulesDocument(
+            new Dictionary<string, ComponentScoringRule> { ["answer"] = new(ScoringRuleKinds.TextNormalized, RequiresManualOrAiEvaluation: true) }));
+        var feedbackPlanJson = JsonSerializer.Serialize(new
+        {
+            correctFeedback = (string?)null,
+            incorrectFeedback = (string?)null,
+            note = "Reflection — not deterministically scored, no manual/AI evaluation required either.",
+        });
+
+        var schemaCheck = _schemaValidator.ValidateSchema(formSchemaJson);
+        if (!schemaCheck.IsValid)
+            throw new ExerciseValidationException($"Generated Form.io schema failed validation: {schemaCheck.Error}");
+
+        var resolvedTitle = !string.IsNullOrWhiteSpace(title) ? title!.Trim() : $"{lesson.Title} — Reflection";
+        var description = $"Deterministic draft — review and edit before approval. Generated from Lesson: {lesson.Title}."
+            + (notes is not null ? $" {notes.Trim()}" : string.Empty);
+
+        Exercise activity;
+        try
+        {
+            activity = new Exercise(
+                resolvedTitle, instructions, ActivityTypeLessonReflection, ExerciseRendererType.Formio, ExerciseSourceMode.GeneratedFromLesson,
+                description, patternKey: null, formSchemaJson, answerKeyJson, scoringRulesJson, feedbackPlanJson,
+                lesson.CefrLevel, "Reflection", subskill: null,
+                contextTagsJson: "[]", focusTagsJson: "[]",
+                difficultyBand: lesson.DifficultyBand, estimatedMinutes: null, lesson.Id,
+                GenerationProvider, GenerationModel, createdByUserId);
+        }
+        catch (ArgumentException ex)
+        {
+            throw new ExerciseValidationException(ex.Message);
+        }
+
+        _db.Exercises.Add(activity);
+        await _db.SaveChangesAsync(ct);
+
+        var dto = ExerciseMappers.ToDto(activity, Array.Empty<ExerciseResourceLink>());
+        return new GenerateExerciseResult(dto, $"/admin/exercises?id={activity.Id}");
     }
 
     private async Task<GenerateExerciseResult> ComposeAndSaveAsync(
@@ -319,6 +404,7 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
                     ActivityTypeAnswerShortQuestion,
                     ActivityTypeSpeakingRoleplayTurn,
                     ActivityTypeReadAloud,
+                    ActivityTypeDescribeImage,
                 },
             _ => Array.Empty<string>(),
         };
@@ -358,6 +444,7 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
                 "Read the roleplay scenario below and record your spoken turn."),
             ActivityTypeReadAloud => ComposeSpeakingPrompt(primary.Snapshot,
                 "Read the text below aloud, as clearly and naturally as possible."),
+            ActivityTypeDescribeImage => await ComposeDescribeImageAsync(primary.Snapshot, primaryMatch.Input.ResourceId, ct),
             ActivityTypeSummarizeSpokenText => ComposeWritingPrompt(primary.Snapshot,
                 "Read the transcript below and write a concise summary in your own words.", "Your summary"),
             ActivityTypeRetellLecture => ComposeSpeakingPrompt(primary.Snapshot,
@@ -666,6 +753,49 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
         });
 
         return (instructions, formSchemaJson, answerKeyJson, scoringRulesJson, feedbackPlanJson);
+    }
+
+    /// <summary>Phase K20 — same speakingResponse/unscored shape as
+    /// <see cref="ComposeSpeakingPrompt"/>, but shows an <c>&lt;img&gt;</c> instead of text —
+    /// see <see cref="ActivityTypeDescribeImage"/>'s doc comment for why generation is rejected
+    /// when the Speaking resource has no ImageUrl.</summary>
+    private async Task<(string Instructions, string FormSchemaJson, string AnswerKeyJson, string ScoringRulesJson, string FeedbackPlanJson)>
+        ComposeDescribeImageAsync(LessonResourceSnapshot primary, Guid resourceId, CancellationToken ct)
+    {
+        var imageUrl = await FindSpeakingImageUrlAsync(resourceId, ct);
+        if (string.IsNullOrWhiteSpace(imageUrl))
+            throw new ExerciseValidationException(
+                $"Resource '{primary.Title}' has no image set — add one on the Resource Bank edit page, or use a different Exercise type.");
+
+        var instructions = "Look at the image below and describe what you see, as clearly and naturally as possible.";
+        var formSchemaJson = JsonSerializer.Serialize(new
+        {
+            components = new object[]
+            {
+                new { type = "content", key = "image", html = $"<img src=\"{System.Net.WebUtility.HtmlEncode(imageUrl)}\" alt=\"Describe this image\" style=\"max-width:100%;\" />" },
+                new { type = "speakingResponse", key = "answer", label = "Your spoken description" },
+            }
+        });
+        var answerKeyJson = JsonSerializer.Serialize(new Dictionary<string, string?> { ["answer"] = null });
+        var scoringRulesJson = JsonSerializer.Serialize(new ScoringRulesDocument(
+            new Dictionary<string, ComponentScoringRule> { ["answer"] = new(ScoringRuleKinds.Speaking, RequiresManualOrAiEvaluation: true) }));
+        var feedbackPlanJson = JsonSerializer.Serialize(new
+        {
+            correctFeedback = (string?)null,
+            incorrectFeedback = (string?)null,
+            note = "Open-ended spoken response — requires manual or AI evaluation, not deterministically scored.",
+        });
+
+        return (instructions, formSchemaJson, answerKeyJson, scoringRulesJson, feedbackPlanJson);
+    }
+
+    private async Task<string?> FindSpeakingImageUrlAsync(Guid resourceId, CancellationToken ct)
+    {
+        var json = await _db.ResourceBankItems
+            .Where(e => e.Id == resourceId && e.Type == PublishedResourceType.Speaking)
+            .Select(e => e.ContentJson)
+            .FirstOrDefaultAsync(ct);
+        return json is null ? null : ResourceBankItemContent.Deserialize<SpeakingPromptContent>(json).ImageUrl;
     }
 
     /// <summary>Phase K16 — deterministic cloze over the resource's own excerpt/passage text.

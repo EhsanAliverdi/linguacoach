@@ -156,7 +156,9 @@ public sealed record UpdateResourceBankItemCommand(
     // Listening
     string? Transcript = null,
     // Speaking
-    int? SuggestedDurationSeconds = null
+    int? SuggestedDurationSeconds = null,
+    // Speaking (Phase K20 — describe_image)
+    string? ImageUrl = null
 );
 
 public interface IResourceBankItemUpdateHandler
@@ -191,5 +193,6 @@ public sealed record ResourceBankItemEditDto(
     string? Genre,
     int? SuggestedMinWords,
     string? Transcript,
-    int? SuggestedDurationSeconds
+    int? SuggestedDurationSeconds,
+    string? ImageUrl
 );

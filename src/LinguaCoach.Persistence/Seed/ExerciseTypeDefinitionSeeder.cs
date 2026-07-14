@@ -97,7 +97,14 @@ public static class ExerciseTypeDefinitionSeeder
         BankFirst(ExercisePatternKey.SpeakingRoleplayTurn, "Speaking Roleplay Turn",
             "Open-ended roleplay turn, shown from the resource's own prompt text verbatim. Requires manual or AI evaluation. Speaking resources only.",
             "speaking", "[]", 1, 1, 1),
-        Ready(ExercisePatternKey.LessonReflection, "Lesson Reflection", "Review and reflect on the lesson.", "reflection", "[]", "Pattern", "read_only", "no_marking", "activity_generate_lesson_reflection", ActivityType.WritingScenario, ExercisePatternKey.LessonReflection, 2, false, false),
+        // Phase K19 — lesson_reflection now has a real Lesson-generation composer, sourced from
+        // the Lesson's own Body/Title rather than a Resource Bank row (see
+        // ActivityGenerationService.ComposeAndSaveLessonReflectionAsync). Same key, moves to
+        // BankFirst/enabled. Not skill-gated in the frontend picker — reflection applies to any
+        // Lesson regardless of its skill.
+        BankFirst(ExercisePatternKey.LessonReflection, "Lesson Reflection",
+            "Open-ended reflection prompt generated from the Lesson's own body text, not a Resource Bank row. Requires manual or AI evaluation. Available for any Lesson.",
+            "reflection", "[]", 1, 1, 1),
         // Phase K17 — reading_multiple_choice_single now has a real (AI-assisted)
         // Lesson-generation composer (AiExerciseGenerationService.ComposeReadingMultipleChoiceSingle),
         // so this row moves from the disabled-by-default Pattern bucket into BankFirst/enabled,
@@ -134,7 +141,12 @@ public static class ExerciseTypeDefinitionSeeder
         // read_aloud promoted to Ready above
         Ready(ExercisePatternKey.RepeatSentence, "Repeat Sentence", "Hear or read a short sentence, then repeat it as accurately as you can.", "speaking", "[\"listening\", \"pronunciation\"]", "Pattern", "repeat_sentence", "exact_match", "activity_generate_repeat_sentence", ActivityType.SpeakingRolePlay, ExercisePatternKey.RepeatSentence, 5, false, false),
         // repeat_sentence promoted to Ready above
-        Ready(ExercisePatternKey.DescribeImage, "Describe Image", "Look at an image prompt and describe what you see as clearly and naturally as possible.", "speaking", "[\"vocabulary\", \"communication\"]", "Pattern", "describe_image", "ai_open_ended", "activity_generate_describe_image", ActivityType.SpeakingRolePlay, ExercisePatternKey.DescribeImage, 6, false, false),
+        // Phase K20 — describe_image now has a real Lesson-generation composer, sourced from
+        // the Speaking resource's new optional ImageUrl field (must be set on that resource in
+        // the Resource Bank edit page first). Same key, moves to BankFirst/enabled.
+        BankFirst(ExercisePatternKey.DescribeImage, "Describe Image",
+            "Look at the resource's own image and describe what you see aloud. Requires the Speaking resource to have an Image URL set. Requires manual or AI evaluation.",
+            "speaking", "[\"vocabulary\", \"communication\"]", 1, 1, 1),
         // describe_image promoted to Ready above
         // Phase K18 — respond_to_situation now has a real Lesson-generation composer, same
         // BankFirst/enabled conversion as the other Speaking types, same key.

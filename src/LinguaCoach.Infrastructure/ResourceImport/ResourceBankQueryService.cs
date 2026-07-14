@@ -437,7 +437,7 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
             TextType: null, DifficultyNotes: null, ReferenceExcerpt: null,
             Title: null, PassageText: null, Summary: null,
             PromptText: null, Genre: null, SuggestedMinWords: null,
-            Transcript: null, SuggestedDurationSeconds: null);
+            Transcript: null, SuggestedDurationSeconds: null, ImageUrl: null);
 
         switch (entry.Type)
         {
@@ -474,7 +474,7 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
             case PublishedResourceType.Speaking:
             {
                 var c = ResourceBankItemContent.Deserialize<SpeakingPromptContent>(entry.ContentJson);
-                return empty with { Type = UnifiedResourceBankItemType.Speaking, Title = c.Title, PromptText = c.PromptText, SuggestedDurationSeconds = c.SuggestedDurationSeconds };
+                return empty with { Type = UnifiedResourceBankItemType.Speaking, Title = c.Title, PromptText = c.PromptText, SuggestedDurationSeconds = c.SuggestedDurationSeconds, ImageUrl = c.ImageUrl };
             }
             default:
                 return null;

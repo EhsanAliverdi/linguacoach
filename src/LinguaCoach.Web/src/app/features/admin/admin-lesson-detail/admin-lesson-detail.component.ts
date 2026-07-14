@@ -206,7 +206,11 @@ export class AdminLessonDetailComponent implements OnInit {
    *  Lesson's skill. No more hardcoded type lists in the frontend — flip a type on in the
    *  catalog (once its composer ships, see the K15-K19 build-out plan) and it appears here with
    *  zero further frontend changes. Unknown/blank Lesson skill falls back to showing every
-   *  enabled+ready type, since the backend remains the real gate either way. */
+   *  enabled+ready type, since the backend remains the real gate either way.
+   *
+   *  Phase K19 — lesson_reflection is a deliberate exception: it's sourced from the Lesson's own
+   *  body, not skill-specific, so it's always offered regardless of skill match (see
+   *  ActivityGenerationService.ActivityTypeLessonReflection's doc comment). */
   openGenerate(): void {
     this.generateError.set('');
     this.generateModalOpen.set(true);
@@ -217,7 +221,8 @@ export class AdminLessonDetailComponent implements OnInit {
         this.typeCountsLoading.set(false);
         const eligible = types.filter(t => t.isAvailableForGeneration);
         const matching = skill
-          ? eligible.filter(t => t.primarySkill?.toLowerCase() === skill
+          ? eligible.filter(t => t.key === 'lesson_reflection'
+              || t.primarySkill?.toLowerCase() === skill
               || (t.secondarySkills ?? []).some(s => s.toLowerCase() === skill))
           : eligible;
         this.typeCounts.set(matching.map(t => ({

@@ -118,6 +118,7 @@ export class AdminResourceBankEditComponent implements OnInit {
       suggestedMinWords: dto.suggestedMinWords,
       transcript: dto.transcript,
       suggestedDurationSeconds: dto.suggestedDurationSeconds,
+      imageUrl: dto.imageUrl,
     }).subscribe({
       next: () => {
         this.saving.set(false);

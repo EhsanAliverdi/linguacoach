@@ -90,7 +90,8 @@ public sealed class ResourceBankItemUpdateHandler : IResourceBankItemUpdateHandl
                 if (string.IsNullOrWhiteSpace(command.Title) || string.IsNullOrWhiteSpace(command.PromptText))
                     throw new ResourceImportValidationException("Title and PromptText are required.");
                 contentJson = ResourceBankItemContent.Serialize(new SpeakingPromptContent(
-                    command.Title.Trim(), command.PromptText.Trim(), command.SuggestedDurationSeconds));
+                    command.Title.Trim(), command.PromptText.Trim(), command.SuggestedDurationSeconds,
+                    string.IsNullOrWhiteSpace(command.ImageUrl) ? null : command.ImageUrl.Trim()));
                 break;
 
             default:

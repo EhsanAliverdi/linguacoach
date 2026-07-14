@@ -100,11 +100,11 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         return e;
     }
 
-    private ResourceBankItem SeedSpeakingPrompt(Guid sourceId, string promptText = "Describe your daily responsibilities at work.")
+    private ResourceBankItem SeedSpeakingPrompt(Guid sourceId, string promptText = "Describe your daily responsibilities at work.", string? imageUrl = null)
     {
         var e = new ResourceBankItem(
             PublishedResourceType.Speaking, sourceId, "B1",
-            ResourceBankItemContent.Serialize(new SpeakingPromptContent("Describe Your Role", promptText, 60)));
+            ResourceBankItemContent.Serialize(new SpeakingPromptContent("Describe Your Role", promptText, 60, imageUrl)));
         _db.ResourceBankItems.Add(e);
         _db.SaveChanges();
         return e;
@@ -332,6 +332,40 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var result = await _sut.HandleAsync(new GenerateActivityFromLessonRequest(lessonResult.Lesson.Id));
 
         result.Activity.Links.Should().ContainSingle(l => l.ResourceType == "Vocabulary" && l.ResourceId == vocab.Id);
+    }
+
+    // ── Phase K19 — lesson_reflection (sourced from the Lesson's own Body, not a resource) ─────
+
+    [Fact]
+    public async Task Lesson_reflection_creates_pending_activity_with_no_resource_links()
+    {
+        var lesson = new Lesson("Present Perfect", "Present perfect is used for past actions with present relevance.", LessonSourceMode.Manual);
+        _db.Lessons.Add(lesson);
+        await _db.SaveChangesAsync();
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromLessonRequest(lesson.Id, RequestedActivityType: "lesson_reflection"));
+
+        result.Activity.ActivityType.Should().Be("lesson_reflection");
+        result.Activity.ReviewStatus.Should().Be("PendingReview");
+        result.Activity.SourceMode.Should().Be("GeneratedFromLesson");
+        result.Activity.LessonId.Should().Be(lesson.Id);
+        result.Activity.Links.Should().BeEmpty();
+        result.Activity.FormSchemaJson.Should().Contain("Present perfect is used for past actions with present relevance.").And.Contain("textarea");
+        result.Activity.ScoringRulesJson.Should().Contain("RequiresManualOrAiEvaluation").And.Contain("true");
+    }
+
+    [Fact]
+    public async Task Lesson_reflection_does_not_require_linked_resources()
+    {
+        // Unlike every other activity type, lesson_reflection must succeed even when the Lesson
+        // has zero LessonResourceLinks — it bypasses that requirement entirely.
+        var lesson = new Lesson("Manual title", "Manual body", LessonSourceMode.Manual);
+        _db.Lessons.Add(lesson);
+        await _db.SaveChangesAsync();
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromLessonRequest(lesson.Id, RequestedActivityType: "lesson_reflection"));
+
+        result.Activity.ActivityType.Should().Be("lesson_reflection");
     }
 
     [Fact]
@@ -863,6 +897,38 @@ public sealed class ActivityGenerationServiceTests : IDisposable
             RequestedActivityType: "gap_fill"));
 
         await act.Should().ThrowAsync<ExerciseValidationException>();
+    }
+
+    // ── Phase K20 — describe_image ──────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task Describe_image_shows_the_resources_own_image_url()
+    {
+        var source = SeedSource();
+        var speaking = SeedSpeakingPrompt(source.Id, imageUrl: "https://example.com/office.jpg");
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Speaking", speaking.Id, "Primary") },
+            RequestedActivityType: "describe_image"));
+
+        result.Activity.ActivityType.Should().Be("describe_image");
+        result.Activity.FormSchemaJson.Should().Contain("https://example.com/office.jpg").And.Contain("speakingResponse");
+        result.Activity.ScoringRulesJson.Should().Contain("RequiresManualOrAiEvaluation").And.Contain("true");
+    }
+
+    [Fact]
+    public async Task Describe_image_rejected_when_resource_has_no_image_url()
+    {
+        var source = SeedSource();
+        var speaking = SeedSpeakingPrompt(source.Id); // no imageUrl
+
+        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Speaking", speaking.Id, "Primary") },
+            RequestedActivityType: "describe_image"));
+
+        (await act.Should().ThrowAsync<ExerciseValidationException>())
+            .WithMessage("*has no image set*");
+        (await _db.Exercises.CountAsync()).Should().Be(0);
     }
 
     [Fact]

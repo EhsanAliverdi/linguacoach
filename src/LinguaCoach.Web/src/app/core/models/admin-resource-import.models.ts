@@ -432,6 +432,7 @@ export interface ResourceBankItemEditDto {
   suggestedMinWords: number | null;
   transcript: string | null;
   suggestedDurationSeconds: number | null;
+  imageUrl: string | null;
 }
 
 export interface UpdateResourceBankItemRequest {
@@ -465,6 +466,8 @@ export interface UpdateResourceBankItemRequest {
   transcript?: string | null;
   // Speaking
   suggestedDurationSeconds?: number | null;
+  // Speaking (Phase K20 — describe_image)
+  imageUrl?: string | null;
 }
 
 // ── Phase K8 — "Fix with AI" repair ──────────────────────────────────────────

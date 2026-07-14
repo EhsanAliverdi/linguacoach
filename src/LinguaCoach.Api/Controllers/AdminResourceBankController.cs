@@ -106,7 +106,7 @@ public sealed class AdminResourceBankController : ControllerBase
                 body.Word, body.PartOfSpeech, body.Notes, body.GrammarPoint, body.Description,
                 body.TextType, body.DifficultyNotes, body.ReferenceExcerpt, body.Title, body.PassageText,
                 body.Summary, body.PromptText, body.Genre, body.SuggestedMinWords, body.Transcript,
-                body.SuggestedDurationSeconds), ct);
+                body.SuggestedDurationSeconds, body.ImageUrl), ct);
             return Ok(result);
         }
         catch (ResourceImportValidationException ex)
@@ -198,6 +198,7 @@ public sealed class AdminResourceBankController : ControllerBase
         string? Genre = null,
         int? SuggestedMinWords = null,
         string? Transcript = null,
-        int? SuggestedDurationSeconds = null
+        int? SuggestedDurationSeconds = null,
+        string? ImageUrl = null
     );
 }

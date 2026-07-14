@@ -112,6 +112,9 @@
             <sp-admin-form-field label="Suggested response duration (seconds)">
               <sp-admin-number-input [ngModel]="e.suggestedDurationSeconds" (ngModelChange)="e.suggestedDurationSeconds = $event" [min]="0" />
             </sp-admin-form-field>
+            <sp-admin-form-field label="Image URL" hint="Required for the 'Describe Image' Exercise type — leave blank for scenarios with no image.">
+              <sp-admin-input [ngModel]="e.imageUrl" (ngModelChange)="e.imageUrl = $event" placeholder="https://..." />
+            </sp-admin-form-field>
           }
         }
       </div>

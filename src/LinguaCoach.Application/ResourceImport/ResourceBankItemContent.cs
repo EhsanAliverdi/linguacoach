@@ -50,11 +50,19 @@ public sealed record ListeningPassageContent(
 /// <summary>Phase J5d — a published speaking reference prompt: a role-play/task scenario the
 /// student speaks a response to. Text-only, matching WritingPromptContent's shape — no reference
 /// audio (see the J5d scope decision: the student's own spoken response is scored via SpeakingTurn
-/// elsewhere, unrelated to import).</summary>
+/// elsewhere, unrelated to import).
+///
+/// Phase K20 — <see cref="ImageUrl"/> added to support the <c>describe_image</c> Exercise type.
+/// Deliberately a plain URL string, not an uploaded/stored file — avoids building new file-upload
+/// plumbing (unlike Listening's AudioStorageKey/AudioContentType, which needed real storage since
+/// there is no external hosting for recorded audio). Optional: existing Speaking resources have
+/// no image and remain valid for every other Speaking Exercise type; describe_image itself
+/// rejects generation when this is null/empty rather than degrading.</summary>
 public sealed record SpeakingPromptContent(
     string Title,
     string PromptText,
-    int? SuggestedDurationSeconds);
+    int? SuggestedDurationSeconds,
+    string? ImageUrl = null);
 
 public static class ResourceBankItemContent
 {

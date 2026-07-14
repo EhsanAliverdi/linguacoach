@@ -309,6 +309,40 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     }
 
     [Fact]
+    public async Task LessonReflection_IsBankFirstAndGenerationEligible_PhaseK19()
+    {
+        // Phase K19 — lesson_reflection got a real composer sourced from the Lesson's own
+        // Body/Title, not a Resource Bank row (ActivityGenerationService.
+        // ComposeAndSaveLessonReflectionAsync) and moved from disabled-Pattern to
+        // BankFirst/enabled.
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "lesson_reflection");
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        Assert.Equal("BankFirst", type.Category);
+        Assert.True(type.IsEnabled);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.Equal("reflection", type.PrimarySkill);
+        Assert.Contains(eligible, e => e.Key == "lesson_reflection");
+    }
+
+    [Fact]
+    public async Task DescribeImage_IsBankFirstAndGenerationEligible_PhaseK20()
+    {
+        // Phase K20 — describe_image got a real composer sourced from the Speaking resource's
+        // new optional ImageUrl field and moved from disabled-Pattern to BankFirst/enabled.
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "describe_image");
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        Assert.Equal("BankFirst", type.Category);
+        Assert.True(type.IsEnabled);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.Equal("speaking", type.PrimarySkill);
+        Assert.Contains(eligible, e => e.Key == "describe_image");
+    }
+
+    [Fact]
     public async Task LegacyAndPatternTypes_AreDisabledByDefault_DespiteBeingReady()
     {
         var service = new ExerciseTypeCatalogService(_db);
@@ -325,7 +359,6 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     [InlineData("highlight_incorrect_words", "listening")]
     [InlineData("write_from_dictation", "listening")]
     [InlineData("repeat_sentence", "speaking")]
-    [InlineData("describe_image", "speaking")]
     public async Task PatternTypes_AreReadyButNotEligibleUntilAdminEnables(string key, string expectedSkill)
     {
         var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == key);
