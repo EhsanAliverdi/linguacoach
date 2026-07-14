@@ -1643,12 +1643,28 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
   Placement only. Built these 5 the same honest way as `short_answer`/`email_reply` instead:
   deterministic, `RequiresManualOrAiEvaluation=true`, using the already-allowlisted
   `speakingResponse` component. **20 of 40 catalog types now enabled — exactly half.**
-- [ ] **Phase K16 (remainder: `phrase_match`/`reorder_paragraphs`) + K17 (`highlight_incorrect_words`)
-  + K18 (remainder: `describe_image`/`repeat_sentence`/`write_from_dictation`/`retell_lecture`/
-  `summarize_group_discussion`/`summarize_spoken_text`/`teams_chat_simulation`) + K19 — Exercise
-  Type composer build-out** `Planned` (2026-07-15) — same doc as above. Builds real
-  Lesson-generation composers for the ~17 remaining catalog types that are Ready but disabled
-  pending their own composer, grouped by skill and generation complexity.
+- [x] **Phase K18 — `retell_lecture`/`summarize_group_discussion`/`summarize_spoken_text` +
+  `reading_writing_fill_in_blanks`** `Done` (2026-07-15) — same doc as above. The 3 open-ended
+  Listening types reuse `ComposeSpeakingPrompt`/`ComposeWritingPrompt` completely unchanged — zero
+  new compose code. `reading_writing_fill_in_blanks` is a new "choose the word" radio variant of
+  the existing cloze algorithm. Confirmed 3 old Pattern-Engine keys
+  (`listen_and_answer`/`listen_and_gap_fill`/`gap_fill_workplace_phrase`) are redundant with
+  already-built BankFirst types — intentionally left disabled rather than duplicated.
+  **24 of 40 catalog types enabled — 60% of the full catalog.**
+- [x] **Bank-first pipeline declared functionally complete** — all 7 `PublishedResourceType`s
+  (Vocabulary/Grammar/ReadingReference/ReadingPassage/Writing/Listening/Speaking) now have at
+  least one real, tested, deployed Exercise composer. The remaining 16 disabled catalog types are
+  each blocked on something outside "write a composer": a new scoring-kind design
+  (`phrase_match`), frontend Form.io verification only possible in a real browser
+  (`reorder_paragraphs`), a new custom text-selection component (`highlight_incorrect_words`),
+  resource content-model changes for image/audio fields (`describe_image`/`repeat_sentence`), new
+  backend audio-serving plumbing (`write_from_dictation` — investigated, genuinely nothing exists
+  to build on), a multi-turn scenario design (`teams_chat_simulation`), or K19 product decisions
+  (`lesson_reflection`, the pilot entry, the 4 Legacy entries). None of these block the core admin
+  workflow: Import Content → Resource Bank → Lesson → Exercise → Module → review → approve.
+- [ ] **K16/K17/K18/K19 remainder** `Planned` — same doc as above, each item individually scoped
+  with its specific blocker documented; pick up whichever gets unblocked first (a design decision,
+  a browser session, or a data-model change).
 
 ## Legacy database cleanup
 

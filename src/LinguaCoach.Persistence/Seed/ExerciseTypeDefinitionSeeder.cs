@@ -131,9 +131,17 @@ public static class ExerciseTypeDefinitionSeeder
             "Read a real-life situation from the resource's own prompt text and speak an appropriate response. Requires manual or AI evaluation. Speaking resources only.",
             "speaking", "[\"communication\", \"listening\"]", 1, 1, 1),
         // respond_to_situation promoted to Ready above
-        Ready(ExercisePatternKey.RetellLecture, "Retell Lecture", "Listen to or read a short lecture and retell the main ideas in your own words.", "listening", "[\"speaking\", \"summarizing\", \"communication\"]", "Pattern", "retell_lecture", "ai_open_ended", "activity_generate_retell_lecture", ActivityType.SpeakingRolePlay, ExercisePatternKey.RetellLecture, 7, false, false),
+        // Phase K18 — retell_lecture now has a real Lesson-generation composer (reuses
+        // ComposeSpeakingPrompt against the transcript), same key, moves to BankFirst/enabled.
+        BankFirst(ExercisePatternKey.RetellLecture, "Retell Lecture",
+            "Read the resource's own transcript and retell the main ideas aloud, in your own words. Requires manual or AI evaluation. Listening resources only.",
+            "listening", "[\"speaking\", \"summarizing\", \"communication\"]", 1, 1, 1),
         // retell_lecture promoted to Ready above
-        Ready(ExercisePatternKey.SummarizeGroupDiscussion, "Summarize Group Discussion", "Listen to or read a short multi-speaker discussion and summarize the main points, speaker views, agreements, and outcomes.", "listening", "[\"speaking\", \"summarizing\", \"communication\"]", "Pattern", "summarize_group_discussion", "ai_open_ended", "activity_generate_summarize_group_discussion", ActivityType.SpeakingRolePlay, ExercisePatternKey.SummarizeGroupDiscussion, 7, false, false),
+        // Phase K18 — summarize_group_discussion now has a real Lesson-generation composer, same
+        // BankFirst/enabled conversion as retell_lecture above, same key.
+        BankFirst(ExercisePatternKey.SummarizeGroupDiscussion, "Summarize Group Discussion",
+            "Read the resource's own transcript and summarize the main points, speaker views, and outcomes aloud. Requires manual or AI evaluation. Listening resources only.",
+            "listening", "[\"speaking\", \"summarizing\", \"communication\"]", 1, 1, 1),
         // summarize_group_discussion promoted to Ready above
         // Phase K18 — answer_short_question now has a real Lesson-generation composer, same
         // BankFirst/enabled conversion as the other Speaking types, same key.
@@ -152,12 +160,17 @@ public static class ExerciseTypeDefinitionSeeder
         BankFirst(ExercisePatternKey.WriteEssay, "Write Essay",
             "Structured essay response, shown from the resource's own prompt text verbatim. Requires manual or AI evaluation. Writing resources only.",
             "writing", "[]", 1, 1, 1),
-        Ready(ExercisePatternKey.ReadingWritingFillInBlanks, "Reading and Writing Fill in Blanks", "Choose the correct word for each blank in a reading passage.", "reading", "[\"writing\"]", "Pattern", "reading_writing_fill_in_blanks", "exact_match", "activity_generate_reading_writing_fill_in_blanks", ActivityType.ReadingTask, ExercisePatternKey.ReadingWritingFillInBlanks, 5, false, false),
-        // reading_writing_fill_in_blanks promoted to Ready above
-        // reading_multiple_choice_multi promoted to Ready above
-        // reorder_paragraphs promoted to Ready above
-        // reading_fill_in_blanks promoted to Ready above
-        Ready(ExercisePatternKey.SummarizeSpokenText, "Summarize Spoken Text", "Listen to a short spoken text and write a concise summary in your own words.", "listening", "[\"writing\"]", "Pattern", "summarize_spoken_text", "ai_structured", "activity_generate_summarize_spoken_text", ActivityType.ListeningComprehension, ExercisePatternKey.SummarizeSpokenText, 6, true, false),
+        // Phase K18 — reading_writing_fill_in_blanks now has a real Lesson-generation composer
+        // (ActivityGenerationService.ComposeReadingWritingFillInBlanksAsync), same key, moves to
+        // BankFirst/enabled.
+        BankFirst(ExercisePatternKey.ReadingWritingFillInBlanks, "Reading and Writing Fill in Blanks",
+            "Choose the correct word for each numbered blank from radio options (correct word + 2 distractors drawn from the same text). ReadingReference/ReadingPassage resources only.",
+            "reading", "[\"writing\"]", 3, 4, 6),
+        // Phase K18 — summarize_spoken_text now has a real Lesson-generation composer (reuses
+        // ComposeWritingPrompt against the transcript), same key, moves to BankFirst/enabled.
+        BankFirst(ExercisePatternKey.SummarizeSpokenText, "Summarize Spoken Text",
+            "Read the resource's own transcript and write a concise summary in your own words. Requires manual or AI evaluation. Listening resources only.",
+            "listening", "[\"writing\"]", 1, 1, 1),
         // summarize_spoken_text promoted to Ready above
         // Phase K17 — listening_multiple_choice_multi now has a real (AI-assisted)
         // Lesson-generation composer, same key, moves to BankFirst/enabled.

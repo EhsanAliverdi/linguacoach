@@ -328,26 +328,47 @@ deterministic, `RequiresManualOrAiEvaluation = true` — rather than scope-creep
   "read this sentence and repeat it" would just duplicate `read_aloud`; a real "listen then repeat"
   exercise needs TTS-generated audio from the prompt text, which is a build step, not just a
   composer.
-- [ ] `write_from_dictation` — Listening, `exact_match` against a `Listening` resource's
-  transcript — same "read the text and reproduce it" shape as `read_aloud`/`repeat_sentence` but
-  audio-in/text-out. Structurally simpler than the two above (no TTS needed — the audio already
-  exists on the Listening resource) — good next-session candidate.
-- [ ] `retell_lecture` / `summarize_group_discussion` / `summarize_spoken_text` — Listening/
-  Speaking, fully open-ended. Same honest `RequiresManualOrAiEvaluation` shape as the 5 done
-  above should work here too — likely a quick follow-up reusing `ComposeSpeakingPrompt`'s pattern
-  (or a Listening-transcript equivalent) rather than needing new design.
+- [ ] `write_from_dictation` — deferred, genuinely blocked. Investigated (dedicated research pass):
+  building this as originally imagined (hear audio, type what you heard) requires NEW backend
+  plumbing that doesn't exist anywhere in the bank-first pipeline — `Exercise` has no audio field,
+  `ListeningAudioService` is hardwired to the legacy `LearningActivity` entity, and the
+  `audioPlayer` Form.io component has no schema-embeddable source (existing usage resolves the URL
+  via a bespoke Placement-only JS side-channel, not a generic convention). Faking it as "read the
+  visible transcript and retype it" would just duplicate `reading_writing_fill_in_blanks`/cloze,
+  not deliver a real dictation exercise — rejected rather than built dishonestly, same discipline
+  as everywhere else in this project.
+- [x] **`retell_lecture` / `summarize_group_discussion` / `summarize_spoken_text`** — Listening
+  resources — `Done` (2026-07-15). Reuse `ComposeSpeakingPrompt`/`ComposeWritingPrompt` completely
+  unchanged against the transcript — zero new compose code, just new instructions text and 3
+  catalog rows converted to `BankFirst`/enabled. 4 new unit tests, all passing.
+- [x] **`reading_writing_fill_in_blanks`** — Reading resources — `Done` (2026-07-15). "Choose the
+  correct word" variant of `reading_fill_in_blanks`: same word-selection algorithm, but each blank
+  renders as a radio choice (correct word + 2 distractors drawn from the same text's other content
+  words, deterministic cyclic selection) instead of a free-text field, scored per-blank via
+  `single_choice`. Needs ≥3 distinct content words. New `ComposeReadingWritingFillInBlanksAsync`
+  composer. Catalog row converted from disabled-Pattern to `BankFirst`/enabled. 3 new unit tests,
+  all passing. **24 of 40 catalog types enabled — 60% of the full catalog.**
 - [ ] `teams_chat_simulation` — Writing, multi-turn `chat_reply` renderer — needs its own design
   pass for what a Resource-Bank-sourced multi-turn scenario looks like; not a simple single-prompt
-  composer like the others.
+  composer like the others. Deferred.
+- **Note:** `listen_and_answer` / `listen_and_gap_fill` / `gap_fill_workplace_phrase` (old Pattern
+  Engine keys) were checked and confirmed functionally redundant with the new `gap_fill`/
+  `listening_fill_in_blanks`/`listening_multiple_choice_single` BankFirst types — intentionally
+  left disabled rather than building parallel duplicate composers.
 
 ### Phase K19 — Decisions needed before touching
 
 - `lesson_reflection` (`reflection` skill, `no_marking` evaluator) — doesn't map to any of the 7
   `PublishedResourceType`s; a reflection prompt would be generated from the *Lesson's own* Body,
   not a Resource Bank row. Different generation entry point than everything else here — needs a
-  product decision on whether it belongs in this pipeline at all.
+  product decision on whether it belongs in this pipeline at all. **Still open.**
 - `formio_practice_gym_pilot` (`ImplementationStatus = planned`, `Pilot` category) — confirm
-  whether this pilot is still active work or should be dropped from the catalog.
+  whether this pilot is still active work or should be dropped from the catalog. **Still open.**
+- The 4 `Legacy`-category catalog entries (`listening_comprehension`, `speaking_roleplay`,
+  `vocabulary_practice`, `writing_scenario`) — predate the bank-first resource-type model, don't
+  map cleanly to any of the 7 `PublishedResourceType`s. Currently disabled (correct default), but
+  whether to delete outright vs. leave as permanently-disabled catalog entries is still an open
+  product call — no urgency, they're inert either way. **Still open.**
 
 ## Decisions made this pass
 
@@ -383,20 +404,36 @@ deterministic, `RequiresManualOrAiEvaluation = true` — rather than scope-creep
 
 ## Implementation tasks produced
 
-Tracked as Phase K15 through K19 above; K15 is the immediate next unit of work (small,
-self-contained, unblocks the Lesson-detail picker from further hardcoding). K16–K19 are separate
-future sessions — each phase should get its own review doc under `docs/reviews/` when implemented,
-per the documentation persistence rule.
+Tracked as Phase K15 through K19 above. **K15 through K18 substantially executed** (2026-07-14 to
+2026-07-15, same continuous work session) — 24 of 40 catalog types now have real Lesson-generation
+composers and are enabled by default; every other type is either intentionally superseded
+(3 old Pattern Engine duplicates), intentionally inert (`formio_practice_gym_pilot`), or blocked
+on something outside "write a composer" (new scoring kind, new Form.io component, data-model
+change, new backend plumbing, multi-turn design, or a K19 product decision).
 
 ## Final verdict
 
-Plan approved in principle by the user (chose "scope a phased build-out now" over disabling
-unimplemented types or a narrower deterministic-only widening). Not yet implemented — this session
-ends at the plan; K15 is next.
+**The bank-first pipeline (Import → Resource Bank → Lesson → Exercise → Module) is now
+functionally complete for all 7 `PublishedResourceType`s** — every resource type
+(Vocabulary/Grammar/ReadingReference/ReadingPassage/Writing/Listening/Speaking) has at least one
+real, tested, deployed Exercise composer a Lesson can generate from, and the Lesson picker
+(K15.4) surfaces exactly what's enabled with zero hardcoding. The remaining 16 disabled catalog
+entries are not "not started" — each has a specific, documented reason it isn't buildable as a
+plain composer right now (see the unchecked items in K16-K19 above). None of them block the core
+admin workflow: Import Content → Resource Bank → generate Lesson → generate Exercise(s) → combine
+into Module → review → approve.
 
 ## Next recommended action
 
-Start Phase K15 (Surfaces removal + catalog-driven Lesson picker) in the next work session — it's
-scoped, low-risk (both gated code paths are already confirmed dead), and is the dependency every
-later phase needs (K15.4's catalog-driven picker is what makes K16+ composers show up in the admin
-UI without further frontend work).
+The composer build-out itself has reached its natural stopping point without new external input.
+Remaining work needs one of: (a) a scoring-kind design decision (`phrase_match`), (b) frontend
+Form.io verification in a real browser (`reorder_paragraphs`, and confirming the `speakingResponse`/
+`selectboxes` renderers actually work end-to-end for everything built in K17-K18, since this
+session's verification was build+test only, never a live browser check), (c) a new custom Form.io
+component (`highlight_incorrect_words`), (d) resource content-model changes for image/audio fields
+(`describe_image`, `repeat_sentence`), (e) new backend audio-serving plumbing
+(`write_from_dictation`), (f) a multi-turn scenario design (`teams_chat_simulation`), or (g) product
+decisions on `lesson_reflection`/the pilot entry/the 4 Legacy entries (K19). **Recommend the user
+now manually test the live admin UI** — generate at least one Exercise of each of the 24 enabled
+types from a real Lesson, since automated tests cover backend logic/schema shape but not actual
+Form.io rendering/submission in the browser.

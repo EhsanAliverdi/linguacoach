@@ -80,6 +80,16 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         return e;
     }
 
+    private ResourceBankItem SeedListeningLecture(Guid sourceId, string? transcript = "Today's lecture covers the basics of project management, including timelines, budgets, and stakeholder communication.")
+    {
+        var e = new ResourceBankItem(
+            PublishedResourceType.Listening, sourceId, "B2",
+            ResourceBankItemContent.Serialize(new ListeningPassageContent("Project Management Basics", transcript, "storage/lecture.mp3", "audio/mpeg", null)));
+        _db.ResourceBankItems.Add(e);
+        _db.SaveChanges();
+        return e;
+    }
+
     private ResourceBankItem SeedListeningPassage(Guid sourceId, string? transcript = "This is a full-length audio transcript about travel plans.")
     {
         var e = new ResourceBankItem(
@@ -453,6 +463,54 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         (await _db.Exercises.CountAsync()).Should().Be(0);
     }
 
+    // ── Phase K18 — reading_writing_fill_in_blanks ("choose", not "type") ──────────────────────
+
+    [Fact]
+    public async Task Reading_writing_fill_in_blanks_creates_radio_choices_with_distractors()
+    {
+        var source = SeedSource();
+        var passage = SeedReadingPassage(source.Id);
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("ReadingPassage", passage.Id, "Primary") },
+            RequestedActivityType: "reading_writing_fill_in_blanks"));
+
+        result.Activity.ActivityType.Should().Be("reading_writing_fill_in_blanks");
+        result.Activity.FormSchemaJson.Should().Contain("radio").And.Contain("Blank 1");
+        result.Activity.ScoringRulesJson.Should().Contain("single_choice").And.Contain("opt_0");
+    }
+
+    [Fact]
+    public async Task Reading_writing_fill_in_blanks_rejected_when_fewer_than_three_content_words()
+    {
+        var source = SeedSource();
+        var e = new ResourceBankItem(
+            PublishedResourceType.ReadingReference, source.Id, "B1",
+            ResourceBankItemContent.Serialize(new ReadingReferenceContent("Note", null, "It is here now.")));
+        _db.ResourceBankItems.Add(e);
+        await _db.SaveChangesAsync();
+
+        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("ReadingReference", e.Id, "Primary") },
+            RequestedActivityType: "reading_writing_fill_in_blanks"));
+
+        await act.Should().ThrowAsync<ExerciseValidationException>();
+        (await _db.Exercises.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Reading_writing_fill_in_blanks_not_supported_for_vocabulary()
+    {
+        var source = SeedSource();
+        var vocab = SeedVocabulary(source.Id);
+
+        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") },
+            RequestedActivityType: "reading_writing_fill_in_blanks"));
+
+        await act.Should().ThrowAsync<ExerciseValidationException>();
+    }
+
     [Fact]
     public async Task Reading_fill_in_blanks_not_supported_for_vocabulary()
     {
@@ -653,6 +711,53 @@ public sealed class ActivityGenerationServiceTests : IDisposable
             new[] { new ExerciseResourceLinkInput("Speaking", speaking.Id, "Primary") }));
 
         result.Activity.ActivityType.Should().Be("spoken_response_from_prompt");
+    }
+
+    // ── Phase K18 — summarize_spoken_text / retell_lecture / summarize_group_discussion
+    // (Listening resources, reuse ComposeWritingPrompt/ComposeSpeakingPrompt unchanged) ─────────
+
+    [Fact]
+    public async Task Summarize_spoken_text_shows_transcript_and_requires_manual_evaluation()
+    {
+        var source = SeedSource();
+        var lecture = SeedListeningLecture(source.Id);
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Listening", lecture.Id, "Primary") },
+            RequestedActivityType: "summarize_spoken_text"));
+
+        result.Activity.ActivityType.Should().Be("summarize_spoken_text");
+        result.Activity.FormSchemaJson.Should().Contain("project management").And.Contain("textarea");
+        result.Activity.ScoringRulesJson.Should().Contain("RequiresManualOrAiEvaluation").And.Contain("true");
+    }
+
+    [Theory]
+    [InlineData("retell_lecture")]
+    [InlineData("summarize_group_discussion")]
+    public async Task Spoken_summary_types_are_supported_for_listening_resources(string activityType)
+    {
+        var source = SeedSource();
+        var lecture = SeedListeningLecture(source.Id);
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Listening", lecture.Id, "Primary") },
+            RequestedActivityType: activityType));
+
+        result.Activity.ActivityType.Should().Be(activityType);
+        result.Activity.FormSchemaJson.Should().Contain("speakingResponse");
+    }
+
+    [Fact]
+    public async Task Gap_fill_not_supported_for_listening_resource()
+    {
+        var source = SeedSource();
+        var lecture = SeedListeningLecture(source.Id);
+
+        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Listening", lecture.Id, "Primary") },
+            RequestedActivityType: "gap_fill"));
+
+        await act.Should().ThrowAsync<ExerciseValidationException>();
     }
 
     [Fact]

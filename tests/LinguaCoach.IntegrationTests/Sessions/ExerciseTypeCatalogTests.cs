@@ -236,6 +236,43 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
         Assert.Contains(eligible, e => e.Key == key);
     }
 
+    [Theory]
+    [InlineData("summarize_spoken_text")]
+    [InlineData("retell_lecture")]
+    [InlineData("summarize_group_discussion")]
+    public async Task OpenEndedListeningTypes_AreBankFirstAndGenerationEligible_PhaseK18(string key)
+    {
+        // Phase K18 — deterministic, Listening resources only, reusing
+        // ComposeWritingPrompt/ComposeSpeakingPrompt unchanged against the resource's own
+        // transcript — no audio playback involved.
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == key);
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        Assert.Equal("BankFirst", type.Category);
+        Assert.True(type.IsEnabled);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.Equal("listening", type.PrimarySkill);
+        Assert.Contains(eligible, e => e.Key == key);
+    }
+
+    [Fact]
+    public async Task ReadingWritingFillInBlanks_IsBankFirstAndGenerationEligible_PhaseK18()
+    {
+        // Phase K18 — reading_writing_fill_in_blanks got a real composer
+        // (ActivityGenerationService.ComposeReadingWritingFillInBlanksAsync — "choose" not "type")
+        // and moved from disabled-Pattern to BankFirst/enabled.
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "reading_writing_fill_in_blanks");
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        Assert.Equal("BankFirst", type.Category);
+        Assert.True(type.IsEnabled);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.Equal("reading", type.PrimarySkill);
+        Assert.Contains(eligible, e => e.Key == "reading_writing_fill_in_blanks");
+    }
+
     [Fact]
     public async Task LegacyAndPatternTypes_AreDisabledByDefault_DespiteBeingReady()
     {
@@ -251,14 +288,10 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
 
     [Theory]
     [InlineData("reorder_paragraphs", "reading")]
-    [InlineData("reading_writing_fill_in_blanks", "reading")]
     [InlineData("highlight_incorrect_words", "listening")]
     [InlineData("write_from_dictation", "listening")]
-    [InlineData("summarize_spoken_text", "listening")]
     [InlineData("repeat_sentence", "speaking")]
     [InlineData("describe_image", "speaking")]
-    [InlineData("retell_lecture", "listening")]
-    [InlineData("summarize_group_discussion", "listening")]
     public async Task PatternTypes_AreReadyButNotEligibleUntilAdminEnables(string key, string expectedSkill)
     {
         var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == key);
@@ -463,8 +496,11 @@ public sealed class ExerciseTypeRegistryTests : IDisposable
     }
 
     [Fact]
-    public async Task Registry_SummarizeGroupDiscussion_IsReadyButNotEligibleByDefault()
+    public async Task Registry_SummarizeGroupDiscussion_IsReadyAndEligible_PhaseK18()
     {
+        // Phase K18 — summarize_group_discussion got a real composer (reuses
+        // ComposeSpeakingPrompt against the transcript) and moved from disabled-Pattern to
+        // BankFirst/enabled.
         var registry = new LinguaCoach.Infrastructure.Activity.ExerciseTypeRegistry(_db);
 
         var def = await registry.GetByKeyAsync("summarize_group_discussion");
@@ -472,7 +508,7 @@ public sealed class ExerciseTypeRegistryTests : IDisposable
 
         Assert.NotNull(def);
         Assert.Equal("ready", def!.ImplementationStatus);
-        Assert.DoesNotContain(eligible, e => e.Key == "summarize_group_discussion");
+        Assert.Contains(eligible, e => e.Key == "summarize_group_discussion");
     }
 
     [Fact]

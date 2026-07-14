@@ -59,6 +59,11 @@ namespace LinguaCoach.Infrastructure.Exercises;
 /// the stock "speakingResponse" Form.io component, honestly marked
 /// <see cref="ComponentScoringRule.RequiresManualOrAiEvaluation"/> — real audio scoring isn't
 /// wired into the bank-first pipeline yet (see ComposeSpeakingPrompt's doc comment).</description></item>
+/// <item><description><c>summarize_spoken_text</c> / <c>retell_lecture</c> /
+/// <c>summarize_group_discussion</c> — Listening resources only (Phase K18). Reuse
+/// ComposeWritingPrompt/ComposeSpeakingPrompt unchanged against the resource's own transcript —
+/// no audio playback involved (none exists in the bank-first pipeline yet), just the transcript
+/// text shown for the student to summarize/retell.</description></item>
 /// </list>
 /// <see cref="Exercise.ScoringRulesJson"/> is serialized straight from the shared
 /// <see cref="ScoringRulesDocument"/>/<see cref="ComponentScoringRule"/> types already used by
@@ -75,6 +80,10 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
     public const string ActivityTypeMultipleChoiceSingle = "multiple_choice_single";
     public const string ActivityTypeShortAnswer = "short_answer";
     public const string ActivityTypeReadingFillInBlanks = "reading_fill_in_blanks";
+
+    /// <summary>Phase K18 — same resource-type bucket as <see cref="ActivityTypeReadingFillInBlanks"/>,
+    /// "choose" instead of "type" variant — see <see cref="ComposeReadingWritingFillInBlanksAsync"/>.</summary>
+    public const string ActivityTypeReadingWritingFillInBlanks = "reading_writing_fill_in_blanks";
 
     /// <summary>Phase K17 — AI-only activity type, no deterministic composer exists (or can
     /// exist) for it: unlike gap_fill/multiple_choice_single, ReadingReference/ReadingPassage
@@ -136,6 +145,17 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
     public const string ActivityTypeAnswerShortQuestion = "answer_short_question";
     public const string ActivityTypeSpeakingRoleplayTurn = "speaking_roleplay_turn";
     public const string ActivityTypeReadAloud = "read_aloud";
+
+    /// <summary>Phase K18 — deterministic, Listening resources only. Reuses
+    /// <see cref="ComposeWritingPrompt"/>/<see cref="ComposeSpeakingPrompt"/> unchanged — these
+    /// are resource-agnostic (they just show <c>primary.Body</c> verbatim), so no new compose
+    /// logic is needed, only new instructions text and a Listening bucket entry.
+    /// <c>summarize_spoken_text</c> asks for a written summary; <c>retell_lecture</c>/
+    /// <c>summarize_group_discussion</c> ask for a spoken response — all honestly unscored, same
+    /// as every other open-ended type.</summary>
+    public const string ActivityTypeSummarizeSpokenText = "summarize_spoken_text";
+    public const string ActivityTypeRetellLecture = "retell_lecture";
+    public const string ActivityTypeSummarizeGroupDiscussion = "summarize_group_discussion";
 
     private const int MaxClozeBlanks = 4;
     private const int MinClozeWordLength = 5;
@@ -241,11 +261,17 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
             PublishedResourceType.Vocabulary or PublishedResourceType.Grammar =>
                 new[] { ActivityTypeGapFill, ActivityTypeMultipleChoiceSingle },
             PublishedResourceType.ReadingReference or PublishedResourceType.ReadingPassage =>
-                new[] { ActivityTypeShortAnswer, ActivityTypeReadingFillInBlanks, ActivityTypeSummarizeWrittenText },
+                new[] { ActivityTypeShortAnswer, ActivityTypeReadingFillInBlanks, ActivityTypeReadingWritingFillInBlanks, ActivityTypeSummarizeWrittenText },
             PublishedResourceType.Writing =>
                 new[] { ActivityTypeEmailReply, ActivityTypeOpenWritingTask, ActivityTypeWriteEssay },
             PublishedResourceType.Listening =>
-                new[] { ActivityTypeListeningFillInBlanks },
+                new[]
+                {
+                    ActivityTypeListeningFillInBlanks,
+                    ActivityTypeSummarizeSpokenText,
+                    ActivityTypeRetellLecture,
+                    ActivityTypeSummarizeGroupDiscussion,
+                },
             PublishedResourceType.Speaking =>
                 new[]
                 {
@@ -272,6 +298,7 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
             ActivityTypeMultipleChoiceSingle => await ComposeMultipleChoiceSingleAsync(primary.Type, primary.Snapshot, primaryMatch.Input.ResourceId, ct),
             ActivityTypeShortAnswer => ComposeShortAnswer(primary.Snapshot),
             ActivityTypeReadingFillInBlanks => await ComposeReadingFillInBlanksAsync(primary.Type, primary.Snapshot, primaryMatch.Input.ResourceId, ct),
+            ActivityTypeReadingWritingFillInBlanks => await ComposeReadingWritingFillInBlanksAsync(primary.Type, primary.Snapshot, primaryMatch.Input.ResourceId, ct),
             ActivityTypeSummarizeWrittenText => ComposeSummarizeWrittenText(primary.Snapshot),
             ActivityTypeEmailReply => ComposeWritingPrompt(primary.Snapshot,
                 "Read the scenario below and write your email reply.", "Your email reply"),
@@ -290,6 +317,12 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
                 "Read the roleplay scenario below and record your spoken turn."),
             ActivityTypeReadAloud => ComposeSpeakingPrompt(primary.Snapshot,
                 "Read the text below aloud, as clearly and naturally as possible."),
+            ActivityTypeSummarizeSpokenText => ComposeWritingPrompt(primary.Snapshot,
+                "Read the transcript below and write a concise summary in your own words.", "Your summary"),
+            ActivityTypeRetellLecture => ComposeSpeakingPrompt(primary.Snapshot,
+                "Read the lecture transcript below and retell the main ideas in your own words."),
+            ActivityTypeSummarizeGroupDiscussion => ComposeSpeakingPrompt(primary.Snapshot,
+                "Read the discussion transcript below and summarize the main points, speaker views, and outcomes."),
             _ => throw new ExerciseValidationException($"Unsupported activity type '{activityType}'."),
         };
 
@@ -571,6 +604,92 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
         ComposeListeningFillInBlanks(LessonResourceSnapshot primary) =>
         BuildCloze(primary.Body, primary.Title,
             "Read the transcript below and fill in each numbered blank.", "publish a transcript, or use a different Exercise type");
+
+    /// <summary>Phase K18 — "choose the correct word for each blank", not "type the word":
+    /// otherwise identical word-selection to <see cref="ComposeReadingFillInBlanksAsync"/>, but
+    /// each blank renders as a radio choice (correct word + 2 distractors drawn from the same
+    /// text's other content words) instead of a free-text field, scored per-blank via
+    /// <see cref="ScoringRuleKinds.SingleChoice"/> — same "never AI-supplied correct answer"
+    /// shape, both correct answer and distractors come straight from the resource's own text.
+    /// Needs at least 3 distinct content words (1 to blank + 2 more to use as distractors) —
+    /// rejects rather than degrades to fewer than 2 distractor options.</summary>
+    private async Task<(string Instructions, string FormSchemaJson, string AnswerKeyJson, string ScoringRulesJson, string FeedbackPlanJson)>
+        ComposeReadingWritingFillInBlanksAsync(PublishedResourceType type, LessonResourceSnapshot primary, Guid resourceId, CancellationToken ct)
+    {
+        var sourceText = type == PublishedResourceType.ReadingPassage
+            ? await FindFullPassageTextAsync(resourceId, ct) ?? primary.Body
+            : primary.Body;
+
+        if (string.IsNullOrWhiteSpace(sourceText))
+            throw new ExerciseValidationException(
+                $"Resource '{primary.Title}' has no source text to build word-choice blanks from — use 'short_answer' instead.");
+
+        var words = sourceText.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+        var candidateIndexes = new List<int>();
+        var candidateWords = new List<string>();
+        var seenWords = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        for (var i = 0; i < words.Length; i++)
+        {
+            var clean = words[i].Trim('.', ',', ';', ':', '!', '?', '"', '\'', '(', ')');
+            if (clean.Length < MinClozeWordLength || !clean.All(char.IsLetter)) continue;
+            if (!seenWords.Add(clean)) continue;
+            candidateIndexes.Add(i);
+            candidateWords.Add(clean);
+        }
+
+        if (candidateWords.Count < 3)
+            throw new ExerciseValidationException(
+                $"Resource '{primary.Title}' does not have enough distinct content words to build word-choice blanks (need at least 3) — use 'reading_fill_in_blanks' instead.");
+
+        var blankCount = Math.Min(MaxClozeBlanks, candidateWords.Count);
+        var answerKey = new Dictionary<string, string>();
+        var scoringComponents = new Dictionary<string, ComponentScoringRule>();
+        var components = new List<object>();
+        var displayWords = new List<string>(words);
+
+        for (var b = 0; b < blankCount; b++)
+        {
+            var idx = candidateIndexes[b];
+            var correctWord = candidateWords[b];
+            displayWords[idx] = $"({b + 1}) _____";
+
+            var distractors = new List<string>();
+            for (var offset = 1; distractors.Count < 2 && offset < candidateWords.Count; offset++)
+            {
+                var candidate = candidateWords[(b + offset) % candidateWords.Count];
+                if (!string.Equals(candidate, correctWord, StringComparison.OrdinalIgnoreCase))
+                    distractors.Add(candidate);
+            }
+
+            var options = new List<(string Key, string Text)> { ("opt_0", correctWord) };
+            for (var d = 0; d < distractors.Count; d++)
+                options.Add(($"opt_{d + 1}", distractors[d]));
+
+            var key = $"answer_{b}";
+            answerKey[key] = correctWord;
+            scoringComponents[key] = new ComponentScoringRule(ScoringRuleKinds.SingleChoice, CorrectAnswer: "opt_0", Points: 1.0);
+            components.Add(new
+            {
+                type = "radio", key, label = $"Blank {b + 1}", input = true,
+                values = options.Select(o => new { label = o.Text, value = o.Key }).ToArray(),
+            });
+        }
+
+        var clozeHtml = System.Net.WebUtility.HtmlEncode(string.Join(' ', displayWords));
+        components.Insert(0, new { type = "content", key = "passage", html = $"<p>{clozeHtml}</p>" });
+
+        var instructions = "Read the passage below and choose the correct word for each numbered blank.";
+        var formSchemaJson = JsonSerializer.Serialize(new { components });
+        var answerKeyJson = JsonSerializer.Serialize(answerKey);
+        var scoringRulesJson = JsonSerializer.Serialize(new ScoringRulesDocument(scoringComponents));
+        var feedbackPlanJson = JsonSerializer.Serialize(new
+        {
+            correctFeedback = "Correct!",
+            incorrectFeedback = $"The correct words were: {string.Join(", ", answerKey.Values)}.",
+        });
+
+        return (instructions, formSchemaJson, answerKeyJson, scoringRulesJson, feedbackPlanJson);
+    }
 
     /// <summary>Shared deterministic cloze-building core: blanks out up to
     /// <see cref="MaxClozeBlanks"/> distinct content words (length &gt;= <see cref="MinClozeWordLength"/>,
