@@ -66,7 +66,12 @@ public static class ExerciseTypeDefinitionSeeder
         Ready("writing_scenario", "Writing Scenario", "Legacy workplace writing activity.", "writing", "[]", "Legacy", "writing", "writing_scenario", "activity_generate_writing", ActivityType.WritingScenario, null, 8, false, false),
         Ready("speaking_roleplay", "Speaking Roleplay", "Legacy speaking roleplay activity.", "speaking", "[]", "Legacy", "speaking", "speaking_roleplay", "activity_generate_speaking_roleplay", ActivityType.SpeakingRolePlay, null, 6, false, false),
         Ready("vocabulary_practice", "Vocabulary Practice", "Staged vocabulary practice from saved student vocabulary.", "vocabulary", "[\"reading\",\"writing\"]", "Legacy", "vocabulary", "vocabulary_practice", "", ActivityType.VocabularyPractice, null, 5, false, false),
-        Ready(ExercisePatternKey.PhraseMatch, "Phrase Match", "Match workplace phrases to meanings.", "vocabulary", "[]", "Pattern", "matching_pairs", "keyed_selection", "activity_generate_phrase_match", ActivityType.VocabularyPractice, ExercisePatternKey.PhraseMatch, 3, false, false),
+        // Phase K16 — phrase_match now has a real Lesson-generation composer (decomposed into N
+        // single_choice sub-questions, see ActivityGenerationService.ComposePhraseMatchAsync),
+        // same key, moves to BankFirst/enabled.
+        BankFirst(ExercisePatternKey.PhraseMatch, "Phrase Match",
+            "Match each term to its correct meaning — one radio question per term, options drawn from every pulled term's own definition. Vocabulary/Grammar resources only.",
+            "vocabulary", "[]", 2, 5, 8),
         Ready(ExercisePatternKey.GapFillWorkplacePhrase, "Gap Fill Workplace Phrase", "Fill missing words in workplace phrases.", "vocabulary", "[]", "Pattern", "gap_fill", "exact_match", "activity_generate_gap_fill_workplace_phrase", ActivityType.VocabularyPractice, ExercisePatternKey.GapFillWorkplacePhrase, 4, false, false),
         Ready(ExercisePatternKey.ListenAndAnswer, "Listen and Answer", "Answer questions after workplace audio.", "listening", "[]", "Pattern", "audio_and_free_text", "ai_structured", "activity_generate_listen_and_answer", ActivityType.ListeningComprehension, ExercisePatternKey.ListenAndAnswer, 4, true, false),
         Ready(ExercisePatternKey.ListenAndGapFill, "Listen and Gap Fill", "Fill gaps from workplace audio.", "listening", "[\"writing\"]", "Pattern", "audio_and_gap_fill", "exact_match", "activity_generate_listen_and_gap_fill", ActivityType.ListeningComprehension, ExercisePatternKey.ListenAndGapFill, 4, true, false),
@@ -113,7 +118,13 @@ public static class ExerciseTypeDefinitionSeeder
         BankFirst(ExercisePatternKey.ReadingFillInBlanks, "Reading Fill in Blanks",
             "Fill in numbered blanks from the resource's own excerpt/passage text. ReadingReference/ReadingPassage resources only.",
             "reading", "[]", 3, 4, 6),
-        Ready(ExercisePatternKey.ReorderParagraphs, "Reorder Paragraphs", "Put paragraphs in the correct logical order.", "reading", "[]", "Pattern", "reorder_paragraphs", "exact_match", "activity_generate_reorder_paragraphs", ActivityType.ReadingTask, ExercisePatternKey.ReorderParagraphs, 5, false, false),
+        // Phase K16 — reorder_paragraphs now has a real Lesson-generation composer (stock Form.io
+        // datagrid+reorder pattern, see ActivityGenerationService.ComposeReorderParagraphsAsync),
+        // same key, moves to BankFirst/enabled. Flagged for manual browser verification — the
+        // datagrid defaultValue pre-population behavior was never confirmed live.
+        BankFirst(ExercisePatternKey.ReorderParagraphs, "Reorder Paragraphs",
+            "Drag shuffled paragraphs from the resource's own passage text into the correct order. ReadingPassage resources only (needs multi-paragraph text).",
+            "reading", "[]", 3, 4, 6),
 
         // Phase K18 — read_aloud now has a real Lesson-generation composer, same BankFirst/enabled
         // conversion as the other Speaking types, same key.

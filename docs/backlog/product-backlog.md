@@ -1662,9 +1662,21 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
   to build on), a multi-turn scenario design (`teams_chat_simulation`), or K19 product decisions
   (`lesson_reflection`, the pilot entry, the 4 Legacy entries). None of these block the core admin
   workflow: Import Content → Resource Bank → Lesson → Exercise → Module → review → approve.
-- [ ] **K16/K17/K18/K19 remainder** `Planned` — same doc as above, each item individually scoped
-  with its specific blocker documented; pick up whichever gets unblocked first (a design decision,
-  a browser session, or a data-model change).
+- [x] **Phase K16 complete — `phrase_match` + `reorder_paragraphs`** `Done` (2026-07-15) — same
+  doc as above. `phrase_match` decomposed into N `single_choice` sub-questions (no new scoring
+  kind needed — a definition used as the correct answer for one term is a live distractor for
+  every other term). `reorder_paragraphs` implemented via the exact datagrid+reorder schema
+  already proven valid in `FormIoSchemaValidationServiceTests`, with a `defaultValue` array to
+  pre-populate shuffled rows — **this one specific assumption (defaultValue pre-population) is
+  not confirmed in a real browser, flagged explicitly.** **26 of 40 catalog types enabled (65%) —
+  K16 fully done.**
+- [ ] **K17 (`highlight_incorrect_words`) / K18 (`describe_image`/`repeat_sentence`/
+  `write_from_dictation`/`teams_chat_simulation`) / K19 remainder** `Planned` — same doc as above,
+  each item individually scoped with its specific blocker documented (new custom component,
+  data-model change, new backend plumbing, multi-turn design, or product decision); pick up
+  whichever gets unblocked first. **Recommend manual browser testing of the 26 enabled types
+  before further backend work** — no automated test in this session ever rendered a Form.io
+  schema live.
 
 ## Legacy database cleanup
 

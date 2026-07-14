@@ -64,6 +64,14 @@ namespace LinguaCoach.Infrastructure.Exercises;
 /// ComposeWritingPrompt/ComposeSpeakingPrompt unchanged against the resource's own transcript —
 /// no audio playback involved (none exists in the bank-first pipeline yet), just the transcript
 /// text shown for the student to summarize/retell.</description></item>
+/// <item><description><c>phrase_match</c> — Vocabulary/Grammar only (Phase K16). Decomposes
+/// "matching" into N single_choice sub-questions using sibling resources of the same type — see
+/// <see cref="ActivityTypePhraseMatch"/>'s doc comment.</description></item>
+/// <item><description><c>reorder_paragraphs</c> — ReadingPassage only in practice (Phase K16).
+/// Stock Form.io datagrid+reorder pattern, scored via
+/// <see cref="ScoringRuleKinds.OrderedSequence"/> — see
+/// <see cref="ActivityTypeReorderParagraphs"/>'s doc comment, including the one thing this session
+/// could not verify without a browser.</description></item>
 /// </list>
 /// <see cref="Exercise.ScoringRulesJson"/> is serialized straight from the shared
 /// <see cref="ScoringRulesDocument"/>/<see cref="ComponentScoringRule"/> types already used by
@@ -157,8 +165,35 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
     public const string ActivityTypeRetellLecture = "retell_lecture";
     public const string ActivityTypeSummarizeGroupDiscussion = "summarize_group_discussion";
 
+    /// <summary>Phase K16 — Vocabulary/Grammar only. No <c>matching_pairs</c> scoring kind exists
+    /// in <c>ComponentAnswerScorer</c> — rather than add one, this decomposes "matching"
+    /// into N independent single_choice sub-questions (one radio per term), each offering every
+    /// pulled term's own definition as an option. That reproduces genuine matching semantics
+    /// (a definition used as the correct answer for one term is a live distractor for every other
+    /// term in the same exercise) using only already-proven scoring infrastructure. Same
+    /// distractor-pool pattern as multiple_choice_single (sibling resources of the same type,
+    /// preferring the same CEFR level) but keeps each sibling's title too, since every pair needs
+    /// both.</summary>
+    public const string ActivityTypePhraseMatch = "phrase_match";
+
+    /// <summary>Phase K16 — ReadingPassage only (needs genuine multi-paragraph text; a
+    /// ReadingReference excerpt is too short). Uses the stock Form.io "datagrid" (reorder-enabled)
+    /// pattern already proven working — see
+    /// FormIoSchemaValidationServiceTests.DatagridWithReorder_AndValidNestedComponents_IsValid and
+    /// ComponentAnswerScorer.ScoreOrderedSequence's own doc comment, both written for exactly this
+    /// shape. Scored via <see cref="ScoringRuleKinds.OrderedSequence"/> (already implemented, one
+    /// point per correctly-placed paragraph). The one thing this session cannot verify without a
+    /// browser: whether the frontend's generic Form.io renderer actually pre-populates the
+    /// datagrid's rows from the schema's <c>defaultValue</c> the way this composer assumes —
+    /// flagged for manual verification, not silently trusted.</summary>
+    public const string ActivityTypeReorderParagraphs = "reorder_paragraphs";
+
     private const int MaxClozeBlanks = 4;
     private const int MinClozeWordLength = 5;
+    private const int MaxPhraseMatchSiblings = 4;
+    private const int MinPhraseMatchPairs = 2;
+    private const int MaxReorderParagraphs = 6;
+    private const int MinReorderParagraphs = 3;
 
     private readonly LinguaCoachDbContext _db;
     private readonly IFormIoSchemaValidationService _schemaValidator;
@@ -259,9 +294,13 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
         var supportedForCategory = primary.Type switch
         {
             PublishedResourceType.Vocabulary or PublishedResourceType.Grammar =>
-                new[] { ActivityTypeGapFill, ActivityTypeMultipleChoiceSingle },
+                new[] { ActivityTypeGapFill, ActivityTypeMultipleChoiceSingle, ActivityTypePhraseMatch },
             PublishedResourceType.ReadingReference or PublishedResourceType.ReadingPassage =>
-                new[] { ActivityTypeShortAnswer, ActivityTypeReadingFillInBlanks, ActivityTypeReadingWritingFillInBlanks, ActivityTypeSummarizeWrittenText },
+                new[]
+                {
+                    ActivityTypeShortAnswer, ActivityTypeReadingFillInBlanks, ActivityTypeReadingWritingFillInBlanks,
+                    ActivityTypeSummarizeWrittenText, ActivityTypeReorderParagraphs,
+                },
             PublishedResourceType.Writing =>
                 new[] { ActivityTypeEmailReply, ActivityTypeOpenWritingTask, ActivityTypeWriteEssay },
             PublishedResourceType.Listening =>
@@ -296,10 +335,12 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
         {
             ActivityTypeGapFill => ComposeGapFill(primary.Snapshot),
             ActivityTypeMultipleChoiceSingle => await ComposeMultipleChoiceSingleAsync(primary.Type, primary.Snapshot, primaryMatch.Input.ResourceId, ct),
+            ActivityTypePhraseMatch => await ComposePhraseMatchAsync(primary.Type, primary.Snapshot, primaryMatch.Input.ResourceId, ct),
             ActivityTypeShortAnswer => ComposeShortAnswer(primary.Snapshot),
             ActivityTypeReadingFillInBlanks => await ComposeReadingFillInBlanksAsync(primary.Type, primary.Snapshot, primaryMatch.Input.ResourceId, ct),
             ActivityTypeReadingWritingFillInBlanks => await ComposeReadingWritingFillInBlanksAsync(primary.Type, primary.Snapshot, primaryMatch.Input.ResourceId, ct),
             ActivityTypeSummarizeWrittenText => ComposeSummarizeWrittenText(primary.Snapshot),
+            ActivityTypeReorderParagraphs => await ComposeReorderParagraphsAsync(primary.Type, primary.Snapshot, primaryMatch.Input.ResourceId, ct),
             ActivityTypeEmailReply => ComposeWritingPrompt(primary.Snapshot,
                 "Read the scenario below and write your email reply.", "Your email reply"),
             ActivityTypeOpenWritingTask => ComposeWritingPrompt(primary.Snapshot,
@@ -445,6 +486,56 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
         {
             correctFeedback = "Correct!",
             incorrectFeedback = $"Not quite — the correct meaning was: \"{options[0].Text}\".",
+        });
+
+        return (instructions, formSchemaJson, answerKeyJson, scoringRulesJson, feedbackPlanJson);
+    }
+
+    /// <summary>Phase K16 — decomposes "matching" into N independent single_choice
+    /// sub-questions, one radio per term, each offering every pulled term's own definition as an
+    /// option — see <see cref="ActivityTypePhraseMatch"/>'s doc comment for the full rationale.
+    /// Needs at least <see cref="MinPhraseMatchPairs"/> total terms (primary + siblings) with a
+    /// usable title+definition; rejects rather than degrading to a thin 1-2-term exercise.</summary>
+    private async Task<(string Instructions, string FormSchemaJson, string AnswerKeyJson, string ScoringRulesJson, string FeedbackPlanJson)>
+        ComposePhraseMatchAsync(PublishedResourceType type, LessonResourceSnapshot primary, Guid primaryId, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(primary.Body))
+            throw new ExerciseValidationException(
+                $"Resource '{primary.Title}' has no definition/description text to build a phrase-match exercise from — use 'gap_fill' instead.");
+
+        var siblings = await FindSiblingTermDefinitionsAsync(type, primaryId, primary.CefrLevel, ct);
+        var pairs = new List<(string Title, string Body)> { (primary.Title, primary.Body!.Trim()) };
+        pairs.AddRange(siblings);
+
+        if (pairs.Count < MinPhraseMatchPairs)
+            throw new ExerciseValidationException(
+                $"Not enough published {type} resources with a definition/description to build a phrase-match exercise (need at least {MinPhraseMatchPairs}, found {pairs.Count}) — use 'gap_fill' instead.");
+
+        var options = pairs.Select((p, i) => (Key: $"opt_{i}", Text: p.Body)).ToList();
+        var answerKey = new Dictionary<string, string>();
+        var scoringComponents = new Dictionary<string, ComponentScoringRule>();
+        var components = new List<object>();
+
+        for (var i = 0; i < pairs.Count; i++)
+        {
+            var key = $"answer_{i}";
+            answerKey[key] = pairs[i].Body;
+            scoringComponents[key] = new ComponentScoringRule(ScoringRuleKinds.SingleChoice, CorrectAnswer: options[i].Key, Points: 1.0);
+            components.Add(new
+            {
+                type = "radio", key, label = $"What does \"{pairs[i].Title}\" mean?", input = true,
+                values = options.Select(o => new { label = o.Text, value = o.Key }).ToArray(),
+            });
+        }
+
+        var instructions = "Match each term below to its correct meaning.";
+        var formSchemaJson = JsonSerializer.Serialize(new { components });
+        var answerKeyJson = JsonSerializer.Serialize(answerKey);
+        var scoringRulesJson = JsonSerializer.Serialize(new ScoringRulesDocument(scoringComponents));
+        var feedbackPlanJson = JsonSerializer.Serialize(new
+        {
+            correctFeedback = "Correct!",
+            incorrectFeedback = "Some matches were incorrect — review the terms and their meanings.",
         });
 
         return (instructions, formSchemaJson, answerKeyJson, scoringRulesJson, feedbackPlanJson);
@@ -691,6 +782,78 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
         return (instructions, formSchemaJson, answerKeyJson, scoringRulesJson, feedbackPlanJson);
     }
 
+    /// <summary>Phase K16 — see <see cref="ActivityTypeReorderParagraphs"/>'s doc comment for the
+    /// full rationale (stock Form.io datagrid+reorder pattern, proven-working shape, scored via
+    /// <see cref="ScoringRuleKinds.OrderedSequence"/>). Only meaningful for ReadingPassage — a
+    /// ReadingReference excerpt is one short paragraph, not multi-paragraph text; splitting
+    /// naturally rejects it via the paragraph-count check below rather than needing a separate
+    /// resource-type gate. Row order is deterministically shuffled (fixed-seed <see cref="Random"/>)
+    /// rather than left in original order, so the exercise isn't trivially "already correct".</summary>
+    private async Task<(string Instructions, string FormSchemaJson, string AnswerKeyJson, string ScoringRulesJson, string FeedbackPlanJson)>
+        ComposeReorderParagraphsAsync(PublishedResourceType type, LessonResourceSnapshot primary, Guid resourceId, CancellationToken ct)
+    {
+        var sourceText = type == PublishedResourceType.ReadingPassage
+            ? await FindFullPassageTextAsync(resourceId, ct) ?? primary.Body
+            : primary.Body;
+
+        if (string.IsNullOrWhiteSpace(sourceText))
+            throw new ExerciseValidationException(
+                $"Resource '{primary.Title}' has no passage text to build a reorder exercise from — use 'short_answer' instead.");
+
+        var paragraphs = sourceText
+            .Split(new[] { "\r\n\r\n", "\n\n" }, StringSplitOptions.None)
+            .Select(p => p.Trim())
+            .Where(p => p.Length > 0)
+            .ToList();
+
+        if (paragraphs.Count < MinReorderParagraphs)
+            throw new ExerciseValidationException(
+                $"Resource '{primary.Title}' does not have enough distinct paragraphs to build a reorder exercise (need at least {MinReorderParagraphs}, found {paragraphs.Count}) — use 'short_answer' instead.");
+
+        if (paragraphs.Count > MaxReorderParagraphs)
+            paragraphs = paragraphs.Take(MaxReorderParagraphs).ToList();
+
+        var correctOrder = Enumerable.Range(0, paragraphs.Count).Select(i => $"p{i}").ToList();
+
+        var shuffled = Enumerable.Range(0, paragraphs.Count).ToList();
+        var rng = new Random(paragraphs.Count); // fixed seed — deterministic, reproducible, not a true shuffle each call
+        for (var i = shuffled.Count - 1; i > 0; i--)
+        {
+            var j = rng.Next(i + 1);
+            (shuffled[i], shuffled[j]) = (shuffled[j], shuffled[i]);
+        }
+
+        var rows = shuffled.Select(i => new { itemId = $"p{i}", text = paragraphs[i] }).ToArray();
+
+        var formSchemaJson = JsonSerializer.Serialize(new
+        {
+            components = new object[]
+            {
+                new
+                {
+                    type = "datagrid", key = "paragraphs", reorder = true, disableAddingRemovingRows = true,
+                    defaultValue = rows,
+                    components = new object[]
+                    {
+                        new { type = "hidden", key = "itemId" },
+                        new { type = "textarea", key = "text", disabled = true },
+                    },
+                },
+            }
+        });
+        var answerKeyJson = JsonSerializer.Serialize(new Dictionary<string, List<string>> { ["paragraphs"] = correctOrder });
+        var scoringRulesJson = JsonSerializer.Serialize(new ScoringRulesDocument(
+            new Dictionary<string, ComponentScoringRule> { ["paragraphs"] = new(ScoringRuleKinds.OrderedSequence, CorrectOrder: correctOrder, Points: 1.0) }));
+        var feedbackPlanJson = JsonSerializer.Serialize(new
+        {
+            correctFeedback = "Correct order!",
+            incorrectFeedback = "Not quite the right order — review the passage and try again.",
+        });
+
+        var instructions = "Drag the paragraphs below into the correct logical order.";
+        return (instructions, formSchemaJson, answerKeyJson, scoringRulesJson, feedbackPlanJson);
+    }
+
     /// <summary>Shared deterministic cloze-building core: blanks out up to
     /// <see cref="MaxClozeBlanks"/> distinct content words (length &gt;= <see cref="MinClozeWordLength"/>,
     /// alphabetic) from <paramref name="sourceText"/>, text_normalized scoring per blank. Rejects
@@ -805,6 +968,49 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
             .Distinct()
             .Take(MaxDistractors)
             .ToList();
+    }
+
+    /// <summary>Same sibling-lookup pattern as <see cref="FindDistractorDefinitionsAsync"/>
+    /// (same CEFR level preferred, newest-first tiebreak), but keeps each sibling's title too —
+    /// phrase_match needs both, unlike multiple_choice_single's distractors which only need
+    /// text.</summary>
+    private async Task<List<(string Title, string Body)>> FindSiblingTermDefinitionsAsync(
+        PublishedResourceType type, Guid excludeId, string? cefrLevel, CancellationToken ct)
+    {
+        if (type is not (PublishedResourceType.Vocabulary or PublishedResourceType.Grammar))
+            return new List<(string, string)>();
+
+        var rows = await _db.ResourceBankItems
+            .Where(e => e.Type == type && e.Id != excludeId)
+            .OrderByDescending(e => e.CefrLevel == cefrLevel)
+            .ThenBy(e => e.CreatedAt)
+            .Take(MaxPhraseMatchSiblings * 2) // over-fetch — some rows may lack a usable definition/description
+            .Select(e => e.ContentJson)
+            .ToListAsync(ct);
+
+        var pairs = new List<(string Title, string Body)>();
+        foreach (var json in rows)
+        {
+            string? title;
+            string? body;
+            if (type == PublishedResourceType.Vocabulary)
+            {
+                var c = ResourceBankItemContent.Deserialize<VocabularyContent>(json);
+                title = c.Word;
+                body = c.Notes;
+            }
+            else
+            {
+                var c = ResourceBankItemContent.Deserialize<GrammarContent>(json);
+                title = c.GrammarPoint;
+                body = c.Description;
+            }
+
+            if (!string.IsNullOrWhiteSpace(title) && !string.IsNullOrWhiteSpace(body))
+                pairs.Add((title!, body!.Trim()));
+            if (pairs.Count >= MaxPhraseMatchSiblings) break;
+        }
+        return pairs;
     }
 
     private static List<string> ParseTags(string? json)

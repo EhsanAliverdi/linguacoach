@@ -274,6 +274,41 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     }
 
     [Fact]
+    public async Task PhraseMatch_IsBankFirstAndGenerationEligible_PhaseK16()
+    {
+        // Phase K16 — phrase_match got a real composer (decomposed into N single_choice
+        // sub-questions, ActivityGenerationService.ComposePhraseMatchAsync) and moved from
+        // disabled-Pattern to BankFirst/enabled.
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "phrase_match");
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        Assert.Equal("BankFirst", type.Category);
+        Assert.True(type.IsEnabled);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.Equal("vocabulary", type.PrimarySkill);
+        Assert.Contains(eligible, e => e.Key == "phrase_match");
+    }
+
+    [Fact]
+    public async Task ReorderParagraphs_IsBankFirstAndGenerationEligible_PhaseK16()
+    {
+        // Phase K16 — reorder_paragraphs got a real composer (stock Form.io datagrid+reorder
+        // pattern, ActivityGenerationService.ComposeReorderParagraphsAsync) and moved from
+        // disabled-Pattern to BankFirst/enabled. Frontend rendering behavior flagged for manual
+        // verification — not verified live this session.
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "reorder_paragraphs");
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        Assert.Equal("BankFirst", type.Category);
+        Assert.True(type.IsEnabled);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.Equal("reading", type.PrimarySkill);
+        Assert.Contains(eligible, e => e.Key == "reorder_paragraphs");
+    }
+
+    [Fact]
     public async Task LegacyAndPatternTypes_AreDisabledByDefault_DespiteBeingReady()
     {
         var service = new ExerciseTypeCatalogService(_db);
@@ -287,7 +322,6 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     }
 
     [Theory]
-    [InlineData("reorder_paragraphs", "reading")]
     [InlineData("highlight_incorrect_words", "listening")]
     [InlineData("write_from_dictation", "listening")]
     [InlineData("repeat_sentence", "speaking")]
@@ -478,7 +512,6 @@ public sealed class ExerciseTypeRegistryTests : IDisposable
     [Theory]
     [InlineData("writing_scenario", "writing", null, "WritingScenario")]
     [InlineData("LISTENING COMPREHENSION", "listening", null, "ListeningComprehension")]
-    [InlineData("phrase_match", "vocabulary", "phrase_match", "VocabularyPractice")]
     [InlineData("teams_chat_simulation", "writing", "teams_chat_simulation", "WritingScenario")]
     public async Task Registry_Resolves_ReadyTypes(string key, string skill, string? pattern, string legacy)
     {

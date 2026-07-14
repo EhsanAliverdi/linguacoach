@@ -498,6 +498,111 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         (await _db.Exercises.CountAsync()).Should().Be(0);
     }
 
+    // ── Phase K16 — phrase_match ─────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task Phrase_match_creates_one_radio_question_per_term()
+    {
+        var source = SeedSource();
+        var vocab1 = SeedVocabulary(source.Id, "resilient", "able to recover quickly");
+        SeedVocabulary(source.Id, "diligent", "showing care in one's work");
+        SeedVocabulary(source.Id, "candid", "open and honest in expression");
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Vocabulary", vocab1.Id, "Primary") },
+            RequestedActivityType: "phrase_match"));
+
+        result.Activity.ActivityType.Should().Be("phrase_match");
+        result.Activity.FormSchemaJson.Should().Contain("radio").And.Contain("resilient").And.Contain("diligent");
+        result.Activity.AnswerKeyJson.Should().Contain("able to recover quickly");
+        result.Activity.ScoringRulesJson.Should().Contain("single_choice");
+    }
+
+    [Fact]
+    public async Task Phrase_match_without_enough_sibling_terms_is_rejected()
+    {
+        var source = SeedSource();
+        var vocab = SeedVocabulary(source.Id);
+
+        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") },
+            RequestedActivityType: "phrase_match"));
+
+        await act.Should().ThrowAsync<ExerciseValidationException>();
+        (await _db.Exercises.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Phrase_match_not_supported_for_reading_reference()
+    {
+        var source = SeedSource();
+        var reference = SeedReadingReference(source.Id);
+
+        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("ReadingReference", reference.Id, "Primary") },
+            RequestedActivityType: "phrase_match"));
+
+        await act.Should().ThrowAsync<ExerciseValidationException>();
+    }
+
+    // ── Phase K16 — reorder_paragraphs ────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task Reorder_paragraphs_creates_datagrid_with_shuffled_rows()
+    {
+        var source = SeedSource();
+        const string passageText = "First paragraph about the topic.\n\nSecond paragraph with more detail.\n\nThird paragraph wraps up the ideas.";
+        var wordCount = passageText.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length;
+        var e = new ResourceBankItem(
+            PublishedResourceType.ReadingPassage, source.Id, "B1",
+            ResourceBankItemContent.Serialize(new ReadingPassageContent(
+                "Multi-Paragraph Passage", passageText, null, "Reading", null, wordCount, 1, null, null)));
+        _db.ResourceBankItems.Add(e);
+        await _db.SaveChangesAsync();
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("ReadingPassage", e.Id, "Primary") },
+            RequestedActivityType: "reorder_paragraphs"));
+
+        result.Activity.ActivityType.Should().Be("reorder_paragraphs");
+        result.Activity.FormSchemaJson.Should().Contain("datagrid").And.Contain("reorder").And.Contain("First paragraph about the topic.");
+        result.Activity.ScoringRulesJson.Should().Contain("ordered_sequence").And.Contain("\"p0\"").And.Contain("\"p1\"").And.Contain("\"p2\"");
+    }
+
+    [Fact]
+    public async Task Reorder_paragraphs_rejected_when_fewer_than_three_paragraphs()
+    {
+        var source = SeedSource();
+        const string passageText = "Only one paragraph here, with no breaks at all to speak of.";
+        var wordCount = passageText.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length;
+        var e = new ResourceBankItem(
+            PublishedResourceType.ReadingPassage, source.Id, "B1",
+            ResourceBankItemContent.Serialize(new ReadingPassageContent(
+                "Single Paragraph", passageText, null, "Reading", null, wordCount, 1, null, null)));
+        _db.ResourceBankItems.Add(e);
+        await _db.SaveChangesAsync();
+
+        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("ReadingPassage", e.Id, "Primary") },
+            RequestedActivityType: "reorder_paragraphs"));
+
+        await act.Should().ThrowAsync<ExerciseValidationException>();
+        (await _db.Exercises.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Reorder_paragraphs_not_supported_for_vocabulary()
+    {
+        var source = SeedSource();
+        var vocab = SeedVocabulary(source.Id);
+
+        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") },
+            RequestedActivityType: "reorder_paragraphs"));
+
+        await act.Should().ThrowAsync<ExerciseValidationException>();
+    }
+
     [Fact]
     public async Task Reading_writing_fill_in_blanks_not_supported_for_vocabulary()
     {

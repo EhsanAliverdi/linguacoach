@@ -162,24 +162,27 @@ scoring kinds needed for anything in this phase).
   (`reading_fill_in_blanks`) — no duplicate catalog entry. 5 new unit tests, all passing;
   `reading_writing_fill_in_blanks` intentionally **not** included in this slice (kept disabled) —
   it implies a distinct read+write interaction, not just cloze, and needs its own design pass.
-- [ ] `phrase_match` — Vocabulary/Grammar. **Deferred.** No `matching_pairs` scoring kind exists in
-  `ComponentAnswerScorer` yet (only single/multiple choice, text, ordered sequence) — needs either
-  a new scoring kind or decomposing into N independent `single_choice` sub-questions (one per
-  pair). Bigger lift than the other K16 items; picking that design is the first step next time
-  this phase is picked up.
-- [ ] `reorder_paragraphs` — Reading (`ReadingPassage` only, needs multi-paragraph `PassageText`).
-  **Deferred** — not a scoring-infra gap (confirmed: `ScoringRuleKinds.OrderedSequence` /
-  `ComponentAnswerScorer.ScoreOrderedSequence` already exist and are exactly what this needs,
-  reusing the datagrid+reorder Form.io pattern documented in
-  `FormIoSchemaValidationServiceTests.DatagridWithReorder_AndValidNestedComponents_IsValid`: a
-  `datagrid` component with `reorder:true`, `disableAddingRemovingRows:true`, row template
-  `[{type:"hidden",key:"itemId"},{type:"textarea",key:"text",disabled:true}]`, scored via
-  `ComponentScoringRule.CorrectOrder`). The open question is whether the datagrid needs a
-  `defaultValue` set on the schema component itself to pre-populate the shuffled rows for display,
-  or whether the frontend Form.io renderer needs separate initial-data plumbing not yet
-  confirmed by reading code alone — this needs either a source-level trace of the generic Form.io
-  renderer or a real browser check before shipping, so it was intentionally not risked in this
-  pass.
+- [x] **`phrase_match`** — Vocabulary/Grammar — `Done` (2026-07-15). Resolved the "no
+  `matching_pairs` scoring kind" gap by decomposing "matching" into N independent `single_choice`
+  sub-questions (one radio per term), each offering every pulled term's own definition as an
+  option — a definition used as the correct answer for one term is a live distractor for every
+  other term in the same exercise, reproducing genuine matching semantics with zero new scoring
+  infra. New `ComposePhraseMatchAsync` + `FindSiblingTermDefinitionsAsync` (same sibling-lookup
+  pattern as `multiple_choice_single`'s distractors, but keeps each sibling's title too). Needs ≥2
+  total terms (primary + siblings). Catalog row converted to `BankFirst`/enabled. 3 new unit
+  tests, all passing.
+- [x] **`reorder_paragraphs`** — Reading (`ReadingPassage` in practice) — `Done` (2026-07-15).
+  Implemented the datagrid+reorder pattern exactly as documented in
+  `FormIoSchemaValidationServiceTests.DatagridWithReorder_AndValidNestedComponents_IsValid`, with
+  a `defaultValue` array on the datagrid component to pre-populate the deterministically-shuffled
+  rows (fixed-seed `Random`, reproducible). New `ComposeReorderParagraphsAsync`. Needs ≥3 distinct
+  paragraphs (split on blank lines). **The one open risk from the original deferral —
+  whether the frontend Form.io renderer actually honors `defaultValue` for datagrid
+  pre-population — was NOT resolved by this implementation; it's a real assumption, not a
+  confirmed fact.** Flagged explicitly in the code doc comment and the catalog row's own
+  description; needs manual browser verification before being fully trusted. 3 new unit tests
+  (backend schema/scoring shape only — cannot verify actual rendering), all passing. **Both K16
+  items done — 26 of 40 catalog types enabled (65%). K16 is fully complete.**
 
 ### Phase K17 — AI-assisted structured types (reuses `AiExerciseGenerationService` pattern from K14)
 
@@ -413,27 +416,31 @@ change, new backend plumbing, multi-turn design, or a K19 product decision).
 
 ## Final verdict
 
-**The bank-first pipeline (Import → Resource Bank → Lesson → Exercise → Module) is now
-functionally complete for all 7 `PublishedResourceType`s** — every resource type
-(Vocabulary/Grammar/ReadingReference/ReadingPassage/Writing/Listening/Speaking) has at least one
-real, tested, deployed Exercise composer a Lesson can generate from, and the Lesson picker
-(K15.4) surfaces exactly what's enabled with zero hardcoding. The remaining 16 disabled catalog
-entries are not "not started" — each has a specific, documented reason it isn't buildable as a
-plain composer right now (see the unchecked items in K16-K19 above). None of them block the core
-admin workflow: Import Content → Resource Bank → generate Lesson → generate Exercise(s) → combine
-into Module → review → approve.
+**The bank-first pipeline (Import → Resource Bank → Lesson → Exercise → Module) is functionally
+complete for all 7 `PublishedResourceType`s, and K15-K16 are fully done.** 26 of 40 catalog types
+(65%) are enabled by default, every resource type
+(Vocabulary/Grammar/ReadingReference/ReadingPassage/Writing/Listening/Speaking) has multiple real,
+tested, deployed Exercise composers a Lesson can generate from, and the Lesson picker (K15.4)
+surfaces exactly what's enabled with zero hardcoding. The remaining 14 disabled catalog entries
+are not "not started" — each has a specific, documented reason it isn't buildable as a plain
+composer right now (see the unchecked items in K17-K19 above, plus the 3 confirmed-redundant
+legacy Pattern Engine keys). None of them block the core admin workflow: Import Content →
+Resource Bank → generate Lesson → generate Exercise(s) → combine into Module → review → approve.
 
 ## Next recommended action
 
-The composer build-out itself has reached its natural stopping point without new external input.
-Remaining work needs one of: (a) a scoring-kind design decision (`phrase_match`), (b) frontend
-Form.io verification in a real browser (`reorder_paragraphs`, and confirming the `speakingResponse`/
-`selectboxes` renderers actually work end-to-end for everything built in K17-K18, since this
-session's verification was build+test only, never a live browser check), (c) a new custom Form.io
-component (`highlight_incorrect_words`), (d) resource content-model changes for image/audio fields
-(`describe_image`, `repeat_sentence`), (e) new backend audio-serving plumbing
-(`write_from_dictation`), (f) a multi-turn scenario design (`teams_chat_simulation`), or (g) product
+The composer build-out has reached its natural stopping point without new external input — every
+remaining item needs one of: (a) frontend Form.io verification in a real browser
+(`reorder_paragraphs`'s `defaultValue` pre-population is a real, stated, unconfirmed assumption —
+and more broadly, confirming the `speakingResponse`/`selectboxes`/`datagrid` renderers actually
+work end-to-end for everything built in K16-K18, since this session's verification was build+test
+only, never a live browser check), (b) a new custom Form.io component
+(`highlight_incorrect_words`), (c) resource content-model changes for image/audio fields
+(`describe_image`, `repeat_sentence`), (d) new backend audio-serving plumbing
+(`write_from_dictation`), (e) a multi-turn scenario design (`teams_chat_simulation`), or (f) product
 decisions on `lesson_reflection`/the pilot entry/the 4 Legacy entries (K19). **Recommend the user
-now manually test the live admin UI** — generate at least one Exercise of each of the 24 enabled
+now manually test the live admin UI** — generate at least one Exercise of each of the 26 enabled
 types from a real Lesson, since automated tests cover backend logic/schema shape but not actual
-Form.io rendering/submission in the browser.
+Form.io rendering/submission in the browser. `reorder_paragraphs` and the K18 speaking types are
+the highest-value ones to check first, since they're the least similar to the original, already
+browser-tested `gap_fill`/`multiple_choice_single` shape.
