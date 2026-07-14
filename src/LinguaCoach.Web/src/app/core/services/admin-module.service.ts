@@ -6,6 +6,7 @@ import {
   ModuleDto,
   ModuleListResult,
   CreateModuleRequestBody,
+  UpdateModuleRequestBody,
   GenerateModuleFromItemsRequestBody,
   GenerateModuleFromResourceRequestBody,
   GenerateModuleFromLessonRequestBody,
@@ -14,7 +15,10 @@ import {
   ModulePreviewResult,
   ModulePreviewSubmitRequestBody,
   ModulePreviewSubmitResult,
+  ModuleArchiveResult,
+  ModuleRepairResult,
 } from '../models/admin-module.models';
+import { DiagnosticIssue, IssuesSummary, BulkRepairResult, RepairableItemSummary } from '../models/admin-repair.models';
 
 @Injectable({ providedIn: 'root' })
 export class AdminModuleService {
@@ -48,6 +52,11 @@ export class AdminModuleService {
   /** Phase K3 — manual create, wired to the backend's previously-unreachable POST endpoint. */
   create(body: CreateModuleRequestBody): Observable<ModuleDto> {
     return this.http.post<ModuleDto>(this.base, body);
+  }
+
+  /** Phase K5 — admin edit of an AI/deterministically-generated Module. */
+  update(id: string, body: UpdateModuleRequestBody): Observable<ModuleDto> {
+    return this.http.put<ModuleDto>(`${this.base}/${id}`, body);
   }
 
   preview(id: string): Observable<ModulePreviewResult> {
@@ -84,5 +93,33 @@ export class AdminModuleService {
 
   reject(id: string, reason: string): Observable<ModuleDto> {
     return this.http.post<ModuleDto>(`${this.base}/${id}/reject`, { reason });
+  }
+
+  archive(ids: string[]): Observable<ModuleArchiveResult> {
+    return this.http.post<ModuleArchiveResult>(`${this.base}/archive`, { ids });
+  }
+
+  unarchive(ids: string[]): Observable<ModuleArchiveResult> {
+    return this.http.post<ModuleArchiveResult>(`${this.base}/unarchive`, { ids });
+  }
+
+  diagnose(id: string): Observable<DiagnosticIssue[]> {
+    return this.http.get<DiagnosticIssue[]>(`${this.base}/${id}/diagnostics`);
+  }
+
+  repair(id: string): Observable<ModuleRepairResult> {
+    return this.http.post<ModuleRepairResult>(`${this.base}/${id}/repair`, {});
+  }
+
+  issuesSummary(): Observable<IssuesSummary> {
+    return this.http.get<IssuesSummary>(`${this.base}/issues-summary`);
+  }
+
+  repairAll(): Observable<BulkRepairResult> {
+    return this.http.post<BulkRepairResult>(`${this.base}/repair-all`, {});
+  }
+
+  listWithIssues(): Observable<RepairableItemSummary[]> {
+    return this.http.get<RepairableItemSummary[]>(`${this.base}/with-issues`);
   }
 }

@@ -29,6 +29,9 @@ public static class DefaultAiSeeder
     public const string LessonGenerateFromResourcesKey = "lesson_generate_from_resources";
     public const string ExerciseGenerateFromResourcesKey = "exercise_generate_from_resources";
     public const string ModuleGenerateFromResourceKey = "module_generate_from_resource";
+    // Phase K8 — one shared "fill this missing field" prompt reused by the admin Resource Bank/
+    // Lesson/Exercise/Module "Fix with AI" repair action (see AdminRepairFieldGenerator).
+    public const string AdminContentRepairFieldKey = "admin_content_repair_field";
 
     // ── Exercise Pattern Engine — pattern-specific generation prompt keys ─────
     public const string ActivityGeneratePhraseMatchKey        = "activity_generate_phrase_match";
@@ -4523,6 +4526,34 @@ General rules:
 - Do not include any text outside the JSON object. No markdown fences.
 """;
 
+    // Phase K8 — one shared prompt for the admin "Fix with AI" repair action across Resource
+    // Bank/Lesson/Exercise/Module. Deliberately generic and single-purpose: given a description
+    // of what's missing plus grounding context, write ONLY that one field's text. Never used for
+    // correctness-critical data (answer keys, scoring rules, schemas) — callers only ask for
+    // descriptive/explanatory text.
+    private const string AdminContentRepairFieldContent = """
+You are helping an admin fill in one missing piece of content on a workplace English learning
+platform.
+
+Content kind: {{entityKind}}
+Missing field: {{fieldLabel}}
+Known context (use this, do not invent unrelated details): {{context}}
+
+Write ONLY the missing field's text described above, grounded in the known context. Keep it
+concise and in plain English appropriate for the stated CEFR level if one is given.
+
+Return ONLY valid JSON (no markdown, no text outside the JSON object):
+
+{
+  "value": "<the missing field's text>"
+}
+
+Rules:
+- "value" must be a single non-empty string, no markdown formatting, no quotes-within-quotes.
+- Do not include real company names, real person names, phone numbers, or sensitive content.
+- Do not include any text outside the JSON object. No markdown fences.
+""";
+
     // Phase J2c — AI-assisted "Generate Module" composer, "from resource" entry point only. AI
     // supplies only the module's own descriptive framing — no answer key/scoring at this level.
     private const string ModuleGenerateFromResourceContent = """
@@ -4786,6 +4817,12 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             ResourceImportProposeColumnMappingKey, ResourceImportProposeColumnMappingContent,
             maxInputTokens: 1600, maxOutputTokens: 1200, ct);
+
+        // Phase K8 — admin "Fix with AI" repair action, shared across Resource Bank/Lesson/
+        // Exercise/Module.
+        await SeedOrUpgradePromptAsync(db, logger,
+            AdminContentRepairFieldKey, AdminContentRepairFieldContent,
+            maxInputTokens: 1200, maxOutputTokens: 500, ct);
 
         // Activity evaluation prompts
         await SeedOrUpgradePromptAsync(db, logger,

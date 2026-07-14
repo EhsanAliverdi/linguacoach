@@ -4,13 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Observable, catchError, concatMap, from, map, of, toArray } from 'rxjs';
 import { AdminExerciseService } from '../../../core/services/admin-exercise.service';
-import { AdminModuleService } from '../../../core/services/admin-module.service';
 import {
   ExerciseDto,
   ACTIVITY_REVIEW_STATUSES,
   ACTIVITY_TYPES,
 } from '../../../core/models/admin-exercise.models';
 import { RESOURCE_BANK_CEFR_LEVELS } from '../../../core/models/admin-resource-import.models';
+import { IssuesSummary } from '../../../core/models/admin-repair.models';
+import { AdminBulkRepairService } from '../../../core/services/admin-bulk-repair.service';
 import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
@@ -25,7 +26,9 @@ import {
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminPaginationComponent,
+  SpAdminRowAction,
   SpAdminSelectComponent,
+  SpAdminTableActionsComponent,
   SpAdminTableComponent,
   SpAdminTableFooterComponent,
   SpAdminTextareaComponent,
@@ -61,6 +64,7 @@ interface BulkItemResult { success: boolean; title: string; error: string | null
     SpAdminPageHeaderComponent,
     SpAdminPaginationComponent,
     SpAdminSelectComponent,
+    SpAdminTableActionsComponent,
     SpAdminTableComponent,
     SpAdminTableFooterComponent,
     SpAdminTextareaComponent,
@@ -101,14 +105,35 @@ export class AdminExercisesComponent implements OnInit {
     return items.length > 0 && items.every(i => this.selectedIds().has(i.id));
   });
 
+  // ── Phase K9/K11 — top-level issue count + bulk "Fix All with AI" (runs in a root service so
+  // its progress toast survives navigating away from this page). ────────────────────────────
+  issuesSummary = signal<IssuesSummary | null>(null);
+
   constructor(
     private exerciseSvc: AdminExerciseService,
-    private moduleSvc: AdminModuleService,
+    public bulkRepair: AdminBulkRepairService,
     private router: Router,
   ) {}
 
   ngOnInit(): void {
     this.loadAll();
+    this.loadIssuesSummary();
+  }
+
+  loadIssuesSummary(): void {
+    this.exerciseSvc.issuesSummary().subscribe({
+      next: summary => this.issuesSummary.set(summary),
+      error: () => this.issuesSummary.set(null),
+    });
+  }
+
+  fixAllWithAi(): void {
+    this.bulkRepair.run({
+      entityLabel: 'Exercise',
+      listWithIssues: () => this.exerciseSvc.listWithIssues(),
+      repairOne: id => this.exerciseSvc.repair(id),
+      onDone: () => { this.loadAll(); this.loadIssuesSummary(); },
+    });
   }
 
   loadAll(): void {
@@ -165,6 +190,29 @@ export class AdminExercisesComponent implements OnInit {
 
   openDetail(item: ExerciseDto): void {
     this.router.navigate(['/admin/exercises', item.id]);
+  }
+
+  rowActions(_item: ExerciseDto): SpAdminRowAction[] {
+    return [
+      { id: 'view', label: 'View', icon: 'view' },
+      { id: 'edit', label: 'Edit', icon: 'edit' },
+      { id: 'delete', label: 'Delete', icon: 'delete', tone: 'danger', dividerBefore: true },
+    ];
+  }
+
+  onRowAction(actionId: string, item: ExerciseDto): void {
+    switch (actionId) {
+      case 'view': this.openDetail(item); break;
+      case 'edit': this.router.navigate(['/admin/exercises', item.id, 'edit']); break;
+      case 'delete': this.deleteItem(item); break;
+    }
+  }
+
+  private deleteItem(item: ExerciseDto): void {
+    this.exerciseSvc.archive([item.id]).subscribe({
+      next: () => { this.actionSuccess.set(`"${item.title}" deleted.`); this.loadAll(); },
+      error: err => { this.actionError.set(err.error?.error ?? 'Could not delete this Exercise.'); },
+    });
   }
 
   statusTone(status: string): 'success' | 'neutral' | 'danger' | 'warning' {
@@ -256,7 +304,7 @@ export class AdminExercisesComponent implements OnInit {
     this.runBulk('rejections', item => this.exerciseSvc.reject(item.id, this.bulkRejectReasonDraft.trim()));
   }
 
-  bulkGenerateModule(): void {
-    this.runBulk('Module generations', item => this.moduleSvc.generateFromExercise({ exerciseId: item.id }));
+  bulkDelete(): void {
+    this.runBulk('deletions', item => this.exerciseSvc.archive([item.id]));
   }
 }

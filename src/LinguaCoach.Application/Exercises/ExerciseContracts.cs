@@ -1,3 +1,6 @@
+using System.Text.Json;
+using LinguaCoach.Application.AdminRepair;
+
 namespace LinguaCoach.Application.Exercises;
 
 // ── Phase H4 — Activity foundation. A reviewable, editable practice task design generated from
@@ -59,7 +62,8 @@ public sealed record ExerciseDto(
     /// while still being a legitimate, reviewable, approvable draft; this only tells the admin
     /// honestly whether it will ever reach a student, so they aren't surprised later.</summary>
     bool CanLaunchOnceApproved = true,
-    string? LaunchUnsupportedReason = null
+    string? LaunchUnsupportedReason = null,
+    bool IsArchived = false
 );
 
 public sealed record ListExercisesQuery(
@@ -161,6 +165,68 @@ public sealed record RejectExerciseCommand(Guid Id, string Reason, Guid? Reviewe
 public interface IAdminRejectExerciseHandler
 {
     Task<ExerciseDto> HandleAsync(RejectExerciseCommand command, CancellationToken ct = default);
+}
+
+// ── Phase K6 — admin archive/unarchive (soft-delete), mirroring ResourceBankItem's
+// ArchiveResourceBankItemsCommand pattern. Bulk is continue-on-error per id. ──
+
+public sealed record ArchiveExercisesCommand(IReadOnlyList<Guid> Ids);
+public sealed record UnarchiveExercisesCommand(IReadOnlyList<Guid> Ids);
+
+public sealed record ExerciseArchiveItemResult(Guid Id, bool Success, string? Error);
+
+public sealed record ExerciseArchiveResult(
+    int RequestedCount,
+    int SucceededCount,
+    int FailedCount,
+    IReadOnlyList<ExerciseArchiveItemResult> Items);
+
+public interface IExerciseArchiveHandler
+{
+    Task<ExerciseArchiveResult> ArchiveAsync(ArchiveExercisesCommand command, CancellationToken ct = default);
+    Task<ExerciseArchiveResult> UnarchiveAsync(UnarchiveExercisesCommand command, CancellationToken ct = default);
+}
+
+// ── Phase K7 — admin "preview as a learner" for a standalone Exercise (not via a Module). Scores
+// a preview submission using the exact same ComponentAnswerScorer logic the real student runtime
+// and Module preview use. Never creates a LearningActivity/ActivityAttempt. ──
+
+public sealed record ExercisePreviewComponentResult(string ComponentKey, bool IsCorrect, double PointsEarned, double MaxPoints);
+
+public sealed record ExercisePreviewSubmitRequest(Guid ExerciseId, Dictionary<string, JsonElement> Answers);
+
+public sealed record ExercisePreviewSubmitResult(
+    bool Scored,
+    string? UnscorableReason,
+    double? ScorePercent,
+    bool? AllCorrect,
+    IReadOnlyList<ExercisePreviewComponentResult> Components,
+    string? FeedbackMessage);
+
+public interface IAdminExercisePreviewSubmitHandler
+{
+    Task<ExercisePreviewSubmitResult> HandleAsync(ExercisePreviewSubmitRequest request, CancellationToken ct = default);
+}
+
+// ── Phase K8 — "diagnose then AI-repair" for an Exercise. Deliberately narrow: only fills
+// missing Description/Instructions (safe descriptive text). Never touches FormSchemaJson,
+// AnswerKeyJson, or ScoringRulesJson — those are correctness-critical and flagged, not
+// auto-fixed, mirroring AiExerciseGenerationService's "never AI-supplied answer" principle. ──
+
+public sealed record ExerciseRepairResult(
+    ExerciseDto Item,
+    IReadOnlyList<DiagnosticIssue> IssuesFixed,
+    IReadOnlyList<DiagnosticIssue> IssuesRemaining,
+    string? ProviderName,
+    string? ModelName);
+
+public interface IExerciseRepairService
+{
+    Task<IReadOnlyList<DiagnosticIssue>> DiagnoseAsync(Guid id, CancellationToken ct = default);
+    Task<ExerciseRepairResult> RepairAsync(Guid id, CancellationToken ct = default);
+    Task<IssuesSummary> GetIssuesSummaryAsync(CancellationToken ct = default);
+    Task<BulkRepairResult> RepairAllAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<RepairableItemSummary>> ListWithIssuesAsync(CancellationToken ct = default);
 }
 
 public sealed class ExerciseValidationException : Exception

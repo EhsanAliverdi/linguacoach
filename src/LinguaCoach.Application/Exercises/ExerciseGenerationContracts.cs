@@ -72,3 +72,38 @@ public interface IGenerateActivityFromResourcesWithAiHandler
 {
     Task<GenerateExerciseResult> HandleAsync(GenerateActivityFromResourcesRequest request, CancellationToken ct = default);
 }
+
+// ── Phase K5 — "Generate Exercises from Lesson" with an admin-picked count per type (e.g. 5
+// gap_fill + 5 multiple_choice_single = 10 Exercises), instead of always exactly one. Every
+// Exercise created this way is auto-linked into a Module together with the source Lesson — see
+// IModuleAutoLinkService in LinguaCoach.Application.Modules — closing the loop the product now
+// wants: Resource Bank → Lesson (manual) → Exercises (manual, admin picks how many/which types) →
+// Module (automatic, no separate "Generate Module" step). ──
+
+/// <summary>Null <see cref="ActivityType"/> means "auto-pick" — the same per-resource-type default
+/// (gap_fill/multiple_choice_single for Vocabulary/Grammar, short_answer for Reading) the
+/// single-item generate endpoints already use when no type is requested.</summary>
+public sealed record ActivityGenerationSpec(string? ActivityType, int Count);
+
+public sealed record GenerateActivitiesFromLessonRequest(
+    Guid LessonId,
+    IReadOnlyList<ActivityGenerationSpec> Specs,
+    string? TitlePrefix = null,
+    string? Notes = null,
+    Guid? CreatedByUserId = null
+);
+
+public sealed record GenerateActivitiesFromLessonResult(
+    IReadOnlyList<ExerciseDto> Activities,
+    Guid ModuleId,
+    string ModuleReviewRoute
+);
+
+/// <summary>Generates N Exercises per requested type (reusing <see cref="IGenerateActivityFromLessonHandler"/>
+/// once per item — same deterministic composer, same per-item validation, nothing duplicated),
+/// then auto-creates-or-extends the Module linking this Lesson to every Exercise it has ever
+/// generated (not just this call's batch) via <c>IModuleAutoLinkService</c>.</summary>
+public interface IGenerateActivitiesFromLessonHandler
+{
+    Task<GenerateActivitiesFromLessonResult> HandleAsync(GenerateActivitiesFromLessonRequest request, CancellationToken ct = default);
+}

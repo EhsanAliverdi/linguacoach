@@ -3,6 +3,8 @@
 // Module. Every create/generate action stages a pending-review row; nothing here creates an
 // Exercise/Module row or assigns anything to a student.
 
+import { DiagnosticIssue } from './admin-repair.models';
+
 export interface LessonResourceLinkDto {
   linkId: string;
   resourceType: string;
@@ -39,6 +41,7 @@ export interface LessonDto {
   createdAt: string;
   updatedAtUtc: string;
   links: LessonResourceLinkDto[];
+  isArchived: boolean;
 }
 
 export interface LessonListResult {
@@ -109,3 +112,25 @@ export interface GenerateLessonFromResourcesResult {
 export const LESSON_REVIEW_STATUSES = ['NotRequired', 'PendingReview', 'Approved', 'Rejected'] as const;
 export const LESSON_SOURCE_MODES = ['Manual', 'GeneratedFromResources', 'Imported'] as const;
 export const LESSON_RESOURCE_ROLES = ['Primary', 'Supporting'] as const;
+
+// ── Phase K6 — admin archive/unarchive (soft-delete) ────────────────────────────────
+export interface LessonArchiveItemResult {
+  id: string;
+  success: boolean;
+  error: string | null;
+}
+export interface LessonArchiveResult {
+  requestedCount: number;
+  succeededCount: number;
+  failedCount: number;
+  items: LessonArchiveItemResult[];
+}
+
+// ── Phase K8 — "Fix with AI" repair ──────────────────────────────────────────
+export interface LessonRepairResult {
+  item: LessonDto;
+  issuesFixed: DiagnosticIssue[];
+  issuesRemaining: DiagnosticIssue[];
+  providerName: string | null;
+  modelName: string | null;
+}

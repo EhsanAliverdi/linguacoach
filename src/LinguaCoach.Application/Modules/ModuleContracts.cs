@@ -1,3 +1,5 @@
+using LinguaCoach.Application.AdminRepair;
+
 namespace LinguaCoach.Application.Modules;
 
 // ── Phase H5 — Module foundation. A reusable, reviewable learning unit combining one
@@ -43,7 +45,8 @@ public sealed record ModuleDto(
     DateTime CreatedAt,
     DateTime UpdatedAtUtc,
     IReadOnlyList<ModuleLessonLinkDto> LessonLinks,
-    IReadOnlyList<ModuleExerciseLinkDto> ExerciseLinks
+    IReadOnlyList<ModuleExerciseLinkDto> ExerciseLinks,
+    bool IsArchived = false
 );
 
 public sealed record ListModulesQuery(
@@ -131,6 +134,47 @@ public sealed record RejectModuleCommand(Guid Id, string Reason, Guid? ReviewedB
 public interface IAdminRejectModuleHandler
 {
     Task<ModuleDto> HandleAsync(RejectModuleCommand command, CancellationToken ct = default);
+}
+
+// ── Phase K6 — admin archive/unarchive (soft-delete), mirroring ResourceBankItem's
+// ArchiveResourceBankItemsCommand pattern. Bulk is continue-on-error per id. Archiving a Module
+// never cascades to its linked Lessons/Exercises. ──
+
+public sealed record ArchiveModulesCommand(IReadOnlyList<Guid> Ids);
+public sealed record UnarchiveModulesCommand(IReadOnlyList<Guid> Ids);
+
+public sealed record ModuleArchiveItemResult(Guid Id, bool Success, string? Error);
+
+public sealed record ModuleArchiveResult(
+    int RequestedCount,
+    int SucceededCount,
+    int FailedCount,
+    IReadOnlyList<ModuleArchiveItemResult> Items);
+
+public interface IModuleArchiveHandler
+{
+    Task<ModuleArchiveResult> ArchiveAsync(ArchiveModulesCommand command, CancellationToken ct = default);
+    Task<ModuleArchiveResult> UnarchiveAsync(UnarchiveModulesCommand command, CancellationToken ct = default);
+}
+
+// ── Phase K8 — "diagnose then AI-repair" for a Module. Never touches Lesson/Exercise links —
+// only fills a missing Description (a missing link is flagged, not auto-fixable, since it needs
+// real linked content, not generated text). ──
+
+public sealed record ModuleRepairResult(
+    ModuleDto Item,
+    IReadOnlyList<DiagnosticIssue> IssuesFixed,
+    IReadOnlyList<DiagnosticIssue> IssuesRemaining,
+    string? ProviderName,
+    string? ModelName);
+
+public interface IModuleRepairService
+{
+    Task<IReadOnlyList<DiagnosticIssue>> DiagnoseAsync(Guid id, CancellationToken ct = default);
+    Task<ModuleRepairResult> RepairAsync(Guid id, CancellationToken ct = default);
+    Task<IssuesSummary> GetIssuesSummaryAsync(CancellationToken ct = default);
+    Task<BulkRepairResult> RepairAllAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<RepairableItemSummary>> ListWithIssuesAsync(CancellationToken ct = default);
 }
 
 public sealed class ModuleValidationException : Exception

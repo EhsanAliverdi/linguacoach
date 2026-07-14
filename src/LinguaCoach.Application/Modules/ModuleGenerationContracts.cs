@@ -90,3 +90,25 @@ public interface IGenerateModuleFromResourceWithAiHandler
 {
     Task<GenerateModuleResult> HandleAsync(GenerateModuleFromResourceRequest request, CancellationToken ct = default);
 }
+
+// ── Phase K5 — product decision: Module creation is no longer a separate manual admin action.
+// Resource Bank → Lesson (manual "Generate Learn") → Exercises (manual "Generate Exercises",
+// admin picks count/type) → Module (fully automatic). Every one of the interfaces above this
+// comment (GenerateModuleFrom{Items,Resource,Lesson,Exercise}) still exists and still works — kept
+// for API/test back-compat and for anyone composing a Module from pre-existing, unrelated
+// Lessons/Exercises — but the admin UI no longer exposes a manual "Generate Module" button
+// anywhere; IModuleAutoLinkService below is what the UI's Exercise-generation flow calls instead. ──
+
+/// <summary>Ensures a Module exists linking <paramref name="lessonId"/> to every id in
+/// <paramref name="exerciseIds"/>. Unlike <see cref="IGenerateModuleFromLessonHandler"/>, this
+/// never requires the Lesson or Exercises to already be Approved — it is automatic bookkeeping
+/// triggered right after Exercise generation, not an admin-invoked composition action; the
+/// resulting Module still starts <c>PendingReview</c> like every other Module, so approval is
+/// unaffected. If a Module already links this Lesson, any of <paramref name="exerciseIds"/> not
+/// already linked to it are appended (never a duplicate Module per Lesson); otherwise a new Module
+/// is created linking the Lesson plus every given Exercise.</summary>
+public interface IModuleAutoLinkService
+{
+    Task<Guid> EnsureLinkedAsync(
+        Guid lessonId, IReadOnlyList<Guid> exerciseIds, Guid? createdByUserId, CancellationToken ct = default);
+}

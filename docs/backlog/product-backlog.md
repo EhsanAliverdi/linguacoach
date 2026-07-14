@@ -1597,6 +1597,16 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
 
 ---
 
+## Admin Content Studio — Phase K (Exercise Type Catalog / Lesson Generation)
+
+- [ ] **Phase K15-K19 — Exercise Type Catalog → Lesson Generation Build-Out** `Planned` (2026-07-14)
+  — Full plan: `docs/sprints/exercise-type-catalog-lesson-generation-buildout-sprint.md`.
+  Merges two parallel exercise-type systems (the 37-entry admin catalog, mostly unwired since its
+  on-demand generation pipeline was deleted in Phase I2A/I2B, and the Lesson→Exercise bank-first
+  pipeline's hardcoded 3-type list) into one catalog-driven system. K15 (Surfaces removal +
+  catalog-driven Lesson picker) is the next unit of work; K16-K19 build real composers for the
+  remaining ~34 catalog types, grouped by skill and generation complexity.
+
 ## Legacy database cleanup
 
 > âš ï¸ These items require explicit confirmation before execution. Do not run without a backup.

@@ -542,6 +542,12 @@ public static class DependencyInjection
             LinguaCoach.Infrastructure.Lessons.LessonGenerationService>();
         services.AddScoped<LinguaCoach.Application.Lessons.IGenerateLessonFromResourcesWithAiHandler,
             LinguaCoach.Infrastructure.Lessons.AiLessonGenerationService>();
+        // Phase K6 — admin archive/unarchive (soft-delete), mirroring the Resource Bank pattern.
+        services.AddScoped<LinguaCoach.Application.Lessons.ILessonArchiveHandler,
+            LinguaCoach.Infrastructure.Lessons.LessonArchiveHandler>();
+        // Phase K8 — "diagnose then AI-repair" for a Lesson missing core teaching content.
+        services.AddScoped<LinguaCoach.Application.Lessons.ILessonRepairService,
+            LinguaCoach.Infrastructure.Lessons.LessonRepairService>();
 
         // Phase H4 — Activity foundation (reviewable, editable practice task designs generated
         // from published Resource Bank rows or a Lesson).
@@ -564,6 +570,21 @@ public static class DependencyInjection
             sp => sp.GetRequiredService<LinguaCoach.Infrastructure.Exercises.ActivityGenerationService>());
         services.AddScoped<LinguaCoach.Application.Exercises.IGenerateActivityFromResourcesWithAiHandler,
             LinguaCoach.Infrastructure.Exercises.AiExerciseGenerationService>();
+        // Phase K5 — "Generate Exercises from Lesson" with an admin-picked count/type per Exercise,
+        // auto-linking a Module afterward (registered after IModuleAutoLinkService below).
+        services.AddScoped<LinguaCoach.Application.Exercises.IGenerateActivitiesFromLessonHandler,
+            LinguaCoach.Infrastructure.Exercises.LessonExerciseBatchGenerationService>();
+        // Phase K6 — admin archive/unarchive (soft-delete), mirroring the Resource Bank pattern.
+        services.AddScoped<LinguaCoach.Application.Exercises.IExerciseArchiveHandler,
+            LinguaCoach.Infrastructure.Exercises.ExerciseArchiveHandler>();
+        // Phase K7 — admin "preview as a learner" for a standalone Exercise (deterministic scoring,
+        // mirroring Module preview's ComponentAnswerScorer usage).
+        services.AddScoped<LinguaCoach.Application.Exercises.IAdminExercisePreviewSubmitHandler,
+            LinguaCoach.Infrastructure.Exercises.AdminExercisePreviewService>();
+        // Phase K8 — "diagnose then AI-repair" for an Exercise missing Instructions/Description
+        // text (never scoring/answer-key/schema — see ExerciseRepairService's doc comment).
+        services.AddScoped<LinguaCoach.Application.Exercises.IExerciseRepairService,
+            LinguaCoach.Infrastructure.Exercises.ExerciseRepairService>();
 
         // Phase H5 — Module foundation (reusable, reviewable learning units combining
         // Lessons + Exercises + a module-level feedback plan).
@@ -590,11 +611,21 @@ public static class DependencyInjection
             sp => sp.GetRequiredService<LinguaCoach.Infrastructure.Modules.ModuleGenerationService>());
         services.AddScoped<LinguaCoach.Application.Modules.IGenerateModuleFromResourceWithAiHandler,
             LinguaCoach.Infrastructure.Modules.AiModuleGenerationService>();
+        // Phase K5 — automatic Module create-or-extend, called after Exercise generation instead
+        // of a separate manual "Generate Module" admin action.
+        services.AddScoped<LinguaCoach.Application.Modules.IModuleAutoLinkService,
+            LinguaCoach.Infrastructure.Modules.ModuleAutoLinkService>();
         services.AddScoped<LinguaCoach.Infrastructure.Modules.AdminModulePreviewService>();
         services.AddScoped<LinguaCoach.Application.Modules.IAdminModulePreviewQuery>(
             sp => sp.GetRequiredService<LinguaCoach.Infrastructure.Modules.AdminModulePreviewService>());
         services.AddScoped<LinguaCoach.Application.Modules.IAdminModulePreviewSubmitHandler>(
             sp => sp.GetRequiredService<LinguaCoach.Infrastructure.Modules.AdminModulePreviewService>());
+        // Phase K6 — admin archive/unarchive (soft-delete), mirroring the Resource Bank pattern.
+        services.AddScoped<LinguaCoach.Application.Modules.IModuleArchiveHandler,
+            LinguaCoach.Infrastructure.Modules.ModuleArchiveHandler>();
+        // Phase K8 — "diagnose then AI-repair" for a Module missing its Description.
+        services.AddScoped<LinguaCoach.Application.Modules.IModuleRepairService,
+            LinguaCoach.Infrastructure.Modules.ModuleRepairService>();
 
         // Phase H6 (renamed I4 Pass 3) — Today Plan Module Pipeline (deterministic, read-only
         // module selection for Today + the one write path for its assignment bookkeeping).
@@ -623,10 +654,13 @@ public static class DependencyInjection
         // Phase K3 — admin archive/unarchive (soft-delete) for Resource Bank rows.
         services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceBankArchiveHandler,
             LinguaCoach.Infrastructure.ResourceImport.ResourceBankArchiveHandler>();
-        // Phase K3 — one-word cascade: publish a Vocabulary Resource Bank item then generate +
-        // auto-approve a Lesson/Exercise and generate a Module, all from one admin action.
-        services.AddScoped<LinguaCoach.Application.ResourceImport.IQuickWordPipelineService,
-            LinguaCoach.Infrastructure.ResourceImport.QuickWordPipelineService>();
+        // Phase K8 — shared AI field-repair helper + per-entity "diagnose then AI-repair" services.
+        services.AddScoped<LinguaCoach.Infrastructure.AdminRepair.AdminRepairFieldGenerator>();
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceBankRepairService,
+            LinguaCoach.Infrastructure.ResourceImport.ResourceBankRepairService>();
+        // Phase K5 — admin edit of a published Resource Bank item's content/metadata.
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceBankItemUpdateHandler,
+            LinguaCoach.Infrastructure.ResourceImport.ResourceBankItemUpdateHandler>();
         // Phase J5c — real audio-file upload/storage for ListeningPassage candidates.
         services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceCandidateAudioService,
             LinguaCoach.Infrastructure.ResourceImport.ResourceCandidateAudioService>();

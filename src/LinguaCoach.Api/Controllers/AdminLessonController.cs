@@ -25,6 +25,8 @@ public sealed class AdminLessonController : ControllerBase
     private readonly IAdminRejectLessonHandler _rejectHandler;
     private readonly IGenerateLessonFromResourcesHandler _generateHandler;
     private readonly IGenerateLessonFromResourcesWithAiHandler _generateWithAiHandler;
+    private readonly ILessonArchiveHandler _archiveHandler;
+    private readonly ILessonRepairService _repairService;
 
     public AdminLessonController(
         IAdminLessonListQuery listQuery,
@@ -34,7 +36,9 @@ public sealed class AdminLessonController : ControllerBase
         IAdminApproveLessonHandler approveHandler,
         IAdminRejectLessonHandler rejectHandler,
         IGenerateLessonFromResourcesHandler generateHandler,
-        IGenerateLessonFromResourcesWithAiHandler generateWithAiHandler)
+        IGenerateLessonFromResourcesWithAiHandler generateWithAiHandler,
+        ILessonArchiveHandler archiveHandler,
+        ILessonRepairService repairService)
     {
         _listQuery = listQuery;
         _getQuery = getQuery;
@@ -44,6 +48,8 @@ public sealed class AdminLessonController : ControllerBase
         _rejectHandler = rejectHandler;
         _generateHandler = generateHandler;
         _generateWithAiHandler = generateWithAiHandler;
+        _archiveHandler = archiveHandler;
+        _repairService = repairService;
     }
 
     // GET api/admin/lessons?page=&pageSize=&status=&cefrLevel=&skill=&subskill=&contextTag=&
@@ -177,11 +183,87 @@ public sealed class AdminLessonController : ControllerBase
         }
     }
 
+    // GET api/admin/lessons/{id}/diagnostics
+    // Phase K8 — issues found on this Lesson (e.g. missing Body/Examples).
+    [HttpGet("{id:guid}/diagnostics")]
+    public async Task<IActionResult> Diagnose(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _repairService.DiagnoseAsync(id, ct);
+            return Ok(result);
+        }
+        catch (LessonValidationException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    // POST api/admin/lessons/{id}/repair
+    // Phase K8 — AI-fills the missing core field(s) found by Diagnose above.
+    [HttpPost("{id:guid}/repair")]
+    public async Task<IActionResult> Repair(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _repairService.RepairAsync(id, ct);
+            return Ok(result);
+        }
+        catch (LessonValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    // POST api/admin/lessons/archive  { ids: [...] }
+    // Phase K6 — soft-delete: hides the row(s) from the default list without breaking any
+    // Exercise/Module that already references them.
+    [HttpPost("archive")]
+    public async Task<IActionResult> Archive([FromBody] LessonIdsRequest request, CancellationToken ct)
+    {
+        var result = await _archiveHandler.ArchiveAsync(new ArchiveLessonsCommand(request.Ids), ct);
+        return Ok(result);
+    }
+
+    // POST api/admin/lessons/unarchive  { ids: [...] }
+    [HttpPost("unarchive")]
+    public async Task<IActionResult> Unarchive([FromBody] LessonIdsRequest request, CancellationToken ct)
+    {
+        var result = await _archiveHandler.UnarchiveAsync(new UnarchiveLessonsCommand(request.Ids), ct);
+        return Ok(result);
+    }
+
     private Guid? GetCurrentUserId()
     {
         var raw = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
         return Guid.TryParse(raw, out var id) ? id : null;
     }
+
+    // GET api/admin/lessons/issues-summary
+    [HttpGet("issues-summary")]
+    public async Task<IActionResult> IssuesSummary(CancellationToken ct)
+    {
+        var result = await _repairService.GetIssuesSummaryAsync(ct);
+        return Ok(result);
+    }
+
+    // GET api/admin/lessons/with-issues
+    [HttpGet("with-issues")]
+    public async Task<IActionResult> ListWithIssues(CancellationToken ct)
+    {
+        var result = await _repairService.ListWithIssuesAsync(ct);
+        return Ok(result);
+    }
+
+    // POST api/admin/lessons/repair-all
+    [HttpPost("repair-all")]
+    public async Task<IActionResult> RepairAll(CancellationToken ct)
+    {
+        var result = await _repairService.RepairAllAsync(ct);
+        return Ok(result);
+    }
+
+    public sealed record LessonIdsRequest(IReadOnlyList<Guid> Ids);
 
     public sealed record CreateLessonRequestBody(
         string Title, string Body, string? CefrLevel = null, string? Skill = null, string? Subskill = null,

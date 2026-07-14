@@ -5,6 +5,8 @@
 // create/generate action stages a pending-review row. Not assigned to students, not wired into
 // Today/Practice Gym runtime this phase.
 
+import { DiagnosticIssue } from './admin-repair.models';
+
 export interface ModuleLessonLinkDto {
   linkId: string;
   lessonId: string;
@@ -49,11 +51,27 @@ export interface ModuleDto {
   updatedAtUtc: string;
   lessonLinks: ModuleLessonLinkDto[];
   exerciseLinks: ModuleExerciseLinkDto[];
+  isArchived: boolean;
 }
 
 export interface ModuleListResult {
   items: ModuleDto[];
   totalCount: number;
+}
+
+// ── Phase K5 — admin edit ────────────────────────────────────────────────────
+
+export interface UpdateModuleRequestBody {
+  title: string;
+  description?: string | null;
+  cefrLevel?: string | null;
+  skill?: string | null;
+  subskill?: string | null;
+  contextTags?: string[] | null;
+  focusTags?: string[] | null;
+  difficultyBand?: number | null;
+  estimatedMinutes?: number | null;
+  feedbackPlanJson?: string | null;
 }
 
 export interface ModuleLessonLinkInput {
@@ -176,3 +194,25 @@ export const MODULE_REVIEW_STATUSES = ['NotRequired', 'PendingReview', 'Approved
 export const MODULE_SOURCE_MODES = ['Manual', 'GeneratedFromLessonAndExercises', 'GeneratedFromResources', 'Imported'] as const;
 export const MODULE_LESSON_ROLES = ['Primary', 'Supporting'] as const;
 export const MODULE_EXERCISE_ROLES = ['PrimaryPractice', 'SupportingPractice', 'Review', 'Extension'] as const;
+
+// ── Phase K6 — admin archive/unarchive (soft-delete) ────────────────────────────────
+export interface ModuleArchiveItemResult {
+  id: string;
+  success: boolean;
+  error: string | null;
+}
+export interface ModuleArchiveResult {
+  requestedCount: number;
+  succeededCount: number;
+  failedCount: number;
+  items: ModuleArchiveItemResult[];
+}
+
+// ── Phase K8 — "Fix with AI" repair ──────────────────────────────────────────
+export interface ModuleRepairResult {
+  item: ModuleDto;
+  issuesFixed: DiagnosticIssue[];
+  issuesRemaining: DiagnosticIssue[];
+  providerName: string | null;
+  modelName: string | null;
+}

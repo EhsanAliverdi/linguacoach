@@ -4,6 +4,9 @@
   <sp-admin-button variant="neutral" appearance="outline" (clicked)="backToList()">
     ← Back to Resource Bank
   </sp-admin-button>
+  @if (item()) {
+    <sp-admin-button variant="primary" appearance="outline" (clicked)="goToEdit()">Edit</sp-admin-button>
+  }
 </sp-admin-page-header>
 
 <sp-admin-page-body>
@@ -17,24 +20,39 @@
 
     @if (d.isArchived) {
       <sp-admin-alert variant="warning">
-        This item is archived — hidden from the default Resource Bank list. It is still fully
-        intact and any Lesson/Exercise/Module already linked to it keeps working.
+        This item is deleted — hidden from the default Resource Bank list. It is still fully
+        intact and any Lesson/Exercise/Module already linked to it keeps working. Use Restore to
+        bring it back.
       </sp-admin-alert>
     }
 
     @if (generateSuccess()) {
       <sp-admin-alert variant="success">
         {{ generateSuccess() }}
-        @if (lastGeneratedKind() === 'activity') {
-          <a (click)="goToActivities()" style="cursor:pointer; text-decoration:underline;">Review in Exercises</a>
-        } @else if (lastGeneratedKind() === 'module') {
-          <a (click)="goToModules()" style="cursor:pointer; text-decoration:underline;">Review in Modules</a>
-        } @else if (lastGeneratedKind() === 'learn') {
-          <a (click)="goToLessons()" style="cursor:pointer; text-decoration:underline;">Review in Lessons</a>
-        }
+        <a (click)="goToLessons()" style="cursor:pointer; text-decoration:underline;">Review in Lessons</a>
       </sp-admin-alert>
     }
     @if (generateError()) { <sp-admin-alert variant="error">{{ generateError() }}</sp-admin-alert> }
+    @if (repairSuccess()) { <sp-admin-alert variant="success">{{ repairSuccess() }}</sp-admin-alert> }
+    @if (repairError()) { <sp-admin-alert variant="error">{{ repairError() }}</sp-admin-alert> }
+
+    @if (issues().length > 0) {
+      <sp-admin-section-card title="Issues">
+        <ul>
+          @for (issue of issues(); track issue.code) {
+            <li>
+              {{ issue.message }}
+              @if (!issue.autoFixable) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">manual fix needed</sp-admin-badge> }
+            </li>
+          }
+        </ul>
+        @if (autoFixableIssues.length > 0) {
+          <sp-admin-button variant="primary" appearance="outline" [disabled]="repairing()" (clicked)="fixWithAi()">
+            {{ repairing() ? 'Fixing…' : 'Fix with AI' }}
+          </sp-admin-button>
+        }
+      </sp-admin-section-card>
+    }
 
     <sp-admin-section-card title="Details">
       <div class="sp-admin-form-stack">
@@ -56,7 +74,7 @@
         }
         @if (d.difficultyBand !== null) { <sp-admin-form-field label="Difficulty band">{{ d.difficultyBand }}</sp-admin-form-field> }
         <sp-admin-form-field label="Status">
-          <sp-admin-badge [tone]="d.isArchived ? 'neutral' : 'success'" appearance="soft">{{ d.isArchived ? 'Archived' : (d.status ?? 'Published') }}</sp-admin-badge>
+          <sp-admin-badge [tone]="d.isArchived ? 'neutral' : 'success'" appearance="soft">{{ d.isArchived ? 'Deleted' : (d.status ?? 'Published') }}</sp-admin-badge>
         </sp-admin-form-field>
         @if (d.sourceName) { <sp-admin-form-field label="Source">{{ d.sourceName }}</sp-admin-form-field> }
         @if (d.contentFingerprint) {
@@ -88,24 +106,17 @@
 
     @if (supportsGeneration(d)) {
       <sp-admin-section-card title="Generate">
+        <p class="sp-admin-hint" style="margin-bottom:0.5rem;">
+          Resource Bank items only generate a Lesson directly — Exercises are generated from a
+          Lesson (with a count and type you choose there), and a Module is created automatically
+          once a Lesson has Exercises.
+        </p>
         <div class="sp-admin-form-actions" style="flex-wrap:wrap;">
           <sp-admin-button variant="primary" [disabled]="generatingLearn()" (clicked)="generateLearn()">
             {{ generatingLearn() ? 'Generating…' : 'Generate Learn' }}
           </sp-admin-button>
           <sp-admin-button variant="primary" appearance="outline" [disabled]="generatingLearnAi()" (clicked)="generateLearnWithAi()">
             {{ generatingLearnAi() ? 'Generating…' : 'Generate Learn (AI)' }}
-          </sp-admin-button>
-          <sp-admin-button variant="primary" [disabled]="generatingActivity()" (clicked)="generateActivity()">
-            {{ generatingActivity() ? 'Generating…' : 'Generate Activity' }}
-          </sp-admin-button>
-          <sp-admin-button variant="primary" appearance="outline" [disabled]="generatingActivityAi()" (clicked)="generateActivityWithAi()">
-            {{ generatingActivityAi() ? 'Generating…' : 'Generate Activity (AI)' }}
-          </sp-admin-button>
-          <sp-admin-button variant="primary" [disabled]="generatingModule()" (clicked)="generateModule()">
-            {{ generatingModule() ? 'Generating…' : 'Generate Module' }}
-          </sp-admin-button>
-          <sp-admin-button variant="primary" appearance="outline" [disabled]="generatingModuleAi()" (clicked)="generateModuleWithAi()">
-            {{ generatingModuleAi() ? 'Generating…' : 'Generate Module (AI)' }}
           </sp-admin-button>
         </div>
       </sp-admin-section-card>
@@ -115,11 +126,11 @@
       <div class="sp-admin-form-actions">
         @if (d.isArchived) {
           <sp-admin-button variant="neutral" appearance="outline" [disabled]="archiving()" (clicked)="unarchive()">
-            {{ archiving() ? 'Working…' : 'Unarchive' }}
+            {{ archiving() ? 'Working…' : 'Restore' }}
           </sp-admin-button>
         } @else {
           <sp-admin-button variant="danger" appearance="outline" [disabled]="archiving()" (clicked)="archive()">
-            {{ archiving() ? 'Working…' : 'Archive' }}
+            {{ archiving() ? 'Working…' : 'Delete' }}
           </sp-admin-button>
         }
       </div>

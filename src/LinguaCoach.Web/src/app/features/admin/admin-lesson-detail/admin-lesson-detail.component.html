@@ -4,6 +4,9 @@
   <sp-admin-button variant="neutral" appearance="outline" (clicked)="backToList()">
     ← Back to Lessons
   </sp-admin-button>
+  @if (item()) {
+    <sp-admin-button variant="primary" appearance="outline" (clicked)="goToEdit()">Edit</sp-admin-button>
+  }
 </sp-admin-page-header>
 
 <sp-admin-page-body>
@@ -15,17 +18,43 @@
   } @else if (item()) {
   @let d = item()!;
 
+    @if (d.isArchived) {
+      <sp-admin-alert variant="warning">
+        This Lesson is deleted — hidden from the default Lessons list. It is still fully intact
+        for any Exercise/Module that already references it. Use Restore to bring it back.
+      </sp-admin-alert>
+    }
+
     @if (actionSuccess()) {
       <sp-admin-alert variant="success">
         {{ actionSuccess() }}
-        @if (lastActionKind() === 'activity') {
-          <a (click)="goToExercises()" style="cursor:pointer; text-decoration:underline;">Review in Exercises</a>
-        } @else if (lastActionKind() === 'module') {
-          <a (click)="goToModules()" style="cursor:pointer; text-decoration:underline;">Review in Modules</a>
+        @if (moduleReviewRoute()) {
+          <a (click)="goToModule()" style="cursor:pointer; text-decoration:underline;">Review the Module</a>
         }
+        <a (click)="goToExercises()" style="cursor:pointer; text-decoration:underline;">Review in Exercises</a>
       </sp-admin-alert>
     }
     @if (actionError()) { <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert> }
+    @if (repairSuccess()) { <sp-admin-alert variant="success">{{ repairSuccess() }}</sp-admin-alert> }
+    @if (repairError()) { <sp-admin-alert variant="error">{{ repairError() }}</sp-admin-alert> }
+
+    @if (issues().length > 0) {
+      <sp-admin-section-card title="Issues">
+        <ul>
+          @for (issue of issues(); track issue.code) {
+            <li>
+              {{ issue.message }}
+              @if (!issue.autoFixable) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">manual fix needed</sp-admin-badge> }
+            </li>
+          }
+        </ul>
+        @if (autoFixableIssues.length > 0) {
+          <sp-admin-button variant="primary" appearance="outline" [disabled]="repairing()" (clicked)="fixWithAi()">
+            {{ repairing() ? 'Fixing…' : 'Fix with AI' }}
+          </sp-admin-button>
+        }
+      </sp-admin-section-card>
+    }
 
     <sp-admin-section-card title="Details">
       <div class="sp-admin-form-stack">
@@ -95,6 +124,10 @@
     </sp-admin-section-card>
 
     <sp-admin-section-card title="Actions">
+      <p class="sp-admin-hint" style="margin-bottom:0.5rem;">
+        A Module linking this Lesson to its Exercises is created (or extended) automatically every
+        time you generate Exercises — there is no separate "Generate Module" step.
+      </p>
       <div class="sp-admin-form-actions" style="flex-wrap:wrap;">
         @if (d.reviewStatus !== 'Approved') {
           <sp-admin-button variant="primary" [disabled]="approving()" (clicked)="approveSelected()">
@@ -106,15 +139,60 @@
             {{ rejecting() ? 'Rejecting…' : 'Reject' }}
           </sp-admin-button>
         }
-        <sp-admin-button variant="primary" appearance="outline" [disabled]="generatingActivity()" (clicked)="generateActivity()">
-          {{ generatingActivity() ? 'Generating…' : 'Generate Exercise' }}
+        <sp-admin-button variant="primary" appearance="outline" (clicked)="openGenerate()">
+          Generate Exercises
         </sp-admin-button>
-        <sp-admin-button variant="primary" appearance="outline" [disabled]="generatingModule()" (clicked)="generateModule()">
-          {{ generatingModule() ? 'Generating…' : 'Generate Module' }}
-        </sp-admin-button>
+        @if (d.isArchived) {
+          <sp-admin-button variant="neutral" appearance="outline" [disabled]="archiving()" (clicked)="restoreItem()">
+            {{ archiving() ? 'Working…' : 'Restore' }}
+          </sp-admin-button>
+        } @else {
+          <sp-admin-button variant="danger" appearance="outline" [disabled]="archiving()" (clicked)="deleteItem()">
+            {{ archiving() ? 'Working…' : 'Delete' }}
+          </sp-admin-button>
+        }
       </div>
     </sp-admin-section-card>
 
   }
 
 </sp-admin-page-body>
+
+<!-- ── Phase K5 — Generate Exercises modal: admin picks a count per type ──────────────────── -->
+<sp-admin-modal [open]="generateModalOpen()" title="Generate Exercises" variant="form" (closed)="closeGenerate()">
+
+  <div class="sp-admin-form-stack">
+    <p class="sp-admin-hint">
+      Pick how many of each Exercise type to generate from this Lesson (0 = skip that type).
+      Counts default to each type's own "default items per practice" from Exercise Types. All
+      generated Exercises are auto-linked into this Lesson's Module.
+    </p>
+    @if (!typeCountsLoading() && typeCounts().length < 3) {
+      <p class="sp-admin-hint">
+        Only showing types supported for this Lesson's linked resource ({{ item()?.skill }}).
+      </p>
+    }
+
+    @if (typeCountsLoading()) {
+      <sp-admin-loading-state message="Loading Exercise types" />
+    } @else {
+      @for (t of typeCounts(); track t.activityType) {
+        <sp-admin-form-field [label]="t.displayName">
+          <sp-admin-number-input
+            [ngModel]="t.count" (ngModelChange)="setTypeCount(t.activityType, $event)" [min]="0" [max]="20" />
+        </sp-admin-form-field>
+      }
+      <p class="sp-admin-hint"><strong>{{ totalRequested }}</strong> Exercise(s) will be generated.</p>
+    }
+  </div>
+
+  @if (generateError()) { <sp-admin-alert variant="error">{{ generateError() }}</sp-admin-alert> }
+
+  <div slot="footer">
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeGenerate()">Cancel</sp-admin-button>
+    <sp-admin-button variant="primary" [disabled]="generateSubmitting() || typeCountsLoading()" (clicked)="submitGenerate()">
+      {{ generateSubmitting() ? 'Generating…' : 'Generate' }}
+    </sp-admin-button>
+  </div>
+
+</sp-admin-modal>

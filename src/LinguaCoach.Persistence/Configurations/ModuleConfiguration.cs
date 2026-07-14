@@ -41,6 +41,7 @@ internal sealed class ModuleConfiguration : IEntityTypeConfiguration<Module>
         builder.Property(e => e.RejectedAtUtc).HasColumnName("rejected_at_utc");
         builder.Property(e => e.RejectionReason).HasColumnName("rejection_reason");
         builder.Property(e => e.ReviewNotes).HasColumnName("review_notes");
+        builder.Property(e => e.IsArchived).HasColumnName("is_archived").IsRequired().HasDefaultValue(false);
 
         builder.HasIndex(e => e.ReviewStatus).HasDatabaseName("ix_modules_review_status");
         builder.HasIndex(e => e.CefrLevel).HasDatabaseName("ix_modules_cefr_level");

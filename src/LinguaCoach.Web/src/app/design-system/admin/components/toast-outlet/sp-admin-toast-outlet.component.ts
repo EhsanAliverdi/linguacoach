@@ -14,10 +14,21 @@ import { ToastService } from '../../../../core/services/toast.service';
           [class.sp-to-success]="toast.kind === 'success'"
           [class.sp-to-error]="toast.kind === 'error'"
           [class.sp-to-warning]="toast.kind === 'warning'"
-          [class.sp-to-info]="toast.kind === 'info'"
+          [class.sp-to-info]="toast.kind === 'info' || toast.kind === 'progress'"
+          [class.sp-to-progress]="toast.kind === 'progress'"
           role="status"
         >
-          <span class="sp-to-msg">{{ toast.message }}</span>
+          @if (toast.kind === 'progress') {
+            <div class="sp-to-progress-body">
+              <span class="sp-to-msg">{{ toast.message }}</span>
+              <div class="sp-to-progress-track">
+                <div class="sp-to-progress-fill"
+                     [style.width.%]="toast.progressTotal ? (toast.progressCurrent! / toast.progressTotal * 100) : 0"></div>
+              </div>
+            </div>
+          } @else {
+            <span class="sp-to-msg">{{ toast.message }}</span>
+          }
           <button
             type="button"
             class="sp-to-dismiss"
@@ -61,6 +72,10 @@ import { ToastService } from '../../../../core/services/toast.service';
     .sp-to-warning { background: var(--sp-admin-amber-bg);  color: var(--sp-admin-amber);   border: 1px solid #FDE68A; }
     .sp-to-info    { background: var(--sp-admin-primary-bg); color: var(--sp-admin-primary); border: 1px solid var(--sp-admin-primary-focus); }
     .sp-to-msg { flex: 1; }
+    .sp-to-progress { align-items: flex-start; }
+    .sp-to-progress-body { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    .sp-to-progress-track { height: 5px; background: rgba(0,0,0,.1); border-radius: 3px; overflow: hidden; }
+    .sp-to-progress-fill { height: 100%; background: currentColor; transition: width .2s; }
     .sp-to-dismiss {
       background: none;
       border: none;

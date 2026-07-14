@@ -22,8 +22,8 @@ import {
   UnifiedResourceBankItemDto,
   UnifiedResourceBankItemType,
   ResourceBankArchiveResult,
-  QuickWordRequest,
-  QuickWordResult,
+  ResourceBankItemEditDto,
+  UpdateResourceBankItemRequest,
   ContentImportInputMode,
   ContentImportRequestBody,
   ContentImportResult,
@@ -32,7 +32,9 @@ import {
   ResourceImportColumnMappingResult,
   AdminResourceCandidateReviewSummaryDto,
   BatchResourceCandidateActionResult,
+  ResourceBankItemRepairResult,
 } from '../models/admin-resource-import.models';
+import { DiagnosticIssue, IssuesSummary, BulkRepairResult, RepairableItemSummary } from '../models/admin-repair.models';
 
 @Injectable({ providedIn: 'root' })
 export class AdminResourceSourceService {
@@ -283,6 +285,17 @@ export class AdminUnifiedResourceBankService {
     return this.http.get<UnifiedResourceBankItemDto>(`${this.base}/${id}`);
   }
 
+  /** Phase K5 — the full, untruncated, type-specific field set backing the edit form. */
+  getEditDto(id: string): Observable<ResourceBankItemEditDto> {
+    return this.http.get<ResourceBankItemEditDto>(`${this.base}/${id}/edit`);
+  }
+
+  /** Phase K5 — admin edit of a published item's content/metadata (e.g. correcting an
+   *  AI/import-generated word or CEFR level). Full-replace per item type. */
+  update(id: string, body: UpdateResourceBankItemRequest): Observable<UnifiedResourceBankItemDto> {
+    return this.http.put<UnifiedResourceBankItemDto>(`${this.base}/${id}`, body);
+  }
+
   /** Phase K3 — soft-delete: hides the row(s) from the default list without breaking any
    *  Lesson/Exercise/Module that already links to them. */
   archive(ids: string[]): Observable<ResourceBankArchiveResult> {
@@ -293,10 +306,24 @@ export class AdminUnifiedResourceBankService {
     return this.http.post<ResourceBankArchiveResult>(`${this.base}/unarchive`, { ids });
   }
 
-  /** Phase K3 — one word in, one Lesson + one Exercise + one Module out. Bypasses the normal
-   *  import/review workflow — an admin dev/testing shortcut, not a replacement for it. */
-  quickWord(request: QuickWordRequest): Observable<QuickWordResult> {
-    return this.http.post<QuickWordResult>(`${this.base}/quick-word`, request);
+  diagnose(id: string): Observable<DiagnosticIssue[]> {
+    return this.http.get<DiagnosticIssue[]>(`${this.base}/${id}/diagnostics`);
+  }
+
+  repair(id: string): Observable<ResourceBankItemRepairResult> {
+    return this.http.post<ResourceBankItemRepairResult>(`${this.base}/${id}/repair`, {});
+  }
+
+  issuesSummary(): Observable<IssuesSummary> {
+    return this.http.get<IssuesSummary>(`${this.base}/issues-summary`);
+  }
+
+  repairAll(): Observable<BulkRepairResult> {
+    return this.http.post<BulkRepairResult>(`${this.base}/repair-all`, {});
+  }
+
+  listWithIssues(): Observable<RepairableItemSummary[]> {
+    return this.http.get<RepairableItemSummary[]>(`${this.base}/with-issues`);
   }
 }
 

@@ -4,6 +4,9 @@
   <sp-admin-button variant="neutral" appearance="outline" (clicked)="backToList()">
     ← Back to Modules
   </sp-admin-button>
+  @if (item()) {
+    <sp-admin-button variant="primary" appearance="outline" (clicked)="goToEdit()">Edit</sp-admin-button>
+  }
 </sp-admin-page-header>
 
 <sp-admin-page-body>
@@ -15,8 +18,35 @@
   } @else if (item()) {
   @let d = item()!;
 
+    @if (d.isArchived) {
+      <sp-admin-alert variant="warning">
+        This Module is deleted — hidden from the default Modules list. It never cascades to its
+        linked Lessons/Exercises. Use Restore to bring it back.
+      </sp-admin-alert>
+    }
+
     @if (actionSuccess()) { <sp-admin-alert variant="success">{{ actionSuccess() }}</sp-admin-alert> }
     @if (actionError()) { <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert> }
+    @if (repairSuccess()) { <sp-admin-alert variant="success">{{ repairSuccess() }}</sp-admin-alert> }
+    @if (repairError()) { <sp-admin-alert variant="error">{{ repairError() }}</sp-admin-alert> }
+
+    @if (issues().length > 0) {
+      <sp-admin-section-card title="Issues">
+        <ul>
+          @for (issue of issues(); track issue.code) {
+            <li>
+              {{ issue.message }}
+              @if (!issue.autoFixable) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">manual fix needed</sp-admin-badge> }
+            </li>
+          }
+        </ul>
+        @if (autoFixableIssues.length > 0) {
+          <sp-admin-button variant="primary" appearance="outline" [disabled]="repairing()" (clicked)="fixWithAi()">
+            {{ repairing() ? 'Fixing…' : 'Fix with AI' }}
+          </sp-admin-button>
+        }
+      </sp-admin-section-card>
+    }
 
     <sp-admin-section-card title="Details">
       <div class="sp-admin-form-stack">
@@ -86,6 +116,15 @@
         @if (d.reviewStatus !== 'Rejected') {
           <sp-admin-button variant="danger" appearance="outline" [disabled]="rejecting()" (clicked)="rejectSelected()">
             {{ rejecting() ? 'Rejecting…' : 'Reject' }}
+          </sp-admin-button>
+        }
+        @if (d.isArchived) {
+          <sp-admin-button variant="neutral" appearance="outline" [disabled]="archiving()" (clicked)="restoreItem()">
+            {{ archiving() ? 'Working…' : 'Restore' }}
+          </sp-admin-button>
+        } @else {
+          <sp-admin-button variant="danger" appearance="outline" [disabled]="archiving()" (clicked)="deleteItem()">
+            {{ archiving() ? 'Working…' : 'Delete' }}
           </sp-admin-button>
         }
       </div>

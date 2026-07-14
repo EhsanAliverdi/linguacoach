@@ -99,6 +99,12 @@ public sealed class Exercise : BaseEntity
 
     public DateTime UpdatedAtUtc { get; private set; }
 
+    /// <summary>Phase K6 — admin-facing soft-delete, mirroring <see cref="ResourceBankItem.IsArchived"/>.
+    /// Archived Exercises are excluded from the default admin list but the row and every link into
+    /// it (ExerciseResourceLink, ModuleExerciseLink) stay intact — archiving never breaks a Module
+    /// that already references this Exercise, it only hides the row.</summary>
+    public bool IsArchived { get; private set; }
+
     private Exercise() { }
 
     public Exercise(
@@ -224,6 +230,18 @@ public sealed class Exercise : BaseEntity
         ReviewedByUserId = reviewedByUserId;
         RejectedAtUtc = DateTimeOffset.UtcNow;
         RejectionReason = reason.Trim();
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
+    public void Archive()
+    {
+        IsArchived = true;
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
+    public void Unarchive()
+    {
+        IsArchived = false;
         UpdatedAtUtc = DateTime.UtcNow;
     }
 

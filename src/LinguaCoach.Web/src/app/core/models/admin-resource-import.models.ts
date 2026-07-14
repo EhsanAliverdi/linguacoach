@@ -1,6 +1,8 @@
 // Phase E1 — English Resource Source Registry, Import Runs, Raw Records, Candidate Staging.
 // Staging only — nothing here is published to any student-facing bank table (that's Phase E4).
 
+import { DiagnosticIssue } from './admin-repair.models';
+
 export interface AdminResourceSourceDto {
   sourceId: string;
   name: string;
@@ -402,20 +404,76 @@ export interface ResourceBankArchiveResult {
   items: ResourceBankArchiveItemResult[];
 }
 
-// ── Phase K3 — one-word cascade pipeline ────────────────────────────────────────
+// ── Phase K5 — admin edit of a published Resource Bank item's content/metadata ─────────────────
 
-export interface QuickWordRequest {
-  word: string;
+/** The full, untruncated, type-specific field set for editing — only fields relevant to `type`
+ *  are populated. Distinct from UnifiedResourceBankItemDto's lossy display Title/Summary. */
+export interface ResourceBankItemEditDto {
+  id: string;
+  type: UnifiedResourceBankItemType;
   cefrLevel: string;
-  partOfSpeech?: string | null;
-  definition?: string | null;
+  subskill: string | null;
+  difficultyBand: number | null;
+  contextTags: string[];
+  focusTags: string[];
+  word: string | null;
+  partOfSpeech: string | null;
+  notes: string | null;
+  grammarPoint: string | null;
+  description: string | null;
+  textType: string | null;
+  difficultyNotes: string | null;
+  referenceExcerpt: string | null;
+  title: string | null;
+  passageText: string | null;
+  summary: string | null;
+  promptText: string | null;
+  genre: string | null;
+  suggestedMinWords: number | null;
+  transcript: string | null;
+  suggestedDurationSeconds: number | null;
 }
 
-export interface QuickWordResult {
-  resourceBankItemId: string;
-  lessonId: string;
-  exerciseId: string;
-  moduleId: string;
+export interface UpdateResourceBankItemRequest {
+  cefrLevel: string;
+  subskill?: string | null;
+  difficultyBand?: number | null;
+  contextTags?: string[] | null;
+  focusTags?: string[] | null;
+  // Vocabulary
+  word?: string | null;
+  partOfSpeech?: string | null;
+  notes?: string | null;
+  // Grammar
+  grammarPoint?: string | null;
+  description?: string | null;
+  // ReadingReference
+  textType?: string | null;
+  difficultyNotes?: string | null;
+  referenceExcerpt?: string | null;
+  // ReadingPassage / Writing / Listening / Speaking share title
+  title?: string | null;
+  // ReadingPassage
+  passageText?: string | null;
+  summary?: string | null;
+  // Writing / Speaking share promptText
+  promptText?: string | null;
+  // Writing
+  genre?: string | null;
+  suggestedMinWords?: number | null;
+  // Listening
+  transcript?: string | null;
+  // Speaking
+  suggestedDurationSeconds?: number | null;
+}
+
+// ── Phase K8 — "Fix with AI" repair ──────────────────────────────────────────
+export interface ResourceBankItemRepairResult {
+  item: UnifiedResourceBankItemDto;
+  issuesFixed: DiagnosticIssue[];
+  issuesRemaining: DiagnosticIssue[];
+  providerName: string | null;
+  modelName: string | null;
 }
 
 export const UNIFIED_RESOURCE_BANK_TYPES: { value: UnifiedResourceBankItemType; label: string }[] = [

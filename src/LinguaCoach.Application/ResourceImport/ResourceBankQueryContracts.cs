@@ -225,4 +225,9 @@ public interface IResourceBankQueryService
     /// (including an archived row — archived items are still real rows, just excluded from the
     /// default list, so this still returns them for a direct-by-id lookup).</summary>
     Task<UnifiedResourceBankItemDto?> GetUnifiedByIdAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>Phase K5 — the full, untruncated, type-specific field set backing the admin edit
+    /// form. See <see cref="ResourceBankItemEditDto"/>'s doc comment for why this is separate from
+    /// <see cref="GetUnifiedByIdAsync"/>.</summary>
+    Task<ResourceBankItemEditDto?> GetEditDtoAsync(Guid id, CancellationToken ct = default);
 }

@@ -59,6 +59,13 @@ public sealed class Module : BaseEntity
 
     public DateTime UpdatedAtUtc { get; private set; }
 
+    /// <summary>Phase K6 — admin-facing soft-delete, mirroring <see cref="ResourceBankItem.IsArchived"/>.
+    /// Archiving a Module never cascades to its linked Lessons/Exercises — it only hides this
+    /// Module row from the default admin list. Safe even once real students have been assigned
+    /// (StudentTodayPlanModuleAssignment/StudentPracticeGymModuleAssignment/StudentExerciseLaunch
+    /// keep resolving; archiving never deletes the row).</summary>
+    public bool IsArchived { get; private set; }
+
     private Module() { }
 
     public Module(
@@ -161,6 +168,18 @@ public sealed class Module : BaseEntity
         ReviewedByUserId = reviewedByUserId;
         RejectedAtUtc = DateTimeOffset.UtcNow;
         RejectionReason = reason.Trim();
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
+    public void Archive()
+    {
+        IsArchived = true;
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
+    public void Unarchive()
+    {
+        IsArchived = false;
         UpdatedAtUtc = DateTime.UtcNow;
     }
 

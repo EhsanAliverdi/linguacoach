@@ -1,19 +1,18 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Observable, catchError, concatMap, from, map, of, toArray } from 'rxjs';
 import { AdminUnifiedResourceBankService } from '../../../core/services/admin-resource-import.service';
 import { AdminLessonService } from '../../../core/services/admin-lesson.service';
-import { AdminExerciseService } from '../../../core/services/admin-exercise.service';
-import { AdminModuleService } from '../../../core/services/admin-module.service';
 import {
   UnifiedResourceBankItemDto,
   UnifiedResourceBankItemType,
   UNIFIED_RESOURCE_BANK_TYPES,
   RESOURCE_BANK_CEFR_LEVELS,
-  QuickWordResult,
 } from '../../../core/models/admin-resource-import.models';
+import { IssuesSummary } from '../../../core/models/admin-repair.models';
+import { AdminBulkRepairService } from '../../../core/services/admin-bulk-repair.service';
 import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
@@ -28,7 +27,9 @@ import {
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminPaginationComponent,
+  SpAdminRowAction,
   SpAdminSelectComponent,
+  SpAdminTableActionsComponent,
   SpAdminTableComponent,
   SpAdminTableFooterComponent,
 } from '../../../design-system/admin';
@@ -78,7 +79,6 @@ const PAGE_SIZE = 20;
   imports: [
     CommonModule,
     FormsModule,
-    RouterLink,
     SpAdminAlertComponent,
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
@@ -93,6 +93,7 @@ const PAGE_SIZE = 20;
     SpAdminPageHeaderComponent,
     SpAdminPaginationComponent,
     SpAdminSelectComponent,
+    SpAdminTableActionsComponent,
     SpAdminTableComponent,
     SpAdminTableFooterComponent,
   ],
@@ -127,7 +128,6 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
 
   generateSuccess = signal('');
   generateError = signal('');
-  lastGeneratedKind = signal<'learn' | 'activity' | 'module' | null>(null);
 
   // ── Phase K3 — bulk selection + bulk actions (client-side sequential calls over the existing
   // single-item generate endpoints — one resource per call is a hard backend invariant, see
@@ -147,23 +147,14 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
     return this.items().filter(i => ids.has(i.id) && TYPES_SUPPORTING_GENERATION.has(i.type));
   });
 
-  // ── Phase K3 — "quick word" one-shot cascade: word -> Resource Bank item + Lesson + Exercise
-  // + Module, all generated and (Lesson/Exercise) auto-approved in one action. ──────────────────
-  quickWordModalOpen = signal(false);
-  quickWordSubmitting = signal(false);
-  quickWordError = signal('');
-  quickWordResult = signal<QuickWordResult | null>(null);
-  quickWordWord = '';
-  quickWordCefrLevel = 'A1';
-  quickWordPartOfSpeech = '';
-  quickWordDefinition = '';
-  readonly quickWordCefrOptions = RESOURCE_BANK_CEFR_LEVELS.map(l => ({ value: l, label: l }));
+  // ── Phase K9/K11 — top-level issue count + bulk "Fix All with AI" (runs in a root service so
+  // its progress toast survives navigating away from this page — see AdminBulkRepairService). ──
+  issuesSummary = signal<IssuesSummary | null>(null);
 
   constructor(
     private bankSvc: AdminUnifiedResourceBankService,
     private lessonSvc: AdminLessonService,
-    private exerciseSvc: AdminExerciseService,
-    private moduleSvc: AdminModuleService,
+    public bulkRepair: AdminBulkRepairService,
     private router: Router,
     private route: ActivatedRoute,
   ) {}
@@ -174,6 +165,23 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
       this.typeFilter.set(requestedType);
     }
     this.loadAll();
+    this.loadIssuesSummary();
+  }
+
+  loadIssuesSummary(): void {
+    this.bankSvc.issuesSummary().subscribe({
+      next: summary => this.issuesSummary.set(summary),
+      error: () => this.issuesSummary.set(null),
+    });
+  }
+
+  fixAllWithAi(): void {
+    this.bulkRepair.run({
+      entityLabel: 'Resource Bank',
+      listWithIssues: () => this.bankSvc.listWithIssues(),
+      repairOne: id => this.bankSvc.repair(id),
+      onDone: () => { this.loadAll(); this.loadIssuesSummary(); },
+    });
   }
 
   loadAll(): void {
@@ -235,6 +243,29 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
     return UNIFIED_RESOURCE_BANK_TYPES.find(t => t.value === type)?.label ?? type;
   }
 
+  rowActions(_item: UnifiedResourceBankItemDto): SpAdminRowAction[] {
+    return [
+      { id: 'view', label: 'View', icon: 'view' },
+      { id: 'edit', label: 'Edit', icon: 'edit' },
+      { id: 'delete', label: 'Delete', icon: 'delete', tone: 'danger', dividerBefore: true },
+    ];
+  }
+
+  onRowAction(actionId: string, item: UnifiedResourceBankItemDto): void {
+    switch (actionId) {
+      case 'view': this.openDetail(item); break;
+      case 'edit': this.router.navigate(['/admin/resource-bank', item.id, 'edit']); break;
+      case 'delete': this.deleteItem(item); break;
+    }
+  }
+
+  private deleteItem(item: UnifiedResourceBankItemDto): void {
+    this.bankSvc.archive([item.id]).subscribe({
+      next: () => { this.bulkResultSummary.set(`"${item.title}" deleted.`); this.loadAll(); },
+      error: err => { this.generateError.set(err.error?.error ?? 'Could not delete this item.'); },
+    });
+  }
+
   // ── Selection ────────────────────────────────────────────────────────────────
 
   isSelected(id: string): boolean {
@@ -262,11 +293,7 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
 
   // ── Bulk actions ─────────────────────────────────────────────────────────────
 
-  private runBulk(
-    verb: string,
-    call: (item: UnifiedResourceBankItemDto) => Observable<unknown>,
-    kind: 'learn' | 'activity' | 'module' | null,
-  ): void {
+  private runBulk(verb: string, call: (item: UnifiedResourceBankItemDto) => Observable<unknown>): void {
     const targets = this.selectedSupportGeneration();
     if (targets.length === 0) return;
     this.bulkRunning.set(true);
@@ -285,7 +312,6 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
       this.bulkRunning.set(false);
       const succeeded = results.filter(r => r.success).length;
       const failed = results.length - succeeded;
-      this.lastGeneratedKind.set(kind);
       this.bulkResultSummary.set(
         `${succeeded} of ${results.length} ${verb} succeeded` +
         (failed > 0 ? ` — ${failed} failed: ${results.filter(r => !r.success).map(r => r.title + ' (' + r.error + ')').join('; ')}` : '.'));
@@ -297,20 +323,7 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
   bulkGenerateLearn(): void {
     this.runBulk('Lesson generations', item => this.lessonSvc.generateFromResources({
       resources: [{ resourceType: RESOURCE_TYPE_TO_LESSON_TYPE[item.type], resourceId: item.id, role: 'Primary' }],
-    }), 'learn');
-  }
-
-  bulkGenerateActivity(): void {
-    this.runBulk('Exercise generations', item => this.exerciseSvc.generateFromResources({
-      resources: [{ resourceType: RESOURCE_TYPE_TO_LESSON_TYPE[item.type], resourceId: item.id, role: 'Primary' }],
-    }), 'activity');
-  }
-
-  bulkGenerateModule(): void {
-    this.runBulk('Module generations', item => this.moduleSvc.generateFromResource({
-      resourceType: RESOURCE_TYPE_TO_LESSON_TYPE[item.type],
-      resourceId: item.id,
-    }), 'module');
+    }));
   }
 
   bulkArchive(): void {
@@ -331,48 +344,4 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
   }
 
   goToLessons(): void { this.router.navigateByUrl('/admin/lesson-library'); }
-  goToActivities(): void { this.router.navigateByUrl('/admin/exercises'); }
-  goToModules(): void { this.router.navigateByUrl('/admin/modules'); }
-
-  // ── Phase K3 — quick word modal ─────────────────────────────────────────────
-
-  openQuickWord(): void {
-    this.quickWordWord = '';
-    this.quickWordCefrLevel = 'A1';
-    this.quickWordPartOfSpeech = '';
-    this.quickWordDefinition = '';
-    this.quickWordError.set('');
-    this.quickWordResult.set(null);
-    this.quickWordModalOpen.set(true);
-  }
-
-  closeQuickWord(): void {
-    this.quickWordModalOpen.set(false);
-  }
-
-  submitQuickWord(): void {
-    if (!this.quickWordWord.trim()) {
-      this.quickWordError.set('A word is required.');
-      return;
-    }
-    this.quickWordSubmitting.set(true);
-    this.quickWordError.set('');
-    this.quickWordResult.set(null);
-    this.bankSvc.quickWord({
-      word: this.quickWordWord.trim(),
-      cefrLevel: this.quickWordCefrLevel,
-      partOfSpeech: this.quickWordPartOfSpeech.trim() || null,
-      definition: this.quickWordDefinition.trim() || null,
-    }).subscribe({
-      next: result => {
-        this.quickWordSubmitting.set(false);
-        this.quickWordResult.set(result);
-        this.loadAll();
-      },
-      error: err => {
-        this.quickWordSubmitting.set(false);
-        this.quickWordError.set(err.error?.error ?? 'Could not run the quick word pipeline.');
-      },
-    });
-  }
 }

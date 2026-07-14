@@ -1,15 +1,15 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AdminUnifiedResourceBankService } from '../../../core/services/admin-resource-import.service';
 import { AdminLessonService } from '../../../core/services/admin-lesson.service';
-import { AdminExerciseService } from '../../../core/services/admin-exercise.service';
-import { AdminModuleService } from '../../../core/services/admin-module.service';
 import {
   UnifiedResourceBankItemDto,
   UnifiedResourceBankItemType,
   UNIFIED_RESOURCE_BANK_TYPES,
 } from '../../../core/models/admin-resource-import.models';
+import { DiagnosticIssue } from '../../../core/models/admin-repair.models';
 import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
@@ -23,7 +23,8 @@ import {
   SpAdminSectionCardComponent,
 } from '../../../design-system/admin';
 
-/** Phase H3/H4/H5 mirror — same "which types support generation" gate as the list page. */
+/** Phase H3 mirror — only Vocabulary/Grammar/ReadingReference/ReadingPassage feed the Lesson
+ *  generator so far (LessonResourceLookup doesn't read Writing/Listening/Speaking yet). */
 const TYPES_SUPPORTING_GENERATION: ReadonlySet<UnifiedResourceBankItemType> =
   new Set(['vocabulary', 'grammar', 'readingReference', 'readingPassage']);
 
@@ -39,15 +40,19 @@ const RESOURCE_TYPE_TO_LESSON_TYPE: Record<UnifiedResourceBankItemType, string> 
 
 /**
  * Phase K3 — Resource Bank item detail as its own routed page (/admin/resource-bank/:id),
- * replacing the old in-place slide-in drawer. Every action that used to live in the list page's
- * row-action dropdown (Generate Learn/Activity/Module, deterministic and AI variants) now lives
- * here instead — the list page's only per-row action is navigating here.
+ * replacing the old in-place slide-in drawer.
+ *
+ * Phase K5 — product decision: Resource Bank items only ever generate a Lesson now ("Generate
+ * Activity"/"Generate Module" removed from here — Exercises come only from a Lesson, and Modules
+ * are created automatically once a Lesson has Exercises, see AdminLessonDetailComponent). Also
+ * adds admin Edit — AI/import-generated content is not immutable; an admin can correct it here.
  */
 @Component({
   selector: 'app-admin-resource-bank-detail',
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     SpAdminAlertComponent,
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
@@ -69,21 +74,20 @@ export class AdminResourceBankDetailComponent implements OnInit {
 
   generateSuccess = signal('');
   generateError = signal('');
-  lastGeneratedKind = signal<'learn' | 'activity' | 'module' | null>(null);
 
   generatingLearn = signal(false);
   generatingLearnAi = signal(false);
-  generatingActivity = signal(false);
-  generatingActivityAi = signal(false);
-  generatingModule = signal(false);
-  generatingModuleAi = signal(false);
   archiving = signal(false);
+
+  // ── Phase K8 — "Fix with AI" repair ──────────────────────────────────────
+  issues = signal<DiagnosticIssue[]>([]);
+  repairing = signal(false);
+  repairSuccess = signal('');
+  repairError = signal('');
 
   constructor(
     private bankSvc: AdminUnifiedResourceBankService,
     private lessonSvc: AdminLessonService,
-    private exerciseSvc: AdminExerciseService,
-    private moduleSvc: AdminModuleService,
     private route: ActivatedRoute,
     private router: Router,
   ) {}
@@ -101,6 +105,28 @@ export class AdminResourceBankDetailComponent implements OnInit {
       next: item => { this.item.set(item); this.loading.set(false); },
       error: err => { this.loading.set(false); this.error.set(err.error?.error ?? 'Could not load this Resource Bank item.'); },
     });
+    this.bankSvc.diagnose(this.itemId).subscribe({
+      next: issues => this.issues.set(issues),
+      error: () => this.issues.set([]),
+    });
+  }
+
+  get autoFixableIssues(): DiagnosticIssue[] {
+    return this.issues().filter(i => i.autoFixable);
+  }
+
+  fixWithAi(): void {
+    this.repairing.set(true);
+    this.repairError.set('');
+    this.repairSuccess.set('');
+    this.bankSvc.repair(this.itemId).subscribe({
+      next: result => {
+        this.repairing.set(false);
+        this.repairSuccess.set(`Fixed ${result.issuesFixed.length} issue(s)` + (result.providerName ? ` using ${result.providerName}/${result.modelName}.` : '.'));
+        this.load();
+      },
+      error: err => { this.repairing.set(false); this.repairError.set(err.error?.error ?? 'Could not repair this item.'); },
+    });
   }
 
   backToList(): void {
@@ -116,8 +142,6 @@ export class AdminResourceBankDetailComponent implements OnInit {
   }
 
   goToLessons(): void { this.router.navigateByUrl('/admin/lesson-library'); }
-  goToActivities(): void { this.router.navigateByUrl('/admin/exercises'); }
-  goToModules(): void { this.router.navigateByUrl('/admin/modules'); }
 
   generateLearn(): void {
     const item = this.item();
@@ -130,7 +154,6 @@ export class AdminResourceBankDetailComponent implements OnInit {
     }).subscribe({
       next: () => {
         this.generatingLearn.set(false);
-        this.lastGeneratedKind.set('learn');
         this.generateSuccess.set(`Lesson draft created from "${item.title}" — pending review.`);
         this.load();
       },
@@ -149,89 +172,10 @@ export class AdminResourceBankDetailComponent implements OnInit {
     }).subscribe({
       next: () => {
         this.generatingLearnAi.set(false);
-        this.lastGeneratedKind.set('learn');
         this.generateSuccess.set(`AI-generated Lesson draft created from "${item.title}" — pending review.`);
         this.load();
       },
       error: err => { this.generatingLearnAi.set(false); this.generateError.set(err.error?.error ?? 'Could not generate a Lesson with AI.'); },
-    });
-  }
-
-  generateActivity(): void {
-    const item = this.item();
-    if (!item) return;
-    this.generatingActivity.set(true);
-    this.generateError.set('');
-    this.generateSuccess.set('');
-    this.exerciseSvc.generateFromResources({
-      resources: [{ resourceType: RESOURCE_TYPE_TO_LESSON_TYPE[item.type], resourceId: item.id, role: 'Primary' }],
-    }).subscribe({
-      next: () => {
-        this.generatingActivity.set(false);
-        this.lastGeneratedKind.set('activity');
-        this.generateSuccess.set(`Exercise draft created from "${item.title}" — pending review.`);
-        this.load();
-      },
-      error: err => { this.generatingActivity.set(false); this.generateError.set(err.error?.error ?? 'Could not generate an Exercise.'); },
-    });
-  }
-
-  generateActivityWithAi(): void {
-    const item = this.item();
-    if (!item) return;
-    this.generatingActivityAi.set(true);
-    this.generateError.set('');
-    this.generateSuccess.set('');
-    this.exerciseSvc.generateFromResourcesWithAi({
-      resources: [{ resourceType: RESOURCE_TYPE_TO_LESSON_TYPE[item.type], resourceId: item.id, role: 'Primary' }],
-    }).subscribe({
-      next: () => {
-        this.generatingActivityAi.set(false);
-        this.lastGeneratedKind.set('activity');
-        this.generateSuccess.set(`AI-generated Exercise draft created from "${item.title}" — pending review.`);
-        this.load();
-      },
-      error: err => { this.generatingActivityAi.set(false); this.generateError.set(err.error?.error ?? 'Could not generate an Exercise with AI.'); },
-    });
-  }
-
-  generateModule(): void {
-    const item = this.item();
-    if (!item) return;
-    this.generatingModule.set(true);
-    this.generateError.set('');
-    this.generateSuccess.set('');
-    this.moduleSvc.generateFromResource({
-      resourceType: RESOURCE_TYPE_TO_LESSON_TYPE[item.type],
-      resourceId: item.id,
-    }).subscribe({
-      next: () => {
-        this.generatingModule.set(false);
-        this.lastGeneratedKind.set('module');
-        this.generateSuccess.set(`Module draft created from "${item.title}" — pending review.`);
-        this.load();
-      },
-      error: err => { this.generatingModule.set(false); this.generateError.set(err.error?.error ?? 'Could not generate a Module.'); },
-    });
-  }
-
-  generateModuleWithAi(): void {
-    const item = this.item();
-    if (!item) return;
-    this.generatingModuleAi.set(true);
-    this.generateError.set('');
-    this.generateSuccess.set('');
-    this.moduleSvc.generateFromResourceWithAi({
-      resourceType: RESOURCE_TYPE_TO_LESSON_TYPE[item.type],
-      resourceId: item.id,
-    }).subscribe({
-      next: () => {
-        this.generatingModuleAi.set(false);
-        this.lastGeneratedKind.set('module');
-        this.generateSuccess.set(`AI-generated Module draft created from "${item.title}" — pending review.`);
-        this.load();
-      },
-      error: err => { this.generatingModuleAi.set(false); this.generateError.set(err.error?.error ?? 'Could not generate a Module with AI.'); },
     });
   }
 
@@ -253,5 +197,9 @@ export class AdminResourceBankDetailComponent implements OnInit {
       next: () => { this.archiving.set(false); this.load(); },
       error: err => { this.archiving.set(false); this.generateError.set(err.error?.error ?? 'Could not unarchive this item.'); },
     });
+  }
+
+  goToEdit(): void {
+    this.router.navigateByUrl(`/admin/resource-bank/${this.itemId}/edit`);
   }
 }

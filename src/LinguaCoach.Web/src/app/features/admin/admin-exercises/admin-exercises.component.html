@@ -4,9 +4,20 @@
   <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="loadAll()">
     Refresh
   </sp-admin-button>
+  @if (issuesSummary() && issuesSummary()!.itemsWithIssues > 0) {
+    <sp-admin-button variant="primary" appearance="outline" size="sm" [disabled]="bulkRepair.running()" (clicked)="fixAllWithAi()">
+      {{ bulkRepair.running() ? 'Fixing…' : 'Fix All with AI (' + issuesSummary()!.itemsWithIssues + ')' }}
+    </sp-admin-button>
+  }
 </sp-admin-page-header>
 
 <sp-admin-page-body>
+
+  @if (issuesSummary() && issuesSummary()!.itemsWithIssues > 0) {
+    <sp-admin-alert variant="warning">
+      {{ issuesSummary()!.itemsWithIssues }} of {{ issuesSummary()!.totalItems }} item(s) have an issue.
+    </sp-admin-alert>
+  }
 
   @if (error()) {
     <sp-admin-error-state title="Could not load Exercises" [message]="error()" />
@@ -55,8 +66,8 @@
           <sp-admin-button variant="danger" appearance="outline" size="sm" [disabled]="bulkRunning()" (clicked)="openBulkReject()">
             Reject selected
           </sp-admin-button>
-          <sp-admin-button variant="primary" appearance="outline" size="sm" [disabled]="bulkRunning()" (clicked)="bulkGenerateModule()">
-            {{ bulkRunning() ? 'Working…' : 'Generate Module' }}
+          <sp-admin-button variant="danger" appearance="outline" size="sm" [disabled]="bulkRunning()" (clicked)="bulkDelete()">
+            {{ bulkRunning() ? 'Working…' : 'Delete selected' }}
           </sp-admin-button>
         </div>
       }
@@ -73,6 +84,7 @@
               <th>Lesson</th>
               <th>Status</th>
               <th>Created</th>
+              <th class="sp-admin-th-actions">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -93,6 +105,9 @@
                 <td>{{ item.lessonId ? 'Linked' : '—' }}</td>
                 <td><sp-admin-badge [tone]="statusTone(item.reviewStatus)">{{ item.reviewStatus }}</sp-admin-badge></td>
                 <td>{{ item.createdAt | date:'short' }}</td>
+                <td (click)="$event.stopPropagation()">
+                  <sp-admin-table-actions [richActions]="rowActions(item)" (actionSelected)="onRowAction($event, item)" />
+                </td>
               </tr>
             }
           </tbody>

@@ -52,6 +52,12 @@ public sealed class Lesson : BaseEntity
 
     public DateTime UpdatedAtUtc { get; private set; }
 
+    /// <summary>Phase K6 — admin-facing soft-delete, mirroring <see cref="ResourceBankItem.IsArchived"/>.
+    /// Archived Lessons are excluded from the default admin list but the row and every link into it
+    /// (LessonResourceLink, ModuleLessonLink, Exercise.LessonId) stay intact — archiving never
+    /// breaks an Exercise/Module that already references this Lesson, it only hides the row.</summary>
+    public bool IsArchived { get; private set; }
+
     private Lesson() { }
 
     public Lesson(
@@ -161,6 +167,18 @@ public sealed class Lesson : BaseEntity
         ReviewedByUserId = reviewedByUserId;
         RejectedAtUtc = DateTimeOffset.UtcNow;
         RejectionReason = reason.Trim();
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
+    public void Archive()
+    {
+        IsArchived = true;
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
+    public void Unarchive()
+    {
+        IsArchived = false;
         UpdatedAtUtc = DateTime.UtcNow;
     }
 

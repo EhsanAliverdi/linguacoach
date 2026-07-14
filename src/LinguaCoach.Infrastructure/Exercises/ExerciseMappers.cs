@@ -18,7 +18,7 @@ internal static class ExerciseMappers
             item.ReviewedByUserId, item.ApprovedAtUtc, item.RejectedAtUtc, item.RejectionReason, item.ReviewNotes,
             item.CreatedAt, item.UpdatedAtUtc,
             links.Select(ToLinkDto).ToList(),
-            eligibility.CanLaunch, eligibility.UnsupportedReason);
+            eligibility.CanLaunch, eligibility.UnsupportedReason, item.IsArchived);
     }
 
     public static ExerciseResourceLinkDto ToLinkDto(ExerciseResourceLink link) => new(

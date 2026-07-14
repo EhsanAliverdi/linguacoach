@@ -1,0 +1,131 @@
+<sp-admin-page-header
+  title="Edit Resource Bank item"
+  [subtitle]="dto ? dto.title ?? dto.word ?? dto.grammarPoint ?? '' : 'Loading…'">
+  <sp-admin-button variant="neutral" appearance="outline" (clicked)="cancel()">
+    ← Cancel
+  </sp-admin-button>
+</sp-admin-page-header>
+
+<sp-admin-page-body>
+
+  @if (error() && !dto) { <sp-admin-error-state title="Could not load this item" [message]="error()" /> }
+
+  @if (loading()) {
+    <sp-admin-loading-state message="Loading item for editing" />
+  } @else if (dto) {
+  @let e = dto;
+
+    <sp-admin-section-card title="Shared fields">
+      <div class="sp-admin-form-stack">
+        <sp-admin-form-field label="CEFR level" [required]="true">
+          <sp-admin-select [ngModel]="e.cefrLevel" (ngModelChange)="e.cefrLevel = $event" [options]="cefrLevelOptions" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Subskill">
+          <sp-admin-input [ngModel]="e.subskill" (ngModelChange)="e.subskill = $event" placeholder="e.g. vocabulary.receptive" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Difficulty band" hint="1 (easiest) – 5 (hardest)">
+          <sp-admin-number-input [ngModel]="e.difficultyBand" (ngModelChange)="e.difficultyBand = $event" [min]="1" [max]="5" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Context tags" hint="Comma-separated">
+          <sp-admin-input [(ngModel)]="contextTagsDraft" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Focus tags" hint="Comma-separated">
+          <sp-admin-input [(ngModel)]="focusTagsDraft" />
+        </sp-admin-form-field>
+      </div>
+    </sp-admin-section-card>
+
+    <sp-admin-section-card title="Type-specific fields">
+      <div class="sp-admin-form-stack">
+        @switch (e.type) {
+          @case ('vocabulary') {
+            <sp-admin-form-field label="Word" [required]="true">
+              <sp-admin-input [ngModel]="e.word" (ngModelChange)="e.word = $event" />
+            </sp-admin-form-field>
+            <sp-admin-form-field label="Part of speech">
+              <sp-admin-input [ngModel]="e.partOfSpeech" (ngModelChange)="e.partOfSpeech = $event" />
+            </sp-admin-form-field>
+            <sp-admin-form-field label="Notes / definition">
+              <sp-admin-textarea [ngModel]="e.notes" (ngModelChange)="e.notes = $event" />
+            </sp-admin-form-field>
+          }
+          @case ('grammar') {
+            <sp-admin-form-field label="Grammar point" [required]="true">
+              <sp-admin-input [ngModel]="e.grammarPoint" (ngModelChange)="e.grammarPoint = $event" />
+            </sp-admin-form-field>
+            <sp-admin-form-field label="Description">
+              <sp-admin-textarea [ngModel]="e.description" (ngModelChange)="e.description = $event" />
+            </sp-admin-form-field>
+          }
+          @case ('readingReference') {
+            <sp-admin-form-field label="Text type">
+              <sp-admin-input [ngModel]="e.textType" (ngModelChange)="e.textType = $event" />
+            </sp-admin-form-field>
+            <sp-admin-form-field label="Difficulty notes">
+              <sp-admin-input [ngModel]="e.difficultyNotes" (ngModelChange)="e.difficultyNotes = $event" />
+            </sp-admin-form-field>
+            <sp-admin-form-field label="Reference excerpt" [required]="true">
+              <sp-admin-textarea [ngModel]="e.referenceExcerpt" (ngModelChange)="e.referenceExcerpt = $event" />
+            </sp-admin-form-field>
+          }
+          @case ('readingPassage') {
+            <sp-admin-form-field label="Title" [required]="true">
+              <sp-admin-input [ngModel]="e.title" (ngModelChange)="e.title = $event" />
+            </sp-admin-form-field>
+            <sp-admin-form-field label="Summary">
+              <sp-admin-textarea [ngModel]="e.summary" (ngModelChange)="e.summary = $event" />
+            </sp-admin-form-field>
+            <sp-admin-form-field label="Passage text" [required]="true">
+              <sp-admin-textarea [ngModel]="e.passageText" (ngModelChange)="e.passageText = $event" />
+            </sp-admin-form-field>
+          }
+          @case ('writing') {
+            <sp-admin-form-field label="Title" [required]="true">
+              <sp-admin-input [ngModel]="e.title" (ngModelChange)="e.title = $event" />
+            </sp-admin-form-field>
+            <sp-admin-form-field label="Prompt" [required]="true">
+              <sp-admin-textarea [ngModel]="e.promptText" (ngModelChange)="e.promptText = $event" />
+            </sp-admin-form-field>
+            <sp-admin-form-field label="Genre">
+              <sp-admin-input [ngModel]="e.genre" (ngModelChange)="e.genre = $event" />
+            </sp-admin-form-field>
+            <sp-admin-form-field label="Suggested minimum words">
+              <sp-admin-number-input [ngModel]="e.suggestedMinWords" (ngModelChange)="e.suggestedMinWords = $event" [min]="0" />
+            </sp-admin-form-field>
+          }
+          @case ('listening') {
+            <sp-admin-form-field label="Title" [required]="true">
+              <sp-admin-input [ngModel]="e.title" (ngModelChange)="e.title = $event" />
+            </sp-admin-form-field>
+            <sp-admin-form-field label="Transcript">
+              <sp-admin-textarea [ngModel]="e.transcript" (ngModelChange)="e.transcript = $event" />
+            </sp-admin-form-field>
+            <p class="sp-admin-hint">The uploaded audio file itself isn't editable here.</p>
+          }
+          @case ('speaking') {
+            <sp-admin-form-field label="Title" [required]="true">
+              <sp-admin-input [ngModel]="e.title" (ngModelChange)="e.title = $event" />
+            </sp-admin-form-field>
+            <sp-admin-form-field label="Scenario / prompt" [required]="true">
+              <sp-admin-textarea [ngModel]="e.promptText" (ngModelChange)="e.promptText = $event" />
+            </sp-admin-form-field>
+            <sp-admin-form-field label="Suggested response duration (seconds)">
+              <sp-admin-number-input [ngModel]="e.suggestedDurationSeconds" (ngModelChange)="e.suggestedDurationSeconds = $event" [min]="0" />
+            </sp-admin-form-field>
+          }
+        }
+      </div>
+    </sp-admin-section-card>
+
+    @if (error()) { <sp-admin-alert variant="error">{{ error() }}</sp-admin-alert> }
+
+    <div class="sp-admin-form-actions">
+      <sp-admin-button variant="neutral" appearance="outline" (clicked)="cancel()">Cancel</sp-admin-button>
+      <sp-admin-button variant="primary" [disabled]="saving()" (clicked)="save()">
+        {{ saving() ? 'Saving…' : 'Save' }}
+      </sp-admin-button>
+    </div>
+
+  }
+
+</sp-admin-page-body>

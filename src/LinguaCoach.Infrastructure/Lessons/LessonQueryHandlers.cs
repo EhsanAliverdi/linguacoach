@@ -17,7 +17,7 @@ public sealed class AdminLessonListQueryHandler : IAdminLessonListQuery
         var page = Math.Max(query.Page, 1);
         var pageSize = Math.Clamp(query.PageSize, 1, MaxPageSize);
 
-        var filtered = _db.Lessons.AsQueryable();
+        var filtered = _db.Lessons.Where(i => !i.IsArchived);
 
         if (!string.IsNullOrWhiteSpace(query.Status)
             && Enum.TryParse<AdminReviewStatus>(query.Status, ignoreCase: true, out var status))

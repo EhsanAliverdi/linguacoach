@@ -1,0 +1,67 @@
+<sp-admin-page-header title="Edit Lesson" [subtitle]="item?.title ?? 'Loading…'">
+  <sp-admin-button variant="neutral" appearance="outline" (clicked)="cancel()">
+    ← Cancel
+  </sp-admin-button>
+</sp-admin-page-header>
+
+<sp-admin-page-body>
+
+  @if (error() && !item) { <sp-admin-error-state title="Could not load this Lesson" [message]="error()" /> }
+
+  @if (loading()) {
+    <sp-admin-loading-state message="Loading Lesson for editing" />
+  } @else if (item) {
+
+    <sp-admin-section-card title="Details">
+      <div class="sp-admin-form-stack">
+        <sp-admin-form-field label="Title" [required]="true">
+          <sp-admin-input [(ngModel)]="title" name="title" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Body" [required]="true">
+          <sp-admin-textarea [(ngModel)]="body" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Examples" hint="One per line">
+          <sp-admin-textarea [(ngModel)]="examplesDraft" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Common mistakes" hint="One per line">
+          <sp-admin-textarea [(ngModel)]="commonMistakesDraft" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Usage notes">
+          <sp-admin-textarea [(ngModel)]="usageNotes" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="CEFR level">
+          <sp-admin-input [(ngModel)]="cefrLevel" name="cefrLevel" placeholder="e.g. A1" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Skill">
+          <sp-admin-input [(ngModel)]="skill" name="skill" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Subskill">
+          <sp-admin-input [(ngModel)]="subskill" name="subskill" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Context tags" hint="Comma-separated">
+          <sp-admin-input [(ngModel)]="contextTagsDraft" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Focus tags" hint="Comma-separated">
+          <sp-admin-input [(ngModel)]="focusTagsDraft" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Difficulty band" hint="1 (easiest) – 5 (hardest)">
+          <sp-admin-number-input [(ngModel)]="difficultyBand" [min]="1" [max]="5" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Estimated minutes">
+          <sp-admin-number-input [(ngModel)]="estimatedMinutes" [min]="0" />
+        </sp-admin-form-field>
+      </div>
+    </sp-admin-section-card>
+
+    @if (error()) { <sp-admin-alert variant="error">{{ error() }}</sp-admin-alert> }
+
+    <div class="sp-admin-form-actions">
+      <sp-admin-button variant="neutral" appearance="outline" (clicked)="cancel()">Cancel</sp-admin-button>
+      <sp-admin-button variant="primary" [disabled]="saving()" (clicked)="save()">
+        {{ saving() ? 'Saving…' : 'Save' }}
+      </sp-admin-button>
+    </div>
+
+  }
+
+</sp-admin-page-body>

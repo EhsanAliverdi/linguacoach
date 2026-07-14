@@ -1,3 +1,5 @@
+using LinguaCoach.Application.AdminRepair;
+
 namespace LinguaCoach.Application.ResourceImport;
 
 // ── Phase H1 — Unified Resource Bank admin read model. ──────────────────────────────────────
@@ -97,3 +99,97 @@ public interface IResourceBankArchiveHandler
     Task<ResourceBankArchiveResult> ArchiveAsync(ArchiveResourceBankItemsCommand command, CancellationToken ct = default);
     Task<ResourceBankArchiveResult> UnarchiveAsync(UnarchiveResourceBankItemsCommand command, CancellationToken ct = default);
 }
+
+// ── Phase K8 — "diagnose then AI-repair" for a single Resource Bank item, e.g. a Vocabulary
+// item missing its definition (which otherwise silently blocks multiple-choice Exercise
+// generation). See AdminRepairFieldGenerator's doc comment for the shared mechanism. ──
+
+public sealed record ResourceBankItemRepairResult(
+    UnifiedResourceBankItemDto Item,
+    IReadOnlyList<DiagnosticIssue> IssuesFixed,
+    IReadOnlyList<DiagnosticIssue> IssuesRemaining,
+    string? ProviderName,
+    string? ModelName);
+
+public interface IResourceBankRepairService
+{
+    Task<IReadOnlyList<DiagnosticIssue>> DiagnoseAsync(Guid id, CancellationToken ct = default);
+    Task<ResourceBankItemRepairResult> RepairAsync(Guid id, CancellationToken ct = default);
+    Task<IssuesSummary> GetIssuesSummaryAsync(CancellationToken ct = default);
+    Task<BulkRepairResult> RepairAllAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<RepairableItemSummary>> ListWithIssuesAsync(CancellationToken ct = default);
+}
+
+// ── Phase K5 — admin edit of a published Resource Bank item's content/metadata (e.g. correcting
+// an AI/import-generated word or CEFR level after the fact). Full-replace semantics per item Type
+// — only the fields relevant to the item's own Type are read; the caller (admin UI) is expected to
+// have loaded the current values first (same convention as Lesson/Exercise/Module PUT). ──
+
+public sealed record UpdateResourceBankItemCommand(
+    Guid Id,
+    string CefrLevel,
+    string? Subskill,
+    int? DifficultyBand,
+    IReadOnlyList<string>? ContextTags,
+    IReadOnlyList<string>? FocusTags,
+    // Vocabulary
+    string? Word = null,
+    string? PartOfSpeech = null,
+    string? Notes = null,
+    // Grammar
+    string? GrammarPoint = null,
+    string? Description = null,
+    // ReadingReference
+    string? TextType = null,
+    string? DifficultyNotes = null,
+    string? ReferenceExcerpt = null,
+    // ReadingPassage / Writing / Listening / Speaking share Title
+    string? Title = null,
+    // ReadingPassage
+    string? PassageText = null,
+    string? Summary = null,
+    // Writing / Speaking share PromptText
+    string? PromptText = null,
+    // Writing
+    string? Genre = null,
+    int? SuggestedMinWords = null,
+    // Listening
+    string? Transcript = null,
+    // Speaking
+    int? SuggestedDurationSeconds = null
+);
+
+public interface IResourceBankItemUpdateHandler
+{
+    Task<UnifiedResourceBankItemDto> HandleAsync(UpdateResourceBankItemCommand command, CancellationToken ct = default);
+}
+
+/// <summary>Phase K5 — the full, untruncated, type-specific field set for editing (the list/detail
+/// <see cref="UnifiedResourceBankItemDto"/> only carries a flattened, sometimes-truncated Title/
+/// Summary for display — not enough to safely round-trip an edit). Only the fields relevant to
+/// <see cref="Type"/> are populated; the rest are null.</summary>
+public sealed record ResourceBankItemEditDto(
+    Guid Id,
+    UnifiedResourceBankItemType Type,
+    string CefrLevel,
+    string? Subskill,
+    int? DifficultyBand,
+    IReadOnlyList<string> ContextTags,
+    IReadOnlyList<string> FocusTags,
+    string? Word,
+    string? PartOfSpeech,
+    string? Notes,
+    string? GrammarPoint,
+    string? Description,
+    string? TextType,
+    string? DifficultyNotes,
+    string? ReferenceExcerpt,
+    string? Title,
+    string? PassageText,
+    string? Summary,
+    string? PromptText,
+    string? Genre,
+    int? SuggestedMinWords,
+    string? Transcript,
+    int? SuggestedDurationSeconds
+);

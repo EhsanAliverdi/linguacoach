@@ -102,4 +102,29 @@ public sealed class ResourceBankItem : BaseEntity
         IsArchived = false;
         UpdatedAt = DateTime.UtcNow;
     }
+
+    /// <summary>Phase K5 — admin-facing edit of a published item's content/metadata (e.g.
+    /// correcting an AI/import-generated word, definition, or CEFR level after the fact).
+    /// <see cref="Type"/> and <see cref="SourceId"/> never change — only the caller-supplied
+    /// <paramref name="contentJson"/> (already re-serialized for this item's own <see cref="Type"/>
+    /// by the application layer) and the shared metadata fields.</summary>
+    public void UpdateContent(
+        string cefrLevel, string contentJson, string? subskill, int? difficultyBand,
+        string? contextTagsJson, string? focusTagsJson)
+    {
+        if (!CefrLevelConstants.IsValid(cefrLevel))
+            throw new ArgumentException($"Invalid CEFR level '{cefrLevel}'.", nameof(cefrLevel));
+        if (string.IsNullOrWhiteSpace(contentJson))
+            throw new ArgumentException("ContentJson is required.", nameof(contentJson));
+        if (difficultyBand is < 1 or > 5)
+            throw new ArgumentOutOfRangeException(nameof(difficultyBand), "DifficultyBand must be between 1 and 5.");
+
+        CefrLevel = cefrLevel.ToUpperInvariant();
+        ContentJson = contentJson;
+        Subskill = subskill?.Trim();
+        DifficultyBand = difficultyBand;
+        ContextTagsJson = string.IsNullOrWhiteSpace(contextTagsJson) ? "[]" : contextTagsJson;
+        FocusTagsJson = string.IsNullOrWhiteSpace(focusTagsJson) ? "[]" : focusTagsJson;
+        UpdatedAt = DateTime.UtcNow;
+    }
 }

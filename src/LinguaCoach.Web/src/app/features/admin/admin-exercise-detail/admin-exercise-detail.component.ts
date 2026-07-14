@@ -3,8 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AdminExerciseService } from '../../../core/services/admin-exercise.service';
-import { AdminModuleService } from '../../../core/services/admin-module.service';
-import { ExerciseDto } from '../../../core/models/admin-exercise.models';
+import { ExerciseDto, ExercisePreviewSubmitResult } from '../../../core/models/admin-exercise.models';
+import { DiagnosticIssue } from '../../../core/models/admin-repair.models';
+import { FormioRendererComponent } from '../../../shared/formio/formio-renderer.component';
 import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
@@ -12,6 +13,7 @@ import {
   SpAdminErrorStateComponent,
   SpAdminFormFieldComponent,
   SpAdminLoadingStateComponent,
+  SpAdminModalComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminSectionCardComponent,
@@ -20,7 +22,11 @@ import {
 
 /**
  * Phase K4 — Exercise detail as its own routed page (/admin/exercises/:id), replacing the old
- * in-place slide-in drawer. Approve/Reject/Generate Module all live here now.
+ * in-place slide-in drawer.
+ *
+ * Phase K5 — removed the manual "Generate Module" action (Modules are now created/extended
+ * automatically whenever Exercises are generated from a Lesson — see AdminLessonDetailComponent).
+ * Added admin Edit — AI-generated Exercise content is not immutable.
  */
 @Component({
   selector: 'app-admin-exercise-detail',
@@ -34,10 +40,12 @@ import {
     SpAdminErrorStateComponent,
     SpAdminFormFieldComponent,
     SpAdminLoadingStateComponent,
+    SpAdminModalComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
     SpAdminSectionCardComponent,
     SpAdminTextareaComponent,
+    FormioRendererComponent,
   ],
   templateUrl: './admin-exercise-detail.component.html',
 })
@@ -51,13 +59,24 @@ export class AdminExerciseDetailComponent implements OnInit {
   rejectReasonDraft = '';
   approving = signal(false);
   rejecting = signal(false);
+  archiving = signal(false);
 
-  generatingModule = signal(false);
-  lastActionWasGenerateModule = signal(false);
+  parsedSchema = signal<any>(null);
+
+  // ── Phase K7 — Preview as Student modal ─────────────────────────────────
+  previewModalOpen = signal(false);
+  previewSubmitting = signal(false);
+  previewError = signal('');
+  previewResult = signal<ExercisePreviewSubmitResult | null>(null);
+
+  // ── Phase K8 — "Fix with AI" repair ──────────────────────────────────────
+  issues = signal<DiagnosticIssue[]>([]);
+  repairing = signal(false);
+  repairSuccess = signal('');
+  repairError = signal('');
 
   constructor(
     private exerciseSvc: AdminExerciseService,
-    private moduleSvc: AdminModuleService,
     private route: ActivatedRoute,
     private router: Router,
   ) {}
@@ -72,8 +91,39 @@ export class AdminExerciseDetailComponent implements OnInit {
     this.loading.set(true);
     this.error.set('');
     this.exerciseSvc.get(this.itemId).subscribe({
-      next: item => { this.item.set(item); this.loading.set(false); this.rejectReasonDraft = ''; },
+      next: item => {
+        this.item.set(item);
+        this.loading.set(false);
+        this.rejectReasonDraft = '';
+        try {
+          this.parsedSchema.set(item.formSchemaJson ? JSON.parse(item.formSchemaJson) : null);
+        } catch {
+          this.parsedSchema.set(null);
+        }
+      },
       error: err => { this.loading.set(false); this.error.set(err.error?.error ?? 'Could not load this Exercise.'); },
+    });
+    this.exerciseSvc.diagnose(this.itemId).subscribe({
+      next: issues => this.issues.set(issues),
+      error: () => this.issues.set([]),
+    });
+  }
+
+  get autoFixableIssues(): DiagnosticIssue[] {
+    return this.issues().filter(i => i.autoFixable);
+  }
+
+  fixWithAi(): void {
+    this.repairing.set(true);
+    this.repairError.set('');
+    this.repairSuccess.set('');
+    this.exerciseSvc.repair(this.itemId).subscribe({
+      next: result => {
+        this.repairing.set(false);
+        this.repairSuccess.set(`Fixed ${result.issuesFixed.length} issue(s)` + (result.providerName ? ` using ${result.providerName}/${result.modelName}.` : '.'));
+        this.load();
+      },
+      error: err => { this.repairing.set(false); this.repairError.set(err.error?.error ?? 'Could not repair this Exercise.'); },
     });
   }
 
@@ -96,7 +146,6 @@ export class AdminExerciseDetailComponent implements OnInit {
     this.exerciseSvc.approve(item.id).subscribe({
       next: updated => {
         this.approving.set(false);
-        this.lastActionWasGenerateModule.set(false);
         this.item.set(updated);
         this.actionSuccess.set('Exercise approved.');
       },
@@ -116,7 +165,6 @@ export class AdminExerciseDetailComponent implements OnInit {
     this.exerciseSvc.reject(item.id, this.rejectReasonDraft.trim()).subscribe({
       next: updated => {
         this.rejecting.set(false);
-        this.lastActionWasGenerateModule.set(false);
         this.item.set(updated);
         this.actionSuccess.set('Exercise rejected.');
       },
@@ -124,25 +172,50 @@ export class AdminExerciseDetailComponent implements OnInit {
     });
   }
 
-  generateModule(): void {
-    const item = this.item();
-    if (!item) return;
-    this.generatingModule.set(true);
+  goToEdit(): void {
+    this.router.navigateByUrl(`/admin/exercises/${this.itemId}/edit`);
+  }
+
+  deleteItem(): void {
+    this.archiving.set(true);
     this.actionError.set('');
-    this.moduleSvc.generateFromExercise({ exerciseId: item.id }).subscribe({
-      next: () => {
-        this.generatingModule.set(false);
-        this.lastActionWasGenerateModule.set(true);
-        this.actionSuccess.set('Module draft generated from this Exercise — pending review.');
-      },
-      error: err => {
-        this.generatingModule.set(false);
-        this.actionError.set(err.error?.error ?? 'Could not generate a Module.');
-      },
+    this.exerciseSvc.archive([this.itemId]).subscribe({
+      next: () => { this.archiving.set(false); this.backToList(); },
+      error: err => { this.archiving.set(false); this.actionError.set(err.error?.error ?? 'Could not delete this Exercise.'); },
     });
   }
 
-  goToModules(): void {
-    this.router.navigateByUrl('/admin/modules');
+  restoreItem(): void {
+    this.archiving.set(true);
+    this.actionError.set('');
+    this.exerciseSvc.unarchive([this.itemId]).subscribe({
+      next: () => { this.archiving.set(false); this.load(); },
+      error: err => { this.archiving.set(false); this.actionError.set(err.error?.error ?? 'Could not restore this Exercise.'); },
+    });
+  }
+
+  openPreview(): void {
+    this.previewError.set('');
+    this.previewResult.set(null);
+    this.previewModalOpen.set(true);
+  }
+
+  closePreview(): void {
+    this.previewModalOpen.set(false);
+  }
+
+  onPreviewSubmit(answers: Record<string, unknown>): void {
+    this.previewSubmitting.set(true);
+    this.previewError.set('');
+    this.exerciseSvc.previewSubmit(this.itemId, { answers }).subscribe({
+      next: result => {
+        this.previewSubmitting.set(false);
+        this.previewResult.set(result);
+      },
+      error: err => {
+        this.previewSubmitting.set(false);
+        this.previewError.set(err.error?.error ?? 'Could not score the preview submission.');
+      },
+    });
   }
 }

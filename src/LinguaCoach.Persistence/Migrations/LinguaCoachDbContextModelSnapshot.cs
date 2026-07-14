@@ -1286,6 +1286,12 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("instructions");
 
+                    b.Property<bool>("IsArchived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_archived");
+
                     b.Property<Guid?>("LessonId")
                         .HasColumnType("uuid")
                         .HasColumnName("lesson_id");
@@ -2442,6 +2448,12 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("generation_provider");
 
+                    b.Property<bool>("IsArchived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_archived");
+
                     b.Property<DateTimeOffset?>("RejectedAtUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("rejected_at_utc");
@@ -2749,6 +2761,12 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("generation_provider");
+
+                    b.Property<bool>("IsArchived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_archived");
 
                     b.Property<string>("ObjectiveKey")
                         .HasMaxLength(128)

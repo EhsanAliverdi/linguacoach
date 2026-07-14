@@ -1,3 +1,5 @@
+using LinguaCoach.Application.AdminRepair;
+
 namespace LinguaCoach.Application.Lessons;
 
 // ── Phase H3 — Lesson foundation. A reviewable teaching/explanation block generated from
@@ -42,7 +44,8 @@ public sealed record LessonDto(
     string? ReviewNotes,
     DateTime CreatedAt,
     DateTime UpdatedAtUtc,
-    IReadOnlyList<LessonResourceLinkDto> Links
+    IReadOnlyList<LessonResourceLinkDto> Links,
+    bool IsArchived = false
 );
 
 public sealed record ListLessonsQuery(
@@ -134,6 +137,44 @@ public sealed record RejectLessonCommand(Guid Id, string Reason, Guid? ReviewedB
 public interface IAdminRejectLessonHandler
 {
     Task<LessonDto> HandleAsync(RejectLessonCommand command, CancellationToken ct = default);
+}
+
+// ── Phase K6 — admin archive/unarchive (soft-delete), mirroring ResourceBankItem's
+// ArchiveResourceBankItemsCommand pattern. Bulk is continue-on-error per id. ──
+
+public sealed record ArchiveLessonsCommand(IReadOnlyList<Guid> Ids);
+public sealed record UnarchiveLessonsCommand(IReadOnlyList<Guid> Ids);
+
+public sealed record LessonArchiveItemResult(Guid Id, bool Success, string? Error);
+
+public sealed record LessonArchiveResult(
+    int RequestedCount,
+    int SucceededCount,
+    int FailedCount,
+    IReadOnlyList<LessonArchiveItemResult> Items);
+
+public interface ILessonArchiveHandler
+{
+    Task<LessonArchiveResult> ArchiveAsync(ArchiveLessonsCommand command, CancellationToken ct = default);
+    Task<LessonArchiveResult> UnarchiveAsync(UnarchiveLessonsCommand command, CancellationToken ct = default);
+}
+
+// ── Phase K8 — "diagnose then AI-repair" for a Lesson missing core teaching content. ──
+
+public sealed record LessonRepairResult(
+    LessonDto Item,
+    IReadOnlyList<DiagnosticIssue> IssuesFixed,
+    IReadOnlyList<DiagnosticIssue> IssuesRemaining,
+    string? ProviderName,
+    string? ModelName);
+
+public interface ILessonRepairService
+{
+    Task<IReadOnlyList<DiagnosticIssue>> DiagnoseAsync(Guid id, CancellationToken ct = default);
+    Task<LessonRepairResult> RepairAsync(Guid id, CancellationToken ct = default);
+    Task<IssuesSummary> GetIssuesSummaryAsync(CancellationToken ct = default);
+    Task<BulkRepairResult> RepairAllAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<RepairableItemSummary>> ListWithIssuesAsync(CancellationToken ct = default);
 }
 
 public sealed class LessonValidationException : Exception

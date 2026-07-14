@@ -418,6 +418,69 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
         return withCounts[0];
     }
 
+    /// <summary>Phase K5 — see <see cref="IResourceBankQueryService.GetEditDtoAsync"/>'s doc
+    /// comment. Deserializes the full, untruncated <see cref="ResourceBankItemContent"/> record
+    /// for this item's own <see cref="Domain.Enums.PublishedResourceType"/> rather than reusing
+    /// <see cref="ToUnifiedDto"/>'s lossy display projection.</summary>
+    public async Task<ResourceBankItemEditDto?> GetEditDtoAsync(Guid id, CancellationToken ct = default)
+    {
+        var entry = await _db.ResourceBankItems.FirstOrDefaultAsync(e => e.Id == id, ct);
+        if (entry is null) return null;
+
+        var contextTags = ParseJsonStringArray(entry.ContextTagsJson);
+        var focusTags = ParseJsonStringArray(entry.FocusTagsJson);
+
+        var empty = new ResourceBankItemEditDto(
+            Id: entry.Id, Type: default, CefrLevel: entry.CefrLevel, Subskill: entry.Subskill, DifficultyBand: entry.DifficultyBand,
+            ContextTags: contextTags, FocusTags: focusTags,
+            Word: null, PartOfSpeech: null, Notes: null, GrammarPoint: null, Description: null,
+            TextType: null, DifficultyNotes: null, ReferenceExcerpt: null,
+            Title: null, PassageText: null, Summary: null,
+            PromptText: null, Genre: null, SuggestedMinWords: null,
+            Transcript: null, SuggestedDurationSeconds: null);
+
+        switch (entry.Type)
+        {
+            case PublishedResourceType.Vocabulary:
+            {
+                var c = ResourceBankItemContent.Deserialize<VocabularyContent>(entry.ContentJson);
+                return empty with { Type = UnifiedResourceBankItemType.Vocabulary, Word = c.Word, PartOfSpeech = c.PartOfSpeech, Notes = c.Notes };
+            }
+            case PublishedResourceType.Grammar:
+            {
+                var c = ResourceBankItemContent.Deserialize<GrammarContent>(entry.ContentJson);
+                return empty with { Type = UnifiedResourceBankItemType.Grammar, GrammarPoint = c.GrammarPoint, Description = c.Description };
+            }
+            case PublishedResourceType.ReadingReference:
+            {
+                var c = ResourceBankItemContent.Deserialize<ReadingReferenceContent>(entry.ContentJson);
+                return empty with { Type = UnifiedResourceBankItemType.ReadingReference, TextType = c.TextType, DifficultyNotes = c.DifficultyNotes, ReferenceExcerpt = c.ReferenceExcerpt };
+            }
+            case PublishedResourceType.ReadingPassage:
+            {
+                var c = ResourceBankItemContent.Deserialize<ReadingPassageContent>(entry.ContentJson);
+                return empty with { Type = UnifiedResourceBankItemType.ReadingPassage, Title = c.Title, PassageText = c.PassageText, Summary = c.Summary };
+            }
+            case PublishedResourceType.Writing:
+            {
+                var c = ResourceBankItemContent.Deserialize<WritingPromptContent>(entry.ContentJson);
+                return empty with { Type = UnifiedResourceBankItemType.Writing, Title = c.Title, PromptText = c.PromptText, Genre = c.Genre, SuggestedMinWords = c.SuggestedMinWords };
+            }
+            case PublishedResourceType.Listening:
+            {
+                var c = ResourceBankItemContent.Deserialize<ListeningPassageContent>(entry.ContentJson);
+                return empty with { Type = UnifiedResourceBankItemType.Listening, Title = c.Title, Transcript = c.Transcript };
+            }
+            case PublishedResourceType.Speaking:
+            {
+                var c = ResourceBankItemContent.Deserialize<SpeakingPromptContent>(entry.ContentJson);
+                return empty with { Type = UnifiedResourceBankItemType.Speaking, Title = c.Title, PromptText = c.PromptText, SuggestedDurationSeconds = c.SuggestedDurationSeconds };
+            }
+            default:
+                return null;
+        }
+    }
+
     private static PublishedResourceType ToDomainType(UnifiedResourceBankItemType type) => type switch
     {
         UnifiedResourceBankItemType.Vocabulary => PublishedResourceType.Vocabulary,

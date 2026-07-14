@@ -214,6 +214,18 @@
           (checkedChange)="patchForm({ isEnabled: $event })" />
       </sp-admin-form-field>
 
+      <!-- Surfaces -->
+      <sp-admin-form-field label="Surfaces" hint="Which runtime surfaces this type is eligible for">
+        <sp-admin-checkbox
+          label="Practice Gym"
+          [ngModel]="configForm().supportsPracticeGym"
+          (checkedChange)="patchForm({ supportsPracticeGym: $event })" />
+        <sp-admin-checkbox
+          label="Daily Lesson (Today)"
+          [ngModel]="configForm().supportsTodayLesson"
+          (checkedChange)="patchForm({ supportsTodayLesson: $event })" />
+      </sp-admin-form-field>
+
       <!-- Items -->
       <sp-admin-form-field label="Items per practice (min / default / max)">
         <div class="sp-admin-form-row sp-admin-form-row--3col">

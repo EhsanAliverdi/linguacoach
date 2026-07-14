@@ -8,7 +8,15 @@ import {
   GenerateActivityFromResourcesRequestBody,
   GenerateActivityFromLessonRequestBody,
   GenerateExerciseResult,
+  UpdateExerciseRequestBody,
+  GenerateActivitiesFromLessonRequestBody,
+  GenerateActivitiesFromLessonResult,
+  ExerciseArchiveResult,
+  ExercisePreviewSubmitRequestBody,
+  ExercisePreviewSubmitResult,
+  ExerciseRepairResult,
 } from '../models/admin-exercise.models';
+import { DiagnosticIssue, IssuesSummary, BulkRepairResult, RepairableItemSummary } from '../models/admin-repair.models';
 
 @Injectable({ providedIn: 'root' })
 export class AdminExerciseService {
@@ -52,11 +60,54 @@ export class AdminExerciseService {
     return this.http.post<GenerateExerciseResult>(`${this.base}/generate-from-lesson`, body);
   }
 
+  /** Phase K5 — admin picks a count per Exercise type (e.g. 5 gap_fill + 5 multiple_choice_single).
+   *  Auto-creates-or-extends the linking Module — no separate "Generate Module" call needed. */
+  generateActivitiesFromLesson(body: GenerateActivitiesFromLessonRequestBody): Observable<GenerateActivitiesFromLessonResult> {
+    return this.http.post<GenerateActivitiesFromLessonResult>(`${this.base}/generate-from-lesson/batch`, body);
+  }
+
+  /** Phase K5 — admin edit of an AI/deterministically-generated Exercise. */
+  update(id: string, body: UpdateExerciseRequestBody): Observable<ExerciseDto> {
+    return this.http.put<ExerciseDto>(`${this.base}/${id}`, body);
+  }
+
   approve(id: string, notes?: string | null): Observable<ExerciseDto> {
     return this.http.post<ExerciseDto>(`${this.base}/${id}/approve`, { notes: notes ?? null });
   }
 
   reject(id: string, reason: string): Observable<ExerciseDto> {
     return this.http.post<ExerciseDto>(`${this.base}/${id}/reject`, { reason });
+  }
+
+  archive(ids: string[]): Observable<ExerciseArchiveResult> {
+    return this.http.post<ExerciseArchiveResult>(`${this.base}/archive`, { ids });
+  }
+
+  unarchive(ids: string[]): Observable<ExerciseArchiveResult> {
+    return this.http.post<ExerciseArchiveResult>(`${this.base}/unarchive`, { ids });
+  }
+
+  previewSubmit(id: string, body: ExercisePreviewSubmitRequestBody): Observable<ExercisePreviewSubmitResult> {
+    return this.http.post<ExercisePreviewSubmitResult>(`${this.base}/${id}/preview/submit`, body);
+  }
+
+  diagnose(id: string): Observable<DiagnosticIssue[]> {
+    return this.http.get<DiagnosticIssue[]>(`${this.base}/${id}/diagnostics`);
+  }
+
+  repair(id: string): Observable<ExerciseRepairResult> {
+    return this.http.post<ExerciseRepairResult>(`${this.base}/${id}/repair`, {});
+  }
+
+  issuesSummary(): Observable<IssuesSummary> {
+    return this.http.get<IssuesSummary>(`${this.base}/issues-summary`);
+  }
+
+  repairAll(): Observable<BulkRepairResult> {
+    return this.http.post<BulkRepairResult>(`${this.base}/repair-all`, {});
+  }
+
+  listWithIssues(): Observable<RepairableItemSummary[]> {
+    return this.http.get<RepairableItemSummary[]>(`${this.base}/with-issues`);
   }
 }

@@ -250,6 +250,8 @@ export class AdminExerciseTypesComponent implements OnInit {
     this.configError.set(null);
     this.admin.updateExerciseType(type.key, {
       isEnabled:               form.isEnabled,
+      supportsPracticeGym:     form.supportsPracticeGym,
+      supportsTodayLesson:     form.supportsTodayLesson,
       minItemsPerPractice:     form.minItemsPerPractice,
       defaultItemsPerPractice: form.defaultItemsPerPractice,
       maxItemsPerPractice:     form.maxItemsPerPractice,

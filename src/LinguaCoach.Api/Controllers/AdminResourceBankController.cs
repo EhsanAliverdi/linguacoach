@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using LinguaCoach.Application.ResourceImport;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,15 +18,17 @@ public sealed class AdminResourceBankController : ControllerBase
 {
     private readonly IResourceBankQueryService _bankQueryService;
     private readonly IResourceBankArchiveHandler _archiveHandler;
-    private readonly IQuickWordPipelineService _quickWordPipeline;
+    private readonly IResourceBankItemUpdateHandler _updateHandler;
+    private readonly IResourceBankRepairService _repairService;
 
     public AdminResourceBankController(
         IResourceBankQueryService bankQueryService, IResourceBankArchiveHandler archiveHandler,
-        IQuickWordPipelineService quickWordPipeline)
+        IResourceBankItemUpdateHandler updateHandler, IResourceBankRepairService repairService)
     {
         _bankQueryService = bankQueryService;
         _archiveHandler = archiveHandler;
-        _quickWordPipeline = quickWordPipeline;
+        _updateHandler = updateHandler;
+        _repairService = repairService;
     }
 
     // GET api/admin/resource-bank?type=&cefrLevel=&skill=&subskill=&contextTag=&focusTag=
@@ -63,6 +64,16 @@ public sealed class AdminResourceBankController : ControllerBase
         return result is null ? NotFound(new { error = $"Resource Bank item '{id}' was not found." }) : Ok(result);
     }
 
+    // GET api/admin/resource-bank/{id}/edit
+    // Phase K5 — the full, untruncated, type-specific field set for the edit form (the list/detail
+    // DTO has a lossy, sometimes-truncated Title/Summary — not enough to safely round-trip edits).
+    [HttpGet("api/admin/resource-bank/{id:guid}/edit")]
+    public async Task<IActionResult> GetEditDto(Guid id, CancellationToken ct)
+    {
+        var result = await _bankQueryService.GetEditDtoAsync(id, ct);
+        return result is null ? NotFound(new { error = $"Resource Bank item '{id}' was not found." }) : Ok(result);
+    }
+
     // POST api/admin/resource-bank/archive  { ids: [...] }
     // Phase K3 — soft-delete: hides the row(s) from the default list/browse view without breaking
     // any Lesson/Exercise/Module that already links to them.
@@ -81,18 +92,21 @@ public sealed class AdminResourceBankController : ControllerBase
         return Ok(result);
     }
 
-    // POST api/admin/resource-bank/quick-word  { word, cefrLevel, partOfSpeech?, definition? }
-    // Phase K3 — one-click cascade: publishes a Vocabulary Resource Bank item then generates and
-    // auto-approves a Lesson and Exercise, then generates a Module from them. See
-    // IQuickWordPipelineService's doc comment — this bypasses the normal import/review workflow,
-    // it's an admin dev/testing shortcut, not a replacement for it.
-    [HttpPost("api/admin/resource-bank/quick-word")]
-    public async Task<IActionResult> QuickWord([FromBody] QuickWordRequest request, CancellationToken ct)
+    // PUT api/admin/resource-bank/{id}
+    // Phase K5 — admin edit of a published item's content/metadata. Full-replace per item Type;
+    // the admin UI is expected to have loaded the current value first (same PUT convention as
+    // Lesson/Exercise/Module).
+    [HttpPut("api/admin/resource-bank/{id:guid}")]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateResourceBankItemRequest body, CancellationToken ct)
     {
         try
         {
-            var result = await _quickWordPipeline.RunAsync(new QuickWordPipelineRequest(
-                request.Word, request.CefrLevel, request.PartOfSpeech, request.Definition, GetCurrentUserId()), ct);
+            var result = await _updateHandler.HandleAsync(new UpdateResourceBankItemCommand(
+                id, body.CefrLevel, body.Subskill, body.DifficultyBand, body.ContextTags, body.FocusTags,
+                body.Word, body.PartOfSpeech, body.Notes, body.GrammarPoint, body.Description,
+                body.TextType, body.DifficultyNotes, body.ReferenceExcerpt, body.Title, body.PassageText,
+                body.Summary, body.PromptText, body.Genre, body.SuggestedMinWords, body.Transcript,
+                body.SuggestedDurationSeconds), ct);
             return Ok(result);
         }
         catch (ResourceImportValidationException ex)
@@ -101,12 +115,89 @@ public sealed class AdminResourceBankController : ControllerBase
         }
     }
 
-    private Guid? GetCurrentUserId()
+    // GET api/admin/resource-bank/{id}/diagnostics
+    // Phase K8 — issues found on this item (e.g. a Vocabulary item missing its definition).
+    [HttpGet("api/admin/resource-bank/{id:guid}/diagnostics")]
+    public async Task<IActionResult> Diagnose(Guid id, CancellationToken ct)
     {
-        var raw = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
-        return Guid.TryParse(raw, out var id) ? id : null;
+        try
+        {
+            var result = await _repairService.DiagnoseAsync(id, ct);
+            return Ok(result);
+        }
+        catch (ResourceImportValidationException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    // POST api/admin/resource-bank/{id}/repair
+    // Phase K8 — AI-fills the missing core field(s) found by Diagnose above.
+    [HttpPost("api/admin/resource-bank/{id:guid}/repair")]
+    public async Task<IActionResult> Repair(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _repairService.RepairAsync(id, ct);
+            return Ok(result);
+        }
+        catch (ResourceImportValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    // GET api/admin/resource-bank/issues-summary
+    // Phase K9 — how many non-archived items have at least one auto-fixable issue.
+    [HttpGet("api/admin/resource-bank/issues-summary")]
+    public async Task<IActionResult> IssuesSummary(CancellationToken ct)
+    {
+        var result = await _repairService.GetIssuesSummaryAsync(ct);
+        return Ok(result);
+    }
+
+    // GET api/admin/resource-bank/with-issues
+    // Phase K10 — id + title of every item with an auto-fixable issue, for the frontend to drive
+    // a client-side "Fix All with AI" progress loop over the single-item repair endpoint.
+    [HttpGet("api/admin/resource-bank/with-issues")]
+    public async Task<IActionResult> ListWithIssues(CancellationToken ct)
+    {
+        var result = await _repairService.ListWithIssuesAsync(ct);
+        return Ok(result);
+    }
+
+    // POST api/admin/resource-bank/repair-all
+    // Phase K9 — AI-repairs every non-archived item with an auto-fixable issue.
+    [HttpPost("api/admin/resource-bank/repair-all")]
+    public async Task<IActionResult> RepairAll(CancellationToken ct)
+    {
+        var result = await _repairService.RepairAllAsync(ct);
+        return Ok(result);
     }
 
     public sealed record ResourceBankIdsRequest(IReadOnlyList<Guid> Ids);
-    public sealed record QuickWordRequest(string Word, string CefrLevel, string? PartOfSpeech = null, string? Definition = null);
+
+    public sealed record UpdateResourceBankItemRequest(
+        string CefrLevel,
+        string? Subskill = null,
+        int? DifficultyBand = null,
+        IReadOnlyList<string>? ContextTags = null,
+        IReadOnlyList<string>? FocusTags = null,
+        string? Word = null,
+        string? PartOfSpeech = null,
+        string? Notes = null,
+        string? GrammarPoint = null,
+        string? Description = null,
+        string? TextType = null,
+        string? DifficultyNotes = null,
+        string? ReferenceExcerpt = null,
+        string? Title = null,
+        string? PassageText = null,
+        string? Summary = null,
+        string? PromptText = null,
+        string? Genre = null,
+        int? SuggestedMinWords = null,
+        string? Transcript = null,
+        int? SuggestedDurationSeconds = null
+    );
 }

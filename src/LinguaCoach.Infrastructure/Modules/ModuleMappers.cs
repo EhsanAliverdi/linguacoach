@@ -15,7 +15,8 @@ internal static class ModuleMappers
         item.CreatedByUserId, item.ReviewedByUserId, item.ApprovedAtUtc, item.RejectedAtUtc,
         item.RejectionReason, item.ReviewNotes, item.CreatedAt, item.UpdatedAtUtc,
         lessonLinks.OrderBy(l => l.SortOrder).Select(ToLessonLinkDto).ToList(),
-        exerciseLinks.OrderBy(l => l.SortOrder).Select(ToExerciseLinkDto).ToList());
+        exerciseLinks.OrderBy(l => l.SortOrder).Select(ToExerciseLinkDto).ToList(),
+        item.IsArchived);
 
     public static ModuleLessonLinkDto ToLessonLinkDto(ModuleLessonLink link) => new(
         link.Id, link.LessonId, link.Role.ToString(), link.SortOrder, link.SnapshotTitle);

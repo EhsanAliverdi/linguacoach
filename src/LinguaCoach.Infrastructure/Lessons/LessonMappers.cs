@@ -12,7 +12,7 @@ internal static class LessonMappers
         item.GenerationModel, item.ReviewStatus.ToString(), item.CreatedByUserId, item.ReviewedByUserId,
         item.ApprovedAtUtc, item.RejectedAtUtc, item.RejectionReason, item.ReviewNotes,
         item.CreatedAt, item.UpdatedAtUtc,
-        links.Select(ToLinkDto).ToList());
+        links.Select(ToLinkDto).ToList(), item.IsArchived);
 
     public static LessonResourceLinkDto ToLinkDto(LessonResourceLink link) => new(
         link.Id, link.ResourceType.ToString(), link.ResourceId, link.Role.ToString(),

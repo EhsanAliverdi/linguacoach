@@ -41,6 +41,7 @@ internal sealed class LessonConfiguration : IEntityTypeConfiguration<Lesson>
         builder.Property(e => e.RejectedAtUtc).HasColumnName("rejected_at_utc");
         builder.Property(e => e.RejectionReason).HasColumnName("rejection_reason");
         builder.Property(e => e.ReviewNotes).HasColumnName("review_notes");
+        builder.Property(e => e.IsArchived).HasColumnName("is_archived").IsRequired().HasDefaultValue(false);
 
         builder.HasIndex(e => e.ReviewStatus).HasDatabaseName("ix_lessons_review_status");
         builder.HasIndex(e => e.CefrLevel).HasDatabaseName("ix_lessons_cefr_level");

@@ -17,7 +17,7 @@ public sealed class AdminModuleListQueryHandler : IAdminModuleListQuery
         var page = Math.Max(query.Page, 1);
         var pageSize = Math.Clamp(query.PageSize, 1, MaxPageSize);
 
-        var filtered = _db.Modules.AsQueryable();
+        var filtered = _db.Modules.Where(m => !m.IsArchived);
 
         if (!string.IsNullOrWhiteSpace(query.Status)
             && Enum.TryParse<AdminReviewStatus>(query.Status, ignoreCase: true, out var status))

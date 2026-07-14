@@ -1,5 +1,7 @@
 using System.Security.Claims;
+using System.Text.Json;
 using LinguaCoach.Application.Exercises;
+using LinguaCoach.Application.Modules;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -31,6 +33,10 @@ public sealed class AdminExerciseController : ControllerBase
     private readonly IGenerateActivityFromResourcesHandler _generateFromResourcesHandler;
     private readonly IGenerateActivityFromLessonHandler _generateFromLessonHandler;
     private readonly IGenerateActivityFromResourcesWithAiHandler _generateFromResourcesWithAiHandler;
+    private readonly IGenerateActivitiesFromLessonHandler _generateActivitiesFromLessonHandler;
+    private readonly IExerciseArchiveHandler _archiveHandler;
+    private readonly IAdminExercisePreviewSubmitHandler _previewSubmitHandler;
+    private readonly IExerciseRepairService _repairService;
 
     public AdminExerciseController(
         IAdminExerciseListQuery listQuery,
@@ -41,7 +47,11 @@ public sealed class AdminExerciseController : ControllerBase
         IAdminRejectExerciseHandler rejectHandler,
         IGenerateActivityFromResourcesHandler generateFromResourcesHandler,
         IGenerateActivityFromLessonHandler generateFromLessonHandler,
-        IGenerateActivityFromResourcesWithAiHandler generateFromResourcesWithAiHandler)
+        IGenerateActivityFromResourcesWithAiHandler generateFromResourcesWithAiHandler,
+        IGenerateActivitiesFromLessonHandler generateActivitiesFromLessonHandler,
+        IExerciseArchiveHandler archiveHandler,
+        IAdminExercisePreviewSubmitHandler previewSubmitHandler,
+        IExerciseRepairService repairService)
     {
         _listQuery = listQuery;
         _getQuery = getQuery;
@@ -52,6 +62,10 @@ public sealed class AdminExerciseController : ControllerBase
         _generateFromResourcesHandler = generateFromResourcesHandler;
         _generateFromLessonHandler = generateFromLessonHandler;
         _generateFromResourcesWithAiHandler = generateFromResourcesWithAiHandler;
+        _generateActivitiesFromLessonHandler = generateActivitiesFromLessonHandler;
+        _archiveHandler = archiveHandler;
+        _previewSubmitHandler = previewSubmitHandler;
+        _repairService = repairService;
     }
 
     // GET api/admin/exercises?page=&pageSize=&status=&activityType=&rendererType=&cefrLevel=&
@@ -134,6 +148,33 @@ public sealed class AdminExerciseController : ControllerBase
         }
     }
 
+    // POST api/admin/exercises/generate-from-lesson/batch  { lessonId, specs: [{activityType, count}], titlePrefix?, notes? }
+    // Phase K5 — admin picks how many Exercises of which type(s) to generate from this Lesson
+    // (e.g. 5 gap_fill + 5 multiple_choice_single = 10). Auto-creates-or-extends the Module
+    // linking this Lesson to every Exercise it has generated — see
+    // IModuleAutoLinkService — there is no separate "Generate Module" step anymore.
+    [HttpPost("generate-from-lesson/batch")]
+    public async Task<IActionResult> GenerateActivitiesFromLesson(
+        [FromBody] GenerateActivitiesFromLessonRequestBody body, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _generateActivitiesFromLessonHandler.HandleAsync(new GenerateActivitiesFromLessonRequest(
+                body.LessonId,
+                body.Specs.Select(s => new ActivityGenerationSpec(s.ActivityType, s.Count)).ToList(),
+                body.TitlePrefix, body.Notes, GetCurrentUserId()), ct);
+            return Ok(result);
+        }
+        catch (ExerciseValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (ModuleValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
     // POST api/admin/exercises/generate-from-resources/ai
     // Phase J2b — AI-assisted alternative to the deterministic action above. A separate action:
     // the deterministic action is untouched and always available, regardless of AI availability.
@@ -203,11 +244,107 @@ public sealed class AdminExerciseController : ControllerBase
         }
     }
 
+    // POST api/admin/exercises/{id}/preview/submit  { answers: { [componentKey]: value } }
+    // Phase K7 — scores a preview submission for a standalone Exercise using the same scoring
+    // engine the real student runtime / Module preview uses. Never creates a LearningActivity/
+    // ActivityAttempt — read/score-only.
+    [HttpPost("{id:guid}/preview/submit")]
+    public async Task<IActionResult> PreviewSubmit(Guid id, [FromBody] ExercisePreviewSubmitRequestBody body, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _previewSubmitHandler.HandleAsync(
+                new ExercisePreviewSubmitRequest(id, body.Answers ?? new Dictionary<string, JsonElement>()), ct);
+            return Ok(result);
+        }
+        catch (ExerciseValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    // GET api/admin/exercises/{id}/diagnostics
+    // Phase K8 — issues found on this Exercise (e.g. missing Instructions, or correctness-critical
+    // gaps like a missing schema/scoring rules that are flagged but never auto-fixed).
+    [HttpGet("{id:guid}/diagnostics")]
+    public async Task<IActionResult> Diagnose(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _repairService.DiagnoseAsync(id, ct);
+            return Ok(result);
+        }
+        catch (ExerciseValidationException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    // POST api/admin/exercises/{id}/repair
+    // Phase K8 — AI-fills missing Instructions/Description only (see ExerciseRepairService).
+    [HttpPost("{id:guid}/repair")]
+    public async Task<IActionResult> Repair(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _repairService.RepairAsync(id, ct);
+            return Ok(result);
+        }
+        catch (ExerciseValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    // POST api/admin/exercises/archive  { ids: [...] }
+    // Phase K6 — soft-delete: hides the row(s) from the default list without breaking any
+    // Module that already references them.
+    [HttpPost("archive")]
+    public async Task<IActionResult> Archive([FromBody] ExerciseIdsRequest request, CancellationToken ct)
+    {
+        var result = await _archiveHandler.ArchiveAsync(new ArchiveExercisesCommand(request.Ids), ct);
+        return Ok(result);
+    }
+
+    // POST api/admin/exercises/unarchive  { ids: [...] }
+    [HttpPost("unarchive")]
+    public async Task<IActionResult> Unarchive([FromBody] ExerciseIdsRequest request, CancellationToken ct)
+    {
+        var result = await _archiveHandler.UnarchiveAsync(new UnarchiveExercisesCommand(request.Ids), ct);
+        return Ok(result);
+    }
+
     private Guid? GetCurrentUserId()
     {
         var raw = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
         return Guid.TryParse(raw, out var id) ? id : null;
     }
+
+    // GET api/admin/exercises/issues-summary
+    [HttpGet("issues-summary")]
+    public async Task<IActionResult> IssuesSummary(CancellationToken ct)
+    {
+        var result = await _repairService.GetIssuesSummaryAsync(ct);
+        return Ok(result);
+    }
+
+    // GET api/admin/exercises/with-issues
+    [HttpGet("with-issues")]
+    public async Task<IActionResult> ListWithIssues(CancellationToken ct)
+    {
+        var result = await _repairService.ListWithIssuesAsync(ct);
+        return Ok(result);
+    }
+
+    // POST api/admin/exercises/repair-all
+    [HttpPost("repair-all")]
+    public async Task<IActionResult> RepairAll(CancellationToken ct)
+    {
+        var result = await _repairService.RepairAllAsync(ct);
+        return Ok(result);
+    }
+
+    public sealed record ExerciseIdsRequest(IReadOnlyList<Guid> Ids);
 
     public sealed record CreateExerciseRequestBody(
         string Title, string Instructions, string ActivityType, string RendererType,
@@ -231,6 +368,13 @@ public sealed class AdminExerciseController : ControllerBase
         Guid LessonId, string? RequestedActivityType = null, string? Title = null, string? Notes = null
     );
 
+    public sealed record ActivityGenerationSpecBody(string? ActivityType, int Count);
+
+    public sealed record GenerateActivitiesFromLessonRequestBody(
+        Guid LessonId, IReadOnlyList<ActivityGenerationSpecBody> Specs,
+        string? TitlePrefix = null, string? Notes = null
+    );
+
     public sealed record UpdateExerciseRequestBody(
         string Title, string Instructions, string? Description = null, string? FormSchemaJson = null,
         string? AnswerKeyJson = null, string? ScoringRulesJson = null, string? FeedbackPlanJson = null,
@@ -241,4 +385,5 @@ public sealed class AdminExerciseController : ControllerBase
 
     public sealed record ApproveExerciseRequestBody(string? Notes = null);
     public sealed record RejectExerciseRequestBody(string Reason);
+    public sealed record ExercisePreviewSubmitRequestBody(Dictionary<string, JsonElement>? Answers = null);
 }

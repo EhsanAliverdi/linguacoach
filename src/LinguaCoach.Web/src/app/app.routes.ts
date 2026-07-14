@@ -178,12 +178,20 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/admin-resource-bank-unified/admin-resource-bank-unified.component').then(m => m.AdminResourceBankUnifiedComponent),
       },
       {
+        path: 'resource-bank/:id/edit',
+        loadComponent: () => import('./features/admin/admin-resource-bank-edit/admin-resource-bank-edit.component').then(m => m.AdminResourceBankEditComponent),
+      },
+      {
         path: 'resource-bank/:id',
         loadComponent: () => import('./features/admin/admin-resource-bank-detail/admin-resource-bank-detail.component').then(m => m.AdminResourceBankDetailComponent),
       },
       {
         path: 'lesson-library',
         loadComponent: () => import('./features/admin/admin-lessons/admin-lessons.component').then(m => m.AdminLessonsComponent),
+      },
+      {
+        path: 'lesson-library/:id/edit',
+        loadComponent: () => import('./features/admin/admin-lesson-edit/admin-lesson-edit.component').then(m => m.AdminLessonEditComponent),
       },
       {
         path: 'lesson-library/:id',
@@ -194,12 +202,20 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/admin-exercises/admin-exercises.component').then(m => m.AdminExercisesComponent),
       },
       {
+        path: 'exercises/:id/edit',
+        loadComponent: () => import('./features/admin/admin-exercise-edit/admin-exercise-edit.component').then(m => m.AdminExerciseEditComponent),
+      },
+      {
         path: 'exercises/:id',
         loadComponent: () => import('./features/admin/admin-exercise-detail/admin-exercise-detail.component').then(m => m.AdminExerciseDetailComponent),
       },
       {
         path: 'modules',
         loadComponent: () => import('./features/admin/admin-modules/admin-modules.component').then(m => m.AdminModulesComponent),
+      },
+      {
+        path: 'modules/:id/edit',
+        loadComponent: () => import('./features/admin/admin-module-edit/admin-module-edit.component').then(m => m.AdminModuleEditComponent),
       },
       {
         path: 'modules/:id',

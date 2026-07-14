@@ -9,7 +9,10 @@ import {
   UpdateLessonRequestBody,
   GenerateLessonFromResourcesRequestBody,
   GenerateLessonFromResourcesResult,
+  LessonArchiveResult,
+  LessonRepairResult,
 } from '../models/admin-lesson.models';
+import { DiagnosticIssue, IssuesSummary, BulkRepairResult, RepairableItemSummary } from '../models/admin-repair.models';
 
 @Injectable({ providedIn: 'root' })
 export class AdminLessonService {
@@ -62,5 +65,33 @@ export class AdminLessonService {
 
   reject(id: string, reason: string): Observable<LessonDto> {
     return this.http.post<LessonDto>(`${this.base}/${id}/reject`, { reason });
+  }
+
+  archive(ids: string[]): Observable<LessonArchiveResult> {
+    return this.http.post<LessonArchiveResult>(`${this.base}/archive`, { ids });
+  }
+
+  unarchive(ids: string[]): Observable<LessonArchiveResult> {
+    return this.http.post<LessonArchiveResult>(`${this.base}/unarchive`, { ids });
+  }
+
+  diagnose(id: string): Observable<DiagnosticIssue[]> {
+    return this.http.get<DiagnosticIssue[]>(`${this.base}/${id}/diagnostics`);
+  }
+
+  repair(id: string): Observable<LessonRepairResult> {
+    return this.http.post<LessonRepairResult>(`${this.base}/${id}/repair`, {});
+  }
+
+  issuesSummary(): Observable<IssuesSummary> {
+    return this.http.get<IssuesSummary>(`${this.base}/issues-summary`);
+  }
+
+  repairAll(): Observable<BulkRepairResult> {
+    return this.http.post<BulkRepairResult>(`${this.base}/repair-all`, {});
+  }
+
+  listWithIssues(): Observable<RepairableItemSummary[]> {
+    return this.http.get<RepairableItemSummary[]>(`${this.base}/with-issues`);
   }
 }

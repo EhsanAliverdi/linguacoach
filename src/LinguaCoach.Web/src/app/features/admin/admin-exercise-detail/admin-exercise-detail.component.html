@@ -4,6 +4,9 @@
   <sp-admin-button variant="neutral" appearance="outline" (clicked)="backToList()">
     ← Back to Exercises
   </sp-admin-button>
+  @if (item()) {
+    <sp-admin-button variant="primary" appearance="outline" (clicked)="goToEdit()">Edit</sp-admin-button>
+  }
 </sp-admin-page-header>
 
 <sp-admin-page-body>
@@ -15,15 +18,37 @@
   } @else if (item()) {
   @let d = item()!;
 
-    @if (actionSuccess()) {
-      <sp-admin-alert variant="success">
-        {{ actionSuccess() }}
-        @if (lastActionWasGenerateModule()) {
-          <a (click)="goToModules()" style="cursor:pointer; text-decoration:underline;">Review in Modules</a>
-        }
+    @if (d.isArchived) {
+      <sp-admin-alert variant="warning">
+        This Exercise is deleted — hidden from the default Exercises list. It is still fully
+        intact for any Module that already references it. Use Restore to bring it back.
       </sp-admin-alert>
     }
+
+    @if (actionSuccess()) {
+      <sp-admin-alert variant="success">{{ actionSuccess() }}</sp-admin-alert>
+    }
     @if (actionError()) { <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert> }
+    @if (repairSuccess()) { <sp-admin-alert variant="success">{{ repairSuccess() }}</sp-admin-alert> }
+    @if (repairError()) { <sp-admin-alert variant="error">{{ repairError() }}</sp-admin-alert> }
+
+    @if (issues().length > 0) {
+      <sp-admin-section-card title="Issues">
+        <ul>
+          @for (issue of issues(); track issue.code) {
+            <li>
+              {{ issue.message }}
+              @if (!issue.autoFixable) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">manual fix needed</sp-admin-badge> }
+            </li>
+          }
+        </ul>
+        @if (autoFixableIssues.length > 0) {
+          <sp-admin-button variant="primary" appearance="outline" [disabled]="repairing()" (clicked)="fixWithAi()">
+            {{ repairing() ? 'Fixing…' : 'Fix with AI' }}
+          </sp-admin-button>
+        }
+      </sp-admin-section-card>
+    }
 
     <sp-admin-section-card title="Details">
       <div class="sp-admin-form-stack">
@@ -51,8 +76,14 @@
           }
         </sp-admin-form-field>
 
-        @if (d.formSchemaJson) {
-          <sp-admin-form-field label="Form.io schema (student-safe)">
+        @if (parsedSchema()) {
+          <sp-admin-form-field label="Form (student-safe, rendered)">
+            <div class="sp-admin-formio-preview">
+              <app-formio-renderer [schema]="parsedSchema()" [disabled]="true" />
+            </div>
+          </sp-admin-form-field>
+        } @else if (d.formSchemaJson) {
+          <sp-admin-form-field label="Form.io schema (student-safe)" hint="Could not be rendered — showing raw JSON">
             <pre>{{ d.formSchemaJson }}</pre>
           </sp-admin-form-field>
         }
@@ -105,6 +136,9 @@
 
     <sp-admin-section-card title="Actions">
       <div class="sp-admin-form-actions" style="flex-wrap:wrap;">
+        <sp-admin-button variant="secondary" appearance="outline" [disabled]="!parsedSchema()" (clicked)="openPreview()">
+          Preview as Student
+        </sp-admin-button>
         @if (d.reviewStatus !== 'Approved') {
           <sp-admin-button variant="primary" [disabled]="approving()" (clicked)="approveSelected()">
             {{ approving() ? 'Approving…' : 'Approve' }}
@@ -115,12 +149,73 @@
             {{ rejecting() ? 'Rejecting…' : 'Reject' }}
           </sp-admin-button>
         }
-        <sp-admin-button variant="primary" appearance="outline" [disabled]="generatingModule()" (clicked)="generateModule()">
-          {{ generatingModule() ? 'Generating…' : 'Generate Module' }}
-        </sp-admin-button>
+        @if (d.isArchived) {
+          <sp-admin-button variant="neutral" appearance="outline" [disabled]="archiving()" (clicked)="restoreItem()">
+            {{ archiving() ? 'Working…' : 'Restore' }}
+          </sp-admin-button>
+        } @else {
+          <sp-admin-button variant="danger" appearance="outline" [disabled]="archiving()" (clicked)="deleteItem()">
+            {{ archiving() ? 'Working…' : 'Delete' }}
+          </sp-admin-button>
+        }
       </div>
     </sp-admin-section-card>
 
   }
 
 </sp-admin-page-body>
+
+<!-- ── Phase K7 — Preview as Student modal ─────────────────────────────── -->
+<sp-admin-modal
+  [open]="previewModalOpen()"
+  title="Preview as Student"
+  variant="form"
+  (closed)="closePreview()">
+
+  @if (item(); as d) {
+    <div class="sp-admin-form-stack">
+      <sp-admin-alert variant="info">
+        This is exactly what a student would see and complete — nothing here affects any student
+        account, and this Exercise's review status ({{ d.reviewStatus }}) is unaffected.
+      </sp-admin-alert>
+
+      <h4>{{ d.title }}</h4>
+      <p>{{ d.instructions }}</p>
+
+      @if (!d.canLaunchOnceApproved) {
+        <sp-admin-alert variant="warning">
+          {{ d.launchUnsupportedReason }} You can still see the activity below, but it will not be
+          auto-scored in this preview.
+        </sp-admin-alert>
+      }
+
+      @if (parsedSchema()) {
+        <app-formio-renderer
+          [schema]="parsedSchema()"
+          [disabled]="previewSubmitting()"
+          (submit)="onPreviewSubmit($event)" />
+      } @else {
+        <sp-admin-alert variant="warning">This Exercise has no renderable schema.</sp-admin-alert>
+      }
+
+      @if (previewResult(); as result) {
+        <sp-admin-form-field label="Feedback">
+          @if (result.scored) {
+            <sp-admin-alert [variant]="result.allCorrect ? 'success' : 'warning'">
+              Score: {{ result.scorePercent }}% — {{ result.feedbackMessage }}
+            </sp-admin-alert>
+          } @else {
+            <sp-admin-alert variant="info">{{ result.unscorableReason }}</sp-admin-alert>
+          }
+        </sp-admin-form-field>
+      }
+    </div>
+  }
+
+  @if (previewError()) { <sp-admin-alert variant="error">{{ previewError() }}</sp-admin-alert> }
+
+  <div slot="footer">
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closePreview()">Close</sp-admin-button>
+  </div>
+
+</sp-admin-modal>
