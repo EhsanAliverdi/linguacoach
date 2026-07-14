@@ -70,10 +70,19 @@ public static class ExerciseTypeDefinitionSeeder
         Ready(ExercisePatternKey.GapFillWorkplacePhrase, "Gap Fill Workplace Phrase", "Fill missing words in workplace phrases.", "vocabulary", "[]", "Pattern", "gap_fill", "exact_match", "activity_generate_gap_fill_workplace_phrase", ActivityType.VocabularyPractice, ExercisePatternKey.GapFillWorkplacePhrase, 4, false, false),
         Ready(ExercisePatternKey.ListenAndAnswer, "Listen and Answer", "Answer questions after workplace audio.", "listening", "[]", "Pattern", "audio_and_free_text", "ai_structured", "activity_generate_listen_and_answer", ActivityType.ListeningComprehension, ExercisePatternKey.ListenAndAnswer, 4, true, false),
         Ready(ExercisePatternKey.ListenAndGapFill, "Listen and Gap Fill", "Fill gaps from workplace audio.", "listening", "[\"writing\"]", "Pattern", "audio_and_gap_fill", "exact_match", "activity_generate_listen_and_gap_fill", ActivityType.ListeningComprehension, ExercisePatternKey.ListenAndGapFill, 4, true, false),
-        Ready(ExercisePatternKey.EmailReply, "Email Reply", "Write a workplace email reply.", "writing", "[]", "Pattern", "email_reply", "ai_structured", "activity_generate_email_reply", ActivityType.WritingScenario, ExercisePatternKey.EmailReply, 7, false, false),
+        // Phase K17 — email_reply now has a real Lesson-generation composer
+        // (ActivityGenerationService.ComposeWritingPrompt), so this row moves from the
+        // disabled-by-default Pattern bucket into BankFirst/enabled, same key.
+        BankFirst(ExercisePatternKey.EmailReply, "Email Reply",
+            "Open-ended email reply task, shown from the resource's own prompt text verbatim. Requires manual or AI evaluation. Writing resources only.",
+            "writing", "[]", 1, 1, 1),
         Ready(ExercisePatternKey.TeamsChatSimulation, "Teams Chat Simulation", "Write a concise workplace chat response.", "writing", "[]", "Pattern", "chat_reply", "ai_structured", "activity_generate_teams_chat_simulation", ActivityType.WritingScenario, ExercisePatternKey.TeamsChatSimulation, 5, false, false),
         Ready(ExercisePatternKey.SpokenResponseFromPrompt, "Spoken Response From Prompt", "Respond aloud to a workplace prompt.", "speaking", "[]", "Pattern", "free_text_entry", "ai_open_ended", "activity_generate_spoken_response_from_prompt", ActivityType.SpeakingRolePlay, ExercisePatternKey.SpokenResponseFromPrompt, 5, false, false),
-        Ready(ExercisePatternKey.OpenWritingTask, "Open Writing Task", "Open workplace writing with coaching feedback.", "writing", "[]", "Pattern", "free_text_entry", "ai_open_ended", "activity_generate_open_writing_task", ActivityType.WritingScenario, ExercisePatternKey.OpenWritingTask, 7, false, false),
+        // Phase K17 — open_writing_task now has a real Lesson-generation composer, same
+        // BankFirst/enabled conversion as email_reply above, same key.
+        BankFirst(ExercisePatternKey.OpenWritingTask, "Open Writing Task",
+            "Open-ended writing task, shown from the resource's own prompt text verbatim. Requires manual or AI evaluation. Writing resources only.",
+            "writing", "[]", 1, 1, 1),
         Ready(ExercisePatternKey.SpeakingRoleplayTurn, "Speaking Roleplay Turn", "Record one spoken workplace roleplay turn.", "speaking", "[]", "Pattern", "audio_response", "ai_open_ended", "activity_generate_speaking_roleplay_turn", ActivityType.SpeakingRolePlay, ExercisePatternKey.SpeakingRoleplayTurn, 5, false, false),
         Ready(ExercisePatternKey.LessonReflection, "Lesson Reflection", "Review and reflect on the lesson.", "reflection", "[]", "Pattern", "read_only", "no_marking", "activity_generate_lesson_reflection", ActivityType.WritingScenario, ExercisePatternKey.LessonReflection, 2, false, false),
         // Phase K17 — reading_multiple_choice_single now has a real (AI-assisted)
@@ -113,8 +122,11 @@ public static class ExerciseTypeDefinitionSeeder
         Ready(ExercisePatternKey.AnswerShortQuestion, "Answer Short Question", "Listen to short questions and speak your answers clearly.", "speaking", "[\"listening\"]", "Pattern", "answer_short_question", "exact_match", "activity_generate_answer_short_question", ActivityType.SpeakingRolePlay, ExercisePatternKey.AnswerShortQuestion, 6, false, false),
         Ready(ExercisePatternKey.SummarizeWrittenText, "Summarize Written Text", "Read a passage and write a concise summary in your own words.", "writing", "[\"reading\"]", "Pattern", "free_text_entry", "ai_structured", "activity_generate_summarize_written_text", ActivityType.WritingScenario, ExercisePatternKey.SummarizeWrittenText, 7, false, false),
         // summarize_written_text promoted to Ready above
-        Ready(ExercisePatternKey.WriteEssay, "Write Essay", "Read an essay prompt and write a structured essay response.", "writing", "[]", "Pattern", "free_text_entry", "ai_structured", "activity_generate_write_essay", ActivityType.WritingScenario, ExercisePatternKey.WriteEssay, 10, false, false),
-        // write_essay promoted to Ready above
+        // Phase K17 — write_essay now has a real Lesson-generation composer, same
+        // BankFirst/enabled conversion as email_reply/open_writing_task above, same key.
+        BankFirst(ExercisePatternKey.WriteEssay, "Write Essay",
+            "Structured essay response, shown from the resource's own prompt text verbatim. Requires manual or AI evaluation. Writing resources only.",
+            "writing", "[]", 1, 1, 1),
         Ready(ExercisePatternKey.ReadingWritingFillInBlanks, "Reading and Writing Fill in Blanks", "Choose the correct word for each blank in a reading passage.", "reading", "[\"writing\"]", "Pattern", "reading_writing_fill_in_blanks", "exact_match", "activity_generate_reading_writing_fill_in_blanks", ActivityType.ReadingTask, ExercisePatternKey.ReadingWritingFillInBlanks, 5, false, false),
         // reading_writing_fill_in_blanks promoted to Ready above
         // reading_multiple_choice_multi promoted to Ready above

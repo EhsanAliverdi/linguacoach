@@ -1617,8 +1617,14 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
   exception to "AI never supplies the correct answer" (confirmed via AskUserQuestion), since
   reading comprehension has no fact field to derive an answer from unlike
   gap_fill/multiple_choice_single. PendingReview admin-approval is the safety net.
+- [x] **Phase K17 (partial) — `email_reply`/`open_writing_task`/`write_essay` composers + Writing/
+  Listening/Speaking Lesson-linking fix** `Done` (2026-07-14) — same doc as above. Found and fixed
+  a foundational gap while building these: `LessonResourceLookup` never resolved Writing/Listening/
+  Speaking resources at all (silently null since Phases J5a/c/d), so Lessons could never be built
+  from them — now fixed, unblocking K18's Listening/Speaking composers too. The 3 Writing composers
+  are deterministic and unscored (same shape as `short_answer`), no AI-trust question involved.
 - [ ] **Phase K16 (remainder) + K17 (remainder) + K18-K19 — Exercise Type composer build-out**
-  `Planned` (2026-07-14) — same doc as above. Builds real Lesson-generation composers for the ~31
+  `Planned` (2026-07-14) — same doc as above. Builds real Lesson-generation composers for the ~28
   remaining catalog types that are Ready but disabled pending their own composer, grouped by skill
   and generation complexity.
 

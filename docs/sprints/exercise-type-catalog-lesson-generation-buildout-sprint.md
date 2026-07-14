@@ -218,10 +218,26 @@ item below in this phase, not just the first one implemented.
   `ReadingPassage` excerpt. Confirm `Listening` resource content model has a transcript field
   suitable as source text (referenced in the K12/K14 summary as already used for
   Listening-resource Lessons) before starting.
-- [ ] `email_reply` / `open_writing_task` / `summarize_written_text` / `write_essay` — Writing.
-  Open-ended, honestly marked `RequiresManualOrAiEvaluation = true` exactly like the existing
-  `short_answer` composer — no correct-answer trust question at all here (nothing is scored), just
-  new instructions/prompt per type sourced from the `Writing` resource's prompt text.
+- [x] **`email_reply` / `open_writing_task` / `write_essay`** — Writing resources — `Done`
+  (2026-07-14). `ActivityGenerationService.ComposeWritingPrompt` — open-ended, honestly marked
+  `RequiresManualOrAiEvaluation = true` exactly like `short_answer`, shows the Writing resource's
+  own `PromptText` verbatim, no correct-answer trust question at all here since nothing is scored.
+  Deterministic (not routed through AI) — no reason to spend an AI call on a prompt that's just
+  copied verbatim. **Required a foundational fix first**: `LessonResourceLookup.FindAsync` never
+  had a case for `PublishedResourceType.Writing`/`Listening`/`Speaking` — despite being
+  importable/publishable since Phases J5a/J5c/J5d, Lessons could never be built from them at all
+  (silently returned null, every generation call against one failed with "Resource ... was not
+  found"). Added all three cases (Writing/Listening/Speaking → `LessonResourceSnapshot`), which
+  also unblocks K18's Listening/Speaking composers below. `ActivityGenerationService`'s category
+  logic refactored from a binary `isDefinitional` (Vocab/Grammar vs everything else) split to a
+  resource-type switch, since Writing needed its own supported-type bucket distinct from Reading's.
+  3 catalog rows converted from disabled-Pattern to `BankFirst`/enabled. 8 new unit tests (5
+  composer + 3 `LessonResourceLookup`), all passing.
+- [ ] `summarize_written_text` — Writing skill, but sourced from a **Reading** resource
+  (`ReadingReference`/`ReadingPassage`) per its own description ("read a passage and write a
+  summary") — deliberately not bundled with the 3 above since it needs the Reading-category branch
+  extended instead of the Writing one. Same open-ended, unscored shape otherwise — should be a
+  quick follow-up.
 
 **K17 implementation notes:**
 - On the existing dev database, the `reading_multiple_choice_single` catalog row's `IsEnabled`
@@ -273,14 +289,25 @@ item below in this phase, not just the first one implemented.
 ## Risks / unresolved questions
 
 - `StudentReadinessAuditService`'s readiness signal built on `GetForTodayAsync` needs a decision
-  on what it means once Surfaces is gone (see K15.1).
+  on what it means once Surfaces is gone (see K15.1). — **Resolved** in K15: switched to
+  `GetGenerationEligibleAsync`.
 - Whether `ComponentAnswerScorer` already has scoring-kind support for `matching_pairs`/cloze
-  blank sets needs to be confirmed before K16 starts, not assumed from the doc comment alone.
-- The `Listening`/`Writing`/`Speaking` `ResourceBankItem` content models' exact field shapes
-  (transcript, prompt text) need re-confirming against the actual `ResourceBankItemContent`
-  subtypes before K17/K18 composer code is written.
+  blank sets needs to be confirmed before K16 starts, not assumed from the doc comment alone. —
+  **Resolved**: confirmed `single_choice`/`multiple_choice`/`text_exact`/`text_normalized`/
+  `ordered_sequence` all exist; no `matching_pairs` kind (still blocks `phrase_match`, see K16).
+- ~~The `Listening`/`Writing`/`Speaking` `ResourceBankItem` content models' exact field shapes~~ —
+  **Resolved** in K17: `WritingPromptContent.PromptText`, `ListeningPassageContent.Transcript`,
+  `SpeakingPromptContent.PromptText` all confirmed. Bigger finding while confirming this:
+  `LessonResourceLookup.FindAsync` had never been extended to resolve any of these 3 types at all
+  — fixed as part of K17, see that section.
 - `ActivityType` legacy enum values tied to the 4 Legacy-category catalog entries need a usage
   check before deciding delete vs. disable in K15.3.
+- `ListeningPassageContent.Transcript` is nullable (`string?`) — a Listening resource published
+  without a transcript exists as valid data (audio-only). K18's Listening composers need to decide
+  whether to reject generation when `Transcript` is null (same "reject, don't degrade" discipline
+  as `multiple_choice_single`'s distractor check) — almost certainly yes, since none of the K18
+  types can work from audio alone without an actual STT/audio-processing step, but worth stating
+  explicitly before K18 starts.
 
 ## Implementation tasks produced
 

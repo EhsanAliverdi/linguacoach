@@ -43,6 +43,10 @@ namespace LinguaCoach.Infrastructure.Exercises;
 /// source text doesn't have enough distinct content words to build a meaningful cloze (fewer than
 /// 2) — same "reject rather than degrade" discipline as multiple_choice_single's distractor
 /// check.</description></item>
+/// <item><description><c>email_reply</c> / <c>open_writing_task</c> / <c>write_essay</c> — Writing
+/// resources only (Phase K17). Shows the resource's own PromptText verbatim as the task, honestly
+/// marked <see cref="ComponentScoringRule.RequiresManualOrAiEvaluation"/> — same open-ended shape as
+/// short_answer, just sourced from a Writing resource instead of a Reading one.</description></item>
 /// </list>
 /// <see cref="Exercise.ScoringRulesJson"/> is serialized straight from the shared
 /// <see cref="ScoringRulesDocument"/>/<see cref="ComponentScoringRule"/> types already used by
@@ -74,13 +78,16 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
     /// <see cref="ActivityTypeReadingMultipleChoiceSingle"/>, multi-select variant.</summary>
     public const string ActivityTypeReadingMultipleChoiceMulti = "reading_multiple_choice_multi";
 
+    /// <summary>Phase K17 — Writing resources only. Deterministic — like short_answer, this is
+    /// open-ended and honestly marked <see cref="ComponentScoringRule.RequiresManualOrAiEvaluation"/>,
+    /// so there's no correctness risk to route through AI for; the prompt shown to the student is
+    /// always the resource's own PromptText verbatim.</summary>
+    public const string ActivityTypeEmailReply = "email_reply";
+    public const string ActivityTypeOpenWritingTask = "open_writing_task";
+    public const string ActivityTypeWriteEssay = "write_essay";
+
     private const int MaxClozeBlanks = 4;
     private const int MinClozeWordLength = 5;
-
-    private static readonly HashSet<PublishedResourceType> DefinitionalTypes = new()
-    {
-        PublishedResourceType.Vocabulary, PublishedResourceType.Grammar
-    };
 
     private readonly LinguaCoachDbContext _db;
     private readonly IFormIoSchemaValidationService _schemaValidator;
@@ -175,14 +182,24 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
         var primaryMatch = resolved.FirstOrDefault(r => r.Role == LessonResourceRole.Primary);
         var primary = primaryMatch.Snapshot is not null ? primaryMatch : resolved[0];
 
-        var isDefinitional = DefinitionalTypes.Contains(primary.Type);
-        var activityType = requestedActivityType?.Trim().ToLowerInvariant();
-        if (activityType is null)
-            activityType = isDefinitional ? ActivityTypeGapFill : ActivityTypeShortAnswer;
+        // Phase K17 — was a binary isDefinitional (Vocab/Grammar) vs everything-else split; now
+        // resource-type-driven since Writing resources need their own supported-type bucket
+        // distinct from Reading's.
+        var supportedForCategory = primary.Type switch
+        {
+            PublishedResourceType.Vocabulary or PublishedResourceType.Grammar =>
+                new[] { ActivityTypeGapFill, ActivityTypeMultipleChoiceSingle },
+            PublishedResourceType.ReadingReference or PublishedResourceType.ReadingPassage =>
+                new[] { ActivityTypeShortAnswer, ActivityTypeReadingFillInBlanks },
+            PublishedResourceType.Writing =>
+                new[] { ActivityTypeEmailReply, ActivityTypeOpenWritingTask, ActivityTypeWriteEssay },
+            _ => Array.Empty<string>(),
+        };
+        if (supportedForCategory.Length == 0)
+            throw new ExerciseValidationException(
+                $"No Exercise types are supported for resource type '{primary.Type}' yet.");
 
-        var supportedForCategory = isDefinitional
-            ? new[] { ActivityTypeGapFill, ActivityTypeMultipleChoiceSingle }
-            : new[] { ActivityTypeShortAnswer, ActivityTypeReadingFillInBlanks };
+        var activityType = requestedActivityType?.Trim().ToLowerInvariant() ?? supportedForCategory[0];
         if (!supportedForCategory.Contains(activityType))
             throw new ExerciseValidationException(
                 $"Activity type '{activityType}' is not supported for resource type '{primary.Type}'. Supported: {string.Join(", ", supportedForCategory)}.");
@@ -193,6 +210,12 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
             ActivityTypeMultipleChoiceSingle => await ComposeMultipleChoiceSingleAsync(primary.Type, primary.Snapshot, primaryMatch.Input.ResourceId, ct),
             ActivityTypeShortAnswer => ComposeShortAnswer(primary.Snapshot),
             ActivityTypeReadingFillInBlanks => await ComposeReadingFillInBlanksAsync(primary.Type, primary.Snapshot, primaryMatch.Input.ResourceId, ct),
+            ActivityTypeEmailReply => ComposeWritingPrompt(primary.Snapshot,
+                "Read the scenario below and write your email reply.", "Your email reply"),
+            ActivityTypeOpenWritingTask => ComposeWritingPrompt(primary.Snapshot,
+                "Complete the writing task below.", "Your response"),
+            ActivityTypeWriteEssay => ComposeWritingPrompt(primary.Snapshot,
+                "Read the essay prompt below and write a structured response.", "Your essay"),
             _ => throw new ExerciseValidationException($"Unsupported activity type '{activityType}'."),
         };
 
@@ -335,6 +358,37 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
             {
                 new { type = "content", key = "passage", html = $"<p>{System.Net.WebUtility.HtmlEncode(excerpt)}</p>" },
                 new { type = "textarea", key = "answer", label = $"What is \"{primary.Title}\" mainly about?", input = true },
+            }
+        });
+        var answerKeyJson = JsonSerializer.Serialize(new Dictionary<string, string?> { ["answer"] = null });
+        var scoringRulesJson = JsonSerializer.Serialize(new ScoringRulesDocument(
+            new Dictionary<string, ComponentScoringRule> { ["answer"] = new(ScoringRuleKinds.TextNormalized, RequiresManualOrAiEvaluation: true) }));
+        var feedbackPlanJson = JsonSerializer.Serialize(new
+        {
+            correctFeedback = (string?)null,
+            incorrectFeedback = (string?)null,
+            note = "Open-ended — requires manual or AI evaluation, not deterministically scored.",
+        });
+
+        return (instructions, formSchemaJson, answerKeyJson, scoringRulesJson, feedbackPlanJson);
+    }
+
+    /// <summary>Phase K17 — email_reply/open_writing_task/write_essay. Deterministic, like
+    /// short_answer: the prompt shown is always the Writing resource's own PromptText verbatim,
+    /// honestly marked as requiring manual/AI evaluation. There is no correctness question here
+    /// (nothing is scored), so — unlike the reading comprehension MC types — there is no reason to
+    /// route this through AI at all.</summary>
+    private static (string Instructions, string FormSchemaJson, string AnswerKeyJson, string ScoringRulesJson, string FeedbackPlanJson)
+        ComposeWritingPrompt(LessonResourceSnapshot primary, string instructions, string responseLabel)
+    {
+        var prompt = !string.IsNullOrWhiteSpace(primary.Body) ? primary.Body!.Trim() : "(no prompt text available)";
+
+        var formSchemaJson = JsonSerializer.Serialize(new
+        {
+            components = new object[]
+            {
+                new { type = "content", key = "prompt", html = $"<p>{System.Net.WebUtility.HtmlEncode(prompt)}</p>" },
+                new { type = "textarea", key = "answer", label = responseLabel, input = true },
             }
         });
         var answerKeyJson = JsonSerializer.Serialize(new Dictionary<string, string?> { ["answer"] = null });

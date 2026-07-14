@@ -134,24 +134,43 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
         Assert.Contains(eligible, e => e.Key == "reading_multiple_choice_multi");
     }
 
+    [Theory]
+    [InlineData("email_reply")]
+    [InlineData("open_writing_task")]
+    [InlineData("write_essay")]
+    public async Task WritingComposerTypes_AreBankFirstAndGenerationEligible_PhaseK17(string key)
+    {
+        // Phase K17 — email_reply/open_writing_task/write_essay got real (deterministic) composers
+        // (ActivityGenerationService.ComposeWritingPrompt) and moved from the disabled-by-default
+        // Pattern bucket into BankFirst/enabled.
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == key);
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        Assert.Equal("BankFirst", type.Category);
+        Assert.True(type.IsEnabled);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.Equal("writing", type.PrimarySkill);
+        Assert.Contains(eligible, e => e.Key == key);
+    }
+
     [Fact]
     public async Task LegacyAndPatternTypes_AreDisabledByDefault_DespiteBeingReady()
     {
         var service = new ExerciseTypeCatalogService(_db);
         var eligible = await service.GetGenerationEligibleAsync();
 
-        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "email_reply");
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "teams_chat_simulation");
         Assert.Equal("ready", type.ImplementationStatus);
         Assert.False(type.IsEnabled);
         Assert.False(type.IsAvailableForGeneration);
-        Assert.DoesNotContain(eligible, e => e.Key == "email_reply");
+        Assert.DoesNotContain(eligible, e => e.Key == "teams_chat_simulation");
     }
 
     [Theory]
     [InlineData("reorder_paragraphs", "reading")]
     [InlineData("reading_writing_fill_in_blanks", "reading")]
     [InlineData("summarize_written_text", "writing")]
-    [InlineData("write_essay", "writing")]
     [InlineData("listening_multiple_choice_single", "listening")]
     [InlineData("listening_multiple_choice_multi", "listening")]
     [InlineData("listening_fill_in_blanks", "listening")]
@@ -354,7 +373,7 @@ public sealed class ExerciseTypeRegistryTests : IDisposable
     [InlineData("writing_scenario", "writing", null, "WritingScenario")]
     [InlineData("LISTENING COMPREHENSION", "listening", null, "ListeningComprehension")]
     [InlineData("phrase_match", "vocabulary", "phrase_match", "VocabularyPractice")]
-    [InlineData("email_reply", "writing", "email_reply", "WritingScenario")]
+    [InlineData("teams_chat_simulation", "writing", "teams_chat_simulation", "WritingScenario")]
     public async Task Registry_Resolves_ReadyTypes(string key, string skill, string? pattern, string legacy)
     {
         var registry = new LinguaCoach.Infrastructure.Activity.ExerciseTypeRegistry(_db);

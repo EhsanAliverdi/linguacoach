@@ -58,6 +58,30 @@ internal static class LessonResourceLookup
                 return new LessonResourceSnapshot(c.Title, c.Summary ?? c.PassageText, e.CefrLevel, c.PrimarySkill, e.Subskill,
                     e.ContextTagsJson, e.FocusTagsJson, e.DifficultyBand, e.ContentFingerprint);
             }
+            // Phase K17 — Writing/Listening/Speaking resources have been importable/publishable
+            // since J5a/J5c/J5d, but Lessons could never be built from them: this switch never had
+            // a case for them, so LessonResourceLookup.FindAsync silently returned null and every
+            // Lesson/Exercise generation call against one of these resources failed with "Resource
+            // ... was not found in the published Resource Bank" even though it existed. Added here
+            // so Writing composers (email_reply etc.) have a resource type to actually work from.
+            case PublishedResourceType.Writing:
+            {
+                var c = ResourceBankItemContent.Deserialize<WritingPromptContent>(e.ContentJson);
+                return new LessonResourceSnapshot(c.Title, c.PromptText, e.CefrLevel, "Writing", e.Subskill,
+                    e.ContextTagsJson, e.FocusTagsJson, e.DifficultyBand, null);
+            }
+            case PublishedResourceType.Listening:
+            {
+                var c = ResourceBankItemContent.Deserialize<ListeningPassageContent>(e.ContentJson);
+                return new LessonResourceSnapshot(c.Title, c.Transcript, e.CefrLevel, "Listening", e.Subskill,
+                    e.ContextTagsJson, e.FocusTagsJson, e.DifficultyBand, null);
+            }
+            case PublishedResourceType.Speaking:
+            {
+                var c = ResourceBankItemContent.Deserialize<SpeakingPromptContent>(e.ContentJson);
+                return new LessonResourceSnapshot(c.Title, c.PromptText, e.CefrLevel, "Speaking", e.Subskill,
+                    e.ContextTagsJson, e.FocusTagsJson, e.DifficultyBand, null);
+            }
             default:
                 return null;
         }

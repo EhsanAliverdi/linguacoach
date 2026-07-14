@@ -157,6 +157,79 @@ public sealed class LessonGenerationServiceTests : IDisposable
         link.SnapshotTitle.Should().Be("A Trip Abroad");
     }
 
+    // ── Phase K17 — Writing/Listening/Speaking resources are now resolvable by
+    // LessonResourceLookup.FindAsync (previously always null, silently blocking Lesson generation
+    // from these resource types despite them being importable/publishable since J5a/J5c/J5d) ─────
+
+    private ResourceBankItem SeedWritingPrompt(Guid sourceId)
+    {
+        var e = new ResourceBankItem(
+            PublishedResourceType.Writing, sourceId, "B1",
+            ResourceBankItemContent.Serialize(new WritingPromptContent("Email a Colleague", "Write an email asking a colleague for a status update.", "email", 80)));
+        _db.ResourceBankItems.Add(e);
+        _db.SaveChanges();
+        return e;
+    }
+
+    private ResourceBankItem SeedListeningPassage(Guid sourceId)
+    {
+        var e = new ResourceBankItem(
+            PublishedResourceType.Listening, sourceId, "B1",
+            ResourceBankItemContent.Serialize(new ListeningPassageContent("Office Announcement", "The meeting has been moved to Friday.", "storage/key.mp3", "audio/mpeg", null)));
+        _db.ResourceBankItems.Add(e);
+        _db.SaveChanges();
+        return e;
+    }
+
+    private ResourceBankItem SeedSpeakingPrompt(Guid sourceId)
+    {
+        var e = new ResourceBankItem(
+            PublishedResourceType.Speaking, sourceId, "B1",
+            ResourceBankItemContent.Serialize(new SpeakingPromptContent("Describe Your Role", "Describe your daily responsibilities at work.", 60)));
+        _db.ResourceBankItems.Add(e);
+        _db.SaveChanges();
+        return e;
+    }
+
+    [Fact]
+    public async Task Generate_links_to_writing_resource()
+    {
+        var source = SeedSource();
+        var writing = SeedWritingPrompt(source.Id);
+
+        var result = await _sut.HandleAsync(new GenerateLessonFromResourcesRequest(
+            new[] { new LessonResourceLinkInput("Writing", writing.Id, "Primary") }));
+
+        result.Lesson.Links.Should().ContainSingle(l => l.ResourceType == "Writing" && l.ResourceId == writing.Id);
+        result.Lesson.Body.Should().Contain("status update");
+    }
+
+    [Fact]
+    public async Task Generate_links_to_listening_resource()
+    {
+        var source = SeedSource();
+        var listening = SeedListeningPassage(source.Id);
+
+        var result = await _sut.HandleAsync(new GenerateLessonFromResourcesRequest(
+            new[] { new LessonResourceLinkInput("Listening", listening.Id, "Primary") }));
+
+        result.Lesson.Links.Should().ContainSingle(l => l.ResourceType == "Listening" && l.ResourceId == listening.Id);
+        result.Lesson.Body.Should().Contain("moved to Friday");
+    }
+
+    [Fact]
+    public async Task Generate_links_to_speaking_resource()
+    {
+        var source = SeedSource();
+        var speaking = SeedSpeakingPrompt(source.Id);
+
+        var result = await _sut.HandleAsync(new GenerateLessonFromResourcesRequest(
+            new[] { new LessonResourceLinkInput("Speaking", speaking.Id, "Primary") }));
+
+        result.Lesson.Links.Should().ContainSingle(l => l.ResourceType == "Speaking" && l.ResourceId == speaking.Id);
+        result.Lesson.Body.Should().Contain("daily responsibilities");
+    }
+
     [Fact]
     public async Task Generate_with_multiple_resources_preserves_traceability_for_each()
     {

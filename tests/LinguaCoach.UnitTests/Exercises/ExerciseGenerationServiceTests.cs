@@ -80,6 +80,16 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         return e;
     }
 
+    private ResourceBankItem SeedWritingPrompt(Guid sourceId, string promptText = "Write an email asking a colleague for a status update.")
+    {
+        var e = new ResourceBankItem(
+            PublishedResourceType.Writing, sourceId, "B1",
+            ResourceBankItemContent.Serialize(new WritingPromptContent("Email a Colleague", promptText, "email", 80)));
+        _db.ResourceBankItems.Add(e);
+        _db.SaveChanges();
+        return e;
+    }
+
     private ResourceBankItem SeedReadingPassage(Guid sourceId)
     {
         const string passageText = "This is a full-length reading passage about travel.";
@@ -432,6 +442,74 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") },
             RequestedActivityType: "reading_fill_in_blanks"));
+
+        await act.Should().ThrowAsync<ExerciseValidationException>();
+    }
+
+    // ── Phase K17 — email_reply / open_writing_task / write_essay (Writing resources) ──────────
+
+    [Fact]
+    public async Task Email_reply_shows_the_resources_own_prompt_text_and_requires_manual_evaluation()
+    {
+        var source = SeedSource();
+        var writing = SeedWritingPrompt(source.Id, "Reply to the customer complaint below.");
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Writing", writing.Id, "Primary") },
+            RequestedActivityType: "email_reply"));
+
+        result.Activity.ActivityType.Should().Be("email_reply");
+        result.Activity.FormSchemaJson.Should().Contain("Reply to the customer complaint below.").And.Contain("textarea");
+        result.Activity.ScoringRulesJson.Should().Contain("RequiresManualOrAiEvaluation").And.Contain("true");
+    }
+
+    [Fact]
+    public async Task Open_writing_task_is_supported_for_writing_resources()
+    {
+        var source = SeedSource();
+        var writing = SeedWritingPrompt(source.Id);
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Writing", writing.Id, "Primary") },
+            RequestedActivityType: "open_writing_task"));
+
+        result.Activity.ActivityType.Should().Be("open_writing_task");
+    }
+
+    [Fact]
+    public async Task Write_essay_is_supported_for_writing_resources()
+    {
+        var source = SeedSource();
+        var writing = SeedWritingPrompt(source.Id);
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Writing", writing.Id, "Primary") },
+            RequestedActivityType: "write_essay"));
+
+        result.Activity.ActivityType.Should().Be("write_essay");
+    }
+
+    [Fact]
+    public async Task Writing_resource_defaults_to_email_reply_when_no_type_requested()
+    {
+        var source = SeedSource();
+        var writing = SeedWritingPrompt(source.Id);
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Writing", writing.Id, "Primary") }));
+
+        result.Activity.ActivityType.Should().Be("email_reply");
+    }
+
+    [Fact]
+    public async Task Gap_fill_not_supported_for_writing_resource()
+    {
+        var source = SeedSource();
+        var writing = SeedWritingPrompt(source.Id);
+
+        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Writing", writing.Id, "Primary") },
+            RequestedActivityType: "gap_fill"));
 
         await act.Should().ThrowAsync<ExerciseValidationException>();
     }
