@@ -150,14 +150,25 @@ public static class ExerciseTypeDefinitionSeeder
         BankFirst(ExercisePatternKey.ListeningFillInBlanks, "Listening Fill in Blanks",
             "Fill in numbered blanks from the resource's own transcript. Listening resources only.",
             "listening", "[\"writing\"]", 3, 4, 6),
-        Ready(ExercisePatternKey.HighlightCorrectSummary, "Highlight Correct Summary", "Listen to a short audio script and choose the summary that best matches it.", "listening", "[\"reading\"]", "Pattern", "highlight_correct_summary", "keyed_selection", "activity_generate_highlight_correct_summary", ActivityType.ListeningComprehension, ExercisePatternKey.HighlightCorrectSummary, 5, false, false),
+        // Phase K17 — highlight_correct_summary now has a real (AI-assisted) Lesson-generation
+        // composer (reuses AiExerciseGenerationService.ComposeReadingMultipleChoiceSingle), same
+        // key, moves to BankFirst/enabled.
+        BankFirst(ExercisePatternKey.HighlightCorrectSummary, "Highlight Correct Summary",
+            "AI-generated summary-selection question — pick the one-sentence summary that best matches the resource's own transcript. Listening resources only.",
+            "listening", "[\"reading\"]", 1, 1, 1),
         // highlight_correct_summary promoted to Ready above
         // Phase K17 — listening_multiple_choice_single now has a real (AI-assisted)
         // Lesson-generation composer, same key, moves to BankFirst/enabled.
         BankFirst(ExercisePatternKey.ListeningMultipleChoiceSingle, "Listening Multiple Choice (Single Answer)",
             "AI-generated comprehension question with a single correct answer, judged from the resource's own transcript. Listening resources only.",
             "listening", "[]", 1, 1, 1),
-        Ready(ExercisePatternKey.SelectMissingWord, "Select Missing Word", "Listen to an audio script and choose the word or phrase that completes it.", "listening", "[]", "Pattern", "select_missing_word", "keyed_selection", "activity_generate_select_missing_word", ActivityType.ListeningComprehension, ExercisePatternKey.SelectMissingWord, 5, false, false),
+        // Phase K17 — select_missing_word now has a real Lesson-generation composer
+        // (ActivityGenerationService.PickBlankWord + AiExerciseGenerationService.ComposeSelectMissingWord)
+        // — the correct answer is deterministic (a real transcript word), AI only supplies
+        // wrong-word distractors. Same key, moves to BankFirst/enabled.
+        BankFirst(ExercisePatternKey.SelectMissingWord, "Select Missing Word",
+            "Choose the word that completes the blank in the resource's own transcript — the correct word is picked deterministically, AI only supplies wrong-word distractors. Listening resources only.",
+            "listening", "[]", 1, 1, 1),
         // select_missing_word promoted to Ready above
         Ready(ExercisePatternKey.HighlightIncorrectWords, "Highlight Incorrect Words", "Listen to a short audio script and select the transcript words that differ from it.", "listening", "[\"reading\"]", "Pattern", "highlight_incorrect_words", "keyed_selection", "activity_generate_highlight_incorrect_words", ActivityType.ListeningComprehension, ExercisePatternKey.HighlightIncorrectWords, 5, false, false),
         // highlight_incorrect_words promoted to Ready above

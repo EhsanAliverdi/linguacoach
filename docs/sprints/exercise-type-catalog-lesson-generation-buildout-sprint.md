@@ -229,13 +229,25 @@ item below in this phase, not just the first one implemented.
   these two AI-assisted types. `exercise_generate_from_resources` prompt extended with
   `listening_multiple_choice_single`/`_multi` rule blocks (near-identical wording to the reading
   ones, "transcript" instead of "excerpt/passage").
-- [ ] `select_missing_word` / `highlight_incorrect_words` / `highlight_correct_summary` — still
-  open. `select_missing_word` and `highlight_correct_summary` are likely close variants of the AI
-  MC pattern above (single-choice, framed differently). `highlight_incorrect_words` is
-  structurally different — it needs word-level selection within displayed text, which has no
-  existing Form.io component in the allow-list (`textfield`/`textarea`/`radio`/`selectboxes`/
-  `content`/`datagrid`/etc.) — would need a new custom component, out of scope for a backend-only
-  pass. **This completes K17 except for these 3 items.**
+- [x] **`highlight_correct_summary`** — Listening resources — `Done` (2026-07-15). Reuses
+  `AiExerciseGenerationService.ComposeReadingMultipleChoiceSingle` verbatim (same AI-supplies-the-
+  answer exception as the reading/listening MC types) — AI writes one accurate summary sentence as
+  the correct answer plus 3 plausible-but-wrong summaries as distractors, all judged from the
+  transcript. New prompt rule block added; no new compose code needed.
+- [x] **`select_missing_word`** — Listening resources — `Done` (2026-07-15). The odd one out: the
+  correct answer IS deterministic here — `ActivityGenerationService.PickBlankWord` (new shared
+  public static helper) picks the first eligible content word from the transcript and blanks it
+  out *before any AI call*, computed the same way as the cloze composers' word-eligibility check.
+  AI is only asked for 3 plausible-but-wrong word distractors — same safe shape as
+  `multiple_choice_single`, not the "AI supplies the answer" exception the other Listening MC
+  types use. Rejects before any AI call when no eligible word exists in the transcript (e.g. all
+  words too short). New `ComposeSelectMissingWord` method; `TryParseAndValidateOutput`'s signature
+  extended with a `knownCorrectAnswer` parameter so it can filter AI distractors against the
+  already-known correct word.
+- [ ] `highlight_incorrect_words` — still open, genuinely blocked: it needs word-level selection
+  within displayed text, which has no existing Form.io component in the allow-list
+  (`textfield`/`textarea`/`radio`/`selectboxes`/`content`/`datagrid`/etc.) — would need a new
+  custom component, out of scope for a backend-only pass. **This is the only remaining K17 item.**
 - [x] **`email_reply` / `open_writing_task` / `write_essay`** — Writing resources — `Done`
   (2026-07-14). `ActivityGenerationService.ComposeWritingPrompt` — open-ended, honestly marked
   `RequiresManualOrAiEvaluation = true` exactly like `short_answer`, shows the Writing resource's

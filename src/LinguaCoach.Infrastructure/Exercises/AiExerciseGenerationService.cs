@@ -24,12 +24,17 @@ namespace LinguaCoach.Infrastructure.Exercises;
 /// are always deterministically derived from the resource's own fields — never AI-supplied — see
 /// <see cref="IGenerateActivityFromResourcesWithAiHandler"/>'s doc comment for why.
 ///
-/// Phase K17 — <see cref="ActivityGenerationService.ActivityTypeReadingMultipleChoiceSingle"/> and
-/// <see cref="ActivityGenerationService.ActivityTypeReadingMultipleChoiceMulti"/> are a deliberate,
-/// scoped exception: reading comprehension has no single fact field to derive a correct answer
-/// from, so AI supplies the correct answer(s) too (see those constants' doc comments). The
+/// Phase K17 — <see cref="ActivityGenerationService.ActivityTypeReadingMultipleChoiceSingle"/>,
+/// <see cref="ActivityGenerationService.ActivityTypeReadingMultipleChoiceMulti"/>, and
+/// <see cref="ActivityGenerationService.ActivityTypeHighlightCorrectSummary"/> are a deliberate,
+/// scoped exception: reading/listening comprehension has no single fact field to derive a correct
+/// answer from, so AI supplies the correct answer(s) too (see those constants' doc comments). The
 /// PendingReview admin-approval gate — which every generated Exercise already goes through — is
 /// the safety net for this exception, not a new one.
+/// <see cref="ActivityGenerationService.ActivityTypeSelectMissingWord"/> is different: its correct
+/// answer IS deterministic (a real word picked from the transcript by
+/// <see cref="ActivityGenerationService.PickBlankWord"/>), AI only supplies wrong-word
+/// distractors — same safe shape as multiple_choice_single.
 ///
 /// Mirrors <see cref="Lessons.AiLessonGenerationService"/>'s retry-once-then-
 /// throw pattern: this is a synchronous admin-triggered action the admin is actively waiting on, so
@@ -114,6 +119,8 @@ public sealed class AiExerciseGenerationService : IGenerateActivityFromResources
                 {
                     ActivityGenerationService.ActivityTypeListeningMultipleChoiceSingle,
                     ActivityGenerationService.ActivityTypeListeningMultipleChoiceMulti,
+                    ActivityGenerationService.ActivityTypeHighlightCorrectSummary,
+                    ActivityGenerationService.ActivityTypeSelectMissingWord,
                 },
             _ => Array.Empty<string>(),
         };
@@ -135,16 +142,31 @@ public sealed class AiExerciseGenerationService : IGenerateActivityFromResources
             throw new ExerciseValidationException(
                 $"Resource '{primary.Snapshot.Title}' has no excerpt/passage text to build a comprehension question from — use 'short_answer' instead.");
         if ((activityType == ActivityGenerationService.ActivityTypeListeningMultipleChoiceSingle
-                || activityType == ActivityGenerationService.ActivityTypeListeningMultipleChoiceMulti)
+                || activityType == ActivityGenerationService.ActivityTypeListeningMultipleChoiceMulti
+                || activityType == ActivityGenerationService.ActivityTypeHighlightCorrectSummary)
             && string.IsNullOrWhiteSpace(primary.Snapshot.Body))
             throw new ExerciseValidationException(
                 $"Resource '{primary.Snapshot.Title}' has no transcript to build a comprehension question from.");
+
+        // Phase K17 — select_missing_word's correct answer is deterministic (a real word picked
+        // directly from the transcript), never AI-supplied — computed before any AI call so a
+        // resource with no eligible word rejects immediately, same "reject before AI call"
+        // discipline as multiple_choice_single's missing-definition check.
+        (string Word, string DisplayTextWithBlank)? blankWordPick = null;
+        if (activityType == ActivityGenerationService.ActivityTypeSelectMissingWord)
+        {
+            blankWordPick = ActivityGenerationService.PickBlankWord(primary.Snapshot.Body);
+            if (blankWordPick is null)
+                throw new ExerciseValidationException(
+                    $"Resource '{primary.Snapshot.Title}' has no eligible content word to build a select_missing_word blank from.");
+        }
 
         var variables = new Dictionary<string, string>
         {
             ["activityType"] = activityType,
             ["resourceTitle"] = primary.Snapshot.Title,
-            ["resourceDefinition"] = Truncate(primary.Snapshot.Body ?? ""),
+            ["resourceDefinition"] = blankWordPick?.DisplayTextWithBlank ?? Truncate(primary.Snapshot.Body ?? ""),
+            ["missingWord"] = blankWordPick?.Word ?? "",
             ["resourceType"] = primary.Type.ToString(),
             ["cefrLevel"] = request.DefaultCefrLevel ?? primary.Snapshot.CefrLevel,
             ["skill"] = request.DefaultSkill ?? primary.Snapshot.Skill,
@@ -177,7 +199,7 @@ public sealed class AiExerciseGenerationService : IGenerateActivityFromResources
                 $"AI generation is currently unavailable: {ex.Message} Use the deterministic Generate action instead.");
         }
 
-        var parsed = TryParseAndValidateOutput(execResult.ResponseJson, activityType, primary.Snapshot, out var parseError);
+        var parsed = TryParseAndValidateOutput(execResult.ResponseJson, activityType, primary.Snapshot, blankWordPick?.Word, out var parseError);
         if (parsed is null)
         {
             try
@@ -192,7 +214,7 @@ public sealed class AiExerciseGenerationService : IGenerateActivityFromResources
                     $"AI generation is currently unavailable: {ex.Message} Use the deterministic Generate action instead.");
             }
 
-            parsed = TryParseAndValidateOutput(execResult.ResponseJson, activityType, primary.Snapshot, out parseError);
+            parsed = TryParseAndValidateOutput(execResult.ResponseJson, activityType, primary.Snapshot, blankWordPick?.Word, out parseError);
             if (parsed is null)
             {
                 throw new ExerciseValidationException(
@@ -213,6 +235,14 @@ public sealed class AiExerciseGenerationService : IGenerateActivityFromResources
             // that's already handled upstream by resourceDefinition/the prompt template.
             ActivityGenerationService.ActivityTypeListeningMultipleChoiceSingle => ComposeReadingMultipleChoiceSingle(parsed.PromptText!, parsed.CorrectAnswerText!, parsed.Distractors),
             ActivityGenerationService.ActivityTypeListeningMultipleChoiceMulti => ComposeReadingMultipleChoiceMulti(parsed.PromptText!, parsed.CorrectAnswersText!, parsed.Distractors),
+            // Phase K17 — highlight_correct_summary is the same "AI supplies the correct answer"
+            // shape as reading/listening MC single — the correct answer is a one-sentence summary
+            // the AI judges from the transcript, distractors are plausible-but-wrong summaries.
+            ActivityGenerationService.ActivityTypeHighlightCorrectSummary => ComposeReadingMultipleChoiceSingle(parsed.PromptText!, parsed.CorrectAnswerText!, parsed.Distractors),
+            // Phase K17 — select_missing_word is the odd one out: the correct answer is
+            // deterministic (blankWordPick, computed before any AI call), AI only supplies
+            // wrong-word distractors — same safe shape as multiple_choice_single.
+            ActivityGenerationService.ActivityTypeSelectMissingWord => ComposeSelectMissingWord(blankWordPick!.Value.DisplayTextWithBlank, blankWordPick!.Value.Word, parsed.Distractors),
             _ => throw new ExerciseValidationException($"Unsupported activity type '{activityType}'."),
         };
 
@@ -432,6 +462,43 @@ public sealed class AiExerciseGenerationService : IGenerateActivityFromResources
         return (question, formSchemaJson, answerKeyJson, scoringRulesJson, feedbackPlanJson);
     }
 
+    /// <summary>Phase K17 — the correct answer is <paramref name="correctWord"/>, picked
+    /// deterministically by <see cref="ActivityGenerationService.PickBlankWord"/> before any AI
+    /// call — AI only supplies the wrong-word <paramref name="distractors"/>. Shows the transcript
+    /// with the word already blanked (computed by PickBlankWord), radio options in the same shape
+    /// as multiple_choice_single.</summary>
+    private static (string Instructions, string FormSchemaJson, string AnswerKeyJson, string ScoringRulesJson, string FeedbackPlanJson)
+        ComposeSelectMissingWord(string transcriptWithBlank, string correctWord, IReadOnlyList<string> distractors)
+    {
+        var options = new List<(string Key, string Text)> { ("opt_0", correctWord) };
+        for (var i = 0; i < distractors.Count; i++)
+            options.Add(($"opt_{i + 1}", distractors[i]));
+
+        var instructions = "Read the transcript below and select the word that completes the blank.";
+        var formSchemaJson = JsonSerializer.Serialize(new
+        {
+            components = new object[]
+            {
+                new { type = "content", key = "passage", html = $"<p>{System.Net.WebUtility.HtmlEncode(transcriptWithBlank)}</p>" },
+                new
+                {
+                    type = "radio", key = "answer", label = "Select the missing word", input = true,
+                    values = options.Select(o => new { label = o.Text, value = o.Key }).ToArray(),
+                },
+            }
+        });
+        var answerKeyJson = JsonSerializer.Serialize(new Dictionary<string, string> { ["answer"] = options[0].Text });
+        var scoringRulesJson = JsonSerializer.Serialize(new ScoringRulesDocument(
+            new Dictionary<string, ComponentScoringRule> { ["answer"] = new(ScoringRuleKinds.SingleChoice, CorrectAnswer: options[0].Key, Points: 1.0) }));
+        var feedbackPlanJson = JsonSerializer.Serialize(new
+        {
+            correctFeedback = "Correct!",
+            incorrectFeedback = $"Not quite — the correct word was: \"{options[0].Text}\".",
+        });
+
+        return (instructions, formSchemaJson, answerKeyJson, scoringRulesJson, feedbackPlanJson);
+    }
+
     private static string Truncate(string value) =>
         value.Length <= MaxResourceTextLength ? value : value[..MaxResourceTextLength];
 
@@ -481,7 +548,7 @@ public sealed class AiExerciseGenerationService : IGenerateActivityFromResources
     /// caller must never use an unvalidated result.
     /// </summary>
     private static AiExerciseOutput? TryParseAndValidateOutput(
-        string rawResponse, string activityType, LessonResourceSnapshot primary, out string? parseError)
+        string rawResponse, string activityType, LessonResourceSnapshot primary, string? knownCorrectAnswer, out string? parseError)
     {
         parseError = null;
         var cleaned = CleanJson(rawResponse);
@@ -550,7 +617,8 @@ public sealed class AiExerciseGenerationService : IGenerateActivityFromResources
             }
 
             if (activityType == ActivityGenerationService.ActivityTypeReadingMultipleChoiceSingle
-                || activityType == ActivityGenerationService.ActivityTypeListeningMultipleChoiceSingle)
+                || activityType == ActivityGenerationService.ActivityTypeListeningMultipleChoiceSingle
+                || activityType == ActivityGenerationService.ActivityTypeHighlightCorrectSummary)
             {
                 if (string.IsNullOrWhiteSpace(promptText))
                 {
@@ -603,6 +671,23 @@ public sealed class AiExerciseGenerationService : IGenerateActivityFromResources
                     return null;
                 }
                 return new AiExerciseOutput(promptText.Trim(), filteredMulti, CorrectAnswersText: correctAnswersText);
+            }
+
+            if (activityType == ActivityGenerationService.ActivityTypeSelectMissingWord)
+            {
+                // promptText/correctAnswerText are irrelevant here — the correct answer is
+                // knownCorrectAnswer (computed deterministically before the AI call, see
+                // ActivityGenerationService.PickBlankWord). Only distractors matter.
+                var filteredWords = distractors
+                    .Where(d => !string.Equals(d, knownCorrectAnswer, StringComparison.OrdinalIgnoreCase))
+                    .Take(MaxDistractors)
+                    .ToList();
+                if (filteredWords.Count == 0)
+                {
+                    parseError = "Response contained no usable word distractors (empty, or all matched the correct word).";
+                    return null;
+                }
+                return new AiExerciseOutput(null, filteredWords);
             }
 
             // short_answer

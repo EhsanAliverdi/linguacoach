@@ -423,6 +423,93 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
         _provider.CallCount.Should().Be(0);
     }
 
+    // ── highlight_correct_summary (Phase K17) — same AI-supplies-the-answer shape as
+    // reading/listening_multiple_choice_single, reused verbatim ──────────────────────────────
+
+    [Fact]
+    public async Task Highlight_correct_summary_valid_response_stores_ai_supplied_correct_summary()
+    {
+        var source = SeedSource();
+        var listening = SeedListeningPassage(source.Id);
+        _provider.NextResponses.Enqueue(
+            """{"promptText": "Which summary best matches what you heard?", "correctAnswerText": "The meeting was moved to Friday due to a conflict.", "distractors": ["The meeting was cancelled entirely.", "The meeting time stayed the same.", "The meeting was moved to Monday."]}""");
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Listening", listening.Id, "Primary") },
+            RequestedActivityType: "highlight_correct_summary"));
+
+        result.Activity.ActivityType.Should().Be("highlight_correct_summary");
+        result.Activity.FormSchemaJson.Should().Contain("radio").And.Contain("The meeting was moved to Friday due to a conflict.");
+        result.Activity.AnswerKeyJson.Should().Contain("The meeting was moved to Friday due to a conflict.");
+    }
+
+    [Fact]
+    public async Task Highlight_correct_summary_resource_with_no_transcript_throws_before_any_ai_call()
+    {
+        var source = SeedSource();
+        var listening = SeedListeningPassage(source.Id, transcript: null);
+
+        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Listening", listening.Id, "Primary") },
+            RequestedActivityType: "highlight_correct_summary"));
+
+        (await act.Should().ThrowAsync<ExerciseValidationException>())
+            .WithMessage("*no transcript*");
+        _provider.CallCount.Should().Be(0);
+    }
+
+    // ── select_missing_word (Phase K17) — deterministic correct answer, AI only supplies
+    // wrong-word distractors ────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task Select_missing_word_valid_response_uses_deterministic_correct_word()
+    {
+        var source = SeedSource();
+        var listening = SeedListeningPassage(source.Id, "The meeting has been moved to Friday due to a scheduling conflict.");
+        _provider.NextResponses.Enqueue("""{"distractors": ["cancelled", "postponed", "rescheduled"]}""");
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Listening", listening.Id, "Primary") },
+            RequestedActivityType: "select_missing_word"));
+
+        result.Activity.ActivityType.Should().Be("select_missing_word");
+        // "meeting" is the first eligible content word (length >= 5, alphabetic) in the transcript.
+        result.Activity.AnswerKeyJson.Should().Contain("meeting");
+        result.Activity.FormSchemaJson.Should().Contain("_____").And.Contain("cancelled").And.Contain("meeting");
+    }
+
+    [Fact]
+    public async Task Select_missing_word_all_distractors_matching_correct_word_both_attempts_throws()
+    {
+        var source = SeedSource();
+        var listening = SeedListeningPassage(source.Id, "The meeting has been moved to Friday due to a scheduling conflict.");
+        _provider.NextResponses.Enqueue("""{"distractors": ["meeting"]}""");
+        _provider.NextResponses.Enqueue("""{"distractors": ["MEETING"]}""");
+
+        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Listening", listening.Id, "Primary") },
+            RequestedActivityType: "select_missing_word"));
+
+        await act.Should().ThrowAsync<ExerciseValidationException>();
+        _provider.CallCount.Should().Be(2);
+        (await _db.Exercises.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Select_missing_word_resource_with_no_eligible_word_throws_before_any_ai_call()
+    {
+        var source = SeedSource();
+        var listening = SeedListeningPassage(source.Id, "It is a go.");
+
+        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Listening", listening.Id, "Primary") },
+            RequestedActivityType: "select_missing_word"));
+
+        (await act.Should().ThrowAsync<ExerciseValidationException>())
+            .WithMessage("*no eligible content word*");
+        _provider.CallCount.Should().Be(0);
+    }
+
     // ── failure paths shared with Lesson generation's pattern ──────────────────
 
     [Fact]

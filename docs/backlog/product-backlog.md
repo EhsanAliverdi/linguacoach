@@ -1625,17 +1625,19 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
   composers too. All 4 Writing composers are deterministic and unscored (same shape as
   `short_answer`), no AI-trust question involved. `summarize_written_text` is Writing-skill but
   Reading-resource-sourced.
-- [x] **Phase K17 — Listening comprehension composers** (`listening_fill_in_blanks`,
-  `listening_multiple_choice_single`/`_multi`) `Done` (2026-07-15) — same doc as above. The
-  deterministic cloze composer was extracted into a shared `BuildCloze` helper and reused from
-  `reading_fill_in_blanks`; the two AI-assisted MC types reuse the reading composers verbatim
-  (identical shape, different source text). **K17 is now complete except for**
-  `select_missing_word`/`highlight_correct_summary` (likely close AI-MC variants) and
-  `highlight_incorrect_words` (needs a new custom Form.io component for word-level text
-  selection — no existing allow-listed component supports it).
-- [ ] **Phase K16 (remainder: `phrase_match`/`reorder_paragraphs`) + K17 (remainder: 3 items above)
+- [x] **Phase K17 — Listening comprehension composers, including `select_missing_word`/
+  `highlight_correct_summary`** `Done` (2026-07-15) — same doc as above. All 6 Listening
+  comprehension types now have real composers except `highlight_incorrect_words`.
+  `select_missing_word` is notably safer than the other AI-assisted comprehension types: its
+  correct answer is deterministic (a real word picked from the transcript by the new
+  `ActivityGenerationService.PickBlankWord` helper), AI only supplies wrong-word distractors —
+  same safe shape as `multiple_choice_single`, not the "AI supplies the answer" exception.
+  **K17 is now complete except for** `highlight_incorrect_words`, which needs a new custom Form.io
+  component for word-level text selection that doesn't exist yet — out of scope for a
+  backend-only pass.
+- [ ] **Phase K16 (remainder: `phrase_match`/`reorder_paragraphs`) + K17 (`highlight_incorrect_words`)
   + K18-K19 — Exercise Type composer build-out** `Planned` (2026-07-15) — same doc as above. Builds
-  real Lesson-generation composers for the ~24 remaining catalog types that are Ready but disabled
+  real Lesson-generation composers for the ~22 remaining catalog types that are Ready but disabled
   pending their own composer, grouped by skill and generation complexity.
 
 ## Legacy database cleanup

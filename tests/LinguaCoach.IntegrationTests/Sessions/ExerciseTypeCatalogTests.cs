@@ -193,6 +193,26 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
         Assert.Contains(eligible, e => e.Key == key);
     }
 
+    [Theory]
+    [InlineData("highlight_correct_summary")]
+    [InlineData("select_missing_word")]
+    public async Task ListeningAiAssistedTypes_AreBankFirstAndGenerationEligible_PhaseK17(string key)
+    {
+        // Phase K17 — highlight_correct_summary reuses ComposeReadingMultipleChoiceSingle (same
+        // AI-supplies-the-answer exception); select_missing_word has a deterministic correct
+        // answer (PickBlankWord) with AI only supplying wrong-word distractors, same safe shape
+        // as multiple_choice_single.
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == key);
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        Assert.Equal("BankFirst", type.Category);
+        Assert.True(type.IsEnabled);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.Equal("listening", type.PrimarySkill);
+        Assert.Contains(eligible, e => e.Key == key);
+    }
+
     [Fact]
     public async Task LegacyAndPatternTypes_AreDisabledByDefault_DespiteBeingReady()
     {
@@ -209,8 +229,6 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     [Theory]
     [InlineData("reorder_paragraphs", "reading")]
     [InlineData("reading_writing_fill_in_blanks", "reading")]
-    [InlineData("select_missing_word", "listening")]
-    [InlineData("highlight_correct_summary", "listening")]
     [InlineData("highlight_incorrect_words", "listening")]
     [InlineData("write_from_dictation", "listening")]
     [InlineData("summarize_spoken_text", "listening")]

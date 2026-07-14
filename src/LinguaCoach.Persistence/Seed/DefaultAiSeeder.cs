@@ -4494,6 +4494,7 @@ Requested exercise type: {{activityType}}
 Student level: {{cefrLevel}}
 Skill: {{skill}}
 Admin notes: {{notes}}
+Missing word (only set for select_missing_word — the already-blanked word, for context): {{missingWord}}
 
 Return ONLY valid JSON (no markdown, no text outside the JSON object):
 
@@ -4554,6 +4555,20 @@ If the requested exercise type is "listening_multiple_choice_multi":
 - correctAnswersText must contain at least 2 short, distinct, unambiguous correct answers to that question, based only on what the transcript above actually says — never invent details not present in the transcript.
 - distractors must contain 2-3 short, plausible-but-clearly-INCORRECT answers to the same question, similar in length and style to the correct answers, that a careless listener might mistakenly pick — but that are definitively wrong based on the transcript above.
 - distractors must NOT be synonyms, paraphrases, or partial restatements of any entry in correctAnswersText.
+
+If the requested exercise type is "highlight_correct_summary":
+- The "Definition/description" field above is this resource's audio TRANSCRIPT, not a passage.
+- promptText must be a fixed instruction like "Which summary best matches what you heard?" — it does not need to reference specific transcript details.
+- correctAnswerText must be one short, accurate one-sentence summary of what the transcript above actually says — never invent details not present in the transcript.
+- correctAnswersText may be left as an empty array [] — it is not used for this exercise type.
+- distractors must contain exactly 3 short one-sentence summaries, similar in length and style to correctAnswerText, that sound plausible but misrepresent something specific in the transcript above (a wrong detail, a wrong reason, a wrong outcome) — a careless listener might mistakenly pick one.
+- distractors must NOT be synonyms, paraphrases, or partial restatements of correctAnswerText — each must misrepresent the transcript in a genuinely different way.
+
+If the requested exercise type is "select_missing_word":
+- The "Definition/description" field above is the transcript with ONE word already replaced by a blank marker "_____" — the removed word is given separately as "Missing word" above. Do not try to guess or re-derive it.
+- promptText and correctAnswerText and correctAnswersText may all be left empty — none of them are used for this exercise type.
+- distractors must contain exactly 3 single words or very short phrases that could plausibly fit the blank grammatically (same part of speech, similar length) but are clearly WRONG given the surrounding context — not synonyms of the missing word, not other correct-sounding alternatives.
+- Never include the missing word itself, or a synonym of it, as one of the distractors.
 
 General rules:
 - Keep language appropriate for {{cefrLevel}}.

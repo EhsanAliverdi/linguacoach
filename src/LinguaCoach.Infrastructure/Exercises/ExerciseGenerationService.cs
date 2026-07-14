@@ -109,6 +109,18 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
     public const string ActivityTypeListeningMultipleChoiceSingle = "listening_multiple_choice_single";
     public const string ActivityTypeListeningMultipleChoiceMulti = "listening_multiple_choice_multi";
 
+    /// <summary>Phase K17 — same AI-only rationale as the reading/listening MC types above: no
+    /// fact field exists to derive "the correct summary" from, so AI judges it from the
+    /// transcript. Listening resources only.</summary>
+    public const string ActivityTypeHighlightCorrectSummary = "highlight_correct_summary";
+
+    /// <summary>Phase K17 — unlike every other AI-routed comprehension type above, the correct
+    /// answer here IS deterministic: a real word picked directly from the resource's own
+    /// transcript, never AI-supplied. AI is only asked for plausible-but-wrong word distractors —
+    /// same safe shape as multiple_choice_single (Vocabulary/Grammar), not the "AI supplies the
+    /// answer" exception. Listening resources only.</summary>
+    public const string ActivityTypeSelectMissingWord = "select_missing_word";
+
     private const int MaxClozeBlanks = 4;
     private const int MinClozeWordLength = 5;
 
@@ -547,6 +559,28 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
         });
 
         return (instructions, formSchemaJson, answerKeyJson, scoringRulesJson, feedbackPlanJson);
+    }
+
+    /// <summary>Picks the first eligible content word (length &gt;= <see cref="MinClozeWordLength"/>,
+    /// alphabetic) from <paramref name="sourceText"/> and returns it alongside the source text with
+    /// that one occurrence replaced by a blank marker. Public/static so
+    /// <see cref="AiExerciseGenerationService"/> can reuse it for select_missing_word — the correct
+    /// answer there is this deterministically-picked word, never AI-supplied; AI is only asked for
+    /// wrong-word distractors, same safe shape as multiple_choice_single.</summary>
+    public static (string Word, string DisplayTextWithBlank)? PickBlankWord(string? sourceText)
+    {
+        if (string.IsNullOrWhiteSpace(sourceText)) return null;
+
+        var words = sourceText.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+        for (var i = 0; i < words.Length; i++)
+        {
+            var clean = words[i].Trim('.', ',', ';', ':', '!', '?', '"', '\'', '(', ')');
+            if (clean.Length < MinClozeWordLength || !clean.All(char.IsLetter)) continue;
+
+            var displayWords = new List<string>(words) { [i] = "_____" };
+            return (clean, string.Join(' ', displayWords));
+        }
+        return null;
     }
 
     private async Task<string?> FindFullPassageTextAsync(Guid resourceId, CancellationToken ct)
