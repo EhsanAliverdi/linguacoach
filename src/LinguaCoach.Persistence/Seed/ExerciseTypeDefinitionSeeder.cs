@@ -78,7 +78,12 @@ public static class ExerciseTypeDefinitionSeeder
         Ready(ExercisePatternKey.LessonReflection, "Lesson Reflection", "Review and reflect on the lesson.", "reflection", "[]", "Pattern", "read_only", "no_marking", "activity_generate_lesson_reflection", ActivityType.WritingScenario, ExercisePatternKey.LessonReflection, 2, false, false),
         Ready(ExercisePatternKey.ReadingMultipleChoiceSingle, "Reading Multiple Choice Single", "Choose one answer from reading.", "reading", "[]", "Pattern", "reading_multiple_choice_single", "keyed_selection", "activity_generate_reading_multiple_choice_single", ActivityType.ReadingTask, ExercisePatternKey.ReadingMultipleChoiceSingle, 5, false, false),
         Ready(ExercisePatternKey.ReadingMultipleChoiceMulti, "Reading Multiple Choice Multiple", "Choose multiple answers from reading.", "reading", "[]", "Pattern", "reading_multiple_choice_multi", "keyed_selection", "activity_generate_reading_multiple_choice_multi", ActivityType.ReadingTask, ExercisePatternKey.ReadingMultipleChoiceMulti, 5, false, false),
-        Ready(ExercisePatternKey.ReadingFillInBlanks, "Reading Fill in Blanks", "Fill blanks in a reading passage.", "reading", "[]", "Pattern", "reading_fill_in_blanks", "exact_match", "activity_generate_reading_fill_in_blanks", ActivityType.ReadingTask, ExercisePatternKey.ReadingFillInBlanks, 5, false, false),
+        // Phase K16 — reading_fill_in_blanks now has a real Lesson-generation composer
+        // (ActivityGenerationService.ComposeReadingFillInBlanksAsync), so this row moves from the
+        // disabled-by-default Pattern bucket into BankFirst/enabled, same key.
+        BankFirst(ExercisePatternKey.ReadingFillInBlanks, "Reading Fill in Blanks",
+            "Fill in numbered blanks from the resource's own excerpt/passage text. ReadingReference/ReadingPassage resources only.",
+            "reading", "[]", 3, 4, 6),
         Ready(ExercisePatternKey.ReorderParagraphs, "Reorder Paragraphs", "Put paragraphs in the correct logical order.", "reading", "[]", "Pattern", "reorder_paragraphs", "exact_match", "activity_generate_reorder_paragraphs", ActivityType.ReadingTask, ExercisePatternKey.ReorderParagraphs, 5, false, false),
 
         Ready(ExercisePatternKey.ReadAloud, "Read Aloud", "Read a short workplace text aloud as clearly and naturally as possible.", "speaking", "[\"pronunciation\", \"reading\"]", "Pattern", "read_aloud", "exact_match", "activity_generate_read_aloud", ActivityType.SpeakingRolePlay, ExercisePatternKey.ReadAloud, 5, false, false),

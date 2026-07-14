@@ -359,6 +359,83 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         reloaded.ReviewStatus.ToString().Should().Be(originalStatus);
     }
 
+    // ── Phase K16 — reading_fill_in_blanks ──────────────────────────────────────────────────
+
+    [Fact]
+    public async Task Reading_fill_in_blanks_from_passage_creates_cloze_with_numbered_blanks()
+    {
+        var source = SeedSource();
+        var passage = SeedReadingPassage(source.Id);
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("ReadingPassage", passage.Id, "Primary") },
+            RequestedActivityType: "reading_fill_in_blanks"));
+
+        result.Activity.ActivityType.Should().Be("reading_fill_in_blanks");
+        result.Activity.FormSchemaJson.Should().Contain("textfield").And.Contain("Blank 1");
+        result.Activity.FormSchemaJson.Should().NotContain("reading"); // blanked-out word must not leak into the schema
+    }
+
+    [Fact]
+    public async Task Reading_fill_in_blanks_stores_answer_key_and_text_normalized_scoring()
+    {
+        var source = SeedSource();
+        var passage = SeedReadingPassage(source.Id);
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("ReadingPassage", passage.Id, "Primary") },
+            RequestedActivityType: "reading_fill_in_blanks"));
+
+        result.Activity.AnswerKeyJson.Should().Contain("answer_0");
+        result.Activity.ScoringRulesJson.Should().Contain("text_normalized");
+        result.Activity.FeedbackPlanJson.Should().Contain("correctFeedback");
+    }
+
+    [Fact]
+    public async Task Reading_fill_in_blanks_from_reading_reference_uses_the_excerpt_text()
+    {
+        var source = SeedSource();
+        var reference = SeedReadingReference(source.Id);
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("ReadingReference", reference.Id, "Primary") },
+            RequestedActivityType: "reading_fill_in_blanks"));
+
+        result.Activity.ActivityType.Should().Be("reading_fill_in_blanks");
+        result.Activity.Links.Should().ContainSingle(l => l.ResourceType == "ReadingReference");
+    }
+
+    [Fact]
+    public async Task Reading_fill_in_blanks_rejected_when_source_text_has_too_few_content_words()
+    {
+        var source = SeedSource();
+        var e = new ResourceBankItem(
+            PublishedResourceType.ReadingReference, source.Id, "B1",
+            ResourceBankItemContent.Serialize(new ReadingReferenceContent("Note", null, "Go now.")));
+        _db.ResourceBankItems.Add(e);
+        await _db.SaveChangesAsync();
+
+        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("ReadingReference", e.Id, "Primary") },
+            RequestedActivityType: "reading_fill_in_blanks"));
+
+        await act.Should().ThrowAsync<ExerciseValidationException>();
+        (await _db.Exercises.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Reading_fill_in_blanks_not_supported_for_vocabulary()
+    {
+        var source = SeedSource();
+        var vocab = SeedVocabulary(source.Id);
+
+        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") },
+            RequestedActivityType: "reading_fill_in_blanks"));
+
+        await act.Should().ThrowAsync<ExerciseValidationException>();
+    }
+
     [Fact]
     public async Task Generate_creates_no_module_or_student_rows()
     {

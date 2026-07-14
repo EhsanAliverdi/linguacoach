@@ -146,20 +146,40 @@ active in `AiPrompts` — prompt authoring is largely done; wiring is not.
 ### Phase K16 — Deterministic extensions, Vocabulary/Grammar/Reading (low risk)
 
 Reuses the existing `ScoringRulesDocument`/`ComponentScoringRule` infra already proven by
-`gap_fill`/`multiple_choice_single`/`reorder_paragraphs` (the doc comment on
-`ActivityGenerationService` already references `reorder_paragraphs` scoring as shared
-infrastructure — check `ComponentAnswerScorer` for what's already implemented there before writing
-new scoring kinds).
+`gap_fill`/`multiple_choice_single` (confirmed: `ComponentAnswerScorer` already implements
+`single_choice`/`multiple_choice`/`text_exact`/`text_normalized`/`ordered_sequence` — no new
+scoring kinds needed for anything in this phase).
 
-- `phrase_match` — Vocabulary/Grammar. `matching_pairs` renderer, `keyed_selection` evaluator.
-  Term↔definition pairs generated the same way `gap_fill`/`multiple_choice_single` already pull
-  from the resource's own `Body` plus sibling rows for extra pairs.
-- `reading_fill_in_blanks` / `reading_writing_fill_in_blanks` — Reading (`ReadingPassage`/
-  `ReadingReference`). Deterministic cloze: blank out N content words from the excerpt,
-  `exact_match` scoring against the removed words.
-- `reorder_paragraphs` — Reading. Split excerpt into shuffled paragraph chunks; scoring
-  infrastructure already exists per the `ActivityGenerationService` doc comment — confirm and
-  reuse rather than re-deriving.
+- [x] **`reading_fill_in_blanks`** — Reading (`ReadingPassage`/`ReadingReference`) — `Done`
+  (2026-07-14). `ActivityGenerationService.ComposeReadingFillInBlanksAsync` blanks out up to 4
+  content words (length ≥5, alphabetic, deduped) from the resource's own excerpt/passage text,
+  `text_normalized` scoring per blank — same shape as `gap_fill`. For `ReadingPassage`, re-fetches
+  the full `PassageText` directly (`FindFullPassageTextAsync`) since `LessonResourceSnapshot.Body`
+  prefers the shorter `Summary` when present, which is too thin for a meaningful cloze. Rejects
+  (doesn't degrade) when fewer than 2 usable content words exist — same discipline as
+  `multiple_choice_single`'s distractor check. Catalog row converted from the disabled-by-default
+  Pattern bucket to `Category = "BankFirst"` + `IsEnabled = true`, same key
+  (`reading_fill_in_blanks`) — no duplicate catalog entry. 5 new unit tests, all passing;
+  `reading_writing_fill_in_blanks` intentionally **not** included in this slice (kept disabled) —
+  it implies a distinct read+write interaction, not just cloze, and needs its own design pass.
+- [ ] `phrase_match` — Vocabulary/Grammar. **Deferred.** No `matching_pairs` scoring kind exists in
+  `ComponentAnswerScorer` yet (only single/multiple choice, text, ordered sequence) — needs either
+  a new scoring kind or decomposing into N independent `single_choice` sub-questions (one per
+  pair). Bigger lift than the other K16 items; picking that design is the first step next time
+  this phase is picked up.
+- [ ] `reorder_paragraphs` — Reading (`ReadingPassage` only, needs multi-paragraph `PassageText`).
+  **Deferred** — not a scoring-infra gap (confirmed: `ScoringRuleKinds.OrderedSequence` /
+  `ComponentAnswerScorer.ScoreOrderedSequence` already exist and are exactly what this needs,
+  reusing the datagrid+reorder Form.io pattern documented in
+  `FormIoSchemaValidationServiceTests.DatagridWithReorder_AndValidNestedComponents_IsValid`: a
+  `datagrid` component with `reorder:true`, `disableAddingRemovingRows:true`, row template
+  `[{type:"hidden",key:"itemId"},{type:"textarea",key:"text",disabled:true}]`, scored via
+  `ComponentScoringRule.CorrectOrder`). The open question is whether the datagrid needs a
+  `defaultValue` set on the schema component itself to pre-populate the shuffled rows for display,
+  or whether the frontend Form.io renderer needs separate initial-data plumbing not yet
+  confirmed by reading code alone — this needs either a source-level trace of the generic Form.io
+  renderer or a real browser check before shipping, so it was intentionally not risked in this
+  pass.
 
 ### Phase K17 — AI-assisted structured types (reuses `AiExerciseGenerationService` pattern from K14)
 

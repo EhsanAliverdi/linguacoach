@@ -84,6 +84,23 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     }
 
     [Fact]
+    public async Task ReadingFillInBlanks_IsBankFirstAndGenerationEligible_PhaseK16()
+    {
+        // Phase K16 — reading_fill_in_blanks got a real composer
+        // (ActivityGenerationService.ComposeReadingFillInBlanksAsync) and moved from the
+        // disabled-by-default Pattern bucket into BankFirst/enabled.
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "reading_fill_in_blanks");
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        Assert.Equal("BankFirst", type.Category);
+        Assert.True(type.IsEnabled);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.Equal("reading", type.PrimarySkill);
+        Assert.Contains(eligible, e => e.Key == "reading_fill_in_blanks");
+    }
+
+    [Fact]
     public async Task LegacyAndPatternTypes_AreDisabledByDefault_DespiteBeingReady()
     {
         var service = new ExerciseTypeCatalogService(_db);
@@ -99,7 +116,6 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     [Theory]
     [InlineData("reading_multiple_choice_single", "reading")]
     [InlineData("reading_multiple_choice_multi", "reading")]
-    [InlineData("reading_fill_in_blanks", "reading")]
     [InlineData("reorder_paragraphs", "reading")]
     [InlineData("reading_writing_fill_in_blanks", "reading")]
     [InlineData("summarize_written_text", "writing")]

@@ -36,6 +36,13 @@ namespace LinguaCoach.Infrastructure.Exercises;
 /// <see cref="ComponentScoringRule.RequiresManualOrAiEvaluation"/> — reading comprehension can't be
 /// deterministically graded from thin metadata, so this is honestly left ungraded rather than
 /// faking a score.</description></item>
+/// <item><description><c>reading_fill_in_blanks</c> — ReadingReference/ReadingPassage only
+/// (Phase K16). Deterministic cloze over the resource's own excerpt/passage text — blanks out up
+/// to 4 content words (length &gt;= 5, alphabetic), deterministically scored per-blank
+/// (text_normalized), same "never AI-supplied correct answer" shape as gap_fill. Rejected when the
+/// source text doesn't have enough distinct content words to build a meaningful cloze (fewer than
+/// 2) — same "reject rather than degrade" discipline as multiple_choice_single's distractor
+/// check.</description></item>
 /// </list>
 /// <see cref="Exercise.ScoringRulesJson"/> is serialized straight from the shared
 /// <see cref="ScoringRulesDocument"/>/<see cref="ComponentScoringRule"/> types already used by
@@ -51,6 +58,10 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
     public const string ActivityTypeGapFill = "gap_fill";
     public const string ActivityTypeMultipleChoiceSingle = "multiple_choice_single";
     public const string ActivityTypeShortAnswer = "short_answer";
+    public const string ActivityTypeReadingFillInBlanks = "reading_fill_in_blanks";
+
+    private const int MaxClozeBlanks = 4;
+    private const int MinClozeWordLength = 5;
 
     private static readonly HashSet<PublishedResourceType> DefinitionalTypes = new()
     {
@@ -157,7 +168,7 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
 
         var supportedForCategory = isDefinitional
             ? new[] { ActivityTypeGapFill, ActivityTypeMultipleChoiceSingle }
-            : new[] { ActivityTypeShortAnswer };
+            : new[] { ActivityTypeShortAnswer, ActivityTypeReadingFillInBlanks };
         if (!supportedForCategory.Contains(activityType))
             throw new ExerciseValidationException(
                 $"Activity type '{activityType}' is not supported for resource type '{primary.Type}'. Supported: {string.Join(", ", supportedForCategory)}.");
@@ -167,6 +178,7 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
             ActivityTypeGapFill => ComposeGapFill(primary.Snapshot),
             ActivityTypeMultipleChoiceSingle => await ComposeMultipleChoiceSingleAsync(primary.Type, primary.Snapshot, primaryMatch.Input.ResourceId, ct),
             ActivityTypeShortAnswer => ComposeShortAnswer(primary.Snapshot),
+            ActivityTypeReadingFillInBlanks => await ComposeReadingFillInBlanksAsync(primary.Type, primary.Snapshot, primaryMatch.Input.ResourceId, ct),
             _ => throw new ExerciseValidationException($"Unsupported activity type '{activityType}'."),
         };
 
@@ -322,6 +334,80 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
         });
 
         return (instructions, formSchemaJson, answerKeyJson, scoringRulesJson, feedbackPlanJson);
+    }
+
+    /// <summary>Phase K16 — deterministic cloze over the resource's own excerpt/passage text.
+    /// ReadingPassage's <see cref="LessonResourceSnapshot.Body"/> prefers Summary over PassageText
+    /// (see <see cref="LessonResourceLookup.FindAsync"/>), which is too short for a meaningful
+    /// cloze — this re-fetches the full PassageText directly for that type. ReadingReference has
+    /// no separate summary field, so its Snapshot.Body (ReferenceExcerpt) is used as-is.</summary>
+    private async Task<(string Instructions, string FormSchemaJson, string AnswerKeyJson, string ScoringRulesJson, string FeedbackPlanJson)>
+        ComposeReadingFillInBlanksAsync(PublishedResourceType type, LessonResourceSnapshot primary, Guid resourceId, CancellationToken ct)
+    {
+        var sourceText = type == PublishedResourceType.ReadingPassage
+            ? await FindFullPassageTextAsync(resourceId, ct) ?? primary.Body
+            : primary.Body;
+
+        if (string.IsNullOrWhiteSpace(sourceText))
+            throw new ExerciseValidationException(
+                $"Resource '{primary.Title}' has no excerpt/passage text to build a cloze from — use 'short_answer' instead.");
+
+        var words = sourceText.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+        var blankIndexes = new List<int>();
+        var seenWords = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        for (var i = 0; i < words.Length && blankIndexes.Count < MaxClozeBlanks; i++)
+        {
+            var clean = words[i].Trim('.', ',', ';', ':', '!', '?', '"', '\'', '(', ')');
+            if (clean.Length < MinClozeWordLength || !clean.All(char.IsLetter)) continue;
+            if (!seenWords.Add(clean)) continue;
+            blankIndexes.Add(i);
+        }
+
+        if (blankIndexes.Count < 2)
+            throw new ExerciseValidationException(
+                $"Resource '{primary.Title}' does not have enough distinct content words to build a cloze — use 'short_answer' instead.");
+
+        var answerKey = new Dictionary<string, string>();
+        var scoringComponents = new Dictionary<string, ComponentScoringRule>();
+        var displayWords = new List<string>(words);
+        for (var b = 0; b < blankIndexes.Count; b++)
+        {
+            var idx = blankIndexes[b];
+            var clean = words[idx].Trim('.', ',', ';', ':', '!', '?', '"', '\'', '(', ')');
+            var key = $"answer_{b}";
+            answerKey[key] = clean;
+            scoringComponents[key] = new ComponentScoringRule(ScoringRuleKinds.TextNormalized, CorrectAnswer: clean, Points: 1.0);
+            displayWords[idx] = $"({b + 1}) _____";
+        }
+
+        var clozeHtml = System.Net.WebUtility.HtmlEncode(string.Join(' ', displayWords));
+        var instructions = "Read the passage below and fill in each numbered blank.";
+        var components = new List<object>
+        {
+            new { type = "content", key = "passage", html = $"<p>{clozeHtml}</p>" },
+        };
+        for (var b = 0; b < blankIndexes.Count; b++)
+            components.Add(new { type = "textfield", key = $"answer_{b}", label = $"Blank {b + 1}", input = true });
+
+        var formSchemaJson = JsonSerializer.Serialize(new { components });
+        var answerKeyJson = JsonSerializer.Serialize(answerKey);
+        var scoringRulesJson = JsonSerializer.Serialize(new ScoringRulesDocument(scoringComponents));
+        var feedbackPlanJson = JsonSerializer.Serialize(new
+        {
+            correctFeedback = "Correct!",
+            incorrectFeedback = $"The correct words were: {string.Join(", ", answerKey.Values)}.",
+        });
+
+        return (instructions, formSchemaJson, answerKeyJson, scoringRulesJson, feedbackPlanJson);
+    }
+
+    private async Task<string?> FindFullPassageTextAsync(Guid resourceId, CancellationToken ct)
+    {
+        var json = await _db.ResourceBankItems
+            .Where(e => e.Id == resourceId && e.Type == PublishedResourceType.ReadingPassage)
+            .Select(e => e.ContentJson)
+            .FirstOrDefaultAsync(ct);
+        return json is null ? null : ResourceBankItemContent.Deserialize<ReadingPassageContent>(json).PassageText;
     }
 
     private async Task<List<string>> FindDistractorDefinitionsAsync(

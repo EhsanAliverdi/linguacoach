@@ -1606,9 +1606,15 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
   picker is catalog-driven (skill match, no more hardcoded frontend type list); seeded 3
   "BankFirst" catalog rows (gap_fill, multiple_choice_single, short_answer) matching the
   composers that actually exist; the other 37 legacy/pattern catalog rows seeded disabled.
-- [ ] **Phase K16-K19 — Exercise Type composer build-out** `Planned` (2026-07-14) — same doc as
-  above. Builds real Lesson-generation composers for the ~34 catalog types that are Ready but
-  disabled pending their own composer, grouped by skill and generation complexity.
+- [x] **Phase K16 (partial) — `reading_fill_in_blanks` composer** `Done` (2026-07-14) — same doc
+  as above. Deterministic cloze composer for Reading resources, reusing `gap_fill`'s proven
+  text_normalized scoring shape; catalog row flipped from disabled-Pattern to enabled-BankFirst.
+  `phrase_match` and `reorder_paragraphs` remain deferred within K16 (see doc for why — a missing
+  scoring-kind design decision and an unverified frontend Form.io datagrid behavior, respectively).
+- [ ] **Phase K16 (remainder) + K17-K19 — Exercise Type composer build-out** `Planned` (2026-07-14)
+  — same doc as above. Builds real Lesson-generation composers for the ~33 remaining catalog types
+  that are Ready but disabled pending their own composer, grouped by skill and generation
+  complexity.
 
 ## Legacy database cleanup
 
