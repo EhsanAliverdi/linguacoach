@@ -1,6 +1,6 @@
 <sp-admin-page-header
   title="Exercise Types"
-  subtitle="Control which exercise types are available for SpeakPath lessons and Practice Gym generation." />
+  subtitle="Control which exercise types are available for Lesson-based Exercise generation." />
 
 <sp-admin-page-body>
 
@@ -70,7 +70,6 @@
               <th>Skill</th>
               <th>Status</th>
               <th>Generation</th>
-              <th>Surfaces</th>
               <th>Items M/D/M</th>
               <th>Options M/D/M</th>
               <th class="sp-admin-th-actions"></th>
@@ -132,14 +131,6 @@
                   <sp-admin-badge [tone]="type.isAvailableForGeneration ? 'success' : 'danger'">
                     {{ type.isAvailableForGeneration ? 'Available' : 'Blocked' }}
                   </sp-admin-badge>
-                </td>
-                <!-- Surfaces -->
-                <td class="sp-admin-nowrap">
-                  <div class="sp-admin-badge-row sp-admin-badge-row--nowrap">
-                    @for (s of surfaceBadges(type); track s) {
-                      <sp-admin-badge tone="neutral">{{ s }}</sp-admin-badge>
-                    }
-                  </div>
                 </td>
                 <!-- Items M/D/M -->
                 <td class="sp-admin-text-mono sp-admin-text-center sp-admin-nowrap">
@@ -209,21 +200,9 @@
       <!-- Enabled toggle -->
       <sp-admin-form-field label="Enabled">
         <sp-admin-checkbox
-          label="Available for lesson and gym generation"
+          label="Available for Lesson-based Exercise generation"
           [ngModel]="configForm().isEnabled"
           (checkedChange)="patchForm({ isEnabled: $event })" />
-      </sp-admin-form-field>
-
-      <!-- Surfaces -->
-      <sp-admin-form-field label="Surfaces" hint="Which runtime surfaces this type is eligible for">
-        <sp-admin-checkbox
-          label="Practice Gym"
-          [ngModel]="configForm().supportsPracticeGym"
-          (checkedChange)="patchForm({ supportsPracticeGym: $event })" />
-        <sp-admin-checkbox
-          label="Daily Lesson (Today)"
-          [ngModel]="configForm().supportsTodayLesson"
-          (checkedChange)="patchForm({ supportsTodayLesson: $event })" />
       </sp-admin-form-field>
 
       <!-- Items -->

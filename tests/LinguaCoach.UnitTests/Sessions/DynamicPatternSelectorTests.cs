@@ -13,16 +13,13 @@ public sealed class DynamicPatternSelectorTests
     // ── Helpers ────────────────────────────────────────────────────────────────
 
     private static PatternCatalogEntry ReadyCatalogEntry(string patternKey, string skill) =>
-        new(patternKey, skill, IsEnabled: true, IsReady: true, SupportsTodayLesson: true);
+        new(patternKey, skill, IsEnabled: true, IsReady: true);
 
     private static PatternCatalogEntry DisabledEntry(string patternKey, string skill) =>
-        new(patternKey, skill, IsEnabled: false, IsReady: true, SupportsTodayLesson: true);
+        new(patternKey, skill, IsEnabled: false, IsReady: true);
 
     private static PatternCatalogEntry PlannedEntry(string patternKey, string skill) =>
-        new(patternKey, skill, IsEnabled: true, IsReady: false, SupportsTodayLesson: true);
-
-    private static PatternCatalogEntry UnavailableForToday(string patternKey, string skill) =>
-        new(patternKey, skill, IsEnabled: true, IsReady: true, SupportsTodayLesson: false);
+        new(patternKey, skill, IsEnabled: true, IsReady: false);
 
     private static PatternSelectionInput BasicInput(
         string[] candidates,
@@ -66,25 +63,6 @@ public sealed class DynamicPatternSelectorTests
         var catalog = new List<PatternCatalogEntry>
         {
             PlannedEntry("email_reply", "writing"),
-            ReadyCatalogEntry("writing_response", "writing")
-        };
-        var input = BasicInput(
-            candidates: ["email_reply", "writing_response"],
-            slotSkill: "writing",
-            catalog: catalog);
-
-        var result = DynamicPatternSelector.Select(input);
-
-        result.SelectedPatternKey.Should().Be("writing_response");
-        result.IsFallback.Should().BeFalse();
-    }
-
-    [Fact]
-    public void UnavailableForToday_IsExcluded()
-    {
-        var catalog = new List<PatternCatalogEntry>
-        {
-            UnavailableForToday("email_reply", "writing"),
             ReadyCatalogEntry("writing_response", "writing")
         };
         var input = BasicInput(

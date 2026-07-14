@@ -318,20 +318,20 @@ public sealed class StudentReadinessAuditService : IStudentReadinessAuditService
         IReadOnlyList<ExerciseTypeRegistryEntry> types;
         try
         {
-            types = await _exerciseTypeRegistry.GetForTodayAsync(ct);
+            types = await _exerciseTypeRegistry.GetGenerationEligibleAsync(ct);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Readiness audit: GetForTodayAsync failed.");
+            _logger.LogWarning(ex, "Readiness audit: GetGenerationEligibleAsync failed.");
             types = [];
         }
 
         var exerciseTypesOk = types.Count > 0;
         checks.Add(exerciseTypesOk
             ? Check("today.exercise_types_available", "Exercise types available", category, ReadinessCheckStatus.Pass, ReadinessCheckSeverity.Blocking,
-                $"{types.Count} enabled exercise type(s) support Today lesson.", now)
+                $"{types.Count} enabled, ready exercise type(s) available for generation.", now)
             : Check("today.exercise_types_available", "Exercise types available", category, ReadinessCheckStatus.Fail, ReadinessCheckSeverity.Blocking,
-                "No enabled, ready exercise types support Today lesson — generation would fail.", now));
+                "No enabled, ready exercise types exist — generation would fail.", now));
 
         var hasActivePath = await _db.LearningPaths.AsNoTracking().AnyAsync(p => p.StudentProfileId == profile.Id, ct);
         checks.Add(hasActivePath

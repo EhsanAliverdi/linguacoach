@@ -67,8 +67,6 @@ public sealed class AdminController : ControllerBase
                 new UpdateExerciseTypeDefinitionCommand(
                     key,
                     request.IsEnabled,
-                    request.SupportsPracticeGym,
-                    request.SupportsTodayLesson,
                     request.MinItemsPerPractice,
                     request.DefaultItemsPerPractice,
                     request.MaxItemsPerPractice,
@@ -901,8 +899,6 @@ public sealed record UpdatePricingOverrideRequest(
 
 public sealed record UpdateExerciseTypeRequest(
     bool? IsEnabled,
-    bool? SupportsPracticeGym,
-    bool? SupportsTodayLesson,
     int? MinItemsPerPractice = null,
     int? DefaultItemsPerPractice = null,
     int? MaxItemsPerPractice = null,

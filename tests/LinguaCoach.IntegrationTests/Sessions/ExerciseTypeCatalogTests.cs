@@ -37,13 +37,18 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     {
         var keys = await _db.ExerciseTypeDefinitions.Select(e => e.Key).ToListAsync();
 
-        // 36 required exercise types + 1 Form.io Practice Gym pilot (ImplementationStatus="planned",
-        // inert by default — see docs/reviews/2026-07-07-ai-bank-assessment-architecture-plan.md).
-        Assert.Equal(37, keys.Count);
+        // 36 legacy/pattern exercise types + 1 Form.io Practice Gym pilot (ImplementationStatus="planned",
+        // inert by default — see docs/reviews/2026-07-07-ai-bank-assessment-architecture-plan.md) +
+        // 3 Phase K15 "BankFirst" types (gap_fill, multiple_choice_single, short_answer) that are
+        // actually wired to Lesson "Generate Exercises" today.
+        Assert.Equal(40, keys.Count);
         Assert.Contains("listening_comprehension", keys);
         Assert.Contains("writing_scenario", keys);
         Assert.Contains("write_essay", keys);
         Assert.Contains("write_from_dictation", keys);
+        Assert.Contains("gap_fill", keys);
+        Assert.Contains("multiple_choice_single", keys);
+        Assert.Contains("short_answer", keys);
     }
 
     [Theory]
@@ -64,315 +69,66 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     }
 
     [Fact]
-    public async Task FutureTypes_AreNotGenerationEligibleUntilReady()
+    public async Task BankFirstTypes_AreGenerationEligibleByDefault()
+    {
+        // Phase K15 — gap_fill/multiple_choice_single/short_answer are the only catalog entries
+        // with a real Lesson-generation composer today, so they're the only ones enabled by
+        // default. Every legacy/pattern entry below is seeded disabled until its own composer
+        // ships (see docs/sprints/exercise-type-catalog-lesson-generation-buildout-sprint.md).
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        Assert.Contains(eligible, e => e.Key == "gap_fill");
+        Assert.Contains(eligible, e => e.Key == "multiple_choice_single");
+        Assert.Contains(eligible, e => e.Key == "short_answer");
+    }
+
+    [Fact]
+    public async Task LegacyAndPatternTypes_AreDisabledByDefault_DespiteBeingReady()
     {
         var service = new ExerciseTypeCatalogService(_db);
         var eligible = await service.GetGenerationEligibleAsync();
 
-        Assert.Contains(eligible, e => e.Key == "email_reply");
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "email_reply");
+        Assert.Equal("ready", type.ImplementationStatus);
+        Assert.False(type.IsEnabled);
+        Assert.False(type.IsAvailableForGeneration);
+        Assert.DoesNotContain(eligible, e => e.Key == "email_reply");
     }
 
-    [Fact]
-    public async Task ReadingMultipleChoiceSingle_IsReadyAndEligible()
+    [Theory]
+    [InlineData("reading_multiple_choice_single", "reading")]
+    [InlineData("reading_multiple_choice_multi", "reading")]
+    [InlineData("reading_fill_in_blanks", "reading")]
+    [InlineData("reorder_paragraphs", "reading")]
+    [InlineData("reading_writing_fill_in_blanks", "reading")]
+    [InlineData("summarize_written_text", "writing")]
+    [InlineData("write_essay", "writing")]
+    [InlineData("listening_multiple_choice_single", "listening")]
+    [InlineData("listening_multiple_choice_multi", "listening")]
+    [InlineData("listening_fill_in_blanks", "listening")]
+    [InlineData("select_missing_word", "listening")]
+    [InlineData("highlight_correct_summary", "listening")]
+    [InlineData("highlight_incorrect_words", "listening")]
+    [InlineData("write_from_dictation", "listening")]
+    [InlineData("summarize_spoken_text", "listening")]
+    [InlineData("answer_short_question", "speaking")]
+    [InlineData("read_aloud", "speaking")]
+    [InlineData("repeat_sentence", "speaking")]
+    [InlineData("respond_to_situation", "speaking")]
+    [InlineData("describe_image", "speaking")]
+    [InlineData("retell_lecture", "listening")]
+    [InlineData("summarize_group_discussion", "listening")]
+    public async Task PatternTypes_AreReadyButNotEligibleUntilAdminEnables(string key, string expectedSkill)
     {
-        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "reading_multiple_choice_single");
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == key);
         var service = new ExerciseTypeCatalogService(_db);
         var eligible = await service.GetGenerationEligibleAsync();
 
         Assert.Equal("ready", type.ImplementationStatus);
-        Assert.True(type.IsAvailableForGeneration);
-        Assert.True(type.SupportsPracticeGym);
-        Assert.False(type.SupportsTodayLesson);
-        Assert.Equal("reading", type.PrimarySkill);
-        Assert.Contains(eligible, e => e.Key == "reading_multiple_choice_single");
-    }
-
-    [Fact]
-    public async Task ReadingMultipleChoiceMulti_IsReadyAndEligible()
-    {
-        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "reading_multiple_choice_multi");
-        var service = new ExerciseTypeCatalogService(_db);
-        var eligible = await service.GetGenerationEligibleAsync();
-
-        Assert.Equal("ready", type.ImplementationStatus);
-        Assert.True(type.IsAvailableForGeneration);
-        Assert.True(type.SupportsPracticeGym);
-        Assert.False(type.SupportsTodayLesson);
-        Assert.Equal("reading", type.PrimarySkill);
-        Assert.Contains(eligible, e => e.Key == "reading_multiple_choice_multi");
-    }
-
-    [Fact]
-    public async Task ReadingFillInBlanks_IsReadyAndEligible()
-    {
-        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "reading_fill_in_blanks");
-        var service = new ExerciseTypeCatalogService(_db);
-        var eligible = await service.GetGenerationEligibleAsync();
-
-        Assert.Equal("ready", type.ImplementationStatus);
-        Assert.True(type.IsAvailableForGeneration);
-        Assert.True(type.SupportsPracticeGym);
-        Assert.False(type.SupportsTodayLesson);
-        Assert.Equal("reading", type.PrimarySkill);
-        Assert.Contains(eligible, e => e.Key == "reading_fill_in_blanks");
-    }
-
-    [Fact]
-    public async Task ReorderParagraphs_IsReadyAndEligible()
-    {
-        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "reorder_paragraphs");
-        var service = new ExerciseTypeCatalogService(_db);
-        var eligible = await service.GetGenerationEligibleAsync();
-
-        Assert.Equal("ready", type.ImplementationStatus);
-        Assert.True(type.IsAvailableForGeneration);
-        Assert.True(type.SupportsPracticeGym);
-        Assert.False(type.SupportsTodayLesson);
-        Assert.Equal("reading", type.PrimarySkill);
-        Assert.Contains(eligible, e => e.Key == "reorder_paragraphs");
-    }
-
-    [Fact]
-    public async Task ReadingWritingFillInBlanks_IsReadyAndEligible()
-    {
-        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "reading_writing_fill_in_blanks");
-        var service = new ExerciseTypeCatalogService(_db);
-        var eligible = await service.GetGenerationEligibleAsync();
-
-        Assert.Equal("ready", type.ImplementationStatus);
-        Assert.True(type.IsAvailableForGeneration);
-        Assert.True(type.SupportsPracticeGym);
-        Assert.False(type.SupportsTodayLesson);
-        Assert.Equal("reading", type.PrimarySkill);
-        Assert.Contains(eligible, e => e.Key == "reading_writing_fill_in_blanks");
-    }
-
-    [Fact]
-    public async Task SummarizeWrittenText_IsReadyAndEligible()
-    {
-        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "summarize_written_text");
-        var service = new ExerciseTypeCatalogService(_db);
-        var eligible = await service.GetGenerationEligibleAsync();
-
-        Assert.Equal("ready", type.ImplementationStatus);
-        Assert.True(type.IsAvailableForGeneration);
-        Assert.True(type.SupportsPracticeGym);
-        Assert.False(type.SupportsTodayLesson);
-        Assert.Equal("writing", type.PrimarySkill);
-        Assert.Contains(eligible, e => e.Key == "summarize_written_text");
-    }
-
-    [Fact]
-    public async Task WriteEssay_IsReadyAndEligible()
-    {
-        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "write_essay");
-        var service = new ExerciseTypeCatalogService(_db);
-        var eligible = await service.GetGenerationEligibleAsync();
-
-        Assert.Equal("ready", type.ImplementationStatus);
-        Assert.True(type.IsAvailableForGeneration);
-        Assert.True(type.SupportsPracticeGym);
-        Assert.False(type.SupportsTodayLesson);
-        Assert.Equal("writing", type.PrimarySkill);
-        Assert.Contains(eligible, e => e.Key == "write_essay");
-    }
-
-    [Fact]
-    public async Task ListeningMultipleChoiceSingle_IsReadyAndEligible()
-    {
-        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "listening_multiple_choice_single");
-        var service = new ExerciseTypeCatalogService(_db);
-        var eligible = await service.GetGenerationEligibleAsync();
-
-        Assert.Equal("ready", type.ImplementationStatus);
-        Assert.True(type.IsAvailableForGeneration);
-        Assert.True(type.SupportsPracticeGym);
-        Assert.False(type.SupportsTodayLesson);
-        Assert.Equal("listening", type.PrimarySkill);
-        Assert.Contains(eligible, e => e.Key == "listening_multiple_choice_single");
-    }
-
-    [Fact]
-    public async Task ListeningMultipleChoiceMulti_IsReadyAndEligible()
-    {
-        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "listening_multiple_choice_multi");
-        var service = new ExerciseTypeCatalogService(_db);
-        var eligible = await service.GetGenerationEligibleAsync();
-
-        Assert.Equal("ready", type.ImplementationStatus);
-        Assert.True(type.IsAvailableForGeneration);
-        Assert.True(type.SupportsPracticeGym);
-        Assert.False(type.SupportsTodayLesson);
-        Assert.Equal("listening", type.PrimarySkill);
-        Assert.Contains(eligible, e => e.Key == "listening_multiple_choice_multi");
-    }
-
-    [Fact]
-    public async Task ListeningFillInBlanks_IsReadyAndEligible()
-    {
-        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "listening_fill_in_blanks");
-        var service = new ExerciseTypeCatalogService(_db);
-        var eligible = await service.GetGenerationEligibleAsync();
-
-        Assert.Equal("ready", type.ImplementationStatus);
-        Assert.True(type.IsAvailableForGeneration);
-        Assert.True(type.SupportsPracticeGym);
-        Assert.False(type.SupportsTodayLesson);
-        Assert.Equal("listening", type.PrimarySkill);
-        Assert.Contains(eligible, e => e.Key == "listening_fill_in_blanks");
-    }
-
-    [Fact]
-    public async Task SelectMissingWord_IsReadyAndEligible()
-    {
-        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "select_missing_word");
-        var service = new ExerciseTypeCatalogService(_db);
-        var eligible = await service.GetGenerationEligibleAsync();
-
-        Assert.Equal("ready", type.ImplementationStatus);
-        Assert.True(type.IsAvailableForGeneration);
-        Assert.True(type.SupportsPracticeGym);
-        Assert.False(type.SupportsTodayLesson);
-        Assert.Equal("listening", type.PrimarySkill);
-        Assert.Contains(eligible, e => e.Key == "select_missing_word");
-    }
-
-    [Fact]
-    public async Task HighlightCorrectSummary_IsReadyAndEligible()
-    {
-        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "highlight_correct_summary");
-        var service = new ExerciseTypeCatalogService(_db);
-        var eligible = await service.GetGenerationEligibleAsync();
-
-        Assert.Equal("ready", type.ImplementationStatus);
-        Assert.True(type.IsAvailableForGeneration);
-        Assert.True(type.SupportsPracticeGym);
-        Assert.False(type.SupportsTodayLesson);
-        Assert.Equal("listening", type.PrimarySkill);
-        Assert.Contains(eligible, e => e.Key == "highlight_correct_summary");
-    }
-
-    [Fact]
-    public async Task HighlightIncorrectWords_IsReadyAndEligible()
-    {
-        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "highlight_incorrect_words");
-        var service = new ExerciseTypeCatalogService(_db);
-        var eligible = await service.GetGenerationEligibleAsync();
-
-        Assert.Equal("ready", type.ImplementationStatus);
-        Assert.True(type.IsAvailableForGeneration);
-        Assert.True(type.SupportsPracticeGym);
-        Assert.False(type.SupportsTodayLesson);
-        Assert.Equal("listening", type.PrimarySkill);
-        Assert.Contains(eligible, e => e.Key == "highlight_incorrect_words");
-    }
-
-    [Fact]
-    public async Task WriteFromDictation_IsNowRunnable()
-    {
-        var service = new ExerciseTypeCatalogService(_db);
-        var eligible = await service.GetGenerationEligibleAsync();
-
-        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "write_from_dictation");
-        Assert.Equal("ready", type.ImplementationStatus);
-        Assert.True(type.IsAvailableForGeneration);
-        Assert.Contains(eligible, e => e.Key == "write_from_dictation");
-    }
-
-    [Fact]
-    public async Task SummarizeSpokenText_IsNowRunnable()
-    {
-        var service = new ExerciseTypeCatalogService(_db);
-        var eligible = await service.GetGenerationEligibleAsync();
-
-        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "summarize_spoken_text");
-        Assert.Equal("ready", type.ImplementationStatus);
-        Assert.True(type.IsAvailableForGeneration);
-        Assert.Contains(eligible, e => e.Key == "summarize_spoken_text");
-    }
-
-    [Fact]
-    public async Task AnswerShortQuestion_IsNowRunnable()
-    {
-        var service = new ExerciseTypeCatalogService(_db);
-        var eligible = await service.GetGenerationEligibleAsync();
-
-        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "answer_short_question");
-        Assert.Equal("ready", type.ImplementationStatus);
-        Assert.True(type.IsAvailableForGeneration);
-        Assert.Contains(eligible, e => e.Key == "answer_short_question");
-    }
-
-    [Fact]
-    public async Task ReadAloud_IsNowRunnable()
-    {
-        var service = new ExerciseTypeCatalogService(_db);
-        var eligible = await service.GetGenerationEligibleAsync();
-
-        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "read_aloud");
-        Assert.Equal("ready", type.ImplementationStatus);
-        Assert.True(type.IsAvailableForGeneration);
-        Assert.Contains(eligible, e => e.Key == "read_aloud");
-    }
-
-    [Fact]
-    public async Task RepeatSentence_IsNowRunnable()
-    {
-        var service = new ExerciseTypeCatalogService(_db);
-        var eligible = await service.GetGenerationEligibleAsync();
-
-        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "repeat_sentence");
-        Assert.Equal("ready", type.ImplementationStatus);
-        Assert.True(type.IsAvailableForGeneration);
-        Assert.Contains(eligible, e => e.Key == "repeat_sentence");
-    }
-
-    [Fact]
-    public async Task RespondToSituation_IsNowRunnable()
-    {
-        var service = new ExerciseTypeCatalogService(_db);
-        var eligible = await service.GetGenerationEligibleAsync();
-
-        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "respond_to_situation");
-        Assert.Equal("ready", type.ImplementationStatus);
-        Assert.True(type.IsAvailableForGeneration);
-        Assert.Contains(eligible, e => e.Key == "respond_to_situation");
-    }
-
-    [Fact]
-    public async Task DescribeImage_IsNowRunnable()
-    {
-        var service = new ExerciseTypeCatalogService(_db);
-        var eligible = await service.GetGenerationEligibleAsync();
-
-        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "describe_image");
-        Assert.Equal("ready", type.ImplementationStatus);
-        Assert.True(type.IsAvailableForGeneration);
-        Assert.Contains(eligible, e => e.Key == "describe_image");
-    }
-
-    [Fact]
-    public async Task RetellLecture_IsNowRunnable()
-    {
-        var service = new ExerciseTypeCatalogService(_db);
-        var eligible = await service.GetGenerationEligibleAsync();
-
-        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "retell_lecture");
-        Assert.Equal("ready", type.ImplementationStatus);
-        Assert.True(type.IsAvailableForGeneration);
-        Assert.Contains(eligible, e => e.Key == "retell_lecture");
-    }
-
-    [Fact]
-    public async Task SummarizeGroupDiscussion_IsNowRunnable()
-    {
-        var service = new ExerciseTypeCatalogService(_db);
-        var eligible = await service.GetGenerationEligibleAsync();
-
-        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "summarize_group_discussion");
-        Assert.Equal("ready", type.ImplementationStatus);
-        Assert.True(type.IsAvailableForGeneration);
-        Assert.Contains(eligible, e => e.Key == "summarize_group_discussion");
+        Assert.Equal(expectedSkill, type.PrimarySkill);
+        Assert.False(type.IsAvailableForGeneration);
+        Assert.DoesNotContain(eligible, e => e.Key == key);
     }
 
     [Fact]
@@ -418,18 +174,18 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     }
 
     [Fact]
-    public async Task AdminToggle_DisablesFutureGenerationWithoutDeletingActivities()
+    public async Task AdminToggle_EnablesAndDisablesGenerationWithoutDeletingActivities()
     {
         var service = new ExerciseTypeCatalogService(_db);
-        await service.UpdateAsync(new("email_reply", false, null, null));
+        await service.UpdateAsync(new("gap_fill", false));
 
-        var type = await service.GetByKeyAsync("email_reply");
+        var type = await service.GetByKeyAsync("gap_fill");
         var eligible = await service.GetGenerationEligibleAsync();
 
         Assert.NotNull(type);
         Assert.False(type!.IsEnabled);
         Assert.False(type.IsAvailableForGeneration);
-        Assert.DoesNotContain(eligible, e => e.Key == "email_reply");
+        Assert.DoesNotContain(eligible, e => e.Key == "gap_fill");
     }
 
     // ── Phase 8N: configurable practice item counts ──────────────────────────
@@ -479,7 +235,7 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     {
         var service = new ExerciseTypeCatalogService(_db);
 
-        var updated = await service.UpdateAsync(new("reading_fill_in_blanks", null, null, null,
+        var updated = await service.UpdateAsync(new("reading_fill_in_blanks", null,
             MinItemsPerPractice: 2, DefaultItemsPerPractice: 3, MaxItemsPerPractice: 5,
             MinOptionsPerItem: 2, DefaultOptionsPerItem: 3, MaxOptionsPerItem: 4));
 
@@ -494,7 +250,7 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
         var service = new ExerciseTypeCatalogService(_db);
 
         await Assert.ThrowsAnyAsync<ArgumentException>(() => service.UpdateAsync(
-            new("reading_fill_in_blanks", null, null, null,
+            new("reading_fill_in_blanks", null,
                 MinItemsPerPractice: 6, DefaultItemsPerPractice: 6, MaxItemsPerPractice: 3)));
     }
 
@@ -504,7 +260,7 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
         var service = new ExerciseTypeCatalogService(_db);
 
         await Assert.ThrowsAnyAsync<ArgumentException>(() => service.UpdateAsync(
-            new("reading_fill_in_blanks", null, null, null,
+            new("reading_fill_in_blanks", null,
                 MinItemsPerPractice: -1, DefaultItemsPerPractice: 0, MaxItemsPerPractice: 1)));
     }
 
@@ -515,7 +271,7 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
         var before = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "write_from_dictation");
         var statusBefore = before.ImplementationStatus;
 
-        var updated = await service.UpdateAsync(new("write_from_dictation", null, null, null,
+        var updated = await service.UpdateAsync(new("write_from_dictation", null,
             MinItemsPerPractice: 1, DefaultItemsPerPractice: 2, MaxItemsPerPractice: 4));
 
         Assert.Equal(statusBefore, updated.ImplementationStatus);
@@ -561,11 +317,13 @@ public sealed class ExerciseTypeRegistryTests : IDisposable
         Assert.Equal(skill, resolved!.PrimarySkill);
         Assert.Equal(pattern, resolved.ExercisePatternKey);
         Assert.Equal(legacy, resolved.LegacyActivityType?.ToString());
-        Assert.True(resolved.IsAvailableForGeneration);
+        // Phase K15 — these legacy/pattern types resolve fine but are disabled by default
+        // (no Lesson-generation composer yet); IsAvailableForGeneration is deliberately not
+        // asserted true here anymore.
     }
 
     [Fact]
-    public async Task Registry_SummarizeGroupDiscussion_IsNowEligible()
+    public async Task Registry_SummarizeGroupDiscussion_IsReadyButNotEligibleByDefault()
     {
         var registry = new LinguaCoach.Infrastructure.Activity.ExerciseTypeRegistry(_db);
 
@@ -574,90 +332,23 @@ public sealed class ExerciseTypeRegistryTests : IDisposable
 
         Assert.NotNull(def);
         Assert.Equal("ready", def!.ImplementationStatus);
-        Assert.Contains(eligible, e => e.Key == "summarize_group_discussion");
-    }
-
-    [Fact]
-    public async Task Registry_FiltersDisabledAndContextSpecificTypes()
-    {
-        var catalog = new ExerciseTypeCatalogService(_db);
-        await catalog.UpdateAsync(new("email_reply", false, null, null));
-        var registry = new LinguaCoach.Infrastructure.Activity.ExerciseTypeRegistry(_db);
-
-        var practice = await registry.GetForPracticeGymAsync();
-        var today = await registry.GetForTodayAsync();
-
-        Assert.DoesNotContain(practice, e => e.Key == "email_reply");
-        Assert.Contains(today, e => e.Key == "lesson_reflection");
-        Assert.DoesNotContain(practice, e => e.Key == "lesson_reflection");
-    }
-
-    [Theory]
-    [InlineData("listening")]
-    [InlineData("writing")]
-    public async Task Registry_SelectsPracticeGymSkill_FromReadyEligibleRows(string skill)
-    {
-        var registry = new LinguaCoach.Infrastructure.Activity.ExerciseTypeRegistry(_db);
-
-        var selected = await registry.SelectForPracticeGymSkillAsync(skill);
-
-        Assert.NotNull(selected);
-        Assert.Equal(skill, selected!.PrimarySkill);
-        Assert.True(selected.IsEnabled);
-        Assert.Equal("ready", selected.ImplementationStatus);
-        Assert.True(selected.IsAvailableForGeneration);
-        Assert.True(selected.SupportsPracticeGym);
-    }
-
-    [Fact]
-    public async Task Registry_SelectPracticeGymSkill_ExcludesDisabledPlannedAndUnsupportedRows()
-    {
-        var catalog = new ExerciseTypeCatalogService(_db);
-        await catalog.UpdateAsync(new("listen_and_answer", false, null, null));
-        await catalog.UpdateAsync(new("listen_and_gap_fill", false, null, null));
-        await catalog.UpdateAsync(new("listening_multiple_choice_single", false, null, null));
-        await catalog.UpdateAsync(new("listening_multiple_choice_multi", false, null, null));
-        await catalog.UpdateAsync(new("listening_fill_in_blanks", false, null, null));
-        await catalog.UpdateAsync(new("select_missing_word", false, null, null));
-        await catalog.UpdateAsync(new("highlight_correct_summary", false, null, null));
-        await catalog.UpdateAsync(new("highlight_incorrect_words", false, null, null));
-        await catalog.UpdateAsync(new("write_from_dictation", false, null, null));
-        await catalog.UpdateAsync(new("summarize_spoken_text", false, null, null));
-        await catalog.UpdateAsync(new("retell_lecture", false, null, null));
-        await catalog.UpdateAsync(new("summarize_group_discussion", false, null, null));
-        var registry = new LinguaCoach.Infrastructure.Activity.ExerciseTypeRegistry(_db);
-
-        var selected = await registry.SelectForPracticeGymSkillAsync("listening");
-
-        Assert.Null(selected);
-    }
-
-    [Fact]
-    public async Task Registry_SelectPracticeGymSkill_ReturnsNullForUnknownSkill()
-    {
-        var registry = new LinguaCoach.Infrastructure.Activity.ExerciseTypeRegistry(_db);
-
-        var selected = await registry.SelectForPracticeGymSkillAsync("unknown");
-
-        Assert.Null(selected);
+        Assert.DoesNotContain(eligible, e => e.Key == "summarize_group_discussion");
     }
 
     [Fact]
     public async Task Registry_ReturnsEligibleExerciseTypesForSkillOnly()
     {
-        var catalog = new ExerciseTypeCatalogService(_db);
-        await catalog.UpdateAsync(new("listen_and_answer", false, null, null));
+        // Phase K15 — only the 3 BankFirst types are enabled by default; skill filtering is
+        // exercised against those instead of the disabled-by-default legacy/pattern catalog.
         var registry = new LinguaCoach.Infrastructure.Activity.ExerciseTypeRegistry(_db);
 
-        var listening = await registry.GetEligibleExerciseTypesForSkillAsync(
-            "Listening",
-            LinguaCoach.Application.Activity.ExerciseTypeSupportContext.PracticeGym);
-        var writing = await registry.GetEligibleExerciseTypesForSkillAsync("writing");
+        var vocabulary = await registry.GetEligibleExerciseTypesForSkillAsync("vocabulary");
+        var reading = await registry.GetEligibleExerciseTypesForSkillAsync("reading");
 
-        Assert.DoesNotContain(listening, e => e.Key == "listen_and_answer");
-        Assert.Contains(listening, e => e.Key == "listen_and_gap_fill");
-        Assert.Contains(listening, e => e.Key == "summarize_spoken_text");
-        Assert.All(writing, e => Assert.Equal("writing", e.PrimarySkill));
+        Assert.Contains(vocabulary, e => e.Key == "gap_fill");
+        Assert.Contains(vocabulary, e => e.Key == "multiple_choice_single");
+        Assert.DoesNotContain(reading, e => e.Key == "gap_fill");
+        Assert.Contains(reading, e => e.Key == "short_answer");
     }
 
     [Fact]

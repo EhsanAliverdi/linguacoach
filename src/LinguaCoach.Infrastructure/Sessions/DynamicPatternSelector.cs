@@ -7,7 +7,7 @@ namespace LinguaCoach.Infrastructure.Sessions;
 /// and catalog signals. Pure logic — no DB access, no AI, no side effects.
 ///
 /// Ranking rules (highest priority first):
-/// 1. Catalog gate: only Ready + enabled + SupportsTodayLesson keys are eligible.
+/// 1. Catalog gate: only Ready + enabled keys are eligible.
 /// 2. Skill-weakness preference: prefer candidates whose primary skill matches the
 ///    weakest skill in the slot's skill group.
 /// 3. Ledger boost: +15 if pattern appears in weak/NeedsReview/Failed ledger events.
@@ -80,7 +80,7 @@ public static class DynamicPatternSelector
     private static HashSet<string> BuildApprovedKeySet(IReadOnlyList<PatternCatalogEntry> catalog)
     {
         return catalog
-            .Where(e => e.IsEnabled && e.IsReady && e.SupportsTodayLesson)
+            .Where(e => e.IsEnabled && e.IsReady)
             .Select(e => e.PatternKey)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
     }

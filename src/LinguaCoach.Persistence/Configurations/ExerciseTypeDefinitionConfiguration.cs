@@ -30,8 +30,6 @@ internal sealed class ExerciseTypeDefinitionConfiguration : IEntityTypeConfigura
         builder.Property(e => e.EstimatedDurationMinutes).HasColumnName("estimated_duration_minutes").IsRequired();
         builder.Property(e => e.RequiresAudio).HasColumnName("requires_audio").IsRequired();
         builder.Property(e => e.RequiresImage).HasColumnName("requires_image").IsRequired();
-        builder.Property(e => e.SupportsPracticeGym).HasColumnName("supports_practice_gym").IsRequired();
-        builder.Property(e => e.SupportsTodayLesson).HasColumnName("supports_today_lesson").IsRequired();
         builder.Property(e => e.MinItemsPerPractice).HasColumnName("min_items_per_practice").IsRequired().HasDefaultValue(1);
         builder.Property(e => e.DefaultItemsPerPractice).HasColumnName("default_items_per_practice").IsRequired().HasDefaultValue(1);
         builder.Property(e => e.MaxItemsPerPractice).HasColumnName("max_items_per_practice").IsRequired().HasDefaultValue(1);

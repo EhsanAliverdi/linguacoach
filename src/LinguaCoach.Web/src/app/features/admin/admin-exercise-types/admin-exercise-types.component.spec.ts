@@ -23,8 +23,6 @@ function makeType(overrides: Partial<ExerciseTypeDefinition> = {}): ExerciseType
     estimatedDurationMinutes: 5,
     requiresAudio: false,
     requiresImage: false,
-    supportsPracticeGym: true,
-    supportsTodayLesson: false,
     minItemsPerPractice: 3,
     defaultItemsPerPractice: 4,
     maxItemsPerPractice: 6,

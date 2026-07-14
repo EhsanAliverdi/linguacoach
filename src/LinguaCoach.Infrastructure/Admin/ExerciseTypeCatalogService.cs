@@ -53,7 +53,6 @@ public sealed class ExerciseTypeCatalogService : IExerciseTypeCatalogService
             ?? throw new InvalidOperationException($"Exercise type '{command.Key}' was not found.");
 
         if (command.IsEnabled.HasValue) item.SetEnabled(command.IsEnabled.Value);
-        item.UpdateSafeSurfaceFlags(command.SupportsPracticeGym, command.SupportsTodayLesson);
 
         var hasCountUpdate = command.MinItemsPerPractice.HasValue || command.DefaultItemsPerPractice.HasValue
             || command.MaxItemsPerPractice.HasValue || command.MinOptionsPerItem.HasValue
@@ -92,8 +91,6 @@ public sealed class ExerciseTypeCatalogService : IExerciseTypeCatalogService
         e.EstimatedDurationMinutes,
         e.RequiresAudio,
         e.RequiresImage,
-        e.SupportsPracticeGym,
-        e.SupportsTodayLesson,
         e.MinItemsPerPractice,
         e.DefaultItemsPerPractice,
         e.MaxItemsPerPractice,

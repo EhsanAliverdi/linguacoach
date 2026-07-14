@@ -193,8 +193,6 @@ export class AdminExerciseTypesComponent implements OnInit {
     { id: 'cancel', label: 'Cancel', variant: 'neutral', appearance: 'outline' },
   ]);
 
-  readonly surfaceOptions = ['Gym', 'Lesson', 'Audio'];
-
   constructor(private admin: AdminService) {}
 
   ngOnInit(): void { this.load(); }
@@ -250,8 +248,6 @@ export class AdminExerciseTypesComponent implements OnInit {
     this.configError.set(null);
     this.admin.updateExerciseType(type.key, {
       isEnabled:               form.isEnabled,
-      supportsPracticeGym:     form.supportsPracticeGym,
-      supportsTodayLesson:     form.supportsTodayLesson,
       minItemsPerPractice:     form.minItemsPerPractice,
       defaultItemsPerPractice: form.defaultItemsPerPractice,
       maxItemsPerPractice:     form.maxItemsPerPractice,
@@ -280,14 +276,6 @@ export class AdminExerciseTypesComponent implements OnInit {
     return null;
   }
 
-  isSurfaceSupported(surface: string): boolean {
-    const form = this.configForm() as any;
-    if (surface === 'Gym')    return !!form.supportsPracticeGym;
-    if (surface === 'Lesson') return !!form.supportsTodayLesson;
-    if (surface === 'Audio')  return !!form.requiresAudio;
-    return false;
-  }
-
   skillLabel(skill: string): string {
     return skill ? skill.charAt(0).toUpperCase() + skill.slice(1) : '';
   }
@@ -295,15 +283,6 @@ export class AdminExerciseTypesComponent implements OnInit {
   skillBg(skill: string):    string { return skillMeta(skill).bg; }
   skillColor(skill: string): string { return skillMeta(skill).color; }
   skillShort(skill: string): string { return skillMeta(skill).short; }
-
-  surfaceBadges(type: ExerciseTypeDefinition): string[] {
-    const s: string[] = [];
-    if (type.supportsPracticeGym) s.push('Gym');
-    if (type.supportsTodayLesson) s.push('Lesson');
-    if (type.requiresAudio)       s.push('Audio');
-    if (type.requiresImage)       s.push('Image');
-    return s;
-  }
 
   patchForm(patch: Partial<ExerciseTypeDefinition>): void {
     this.configForm.update(f => ({ ...f, ...patch }));

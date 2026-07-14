@@ -37,39 +37,12 @@ public sealed class ExerciseTypeRegistry : IExerciseTypeRegistry
             .OrderBy(e => e.DisplayName), ct);
     }
 
-    public async Task<IReadOnlyList<ExerciseTypeRegistryEntry>> GetForPracticeGymAsync(CancellationToken ct = default) =>
-        await ToEntriesAsync(QueryReady().Where(e => e.SupportsPracticeGym), ct);
-
-    public async Task<IReadOnlyList<ExerciseTypeRegistryEntry>> GetForTodayAsync(CancellationToken ct = default) =>
-        await ToEntriesAsync(QueryReady().Where(e => e.SupportsTodayLesson), ct);
-
     public async Task<IReadOnlyList<ExerciseTypeRegistryEntry>> GetEligibleExerciseTypesForSkillAsync(
-        string primarySkill,
-        ExerciseTypeSupportContext supportContext = ExerciseTypeSupportContext.Any,
-        CancellationToken ct = default)
+        string primarySkill, CancellationToken ct = default)
     {
         var skill = NormalizeSkill(primarySkill);
         var query = QueryReady().Where(e => e.PrimarySkill == skill);
-        query = supportContext switch
-        {
-            ExerciseTypeSupportContext.PracticeGym => query.Where(e => e.SupportsPracticeGym),
-            ExerciseTypeSupportContext.Today => query.Where(e => e.SupportsTodayLesson),
-            _ => query
-        };
         return await ToEntriesAsync(query, ct);
-    }
-
-    public async Task<ExerciseTypeRegistryEntry?> SelectForPracticeGymSkillAsync(string primarySkill, CancellationToken ct = default)
-    {
-        var eligible = await GetEligibleExerciseTypesForSkillAsync(
-            primarySkill,
-            ExerciseTypeSupportContext.PracticeGym,
-            ct);
-
-        // TODO: Replace this deterministic first-eligible strategy with adaptive
-        // selection using weak skills, recent attempts, variety, spaced repetition,
-        // admin priority, and pre-generated Today/Gym pool availability.
-        return eligible.FirstOrDefault();
     }
 
     public async Task<string?> ResolveRendererKeyAsync(string exerciseTypeKey, CancellationToken ct = default) =>
@@ -114,8 +87,6 @@ public sealed class ExerciseTypeRegistry : IExerciseTypeRegistry
         e.EstimatedDurationMinutes,
         e.RequiresAudio,
         e.RequiresImage,
-        e.SupportsPracticeGym,
-        e.SupportsTodayLesson,
         e.MinItemsPerPractice,
         e.DefaultItemsPerPractice,
         e.MaxItemsPerPractice,

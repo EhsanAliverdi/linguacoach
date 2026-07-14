@@ -18,8 +18,6 @@ public sealed record ExerciseTypeDefinitionDto(
     int EstimatedDurationMinutes,
     bool RequiresAudio,
     bool RequiresImage,
-    bool SupportsPracticeGym,
-    bool SupportsTodayLesson,
     int MinItemsPerPractice = 1,
     int DefaultItemsPerPractice = 1,
     int MaxItemsPerPractice = 1,
@@ -30,8 +28,6 @@ public sealed record ExerciseTypeDefinitionDto(
 public sealed record UpdateExerciseTypeDefinitionCommand(
     string Key,
     bool? IsEnabled,
-    bool? SupportsPracticeGym,
-    bool? SupportsTodayLesson,
     int? MinItemsPerPractice = null,
     int? DefaultItemsPerPractice = null,
     int? MaxItemsPerPractice = null,

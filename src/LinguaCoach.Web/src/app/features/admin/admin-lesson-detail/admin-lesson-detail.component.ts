@@ -6,7 +6,6 @@ import { AdminLessonService } from '../../../core/services/admin-lesson.service'
 import { AdminExerciseService } from '../../../core/services/admin-exercise.service';
 import { AdminService } from '../../../core/services/admin.service';
 import { LessonDto } from '../../../core/models/admin-lesson.models';
-import { ACTIVITY_TYPES } from '../../../core/models/admin-exercise.models';
 import { ExerciseTypeDefinition } from '../../../core/models/admin.models';
 import { DiagnosticIssue } from '../../../core/models/admin-repair.models';
 import {
@@ -202,46 +201,34 @@ export class AdminLessonDetailComponent implements OnInit {
   typeCountsLoading = signal(false);
   typeCounts = signal<ExerciseTypeCount[]>([]);
 
-  /** Phase K13 — mirrors ActivityGenerationService's DefinitionalTypes/supportedForCategory
-   *  split exactly: a Lesson generated from a Vocabulary/Grammar resource only supports
-   *  gap_fill/multiple_choice_single; one generated from a Reading resource only supports
-   *  short_answer. Offering a type here that the backend will reject makes the modal itself
-   *  lie about what "Generate" will actually do — filter it out before the admin ever sees it,
-   *  rather than let them hit a mid-batch failure (previously with silently orphaned Exercises
-   *  from types generated before the unsupported one — see K12's transaction fix). Unknown/blank
-   *  Skill falls back to showing every type, since the backend remains the real gate either way. */
-  private supportedActivityTypesForThisLesson(): readonly string[] {
-    const skill = (this.item()?.skill ?? '').trim().toLowerCase();
-    if (skill === 'vocabulary' || skill === 'grammar') return ['gap_fill', 'multiple_choice_single'];
-    if (skill === 'reading') return ['short_answer'];
-    return ACTIVITY_TYPES;
-  }
-
+  /** Phase K15 — the picker is now fully catalog-driven: an Exercise Type shows up here only if
+   *  it is Enabled in /admin/exercise-types AND its primarySkill/secondarySkills match this
+   *  Lesson's skill. No more hardcoded type lists in the frontend — flip a type on in the
+   *  catalog (once its composer ships, see the K15-K19 build-out plan) and it appears here with
+   *  zero further frontend changes. Unknown/blank Lesson skill falls back to showing every
+   *  enabled+ready type, since the backend remains the real gate either way. */
   openGenerate(): void {
     this.generateError.set('');
     this.generateModalOpen.set(true);
     this.typeCountsLoading.set(true);
-    const supported = this.supportedActivityTypesForThisLesson();
+    const skill = (this.item()?.skill ?? '').trim().toLowerCase();
     this.adminSvc.listExerciseTypes().subscribe({
       next: (types: ExerciseTypeDefinition[]) => {
         this.typeCountsLoading.set(false);
         const eligible = types.filter(t => t.isAvailableForGeneration);
-        // Only the three deterministic composer types are actually wired to "Generate Exercises"
-        // (see ActivityGenerationService) — show those, using the catalog's own DefaultItemsPerPractice
-        // as the starting suggestion (falls back to 0 — i.e. "skip this type" — if not cataloged).
-        this.typeCounts.set(ACTIVITY_TYPES.filter(t => supported.includes(t)).map(activityType => {
-          const match = eligible.find(t => t.key === activityType);
-          return {
-            activityType,
-            displayName: match?.displayName ?? activityType,
-            count: match?.defaultItemsPerPractice ?? 0,
-          };
-        }));
+        const matching = skill
+          ? eligible.filter(t => t.primarySkill?.toLowerCase() === skill
+              || (t.secondarySkills ?? []).some(s => s.toLowerCase() === skill))
+          : eligible;
+        this.typeCounts.set(matching.map(t => ({
+          activityType: t.key,
+          displayName: t.displayName,
+          count: t.defaultItemsPerPractice,
+        })));
       },
       error: () => {
         this.typeCountsLoading.set(false);
-        // Catalog fetch failed — still let the admin generate, just without pre-filled defaults.
-        this.typeCounts.set(ACTIVITY_TYPES.filter(t => supported.includes(t)).map(activityType => ({ activityType, displayName: activityType, count: 0 })));
+        this.generateError.set('Could not load Exercise Types.');
       },
     });
   }

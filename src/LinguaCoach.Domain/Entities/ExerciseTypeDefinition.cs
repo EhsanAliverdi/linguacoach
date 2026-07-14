@@ -21,8 +21,6 @@ public sealed class ExerciseTypeDefinition : BaseEntity
     public int EstimatedDurationMinutes { get; private set; }
     public bool RequiresAudio { get; private set; }
     public bool RequiresImage { get; private set; }
-    public bool SupportsPracticeGym { get; private set; }
-    public bool SupportsTodayLesson { get; private set; }
     public int MinItemsPerPractice { get; private set; }
     public int DefaultItemsPerPractice { get; private set; }
     public int MaxItemsPerPractice { get; private set; }
@@ -71,8 +69,6 @@ public sealed class ExerciseTypeDefinition : BaseEntity
         int estimatedDurationMinutes,
         bool requiresAudio,
         bool requiresImage,
-        bool supportsPracticeGym,
-        bool supportsTodayLesson,
         int minItemsPerPractice = 1,
         int defaultItemsPerPractice = 1,
         int maxItemsPerPractice = 1,
@@ -102,8 +98,6 @@ public sealed class ExerciseTypeDefinition : BaseEntity
         EstimatedDurationMinutes = estimatedDurationMinutes;
         RequiresAudio = requiresAudio;
         RequiresImage = requiresImage;
-        SupportsPracticeGym = supportsPracticeGym;
-        SupportsTodayLesson = supportsTodayLesson;
         ValidateCounts(minItemsPerPractice, defaultItemsPerPractice, maxItemsPerPractice, minOptionsPerItem, defaultOptionsPerItem, maxOptionsPerItem);
         MinItemsPerPractice = minItemsPerPractice;
         DefaultItemsPerPractice = defaultItemsPerPractice;
@@ -148,13 +142,6 @@ public sealed class ExerciseTypeDefinition : BaseEntity
     public void SetEnabled(bool isEnabled)
     {
         IsEnabled = isEnabled;
-        UpdatedAt = DateTime.UtcNow;
-    }
-
-    public void UpdateSafeSurfaceFlags(bool? supportsPracticeGym, bool? supportsTodayLesson)
-    {
-        if (supportsPracticeGym.HasValue) SupportsPracticeGym = supportsPracticeGym.Value;
-        if (supportsTodayLesson.HasValue) SupportsTodayLesson = supportsTodayLesson.Value;
         UpdatedAt = DateTime.UtcNow;
     }
 

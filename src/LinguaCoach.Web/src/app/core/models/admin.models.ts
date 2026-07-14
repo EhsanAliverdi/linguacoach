@@ -273,8 +273,6 @@ export interface ExerciseTypeDefinition {
   estimatedDurationMinutes: number;
   requiresAudio: boolean;
   requiresImage: boolean;
-  supportsPracticeGym: boolean;
-  supportsTodayLesson: boolean;
   minItemsPerPractice: number;
   defaultItemsPerPractice: number;
   maxItemsPerPractice: number;
@@ -555,8 +553,6 @@ export interface AdminTemplatePreviewResult {
 
 export interface UpdateExerciseTypeRequest {
   isEnabled?: boolean;
-  supportsPracticeGym?: boolean;
-  supportsTodayLesson?: boolean;
   minItemsPerPractice?: number;
   defaultItemsPerPractice?: number;
   maxItemsPerPractice?: number;

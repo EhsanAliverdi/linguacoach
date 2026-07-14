@@ -85,7 +85,7 @@ public sealed class StudentReadinessAuditServiceTests : IDisposable
     [Fact]
     public async Task CleanCourseReadyStudent_ReadyForPilot()
     {
-        _exerciseTypes.ForToday = [MakeExerciseType()];
+        _exerciseTypes.GenerationEligible = [MakeExerciseType()];
         var student = SeedCourseReadyStudent();
         _db.LearningPaths.Add(new LinguaCoach.Domain.Entities.LearningPath(student.Id, "Workplace English", "desc"));
         _db.SaveChanges();
@@ -126,7 +126,7 @@ public sealed class StudentReadinessAuditServiceTests : IDisposable
     [Fact]
     public async Task NoAvailableExerciseTypes_TodayLessonCheckIsBlockingFail()
     {
-        _exerciseTypes.ForToday = [];
+        _exerciseTypes.GenerationEligible = [];
         var student = SeedCourseReadyStudent();
 
         var sut = BuildSut();
@@ -141,7 +141,7 @@ public sealed class StudentReadinessAuditServiceTests : IDisposable
     [Fact]
     public async Task PracticeGymCheck_IsModuleBasedNotApplicable()
     {
-        _exerciseTypes.ForToday = [MakeExerciseType()];
+        _exerciseTypes.GenerationEligible = [MakeExerciseType()];
         var student = SeedCourseReadyStudent();
 
         var sut = BuildSut();
@@ -155,7 +155,7 @@ public sealed class StudentReadinessAuditServiceTests : IDisposable
     [Fact]
     public async Task TtsSetting_ReportsCurrentValue()
     {
-        _exerciseTypes.ForToday = [MakeExerciseType()];
+        _exerciseTypes.GenerationEligible = [MakeExerciseType()];
         var student = SeedCourseReadyStudent();
         _db.LessonGenerationSettings.Add(new LessonGenerationSettings());
         _db.SaveChanges();
@@ -170,7 +170,7 @@ public sealed class StudentReadinessAuditServiceTests : IDisposable
     [Fact]
     public async Task EmptyLedger_IsPass_NotCrash()
     {
-        _exerciseTypes.ForToday = [MakeExerciseType()];
+        _exerciseTypes.GenerationEligible = [MakeExerciseType()];
         var student = SeedCourseReadyStudent();
 
         var sut = BuildSut();
@@ -185,8 +185,7 @@ public sealed class StudentReadinessAuditServiceTests : IDisposable
         SecondarySkills: [], Category: "writing", IsEnabled: true, ImplementationStatus: "ready",
         IsAvailableForGeneration: true, RendererKey: "writing", EvaluatorKey: "writing",
         GenerationPromptKey: "writing", LegacyActivityType: ActivityType.WritingScenario,
-        ExercisePatternKey: null, EstimatedDurationMinutes: 10, RequiresAudio: false, RequiresImage: false,
-        SupportsPracticeGym: true, SupportsTodayLesson: true);
+        ExercisePatternKey: null, EstimatedDurationMinutes: 10, RequiresAudio: false, RequiresImage: false);
 
     // --- fakes ---
 
@@ -258,22 +257,16 @@ public sealed class StudentReadinessAuditServiceTests : IDisposable
 
     private sealed class FakeExerciseTypeRegistry : IExerciseTypeRegistry
     {
-        public IReadOnlyList<ExerciseTypeRegistryEntry> ForToday { get; set; } = [];
+        public IReadOnlyList<ExerciseTypeRegistryEntry> GenerationEligible { get; set; } = [];
 
         public Task<ExerciseTypeRegistryEntry?> GetByKeyAsync(string exerciseTypeKey, CancellationToken ct = default) =>
             throw new NotSupportedException();
         public Task<IReadOnlyList<ExerciseTypeRegistryEntry>> GetGenerationEligibleAsync(CancellationToken ct = default) =>
-            throw new NotSupportedException();
+            Task.FromResult(GenerationEligible);
         public Task<IReadOnlyList<ExerciseTypeRegistryEntry>> GetByPrimarySkillAsync(string primarySkill, CancellationToken ct = default) =>
             throw new NotSupportedException();
-        public Task<IReadOnlyList<ExerciseTypeRegistryEntry>> GetForPracticeGymAsync(CancellationToken ct = default) =>
-            throw new NotSupportedException();
-        public Task<IReadOnlyList<ExerciseTypeRegistryEntry>> GetForTodayAsync(CancellationToken ct = default) =>
-            Task.FromResult(ForToday);
         public Task<IReadOnlyList<ExerciseTypeRegistryEntry>> GetEligibleExerciseTypesForSkillAsync(
-            string primarySkill, ExerciseTypeSupportContext supportContext = ExerciseTypeSupportContext.Any, CancellationToken ct = default) =>
-            throw new NotSupportedException();
-        public Task<ExerciseTypeRegistryEntry?> SelectForPracticeGymSkillAsync(string primarySkill, CancellationToken ct = default) =>
+            string primarySkill, CancellationToken ct = default) =>
             throw new NotSupportedException();
         public Task<string?> ResolveRendererKeyAsync(string exerciseTypeKey, CancellationToken ct = default) =>
             throw new NotSupportedException();

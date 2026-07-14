@@ -63,7 +63,7 @@ public sealed record PatternSelectionInput(
     /// <summary>Skill this slot is primarily intended to train, e.g. "Writing".</summary>
     string SlotPrimarySkill,
 
-    /// <summary>Available catalog entries (Ready + enabled + SupportsTodayLesson).</summary>
+    /// <summary>Available catalog entries (Ready + enabled).</summary>
     IReadOnlyList<PatternCatalogEntry> AvailableCatalog,
 
     /// <summary>
@@ -78,8 +78,7 @@ public sealed record PatternCatalogEntry(
     string PatternKey,
     string PrimarySkill,
     bool IsEnabled,
-    bool IsReady,
-    bool SupportsTodayLesson);
+    bool IsReady);
 
 // ── Selector result ────────────────────────────────────────────────────────────
 

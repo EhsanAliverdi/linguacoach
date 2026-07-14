@@ -83,7 +83,7 @@ function toCard(type: ExerciseTypeDefinition): FormatCard {
     secondarySkills: type.secondarySkills ?? [],
     defaultItemCount: type.defaultItemsPerPractice ?? 0,
     estimatedMinutes: type.estimatedDurationMinutes ?? 0,
-    runnable: type.isEnabled && type.isAvailableForGeneration && type.implementationStatus === 'ready' && type.supportsPracticeGym,
+    runnable: type.isEnabled && type.isAvailableForGeneration && type.implementationStatus === 'ready',
     icon: SKILL_ICONS[type.primarySkill] ?? type.primarySkill.charAt(0).toUpperCase(),
   };
 }
@@ -126,7 +126,7 @@ export class PracticeGymComponent implements OnInit {
   });
 
   readonly runnableCount = computed(() =>
-    this._types().filter(t => t.isEnabled && t.isAvailableForGeneration && t.implementationStatus === 'ready' && t.supportsPracticeGym).length
+    this._types().filter(t => t.isEnabled && t.isAvailableForGeneration && t.implementationStatus === 'ready').length
   );
 
   readonly suggestedItems = computed(() => this.suggestions()?.suggestedItems ?? []);
@@ -149,7 +149,11 @@ export class PracticeGymComponent implements OnInit {
   ngOnInit(): void {
     this.activityService.getExerciseTypes().subscribe({
       next: items => {
-        this._types.set(items);
+        // Phase K15 — "BankFirst" catalog entries (gap_fill/multiple_choice_single/short_answer)
+        // only drive the admin Lesson "Generate Exercises" flow; this on-demand Formats grid is
+        // already inert (startFormat()'s getPracticeGymNext always reports unavailable — see
+        // Phase I2A) so BankFirst types are excluded here rather than showing a card that errors.
+        this._types.set(items.filter(t => t.category !== 'BankFirst'));
         this.loadState.set('ready');
       },
       error: () => this.loadState.set('error'),
@@ -309,8 +313,7 @@ export class PracticeGymComponent implements OnInit {
       t.primarySkill === skill &&
       t.isEnabled &&
       t.isAvailableForGeneration &&
-      t.implementationStatus === 'ready' &&
-      t.supportsPracticeGym);
+      t.implementationStatus === 'ready');
   }
 
   skillStatusText(skill: string): string {
@@ -319,7 +322,7 @@ export class PracticeGymComponent implements OnInit {
 
   isAvailable(key: string): boolean {
     const item = this._types().find(t => t.key === key);
-    return !!item && item.isEnabled && item.isAvailableForGeneration && item.implementationStatus === 'ready' && item.supportsPracticeGym;
+    return !!item && item.isEnabled && item.isAvailableForGeneration && item.implementationStatus === 'ready';
   }
 
   statusText(key: string): string {
@@ -327,7 +330,6 @@ export class PracticeGymComponent implements OnInit {
     if (!item) return 'Coming soon';
     if (!item.isEnabled) return 'Disabled';
     if (item.implementationStatus !== 'ready') return 'Coming soon';
-    if (!item.supportsPracticeGym) return 'Not in Practice Gym';
     return 'Available';
   }
 }

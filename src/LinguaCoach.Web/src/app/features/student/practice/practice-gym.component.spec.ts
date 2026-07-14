@@ -49,7 +49,7 @@ const readyListening: any = {
   key: 'listen_and_answer', displayName: 'Listen and Answer', primarySkill: 'listening', secondarySkills: [],
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'audio_and_free_text', evaluatorKey: 'ai_structured', generationPromptKey: 'activity_generate_listen_and_answer',
-  estimatedDurationMinutes: 4, requiresAudio: true, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: true,
+  estimatedDurationMinutes: 4, requiresAudio: true, requiresImage: false,
   defaultItemsPerPractice: 3, minItemsPerPractice: 2, maxItemsPerPractice: 5,
 };
 
@@ -57,7 +57,7 @@ const readyReading: any = {
   key: 'reading_multiple_choice_single', displayName: 'Reading Multiple Choice Single', primarySkill: 'reading', secondarySkills: [],
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'reading_multiple_choice_single', evaluatorKey: 'keyed_selection', generationPromptKey: 'activity_generate_reading_multiple_choice_single',
-  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false,
   defaultItemsPerPractice: 4, minItemsPerPractice: 3, maxItemsPerPractice: 6,
 };
 
@@ -65,7 +65,7 @@ const readyReadingMulti: any = {
   key: 'reading_multiple_choice_multi', displayName: 'Reading Multiple Choice Multiple', primarySkill: 'reading', secondarySkills: [],
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'reading_multiple_choice_multi', evaluatorKey: 'keyed_selection', generationPromptKey: 'activity_generate_reading_multiple_choice_multi',
-  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false,
   defaultItemsPerPractice: 4, minItemsPerPractice: 3, maxItemsPerPractice: 6,
 };
 
@@ -73,7 +73,7 @@ const readyReadingFillInBlanks: any = {
   key: 'reading_fill_in_blanks', displayName: 'Reading Fill in Blanks', primarySkill: 'reading', secondarySkills: [],
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'reading_fill_in_blanks', evaluatorKey: 'exact_match', generationPromptKey: 'activity_generate_reading_fill_in_blanks',
-  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false,
   defaultItemsPerPractice: 5, minItemsPerPractice: 3, maxItemsPerPractice: 7,
 };
 
@@ -81,7 +81,7 @@ const readyReorderParagraphs: any = {
   key: 'reorder_paragraphs', displayName: 'Reorder Paragraphs', primarySkill: 'reading', secondarySkills: [],
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'reorder_paragraphs', evaluatorKey: 'exact_match', generationPromptKey: 'activity_generate_reorder_paragraphs',
-  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false,
   defaultItemsPerPractice: 4, minItemsPerPractice: 3, maxItemsPerPractice: 6,
 };
 
@@ -89,7 +89,7 @@ const readyReadingWritingFillInBlanks: any = {
   key: 'reading_writing_fill_in_blanks', displayName: 'Reading and Writing Fill in Blanks', primarySkill: 'reading', secondarySkills: ['writing'],
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'reading_writing_fill_in_blanks', evaluatorKey: 'exact_match', generationPromptKey: 'activity_generate_reading_writing_fill_in_blanks',
-  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false,
   defaultItemsPerPractice: 5, minItemsPerPractice: 3, maxItemsPerPractice: 7,
 };
 
@@ -97,7 +97,7 @@ const readySummarizeWrittenText: any = {
   key: 'summarize_written_text', displayName: 'Summarize Written Text', primarySkill: 'writing', secondarySkills: ['reading'],
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'free_text_entry', evaluatorKey: 'ai_structured', generationPromptKey: 'activity_generate_summarize_written_text',
-  estimatedDurationMinutes: 7, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  estimatedDurationMinutes: 7, requiresAudio: false, requiresImage: false,
   defaultItemsPerPractice: 1, minItemsPerPractice: 1, maxItemsPerPractice: 1,
 };
 
@@ -105,7 +105,7 @@ const readyWriteEssay: any = {
   key: 'write_essay', displayName: 'Write Essay', primarySkill: 'writing', secondarySkills: [],
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'free_text_entry', evaluatorKey: 'ai_structured', generationPromptKey: 'activity_generate_write_essay',
-  estimatedDurationMinutes: 10, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  estimatedDurationMinutes: 10, requiresAudio: false, requiresImage: false,
   defaultItemsPerPractice: 1, minItemsPerPractice: 1, maxItemsPerPractice: 1,
 };
 
@@ -113,7 +113,7 @@ const readyListeningMultipleChoiceSingle: any = {
   key: 'listening_multiple_choice_single', displayName: 'Listening Multiple Choice Single', primarySkill: 'listening', secondarySkills: [],
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'listening_multiple_choice_single', evaluatorKey: 'keyed_selection', generationPromptKey: 'activity_generate_listening_multiple_choice_single',
-  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false,
   defaultItemsPerPractice: 4, minItemsPerPractice: 3, maxItemsPerPractice: 6,
 };
 
@@ -121,7 +121,7 @@ const readyListeningMultipleChoiceMulti: any = {
   key: 'listening_multiple_choice_multi', displayName: 'Listening Multiple Choice Multiple', primarySkill: 'listening', secondarySkills: [],
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'listening_multiple_choice_multi', evaluatorKey: 'keyed_selection', generationPromptKey: 'activity_generate_listening_multiple_choice_multi',
-  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false,
   defaultItemsPerPractice: 4, minItemsPerPractice: 3, maxItemsPerPractice: 6,
 };
 
@@ -129,7 +129,7 @@ const readyListeningFillInBlanks: any = {
   key: 'listening_fill_in_blanks', displayName: 'Listening Fill in Blanks', primarySkill: 'listening', secondarySkills: ['writing'],
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'listening_fill_in_blanks', evaluatorKey: 'exact_match', generationPromptKey: 'activity_generate_listening_fill_in_blanks',
-  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false,
   defaultItemsPerPractice: 5, minItemsPerPractice: 3, maxItemsPerPractice: 7,
 };
 
@@ -137,7 +137,7 @@ const readySelectMissingWord: any = {
   key: 'select_missing_word', displayName: 'Select Missing Word', primarySkill: 'listening', secondarySkills: [],
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'select_missing_word', evaluatorKey: 'keyed_selection', generationPromptKey: 'activity_generate_select_missing_word',
-  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false,
   defaultItemsPerPractice: 5, minItemsPerPractice: 3, maxItemsPerPractice: 7,
 };
 
@@ -145,7 +145,7 @@ const readyHighlightCorrectSummary: any = {
   key: 'highlight_correct_summary', displayName: 'Highlight Correct Summary', primarySkill: 'listening', secondarySkills: ['reading'],
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'highlight_correct_summary', evaluatorKey: 'keyed_selection', generationPromptKey: 'activity_generate_highlight_correct_summary',
-  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false,
   defaultItemsPerPractice: 3, minItemsPerPractice: 2, maxItemsPerPractice: 5,
 };
 
@@ -153,7 +153,7 @@ const readyHighlightIncorrectWords: any = {
   key: 'highlight_incorrect_words', displayName: 'Highlight Incorrect Words', primarySkill: 'listening', secondarySkills: ['reading'],
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'highlight_incorrect_words', evaluatorKey: 'keyed_selection', generationPromptKey: 'activity_generate_highlight_incorrect_words',
-  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false,
   defaultItemsPerPractice: 3, minItemsPerPractice: 2, maxItemsPerPractice: 5,
 };
 
@@ -161,7 +161,7 @@ const readyAnswerShortQuestion: any = {
   key: 'answer_short_question', displayName: 'Answer Short Question', primarySkill: 'speaking', secondarySkills: ['listening'],
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'answer_short_question', evaluatorKey: 'exact_match', generationPromptKey: 'activity_generate_answer_short_question',
-  estimatedDurationMinutes: 6, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  estimatedDurationMinutes: 6, requiresAudio: false, requiresImage: false,
   defaultItemsPerPractice: 5, minItemsPerPractice: 3, maxItemsPerPractice: 8,
 };
 
@@ -169,7 +169,7 @@ const readyReadAloud: any = {
   key: 'read_aloud', displayName: 'Read Aloud', primarySkill: 'speaking', secondarySkills: ['pronunciation', 'reading'],
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'read_aloud', evaluatorKey: 'exact_match', generationPromptKey: 'activity_generate_read_aloud',
-  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false,
   defaultItemsPerPractice: 2, minItemsPerPractice: 1, maxItemsPerPractice: 3,
 };
 
@@ -177,7 +177,7 @@ const readyRepeatSentence: any = {
   key: 'repeat_sentence', displayName: 'Repeat Sentence', primarySkill: 'speaking', secondarySkills: ['listening', 'pronunciation'],
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'repeat_sentence', evaluatorKey: 'exact_match', generationPromptKey: 'activity_generate_repeat_sentence',
-  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  estimatedDurationMinutes: 5, requiresAudio: false, requiresImage: false,
   defaultItemsPerPractice: 5, minItemsPerPractice: 3, maxItemsPerPractice: 6,
 };
 
@@ -185,7 +185,7 @@ const readyRespondToSituation: any = {
   key: 'respond_to_situation', displayName: 'Respond to Situation', primarySkill: 'speaking', secondarySkills: ['communication', 'listening'],
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'respond_to_situation', evaluatorKey: 'ai_open_ended', generationPromptKey: 'activity_generate_respond_to_situation',
-  estimatedDurationMinutes: 6, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  estimatedDurationMinutes: 6, requiresAudio: false, requiresImage: false,
   defaultItemsPerPractice: 1, minItemsPerPractice: 1, maxItemsPerPractice: 2,
 };
 
@@ -193,7 +193,7 @@ const readyDescribeImage: any = {
   key: 'describe_image', displayName: 'Describe Image', primarySkill: 'speaking', secondarySkills: ['vocabulary', 'communication'],
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'describe_image', evaluatorKey: 'ai_open_ended', generationPromptKey: 'activity_generate_describe_image',
-  estimatedDurationMinutes: 6, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  estimatedDurationMinutes: 6, requiresAudio: false, requiresImage: false,
   defaultItemsPerPractice: 1, minItemsPerPractice: 1, maxItemsPerPractice: 1,
 };
 
@@ -201,7 +201,7 @@ const readyRetellLecture: any = {
   key: 'retell_lecture', displayName: 'Retell Lecture', primarySkill: 'listening', secondarySkills: ['speaking', 'summarizing', 'communication'],
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'retell_lecture', evaluatorKey: 'ai_open_ended', generationPromptKey: 'activity_generate_retell_lecture',
-  estimatedDurationMinutes: 7, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  estimatedDurationMinutes: 7, requiresAudio: false, requiresImage: false,
   defaultItemsPerPractice: 1, minItemsPerPractice: 1, maxItemsPerPractice: 1,
 };
 
@@ -209,7 +209,7 @@ const readySummarizeGroupDiscussion: any = {
   key: 'summarize_group_discussion', displayName: 'Summarize Group Discussion', primarySkill: 'listening', secondarySkills: ['speaking', 'summarizing', 'communication'],
   category: 'Pattern', isEnabled: true, implementationStatus: 'ready', isAvailableForGeneration: true,
   rendererKey: 'summarize_group_discussion', evaluatorKey: 'ai_open_ended', generationPromptKey: 'activity_generate_summarize_group_discussion',
-  estimatedDurationMinutes: 7, requiresAudio: false, requiresImage: false, supportsPracticeGym: true, supportsTodayLesson: false,
+  estimatedDurationMinutes: 7, requiresAudio: false, requiresImage: false,
   defaultItemsPerPractice: 1, minItemsPerPractice: 1, maxItemsPerPractice: 1,
 };
 
@@ -217,7 +217,7 @@ const plannedFormat: any = {
   key: 'some_future_format', displayName: 'Some Future Format', primarySkill: 'speaking', secondarySkills: [],
   category: 'Pattern', isEnabled: false, implementationStatus: 'planned', isAvailableForGeneration: false,
   rendererKey: '', evaluatorKey: '', generationPromptKey: '',
-  estimatedDurationMinutes: 0, requiresAudio: false, requiresImage: false, supportsPracticeGym: false, supportsTodayLesson: false,
+  estimatedDurationMinutes: 0, requiresAudio: false, requiresImage: false,
   defaultItemsPerPractice: 0, minItemsPerPractice: 0, maxItemsPerPractice: 0,
 };
 
