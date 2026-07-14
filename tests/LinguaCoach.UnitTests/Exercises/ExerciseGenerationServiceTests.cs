@@ -501,6 +501,49 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         result.Activity.ActivityType.Should().Be("email_reply");
     }
 
+    // ── Phase K17 — summarize_written_text (Writing-skill, Reading-resource-sourced) ───────────
+
+    [Fact]
+    public async Task Summarize_written_text_shows_excerpt_and_requires_manual_evaluation()
+    {
+        var source = SeedSource();
+        var reference = SeedReadingReference(source.Id);
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("ReadingReference", reference.Id, "Primary") },
+            RequestedActivityType: "summarize_written_text"));
+
+        result.Activity.ActivityType.Should().Be("summarize_written_text");
+        result.Activity.FormSchemaJson.Should().Contain("A short excerpt about travel.").And.Contain("textarea");
+        result.Activity.ScoringRulesJson.Should().Contain("RequiresManualOrAiEvaluation").And.Contain("true");
+    }
+
+    [Fact]
+    public async Task Summarize_written_text_supported_for_reading_passage_too()
+    {
+        var source = SeedSource();
+        var passage = SeedReadingPassage(source.Id);
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("ReadingPassage", passage.Id, "Primary") },
+            RequestedActivityType: "summarize_written_text"));
+
+        result.Activity.ActivityType.Should().Be("summarize_written_text");
+    }
+
+    [Fact]
+    public async Task Summarize_written_text_not_supported_for_writing_resource()
+    {
+        var source = SeedSource();
+        var writing = SeedWritingPrompt(source.Id);
+
+        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Writing", writing.Id, "Primary") },
+            RequestedActivityType: "summarize_written_text"));
+
+        await act.Should().ThrowAsync<ExerciseValidationException>();
+    }
+
     [Fact]
     public async Task Gap_fill_not_supported_for_writing_resource()
     {

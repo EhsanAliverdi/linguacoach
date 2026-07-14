@@ -155,6 +155,24 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     }
 
     [Fact]
+    public async Task SummarizeWrittenText_IsBankFirstAndGenerationEligible_PhaseK17()
+    {
+        // Phase K17 — summarize_written_text got a real composer
+        // (ActivityGenerationService.ComposeSummarizeWrittenText) and moved from the
+        // disabled-by-default Pattern bucket into BankFirst/enabled. Writing-skill but
+        // Reading-resource-sourced, so secondarySkills still carries "reading".
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "summarize_written_text");
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        Assert.Equal("BankFirst", type.Category);
+        Assert.True(type.IsEnabled);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.Equal("writing", type.PrimarySkill);
+        Assert.Contains(eligible, e => e.Key == "summarize_written_text");
+    }
+
+    [Fact]
     public async Task LegacyAndPatternTypes_AreDisabledByDefault_DespiteBeingReady()
     {
         var service = new ExerciseTypeCatalogService(_db);
@@ -170,7 +188,6 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     [Theory]
     [InlineData("reorder_paragraphs", "reading")]
     [InlineData("reading_writing_fill_in_blanks", "reading")]
-    [InlineData("summarize_written_text", "writing")]
     [InlineData("listening_multiple_choice_single", "listening")]
     [InlineData("listening_multiple_choice_multi", "listening")]
     [InlineData("listening_fill_in_blanks", "listening")]

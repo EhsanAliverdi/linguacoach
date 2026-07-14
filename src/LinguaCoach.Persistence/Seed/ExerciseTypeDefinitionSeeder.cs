@@ -120,8 +120,13 @@ public static class ExerciseTypeDefinitionSeeder
         Ready(ExercisePatternKey.SummarizeGroupDiscussion, "Summarize Group Discussion", "Listen to or read a short multi-speaker discussion and summarize the main points, speaker views, agreements, and outcomes.", "listening", "[\"speaking\", \"summarizing\", \"communication\"]", "Pattern", "summarize_group_discussion", "ai_open_ended", "activity_generate_summarize_group_discussion", ActivityType.SpeakingRolePlay, ExercisePatternKey.SummarizeGroupDiscussion, 7, false, false),
         // summarize_group_discussion promoted to Ready above
         Ready(ExercisePatternKey.AnswerShortQuestion, "Answer Short Question", "Listen to short questions and speak your answers clearly.", "speaking", "[\"listening\"]", "Pattern", "answer_short_question", "exact_match", "activity_generate_answer_short_question", ActivityType.SpeakingRolePlay, ExercisePatternKey.AnswerShortQuestion, 6, false, false),
-        Ready(ExercisePatternKey.SummarizeWrittenText, "Summarize Written Text", "Read a passage and write a concise summary in your own words.", "writing", "[\"reading\"]", "Pattern", "free_text_entry", "ai_structured", "activity_generate_summarize_written_text", ActivityType.WritingScenario, ExercisePatternKey.SummarizeWrittenText, 7, false, false),
-        // summarize_written_text promoted to Ready above
+        // Phase K17 — summarize_written_text now has a real Lesson-generation composer
+        // (ActivityGenerationService.ComposeSummarizeWrittenText), so this row moves from the
+        // disabled-by-default Pattern bucket into BankFirst/enabled, same key. Writing-skill but
+        // Reading-resource-sourced (see ExerciseGenerationService's doc comment).
+        BankFirst(ExercisePatternKey.SummarizeWrittenText, "Summarize Written Text",
+            "Open-ended summary task over the resource's own excerpt/passage text. Requires manual or AI evaluation. ReadingReference/ReadingPassage resources only.",
+            "writing", "[\"reading\"]", 1, 1, 1),
         // Phase K17 — write_essay now has a real Lesson-generation composer, same
         // BankFirst/enabled conversion as email_reply/open_writing_task above, same key.
         BankFirst(ExercisePatternKey.WriteEssay, "Write Essay",

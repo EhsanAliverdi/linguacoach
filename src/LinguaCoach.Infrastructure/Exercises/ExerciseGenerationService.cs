@@ -47,6 +47,9 @@ namespace LinguaCoach.Infrastructure.Exercises;
 /// resources only (Phase K17). Shows the resource's own PromptText verbatim as the task, honestly
 /// marked <see cref="ComponentScoringRule.RequiresManualOrAiEvaluation"/> — same open-ended shape as
 /// short_answer, just sourced from a Writing resource instead of a Reading one.</description></item>
+/// <item><description><c>summarize_written_text</c> — ReadingReference/ReadingPassage only (Phase
+/// K17). Writing-skill but Reading-resource-sourced — same shape as short_answer, asks for a
+/// summary instead of an answer to a specific question.</description></item>
 /// </list>
 /// <see cref="Exercise.ScoringRulesJson"/> is serialized straight from the shared
 /// <see cref="ScoringRulesDocument"/>/<see cref="ComponentScoringRule"/> types already used by
@@ -85,6 +88,12 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
     public const string ActivityTypeEmailReply = "email_reply";
     public const string ActivityTypeOpenWritingTask = "open_writing_task";
     public const string ActivityTypeWriteEssay = "write_essay";
+
+    /// <summary>Phase K17 — Writing-skill but Reading-resource-sourced (ReadingReference/
+    /// ReadingPassage), unlike the 3 constants above which are Writing-resource-sourced. Same
+    /// deterministic, unscored shape as short_answer — asks for a summary instead of an answer to
+    /// a specific question.</summary>
+    public const string ActivityTypeSummarizeWrittenText = "summarize_written_text";
 
     private const int MaxClozeBlanks = 4;
     private const int MinClozeWordLength = 5;
@@ -190,7 +199,7 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
             PublishedResourceType.Vocabulary or PublishedResourceType.Grammar =>
                 new[] { ActivityTypeGapFill, ActivityTypeMultipleChoiceSingle },
             PublishedResourceType.ReadingReference or PublishedResourceType.ReadingPassage =>
-                new[] { ActivityTypeShortAnswer, ActivityTypeReadingFillInBlanks },
+                new[] { ActivityTypeShortAnswer, ActivityTypeReadingFillInBlanks, ActivityTypeSummarizeWrittenText },
             PublishedResourceType.Writing =>
                 new[] { ActivityTypeEmailReply, ActivityTypeOpenWritingTask, ActivityTypeWriteEssay },
             _ => Array.Empty<string>(),
@@ -210,6 +219,7 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
             ActivityTypeMultipleChoiceSingle => await ComposeMultipleChoiceSingleAsync(primary.Type, primary.Snapshot, primaryMatch.Input.ResourceId, ct),
             ActivityTypeShortAnswer => ComposeShortAnswer(primary.Snapshot),
             ActivityTypeReadingFillInBlanks => await ComposeReadingFillInBlanksAsync(primary.Type, primary.Snapshot, primaryMatch.Input.ResourceId, ct),
+            ActivityTypeSummarizeWrittenText => ComposeSummarizeWrittenText(primary.Snapshot),
             ActivityTypeEmailReply => ComposeWritingPrompt(primary.Snapshot,
                 "Read the scenario below and write your email reply.", "Your email reply"),
             ActivityTypeOpenWritingTask => ComposeWritingPrompt(primary.Snapshot,
@@ -358,6 +368,37 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
             {
                 new { type = "content", key = "passage", html = $"<p>{System.Net.WebUtility.HtmlEncode(excerpt)}</p>" },
                 new { type = "textarea", key = "answer", label = $"What is \"{primary.Title}\" mainly about?", input = true },
+            }
+        });
+        var answerKeyJson = JsonSerializer.Serialize(new Dictionary<string, string?> { ["answer"] = null });
+        var scoringRulesJson = JsonSerializer.Serialize(new ScoringRulesDocument(
+            new Dictionary<string, ComponentScoringRule> { ["answer"] = new(ScoringRuleKinds.TextNormalized, RequiresManualOrAiEvaluation: true) }));
+        var feedbackPlanJson = JsonSerializer.Serialize(new
+        {
+            correctFeedback = (string?)null,
+            incorrectFeedback = (string?)null,
+            note = "Open-ended — requires manual or AI evaluation, not deterministically scored.",
+        });
+
+        return (instructions, formSchemaJson, answerKeyJson, scoringRulesJson, feedbackPlanJson);
+    }
+
+    /// <summary>Phase K17 — Writing-skill but Reading-resource-sourced. Same shape as
+    /// ComposeShortAnswer (excerpt shown, open-ended textarea, honestly unscored), different
+    /// framing: asks for a summary rather than an answer to a specific comprehension
+    /// question.</summary>
+    private static (string Instructions, string FormSchemaJson, string AnswerKeyJson, string ScoringRulesJson, string FeedbackPlanJson)
+        ComposeSummarizeWrittenText(LessonResourceSnapshot primary)
+    {
+        var excerpt = !string.IsNullOrWhiteSpace(primary.Body) ? primary.Body!.Trim() : "(no excerpt available)";
+
+        var instructions = "Read the passage below and write a concise summary in your own words.";
+        var formSchemaJson = JsonSerializer.Serialize(new
+        {
+            components = new object[]
+            {
+                new { type = "content", key = "passage", html = $"<p>{System.Net.WebUtility.HtmlEncode(excerpt)}</p>" },
+                new { type = "textarea", key = "answer", label = "Your summary", input = true },
             }
         });
         var answerKeyJson = JsonSerializer.Serialize(new Dictionary<string, string?> { ["answer"] = null });

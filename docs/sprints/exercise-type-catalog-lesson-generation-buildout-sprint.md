@@ -233,11 +233,18 @@ item below in this phase, not just the first one implemented.
   resource-type switch, since Writing needed its own supported-type bucket distinct from Reading's.
   3 catalog rows converted from disabled-Pattern to `BankFirst`/enabled. 8 new unit tests (5
   composer + 3 `LessonResourceLookup`), all passing.
-- [ ] `summarize_written_text` — Writing skill, but sourced from a **Reading** resource
-  (`ReadingReference`/`ReadingPassage`) per its own description ("read a passage and write a
-  summary") — deliberately not bundled with the 3 above since it needs the Reading-category branch
-  extended instead of the Writing one. Same open-ended, unscored shape otherwise — should be a
-  quick follow-up.
+- [x] **`summarize_written_text`** — Writing skill, sourced from a **Reading** resource
+  (`ReadingReference`/`ReadingPassage`) — `Done` (2026-07-14).
+  `ActivityGenerationService.ComposeSummarizeWrittenText` — same shape as `short_answer` (excerpt
+  shown, open-ended textarea, honestly unscored), added to the Reading resource-type bucket rather
+  than the Writing one since generation must be rejected for a Writing-resource Lesson (backend
+  validates the actual resource type, not just the catalog's declared skill). Catalog row converted
+  from disabled-Pattern to `BankFirst`/enabled, same key — `PrimarySkill = "writing"`,
+  `SecondarySkills = ["reading"]` unchanged, so it surfaces in the Lesson picker for both
+  Writing-skill and Reading-skill Lessons (the backend is the real gate on which resource type it
+  actually works with). 3 new unit tests, all passing. **This completes K17's Writing section** —
+  all 4 originally-scoped Writing types (`email_reply`, `open_writing_task`, `write_essay`,
+  `summarize_written_text`) now have real composers.
 
 **K17 implementation notes:**
 - On the existing dev database, the `reading_multiple_choice_single` catalog row's `IsEnabled`
