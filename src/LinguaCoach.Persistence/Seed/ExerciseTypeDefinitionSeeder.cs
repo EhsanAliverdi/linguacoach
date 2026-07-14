@@ -81,7 +81,12 @@ public static class ExerciseTypeDefinitionSeeder
         BankFirst(ExercisePatternKey.EmailReply, "Email Reply",
             "Open-ended email reply task, shown from the resource's own prompt text verbatim. Requires manual or AI evaluation. Writing resources only.",
             "writing", "[]", 1, 1, 1),
-        Ready(ExercisePatternKey.TeamsChatSimulation, "Teams Chat Simulation", "Write a concise workplace chat response.", "writing", "[]", "Pattern", "chat_reply", "ai_structured", "activity_generate_teams_chat_simulation", ActivityType.WritingScenario, ExercisePatternKey.TeamsChatSimulation, 5, false, false),
+        // Phase K20 — teams_chat_simulation now has a real Lesson-generation composer, reused
+        // from ComposeWritingPrompt (simplified to single-turn — no multi-turn chat UI exists in
+        // this codebase). Same key, moves to BankFirst/enabled.
+        BankFirst(ExercisePatternKey.TeamsChatSimulation, "Teams Chat Simulation",
+            "Write a concise professional reply to the resource's own chat message. Simplified to single-turn (no multi-turn chat UI exists). Requires manual or AI evaluation. Writing resources only.",
+            "writing", "[]", 1, 1, 1),
         // Phase K18 — spoken_response_from_prompt now has a real Lesson-generation composer
         // (ActivityGenerationService.ComposeSpeakingPrompt), same key, moves to BankFirst/enabled.
         BankFirst(ExercisePatternKey.SpokenResponseFromPrompt, "Spoken Response From Prompt",

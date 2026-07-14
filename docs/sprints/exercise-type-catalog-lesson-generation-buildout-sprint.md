@@ -351,20 +351,50 @@ deterministic, `RequiresManualOrAiEvaluation = true` — rather than scope-creep
   `single_choice`. Needs ≥3 distinct content words. New `ComposeReadingWritingFillInBlanksAsync`
   composer. Catalog row converted from disabled-Pattern to `BankFirst`/enabled. 3 new unit tests,
   all passing. **24 of 40 catalog types enabled — 60% of the full catalog.**
-- [ ] `teams_chat_simulation` — Writing, multi-turn `chat_reply` renderer — needs its own design
-  pass for what a Resource-Bank-sourced multi-turn scenario looks like; not a simple single-prompt
-  composer like the others. Deferred.
 - **Note:** `listen_and_answer` / `listen_and_gap_fill` / `gap_fill_workplace_phrase` (old Pattern
   Engine keys) were checked and confirmed functionally redundant with the new `gap_fill`/
   `listening_fill_in_blanks`/`listening_multiple_choice_single` BankFirst types — intentionally
   left disabled rather than building parallel duplicate composers.
 
-### Phase K19 — Decisions needed before touching
+### Phase K19 — `lesson_reflection` (2026-07-15, done)
 
-- `lesson_reflection` (`reflection` skill, `no_marking` evaluator) — doesn't map to any of the 7
-  `PublishedResourceType`s; a reflection prompt would be generated from the *Lesson's own* Body,
-  not a Resource Bank row. Different generation entry point than everything else here — needs a
-  product decision on whether it belongs in this pipeline at all. **Still open.**
+`lesson_reflection` (`reflection` skill, `no_marking` evaluator) doesn't map to any
+`PublishedResourceType` — it's generated from the *Lesson's own* Body, not a Resource Bank row.
+Resolved by special-casing `ActivityTypeLessonReflection` at the top of
+`HandleAsync(GenerateActivityFromLessonRequest ...)`, before the "must have linked resources"
+check, so it never needs a `LessonResourceLink`. New `ComposeAndSaveLessonReflectionAsync` builds
+the `Exercise` directly from `lesson.Body`/`lesson.Title`, `Skill="Reflection"`, zero
+`ExerciseResourceLink`s. No defensive "is Body empty" guard — `Lesson`'s own constructor
+(`ValidateAuthorableFields`) already guarantees a non-whitespace `Body`, so that state can't occur
+(a test asserting the guard was written, found to test an impossible domain state, and removed).
+Catalog row converted to `BankFirst`/enabled. Lesson picker's `openGenerate()` filter updated so
+`lesson_reflection` always appears regardless of skill filter (it isn't skill-gated like every
+other type).
+
+### Phase K20 — `describe_image` + `teams_chat_simulation` (2026-07-15, done)
+
+- `describe_image` (Speaking) — needed image support without building file-upload
+  infrastructure. Solved by adding a plain `ImageUrl` string field to `SpeakingPromptContent`
+  (admin pastes a URL), threaded through `UpdateResourceBankItemCommand`,
+  `ResourceBankItemEditDto`, `ResourceBankItemUpdateHandler`, `ResourceBankQueryService`,
+  `AdminResourceBankController`, and a new "Image URL" field on the Speaking case of the
+  Resource Bank edit page. New `ComposeDescribeImageAsync` rejects (does not degrade) when the
+  resource has no `ImageUrl` set: `"Resource '{title}' has no image set — add one on the Resource
+  Bank edit page, or use a different Exercise type."` Otherwise builds a `content`-type HTML `<img>`
+  component plus a `speakingResponse` component.
+- `teams_chat_simulation` (Writing) — original ambition was a multi-turn `chat_reply` scenario, but
+  no multi-turn Form.io component exists anywhere in the codebase (`chat_reply` was never
+  allow-listed). Deliberately simplified to single-turn: reuses `ComposeWritingPrompt` unchanged
+  ("Read the chat message below and write a concise, professional reply."), same as
+  `email_reply`/`open_writing_task`/`write_essay`. Documented as a deliberate simplification, not a
+  silent under-delivery.
+
+Both catalog rows converted `Ready` → `BankFirst`/enabled. Full test suite green after each
+change (Unit 2255, Integration 1322, Architecture 5 — all passing). **29 of 40 catalog types
+(72.5%) now enabled by default.**
+
+### Phase K21 — Decisions needed before touching
+
 - `formio_practice_gym_pilot` (`ImplementationStatus = planned`, `Pilot` category) — confirm
   whether this pilot is still active work or should be dropped from the catalog. **Still open.**
 - The 4 `Legacy`-category catalog entries (`listening_comprehension`, `speaking_roleplay`,
@@ -372,6 +402,13 @@ deterministic, `RequiresManualOrAiEvaluation = true` — rather than scope-creep
   map cleanly to any of the 7 `PublishedResourceType`s. Currently disabled (correct default), but
   whether to delete outright vs. leave as permanently-disabled catalog entries is still an open
   product call — no urgency, they're inert either way. **Still open.**
+- `write_from_dictation` / `repeat_sentence` — need real audio-serving/recording infrastructure
+  that doesn't exist yet; investigated, nothing to build a composer on top of without first
+  building that infrastructure. Building a text-only fake would misrepresent the exercise
+  ("reject rather than degrade"). **Still open, needs a scoping decision.**
+- `highlight_incorrect_words` — needs a new custom Form.io Angular component; no existing
+  component supports click-to-highlight-word scoring. Significant frontend work, unverifiable
+  without a browser session. **Still open.**
 
 ## Decisions made this pass
 
@@ -407,40 +444,39 @@ deterministic, `RequiresManualOrAiEvaluation = true` — rather than scope-creep
 
 ## Implementation tasks produced
 
-Tracked as Phase K15 through K19 above. **K15 through K18 substantially executed** (2026-07-14 to
-2026-07-15, same continuous work session) — 24 of 40 catalog types now have real Lesson-generation
-composers and are enabled by default; every other type is either intentionally superseded
-(3 old Pattern Engine duplicates), intentionally inert (`formio_practice_gym_pilot`), or blocked
-on something outside "write a composer" (new scoring kind, new Form.io component, data-model
-change, new backend plumbing, multi-turn design, or a K19 product decision).
+Tracked as Phase K15 through K21 above. **K15 through K20 executed** (2026-07-14 to 2026-07-15,
+same continuous work session) — 29 of 40 catalog types now have real Lesson-generation composers
+and are enabled by default; every other type is either intentionally superseded (3 old Pattern
+Engine duplicates), intentionally inert (`formio_practice_gym_pilot`), or blocked on something
+outside "write a composer" (new scoring kind, new Form.io component, real audio infrastructure, or
+a K21 product decision on the 4 Legacy entries).
 
 ## Final verdict
 
 **The bank-first pipeline (Import → Resource Bank → Lesson → Exercise → Module) is functionally
-complete for all 7 `PublishedResourceType`s, and K15-K16 are fully done.** 26 of 40 catalog types
-(65%) are enabled by default, every resource type
+complete for all 7 `PublishedResourceType`s, plus the Lesson-Body-sourced `lesson_reflection`
+type.** 29 of 40 catalog types (72.5%) are enabled by default, every resource type
 (Vocabulary/Grammar/ReadingReference/ReadingPassage/Writing/Listening/Speaking) has multiple real,
 tested, deployed Exercise composers a Lesson can generate from, and the Lesson picker (K15.4)
-surfaces exactly what's enabled with zero hardcoding. The remaining 14 disabled catalog entries
+surfaces exactly what's enabled with zero hardcoding. The remaining 11 disabled catalog entries
 are not "not started" — each has a specific, documented reason it isn't buildable as a plain
-composer right now (see the unchecked items in K17-K19 above, plus the 3 confirmed-redundant
-legacy Pattern Engine keys). None of them block the core admin workflow: Import Content →
-Resource Bank → generate Lesson → generate Exercise(s) → combine into Module → review → approve.
+composer right now (see K21 above, plus the 3 confirmed-redundant legacy Pattern Engine keys).
+None of them block the core admin workflow: Import Content → Resource Bank → generate Lesson →
+generate Exercise(s) → combine into Module → review → approve.
 
 ## Next recommended action
 
 The composer build-out has reached its natural stopping point without new external input — every
 remaining item needs one of: (a) frontend Form.io verification in a real browser
 (`reorder_paragraphs`'s `defaultValue` pre-population is a real, stated, unconfirmed assumption —
-and more broadly, confirming the `speakingResponse`/`selectboxes`/`datagrid` renderers actually
-work end-to-end for everything built in K16-K18, since this session's verification was build+test
-only, never a live browser check), (b) a new custom Form.io component
-(`highlight_incorrect_words`), (c) resource content-model changes for image/audio fields
-(`describe_image`, `repeat_sentence`), (d) new backend audio-serving plumbing
-(`write_from_dictation`), (e) a multi-turn scenario design (`teams_chat_simulation`), or (f) product
-decisions on `lesson_reflection`/the pilot entry/the 4 Legacy entries (K19). **Recommend the user
-now manually test the live admin UI** — generate at least one Exercise of each of the 26 enabled
-types from a real Lesson, since automated tests cover backend logic/schema shape but not actual
-Form.io rendering/submission in the browser. `reorder_paragraphs` and the K18 speaking types are
+and more broadly, confirming the `speakingResponse`/`selectboxes`/`datagrid`/`content`(image)
+renderers actually work end-to-end for everything built in K16-K20, since this session's
+verification was build+test only, never a live browser check), (b) a new custom Form.io component
+(`highlight_incorrect_words`), (c) real audio-serving/recording infrastructure
+(`write_from_dictation`, `repeat_sentence`), or (d) product decisions on the pilot entry/the 4
+Legacy entries (K21). **Recommend the user now manually test the live admin UI** — generate at
+least one Exercise of each of the 29 enabled types from a real Lesson, since automated tests cover
+backend logic/schema shape but not actual Form.io rendering/submission in the browser.
+`reorder_paragraphs`, the K18 speaking types, and `describe_image`'s image `<img>` rendering are
 the highest-value ones to check first, since they're the least similar to the original, already
 browser-tested `gap_fill`/`multiple_choice_single` shape.

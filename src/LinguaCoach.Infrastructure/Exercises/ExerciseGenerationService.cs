@@ -115,6 +115,17 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
     public const string ActivityTypeOpenWritingTask = "open_writing_task";
     public const string ActivityTypeWriteEssay = "write_essay";
 
+    /// <summary>Phase K20 — same Writing-resource, deterministic, unscored shape as
+    /// email_reply/open_writing_task/write_essay, reusing ComposeWritingPrompt unchanged.
+    /// Deliberately simplified from the catalog's original "multi-turn chat" ambition
+    /// (RendererKey historically "chat_reply") to a single-turn written reply: no multi-turn
+    /// Form.io component exists in this codebase ("chat_reply" was never an allow-listed
+    /// component type — confirmed zero implementation existed anywhere), and building one is a
+    /// genuinely separate UI feature, not a composer. A single realistic chat message shown, one
+    /// written reply — honestly labeled as simplified rather than silently passed off as the
+    /// original multi-turn design.</summary>
+    public const string ActivityTypeTeamsChatSimulation = "teams_chat_simulation";
+
     /// <summary>Phase K17 — Writing-skill but Reading-resource-sourced (ReadingReference/
     /// ReadingPassage), unlike the 3 constants above which are Writing-resource-sourced. Same
     /// deterministic, unscored shape as short_answer — asks for a summary instead of an answer to
@@ -387,7 +398,7 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
                     ActivityTypeSummarizeWrittenText, ActivityTypeReorderParagraphs,
                 },
             PublishedResourceType.Writing =>
-                new[] { ActivityTypeEmailReply, ActivityTypeOpenWritingTask, ActivityTypeWriteEssay },
+                new[] { ActivityTypeEmailReply, ActivityTypeOpenWritingTask, ActivityTypeWriteEssay, ActivityTypeTeamsChatSimulation },
             PublishedResourceType.Listening =>
                 new[]
                 {
@@ -433,6 +444,8 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
                 "Complete the writing task below.", "Your response"),
             ActivityTypeWriteEssay => ComposeWritingPrompt(primary.Snapshot,
                 "Read the essay prompt below and write a structured response.", "Your essay"),
+            ActivityTypeTeamsChatSimulation => ComposeWritingPrompt(primary.Snapshot,
+                "Read the chat message below and write a concise, professional reply.", "Your reply"),
             ActivityTypeListeningFillInBlanks => ComposeListeningFillInBlanks(primary.Snapshot),
             ActivityTypeSpokenResponseFromPrompt => ComposeSpeakingPrompt(primary.Snapshot,
                 "Respond aloud to the prompt below."),

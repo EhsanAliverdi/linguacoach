@@ -343,16 +343,32 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     }
 
     [Fact]
+    public async Task TeamsChatSimulation_IsBankFirstAndGenerationEligible_PhaseK20()
+    {
+        // Phase K20 — teams_chat_simulation got a real composer (reuses ComposeWritingPrompt,
+        // simplified to single-turn) and moved from disabled-Pattern to BankFirst/enabled.
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "teams_chat_simulation");
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        Assert.Equal("BankFirst", type.Category);
+        Assert.True(type.IsEnabled);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.Equal("writing", type.PrimarySkill);
+        Assert.Contains(eligible, e => e.Key == "teams_chat_simulation");
+    }
+
+    [Fact]
     public async Task LegacyAndPatternTypes_AreDisabledByDefault_DespiteBeingReady()
     {
         var service = new ExerciseTypeCatalogService(_db);
         var eligible = await service.GetGenerationEligibleAsync();
 
-        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "teams_chat_simulation");
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "repeat_sentence");
         Assert.Equal("ready", type.ImplementationStatus);
         Assert.False(type.IsEnabled);
         Assert.False(type.IsAvailableForGeneration);
-        Assert.DoesNotContain(eligible, e => e.Key == "teams_chat_simulation");
+        Assert.DoesNotContain(eligible, e => e.Key == "repeat_sentence");
     }
 
     [Theory]
@@ -545,7 +561,6 @@ public sealed class ExerciseTypeRegistryTests : IDisposable
     [Theory]
     [InlineData("writing_scenario", "writing", null, "WritingScenario")]
     [InlineData("LISTENING COMPREHENSION", "listening", null, "ListeningComprehension")]
-    [InlineData("teams_chat_simulation", "writing", "teams_chat_simulation", "WritingScenario")]
     public async Task Registry_Resolves_ReadyTypes(string key, string skill, string? pattern, string legacy)
     {
         var registry = new LinguaCoach.Infrastructure.Activity.ExerciseTypeRegistry(_db);

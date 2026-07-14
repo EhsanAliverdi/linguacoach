@@ -1670,13 +1670,24 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
   pre-populate shuffled rows — **this one specific assumption (defaultValue pre-population) is
   not confirmed in a real browser, flagged explicitly.** **26 of 40 catalog types enabled (65%) —
   K16 fully done.**
-- [ ] **K17 (`highlight_incorrect_words`) / K18 (`describe_image`/`repeat_sentence`/
-  `write_from_dictation`/`teams_chat_simulation`) / K19 remainder** `Planned` — same doc as above,
-  each item individually scoped with its specific blocker documented (new custom component,
-  data-model change, new backend plumbing, multi-turn design, or product decision); pick up
-  whichever gets unblocked first. **Recommend manual browser testing of the 26 enabled types
-  before further backend work** — no automated test in this session ever rendered a Form.io
-  schema live.
+- [x] **Phase K19 — `lesson_reflection`** `Done` (2026-07-15) — same doc as above. Sourced from
+  the Lesson's own Body, not a Resource Bank row; special-cased at the top of the Lesson-generation
+  entry point so it bypasses the resource-linking requirement entirely and isn't skill-gated in the
+  picker. No defensive "empty Body" guard needed — `Lesson`'s own constructor already guarantees
+  non-whitespace Body.
+- [x] **Phase K20 — `describe_image` + `teams_chat_simulation`** `Done` (2026-07-15) — same doc as
+  above. `describe_image`: added a plain `ImageUrl` string field to `SpeakingPromptContent`
+  (admin-pasted URL, no upload infra) threaded through the full command/DTO/handler/controller/UI
+  stack; composer rejects (doesn't degrade) when no image is set. `teams_chat_simulation`:
+  deliberately simplified from an original multi-turn chat design to single-turn (no multi-turn
+  Form.io component exists), reuses `ComposeWritingPrompt` unchanged, documented as a deliberate
+  simplification. **29 of 40 catalog types enabled — 72.5% of the full catalog.**
+- [ ] **K21 (`highlight_incorrect_words` / `write_from_dictation` / `repeat_sentence` / pilot entry
+  / 4 Legacy entries)** `Planned` — same doc as above, each item individually scoped with its
+  specific blocker documented (new custom component, real audio infrastructure, or product
+  decision); pick up whichever gets unblocked first. **Recommend manual browser testing of the 29
+  enabled types before further backend work** — no automated test in this session ever rendered a
+  Form.io schema live.
 
 ## Legacy database cleanup
 

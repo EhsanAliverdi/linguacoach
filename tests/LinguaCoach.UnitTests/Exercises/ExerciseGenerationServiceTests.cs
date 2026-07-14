@@ -681,6 +681,21 @@ public sealed class ActivityGenerationServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Teams_chat_simulation_is_supported_for_writing_resources()
+    {
+        var source = SeedSource();
+        var writing = SeedWritingPrompt(source.Id, "Hey, can you send me the report by EOD?");
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Writing", writing.Id, "Primary") },
+            RequestedActivityType: "teams_chat_simulation"));
+
+        result.Activity.ActivityType.Should().Be("teams_chat_simulation");
+        result.Activity.FormSchemaJson.Should().Contain("Hey, can you send me the report by EOD?").And.Contain("textarea");
+        result.Activity.ScoringRulesJson.Should().Contain("RequiresManualOrAiEvaluation").And.Contain("true");
+    }
+
+    [Fact]
     public async Task Open_writing_task_is_supported_for_writing_resources()
     {
         var source = SeedSource();
