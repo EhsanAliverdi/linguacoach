@@ -212,12 +212,30 @@ item below in this phase, not just the first one implemented.
   `correctAnswersText` entries (a "select all" question with only 1 correct answer isn't really
   multi) and 1-3 usable distractors after filtering. Catalog row converted from disabled-Pattern to
   `BankFirst`/enabled, same key. 3 new unit tests, all passing.
-- [ ] `listening_fill_in_blanks` / `listening_multiple_choice_single` / `listening_multiple_choice_multi`
-  / `select_missing_word` / `highlight_incorrect_words` / `highlight_correct_summary` — same
-  pattern, sourced from the `Listening` resource type's transcript field instead of a
-  `ReadingPassage` excerpt. Confirm `Listening` resource content model has a transcript field
-  suitable as source text (referenced in the K12/K14 summary as already used for
-  Listening-resource Lessons) before starting.
+- [x] **`listening_fill_in_blanks`** — Listening resources — `Done` (2026-07-14).
+  `ActivityGenerationService.ComposeListeningFillInBlanks` — the deterministic cloze algorithm
+  from `reading_fill_in_blanks` was extracted into a shared `BuildCloze` helper and reused verbatim
+  here; Listening's `Snapshot.Body` already carries the transcript directly (no
+  Summary-vs-full-text divergence like `ReadingPassage`, so no DB re-fetch needed). A Listening
+  resource published without a transcript (audio-only) is valid data — rejects rather than
+  degrading, same discipline as everywhere else.
+- [x] **`listening_multiple_choice_single` / `listening_multiple_choice_multi`** — Listening
+  resources — `Done` (2026-07-14). Reuse the exact same `AiExerciseGenerationService` compose
+  methods as their reading counterparts (`ComposeReadingMultipleChoiceSingle`/`Multi`) — identical
+  shape (radio/selectboxes + single_choice/multiple_choice scoring), only the source text
+  (transcript vs excerpt) differs. `AiExerciseGenerationService`'s category logic refactored from
+  binary `isDefinitional` to a resource-type switch (same refactor `ActivityGenerationService` got
+  in the Writing section below), since Listening has no deterministic equivalent at all — only
+  these two AI-assisted types. `exercise_generate_from_resources` prompt extended with
+  `listening_multiple_choice_single`/`_multi` rule blocks (near-identical wording to the reading
+  ones, "transcript" instead of "excerpt/passage").
+- [ ] `select_missing_word` / `highlight_incorrect_words` / `highlight_correct_summary` — still
+  open. `select_missing_word` and `highlight_correct_summary` are likely close variants of the AI
+  MC pattern above (single-choice, framed differently). `highlight_incorrect_words` is
+  structurally different — it needs word-level selection within displayed text, which has no
+  existing Form.io component in the allow-list (`textfield`/`textarea`/`radio`/`selectboxes`/
+  `content`/`datagrid`/etc.) — would need a new custom component, out of scope for a backend-only
+  pass. **This completes K17 except for these 3 items.**
 - [x] **`email_reply` / `open_writing_task` / `write_essay`** — Writing resources — `Done`
   (2026-07-14). `ActivityGenerationService.ComposeWritingPrompt` — open-ended, honestly marked
   `RequiresManualOrAiEvaluation = true` exactly like `short_answer`, shows the Writing resource's
@@ -256,6 +274,11 @@ item below in this phase, not just the first one implemented.
   (rather than a new file) since every other activity-type constant and the AI composer's
   `supportedForCategory` checks already reference `ActivityGenerationService.ActivityType*`
   uniformly; splitting would fragment that single source of truth for activity-type strings.
+- Every new BankFirst catalog row hits the same one-time `IsEnabled` flip issue on this
+  already-seeded dev database (13 rows total by the end of K17) — always check
+  `SELECT key, is_enabled FROM exercise_type_definitions WHERE category='BankFirst'` after a
+  redeploy that adds new BankFirst rows, and flip any still `f` with a direct `UPDATE`. A fresh
+  database seeds correctly on first run; this is purely a reseed-preserves-admin-edits artifact.
 
 ### Phase K18 — Speaking + audio-dependent types (needs existing speaking/audio pipeline)
 

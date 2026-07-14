@@ -172,6 +172,27 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
         Assert.Contains(eligible, e => e.Key == "summarize_written_text");
     }
 
+    [Theory]
+    [InlineData("listening_fill_in_blanks")]
+    [InlineData("listening_multiple_choice_single")]
+    [InlineData("listening_multiple_choice_multi")]
+    public async Task ListeningComposerTypes_AreBankFirstAndGenerationEligible_PhaseK17(string key)
+    {
+        // Phase K17 — the 3 Listening comprehension types with real composers
+        // (ActivityGenerationService.ComposeListeningFillInBlanks, deterministic; and the two
+        // AI-assisted MC types reusing the reading composers) moved from disabled-Pattern to
+        // BankFirst/enabled.
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == key);
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        Assert.Equal("BankFirst", type.Category);
+        Assert.True(type.IsEnabled);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.Equal("listening", type.PrimarySkill);
+        Assert.Contains(eligible, e => e.Key == key);
+    }
+
     [Fact]
     public async Task LegacyAndPatternTypes_AreDisabledByDefault_DespiteBeingReady()
     {
@@ -188,9 +209,6 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     [Theory]
     [InlineData("reorder_paragraphs", "reading")]
     [InlineData("reading_writing_fill_in_blanks", "reading")]
-    [InlineData("listening_multiple_choice_single", "listening")]
-    [InlineData("listening_multiple_choice_multi", "listening")]
-    [InlineData("listening_fill_in_blanks", "listening")]
     [InlineData("select_missing_word", "listening")]
     [InlineData("highlight_correct_summary", "listening")]
     [InlineData("highlight_incorrect_words", "listening")]

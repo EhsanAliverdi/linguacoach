@@ -1625,12 +1625,18 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
   composers too. All 4 Writing composers are deterministic and unscored (same shape as
   `short_answer`), no AI-trust question involved. `summarize_written_text` is Writing-skill but
   Reading-resource-sourced.
-- [ ] **Phase K16 (remainder) + K17 (Listening remainder) + K18-K19 — Exercise Type composer
-  build-out** `Planned` (2026-07-14) — same doc as above. Builds real Lesson-generation composers
-  for the ~27 remaining catalog types that are Ready but disabled pending their own composer,
-  grouped by skill and generation complexity. K17's only remaining item is the 6 Listening
-  comprehension types (`listening_fill_in_blanks` etc.) — same AI-supplies-the-answer reasoning as
-  the reading comprehension types, needs `Listening` resource content (transcript) as source.
+- [x] **Phase K17 — Listening comprehension composers** (`listening_fill_in_blanks`,
+  `listening_multiple_choice_single`/`_multi`) `Done` (2026-07-15) — same doc as above. The
+  deterministic cloze composer was extracted into a shared `BuildCloze` helper and reused from
+  `reading_fill_in_blanks`; the two AI-assisted MC types reuse the reading composers verbatim
+  (identical shape, different source text). **K17 is now complete except for**
+  `select_missing_word`/`highlight_correct_summary` (likely close AI-MC variants) and
+  `highlight_incorrect_words` (needs a new custom Form.io component for word-level text
+  selection — no existing allow-listed component supports it).
+- [ ] **Phase K16 (remainder: `phrase_match`/`reorder_paragraphs`) + K17 (remainder: 3 items above)
+  + K18-K19 — Exercise Type composer build-out** `Planned` (2026-07-15) — same doc as above. Builds
+  real Lesson-generation composers for the ~24 remaining catalog types that are Ready but disabled
+  pending their own composer, grouped by skill and generation complexity.
 
 ## Legacy database cleanup
 

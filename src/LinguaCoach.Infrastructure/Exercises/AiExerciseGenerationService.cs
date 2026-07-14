@@ -43,11 +43,6 @@ public sealed class AiExerciseGenerationService : IGenerateActivityFromResources
     private const int MaxDistractors = 3;
     private const string BlankMarker = "___";
 
-    private static readonly HashSet<PublishedResourceType> DefinitionalTypes = new()
-    {
-        PublishedResourceType.Vocabulary, PublishedResourceType.Grammar
-    };
-
     private readonly LinguaCoachDbContext _db;
     private readonly IFormIoSchemaValidationService _schemaValidator;
     private readonly IAiContextBuilder _contextBuilder;
@@ -99,18 +94,34 @@ public sealed class AiExerciseGenerationService : IGenerateActivityFromResources
         var primaryMatch = resolved.FirstOrDefault(r => r.Role == LessonResourceRole.Primary);
         var primary = primaryMatch.Snapshot is not null ? primaryMatch : resolved[0];
 
-        var isDefinitional = DefinitionalTypes.Contains(primary.Type);
-        var activityType = request.RequestedActivityType?.Trim().ToLowerInvariant()
-            ?? (isDefinitional ? ActivityGenerationService.ActivityTypeGapFill : ActivityGenerationService.ActivityTypeShortAnswer);
+        // Phase K17 — was a binary isDefinitional (Vocab/Grammar) vs everything-else split; now
+        // resource-type-driven since Listening needed its own supported-type bucket (no
+        // deterministic short_answer equivalent — Listening comprehension has no deterministic
+        // path at all, only these AI-assisted MC types).
+        var supportedForCategory = primary.Type switch
+        {
+            PublishedResourceType.Vocabulary or PublishedResourceType.Grammar =>
+                new[] { ActivityGenerationService.ActivityTypeGapFill, ActivityGenerationService.ActivityTypeMultipleChoiceSingle },
+            PublishedResourceType.ReadingReference or PublishedResourceType.ReadingPassage =>
+                new[]
+                {
+                    ActivityGenerationService.ActivityTypeShortAnswer,
+                    ActivityGenerationService.ActivityTypeReadingMultipleChoiceSingle,
+                    ActivityGenerationService.ActivityTypeReadingMultipleChoiceMulti,
+                },
+            PublishedResourceType.Listening =>
+                new[]
+                {
+                    ActivityGenerationService.ActivityTypeListeningMultipleChoiceSingle,
+                    ActivityGenerationService.ActivityTypeListeningMultipleChoiceMulti,
+                },
+            _ => Array.Empty<string>(),
+        };
+        if (supportedForCategory.Length == 0)
+            throw new ExerciseValidationException(
+                $"No AI-assisted Exercise types are supported for resource type '{primary.Type}' yet.");
 
-        var supportedForCategory = isDefinitional
-            ? new[] { ActivityGenerationService.ActivityTypeGapFill, ActivityGenerationService.ActivityTypeMultipleChoiceSingle }
-            : new[]
-            {
-                ActivityGenerationService.ActivityTypeShortAnswer,
-                ActivityGenerationService.ActivityTypeReadingMultipleChoiceSingle,
-                ActivityGenerationService.ActivityTypeReadingMultipleChoiceMulti,
-            };
+        var activityType = request.RequestedActivityType?.Trim().ToLowerInvariant() ?? supportedForCategory[0];
         if (!supportedForCategory.Contains(activityType))
             throw new ExerciseValidationException(
                 $"Activity type '{activityType}' is not supported for resource type '{primary.Type}'. Supported: {string.Join(", ", supportedForCategory)}.");
@@ -123,6 +134,11 @@ public sealed class AiExerciseGenerationService : IGenerateActivityFromResources
             && string.IsNullOrWhiteSpace(primary.Snapshot.Body))
             throw new ExerciseValidationException(
                 $"Resource '{primary.Snapshot.Title}' has no excerpt/passage text to build a comprehension question from — use 'short_answer' instead.");
+        if ((activityType == ActivityGenerationService.ActivityTypeListeningMultipleChoiceSingle
+                || activityType == ActivityGenerationService.ActivityTypeListeningMultipleChoiceMulti)
+            && string.IsNullOrWhiteSpace(primary.Snapshot.Body))
+            throw new ExerciseValidationException(
+                $"Resource '{primary.Snapshot.Title}' has no transcript to build a comprehension question from.");
 
         var variables = new Dictionary<string, string>
         {
@@ -191,6 +207,12 @@ public sealed class AiExerciseGenerationService : IGenerateActivityFromResources
             ActivityGenerationService.ActivityTypeShortAnswer => ComposeShortAnswer(primary.Snapshot, parsed.PromptText!),
             ActivityGenerationService.ActivityTypeReadingMultipleChoiceSingle => ComposeReadingMultipleChoiceSingle(parsed.PromptText!, parsed.CorrectAnswerText!, parsed.Distractors),
             ActivityGenerationService.ActivityTypeReadingMultipleChoiceMulti => ComposeReadingMultipleChoiceMulti(parsed.PromptText!, parsed.CorrectAnswersText!, parsed.Distractors),
+            // Phase K17 — listening_multiple_choice_single/multi reuse the exact same composers as
+            // their reading counterparts (identical shape: radio/selectboxes + single_choice/
+            // multiple_choice scoring); only the source text (transcript vs excerpt) differs, and
+            // that's already handled upstream by resourceDefinition/the prompt template.
+            ActivityGenerationService.ActivityTypeListeningMultipleChoiceSingle => ComposeReadingMultipleChoiceSingle(parsed.PromptText!, parsed.CorrectAnswerText!, parsed.Distractors),
+            ActivityGenerationService.ActivityTypeListeningMultipleChoiceMulti => ComposeReadingMultipleChoiceMulti(parsed.PromptText!, parsed.CorrectAnswersText!, parsed.Distractors),
             _ => throw new ExerciseValidationException($"Unsupported activity type '{activityType}'."),
         };
 
@@ -527,7 +549,8 @@ public sealed class AiExerciseGenerationService : IGenerateActivityFromResources
                 return new AiExerciseOutput(promptText, filtered);
             }
 
-            if (activityType == ActivityGenerationService.ActivityTypeReadingMultipleChoiceSingle)
+            if (activityType == ActivityGenerationService.ActivityTypeReadingMultipleChoiceSingle
+                || activityType == ActivityGenerationService.ActivityTypeListeningMultipleChoiceSingle)
             {
                 if (string.IsNullOrWhiteSpace(promptText))
                 {
@@ -552,7 +575,8 @@ public sealed class AiExerciseGenerationService : IGenerateActivityFromResources
                 return new AiExerciseOutput(promptText.Trim(), filtered, correctAnswerText);
             }
 
-            if (activityType == ActivityGenerationService.ActivityTypeReadingMultipleChoiceMulti)
+            if (activityType == ActivityGenerationService.ActivityTypeReadingMultipleChoiceMulti
+                || activityType == ActivityGenerationService.ActivityTypeListeningMultipleChoiceMulti)
             {
                 if (string.IsNullOrWhiteSpace(promptText))
                 {

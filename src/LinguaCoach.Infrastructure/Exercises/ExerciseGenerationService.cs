@@ -50,6 +50,9 @@ namespace LinguaCoach.Infrastructure.Exercises;
 /// <item><description><c>summarize_written_text</c> — ReadingReference/ReadingPassage only (Phase
 /// K17). Writing-skill but Reading-resource-sourced — same shape as short_answer, asks for a
 /// summary instead of an answer to a specific question.</description></item>
+/// <item><description><c>listening_fill_in_blanks</c> — Listening resources only (Phase K17).
+/// Same shared cloze algorithm as reading_fill_in_blanks, sourced from the resource's own
+/// transcript.</description></item>
 /// </list>
 /// <see cref="Exercise.ScoringRulesJson"/> is serialized straight from the shared
 /// <see cref="ScoringRulesDocument"/>/<see cref="ComponentScoringRule"/> types already used by
@@ -94,6 +97,17 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
     /// deterministic, unscored shape as short_answer — asks for a summary instead of an answer to
     /// a specific question.</summary>
     public const string ActivityTypeSummarizeWrittenText = "summarize_written_text";
+
+    /// <summary>Phase K17 — deterministic, Listening resources only. Same shared cloze algorithm
+    /// as <see cref="ActivityTypeReadingFillInBlanks"/>, sourced from the resource's own
+    /// transcript.</summary>
+    public const string ActivityTypeListeningFillInBlanks = "listening_fill_in_blanks";
+
+    /// <summary>Phase K17 — same AI-only rationale as
+    /// <see cref="ActivityTypeReadingMultipleChoiceSingle"/>/<see cref="ActivityTypeReadingMultipleChoiceMulti"/>,
+    /// sourced from a Listening resource's transcript instead of a Reading excerpt/passage.</summary>
+    public const string ActivityTypeListeningMultipleChoiceSingle = "listening_multiple_choice_single";
+    public const string ActivityTypeListeningMultipleChoiceMulti = "listening_multiple_choice_multi";
 
     private const int MaxClozeBlanks = 4;
     private const int MinClozeWordLength = 5;
@@ -202,6 +216,8 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
                 new[] { ActivityTypeShortAnswer, ActivityTypeReadingFillInBlanks, ActivityTypeSummarizeWrittenText },
             PublishedResourceType.Writing =>
                 new[] { ActivityTypeEmailReply, ActivityTypeOpenWritingTask, ActivityTypeWriteEssay },
+            PublishedResourceType.Listening =>
+                new[] { ActivityTypeListeningFillInBlanks },
             _ => Array.Empty<string>(),
         };
         if (supportedForCategory.Length == 0)
@@ -226,6 +242,7 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
                 "Complete the writing task below.", "Your response"),
             ActivityTypeWriteEssay => ComposeWritingPrompt(primary.Snapshot,
                 "Read the essay prompt below and write a structured response.", "Your essay"),
+            ActivityTypeListeningFillInBlanks => ComposeListeningFillInBlanks(primary.Snapshot),
             _ => throw new ExerciseValidationException($"Unsupported activity type '{activityType}'."),
         };
 
@@ -457,9 +474,32 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
             ? await FindFullPassageTextAsync(resourceId, ct) ?? primary.Body
             : primary.Body;
 
+        return BuildCloze(sourceText, primary.Title,
+            "Read the passage below and fill in each numbered blank.", "use 'short_answer' instead");
+    }
+
+    /// <summary>Phase K17 — same deterministic cloze algorithm as
+    /// <see cref="ComposeReadingFillInBlanksAsync"/>, sourced from a Listening resource's own
+    /// transcript instead of a Reading excerpt/passage. Unlike ReadingPassage, Listening has no
+    /// Summary-vs-full-text divergence — <see cref="LessonResourceSnapshot.Body"/> already carries
+    /// the transcript verbatim (see <see cref="LessonResourceLookup.FindAsync"/>) — so no
+    /// re-fetch is needed. A Listening resource published without a transcript (audio-only) is
+    /// valid data, so this rejects rather than degrading, same discipline as everywhere else.</summary>
+    private static (string Instructions, string FormSchemaJson, string AnswerKeyJson, string ScoringRulesJson, string FeedbackPlanJson)
+        ComposeListeningFillInBlanks(LessonResourceSnapshot primary) =>
+        BuildCloze(primary.Body, primary.Title,
+            "Read the transcript below and fill in each numbered blank.", "publish a transcript, or use a different Exercise type");
+
+    /// <summary>Shared deterministic cloze-building core: blanks out up to
+    /// <see cref="MaxClozeBlanks"/> distinct content words (length &gt;= <see cref="MinClozeWordLength"/>,
+    /// alphabetic) from <paramref name="sourceText"/>, text_normalized scoring per blank. Rejects
+    /// rather than degrades when fewer than 2 usable content words exist.</summary>
+    private static (string Instructions, string FormSchemaJson, string AnswerKeyJson, string ScoringRulesJson, string FeedbackPlanJson)
+        BuildCloze(string? sourceText, string resourceTitle, string instructions, string rejectionHint)
+    {
         if (string.IsNullOrWhiteSpace(sourceText))
             throw new ExerciseValidationException(
-                $"Resource '{primary.Title}' has no excerpt/passage text to build a cloze from — use 'short_answer' instead.");
+                $"Resource '{resourceTitle}' has no source text to build a cloze from — {rejectionHint}.");
 
         var words = sourceText.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
         var blankIndexes = new List<int>();
@@ -474,7 +514,7 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
 
         if (blankIndexes.Count < 2)
             throw new ExerciseValidationException(
-                $"Resource '{primary.Title}' does not have enough distinct content words to build a cloze — use 'short_answer' instead.");
+                $"Resource '{resourceTitle}' does not have enough distinct content words to build a cloze — {rejectionHint}.");
 
         var answerKey = new Dictionary<string, string>();
         var scoringComponents = new Dictionary<string, ComponentScoringRule>();
@@ -490,7 +530,6 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
         }
 
         var clozeHtml = System.Net.WebUtility.HtmlEncode(string.Join(' ', displayWords));
-        var instructions = "Read the passage below and fill in each numbered blank.";
         var components = new List<object>
         {
             new { type = "content", key = "passage", html = $"<p>{clozeHtml}</p>" },

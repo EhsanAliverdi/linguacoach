@@ -346,6 +346,83 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
         _provider.CallCount.Should().Be(0);
     }
 
+    // ── listening_multiple_choice_single/multi (Phase K17) ──────────────────────
+    // Reuse the exact same compose methods as their reading counterparts — only the source text
+    // (transcript vs excerpt) differs, same "AI supplies the correct answer(s)" exception.
+
+    private ResourceBankItem SeedListeningPassage(Guid sourceId, string? transcript = "The meeting has been moved to Friday due to a scheduling conflict.")
+    {
+        var e = new ResourceBankItem(
+            PublishedResourceType.Listening, sourceId, "B1",
+            ResourceBankItemContent.Serialize(new ListeningPassageContent("Office Announcement", transcript, "storage/key.mp3", "audio/mpeg", null)));
+        _db.ResourceBankItems.Add(e);
+        _db.SaveChanges();
+        return e;
+    }
+
+    [Fact]
+    public async Task Listening_multiple_choice_single_valid_response_stores_ai_supplied_correct_answer()
+    {
+        var source = SeedSource();
+        var listening = SeedListeningPassage(source.Id);
+        _provider.NextResponses.Enqueue(
+            """{"promptText": "Why was the meeting moved?", "correctAnswerText": "A scheduling conflict", "distractors": ["Bad weather", "Room unavailable", "Low attendance"]}""");
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Listening", listening.Id, "Primary") },
+            RequestedActivityType: "listening_multiple_choice_single"));
+
+        result.Activity.ActivityType.Should().Be("listening_multiple_choice_single");
+        result.Activity.FormSchemaJson.Should().Contain("radio").And.Contain("A scheduling conflict");
+        result.Activity.AnswerKeyJson.Should().Contain("A scheduling conflict");
+    }
+
+    [Fact]
+    public async Task Listening_multiple_choice_single_resource_with_no_transcript_throws_before_any_ai_call()
+    {
+        var source = SeedSource();
+        var listening = SeedListeningPassage(source.Id, transcript: null);
+
+        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Listening", listening.Id, "Primary") },
+            RequestedActivityType: "listening_multiple_choice_single"));
+
+        (await act.Should().ThrowAsync<ExerciseValidationException>())
+            .WithMessage("*no transcript*");
+        _provider.CallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Listening_multiple_choice_multi_valid_response_stores_ai_supplied_correct_answers()
+    {
+        var source = SeedSource();
+        var listening = SeedListeningPassage(source.Id);
+        _provider.NextResponses.Enqueue(
+            """{"promptText": "Select all reasons given for the change.", "correctAnswersText": ["A scheduling conflict", "Room availability"], "distractors": ["Budget cuts", "Staff shortage"]}""");
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Listening", listening.Id, "Primary") },
+            RequestedActivityType: "listening_multiple_choice_multi"));
+
+        result.Activity.ActivityType.Should().Be("listening_multiple_choice_multi");
+        result.Activity.FormSchemaJson.Should().Contain("selectboxes");
+        result.Activity.ScoringRulesJson.Should().Contain("multiple_choice");
+    }
+
+    [Fact]
+    public async Task Listening_multiple_choice_single_not_supported_for_vocabulary()
+    {
+        var source = SeedSource();
+        var vocab = SeedVocabulary(source.Id);
+
+        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") },
+            RequestedActivityType: "listening_multiple_choice_single"));
+
+        await act.Should().ThrowAsync<ExerciseValidationException>();
+        _provider.CallCount.Should().Be(0);
+    }
+
     // ── failure paths shared with Lesson generation's pattern ──────────────────
 
     [Fact]

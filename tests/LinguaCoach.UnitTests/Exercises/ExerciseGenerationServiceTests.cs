@@ -80,6 +80,16 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         return e;
     }
 
+    private ResourceBankItem SeedListeningPassage(Guid sourceId, string? transcript = "This is a full-length audio transcript about travel plans.")
+    {
+        var e = new ResourceBankItem(
+            PublishedResourceType.Listening, sourceId, "B1",
+            ResourceBankItemContent.Serialize(new ListeningPassageContent("Office Announcement", transcript, "storage/key.mp3", "audio/mpeg", null)));
+        _db.ResourceBankItems.Add(e);
+        _db.SaveChanges();
+        return e;
+    }
+
     private ResourceBankItem SeedWritingPrompt(Guid sourceId, string promptText = "Write an email asking a colleague for a status update.")
     {
         var e = new ResourceBankItem(
@@ -540,6 +550,50 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Writing", writing.Id, "Primary") },
             RequestedActivityType: "summarize_written_text"));
+
+        await act.Should().ThrowAsync<ExerciseValidationException>();
+    }
+
+    // ── Phase K17 — listening_fill_in_blanks (Listening resources) ─────────────────────────────
+
+    [Fact]
+    public async Task Listening_fill_in_blanks_creates_cloze_with_numbered_blanks()
+    {
+        var source = SeedSource();
+        var listening = SeedListeningPassage(source.Id);
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Listening", listening.Id, "Primary") },
+            RequestedActivityType: "listening_fill_in_blanks"));
+
+        result.Activity.ActivityType.Should().Be("listening_fill_in_blanks");
+        result.Activity.FormSchemaJson.Should().Contain("textfield").And.Contain("Blank 1");
+        result.Activity.ScoringRulesJson.Should().Contain("text_normalized");
+    }
+
+    [Fact]
+    public async Task Listening_fill_in_blanks_rejected_when_transcript_missing()
+    {
+        var source = SeedSource();
+        var listening = SeedListeningPassage(source.Id, transcript: null);
+
+        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Listening", listening.Id, "Primary") },
+            RequestedActivityType: "listening_fill_in_blanks"));
+
+        await act.Should().ThrowAsync<ExerciseValidationException>();
+        (await _db.Exercises.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Listening_fill_in_blanks_not_supported_for_writing_resource()
+    {
+        var source = SeedSource();
+        var writing = SeedWritingPrompt(source.Id);
+
+        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Writing", writing.Id, "Primary") },
+            RequestedActivityType: "listening_fill_in_blanks"));
 
         await act.Should().ThrowAsync<ExerciseValidationException>();
     }
