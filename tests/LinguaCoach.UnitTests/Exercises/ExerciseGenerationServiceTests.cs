@@ -90,6 +90,16 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         return e;
     }
 
+    private ResourceBankItem SeedSpeakingPrompt(Guid sourceId, string promptText = "Describe your daily responsibilities at work.")
+    {
+        var e = new ResourceBankItem(
+            PublishedResourceType.Speaking, sourceId, "B1",
+            ResourceBankItemContent.Serialize(new SpeakingPromptContent("Describe Your Role", promptText, 60)));
+        _db.ResourceBankItems.Add(e);
+        _db.SaveChanges();
+        return e;
+    }
+
     private ResourceBankItem SeedWritingPrompt(Guid sourceId, string promptText = "Write an email asking a colleague for a status update.")
     {
         var e = new ResourceBankItem(
@@ -594,6 +604,66 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Writing", writing.Id, "Primary") },
             RequestedActivityType: "listening_fill_in_blanks"));
+
+        await act.Should().ThrowAsync<ExerciseValidationException>();
+    }
+
+    // ── Phase K18 — spoken_response_from_prompt / respond_to_situation / answer_short_question /
+    // speaking_roleplay_turn / read_aloud (Speaking resources) ─────────────────────────────────
+
+    [Fact]
+    public async Task Spoken_response_from_prompt_shows_own_prompt_text_and_requires_manual_evaluation()
+    {
+        var source = SeedSource();
+        var speaking = SeedSpeakingPrompt(source.Id, "Talk about a challenge you faced at work.");
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Speaking", speaking.Id, "Primary") },
+            RequestedActivityType: "spoken_response_from_prompt"));
+
+        result.Activity.ActivityType.Should().Be("spoken_response_from_prompt");
+        result.Activity.FormSchemaJson.Should().Contain("Talk about a challenge you faced at work.").And.Contain("speakingResponse");
+        result.Activity.ScoringRulesJson.Should().Contain("speaking").And.Contain("RequiresManualOrAiEvaluation").And.Contain("true");
+    }
+
+    [Theory]
+    [InlineData("respond_to_situation")]
+    [InlineData("answer_short_question")]
+    [InlineData("speaking_roleplay_turn")]
+    [InlineData("read_aloud")]
+    public async Task Other_speaking_types_are_supported_for_speaking_resources(string activityType)
+    {
+        var source = SeedSource();
+        var speaking = SeedSpeakingPrompt(source.Id);
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Speaking", speaking.Id, "Primary") },
+            RequestedActivityType: activityType));
+
+        result.Activity.ActivityType.Should().Be(activityType);
+    }
+
+    [Fact]
+    public async Task Speaking_resource_defaults_to_spoken_response_from_prompt_when_no_type_requested()
+    {
+        var source = SeedSource();
+        var speaking = SeedSpeakingPrompt(source.Id);
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Speaking", speaking.Id, "Primary") }));
+
+        result.Activity.ActivityType.Should().Be("spoken_response_from_prompt");
+    }
+
+    [Fact]
+    public async Task Gap_fill_not_supported_for_speaking_resource()
+    {
+        var source = SeedSource();
+        var speaking = SeedSpeakingPrompt(source.Id);
+
+        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Speaking", speaking.Id, "Primary") },
+            RequestedActivityType: "gap_fill"));
 
         await act.Should().ThrowAsync<ExerciseValidationException>();
     }

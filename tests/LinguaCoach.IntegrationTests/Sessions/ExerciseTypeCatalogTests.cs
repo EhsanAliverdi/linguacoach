@@ -213,6 +213,29 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
         Assert.Contains(eligible, e => e.Key == key);
     }
 
+    [Theory]
+    [InlineData("spoken_response_from_prompt")]
+    [InlineData("respond_to_situation")]
+    [InlineData("answer_short_question")]
+    [InlineData("speaking_roleplay_turn")]
+    [InlineData("read_aloud")]
+    public async Task SpeakingComposerTypes_AreBankFirstAndGenerationEligible_PhaseK18(string key)
+    {
+        // Phase K18 — deterministic, Speaking resources only
+        // (ActivityGenerationService.ComposeSpeakingPrompt) — shows the resource's own prompt
+        // text verbatim, honestly unscored (RequiresManualOrAiEvaluation) since real audio
+        // scoring isn't wired into the bank-first pipeline yet.
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == key);
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        Assert.Equal("BankFirst", type.Category);
+        Assert.True(type.IsEnabled);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.Equal("speaking", type.PrimarySkill);
+        Assert.Contains(eligible, e => e.Key == key);
+    }
+
     [Fact]
     public async Task LegacyAndPatternTypes_AreDisabledByDefault_DespiteBeingReady()
     {
@@ -232,10 +255,7 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     [InlineData("highlight_incorrect_words", "listening")]
     [InlineData("write_from_dictation", "listening")]
     [InlineData("summarize_spoken_text", "listening")]
-    [InlineData("answer_short_question", "speaking")]
-    [InlineData("read_aloud", "speaking")]
     [InlineData("repeat_sentence", "speaking")]
-    [InlineData("respond_to_situation", "speaking")]
     [InlineData("describe_image", "speaking")]
     [InlineData("retell_lecture", "listening")]
     [InlineData("summarize_group_discussion", "listening")]

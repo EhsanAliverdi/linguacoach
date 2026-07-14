@@ -294,20 +294,50 @@ item below in this phase, not just the first one implemented.
 
 ### Phase K18 — Speaking + audio-dependent types (needs existing speaking/audio pipeline)
 
-- `answer_short_question` / `respond_to_situation` / `describe_image` / `spoken_response_from_prompt`
-  / `speaking_roleplay_turn` — Speaking. Reuse the existing `_speakingEvaluator`/STT pipeline
-  already wired into `ActivityController` for the old flow — confirm it's reusable standalone
-  from the new Lesson-based composer rather than tied to the deleted session generator.
-- `read_aloud` / `repeat_sentence` — Speaking, `exact_match` evaluator against a transcript —
-  needs TTS for the prompt audio if not already available from the `Speaking` resource's own
-  recorded content.
-- `write_from_dictation` — Listening, `exact_match` against a `Listening` resource's transcript —
-  same shape as `read_aloud`/`repeat_sentence` but audio-in/text-out instead of text-in/audio-out.
-- `retell_lecture` / `summarize_group_discussion` / `summarize_spoken_text` — Listening/Speaking,
-  fully open-ended AI-graded (`ai_open_ended`/`ai_structured` evaluator keys already seeded) —
-  hardest tier, do last.
-- `teams_chat_simulation` — Writing, multi-turn `chat_reply` renderer — needs its own design pass
-  for what a Resource-Bank-sourced multi-turn scenario looks like; not a simple single-prompt
+**Investigated before starting** (dedicated research pass, not assumed): is there a working,
+generic (non-placement-specific) speaking-audio scoring pipeline the bank-first Exercise flow
+could reuse? **No.** `ComponentAnswerScorer.Score()` (the actual scorer for Exercise/Activity
+attempts, confirmed via `ActivitySubmitHandler` → `FormIoPatternEvaluator` →
+`IPlacementScoringService`) has no case for `ScoringRuleKinds.Speaking` — it silently falls into
+the "wrong" default branch. Real audio scoring (`IPlacementSpeakingScorer` →
+`ISpeakingEvaluationProvider`) is hardwired to the Placement flow only (item/attempt IDs,
+`PlacementScoreResult`, etc.) and isn't reusable as-is. A *third*, older pipeline
+(`SpeakingRolePlayEvaluator`/`ISpeakingEvaluationService`/`ISpeechToTextService`) belongs to the
+legacy `LearningActivity`/`ActivityController` flow, async/job-queue based, also not reusable
+inline. **Decision:** build these 5 types the same honest way as `short_answer`/`email_reply` —
+deterministic, `RequiresManualOrAiEvaluation = true` — rather than scope-creep into generalizing
+`IPlacementSpeakingScorer` for the bank-first pipeline (a separately-scoped follow-up).
+
+- [x] **`spoken_response_from_prompt` / `respond_to_situation` / `answer_short_question` /
+  `speaking_roleplay_turn` / `read_aloud`** — Speaking resources only — `Done` (2026-07-15).
+  `ActivityGenerationService.ComposeSpeakingPrompt` — shows the resource's own PromptText
+  verbatim, student responds via the stock `speakingResponse` Form.io component (same one already
+  used by placement/onboarding speaking items — exact submitted-value shape confirmed:
+  `{"storageKey": "<string>"}`), honestly marked `RequiresManualOrAiEvaluation`.
+  `ScoringRuleKinds.Speaking` is used as the rule kind (matches the semantic intent) but the
+  `RequiresManualOrAiEvaluation` flag is what actually short-circuits `ComponentAnswerScorer`
+  before it would hit the unhandled-kind default branch. 5 catalog rows converted from
+  disabled-Pattern to `BankFirst`/enabled. 7 new unit tests, all passing. **20 BankFirst types
+  enabled total** — exactly half the 40-entry catalog.
+- [ ] `describe_image` — deferred. `SpeakingPromptContent` has no image field, so there's nothing
+  to actually describe yet — needs the resource content model extended with an image reference
+  first (or a decision that admin notes/PromptText can substitute), a data-model change out of
+  scope for a composer-only pass.
+- [ ] `repeat_sentence` — deferred. Needs the resource to provide a *spoken* sentence for the
+  student to repeat, not just text — `SpeakingPromptContent` has no audio field. Framing it as
+  "read this sentence and repeat it" would just duplicate `read_aloud`; a real "listen then repeat"
+  exercise needs TTS-generated audio from the prompt text, which is a build step, not just a
+  composer.
+- [ ] `write_from_dictation` — Listening, `exact_match` against a `Listening` resource's
+  transcript — same "read the text and reproduce it" shape as `read_aloud`/`repeat_sentence` but
+  audio-in/text-out. Structurally simpler than the two above (no TTS needed — the audio already
+  exists on the Listening resource) — good next-session candidate.
+- [ ] `retell_lecture` / `summarize_group_discussion` / `summarize_spoken_text` — Listening/
+  Speaking, fully open-ended. Same honest `RequiresManualOrAiEvaluation` shape as the 5 done
+  above should work here too — likely a quick follow-up reusing `ComposeSpeakingPrompt`'s pattern
+  (or a Listening-transcript equivalent) rather than needing new design.
+- [ ] `teams_chat_simulation` — Writing, multi-turn `chat_reply` renderer — needs its own design
+  pass for what a Resource-Bank-sourced multi-turn scenario looks like; not a simple single-prompt
   composer like the others.
 
 ### Phase K19 — Decisions needed before touching

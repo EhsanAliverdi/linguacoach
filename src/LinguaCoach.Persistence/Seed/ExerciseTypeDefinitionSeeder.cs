@@ -77,13 +77,21 @@ public static class ExerciseTypeDefinitionSeeder
             "Open-ended email reply task, shown from the resource's own prompt text verbatim. Requires manual or AI evaluation. Writing resources only.",
             "writing", "[]", 1, 1, 1),
         Ready(ExercisePatternKey.TeamsChatSimulation, "Teams Chat Simulation", "Write a concise workplace chat response.", "writing", "[]", "Pattern", "chat_reply", "ai_structured", "activity_generate_teams_chat_simulation", ActivityType.WritingScenario, ExercisePatternKey.TeamsChatSimulation, 5, false, false),
-        Ready(ExercisePatternKey.SpokenResponseFromPrompt, "Spoken Response From Prompt", "Respond aloud to a workplace prompt.", "speaking", "[]", "Pattern", "free_text_entry", "ai_open_ended", "activity_generate_spoken_response_from_prompt", ActivityType.SpeakingRolePlay, ExercisePatternKey.SpokenResponseFromPrompt, 5, false, false),
+        // Phase K18 — spoken_response_from_prompt now has a real Lesson-generation composer
+        // (ActivityGenerationService.ComposeSpeakingPrompt), same key, moves to BankFirst/enabled.
+        BankFirst(ExercisePatternKey.SpokenResponseFromPrompt, "Spoken Response From Prompt",
+            "Open-ended spoken response task, shown from the resource's own prompt text verbatim. Requires manual or AI evaluation. Speaking resources only.",
+            "speaking", "[]", 1, 1, 1),
         // Phase K17 — open_writing_task now has a real Lesson-generation composer, same
         // BankFirst/enabled conversion as email_reply above, same key.
         BankFirst(ExercisePatternKey.OpenWritingTask, "Open Writing Task",
             "Open-ended writing task, shown from the resource's own prompt text verbatim. Requires manual or AI evaluation. Writing resources only.",
             "writing", "[]", 1, 1, 1),
-        Ready(ExercisePatternKey.SpeakingRoleplayTurn, "Speaking Roleplay Turn", "Record one spoken workplace roleplay turn.", "speaking", "[]", "Pattern", "audio_response", "ai_open_ended", "activity_generate_speaking_roleplay_turn", ActivityType.SpeakingRolePlay, ExercisePatternKey.SpeakingRoleplayTurn, 5, false, false),
+        // Phase K18 — speaking_roleplay_turn now has a real Lesson-generation composer, same
+        // BankFirst/enabled conversion as spoken_response_from_prompt above, same key.
+        BankFirst(ExercisePatternKey.SpeakingRoleplayTurn, "Speaking Roleplay Turn",
+            "Open-ended roleplay turn, shown from the resource's own prompt text verbatim. Requires manual or AI evaluation. Speaking resources only.",
+            "speaking", "[]", 1, 1, 1),
         Ready(ExercisePatternKey.LessonReflection, "Lesson Reflection", "Review and reflect on the lesson.", "reflection", "[]", "Pattern", "read_only", "no_marking", "activity_generate_lesson_reflection", ActivityType.WritingScenario, ExercisePatternKey.LessonReflection, 2, false, false),
         // Phase K17 — reading_multiple_choice_single now has a real (AI-assisted)
         // Lesson-generation composer (AiExerciseGenerationService.ComposeReadingMultipleChoiceSingle),
@@ -107,19 +115,31 @@ public static class ExerciseTypeDefinitionSeeder
             "reading", "[]", 3, 4, 6),
         Ready(ExercisePatternKey.ReorderParagraphs, "Reorder Paragraphs", "Put paragraphs in the correct logical order.", "reading", "[]", "Pattern", "reorder_paragraphs", "exact_match", "activity_generate_reorder_paragraphs", ActivityType.ReadingTask, ExercisePatternKey.ReorderParagraphs, 5, false, false),
 
-        Ready(ExercisePatternKey.ReadAloud, "Read Aloud", "Read a short workplace text aloud as clearly and naturally as possible.", "speaking", "[\"pronunciation\", \"reading\"]", "Pattern", "read_aloud", "exact_match", "activity_generate_read_aloud", ActivityType.SpeakingRolePlay, ExercisePatternKey.ReadAloud, 5, false, false),
+        // Phase K18 — read_aloud now has a real Lesson-generation composer, same BankFirst/enabled
+        // conversion as the other Speaking types, same key.
+        BankFirst(ExercisePatternKey.ReadAloud, "Read Aloud",
+            "Read the resource's own prompt text aloud as clearly and naturally as possible. Requires manual or AI evaluation. Speaking resources only.",
+            "speaking", "[\"pronunciation\", \"reading\"]", 1, 1, 1),
         // read_aloud promoted to Ready above
         Ready(ExercisePatternKey.RepeatSentence, "Repeat Sentence", "Hear or read a short sentence, then repeat it as accurately as you can.", "speaking", "[\"listening\", \"pronunciation\"]", "Pattern", "repeat_sentence", "exact_match", "activity_generate_repeat_sentence", ActivityType.SpeakingRolePlay, ExercisePatternKey.RepeatSentence, 5, false, false),
         // repeat_sentence promoted to Ready above
         Ready(ExercisePatternKey.DescribeImage, "Describe Image", "Look at an image prompt and describe what you see as clearly and naturally as possible.", "speaking", "[\"vocabulary\", \"communication\"]", "Pattern", "describe_image", "ai_open_ended", "activity_generate_describe_image", ActivityType.SpeakingRolePlay, ExercisePatternKey.DescribeImage, 6, false, false),
         // describe_image promoted to Ready above
-        Ready(ExercisePatternKey.RespondToSituation, "Respond to Situation", "Read or hear a short real-life situation and speak an appropriate response.", "speaking", "[\"communication\", \"listening\"]", "Pattern", "respond_to_situation", "ai_open_ended", "activity_generate_respond_to_situation", ActivityType.SpeakingRolePlay, ExercisePatternKey.RespondToSituation, 6, false, false),
+        // Phase K18 — respond_to_situation now has a real Lesson-generation composer, same
+        // BankFirst/enabled conversion as the other Speaking types, same key.
+        BankFirst(ExercisePatternKey.RespondToSituation, "Respond to Situation",
+            "Read a real-life situation from the resource's own prompt text and speak an appropriate response. Requires manual or AI evaluation. Speaking resources only.",
+            "speaking", "[\"communication\", \"listening\"]", 1, 1, 1),
         // respond_to_situation promoted to Ready above
         Ready(ExercisePatternKey.RetellLecture, "Retell Lecture", "Listen to or read a short lecture and retell the main ideas in your own words.", "listening", "[\"speaking\", \"summarizing\", \"communication\"]", "Pattern", "retell_lecture", "ai_open_ended", "activity_generate_retell_lecture", ActivityType.SpeakingRolePlay, ExercisePatternKey.RetellLecture, 7, false, false),
         // retell_lecture promoted to Ready above
         Ready(ExercisePatternKey.SummarizeGroupDiscussion, "Summarize Group Discussion", "Listen to or read a short multi-speaker discussion and summarize the main points, speaker views, agreements, and outcomes.", "listening", "[\"speaking\", \"summarizing\", \"communication\"]", "Pattern", "summarize_group_discussion", "ai_open_ended", "activity_generate_summarize_group_discussion", ActivityType.SpeakingRolePlay, ExercisePatternKey.SummarizeGroupDiscussion, 7, false, false),
         // summarize_group_discussion promoted to Ready above
-        Ready(ExercisePatternKey.AnswerShortQuestion, "Answer Short Question", "Listen to short questions and speak your answers clearly.", "speaking", "[\"listening\"]", "Pattern", "answer_short_question", "exact_match", "activity_generate_answer_short_question", ActivityType.SpeakingRolePlay, ExercisePatternKey.AnswerShortQuestion, 6, false, false),
+        // Phase K18 — answer_short_question now has a real Lesson-generation composer, same
+        // BankFirst/enabled conversion as the other Speaking types, same key.
+        BankFirst(ExercisePatternKey.AnswerShortQuestion, "Answer Short Question",
+            "Read the resource's own question text and speak your answer clearly. Requires manual or AI evaluation. Speaking resources only.",
+            "speaking", "[\"listening\"]", 1, 1, 1),
         // Phase K17 — summarize_written_text now has a real Lesson-generation composer
         // (ActivityGenerationService.ComposeSummarizeWrittenText), so this row moves from the
         // disabled-by-default Pattern bucket into BankFirst/enabled, same key. Writing-skill but

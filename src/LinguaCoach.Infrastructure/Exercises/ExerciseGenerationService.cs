@@ -53,6 +53,12 @@ namespace LinguaCoach.Infrastructure.Exercises;
 /// <item><description><c>listening_fill_in_blanks</c> — Listening resources only (Phase K17).
 /// Same shared cloze algorithm as reading_fill_in_blanks, sourced from the resource's own
 /// transcript.</description></item>
+/// <item><description><c>spoken_response_from_prompt</c> / <c>respond_to_situation</c> /
+/// <c>answer_short_question</c> / <c>speaking_roleplay_turn</c> / <c>read_aloud</c> — Speaking
+/// resources only (Phase K18). Shows the resource's own PromptText verbatim, student responds via
+/// the stock "speakingResponse" Form.io component, honestly marked
+/// <see cref="ComponentScoringRule.RequiresManualOrAiEvaluation"/> — real audio scoring isn't
+/// wired into the bank-first pipeline yet (see ComposeSpeakingPrompt's doc comment).</description></item>
 /// </list>
 /// <see cref="Exercise.ScoringRulesJson"/> is serialized straight from the shared
 /// <see cref="ScoringRulesDocument"/>/<see cref="ComponentScoringRule"/> types already used by
@@ -120,6 +126,16 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
     /// same safe shape as multiple_choice_single (Vocabulary/Grammar), not the "AI supplies the
     /// answer" exception. Listening resources only.</summary>
     public const string ActivityTypeSelectMissingWord = "select_missing_word";
+
+    /// <summary>Phase K18 — deterministic, Speaking resources only. Shows the resource's own
+    /// PromptText verbatim, student responds via the speakingResponse component, honestly
+    /// unscored (RequiresManualOrAiEvaluation) — see ComposeSpeakingPrompt's doc comment for why
+    /// real audio scoring isn't wired in yet.</summary>
+    public const string ActivityTypeSpokenResponseFromPrompt = "spoken_response_from_prompt";
+    public const string ActivityTypeRespondToSituation = "respond_to_situation";
+    public const string ActivityTypeAnswerShortQuestion = "answer_short_question";
+    public const string ActivityTypeSpeakingRoleplayTurn = "speaking_roleplay_turn";
+    public const string ActivityTypeReadAloud = "read_aloud";
 
     private const int MaxClozeBlanks = 4;
     private const int MinClozeWordLength = 5;
@@ -230,6 +246,15 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
                 new[] { ActivityTypeEmailReply, ActivityTypeOpenWritingTask, ActivityTypeWriteEssay },
             PublishedResourceType.Listening =>
                 new[] { ActivityTypeListeningFillInBlanks },
+            PublishedResourceType.Speaking =>
+                new[]
+                {
+                    ActivityTypeSpokenResponseFromPrompt,
+                    ActivityTypeRespondToSituation,
+                    ActivityTypeAnswerShortQuestion,
+                    ActivityTypeSpeakingRoleplayTurn,
+                    ActivityTypeReadAloud,
+                },
             _ => Array.Empty<string>(),
         };
         if (supportedForCategory.Length == 0)
@@ -255,6 +280,16 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
             ActivityTypeWriteEssay => ComposeWritingPrompt(primary.Snapshot,
                 "Read the essay prompt below and write a structured response.", "Your essay"),
             ActivityTypeListeningFillInBlanks => ComposeListeningFillInBlanks(primary.Snapshot),
+            ActivityTypeSpokenResponseFromPrompt => ComposeSpeakingPrompt(primary.Snapshot,
+                "Respond aloud to the prompt below."),
+            ActivityTypeRespondToSituation => ComposeSpeakingPrompt(primary.Snapshot,
+                "Read the situation below and speak an appropriate response."),
+            ActivityTypeAnswerShortQuestion => ComposeSpeakingPrompt(primary.Snapshot,
+                "Read the question below and speak your answer clearly."),
+            ActivityTypeSpeakingRoleplayTurn => ComposeSpeakingPrompt(primary.Snapshot,
+                "Read the roleplay scenario below and record your spoken turn."),
+            ActivityTypeReadAloud => ComposeSpeakingPrompt(primary.Snapshot,
+                "Read the text below aloud, as clearly and naturally as possible."),
             _ => throw new ExerciseValidationException($"Unsupported activity type '{activityType}'."),
         };
 
@@ -469,6 +504,41 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
             correctFeedback = (string?)null,
             incorrectFeedback = (string?)null,
             note = "Open-ended — requires manual or AI evaluation, not deterministically scored.",
+        });
+
+        return (instructions, formSchemaJson, answerKeyJson, scoringRulesJson, feedbackPlanJson);
+    }
+
+    /// <summary>Phase K18 — spoken_response_from_prompt/respond_to_situation/answer_short_question/
+    /// speaking_roleplay_turn/read_aloud. Deterministic, Speaking resources only: shows the
+    /// resource's own PromptText verbatim, student responds via the stock "speakingResponse"
+    /// Form.io component (same one already used by placement/onboarding speaking items).
+    /// Honestly marked <see cref="ComponentScoringRule.RequiresManualOrAiEvaluation"/> —
+    /// <see cref="ScoringRuleKinds.Speaking"/> scoring (<c>IPlacementSpeakingScorer</c>) is
+    /// currently hardwired to the Placement flow only, not reusable by the generic
+    /// ComponentAnswerScorer path Exercise attempts actually go through — wiring real audio
+    /// scoring into the bank-first pipeline is a separately-scoped follow-up, not done here.</summary>
+    private static (string Instructions, string FormSchemaJson, string AnswerKeyJson, string ScoringRulesJson, string FeedbackPlanJson)
+        ComposeSpeakingPrompt(LessonResourceSnapshot primary, string instructions)
+    {
+        var prompt = !string.IsNullOrWhiteSpace(primary.Body) ? primary.Body!.Trim() : "(no prompt text available)";
+
+        var formSchemaJson = JsonSerializer.Serialize(new
+        {
+            components = new object[]
+            {
+                new { type = "content", key = "prompt", html = $"<p>{System.Net.WebUtility.HtmlEncode(prompt)}</p>" },
+                new { type = "speakingResponse", key = "answer", label = "Your spoken response" },
+            }
+        });
+        var answerKeyJson = JsonSerializer.Serialize(new Dictionary<string, string?> { ["answer"] = null });
+        var scoringRulesJson = JsonSerializer.Serialize(new ScoringRulesDocument(
+            new Dictionary<string, ComponentScoringRule> { ["answer"] = new(ScoringRuleKinds.Speaking, RequiresManualOrAiEvaluation: true) }));
+        var feedbackPlanJson = JsonSerializer.Serialize(new
+        {
+            correctFeedback = (string?)null,
+            incorrectFeedback = (string?)null,
+            note = "Open-ended spoken response — requires manual or AI evaluation, not deterministically scored.",
         });
 
         return (instructions, formSchemaJson, answerKeyJson, scoringRulesJson, feedbackPlanJson);

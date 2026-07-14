@@ -1635,9 +1635,19 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
   **K17 is now complete except for** `highlight_incorrect_words`, which needs a new custom Form.io
   component for word-level text selection that doesn't exist yet — out of scope for a
   backend-only pass.
+- [x] **Phase K18 (partial) — Speaking composers** (`spoken_response_from_prompt`,
+  `respond_to_situation`, `answer_short_question`, `speaking_roleplay_turn`, `read_aloud`) `Done`
+  (2026-07-15) — same doc as above. Investigated first: no generic (non-Placement) speaking-audio
+  scoring pipeline exists for the bank-first Exercise flow — `ComponentAnswerScorer` silently
+  mis-scores `Speaking`-kind components today, and `IPlacementSpeakingScorer` is hardwired to
+  Placement only. Built these 5 the same honest way as `short_answer`/`email_reply` instead:
+  deterministic, `RequiresManualOrAiEvaluation=true`, using the already-allowlisted
+  `speakingResponse` component. **20 of 40 catalog types now enabled — exactly half.**
 - [ ] **Phase K16 (remainder: `phrase_match`/`reorder_paragraphs`) + K17 (`highlight_incorrect_words`)
-  + K18-K19 — Exercise Type composer build-out** `Planned` (2026-07-15) — same doc as above. Builds
-  real Lesson-generation composers for the ~22 remaining catalog types that are Ready but disabled
+  + K18 (remainder: `describe_image`/`repeat_sentence`/`write_from_dictation`/`retell_lecture`/
+  `summarize_group_discussion`/`summarize_spoken_text`/`teams_chat_simulation`) + K19 — Exercise
+  Type composer build-out** `Planned` (2026-07-15) — same doc as above. Builds real
+  Lesson-generation composers for the ~17 remaining catalog types that are Ready but disabled
   pending their own composer, grouped by skill and generation complexity.
 
 ## Legacy database cleanup
