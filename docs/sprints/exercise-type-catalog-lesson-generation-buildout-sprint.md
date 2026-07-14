@@ -74,7 +74,7 @@ active in `AiPrompts` — prompt authoring is largely done; wiring is not.
 
 ## Phased plan
 
-### Phase K15 — Foundation cleanup (small, do first, unblocks everything else)
+### Phase K15 — Foundation cleanup (small, do first, unblocks everything else) — `Done` (2026-07-14)
 
 1. Remove `SupportsPracticeGym`/`SupportsTodayLesson` end to end:
    - `ExerciseTypeDefinition` entity, `ExerciseTypeDefinitionConfiguration`, EF migration dropping
@@ -115,6 +115,33 @@ active in `AiPrompts` — prompt authoring is largely done; wiring is not.
    `GetByPrimarySkillAsync(lesson.skill)` filtered to `isAvailableForGeneration` — this is what
    makes every subsequent phase below show up in the picker automatically as composers ship,
    with zero further frontend changes.
+
+**K15 implementation notes** (deviations from the plan above, for anyone picking up K16+):
+- `DynamicPatternSelector`/`DynamicPatternSelection.cs` were **not deleted** — only the
+  `SupportsTodayLesson` field was stripped (gate is now `IsEnabled && IsReady`). Kept in place
+  since deleting an orphaned-but-still-compiling file with its own test suite was judged higher
+  risk than the field removal alone; still flagged orphaned/dead, still a candidate for deletion
+  in a future pass.
+- The Practice Gym "Formats" card grid (`practice-gym.component.ts`) was **not deleted** either —
+  it's still dead UI (its `startFormat()` action hits the permanently-disabled
+  `GetPracticeGymNext` endpoint), but removing student-facing UI without a browser to verify
+  against felt like the wrong risk tradeoff for this pass. It now filters out `category ===
+  'BankFirst'` catalog rows so the 3 new Lesson-generation types don't show up there as a
+  card that errors on click.
+- The 4 "Legacy"-category catalog entries were not specially deleted or given individual
+  attention — they're covered by the same blanket `category <> 'BankFirst' → disabled` data fix
+  as the other 33 legacy/pattern rows. `ActivityType` legacy enum values were left completely
+  untouched (confirmed widely used elsewhere in the attempt/evaluation pipeline, out of scope).
+- `StudentReadinessAuditService`'s "Today lesson" readiness check now calls
+  `GetGenerationEligibleAsync` instead of the deleted `GetForTodayAsync` — same Ready+enabled
+  gate, just without the Surfaces filter. Its check key/copy (`today.exercise_types_available`)
+  was left as-is rather than renamed, since renaming a readiness check key has its own
+  migration/dashboard-compat considerations outside this pass's scope.
+- One-time data fix (`UPDATE exercise_type_definitions SET is_enabled = false WHERE category <>
+  'BankFirst'`) is baked into the K15 migration's `Up()` — necessary because
+  `SyncCatalogMetadata` deliberately never overwrites `IsEnabled` on existing rows on reseed (to
+  protect a future admin's manual toggle), so a fresh reseed alone would not have picked up the
+  new "35 legacy/pattern rows start disabled" default on an already-seeded database.
 
 ### Phase K16 — Deterministic extensions, Vocabulary/Grammar/Reading (low risk)
 
