@@ -4499,6 +4499,7 @@ Return ONLY valid JSON (no markdown, no text outside the JSON object):
 
 {
   "promptText": "<see rules below for this exercise type>",
+  "correctAnswerText": "<see rules below — only used by reading_multiple_choice_single>",
   "distractors": ["<see rules below>"]
 }
 
@@ -4507,10 +4508,12 @@ Rules by exercise type:
 If the requested exercise type is "gap_fill":
 - promptText must be exactly one natural, realistic sentence that uses "{{resourceTitle}}" in context, with "{{resourceTitle}}" itself replaced by the blank marker "___" (three underscores).
 - promptText must NOT contain the word or phrase "{{resourceTitle}}" anywhere else in the sentence — only the "___" marker.
+- correctAnswerText may be left as an empty string "" — it is not used for this exercise type.
 - distractors must be an empty array [].
 
 If the requested exercise type is "multiple_choice_single":
 - promptText may be left as an empty string "" — it is not used for this exercise type.
+- correctAnswerText may be left as an empty string "" — it is not used for this exercise type (the correct answer always comes from the resource's own definition, never from you).
 - distractors must contain exactly 3 short, plausible-but-clearly-INCORRECT alternative definitions for "{{resourceTitle}}", written in the same style and length as the real definition above.
 - distractors must NOT be synonyms, paraphrases, or partial restatements of the real definition above — each must describe a genuinely different meaning.
 - Never include the real definition, or anything close to it, as one of the distractors.
@@ -4518,7 +4521,14 @@ If the requested exercise type is "multiple_choice_single":
 If the requested exercise type is "short_answer":
 - promptText must be one specific comprehension question about the passage/excerpt content above, answerable in 1-2 sentences.
 - promptText must reference something specific from the excerpt, not a generic question that could apply to any passage.
+- correctAnswerText may be left as an empty string "" — it is not used for this exercise type (open-ended, not deterministically scored).
 - distractors must be an empty array [].
+
+If the requested exercise type is "reading_multiple_choice_single":
+- promptText must be one specific comprehension question about the passage/excerpt content above, answerable by picking a single option — not a generic question that could apply to any passage.
+- correctAnswerText must be the single, unambiguous correct answer to that question, based only on what the excerpt/passage above actually says — never invent details not present in the text.
+- distractors must contain exactly 3 short, plausible-but-clearly-INCORRECT answers to the same question, similar in length and style to correctAnswerText, that a careless reader might mistakenly pick — but that are definitively wrong based on the text above.
+- distractors must NOT be synonyms, paraphrases, or partial restatements of correctAnswerText.
 
 General rules:
 - Keep language appropriate for {{cefrLevel}}.

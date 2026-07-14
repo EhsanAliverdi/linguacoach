@@ -19,10 +19,18 @@ namespace LinguaCoach.Infrastructure.Exercises;
 /// Phase J2b — AI-assisted "Generate Activity" composer, "from resources" entry point only. Builds
 /// a pending-review <see cref="Exercise"/> draft the same way <see cref="ActivityGenerationService"/>
 /// does, but AI supplies the framing content (gap-fill sentence / multiple-choice distractors /
-/// comprehension question) instead of the deterministic composer's fixed templates. The correct
-/// answer, scoring rule, and answer key are always deterministically derived from the resource's
-/// own fields — never AI-supplied — see <see cref="IGenerateActivityFromResourcesWithAiHandler"/>'s
-/// doc comment for why. Mirrors <see cref="Lessons.AiLessonGenerationService"/>'s retry-once-then-
+/// comprehension question) instead of the deterministic composer's fixed templates. For
+/// gap_fill/multiple_choice_single/short_answer, the correct answer, scoring rule, and answer key
+/// are always deterministically derived from the resource's own fields — never AI-supplied — see
+/// <see cref="IGenerateActivityFromResourcesWithAiHandler"/>'s doc comment for why.
+///
+/// Phase K17 — <see cref="ActivityGenerationService.ActivityTypeReadingMultipleChoiceSingle"/> is a
+/// deliberate, scoped exception: reading comprehension has no single fact field to derive a
+/// correct answer from, so AI supplies the correct answer too (see that constant's doc comment).
+/// The PendingReview admin-approval gate — which every generated Exercise already goes through —
+/// is the safety net for this exception, not a new one.
+///
+/// Mirrors <see cref="Lessons.AiLessonGenerationService"/>'s retry-once-then-
 /// throw pattern: this is a synchronous admin-triggered action the admin is actively waiting on, so
 /// failure after the retry throws rather than degrading silently.
 /// </summary>
@@ -96,7 +104,7 @@ public sealed class AiExerciseGenerationService : IGenerateActivityFromResources
 
         var supportedForCategory = isDefinitional
             ? new[] { ActivityGenerationService.ActivityTypeGapFill, ActivityGenerationService.ActivityTypeMultipleChoiceSingle }
-            : new[] { ActivityGenerationService.ActivityTypeShortAnswer };
+            : new[] { ActivityGenerationService.ActivityTypeShortAnswer, ActivityGenerationService.ActivityTypeReadingMultipleChoiceSingle };
         if (!supportedForCategory.Contains(activityType))
             throw new ExerciseValidationException(
                 $"Activity type '{activityType}' is not supported for resource type '{primary.Type}'. Supported: {string.Join(", ", supportedForCategory)}.");
@@ -104,6 +112,9 @@ public sealed class AiExerciseGenerationService : IGenerateActivityFromResources
         if (activityType == ActivityGenerationService.ActivityTypeMultipleChoiceSingle && string.IsNullOrWhiteSpace(primary.Snapshot.Body))
             throw new ExerciseValidationException(
                 $"Resource '{primary.Snapshot.Title}' has no definition/description text to build a multiple-choice question from — use 'gap_fill' instead.");
+        if (activityType == ActivityGenerationService.ActivityTypeReadingMultipleChoiceSingle && string.IsNullOrWhiteSpace(primary.Snapshot.Body))
+            throw new ExerciseValidationException(
+                $"Resource '{primary.Snapshot.Title}' has no excerpt/passage text to build a comprehension question from — use 'short_answer' instead.");
 
         var variables = new Dictionary<string, string>
         {
@@ -170,6 +181,7 @@ public sealed class AiExerciseGenerationService : IGenerateActivityFromResources
             ActivityGenerationService.ActivityTypeGapFill => ComposeGapFill(primary.Snapshot, parsed.PromptText!),
             ActivityGenerationService.ActivityTypeMultipleChoiceSingle => ComposeMultipleChoiceSingle(primary.Snapshot, parsed.Distractors),
             ActivityGenerationService.ActivityTypeShortAnswer => ComposeShortAnswer(primary.Snapshot, parsed.PromptText!),
+            ActivityGenerationService.ActivityTypeReadingMultipleChoiceSingle => ComposeReadingMultipleChoiceSingle(parsed.PromptText!, parsed.CorrectAnswerText!, parsed.Distractors),
             _ => throw new ExerciseValidationException($"Unsupported activity type '{activityType}'."),
         };
 
@@ -315,6 +327,41 @@ public sealed class AiExerciseGenerationService : IGenerateActivityFromResources
         return (instructions, formSchemaJson, answerKeyJson, scoringRulesJson, feedbackPlanJson);
     }
 
+    /// <summary>Phase K17 — AI supplies the question, the correct answer, AND the distractors
+    /// (see <see cref="ActivityGenerationService.ActivityTypeReadingMultipleChoiceSingle"/>'s
+    /// doc comment for why this is a deliberate exception to "AI never supplies the correct
+    /// answer"). The generated Exercise still starts PendingReview like every other one — an
+    /// admin must read the passage and verify the AI's answer before approving.</summary>
+    private static (string Instructions, string FormSchemaJson, string AnswerKeyJson, string ScoringRulesJson, string FeedbackPlanJson)
+        ComposeReadingMultipleChoiceSingle(string question, string correctAnswerText, IReadOnlyList<string> distractors)
+    {
+        var options = new List<(string Key, string Text)> { ("opt_0", correctAnswerText) };
+        for (var i = 0; i < distractors.Count; i++)
+            options.Add(($"opt_{i + 1}", distractors[i]));
+
+        var formSchemaJson = JsonSerializer.Serialize(new
+        {
+            components = new object[]
+            {
+                new
+                {
+                    type = "radio", key = "answer", label = question, input = true,
+                    values = options.Select(o => new { label = o.Text, value = o.Key }).ToArray(),
+                },
+            }
+        });
+        var answerKeyJson = JsonSerializer.Serialize(new Dictionary<string, string> { ["answer"] = options[0].Text });
+        var scoringRulesJson = JsonSerializer.Serialize(new ScoringRulesDocument(
+            new Dictionary<string, ComponentScoringRule> { ["answer"] = new(ScoringRuleKinds.SingleChoice, CorrectAnswer: options[0].Key, Points: 1.0) }));
+        var feedbackPlanJson = JsonSerializer.Serialize(new
+        {
+            correctFeedback = "Correct!",
+            incorrectFeedback = $"Not quite — the correct answer was: \"{options[0].Text}\".",
+        });
+
+        return (question, formSchemaJson, answerKeyJson, scoringRulesJson, feedbackPlanJson);
+    }
+
     private static string Truncate(string value) =>
         value.Length <= MaxResourceTextLength ? value : value[..MaxResourceTextLength];
 
@@ -353,7 +400,7 @@ public sealed class AiExerciseGenerationService : IGenerateActivityFromResources
         return cleaned;
     }
 
-    private sealed record AiExerciseOutput(string? PromptText, List<string> Distractors);
+    private sealed record AiExerciseOutput(string? PromptText, List<string> Distractors, string? CorrectAnswerText = null);
 
     /// <summary>
     /// Fully defensive JSON-&gt;output parsing plus per-activityType safety validation. Returns
@@ -429,6 +476,31 @@ public sealed class AiExerciseGenerationService : IGenerateActivityFromResources
                     return null;
                 }
                 return new AiExerciseOutput(promptText, filtered);
+            }
+
+            if (activityType == ActivityGenerationService.ActivityTypeReadingMultipleChoiceSingle)
+            {
+                if (string.IsNullOrWhiteSpace(promptText))
+                {
+                    parseError = "Response is missing a non-empty 'promptText' for the comprehension question.";
+                    return null;
+                }
+                var correctAnswerText = GetString(root, "correctAnswerText")?.Trim();
+                if (string.IsNullOrWhiteSpace(correctAnswerText))
+                {
+                    parseError = "Response is missing a non-empty 'correctAnswerText'.";
+                    return null;
+                }
+                var filtered = distractors
+                    .Where(d => !string.Equals(d, correctAnswerText, StringComparison.OrdinalIgnoreCase))
+                    .Take(MaxDistractors)
+                    .ToList();
+                if (filtered.Count == 0)
+                {
+                    parseError = "Response contained no usable distractors (empty, or all matched the correct answer).";
+                    return null;
+                }
+                return new AiExerciseOutput(promptText.Trim(), filtered, correctAnswerText);
             }
 
             // short_answer

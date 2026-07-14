@@ -76,7 +76,13 @@ public static class ExerciseTypeDefinitionSeeder
         Ready(ExercisePatternKey.OpenWritingTask, "Open Writing Task", "Open workplace writing with coaching feedback.", "writing", "[]", "Pattern", "free_text_entry", "ai_open_ended", "activity_generate_open_writing_task", ActivityType.WritingScenario, ExercisePatternKey.OpenWritingTask, 7, false, false),
         Ready(ExercisePatternKey.SpeakingRoleplayTurn, "Speaking Roleplay Turn", "Record one spoken workplace roleplay turn.", "speaking", "[]", "Pattern", "audio_response", "ai_open_ended", "activity_generate_speaking_roleplay_turn", ActivityType.SpeakingRolePlay, ExercisePatternKey.SpeakingRoleplayTurn, 5, false, false),
         Ready(ExercisePatternKey.LessonReflection, "Lesson Reflection", "Review and reflect on the lesson.", "reflection", "[]", "Pattern", "read_only", "no_marking", "activity_generate_lesson_reflection", ActivityType.WritingScenario, ExercisePatternKey.LessonReflection, 2, false, false),
-        Ready(ExercisePatternKey.ReadingMultipleChoiceSingle, "Reading Multiple Choice Single", "Choose one answer from reading.", "reading", "[]", "Pattern", "reading_multiple_choice_single", "keyed_selection", "activity_generate_reading_multiple_choice_single", ActivityType.ReadingTask, ExercisePatternKey.ReadingMultipleChoiceSingle, 5, false, false),
+        // Phase K17 — reading_multiple_choice_single now has a real (AI-assisted)
+        // Lesson-generation composer (AiExerciseGenerationService.ComposeReadingMultipleChoiceSingle),
+        // so this row moves from the disabled-by-default Pattern bucket into BankFirst/enabled,
+        // same key.
+        BankFirst(ExercisePatternKey.ReadingMultipleChoiceSingle, "Reading Multiple Choice (Single Answer)",
+            "AI-generated comprehension question with a single correct answer, judged from the resource's own excerpt/passage text. ReadingReference/ReadingPassage resources only.",
+            "reading", "[]", 1, 1, 1),
         Ready(ExercisePatternKey.ReadingMultipleChoiceMulti, "Reading Multiple Choice Multiple", "Choose multiple answers from reading.", "reading", "[]", "Pattern", "reading_multiple_choice_multi", "keyed_selection", "activity_generate_reading_multiple_choice_multi", ActivityType.ReadingTask, ExercisePatternKey.ReadingMultipleChoiceMulti, 5, false, false),
         // Phase K16 — reading_fill_in_blanks now has a real Lesson-generation composer
         // (ActivityGenerationService.ComposeReadingFillInBlanksAsync), so this row moves from the

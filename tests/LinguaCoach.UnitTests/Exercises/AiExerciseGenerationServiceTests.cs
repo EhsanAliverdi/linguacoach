@@ -212,6 +212,82 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
         result.Activity.ScoringRulesJson.Should().Contain("RequiresManualOrAiEvaluation");
     }
 
+    // ── reading_multiple_choice_single (Phase K17) ──────────────────────────────
+    // AI supplies the question, correct answer, AND distractors — a deliberate scoped exception,
+    // unlike gap_fill/multiple_choice_single where the correct answer always comes from the
+    // resource's own field.
+
+    [Fact]
+    public async Task Reading_multiple_choice_single_valid_response_stores_ai_supplied_correct_answer()
+    {
+        var source = SeedSource();
+        var reading = SeedReadingReference(source.Id);
+        _provider.NextResponses.Enqueue(
+            """{"promptText": "Why was the flight delayed?", "correctAnswerText": "Bad weather", "distractors": ["Mechanical issues", "Crew shortage", "Air traffic control"]}""");
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("ReadingReference", reading.Id, "Primary") },
+            RequestedActivityType: "reading_multiple_choice_single"));
+
+        result.Activity.ReviewStatus.Should().Be("PendingReview");
+        result.Activity.ActivityType.Should().Be("reading_multiple_choice_single");
+        result.Activity.FormSchemaJson.Should().Contain("radio").And.Contain("Why was the flight delayed?").And.Contain("Bad weather");
+        result.Activity.AnswerKeyJson.Should().Contain("Bad weather");
+        result.Activity.ScoringRulesJson.Should().Contain("single_choice").And.Contain("opt_0");
+    }
+
+    [Fact]
+    public async Task Reading_multiple_choice_single_missing_correct_answer_text_retries_then_throws()
+    {
+        var source = SeedSource();
+        var reading = SeedReadingReference(source.Id);
+        _provider.NextResponses.Enqueue(
+            """{"promptText": "Why was the flight delayed?", "correctAnswerText": "", "distractors": ["A", "B", "C"]}""");
+        _provider.NextResponses.Enqueue(
+            """{"promptText": "Why was the flight delayed?", "correctAnswerText": "", "distractors": ["A", "B", "C"]}""");
+
+        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("ReadingReference", reading.Id, "Primary") },
+            RequestedActivityType: "reading_multiple_choice_single"));
+
+        await act.Should().ThrowAsync<ExerciseValidationException>();
+        _provider.CallCount.Should().Be(2);
+        (await _db.Exercises.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Reading_multiple_choice_single_resource_with_no_excerpt_throws_before_any_ai_call()
+    {
+        var source = SeedSource();
+        var e = new ResourceBankItem(
+            PublishedResourceType.ReadingReference, source.Id, "B1",
+            ResourceBankItemContent.Serialize(new ReadingReferenceContent("Article", null, null)));
+        _db.ResourceBankItems.Add(e);
+        await _db.SaveChangesAsync();
+
+        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("ReadingReference", e.Id, "Primary") },
+            RequestedActivityType: "reading_multiple_choice_single"));
+
+        (await act.Should().ThrowAsync<ExerciseValidationException>())
+            .WithMessage("*no excerpt/passage text*");
+        _provider.CallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Reading_multiple_choice_single_not_supported_for_vocabulary()
+    {
+        var source = SeedSource();
+        var vocab = SeedVocabulary(source.Id);
+
+        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") },
+            RequestedActivityType: "reading_multiple_choice_single"));
+
+        await act.Should().ThrowAsync<ExerciseValidationException>();
+        _provider.CallCount.Should().Be(0);
+    }
+
     // ── failure paths shared with Lesson generation's pattern ──────────────────
 
     [Fact]

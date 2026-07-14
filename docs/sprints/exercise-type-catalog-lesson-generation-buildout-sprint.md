@@ -183,21 +183,53 @@ scoring kinds needed for anything in this phase).
 
 ### Phase K17 — AI-assisted structured types (reuses `AiExerciseGenerationService` pattern from K14)
 
-Same principle as the K14 multiple-choice-distractor fix: AI supplies framing/distractors/options,
-the correct answer is always derived from the resource's own field, never AI-supplied.
+**Revised principle, decided this phase (AskUserQuestion):** the K14 "AI never supplies the
+correct answer" principle holds for `gap_fill`/`multiple_choice_single` (Vocabulary/Grammar have a
+definition field to derive the correct answer from) but does **not** hold structurally for reading
+comprehension — a `ReadingReference`/`ReadingPassage` row has no "the answer is X" field, so a real
+comprehension question requires the AI to judge the correct answer from the passage text itself.
+Confirmed via AskUserQuestion: AI may supply the correct answer for this class of types, as a
+scoped, documented exception — the existing PendingReview admin-approval gate (already required
+for every generated Exercise) is the safety net, not a new one. This reasoning applies to every
+item below in this phase, not just the first one implemented.
 
-- `reading_multiple_choice_single` / `reading_multiple_choice_multi` — AI-generated
-  comprehension question against the passage excerpt; answer verified against excerpt content.
-- `listening_fill_in_blanks` / `listening_multiple_choice_single` / `listening_multiple_choice_multi`
+- [x] **`reading_multiple_choice_single`** — Reading (`ReadingReference`/`ReadingPassage`) —
+  `Done` (2026-07-14). `AiExerciseGenerationService.ComposeReadingMultipleChoiceSingle` — AI
+  returns `promptText` (the question), `correctAnswerText`, and up to 3 `distractors`, all judged
+  from the resource's own excerpt/passage text (truncated to 2000 chars, same limit as the
+  existing prompt). `exercise_generate_from_resources` prompt template extended with a new
+  `correctAnswerText` field and a `reading_multiple_choice_single` rules block (existing
+  gap_fill/multiple_choice_single/short_answer rules unchanged) — prompt auto-upgraded via content
+  hash, no manual DB step needed beyond the usual seed run. No deterministic path exists or is
+  possible for this type — it's routed straight to the AI handler by
+  `LessonExerciseBatchGenerationService.AiOnlyOrAiPreferredTypes`, same mechanism K14 used for
+  `multiple_choice_single`. Catalog row converted from disabled-Pattern to `BankFirst`/enabled,
+  same key. 4 new unit tests, all passing.
+- [ ] `reading_multiple_choice_multi` — same reasoning and mechanism as
+  `reading_multiple_choice_single` above, just multi-select (`ScoringRuleKinds.MultipleChoice`,
+  already implemented in `ComponentAnswerScorer`). Not yet built — natural next K17 slice, should
+  be a close copy of the single-choice composer.
+- [ ] `listening_fill_in_blanks` / `listening_multiple_choice_single` / `listening_multiple_choice_multi`
   / `select_missing_word` / `highlight_incorrect_words` / `highlight_correct_summary` — same
   pattern, sourced from the `Listening` resource type's transcript field instead of a
   `ReadingPassage` excerpt. Confirm `Listening` resource content model has a transcript field
   suitable as source text (referenced in the K12/K14 summary as already used for
-  Listening-resource Lessons).
-- `email_reply` / `open_writing_task` / `summarize_written_text` / `write_essay` — Writing.
+  Listening-resource Lessons) before starting.
+- [ ] `email_reply` / `open_writing_task` / `summarize_written_text` / `write_essay` — Writing.
   Open-ended, honestly marked `RequiresManualOrAiEvaluation = true` exactly like the existing
-  `short_answer` composer — no new scoring risk, just new instructions/prompt per type sourced
-  from the `Writing` resource's prompt text.
+  `short_answer` composer — no correct-answer trust question at all here (nothing is scored), just
+  new instructions/prompt per type sourced from the `Writing` resource's prompt text.
+
+**K17 implementation notes:**
+- On the existing dev database, the `reading_multiple_choice_single` catalog row's `IsEnabled`
+  needed a one-time manual flip after redeploy — same reseed limitation documented under K16/K15
+  (`SyncCatalogMetadata` never touches `IsEnabled` on an existing row). A genuinely fresh database
+  seeds it enabled correctly on first run.
+- `ActivityGenerationService.ActivityTypeReadingMultipleChoiceSingle` lives in the deterministic
+  composer's constants file even though no deterministic case exists for it — kept there
+  (rather than a new file) since every other activity-type constant and the AI composer's
+  `supportedForCategory` checks already reference `ActivityGenerationService.ActivityType*`
+  uniformly; splitting would fragment that single source of truth for activity-type strings.
 
 ### Phase K18 — Speaking + audio-dependent types (needs existing speaking/audio pipeline)
 

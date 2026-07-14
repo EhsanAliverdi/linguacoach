@@ -31,6 +31,11 @@ namespace LinguaCoach.Infrastructure.Exercises;
 /// ever supplies the distractors, matching the existing project principle that AI is never
 /// trusted to decide which option is correct (see AiExerciseGenerationService's doc comment).
 /// "gap_fill" and "short_answer" stay deterministic — neither has this distractor problem.
+///
+/// Phase K17 — "reading_multiple_choice_single" is also routed here, but for a different reason
+/// than multiple_choice_single: it has no deterministic composer at all (no fact field on a
+/// ReadingReference/ReadingPassage row to derive a correct answer from — see
+/// ActivityGenerationService.ActivityTypeReadingMultipleChoiceSingle's doc comment).
 /// </summary>
 public sealed class LessonExerciseBatchGenerationService : IGenerateActivitiesFromLessonHandler
 {
@@ -38,6 +43,16 @@ public sealed class LessonExerciseBatchGenerationService : IGenerateActivitiesFr
     // unbounded synchronous generation run. Mirrors ResourceCandidateBatchAnalysisService's
     // MaxCandidatesPerBatch discipline.
     public const int MaxTotalPerCall = 50;
+
+    /// <summary>Activity types with no deterministic composer — always routed through the
+    /// AI-assisted resources handler. multiple_choice_single (K14) still has a deterministic
+    /// composer too but is routed here for distractor quality; reading_multiple_choice_single
+    /// (K17) has no deterministic composer at all (see its doc comment).</summary>
+    private static readonly HashSet<string> AiOnlyOrAiPreferredTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ActivityGenerationService.ActivityTypeMultipleChoiceSingle,
+        ActivityGenerationService.ActivityTypeReadingMultipleChoiceSingle,
+    };
 
     private readonly IGenerateActivityFromLessonHandler _singleHandler;
     private readonly IGenerateActivityFromResourcesWithAiHandler _aiResourcesHandler;
@@ -80,7 +95,7 @@ public sealed class LessonExerciseBatchGenerationService : IGenerateActivitiesFr
                     : $"{request.TitlePrefix} ({created.Count + 1})";
 
                 ExerciseDto activity;
-                if (string.Equals(spec.ActivityType, ActivityGenerationService.ActivityTypeMultipleChoiceSingle, StringComparison.OrdinalIgnoreCase))
+                if (spec.ActivityType is not null && AiOnlyOrAiPreferredTypes.Contains(spec.ActivityType))
                 {
                     var resourcesRequest = await BuildResourcesRequestAsync(request.LessonId, spec.ActivityType, title, request.Notes, request.CreatedByUserId, ct);
                     var result = await _aiResourcesHandler.HandleAsync(resourcesRequest, ct);

@@ -60,6 +60,16 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
     public const string ActivityTypeShortAnswer = "short_answer";
     public const string ActivityTypeReadingFillInBlanks = "reading_fill_in_blanks";
 
+    /// <summary>Phase K17 — AI-only activity type, no deterministic composer exists (or can
+    /// exist) for it: unlike gap_fill/multiple_choice_single, ReadingReference/ReadingPassage
+    /// resources have no single "the answer is X" field to derive a correct answer from, so
+    /// building a real comprehension question requires the AI to judge the correct answer from
+    /// the passage text itself — a deliberate, documented, scoped exception to this project's
+    /// "AI never supplies the correct answer" rule (confirmed via AskUserQuestion). The existing
+    /// PendingReview admin-approval gate is the safety net, same as every other generated
+    /// Exercise. See <see cref="LinguaCoach.Infrastructure.Exercises.AiExerciseGenerationService"/>.</summary>
+    public const string ActivityTypeReadingMultipleChoiceSingle = "reading_multiple_choice_single";
+
     private const int MaxClozeBlanks = 4;
     private const int MinClozeWordLength = 5;
 

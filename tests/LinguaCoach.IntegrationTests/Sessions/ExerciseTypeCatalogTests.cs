@@ -101,6 +101,23 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     }
 
     [Fact]
+    public async Task ReadingMultipleChoiceSingle_IsBankFirstAndGenerationEligible_PhaseK17()
+    {
+        // Phase K17 — reading_multiple_choice_single got a real (AI-assisted) composer
+        // (AiExerciseGenerationService.ComposeReadingMultipleChoiceSingle) and moved from the
+        // disabled-by-default Pattern bucket into BankFirst/enabled.
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "reading_multiple_choice_single");
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        Assert.Equal("BankFirst", type.Category);
+        Assert.True(type.IsEnabled);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.Equal("reading", type.PrimarySkill);
+        Assert.Contains(eligible, e => e.Key == "reading_multiple_choice_single");
+    }
+
+    [Fact]
     public async Task LegacyAndPatternTypes_AreDisabledByDefault_DespiteBeingReady()
     {
         var service = new ExerciseTypeCatalogService(_db);
@@ -114,7 +131,6 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     }
 
     [Theory]
-    [InlineData("reading_multiple_choice_single", "reading")]
     [InlineData("reading_multiple_choice_multi", "reading")]
     [InlineData("reorder_paragraphs", "reading")]
     [InlineData("reading_writing_fill_in_blanks", "reading")]
