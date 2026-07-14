@@ -288,6 +288,64 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
         _provider.CallCount.Should().Be(0);
     }
 
+    // ── reading_multiple_choice_multi (Phase K17) ───────────────────────────────
+
+    [Fact]
+    public async Task Reading_multiple_choice_multi_valid_response_stores_ai_supplied_correct_answers()
+    {
+        var source = SeedSource();
+        var reading = SeedReadingReference(source.Id);
+        _provider.NextResponses.Enqueue(
+            """{"promptText": "Select all reasons the flight was delayed.", "correctAnswersText": ["Bad weather", "Late crew arrival"], "distractors": ["Mechanical issues", "Overbooking"]}""");
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("ReadingReference", reading.Id, "Primary") },
+            RequestedActivityType: "reading_multiple_choice_multi"));
+
+        result.Activity.ActivityType.Should().Be("reading_multiple_choice_multi");
+        result.Activity.FormSchemaJson.Should().Contain("selectboxes").And.Contain("Bad weather").And.Contain("Late crew arrival");
+        result.Activity.AnswerKeyJson.Should().Contain("Bad weather").And.Contain("Late crew arrival");
+        result.Activity.ScoringRulesJson.Should().Contain("multiple_choice").And.Contain("opt_0").And.Contain("opt_1");
+    }
+
+    [Fact]
+    public async Task Reading_multiple_choice_multi_fewer_than_two_correct_answers_retries_then_throws()
+    {
+        var source = SeedSource();
+        var reading = SeedReadingReference(source.Id);
+        _provider.NextResponses.Enqueue(
+            """{"promptText": "Select all that apply.", "correctAnswersText": ["Bad weather"], "distractors": ["A", "B"]}""");
+        _provider.NextResponses.Enqueue(
+            """{"promptText": "Select all that apply.", "correctAnswersText": [], "distractors": ["A", "B"]}""");
+
+        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("ReadingReference", reading.Id, "Primary") },
+            RequestedActivityType: "reading_multiple_choice_multi"));
+
+        await act.Should().ThrowAsync<ExerciseValidationException>();
+        _provider.CallCount.Should().Be(2);
+        (await _db.Exercises.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Reading_multiple_choice_multi_resource_with_no_excerpt_throws_before_any_ai_call()
+    {
+        var source = SeedSource();
+        var e = new ResourceBankItem(
+            PublishedResourceType.ReadingReference, source.Id, "B1",
+            ResourceBankItemContent.Serialize(new ReadingReferenceContent("Article", null, null)));
+        _db.ResourceBankItems.Add(e);
+        await _db.SaveChangesAsync();
+
+        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("ReadingReference", e.Id, "Primary") },
+            RequestedActivityType: "reading_multiple_choice_multi"));
+
+        (await act.Should().ThrowAsync<ExerciseValidationException>())
+            .WithMessage("*no excerpt/passage text*");
+        _provider.CallCount.Should().Be(0);
+    }
+
     // ── failure paths shared with Lesson generation's pattern ──────────────────
 
     [Fact]

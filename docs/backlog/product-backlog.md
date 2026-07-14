@@ -1611,14 +1611,14 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
   text_normalized scoring shape; catalog row flipped from disabled-Pattern to enabled-BankFirst.
   `phrase_match` and `reorder_paragraphs` remain deferred within K16 (see doc for why — a missing
   scoring-kind design decision and an unverified frontend Form.io datagrid behavior, respectively).
-- [x] **Phase K17 (partial) — `reading_multiple_choice_single` AI composer** `Done` (2026-07-14) —
-  same doc as above. AI-generated comprehension question + correct answer + distractors, judged
-  from the resource's own excerpt/passage text — a deliberate, documented exception to "AI never
-  supplies the correct answer" (confirmed via AskUserQuestion), since reading comprehension has no
-  fact field to derive an answer from unlike gap_fill/multiple_choice_single. PendingReview
-  admin-approval is the safety net.
+- [x] **Phase K17 (partial) — `reading_multiple_choice_single`/`_multi` AI composers** `Done`
+  (2026-07-14) — same doc as above. AI-generated comprehension question + correct answer(s) +
+  distractors, judged from the resource's own excerpt/passage text — a deliberate, documented
+  exception to "AI never supplies the correct answer" (confirmed via AskUserQuestion), since
+  reading comprehension has no fact field to derive an answer from unlike
+  gap_fill/multiple_choice_single. PendingReview admin-approval is the safety net.
 - [ ] **Phase K16 (remainder) + K17 (remainder) + K18-K19 — Exercise Type composer build-out**
-  `Planned` (2026-07-14) — same doc as above. Builds real Lesson-generation composers for the ~32
+  `Planned` (2026-07-14) — same doc as above. Builds real Lesson-generation composers for the ~31
   remaining catalog types that are Ready but disabled pending their own composer, grouped by skill
   and generation complexity.
 

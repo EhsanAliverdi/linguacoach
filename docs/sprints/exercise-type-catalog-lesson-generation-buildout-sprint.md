@@ -205,10 +205,13 @@ item below in this phase, not just the first one implemented.
   `LessonExerciseBatchGenerationService.AiOnlyOrAiPreferredTypes`, same mechanism K14 used for
   `multiple_choice_single`. Catalog row converted from disabled-Pattern to `BankFirst`/enabled,
   same key. 4 new unit tests, all passing.
-- [ ] `reading_multiple_choice_multi` — same reasoning and mechanism as
-  `reading_multiple_choice_single` above, just multi-select (`ScoringRuleKinds.MultipleChoice`,
-  already implemented in `ComponentAnswerScorer`). Not yet built — natural next K17 slice, should
-  be a close copy of the single-choice composer.
+- [x] **`reading_multiple_choice_multi`** — Reading (`ReadingReference`/`ReadingPassage`) — `Done`
+  (2026-07-14). `AiExerciseGenerationService.ComposeReadingMultipleChoiceMulti` — same reasoning
+  and mechanism as `reading_multiple_choice_single`, multi-select variant
+  (`ScoringRuleKinds.MultipleChoice`/`selectboxes`, both already implemented). Requires ≥2 distinct
+  `correctAnswersText` entries (a "select all" question with only 1 correct answer isn't really
+  multi) and 1-3 usable distractors after filtering. Catalog row converted from disabled-Pattern to
+  `BankFirst`/enabled, same key. 3 new unit tests, all passing.
 - [ ] `listening_fill_in_blanks` / `listening_multiple_choice_single` / `listening_multiple_choice_multi`
   / `select_missing_word` / `highlight_incorrect_words` / `highlight_correct_summary` — same
   pattern, sourced from the `Listening` resource type's transcript field instead of a

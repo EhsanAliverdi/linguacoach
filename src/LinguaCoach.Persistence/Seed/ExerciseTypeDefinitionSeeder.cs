@@ -83,7 +83,13 @@ public static class ExerciseTypeDefinitionSeeder
         BankFirst(ExercisePatternKey.ReadingMultipleChoiceSingle, "Reading Multiple Choice (Single Answer)",
             "AI-generated comprehension question with a single correct answer, judged from the resource's own excerpt/passage text. ReadingReference/ReadingPassage resources only.",
             "reading", "[]", 1, 1, 1),
-        Ready(ExercisePatternKey.ReadingMultipleChoiceMulti, "Reading Multiple Choice Multiple", "Choose multiple answers from reading.", "reading", "[]", "Pattern", "reading_multiple_choice_multi", "keyed_selection", "activity_generate_reading_multiple_choice_multi", ActivityType.ReadingTask, ExercisePatternKey.ReadingMultipleChoiceMulti, 5, false, false),
+        // Phase K17 — reading_multiple_choice_multi now has a real (AI-assisted)
+        // Lesson-generation composer (AiExerciseGenerationService.ComposeReadingMultipleChoiceMulti),
+        // so this row moves from the disabled-by-default Pattern bucket into BankFirst/enabled,
+        // same key.
+        BankFirst(ExercisePatternKey.ReadingMultipleChoiceMulti, "Reading Multiple Choice (Multiple Answers)",
+            "AI-generated comprehension question with 2+ correct answers, judged from the resource's own excerpt/passage text. ReadingReference/ReadingPassage resources only.",
+            "reading", "[]", 1, 1, 1),
         // Phase K16 — reading_fill_in_blanks now has a real Lesson-generation composer
         // (ActivityGenerationService.ComposeReadingFillInBlanksAsync), so this row moves from the
         // disabled-by-default Pattern bucket into BankFirst/enabled, same key.

@@ -70,6 +70,10 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
     /// Exercise. See <see cref="LinguaCoach.Infrastructure.Exercises.AiExerciseGenerationService"/>.</summary>
     public const string ActivityTypeReadingMultipleChoiceSingle = "reading_multiple_choice_single";
 
+    /// <summary>Phase K17 — same AI-only rationale as
+    /// <see cref="ActivityTypeReadingMultipleChoiceSingle"/>, multi-select variant.</summary>
+    public const string ActivityTypeReadingMultipleChoiceMulti = "reading_multiple_choice_multi";
+
     private const int MaxClozeBlanks = 4;
     private const int MinClozeWordLength = 5;
 

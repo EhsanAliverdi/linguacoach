@@ -24,11 +24,12 @@ namespace LinguaCoach.Infrastructure.Exercises;
 /// are always deterministically derived from the resource's own fields — never AI-supplied — see
 /// <see cref="IGenerateActivityFromResourcesWithAiHandler"/>'s doc comment for why.
 ///
-/// Phase K17 — <see cref="ActivityGenerationService.ActivityTypeReadingMultipleChoiceSingle"/> is a
-/// deliberate, scoped exception: reading comprehension has no single fact field to derive a
-/// correct answer from, so AI supplies the correct answer too (see that constant's doc comment).
-/// The PendingReview admin-approval gate — which every generated Exercise already goes through —
-/// is the safety net for this exception, not a new one.
+/// Phase K17 — <see cref="ActivityGenerationService.ActivityTypeReadingMultipleChoiceSingle"/> and
+/// <see cref="ActivityGenerationService.ActivityTypeReadingMultipleChoiceMulti"/> are a deliberate,
+/// scoped exception: reading comprehension has no single fact field to derive a correct answer
+/// from, so AI supplies the correct answer(s) too (see those constants' doc comments). The
+/// PendingReview admin-approval gate — which every generated Exercise already goes through — is
+/// the safety net for this exception, not a new one.
 ///
 /// Mirrors <see cref="Lessons.AiLessonGenerationService"/>'s retry-once-then-
 /// throw pattern: this is a synchronous admin-triggered action the admin is actively waiting on, so
@@ -104,7 +105,12 @@ public sealed class AiExerciseGenerationService : IGenerateActivityFromResources
 
         var supportedForCategory = isDefinitional
             ? new[] { ActivityGenerationService.ActivityTypeGapFill, ActivityGenerationService.ActivityTypeMultipleChoiceSingle }
-            : new[] { ActivityGenerationService.ActivityTypeShortAnswer, ActivityGenerationService.ActivityTypeReadingMultipleChoiceSingle };
+            : new[]
+            {
+                ActivityGenerationService.ActivityTypeShortAnswer,
+                ActivityGenerationService.ActivityTypeReadingMultipleChoiceSingle,
+                ActivityGenerationService.ActivityTypeReadingMultipleChoiceMulti,
+            };
         if (!supportedForCategory.Contains(activityType))
             throw new ExerciseValidationException(
                 $"Activity type '{activityType}' is not supported for resource type '{primary.Type}'. Supported: {string.Join(", ", supportedForCategory)}.");
@@ -112,7 +118,9 @@ public sealed class AiExerciseGenerationService : IGenerateActivityFromResources
         if (activityType == ActivityGenerationService.ActivityTypeMultipleChoiceSingle && string.IsNullOrWhiteSpace(primary.Snapshot.Body))
             throw new ExerciseValidationException(
                 $"Resource '{primary.Snapshot.Title}' has no definition/description text to build a multiple-choice question from — use 'gap_fill' instead.");
-        if (activityType == ActivityGenerationService.ActivityTypeReadingMultipleChoiceSingle && string.IsNullOrWhiteSpace(primary.Snapshot.Body))
+        if ((activityType == ActivityGenerationService.ActivityTypeReadingMultipleChoiceSingle
+                || activityType == ActivityGenerationService.ActivityTypeReadingMultipleChoiceMulti)
+            && string.IsNullOrWhiteSpace(primary.Snapshot.Body))
             throw new ExerciseValidationException(
                 $"Resource '{primary.Snapshot.Title}' has no excerpt/passage text to build a comprehension question from — use 'short_answer' instead.");
 
@@ -182,6 +190,7 @@ public sealed class AiExerciseGenerationService : IGenerateActivityFromResources
             ActivityGenerationService.ActivityTypeMultipleChoiceSingle => ComposeMultipleChoiceSingle(primary.Snapshot, parsed.Distractors),
             ActivityGenerationService.ActivityTypeShortAnswer => ComposeShortAnswer(primary.Snapshot, parsed.PromptText!),
             ActivityGenerationService.ActivityTypeReadingMultipleChoiceSingle => ComposeReadingMultipleChoiceSingle(parsed.PromptText!, parsed.CorrectAnswerText!, parsed.Distractors),
+            ActivityGenerationService.ActivityTypeReadingMultipleChoiceMulti => ComposeReadingMultipleChoiceMulti(parsed.PromptText!, parsed.CorrectAnswersText!, parsed.Distractors),
             _ => throw new ExerciseValidationException($"Unsupported activity type '{activityType}'."),
         };
 
@@ -362,6 +371,45 @@ public sealed class AiExerciseGenerationService : IGenerateActivityFromResources
         return (question, formSchemaJson, answerKeyJson, scoringRulesJson, feedbackPlanJson);
     }
 
+    /// <summary>Phase K17 — multi-select variant of <see cref="ComposeReadingMultipleChoiceSingle"/>,
+    /// same "AI supplies the correct answer(s)" exception. Correct options are listed first,
+    /// distractors after — same non-shuffled convention the single-choice composer already
+    /// uses.</summary>
+    private static (string Instructions, string FormSchemaJson, string AnswerKeyJson, string ScoringRulesJson, string FeedbackPlanJson)
+        ComposeReadingMultipleChoiceMulti(string question, IReadOnlyList<string> correctAnswers, IReadOnlyList<string> distractors)
+    {
+        var options = new List<(string Key, string Text, bool IsCorrect)>();
+        for (var i = 0; i < correctAnswers.Count; i++)
+            options.Add(($"opt_{i}", correctAnswers[i], true));
+        for (var i = 0; i < distractors.Count; i++)
+            options.Add(($"opt_{correctAnswers.Count + i}", distractors[i], false));
+
+        var correctKeys = options.Where(o => o.IsCorrect).Select(o => o.Key).ToList();
+        var correctTexts = options.Where(o => o.IsCorrect).Select(o => o.Text).ToList();
+
+        var formSchemaJson = JsonSerializer.Serialize(new
+        {
+            components = new object[]
+            {
+                new
+                {
+                    type = "selectboxes", key = "answer", label = question, input = true,
+                    values = options.Select(o => new { label = o.Text, value = o.Key }).ToArray(),
+                },
+            }
+        });
+        var answerKeyJson = JsonSerializer.Serialize(new Dictionary<string, IReadOnlyList<string>> { ["answer"] = correctTexts });
+        var scoringRulesJson = JsonSerializer.Serialize(new ScoringRulesDocument(
+            new Dictionary<string, ComponentScoringRule> { ["answer"] = new(ScoringRuleKinds.MultipleChoice, CorrectAnswers: correctKeys, Points: 1.0) }));
+        var feedbackPlanJson = JsonSerializer.Serialize(new
+        {
+            correctFeedback = "Correct!",
+            incorrectFeedback = $"Not quite — the correct answers were: {string.Join(", ", correctTexts)}.",
+        });
+
+        return (question, formSchemaJson, answerKeyJson, scoringRulesJson, feedbackPlanJson);
+    }
+
     private static string Truncate(string value) =>
         value.Length <= MaxResourceTextLength ? value : value[..MaxResourceTextLength];
 
@@ -400,7 +448,8 @@ public sealed class AiExerciseGenerationService : IGenerateActivityFromResources
         return cleaned;
     }
 
-    private sealed record AiExerciseOutput(string? PromptText, List<string> Distractors, string? CorrectAnswerText = null);
+    private sealed record AiExerciseOutput(
+        string? PromptText, List<string> Distractors, string? CorrectAnswerText = null, List<string>? CorrectAnswersText = null);
 
     /// <summary>
     /// Fully defensive JSON-&gt;output parsing plus per-activityType safety validation. Returns
@@ -501,6 +550,35 @@ public sealed class AiExerciseGenerationService : IGenerateActivityFromResources
                     return null;
                 }
                 return new AiExerciseOutput(promptText.Trim(), filtered, correctAnswerText);
+            }
+
+            if (activityType == ActivityGenerationService.ActivityTypeReadingMultipleChoiceMulti)
+            {
+                if (string.IsNullOrWhiteSpace(promptText))
+                {
+                    parseError = "Response is missing a non-empty 'promptText' for the comprehension question.";
+                    return null;
+                }
+                var correctAnswersText = GetStringArray(root, "correctAnswersText")
+                    .Where(a => !string.IsNullOrWhiteSpace(a))
+                    .Select(a => a.Trim())
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+                if (correctAnswersText.Count < 2)
+                {
+                    parseError = "Response must contain at least 2 distinct non-empty 'correctAnswersText' entries.";
+                    return null;
+                }
+                var filteredMulti = distractors
+                    .Where(d => !correctAnswersText.Contains(d, StringComparer.OrdinalIgnoreCase))
+                    .Take(MaxDistractors)
+                    .ToList();
+                if (filteredMulti.Count == 0)
+                {
+                    parseError = "Response contained no usable distractors (empty, or all matched a correct answer).";
+                    return null;
+                }
+                return new AiExerciseOutput(promptText.Trim(), filteredMulti, CorrectAnswersText: correctAnswersText);
             }
 
             // short_answer

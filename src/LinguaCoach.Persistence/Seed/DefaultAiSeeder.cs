@@ -4500,6 +4500,7 @@ Return ONLY valid JSON (no markdown, no text outside the JSON object):
 {
   "promptText": "<see rules below for this exercise type>",
   "correctAnswerText": "<see rules below — only used by reading_multiple_choice_single>",
+  "correctAnswersText": ["<see rules below — only used by reading_multiple_choice_multi>"],
   "distractors": ["<see rules below>"]
 }
 
@@ -4527,8 +4528,16 @@ If the requested exercise type is "short_answer":
 If the requested exercise type is "reading_multiple_choice_single":
 - promptText must be one specific comprehension question about the passage/excerpt content above, answerable by picking a single option — not a generic question that could apply to any passage.
 - correctAnswerText must be the single, unambiguous correct answer to that question, based only on what the excerpt/passage above actually says — never invent details not present in the text.
+- correctAnswersText may be left as an empty array [] — it is not used for this exercise type.
 - distractors must contain exactly 3 short, plausible-but-clearly-INCORRECT answers to the same question, similar in length and style to correctAnswerText, that a careless reader might mistakenly pick — but that are definitively wrong based on the text above.
 - distractors must NOT be synonyms, paraphrases, or partial restatements of correctAnswerText.
+
+If the requested exercise type is "reading_multiple_choice_multi":
+- promptText must be one specific comprehension question about the passage/excerpt content above, answerable by selecting ALL options that apply — phrase it so the student knows more than one answer may be correct (e.g. "Select all that apply").
+- correctAnswerText may be left as an empty string "" — it is not used for this exercise type.
+- correctAnswersText must contain at least 2 short, distinct, unambiguous correct answers to that question, based only on what the excerpt/passage above actually says — never invent details not present in the text.
+- distractors must contain 2-3 short, plausible-but-clearly-INCORRECT answers to the same question, similar in length and style to the correct answers, that a careless reader might mistakenly pick — but that are definitively wrong based on the text above.
+- distractors must NOT be synonyms, paraphrases, or partial restatements of any entry in correctAnswersText.
 
 General rules:
 - Keep language appropriate for {{cefrLevel}}.

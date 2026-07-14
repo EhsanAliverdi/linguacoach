@@ -52,6 +52,7 @@ public sealed class LessonExerciseBatchGenerationService : IGenerateActivitiesFr
     {
         ActivityGenerationService.ActivityTypeMultipleChoiceSingle,
         ActivityGenerationService.ActivityTypeReadingMultipleChoiceSingle,
+        ActivityGenerationService.ActivityTypeReadingMultipleChoiceMulti,
     };
 
     private readonly IGenerateActivityFromLessonHandler _singleHandler;
