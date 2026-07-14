@@ -157,26 +157,29 @@
       }
     </sp-admin-form-field>
 
-    <sp-admin-form-field label="Exercise" [required]="true">
-      @if (selectedExercise(); as exercise) {
-        <div class="sp-admin-form-actions" style="align-items:center;">
-          <sp-admin-badge tone="info" appearance="soft">{{ exercise.title }}</sp-admin-badge>
-          <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="clearExercise()">Change</sp-admin-button>
+    <sp-admin-form-field label="Exercises" [required]="true" hint="Combine one or more Exercises with the Lesson above into a single Module.">
+      @if (selectedExercises().length > 0) {
+        <div class="sp-admin-badge-row" style="margin-bottom:0.5rem;">
+          @for (e of selectedExercises(); track e.id) {
+            <sp-admin-badge tone="info" appearance="soft">
+              {{ e.title }}
+              <a (click)="removeExercise(e.id)" style="cursor:pointer; margin-left:0.35rem;">✕</a>
+            </sp-admin-badge>
+          }
         </div>
-      } @else {
-        <sp-admin-input [ngModel]="exerciseSearchQuery" (input)="onExerciseSearch($event)" placeholder="Search Exercises by title…" />
-        @if (exerciseSearching()) { <span class="sp-admin-hint">Searching…</span> }
-        @if (exerciseResults().length > 0) {
-          <ul class="sp-admin-form-stack" style="margin-top:0.35rem;">
-            @for (e of exerciseResults(); track e.id) {
-              <li>
-                <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="pickExercise(e)">
-                  {{ e.title }}
-                </sp-admin-button>
-              </li>
-            }
-          </ul>
-        }
+      }
+      <sp-admin-input [ngModel]="exerciseSearchQuery" (input)="onExerciseSearch($event)" placeholder="Search Exercises by title…" />
+      @if (exerciseSearching()) { <span class="sp-admin-hint">Searching…</span> }
+      @if (exerciseResults().length > 0) {
+        <ul class="sp-admin-form-stack" style="margin-top:0.35rem;">
+          @for (e of exerciseResults(); track e.id) {
+            <li>
+              <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="pickExercise(e)">
+                {{ e.title }}
+              </sp-admin-button>
+            </li>
+          }
+        </ul>
       }
     </sp-admin-form-field>
   </div>

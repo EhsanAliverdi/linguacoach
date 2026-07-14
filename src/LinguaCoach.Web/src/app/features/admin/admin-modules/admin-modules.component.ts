@@ -122,7 +122,10 @@ export class AdminModulesComponent implements OnInit {
   exerciseSearchQuery = '';
   exerciseResults = signal<ExerciseDto[]>([]);
   exerciseSearching = signal(false);
-  selectedExercise = signal<ExerciseDto | null>(null);
+  /** Phase K15 — combining multiple Exercises into one Module (e.g. a Lesson's 2 gap_fill + 2
+   *  multiple_choice) must be possible here too, not just as the automatic side-effect of a
+   *  Lesson's "Generate Exercises" action — so this is a multi-select, not a single pick. */
+  selectedExercises = signal<ExerciseDto[]>([]);
   private exerciseSearchDebounce?: ReturnType<typeof setTimeout>;
 
   // ── Phase K9/K11 — top-level issue count + bulk "Fix All with AI" (runs in a root service so
@@ -331,7 +334,7 @@ export class AdminModulesComponent implements OnInit {
     this.selectedLesson.set(null);
     this.exerciseSearchQuery = '';
     this.exerciseResults.set([]);
-    this.selectedExercise.set(null);
+    this.selectedExercises.set([]);
     this.actionError.set('');
     this.createModalOpen.set(true);
   }
@@ -383,13 +386,14 @@ export class AdminModulesComponent implements OnInit {
   }
 
   pickExercise(exercise: ExerciseDto): void {
-    this.selectedExercise.set(exercise);
+    this.selectedExercises.update(list =>
+      list.some(e => e.id === exercise.id) ? list : [...list, exercise]);
     this.exerciseResults.set([]);
     this.exerciseSearchQuery = '';
   }
 
-  clearExercise(): void {
-    this.selectedExercise.set(null);
+  removeExercise(exerciseId: string): void {
+    this.selectedExercises.update(list => list.filter(e => e.id !== exerciseId));
   }
 
   /** Phase K3 — real create: a Lesson and an Exercise picked from live search dropdowns (not
@@ -402,9 +406,9 @@ export class AdminModulesComponent implements OnInit {
       return;
     }
     const lesson = this.selectedLesson();
-    const exercise = this.selectedExercise();
-    if (!lesson || !exercise) {
-      this.actionError.set('Both a Lesson and an Exercise must be selected.');
+    const exercises = this.selectedExercises();
+    if (!lesson || exercises.length === 0) {
+      this.actionError.set('A Lesson and at least one Exercise must be selected.');
       return;
     }
     this.creating.set(true);
@@ -412,7 +416,7 @@ export class AdminModulesComponent implements OnInit {
     this.moduleSvc.create({
       title: this.createTitle.trim(),
       lessonLinks: [{ lessonId: lesson.id, role: 'Primary' }],
-      exerciseLinks: [{ exerciseId: exercise.id, role: 'PrimaryPractice', required: true }],
+      exerciseLinks: exercises.map(e => ({ exerciseId: e.id, role: 'PrimaryPractice', required: true })),
       cefrLevel: this.createCefrLevel || null,
     }).subscribe({
       next: () => {
