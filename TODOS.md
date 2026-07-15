@@ -1021,3 +1021,44 @@ Module with an approved `gap_fill`/`multiple_choice_single` Exercise launched vi
 `IExerciseLaunchService` bridge (`POST api/practice-gym/module-suggestions/{moduleId}/start`).
 
 **Deferred from:** Phase J4B, 2026-07-13.
+
+---
+
+### TODO-026 — Module authoring-time source filtering does not check Lesson/Exercise IsArchived
+
+**What:** `ModuleGenerationService`/`AiModuleGenerationService`/`ModuleLinkBuilder` filter
+*source* Lesson/Exercise rows by `ReviewStatus == Approved` when composing a **new** Module draft,
+but do not additionally check `Lesson.IsArchived`/`Exercise.IsArchived` at that authoring-time
+step. This means an admin could compose a new Module out of an archived Lesson or Exercise. It is
+a different code path from the Phase 1 (2026-07-15) student-delivery leak fixed via
+`ModuleEligibility` (that fix governs what's offered to *students*, not what an admin can compose
+*from*), and was explicitly out of scope for that phase per its working rules ("Do not redesign
+the Module or Exercise domains").
+
+**Why:** Surfaced during the Phase 1 root-cause investigation
+(`docs/reviews/2026-07-15-phase-1-pipeline-safety-data-integrity-fixes.md`, "Deferred findings")
+but not fixed there to keep that phase narrowly scoped to the two confirmed correctness bugs.
+
+**Context:** `src/LinguaCoach.Infrastructure/Modules/ModuleGenerationService.cs`,
+`AiModuleGenerationService.cs`, `ModuleLinkBuilder.cs`.
+
+**Deferred from:** Phase 1, 2026-07-15.
+
+---
+
+### TODO-027 — Direct Resource→Exercise generation path: keep or deprecate?
+
+**What:** `IGenerateActivityFromResourcesHandler`/`IGenerateActivityFromResourcesWithAiHandler`
+remain fully implemented and API-reachable with no `LessonId`, bypassing the "Exercises come from
+Lessons" framing. The 2026-07-15 architecture audit flagged this as an open product question
+(is it an intentional supported alternative, or vestigial?); Phase 1 (2026-07-15) deliberately
+left it untouched — its working rules explicitly forbade removing or redesigning the direct
+Resource-to-Exercise capability.
+
+**Why:** A future frontend change wiring this path up would silently reintroduce "Exercises can
+bypass Lessons" as live behavior without anyone deciding that as a product choice.
+
+**Context:** `docs/reviews/2026-07-15-content-creation-pipeline-architecture-audit.md` ("Questions
+or ambiguities discovered during the audit", item 1).
+
+**Deferred from:** Content Creation Pipeline architecture audit, 2026-07-15.

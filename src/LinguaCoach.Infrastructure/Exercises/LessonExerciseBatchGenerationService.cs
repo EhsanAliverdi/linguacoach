@@ -111,6 +111,14 @@ public sealed class LessonExerciseBatchGenerationService : IGenerateActivitiesFr
                     activity = result.Activity;
                 }
 
+                // Phase 1 (2026-07-15 pipeline safety audit) — this is a Lesson-based batch, so
+                // every Exercise it creates must retain the Lesson relationship regardless of which
+                // internal handler composed it; fail the whole (transacted) call rather than
+                // silently persist an orphaned Exercise if that invariant is ever violated again.
+                if (activity.LessonId != request.LessonId)
+                    throw new ExerciseValidationException(
+                        $"Generated Exercise '{activity.Id}' (type '{spec.ActivityType}') did not retain LessonId '{request.LessonId}'.");
+
                 created.Add(activity);
             }
         }
@@ -145,7 +153,7 @@ public sealed class LessonExerciseBatchGenerationService : IGenerateActivitiesFr
             resources, activityType, title ?? lesson.Title,
             lesson.CefrLevel, lesson.Skill, lesson.Subskill,
             ParseTags(lesson.ContextTagsJson), ParseTags(lesson.FocusTagsJson), lesson.DifficultyBand,
-            notes, createdByUserId);
+            notes, createdByUserId, LessonId: lesson.Id);
     }
 
     private static List<string> ParseTags(string? json)

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using LinguaCoach.Application.Modules;
 using LinguaCoach.Application.PracticeGymModules;
 using LinguaCoach.Domain.Constants;
 using LinguaCoach.Domain.Entities;
@@ -42,7 +43,7 @@ public sealed class PracticeGymModuleSelectionService : IPracticeGymModuleSelect
 
             var candidateModules = await _db.Modules
                 .AsNoTracking()
-                .Where(m => m.ReviewStatus == AdminReviewStatus.Approved)
+                .Where(ModuleEligibility.AvailableForNewStudentDeliveryExpr)
                 .ToListAsync(ct);
 
             if (candidateModules.Count == 0)

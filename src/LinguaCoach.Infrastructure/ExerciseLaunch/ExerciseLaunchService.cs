@@ -1,4 +1,5 @@
 using LinguaCoach.Application.ExerciseLaunch;
+using LinguaCoach.Application.Modules;
 using LinguaCoach.Application.PracticeGymModules;
 using LinguaCoach.Domain;
 using LinguaCoach.Domain.Entities;
@@ -44,6 +45,13 @@ public sealed class ExerciseLaunchService : IExerciseLaunchService
 
             if (module is null || module.ReviewStatus != AdminReviewStatus.Approved)
                 return Unsupported(request.ModuleId, "This module is not available for practice right now.");
+
+            // Phase 1 (2026-07-15 pipeline safety audit) — archival must block new launches even
+            // when a stale client still holds a suggestion/assignment for a module that was
+            // archived after being suggested. Already-created assignments/launches are untouched;
+            // this only blocks materializing a *new* LearningActivity/StudentExerciseLaunch.
+            if (!ModuleEligibility.IsAvailableForNewStudentDelivery(module))
+                return Unsupported(request.ModuleId, "This module has been archived and is no longer available for new practice.");
 
             var exerciseLinks = await _db.ModuleExerciseLinks
                 .AsNoTracking()

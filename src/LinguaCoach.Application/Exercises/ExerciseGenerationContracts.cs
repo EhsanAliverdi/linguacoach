@@ -19,7 +19,14 @@ public sealed record GenerateActivityFromResourcesRequest(
     IReadOnlyList<string>? DefaultFocusTags = null,
     int? DefaultDifficultyBand = null,
     string? Notes = null,
-    Guid? CreatedByUserId = null
+    Guid? CreatedByUserId = null,
+    // Phase 1 (2026-07-15 pipeline safety audit) — null for a direct "generate from resources"
+    // call with no Lesson context. Set when this request was synthesized from a Lesson's own
+    // resource links (see GenerateActivitiesFromLessonRequest /
+    // LessonExerciseBatchGenerationService.BuildResourcesRequestAsync) so the resulting Exercise
+    // still retains Exercise.LessonId even though it was composed via the resources-based
+    // (including AI) handler rather than IGenerateActivityFromLessonHandler.
+    Guid? LessonId = null
 );
 
 public sealed record GenerateActivityFromLessonRequest(

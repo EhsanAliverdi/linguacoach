@@ -121,6 +121,44 @@ public sealed class ExerciseLaunchServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Launch_rejected_for_archived_module()
+    {
+        var module = SeedModule();
+        module.Archive();
+        _db.SaveChanges();
+
+        var result = await _sut.LaunchAsync(Request(module.Id, Guid.NewGuid()));
+
+        result.Success.Should().BeFalse();
+        result.UnsupportedReason.Should().Contain("archived");
+    }
+
+    [Fact]
+    public async Task Archiving_module_after_launch_preserves_existing_launch_bridge_row()
+    {
+        // Preferred safety rule: archival blocks *new* launches only — an already-created
+        // StudentExerciseLaunch row (and the LearningActivity it materialized) must keep
+        // resolving, matching Module.IsArchived's own doc comment ("archiving never deletes
+        // the row" / existing assignments "keep resolving").
+        var module = SeedModule();
+        var studentId = Guid.NewGuid();
+        var firstLaunch = await _sut.LaunchAsync(Request(module.Id, studentId));
+        firstLaunch.Success.Should().BeTrue();
+
+        module.Archive();
+        _db.SaveChanges();
+
+        var bridge = await _db.StudentExerciseLaunches.SingleAsync();
+        bridge.ModuleId.Should().Be(module.Id);
+        var learningActivity = await _db.LearningActivities.AsNoTracking()
+            .SingleAsync(a => a.Id == bridge.LearningActivityId);
+        learningActivity.Should().NotBeNull();
+
+        var secondLaunch = await _sut.LaunchAsync(Request(module.Id, Guid.NewGuid()));
+        secondLaunch.Success.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task Launch_rejected_for_rejected_module()
     {
         var module = new Module("Bad Module", ModuleSourceMode.Manual, cefrLevel: "B1", skill: "Vocabulary");

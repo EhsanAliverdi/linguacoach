@@ -538,4 +538,48 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
             .WithMessage("*At least one resource is required*");
         _provider.CallCount.Should().Be(0);
     }
+
+    // ── LessonId provenance (Phase 1, 2026-07-15 pipeline safety audit) ────────
+    // Previously this handler always hardcoded lessonId: null on the Exercise it created, even
+    // when the request was synthesized from a Lesson's own resources (see
+    // LessonExerciseBatchGenerationService.BuildResourcesRequestAsync) — dropping the Lesson
+    // relationship for every AI-preferred activity type generated from a Lesson.
+
+    [Fact]
+    public async Task Request_with_lesson_id_creates_exercise_retaining_lesson_id()
+    {
+        var source = SeedSource();
+        var vocab = SeedVocabulary(source.Id);
+        var lesson = new Lesson("Resilient", "Resilient means able to recover quickly.",
+            LessonSourceMode.Manual, "B1", "Vocabulary");
+        _db.Lessons.Add(lesson);
+        _db.SaveChanges();
+        _provider.NextResponses.Enqueue(
+            """{"promptText": "", "distractors": ["easily discouraged by setbacks", "unable to adapt to change", "overly cautious in decisions"]}""");
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") },
+            RequestedActivityType: "multiple_choice_single", LessonId: lesson.Id));
+
+        result.Activity.LessonId.Should().Be(lesson.Id);
+        result.Activity.SourceMode.Should().Be("GeneratedFromLesson");
+        var persisted = await _db.Exercises.AsNoTracking().SingleAsync(e => e.Id == result.Activity.Id);
+        persisted.LessonId.Should().Be(lesson.Id);
+    }
+
+    [Fact]
+    public async Task Request_without_lesson_id_creates_exercise_with_null_lesson_id()
+    {
+        var source = SeedSource();
+        var vocab = SeedVocabulary(source.Id);
+        _provider.NextResponses.Enqueue(
+            """{"promptText": "", "distractors": ["easily discouraged by setbacks", "unable to adapt to change", "overly cautious in decisions"]}""");
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") },
+            RequestedActivityType: "multiple_choice_single"));
+
+        result.Activity.LessonId.Should().BeNull();
+        result.Activity.SourceMode.Should().Be("GeneratedFromResources");
+    }
 }

@@ -266,15 +266,23 @@ public sealed class AiExerciseGenerationService : IGenerateActivityFromResources
             + $"Generated from: {string.Join(", ", resolved.Select(r => r.Snapshot.Title))}."
             + (request.Notes is not null ? $" {request.Notes.Trim()}" : string.Empty);
 
+        // Phase 1 (2026-07-15 pipeline safety audit) — request.LessonId is set when this request
+        // was synthesized from a Lesson's own resources (LessonExerciseBatchGenerationService's
+        // AI-preferred-type routing); previously hardcoded to null here, which silently dropped
+        // Exercise.LessonId for every AI-generated Exercise reached via that path. SourceMode
+        // mirrors ExerciseGenerationService.ComposeAndSaveAsync's own lessonId.HasValue check for
+        // consistency between the deterministic and AI composers.
+        var sourceMode = request.LessonId.HasValue ? ExerciseSourceMode.GeneratedFromLesson : ExerciseSourceMode.GeneratedFromResources;
+
         Exercise activity;
         try
         {
             activity = new Exercise(
-                resolvedTitle, instructions, activityType, ExerciseRendererType.Formio, ExerciseSourceMode.GeneratedFromResources,
+                resolvedTitle, instructions, activityType, ExerciseRendererType.Formio, sourceMode,
                 description, patternKey: null, formSchemaJson, answerKeyJson, scoringRulesJson, feedbackPlanJson,
                 cefrLevel, skill, subskill,
                 JsonSerializer.Serialize(contextTags), JsonSerializer.Serialize(focusTags),
-                difficultyBand, estimatedMinutes: null, lessonId: null,
+                difficultyBand, estimatedMinutes: null, lessonId: request.LessonId,
                 execResult.ProviderName, execResult.ModelName, request.CreatedByUserId);
         }
         catch (ArgumentException ex)

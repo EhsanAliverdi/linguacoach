@@ -136,6 +136,19 @@ public sealed class PracticeGymModuleSelectionServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Approved_archived_module_not_selected()
+    {
+        var module = SeedModule(cefrLevel: "B1", skill: "Vocabulary");
+        module.Archive();
+        _db.SaveChanges();
+
+        var result = await _sut.SelectAsync(Request(Guid.NewGuid(), cefr: "B1", skill: "Vocabulary"));
+
+        result.FallbackRequired.Should().BeTrue();
+        result.Suggestions.Should().NotContain(s => s.ModuleId == module.Id);
+    }
+
+    [Fact]
     public async Task Approved_module_with_pending_lesson_not_selected()
     {
         SeedModule(linkApprovedLesson: false);

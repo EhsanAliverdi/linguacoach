@@ -310,7 +310,7 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
             resolved, request.RequestedActivityType, request.Title,
             request.DefaultCefrLevel, request.DefaultSkill, request.DefaultSubskill,
             request.DefaultContextTags, request.DefaultFocusTags, request.DefaultDifficultyBand,
-            request.Notes, request.CreatedByUserId, lessonId: null, ct);
+            request.Notes, request.CreatedByUserId, lessonId: request.LessonId, ct);
     }
 
     public async Task<GenerateExerciseResult> HandleAsync(

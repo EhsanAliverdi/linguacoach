@@ -1,4 +1,5 @@
 using System.Text.Json;
+using LinguaCoach.Application.Modules;
 using LinguaCoach.Application.TodayPlanModules;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
@@ -38,7 +39,7 @@ public sealed class TodayPlanModuleSelectionService : ITodayPlanModuleSelectionS
 
             var candidateModules = await _db.Modules
                 .AsNoTracking()
-                .Where(m => m.ReviewStatus == AdminReviewStatus.Approved)
+                .Where(ModuleEligibility.AvailableForNewStudentDeliveryExpr)
                 .ToListAsync(ct);
 
             if (candidateModules.Count == 0)

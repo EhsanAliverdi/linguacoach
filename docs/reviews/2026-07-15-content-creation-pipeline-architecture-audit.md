@@ -326,3 +326,14 @@ A second, subtler deviation: inside the Lesson-sourced batch-generation flow its
 The middle of the pipeline — Resource Bank lifecycle, Lesson generation and review, Exercise generation and review, Module review — is implemented to a genuinely high standard, in several places (dual provenance links, real duplicate fingerprinting, defensive re-validation at publish time) exceeding what the intended design strictly requires. The two edges of the pipeline are where the implementation diverges most from intent: **Import's "AI understands and splits content" promise is not built** (AI only enriches pre-existing candidates), and **the Published Module Catalogue as a distinct, versioned, single-source-of-truth concept does not exist** — "Approved" alone carries the full weight of "published," re-derived independently across multiple consumers, with one confirmed leak (`IsArchived` not gating student-facing selection) as a result of that duplication.
 
 Structurally, the codebase is not confused about the target architecture — its own internal documentation (`product-model-realignment-h0.md`, the Phase I2A/I2B deletion reviews, the Phase I4 rename doc) shows a team that understands the gap between the legacy system and the intended bank-first pipeline, and has been closing it phase by phase. What remains open (the Import AI gap, the Catalogue/versioning gap, and the archived-Module leak) reads as deliberately sequenced future work rather than oversight — but the archived-Module leak in particular is worth treating as a near-term fix candidate rather than pure architecture backlog, since it's a live behavioural gap against the intended safety guarantee, not just a missing concept.
+
+---
+
+## Phase 1 follow-up (2026-07-15)
+
+The two confirmed correctness findings from this audit (`IsArchived` not gating student-facing
+Module selection/launch, and Lesson-generated Exercises losing `LessonId` for AI-preferred types)
+were fixed in a narrowly scoped follow-up phase, without acting on any of the broader
+architecture/versioning/catalogue findings above. See
+`docs/reviews/2026-07-15-phase-1-pipeline-safety-data-integrity-fixes.md` for the fix, root-cause
+detail, tests, and validation.
