@@ -16,14 +16,10 @@ import {
   BatchResourceCandidateActionResult,
   AdminResourceSourceDto,
   ColumnMappingSuggestion,
-  CONTENT_IMPORT_COMING_SOON_TYPES,
-  CONTENT_IMPORT_INPUT_MODES,
   CONTENT_IMPORT_RESOURCE_TYPES,
   ContentImportInputMode,
   ContentImportResourceType,
   ContentImportResult,
-  RESOURCE_BANK_CEFR_LEVELS,
-  RESOURCE_IMPORT_MODES,
   RESOURCE_IMPORT_RECOGNIZED_FIELDS,
   ResourceCandidatePreviewDto,
   ResourceCandidatePublishResult,
@@ -38,22 +34,25 @@ import {
   SpAdminDrawerComponent,
   SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
+  SpAdminFileDropzoneComponent,
   SpAdminFormFieldComponent,
-  SpAdminFormGridComponent,
+  SpAdminIconComponent,
   SpAdminInputComponent,
   SpAdminLoadingStateComponent,
   SpAdminModalComponent,
   SpAdminNativeSelectComponent,
-  SpAdminNumberInputComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminPaginationComponent,
   SpAdminSectionCardComponent,
+  SpAdminSegmentedToggleComponent,
+  SpAdminStepperComponent,
   SpAdminTableActionsComponent,
   SpAdminTableComponent,
   SpAdminTableFooterComponent,
   SpAdminTextareaComponent,
 } from '../../../design-system/admin';
+import type { SpAdminSegmentedOption } from '../../../design-system/admin';
 import type { SpAdminRowAction } from '../../../design-system/admin';
 
 type ImportEntryMode = 'paste' | 'file';
@@ -78,6 +77,26 @@ const RECENT_RUNS_PAGE_SIZE = 10;
  * for the reference usage) instead of a bespoke button pair; selecting a run in Import History
  * navigates to its own page (/admin/content/import/runs/:runId) instead of expanding inline; both
  * the runs table and the run-candidates table are frontend+backend paginated.
+ *
+ * Phase K23 — "Add content" restyled around a real sp-admin-stepper, a single unified source
+ * picker (inline "+ New source" row, no modal), and an sp-admin-segmented-toggle for
+ * upload-vs-paste, matching the design reference in import-content.jsx. Paste mode's source field
+ * used to be free text (auto-created-or-reused by name on submit, no pre-registration required);
+ * it now shares the same registered-source dropdown as file mode, resolving the selected source's
+ * name for the paste backend call (which still only accepts a name, not an id) — this is a
+ * deliberate small behavior unification (one source list instead of two different source
+ * concepts), not a visual-only change. Content type is shown in both modes to match the
+ * reference, but is only ever sent to the backend in paste mode — file-mode's import endpoint has
+ * no resourceType parameter (each row is classified from its own columns).
+ *
+ * Phase K23 (follow-up) — removed the "advanced options" disclosure entirely (per-item CEFR/
+ * skill/subskill/tags/difficulty-band defaults, and the paste/file format picker). The metadata
+ * defaults duplicated what ResourceCandidateAnalysisService's AI analysis step already decides
+ * per candidate (CEFR level, skill/subskill, tags) — always sent as null now, deferring entirely
+ * to that AI step rather than admin-typed defaults. The format picker is replaced by
+ * auto-detection (detectPasteInputMode/detectFileImportMode below) — content shape (leading `[`/
+ * `{` for JSON, a comma-bearing first line for CSV) and file extension are reliable enough
+ * signals that a manual picker added friction without adding real control.
  */
 @Component({
   selector: 'app-admin-content-import',
@@ -91,17 +110,19 @@ const RECENT_RUNS_PAGE_SIZE = 10;
     SpAdminDrawerComponent,
     SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
+    SpAdminFileDropzoneComponent,
     SpAdminFormFieldComponent,
-    SpAdminFormGridComponent,
+    SpAdminIconComponent,
     SpAdminInputComponent,
     SpAdminLoadingStateComponent,
     SpAdminModalComponent,
     SpAdminNativeSelectComponent,
-    SpAdminNumberInputComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
     SpAdminPaginationComponent,
     SpAdminSectionCardComponent,
+    SpAdminSegmentedToggleComponent,
+    SpAdminStepperComponent,
     SpAdminTableActionsComponent,
     SpAdminTableComponent,
     SpAdminTableFooterComponent,
@@ -112,33 +133,49 @@ const RECENT_RUNS_PAGE_SIZE = 10;
 })
 export class AdminContentImportComponent implements OnInit {
   readonly resourceTypeOptions = CONTENT_IMPORT_RESOURCE_TYPES.map(t => ({ value: t.value, label: t.label }));
-  readonly inputModeOptions = CONTENT_IMPORT_INPUT_MODES.map(m => ({ value: m.value, label: m.label }));
-  readonly cefrOptions = [{ value: '', label: 'No default' }, ...RESOURCE_BANK_CEFR_LEVELS.map(l => ({ value: l, label: l }))];
-  readonly comingSoonTypes = CONTENT_IMPORT_COMING_SOON_TYPES;
-  readonly fileImportModeOptions = RESOURCE_IMPORT_MODES.map(m => ({ value: m, label: m }));
+
+  // ── Phase K23 — the 4-stage pipeline stepper shown above "New Import" ───
+  readonly pipelineSteps = ['Add content', 'Structure into candidates', 'Review', 'Approve & publish to the Resource Bank'];
+  readonly stepperIndex = computed(() => {
+    if (!this.showPipeline()) return 0;
+    const items = this.candidates();
+    if (items.length > 0 && items.every(c => c.isPublished)) return 3;
+    return 2;
+  });
 
   // ── Page tabs (Phase J4B) ────────────────────────────────────────────────
   activeTab = signal<ImportPageTab>('new');
-  advancedDefaultsOpen = signal(false);
 
-  // ── Import entry mode toggle ────────────────────────────────────────────
-  entryMode = signal<ImportEntryMode>('paste');
+  // ── Import entry mode toggle (Phase K23 — sp-admin-segmented-toggle) ────
+  entryMode = signal<ImportEntryMode>('file');
+  readonly entryModeOptions: SpAdminSegmentedOption[] = [
+    { value: 'file', label: 'Upload a file' },
+    { value: 'paste', label: 'Type it in' },
+  ];
 
-  // ── Paste-based import (existing Phase H2 form) ─────────────────────────
-  sourceName = '';
-  notes = '';
+  // ── Unified content fields (Phase K23 — shared by both paste and file-upload submit paths) ──
   resourceType: ContentImportResourceType = 'vocabulary';
-  defaultCefrLevel = '';
-  defaultSkill = '';
-  defaultSubskill = '';
-  defaultContextTags = '';
-  defaultFocusTags = '';
-  defaultDifficultyBand: number | null = null;
-  inputMode: ContentImportInputMode = 'pasted_text';
+  noteDraft = '';
   content = '';
 
-  get inputHint(): string {
-    return CONTENT_IMPORT_INPUT_MODES.find(m => m.value === this.inputMode)?.hint ?? '';
+  /** Phase K1 CEFR/skill/subskill/tags/difficulty-band "defaults" and the paste/file format
+   *  picker used to live in an "advanced options" disclosure — removed (Phase K23 follow-up).
+   *  The metadata defaults duplicated what ResourceCandidateAnalysisService's AI analysis step
+   *  already decides per candidate; the format is now auto-detected from content/file
+   *  extension instead of admin-picked. See detectPasteInputMode/detectFileImportMode below. */
+  private detectPasteInputMode(content: string): ContentImportInputMode {
+    const trimmed = content.trim();
+    if (trimmed.startsWith('[') || trimmed.startsWith('{')) return 'json_text';
+    const lines = trimmed.split('\n');
+    if (lines.length > 1 && lines[0].includes(',')) return 'csv_text';
+    return 'pasted_text';
+  }
+
+  private detectFileImportMode(file: File): string {
+    const name = file.name.toLowerCase();
+    if (name.endsWith('.jsonl')) return 'Jsonl';
+    if (name.endsWith('.json')) return 'Json';
+    return 'Csv';
   }
 
   /** Phase J5b — "Mixed" doesn't force one type onto every row, so the field's default
@@ -162,23 +199,24 @@ export class AdminContentImportComponent implements OnInit {
   mappingRows = signal<{ column: string; field: string; confidence: number | null }[]>([]);
   private pendingSubmitKind: 'paste' | 'file' | null = null;
 
-  // ── File-upload import (Phase I1 — new) ─────────────────────────────────
+  // ── Source (Phase K23 — unified: one registered-source list + inline "+ New source" row,
+  // shared by both paste and file-upload submit paths; see the class doc comment above) ─────────
   sources = signal<AdminResourceSourceDto[]>([]);
   loadingSources = signal(false);
   readonly sourceOptions = computed(() => this.sources().map(s => ({ value: s.sourceId, label: s.name })));
 
-  fileSourceId = '';
+  selectedSourceId = '';
+  addingSource = signal(false);
+  newSourceName = '';
+  creatingSource = signal(false);
+  newSourceError = signal('');
+
+  // ── File-upload import (Phase I1) ────────────────────────────────────────
   fileImportMode: string = 'Csv';
-  fileNotes = '';
   selectedFile: File | null = null;
   fileSubmitting = signal(false);
   fileError = signal('');
   fileResult = signal<ResourceImportResult | null>(null);
-
-  newSourceModalOpen = signal(false);
-  newSourceName = '';
-  creatingSource = signal(false);
-  newSourceError = signal('');
 
   // ── Pipeline/review section (New Import tab only — Phase J4B follow-up moved the Import
   // History "candidates for selected run" view to its own page) ──────────────────────────
@@ -278,20 +316,26 @@ export class AdminContentImportComponent implements OnInit {
       next: result => {
         this.sources.set(result.items);
         this.loadingSources.set(false);
-        if (!this.fileSourceId && result.items.length > 0) this.fileSourceId = result.items[0].sourceId;
+        if (!this.selectedSourceId && result.items.length > 0) this.selectedSourceId = result.items[0].sourceId;
       },
       error: () => { this.loadingSources.set(false); },
     });
   }
 
-  openNewSourceModal(): void {
-    this.newSourceName = '';
-    this.newSourceError.set('');
-    this.newSourceModalOpen.set(true);
+  /** Resolves the selected registered source's own name — needed because the paste-import
+   *  backend still takes a `sourceName: string`, not an id (see class doc comment). */
+  private selectedSourceName(): string | null {
+    return this.sources().find(s => s.sourceId === this.selectedSourceId)?.name ?? null;
   }
 
-  closeNewSourceModal(): void {
-    this.newSourceModalOpen.set(false);
+  startAddSource(): void {
+    this.newSourceName = '';
+    this.newSourceError.set('');
+    this.addingSource.set(true);
+  }
+
+  cancelAddSource(): void {
+    this.addingSource.set(false);
   }
 
   createSource(): void {
@@ -318,16 +362,16 @@ export class AdminContentImportComponent implements OnInit {
         this.sourceSvc.approve(created.sourceId).subscribe({
           next: approved => {
             this.creatingSource.set(false);
-            this.newSourceModalOpen.set(false);
+            this.addingSource.set(false);
             this.sources.update(items => [approved, ...items]);
-            this.fileSourceId = approved.sourceId;
+            this.selectedSourceId = approved.sourceId;
           },
           error: err => {
             // Source was created but auto-approve failed — still usable, just surface a note.
             this.creatingSource.set(false);
-            this.newSourceModalOpen.set(false);
+            this.addingSource.set(false);
             this.sources.update(items => [created, ...items]);
-            this.fileSourceId = created.sourceId;
+            this.selectedSourceId = created.sourceId;
             this.fileError.set(err.error?.error ?? 'Source created but could not be auto-approved; approve it before uploading.');
           },
         });
@@ -341,20 +385,19 @@ export class AdminContentImportComponent implements OnInit {
 
   // ── Paste import ─────────────────────────────────────────────────────────
 
-  private parseTags(raw: string): string[] | null {
-    const tags = raw.split(',').map(t => t.trim()).filter(t => t.length > 0);
-    return tags.length > 0 ? tags : null;
-  }
+  private detectedPasteInputMode: ContentImportInputMode = 'pasted_text';
 
   /** Phase K1 — was submitPaste()'s entire body. Pasted-line mode ('pasted_text') has no columns
    *  to map, so it goes straight through unchanged; CSV/JSON text always routes through the
-   *  mapping-review step first (see openMappingReview()), matching file-upload's same treatment. */
+   *  mapping-review step first (see openMappingReview()), matching file-upload's same treatment.
+   *  Phase K23 — the format itself is now auto-detected (detectPasteInputMode) rather than
+   *  admin-picked. */
   submitPaste(): void {
     this.error.set('');
     this.result.set(null);
 
-    if (!this.sourceName.trim()) {
-      this.error.set('Source name is required.');
+    if (!this.selectedSourceName()) {
+      this.error.set('A source is required — pick one or create a new one.');
       return;
     }
     if (!this.content.trim()) {
@@ -362,7 +405,8 @@ export class AdminContentImportComponent implements OnInit {
       return;
     }
 
-    if (this.inputMode === 'pasted_text') {
+    this.detectedPasteInputMode = this.detectPasteInputMode(this.content);
+    if (this.detectedPasteInputMode === 'pasted_text') {
       this.runPasteImport(null);
       return;
     }
@@ -371,7 +415,7 @@ export class AdminContentImportComponent implements OnInit {
     this.mappingError.set('');
     this.mappingLoading.set(true);
     this.mappingModalOpen.set(true);
-    this.importSvc.proposeMapping(this.inputMode, this.content).subscribe({
+    this.importSvc.proposeMapping(this.detectedPasteInputMode, this.content).subscribe({
       next: result => { this.mappingLoading.set(false); this.applyMappingResult(result); },
       error: err => { this.mappingLoading.set(false); this.mappingError.set(err.error?.error ?? 'Could not get an AI mapping suggestion.'); this.mappingRows.set([]); },
     });
@@ -380,17 +424,17 @@ export class AdminContentImportComponent implements OnInit {
   private runPasteImport(columnRenames: Record<string, string> | null): void {
     this.submitting.set(true);
     this.importSvc.import({
-      sourceName: this.sourceName.trim(),
+      sourceName: this.selectedSourceName()!,
       resourceType: this.resourceType,
-      inputMode: this.inputMode,
+      inputMode: this.detectedPasteInputMode,
       content: this.content,
-      defaultCefrLevel: this.defaultCefrLevel || null,
-      defaultSkill: this.defaultSkill.trim() || null,
-      defaultSubskill: this.defaultSubskill.trim() || null,
-      defaultContextTags: this.parseTags(this.defaultContextTags),
-      defaultFocusTags: this.parseTags(this.defaultFocusTags),
-      defaultDifficultyBand: this.defaultDifficultyBand,
-      notes: this.notes.trim() || null,
+      defaultCefrLevel: null,
+      defaultSkill: null,
+      defaultSubskill: null,
+      defaultContextTags: null,
+      defaultFocusTags: null,
+      defaultDifficultyBand: null,
+      notes: this.noteDraft.trim() || null,
       columnRenames,
     }).subscribe({
       next: result => {
@@ -411,6 +455,7 @@ export class AdminContentImportComponent implements OnInit {
 
   startAnotherPasteImport(): void {
     this.content = '';
+    this.noteDraft = '';
     this.result.set(null);
     this.error.set('');
     this.currentRunId.set(null);
@@ -424,18 +469,21 @@ export class AdminContentImportComponent implements OnInit {
 
   // ── File-upload import ───────────────────────────────────────────────────
 
-  onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.selectedFile = input.files && input.files.length > 0 ? input.files[0] : null;
+  private detectedFileImportMode = 'Csv';
+
+  onFileSelected(file: File | null): void {
+    this.selectedFile = file;
   }
 
   /** Phase K1 — file uploads always route through the mapping-review step first (every file
-   *  format this endpoint accepts — Csv/Json/Jsonl — has real column ambiguity to review). */
+   *  format this endpoint accepts — Csv/Json/Jsonl — has real column ambiguity to review).
+   *  Phase K23 — the format itself is now auto-detected from the file extension
+   *  (detectFileImportMode) rather than admin-picked. */
   submitFile(): void {
     this.fileError.set('');
     this.fileResult.set(null);
 
-    if (!this.fileSourceId) {
+    if (!this.selectedSourceId) {
       this.fileError.set('A source is required — pick one or create a new one.');
       return;
     }
@@ -444,11 +492,12 @@ export class AdminContentImportComponent implements OnInit {
       return;
     }
 
+    this.detectedFileImportMode = this.detectFileImportMode(this.selectedFile);
     this.pendingSubmitKind = 'file';
     this.mappingError.set('');
     this.mappingLoading.set(true);
     this.mappingModalOpen.set(true);
-    this.importRunSvc.proposeMapping(this.fileImportMode, this.selectedFile).subscribe({
+    this.importRunSvc.proposeMapping(this.detectedFileImportMode, this.selectedFile).subscribe({
       next: result => { this.mappingLoading.set(false); this.applyMappingResult(result); },
       error: err => { this.mappingLoading.set(false); this.mappingError.set(err.error?.error ?? 'Could not get an AI mapping suggestion.'); this.mappingRows.set([]); },
     });
@@ -457,7 +506,7 @@ export class AdminContentImportComponent implements OnInit {
   private runFileImport(columnRenames: Record<string, string> | null): void {
     this.fileSubmitting.set(true);
     this.importRunSvc.import(
-      this.fileSourceId, this.fileImportMode, this.selectedFile!, this.fileNotes.trim() || undefined, columnRenames,
+      this.selectedSourceId, this.detectedFileImportMode, this.selectedFile!, this.noteDraft.trim() || undefined, columnRenames,
     ).subscribe({
       next: result => {
         this.fileSubmitting.set(false);
@@ -511,6 +560,7 @@ export class AdminContentImportComponent implements OnInit {
 
   startAnotherFileImport(): void {
     this.selectedFile = null;
+    this.noteDraft = '';
     this.fileResult.set(null);
     this.fileError.set('');
     this.currentRunId.set(null);

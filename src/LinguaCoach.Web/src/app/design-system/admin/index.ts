@@ -75,3 +75,6 @@ export * from './components/heatmap/sp-admin-heatmap.component';
 export * from './services/admin-drawer.service';
 export * from './services/admin-modal.service';
 export * from './services/admin-toast.service';
+export * from './components/stepper/sp-admin-stepper.component';
+export * from './components/segmented-toggle/sp-admin-segmented-toggle.component';
+export * from './components/file-dropzone/sp-admin-file-dropzone.component';
