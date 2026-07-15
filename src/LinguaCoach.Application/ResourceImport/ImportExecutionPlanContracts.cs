@@ -97,7 +97,16 @@ public sealed record ImportExecutionPlanDto(
     DateTimeOffset? RejectedAtUtc,
     string? RejectionReason,
     string? PauseReason,
-    string? ChangeReason);
+    string? ChangeReason,
+    /// <summary>Phase 4.4 — the caller must echo this back on the next edit/approval so the
+    /// server can detect a stale save/approve (see <see cref="ImportPlanConcurrencyConflictException"/>).</summary>
+    Guid ConcurrencyStamp,
+    /// <summary>Phase 4.4 — whether the plan is still in a status <c>IImportPlanDraftService</c>
+    /// will accept an edit for (Draft or AwaitingApproval). False for every other status.</summary>
+    bool IsEditable,
+    /// <summary>Phase 4.4 — the typed group instructions this plan's <c>ProfileJson</c> currently
+    /// holds, for a UI to render editable controls against without parsing JSON itself.</summary>
+    IReadOnlyList<ImportExecutionGroupInstruction> GroupInstructions);
 
 public sealed record GenerateImportExecutionPlanCommand(Guid ImportPackageId, string? ChangeReason = null);
 
@@ -105,7 +114,11 @@ public sealed record ApproveImportExecutionPlanCommand(
     Guid ImportPackageId,
     Guid PlanId,
     Guid? ApprovedByUserId,
-    decimal ApprovedCostCeiling);
+    decimal ApprovedCostCeiling,
+    /// <summary>Phase 4.4 (A5) — the concurrency stamp the caller last read for this plan. A
+    /// mismatch against the persisted value means someone else edited/approved it first — the
+    /// approval is rejected rather than silently overwriting whatever changed.</summary>
+    Guid ExpectedConcurrencyStamp);
 
 public sealed record RejectImportExecutionPlanCommand(
     Guid ImportPackageId,
@@ -131,6 +144,132 @@ public sealed class ImportExecutionPlanNotApprovableException : Exception
     {
         BlockingReasons = blockingReasons;
     }
+}
+
+// ── Phase 4.4 (Workstream A) — admin plan editing before approval. Reuses the exact typed
+// contract execution already consumes (ImportExecutionGroupInstruction/ApprovedImportExecutionProfile,
+// Phase 4.3) so a saved draft edit round-trips to the same schema ImportPackageProcessingService
+// reads — there is one authoritative plan schema, not a separate frontend-only model. ──
+
+/// <summary>Thrown when a save or approval's <c>ExpectedConcurrencyStamp</c> does not match the
+/// plan's current <see cref="Domain.Entities.ImportProfile.ConcurrencyStamp"/> — someone else
+/// edited or approved the plan first. Carries the current stamp so the client can reload and
+/// re-diff rather than blindly retrying with stale data.</summary>
+public sealed class ImportPlanConcurrencyConflictException : Exception
+{
+    public Guid CurrentConcurrencyStamp { get; }
+
+    public ImportPlanConcurrencyConflictException(Guid currentConcurrencyStamp)
+        : base("This Import Execution Plan was changed by someone else — reload it before saving or approving again.")
+    {
+        CurrentConcurrencyStamp = currentConcurrencyStamp;
+    }
+}
+
+/// <summary>Thrown when a draft plan update fails <see cref="ImportPlanInstructionValidator"/> —
+/// carries every violation (not just the first) so the admin UI can display them grouped by
+/// source group, per Workstream A9 ("do not allow approve anyway").</summary>
+public sealed class ImportPlanValidationFailedException : Exception
+{
+    public IReadOnlyList<ImportPlanValidationError> Errors { get; }
+
+    public ImportPlanValidationFailedException(IReadOnlyList<ImportPlanValidationError> errors)
+        : base("Import Execution Plan draft failed validation: " +
+               string.Join(" ", errors.Select(e => e.GroupKey is null ? e.Message : $"[{e.GroupKey}] {e.Message}")))
+    {
+        Errors = errors;
+    }
+}
+
+/// <summary>Thrown at approval time when a billable plan's required pricing cannot be resolved
+/// (Workstream B7 — "missing pricing must not silently become zero"). Distinct from
+/// <see cref="ImportExecutionPlanNotApprovableException"/> so the admin-facing message can name
+/// the exact provider/model/operation dimension that is missing.</summary>
+public sealed class ImportPricingUnavailableException : Exception
+{
+    public string ProviderName { get; }
+    public string ModelName { get; }
+    public string Operation { get; }
+
+    public ImportPricingUnavailableException(string providerName, string modelName, string operation)
+        : base($"Pricing for provider '{providerName}', model '{modelName}' ({operation}) is not configured — " +
+               "cannot approve or execute a billable plan without it.")
+    {
+        ProviderName = providerName;
+        ModelName = modelName;
+        Operation = operation;
+    }
+}
+
+public sealed record UpdateImportPlanDraftCommand(
+    Guid ImportPackageId,
+    Guid PlanId,
+    Guid ExpectedConcurrencyStamp,
+    IReadOnlyList<ImportExecutionGroupInstruction> GroupInstructions);
+
+/// <summary>Creates a new Draft plan revision copying the given (typically Approved) plan's
+/// instructions, for the admin to then edit and re-approve — Workstream A4's "deliberate revision
+/// workflow" rather than mutating an approved row in place. Only allowed while the package hasn't
+/// started executing the currently-approved plan yet (see <c>ImportPlanDraftService</c> for the
+/// exact guard) — this phase does not implement a destructive mid-execution reset.</summary>
+public sealed record ReviseApprovedImportPlanCommand(Guid ImportPackageId, Guid SourcePlanId, string ChangeReason);
+
+public sealed record PreviewImportPlanDraftCommand(
+    Guid ImportPackageId,
+    IReadOnlyList<ImportExecutionGroupInstruction> GroupInstructions,
+    int MaxSampleRowsPerGroup = 5);
+
+/// <summary>One bounded preview row: the source values as parsed, and what execution's exact
+/// mapping logic (<see cref="IResourceImportService"/>'s column-rename + type-inference/forced-type
+/// path) would produce from it — proving "source value → selected mapping → expected candidate
+/// field" without creating anything.</summary>
+public sealed record ImportPlanPreviewRow(
+    string GroupKey,
+    string AssetRelativePath,
+    IReadOnlyDictionary<string, string?> SourceRow,
+    ResourceCandidateType PredictedCandidateType,
+    string PredictedCanonicalText,
+    IReadOnlyList<string> Warnings);
+
+public sealed record ImportPlanPreviewResult(
+    IReadOnlyList<ImportPlanPreviewRow> Rows,
+    IReadOnlyList<ImportPlanValidationError> ValidationErrors);
+
+public interface IImportPlanDraftService
+{
+    /// <summary>Validates and saves <paramref name="command"/>'s group instructions onto the
+    /// Draft/AwaitingApproval plan, recalculating its estimate in the same call (Workstream A8 —
+    /// a cost-relevant edit must never leave a stale estimate attached). Throws
+    /// <see cref="ImportPlanConcurrencyConflictException"/> on a stale <c>ExpectedConcurrencyStamp</c>
+    /// and <see cref="ImportPlanValidationFailedException"/> on any validation violation.</summary>
+    Task<ImportExecutionPlanDto> UpdateDraftAsync(UpdateImportPlanDraftCommand command, CancellationToken ct = default);
+
+    /// <summary>Creates a new Draft revision copying an existing plan's instructions (see
+    /// <see cref="ReviseApprovedImportPlanCommand"/>'s doc comment for the exact lifecycle this
+    /// implements).</summary>
+    Task<ImportExecutionPlanDto> ReviseAsync(ReviseApprovedImportPlanCommand command, CancellationToken ct = default);
+}
+
+/// <summary>Phase 4.4 (Workstream A8) — recalculates a plan's volume/time/cost estimate from a
+/// candidate set of group instructions (honouring each group's <c>Included</c> flag), so a
+/// cost-relevant edit can never leave the plan's estimate stale. Fails closed
+/// (<see cref="ImportPricingUnavailableException"/>) rather than silently pricing at $0 — see
+/// Workstream B7.</summary>
+public interface IImportPlanEstimateService
+{
+    Task<ImportExecutionPlanEstimate> RecalculateAsync(
+        Domain.Entities.ImportPackage package, IReadOnlyList<ImportExecutionGroupInstruction> instructions,
+        CancellationToken ct = default);
+}
+
+public interface IImportPlanPreviewService
+{
+    /// <summary>Bounded, safe preview: parses a few sample rows per structured source group using
+    /// the package's already-extracted <c>ImportAsset</c> rows and applies the exact mapping logic
+    /// execution uses — never persists a candidate/raw-record/run, never calls AI or STT. Audio
+    /// groups are not previewed (no generic "predicted field" shape applies to a transcript that
+    /// doesn't exist yet).</summary>
+    Task<ImportPlanPreviewResult> PreviewAsync(PreviewImportPlanDraftCommand command, CancellationToken ct = default);
 }
 
 // ── Phase 4.3 (2026-07-16) — approved-plan-driven execution. Pre-4.3, ProfileJson was written

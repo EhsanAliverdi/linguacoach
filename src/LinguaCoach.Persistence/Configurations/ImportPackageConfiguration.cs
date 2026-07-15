@@ -41,6 +41,10 @@ internal sealed class ImportPackageConfiguration : IEntityTypeConfiguration<Impo
         builder.Property(e => e.CandidatesFailedCount).HasColumnName("candidates_failed_count").IsRequired().HasDefaultValue(0);
         builder.Property(e => e.LastCompletedStageIndex).HasColumnName("last_completed_stage_index").IsRequired().HasDefaultValue(-1);
 
+        // Phase 4.4 — durable running cost total, neutral default (0) for existing rows.
+        builder.Property(e => e.AccruedCost).HasColumnName("accrued_cost").HasPrecision(12, 4).IsRequired().HasDefaultValue(0m);
+        builder.Property(e => e.AccruedCostCurrency).HasColumnName("accrued_cost_currency").HasMaxLength(8).IsRequired().HasDefaultValue("USD");
+
         builder.HasOne<CefrResourceSource>()
             .WithMany()
             .HasForeignKey(e => e.CefrResourceSourceId)

@@ -525,6 +525,20 @@ public sealed class ResourceImportService : IResourceImportService
         return (columns, rows.Take(sampleSize).ToList());
     }
 
+    public ResourceImportRowPreview PreviewRow(
+        IReadOnlyDictionary<string, string?> row,
+        IReadOnlyDictionary<string, string>? columnRenames,
+        ResourceCandidateType? defaultCandidateType)
+    {
+        var mappedRow = columnRenames is { Count: > 0 } ? ApplyColumnRenames(row, columnRenames) : row;
+
+        var (candidateType, canonicalText) = defaultCandidateType is { } forcedType
+            ? (forcedType, ExtractCanonicalTextForType(mappedRow, forcedType))
+            : InferCandidateType(mappedRow);
+
+        return new ResourceImportRowPreview(candidateType, canonicalText, mappedRow);
+    }
+
     private static IReadOnlyDictionary<string, string?> ApplyColumnRenames(
         IReadOnlyDictionary<string, string?> row, IReadOnlyDictionary<string, string> renames)
     {

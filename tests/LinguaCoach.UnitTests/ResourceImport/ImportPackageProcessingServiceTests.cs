@@ -71,11 +71,13 @@ public sealed class ImportPackagePlanProcessingTests : IDisposable
             _db, inspector, modeDecision, new DbPromptAiContextBuilder(_db), aiExecution, pricingResolver,
             new NoOpNotificationService(), _storage, resourceImportService, columnMappingService,
             Options.Create(_limits), Options.Create(_costOptions), NullLogger<ImportExecutionPlanGenerationService>.Instance);
-        _approvalService = new ImportExecutionPlanApprovalService(_db);
+        _approvalService = new ImportExecutionPlanApprovalService(_db, pricingResolver, Options.Create(_costOptions));
         var profileResolver = new ApprovedImportProfileResolver(_db);
+        var sttLedger = new ImportSttOperationLedger(_db);
         _processingService = new ImportPackageProcessingService(
             _db, _storage, resourceImportService, new NoOpBatchAnalysisService(), sttService, fingerprint,
-            pricingResolver, new NoOpNotificationService(), profileResolver, Options.Create(_costOptions), NullLogger<ImportPackageProcessingService>.Instance);
+            pricingResolver, new NoOpNotificationService(), profileResolver, sttLedger,
+            Options.Create(_costOptions), NullLogger<ImportPackageProcessingService>.Instance);
     }
 
     public void Dispose()
@@ -119,6 +121,13 @@ public sealed class ImportPackagePlanProcessingTests : IDisposable
         return (uploadResult.ImportPackageId, plan.PlanId);
     }
 
+    private async Task ApprovePlanAsync(Guid packageId, Guid planId, decimal approvedCostCeiling)
+    {
+        var plan = await _db.ImportProfiles.FirstAsync(p => p.Id == planId);
+        await _approvalService.ApproveAsync(new ApproveImportExecutionPlanCommand(
+            packageId, planId, Guid.NewGuid(), approvedCostCeiling, plan.ConcurrencyStamp));
+    }
+
     [Fact]
     public async Task ProcessPendingAsync_ignores_packages_without_an_approved_plan()
     {
@@ -142,7 +151,7 @@ public sealed class ImportPackagePlanProcessingTests : IDisposable
         var zipBytes = BuildZip(("words.csv", System.Text.Encoding.UTF8.GetBytes("word,definition\nhello,greeting\nbye,farewell\n")));
         var (packageId, planId) = await UploadConfirmAndGeneratePlanAsync(zipBytes);
 
-        await _approvalService.ApproveAsync(new ApproveImportExecutionPlanCommand(packageId, planId, Guid.NewGuid(), 50m));
+        await ApprovePlanAsync(packageId, planId, 50m);
 
         var outcomes = await _processingService.ProcessPendingAsync(10);
 
@@ -165,7 +174,7 @@ public sealed class ImportPackagePlanProcessingTests : IDisposable
         var zipBytes = BuildZip(("lesson/audio.mp3", new byte[100]));
         var (packageId, planId) = await UploadConfirmAndGeneratePlanAsync(zipBytes);
 
-        await _approvalService.ApproveAsync(new ApproveImportExecutionPlanCommand(packageId, planId, Guid.NewGuid(), 50m));
+        await ApprovePlanAsync(packageId, planId, 50m);
 
         await _processingService.ProcessPendingAsync(10);
 
@@ -184,7 +193,7 @@ public sealed class ImportPackagePlanProcessingTests : IDisposable
         var (packageId, planId) = await UploadConfirmAndGeneratePlanAsync(zipBytes);
 
         // Approve with a near-zero ceiling so even one STT call trips it.
-        await _approvalService.ApproveAsync(new ApproveImportExecutionPlanCommand(packageId, planId, Guid.NewGuid(), 0.0001m));
+        await ApprovePlanAsync(packageId, planId, 0.0001m);
 
         var outcomes = await _processingService.ProcessPendingAsync(10);
 

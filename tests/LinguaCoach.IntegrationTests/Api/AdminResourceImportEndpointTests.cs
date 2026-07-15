@@ -120,9 +120,11 @@ public sealed class AdminResourceImportEndpointTests : IClassFixture<ApiTestFact
         var planResp = await client.PostAsJsonAsync($"/api/admin/import-packages/{packageId}/plan", new { });
         var planBody = await planResp.Content.ReadFromJsonAsync<JsonElement>();
         var planId = planBody.GetProperty("planId").GetGuid();
+        var concurrencyStamp = planBody.GetProperty("concurrencyStamp").GetGuid();
 
         var approveResp = await client.PostAsJsonAsync(
-            $"/api/admin/import-packages/{packageId}/plan/{planId}/approve", new { approvedCostCeiling = 100m });
+            $"/api/admin/import-packages/{packageId}/plan/{planId}/approve",
+            new { approvedCostCeiling = 100m, expectedConcurrencyStamp = concurrencyStamp });
         Assert.Equal(HttpStatusCode.OK, approveResp.StatusCode);
         var approveBody = await approveResp.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal("approved", approveBody.GetProperty("status").GetString());

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-16 (Phase 4.3 — approved-plan-driven execution)
+lastUpdated: 2026-07-16 (Phase 4.4 — editable import plans and durable cost accounting, backend-first slice)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,51 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-16 (Phase 4.3 — approved-plan-driven execution)
+Last updated: 2026-07-16 (Phase 4.4 — editable import plans and durable cost accounting, backend-first slice)
+
+## Phase 4.4: Editable import plans and durable cost accounting — backend-first slice (2026-07-16)
+
+**Scope note:** the full Phase 4.4 brief spans an Angular plan-editor UI, real audio-duration
+measurement, a full multi-operation cost ledger, and Playwright coverage — confirmed with the user
+as multi-day work before starting. This session delivered a backend-first slice: draft plan editing
+with optimistic concurrency and a revision lifecycle, plus a durable, retry-safe STT operation
+ledger with fail-closed pricing and persisted cost-ceiling enforcement. See `TODOS.md`'s Phase 4.4
+section for everything explicitly deferred (`TODO-4.4-PLAN-EDITOR-UI`, `TODO-4.4-AUDIO-DURATION-PROBE`,
+`TODO-4.4-AI-ENRICHMENT-LEDGER`, `TODO-4.4-PLAYWRIGHT`, `TODO-4.4-CEILING-RESUME-UI`).
+
+**Editable plans (Workstream A):** `ImportProfile` gained a `ConcurrencyStamp` (application-checked
+optimistic concurrency — bumped by every mutator) and a `ReviseDraft` domain method allowing edits
+while Draft or AwaitingApproval. New `PUT api/admin/import-packages/{packageId}/plan/{planId}`
+validates (via the same `ImportPlanInstructionValidator` Phase 4.3's resolver uses — one shared
+validator, edit-time and execution-time) and recalculates the estimate (`IImportPlanEstimateService`,
+fails closed on missing AI pricing) in the same call, so a saved draft's mapping and its displayed
+estimate can never drift apart. New `POST .../plan/{planId}/revise` creates a new Draft revision
+copying an approved plan's instructions (blocked once the package has started executing — no
+destructive mid-execution reset was invented). New `POST .../plan/preview` runs the exact mapping
+logic execution uses (`IResourceImportService.PreviewRow`) over a few already-parsed sample rows —
+creates no candidates, calls no AI/STT provider. Approval now requires and checks
+`ExpectedConcurrencyStamp` (409 on a stale value) and fails closed on missing AI pricing for a
+billable plan.
+
+**Durable cost accounting (Workstream B, STT-scoped):** `ImportPackage.AccruedCost` is now the
+durable running total — seeded at the start of every processing pass (not reset to zero), persisted
+immediately (same `SaveChangesAsync`) alongside each billable operation. A new `ImportSttOperation`
+ledger table (one row per logical key `package+asset+checksum`, unique-indexed, mutated across
+retries rather than accumulating new rows) makes STT genuinely retry-safe: a successful transcript
+is reused on retry with zero provider calls and zero duplicate cost; a failed attempt may retry
+once. `CheckAndAccrueAiCostAsync` (AI enrichment) now throws instead of silently treating missing
+pricing as $0. The cost ceiling is checked against `package.AccruedCost` (persisted) before every
+STT/AI call, never an in-memory total that resets on retry.
+
+**Known limitations:** no admin UI exists yet to actually exercise draft editing/preview/revision —
+the acceptance-proof tests exercise the real API directly. Audio duration remains a flat 5-minute
+assumption (unchanged from Phase 4). Only STT has a durable operation ledger; AI enrichment cost is
+fail-closed and persisted but has no per-call ledger row. A pre-existing (not introduced this phase)
+loose-file-submission folder-grouping bug was discovered and documented as `TODO-4.4-LOOSE-FILE-FOLDER-BUG`.
+
+2338 unit / 1302 integration / 19 architecture tests pass. No Angular files were touched — `tsc`
+shows the same pre-existing baseline errors as Phase 4.3, no new ones. Full detail:
+`docs/reviews/2026-07-16-phase-4-4-editable-plans-and-durable-cost-accounting-review.md`.
 
 ## Phase 4.3: Approved-plan-driven execution (2026-07-16)
 

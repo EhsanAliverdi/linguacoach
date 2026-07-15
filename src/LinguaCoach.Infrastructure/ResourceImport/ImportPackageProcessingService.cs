@@ -47,6 +47,7 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
     private readonly IAiPricingResolver _pricingResolver;
     private readonly INotificationService _notifications;
     private readonly IApprovedImportProfileResolver _profileResolver;
+    private readonly IImportSttOperationLedger _sttLedger;
     private readonly ImportCostEstimationOptions _costOptions;
     private readonly ILogger<ImportPackageProcessingService> _logger;
 
@@ -60,6 +61,7 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
         IAiPricingResolver pricingResolver,
         INotificationService notifications,
         IApprovedImportProfileResolver profileResolver,
+        IImportSttOperationLedger sttLedger,
         IOptions<ImportCostEstimationOptions> costOptions,
         ILogger<ImportPackageProcessingService> logger)
     {
@@ -72,6 +74,7 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
         _pricingResolver = pricingResolver;
         _notifications = notifications;
         _profileResolver = profileResolver;
+        _sttLedger = sttLedger;
         _costOptions = costOptions.Value;
         _logger = logger;
     }
@@ -267,7 +270,11 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
     {
         var ceiling = plan.ApprovedCostCeiling ?? decimal.MaxValue;
         var tolerance = (decimal)_costOptions.CostCeilingToleranceFraction;
-        var runningCost = 0m;
+        // Phase 4.4 (Workstream B2/B9) — seeded from the package's durable AccruedCost, not zero:
+        // a retry after a crash mid-package must not lose track of what was already spent, and the
+        // ceiling check below must compare against real persisted spend, not an ephemeral total
+        // that resets every processing pass.
+        var runningCost = package.AccruedCost;
         var candidatesCreated = 0;
         var candidatesFailed = 0;
 
@@ -317,6 +324,11 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
                 {
                     var (aiCost, ceilingHit) = await CheckAndAccrueAiCostAsync(result.SucceededCount, runningCost, ceiling, tolerance, ct);
                     runningCost += aiCost;
+                    // Phase 4.4 (Workstream B2) — persisted immediately, in the same save as the
+                    // asset/candidate state already tracked above, so a crash right after this line
+                    // never loses track of cost that was already (about to be) spent.
+                    package.AccrueCost(aiCost, "USD");
+                    await _db.SaveChangesAsync(ct);
                     if (ceilingHit)
                     {
                         package.UpdateProgress(candidatesCreatedCount: candidatesCreated, candidatesFailedCount: candidatesFailed);
@@ -380,22 +392,55 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
                 }
                 else
                 {
-                    var projectedSttCost = runningCost + _costOptions.SttCostPerMinute * 5m; // flat per-file assumption, see plan estimate's documented limitation
+                    const decimal assumedMinutes = 5m; // flat per-file assumption, see plan estimate's documented limitation
+                    var sttCostIfCharged = assumedMinutes * _costOptions.SttCostPerMinute;
+                    var projectedSttCost = runningCost + sttCostIfCharged;
                     if (projectedSttCost > ceiling * (1 + tolerance))
                     {
                         package.UpdateProgress(candidatesCreatedCount: candidatesCreated, candidatesFailedCount: candidatesFailed);
                         return $"Projected cost reached ${projectedSttCost:N2}, at or above the approved ${ceiling:N2} ceiling, before transcribing {audio.RelativePath}.";
                     }
 
-                    await using var audioStream = await _storage.ReadAsync(audio.StorageKey, ct);
-                    var sttResult = await _sttService.TranscribeAsync(
-                        audioStream, new SpeechToTextOptions(audio.MimeType, "en"), ct);
-                    runningCost = projectedSttCost;
+                    // Phase 4.4 (Workstream B3/B4) — claim (or reuse, if this exact audio content
+                    // already succeeded under this or a prior package attempt) a durable ledger
+                    // entry before ever calling the provider, so a crash/retry can never re-call
+                    // STT — or accrue cost — for content it already transcribed.
+                    var logicalKey = ImportSttOperationKey.Compute(package.Id, audio.Id, audio.Checksum);
+                    var claim = await _sttLedger.ClaimAsync(package.Id, plan.Id, audio.Id, logicalKey, "openai", assumedMinutes, ct);
 
-                    if (sttResult.Success && !string.IsNullOrWhiteSpace(sttResult.Transcript))
+                    if (claim.Outcome == ImportSttClaimOutcome.AlreadySucceeded)
                     {
-                        transcriptText = sttResult.Transcript;
+                        transcriptText = claim.Operation.TranscriptText;
                         origin = MetadataOrigin.AITranscribed;
+                        // No cost re-accrual and no provider call — this exact operation already
+                        // succeeded and was already charged once.
+                    }
+                    else
+                    {
+                        await using var audioStream = await _storage.ReadAsync(audio.StorageKey, ct);
+                        var sttResult = await _sttService.TranscribeAsync(
+                            audioStream, new SpeechToTextOptions(audio.MimeType, "en"), ct);
+
+                        if (sttResult.Success && !string.IsNullOrWhiteSpace(sttResult.Transcript))
+                        {
+                            await _sttLedger.MarkSucceededAsync(
+                                claim.Operation, sttResult.Transcript, sttCostIfCharged, "USD",
+                                _costOptions.SttCostPerMinute, sttResult.Provider, ct);
+                            package.AccrueCost(sttCostIfCharged, "USD");
+                            await _db.SaveChangesAsync(ct); // ledger row + package cost, one save — never drifts apart
+                            runningCost = projectedSttCost;
+                            transcriptText = sttResult.Transcript;
+                            origin = MetadataOrigin.AITranscribed;
+                        }
+                        else
+                        {
+                            // Workstream B13 ("failed operations") — a failed call's actual
+                            // provider-side usage/charge is unknown to this codebase (OpenAI's
+                            // Whisper SDK result exposes no usage on failure); documented as a
+                            // known limitation rather than guessed at — no cost is accrued for it.
+                            await _sttLedger.MarkFailedAsync(
+                                claim.Operation, sttResult.FailureReason ?? "STT provider returned no transcript.", ct);
+                        }
                     }
                 }
 
@@ -434,13 +479,17 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
     private async Task<(decimal AiCost, bool CeilingHit)> CheckAndAccrueAiCostAsync(
         int candidateCount, decimal runningCost, decimal ceiling, decimal tolerance, CancellationToken ct)
     {
-        var pricing = await _pricingResolver.ResolveAsync(_costOptions.AssumedAiProviderName, _costOptions.AssumedAiModelName, ct);
-        var inputPer1K = pricing?.InputPer1KTokens ?? 0m;
-        var outputPer1K = pricing?.OutputPer1KTokens ?? 0m;
+        // Phase 4.4 (Workstream B7) — fail closed: unresolved pricing must never silently become
+        // $0 (the pre-4.4 behaviour here). ImportExecutionPlanApprovalService already validates
+        // this at approval time for a plan with structured files, so reaching this with no pricing
+        // means the pricing configuration changed out from under an already-approved plan.
+        var pricing = await _pricingResolver.ResolveAsync(_costOptions.AssumedAiProviderName, _costOptions.AssumedAiModelName, ct)
+            ?? throw new ImportPricingUnavailableException(
+                _costOptions.AssumedAiProviderName, _costOptions.AssumedAiModelName, "AI candidate enrichment");
 
         var inputTokens = (long)candidateCount * _costOptions.AssumedInputTokensPerCandidate;
         var outputTokens = (long)candidateCount * _costOptions.AssumedOutputTokensPerCandidate;
-        var cost = inputTokens / 1000m * inputPer1K + outputTokens / 1000m * outputPer1K;
+        var cost = inputTokens / 1000m * pricing.InputPer1KTokens + outputTokens / 1000m * pricing.OutputPer1KTokens;
 
         var projected = runningCost + cost;
         return (cost, projected > ceiling * (1 + tolerance));

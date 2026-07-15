@@ -52,6 +52,16 @@ public sealed class ImportPackage : BaseEntity
     /// the first file. See <c>ImportPackageProcessingStage</c> for the ordered stage list.</summary>
     public int LastCompletedStageIndex { get; private set; } = -1;
 
+    /// <summary>Phase 4.4 — durable, persisted running total of calculated cost for billable
+    /// operations completed so far (see <c>ImportSttOperation</c> and any future operation ledger
+    /// entries). Unlike the pre-4.4 in-memory <c>runningCost</c> local variable in
+    /// <c>ImportPackageProcessingService</c> (which reset to zero on every processing pass), this
+    /// survives a process/job restart — a retry after a crash mid-package must not lose track of
+    /// what was already spent, and the cost-ceiling check must compare against this value, not an
+    /// ephemeral one.</summary>
+    public decimal AccruedCost { get; private set; }
+    public string AccruedCostCurrency { get; private set; } = "USD";
+
     private ImportPackage() { }
 
     public ImportPackage(
@@ -160,5 +170,24 @@ public sealed class ImportPackage : BaseEntity
     public void Cancel()
     {
         Status = ImportPackageStatus.Cancelled;
+    }
+
+    /// <summary>Phase 4.4 — records calculated cost for one completed billable operation against
+    /// the package's durable running total. Must be called in the same <c>SaveChangesAsync</c> as
+    /// the operation ledger row that produced <paramref name="amount"/>, so the two never drift.
+    /// Never negative — a reused/no-charge operation must call this with <c>0m</c> or not at all,
+    /// never with a negative "refund".</summary>
+    public void AccrueCost(decimal amount, string currency)
+    {
+        if (amount < 0)
+            throw new ArgumentOutOfRangeException(nameof(amount), "Accrued cost cannot be reduced by a negative amount.");
+        if (string.IsNullOrWhiteSpace(currency))
+            throw new ArgumentException("Currency is required.", nameof(currency));
+        if (AccruedCost > 0 && !string.Equals(AccruedCostCurrency, currency, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException(
+                $"Cannot accrue cost in '{currency}' — this package already has accrued cost in '{AccruedCostCurrency}'.");
+
+        AccruedCost += amount;
+        AccruedCostCurrency = currency;
     }
 }

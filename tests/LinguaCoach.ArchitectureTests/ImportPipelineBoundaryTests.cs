@@ -1,5 +1,6 @@
 using System.Reflection;
 using LinguaCoach.Application.ResourceImport;
+using Microsoft.EntityFrameworkCore;
 using NetArchTest.Rules;
 
 namespace LinguaCoach.ArchitectureTests;
@@ -209,6 +210,11 @@ public class ImportPipelineBoundaryTests
             "ApprovedImportProfileResolver", // parses/validates ProfileJson — the one allowed parser
             "ImportExecutionPlanGenerationService", // produces the instructions at plan-generation time
             "ImportPackageProcessingService", // consumes the resolved, typed instructions
+            // Phase 4.4 (Workstream A) — admin editing of the same typed contract before approval.
+            "ImportPlanDraftService", // validates/persists an admin's edited instructions
+            "ImportPlanEstimateService", // recalculates volume/cost from a candidate instruction set
+            "ImportPlanPreviewService", // bounded preview using the same instructions
+            "ImportPlanDtoHelpers", // builds the DTO's GroupInstructions field for display
         };
 
         var offendingTypes = Types.InAssembly(typeof(LinguaCoach.Infrastructure.DependencyInjection).Assembly)
@@ -228,4 +234,112 @@ public class ImportPipelineBoundaryTests
         result.FailingTypeNames is null
             ? "Architecture rule failed."
             : "Failing type(s): " + string.Join(", ", result.FailingTypeNames);
+
+    // ── Phase 4.4 (2026-07-16) — editable plans and durable cost accounting guards. ──
+
+    /// <summary>Workstream requirement: "controllers do not calculate Import cost." The
+    /// controller may depend on the plan-editing/estimate/draft services (which return already-
+    /// computed DTOs) but never on the pricing resolver or cost-estimation options directly —
+    /// those belong to <c>ImportPlanEstimateService</c>/<c>ImportExecutionPlanApprovalService</c>/
+    /// <c>ImportPackageProcessingService</c>.</summary>
+    [Fact]
+    public void Import_package_controller_does_not_depend_on_pricing_or_cost_options_directly()
+    {
+        var forbidden = new[]
+        {
+            typeof(LinguaCoach.Application.Ai.IAiPricingResolver),
+            typeof(LinguaCoach.Infrastructure.ResourceImport.ImportCostEstimationOptions),
+        };
+
+        var controllerType = typeof(LinguaCoach.Api.Controllers.AdminImportPackageController);
+        var offending = new List<string>();
+        foreach (var ctor in controllerType.GetConstructors())
+        {
+            foreach (var param in ctor.GetParameters())
+            {
+                if (forbidden.Contains(param.ParameterType))
+                    offending.Add($"{controllerType.Name} depends on {param.ParameterType.Name}");
+            }
+        }
+
+        Assert.True(offending.Count == 0,
+            "AdminImportPackageController must not calculate cost itself: " + string.Join(", ", offending));
+    }
+
+    /// <summary>Workstream requirement: "Import provider calls pass through durable operation/
+    /// accounting orchestration" — no controller may depend on the STT provider or the STT ledger
+    /// directly; only <c>ImportPackageProcessingService</c> orchestrates that call sequence.
+    /// </summary>
+    [Fact]
+    public void Import_package_controller_does_not_depend_on_the_STT_ledger_directly()
+    {
+        // Scoped to AdminImportPackageController specifically (not every controller) — other
+        // features (e.g. speaking practice) have their own legitimate, unrelated reasons to depend
+        // on ISpeechToTextService; this guard is only about the Import pipeline's own orchestration
+        // boundary.
+        var controllerType = typeof(LinguaCoach.Api.Controllers.AdminImportPackageController);
+        var offending = new List<string>();
+        foreach (var ctor in controllerType.GetConstructors())
+        {
+            foreach (var param in ctor.GetParameters())
+            {
+                if (param.ParameterType == typeof(IImportSttOperationLedger))
+                    offending.Add($"{controllerType.Name} depends on {param.ParameterType.Name}");
+            }
+        }
+
+        Assert.True(offending.Count == 0,
+            "AdminImportPackageController must not depend on the STT ledger directly — only " +
+            "ImportPackageProcessingService orchestrates STT calls: " + string.Join(", ", offending));
+    }
+
+    /// <summary>Workstream B12: "use decimal types for monetary values... do not persist monetary
+    /// values as double or float." Checks every property on the Phase 4.4 cost-bearing entities
+    /// whose name suggests a monetary/price value.</summary>
+    [Fact]
+    public void Monetary_properties_on_import_cost_entities_use_decimal_not_double_or_float()
+    {
+        var monetaryNameFragments = new[] { "Cost", "Price", "Ceiling" };
+        var typesToCheck = new[]
+        {
+            typeof(LinguaCoach.Domain.Entities.ImportPackage),
+            typeof(LinguaCoach.Domain.Entities.ImportProfile),
+            typeof(LinguaCoach.Domain.Entities.ImportSttOperation),
+        };
+
+        var offending = new List<string>();
+        foreach (var type in typesToCheck)
+        {
+            foreach (var prop in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            {
+                if (!monetaryNameFragments.Any(f => prop.Name.Contains(f, StringComparison.Ordinal))) continue;
+                var underlying = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+                if (underlying == typeof(double) || underlying == typeof(float))
+                    offending.Add($"{type.Name}.{prop.Name} is {underlying.Name}");
+            }
+        }
+
+        Assert.True(offending.Count == 0,
+            "Found a monetary property using double/float instead of decimal: " + string.Join(", ", offending));
+    }
+
+    /// <summary>Workstream B11: exactly one ledger row may ever exist per logical STT operation —
+    /// guards against the unique index being accidentally dropped from the EF configuration.
+    /// </summary>
+    [Fact]
+    public void Stt_operation_logical_key_has_a_unique_index_configured()
+    {
+        using var db = new LinguaCoach.Persistence.LinguaCoachDbContext(
+            new Microsoft.EntityFrameworkCore.DbContextOptionsBuilder<LinguaCoach.Persistence.LinguaCoachDbContext>()
+                .UseSqlite("DataSource=:memory:").Options);
+
+        var entityType = db.Model.FindEntityType(typeof(LinguaCoach.Domain.Entities.ImportSttOperation));
+        Assert.NotNull(entityType);
+
+        var hasUniqueIndexOnLogicalKey = entityType!.GetIndexes().Any(i =>
+            i.IsUnique && i.Properties.Count == 1 && i.Properties[0].Name == nameof(LinguaCoach.Domain.Entities.ImportSttOperation.LogicalOperationKey));
+
+        Assert.True(hasUniqueIndexOnLogicalKey,
+            "ImportSttOperation.LogicalOperationKey must have a unique index — this is the DB-level dedup guarantee.");
+    }
 }

@@ -63,7 +63,7 @@ public sealed class ImportPackagePlanFlowTests : IDisposable
             _db, inspector, modeDecision, new DbPromptAiContextBuilder(_db), aiExecution, pricingResolver,
             new NoOpNotificationService(), _storage, resourceImportService, columnMappingService,
             Options.Create(_limits), Options.Create(_costOptions), NullLogger<ImportExecutionPlanGenerationService>.Instance);
-        _approvalService = new ImportExecutionPlanApprovalService(_db);
+        _approvalService = new ImportExecutionPlanApprovalService(_db, pricingResolver, Options.Create(_costOptions));
     }
 
     public void Dispose()
@@ -141,7 +141,7 @@ public sealed class ImportPackagePlanFlowTests : IDisposable
         package.ApprovedImportProfileId.Should().BeNull();
 
         var approved = await _approvalService.ApproveAsync(new ApproveImportExecutionPlanCommand(
-            uploadResult.ImportPackageId, plan.PlanId, Guid.NewGuid(), ApprovedCostCeiling: 50m));
+            uploadResult.ImportPackageId, plan.PlanId, Guid.NewGuid(), ApprovedCostCeiling: 50m, plan.ConcurrencyStamp));
 
         approved.Status.Should().Be(ImportProfileStatus.Approved);
 
@@ -167,8 +167,12 @@ public sealed class ImportPackagePlanFlowTests : IDisposable
         await _approvalService.RejectAsync(new RejectImportExecutionPlanCommand(
             uploadResult.ImportPackageId, plan.PlanId, Guid.NewGuid(), "Too expensive."));
 
+        // Reject bumps ConcurrencyStamp too — fetch the post-reject value so this test exercises
+        // "a Rejected plan can't be approved" specifically, not a (also-true, but different) stale-
+        // concurrency conflict.
+        var rejectedPlan = await _db.ImportProfiles.FirstAsync(p => p.Id == plan.PlanId);
         var act = async () => await _approvalService.ApproveAsync(new ApproveImportExecutionPlanCommand(
-            uploadResult.ImportPackageId, plan.PlanId, Guid.NewGuid(), 50m));
+            uploadResult.ImportPackageId, plan.PlanId, Guid.NewGuid(), 50m, rejectedPlan.ConcurrencyStamp));
 
         await act.Should().ThrowAsync<ImportExecutionPlanNotApprovableException>();
 

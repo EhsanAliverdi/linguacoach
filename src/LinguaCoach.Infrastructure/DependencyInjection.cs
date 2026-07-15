@@ -711,6 +711,18 @@ public static class DependencyInjection
         services.AddScoped<LinguaCoach.Application.ResourceImport.IApprovedImportProfileResolver,
             LinguaCoach.Infrastructure.ResourceImport.ApprovedImportProfileResolver>();
 
+        // Phase 4.4 (Workstream A) — admin plan editing before approval, estimate recalculation,
+        // and bounded mapping preview.
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IImportPlanEstimateService,
+            LinguaCoach.Infrastructure.ResourceImport.ImportPlanEstimateService>();
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IImportPlanDraftService,
+            LinguaCoach.Infrastructure.ResourceImport.ImportPlanDraftService>();
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IImportPlanPreviewService,
+            LinguaCoach.Infrastructure.ResourceImport.ImportPlanPreviewService>();
+        // Phase 4.4 (Workstream B) — durable, retry-safe STT operation ledger.
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IImportSttOperationLedger,
+            LinguaCoach.Infrastructure.ResourceImport.ImportSttOperationLedger>();
+
         // Phase 16F/16G — Speaking Evaluation Foundation + Provider-Backed Evaluation
         if (configuration is not null)
             services.Configure<LinguaCoach.Application.Speaking.SpeakingEvaluationOptions>(

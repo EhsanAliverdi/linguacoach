@@ -329,7 +329,25 @@ public interface IResourceImportService
     /// writes), used by the AI column-mapping "propose" endpoints.</summary>
     (IReadOnlyList<string> Columns, IReadOnlyList<IReadOnlyDictionary<string, string?>> SampleRows) ParseSample(
         string fileText, ResourceImportMode mode, int sampleSize = 5);
+
+    /// <summary>Phase 4.4 — applies the exact same column-rename + resource-type routing logic
+    /// <see cref="ImportAsync"/> uses when staging a real row (Gate 1-3 language/dedup/content
+    /// checks are NOT run here — a preview shows what mapping/routing would produce, not whether
+    /// the row would ultimately be accepted), without touching the database. Used by the bounded
+    /// Import plan preview (Workstream A7) so "source value → mapping → predicted candidate field"
+    /// is provably the same code path execution runs, not a second, potentially-divergent one.
+    /// </summary>
+    ResourceImportRowPreview PreviewRow(
+        IReadOnlyDictionary<string, string?> row,
+        IReadOnlyDictionary<string, string>? columnRenames,
+        ResourceCandidateType? defaultCandidateType);
 }
+
+/// <summary>See <see cref="IResourceImportService.PreviewRow"/>.</summary>
+public sealed record ResourceImportRowPreview(
+    ResourceCandidateType CandidateType,
+    string CanonicalText,
+    IReadOnlyDictionary<string, string?> MappedRow);
 
 public sealed class ResourceImportValidationException : Exception
 {

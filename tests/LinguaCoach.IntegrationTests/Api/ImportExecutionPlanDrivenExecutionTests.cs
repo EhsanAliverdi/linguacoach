@@ -104,8 +104,16 @@ public sealed class ImportExecutionPlanDrivenExecutionTests : IClassFixture<ApiT
 
     private async Task ApprovePlanAsync(HttpClient client, Guid packageId, Guid planId)
     {
+        Guid concurrencyStamp;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            concurrencyStamp = (await db.ImportProfiles.FirstAsync(p => p.Id == planId)).ConcurrencyStamp;
+        }
+
         var approveResp = await client.PostAsJsonAsync(
-            $"/api/admin/import-packages/{packageId}/plan/{planId}/approve", new { approvedCostCeiling = 100m });
+            $"/api/admin/import-packages/{packageId}/plan/{planId}/approve",
+            new { approvedCostCeiling = 100m, expectedConcurrencyStamp = concurrencyStamp });
         Assert.Equal(HttpStatusCode.OK, approveResp.StatusCode);
     }
 

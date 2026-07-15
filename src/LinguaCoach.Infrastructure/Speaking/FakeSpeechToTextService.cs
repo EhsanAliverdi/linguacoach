@@ -18,6 +18,12 @@ public sealed class FakeSpeechToTextService : ISpeechToTextService
     private readonly IConfiguration _configuration;
     private readonly ILogger<FakeSpeechToTextService> _logger;
 
+    /// <summary>Phase 4.4 — test-only call counter (thread-unsafe increment is fine: this fake is
+    /// only ever exercised sequentially in tests) so a retry-safety test can assert the provider
+    /// was genuinely called exactly once for the same content, not just that the outcome looked
+    /// right.</summary>
+    public int CallCount { get; private set; }
+
     public FakeSpeechToTextService(IConfiguration configuration, ILogger<FakeSpeechToTextService> logger)
     {
         _configuration = configuration;
@@ -29,6 +35,7 @@ public sealed class FakeSpeechToTextService : ISpeechToTextService
         SpeechToTextOptions options,
         CancellationToken ct = default)
     {
+        CallCount++;
         var sw = Stopwatch.StartNew();
 
         var enabledRaw = Environment.GetEnvironmentVariable("STT_ENABLED");

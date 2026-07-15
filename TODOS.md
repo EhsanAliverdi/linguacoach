@@ -5,6 +5,87 @@ Each item includes context, motivation, and the phase where it was deferred.
 
 ---
 
+## Phase 4.4 — Editable import plans and durable cost accounting (2026-07-16)
+
+Review: docs/reviews/2026-07-16-phase-4-4-editable-plans-and-durable-cost-accounting-review.md
+
+This phase was explicitly scoped down from its full brief to a backend-first slice (confirmed with
+the user before starting): draft plan editing with optimistic concurrency and a revision lifecycle
+(Workstream A backend), plus a durable, retry-safe STT operation ledger with fail-closed AI
+pricing and persisted cost-ceiling enforcement (the core of Workstream B). The Angular plan-editor
+UI, real audio-duration measurement, an AI-enrichment operation ledger, and Playwright coverage
+were deliberately deferred — tracked below, not silently dropped.
+
+### TODO-4.4-PLAN-EDITOR-UI — Angular plan-editor UI for the new draft-update/preview/revise APIs
+**What:** Build the type-aware plan-editing page (group include/exclude, resource-type selector,
+field-mapping controls, bounded preview, estimate/ceiling display, save/approve, concurrency-
+conflict handling) described in Workstream A6/A10, backed by the already-shipped
+`PUT .../plan/{planId}`, `POST .../plan/{planId}/revise`, and `POST .../plan/preview` endpoints.
+**Why:** Explicitly deferred per the backend-first scoping decision — the backend contract exists
+and is tested, but no admin can exercise it through the product UI yet. Today's plan review page
+remains read-only.
+**Context:** `ImportExecutionPlanDto.GroupInstructions` already exposes the typed shape to bind
+against; `ImportPlanValidationFailedException.Errors` is grouped by `GroupKey` for direct display.
+**Deferred from:** Phase 4.4 engineering session, 2026-07-16.
+
+### TODO-4.4-AUDIO-DURATION-PROBE — Real audio-duration measurement (ffprobe or equivalent)
+**What:** Replace the flat 5-minutes-per-file STT cost assumption with real measured duration
+(`IAudioDurationProbe` abstraction, bounded/timeout-safe external-process or media-metadata-library
+wrapper), persisted on `ImportAsset` and used by both plan estimation and the STT ledger's
+`AssumedMinutes`.
+**Why:** Deferred per the backend-first scoping decision — introducing an external-binary runtime
+dependency (ffprobe) or a new media-metadata library is a materially separate, higher-risk piece of
+work than the plan-editing/cost-ledger slice delivered this phase.
+**Context:** `ImportSttOperation.AssumedMinutes` already exists as a named field ready to receive a
+real measured value instead of the constant `5m` currently passed by `ImportPackageProcessingService`.
+**Deferred from:** Phase 4.4 engineering session, 2026-07-16.
+
+### TODO-4.4-AI-ENRICHMENT-LEDGER — Durable operation ledger for AI candidate-enrichment calls
+**What:** Extend the `ImportSttOperation`-style durable, retry-safe, unique-key-constrained ledger
+pattern to AI candidate-enrichment calls (currently only cost-tracked via the in-memory
+`CheckAndAccrueAiCostAsync` delta plus `ImportPackage.AccruedCost`, with fail-closed pricing but no
+per-call ledger row/idempotency guarantee against a duplicate `IResourceCandidateBatchAnalysisService`
+invocation on retry).
+**Why:** Deferred — the phase brief explicitly called STT "the highest-risk duplicate-cost path"
+and this session scoped the ledger to that. AI enrichment's actual duplicate-call risk is lower
+today (batch analysis is idempotent per already-analyzed candidate, not per raw provider call), but
+a full operation-level ledger would still improve auditability parity with STT.
+**Deferred from:** Phase 4.4 engineering session, 2026-07-16.
+
+### TODO-4.4-PLAYWRIGHT — E2E coverage for plan editing and cost-paused states
+**What:** Add Playwright specs once `TODO-4.4-PLAN-EDITOR-UI` ships: submit → edit mapping → preview
+→ save → approve → process → verify edited value in Candidate Review; and a cost-paused package
+displaying accrued cost/ceiling/pause reason.
+**Why:** No UI was built this phase to test against. Still deferred from Phase 4.2/4.3 as well
+(`TODO-4.2-PLAYWRIGHT`).
+**Deferred from:** Phase 4.4 engineering session, 2026-07-16.
+
+### TODO-4.4-CEILING-RESUME-UI — Controlled ceiling-revision/resume action
+**What:** Workstream B10's "paused package → explicit ceiling-revision approval → resume" UI flow.
+The backend primitive (`ApproveRevisedCostCeilingCommand`/`ApproveRevisedCeilingAndResume`) already
+existed pre-4.4 and still works unchanged; no UI surfaces it, and it was not updated to require a
+concurrency stamp or audit the previous ceiling this phase.
+**Why:** Deferred with the rest of the UI work; a small backend hardening (concurrency + audit
+trail on ceiling amendment) was also not done this phase and should be picked up alongside the UI.
+**Deferred from:** Phase 4.4 engineering session, 2026-07-16.
+
+### TODO-4.4-LOOSE-FILE-FOLDER-BUG — Loose-file submissions with a slash in the filename mis-group
+**What:** A pasted/loose-file submission's synthetic manifest always declares a single root
+(`FolderPath: string.Empty`) `FolderGroup` (`ImportPackageSubmissionService.SubmitAsync`), but an
+`ImportAsset`'s `RelativePath` is set to the raw client-supplied filename verbatim, including any
+`/` it contains. If a filename contains a `/`, `ImportExecutionGroupKey.ForRelativePath` resolves
+it to that subfolder while the manifest only ever declared `"(root)"` — the approved plan then has
+no instruction for that group and processing fails deterministically (a safe failure, not silent
+data loss, but still a usability bug for any admin who uploads a loose file with a folder-like name).
+**Why:** Discovered while writing a Phase 4.4 integration test (initially used `"lesson/audio.mp3"`
+as a loose-file submission's filename); pre-existing since Phase 4.2, unrelated to this phase's
+changes, and out of scope to fix here.
+**Context:** Fix options: reject/sanitize filenames containing `/` at submission time, or build the
+loose-file manifest's folder groups from the actual filenames instead of always assuming root.
+**Deferred from:** Phase 4.4 engineering session, 2026-07-16 (discovered, not introduced).
+
+---
+
 ## Phase 4.2 — Unify all imports behind the mandatory Import Execution Plan gate (2026-07-15)
 
 ### TODO-4.2-DB-PROVENANCE — Make ResourceImportRun.ImportPackageId non-nullable at the DB level

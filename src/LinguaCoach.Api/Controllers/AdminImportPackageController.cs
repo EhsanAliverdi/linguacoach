@@ -23,17 +23,23 @@ public sealed class AdminImportPackageController : ControllerBase
     private readonly IImportPackageSubmissionService _submissionService;
     private readonly IImportExecutionPlanGenerationService _planGenerationService;
     private readonly IImportExecutionPlanApprovalService _planApprovalService;
+    private readonly IImportPlanDraftService _planDraftService;
+    private readonly IImportPlanPreviewService _planPreviewService;
 
     public AdminImportPackageController(
         IImportPackageUploadService uploadService,
         IImportPackageSubmissionService submissionService,
         IImportExecutionPlanGenerationService planGenerationService,
-        IImportExecutionPlanApprovalService planApprovalService)
+        IImportExecutionPlanApprovalService planApprovalService,
+        IImportPlanDraftService planDraftService,
+        IImportPlanPreviewService planPreviewService)
     {
         _uploadService = uploadService;
         _submissionService = submissionService;
         _planGenerationService = planGenerationService;
         _planApprovalService = planApprovalService;
+        _planDraftService = planDraftService;
+        _planPreviewService = planPreviewService;
     }
 
     // POST api/admin/import-packages/submit  multipart/form-data:
@@ -137,6 +143,74 @@ public sealed class AdminImportPackageController : ControllerBase
         return result is null ? NotFound() : Ok(result);
     }
 
+    // PUT api/admin/import-packages/{packageId}/plan/{planId} — Phase 4.4 (Workstream A) — saves
+    // an edited draft's group instructions (include/exclude, resource type, field mappings),
+    // re-validates, and recalculates the estimate. Only a Draft/AwaitingApproval plan is editable.
+    [HttpPut("{packageId:guid}/plan/{planId:guid}")]
+    public async Task<IActionResult> UpdatePlanDraft(
+        Guid packageId, Guid planId, [FromBody] UpdatePlanDraftBody body, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _planDraftService.UpdateDraftAsync(new UpdateImportPlanDraftCommand(
+                packageId, planId, body.ExpectedConcurrencyStamp, body.GroupInstructions), ct);
+            return Ok(result);
+        }
+        catch (ImportPlanConcurrencyConflictException ex)
+        {
+            return Conflict(new { error = ex.Message, currentConcurrencyStamp = ex.CurrentConcurrencyStamp });
+        }
+        catch (ImportPlanValidationFailedException ex)
+        {
+            return BadRequest(new { error = ex.Message, errors = ex.Errors });
+        }
+        catch (ImportPricingUnavailableException ex)
+        {
+            return BadRequest(new { error = ex.Message, providerName = ex.ProviderName, modelName = ex.ModelName, operation = ex.Operation });
+        }
+        catch (ResourceImportValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    // POST api/admin/import-packages/{packageId}/plan/{planId}/revise — Phase 4.4 (Workstream A4)
+    // — creates a new Draft revision copying an existing (typically Approved) plan's instructions,
+    // for the admin to edit and re-approve, without mutating the original approved row. Only
+    // allowed before the package has started executing its currently-approved plan.
+    [HttpPost("{packageId:guid}/plan/{planId:guid}/revise")]
+    public async Task<IActionResult> RevisePlan(Guid packageId, Guid planId, [FromBody] RevisePlanBody body, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _planDraftService.ReviseAsync(
+                new ReviseApprovedImportPlanCommand(packageId, planId, body.ChangeReason), ct);
+            return Ok(result);
+        }
+        catch (ResourceImportValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    // POST api/admin/import-packages/{packageId}/plan/preview — Phase 4.4 (Workstream A7) —
+    // bounded sample preview of the (unsaved) draft's mapping. Creates no candidates, calls no
+    // AI/STT provider — see IImportPlanPreviewService's doc comment.
+    [HttpPost("{packageId:guid}/plan/preview")]
+    public async Task<IActionResult> PreviewPlanDraft(Guid packageId, [FromBody] PreviewPlanDraftBody body, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _planPreviewService.PreviewAsync(new PreviewImportPlanDraftCommand(
+                packageId, body.GroupInstructions, body.MaxSampleRowsPerGroup ?? 5), ct);
+            return Ok(result);
+        }
+        catch (ResourceImportValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
     // POST api/admin/import-packages/{packageId}/plan/{planId}/approve — the one and only
     // "Approve and Start Processing" action. Never implicit, never pre-checked.
     [HttpPost("{packageId:guid}/plan/{planId:guid}/approve")]
@@ -145,8 +219,17 @@ public sealed class AdminImportPackageController : ControllerBase
         try
         {
             var result = await _planApprovalService.ApproveAsync(
-                new ApproveImportExecutionPlanCommand(packageId, planId, CurrentUserId(), body.ApprovedCostCeiling), ct);
+                new ApproveImportExecutionPlanCommand(
+                    packageId, planId, CurrentUserId(), body.ApprovedCostCeiling, body.ExpectedConcurrencyStamp), ct);
             return Ok(result);
+        }
+        catch (ImportPlanConcurrencyConflictException ex)
+        {
+            return Conflict(new { error = ex.Message, currentConcurrencyStamp = ex.CurrentConcurrencyStamp });
+        }
+        catch (ImportPricingUnavailableException ex)
+        {
+            return BadRequest(new { error = ex.Message, providerName = ex.ProviderName, modelName = ex.ModelName, operation = ex.Operation });
         }
         catch (ImportExecutionPlanNotApprovableException ex)
         {
@@ -202,7 +285,15 @@ public sealed class AdminImportPackageController : ControllerBase
 
     public sealed record GeneratePlanBody(string? ChangeReason);
 
-    public sealed record ApprovePlanBody(decimal ApprovedCostCeiling);
+    public sealed record ApprovePlanBody(decimal ApprovedCostCeiling, Guid ExpectedConcurrencyStamp);
 
     public sealed record RejectPlanBody(string Reason);
+
+    public sealed record UpdatePlanDraftBody(
+        Guid ExpectedConcurrencyStamp, IReadOnlyList<ImportExecutionGroupInstruction> GroupInstructions);
+
+    public sealed record RevisePlanBody(string ChangeReason);
+
+    public sealed record PreviewPlanDraftBody(
+        IReadOnlyList<ImportExecutionGroupInstruction> GroupInstructions, int? MaxSampleRowsPerGroup);
 }

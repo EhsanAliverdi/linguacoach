@@ -53,6 +53,10 @@ internal sealed class ImportProfileConfiguration : IEntityTypeConfiguration<Impo
         builder.Property(e => e.ChangeReason).HasColumnName("change_reason").HasMaxLength(2000);
         builder.Property(e => e.PauseReason).HasColumnName("pause_reason").HasMaxLength(2000);
 
+        // Phase 4.4 — application-checked optimistic concurrency (see ImportProfile.ConcurrencyStamp's
+        // doc comment for why this is a plain Guid column, not an EF-native rowversion/xmin token).
+        builder.Property(e => e.ConcurrencyStamp).HasColumnName("concurrency_stamp").IsRequired();
+
         builder.HasOne<ImportPackage>()
             .WithMany()
             .HasForeignKey(e => e.ImportPackageId)

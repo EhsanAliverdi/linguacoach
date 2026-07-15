@@ -116,6 +116,9 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<ImportCandidateAssetLink> ImportCandidateAssetLinks => Set<ImportCandidateAssetLink>();
     public DbSet<ImportProfile> ImportProfiles => Set<ImportProfile>();
 
+    // Phase 4.4 — durable, retry-safe billable-operation ledger (STT scope for this phase)
+    public DbSet<ImportSttOperation> ImportSttOperations => Set<ImportSttOperation>();
+
     // Phase H3 — Lesson foundation (reviewable teaching/explanation blocks generated from
     // published Resource Bank rows; the "Learn" half of a future Module)
     public DbSet<Lesson> Lessons => Set<Lesson>();

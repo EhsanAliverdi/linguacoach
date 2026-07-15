@@ -609,5 +609,7 @@ internal sealed class ImportExecutionPlanGenerationService : IImportExecutionPla
         new(
             plan.Id, package.Id, plan.Version, plan.Status, package.ProcessingMode, package.ProcessingModeReason,
             estimate, plan.ApprovedCostCeiling, plan.CreatedAtUtc, plan.ApprovedAtUtc, plan.ApprovedByUserId,
-            plan.RejectedAtUtc, plan.RejectionReason, plan.PauseReason, plan.ChangeReason);
+            plan.RejectedAtUtc, plan.RejectionReason, plan.PauseReason, plan.ChangeReason,
+            plan.ConcurrencyStamp, plan.Status is ImportProfileStatus.Draft or ImportProfileStatus.AwaitingApproval,
+            ImportPlanDtoHelpers.DeserializeGroupInstructionsSafe(plan.ProfileJson));
 }
