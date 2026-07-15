@@ -34,6 +34,12 @@ public sealed class ResourceImportRun : BaseEntity
     public string? ErrorSummary { get; private set; }
     public string? Notes { get; private set; }
 
+    /// <summary>Phase 4 (2026-07-15 large-scale AI import packages) — set when this run was
+    /// created as part of an <see cref="ImportPackage"/>'s deterministic full-package processing
+    /// (one run per detected schema/file group within the package). Null for a simple single-file
+    /// CSV/JSON/JSONL/paste import — the pre-Phase-4 path, unchanged.</summary>
+    public Guid? ImportPackageId { get; private set; }
+
     private ResourceImportRun() { }
 
     public ResourceImportRun(
@@ -44,7 +50,8 @@ public sealed class ResourceImportRun : BaseEntity
         DateTimeOffset startedAtUtc,
         Guid? importedByUserId = null,
         string? sourceVersion = null,
-        string? notes = null)
+        string? notes = null,
+        Guid? importPackageId = null)
     {
         if (cefrResourceSourceId == Guid.Empty)
             throw new ArgumentException("CefrResourceSourceId must not be empty.", nameof(cefrResourceSourceId));
@@ -63,6 +70,7 @@ public sealed class ResourceImportRun : BaseEntity
         Notes = notes?.Trim();
         ParserVersion = CurrentParserVersion;
         Status = ResourceImportRunStatus.Running;
+        ImportPackageId = importPackageId;
     }
 
     /// <summary>Marks the run failed before any row-level processing happened (e.g. source not

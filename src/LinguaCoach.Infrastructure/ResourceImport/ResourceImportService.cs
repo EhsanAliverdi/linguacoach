@@ -115,7 +115,8 @@ public sealed class ResourceImportService : IResourceImportService
         var startedAtUtc = DateTimeOffset.UtcNow;
         var run = new ResourceImportRun(
             source.Id, request.ImportMode, request.FileName, fileHash, startedAtUtc,
-            request.ImportedByUserId, source.SourceVersion, request.Notes);
+            request.ImportedByUserId, source.SourceVersion, request.Notes,
+            importPackageId: request.ImportPackageId);
         _db.ResourceImportRuns.Add(run);
         await _db.SaveChangesAsync(ct);
 

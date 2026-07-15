@@ -100,6 +100,15 @@ public static class QuartzConfiguration
                 .WithIdentity($"{WritingEvaluationSignalApplicationJob.JobName}-trigger")
                 .WithSimpleSchedule(s => s.WithIntervalInMinutes(10).RepeatForever()));
 
+            // Import package processing — every 2 minutes. Advances approved packages through
+            // extraction/candidate creation; never touches an unapproved plan.
+            var importPackageKey = new JobKey(ImportPackageProcessingJob.JobName);
+            q.AddJob<ImportPackageProcessingJob>(opts => opts.WithIdentity(importPackageKey).StoreDurably());
+            q.AddTrigger(t => t
+                .ForJob(importPackageKey)
+                .WithIdentity($"{ImportPackageProcessingJob.JobName}-trigger")
+                .WithSimpleSchedule(s => s.WithIntervalInMinutes(2).RepeatForever()));
+
             // Generation validation failure retention prune — daily.
             var pruneKey = new JobKey(GenerationValidationFailurePruneJob.JobName);
             q.AddJob<GenerationValidationFailurePruneJob>(opts => opts.WithIdentity(pruneKey).StoreDurably());

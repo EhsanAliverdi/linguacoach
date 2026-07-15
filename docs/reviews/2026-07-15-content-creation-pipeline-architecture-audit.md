@@ -362,3 +362,17 @@ publishing was already a distinct, live-re-checked action, not conflated with ap
 investigation, root-cause-vs-actual-gap analysis, and validation. AI segmentation (this audit's
 other Import finding — "No AI-driven content understanding/segmentation exists") remains
 unaddressed by design; it is explicitly out of this phase's scope and deferred to a future phase.
+
+## Phase 4 follow-up (2026-07-15)
+
+This audit's "No AI-driven content understanding/segmentation exists" finding (deferred at the end
+of the Phase 3 follow-up above) was closed: large/mixed-media ZIP packages now get automatic
+deterministic clustering plus a bounded AI structural review, materialized as a persisted,
+admin-approved Import Execution Plan before any processing occurs. This introduces a second,
+package-oriented import path alongside the existing single-file pipeline (which is unchanged and
+still reused underneath for structured CSV/JSON files within a package). A mandatory addendum
+during this phase also introduced a cost-ceiling/approval gate that applies to every import,
+regardless of size — see `docs/reviews/2026-07-15-phase-4-import-execution-plan-progress.md` for
+the full design, the plan/approval/execution state machine, and known limitations (audio-duration
+estimates are a flat assumption, not measured; local-disk storage cannot serve the direct-upload
+flow; no Playwright E2E coverage yet — tracked as TODO-030 through TODO-033).

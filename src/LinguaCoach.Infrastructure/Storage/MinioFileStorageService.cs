@@ -142,6 +142,19 @@ public sealed class MinioFileStorageService : IFileStorageService
         return $"{category}/{safeOwner}/{Guid.NewGuid():N}{extension}";
     }
 
+    public async Task<SignedUrlResult> GenerateUploadUrlAsync(string key, TimeSpan expiry, string contentType, CancellationToken cancellationToken = default)
+    {
+        var expirySeconds = (int)Math.Min(expiry.TotalSeconds, 604800); // MinIO max 7 days
+        var args = new PresignedPutObjectArgs()
+            .WithBucket(_bucketName)
+            .WithObject(key)
+            .WithExpiry(expirySeconds);
+
+        var url = await _minio.PresignedPutObjectAsync(args);
+        var expiresAt = DateTimeOffset.UtcNow.AddSeconds(expirySeconds);
+        return new SignedUrlResult(url, expiresAt);
+    }
+
     /// <summary>
     /// Validates MinIO connectivity and bucket existence.
     /// Called at startup — returns null on success, sanitized error message on failure.

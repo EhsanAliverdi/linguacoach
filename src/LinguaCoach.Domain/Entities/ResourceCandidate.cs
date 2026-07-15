@@ -82,6 +82,24 @@ public sealed class ResourceCandidate : BaseEntity
     public string? AudioStorageKey { get; private set; }
     public string? AudioContentType { get; private set; }
 
+    // ── Phase 4 (2026-07-15 large-scale AI import packages) — transcript/audio provenance and
+    // general field-level provenance for candidates staged from an ImportPackage. ─────────────
+    /// <summary>Null when this candidate has no transcript (e.g. audio not yet transcribed) or
+    /// wasn't staged from a package. "AITranscribed" (see <see cref="MetadataOrigin"/>) vs.
+    /// "SourceMetadata"/"AdministratorProvided" distinguishes a generated transcript from a
+    /// supplied one — never conflated.</summary>
+    public MetadataOrigin? TranscriptOrigin { get; private set; }
+    public double? TranscriptConfidence { get; private set; }
+    public string? SttProviderName { get; private set; }
+    public string? SttModelName { get; private set; }
+
+    /// <summary>Per-field provenance for this candidate's structured content, keyed by field name
+    /// (e.g. "cefrLevel", "title") — see <c>ResourceCandidateFieldProvenance</c> for the
+    /// deserialized shape (origin, confidence, provider/model, timestamp). Null for candidates
+    /// staged before Phase 4 or via the simple deterministic pipeline, where every populated field
+    /// is implicitly DeterministicallyExtracted/AIInferred per the existing Phase E2 convention.</summary>
+    public string? MetadataProvenanceJson { get; private set; }
+
     private ResourceCandidate() { }
 
     public ResourceCandidate(
@@ -363,4 +381,94 @@ public sealed class ResourceCandidate : BaseEntity
         AudioContentType = contentType.Trim();
         UpdatedAtUtc = DateTime.UtcNow;
     }
+
+    /// <summary>
+    /// Phase 4 (Part G — audio without transcript) — records an AI-generated transcript from
+    /// speech-to-text, distinct in origin from a transcript supplied directly with the source
+    /// (which should instead be written via <see cref="UpdateContent"/>'s <c>normalizedJson</c>
+    /// with <see cref="MetadataOrigin.SourceMetadata"/> recorded in
+    /// <see cref="MetadataProvenanceJson"/>). Never overwrites a transcript an administrator has
+    /// already corrected — see <see cref="ApplyFieldProvenance"/>'s precedence rule.
+    /// </summary>
+    public void SetGeneratedTranscript(string transcriptText, double? confidence, string providerName, string modelName)
+    {
+        if (string.IsNullOrWhiteSpace(transcriptText))
+            throw new ArgumentException("TranscriptText is required.", nameof(transcriptText));
+        if (IsPublished)
+            throw new InvalidOperationException("Cannot change the transcript on a resource candidate that has already been published.");
+
+        TranscriptOrigin = MetadataOrigin.AITranscribed;
+        TranscriptConfidence = confidence;
+        SttProviderName = providerName;
+        SttModelName = modelName;
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
+    /// <summary>Marks the transcript as supplied directly by the source/admin rather than
+    /// generated — set alongside writing the transcript text itself into NormalizedJson.</summary>
+    public void SetSuppliedTranscript(MetadataOrigin origin)
+    {
+        if (origin is MetadataOrigin.AITranscribed or MetadataOrigin.AIGenerated or MetadataOrigin.AIInferred)
+            throw new ArgumentException("Use SetGeneratedTranscript for an AI-produced transcript.", nameof(origin));
+
+        TranscriptOrigin = origin;
+        TranscriptConfidence = null;
+        SttProviderName = null;
+        SttModelName = null;
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Phase 4 (Part F — metadata precedence and provenance). Records/updates one field's
+    /// provenance entry, enforcing that an <see cref="MetadataOrigin.AdministratorCorrected"/> or
+    /// <see cref="MetadataOrigin.AdministratorProvided"/> value is never silently downgraded by a
+    /// later AI-origin write for the same field — the caller must check
+    /// <see cref="CanFieldBeAiOverwritten"/> before applying an AI suggestion's value to the field
+    /// itself; this method only maintains the provenance ledger.
+    /// </summary>
+    public void ApplyFieldProvenance(string fieldName, MetadataOrigin origin, double? confidence, string? providerName, string? modelName)
+    {
+        if (string.IsNullOrWhiteSpace(fieldName))
+            throw new ArgumentException("FieldName is required.", nameof(fieldName));
+
+        var provenance = string.IsNullOrWhiteSpace(MetadataProvenanceJson)
+            ? new Dictionary<string, ResourceCandidateFieldProvenanceEntry>()
+            : System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, ResourceCandidateFieldProvenanceEntry>>(MetadataProvenanceJson!)
+                ?? new Dictionary<string, ResourceCandidateFieldProvenanceEntry>();
+
+        if (provenance.TryGetValue(fieldName, out var existing)
+            && existing.Origin is MetadataOrigin.AdministratorCorrected or MetadataOrigin.AdministratorProvided
+            && origin is not (MetadataOrigin.AdministratorCorrected or MetadataOrigin.AdministratorProvided))
+        {
+            // An admin-set value's provenance entry is never overwritten by a lower-precedence
+            // origin — the caller should have already skipped writing the field value itself.
+            return;
+        }
+
+        provenance[fieldName] = new ResourceCandidateFieldProvenanceEntry(origin, confidence, providerName, modelName, DateTimeOffset.UtcNow);
+        MetadataProvenanceJson = System.Text.Json.JsonSerializer.Serialize(provenance);
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
+    /// <summary>True unless <paramref name="fieldName"/>'s current provenance is
+    /// AdministratorProvided/AdministratorCorrected — the Part F precedence gate an AI enrichment
+    /// step must check before overwriting a field value.</summary>
+    public bool CanFieldBeAiOverwritten(string fieldName)
+    {
+        if (string.IsNullOrWhiteSpace(MetadataProvenanceJson)) return true;
+
+        var provenance = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, ResourceCandidateFieldProvenanceEntry>>(MetadataProvenanceJson!);
+        if (provenance is null || !provenance.TryGetValue(fieldName, out var entry)) return true;
+
+        return entry.Origin is not (MetadataOrigin.AdministratorCorrected or MetadataOrigin.AdministratorProvided);
+    }
 }
+
+/// <summary>Phase 4 — one field's provenance ledger entry. See
+/// <see cref="ResourceCandidate.ApplyFieldProvenance"/>.</summary>
+public sealed record ResourceCandidateFieldProvenanceEntry(
+    MetadataOrigin Origin,
+    double? Confidence,
+    string? ProviderName,
+    string? ModelName,
+    DateTimeOffset RecordedAtUtc);

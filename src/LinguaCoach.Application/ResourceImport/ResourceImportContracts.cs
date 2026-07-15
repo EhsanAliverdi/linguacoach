@@ -304,7 +304,11 @@ public sealed record ResourceImportRequest(
     /// before any gate runs. Never AI-applied automatically — this is only ever populated from an
     /// admin's confirmed choice in the mapping-review UI. Null/empty means "no renames," the exact
     /// pre-K1 behavior.</summary>
-    IReadOnlyDictionary<string, string>? ColumnRenames = null
+    IReadOnlyDictionary<string, string>? ColumnRenames = null,
+    /// <summary>Phase 4 (2026-07-15) — set when this run is one of a package-driven job's
+    /// per-file-group runs, so the run is traceable back to its <c>ImportPackage</c>. Null for
+    /// every pre-Phase-4 single-file admin upload — behavior there is unchanged.</summary>
+    Guid? ImportPackageId = null
 );
 
 public sealed record ResourceImportResult(

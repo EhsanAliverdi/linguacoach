@@ -52,6 +52,9 @@ public sealed class FakeFileStorageService : IFileStorageService
     public string GenerateKey(string ownerId, string category, string extension)
         => $"{category}/{ownerId.Replace("-", "")}/{Guid.NewGuid():N}{extension}";
 
+    public Task<SignedUrlResult> GenerateUploadUrlAsync(string key, TimeSpan expiry, string contentType, CancellationToken cancellationToken = default)
+        => Task.FromResult(new SignedUrlResult($"fake-upload://{key}", DateTimeOffset.UtcNow.Add(expiry)));
+
     public Task<string?> HealthCheckAsync(CancellationToken cancellationToken = default)
         => Task.FromResult<string?>(null);
 

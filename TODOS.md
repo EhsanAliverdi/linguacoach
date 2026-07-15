@@ -1111,3 +1111,75 @@ so a future phase can add typed forms with zero backend change.
 ("Known limitations").
 
 **Deferred from:** Phase 3, 2026-07-15.
+
+---
+
+## Large-Scale AI Import Packages (Phase 4, 2026-07-15)
+
+### TODO-030 — Real audio-duration extraction for Import Execution Plan estimates
+
+**What:** `ImportExecutionPlanGenerationService.BuildVolumeEstimate` and
+`ImportPackageProcessingService.MapAndCreateCandidatesAsync` both assume a flat 5 minutes per
+audio file lacking a transcript, rather than reading the actual duration from the audio file's
+header (e.g. an MP3 frame header or WAV `fmt`/`data` chunk).
+
+**Why:** Real duration extraction was judged out of scope for this session's time budget; the
+placeholder is explicitly documented in code and in the plan's cost/time estimate as an
+assumption, never presented as measured. A package with unusually long or short audio files will
+get a materially wrong cost/time estimate until this is fixed.
+
+**Context:** `docs/reviews/2026-07-15-phase-4-import-execution-plan-progress.md`.
+
+**Deferred from:** Phase 4, 2026-07-15.
+
+---
+
+### TODO-031 — Per-row candidate↔asset linking for structured-data (CSV/JSON) package imports
+
+**What:** `ImportCandidateAssetLink` rows are only created for audio/transcript-derived Listening
+candidates in `ImportPackageProcessingService`. Candidates created from a package's CSV/JSON files
+(via the reused `IResourceImportService.ImportAsync` pipeline) have no link back to their source
+`ImportAsset` row.
+
+**Why:** `ResourceImportService.ImportAsync` returns only aggregate counts (succeeded/rejected),
+not per-row candidate ids, so linking would require a deeper change to that shared method (used by
+both the pre-Phase-4 single-file pipeline and the new package pipeline). The candidate's
+`NormalizedJson` already carries the full row content either way, so this is a traceability gap,
+not a data-loss one.
+
+**Context:** `docs/reviews/2026-07-15-phase-4-import-execution-plan-progress.md`.
+
+**Deferred from:** Phase 4, 2026-07-15.
+
+---
+
+### TODO-032 — Local-disk storage cannot serve the Import Package direct-browser-upload flow
+
+**What:** `LocalFileStorageService.GenerateUploadUrlAsync` returns a `local://` marker (mirroring
+its existing `GenerateSignedUrlAsync` GET fallback), which the Angular upload flow cannot actually
+PUT to. Large-package upload only works end-to-end against a real MinIO backend.
+
+**Why:** Building a true API-mediated large-upload fallback (streamed multipart or chunked upload
+through an authenticated endpoint) for local-disk storage was out of scope for this session; local
+dev environments without MinIO configured will see a clear error message rather than a silent
+failure, per `AdminContentImportComponent.uploadPackage()`'s error handling.
+
+**Context:** `docs/reviews/2026-07-15-phase-4-import-execution-plan-progress.md`.
+
+**Deferred from:** Phase 4, 2026-07-15.
+
+---
+
+### TODO-033 — Playwright E2E coverage for the Import Package upload → plan → approve → review flow
+
+**What:** No Playwright spec exercises the full browser flow: upload a ZIP, watch manifest
+inspection, review the auto-generated plan, approve with a cost ceiling, and confirm candidates
+eventually appear in the existing Import Review page.
+
+**Why:** Backend integration-style unit tests (fake storage + fake AI provider) cover the service
+layer end-to-end; the Angular production build was verified to compile cleanly, but no browser-
+level test was written this session, per the time budget.
+
+**Context:** `docs/reviews/2026-07-15-phase-4-import-execution-plan-progress.md`.
+
+**Deferred from:** Phase 4, 2026-07-15.

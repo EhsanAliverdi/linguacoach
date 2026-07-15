@@ -109,6 +109,13 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<ResourceRawRecord> ResourceRawRecords => Set<ResourceRawRecord>();
     public DbSet<ResourceCandidate> ResourceCandidates => Set<ResourceCandidate>();
 
+    // Phase 4 — large-scale AI import packages (package → asset inventory → sample-driven Import
+    // Profile → deterministic full-package processing, feeding the ResourceImportRun pipeline above)
+    public DbSet<ImportPackage> ImportPackages => Set<ImportPackage>();
+    public DbSet<ImportAsset> ImportAssets => Set<ImportAsset>();
+    public DbSet<ImportCandidateAssetLink> ImportCandidateAssetLinks => Set<ImportCandidateAssetLink>();
+    public DbSet<ImportProfile> ImportProfiles => Set<ImportProfile>();
+
     // Phase H3 — Lesson foundation (reviewable teaching/explanation blocks generated from
     // published Resource Bank rows; the "Learn" half of a future Module)
     public DbSet<Lesson> Lessons => Set<Lesson>();

@@ -32,6 +32,7 @@ internal sealed class ResourceImportRunConfiguration : IEntityTypeConfiguration<
         builder.Property(e => e.WarningCount).HasColumnName("warning_count").IsRequired().HasDefaultValue(0);
         builder.Property(e => e.ErrorSummary).HasColumnName("error_summary");
         builder.Property(e => e.Notes).HasColumnName("notes");
+        builder.Property(e => e.ImportPackageId).HasColumnName("import_package_id");
 
         builder.HasOne<CefrResourceSource>()
             .WithMany()
@@ -40,5 +41,6 @@ internal sealed class ResourceImportRunConfiguration : IEntityTypeConfiguration<
 
         builder.HasIndex(e => e.CefrResourceSourceId).HasDatabaseName("ix_resource_import_runs_source");
         builder.HasIndex(e => e.Status).HasDatabaseName("ix_resource_import_runs_status");
+        builder.HasIndex(e => e.ImportPackageId).HasDatabaseName("ix_resource_import_runs_package");
     }
 }

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-15 (Phase 3 — import candidate review workflow)
+lastUpdated: 2026-07-15 (Phase 4 — large-scale AI import packages, Import Execution Plan)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,39 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-15 (Phase 3 — import candidate review workflow)
+Last updated: 2026-07-15 (Phase 4 — large-scale AI import packages, Import Execution Plan)
+
+## Phase 4: Large-scale AI import packages + mandatory Import Execution Plan gate (2026-07-15)
+
+Adds a second, package-oriented import path alongside the existing single-file
+Import/Review/Publish pipeline (unchanged) — for large or mixed-media (ZIP) uploads that need
+extraction, automatic structure detection, and cost estimation before processing. Full detail in
+`docs/reviews/2026-07-15-phase-4-import-execution-plan-progress.md`.
+
+Mid-session, a mandatory addendum required: **no package — large or small — may begin material
+AI/STT/TTS/background processing without a persisted, admin-approved Import Execution Plan
+carrying a cost estimate and an explicit spending ceiling.** Sample selection for the plan is
+fully automatic (deterministic clustering + a bounded AI review); there is no manual admin
+sample-picking step.
+
+Lifecycle: admin uploads a ZIP via a presigned PUT URL (direct to storage, bypassing API
+request-size limits) → the archive is safety-inspected (path traversal/zip-bomb/entry-count/
+compression-ratio guards) into a manifest → the system automatically generates an Import
+Execution Plan (detected structure, proposed resource types, volume/time/cost estimate, risks) →
+the admin reviews it on `/admin/content/import/packages/:packageId/plan` and either approves
+(with a cost ceiling), rejects, or lets the system regenerate it → only on approval does a Quartz
+background job (every 2 min) extract files, create candidates (structured data reuses the
+existing single-file pipeline; audio/transcript pairs become Listening candidates directly, using
+real OpenAI Whisper STT for missing transcripts) → created candidates land in the exact same
+Phase 3 candidate review workflow (edit/approve/reject/skip/publish) as any other import.
+
+If projected cost would exceed the approved ceiling mid-run, the job pauses
+(`PausedForCostApproval`) rather than continuing — the admin must approve a revised ceiling to
+resume. In-app notifications fire at plan-ready, paused-for-cost, completed, and failed.
+
+Known limitations (see the review doc for the full list): candidate-count/audio-duration
+estimates are coarse proxies, not measured; the presigned-PUT browser upload only works against a
+real MinIO backend (not local-disk storage); no Playwright E2E coverage yet.
 
 ## Phase 3: Import candidate review workflow — editing, Skip, and one review page (2026-07-15)
 

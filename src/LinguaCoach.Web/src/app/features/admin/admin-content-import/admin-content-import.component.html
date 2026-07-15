@@ -105,6 +105,28 @@
         }
       </div>
     </sp-admin-section-card>
+
+    <!-- ── Mandatory Import Execution Plan addendum (2026-07-15) — large ZIP package upload.
+         Uploads directly to storage via a presigned URL (never through this API), then always
+         routes to the Import Execution Plan page — no candidates are created here, and nothing
+         is processed until an administrator explicitly approves the plan on that page. ── -->
+    <sp-admin-section-card title="Large package (ZIP)">
+      <p class="sp-admin-hint" style="margin-top:-8px; margin-bottom:16px;">
+        For large or mixed-media archives (audio, images, many files), upload a ZIP instead. The
+        system inspects it, builds an automatic processing plan with a cost estimate, and waits
+        for your approval before creating any candidates.
+      </p>
+      @if (packageUploadError()) { <sp-admin-alert variant="error">{{ packageUploadError() }}</sp-admin-alert> }
+      <div class="sp-admin-form-stack">
+        <sp-admin-file-dropzone accept=".zip" (fileSelected)="onPackageFileSelected($event)" />
+        <sp-admin-button
+          variant="primary"
+          [disabled]="!selectedSourceId || !selectedPackageFile || packageUploading()"
+          (clicked)="uploadPackage()">
+          {{ packageUploading() ? packageUploadStage() : 'Upload package' }}
+        </sp-admin-button>
+      </div>
+    </sp-admin-section-card>
   }
 
   <!-- ══════════════════════════════════════════════════════════════════ -->

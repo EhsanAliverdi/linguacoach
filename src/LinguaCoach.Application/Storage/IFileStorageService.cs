@@ -44,6 +44,22 @@ public interface IFileStorageService
 
     /// <summary>Checks MinIO bucket existence and connectivity. Returns null on success, error message on failure.</summary>
     Task<string?> HealthCheckAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Phase 4 (2026-07-15 large-scale AI import packages, Part A) — returns a short-lived
+    /// signed PUT URL so a large archive can be uploaded directly from the admin's browser to
+    /// storage, bypassing the API's request-body size limits. Local storage has no signed PUT
+    /// concept — it returns a marker URL that routes back through an authenticated API upload
+    /// endpoint instead, mirroring how <see cref="GenerateSignedUrlAsync"/> already falls back
+    /// for reads. Callers must call <see cref="ExistsAsync"/> (or re-stat) after the client
+    /// reports completion — a presigned PUT can be abandoned or fail client-side with no server
+    /// notification.
+    /// </summary>
+    Task<SignedUrlResult> GenerateUploadUrlAsync(
+        string key,
+        TimeSpan expiry,
+        string contentType,
+        CancellationToken cancellationToken = default);
 }
 
 public sealed record SignedUrlResult(string Url, DateTimeOffset ExpiresAt);

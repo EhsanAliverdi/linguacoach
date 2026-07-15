@@ -80,6 +80,13 @@ public sealed class LocalFileStorageService : IFileStorageService
         return $"{category}/{safeOwner}/{Guid.NewGuid():N}{extension}";
     }
 
+    public Task<SignedUrlResult> GenerateUploadUrlAsync(string key, TimeSpan expiry, string contentType, CancellationToken cancellationToken = default)
+    {
+        // Local storage has no signed PUT — callers fall back to an authenticated API upload endpoint.
+        var expiresAt = DateTimeOffset.UtcNow.Add(expiry);
+        return Task.FromResult(new SignedUrlResult($"local://{key}", expiresAt));
+    }
+
     public Task<string?> HealthCheckAsync(CancellationToken cancellationToken = default)
     {
         try

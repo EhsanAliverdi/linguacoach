@@ -56,6 +56,12 @@ internal sealed class ResourceCandidateConfiguration : IEntityTypeConfiguration<
         builder.Property(e => e.AudioStorageKey).HasColumnName("audio_storage_key").HasMaxLength(500);
         builder.Property(e => e.AudioContentType).HasColumnName("audio_content_type").HasMaxLength(100);
 
+        builder.Property(e => e.TranscriptOrigin).HasColumnName("transcript_origin").HasConversion<string>().HasMaxLength(32);
+        builder.Property(e => e.TranscriptConfidence).HasColumnName("transcript_confidence");
+        builder.Property(e => e.SttProviderName).HasColumnName("stt_provider_name").HasMaxLength(100);
+        builder.Property(e => e.SttModelName).HasColumnName("stt_model_name").HasMaxLength(100);
+        builder.Property(e => e.MetadataProvenanceJson).HasColumnName("metadata_provenance_json");
+
         builder.HasOne<ResourceRawRecord>()
             .WithMany()
             .HasForeignKey(e => e.ResourceRawRecordId)

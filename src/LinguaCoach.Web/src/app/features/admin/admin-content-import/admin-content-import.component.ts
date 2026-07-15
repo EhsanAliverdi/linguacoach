@@ -7,6 +7,7 @@ import {
   AdminResourceImportRunService,
   AdminResourceSourceService,
 } from '../../../core/services/admin-resource-import.service';
+import { AdminImportPackageService } from '../../../core/services/admin-import-package.service';
 import {
   AdminResourceImportRunDto,
   AdminResourceSourceDto,
@@ -180,10 +181,17 @@ export class AdminContentImportComponent implements OnInit {
   runsTotalCount = signal(0);
   readonly runsTotalPages = computed(() => Math.max(1, Math.ceil(this.runsTotalCount() / this.runsPageSize)));
 
+  // ── Mandatory Import Execution Plan addendum (2026-07-15) — large ZIP package upload ────────
+  selectedPackageFile: File | null = null;
+  packageUploading = signal(false);
+  packageUploadStage = signal('Uploading…');
+  packageUploadError = signal('');
+
   constructor(
     private importSvc: AdminContentImportService,
     private importRunSvc: AdminResourceImportRunService,
     private sourceSvc: AdminResourceSourceService,
+    private packageSvc: AdminImportPackageService,
     private router: Router,
     private route: ActivatedRoute,
   ) {}
@@ -398,6 +406,79 @@ export class AdminContentImportComponent implements OnInit {
       error: err => {
         this.fileSubmitting.set(false);
         this.fileError.set(err.error?.error ?? 'File import failed.');
+      },
+    });
+  }
+
+  // ── Mandatory Import Execution Plan addendum (2026-07-15) — large ZIP package upload. Uploads
+  // directly to storage via a presigned URL (never through this API's own request-body limits),
+  // then always routes to the Import Execution Plan page — no candidates are created and nothing
+  // is processed until an administrator explicitly approves that plan. ──────────────────────────
+
+  onPackageFileSelected(file: File | null): void {
+    this.selectedPackageFile = file;
+    this.packageUploadError.set('');
+  }
+
+  uploadPackage(): void {
+    this.packageUploadError.set('');
+    if (!this.selectedSourceId) {
+      this.packageUploadError.set('A source is required — pick one or create a new one.');
+      return;
+    }
+    if (!this.selectedPackageFile) {
+      this.packageUploadError.set('A ZIP file is required.');
+      return;
+    }
+
+    const file = this.selectedPackageFile;
+    this.packageUploading.set(true);
+    this.packageUploadStage.set('Requesting upload URL…');
+
+    this.packageSvc.requestUpload(this.selectedSourceId, file.name, file.size).subscribe({
+      next: uploadResult => {
+        this.packageUploadStage.set('Uploading to storage…');
+        this.packageSvc.putToStorage(uploadResult.uploadUrl, file).subscribe({
+          next: () => {
+            this.packageUploadStage.set('Inspecting package…');
+            this.packageSvc.confirmUpload(uploadResult.importPackageId).subscribe({
+              next: manifest => {
+                if (!manifest.isAccepted) {
+                  this.packageUploading.set(false);
+                  this.packageUploadError.set(manifest.rejectionReason ?? 'Package was rejected during inspection.');
+                  return;
+                }
+                this.packageUploadStage.set('Generating plan…');
+                this.packageSvc.generatePlan(uploadResult.importPackageId).subscribe({
+                  next: () => {
+                    this.packageUploading.set(false);
+                    this.router.navigate(['/admin/content/import/packages', uploadResult.importPackageId, 'plan']);
+                  },
+                  error: err => {
+                    this.packageUploading.set(false);
+                    // Manifest was accepted but plan generation failed — the admin can retry from the plan page.
+                    this.router.navigate(['/admin/content/import/packages', uploadResult.importPackageId, 'plan']);
+                    this.packageUploadError.set(err.error?.error ?? 'Could not generate a plan automatically — retry from the plan page.');
+                  },
+                });
+              },
+              error: err => {
+                this.packageUploading.set(false);
+                this.packageUploadError.set(err.error?.error ?? 'Could not confirm the upload.');
+              },
+            });
+          },
+          error: () => {
+            this.packageUploading.set(false);
+            this.packageUploadError.set(
+              'Upload to storage failed. If this environment uses local file storage (no MinIO), ' +
+              'direct browser upload is not yet supported there — configure MinIO to use large-package upload.');
+          },
+        });
+      },
+      error: err => {
+        this.packageUploading.set(false);
+        this.packageUploadError.set(err.error?.error ?? 'Could not start the upload.');
       },
     });
   }

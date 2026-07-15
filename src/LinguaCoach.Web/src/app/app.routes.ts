@@ -159,6 +159,12 @@ export const routes: Routes = [
         path: 'content/import/runs/:runId',
         loadComponent: () => import('./features/admin/admin-import-run-candidates/admin-import-run-candidates.component').then(m => m.AdminImportRunCandidatesComponent),
       },
+      // Mandatory Import Execution Plan addendum (2026-07-15) — every large-scale ZIP package
+      // upload lands here for review/approval before any AI/STT/TTS/background processing begins.
+      {
+        path: 'content/import/packages/:packageId/plan',
+        loadComponent: () => import('./features/admin/admin-import-package-plan/admin-import-package-plan.component').then(m => m.AdminImportPackagePlanComponent),
+      },
       // Phase I1 — the standalone import/review/publish pages were merged into one unified
       // pipeline page at content/import; old bookmarks/links redirect there (see AGENTS.md I1).
       {

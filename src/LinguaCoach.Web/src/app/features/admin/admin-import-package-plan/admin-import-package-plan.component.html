@@ -1,0 +1,181 @@
+<sp-admin-page-header
+  title="Import Execution Plan"
+  subtitle="Every package — large or small — must be reviewed and approved here before any AI, transcription, or background processing begins.">
+  <sp-admin-button variant="neutral" appearance="outline" (clicked)="backToImport()">
+    ← Back to Import
+  </sp-admin-button>
+</sp-admin-page-header>
+
+<sp-admin-page-body>
+
+  @if (loading()) {
+    <sp-admin-loading-state message="Loading package and plan" />
+  } @else {
+
+    @if (error()) { <sp-admin-error-state title="Could not load this package" [message]="error()" /> }
+
+    @if (manifest(); as m) {
+      <sp-admin-section-card title="Package manifest">
+        <div class="sp-admin-form-stack" style="flex-direction:row;flex-wrap:wrap;gap:0.75rem;">
+          <sp-admin-badge tone="neutral">{{ m.entryCount }} files</sp-admin-badge>
+          <sp-admin-badge tone="neutral">{{ (m.expandedSizeBytes / 1e6) | number:'1.1-1' }} MB expanded</sp-admin-badge>
+          <sp-admin-badge [tone]="m.isAccepted ? 'success' : 'danger'">
+            {{ m.isAccepted ? 'Accepted' : 'Rejected' }}
+          </sp-admin-badge>
+          @if (m.suspiciousEntryCount > 0) { <sp-admin-badge tone="warning">{{ m.suspiciousEntryCount }} suspicious</sp-admin-badge> }
+          @if (m.unsupportedEntryCount > 0) { <sp-admin-badge tone="warning">{{ m.unsupportedEntryCount }} unsupported</sp-admin-badge> }
+          @if (m.duplicateChecksumEntryCount > 0) { <sp-admin-badge tone="warning">{{ m.duplicateChecksumEntryCount }} possible duplicates</sp-admin-badge> }
+        </div>
+        @if (!m.isAccepted && m.rejectionReason) {
+          <sp-admin-alert variant="error" style="margin-top:0.75rem;">{{ m.rejectionReason }}</sp-admin-alert>
+        }
+      </sp-admin-section-card>
+    }
+
+    @if (!plan()) {
+      <sp-admin-section-card title="No plan yet">
+        <p class="sp-admin-hint">
+          No Import Execution Plan exists for this package yet. Generating one is fully automatic —
+          the system detects file groups, selects representative samples, and estimates cost/time itself.
+        </p>
+        <sp-admin-button [loading]="regenerating()" [disabled]="regenerating() || !manifest()?.isAccepted" (clicked)="generatePlan()">
+          Generate plan
+        </sp-admin-button>
+      </sp-admin-section-card>
+    }
+
+    @if (plan(); as p) {
+      <sp-admin-section-card title="Plan status">
+        <div class="sp-admin-form-stack" style="flex-direction:row;flex-wrap:wrap;align-items:center;gap:0.75rem;">
+          <sp-admin-badge [tone]="statusTone(p.status)">{{ p.status }}</sp-admin-badge>
+          <span class="sp-admin-hint">Version {{ p.version }}</span>
+          @if (p.processingMode) { <sp-admin-badge tone="neutral">{{ p.processingMode }}</sp-admin-badge> }
+        </div>
+        @if (p.processingModeReason) { <p class="sp-admin-hint" style="margin-top:0.5rem;">{{ p.processingModeReason }}</p> }
+
+        @if (p.status === 'PausedForCostApproval') {
+          <sp-admin-alert variant="warning" style="margin-top:0.75rem;">
+            Processing paused: {{ p.pauseReason }}
+          </sp-admin-alert>
+        }
+        @if (p.status === 'Rejected') {
+          <sp-admin-alert variant="error" style="margin-top:0.75rem;">Rejected: {{ p.rejectionReason }}</sp-admin-alert>
+        }
+
+        <div style="margin-top:1rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
+          @if (p.status === 'AwaitingApproval') {
+            <sp-admin-button variant="primary" (clicked)="openApprove()">Approve and Start Processing</sp-admin-button>
+            <sp-admin-button variant="danger" appearance="outline" (clicked)="openReject()">Reject</sp-admin-button>
+          }
+          @if (p.status === 'PausedForCostApproval') {
+            <sp-admin-button variant="primary" (clicked)="openResume()">Approve revised cost and resume</sp-admin-button>
+          }
+          <sp-admin-button variant="neutral" appearance="outline" [loading]="regenerating()" (clicked)="generatePlan()">
+            Regenerate plan
+          </sp-admin-button>
+        </div>
+      </sp-admin-section-card>
+
+      <sp-admin-section-card title="Detected structure">
+        @for (group of p.estimate.detectedGroups; track group.groupKey) {
+          <div style="padding:0.5rem 0;border-bottom:1px solid var(--sp-admin-border-subtle, #eee);">
+            <strong>{{ group.groupKey }}</strong> — {{ group.fileCount }} file(s)
+            @if (group.proposedResourceType) { <sp-admin-badge tone="neutral">{{ group.proposedResourceType }}</sp-admin-badge> }
+            <p class="sp-admin-hint">{{ group.description }}</p>
+          </div>
+        }
+        @if (p.estimate.ambiguousGroups.length > 0) {
+          <sp-admin-alert variant="warning" style="margin-top:0.5rem;">
+            Ambiguous groups: {{ p.estimate.ambiguousGroups.join(', ') }}
+          </sp-admin-alert>
+        }
+      </sp-admin-section-card>
+
+      <sp-admin-section-card title="Estimated volume, time, and cost">
+        <div class="sp-admin-form-stack">
+          <sp-admin-form-field label="Expected candidates">{{ p.estimate.volume.expectedCandidateCount | number }}</sp-admin-form-field>
+          <sp-admin-form-field label="Audio requiring transcription">{{ p.estimate.volume.expectedAudioFilesRequiringStt }} file(s)</sp-admin-form-field>
+          <sp-admin-form-field label="Estimated duration">{{ p.estimate.time.estimatedDurationRangeDescription }}</sp-admin-form-field>
+        </div>
+
+        <div style="margin-top:1rem;">
+          <strong>
+            Estimated cost: {{ p.estimate.cost.currency }} {{ p.estimate.cost.expectedCost | number:'1.2-2' }}
+            (range {{ p.estimate.cost.minCost | number:'1.2-2' }}–{{ p.estimate.cost.maxCost | number:'1.2-2' }})
+          </strong>
+          <ul>
+            @for (line of p.estimate.cost.breakdown; track line.category) {
+              <li>{{ line.category }}: {{ p.estimate.cost.currency }} {{ line.amount | number:'1.2-2' }}</li>
+            }
+          </ul>
+          <p class="sp-admin-hint">{{ p.estimate.cost.providerModelAssumptions }}</p>
+          @for (a of p.estimate.cost.assumptions; track a) { <p class="sp-admin-hint">{{ a }}</p> }
+        </div>
+
+        @if (p.approvedCostCeiling !== null) {
+          <p class="sp-admin-hint" style="margin-top:0.5rem;">
+            Approved cost ceiling: {{ p.estimate.cost.currency }} {{ p.approvedCostCeiling | number:'1.2-2' }}
+          </p>
+        }
+      </sp-admin-section-card>
+
+      @if (p.estimate.risks.length > 0) {
+        <sp-admin-section-card title="Risks and warnings">
+          <ul>
+            @for (risk of p.estimate.risks; track risk) { <li>{{ risk }}</li> }
+          </ul>
+        </sp-admin-section-card>
+      }
+
+      <sp-admin-section-card title="Proposed decisions">
+        @for (d of p.estimate.proposedDecisions; track d.topic) {
+          <div style="padding:0.5rem 0;">
+            <strong>{{ d.topic }}:</strong> {{ d.decision }}
+            <p class="sp-admin-hint">{{ d.reason }}</p>
+          </div>
+        }
+      </sp-admin-section-card>
+    }
+  }
+</sp-admin-page-body>
+
+<sp-admin-modal [open]="approveModalOpen()" title="Approve and Start Processing" variant="form" (closed)="approveModalOpen.set(false)">
+  <p class="sp-admin-hint" style="margin-bottom:1rem;">
+    Set a spending limit for this import. Processing will pause automatically — never continue silently —
+    if the projected cost would exceed this ceiling.
+  </p>
+  @if (approveError()) { <sp-admin-alert variant="error">{{ approveError() }}</sp-admin-alert> }
+  <sp-admin-form-field label="Approved cost ceiling (USD)">
+    <sp-admin-input type="number" [(ngModel)]="approvedCostCeiling" placeholder="e.g. 50.00" />
+  </sp-admin-form-field>
+  <div style="margin-top:1rem;display:flex;gap:0.5rem;">
+    <sp-admin-button variant="primary" [loading]="approving()" (clicked)="confirmApprove()">Approve and Start Processing</sp-admin-button>
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="approveModalOpen.set(false)">Cancel</sp-admin-button>
+  </div>
+</sp-admin-modal>
+
+<sp-admin-modal [open]="rejectModalOpen()" title="Reject plan" variant="form" (closed)="rejectModalOpen.set(false)">
+  @if (rejectError()) { <sp-admin-alert variant="error">{{ rejectError() }}</sp-admin-alert> }
+  <sp-admin-form-field label="Reason">
+    <sp-admin-textarea [(ngModel)]="rejectReason" [rows]="3" placeholder="Why is this plan being rejected?" />
+  </sp-admin-form-field>
+  <div style="margin-top:1rem;display:flex;gap:0.5rem;">
+    <sp-admin-button variant="danger" [loading]="rejecting()" (clicked)="confirmReject()">Reject</sp-admin-button>
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="rejectModalOpen.set(false)">Cancel</sp-admin-button>
+  </div>
+</sp-admin-modal>
+
+<sp-admin-modal [open]="resumeModalOpen()" title="Approve revised cost and resume" variant="form" (closed)="resumeModalOpen.set(false)">
+  <p class="sp-admin-hint" style="margin-bottom:1rem;">
+    Processing paused because the projected cost exceeded the previously approved ceiling. Set a new
+    ceiling to resume — it will not silently exceed this value either.
+  </p>
+  @if (resumeError()) { <sp-admin-alert variant="error">{{ resumeError() }}</sp-admin-alert> }
+  <sp-admin-form-field label="New approved cost ceiling (USD)">
+    <sp-admin-input type="number" [(ngModel)]="resumeCostCeiling" placeholder="e.g. 75.00" />
+  </sp-admin-form-field>
+  <div style="margin-top:1rem;display:flex;gap:0.5rem;">
+    <sp-admin-button variant="primary" [loading]="resuming()" (clicked)="confirmResume()">Approve and resume</sp-admin-button>
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="resumeModalOpen.set(false)">Cancel</sp-admin-button>
+  </div>
+</sp-admin-modal>

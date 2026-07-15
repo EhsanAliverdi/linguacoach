@@ -345,8 +345,17 @@ public static class DependencyInjection
         services.AddScoped<IPatternEvaluator, FormIoPatternEvaluator>();
         services.AddScoped<IPatternEvaluationRouter, PatternEvaluationRouter>();
 
-        // STT: use FakeSpeechToTextService for MVP; swap in a real provider later
-        services.AddScoped<ISpeechToTextService, FakeSpeechToTextService>();
+        // STT: Phase 4 (2026-07-15) — OpenAiSpeechToTextService activates when OpenAI:ApiKey /
+        // OPENAI_API_KEY is configured; falls back to FakeSpeechToTextService (deterministic
+        // placeholder) otherwise, same "real if configured, fake if not" precedent as every other
+        // OpenAI-backed provider in this codebase.
+        services.AddScoped<FakeSpeechToTextService>();
+        services.AddScoped<LinguaCoach.Infrastructure.Speaking.OpenAiSpeechToTextService>();
+        services.AddScoped<ISpeechToTextService>(sp =>
+        {
+            var openAi = sp.GetRequiredService<LinguaCoach.Infrastructure.Speaking.OpenAiSpeechToTextService>();
+            return openAi.IsSupported ? openAi : sp.GetRequiredService<FakeSpeechToTextService>();
+        });
         // TTS: FakeTextToSpeechService is the default (no API key needed).
         // OpenAiTextToSpeechService activates when AiProviderConfig selects "openai" for tts.* feature keys.
         // TtsProviderResolver reads the DB config and returns the correct implementation.
@@ -670,6 +679,34 @@ public static class DependencyInjection
         // Phase K1 — AI-assisted import column-mapping proposal.
         services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceImportColumnMappingService,
             LinguaCoach.Infrastructure.ResourceImport.ResourceImportColumnMappingService>();
+
+        // Phase 4 (2026-07-15) — large-scale AI import packages. App never crashes on a missing
+        // "ImportPackageLimits" config section — sensible defaults are baked into the options class.
+        if (configuration is not null)
+            services.Configure<LinguaCoach.Infrastructure.ResourceImport.ImportPackageLimitsOptions>(
+                configuration.GetSection(LinguaCoach.Infrastructure.ResourceImport.ImportPackageLimitsOptions.SectionName));
+        else
+            services.Configure<LinguaCoach.Infrastructure.ResourceImport.ImportPackageLimitsOptions>(_ => { });
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IZipPackageInspector,
+            LinguaCoach.Infrastructure.ResourceImport.ZipPackageInspector>();
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IImportPackageUploadService,
+            LinguaCoach.Infrastructure.ResourceImport.ImportPackageUploadService>();
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IImportProcessingModeDecisionService,
+            LinguaCoach.Infrastructure.ResourceImport.ImportProcessingModeDecisionService>();
+
+        // Mandatory Import Execution Plan addendum (2026-07-15) — plan generation + approval,
+        // required before any package (regardless of size) may be processed.
+        if (configuration is not null)
+            services.Configure<LinguaCoach.Infrastructure.ResourceImport.ImportCostEstimationOptions>(
+                configuration.GetSection(LinguaCoach.Infrastructure.ResourceImport.ImportCostEstimationOptions.SectionName));
+        else
+            services.Configure<LinguaCoach.Infrastructure.ResourceImport.ImportCostEstimationOptions>(_ => { });
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IImportExecutionPlanGenerationService,
+            LinguaCoach.Infrastructure.ResourceImport.ImportExecutionPlanGenerationService>();
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IImportExecutionPlanApprovalService,
+            LinguaCoach.Infrastructure.ResourceImport.ImportExecutionPlanApprovalService>();
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IImportPackageProcessingService,
+            LinguaCoach.Infrastructure.ResourceImport.ImportPackageProcessingService>();
 
         // Phase 16F/16G — Speaking Evaluation Foundation + Provider-Backed Evaluation
         if (configuration is not null)

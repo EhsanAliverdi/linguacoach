@@ -17,6 +17,10 @@ public static class DefaultAiSeeder
     public const string ActivityTemplateGenerateInstanceKey = "activity_template_generate_instance";
     public const string ResourceCandidateAnalyzeKey = "resource_candidate_analyze";
     public const string ResourceImportProposeColumnMappingKey = "resource_import_propose_column_mapping";
+    // Mandatory Import Execution Plan addendum (2026-07-15) — bounded review of a package's
+    // deterministic manifest clustering + automatically-selected sample metadata, used only
+    // during plan generation (never during full-package processing).
+    public const string ImportPackagePlanReviewKey = "import_package_plan_review";
     public const string ActivityGenerateListeningKey = "activity_generate_listening";
     public const string ActivityGenerateSpeakingRolePlayKey = "activity_generate_speaking_roleplay";
     public const string ActivityEvaluateWritingKey = "activity_evaluate_writing";
@@ -4760,6 +4764,49 @@ Rules:
 - Do not include any text outside the JSON object. No markdown fences.
 """;
 
+    // Mandatory Import Execution Plan addendum — reviews a package's deterministic manifest
+    // clustering plus automatically-selected sample file metadata (names/paths/sizes only — no
+    // file content beyond bounded structured-file headers). Advisory only: confirms or corrects
+    // the deterministic grouping and resource-type guesses, flags ambiguity, never itself creates
+    // candidates or decides approval.
+    private const string ImportPackagePlanReviewContent = """
+You are reviewing the deterministic structural analysis of an uploaded content package for an internal English-learning content pipeline, before any expensive processing begins. Your output only informs a plan an administrator must explicitly approve — you are not approving anything and you must not analyse file content beyond what is given below.
+
+Package file count: {{fileCount}}
+Distinct extensions: {{distinctExtensions}}
+
+Deterministically detected folder/extension groups (name, file count, sample relative paths):
+{{detectedGroupsJson}}
+
+Sample file metadata considered so far (relative path, extension, size in bytes; content is NOT included):
+{{sampleMetadataJson}}
+
+Sampling round: {{samplingRound}} of a maximum of {{maxSamplingRounds}}.
+
+Return ONLY valid JSON (no markdown, no text outside the JSON object) matching this exact shape:
+
+{
+  "groups": [
+    {
+      "groupKey": "<must match one of the provided group keys>",
+      "proposedResourceType": "<one of VocabularyEntry, GrammarProfileEntry, ReadingPassage, WritingPrompt, ListeningPassage, SpeakingPrompt, or null if undetermined>",
+      "description": "<one short sentence describing what this group appears to contain>",
+      "confidence": <number 0-1>
+    }
+  ],
+  "ambiguousGroups": ["<groupKey values you could not confidently classify>"],
+  "unsupportedContentNotes": ["<short note about any file type/content this pipeline cannot use>"],
+  "structureConfidence": <number 0-1: overall confidence the package structure is now understood>,
+  "needsAnotherSamplingRound": <true only if structureConfidence is low AND another round could plausibly resolve it; otherwise false>,
+  "requestedAdditionalSampleHint": "<short hint of what additional sample would help, or null>"
+}
+
+Rules:
+- groupKey values in your response must exactly match the provided group keys — do not invent new ones.
+- Never claim false certainty: if a group's purpose is unclear from the metadata given, mark it ambiguous rather than guessing a resource type.
+- Do not include any text outside the JSON object. No markdown fences.
+""";
+
     // Phase K1 — proposes a column-rename mapping for an admin's uploaded/pasted import file.
     // Advisory only: the admin always reviews/confirms before it's applied, and the caller drops
     // any suggested field name that isn't in the recognized set — this prompt cannot change what a
@@ -4867,6 +4914,11 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             ResourceImportProposeColumnMappingKey, ResourceImportProposeColumnMappingContent,
             maxInputTokens: 1600, maxOutputTokens: 1200, ct);
+
+        // Mandatory Import Execution Plan addendum — bounded manifest/sample structure review
+        await SeedOrUpgradePromptAsync(db, logger,
+            ImportPackagePlanReviewKey, ImportPackagePlanReviewContent,
+            maxInputTokens: 4000, maxOutputTokens: 1800, ct);
 
         // Phase K8 — admin "Fix with AI" repair action, shared across Resource Bank/Lesson/
         // Exercise/Module.
