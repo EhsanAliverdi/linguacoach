@@ -13,6 +13,7 @@ import {
   BatchResourceCandidateActionResult,
   ResourceCandidatePreviewDto,
   ResourceCandidatePublishResult,
+  UpdateCandidateContentRequestBody,
 } from '../../../core/models/admin-resource-import.models';
 import { FormioRendererComponent } from '../../../shared/formio/formio-renderer.component';
 import {
@@ -111,6 +112,32 @@ export class AdminImportRunCandidatesComponent implements OnInit {
   rejectTargetId = signal<string | null>(null);
   rejectReasonDraft = '';
   rejecting = signal(false);
+
+  // ── Phase 3 — Skip modal (reason optional, distinct from Reject) ───────────
+  skipModalOpen = signal(false);
+  skipTargetId = signal<string | null>(null);
+  skipReasonDraft = '';
+  skipping = signal(false);
+
+  // ── Phase 3 — batch reject modal (reason required, mirrors the row-level one) ──
+  batchRejectModalOpen = signal(false);
+  batchRejectReasonDraft = '';
+
+  // ── Phase 3 — candidate content editing ─────────────────────────────────────
+  editModalOpen = signal(false);
+  editTargetId = signal<string | null>(null);
+  editSaving = signal(false);
+  editError = signal('');
+  editDraft: {
+    canonicalText: string;
+    normalizedJson: string;
+    cefrLevel: string;
+    primarySkill: string;
+    subskill: string;
+    difficultyBand: string;
+    contextTags: string;
+    focusTags: string;
+  } = { canonicalText: '', normalizedJson: '', cefrLevel: '', primarySkill: '', subskill: '', difficultyBand: '', contextTags: '', focusTags: '' };
 
   // ── Preview drawer ───────────────────────────────────────────────────────
   previewDrawerOpen = signal(false);
@@ -240,6 +267,40 @@ export class AdminImportRunCandidatesComponent implements OnInit {
     this.runBatchAction(this.candidateSvc.batchApproveAndPublish(ids), 'approved & published');
   }
 
+  /** Phase 3 — "Publish Approved": a separate action from "Approve & Publish selected" — this one
+   *  never approves anything, it only attempts to publish candidates already Approved. */
+  batchPublishApprovedSelected(): void {
+    this.batchPublishSelected();
+  }
+
+  batchSkipSelected(): void {
+    const ids = Array.from(this.selectedIds());
+    if (ids.length === 0) return;
+    this.runBatchAction(this.candidateSvc.batchSkip(ids), 'skipped');
+  }
+
+  openBatchReject(): void {
+    if (this.selectedCount() === 0) return;
+    this.batchRejectReasonDraft = '';
+    this.actionError.set('');
+    this.batchRejectModalOpen.set(true);
+  }
+
+  closeBatchReject(): void {
+    this.batchRejectModalOpen.set(false);
+  }
+
+  confirmBatchReject(): void {
+    const ids = Array.from(this.selectedIds());
+    if (ids.length === 0) return;
+    if (!this.batchRejectReasonDraft.trim()) {
+      this.actionError.set('A reason is required to reject candidates.');
+      return;
+    }
+    this.batchRejectModalOpen.set(false);
+    this.runBatchAction(this.candidateSvc.batchReject(ids, this.batchRejectReasonDraft.trim()), 'rejected');
+  }
+
   private runBatchAction(obs: Observable<BatchResourceCandidateActionResult>, verb: string): void {
     this.batchActionRunning.set(true);
     this.actionError.set('');
@@ -268,18 +329,27 @@ export class AdminImportRunCandidatesComponent implements OnInit {
     return 'neutral';
   }
 
+  reviewStatusTone(status: string): 'success' | 'neutral' | 'danger' | 'warning' {
+    if (status === 'Approved') return 'success';
+    if (status === 'Rejected') return 'danger';
+    if (status === 'Skipped') return 'warning';
+    return 'neutral';
+  }
+
   rowActions(item: AdminResourceCandidateDto): SpAdminRowAction[] {
     const actions: SpAdminRowAction[] = [
       { id: 'preview', label: 'Preview', icon: 'view', tone: 'default' },
       { id: 'analyze', label: 'Analyze', icon: 'sparkles', tone: 'default' },
     ];
     if (!item.isPublished) {
+      actions.push({ id: 'edit', label: 'Edit', icon: 'edit', tone: 'default' });
       // Phase K2 — hard-blocked candidates (Failed/Pending ValidationStatus) never show the
       // publish action; the specific blocker (item.publishBlockReason) is shown inline instead.
       if (item.canAttemptPublish) {
         actions.push({ id: 'approve-and-publish', label: 'Approve & Publish', icon: 'check', tone: 'default' });
       }
       if (item.reviewStatus !== 'Rejected') actions.push({ id: 'reject', label: 'Reject', icon: 'delete', tone: 'danger' });
+      if (item.reviewStatus !== 'Skipped') actions.push({ id: 'skip', label: 'Skip', icon: 'clock', tone: 'default' });
     }
     return actions;
   }
@@ -289,6 +359,129 @@ export class AdminImportRunCandidatesComponent implements OnInit {
     if (actionId === 'analyze') this.analyzeCandidate(item);
     if (actionId === 'approve-and-publish') this.approveAndPublish(item);
     if (actionId === 'reject') this.openReject(item);
+    if (actionId === 'skip') this.openSkip(item);
+    if (actionId === 'edit') this.openEdit(item);
+  }
+
+  // ── Phase 3 — Skip ───────────────────────────────────────────────────────
+
+  openSkip(item: AdminResourceCandidateDto): void {
+    this.skipTargetId.set(item.candidateId);
+    this.skipReasonDraft = '';
+    this.actionError.set('');
+    this.skipModalOpen.set(true);
+  }
+
+  closeSkip(): void {
+    this.skipModalOpen.set(false);
+  }
+
+  confirmSkip(): void {
+    const id = this.skipTargetId();
+    if (!id) return;
+    this.skipping.set(true);
+    this.candidateSvc.skip(id, this.skipReasonDraft.trim() || null).subscribe({
+      next: () => {
+        this.skipping.set(false);
+        this.skipModalOpen.set(false);
+        this.actionSuccess.set('Candidate skipped.');
+        this.refreshAfterAction();
+      },
+      error: err => { this.skipping.set(false); this.actionError.set(err.error?.error ?? 'Could not skip candidate.'); },
+    });
+  }
+
+  // ── Phase 3 — candidate content editing ─────────────────────────────────────
+
+  openEdit(item: AdminResourceCandidateDto): void {
+    this.editTargetId.set(item.candidateId);
+    this.editError.set('');
+    this.editDraft = {
+      canonicalText: item.canonicalText,
+      normalizedJson: this.prettyJson(item.normalizedJson),
+      cefrLevel: item.cefrLevel ?? '',
+      primarySkill: item.primarySkill ?? '',
+      subskill: item.subskill ?? '',
+      difficultyBand: item.difficultyBand?.toString() ?? '',
+      contextTags: this.parseTagsToCsv(item.contextTagsJson),
+      focusTags: this.parseTagsToCsv(item.focusTagsJson),
+    };
+    this.editModalOpen.set(true);
+  }
+
+  closeEdit(): void {
+    this.editModalOpen.set(false);
+  }
+
+  confirmEdit(): void {
+    const id = this.editTargetId();
+    if (!id) return;
+
+    let normalizedJson: string | null = null;
+    const trimmedJson = this.editDraft.normalizedJson.trim();
+    if (trimmedJson) {
+      try {
+        normalizedJson = JSON.stringify(JSON.parse(trimmedJson));
+      } catch {
+        this.editError.set('Content JSON is not valid JSON — fix it before saving.');
+        return;
+      }
+    }
+
+    const difficultyBand = this.editDraft.difficultyBand.trim()
+      ? Number(this.editDraft.difficultyBand.trim())
+      : null;
+    if (difficultyBand !== null && (!Number.isInteger(difficultyBand) || difficultyBand < 1 || difficultyBand > 5)) {
+      this.editError.set('Difficulty band must be a whole number between 1 and 5.');
+      return;
+    }
+
+    const body: UpdateCandidateContentRequestBody = {
+      canonicalText: this.editDraft.canonicalText.trim() || null,
+      normalizedJson,
+      cefrLevel: this.editDraft.cefrLevel.trim() || null,
+      primarySkill: this.editDraft.primarySkill.trim() || null,
+      subskill: this.editDraft.subskill.trim() || null,
+      difficultyBand,
+      contextTags: this.parseCsvToTags(this.editDraft.contextTags),
+      focusTags: this.parseCsvToTags(this.editDraft.focusTags),
+    };
+
+    this.editSaving.set(true);
+    this.editError.set('');
+    this.candidateSvc.updateContent(id, body).subscribe({
+      next: () => {
+        this.editSaving.set(false);
+        this.editModalOpen.set(false);
+        this.actionSuccess.set('Candidate content updated.');
+        this.refreshAfterAction();
+      },
+      error: err => { this.editSaving.set(false); this.editError.set(err.error?.error ?? 'Could not save candidate content.'); },
+    });
+  }
+
+  private prettyJson(json: string): string {
+    try {
+      return JSON.stringify(JSON.parse(json), null, 2);
+    } catch {
+      return json;
+    }
+  }
+
+  private parseTagsToCsv(tagsJson: string | null): string {
+    if (!tagsJson) return '';
+    try {
+      const tags = JSON.parse(tagsJson);
+      return Array.isArray(tags) ? tags.join(', ') : '';
+    } catch {
+      return '';
+    }
+  }
+
+  private parseCsvToTags(csv: string): string[] | null {
+    const trimmed = csv.trim();
+    if (!trimmed) return null;
+    return trimmed.split(',').map(t => t.trim()).filter(t => t.length > 0);
   }
 
   analyzeCandidate(item: AdminResourceCandidateDto): void {

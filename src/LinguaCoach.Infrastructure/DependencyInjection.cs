@@ -513,6 +513,11 @@ public static class DependencyInjection
             LinguaCoach.Infrastructure.ResourceImport.AdminResourceCandidateApproveHandler>();
         services.AddScoped<LinguaCoach.Application.ResourceImport.IAdminResourceCandidateRejectHandler,
             LinguaCoach.Infrastructure.ResourceImport.AdminResourceCandidateRejectHandler>();
+        // Phase 3 — import candidate review workflow.
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IAdminResourceCandidateSkipHandler,
+            LinguaCoach.Infrastructure.ResourceImport.AdminResourceCandidateSkipHandler>();
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IAdminResourceCandidateContentUpdateHandler,
+            LinguaCoach.Infrastructure.ResourceImport.AdminResourceCandidateContentUpdateHandler>();
         services.AddScoped<LinguaCoach.Application.ResourceImport.IAdminResourceCandidateReviewSummaryQuery,
             LinguaCoach.Infrastructure.ResourceImport.AdminResourceCandidateReviewSummaryQueryHandler>();
         services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceCandidateBatchActionService,

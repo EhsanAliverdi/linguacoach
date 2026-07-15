@@ -55,6 +55,8 @@ public sealed record BatchResourceCandidateActionResult(
 public sealed record BatchApproveResourceCandidatesCommand(IReadOnlyList<Guid> CandidateIds, string? Notes = null);
 public sealed record BatchPublishResourceCandidatesCommand(IReadOnlyList<Guid> CandidateIds);
 public sealed record BatchApproveAndPublishResourceCandidatesCommand(IReadOnlyList<Guid> CandidateIds, string? Notes = null);
+public sealed record BatchRejectResourceCandidatesCommand(IReadOnlyList<Guid> CandidateIds, string Reason);
+public sealed record BatchSkipResourceCandidatesCommand(IReadOnlyList<Guid> CandidateIds, string? Reason = null);
 
 public interface IResourceCandidateBatchActionService
 {
@@ -66,4 +68,12 @@ public interface IResourceCandidateBatchActionService
 
     Task<BatchResourceCandidateActionResult> ApproveAndPublishAsync(
         BatchApproveAndPublishResourceCandidatesCommand command, Guid? publishedByUserId, CancellationToken ct = default);
+
+    /// <summary>Phase 3 (2026-07-15 import candidate review workflow).</summary>
+    Task<BatchResourceCandidateActionResult> RejectAsync(
+        BatchRejectResourceCandidatesCommand command, CancellationToken ct = default);
+
+    /// <summary>Phase 3 (2026-07-15 import candidate review workflow).</summary>
+    Task<BatchResourceCandidateActionResult> SkipAsync(
+        BatchSkipResourceCandidatesCommand command, CancellationToken ct = default);
 }

@@ -140,7 +140,7 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
         }
 
         // ── Gate: admin approval — separate from validation. ──
-        if (candidate.ReviewStatus != AdminReviewStatus.Approved)
+        if (candidate.ReviewStatus != ResourceCandidateReviewStatus.Approved)
         {
             errors.Add($"ReviewStatus must be 'Approved' to publish (current: '{candidate.ReviewStatus}').");
         }

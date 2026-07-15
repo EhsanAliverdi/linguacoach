@@ -1,6 +1,6 @@
 <sp-admin-page-header
   title="Import Content"
-  subtitle="Import unstructured content, review structured candidates, and publish approved items to the Resource Bank.">
+  subtitle="Import unstructured content, then review, edit, and publish the staged candidates on the Import Review page.">
 </sp-admin-page-header>
 
 <sp-admin-page-body>
@@ -22,206 +22,89 @@
 
     <sp-admin-section-card title="Add content">
       <p class="sp-admin-hint" style="margin-top:-8px; margin-bottom:16px;">
-        Choose a source and content type, then upload a file or type the content directly.
+        Choose a source and content type, then upload a file or type the content directly. Once
+        candidates are generated you'll be taken straight to Import Review to review, edit,
+        approve, reject, skip, and publish them — this page doesn't review candidates itself.
       </p>
 
-      @if (entryMode() === 'paste' && result(); as importResult) {
-        <sp-admin-alert [variant]="importResult.warningCount > 0 ? 'warning' : 'success'">
-          {{ importResult.candidateCount }} candidate(s) staged from {{ importResult.rawRecordCount }} row(s)
-          @if (importResult.warningCount > 0) { , {{ importResult.warningCount }} warning(s) to review }.
-        </sp-admin-alert>
-        @if (importResult.errorSummary) {
-          <sp-admin-alert variant="error">{{ importResult.errorSummary }}</sp-admin-alert>
-        }
-        <p class="sp-admin-hint">Review the staged candidates below, then approve and publish the ones you want in the Resource Bank.</p>
-        <div class="sp-admin-form-actions">
-          <sp-admin-button variant="neutral" appearance="outline" (clicked)="goToResourceBank()">Go to Resource Bank</sp-admin-button>
-          <sp-admin-button variant="neutral" appearance="outline" (clicked)="startAnotherPasteImport()">Import more content</sp-admin-button>
-        </div>
-      }
-      @if (entryMode() === 'file' && fileResult(); as importResult) {
-        <sp-admin-alert [variant]="importResult.warningCount > 0 ? 'warning' : 'success'">
-          {{ importResult.succeededCount }} of {{ importResult.totalRecordCount }} row(s) staged
-          @if (importResult.warningCount > 0) { , {{ importResult.warningCount }} warning(s) }
-          @if (importResult.rejectedCount > 0) { , {{ importResult.rejectedCount }} rejected }.
-        </sp-admin-alert>
-        @if (importResult.errorSummary) {
-          <sp-admin-alert variant="error">{{ importResult.errorSummary }}</sp-admin-alert>
-        }
-        <p class="sp-admin-hint">Review the staged candidates below, then approve and publish the ones you want in the Resource Bank.</p>
-        <div class="sp-admin-form-actions">
-          <sp-admin-button variant="neutral" appearance="outline" (clicked)="goToResourceBank()">Go to Resource Bank</sp-admin-button>
-          <sp-admin-button variant="neutral" appearance="outline" (clicked)="startAnotherFileImport()">Import another file</sp-admin-button>
-        </div>
-      }
-      @if (!(entryMode() === 'paste' && result()) && !(entryMode() === 'file' && fileResult())) {
+      @if (entryMode() === 'paste' && error()) { <sp-admin-alert variant="error">{{ error() }}</sp-admin-alert> }
+      @if (entryMode() === 'file' && fileError()) { <sp-admin-alert variant="error">{{ fileError() }}</sp-admin-alert> }
 
-        @if (entryMode() === 'paste' && error()) { <sp-admin-alert variant="error">{{ error() }}</sp-admin-alert> }
-        @if (entryMode() === 'file' && fileError()) { <sp-admin-alert variant="error">{{ fileError() }}</sp-admin-alert> }
-
-        <div class="sp-admin-form-stack">
-          <!-- ── Source — one registered-source list shared by both modes (Phase K23) ──────── -->
-          <sp-admin-form-field label="Source" [required]="true" hint="Licensing/provenance registry entry this content will be attributed to.">
-            @if (addingSource()) {
-              <div style="display:flex; gap:8px;">
-                <sp-admin-input [(ngModel)]="newSourceName" name="newSourceName" placeholder="New source name" style="flex:1;" />
-                <sp-admin-button variant="primary" size="sm" [disabled]="!newSourceName.trim() || creatingSource()" (clicked)="createSource()">
-                  {{ creatingSource() ? 'Adding…' : 'Add' }}
-                </sp-admin-button>
-                <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="cancelAddSource()">Cancel</sp-admin-button>
-              </div>
-              @if (newSourceError()) { <sp-admin-alert variant="error">{{ newSourceError() }}</sp-admin-alert> }
-            } @else {
-              <sp-admin-native-select [(ngModel)]="selectedSourceId" name="selectedSourceId" [options]="sourceOptions()" placeholder="Select a source" />
-            }
-          </sp-admin-form-field>
-          @if (!addingSource()) {
-            <div style="align-self:flex-start;">
-              <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="startAddSource()">
-                <sp-admin-icon name="plus" size="xs" slot="leading" />New source
+      <div class="sp-admin-form-stack">
+        <!-- ── Source — one registered-source list shared by both modes (Phase K23) ──────── -->
+        <sp-admin-form-field label="Source" [required]="true" hint="Licensing/provenance registry entry this content will be attributed to.">
+          @if (addingSource()) {
+            <div style="display:flex; gap:8px;">
+              <sp-admin-input [(ngModel)]="newSourceName" name="newSourceName" placeholder="New source name" style="flex:1;" />
+              <sp-admin-button variant="primary" size="sm" [disabled]="!newSourceName.trim() || creatingSource()" (clicked)="createSource()">
+                {{ creatingSource() ? 'Adding…' : 'Add' }}
               </sp-admin-button>
+              <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="cancelAddSource()">Cancel</sp-admin-button>
             </div>
-          }
-          @if (sources().length === 0 && !loadingSources() && !addingSource()) {
-            <sp-admin-alert variant="warning">No sources yet — create one to continue.</sp-admin-alert>
-          }
-
-          <!-- ── Content type — shown in both modes; only sent to the backend in paste mode ── -->
-          <sp-admin-form-field label="Content type" [required]="true" [hint]="resourceTypeHint">
-            <sp-admin-native-select [(ngModel)]="resourceType" name="resourceType" [options]="resourceTypeOptions" />
-          </sp-admin-form-field>
-          @if (entryMode() === 'file') {
-            <p class="sp-admin-hint">Not sent for file uploads — each row is classified automatically from its own columns during mapping review.</p>
-          }
-
-          <sp-admin-form-field label="Note">
-            <sp-admin-textarea [(ngModel)]="noteDraft" [rows]="2" placeholder="Optional note for this import run…" />
-          </sp-admin-form-field>
-
-          <!-- ── Content — segmented toggle between upload and paste (Phase K23) ──────────── -->
-          <div>
-            <div class="sp-admin-section-header-row" style="margin-bottom:6px;">
-              <label class="sp-admin-section-title" style="margin:0;">Content *</label>
-              <sp-admin-segmented-toggle [options]="entryModeOptions" [value]="entryMode()" ariaLabel="Content input mode"
-                (valueChange)="entryMode.set($any($event))" />
-            </div>
-
-            @if (entryMode() === 'paste') {
-              <sp-admin-textarea [(ngModel)]="content" [rows]="10" placeholder="Type or paste content here… (one item per line, or CSV/JSON)" />
-              <p class="sp-admin-hint">
-                Format (plain text, CSV, or JSON) is detected automatically. Every candidate is analyzed and
-                classified by AI during review — CEFR level, skill, and tags aren't set here.
-              </p>
-            } @else {
-              <sp-admin-file-dropzone
-                [fileName]="selectedFile?.name ?? null"
-                hint="CSV, JSON array/object, or JSONL — max 5MB, format detected from the file extension"
-                accept=".csv,.json,.jsonl,.txt"
-                (fileSelected)="onFileSelected($event)" />
-            }
-          </div>
-        </div>
-
-        <div class="sp-admin-form-actions" style="margin-top:1rem;">
-          @if (entryMode() === 'paste') {
-            <sp-admin-button variant="primary" [disabled]="submitting() || !selectedSourceId || !content.trim()" (clicked)="submitPaste()">
-              {{ submitting() ? 'Importing…' : 'Import as candidates' }}
-            </sp-admin-button>
+            @if (newSourceError()) { <sp-admin-alert variant="error">{{ newSourceError() }}</sp-admin-alert> }
           } @else {
-            <sp-admin-button variant="primary" [disabled]="fileSubmitting() || !selectedSourceId || !selectedFile" (clicked)="submitFile()">
-              {{ fileSubmitting() ? 'Importing…' : 'Import as candidates' }}
+            <sp-admin-native-select [(ngModel)]="selectedSourceId" name="selectedSourceId" [options]="sourceOptions()" placeholder="Select a source" />
+          }
+        </sp-admin-form-field>
+        @if (!addingSource()) {
+          <div style="align-self:flex-start;">
+            <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="startAddSource()">
+              <sp-admin-icon name="plus" size="xs" slot="leading" />New source
             </sp-admin-button>
+          </div>
+        }
+        @if (sources().length === 0 && !loadingSources() && !addingSource()) {
+          <sp-admin-alert variant="warning">No sources yet — create one to continue.</sp-admin-alert>
+        }
+
+        <!-- ── Content type — shown in both modes; only sent to the backend in paste mode ── -->
+        <sp-admin-form-field label="Content type" [required]="true" [hint]="resourceTypeHint">
+          <sp-admin-native-select [(ngModel)]="resourceType" name="resourceType" [options]="resourceTypeOptions" />
+        </sp-admin-form-field>
+        @if (entryMode() === 'file') {
+          <p class="sp-admin-hint">Not sent for file uploads — each row is classified automatically from its own columns during mapping review.</p>
+        }
+
+        <sp-admin-form-field label="Note">
+          <sp-admin-textarea [(ngModel)]="noteDraft" [rows]="2" placeholder="Optional note for this import run…" />
+        </sp-admin-form-field>
+
+        <!-- ── Content — segmented toggle between upload and paste (Phase K23) ──────────── -->
+        <div>
+          <div class="sp-admin-section-header-row" style="margin-bottom:6px;">
+            <label class="sp-admin-section-title" style="margin:0;">Content *</label>
+            <sp-admin-segmented-toggle [options]="entryModeOptions" [value]="entryMode()" ariaLabel="Content input mode"
+              (valueChange)="entryMode.set($any($event))" />
+          </div>
+
+          @if (entryMode() === 'paste') {
+            <sp-admin-textarea [(ngModel)]="content" [rows]="10" placeholder="Type or paste content here… (one item per line, or CSV/JSON)" />
+            <p class="sp-admin-hint">
+              Format (plain text, CSV, or JSON) is detected automatically. Every candidate is analyzed and
+              classified by AI during review — CEFR level, skill, and tags aren't set here.
+            </p>
+          } @else {
+            <sp-admin-file-dropzone
+              [fileName]="selectedFile?.name ?? null"
+              hint="CSV, JSON array/object, or JSONL — max 5MB, format detected from the file extension"
+              accept=".csv,.json,.jsonl,.txt"
+              (fileSelected)="onFileSelected($event)" />
           }
         </div>
-      }
-    </sp-admin-section-card>
+      </div>
 
-    @if (showPipeline()) {
-      <!-- Phase K2 — review-state summary: "Analysis complete" no longer stands in for "ready to
-           publish." Distinguishes warning-only NeedsReview (still publishable) from hard-blocked
-           Failed/Pending candidates. -->
-      @if (summary(); as s) {
-        <sp-admin-section-card title="Review status">
-          <div class="sp-admin-form-stack" style="flex-direction:row;flex-wrap:wrap;gap:0.75rem;">
-            <sp-admin-badge tone="success">{{ s.passedCount }} passed</sp-admin-badge>
-            <sp-admin-badge tone="warning">{{ s.needsReviewCount }} need review (warnings only, publishable)</sp-admin-badge>
-            <sp-admin-badge tone="danger">{{ s.blockedCount }} blocked (fix before publish)</sp-admin-badge>
-            <sp-admin-badge tone="neutral">{{ s.publishedCount }} published</sp-admin-badge>
-          </div>
-          @if (s.publishableCount > 0) {
-            <p class="sp-admin-hint" style="margin-top:0.5rem;">
-              {{ s.publishableCount }} candidate(s) can be approved &amp; published right now (passed or warning-only).
-            </p>
-          }
-        </sp-admin-section-card>
-      }
-
-      <sp-admin-section-card title="Review candidates">
-        <sp-admin-button slot="header-action" variant="neutral" appearance="outline" size="sm" (clicked)="loadCandidates()">
-          Refresh
-        </sp-admin-button>
-
-        @if (actionSuccess()) { <sp-admin-alert variant="success">{{ actionSuccess() }}</sp-admin-alert> }
-        @if (actionError()) { <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert> }
-        @if (candidatesError()) { <sp-admin-error-state title="Could not load candidates" [message]="candidatesError()" /> }
-
-        @if (!candidatesLoading() && candidates().length > 0) {
-          <!-- Phase K2 — batch toolbar. Actions apply only to the checked rows on this page. -->
-          <div class="sp-admin-form-actions" style="flex-wrap:wrap;align-items:center;margin-bottom:0.75rem;">
-            <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="selectAllPublishableVisible()">
-              Select all publishable (this page)
-            </sp-admin-button>
-            @if (selectedCount() > 0) {
-              <span class="sp-admin-hint">{{ selectedCount() }} selected</span>
-              <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="clearSelection()">Clear</sp-admin-button>
-              <sp-admin-button variant="neutral" size="sm" [disabled]="batchActionRunning()" (clicked)="batchApproveSelected()">
-                Approve selected
-              </sp-admin-button>
-              <sp-admin-button variant="neutral" size="sm" [disabled]="batchActionRunning()" (clicked)="batchPublishSelected()">
-                Publish selected
-              </sp-admin-button>
-              <sp-admin-button variant="primary" size="sm" [disabled]="batchActionRunning()" (clicked)="batchApproveAndPublishSelected()">
-                {{ batchActionRunning() ? 'Working…' : 'Approve & Publish selected' }}
-              </sp-admin-button>
-            }
-          </div>
-
-          @if (lastBatchResult(); as br) {
-            <sp-admin-alert [variant]="br.failedCount > 0 ? 'warning' : 'success'">
-              {{ br.succeededCount + br.alreadyPublishedCount }} of {{ br.requestedCount }} succeeded
-              @if (br.failedCount > 0) { — {{ br.failedCount }} failed: }
-              @if (br.failedCount > 0) {
-                <ul>
-                  @for (i of br.items; track i.candidateId) {
-                    @if (!i.success) { <li>{{ i.error }}</li> }
-                  }
-                </ul>
-              }
-              @if (br.batchLimitReached) { <div>Selection exceeded the per-call limit — only the first batch was processed.</div> }
-            </sp-admin-alert>
-          }
-        }
-
-        @if (candidatesLoading()) {
-          <sp-admin-loading-state message="Loading staged candidates" />
-        } @else if (candidates().length === 0) {
-          <sp-admin-empty-state title="No candidates" message="This import run has no staged candidates." />
+      <div class="sp-admin-form-actions" style="margin-top:1rem;">
+        @if (entryMode() === 'paste') {
+          <sp-admin-button variant="primary" [disabled]="submitting() || !selectedSourceId || !content.trim()" (clicked)="submitPaste()">
+            {{ submitting() ? 'Importing…' : 'Import as candidates' }}
+          </sp-admin-button>
         } @else {
-          <ng-container *ngTemplateOutlet="candidatesTable" />
+          <sp-admin-button variant="primary" [disabled]="fileSubmitting() || !selectedSourceId || !selectedFile" (clicked)="submitFile()">
+            {{ fileSubmitting() ? 'Importing…' : 'Import as candidates' }}
+          </sp-admin-button>
         }
-
-        @if (lastPublishResult(); as publishResult) {
-          @if (!publishResult.success) {
-            <sp-admin-alert variant="error">
-              Publish failed:
-              <ul>
-                @for (e of publishResult.errors; track e) { <li>{{ e }}</li> }
-              </ul>
-            </sp-admin-alert>
-          }
-        }
-      </sp-admin-section-card>
-    }
+      </div>
+    </sp-admin-section-card>
   }
 
   <!-- ══════════════════════════════════════════════════════════════════ -->
@@ -255,7 +138,7 @@
                   <td class="sp-admin-truncate" style="max-width:520px; color:var(--sp-admin-primary);">{{ run.sourceName }}</td>
                   <td class="sp-admin-text-mono">{{ run.fileName }}</td>
                   <td style="font-weight:700;">{{ run.succeededCount }} / {{ run.totalRecordCount }}</td>
-                  <td><sp-admin-badge tone="neutral">View</sp-admin-badge></td>
+                  <td><sp-admin-badge tone="neutral">Review</sp-admin-badge></td>
                 </tr>
               }
             </tbody>
@@ -271,98 +154,11 @@
 
 </sp-admin-page-body>
 
-<!-- ── Shared candidates table (used by both tabs' pipeline sections) ──── -->
-<ng-template #candidatesTable>
-  <sp-admin-table layout="first-column-fluid">
-    <table>
-      <thead>
-        <tr>
-          <th><input type="checkbox" [checked]="allVisibleSelected()" (change)="toggleSelectAllVisible()" aria-label="Select all visible" /></th>
-          <th>Text</th>
-          <th>Type</th>
-          <th>CEFR</th>
-          <th>Validation</th>
-          <th>Review</th>
-          <th>Published</th>
-          <th class="sp-admin-th-actions"></th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (item of candidates(); track item.candidateId) {
-          <tr>
-            <td><input type="checkbox" [checked]="isSelected(item.candidateId)" (change)="toggleSelected(item.candidateId)" aria-label="Select candidate" /></td>
-            <td>
-              {{ item.canonicalText }}
-              @if (!item.isPublished && !item.canAttemptPublish && item.publishBlockReason) {
-                <div class="sp-admin-hint" style="color:var(--sp-admin-danger,#b91c1c);">{{ item.publishBlockReason }}</div>
-              }
-            </td>
-            <td><sp-admin-badge tone="neutral">{{ item.candidateType }}</sp-admin-badge></td>
-            <td>{{ item.cefrLevel ?? '—' }}</td>
-            <td><sp-admin-badge [tone]="validationStatusTone(item.validationStatus)">{{ item.validationStatus }}</sp-admin-badge></td>
-            <td><sp-admin-badge tone="neutral">{{ item.reviewStatus }}</sp-admin-badge></td>
-            <td>
-              @if (item.isPublished) {
-                <sp-admin-badge tone="success">{{ item.publishedEntityType }}</sp-admin-badge>
-              } @else {
-                <sp-admin-badge tone="neutral">Not published</sp-admin-badge>
-              }
-            </td>
-            <td>
-              <div class="sp-admin-form-actions" style="flex-wrap:nowrap;">
-                @if (!item.isPublished && item.canAttemptPublish) {
-                  <sp-admin-button
-                    variant="primary" size="sm"
-                    [disabled]="publishingId() === item.candidateId"
-                    (clicked)="approveAndPublish(item)">
-                    {{ publishingId() === item.candidateId ? 'Publishing…' : 'Approve & Publish' }}
-                  </sp-admin-button>
-                }
-                <sp-admin-table-actions
-                  mode="dropdown"
-                  [richActions]="rowActions(item)"
-                  (actionSelected)="onRowAction($event, item)" />
-              </div>
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
-    <sp-admin-table-footer>
-      Page {{ candidatesPage() }} of {{ candidatesTotalPages() }} · {{ candidatesTotal() }} candidate{{ candidatesTotal() !== 1 ? 's' : '' }}
-      <sp-admin-pagination slot="actions" [page]="candidatesPage()" [totalPages]="candidatesTotalPages()" (pageChange)="onCandidatesPageChange($event)" />
-    </sp-admin-table-footer>
-  </sp-admin-table>
-</ng-template>
-
-<!-- ── Reject modal ─────────────────────────────────────────────────────── -->
-<sp-admin-modal
-  [open]="rejectModalOpen()"
-  title="Reject candidate"
-  variant="form"
-  (closed)="closeReject()">
-
-  <div class="sp-admin-form-stack">
-    <sp-admin-form-field label="Reason" [required]="true" hint="Required — shown to admins reviewing this candidate later">
-      <sp-admin-textarea [(ngModel)]="rejectReasonDraft" placeholder="Why this candidate is being rejected" />
-    </sp-admin-form-field>
-  </div>
-
-  @if (actionError()) { <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert> }
-
-  <div slot="footer">
-    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeReject()">Cancel</sp-admin-button>
-    <sp-admin-button variant="danger" [disabled]="rejecting()" (clicked)="confirmReject()">
-      {{ rejecting() ? 'Rejecting…' : 'Reject' }}
-    </sp-admin-button>
-  </div>
-
-</sp-admin-modal>
-
 <!-- ── Column-mapping review modal (Phase K1) ──────────────────────────────
      Always shown for CSV/JSON (paste or file-upload) before the import actually runs. The AI's
      suggestion is advisory only — every row is editable, and "Confirm and Import" is the only
-     action that ever applies a rename. ── -->
+     action that ever applies a rename. Confirming navigates straight to Import Review once
+     candidate generation finishes (Phase 3). ── -->
 <sp-admin-modal
   [open]="mappingModalOpen()"
   title="Review column mapping"
@@ -419,239 +215,3 @@
   </div>
 
 </sp-admin-modal>
-
-<!-- ── Preview drawer (ported from AdminResourceCandidatesComponent, Phase E3) ─ -->
-<sp-admin-drawer
-  [open]="previewDrawerOpen()"
-  [title]="preview()?.title ?? 'Candidate preview'"
-  side="right"
-  size="xl"
-  (closed)="closePreview()">
-
-  <sp-admin-alert variant="warning">
-    Read-only preview. Use Approve &amp; Publish or Reject in the pipeline table, not here.
-  </sp-admin-alert>
-
-  @if (previewLoading()) {
-    <sp-admin-loading-state message="Loading preview" />
-  }
-  @if (previewError()) {
-    <sp-admin-error-state title="Could not load preview" [message]="previewError()" />
-  }
-
-  @if (preview(); as p) {
-    @if (!p.canPreview) {
-      <sp-admin-alert variant="warning">
-        This candidate could not be fully rendered.
-        @for (w of p.previewWarnings; track w) { <div>{{ w }}</div> }
-      </sp-admin-alert>
-    }
-
-    <!-- What the student would see ──────────────────────────────────────── -->
-    <section class="sp-e3-preview-panel sp-e3-preview-panel--student">
-      <h3 class="sp-e3-preview-panel-title">What the student would see</h3>
-
-      @switch (p.renderedPreviewModel.kind) {
-        @case ('VocabularyEntry') {
-          <div class="sp-admin-form-stack">
-            <sp-admin-form-field label="Word"><strong>{{ p.renderedPreviewModel.word }}</strong></sp-admin-form-field>
-            @if (p.renderedPreviewModel.partOfSpeech) {
-              <sp-admin-form-field label="Part of speech">{{ p.renderedPreviewModel.partOfSpeech }}</sp-admin-form-field>
-            }
-            @if (p.renderedPreviewModel.definition) {
-              <sp-admin-form-field label="Definition">{{ p.renderedPreviewModel.definition }}</sp-admin-form-field>
-            }
-            @if (p.renderedPreviewModel.example) {
-              <sp-admin-form-field label="Example">{{ p.renderedPreviewModel.example }}</sp-admin-form-field>
-            }
-          </div>
-        }
-        @case ('GrammarProfileEntry') {
-          <div class="sp-admin-form-stack">
-            <sp-admin-form-field label="Grammar point"><strong>{{ p.renderedPreviewModel.grammarTitle }}</strong></sp-admin-form-field>
-            @if (p.renderedPreviewModel.explanation) {
-              <sp-admin-form-field label="Explanation">{{ p.renderedPreviewModel.explanation }}</sp-admin-form-field>
-            }
-            @if (p.renderedPreviewModel.grammarExamples?.length) {
-              <sp-admin-form-field label="Examples">
-                <ul>
-                  @for (ex of p.renderedPreviewModel.grammarExamples; track ex) { <li>{{ ex }}</li> }
-                </ul>
-              </sp-admin-form-field>
-            }
-          </div>
-        }
-        @case ('ReadingPassage') {
-          <div class="sp-admin-form-stack">
-            <sp-admin-form-field label="Title"><strong>{{ p.renderedPreviewModel.title }}</strong></sp-admin-form-field>
-            @if (p.renderedPreviewModel.passageText) {
-              <sp-admin-form-field
-                [label]="(p.renderedPreviewModel.wordCount ?? 0) + ' words · ~' + (p.renderedPreviewModel.estimatedReadingMinutes ?? 0) + ' min read'">
-                <p class="sp-e3-passage-text">{{ p.renderedPreviewModel.passageText }}</p>
-              </sp-admin-form-field>
-            }
-          </div>
-        }
-        @case ('ActivityTemplateCandidate') {
-          @if (p.renderedPreviewModel.studentVisibleFormIoSchemaJson) {
-            <app-formio-renderer [schema]="parsedFormIoSchema(p.renderedPreviewModel.studentVisibleFormIoSchemaJson)" [disabled]="true" />
-          } @else {
-            <sp-admin-empty-state title="No student-safe schema available" message="This candidate's Form.io schema could not be rendered — see the warnings above." />
-          }
-        }
-        @case ('WritingPrompt') {
-          <div class="sp-admin-form-stack">
-            <sp-admin-form-field label="Title"><strong>{{ p.renderedPreviewModel.title }}</strong></sp-admin-form-field>
-            @if (p.renderedPreviewModel.promptText) {
-              <sp-admin-form-field label="Prompt">{{ p.renderedPreviewModel.promptText }}</sp-admin-form-field>
-            }
-            @if (p.renderedPreviewModel.genre) {
-              <sp-admin-form-field label="Genre">{{ p.renderedPreviewModel.genre }}</sp-admin-form-field>
-            }
-            @if (p.renderedPreviewModel.suggestedMinWords) {
-              <sp-admin-form-field label="Suggested minimum words">{{ p.renderedPreviewModel.suggestedMinWords }}</sp-admin-form-field>
-            }
-          </div>
-        }
-        @case ('ListeningPassage') {
-          <div class="sp-admin-form-stack">
-            <sp-admin-form-field label="Title"><strong>{{ p.renderedPreviewModel.title }}</strong></sp-admin-form-field>
-            @if (p.renderedPreviewModel.transcript) {
-              <sp-admin-form-field label="Transcript">{{ p.renderedPreviewModel.transcript }}</sp-admin-form-field>
-            }
-            <sp-admin-form-field label="Audio">
-              @if (p.renderedPreviewModel.hasAudio) {
-                @if (audioLoading()) {
-                  <sp-admin-loading-state message="Loading audio" />
-                } @else if (audioUrl()) {
-                  <audio controls [src]="audioUrl()!" style="width:100%;"></audio>
-                }
-              } @else {
-                <sp-admin-alert variant="warning">No audio file uploaded yet — this candidate cannot be published until one is.</sp-admin-alert>
-              }
-              <div style="margin-top:0.5rem;">
-                <input type="file" accept="audio/*" (change)="onAudioFileSelected($event)" [disabled]="audioUploading()" />
-                @if (audioUploading()) { <span class="sp-admin-hint">Uploading…</span> }
-              </div>
-              @if (audioUploadError()) { <sp-admin-alert variant="error">{{ audioUploadError() }}</sp-admin-alert> }
-            </sp-admin-form-field>
-          </div>
-        }
-        @case ('SpeakingPrompt') {
-          <div class="sp-admin-form-stack">
-            <sp-admin-form-field label="Title"><strong>{{ p.renderedPreviewModel.title }}</strong></sp-admin-form-field>
-            @if (p.renderedPreviewModel.promptText) {
-              <sp-admin-form-field label="Scenario">{{ p.renderedPreviewModel.promptText }}</sp-admin-form-field>
-            }
-            @if (p.renderedPreviewModel.suggestedDurationSeconds) {
-              <sp-admin-form-field label="Suggested response duration">{{ p.renderedPreviewModel.suggestedDurationSeconds }}s</sp-admin-form-field>
-            }
-          </div>
-        }
-        @default {
-          <sp-admin-form-field label="Generic field summary" hint="This candidate type has no specialized preview yet.">
-            <ul>
-              @for (f of p.renderedPreviewModel.fieldSummary; track f) { <li>{{ f }}</li> }
-            </ul>
-          </sp-admin-form-field>
-        }
-      }
-    </section>
-
-    <!-- Admin-only ────────────────────────────────────────────────────────── -->
-    <section class="sp-e3-preview-panel sp-e3-preview-panel--admin">
-      <h3 class="sp-e3-preview-panel-title">Admin-only</h3>
-
-      <div class="sp-admin-form-stack">
-        <sp-admin-form-field label="Source">
-          {{ p.source.sourceName }} · <code>{{ p.source.licenseType }}</code>
-          @if (!p.source.allowsStudentDisplay || !p.source.allowsCommercialUse) {
-            <sp-admin-badge tone="warning">Restricted use</sp-admin-badge>
-          }
-        </sp-admin-form-field>
-        @if (p.source.attributionText) {
-          <sp-admin-form-field label="Attribution">{{ p.source.attributionText }}</sp-admin-form-field>
-        }
-        @if (p.source.sourceUrl || p.source.downloadUrl) {
-          <sp-admin-form-field label="Links">
-            @if (p.source.sourceUrl) { <div><a [href]="p.source.sourceUrl" target="_blank" rel="noopener">Source</a></div> }
-            @if (p.source.downloadUrl) { <div><a [href]="p.source.downloadUrl" target="_blank" rel="noopener">Download</a></div> }
-          </sp-admin-form-field>
-        }
-
-        <sp-admin-form-field label="Validation status">
-          <sp-admin-badge [tone]="validationStatusTone(p.validationStatus)">{{ p.validationStatus }}</sp-admin-badge>
-          · Review: {{ p.reviewStatus }}
-        </sp-admin-form-field>
-        @if (p.validationErrors.length > 0) {
-          <sp-admin-form-field label="Validation errors">
-            <ul>@for (e of p.validationErrors; track e) { <li>{{ e }}</li> }</ul>
-          </sp-admin-form-field>
-        }
-        @if (p.validationWarnings.length > 0) {
-          <sp-admin-form-field label="Validation warnings">
-            <ul>@for (w of p.validationWarnings; track w) { <li>{{ w }}</li> }</ul>
-          </sp-admin-form-field>
-        }
-        @if (p.duplicateIndicators.length > 0) {
-          <sp-admin-form-field label="Duplicate indicators">
-            <ul>@for (d of p.duplicateIndicators; track d) { <li>{{ d }}</li> }</ul>
-          </sp-admin-form-field>
-        }
-
-        <sp-admin-form-field label="CEFR / skill">
-          {{ p.cefrLevel ?? '—' }} @if (p.cefrConfidence !== null) { ({{ (p.cefrConfidence * 100).toFixed(0) }}%) }
-          @if (p.primarySkill) { · {{ p.primarySkill }} @if (p.subskill) { / {{ p.subskill }} } }
-        </sp-admin-form-field>
-        @if (p.qualityScore !== null) {
-          <sp-admin-form-field label="Quality score">{{ (p.qualityScore * 100).toFixed(0) }}%</sp-admin-form-field>
-        }
-        @if (p.safetyIssues.length > 0) {
-          <sp-admin-form-field label="Safety issues">
-            <sp-admin-badge tone="danger">{{ p.safetyIssues.join(', ') }}</sp-admin-badge>
-          </sp-admin-form-field>
-        }
-
-        @if (p.aiAnalysisSummary; as ai) {
-          <sp-admin-form-field label="AI analysis summary (advisory only)">
-            CEFR {{ ai.cefrLevel ?? '—' }}
-            @if (ai.cefrConfidence !== null) { ({{ (ai.cefrConfidence * 100).toFixed(0) }}%) }
-            · {{ ai.primarySkill ?? '—' }} @if (ai.subskill) { / {{ ai.subskill }} }
-          </sp-admin-form-field>
-        }
-
-        <sp-admin-form-field label="Content fingerprint"><code>{{ p.contentFingerprint }}</code></sp-admin-form-field>
-        <sp-admin-form-field label="Raw record">
-          {{ p.rawRecordSummary.extractionStatus }} — {{ p.rawRecordSummary.excerpt }}
-        </sp-admin-form-field>
-        <sp-admin-form-field label="Import run">
-          {{ p.importRunSummary.status }} (started {{ p.importRunSummary.startedAtUtc | date:'short' }})
-        </sp-admin-form-field>
-
-        <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="previewRawJsonOpen.set(!previewRawJsonOpen())">
-          {{ previewRawJsonOpen() ? 'Hide' : 'Show' }} raw/normalized JSON
-        </sp-admin-button>
-        @if (previewRawJsonOpen()) {
-          <sp-admin-form-field label="Normalized content">
-            <pre>{{ p.normalizedContent | json }}</pre>
-          </sp-admin-form-field>
-          @if (p.adminOnlyActivityMetadataJson) {
-            <sp-admin-form-field label="Admin-only activity metadata (scoring/rubric — never student-visible)">
-              <pre>{{ p.adminOnlyActivityMetadataJson }}</pre>
-            </sp-admin-form-field>
-          }
-          @if (p.aiAnalysisDetailsJson) {
-            <sp-admin-form-field label="Raw AI analysis (admin-only)">
-              <pre>{{ p.aiAnalysisDetailsJson }}</pre>
-            </sp-admin-form-field>
-          }
-        }
-      </div>
-    </section>
-  }
-
-  <div slot="footer">
-    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closePreview()">Close</sp-admin-button>
-  </div>
-
-</sp-admin-drawer>

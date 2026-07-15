@@ -32,8 +32,10 @@ public sealed class ResourceCandidateBatchActionServiceTests : IDisposable
         _db.Database.EnsureCreated();
 
         var approveHandler = new AdminResourceCandidateApproveHandler(_db);
+        var rejectHandler = new AdminResourceCandidateRejectHandler(_db);
+        var skipHandler = new AdminResourceCandidateSkipHandler(_db);
         var publishService = new ResourceCandidatePublishService(_db);
-        _sut = new ResourceCandidateBatchActionService(_db, approveHandler, publishService);
+        _sut = new ResourceCandidateBatchActionService(_db, approveHandler, rejectHandler, skipHandler, publishService);
     }
 
     public void Dispose()
@@ -155,8 +157,64 @@ public sealed class ResourceCandidateBatchActionServiceTests : IDisposable
         var result = await _sut.ApproveAsync(new BatchApproveResourceCandidatesCommand(new[] { a.Id, b.Id }));
 
         result.SucceededCount.Should().Be(2);
-        (await _db.ResourceCandidates.AsNoTracking().FirstAsync(c => c.Id == a.Id)).ReviewStatus.Should().Be(AdminReviewStatus.Approved);
-        (await _db.ResourceCandidates.AsNoTracking().FirstAsync(c => c.Id == b.Id)).ReviewStatus.Should().Be(AdminReviewStatus.Approved);
+        (await _db.ResourceCandidates.AsNoTracking().FirstAsync(c => c.Id == a.Id)).ReviewStatus.Should().Be(ResourceCandidateReviewStatus.Approved);
+        (await _db.ResourceCandidates.AsNoTracking().FirstAsync(c => c.Id == b.Id)).ReviewStatus.Should().Be(ResourceCandidateReviewStatus.Approved);
+    }
+
+    [Fact]
+    public async Task Batch_reject_sets_ReviewStatus_Rejected_for_every_requested_candidate()
+    {
+        var source = SeedSource();
+        var a = SeedCandidate(source, "hello", ResourceCandidateValidationStatus.NeedsReview, approve: false);
+        var b = SeedCandidate(source, "world", ResourceCandidateValidationStatus.Passed, approve: false);
+
+        var result = await _sut.RejectAsync(new BatchRejectResourceCandidatesCommand(new[] { a.Id, b.Id }, "not usable"));
+
+        result.SucceededCount.Should().Be(2);
+        (await _db.ResourceCandidates.AsNoTracking().FirstAsync(c => c.Id == a.Id)).ReviewStatus.Should().Be(ResourceCandidateReviewStatus.Rejected);
+        (await _db.ResourceCandidates.AsNoTracking().FirstAsync(c => c.Id == b.Id)).ReviewStatus.Should().Be(ResourceCandidateReviewStatus.Rejected);
+    }
+
+    [Fact]
+    public async Task Batch_skip_sets_ReviewStatus_Skipped_for_every_requested_candidate()
+    {
+        var source = SeedSource();
+        var a = SeedCandidate(source, "hello", ResourceCandidateValidationStatus.NeedsReview, approve: false);
+        var b = SeedCandidate(source, "world", ResourceCandidateValidationStatus.Passed, approve: false);
+
+        var result = await _sut.SkipAsync(new BatchSkipResourceCandidatesCommand(new[] { a.Id, b.Id }));
+
+        result.SucceededCount.Should().Be(2);
+        (await _db.ResourceCandidates.AsNoTracking().FirstAsync(c => c.Id == a.Id)).ReviewStatus.Should().Be(ResourceCandidateReviewStatus.Skipped);
+        (await _db.ResourceCandidates.AsNoTracking().FirstAsync(c => c.Id == b.Id)).ReviewStatus.Should().Be(ResourceCandidateReviewStatus.Skipped);
+    }
+
+    [Fact]
+    public async Task Skipped_candidate_cannot_be_published()
+    {
+        var source = SeedSource();
+        var candidate = SeedCandidate(source, "hello", ResourceCandidateValidationStatus.Passed, approve: false);
+        await _sut.SkipAsync(new BatchSkipResourceCandidatesCommand(new[] { candidate.Id }));
+
+        var result = await new ResourceCandidatePublishService(_db).PublishAsync(candidate.Id, null);
+
+        result.Success.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("ReviewStatus"));
+        (await _db.ResourceCandidates.AsNoTracking().FirstAsync(c => c.Id == candidate.Id)).IsPublished.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Rejected_candidate_cannot_be_published()
+    {
+        var source = SeedSource();
+        var candidate = SeedCandidate(source, "hello", ResourceCandidateValidationStatus.Passed, approve: false);
+        await _sut.RejectAsync(new BatchRejectResourceCandidatesCommand(new[] { candidate.Id }, "no good"));
+
+        var result = await new ResourceCandidatePublishService(_db).PublishAsync(candidate.Id, null);
+
+        result.Success.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("ReviewStatus"));
+        (await _db.ResourceCandidates.AsNoTracking().FirstAsync(c => c.Id == candidate.Id)).IsPublished.Should().BeFalse();
     }
 
     [Fact]

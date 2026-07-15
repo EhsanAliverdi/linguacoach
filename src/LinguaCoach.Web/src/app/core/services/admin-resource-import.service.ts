@@ -33,6 +33,7 @@ import {
   AdminResourceCandidateReviewSummaryDto,
   BatchResourceCandidateActionResult,
   ResourceBankItemRepairResult,
+  UpdateCandidateContentRequestBody,
 } from '../models/admin-resource-import.models';
 import { DiagnosticIssue, IssuesSummary, BulkRepairResult, RepairableItemSummary } from '../models/admin-repair.models';
 
@@ -190,6 +191,19 @@ export class AdminResourceCandidateService {
     return this.http.post<AdminResourceCandidateDto>(`${this.base}/${candidateId}/reject`, { reason });
   }
 
+  /** Phase 3 — "I am intentionally ignoring this candidate," distinct from PendingReview (never
+   *  reviewed). Reason is optional, unlike reject. */
+  skip(candidateId: string, reason?: string | null): Observable<AdminResourceCandidateDto> {
+    return this.http.post<AdminResourceCandidateDto>(`${this.base}/${candidateId}/skip`, { reason: reason ?? null });
+  }
+
+  /** Phase 3 — edits a staged candidate's content before approval. Re-validates server-side
+   *  immediately after the edit, so the returned DTO's validationStatus/canAttemptPublish reflect
+   *  the new content. Rejected for an already-published candidate. */
+  updateContent(candidateId: string, body: UpdateCandidateContentRequestBody): Observable<AdminResourceCandidateDto> {
+    return this.http.put<AdminResourceCandidateDto>(`${this.base}/${candidateId}/content`, body);
+  }
+
   /** Phase E4 — publishes an approved, validated candidate into its target Cefr* bank table.
    *  Idempotent; a failed attempt returns 200 with success=false and a list of reasons. */
   publish(candidateId: string): Observable<ResourceCandidatePublishResult> {
@@ -242,6 +256,18 @@ export class AdminResourceCandidateService {
   batchApproveAndPublish(candidateIds: string[], notes?: string | null): Observable<BatchResourceCandidateActionResult> {
     return this.http.post<BatchResourceCandidateActionResult>(
       `${this.base}/batch/approve-and-publish`, { candidateIds, notes: notes ?? null });
+  }
+
+  /** Phase 3 — batch admin rejection over an explicit set of candidates. Reason is required. */
+  batchReject(candidateIds: string[], reason: string): Observable<BatchResourceCandidateActionResult> {
+    return this.http.post<BatchResourceCandidateActionResult>(
+      `${this.base}/batch/reject`, { candidateIds, reason });
+  }
+
+  /** Phase 3 — batch "intentionally ignore" over an explicit set of candidates. Reason optional. */
+  batchSkip(candidateIds: string[], reason?: string | null): Observable<BatchResourceCandidateActionResult> {
+    return this.http.post<BatchResourceCandidateActionResult>(
+      `${this.base}/batch/skip`, { candidateIds, reason: reason ?? null });
   }
 }
 

@@ -40,7 +40,7 @@ public sealed class AdminResourceCandidateListQueryHandler : IAdminResourceCandi
             joined = joined.Where(x => x.Candidate.ValidationStatus == validationStatus);
 
         if (!string.IsNullOrWhiteSpace(query.ReviewStatus)
-            && Enum.TryParse<AdminReviewStatus>(query.ReviewStatus, ignoreCase: true, out var reviewStatus))
+            && Enum.TryParse<ResourceCandidateReviewStatus>(query.ReviewStatus, ignoreCase: true, out var reviewStatus))
             joined = joined.Where(x => x.Candidate.ReviewStatus == reviewStatus);
 
         if (!string.IsNullOrWhiteSpace(query.LanguageCode))
@@ -101,7 +101,7 @@ public sealed class AdminResourceCandidateReviewSummaryQueryHandler : IAdminReso
             candidates = candidates.Where(x => x.Run.CefrResourceSourceId == query.SourceId.Value);
 
         var rows = await candidates
-            .Select(x => new { x.Candidate.IsPublished, x.Candidate.ValidationStatus })
+            .Select(x => new { x.Candidate.IsPublished, x.Candidate.ValidationStatus, x.Candidate.ReviewStatus })
             .ToListAsync(ct);
 
         var publishedCount = rows.Count(r => r.IsPublished);
@@ -109,6 +109,9 @@ public sealed class AdminResourceCandidateReviewSummaryQueryHandler : IAdminReso
         var needsReviewCount = rows.Count(r => !r.IsPublished && r.ValidationStatus == ResourceCandidateValidationStatus.NeedsReview);
         var blockedCount = rows.Count(r => !r.IsPublished
             && r.ValidationStatus is ResourceCandidateValidationStatus.Failed or ResourceCandidateValidationStatus.Pending);
+        var rejectedCount = rows.Count(r => r.ReviewStatus == ResourceCandidateReviewStatus.Rejected);
+        var skippedCount = rows.Count(r => r.ReviewStatus == ResourceCandidateReviewStatus.Skipped);
+        var pendingReviewCount = rows.Count(r => !r.IsPublished && r.ReviewStatus == ResourceCandidateReviewStatus.PendingReview);
 
         return new AdminResourceCandidateReviewSummaryDto(
             TotalCount: rows.Count,
@@ -116,7 +119,10 @@ public sealed class AdminResourceCandidateReviewSummaryQueryHandler : IAdminReso
             PassedCount: passedCount,
             NeedsReviewCount: needsReviewCount,
             BlockedCount: blockedCount,
-            PublishableCount: passedCount + needsReviewCount);
+            PublishableCount: passedCount + needsReviewCount,
+            RejectedCount: rejectedCount,
+            SkippedCount: skippedCount,
+            PendingReviewCount: pendingReviewCount);
     }
 }
 
@@ -231,5 +237,98 @@ public sealed class AdminResourceCandidateRejectHandler : IAdminResourceCandidat
         await _db.SaveChangesAsync(ct);
 
         return ResourceImportMappers.ToDto(result.Candidate, result.Run.Id, result.Run.CefrResourceSourceId);
+    }
+}
+
+/// <summary>Phase 3 (2026-07-15 import candidate review workflow) — "intentionally ignore this
+/// candidate," distinct from PendingReview. Blocked outright for an already-published candidate,
+/// same guard as reject (see <c>ResourceCandidate.Skip</c>'s doc comment).</summary>
+public sealed class AdminResourceCandidateSkipHandler : IAdminResourceCandidateSkipHandler
+{
+    private readonly LinguaCoachDbContext _db;
+
+    public AdminResourceCandidateSkipHandler(LinguaCoachDbContext db) => _db = db;
+
+    public async Task<AdminResourceCandidateDto> HandleAsync(
+        SkipResourceCandidateCommand command, CancellationToken ct = default)
+    {
+        var result =
+            await (from c in _db.ResourceCandidates
+                   join r in _db.ResourceRawRecords on c.ResourceRawRecordId equals r.Id
+                   join run in _db.ResourceImportRuns on r.ResourceImportRunId equals run.Id
+                   where c.Id == command.CandidateId
+                   select new { Candidate = c, Run = run })
+                .FirstOrDefaultAsync(ct)
+            ?? throw new ResourceImportValidationException($"Resource candidate '{command.CandidateId}' was not found.");
+
+        try
+        {
+            result.Candidate.Skip(command.Reason);
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new ResourceImportValidationException(ex.Message);
+        }
+
+        await _db.SaveChangesAsync(ct);
+
+        return ResourceImportMappers.ToDto(result.Candidate, result.Run.Id, result.Run.CefrResourceSourceId);
+    }
+}
+
+/// <summary>Phase 3 (2026-07-15 import candidate review workflow) — edits a staged candidate's
+/// content, then re-validates so the returned DTO's ValidationStatus/CanAttemptPublish reflect the
+/// edit immediately (see <see cref="UpdateResourceCandidateContentCommand"/>'s doc comment).</summary>
+public sealed class AdminResourceCandidateContentUpdateHandler : IAdminResourceCandidateContentUpdateHandler
+{
+    private readonly LinguaCoachDbContext _db;
+    private readonly IResourceCandidateValidationService _validationService;
+
+    public AdminResourceCandidateContentUpdateHandler(
+        LinguaCoachDbContext db, IResourceCandidateValidationService validationService)
+    {
+        _db = db;
+        _validationService = validationService;
+    }
+
+    public async Task<AdminResourceCandidateDto> HandleAsync(
+        UpdateResourceCandidateContentCommand command, CancellationToken ct = default)
+    {
+        var result =
+            await (from c in _db.ResourceCandidates
+                   join r in _db.ResourceRawRecords on c.ResourceRawRecordId equals r.Id
+                   join run in _db.ResourceImportRuns on r.ResourceImportRunId equals run.Id
+                   where c.Id == command.CandidateId
+                   select new { Candidate = c, Run = run })
+                .FirstOrDefaultAsync(ct)
+            ?? throw new ResourceImportValidationException($"Resource candidate '{command.CandidateId}' was not found.");
+
+        try
+        {
+            result.Candidate.UpdateContent(
+                command.CanonicalText,
+                command.NormalizedJson,
+                command.CefrLevel,
+                command.PrimarySkill,
+                command.Subskill,
+                command.DifficultyBand,
+                command.ContextTags is null ? null : System.Text.Json.JsonSerializer.Serialize(command.ContextTags),
+                command.FocusTags is null ? null : System.Text.Json.JsonSerializer.Serialize(command.FocusTags));
+        }
+        catch (ArgumentException ex)
+        {
+            throw new ResourceImportValidationException(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new ResourceImportValidationException(ex.Message);
+        }
+
+        await _db.SaveChangesAsync(ct);
+        await _validationService.ValidateAsync(command.CandidateId, ct);
+
+        var refreshed = await _db.ResourceCandidates.FirstAsync(c => c.Id == command.CandidateId, ct);
+
+        return ResourceImportMappers.ToDto(refreshed, result.Run.Id, result.Run.CefrResourceSourceId);
     }
 }

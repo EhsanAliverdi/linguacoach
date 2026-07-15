@@ -347,3 +347,18 @@ architecture-test guard prevents reintroduction. See
 `docs/reviews/2026-07-15-phase-2-exercise-pipeline-boundary-review.md` and
 `docs/architecture/exercise-pipeline-boundary.md` for the removal detail, data migration, and the
 final content-boundary rule.
+
+## Phase 3 follow-up (2026-07-15)
+
+The Import review-workflow gaps this audit flagged ("Editing capability is narrower than intended
+— only AdminNotes is editable"; the missing "Skip" modeling implied by "Admin can skip a
+candidate — No modeled Skip state") were closed: `ResourceCandidate.UpdateContent(...)` now edits
+content fields (via NormalizedJson, since candidates have no per-type typed columns) and a new
+`ResourceCandidateReviewStatus.Skipped` value plus row/batch Skip actions were added. Investigation
+found this audit's other Import-related finding — the audit's characterization of publishing
+implied it might not be separate from approval — was already incorrect at investigation time:
+publishing was already a distinct, live-re-checked action, not conflated with approval. See
+`docs/reviews/2026-07-15-phase-3-import-candidate-review-workflow-review.md` for the full
+investigation, root-cause-vs-actual-gap analysis, and validation. AI segmentation (this audit's
+other Import finding — "No AI-driven content understanding/segmentation exists") remains
+unaddressed by design; it is explicitly out of this phase's scope and deferred to a future phase.

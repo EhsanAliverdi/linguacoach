@@ -87,7 +87,7 @@ public sealed class ContentImportServiceTests : IDisposable
         candidate.IsPublished.Should().BeFalse();
         // ReviewStatus only advances to PendingReview once IResourceCandidateValidationService
         // has validated the row (Phase E2+) — import alone stages it as NotRequired.
-        candidate.ReviewStatus.Should().Be(AdminReviewStatus.NotRequired);
+        candidate.ReviewStatus.Should().Be(ResourceCandidateReviewStatus.NotRequired);
 
         (await _db.ResourceBankItems.CountAsync()).Should().Be(0);
     }

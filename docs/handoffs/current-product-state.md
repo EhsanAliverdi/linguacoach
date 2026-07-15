@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-15 (Phase 2 — exercise pipeline boundary consolidation)
+lastUpdated: 2026-07-15 (Phase 3 — import candidate review workflow)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,42 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-15 (Phase 2 — exercise pipeline boundary consolidation)
+Last updated: 2026-07-15 (Phase 3 — import candidate review workflow)
+
+## Phase 3: Import candidate review workflow — editing, Skip, and one review page (2026-07-15)
+
+Investigation before implementing found publishing was already correctly separated from approval
+(`ResourceCandidatePublishService` re-checks `ReviewStatus == Approved` live and is never called by
+`Approve()` itself) and a dedicated per-run review page already existed at
+`/admin/content/import/runs/:runId`. The two real gaps: content editing was restricted to
+`AdminNotes` only, and there was no "Skip" decision — this phase closed both, and removed a
+~500-line duplicate inline copy of the review UI that lived on the Import page itself.
+
+**Domain:** new `ResourceCandidateReviewStatus` enum (`PendingReview`/`Approved`/`Rejected`/
+`Skipped`, split off from the shared `AdminReviewStatus` enum used by Module/Lesson/Exercise, which
+have no Skip concept). `ResourceCandidate.Skip(reason?)` (reason optional, unlike Reject) and
+`ResourceCandidate.UpdateContent(...)` (edits CanonicalText/NormalizedJson/CefrLevel/PrimarySkill/
+Subskill/DifficultyBand/tags — NormalizedJson is where every type-specific field lives, so this is
+one generic editor across all 7 candidate types, not seven typed forms). Both blocked once
+published, mirroring the existing Reject guard.
+
+**New endpoints** (`api/admin/resource-candidates`): `PUT {id}/content`, `POST {id}/skip`,
+`POST batch/reject`, `POST batch/skip`.
+
+**Frontend:** the Import Review page (`AdminImportRunCandidatesComponent`) gained Skip (row +
+bulk), Reject-selected (bulk), a distinctly-labeled "Publish Approved" bulk action, and a
+content-edit modal. The Import page (`AdminContentImportComponent`) no longer reviews candidates
+itself — after a successful import it navigates straight to the run's Import Review page; "Add
+content" is now its only job.
+
+**Tests:** 18 new/updated backend tests (domain Skip/UpdateContent, the two new handlers, batch
+reject/skip, publish-gate regressions for Skipped/Rejected, review-summary counts). Full details in
+`docs/reviews/2026-07-15-phase-3-import-candidate-review-workflow-review.md`.
+
+**Deferred:** no frontend test coverage was added — the Import/Candidate area had zero `.spec.ts`
+coverage before this phase too, and adding first-time tests against components mid-reshape was
+judged lower-value than shipping the workflow correctly. Content editing is a generic JSON-blob
+editor, not seven per-type structured forms (see the review doc's "Known limitations").
 
 ## Phase 2: Exercise pipeline boundary consolidation — every Exercise requires a Lesson (2026-07-15)
 

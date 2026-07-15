@@ -1069,3 +1069,45 @@ or ambiguities discovered during the audit", item 1).
 
 **Deferred from:** Content Creation Pipeline architecture audit, 2026-07-15. **Resolved:** Phase 2,
 2026-07-15.
+
+---
+
+### TODO-028 — No frontend test coverage for the Import/Candidate admin area
+
+**What:** `AdminContentImportComponent`, `AdminImportRunCandidatesComponent`,
+`AdminResourceCandidateService`/`AdminResourceImportRunService`/`AdminResourceSourceService`
+(`admin-resource-import.service.ts`), and their models file have zero `.spec.ts` coverage — true
+before Phase 3 and still true after it, despite Phase 3 significantly reshaping both components
+(removing ~500 lines of duplicate inline review UI from the Import page, adding Skip/content-edit/
+batch-reject to the Import Review page).
+
+**Why:** Deferred deliberately — writing first-time tests against components being actively
+reshaped in the same phase tends to require an immediate rewrite once the shape settles. Judged
+lower-value than shipping the workflow correctly and validating via full production build + manual
+review of the diff.
+
+**Context:** `docs/reviews/2026-07-15-phase-3-import-candidate-review-workflow-review.md`
+("Deferred findings"). Also applies to Playwright — no E2E spec exists for
+`/admin/content/import` or `/admin/content/import/runs/:id`.
+
+**Deferred from:** Phase 3, 2026-07-15.
+
+---
+
+### TODO-029 — Candidate content editing is a generic JSON editor, not per-type structured forms
+
+**What:** `ResourceCandidate.UpdateContent(...)` and the Import Review page's Edit modal expose
+`NormalizedJson` as one raw JSON textarea across every `ResourceCandidateType`, rather than typed
+forms per type (e.g. Vocabulary word/definition/example fields, Grammar title/explanation/examples/
+common-mistakes fields, as originally described for Phase 3).
+
+**Why:** The existing codebase already treats `NormalizedJson` as a generic field-name-keyed bag
+(`ResourceCandidateFieldHelper`'s pattern, reused by validation/preview/publish) rather than typed
+per-type DTOs; building 7 new structured forms plus matching backend DTOs was judged
+disproportionate for this phase. The backend command already accepts arbitrary valid JSON per type,
+so a future phase can add typed forms with zero backend change.
+
+**Context:** `docs/reviews/2026-07-15-phase-3-import-candidate-review-workflow-review.md`
+("Known limitations").
+
+**Deferred from:** Phase 3, 2026-07-15.

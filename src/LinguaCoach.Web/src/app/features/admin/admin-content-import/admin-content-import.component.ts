@@ -2,38 +2,26 @@ import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable } from 'rxjs';
 import {
   AdminContentImportService,
-  AdminResourceCandidateService,
   AdminResourceImportRunService,
   AdminResourceSourceService,
 } from '../../../core/services/admin-resource-import.service';
 import {
-  AdminResourceCandidateDto,
   AdminResourceImportRunDto,
-  AdminResourceCandidateReviewSummaryDto,
-  BatchResourceCandidateActionResult,
   AdminResourceSourceDto,
   ColumnMappingSuggestion,
   CONTENT_IMPORT_RESOURCE_TYPES,
   ContentImportInputMode,
   ContentImportResourceType,
-  ContentImportResult,
   RESOURCE_IMPORT_RECOGNIZED_FIELDS,
-  ResourceCandidatePreviewDto,
-  ResourceCandidatePublishResult,
-  ResourceImportResult,
   ResourceSourceRequest,
 } from '../../../core/models/admin-resource-import.models';
-import { FormioRendererComponent } from '../../../shared/formio/formio-renderer.component';
 import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
   SpAdminButtonComponent,
-  SpAdminDrawerComponent,
   SpAdminEmptyStateComponent,
-  SpAdminErrorStateComponent,
   SpAdminFileDropzoneComponent,
   SpAdminFormFieldComponent,
   SpAdminIconComponent,
@@ -47,18 +35,15 @@ import {
   SpAdminSectionCardComponent,
   SpAdminSegmentedToggleComponent,
   SpAdminStepperComponent,
-  SpAdminTableActionsComponent,
   SpAdminTableComponent,
   SpAdminTableFooterComponent,
   SpAdminTextareaComponent,
 } from '../../../design-system/admin';
 import type { SpAdminSegmentedOption } from '../../../design-system/admin';
-import type { SpAdminRowAction } from '../../../design-system/admin';
 
 type ImportEntryMode = 'paste' | 'file';
 type ImportPageTab = 'new' | 'history';
 
-const CANDIDATES_PAGE_SIZE = 50;
 const RECENT_RUNS_PAGE_SIZE = 10;
 
 /**
@@ -69,34 +54,20 @@ const RECENT_RUNS_PAGE_SIZE = 10;
  *
  * Phase J4B — restructured around two tabs ("New Import" / "Import History") after admin feedback
  * that mixing recent-run chips above the import form made it unclear where a freshly-imported
- * run's candidates would appear versus a historical run's. "New Import" now reads as one linear
- * flow (add content -> staged candidates -> review -> approve & publish); "Import History" is a
- * separate browse/review surface for past runs. No backend behavior changed.
- *
- * Phase J4B (follow-up) — tabs now use the shared sp-admin-tab-bar pattern (see admin-ai-config
- * for the reference usage) instead of a bespoke button pair; selecting a run in Import History
- * navigates to its own page (/admin/content/import/runs/:runId) instead of expanding inline; both
- * the runs table and the run-candidates table are frontend+backend paginated.
+ * run's candidates would appear versus a historical run's.
  *
  * Phase K23 — "Add content" restyled around a real sp-admin-stepper, a single unified source
  * picker (inline "+ New source" row, no modal), and an sp-admin-segmented-toggle for
- * upload-vs-paste, matching the design reference in import-content.jsx. Paste mode's source field
- * used to be free text (auto-created-or-reused by name on submit, no pre-registration required);
- * it now shares the same registered-source dropdown as file mode, resolving the selected source's
- * name for the paste backend call (which still only accepts a name, not an id) — this is a
- * deliberate small behavior unification (one source list instead of two different source
- * concepts), not a visual-only change. Content type is shown in both modes to match the
- * reference, but is only ever sent to the backend in paste mode — file-mode's import endpoint has
- * no resourceType parameter (each row is classified from its own columns).
+ * upload-vs-paste, matching the design reference in import-content.jsx.
  *
- * Phase K23 (follow-up) — removed the "advanced options" disclosure entirely (per-item CEFR/
- * skill/subskill/tags/difficulty-band defaults, and the paste/file format picker). The metadata
- * defaults duplicated what ResourceCandidateAnalysisService's AI analysis step already decides
- * per candidate (CEFR level, skill/subskill, tags) — always sent as null now, deferring entirely
- * to that AI step rather than admin-typed defaults. The format picker is replaced by
- * auto-detection (detectPasteInputMode/detectFileImportMode below) — content shape (leading `[`/
- * `{` for JSON, a comma-bearing first line for CSV) and file extension are reliable enough
- * signals that a manual picker added friction without adding real control.
+ * Phase 3 (2026-07-15 import candidate review workflow) — the candidate review UI that used to
+ * render inline on this page (a near-duplicate of AdminImportRunCandidatesComponent, the
+ * dedicated /admin/content/import/runs/:runId page) was removed. The intended workflow is
+ * Add content -> System generates candidates -> redirect to Import Review — this page now does
+ * exactly the "Add content" half and then navigates straight to the run's own review page the
+ * moment candidate generation finishes, instead of duplicating the review/edit/approve/reject/
+ * skip/publish workflow a second time on this page. See
+ * docs/reviews/2026-07-15-phase-3-import-candidate-review-workflow-review.md.
  */
 @Component({
   selector: 'app-admin-content-import',
@@ -107,9 +78,7 @@ const RECENT_RUNS_PAGE_SIZE = 10;
     SpAdminAlertComponent,
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
-    SpAdminDrawerComponent,
     SpAdminEmptyStateComponent,
-    SpAdminErrorStateComponent,
     SpAdminFileDropzoneComponent,
     SpAdminFormFieldComponent,
     SpAdminIconComponent,
@@ -123,25 +92,18 @@ const RECENT_RUNS_PAGE_SIZE = 10;
     SpAdminSectionCardComponent,
     SpAdminSegmentedToggleComponent,
     SpAdminStepperComponent,
-    SpAdminTableActionsComponent,
     SpAdminTableComponent,
     SpAdminTableFooterComponent,
     SpAdminTextareaComponent,
-    FormioRendererComponent,
   ],
   templateUrl: './admin-content-import.component.html',
 })
 export class AdminContentImportComponent implements OnInit {
   readonly resourceTypeOptions = CONTENT_IMPORT_RESOURCE_TYPES.map(t => ({ value: t.value, label: t.label }));
 
-  // ── Phase K23 — the 4-stage pipeline stepper shown above "New Import" ───
-  readonly pipelineSteps = ['Add content', 'Structure into candidates', 'Review', 'Approve & publish to the Resource Bank'];
-  readonly stepperIndex = computed(() => {
-    if (!this.showPipeline()) return 0;
-    const items = this.candidates();
-    if (items.length > 0 && items.every(c => c.isPublished)) return 3;
-    return 2;
-  });
+  // ── Phase 3 — "Add content" is now the whole New Import tab; review happens on its own page. ──
+  readonly pipelineSteps = ['Add content', 'System generates candidates', 'Review (redirects to Import Review)'];
+  readonly stepperIndex = computed(() => (this.submitting() || this.fileSubmitting()) ? 1 : 0);
 
   // ── Page tabs (Phase J4B) ────────────────────────────────────────────────
   activeTab = signal<ImportPageTab>('new');
@@ -158,11 +120,6 @@ export class AdminContentImportComponent implements OnInit {
   noteDraft = '';
   content = '';
 
-  /** Phase K1 CEFR/skill/subskill/tags/difficulty-band "defaults" and the paste/file format
-   *  picker used to live in an "advanced options" disclosure — removed (Phase K23 follow-up).
-   *  The metadata defaults duplicated what ResourceCandidateAnalysisService's AI analysis step
-   *  already decides per candidate; the format is now auto-detected from content/file
-   *  extension instead of admin-picked. See detectPasteInputMode/detectFileImportMode below. */
   private detectPasteInputMode(content: string): ContentImportInputMode {
     const trimmed = content.trim();
     if (trimmed.startsWith('[') || trimmed.startsWith('{')) return 'json_text';
@@ -188,7 +145,6 @@ export class AdminContentImportComponent implements OnInit {
 
   submitting = signal(false);
   error = signal('');
-  result = signal<ContentImportResult | null>(null);
 
   // ── Phase K1 — AI-assisted column-mapping review (always shown for CSV/JSON, both paste and
   // file-upload flows; skipped for 'pasted_text' mode, which has no columns to map) ─────────────
@@ -199,8 +155,7 @@ export class AdminContentImportComponent implements OnInit {
   mappingRows = signal<{ column: string; field: string; confidence: number | null }[]>([]);
   private pendingSubmitKind: 'paste' | 'file' | null = null;
 
-  // ── Source (Phase K23 — unified: one registered-source list + inline "+ New source" row,
-  // shared by both paste and file-upload submit paths; see the class doc comment above) ─────────
+  // ── Source (Phase K23 — unified: one registered-source list + inline "+ New source" row) ──────
   sources = signal<AdminResourceSourceDto[]>([]);
   loadingSources = signal(false);
   readonly sourceOptions = computed(() => this.sources().map(s => ({ value: s.sourceId, label: s.name })));
@@ -216,13 +171,8 @@ export class AdminContentImportComponent implements OnInit {
   selectedFile: File | null = null;
   fileSubmitting = signal(false);
   fileError = signal('');
-  fileResult = signal<ResourceImportResult | null>(null);
 
-  // ── Pipeline/review section (New Import tab only — Phase J4B follow-up moved the Import
-  // History "candidates for selected run" view to its own page) ──────────────────────────
-  currentRunId = signal<string | null>(null);
-  readonly showPipeline = computed(() => this.currentRunId() !== null);
-
+  // ── Import History tab ───────────────────────────────────────────────────
   recentRuns = signal<AdminResourceImportRunDto[]>([]);
   loadingRecentRuns = signal(false);
   runsPage = signal(1);
@@ -230,57 +180,9 @@ export class AdminContentImportComponent implements OnInit {
   runsTotalCount = signal(0);
   readonly runsTotalPages = computed(() => Math.max(1, Math.ceil(this.runsTotalCount() / this.runsPageSize)));
 
-  candidates = signal<AdminResourceCandidateDto[]>([]);
-  candidatesLoading = signal(false);
-  candidatesError = signal('');
-  candidatesTotal = signal(0);
-  candidatesPage = signal(1);
-  readonly candidatesPageSize = CANDIDATES_PAGE_SIZE;
-  readonly candidatesTotalPages = computed(() => Math.max(1, Math.ceil(this.candidatesTotal() / this.candidatesPageSize)));
-
-  actionError = signal('');
-  actionSuccess = signal('');
-  analyzingId = signal<string | null>(null);
-  publishingId = signal<string | null>(null);
-
-  // ── Phase K2 — review-state summary + batch selection/actions ──────────────
-  summary = signal<AdminResourceCandidateReviewSummaryDto | null>(null);
-  selectedIds = signal<Set<string>>(new Set());
-  batchActionRunning = signal(false);
-  lastBatchResult = signal<BatchResourceCandidateActionResult | null>(null);
-
-  readonly selectedCount = computed(() => this.selectedIds().size);
-  readonly allVisibleSelected = computed(() => {
-    const items = this.candidates();
-    return items.length > 0 && items.every(c => this.selectedIds().has(c.candidateId));
-  });
-
-  // ── Reject modal ─────────────────────────────────────────────────────────
-  rejectModalOpen = signal(false);
-  rejectTargetId = signal<string | null>(null);
-  rejectReasonDraft = '';
-  rejecting = signal(false);
-
-  // ── Preview drawer (ported from AdminResourceCandidatesComponent, Phase E3) ─
-  previewDrawerOpen = signal(false);
-  previewLoading = signal(false);
-  previewError = signal('');
-  preview = signal<ResourceCandidatePreviewDto | null>(null);
-  previewRawJsonOpen = signal(false);
-  previewCandidateId = signal<string | null>(null);
-
-  // ── ListeningPassage audio (Phase J5c) ──────────────────────────────────────
-  audioUrl = signal<string | null>(null);
-  audioLoading = signal(false);
-  audioUploading = signal(false);
-  audioUploadError = signal('');
-
-  lastPublishResult = signal<ResourceCandidatePublishResult | null>(null);
-
   constructor(
     private importSvc: AdminContentImportService,
     private importRunSvc: AdminResourceImportRunService,
-    private candidateSvc: AdminResourceCandidateService,
     private sourceSvc: AdminResourceSourceService,
     private router: Router,
     private route: ActivatedRoute,
@@ -291,8 +193,7 @@ export class AdminContentImportComponent implements OnInit {
     this.loadRecentRuns();
 
     // A deep link to a specific run (e.g. from a past session, or an old bookmark) is always a
-    // "look up this run's history" intent — send it straight to that run's own candidates page
-    // (Phase J4B follow-up) rather than reviving the old inline-in-History-tab behavior.
+    // "look up this run's history" intent — send it straight to that run's own review page.
     const importRunId = this.route.snapshot.queryParamMap.get('importRunId');
     if (importRunId) {
       this.router.navigate(['/admin/content/import/runs', importRunId], { replaceUrl: true });
@@ -394,7 +295,6 @@ export class AdminContentImportComponent implements OnInit {
    *  admin-picked. */
   submitPaste(): void {
     this.error.set('');
-    this.result.set(null);
 
     if (!this.selectedSourceName()) {
       this.error.set('A source is required — pick one or create a new one.');
@@ -421,6 +321,8 @@ export class AdminContentImportComponent implements OnInit {
     });
   }
 
+  /** Phase 3 — the Import Run finishes and redirects straight to its own Import Review page
+   *  (/admin/content/import/runs/:runId) rather than reviewing candidates inline here. */
   private runPasteImport(columnRenames: Record<string, string> | null): void {
     this.submitting.set(true);
     this.importSvc.import({
@@ -439,32 +341,13 @@ export class AdminContentImportComponent implements OnInit {
     }).subscribe({
       next: result => {
         this.submitting.set(false);
-        this.result.set(result);
-        this.currentRunId.set(result.importRunId);
-        this.candidatesPage.set(1);
-        this.loadCandidates();
-        this.loadSummary();
-        this.loadRecentRuns();
+        this.router.navigate(['/admin/content/import/runs', result.importRunId]);
       },
       error: err => {
         this.submitting.set(false);
         this.error.set(err.error?.error ?? 'Import failed.');
       },
     });
-  }
-
-  startAnotherPasteImport(): void {
-    this.content = '';
-    this.noteDraft = '';
-    this.result.set(null);
-    this.error.set('');
-    this.currentRunId.set(null);
-    this.summary.set(null);
-    this.selectedIds.set(new Set());
-  }
-
-  goToResourceBank(): void {
-    this.router.navigateByUrl('/admin/resource-bank');
   }
 
   // ── File-upload import ───────────────────────────────────────────────────
@@ -481,7 +364,6 @@ export class AdminContentImportComponent implements OnInit {
    *  (detectFileImportMode) rather than admin-picked. */
   submitFile(): void {
     this.fileError.set('');
-    this.fileResult.set(null);
 
     if (!this.selectedSourceId) {
       this.fileError.set('A source is required — pick one or create a new one.');
@@ -503,6 +385,7 @@ export class AdminContentImportComponent implements OnInit {
     });
   }
 
+  /** Phase 3 — the Import Run finishes and redirects straight to its own Import Review page. */
   private runFileImport(columnRenames: Record<string, string> | null): void {
     this.fileSubmitting.set(true);
     this.importRunSvc.import(
@@ -510,12 +393,7 @@ export class AdminContentImportComponent implements OnInit {
     ).subscribe({
       next: result => {
         this.fileSubmitting.set(false);
-        this.fileResult.set(result);
-        this.currentRunId.set(result.runId);
-        this.candidatesPage.set(1);
-        this.loadCandidates();
-        this.loadSummary();
-        this.loadRecentRuns();
+        this.router.navigate(['/admin/content/import/runs', result.runId]);
       },
       error: err => {
         this.fileSubmitting.set(false);
@@ -558,16 +436,6 @@ export class AdminContentImportComponent implements OnInit {
     this.pendingSubmitKind = null;
   }
 
-  startAnotherFileImport(): void {
-    this.selectedFile = null;
-    this.noteDraft = '';
-    this.fileResult.set(null);
-    this.fileError.set('');
-    this.currentRunId.set(null);
-    this.summary.set(null);
-    this.selectedIds.set(new Set());
-  }
-
   // ── Import History tab ───────────────────────────────────────────────────
 
   loadRecentRuns(): void {
@@ -587,296 +455,8 @@ export class AdminContentImportComponent implements OnInit {
     this.loadRecentRuns();
   }
 
-  /** Selecting a run from Import History navigates to that run's own candidates page (Phase J4B
-   *  follow-up) instead of expanding a review panel inline below the runs table. */
+  /** Selecting a run from Import History navigates to that run's own Import Review page. */
   selectRun(runId: string): void {
     this.router.navigate(['/admin/content/import/runs', runId]);
-  }
-
-  // ── Candidate pipeline/review (New Import tab) ──────────────────────────
-
-  loadCandidates(): void {
-    const runId = this.currentRunId();
-    if (!runId) return;
-    this.candidatesLoading.set(true);
-    this.candidatesError.set('');
-    this.candidateSvc.list(this.candidatesPage(), this.candidatesPageSize, undefined, runId).subscribe({
-      next: result => {
-        this.candidates.set(result.items);
-        this.candidatesTotal.set(result.totalCount);
-        this.candidatesLoading.set(false);
-      },
-      error: err => {
-        this.candidatesLoading.set(false);
-        this.candidatesError.set(err.error?.error ?? 'Could not load candidates for this import run.');
-      },
-    });
-  }
-
-  loadSummary(): void {
-    const runId = this.currentRunId();
-    if (!runId) return;
-    this.candidateSvc.summary(runId).subscribe({ next: result => this.summary.set(result), error: () => {} });
-  }
-
-  private refreshAfterAction(): void {
-    this.loadCandidates();
-    this.loadSummary();
-  }
-
-  onCandidatesPageChange(page: number): void {
-    this.candidatesPage.set(page);
-    this.selectedIds.set(new Set());
-    this.loadCandidates();
-  }
-
-  // ── Phase K2 — selection ────────────────────────────────────────────────────
-
-  isSelected(candidateId: string): boolean {
-    return this.selectedIds().has(candidateId);
-  }
-
-  toggleSelected(candidateId: string): void {
-    const next = new Set(this.selectedIds());
-    if (next.has(candidateId)) next.delete(candidateId); else next.add(candidateId);
-    this.selectedIds.set(next);
-  }
-
-  toggleSelectAllVisible(): void {
-    if (this.allVisibleSelected()) {
-      this.selectedIds.set(new Set());
-      return;
-    }
-    this.selectedIds.set(new Set(this.candidates().map(c => c.candidateId)));
-  }
-
-  /** Selects only the publishable (Passed/NeedsReview, not-yet-published) rows on this page. */
-  selectAllPublishableVisible(): void {
-    const ids = this.candidates().filter(c => c.canAttemptPublish && !c.isPublished).map(c => c.candidateId);
-    this.selectedIds.set(new Set(ids));
-  }
-
-  clearSelection(): void {
-    this.selectedIds.set(new Set());
-  }
-
-  // ── Phase K2 — batch actions (operate on the current page's checked selection) ──────────────
-
-  batchApproveSelected(): void {
-    const ids = Array.from(this.selectedIds());
-    if (ids.length === 0) return;
-    this.runBatchAction(this.candidateSvc.batchApprove(ids), 'approved');
-  }
-
-  batchPublishSelected(): void {
-    const ids = Array.from(this.selectedIds());
-    if (ids.length === 0) return;
-    this.runBatchAction(this.candidateSvc.batchPublish(ids), 'published');
-  }
-
-  batchApproveAndPublishSelected(): void {
-    const ids = Array.from(this.selectedIds());
-    if (ids.length === 0) return;
-    this.runBatchAction(this.candidateSvc.batchApproveAndPublish(ids), 'approved & published');
-  }
-
-  private runBatchAction(obs: Observable<BatchResourceCandidateActionResult>, verb: string): void {
-    this.batchActionRunning.set(true);
-    this.actionError.set('');
-    this.lastBatchResult.set(null);
-    obs.subscribe({
-      next: result => {
-        this.batchActionRunning.set(false);
-        this.lastBatchResult.set(result);
-        this.actionSuccess.set(
-          `${result.succeededCount + result.alreadyPublishedCount} of ${result.requestedCount} candidate(s) ${verb}` +
-          (result.failedCount > 0 ? ` — ${result.failedCount} failed, see details below.` : '.'));
-        this.selectedIds.set(new Set());
-        this.refreshAfterAction();
-      },
-      error: err => {
-        this.batchActionRunning.set(false);
-        this.actionError.set(err.error?.error ?? `Could not ${verb.replace('&', 'and')} the selected candidates.`);
-      },
-    });
-  }
-
-  validationStatusTone(status: string): 'success' | 'neutral' | 'danger' | 'warning' {
-    if (status === 'Passed') return 'success';
-    if (status === 'Failed') return 'danger';
-    if (status === 'NeedsReview') return 'warning';
-    return 'neutral';
-  }
-
-  rowActions(item: AdminResourceCandidateDto): SpAdminRowAction[] {
-    const actions: SpAdminRowAction[] = [
-      { id: 'preview', label: 'Preview', icon: 'view', tone: 'default' },
-      { id: 'analyze', label: 'Analyze', icon: 'sparkles', tone: 'default' },
-    ];
-    if (!item.isPublished) {
-      // Phase K2 — hard-blocked candidates (Failed/Pending ValidationStatus) never show the
-      // publish action; the specific blocker (item.publishBlockReason) is shown inline instead.
-      if (item.canAttemptPublish) {
-        actions.push({ id: 'approve-and-publish', label: 'Approve & Publish', icon: 'check', tone: 'default' });
-      }
-      if (item.reviewStatus !== 'Rejected') actions.push({ id: 'reject', label: 'Reject', icon: 'delete', tone: 'danger' });
-    }
-    return actions;
-  }
-
-  onRowAction(actionId: string, item: AdminResourceCandidateDto): void {
-    if (actionId === 'preview') this.openPreview(item.candidateId);
-    if (actionId === 'analyze') this.analyzeCandidate(item);
-    if (actionId === 'approve-and-publish') this.approveAndPublish(item);
-    if (actionId === 'reject') this.openReject(item);
-  }
-
-  analyzeCandidate(item: AdminResourceCandidateDto): void {
-    this.analyzingId.set(item.candidateId);
-    this.actionError.set('');
-    this.candidateSvc.analyze(item.candidateId).subscribe({
-      next: response => {
-        this.analyzingId.set(null);
-        this.actionSuccess.set(
-          response.analysis.success
-            ? `Analysis complete — validation: ${response.validation.status}.`
-            : `Analysis could not complete: ${response.analysis.errorMessage}`);
-        this.refreshAfterAction();
-      },
-      error: err => { this.analyzingId.set(null); this.actionError.set(err.error?.error ?? 'Could not analyze candidate.'); },
-    });
-  }
-
-  /** Phase I1 — the primary action: approves then publishes in a single call. A failed publish
-   *  returns 200 with success=false and a list of reasons, surfaced via lastPublishResult. */
-  approveAndPublish(item: AdminResourceCandidateDto): void {
-    this.publishingId.set(item.candidateId);
-    this.actionError.set('');
-    this.lastPublishResult.set(null);
-    this.candidateSvc.approveAndPublish(item.candidateId).subscribe({
-      next: result => {
-        this.publishingId.set(null);
-        this.lastPublishResult.set(result);
-        if (result.success) {
-          this.actionSuccess.set(`Published as ${result.publishedEntityType}.`);
-          this.refreshAfterAction();
-        } else {
-          this.actionError.set(`Could not publish "${item.canonicalText}": ${result.errors.join('; ')}`);
-        }
-      },
-      error: err => { this.publishingId.set(null); this.actionError.set(err.error?.error ?? 'Could not approve/publish candidate.'); },
-    });
-  }
-
-  openReject(item: AdminResourceCandidateDto): void {
-    this.rejectTargetId.set(item.candidateId);
-    this.rejectReasonDraft = '';
-    this.actionError.set('');
-    this.rejectModalOpen.set(true);
-  }
-
-  closeReject(): void {
-    this.rejectModalOpen.set(false);
-  }
-
-  confirmReject(): void {
-    const id = this.rejectTargetId();
-    if (!id) return;
-    if (!this.rejectReasonDraft.trim()) {
-      this.actionError.set('A reason is required to reject a candidate.');
-      return;
-    }
-    this.rejecting.set(true);
-    this.candidateSvc.reject(id, this.rejectReasonDraft.trim()).subscribe({
-      next: () => {
-        this.rejecting.set(false);
-        this.rejectModalOpen.set(false);
-        this.actionSuccess.set('Candidate rejected.');
-        this.refreshAfterAction();
-      },
-      error: err => { this.rejecting.set(false); this.actionError.set(err.error?.error ?? 'Could not reject candidate.'); },
-    });
-  }
-
-  // ── Preview drawer (ported from AdminResourceCandidatesComponent, Phase E3) ─
-
-  openPreview(candidateId: string): void {
-    this.previewError.set('');
-    this.previewRawJsonOpen.set(false);
-    this.preview.set(null);
-    this.previewCandidateId.set(candidateId);
-    this.previewDrawerOpen.set(true);
-    this.previewLoading.set(true);
-    this.audioUrl.set(null);
-    this.audioUploadError.set('');
-    this.candidateSvc.preview(candidateId).subscribe({
-      next: result => {
-        this.previewLoading.set(false);
-        this.preview.set(result);
-        if (result.renderedPreviewModel.kind === 'ListeningPassage' && result.renderedPreviewModel.hasAudio) {
-          this.loadAudioUrl(candidateId);
-        }
-      },
-      error: err => { this.previewLoading.set(false); this.previewError.set(err.error?.error ?? 'Could not load preview.'); },
-    });
-  }
-
-  closePreview(): void {
-    this.previewDrawerOpen.set(false);
-  }
-
-  // ── ListeningPassage audio (Phase J5c) ──────────────────────────────────────
-
-  /** A signed MinIO URL (absolute http(s)) can be bound directly to `<audio src>`. The local-
-   *  storage streaming fallback is a same-origin `/api/...` path behind admin auth — a plain
-   *  `<audio src>` can't send a Bearer token, so that case is fetched as an authenticated blob
-   *  instead (see AdminResourceCandidateService.getAudioBlobUrl). */
-  loadAudioUrl(candidateId: string): void {
-    this.audioLoading.set(true);
-    this.candidateSvc.getAudioUrl(candidateId).subscribe({
-      next: r => {
-        if (/^https?:\/\//i.test(r.url)) {
-          this.audioLoading.set(false);
-          this.audioUrl.set(r.url);
-          return;
-        }
-        this.candidateSvc.getAudioBlobUrl(candidateId).subscribe({
-          next: blobUrl => { this.audioLoading.set(false); this.audioUrl.set(blobUrl); },
-          error: () => { this.audioLoading.set(false); this.audioUrl.set(null); },
-        });
-      },
-      error: () => { this.audioLoading.set(false); this.audioUrl.set(null); },
-    });
-  }
-
-  onAudioFileSelected(event: Event): void {
-    const candidateId = this.previewCandidateId();
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    input.value = '';
-    if (!candidateId || !file) return;
-
-    this.audioUploading.set(true);
-    this.audioUploadError.set('');
-    this.candidateSvc.uploadAudio(candidateId, file).subscribe({
-      next: () => {
-        this.audioUploading.set(false);
-        this.loadAudioUrl(candidateId);
-        this.openPreview(candidateId); // refreshes hasAudio/warnings, matches the file just uploaded
-        this.loadCandidates();
-      },
-      error: err => { this.audioUploading.set(false); this.audioUploadError.set(err.error?.error ?? 'Could not upload audio.'); },
-    });
-  }
-
-  /** Parses a rendered ActivityTemplateCandidate's Form.io schema JSON string into an object for
-   *  app-formio-renderer's `[schema]` input (which expects a parsed object, not a JSON string). */
-  parsedFormIoSchema(schemaJson: string | null): unknown {
-    if (!schemaJson) return null;
-    try {
-      return JSON.parse(schemaJson);
-    } catch {
-      return null;
-    }
   }
 }

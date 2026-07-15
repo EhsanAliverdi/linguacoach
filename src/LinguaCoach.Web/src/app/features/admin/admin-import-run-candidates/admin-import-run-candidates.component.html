@@ -29,6 +29,9 @@
         <sp-admin-badge tone="success">{{ s.passedCount }} passed</sp-admin-badge>
         <sp-admin-badge tone="warning">{{ s.needsReviewCount }} need review (warnings only, publishable)</sp-admin-badge>
         <sp-admin-badge tone="danger">{{ s.blockedCount }} blocked (fix before publish)</sp-admin-badge>
+        <sp-admin-badge tone="neutral">{{ s.pendingReviewCount }} pending review</sp-admin-badge>
+        <sp-admin-badge tone="danger">{{ s.rejectedCount }} rejected</sp-admin-badge>
+        <sp-admin-badge tone="warning">{{ s.skippedCount }} skipped</sp-admin-badge>
         <sp-admin-badge tone="neutral">{{ s.publishedCount }} published</sp-admin-badge>
       </div>
       @if (s.publishableCount > 0) {
@@ -61,8 +64,17 @@
           <sp-admin-button variant="neutral" size="sm" [disabled]="batchActionRunning()" (clicked)="batchApproveSelected()">
             Approve selected
           </sp-admin-button>
-          <sp-admin-button variant="neutral" size="sm" [disabled]="batchActionRunning()" (clicked)="batchPublishSelected()">
-            Publish selected
+          <sp-admin-button variant="danger" appearance="outline" size="sm" [disabled]="batchActionRunning()" (clicked)="openBatchReject()">
+            Reject selected
+          </sp-admin-button>
+          <sp-admin-button variant="neutral" appearance="outline" size="sm" [disabled]="batchActionRunning()" (clicked)="batchSkipSelected()">
+            Skip selected
+          </sp-admin-button>
+          <!-- "Publish selected" only attempts to publish already-Approved candidates in the
+               selection — it never approves anything. Distinct from "Approve & Publish selected"
+               below, which does both in one click. -->
+          <sp-admin-button variant="neutral" size="sm" [disabled]="batchActionRunning()" (clicked)="batchPublishApprovedSelected()">
+            Publish Approved
           </sp-admin-button>
           <sp-admin-button variant="primary" size="sm" [disabled]="batchActionRunning()" (clicked)="batchApproveAndPublishSelected()">
             {{ batchActionRunning() ? 'Working…' : 'Approve & Publish selected' }}
@@ -118,7 +130,7 @@
                 <td><sp-admin-badge tone="neutral">{{ item.candidateType }}</sp-admin-badge></td>
                 <td>{{ item.cefrLevel ?? '—' }}</td>
                 <td><sp-admin-badge [tone]="validationStatusTone(item.validationStatus)">{{ item.validationStatus }}</sp-admin-badge></td>
-                <td><sp-admin-badge tone="neutral">{{ item.reviewStatus }}</sp-admin-badge></td>
+                <td><sp-admin-badge [tone]="reviewStatusTone(item.reviewStatus)">{{ item.reviewStatus }}</sp-admin-badge></td>
                 <td>
                   @if (item.isPublished) {
                     <sp-admin-badge tone="success">{{ item.publishedEntityType }}</sp-admin-badge>
@@ -186,6 +198,109 @@
     <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeReject()">Cancel</sp-admin-button>
     <sp-admin-button variant="danger" [disabled]="rejecting()" (clicked)="confirmReject()">
       {{ rejecting() ? 'Rejecting…' : 'Reject' }}
+    </sp-admin-button>
+  </div>
+
+</sp-admin-modal>
+
+<!-- ── Phase 3 — Skip modal (reason optional, distinct from Reject) ───────── -->
+<sp-admin-modal
+  [open]="skipModalOpen()"
+  title="Skip candidate"
+  variant="form"
+  (closed)="closeSkip()">
+
+  <p class="sp-admin-hint">
+    Skipping means "intentionally ignore this candidate" — it stays in this import run and can
+    still be approved, rejected, or re-skipped later. Unlike Reject, a reason is optional.
+  </p>
+  <div class="sp-admin-form-stack">
+    <sp-admin-form-field label="Reason (optional)">
+      <sp-admin-textarea [(ngModel)]="skipReasonDraft" placeholder="Optional note about why this is skipped" />
+    </sp-admin-form-field>
+  </div>
+
+  @if (actionError()) { <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert> }
+
+  <div slot="footer">
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeSkip()">Cancel</sp-admin-button>
+    <sp-admin-button variant="neutral" [disabled]="skipping()" (clicked)="confirmSkip()">
+      {{ skipping() ? 'Skipping…' : 'Skip' }}
+    </sp-admin-button>
+  </div>
+
+</sp-admin-modal>
+
+<!-- ── Phase 3 — batch reject modal (reason required) ──────────────────────── -->
+<sp-admin-modal
+  [open]="batchRejectModalOpen()"
+  title="Reject selected candidates"
+  variant="form"
+  (closed)="closeBatchReject()">
+
+  <p class="sp-admin-hint">Rejecting {{ selectedCount() }} candidate(s). This reason is applied to all of them.</p>
+  <div class="sp-admin-form-stack">
+    <sp-admin-form-field label="Reason" [required]="true">
+      <sp-admin-textarea [(ngModel)]="batchRejectReasonDraft" placeholder="Why these candidates are being rejected" />
+    </sp-admin-form-field>
+  </div>
+
+  @if (actionError()) { <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert> }
+
+  <div slot="footer">
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeBatchReject()">Cancel</sp-admin-button>
+    <sp-admin-button variant="danger" [disabled]="batchActionRunning()" (clicked)="confirmBatchReject()">
+      {{ batchActionRunning() ? 'Rejecting…' : 'Reject selected' }}
+    </sp-admin-button>
+  </div>
+
+</sp-admin-modal>
+
+<!-- ── Phase 3 — candidate content editing ─────────────────────────────────── -->
+<sp-admin-modal
+  [open]="editModalOpen()"
+  title="Edit candidate content"
+  variant="form"
+  size="lg"
+  (closed)="closeEdit()">
+
+  <p class="sp-admin-hint">
+    Editable until published. The Content JSON field carries every type-specific field
+    (word/definition/title/body/examples/etc — the field names this candidate's type recognizes).
+  </p>
+  <div class="sp-admin-form-stack">
+    <sp-admin-form-field label="Display text (CanonicalText)">
+      <sp-admin-textarea [(ngModel)]="editDraft.canonicalText" [rows]="2" />
+    </sp-admin-form-field>
+    <sp-admin-form-field label="Content JSON" hint="Must be valid JSON — this is where type-specific fields live">
+      <sp-admin-textarea [(ngModel)]="editDraft.normalizedJson" [rows]="8" />
+    </sp-admin-form-field>
+    <sp-admin-form-field label="CEFR level">
+      <sp-admin-textarea [(ngModel)]="editDraft.cefrLevel" [rows]="1" placeholder="e.g. B1" />
+    </sp-admin-form-field>
+    <sp-admin-form-field label="Primary skill">
+      <sp-admin-textarea [(ngModel)]="editDraft.primarySkill" [rows]="1" />
+    </sp-admin-form-field>
+    <sp-admin-form-field label="Subskill">
+      <sp-admin-textarea [(ngModel)]="editDraft.subskill" [rows]="1" />
+    </sp-admin-form-field>
+    <sp-admin-form-field label="Difficulty band" hint="1-5">
+      <sp-admin-textarea [(ngModel)]="editDraft.difficultyBand" [rows]="1" />
+    </sp-admin-form-field>
+    <sp-admin-form-field label="Context tags" hint="Comma-separated">
+      <sp-admin-textarea [(ngModel)]="editDraft.contextTags" [rows]="1" />
+    </sp-admin-form-field>
+    <sp-admin-form-field label="Focus tags" hint="Comma-separated">
+      <sp-admin-textarea [(ngModel)]="editDraft.focusTags" [rows]="1" />
+    </sp-admin-form-field>
+  </div>
+
+  @if (editError()) { <sp-admin-alert variant="error">{{ editError() }}</sp-admin-alert> }
+
+  <div slot="footer">
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="closeEdit()">Cancel</sp-admin-button>
+    <sp-admin-button variant="primary" [disabled]="editSaving()" (clicked)="confirmEdit()">
+      {{ editSaving() ? 'Saving…' : 'Save changes' }}
     </sp-admin-button>
   </div>
 

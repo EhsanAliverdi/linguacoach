@@ -44,7 +44,7 @@ public sealed class ResourceCandidate : BaseEntity
     public string? AiAnalysisJson { get; private set; }
 
     public ResourceCandidateValidationStatus ValidationStatus { get; private set; }
-    public AdminReviewStatus ReviewStatus { get; private set; }
+    public ResourceCandidateReviewStatus ReviewStatus { get; private set; }
 
     /// <summary>
     /// Phase E1: a plain rejection reason string. Phase E2 broadens this field's meaning (no
@@ -113,7 +113,7 @@ public sealed class ResourceCandidate : BaseEntity
         SearchText = (searchText ?? string.Empty).Trim().ToLowerInvariant();
         ContentFingerprint = contentFingerprint.Trim();
         ValidationStatus = validationStatus;
-        ReviewStatus = AdminReviewStatus.NotRequired;
+        ReviewStatus = ResourceCandidateReviewStatus.NotRequired;
         ContextTagsJson = contextTagsJson ?? "[]";
         FocusTagsJson = focusTagsJson ?? "[]";
         UpdatedAtUtc = DateTime.UtcNow;
@@ -201,9 +201,9 @@ public sealed class ResourceCandidate : BaseEntity
         RejectReason = string.IsNullOrWhiteSpace(validationSummaryJson) ? null : validationSummaryJson;
 
         if (status is ResourceCandidateValidationStatus.Passed or ResourceCandidateValidationStatus.NeedsReview
-            && ReviewStatus == AdminReviewStatus.NotRequired)
+            && ReviewStatus == ResourceCandidateReviewStatus.NotRequired)
         {
-            ReviewStatus = AdminReviewStatus.PendingReview;
+            ReviewStatus = ResourceCandidateReviewStatus.PendingReview;
         }
 
         UpdatedAtUtc = DateTime.UtcNow;
@@ -219,7 +219,7 @@ public sealed class ResourceCandidate : BaseEntity
     /// </summary>
     public void Approve(string? notes = null)
     {
-        ReviewStatus = AdminReviewStatus.Approved;
+        ReviewStatus = ResourceCandidateReviewStatus.Approved;
         if (notes is not null)
             AdminNotes = notes.Trim();
         UpdatedAtUtc = DateTime.UtcNow;
@@ -241,8 +241,81 @@ public sealed class ResourceCandidate : BaseEntity
             throw new InvalidOperationException(
                 "Cannot reject a resource candidate that has already been published — no unpublish step exists in this phase.");
 
-        ReviewStatus = AdminReviewStatus.Rejected;
+        ReviewStatus = ResourceCandidateReviewStatus.Rejected;
         AdminNotes = reason.Trim();
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Phase 3 (2026-07-15 import candidate review workflow) — "I am intentionally ignoring this
+    /// candidate," distinct from never having been reviewed (<see cref="ResourceCandidateReviewStatus.PendingReview"/>).
+    /// Unlike <see cref="Reject"/>, a reason is optional — skipping is a lighter-weight decision
+    /// than an explicit rejection. Blocked once published for the same reason <see cref="Reject"/>
+    /// is: no unpublish step exists, so a published candidate's review decision is final.
+    /// </summary>
+    public void Skip(string? reason = null)
+    {
+        if (IsPublished)
+            throw new InvalidOperationException(
+                "Cannot skip a resource candidate that has already been published — no unpublish step exists in this phase.");
+
+        ReviewStatus = ResourceCandidateReviewStatus.Skipped;
+        if (!string.IsNullOrWhiteSpace(reason))
+            AdminNotes = reason.Trim();
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Phase 3 (2026-07-15 import candidate review workflow) — lets an admin edit a candidate's
+    /// staged content before approval. Every parameter is optional/independent: pass only the
+    /// fields the review UI actually changed, matching <see cref="ApplyAnalysis"/>'s "always
+    /// overwrites, never merges partial state silently" discipline for the ones that ARE passed —
+    /// a null here always means "leave this field as-is," never "clear it" (use an explicit empty
+    /// string/array for that). <paramref name="normalizedJson"/> carries every type-specific field
+    /// (word/definition/title/body/examples/etc — see <c>ResourceCandidateFieldHelper</c>'s
+    /// field-name lookups) since a <see cref="ResourceCandidate"/> has no per-type typed columns;
+    /// editing content means replacing this JSON blob. Blocked once
+    /// published — published content is immutable, edit through the Resource Bank instead (mirrors
+    /// <see cref="Reject"/>/<see cref="AttachAudio"/>'s same guard). Does not itself re-run
+    /// validation — the caller (<c>IAdminResourceCandidateContentUpdateHandler</c>) is responsible
+    /// for calling <see cref="ApplyValidation"/> afterward so <see cref="ValidationStatus"/> and
+    /// <see cref="RejectReason"/> reflect the edited content, not stale pre-edit gates.
+    /// </summary>
+    public void UpdateContent(
+        string? canonicalText = null,
+        string? normalizedJson = null,
+        string? cefrLevel = null,
+        string? primarySkill = null,
+        string? subskill = null,
+        int? difficultyBand = null,
+        string? contextTagsJson = null,
+        string? focusTagsJson = null)
+    {
+        if (IsPublished)
+            throw new InvalidOperationException(
+                "Cannot edit a resource candidate that has already been published — edit through the Resource Bank instead.");
+        if (cefrLevel is not null && !CefrLevelConstants.IsValid(cefrLevel))
+            throw new ArgumentException($"CefrLevel '{cefrLevel}' is not a recognized CEFR level.", nameof(cefrLevel));
+        if (difficultyBand is < 1 or > 5)
+            throw new ArgumentOutOfRangeException(nameof(difficultyBand), "DifficultyBand must be between 1 and 5.");
+
+        if (!string.IsNullOrWhiteSpace(canonicalText))
+            CanonicalText = canonicalText.Trim();
+        if (!string.IsNullOrWhiteSpace(normalizedJson))
+            NormalizedJson = normalizedJson;
+        if (cefrLevel is not null)
+            CefrLevel = cefrLevel;
+        if (primarySkill is not null)
+            PrimarySkill = primarySkill;
+        if (subskill is not null)
+            Subskill = subskill;
+        if (difficultyBand is not null)
+            DifficultyBand = difficultyBand;
+        if (contextTagsJson is not null)
+            ContextTagsJson = contextTagsJson;
+        if (focusTagsJson is not null)
+            FocusTagsJson = focusTagsJson;
+
         UpdatedAtUtc = DateTime.UtcNow;
     }
 

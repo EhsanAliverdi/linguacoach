@@ -192,6 +192,8 @@ public sealed class AdminResourceCandidateController : ControllerBase
     private readonly IResourceCandidatePreviewService _previewService;
     private readonly IAdminResourceCandidateApproveHandler _approveHandler;
     private readonly IAdminResourceCandidateRejectHandler _rejectHandler;
+    private readonly IAdminResourceCandidateSkipHandler _skipHandler;
+    private readonly IAdminResourceCandidateContentUpdateHandler _contentUpdateHandler;
     private readonly IResourceCandidatePublishService _publishService;
     private readonly IResourceCandidateBatchActionService _batchActionService;
     private readonly IResourceCandidateAudioService _audioService;
@@ -206,6 +208,8 @@ public sealed class AdminResourceCandidateController : ControllerBase
         IResourceCandidatePreviewService previewService,
         IAdminResourceCandidateApproveHandler approveHandler,
         IAdminResourceCandidateRejectHandler rejectHandler,
+        IAdminResourceCandidateSkipHandler skipHandler,
+        IAdminResourceCandidateContentUpdateHandler contentUpdateHandler,
         IResourceCandidatePublishService publishService,
         IResourceCandidateBatchActionService batchActionService,
         IResourceCandidateAudioService audioService)
@@ -219,6 +223,8 @@ public sealed class AdminResourceCandidateController : ControllerBase
         _previewService = previewService;
         _approveHandler = approveHandler;
         _rejectHandler = rejectHandler;
+        _skipHandler = skipHandler;
+        _contentUpdateHandler = contentUpdateHandler;
         _publishService = publishService;
         _batchActionService = batchActionService;
         _audioService = audioService;
@@ -273,6 +279,29 @@ public sealed class AdminResourceCandidateController : ControllerBase
         catch (ResourceImportValidationException ex)
         {
             return NotFound(new { error = ex.Message });
+        }
+    }
+
+    // PUT api/admin/resource-candidates/{candidateId}/content
+    // Phase 3 (2026-07-15 import candidate review workflow) — edits a staged candidate's content
+    // before approval. Re-validates immediately after the edit so the returned DTO's
+    // ValidationStatus/CanAttemptPublish reflect the new content, not stale pre-edit gates.
+    // Rejected for an already-published candidate — edit through the Resource Bank instead.
+    [HttpPut("{candidateId:guid}/content")]
+    public async Task<IActionResult> UpdateContent(
+        Guid candidateId, [FromBody] UpdateCandidateContentRequest request, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _contentUpdateHandler.HandleAsync(new UpdateResourceCandidateContentCommand(
+                candidateId, request.CanonicalText, request.NormalizedJson, request.CefrLevel,
+                request.PrimarySkill, request.Subskill, request.DifficultyBand,
+                request.ContextTags, request.FocusTags), ct);
+            return Ok(result);
+        }
+        catch (ResourceImportValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
         }
     }
 
@@ -413,6 +442,24 @@ public sealed class AdminResourceCandidateController : ControllerBase
         }
     }
 
+    // POST api/admin/resource-candidates/{candidateId}/skip  { reason? }
+    // Phase 3 (2026-07-15 import candidate review workflow) — "I am intentionally ignoring this
+    // candidate," distinct from PendingReview (never reviewed). Reason is optional, unlike reject.
+    // Blocked outright for an already-published candidate.
+    [HttpPost("{candidateId:guid}/skip")]
+    public async Task<IActionResult> Skip(Guid candidateId, [FromBody] SkipCandidateRequest request, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _skipHandler.HandleAsync(new SkipResourceCandidateCommand(candidateId, request.Reason), ct);
+            return Ok(result);
+        }
+        catch (ResourceImportValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
     // POST api/admin/resource-candidates/{candidateId}/publish
     // Phase E4 — publishes an approved, validated candidate into its target Cefr* bank table.
     // Idempotent (repeated calls after a successful publish return the same target reference, no
@@ -477,6 +524,26 @@ public sealed class AdminResourceCandidateController : ControllerBase
         return Ok(result);
     }
 
+    // POST api/admin/resource-candidates/batch/reject  { candidateIds: [...], reason }
+    // Phase 3 (2026-07-15 import candidate review workflow).
+    [HttpPost("batch/reject")]
+    public async Task<IActionResult> BatchReject([FromBody] BatchCandidateReasonRequest request, CancellationToken ct)
+    {
+        var result = await _batchActionService.RejectAsync(
+            new BatchRejectResourceCandidatesCommand(request.CandidateIds, request.Reason ?? string.Empty), ct);
+        return Ok(result);
+    }
+
+    // POST api/admin/resource-candidates/batch/skip  { candidateIds: [...], reason? }
+    // Phase 3 (2026-07-15 import candidate review workflow).
+    [HttpPost("batch/skip")]
+    public async Task<IActionResult> BatchSkip([FromBody] BatchCandidateReasonRequest request, CancellationToken ct)
+    {
+        var result = await _batchActionService.SkipAsync(
+            new BatchSkipResourceCandidatesCommand(request.CandidateIds, request.Reason), ct);
+        return Ok(result);
+    }
+
     // POST api/admin/resource-candidates/batch/approve-and-publish  { candidateIds: [...], notes? }
     // Phase K2 — the batch equivalent of the single-item approve-and-publish action: approves then
     // immediately publishes each candidate, continue-on-error per item. A candidate whose
@@ -499,5 +566,17 @@ public sealed class AdminResourceCandidateController : ControllerBase
     public sealed record SetCandidateNotesRequest(string? AdminNotes);
     public sealed record ApproveCandidateRequest(string? Notes = null);
     public sealed record RejectCandidateRequest(string Reason);
+    public sealed record SkipCandidateRequest(string? Reason = null);
+    public sealed record UpdateCandidateContentRequest(
+        string? CanonicalText = null,
+        string? NormalizedJson = null,
+        string? CefrLevel = null,
+        string? PrimarySkill = null,
+        string? Subskill = null,
+        int? DifficultyBand = null,
+        IReadOnlyList<string>? ContextTags = null,
+        IReadOnlyList<string>? FocusTags = null
+    );
     public sealed record BatchCandidateIdsRequest(IReadOnlyList<Guid> CandidateIds, string? Notes = null);
+    public sealed record BatchCandidateReasonRequest(IReadOnlyList<Guid> CandidateIds, string? Reason = null);
 }

@@ -22,15 +22,21 @@ public sealed class ResourceCandidateBatchActionService : IResourceCandidateBatc
 
     private readonly LinguaCoachDbContext _db;
     private readonly IAdminResourceCandidateApproveHandler _approveHandler;
+    private readonly IAdminResourceCandidateRejectHandler _rejectHandler;
+    private readonly IAdminResourceCandidateSkipHandler _skipHandler;
     private readonly IResourceCandidatePublishService _publishService;
 
     public ResourceCandidateBatchActionService(
         LinguaCoachDbContext db,
         IAdminResourceCandidateApproveHandler approveHandler,
+        IAdminResourceCandidateRejectHandler rejectHandler,
+        IAdminResourceCandidateSkipHandler skipHandler,
         IResourceCandidatePublishService publishService)
     {
         _db = db;
         _approveHandler = approveHandler;
+        _rejectHandler = rejectHandler;
+        _skipHandler = skipHandler;
         _publishService = publishService;
     }
 
@@ -122,6 +128,60 @@ public sealed class ResourceCandidateBatchActionService : IResourceCandidateBatc
 
         return new BatchResourceCandidateActionResult(
             ids.Count, succeeded, failed, alreadyPublishedSet.Count, limitReached, items);
+    }
+
+    /// <summary>Phase 3 (2026-07-15 import candidate review workflow).</summary>
+    public async Task<BatchResourceCandidateActionResult> RejectAsync(
+        BatchRejectResourceCandidatesCommand command, CancellationToken ct = default)
+    {
+        var (ids, limitReached) = Bound(command.CandidateIds);
+        var items = new List<BatchResourceCandidateActionItemResult>();
+        var succeeded = 0;
+        var failed = 0;
+
+        foreach (var id in ids)
+        {
+            try
+            {
+                await _rejectHandler.HandleAsync(new RejectResourceCandidateCommand(id, command.Reason), ct);
+                items.Add(new BatchResourceCandidateActionItemResult(id, true, null));
+                succeeded++;
+            }
+            catch (ResourceImportValidationException ex)
+            {
+                items.Add(new BatchResourceCandidateActionItemResult(id, false, ex.Message));
+                failed++;
+            }
+        }
+
+        return new BatchResourceCandidateActionResult(ids.Count, succeeded, failed, AlreadyPublishedCount: 0, limitReached, items);
+    }
+
+    /// <summary>Phase 3 (2026-07-15 import candidate review workflow).</summary>
+    public async Task<BatchResourceCandidateActionResult> SkipAsync(
+        BatchSkipResourceCandidatesCommand command, CancellationToken ct = default)
+    {
+        var (ids, limitReached) = Bound(command.CandidateIds);
+        var items = new List<BatchResourceCandidateActionItemResult>();
+        var succeeded = 0;
+        var failed = 0;
+
+        foreach (var id in ids)
+        {
+            try
+            {
+                await _skipHandler.HandleAsync(new SkipResourceCandidateCommand(id, command.Reason), ct);
+                items.Add(new BatchResourceCandidateActionItemResult(id, true, null));
+                succeeded++;
+            }
+            catch (ResourceImportValidationException ex)
+            {
+                items.Add(new BatchResourceCandidateActionItemResult(id, false, ex.Message));
+                failed++;
+            }
+        }
+
+        return new BatchResourceCandidateActionResult(ids.Count, succeeded, failed, AlreadyPublishedCount: 0, limitReached, items);
     }
 
     private static (IReadOnlyList<Guid> Ids, bool LimitReached) Bound(IReadOnlyList<Guid> candidateIds)

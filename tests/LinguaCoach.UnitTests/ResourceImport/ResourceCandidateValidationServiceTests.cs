@@ -104,7 +104,7 @@ public sealed class ResourceCandidateValidationServiceTests : IDisposable
         result.Errors.Should().BeEmpty();
 
         var reloaded = await _db.ResourceCandidates.FirstAsync(c => c.Id == candidate.Id);
-        reloaded.ReviewStatus.Should().Be(AdminReviewStatus.PendingReview);
+        reloaded.ReviewStatus.Should().Be(ResourceCandidateReviewStatus.PendingReview);
     }
 
     [Fact]
@@ -145,7 +145,7 @@ public sealed class ResourceCandidateValidationServiceTests : IDisposable
         // review queue Passed does — previously only Passed promoted NotRequired->PendingReview,
         // so a NeedsReview candidate never became a real Approve & Publish candidate.
         var reloaded = await _db.ResourceCandidates.FirstAsync(c => c.Id == candidate.Id);
-        reloaded.ReviewStatus.Should().Be(AdminReviewStatus.PendingReview);
+        reloaded.ReviewStatus.Should().Be(ResourceCandidateReviewStatus.PendingReview);
     }
 
     [Fact]
@@ -162,7 +162,7 @@ public sealed class ResourceCandidateValidationServiceTests : IDisposable
 
         var reloaded = await _db.ResourceCandidates.FirstAsync(c => c.Id == candidate.Id);
         reloaded.ValidationStatus.Should().Be(ResourceCandidateValidationStatus.Failed);
-        reloaded.ReviewStatus.Should().Be(AdminReviewStatus.NotRequired);
+        reloaded.ReviewStatus.Should().Be(ResourceCandidateReviewStatus.NotRequired);
     }
 
     [Fact]

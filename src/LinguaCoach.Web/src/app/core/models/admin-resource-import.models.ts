@@ -151,6 +151,34 @@ export interface AdminResourceCandidateReviewSummaryDto {
   needsReviewCount: number;
   blockedCount: number;
   publishableCount: number;
+  /** Phase 3 — admin-rejected, regardless of ValidationStatus. */
+  rejectedCount: number;
+  /** Phase 3 — admin-skipped ("intentionally ignored"), regardless of ValidationStatus. */
+  skippedCount: number;
+  /** Phase 3 — awaiting an explicit admin decision, not yet published. */
+  pendingReviewCount: number;
+}
+
+// ── Phase 3 (2026-07-15 import candidate review workflow) — skip + content editing ─────
+
+export interface SkipCandidateRequestBody {
+  reason?: string | null;
+}
+
+export interface UpdateCandidateContentRequestBody {
+  canonicalText?: string | null;
+  normalizedJson?: string | null;
+  cefrLevel?: string | null;
+  primarySkill?: string | null;
+  subskill?: string | null;
+  difficultyBand?: number | null;
+  contextTags?: string[] | null;
+  focusTags?: string[] | null;
+}
+
+export interface BatchCandidateReasonRequestBody {
+  candidateIds: string[];
+  reason?: string | null;
 }
 
 export interface BatchResourceCandidateActionItemResult {
@@ -602,7 +630,7 @@ export const RESOURCE_CANDIDATE_TYPES = [
   'WritingPrompt', 'ListeningPassage', 'SpeakingPrompt',
 ] as const;
 export const RESOURCE_VALIDATION_STATUSES = ['Pending', 'Passed', 'Failed', 'NeedsReview'] as const;
-export const RESOURCE_REVIEW_STATUSES = ['NotRequired', 'PendingReview', 'Approved', 'Rejected'] as const;
+export const RESOURCE_REVIEW_STATUSES = ['NotRequired', 'PendingReview', 'Approved', 'Rejected', 'Skipped'] as const;
 export const RESOURCE_IMPORT_RUN_STATUSES = [
   'Pending', 'Running', 'Completed', 'CompletedWithWarnings', 'Failed', 'Cancelled',
 ] as const;

@@ -198,7 +198,13 @@ public sealed record AdminResourceCandidateReviewSummaryDto(
     int PassedCount,
     int NeedsReviewCount,
     int BlockedCount,
-    int PublishableCount
+    int PublishableCount,
+    /// <summary>Phase 3 — admin-rejected, regardless of ValidationStatus.</summary>
+    int RejectedCount = 0,
+    /// <summary>Phase 3 — admin-skipped ("intentionally ignored"), regardless of ValidationStatus.</summary>
+    int SkippedCount = 0,
+    /// <summary>Phase 3 — awaiting an explicit admin decision (Approve/Reject/Skip), not yet published.</summary>
+    int PendingReviewCount = 0
 );
 
 public sealed record GetAdminResourceCandidateReviewSummaryQuery(Guid? ImportRunId = null, Guid? SourceId = null);
@@ -232,6 +238,44 @@ public sealed record RejectResourceCandidateCommand(Guid CandidateId, string Rea
 public interface IAdminResourceCandidateRejectHandler
 {
     Task<AdminResourceCandidateDto> HandleAsync(RejectResourceCandidateCommand command, CancellationToken ct = default);
+}
+
+/// <summary>Phase 3 (2026-07-15 import candidate review workflow) — "I am intentionally ignoring
+/// this candidate," distinct from PendingReview (never reviewed). See
+/// <see cref="ResourceCandidateReviewStatus.Skipped"/>'s doc comment.</summary>
+public sealed record SkipResourceCandidateCommand(Guid CandidateId, string? Reason = null);
+
+public interface IAdminResourceCandidateSkipHandler
+{
+    Task<AdminResourceCandidateDto> HandleAsync(SkipResourceCandidateCommand command, CancellationToken ct = default);
+}
+
+/// <summary>
+/// Phase 3 (2026-07-15 import candidate review workflow) — edits a staged candidate's content
+/// before approval. Every field is independent/optional (null = leave unchanged, matching
+/// <see cref="Entities.ResourceCandidate.UpdateContent"/>'s semantics — see that method's doc
+/// comment). <paramref name="NormalizedJson"/> is where every type-specific field lives
+/// (word/definition/title/body/examples/etc, per <see cref="ResourceCandidateType"/>) since
+/// candidates have no per-type typed columns. Re-runs deterministic validation after the edit so
+/// <see cref="AdminResourceCandidateDto.ValidationStatus"/>/<see cref="AdminResourceCandidateDto.CanAttemptPublish"/>
+/// reflect the edited content immediately, not stale pre-edit gates. Rejected for an
+/// already-published candidate — edit through the Resource Bank instead.
+/// </summary>
+public sealed record UpdateResourceCandidateContentCommand(
+    Guid CandidateId,
+    string? CanonicalText = null,
+    string? NormalizedJson = null,
+    string? CefrLevel = null,
+    string? PrimarySkill = null,
+    string? Subskill = null,
+    int? DifficultyBand = null,
+    IReadOnlyList<string>? ContextTags = null,
+    IReadOnlyList<string>? FocusTags = null
+);
+
+public interface IAdminResourceCandidateContentUpdateHandler
+{
+    Task<AdminResourceCandidateDto> HandleAsync(UpdateResourceCandidateContentCommand command, CancellationToken ct = default);
 }
 
 // ── Import service (the parser/gate pipeline) ──────────────────────────────────
