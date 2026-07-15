@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-16 (Phase 4.4 — editable import plans and durable cost accounting, backend-first slice)
+lastUpdated: 2026-07-16 (Phase 4.4A — admin plan editor and cost operations UI, core-editor slice)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,40 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-16 (Phase 4.4 — editable import plans and durable cost accounting, backend-first slice)
+Last updated: 2026-07-16 (Phase 4.4A — admin plan editor and cost operations UI, core-editor slice)
+
+## Phase 4.4A: Admin plan editor and cost operations UI — core-editor slice (2026-07-16)
+
+**Scope note:** the full Phase 4.4A brief spans a 6-component Angular editor, JSON mapping UI, a
+new audited ceiling-amendment endpoint, an STT operation summary, and Playwright coverage —
+confirmed with the user as multi-day work before starting. This session delivered the core editor:
+`AdminImportPackagePlanComponent` now lets an admin include/exclude each detected group, route it
+to a supported Resource type (audio restricted to Listening passage), edit CSV field mappings
+against `ResourceImportRecognizedFields`, preview the bounded mapped output via the real
+`POST .../plan/preview` endpoint, and save via the concurrency-checked `PUT .../plan/{planId}` —
+all against Phase 4.4's existing typed contract, no parallel frontend-only schema. Approval is
+disabled while the form has unsaved edits; a stale save or approval (409) shows reload guidance
+instead of silently discarding the edit or merging. A "Create Revision" action (shown once a plan
+is Approved) calls the existing `POST .../plan/{planId}/revise` endpoint. See `TODOS.md`'s
+Phase 4.4A section for what's deferred (`TODO-4.4A-JSON-MAPPING-UI`,
+`TODO-4.4A-CEILING-AMENDMENT-AUDIT`, `TODO-4.4A-COST-SUMMARY-PANEL`,
+`TODO-4.4A-STT-OPERATION-SUMMARY`, `TODO-4.4A-PLAYWRIGHT`).
+
+**Bug fixed alongside:** the pre-4.4A `approvePlan`/`approveRevisedCeiling` Angular calls never sent
+`expectedConcurrencyStamp` at all (silently sent as `Guid.Empty`) even though the backend's
+`ApprovePlanBody` requires it — now fixed. Also fixed `TODO-4.4-LOOSE-FILE-FOLDER-BUG`: a loose-file
+submission's raw client-supplied filename is now flattened to its bare basename before becoming
+`ImportAsset.RelativePath`, so a filename containing a directory separator can no longer resolve to
+a manifest group that was never declared (confirmed unreachable by real browser file inputs;
+reachable only via a directly-crafted API call — a regression test now covers it).
+
+2338 unit / 1303 integration / 19 architecture tests pass (integration +1 for the loose-file
+regression test). `npx tsc --noEmit` shows the same pre-existing baseline errors as Phase 4.4
+(`feedbackPolicy`/`moduleSuggestions`, unrelated files), zero new ones. Production Angular build
+succeeds. Karma could not be run to a pass/fail result — the same pre-existing baseline TypeScript
+errors block the full test bundle from compiling (not introduced this phase; the new spec file
+itself has no compile errors under `tsc`). Full detail:
+`docs/reviews/2026-07-16-phase-4-4a-admin-plan-editor-and-cost-ui-review.md`.
 
 ## Phase 4.4: Editable import plans and durable cost accounting — backend-first slice (2026-07-16)
 

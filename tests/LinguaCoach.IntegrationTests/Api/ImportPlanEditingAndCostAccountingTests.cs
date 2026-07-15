@@ -292,4 +292,73 @@ public sealed class ImportPlanEditingAndCostAccountingTests : IClassFixture<ApiT
         Assert.Equal(ImportProfileStatus.PausedForCostApproval, plan.Status);
         Assert.False(string.IsNullOrWhiteSpace(plan.PauseReason));
     }
+
+    /// <summary>TODO-4.4-LOOSE-FILE-FOLDER-BUG regression: a loose-file submission's synthetic
+    /// manifest always declares a single "(root)" folder group. A client-supplied file name
+    /// containing a directory separator (never produced by a real browser file input, but
+    /// reachable via a directly-crafted API call) must not be allowed to resolve to a folder
+    /// group the manifest never declared — the asset must be flattened into "(root)" so plan
+    /// generation, editing, preview, and execution all agree on which group governs it.</summary>
+    [Fact]
+    public async Task Loose_file_with_directory_separator_in_name_is_flattened_to_the_root_group()
+    {
+        var client = await AdminClientAsync();
+        var sourceId = await CreateApprovedSourceAsync(client, $"Loose File Folder Bug Source {Guid.NewGuid():N}");
+        var marker = $"flattenmarker{Guid.NewGuid():N}";
+        var csvBytes = Encoding.UTF8.GetBytes($"mystery1\r\n{marker}\r\n");
+
+        using var form = new MultipartFormDataContent
+        {
+            { new StringContent(sourceId.ToString()), "cefrResourceSourceId" },
+        };
+        var fileContent = new ByteArrayContent(csvBytes);
+        fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/csv");
+        // Deliberately crafted with a directory component — this is what a direct API call
+        // (bypassing the browser file input, which never sends one) could send.
+        form.Add(fileContent, "files", "lesson/data.csv");
+
+        var submitResp = await client.PostAsync("/api/admin/import-packages/submit", form);
+        Assert.Equal(HttpStatusCode.OK, submitResp.StatusCode);
+        var submitBody = await submitResp.Content.ReadFromJsonAsync<JsonElement>();
+        var packageId = submitBody.GetProperty("importPackageId").GetGuid();
+
+        var manifestResp = await client.GetAsync($"/api/admin/import-packages/{packageId}/manifest");
+        var manifestBody = await manifestResp.Content.ReadFromJsonAsync<JsonElement>();
+        var folderGroups = manifestBody.GetProperty("folderGroups").EnumerateArray().ToList();
+        Assert.Single(folderGroups);
+        Assert.Equal(string.Empty, folderGroups[0].GetProperty("folderPath").GetString());
+
+        var planResp = await client.PostAsJsonAsync($"/api/admin/import-packages/{packageId}/plan", new { });
+        Assert.Equal(HttpStatusCode.OK, planResp.StatusCode);
+        var planBody = await planResp.Content.ReadFromJsonAsync<JsonElement>();
+        var planId = planBody.GetProperty("planId").GetGuid();
+        var concurrencyStamp = planBody.GetProperty("concurrencyStamp").GetGuid();
+        var groups = planBody.GetProperty("groupInstructions").EnumerateArray().ToList();
+        Assert.Single(groups);
+        Assert.Equal("(root)", groups[0].GetProperty("groupKey").GetString());
+
+        var editedInstructions = new[]
+        {
+            new ImportExecutionGroupInstruction(
+                "(root)", true, ResourceCandidateType.VocabularyEntry,
+                new Dictionary<string, string> { ["mystery1"] = "word" }, Array.Empty<string>()),
+        };
+        var updateResp = await client.PutAsJsonAsync(
+            $"/api/admin/import-packages/{packageId}/plan/{planId}",
+            new { expectedConcurrencyStamp = concurrencyStamp, groupInstructions = editedInstructions });
+        Assert.Equal(HttpStatusCode.OK, updateResp.StatusCode);
+        var updatedStamp = (await updateResp.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("concurrencyStamp").GetGuid();
+
+        var approveResp = await client.PostAsJsonAsync(
+            $"/api/admin/import-packages/{packageId}/plan/{planId}/approve",
+            new { approvedCostCeiling = 100m, expectedConcurrencyStamp = updatedStamp });
+        Assert.Equal(HttpStatusCode.OK, approveResp.StatusCode);
+
+        await RunPackageProcessingAsync();
+
+        var candidatesResp = await client.GetAsync($"/api/admin/resource-candidates?sourceId={sourceId}&pageSize=50");
+        var candidatesBody = await candidatesResp.Content.ReadFromJsonAsync<JsonElement>();
+        var items = candidatesBody.GetProperty("items").EnumerateArray().ToList();
+        Assert.Contains(items, i => i.GetProperty("canonicalText").GetString() == marker);
+    }
 }

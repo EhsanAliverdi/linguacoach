@@ -109,6 +109,63 @@ export type ImportProfileStatus =
   | 'Draft' | 'AwaitingApproval' | 'Approved' | 'Rejected' | 'PausedForCostApproval'
   | 'Executing' | 'Completed' | 'Failed' | 'Cancelled' | 'Superseded';
 
+/** Mirrors LinguaCoach.Domain.Enums.ResourceCandidateType — camelCase (JsonStringEnumConverter). */
+export type ResourceCandidateType =
+  | 'unknown' | 'vocabularyEntry' | 'grammarProfileEntry' | 'readingPassage'
+  | 'activityTemplateCandidate' | 'writingPrompt' | 'listeningPassage' | 'speakingPrompt';
+
+/** Every Resource type an admin may route a group to. Audio content is further restricted to
+ *  'listeningPassage' by ImportPlanInstructionValidator — see isAudioGroup() in the plan
+ *  component, which narrows this list per group. */
+export const ROUTABLE_RESOURCE_TYPES: { value: ResourceCandidateType; label: string }[] = [
+  { value: 'vocabularyEntry', label: 'Vocabulary entry' },
+  { value: 'grammarProfileEntry', label: 'Grammar profile entry' },
+  { value: 'readingPassage', label: 'Reading passage' },
+  { value: 'activityTemplateCandidate', label: 'Activity template candidate' },
+  { value: 'writingPrompt', label: 'Writing prompt' },
+  { value: 'listeningPassage', label: 'Listening passage' },
+  { value: 'speakingPrompt', label: 'Speaking prompt' },
+];
+
+/** Mirrors LinguaCoach.Application.ResourceImport.ResourceImportRecognizedFields.All — the only
+ *  field-mapping targets execution will accept. */
+export const RECOGNIZED_FIELD_MAPPING_TARGETS: string[] = [
+  'word', 'lemma', 'headword', 'grammarkey', 'explanation', 'passage', 'text', 'title',
+  'prompt', 'transcript', 'scenario', 'formio', 'schema', 'template',
+  'cefrlevel', 'cefr', 'skill', 'subskill', 'tags', 'focustags', 'difficultyband',
+];
+
+/** Mirrors LinguaCoach.Application.ResourceImport.ImportExecutionGroupInstruction — one
+ *  folder-group's editable executable instruction: whether it's included, which Resource type it
+ *  routes to, and its source-column -> target-field mappings. This is the exact typed contract
+ *  both the draft-update and preview endpoints consume — no separate frontend-only shape. */
+export interface ImportExecutionGroupInstruction {
+  groupKey: string;
+  included: boolean;
+  resourceType: ResourceCandidateType | null;
+  fieldMappings: Record<string, string>;
+  sampleRelativePaths: string[];
+}
+
+export interface ImportPlanValidationError {
+  groupKey: string | null;
+  message: string;
+}
+
+export interface ImportPlanPreviewRow {
+  groupKey: string;
+  assetRelativePath: string;
+  sourceRow: Record<string, string | null>;
+  predictedCandidateType: ResourceCandidateType;
+  predictedCanonicalText: string;
+  warnings: string[];
+}
+
+export interface ImportPlanPreviewResult {
+  rows: ImportPlanPreviewRow[];
+  validationErrors: ImportPlanValidationError[];
+}
+
 export interface ImportExecutionPlanDto {
   planId: string;
   importPackageId: string;
@@ -125,4 +182,12 @@ export interface ImportExecutionPlanDto {
   rejectionReason: string | null;
   pauseReason: string | null;
   changeReason: string | null;
+  /** Phase 4.4 — bumped by every draft edit; must be echoed back on the next PUT/approve or the
+   *  request is rejected with 409 (another admin or process changed the plan first). */
+  concurrencyStamp: string;
+  /** Phase 4.4 — true only while Status is Draft or AwaitingApproval. */
+  isEditable: boolean;
+  /** Phase 4.4 — the plan's actual executable instructions (what PUT/preview/approve operate
+   *  on) — the single source of truth for the editor's form model. */
+  groupInstructions: ImportExecutionGroupInstruction[];
 }

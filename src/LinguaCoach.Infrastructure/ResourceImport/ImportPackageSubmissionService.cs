@@ -93,7 +93,7 @@ internal sealed class ImportPackageSubmissionService : IImportPackageSubmissionS
             var bytes = buffer.ToArray();
             if (bytes.Length == 0) continue;
 
-            entries.Add(await StoreAssetAsync(package.Id, file.FileName, bytes, utcNow, ImportAssetRole.Unknown, ct));
+            entries.Add(await StoreAssetAsync(package.Id, FlattenFileName(file.FileName), bytes, utcNow, ImportAssetRole.Unknown, ct));
         }
 
         if (entries.Count == 0)
@@ -147,6 +147,16 @@ internal sealed class ImportPackageSubmissionService : IImportPackageSubmissionS
             CompressedSizeBytes: bytes.Length, UncompressedSizeBytes: bytes.Length,
             DetectedMimeType: mimeType, Checksum: checksum, IsSuspicious: false, SuspiciousReason: null);
     }
+
+    // TODO-4.4-LOOSE-FILE-FOLDER-BUG fix — this submission path always builds a single "(root)"
+    // manifest FolderGroup (see the FolderGroups list above), so every asset's RelativePath must
+    // resolve to that same group. A client-supplied file name containing a directory separator
+    // (never produced by a real <input type="file">, but reachable via a directly-crafted API
+    // call) would otherwise make ImportExecutionGroupKey.ForRelativePath resolve to a folder the
+    // manifest never declared, permanently failing validation for that asset. Flattening to the
+    // bare file name here keeps every loose-file asset in the one group the manifest actually has.
+    private static string FlattenFileName(string fileName) =>
+        Path.GetFileName(fileName.Replace('\\', '/'));
 
     private static string BuildDisplayName(bool hasPastedText, IReadOnlyList<ImportPackageSubmissionFile> files)
     {

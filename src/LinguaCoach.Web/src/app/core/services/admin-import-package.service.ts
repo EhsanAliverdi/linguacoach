@@ -3,8 +3,10 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
+  ImportExecutionGroupInstruction,
   ImportExecutionPlanDto,
   ImportPackageManifestSummaryDto,
+  ImportPlanPreviewResult,
   RequestImportPackageUploadResult,
 } from '../models/admin-import-package.models';
 
@@ -63,9 +65,11 @@ export class AdminImportPackageService {
     return this.http.get<ImportExecutionPlanDto>(`${this.base}/${packageId}/plan`);
   }
 
-  /** The one and only "Approve and Start Processing" action — never implicit. */
-  approvePlan(packageId: string, planId: string, approvedCostCeiling: number): Observable<ImportExecutionPlanDto> {
-    return this.http.post<ImportExecutionPlanDto>(`${this.base}/${packageId}/plan/${planId}/approve`, { approvedCostCeiling });
+  /** The one and only "Approve and Start Processing" action — never implicit. Requires the
+   *  plan's current concurrencyStamp; the backend rejects a stale one with 409. */
+  approvePlan(packageId: string, planId: string, approvedCostCeiling: number, expectedConcurrencyStamp: string): Observable<ImportExecutionPlanDto> {
+    return this.http.post<ImportExecutionPlanDto>(
+      `${this.base}/${packageId}/plan/${planId}/approve`, { approvedCostCeiling, expectedConcurrencyStamp });
   }
 
   rejectPlan(packageId: string, planId: string, reason: string): Observable<ImportExecutionPlanDto> {
@@ -75,5 +79,31 @@ export class AdminImportPackageService {
   approveRevisedCeiling(packageId: string, planId: string, newApprovedCostCeiling: number): Observable<ImportExecutionPlanDto> {
     return this.http.post<ImportExecutionPlanDto>(
       `${this.base}/${packageId}/plan/${planId}/approve-revised-ceiling`, { approvedCostCeiling: newApprovedCostCeiling });
+  }
+
+  /** Phase 4.4A — saves an edited draft's group instructions. Requires the plan's current
+   *  concurrencyStamp; a stale one is rejected with 409 (another admin/process changed it
+   *  first). Re-validates and recalculates the estimate server-side. */
+  updatePlanDraft(
+    packageId: string, planId: string, expectedConcurrencyStamp: string,
+    groupInstructions: ImportExecutionGroupInstruction[],
+  ): Observable<ImportExecutionPlanDto> {
+    return this.http.put<ImportExecutionPlanDto>(
+      `${this.base}/${packageId}/plan/${planId}`, { expectedConcurrencyStamp, groupInstructions });
+  }
+
+  /** Phase 4.4A — creates a new Draft revision copying an existing (typically Approved) plan's
+   *  instructions, for further editing, without mutating the original approved row. */
+  revisePlan(packageId: string, planId: string, changeReason: string): Observable<ImportExecutionPlanDto> {
+    return this.http.post<ImportExecutionPlanDto>(`${this.base}/${packageId}/plan/${planId}/revise`, { changeReason });
+  }
+
+  /** Phase 4.4A — bounded sample preview of the (possibly unsaved) draft's mapping. Zero
+   *  persistence, zero AI/STT calls, zero candidate creation. */
+  previewPlanDraft(
+    packageId: string, groupInstructions: ImportExecutionGroupInstruction[], maxSampleRowsPerGroup?: number,
+  ): Observable<ImportPlanPreviewResult> {
+    return this.http.post<ImportPlanPreviewResult>(
+      `${this.base}/${packageId}/plan/preview`, { groupInstructions, maxSampleRowsPerGroup: maxSampleRowsPerGroup ?? null });
   }
 }

@@ -50,6 +50,7 @@
           <sp-admin-badge [tone]="statusTone(p.status)">{{ p.status }}</sp-admin-badge>
           <span class="sp-admin-hint">Version {{ p.version }}</span>
           @if (p.processingMode) { <sp-admin-badge tone="neutral">{{ p.processingMode }}</sp-admin-badge> }
+          @if (p.isEditable && dirty()) { <sp-admin-badge tone="warning">Unsaved edits — estimate may be stale</sp-admin-badge> }
         </div>
         @if (p.processingModeReason) { <p class="sp-admin-hint" style="margin-top:0.5rem;">{{ p.processingModeReason }}</p> }
 
@@ -61,20 +62,164 @@
         @if (p.status === 'Rejected') {
           <sp-admin-alert variant="error" style="margin-top:0.75rem;">Rejected: {{ p.rejectionReason }}</sp-admin-alert>
         }
+        @if (concurrencyConflict()) {
+          <sp-admin-alert variant="error" style="margin-top:0.75rem;">
+            {{ saveError() }} Another administrator or process changed this plan. Reload to see the current version
+            before editing further — your changes were not saved and will not be merged automatically.
+            <div style="margin-top:0.5rem;">
+              <sp-admin-button variant="danger" appearance="outline" size="sm" (clicked)="discardAndReload()">Reload plan</sp-admin-button>
+            </div>
+          </sp-admin-alert>
+        }
 
         <div style="margin-top:1rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
           @if (p.status === 'AwaitingApproval') {
-            <sp-admin-button variant="primary" (clicked)="openApprove()">Approve and Start Processing</sp-admin-button>
+            <sp-admin-button variant="primary" [disabled]="dirty()" (clicked)="openApprove()">Approve and Start Processing</sp-admin-button>
             <sp-admin-button variant="danger" appearance="outline" (clicked)="openReject()">Reject</sp-admin-button>
           }
           @if (p.status === 'PausedForCostApproval') {
             <sp-admin-button variant="primary" (clicked)="openResume()">Approve revised cost and resume</sp-admin-button>
           }
+          @if (canRevise()) {
+            <sp-admin-button variant="neutral" appearance="outline" (clicked)="openReviseModal()">Create Revision</sp-admin-button>
+          }
           <sp-admin-button variant="neutral" appearance="outline" [loading]="regenerating()" (clicked)="generatePlan()">
             Regenerate plan
           </sp-admin-button>
         </div>
+        @if (p.isEditable && dirty()) {
+          <p class="sp-admin-hint" style="margin-top:0.5rem;">
+            Approval is disabled while there are unsaved edits below — save the draft first so the approved plan
+            exactly matches what execution will use.
+          </p>
+        }
       </sp-admin-section-card>
+
+      @if (p.isEditable) {
+        <sp-admin-section-card title="Edit source groups">
+          <p class="sp-admin-hint" style="margin-top:-8px;margin-bottom:12px;">
+            Include or exclude each detected group, choose its Resource type, and map CSV columns to recognized
+            fields. This is exactly what will be saved, previewed, and — once approved — executed.
+          </p>
+
+          @if (structuralErrors().length > 0) {
+            <sp-admin-alert variant="error" style="margin-bottom:0.75rem;">
+              @for (e of structuralErrors(); track e.message) { <div>{{ e.message }}</div> }
+            </sp-admin-alert>
+          }
+
+          @for (row of formRows(); track row.groupKey) {
+            <div style="padding:0.75rem 0;border-bottom:1px solid var(--sp-admin-border-subtle, #eee);">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;">
+                <div>
+                  <strong>{{ row.groupKey }}</strong> — {{ row.fileCount }} file(s)
+                  <p class="sp-admin-hint" style="margin:0;">{{ row.description }}</p>
+                  @if (row.sampleRelativePaths.length > 0) {
+                    <p class="sp-admin-hint" style="margin:0;">e.g. {{ row.sampleRelativePaths.slice(0, 3).join(', ') }}</p>
+                  }
+                </div>
+                <sp-admin-toggle [(ngModel)]="row.included" (ngModelChange)="markDirty()" label="Included" />
+              </div>
+
+              @if (row.included) {
+                <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:0.5rem;align-items:flex-end;">
+                  <sp-admin-form-field label="Resource type">
+                    <sp-admin-native-select
+                      [options]="row.isAudioGroup ? listeningOnlyOption : resourceTypeOptions"
+                      placeholder="(unset — cannot execute)"
+                      [(ngModel)]="row.resourceType"
+                      (ngModelChange)="markDirty()" />
+                  </sp-admin-form-field>
+                  @if (row.isAudioGroup) {
+                    <p class="sp-admin-hint">Audio content can only route to Listening passage.</p>
+                  }
+                </div>
+
+                @if (row.mappings.length > 0) {
+                  <table style="width:100%;margin-top:0.75rem;">
+                    <thead><tr><th style="text-align:left;">Detected column</th><th style="text-align:left;">Maps to</th></tr></thead>
+                    <tbody>
+                      @for (m of row.mappings; track m.source) {
+                        <tr>
+                          <td><code>{{ m.source }}</code></td>
+                          <td>
+                            <sp-admin-native-select
+                              [options]="fieldMappingTargetOptions"
+                              placeholder="(ignore this column)"
+                              [(ngModel)]="m.target"
+                              (ngModelChange)="markDirty()" />
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                } @else if (row.hasStructuredHeaders === false && row.isAudioGroup === false) {
+                  <p class="sp-admin-hint" style="margin-top:0.5rem;">
+                    No detected CSV columns for this group (non-CSV content, or column detection is only available
+                    for inline/pasted submissions — not ZIP archives). JSON field-mapping editing is not yet
+                    available in this phase.
+                  </p>
+                }
+              }
+
+              @if (errorsForGroup(row.groupKey).length > 0) {
+                <sp-admin-alert variant="error" style="margin-top:0.5rem;">
+                  @for (e of errorsForGroup(row.groupKey); track e.message) { <div>{{ e.message }}</div> }
+                </sp-admin-alert>
+              }
+            </div>
+          }
+
+          @if (saveError() && !concurrencyConflict()) {
+            <sp-admin-alert variant="error" style="margin-top:0.75rem;">{{ saveError() }}</sp-admin-alert>
+          }
+
+          <div style="margin-top:1rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <sp-admin-button variant="primary" [loading]="saving()" (clicked)="saveDraft()">Save draft</sp-admin-button>
+            <sp-admin-button variant="neutral" appearance="outline" [loading]="previewLoading()" (clicked)="previewDraft()">
+              Preview mapped output
+            </sp-admin-button>
+          </div>
+
+          @if (dirty() && previewResult()) {
+            <p class="sp-admin-hint" style="margin-top:0.5rem;">
+              This preview reflects your unsaved edits — save the draft to persist them.
+            </p>
+          }
+
+          @if (previewError()) {
+            <sp-admin-alert variant="error" style="margin-top:0.75rem;">{{ previewError() }}</sp-admin-alert>
+          }
+
+          @if (previewResult(); as preview) {
+            <div style="margin-top:1rem;">
+              <strong>Bounded sample preview</strong>
+              <p class="sp-admin-hint" style="margin:0 0 0.5rem;">
+                A bounded sample of mapped output only — nothing here is persisted, and no candidate has been created.
+              </p>
+              @if (preview.validationErrors.length > 0) {
+                <sp-admin-alert variant="warning" style="margin-bottom:0.5rem;">
+                  @for (e of preview.validationErrors; track e.message) {
+                    <div>{{ e.groupKey ? (e.groupKey + ': ') : '' }}{{ e.message }}</div>
+                  }
+                </sp-admin-alert>
+              }
+              @if (preview.rows.length === 0) {
+                <p class="sp-admin-hint">No sample rows to show (all groups excluded, or no included group produced rows).</p>
+              }
+              @for (row of preview.rows; track row.assetRelativePath + row.predictedCanonicalText) {
+                <div style="padding:0.5rem 0;border-bottom:1px solid var(--sp-admin-border-subtle, #eee);">
+                  <sp-admin-badge tone="neutral">{{ row.groupKey }}</sp-admin-badge>
+                  <sp-admin-badge tone="neutral">{{ row.predictedCandidateType }}</sp-admin-badge>
+                  <span class="sp-admin-hint">{{ row.assetRelativePath }}</span>
+                  <p style="margin:0.25rem 0;">{{ row.predictedCanonicalText }}</p>
+                  @for (w of row.warnings; track w) { <p class="sp-admin-hint">{{ w }}</p> }
+                </div>
+              }
+            </div>
+          }
+        </sp-admin-section-card>
+      }
 
       <sp-admin-section-card title="Detected structure">
         @for (group of p.estimate.detectedGroups; track group.groupKey) {
@@ -191,6 +336,21 @@
   <div style="margin-top:1rem;display:flex;gap:0.5rem;">
     <sp-admin-button variant="danger" [loading]="rejecting()" (clicked)="confirmReject()">Reject</sp-admin-button>
     <sp-admin-button variant="neutral" appearance="outline" (clicked)="rejectModalOpen.set(false)">Cancel</sp-admin-button>
+  </div>
+</sp-admin-modal>
+
+<sp-admin-modal [open]="reviseModalOpen()" title="Create Revision" variant="form" (closed)="reviseModalOpen.set(false)">
+  <p class="sp-admin-hint" style="margin-bottom:1rem;">
+    Creates a new, independently editable Draft copy of this approved plan's instructions. The currently
+    approved plan is not changed — it stays exactly as it was approved until this revision is itself approved.
+  </p>
+  @if (reviseError()) { <sp-admin-alert variant="error">{{ reviseError() }}</sp-admin-alert> }
+  <sp-admin-form-field label="Reason">
+    <sp-admin-textarea [(ngModel)]="reviseReason" [rows]="3" placeholder="Why is a revision needed?" />
+  </sp-admin-form-field>
+  <div style="margin-top:1rem;display:flex;gap:0.5rem;">
+    <sp-admin-button variant="primary" [loading]="revising()" (clicked)="confirmRevise()">Create Revision</sp-admin-button>
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="reviseModalOpen.set(false)">Cancel</sp-admin-button>
   </div>
 </sp-admin-modal>
 

@@ -16,17 +16,86 @@ pricing and persisted cost-ceiling enforcement (the core of Workstream B). The A
 UI, real audio-duration measurement, an AI-enrichment operation ledger, and Playwright coverage
 were deliberately deferred — tracked below, not silently dropped.
 
-### TODO-4.4-PLAN-EDITOR-UI — Angular plan-editor UI for the new draft-update/preview/revise APIs
-**What:** Build the type-aware plan-editing page (group include/exclude, resource-type selector,
-field-mapping controls, bounded preview, estimate/ceiling display, save/approve, concurrency-
-conflict handling) described in Workstream A6/A10, backed by the already-shipped
-`PUT .../plan/{planId}`, `POST .../plan/{planId}/revise`, and `POST .../plan/preview` endpoints.
-**Why:** Explicitly deferred per the backend-first scoping decision — the backend contract exists
-and is tested, but no admin can exercise it through the product UI yet. Today's plan review page
-remains read-only.
-**Context:** `ImportExecutionPlanDto.GroupInstructions` already exposes the typed shape to bind
-against; `ImportPlanValidationFailedException.Errors` is grouped by `GroupKey` for direct display.
-**Deferred from:** Phase 4.4 engineering session, 2026-07-16.
+### TODO-4.4-PLAN-EDITOR-UI — ~~Angular plan-editor UI~~ CORE EDITOR SHIPPED in Phase 4.4A
+**Shipped 2026-07-16 (Phase 4.4A):** `AdminImportPackagePlanComponent` now renders an editable
+"Edit source groups" card while a plan is Draft/AwaitingApproval — per-group include/exclude
+toggle, Resource-type routing (audio groups restricted to Listening passage), CSV field-mapping
+selects bound to `ResourceImportRecognizedFields`, a "Preview mapped output" action against the
+real `POST .../plan/preview` endpoint, and a concurrency-checked "Save draft" action against
+`PUT .../plan/{planId}`. Approval now sends `expectedConcurrencyStamp` (previously missing — see
+below) and is disabled while the form is dirty. A "Create Revision" action calls
+`POST .../plan/{planId}/revise` once a plan is Approved. Also fixed in this pass: `approvePlan`/
+the approve modal never sent `expectedConcurrencyStamp` at all before this phase, meaning every
+approval was silently checked against `Guid.Empty` — since the very first approval of a freshly
+generated plan happens to still have its original stamp only coincidentally when no edit occurred
+first, this had not yet surfaced as a visible bug, but would have started rejecting real approvals
+the moment any draft edit (this phase's own feature) preceded one.
+**Still deferred (see TODO-4.4A-* below):** JSON field-mapping controls, ceiling-amendment audit
+hardening, a dedicated cost-summary/pause panel beyond the existing modals, an STT operation
+summary view, Playwright coverage, and the full Angular/integration/architecture test counts the
+original 4.4A brief specified (a smaller, focused subset was added instead — see the 4.4A review
+doc for exact test names).
+**Deferred from:** Phase 4.4 engineering session, 2026-07-16. **Core scope delivered:** Phase 4.4A,
+2026-07-16 (see docs/reviews/2026-07-16-phase-4-4a-admin-plan-editor-and-cost-ui-review.md).
+
+---
+
+## Phase 4.4A — Admin plan editor and cost operations UI (2026-07-16)
+
+This phase was explicitly scoped down (confirmed with the user before starting) to: the core
+Angular plan editor (include/exclude, Resource-type routing, CSV mapping, preview, concurrency-
+checked save, approval gating on dirty state, read-only approved state, Create Revision), plus the
+loose-file folder bug fix. Deferred: JSON mapping controls, the ceiling-amendment audit/UI hardening
+item, a dedicated cost-state/pause panel (the pre-existing pause/resume modals were left as-is),
+an STT operation summary view, and Playwright coverage.
+
+### TODO-4.4A-JSON-MAPPING-UI — JSON/JSONL field-mapping controls
+**What:** Extend the "Edit source groups" card's mapping UI to JSON/JSONL groups (currently only
+CSV-detected headers, sourced from `estimate.structuredMappingPreviews`, are editable — JSON groups
+show a "not yet available" note instead of mapping controls).
+**Why:** Deferred per the 4.4A scoping decision; the backend's structured-mapping-preview detection
+is itself weaker for JSON today (see the Phase 4.4 review's known limitations), so a JSON mapping UI
+would need backend detection work first to be genuinely useful, not just a cosmetic control.
+**Deferred from:** Phase 4.4A engineering session, 2026-07-16.
+
+### TODO-4.4A-CEILING-AMENDMENT-AUDIT — Concurrency-checked, audited ceiling amendment
+**What:** Harden `POST .../plan/{planId}/approve-revised-ceiling` (and its Angular modal, both
+pre-existing since before Phase 4.4) to require a concurrency stamp, record the previous ceiling,
+actor, timestamp, and an admin-supplied reason as an auditable amendment record — matching the
+"explicit audited admin action" requirement for ceiling increases.
+**Why:** Deferred — the existing resume flow works and is safe (still requires explicit admin
+confirmation, still cannot silently exceed the new ceiling), but lacks the audit trail and
+concurrency guard the original brief specified.
+**Deferred from:** Phase 4.4A engineering session, 2026-07-16.
+
+### TODO-4.4A-COST-SUMMARY-PANEL — Dedicated cost/pause-state summary panel
+**What:** A clearer, purpose-built display distinguishing draft estimate / approved estimate /
+approved ceiling / accrued cost / remaining ceiling / currency, replacing today's scattered
+estimate-card + pause-alert presentation.
+**Why:** Deferred — the underlying data (`ImportPackage.AccruedCost`, `ImportProfile.
+ApprovedCostCeiling`/`PauseReason`) is already returned and shown, just not laid out as a unified
+summary component.
+**Deferred from:** Phase 4.4A engineering session, 2026-07-16.
+
+### TODO-4.4A-STT-OPERATION-SUMMARY — STT operation ledger visibility in the admin UI
+**What:** Surface `ImportSttOperation` rows (asset, status, provider/model, cost, reused/attempt
+count) on the package/plan page.
+**Why:** Deferred — no UI reads the ledger table today; it's only ever inspected via direct DB
+query or the integration tests that assert against it.
+**Deferred from:** Phase 4.4A engineering session, 2026-07-16.
+
+### TODO-4.4A-PLAYWRIGHT — E2E coverage for the plan editor
+**What:** Add Playwright specs covering: submit CSV → edit mapping/routing → preview → save →
+approve exact revision → verify read-only approved state → process → verify edited value in
+Candidate Review; plus a stale-concurrency-conflict scenario and a cost-paused/resume scenario.
+**Why:** Deferred — still blocked by the same pre-existing Karma/build-time TypeScript baseline
+errors (`feedbackPolicy`, `moduleSuggestions`) noted since Phase 4.2/4.3/4.4; this phase's own
+Angular unit spec compiles cleanly in isolation (`npx tsc --noEmit` shows no new errors) but the
+full Karma bundle still fails at the pre-existing unrelated spec files. Still tracked from
+Phase 4.2 (`TODO-4.2-PLAYWRIGHT`) and Phase 4.4 (`TODO-4.4-PLAYWRIGHT`).
+**Deferred from:** Phase 4.4A engineering session, 2026-07-16.
+
+---
 
 ### TODO-4.4-AUDIO-DURATION-PROBE — Real audio-duration measurement (ffprobe or equivalent)
 **What:** Replace the flat 5-minutes-per-file STT cost assumption with real measured duration
@@ -69,20 +138,15 @@ concurrency stamp or audit the previous ceiling this phase.
 trail on ceiling amendment) was also not done this phase and should be picked up alongside the UI.
 **Deferred from:** Phase 4.4 engineering session, 2026-07-16.
 
-### TODO-4.4-LOOSE-FILE-FOLDER-BUG — Loose-file submissions with a slash in the filename mis-group
-**What:** A pasted/loose-file submission's synthetic manifest always declares a single root
-(`FolderPath: string.Empty`) `FolderGroup` (`ImportPackageSubmissionService.SubmitAsync`), but an
-`ImportAsset`'s `RelativePath` is set to the raw client-supplied filename verbatim, including any
-`/` it contains. If a filename contains a `/`, `ImportExecutionGroupKey.ForRelativePath` resolves
-it to that subfolder while the manifest only ever declared `"(root)"` — the approved plan then has
-no instruction for that group and processing fails deterministically (a safe failure, not silent
-data loss, but still a usability bug for any admin who uploads a loose file with a folder-like name).
-**Why:** Discovered while writing a Phase 4.4 integration test (initially used `"lesson/audio.mp3"`
-as a loose-file submission's filename); pre-existing since Phase 4.2, unrelated to this phase's
-changes, and out of scope to fix here.
-**Context:** Fix options: reject/sanitize filenames containing `/` at submission time, or build the
-loose-file manifest's folder groups from the actual filenames instead of always assuming root.
-**Deferred from:** Phase 4.4 engineering session, 2026-07-16 (discovered, not introduced).
+### TODO-4.4-LOOSE-FILE-FOLDER-BUG — ~~Loose-file submissions with a slash in the filename mis-group~~ FIXED in Phase 4.4A
+**Fixed 2026-07-16 (Phase 4.4A).** `ImportPackageSubmissionService.SubmitAsync` now flattens every
+submitted file name to its bare basename (`FlattenFileName`, strips any `/`/`\` directory
+component) before it becomes `ImportAsset.RelativePath` or the manifest entry's `RelativePath` —
+guaranteeing every loose-file asset resolves to the one `"(root)"` group the synthetic manifest
+actually declares. Confirmed unreachable by real end users (no browser file input ever sends a
+path with a separator); reachable only via a directly-crafted API call, which is exactly what the
+regression test exercises. Regression test:
+`ImportPlanEditingAndCostAccountingTests.Loose_file_with_directory_separator_in_name_is_flattened_to_the_root_group`.
 
 ---
 
