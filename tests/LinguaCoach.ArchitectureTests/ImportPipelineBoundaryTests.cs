@@ -1,5 +1,6 @@
 using System.Reflection;
 using LinguaCoach.Application.ResourceImport;
+using NetArchTest.Rules;
 
 namespace LinguaCoach.ArchitectureTests;
 
@@ -155,4 +156,76 @@ public class ImportPipelineBoundaryTests
             "Found a second controller that can create an ImportPackage: " + string.Join(", ", offending) +
             ". AdminImportPackageController must remain the sole entry point.");
     }
+
+    // ── Phase 4.3 (2026-07-16) — approved-plan-driven execution guards. The Phase 4.1 audit's
+    // central finding for this phase was that ImportPackageProcessingService never read the
+    // approved plan's mapping/routing decisions and instead re-derived them independently. These
+    // tests fail the build if that disconnect comes back. ──
+
+    /// <summary>Package execution must resolve its routing/mapping instructions through the
+    /// single typed resolver — never construct them ad hoc.</summary>
+    [Fact]
+    public void Package_processing_service_depends_on_the_approved_profile_resolver()
+    {
+        var result = Types.InAssembly(typeof(LinguaCoach.Infrastructure.DependencyInjection).Assembly)
+            .That().HaveNameEndingWith("ImportPackageProcessingService")
+            .Should().HaveDependencyOn(typeof(IApprovedImportProfileResolver).FullName!)
+            .GetResult();
+
+        Assert.True(result.IsSuccessful,
+            "ImportPackageProcessingService must depend on IApprovedImportProfileResolver to drive execution " +
+            "from the approved plan. " + FailureSummary(result));
+    }
+
+    /// <summary>Package execution must never call plan-generation/mapping-inference services
+    /// itself — those are pre-approval, proposal-only concerns. Reintroducing this dependency is
+    /// exactly the "execution re-derives its own routing" regression Phase 4.3 fixed.</summary>
+    [Fact]
+    public void Package_processing_service_does_not_depend_on_plan_generation_or_mapping_inference()
+    {
+        var result = Types.InAssembly(typeof(LinguaCoach.Infrastructure.DependencyInjection).Assembly)
+            .That().HaveNameEndingWith("ImportPackageProcessingService")
+            .Should().NotHaveDependencyOnAny(
+                typeof(IImportExecutionPlanGenerationService).FullName!,
+                typeof(IResourceImportColumnMappingService).FullName!,
+                "LinguaCoach.Infrastructure.ResourceImport.ImportExecutionPlanGenerationService")
+            .GetResult();
+
+        Assert.True(result.IsSuccessful,
+            "ImportPackageProcessingService must not depend on plan-generation or AI mapping-proposal " +
+            "services — routing/mapping must come from the approved plan via IApprovedImportProfileResolver, " +
+            "not be re-inferred at execution time. " + FailureSummary(result));
+    }
+
+    /// <summary>Only the types that legitimately produce (plan generation), parse/validate (the
+    /// resolver), or consume (execution) the approved-plan execution contract may reference it —
+    /// guards against a new service growing its own independent ProfileJson parsing instead of
+    /// going through IApprovedImportProfileResolver.</summary>
+    [Fact]
+    public void Only_known_types_depend_on_the_execution_group_instruction_contract()
+    {
+        var allowedTypeNames = new HashSet<string>
+        {
+            "ApprovedImportProfileResolver", // parses/validates ProfileJson — the one allowed parser
+            "ImportExecutionPlanGenerationService", // produces the instructions at plan-generation time
+            "ImportPackageProcessingService", // consumes the resolved, typed instructions
+        };
+
+        var offendingTypes = Types.InAssembly(typeof(LinguaCoach.Infrastructure.DependencyInjection).Assembly)
+            .That().HaveDependencyOn(typeof(ImportExecutionGroupInstruction).FullName!)
+            .GetTypes()
+            .Where(t => !allowedTypeNames.Contains(t.Name))
+            .Select(t => t.FullName ?? t.Name)
+            .ToList();
+
+        Assert.True(offendingTypes.Count == 0,
+            "Found a type depending directly on ImportExecutionGroupInstruction outside the known " +
+            "producer/parser/consumer set — route it through IApprovedImportProfileResolver instead: " +
+            string.Join(", ", offendingTypes));
+    }
+
+    private static string FailureSummary(TestResult result) =>
+        result.FailingTypeNames is null
+            ? "Architecture rule failed."
+            : "Failing type(s): " + string.Join(", ", result.FailingTypeNames);
 }

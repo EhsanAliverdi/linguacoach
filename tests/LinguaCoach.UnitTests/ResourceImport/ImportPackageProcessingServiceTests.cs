@@ -72,9 +72,10 @@ public sealed class ImportPackagePlanProcessingTests : IDisposable
             new NoOpNotificationService(), _storage, resourceImportService, columnMappingService,
             Options.Create(_limits), Options.Create(_costOptions), NullLogger<ImportExecutionPlanGenerationService>.Instance);
         _approvalService = new ImportExecutionPlanApprovalService(_db);
+        var profileResolver = new ApprovedImportProfileResolver(_db);
         _processingService = new ImportPackageProcessingService(
             _db, _storage, resourceImportService, new NoOpBatchAnalysisService(), sttService, fingerprint,
-            pricingResolver, new NoOpNotificationService(), Options.Create(_costOptions), NullLogger<ImportPackageProcessingService>.Instance);
+            pricingResolver, new NoOpNotificationService(), profileResolver, Options.Create(_costOptions), NullLogger<ImportPackageProcessingService>.Instance);
     }
 
     public void Dispose()

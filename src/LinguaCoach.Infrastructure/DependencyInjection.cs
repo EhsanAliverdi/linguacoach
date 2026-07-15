@@ -706,6 +706,10 @@ public static class DependencyInjection
             LinguaCoach.Infrastructure.ResourceImport.ImportExecutionPlanApprovalService>();
         services.AddScoped<LinguaCoach.Application.ResourceImport.IImportPackageProcessingService,
             LinguaCoach.Infrastructure.ResourceImport.ImportPackageProcessingService>();
+        // Phase 4.3 — the single place ProfileJson is parsed/validated; execution must resolve
+        // through this rather than reading ProfileJson directly.
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IApprovedImportProfileResolver,
+            LinguaCoach.Infrastructure.ResourceImport.ApprovedImportProfileResolver>();
 
         // Phase 16F/16G — Speaking Evaluation Foundation + Provider-Backed Evaluation
         if (configuration is not null)

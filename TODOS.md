@@ -46,6 +46,56 @@ session time constraints — prioritized real API-level integration tests instea
 never a live billable AI call.
 **Deferred from:** Phase 4.2 engineering session, 2026-07-15.
 
+## Phase 4.3 — Approved-plan-driven execution (2026-07-16)
+
+Review: docs/reviews/2026-07-16-phase-4-3-approved-plan-driven-execution-review.md
+
+Closed the central Phase 4.1 finding: `ImportPackageProcessingService` now resolves a typed
+`ApprovedImportExecutionProfile` (via `IApprovedImportProfileResolver`) from the package's exact
+`ApprovedImportProfileId` and drives file inclusion, resource-type routing, and CSV/JSON field
+mapping from it — no more independent extension-based inference at execution time. `ProfileJson`
+now persists `List<ImportExecutionGroupInstruction>` instead of a write-only detected-groups list.
+
+### TODO-4.3-PLAN-EDIT-UI — Admin UI to edit a plan's group routing/mapping before approval
+**What:** Add an endpoint + Angular UI step letting an admin edit a Draft plan's per-group
+`Included`/`ResourceType`/`FieldMappings` before submitting for approval (using the already-Draft-
+only `ImportProfile.ReplaceProfileJson`).
+**Why:** Phase 4.3 made the approved plan authoritative for execution, but there is still no way
+for an admin to actually change a group's routing/mapping before approving — today's plan review
+page is read-only, and the only way to get a "different" plan is to construct one directly against
+persistence (as the Phase 4.3 acceptance-proof tests do). Without this, "approve the plan" always
+approves exactly what deterministic clustering + AI review proposed.
+**Context:** `ImportExecutionGroupInstruction`/`ApprovedImportExecutionProfile` (Application/
+ResourceImport) are the typed shapes to expose; `IApprovedImportProfileResolver`'s validation rules
+(recognized field-mapping targets, audio-route restriction, manifest-group coverage) should be
+reused for a "would this pass" pre-check before the admin submits an edit.
+**Deferred from:** Phase 4.3 engineering session, 2026-07-16 — explicitly out of scope per the
+phase brief ("Do not redesign the Angular UI").
+
+### TODO-4.3-ZIP-GROUP-MAPPING-PREVIEW — Per-group field mapping preview for ZIP packages
+**What:** Extend `BuildStructuredMappingPreviewsAsync` (or an equivalent) to also build a mapping
+preview for ZIP packages, not just inline/loose-file submissions — today `ImportAsset` rows for a
+ZIP package don't exist until the approved plan's Extract stage runs, so `FieldMappings` on a ZIP
+package's group instructions is always empty at generation time (execution still honours whatever
+is there, including a manually/future-UI-edited non-empty mapping — this is a plan-generation
+proposal gap, not an execution gap).
+**Why:** Admins uploading a ZIP of CSV/JSON files currently get no AI-suggested column mapping in
+the plan review UI at all (only the coarse per-folder resource-type/description), unlike inline
+submissions.
+**Context:** Would need to either sample-extract a few structured entries straight from the ZIP
+stream during plan generation (without materializing full `ImportAsset` rows), or move mapping
+preview generation to run once after the Extract stage but before Map/CreateCandidates, with the
+plan still frozen at approval time.
+**Deferred from:** Phase 4.3 engineering session, 2026-07-16.
+
+### TODO-4.3-COST-ACCOUNTING — Durable, crash-safe running-cost accounting
+**What:** Persist accrued cost as it's spent (not just projected in-memory per processing pass) so
+a crash mid-package doesn't lose the cost-ceiling gate's running total.
+**Why:** Explicitly deferred per the Phase 4.3 brief — cost estimation/ceiling gating continues to
+use the existing in-memory `runningCost` accumulation within a single `ProcessPendingAsync` pass,
+unchanged from Phase 4/4.2.
+**Deferred from:** Phase 4.3 engineering session, 2026-07-16 (originally Phase 4.4 in the roadmap).
+
 ---
 
 ## Curriculum / CEFR

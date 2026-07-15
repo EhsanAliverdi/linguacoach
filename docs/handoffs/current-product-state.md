@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-15 (Phase 4.2 — mandatory Import Execution Plan gate for every import)
+lastUpdated: 2026-07-16 (Phase 4.3 — approved-plan-driven execution)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,64 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-15 (Phase 4.2 — mandatory Import Execution Plan gate for every import)
+Last updated: 2026-07-16 (Phase 4.3 — approved-plan-driven execution)
+
+## Phase 4.3: Approved-plan-driven execution (2026-07-16)
+
+The Phase 4.1 audit's central finding, left open by Phase 4.2: `ImportPackageProcessingService`
+read only a plan's status/cost-ceiling and re-derived file routing, resource-type classification,
+and (for ZIP packages) column mapping independently from the approved plan's own decisions. This
+phase makes the approved plan authoritative: "what the administrator reviews and approves must be
+what the processing engine executes."
+
+**Typed execution contract:** `ImportProfile.ProfileJson` now persists
+`List<ImportExecutionGroupInstruction>` (`Application.ResourceImport.ImportExecutionPlanContracts`)
+— one frozen instruction per detected folder group: `Included` (bool), `ResourceType`
+(`ResourceCandidateType?`, a forced route), `FieldMappings` (source column → target field name).
+Previously `ProfileJson` held a plain, write-only `List<ImportExecutionPlanDetectedGroup>` that no
+execution code ever read.
+
+**Central resolver:** `IApprovedImportProfileResolver`/`ApprovedImportProfileResolver` is the one
+place `ProfileJson` is deserialized/validated. It loads the package's exact
+`ImportPackage.ApprovedImportProfileId` (never "the latest" plan), validates package ownership and
+Approved/Executing status, deserializes and validates `ProfileJson` (recognized field-mapping
+targets only, every manifest folder group covered, audio groups can only route to
+`ListeningPassage`), and returns an `ApprovedImportExecutionProfile` with a
+`ResolveForRelativePath(path)` lookup. Any validation failure throws
+`ApprovedImportProfileResolutionException` with a specific, admin-safe message — the package fails
+deterministically (`ImportPackage.MarkFailed`/`ImportProfile.MarkFailed`), never silently falls
+back to inference.
+
+**Execution changes:** `ImportPackageProcessingService.MapAndCreateCandidatesAsync` resolves the
+approved profile once per processing pass (before extraction even runs, since the resolver only
+needs the manifest) and, for every asset, looks up its group's instruction: skip if `Included` is
+false; pass `ResourceType` as `ResourceImportRequest.DefaultCandidateType` (forces the candidate
+type instead of `ResourceImportService`'s own field-name heuristic); pass `FieldMappings` as
+`ColumnRenames` (works for ZIP packages now too, not just inline submissions). The old hardcoded
+extension-based folder grouping and the narrow `PlanEstimateJson.StructuredMappingPreviews`-only
+mapping path were removed.
+
+**Critical acceptance proof** (`tests/LinguaCoach.IntegrationTests/Api/ImportExecutionPlanDrivenExecutionTests.cs`):
+byte-identical CSV content submitted as two packages, each approved with a manually-differentiated
+`ProfileJson` (mapping the same source columns to different target fields and forcing different
+`ResourceType`s), produces different candidate types and field values after processing — proving
+execution follows each approved plan rather than re-deriving the same result. Companion tests prove
+excluded groups create no candidates, a malformed field-mapping target fails processing before any
+candidate is created, and execution is pinned to the exact approved plan even when a newer draft
+plan exists for the same package.
+
+**Known/deferred gaps** (see the review doc): no admin UI to edit a plan's group routing/mapping
+before approval exists yet (`TODO-4.3-PLAN-EDIT-UI` — out of scope per the phase brief); ZIP
+packages still get no AI-suggested field mapping at plan-generation time, only inline/loose-file
+submissions do (`TODO-4.3-ZIP-GROUP-MAPPING-PREVIEW`); cost accounting remains in-memory-per-pass,
+not durable (`TODO-4.3-COST-ACCOUNTING`); `TODO-4.2-DB-PROVENANCE`, `TODO-4.2-SERVICE-LEVEL-GATE`,
+and `TODO-4.2-PLAYWRIGHT` remain open from Phase 4.2.
+
+2320 unit / 1298 integration / 15 architecture tests pass (3 new architecture guards enforce that
+execution depends on the resolver, not on plan-generation/mapping-inference services). Angular
+production build clean; no new TypeScript errors (pre-existing `feedbackPolicy`/`moduleSuggestions`
+Karma-blocking errors are unrelated to this phase). Full detail:
+`docs/reviews/2026-07-16-phase-4-3-approved-plan-driven-execution-review.md`.
 
 ## Phase 4.2: Unify all imports behind the mandatory Import Execution Plan gate (2026-07-15)
 

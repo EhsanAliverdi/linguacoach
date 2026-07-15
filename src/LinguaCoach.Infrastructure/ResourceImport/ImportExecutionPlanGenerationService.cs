@@ -151,10 +151,12 @@ internal sealed class ImportExecutionPlanGenerationService : IImportExecutionPla
             SnapshotAtUtc = DateTimeOffset.UtcNow,
         });
 
+        var groupInstructions = BuildGroupInstructions(groups, structuredMappingPreviews);
+
         var plan = new ImportProfile(
             package.Id,
             nextVersion,
-            profileJson: JsonSerializer.Serialize(groups),
+            profileJson: JsonSerializer.Serialize(groupInstructions),
             sampleAssetIds: Array.Empty<Guid>(),
             estimatedCandidateCount: volume.ExpectedCandidateCount,
             createdAtUtc: DateTimeOffset.UtcNow,
@@ -187,6 +189,37 @@ internal sealed class ImportExecutionPlanGenerationService : IImportExecutionPla
         }
 
         return ToDto(package, plan, estimate);
+    }
+
+    // ── Phase 4.3 — the typed, frozen execution contract ProfileJson now persists. Built once per
+    // plan generation from the same deterministic/AI-reviewed groups the admin sees in the plan
+    // review UI, plus (for inline/non-ZIP packages only — see BuildStructuredMappingPreviewsAsync's
+    // limitation) each group's aggregated column-mapping preview. Every group defaults to
+    // Included=true; there is no admin exclusion UI yet (Phase 4.3 scope), but ImportProfile stays
+    // Draft-editable via ReplaceProfileJson for a future one, or for a script/test to construct a
+    // deliberately different approved plan. ──
+
+    private static List<ImportExecutionGroupInstruction> BuildGroupInstructions(
+        List<ImportExecutionPlanDetectedGroup> groups,
+        IReadOnlyList<ImportExecutionPlanStructuredMappingPreview> structuredMappingPreviews)
+    {
+        return groups.Select(group =>
+        {
+            var fieldMappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var preview in structuredMappingPreviews)
+            {
+                if (!string.Equals(ImportExecutionGroupKey.ForRelativePath(preview.AssetRelativePath), group.GroupKey, StringComparison.OrdinalIgnoreCase)) continue;
+                foreach (var kv in preview.ProposedMapping)
+                    fieldMappings.TryAdd(kv.Key, kv.Value);
+            }
+
+            return new ImportExecutionGroupInstruction(
+                GroupKey: group.GroupKey,
+                Included: true,
+                ResourceType: group.ProposedResourceType,
+                FieldMappings: fieldMappings,
+                SampleRelativePaths: group.SampleRelativePaths);
+        }).ToList();
     }
 
     // ── Part 2/3 — deterministic clustering ─────────────────────────────────────────────────

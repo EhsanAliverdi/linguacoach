@@ -46,6 +46,7 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
     private readonly IActivityContentFingerprintService _fingerprint;
     private readonly IAiPricingResolver _pricingResolver;
     private readonly INotificationService _notifications;
+    private readonly IApprovedImportProfileResolver _profileResolver;
     private readonly ImportCostEstimationOptions _costOptions;
     private readonly ILogger<ImportPackageProcessingService> _logger;
 
@@ -58,6 +59,7 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
         IActivityContentFingerprintService fingerprint,
         IAiPricingResolver pricingResolver,
         INotificationService notifications,
+        IApprovedImportProfileResolver profileResolver,
         IOptions<ImportCostEstimationOptions> costOptions,
         ILogger<ImportPackageProcessingService> logger)
     {
@@ -69,6 +71,7 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
         _fingerprint = fingerprint;
         _pricingResolver = pricingResolver;
         _notifications = notifications;
+        _profileResolver = profileResolver;
         _costOptions = costOptions.Value;
         _logger = logger;
     }
@@ -112,6 +115,11 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
 
         try
         {
+            // Phase 4.3 — resolved once per processing pass, before Extract even runs (the resolver
+            // validates against the manifest, which exists before extraction), so a malformed or
+            // incomplete approved plan is rejected deterministically before any file is touched.
+            var approvedProfile = await _profileResolver.ResolveAsync(package.Id, ct);
+
             if (package.LastCompletedStageIndex < StageExtract)
             {
                 // Phase 4.2 — a package submitted via IImportPackageSubmissionService (pasted
@@ -129,7 +137,7 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
 
             if (package.LastCompletedStageIndex < StageMapAndCreateCandidates)
             {
-                var pauseReason = await MapAndCreateCandidatesAsync(package, plan, ct);
+                var pauseReason = await MapAndCreateCandidatesAsync(package, plan, approvedProfile, ct);
                 if (pauseReason is not null)
                 {
                     plan.PauseForCostApproval(pauseReason);
@@ -254,7 +262,8 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
 
     /// <summary>Returns a non-null pause reason if the approved cost ceiling was reached before
     /// all work completed; otherwise null (stage fully completed).</summary>
-    private async Task<string?> MapAndCreateCandidatesAsync(ImportPackage package, ImportProfile plan, CancellationToken ct)
+    private async Task<string?> MapAndCreateCandidatesAsync(
+        ImportPackage package, ImportProfile plan, ApprovedImportExecutionProfile approvedProfile, CancellationToken ct)
     {
         var ceiling = plan.ApprovedCostCeiling ?? decimal.MaxValue;
         var tolerance = (decimal)_costOptions.CostCeilingToleranceFraction;
@@ -266,32 +275,38 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
             .Where(a => a.ImportPackageId == package.Id && a.ProcessingState != ImportAssetProcessingState.Processed)
             .ToListAsync(ct);
 
-        var assetsByFolder = assets.GroupBy(a => System.IO.Path.GetDirectoryName(a.RelativePath)?.Replace('\\', '/') ?? string.Empty);
+        var assetsByFolder = assets.GroupBy(a => ImportExecutionGroupKey.ForRelativePath(a.RelativePath));
 
-        // Phase 4.2 (Part F) — the plan's mapping preview (built for inline/non-ZIP packages
-        // only; see ImportExecutionPlanGenerationService) is the one approved-plan decision this
-        // phase actually applies at execution time: a confirmed column-rename map per structured
-        // asset, so a package submitted through the unified page doesn't regress the Phase K1
-        // header-recognition fix just because the mapping-review step moved into the plan.
-        var mappingByAssetPath = LoadStructuredMappingPreviews(plan);
-
-        // Reuse the existing single-file candidate-staging pipeline for structured data files —
-        // no need to reimplement CSV/JSON/JSONL parsing/dedup/field-inference here.
+        // Phase 4.3 — routing, resource-type, and column mapping now come exclusively from the
+        // approved plan's per-group instructions (see ApprovedImportProfileResolver), not from
+        // this service's own extension/heuristic inference. Reuse the existing single-file
+        // candidate-staging pipeline for structured data files — no need to reimplement CSV/
+        // JSON/JSONL parsing/dedup/field-inference here.
         foreach (var asset in assets.Where(a =>
             CsvExtensions.Contains(a.FileExtension) || JsonExtensions.Contains(a.FileExtension) || JsonlExtensions.Contains(a.FileExtension)))
         {
             ct.ThrowIfCancellationRequested();
+
+            var instruction = approvedProfile.ResolveForRelativePath(asset.RelativePath)
+                ?? throw new ApprovedImportProfileResolutionException(
+                    $"Approved plan for package '{package.Id}' has no instruction covering asset '{asset.RelativePath}'.");
+
+            if (!instruction.Included)
+            {
+                asset.MarkProcessed();
+                continue;
+            }
+
             try
             {
                 await using var fileStream = await _storage.ReadAsync(asset.StorageKey, ct);
                 var mode = CsvExtensions.Contains(asset.FileExtension) ? ResourceImportMode.Csv
                     : JsonlExtensions.Contains(asset.FileExtension) ? ResourceImportMode.Jsonl
                     : ResourceImportMode.Json;
-                var columnRenames = mappingByAssetPath.TryGetValue(asset.RelativePath, out var preview)
-                    ? preview.ProposedMapping
-                    : null;
+                var columnRenames = instruction.FieldMappings.Count > 0 ? instruction.FieldMappings : null;
                 var result = await _resourceImportService.ImportAsync(new ResourceImportRequest(
                     package.CefrResourceSourceId, fileStream, asset.OriginalFileName, mode,
+                    DefaultCandidateType: instruction.ResourceType,
                     ColumnRenames: columnRenames, ImportPackageId: package.Id), ct);
 
                 candidatesCreated += result.SucceededCount;
@@ -325,6 +340,24 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
         {
             var audioAssets = folderGroup.Where(a => AudioExtensions.Contains(a.FileExtension)).ToList();
             if (audioAssets.Count == 0) continue;
+
+            var instruction = approvedProfile.ResolveForRelativePath(audioAssets[0].RelativePath)
+                ?? throw new ApprovedImportProfileResolutionException(
+                    $"Approved plan for package '{package.Id}' has no instruction covering asset '{audioAssets[0].RelativePath}'.");
+
+            if (!instruction.Included)
+            {
+                foreach (var skipped in folderGroup) skipped.MarkProcessed();
+                continue;
+            }
+
+            // Defense-in-depth — ApprovedImportProfileResolver already rejects an audio group
+            // routed to anything but ListeningPassage against the manifest before execution
+            // reaches here; this only guards a plan approved before that check existed.
+            if (instruction.ResourceType is not null && instruction.ResourceType != ResourceCandidateType.ListeningPassage)
+                throw new ApprovedImportProfileResolutionException(
+                    $"Approved plan for package '{package.Id}', group '{instruction.GroupKey}': audio content routed to " +
+                    $"'{instruction.ResourceType}' is an unsupported route.");
 
             var transcriptAssets = folderGroup.Where(a => TranscriptExtensions.Contains(a.FileExtension)).ToList();
 
@@ -396,23 +429,6 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
 
         package.UpdateProgress(candidatesCreatedCount: candidatesCreated, candidatesFailedCount: candidatesFailed);
         return null;
-    }
-
-    private static IReadOnlyDictionary<string, ImportExecutionPlanStructuredMappingPreview> LoadStructuredMappingPreviews(ImportProfile plan)
-    {
-        if (string.IsNullOrEmpty(plan.PlanEstimateJson))
-            return new Dictionary<string, ImportExecutionPlanStructuredMappingPreview>();
-
-        try
-        {
-            var estimate = JsonSerializer.Deserialize<ImportExecutionPlanEstimate>(plan.PlanEstimateJson);
-            return estimate?.StructuredMappingPreviews.ToDictionary(p => p.AssetRelativePath, StringComparer.OrdinalIgnoreCase)
-                ?? new Dictionary<string, ImportExecutionPlanStructuredMappingPreview>();
-        }
-        catch (JsonException)
-        {
-            return new Dictionary<string, ImportExecutionPlanStructuredMappingPreview>();
-        }
     }
 
     private async Task<(decimal AiCost, bool CeilingHit)> CheckAndAccrueAiCostAsync(

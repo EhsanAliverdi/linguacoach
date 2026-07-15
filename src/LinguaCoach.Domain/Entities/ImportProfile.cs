@@ -18,9 +18,11 @@ public sealed class ImportProfile : BaseEntity
     public int Version { get; private set; }
     public ImportProfileStatus Status { get; private set; }
 
-    /// <summary>The full structured profile — see <c>ImportProfileDefinition</c> for the
-    /// deserialized shape (detected structure, field mappings, grouping/pairing rules, defaults,
-    /// required fields, validation rules, confidence/warnings, estimates).</summary>
+    /// <summary>Phase 4.3 — a serialized <c>List&lt;ImportExecutionGroupInstruction&gt;</c> (see
+    /// <c>Application.ResourceImport.ImportExecutionPlanContracts</c>): one frozen, approved
+    /// routing/mapping instruction per detected folder group (include/exclude, forced resource
+    /// type, column field mappings). This is the actual execution contract — read only through
+    /// <c>IApprovedImportProfileResolver</c>, never parsed directly by execution code.</summary>
     public string ProfileJson { get; private set; } = string.Empty;
 
     public string? AiProviderName { get; private set; }
