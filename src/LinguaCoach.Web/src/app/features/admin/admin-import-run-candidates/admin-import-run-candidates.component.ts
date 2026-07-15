@@ -261,10 +261,21 @@ export class AdminImportRunCandidatesComponent implements OnInit {
     this.runBatchAction(this.candidateSvc.batchPublish(ids), 'published');
   }
 
+  /** Phase 4.2 — the backend's combined batch approve-and-publish shortcut was removed; composes
+   *  batchApprove() then batchPublish() client-side, same as the single-item action above. */
   batchApproveAndPublishSelected(): void {
     const ids = Array.from(this.selectedIds());
     if (ids.length === 0) return;
-    this.runBatchAction(this.candidateSvc.batchApproveAndPublish(ids), 'approved & published');
+    this.batchActionRunning.set(true);
+    this.actionError.set('');
+    this.lastBatchResult.set(null);
+    this.candidateSvc.batchApprove(ids).subscribe({
+      next: () => this.runBatchAction(this.candidateSvc.batchPublish(ids), 'approved & published'),
+      error: err => {
+        this.batchActionRunning.set(false);
+        this.actionError.set(err.error?.error ?? 'Could not approve the selected candidates.');
+      },
+    });
   }
 
   /** Phase 3 — "Publish Approved": a separate action from "Approve & Publish selected" — this one
@@ -500,22 +511,30 @@ export class AdminImportRunCandidatesComponent implements OnInit {
     });
   }
 
+  /** Phase 4.2 — the backend's combined approve-and-publish shortcut was removed (it bypassed the
+   *  separate Phase 3 review/publish lifecycle at the API level); this composes the two remaining,
+   *  still-separate approve() and publish() calls client-side so the admin keeps a single click. */
   approveAndPublish(item: AdminResourceCandidateDto): void {
     this.publishingId.set(item.candidateId);
     this.actionError.set('');
     this.lastPublishResult.set(null);
-    this.candidateSvc.approveAndPublish(item.candidateId).subscribe({
-      next: result => {
-        this.publishingId.set(null);
-        this.lastPublishResult.set(result);
-        if (result.success) {
-          this.actionSuccess.set(`Published as ${result.publishedEntityType}.`);
-          this.refreshAfterAction();
-        } else {
-          this.actionError.set(`Could not publish "${item.canonicalText}": ${result.errors.join('; ')}`);
-        }
+    this.candidateSvc.approve(item.candidateId).subscribe({
+      next: () => {
+        this.candidateSvc.publish(item.candidateId).subscribe({
+          next: result => {
+            this.publishingId.set(null);
+            this.lastPublishResult.set(result);
+            if (result.success) {
+              this.actionSuccess.set(`Published as ${result.publishedEntityType}.`);
+              this.refreshAfterAction();
+            } else {
+              this.actionError.set(`Could not publish "${item.canonicalText}": ${result.errors.join('; ')}`);
+            }
+          },
+          error: err => { this.publishingId.set(null); this.actionError.set(err.error?.error ?? 'Could not publish candidate.'); },
+        });
       },
-      error: err => { this.publishingId.set(null); this.actionError.set(err.error?.error ?? 'Could not approve/publish candidate.'); },
+      error: err => { this.publishingId.set(null); this.actionError.set(err.error?.error ?? 'Could not approve candidate.'); },
     });
   }
 

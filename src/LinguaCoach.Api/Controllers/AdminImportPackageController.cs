@@ -6,11 +6,13 @@ using Microsoft.AspNetCore.Mvc;
 namespace LinguaCoach.Api.Controllers;
 
 /// <summary>
-/// Mandatory Import Execution Plan addendum (2026-07-15) — the large-scale package lifecycle:
-/// request a signed upload URL, confirm the upload (triggers manifest inspection), generate the
-/// automatic Import Execution Plan, and approve/reject/resume it. No endpoint here can trigger
-/// full-package processing directly — that only happens once a plan reaches Approved (Part 8's
-/// background job, wired separately).
+/// Phase 4.2 (2026-07-15 mandatory Import Execution Plan gate for every import) — the single
+/// canonical Import entry point. Every submission — pasted text, one file, several files, or a
+/// ZIP archive — becomes an <c>ImportPackage</c> here and must go through plan generation and
+/// explicit admin approval before any candidate is created, any AI call runs, or anything
+/// publishes. No endpoint anywhere in this codebase may create a Resource Candidate, run AI
+/// column-mapping/enrichment, or trigger full-package processing directly — that only happens
+/// once a plan reaches Approved (see <c>ImportPackageProcessingService</c>, the background job).
 /// </summary>
 [ApiController]
 [Route("api/admin/import-packages")]
@@ -18,17 +20,56 @@ namespace LinguaCoach.Api.Controllers;
 public sealed class AdminImportPackageController : ControllerBase
 {
     private readonly IImportPackageUploadService _uploadService;
+    private readonly IImportPackageSubmissionService _submissionService;
     private readonly IImportExecutionPlanGenerationService _planGenerationService;
     private readonly IImportExecutionPlanApprovalService _planApprovalService;
 
     public AdminImportPackageController(
         IImportPackageUploadService uploadService,
+        IImportPackageSubmissionService submissionService,
         IImportExecutionPlanGenerationService planGenerationService,
         IImportExecutionPlanApprovalService planApprovalService)
     {
         _uploadService = uploadService;
+        _submissionService = submissionService;
         _planGenerationService = planGenerationService;
         _planApprovalService = planApprovalService;
+    }
+
+    // POST api/admin/import-packages/submit  multipart/form-data:
+    //   cefrResourceSourceId, pastedText?, files[]?, notes?
+    // Phase 4.2 — the canonical entry point for pasted content and/or loose (non-ZIP) files. A
+    // ZIP archive still uses upload-request/confirm-upload below (presigned direct-to-storage
+    // upload, unchanged). Creates the ImportPackage + its ImportAsset(s) + an accepted manifest
+    // synchronously; never creates a candidate and never calls AI — that only happens after the
+    // plan this package still needs is generated (POST .../plan below) and approved.
+    [HttpPost("submit")]
+    [RequestSizeLimit(600_000_000)]
+    public async Task<IActionResult> Submit(
+        [FromForm] Guid cefrResourceSourceId, [FromForm] string? pastedText,
+        List<IFormFile>? files, [FromForm] string? notes, CancellationToken ct)
+    {
+        var fileInputs = new List<ImportPackageSubmissionFile>();
+        try
+        {
+            foreach (var file in files ?? new List<IFormFile>())
+            {
+                if (file.Length == 0) continue;
+                fileInputs.Add(new ImportPackageSubmissionFile(file.FileName, file.OpenReadStream(), file.Length));
+            }
+
+            var result = await _submissionService.SubmitAsync(new SubmitImportPackageCommand(
+                cefrResourceSourceId, pastedText, fileInputs, notes, CurrentUserId()), ct);
+            return Ok(result);
+        }
+        catch (ResourceImportValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        finally
+        {
+            foreach (var input in fileInputs) await input.Content.DisposeAsync();
+        }
     }
 
     // POST api/admin/import-packages/upload-request

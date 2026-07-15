@@ -33,6 +33,7 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
         { ".txt", ".md" };
     private static readonly HashSet<string> CsvExtensions = new(StringComparer.OrdinalIgnoreCase) { ".csv" };
     private static readonly HashSet<string> JsonExtensions = new(StringComparer.OrdinalIgnoreCase) { ".json" };
+    private static readonly HashSet<string> JsonlExtensions = new(StringComparer.OrdinalIgnoreCase) { ".jsonl" };
 
     private const int StageExtract = 0;
     private const int StageMapAndCreateCandidates = 1;
@@ -113,7 +114,12 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
         {
             if (package.LastCompletedStageIndex < StageExtract)
             {
-                await ExtractAssetsAsync(package, ct);
+                // Phase 4.2 — a package submitted via IImportPackageSubmissionService (pasted
+                // text / loose files) has no archive; its ImportAsset rows were already created
+                // and stored directly at submission time, so there is nothing to extract.
+                if (!string.IsNullOrEmpty(package.ArchiveStorageKey))
+                    await ExtractAssetsAsync(package, ct);
+
                 package.CheckpointStage(StageExtract);
                 await _db.SaveChangesAsync(ct);
             }
@@ -149,8 +155,11 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
                 $"\"{package.OriginalArchiveFileName}\" finished processing — " +
                 $"{package.CandidatesCreatedCount:N0} candidate(s) created, {package.CandidatesFailedCount:N0} failed. " +
                 "Review and approve/reject candidates in the usual import review workflow.",
-                package.CandidatesFailedCount > 0 ? NotificationSeverity.Warning : NotificationSeverity.Success, ct,
-                deepLinkUrl: $"/admin/content/import/runs?packageId={package.Id}");
+                package.CandidatesFailedCount > 0 ? NotificationSeverity.Warning : NotificationSeverity.Success, ct);
+                // Phase 4.2 fix — the prior deep link (`/admin/content/import/runs?packageId=...`)
+                // did not match any Angular route (that route requires a :runId path segment, not
+                // a query param) and silently fell through to the wildcard redirect. Falls back to
+                // NotifyAsync's default (the plan page), which is always a valid route.
 
             return new ImportPackageProcessingOutcome(package.Id, true, false, null);
         }
@@ -239,15 +248,7 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
         }
     }
 
-    private static ImportAssetMediaType DetectMediaType(string extension) => extension.ToLowerInvariant() switch
-    {
-        ".csv" or ".json" or ".xml" or ".jsonl" => ImportAssetMediaType.StructuredData,
-        ".txt" or ".md" => ImportAssetMediaType.Text,
-        ".mp3" or ".wav" or ".m4a" or ".ogg" => ImportAssetMediaType.Audio,
-        ".jpg" or ".jpeg" or ".png" or ".gif" or ".webp" => ImportAssetMediaType.Image,
-        ".mp4" => ImportAssetMediaType.Video,
-        _ => ImportAssetMediaType.Unknown,
-    };
+    private static ImportAssetMediaType DetectMediaType(string extension) => ImportAssetClassification.Classify(extension).MediaType;
 
     // ── Stage 1 — mapping + candidate creation, cost-ceiling enforced ──────────────────────
 
@@ -267,18 +268,31 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
 
         var assetsByFolder = assets.GroupBy(a => System.IO.Path.GetDirectoryName(a.RelativePath)?.Replace('\\', '/') ?? string.Empty);
 
+        // Phase 4.2 (Part F) — the plan's mapping preview (built for inline/non-ZIP packages
+        // only; see ImportExecutionPlanGenerationService) is the one approved-plan decision this
+        // phase actually applies at execution time: a confirmed column-rename map per structured
+        // asset, so a package submitted through the unified page doesn't regress the Phase K1
+        // header-recognition fix just because the mapping-review step moved into the plan.
+        var mappingByAssetPath = LoadStructuredMappingPreviews(plan);
+
         // Reuse the existing single-file candidate-staging pipeline for structured data files —
-        // no need to reimplement CSV/JSON parsing/dedup/field-inference here.
-        foreach (var asset in assets.Where(a => CsvExtensions.Contains(a.FileExtension) || JsonExtensions.Contains(a.FileExtension)))
+        // no need to reimplement CSV/JSON/JSONL parsing/dedup/field-inference here.
+        foreach (var asset in assets.Where(a =>
+            CsvExtensions.Contains(a.FileExtension) || JsonExtensions.Contains(a.FileExtension) || JsonlExtensions.Contains(a.FileExtension)))
         {
             ct.ThrowIfCancellationRequested();
             try
             {
                 await using var fileStream = await _storage.ReadAsync(asset.StorageKey, ct);
-                var mode = CsvExtensions.Contains(asset.FileExtension) ? ResourceImportMode.Csv : ResourceImportMode.Json;
+                var mode = CsvExtensions.Contains(asset.FileExtension) ? ResourceImportMode.Csv
+                    : JsonlExtensions.Contains(asset.FileExtension) ? ResourceImportMode.Jsonl
+                    : ResourceImportMode.Json;
+                var columnRenames = mappingByAssetPath.TryGetValue(asset.RelativePath, out var preview)
+                    ? preview.ProposedMapping
+                    : null;
                 var result = await _resourceImportService.ImportAsync(new ResourceImportRequest(
                     package.CefrResourceSourceId, fileStream, asset.OriginalFileName, mode,
-                    ImportPackageId: package.Id), ct);
+                    ColumnRenames: columnRenames, ImportPackageId: package.Id), ct);
 
                 candidatesCreated += result.SucceededCount;
                 candidatesFailed += result.RejectedCount;
@@ -382,6 +396,23 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
 
         package.UpdateProgress(candidatesCreatedCount: candidatesCreated, candidatesFailedCount: candidatesFailed);
         return null;
+    }
+
+    private static IReadOnlyDictionary<string, ImportExecutionPlanStructuredMappingPreview> LoadStructuredMappingPreviews(ImportProfile plan)
+    {
+        if (string.IsNullOrEmpty(plan.PlanEstimateJson))
+            return new Dictionary<string, ImportExecutionPlanStructuredMappingPreview>();
+
+        try
+        {
+            var estimate = JsonSerializer.Deserialize<ImportExecutionPlanEstimate>(plan.PlanEstimateJson);
+            return estimate?.StructuredMappingPreviews.ToDictionary(p => p.AssetRelativePath, StringComparer.OrdinalIgnoreCase)
+                ?? new Dictionary<string, ImportExecutionPlanStructuredMappingPreview>();
+        }
+        catch (JsonException)
+        {
+            return new Dictionary<string, ImportExecutionPlanStructuredMappingPreview>();
+        }
     }
 
     private async Task<(decimal AiCost, bool CeilingHit)> CheckAndAccrueAiCostAsync(

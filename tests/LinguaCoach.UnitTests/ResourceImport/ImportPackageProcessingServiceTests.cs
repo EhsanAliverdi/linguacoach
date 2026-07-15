@@ -63,10 +63,13 @@ public sealed class ImportPackagePlanProcessingTests : IDisposable
         var resourceImportService = new ResourceImportService(_db, fingerprint);
         var sttService = new FakeSpeechToTextService(new ConfigurationBuilder().Build(), NullLogger<FakeSpeechToTextService>.Instance);
 
+        var columnMappingService = new ResourceImportColumnMappingService(
+            new DbPromptAiContextBuilder(_db), aiExecution, NullLogger<ResourceImportColumnMappingService>.Instance);
+
         _uploadService = new ImportPackageUploadService(_db, _storage, inspector, Options.Create(_limits));
         _planGenerationService = new ImportExecutionPlanGenerationService(
             _db, inspector, modeDecision, new DbPromptAiContextBuilder(_db), aiExecution, pricingResolver,
-            new NoOpNotificationService(),
+            new NoOpNotificationService(), _storage, resourceImportService, columnMappingService,
             Options.Create(_limits), Options.Create(_costOptions), NullLogger<ImportExecutionPlanGenerationService>.Instance);
         _approvalService = new ImportExecutionPlanApprovalService(_db);
         _processingService = new ImportPackageProcessingService(

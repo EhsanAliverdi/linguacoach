@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-15 (Phase 4 — large-scale AI import packages, Import Execution Plan)
+lastUpdated: 2026-07-15 (Phase 4.2 — mandatory Import Execution Plan gate for every import)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,52 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-15 (Phase 4 — large-scale AI import packages, Import Execution Plan)
+Last updated: 2026-07-15 (Phase 4.2 — mandatory Import Execution Plan gate for every import)
+
+## Phase 4.2: Unify all imports behind the mandatory Import Execution Plan gate (2026-07-15)
+
+A Phase 4.1 audit (`docs/reviews/2026-07-15-phase-4-1-large-import-validation-and-gap-audit.md`)
+found Phase 4's plan/approval gate only applied to the new ZIP-package pipeline — the pre-existing
+single-file/paste pipeline could still create, AI-enrich, and publish candidates with no plan, no
+approval, and no cost ceiling, sitting right next to the gated flow on the same admin page. This
+phase removes that ungated pipeline's public entry points entirely and establishes one canonical
+Import architecture: pasted text, one file, several files, and ZIP archives all become an
+`ImportPackage`, and every one of them requires an admin-approved Import Execution Plan before any
+candidate is created, any AI call runs, or anything publishes.
+
+**New canonical entry point:** `POST api/admin/import-packages/submit` (pasted text and/or loose
+files) alongside the existing presigned-upload ZIP flow — both always route to the plan review
+page. **Removed entirely** (not deprecated): `AdminContentImportController` and its two routes,
+`AdminResourceImportController`'s file-upload/propose-mapping/batch-analyze actions, and
+`AdminResourceCandidateController`'s combined approve-and-publish actions (single + batch) — see
+the Phase 4.2 review doc for the full removed-route table. `ContentImportService`/
+`IContentImportService` were deleted, not deprecated.
+
+**Provenance model:** every candidate traces `ResourceCandidate → ResourceRawRecord →
+ResourceImportRun.ImportPackageId → ImportPackage.ApprovedImportProfileId → ImportProfile`. AI
+enrichment (`ResourceCandidateAnalysisService`) and publish (`ResourceCandidatePublishService`)
+both verify this chain before proceeding. A candidate-creation-level check in
+`ResourceImportService.ImportAsync` itself was attempted and reverted this session (broke 26
+pre-existing parser-gate unit tests unrelated to packages) — deferred as `TODO-4.2-SERVICE-LEVEL-GATE`.
+
+**Structured mapping preview (Part F):** for inline (non-ZIP) packages, plan generation now builds
+a real per-file column-mapping preview (reusing the Phase K1 AI column-mapping service) and
+execution applies the approved mapping when creating candidates — the one approved-plan decision
+this phase makes execution actually read, closing the specific gap where the unified page would
+otherwise have regressed the Phase K1 header-recognition fix. ZIP packages are unaffected (their
+assets don't exist until after approval).
+
+**Known/deferred gaps** (see the review doc): `ResourceImportRun.ImportPackageId` was not made
+non-nullable at the database level (no live DB connection this session — deferred as
+`TODO-4.2-DB-PROVENANCE`); no Playwright E2E coverage was added for the unified flow
+(`TODO-4.2-PLAYWRIGHT`); the broader Phase 4.1 finding that execution doesn't apply the rest of an
+approved plan's decisions (beyond the one structured-mapping exception above) remains open for
+Phase 4.3.
+
+2320+ unit / 1294+ integration / 12 architecture tests pass (4 new architecture guards prevent the
+ungated path from being reintroduced). Angular production build clean; `tsc --noEmit` shows zero
+new errors. Full detail:
+`docs/reviews/2026-07-15-phase-4-2-mandatory-import-plan-gate-review.md`.
 
 ## Phase 4: Large-scale AI import packages + mandatory Import Execution Plan gate (2026-07-15)
 

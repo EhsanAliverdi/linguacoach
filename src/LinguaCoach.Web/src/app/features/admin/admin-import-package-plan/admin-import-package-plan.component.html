@@ -119,6 +119,35 @@
         }
       </sp-admin-section-card>
 
+      @if (p.estimate.structuredMappingPreviews.length > 0) {
+        <sp-admin-section-card title="Structured file mapping preview">
+          <p class="sp-admin-hint" style="margin-top:-8px;margin-bottom:12px;">
+            The exact column mapping that will be applied when this plan is executed — inspect it
+            before approving.
+          </p>
+          @for (preview of p.estimate.structuredMappingPreviews; track preview.assetRelativePath) {
+            <div style="padding:0.5rem 0;border-bottom:1px solid var(--sp-admin-border-subtle, #eee);">
+              <strong>{{ preview.assetRelativePath }}</strong> — {{ preview.expectedRecordCount }} row(s)
+              <table style="width:100%;margin-top:0.5rem;">
+                <thead><tr><th style="text-align:left;">Detected column</th><th style="text-align:left;">Maps to</th></tr></thead>
+                <tbody>
+                  @for (col of preview.detectedColumns; track col) {
+                    <tr>
+                      <td><code>{{ col }}</code></td>
+                      <td>{{ preview.proposedMapping[col] ?? '(unchanged)' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+              @if (preview.ignoredColumns.length > 0) {
+                <p class="sp-admin-hint">Ignored: {{ preview.ignoredColumns.join(', ') }}</p>
+              }
+              @for (w of preview.warnings; track w) { <p class="sp-admin-hint">{{ w }}</p> }
+            </div>
+          }
+        </sp-admin-section-card>
+      }
+
       @if (p.estimate.risks.length > 0) {
         <sp-admin-section-card title="Risks and warnings">
           <ul>

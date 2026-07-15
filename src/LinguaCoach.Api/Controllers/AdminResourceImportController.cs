@@ -8,9 +8,13 @@ using Microsoft.AspNetCore.Mvc;
 namespace LinguaCoach.Api.Controllers;
 
 /// <summary>
-/// Phase E1 — resource import runs, raw records, and staged candidates. Read/upload only: no
-/// approve/publish/reject-with-workflow actions here (Phase E4 publishes to the Cefr* bank,
-/// which this controller never touches). Candidates support only an AdminNotes edit.
+/// Phase E1 — resource import runs and raw records. Read-only, and deliberately narrowed further
+/// in Phase 4.2: the file-upload Import action, the AI column-mapping "propose" action, and the
+/// batch candidate-analysis action all moved behind the mandatory Import Execution Plan gate (see
+/// <c>AdminImportPackageController</c>/<c>ImportPackageProcessingService</c>) — every one of them
+/// used to be able to create or AI-enrich candidates without any plan/approval, which is exactly
+/// the ungated path the Phase 4.1 audit flagged. This controller can no longer create, mutate, or
+/// AI-analyze anything.
 /// </summary>
 [ApiController]
 [Route("api/admin/resource-import-runs")]
@@ -21,26 +25,17 @@ public sealed class AdminResourceImportController : ControllerBase
     private readonly IAdminResourceImportRunGetQuery _runGetQuery;
     private readonly IAdminResourceRawRecordListQuery _rawRecordListQuery;
     private readonly IAdminResourceRawRecordGetQuery _rawRecordGetQuery;
-    private readonly IResourceImportService _importService;
-    private readonly IResourceCandidateBatchAnalysisService _batchAnalysisService;
-    private readonly IResourceImportColumnMappingService _columnMappingService;
 
     public AdminResourceImportController(
         IAdminResourceImportRunListQuery runListQuery,
         IAdminResourceImportRunGetQuery runGetQuery,
         IAdminResourceRawRecordListQuery rawRecordListQuery,
-        IAdminResourceRawRecordGetQuery rawRecordGetQuery,
-        IResourceImportService importService,
-        IResourceCandidateBatchAnalysisService batchAnalysisService,
-        IResourceImportColumnMappingService columnMappingService)
+        IAdminResourceRawRecordGetQuery rawRecordGetQuery)
     {
         _runListQuery = runListQuery;
         _runGetQuery = runGetQuery;
         _rawRecordListQuery = rawRecordListQuery;
         _rawRecordGetQuery = rawRecordGetQuery;
-        _importService = importService;
-        _batchAnalysisService = batchAnalysisService;
-        _columnMappingService = columnMappingService;
     }
 
     // GET api/admin/resource-import-runs?page=1&pageSize=20&sourceId=...&status=Completed
@@ -61,80 +56,6 @@ public sealed class AdminResourceImportController : ControllerBase
         return result is null ? NotFound() : Ok(result);
     }
 
-    // POST api/admin/resource-import-runs  multipart/form-data: sourceId, importMode, file, notes?,
-    // columnRenamesJson? (Phase K1 — an admin-confirmed {"sourceColumn":"recognizedField",...} map)
-    [HttpPost]
-    [RequestSizeLimit(LinguaCoach.Infrastructure.ResourceImport.ResourceImportService.MaxFileSizeBytes)]
-    public async Task<IActionResult> Import(
-        [FromForm] Guid sourceId, [FromForm] string importMode, IFormFile file,
-        [FromForm] string? notes, [FromForm] string? columnRenamesJson, CancellationToken ct)
-    {
-        if (file is null || file.Length == 0)
-            return BadRequest(new { error = "File is required." });
-
-        if (!Enum.TryParse<ResourceImportMode>(importMode, ignoreCase: true, out var mode))
-            return BadRequest(new { error = $"Unsupported import mode '{importMode}'. Use Csv, Json, or Jsonl." });
-
-        IReadOnlyDictionary<string, string>? columnRenames;
-        try
-        {
-            columnRenames = ParseColumnRenames(columnRenamesJson);
-        }
-        catch (JsonException)
-        {
-            return BadRequest(new { error = "columnRenamesJson is not valid JSON." });
-        }
-
-        try
-        {
-            await using var stream = file.OpenReadStream();
-            var result = await _importService.ImportAsync(new ResourceImportRequest(
-                sourceId, stream, file.FileName, mode, GetCurrentUserId(), notes, ColumnRenames: columnRenames), ct);
-            return Ok(result);
-        }
-        catch (ResourceImportValidationException ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
-    }
-
-    // POST api/admin/resource-import-runs/propose-mapping  multipart/form-data: importMode, file
-    // Phase K1 — AI-assisted column-mapping proposal. Parses only the header + a bounded sample of
-    // rows, never stages anything, never writes to the database. The admin reviews/confirms the
-    // result before it's ever sent back as columnRenamesJson on the real Import call above.
-    [HttpPost("propose-mapping")]
-    [RequestSizeLimit(LinguaCoach.Infrastructure.ResourceImport.ResourceImportService.MaxFileSizeBytes)]
-    public async Task<IActionResult> ProposeMapping(
-        [FromForm] string importMode, IFormFile file, CancellationToken ct)
-    {
-        if (file is null || file.Length == 0)
-            return BadRequest(new { error = "File is required." });
-
-        if (!Enum.TryParse<ResourceImportMode>(importMode, ignoreCase: true, out var mode))
-            return BadRequest(new { error = $"Unsupported import mode '{importMode}'. Use Csv, Json, or Jsonl." });
-
-        string fileText;
-        using (var reader = new StreamReader(file.OpenReadStream()))
-            fileText = await reader.ReadToEndAsync(ct);
-
-        (IReadOnlyList<string> Columns, IReadOnlyList<IReadOnlyDictionary<string, string?>> SampleRows) sample;
-        try
-        {
-            sample = _importService.ParseSample(fileText, mode);
-        }
-        catch (Exception ex) when (ex is JsonException or FormatException)
-        {
-            return BadRequest(new { error = $"File could not be parsed as {mode}: {ex.Message}" });
-        }
-
-        var result = await _columnMappingService.ProposeMappingAsync(
-            new ResourceImportColumnMappingRequest(sample.Columns, sample.SampleRows), ct);
-        return Ok(result);
-    }
-
-    private static IReadOnlyDictionary<string, string>? ParseColumnRenames(string? json) =>
-        string.IsNullOrWhiteSpace(json) ? null : JsonSerializer.Deserialize<Dictionary<string, string>>(json);
-
     // GET api/admin/resource-import-runs/{runId}/raw-records?page=1&pageSize=50&extractionStatus=Rejected
     [HttpGet("{runId:guid}/raw-records")]
     public async Task<IActionResult> ListRawRecords(
@@ -154,23 +75,6 @@ public sealed class AdminResourceImportController : ControllerBase
         return result is null ? NotFound() : Ok(result);
     }
 
-    // POST api/admin/resource-import-runs/{runId}/candidates/analyze
-    // Phase E2 — bounded-batch AI analysis + re-validation of all not-yet-analyzed candidates for
-    // this run. Capped at IResourceCandidateBatchAnalysisService's MaxCandidatesPerBatch (50) per
-    // call — this is deliberately synchronous/batched, not a background job (see that service's
-    // doc comment for why). Re-run the same call to sweep the next batch if the cap was reached.
-    [HttpPost("{runId:guid}/candidates/analyze")]
-    public async Task<IActionResult> AnalyzePendingCandidates(Guid runId, CancellationToken ct)
-    {
-        var result = await _batchAnalysisService.AnalyzePendingForRunAsync(runId, ct);
-        return Ok(result);
-    }
-
-    private Guid? GetCurrentUserId()
-    {
-        var raw = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
-        return Guid.TryParse(raw, out var id) ? id : null;
-    }
 }
 
 /// <summary>
@@ -480,27 +384,6 @@ public sealed class AdminResourceCandidateController : ControllerBase
         }
     }
 
-    // POST api/admin/resource-candidates/{candidateId}/approve-and-publish  { notes? }
-    // Phase I1 — the single-click unified pipeline action: approves (idempotent — a no-op re-set
-    // of ReviewStatus if already Approved) then immediately publishes. PublishAsync already
-    // re-validates every other gate live (English-only, source approval/license, deterministic
-    // validation), so approval was the only precondition a separate click used to gate — this
-    // collapses that into one admin action without skipping any check.
-    [HttpPost("{candidateId:guid}/approve-and-publish")]
-    public async Task<IActionResult> ApproveAndPublish(Guid candidateId, [FromBody] ApproveCandidateRequest request, CancellationToken ct)
-    {
-        try
-        {
-            await _approveHandler.HandleAsync(new ApproveResourceCandidateCommand(candidateId, request.Notes), ct);
-            var result = await _publishService.PublishAsync(candidateId, GetCurrentUserId(), ct);
-            return Ok(result);
-        }
-        catch (ResourceImportValidationException ex)
-        {
-            return NotFound(new { error = ex.Message });
-        }
-    }
-
     // POST api/admin/resource-candidates/batch/approve  { candidateIds: [...], notes? }
     // Phase K2 — batch admin approval over an explicit set of candidates (the current filtered
     // page's selection). Never publishes anything by itself.
@@ -541,19 +424,6 @@ public sealed class AdminResourceCandidateController : ControllerBase
     {
         var result = await _batchActionService.SkipAsync(
             new BatchSkipResourceCandidatesCommand(request.CandidateIds, request.Reason), ct);
-        return Ok(result);
-    }
-
-    // POST api/admin/resource-candidates/batch/approve-and-publish  { candidateIds: [...], notes? }
-    // Phase K2 — the batch equivalent of the single-item approve-and-publish action: approves then
-    // immediately publishes each candidate, continue-on-error per item. A candidate whose
-    // ValidationStatus is Failed/Pending fails its own item with the specific blocking error — see
-    // ResourceCandidatePublishService's gate — it never silently skips or force-publishes it.
-    [HttpPost("batch/approve-and-publish")]
-    public async Task<IActionResult> BatchApproveAndPublish([FromBody] BatchCandidateIdsRequest request, CancellationToken ct)
-    {
-        var result = await _batchActionService.ApproveAndPublishAsync(
-            new BatchApproveAndPublishResourceCandidatesCommand(request.CandidateIds, request.Notes), GetCurrentUserId(), ct);
         return Ok(result);
     }
 

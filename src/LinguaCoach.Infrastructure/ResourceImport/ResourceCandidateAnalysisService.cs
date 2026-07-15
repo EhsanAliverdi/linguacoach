@@ -58,6 +58,25 @@ public sealed class ResourceCandidateAnalysisService : IResourceCandidateAnalysi
 
         var (candidate, rawRecord, source) = loaded.Value;
 
+        // ── Phase 4.2 — AI enrichment invariant: a candidate may only be analyzed if it traces
+        // back to an Import Package whose Import Execution Plan was approved. Defense-in-depth —
+        // the only caller left in this codebase (ImportPackageProcessingService, via the batch
+        // service) already only runs post-approval, but this keeps the invariant enforced at the
+        // application-service level too, not just by "nothing else calls this anymore." ──
+        var hasApprovedPlanProvenance = await (
+            from r in _db.ResourceImportRuns
+            where r.Id == rawRecord.ResourceImportRunId && r.ImportPackageId != null
+            join p in _db.ImportPackages on r.ImportPackageId equals p.Id
+            select p.ApprovedImportProfileId != null)
+            .FirstOrDefaultAsync(ct);
+        if (!hasApprovedPlanProvenance)
+        {
+            return await FailGracefullyAsync(
+                candidate,
+                "This candidate has no Import Package with an approved Import Execution Plan — AI analysis is blocked.",
+                null, null, ct);
+        }
+
         var variables = new Dictionary<string, string>
         {
             ["candidateType"] = candidate.CandidateType.ToString(),

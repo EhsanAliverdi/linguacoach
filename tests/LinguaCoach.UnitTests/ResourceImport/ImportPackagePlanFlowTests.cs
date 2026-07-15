@@ -54,11 +54,14 @@ public sealed class ImportPackagePlanFlowTests : IDisposable
         var aiExecution = new AiExecutionService(
             _db, new FakeAiProviderResolver(_aiProvider), new NeverCalledUsageQuotaService(), NullLogger<AiExecutionService>.Instance);
         var pricingResolver = new AiPricingResolver(_db, new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
+        var resourceImportService = new ResourceImportService(_db, new LinguaCoach.Infrastructure.Activity.ActivityContentFingerprintService());
+        var columnMappingService = new ResourceImportColumnMappingService(
+            new DbPromptAiContextBuilder(_db), aiExecution, NullLogger<ResourceImportColumnMappingService>.Instance);
 
         _uploadService = new ImportPackageUploadService(_db, _storage, inspector, Options.Create(_limits));
         _planGenerationService = new ImportExecutionPlanGenerationService(
             _db, inspector, modeDecision, new DbPromptAiContextBuilder(_db), aiExecution, pricingResolver,
-            new NoOpNotificationService(),
+            new NoOpNotificationService(), _storage, resourceImportService, columnMappingService,
             Options.Create(_limits), Options.Create(_costOptions), NullLogger<ImportExecutionPlanGenerationService>.Instance);
         _approvalService = new ImportExecutionPlanApprovalService(_db);
     }

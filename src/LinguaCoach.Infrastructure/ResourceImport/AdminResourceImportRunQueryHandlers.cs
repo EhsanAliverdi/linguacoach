@@ -29,11 +29,14 @@ public sealed class AdminResourceImportRunListQueryHandler : IAdminResourceImpor
         var totalCount = await filtered.CountAsync(ct);
         var overallTotalCount = await _db.ResourceImportRuns.CountAsync(ct);
 
-        var runs = await filtered
+        // Ordered client-side, not via OrderBy in the query — SQLite (every test project's DB per
+        // this codebase's convention) cannot translate ORDER BY on a DateTimeOffset column. Same
+        // fix already applied in ImportPackageProcessingService.ProcessPendingAsync.
+        var runs = (await filtered.ToListAsync(ct))
             .OrderByDescending(r => r.StartedAtUtc)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .ToListAsync(ct);
+            .ToList();
 
         var sourceIds = runs.Select(r => r.CefrResourceSourceId).Distinct().ToList();
         var sourceNames = await _db.CefrResourceSources

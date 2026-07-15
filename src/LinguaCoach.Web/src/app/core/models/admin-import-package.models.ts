@@ -80,6 +80,17 @@ export interface ImportExecutionPlanDecision {
   reason: string;
 }
 
+/** Phase 4.2 (Part F) — real column-mapping preview for a structured (CSV/JSON/JSONL) asset,
+ *  built only for inline (paste/file, non-ZIP) packages. */
+export interface ImportExecutionPlanStructuredMappingPreview {
+  assetRelativePath: string;
+  detectedColumns: string[];
+  proposedMapping: Record<string, string>;
+  ignoredColumns: string[];
+  expectedRecordCount: number;
+  warnings: string[];
+}
+
 export interface ImportExecutionPlanEstimate {
   detectedGroups: ImportExecutionPlanDetectedGroup[];
   ambiguousGroups: string[];
@@ -91,6 +102,7 @@ export interface ImportExecutionPlanEstimate {
   proposedDecisions: ImportExecutionPlanDecision[];
   samplingRoundsUsed: number;
   structureConfidence: number;
+  structuredMappingPreviews: ImportExecutionPlanStructuredMappingPreview[];
 }
 
 export type ImportProfileStatus =

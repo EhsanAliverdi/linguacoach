@@ -205,22 +205,8 @@ public sealed class AdminExerciseEndpointTests : IClassFixture<ApiTestFactory>
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    [Fact]
-    public async Task Existing_H2_content_import_endpoint_still_works()
-    {
-        var token = await _factory.CreateAdminAndGetTokenAsync();
-        var client = _factory.CreateClient();
-        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-
-        var response = await client.PostAsJsonAsync("/api/admin/content-imports", new
-        {
-            sourceName = $"H4 Regression Source {Guid.NewGuid():N}",
-            resourceType = "vocabulary",
-            inputMode = "pasted_text",
-            content = "regressionword",
-        });
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-    }
+    // Phase 4.2 — the H2 content-imports endpoint this regression test targeted was removed (see
+    // AdminResourceImportEndpointTests for the replacement plan-gated pipeline coverage).
 
     [Fact]
     public async Task Existing_H3_lesson_endpoints_still_work()

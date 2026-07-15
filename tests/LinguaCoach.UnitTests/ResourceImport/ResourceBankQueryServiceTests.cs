@@ -52,9 +52,31 @@ public sealed class ResourceBankQueryServiceTests : IDisposable
         return source;
     }
 
+    /// <summary>Phase 4.2 — every publishable candidate must trace back to an ImportPackage with
+    /// an approved Import Execution Plan.</summary>
+    private Guid SeedApprovedPackage(CefrResourceSource source)
+    {
+        var package = new ImportPackage(source.Id, "test-package", DateTimeOffset.UtcNow);
+        _db.ImportPackages.Add(package);
+        _db.SaveChanges();
+
+        var plan = new ImportProfile(
+            package.Id, 1, profileJson: "{}", sampleAssetIds: Array.Empty<Guid>(),
+            estimatedCandidateCount: 1, createdAtUtc: DateTimeOffset.UtcNow);
+        plan.SubmitForApproval();
+        plan.Approve(null, DateTimeOffset.UtcNow, 100m);
+        _db.ImportProfiles.Add(plan);
+        package.ApproveProfile(plan.Id);
+        _db.SaveChanges();
+
+        return package.Id;
+    }
+
     private (ResourceImportRun Run, ResourceRawRecord Raw) SeedRunAndRaw(CefrResourceSource source, string rawJson)
     {
-        var run = new ResourceImportRun(source.Id, ResourceImportMode.Csv, "test.csv", $"filehash-{Guid.NewGuid():N}", DateTimeOffset.UtcNow);
+        var run = new ResourceImportRun(
+            source.Id, ResourceImportMode.Csv, "test.csv", $"filehash-{Guid.NewGuid():N}", DateTimeOffset.UtcNow,
+            importPackageId: SeedApprovedPackage(source));
         _db.ResourceImportRuns.Add(run);
         _db.SaveChanges();
 

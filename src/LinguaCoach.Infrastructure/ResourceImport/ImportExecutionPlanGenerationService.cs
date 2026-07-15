@@ -2,6 +2,7 @@ using System.Text.Json;
 using LinguaCoach.Application.Ai;
 using LinguaCoach.Application.Notifications;
 using LinguaCoach.Application.ResourceImport;
+using LinguaCoach.Application.Storage;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.Ai;
@@ -32,6 +33,9 @@ internal sealed class ImportExecutionPlanGenerationService : IImportExecutionPla
     private static readonly HashSet<string> StructuredDataExtensions = new(StringComparer.OrdinalIgnoreCase)
         { ".csv", ".json" };
 
+    private static readonly HashSet<string> StructuredMappingPreviewExtensions =
+        new(StringComparer.OrdinalIgnoreCase) { ".csv", ".json", ".jsonl" };
+
     private readonly LinguaCoachDbContext _db;
     private readonly IZipPackageInspector _inspector; // unused directly, kept for future re-inspection hooks
     private readonly IImportProcessingModeDecisionService _modeDecision;
@@ -39,6 +43,9 @@ internal sealed class ImportExecutionPlanGenerationService : IImportExecutionPla
     private readonly AiExecutionService _aiExecution;
     private readonly IAiPricingResolver _pricingResolver;
     private readonly INotificationService _notifications;
+    private readonly IFileStorageService _storage;
+    private readonly IResourceImportService _resourceImportService;
+    private readonly IResourceImportColumnMappingService _columnMappingService;
     private readonly ImportPackageLimitsOptions _limits;
     private readonly ImportCostEstimationOptions _costOptions;
     private readonly ILogger<ImportExecutionPlanGenerationService> _logger;
@@ -51,6 +58,9 @@ internal sealed class ImportExecutionPlanGenerationService : IImportExecutionPla
         AiExecutionService aiExecution,
         IAiPricingResolver pricingResolver,
         INotificationService notifications,
+        IFileStorageService storage,
+        IResourceImportService resourceImportService,
+        IResourceImportColumnMappingService columnMappingService,
         IOptions<ImportPackageLimitsOptions> limits,
         IOptions<ImportCostEstimationOptions> costOptions,
         ILogger<ImportExecutionPlanGenerationService> logger)
@@ -62,6 +72,9 @@ internal sealed class ImportExecutionPlanGenerationService : IImportExecutionPla
         _aiExecution = aiExecution;
         _pricingResolver = pricingResolver;
         _notifications = notifications;
+        _storage = storage;
+        _resourceImportService = resourceImportService;
+        _columnMappingService = columnMappingService;
         _limits = limits.Value;
         _costOptions = costOptions.Value;
         _logger = logger;
@@ -102,9 +115,17 @@ internal sealed class ImportExecutionPlanGenerationService : IImportExecutionPla
         var risks = BuildRisks(manifest, ambiguousGroups, unsupportedNotes, volume);
         var decisions = BuildProposedDecisions(volume);
 
+        // ── Part F — a real structured-file mapping preview. Only buildable for inline
+        // (non-ZIP) packages: those are the only ones whose ImportAsset rows already exist at
+        // plan-generation time (a ZIP package's assets aren't materialized until the approved
+        // plan's Extract stage runs). ZIP packages keep their pre-existing behavior unchanged. ──
+        var structuredMappingPreviews = string.IsNullOrEmpty(package.ArchiveStorageKey)
+            ? await BuildStructuredMappingPreviewsAsync(package.Id, ct)
+            : Array.Empty<ImportExecutionPlanStructuredMappingPreview>();
+
         var estimate = new ImportExecutionPlanEstimate(
             groups, ambiguousGroups, unsupportedNotes, volume, time, cost, risks, decisions,
-            roundsUsed, structureConfidence);
+            roundsUsed, structureConfidence, structuredMappingPreviews);
 
         // ── Versioning (Part 7) — supersede any prior not-yet-executed plan for this package. ──
         var priorPlans = await _db.ImportProfiles
@@ -359,6 +380,66 @@ internal sealed class ImportExecutionPlanGenerationService : IImportExecutionPla
         {
             return null;
         }
+    }
+
+    // ── Part F — structured file mapping preview (inline packages only) ────────────────────────
+
+    private async Task<IReadOnlyList<ImportExecutionPlanStructuredMappingPreview>> BuildStructuredMappingPreviewsAsync(
+        Guid packageId, CancellationToken ct)
+    {
+        var assets = await _db.ImportAssets
+            .Where(a => a.ImportPackageId == packageId && StructuredMappingPreviewExtensions.Contains(a.FileExtension))
+            .ToListAsync(ct);
+
+        var previews = new List<ImportExecutionPlanStructuredMappingPreview>();
+        foreach (var asset in assets)
+        {
+            try
+            {
+                await using var stream = await _storage.ReadAsync(asset.StorageKey, ct);
+                using var reader = new StreamReader(stream);
+                var fileText = await reader.ReadToEndAsync(ct);
+
+                var mode = asset.FileExtension.Equals(".csv", StringComparison.OrdinalIgnoreCase) ? ResourceImportMode.Csv
+                    : asset.FileExtension.Equals(".jsonl", StringComparison.OrdinalIgnoreCase) ? ResourceImportMode.Jsonl
+                    : ResourceImportMode.Json;
+
+                var sample = _resourceImportService.ParseSample(fileText, mode, sampleSize: 5);
+                var warnings = new List<string>();
+
+                var mapping = new Dictionary<string, string>();
+                var ignored = new List<string>();
+                try
+                {
+                    var proposal = await _columnMappingService.ProposeMappingAsync(
+                        new ResourceImportColumnMappingRequest(sample.Columns, sample.SampleRows), ct);
+                    foreach (var s in proposal.Suggestions)
+                    {
+                        if (s.SuggestedField is not null) mapping[s.SourceColumn] = s.SuggestedField;
+                        else ignored.Add(s.SourceColumn);
+                    }
+                    if (!proposal.Success)
+                        warnings.Add("AI mapping suggestion was unavailable — columns will be read using their own names as-is.");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Structured mapping preview: AI proposal failed for asset {AssetId} (non-blocking).", asset.Id);
+                    warnings.Add("AI mapping suggestion was unavailable — columns will be read using their own names as-is.");
+                }
+
+                previews.Add(new ImportExecutionPlanStructuredMappingPreview(
+                    asset.RelativePath, sample.Columns, mapping, ignored, sample.SampleRows.Count, warnings));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Structured mapping preview: could not parse asset {AssetId} (non-blocking).", asset.Id);
+                previews.Add(new ImportExecutionPlanStructuredMappingPreview(
+                    asset.RelativePath, Array.Empty<string>(), new Dictionary<string, string>(), Array.Empty<string>(), 0,
+                    new[] { $"Could not parse this file for a mapping preview: {ex.Message}" }));
+            }
+        }
+
+        return previews;
     }
 
     // ── Part 4 — volume / time / cost estimation ────────────────────────────────────────────

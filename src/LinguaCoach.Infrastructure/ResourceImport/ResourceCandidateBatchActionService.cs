@@ -73,24 +73,6 @@ public sealed class ResourceCandidateBatchActionService : IResourceCandidateBatc
         return await PublishManyAsync(ids, limitReached, publishedByUserId, ct);
     }
 
-    public async Task<BatchResourceCandidateActionResult> ApproveAndPublishAsync(
-        BatchApproveAndPublishResourceCandidatesCommand command, Guid? publishedByUserId, CancellationToken ct = default)
-    {
-        var (ids, limitReached) = Bound(command.CandidateIds);
-
-        // Approve first (idempotent no-op if already Approved), continue-on-error per id — a
-        // candidate that fails to approve (e.g. not found) is still attempted for publish below so
-        // its failure reason comes from the more specific publish gate rather than being silently
-        // dropped, matching AdminResourceCandidateController.ApproveAndPublish's single-item shape.
-        foreach (var id in ids)
-        {
-            try { await _approveHandler.HandleAsync(new ApproveResourceCandidateCommand(id, command.Notes), ct); }
-            catch (ResourceImportValidationException) { /* surfaced by the publish attempt below */ }
-        }
-
-        return await PublishManyAsync(ids, limitReached, publishedByUserId, ct);
-    }
-
     private async Task<BatchResourceCandidateActionResult> PublishManyAsync(
         IReadOnlyList<Guid> ids, bool limitReached, Guid? publishedByUserId, CancellationToken ct)
     {

@@ -154,17 +154,5 @@ internal sealed class ImportPackageUploadService : IImportPackageUploadService
     }
 
     private static ImportPackageManifestSummaryDto ToSummary(ImportPackage package, ImportPackageManifest manifest) =>
-        new(
-            package.Id,
-            package.Status,
-            manifest.IsAccepted,
-            manifest.RejectionReason,
-            manifest.CompressedSizeBytes,
-            manifest.ExpandedSizeBytes,
-            manifest.EntryCount,
-            manifest.FolderGroups,
-            manifest.DistinctExtensions,
-            manifest.DuplicateChecksumEntries.Count,
-            manifest.UnsupportedEntries.Count,
-            manifest.SuspiciousEntries.Count);
+        ImportPackageManifestSummaryMapper.ToSummary(package, manifest);
 }

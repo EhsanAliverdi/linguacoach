@@ -12,10 +12,8 @@ import {
   AdminResourceRawRecordListResult,
   AdminResourceCandidateDto,
   AdminResourceCandidateListResult,
-  ResourceImportResult,
   ResourceCandidateAnalyzeResponse,
   ResourceCandidateValidationResult,
-  ResourceCandidateBatchAnalysisResult,
   ResourceCandidatePreviewDto,
   ResourceCandidatePublishResult,
   UnifiedResourceBankListResult,
@@ -24,12 +22,8 @@ import {
   ResourceBankArchiveResult,
   ResourceBankItemEditDto,
   UpdateResourceBankItemRequest,
-  ContentImportInputMode,
-  ContentImportRequestBody,
-  ContentImportResult,
   ResourceCandidateAudioUploadResult,
   ResourceCandidateAudioUrlResult,
-  ResourceImportColumnMappingResult,
   AdminResourceCandidateReviewSummaryDto,
   BatchResourceCandidateActionResult,
   ResourceBankItemRepairResult,
@@ -90,38 +84,10 @@ export class AdminResourceImportRunService {
     return this.http.get<AdminResourceImportRunDto>(`${this.base}/${runId}`);
   }
 
-  import(
-    sourceId: string, importMode: string, file: File, notes?: string,
-    columnRenames?: Record<string, string> | null,
-  ): Observable<ResourceImportResult> {
-    const form = new FormData();
-    form.append('sourceId', sourceId);
-    form.append('importMode', importMode);
-    form.append('file', file, file.name);
-    if (notes) form.append('notes', notes);
-    if (columnRenames && Object.keys(columnRenames).length > 0) form.append('columnRenamesJson', JSON.stringify(columnRenames));
-    return this.http.post<ResourceImportResult>(this.base, form);
-  }
-
-  /** Phase K1 — AI-assisted column-mapping proposal for an uploaded file. Never stages anything;
-   *  the admin reviews/confirms before the mapping is ever sent back via import()'s columnRenames. */
-  proposeMapping(importMode: string, file: File): Observable<ResourceImportColumnMappingResult> {
-    const form = new FormData();
-    form.append('importMode', importMode);
-    form.append('file', file, file.name);
-    return this.http.post<ResourceImportColumnMappingResult>(`${this.base}/propose-mapping`, form);
-  }
-
   listRawRecords(runId: string, page = 1, pageSize = 50, extractionStatus?: string): Observable<AdminResourceRawRecordListResult> {
     let params = new HttpParams().set('page', page).set('pageSize', pageSize);
     if (extractionStatus && extractionStatus !== 'all') params = params.set('extractionStatus', extractionStatus);
     return this.http.get<AdminResourceRawRecordListResult>(`${this.base}/${runId}/raw-records`, { params });
-  }
-
-  /** Phase E2 — bounded-batch AI analysis + re-validation of all not-yet-analyzed candidates
-   *  for this run (capped server-side; re-call to sweep the next batch if the cap was hit). */
-  analyzePendingCandidates(runId: string): Observable<ResourceCandidateBatchAnalysisResult> {
-    return this.http.post<ResourceCandidateBatchAnalysisResult>(`${this.base}/${runId}/candidates/analyze`, {});
   }
 }
 
@@ -210,13 +176,6 @@ export class AdminResourceCandidateService {
     return this.http.post<ResourceCandidatePublishResult>(`${this.base}/${candidateId}/publish`, {});
   }
 
-  /** Phase I1 — the single-click unified pipeline action: approves then immediately publishes.
-   *  Same result shape/semantics as publish() — a failed attempt returns 200 with a reasons list. */
-  approveAndPublish(candidateId: string, notes?: string | null): Observable<ResourceCandidatePublishResult> {
-    return this.http.post<ResourceCandidatePublishResult>(
-      `${this.base}/${candidateId}/approve-and-publish`, { notes: notes ?? null });
-  }
-
   /** Phase J5c — uploads the real audio file backing a ListeningPassage candidate. Publish is
    *  blocked server-side until this has run at least once. */
   uploadAudio(candidateId: string, audioFile: File): Observable<ResourceCandidateAudioUploadResult> {
@@ -249,13 +208,6 @@ export class AdminResourceCandidateService {
    *  published candidates in the request are a safe no-op (see result.alreadyPublishedCount). */
   batchPublish(candidateIds: string[]): Observable<BatchResourceCandidateActionResult> {
     return this.http.post<BatchResourceCandidateActionResult>(`${this.base}/batch/publish`, { candidateIds });
-  }
-
-  /** Phase K2 — the batch equivalent of approveAndPublish(): approves then publishes each
-   *  candidate, continue-on-error per item — see result.items for per-candidate outcomes. */
-  batchApproveAndPublish(candidateIds: string[], notes?: string | null): Observable<BatchResourceCandidateActionResult> {
-    return this.http.post<BatchResourceCandidateActionResult>(
-      `${this.base}/batch/approve-and-publish`, { candidateIds, notes: notes ?? null });
   }
 
   /** Phase 3 — batch admin rejection over an explicit set of candidates. Reason is required. */
@@ -350,26 +302,5 @@ export class AdminUnifiedResourceBankService {
 
   listWithIssues(): Observable<RepairableItemSummary[]> {
     return this.http.get<RepairableItemSummary[]>(`${this.base}/with-issues`);
-  }
-}
-
-/** Phase H2 — Import Content UX v1. Wraps POST /api/admin/content-imports: paste text/CSV/JSON,
- *  choose a broad resource type + default metadata, get back pending Resource Candidates. */
-@Injectable({ providedIn: 'root' })
-export class AdminContentImportService {
-  private readonly base = `${environment.apiUrl}/admin/content-imports`;
-
-  constructor(private http: HttpClient) {}
-
-  import(body: ContentImportRequestBody): Observable<ContentImportResult> {
-    return this.http.post<ContentImportResult>(this.base, body);
-  }
-
-  /** Phase K1 — AI-assisted column-mapping proposal for pasted CSV/JSON content. Never stages
-   *  anything; the admin reviews/confirms before the mapping is ever sent back via import()'s
-   *  columnRenames. Not meaningful for 'pasted_text' mode — the backend returns a trivial success
-   *  with no suggestions for that case rather than making an AI call. */
-  proposeMapping(inputMode: ContentImportInputMode, content: string): Observable<ResourceImportColumnMappingResult> {
-    return this.http.post<ResourceImportColumnMappingResult>(`${this.base}/propose-mapping`, { inputMode, content });
   }
 }

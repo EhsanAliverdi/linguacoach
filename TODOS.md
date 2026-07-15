@@ -5,6 +5,49 @@ Each item includes context, motivation, and the phase where it was deferred.
 
 ---
 
+## Phase 4.2 — Unify all imports behind the mandatory Import Execution Plan gate (2026-07-15)
+
+### TODO-4.2-DB-PROVENANCE — Make ResourceImportRun.ImportPackageId non-nullable at the DB level
+**What:** Add an EF migration making `ResourceImportRun.ImportPackageId` (and the transitive chain
+it enables) required at the database level, not just enforced by application code.
+**Why:** Phase 4.2 enforces the "every candidate needs approved-plan provenance" invariant at the
+AI-enrichment and publish layers, but the DB column itself stays nullable — no live database
+connection was available in the session that implemented Phase 4.2 to safely audit/migrate
+existing rows.
+**Context:** Requires a real data audit first (exact counts of pre-4.2 `ResourceImportRun`/
+`ResourceCandidate` rows with `ImportPackageId == null`, and a decision on synthetic-package
+backfill vs. archival — see the Phase 4.2 review doc's "Existing development data" section for the
+priority order to use).
+**Deferred from:** Phase 4.2 engineering session, 2026-07-15.
+
+### TODO-4.2-SERVICE-LEVEL-GATE — Candidate-creation-level provenance check in ResourceImportService
+**What:** Re-add the hard `ImportPackageId`/approved-plan check to `ResourceImportService.ImportAsync`
+itself (attempted and reverted in Phase 4.2), updating `ResourceImportServiceTests.cs`'s ~26
+direct-call tests (which test parser/gate logic in isolation, predating the package concept) to
+seed valid package/plan provenance via a shared helper, matching the pattern already applied to
+`ResourceCandidatePublishServiceTests`/`ResourceCandidateReviewWorkflowTests`/
+`ResourceCandidateBatchActionServiceTests`/`ResourceBankQueryServiceTests`/
+`ResourceCandidateAnalysisServiceTests`.
+**Why:** Defense-in-depth — the invariant is already fully enforced today at the AI-enrichment and
+publish layers (nothing can reach either without valid provenance), but a future direct caller of
+`ImportAsync` that skips both would not be caught until this is added.
+**Deferred from:** Phase 4.2 engineering session, 2026-07-15 — reverted rather than shipped with an
+unverified 26-test patch under time pressure.
+
+### TODO-4.2-PLAYWRIGHT — E2E coverage for the unified Import submission flow
+**What:** Add focused Playwright specs covering: paste small content → plan page appears before
+candidate review → no candidates exist before approval → approve → background processing → review
+→ approve & publish → visible in Resource Bank; plus a single-CSV-file variant and confirmation
+that the old ungated "immediate import" UI controls are genuinely absent.
+**Why:** Zero Playwright coverage exists for any part of the import pipeline (a gap the Phase 4.1
+audit also flagged for the ZIP-only pipeline before this phase). Not added in Phase 4.2 due to
+session time constraints — prioritized real API-level integration tests instead (Phase 4 had zero).
+**Context:** Use fake AI/STT/storage providers, matching the existing integration-test convention —
+never a live billable AI call.
+**Deferred from:** Phase 4.2 engineering session, 2026-07-15.
+
+---
+
 ## Curriculum / CEFR
 
 ### TODO-001 — CEFR plus/sublevel handling (B2+)

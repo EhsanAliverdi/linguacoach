@@ -219,24 +219,6 @@ export interface ResourceCandidateAnalyzeResponse {
   validation: ResourceCandidateValidationResult;
 }
 
-export interface ResourceCandidateBatchAnalysisResult {
-  candidatesConsidered: number;
-  candidatesAnalyzed: number;
-  succeededCount: number;
-  failedCount: number;
-  batchLimitReached: boolean;
-}
-
-export interface ResourceImportResult {
-  runId: string;
-  status: string;
-  totalRecordCount: number;
-  succeededCount: number;
-  rejectedCount: number;
-  warningCount: number;
-  errorSummary: string | null;
-}
-
 // ── Phase E3 — read-only rendered preview ───────────────────────────────────────
 
 export interface ResourceCandidateSourceInfoDto {
@@ -518,111 +500,6 @@ export const UNIFIED_RESOURCE_BANK_TYPES: { value: UnifiedResourceBankItemType; 
 ];
 
 export const RESOURCE_BANK_CEFR_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
-
-// ── Phase H2 — Import Content UX v1. A product-friendly wrapper around the Phase E1 import
-// pipeline above: paste text/CSV/JSON, choose a broad resource type + default metadata, get
-// back pending ResourceCandidate rows. No AI structure detection — see the "Coming soon" types
-// below. Never publishes anything — review still happens on the Resource Candidates page. ──
-
-export type ContentImportResourceType =
-  'vocabulary' | 'grammar' | 'reading' | 'writing' | 'listening' | 'speaking' | 'mixed';
-export type ContentImportInputMode = 'pasted_text' | 'csv_text' | 'json_text';
-
-/** Phase J5a added 'writing'; Phase J5b added 'mixed' (no forced type, each row is classified
- *  independently from its own fields); Phase J5c added 'listening' (staged as title/transcript
- *  text, the real audio file is uploaded separately per-candidate from the preview drawer);
- *  Phase J5d adds 'speaking' — a text-only reference prompt (role-play/task scenario), no
- *  reference audio (see the J5d scope decision — the student's own spoken response is scored via
- *  SpeakingTurn elsewhere, unrelated to import). Closes the J5 "import content-type expansion"
- *  roadmap item — see docs/architecture/product-model-realignment-h0.md for the original H2 scope
- *  decision and the J5 roadmap entries for the full phased expansion. */
-export const CONTENT_IMPORT_RESOURCE_TYPES: { value: ContentImportResourceType; label: string }[] = [
-  { value: 'vocabulary', label: 'Vocabulary' },
-  { value: 'grammar', label: 'Grammar' },
-  { value: 'reading', label: 'Reading' },
-  { value: 'writing', label: 'Writing' },
-  { value: 'listening', label: 'Listening' },
-  { value: 'speaking', label: 'Speaking' },
-  { value: 'mixed', label: 'Mixed (auto-detect per row)' },
-];
-
-/** Empty as of Phase J5d — every content type from the original J5 scope is now implemented. */
-export const CONTENT_IMPORT_COMING_SOON_TYPES: string[] = [];
-
-export const CONTENT_IMPORT_INPUT_MODES: { value: ContentImportInputMode; label: string; hint: string }[] = [
-  { value: 'pasted_text', label: 'Pasted text (one item per line)', hint: 'Each non-empty line becomes one candidate.' },
-  { value: 'csv_text', label: 'CSV', hint: 'Paste CSV with a header row, same columns the file-upload import accepts.' },
-  { value: 'json_text', label: 'JSON', hint: 'Paste a JSON array of row objects.' },
-];
-
-export interface ContentImportRequestBody {
-  sourceName: string;
-  resourceType: ContentImportResourceType;
-  inputMode: ContentImportInputMode;
-  content: string;
-  defaultCefrLevel?: string | null;
-  defaultSkill?: string | null;
-  defaultSubskill?: string | null;
-  defaultContextTags?: string[] | null;
-  defaultFocusTags?: string[] | null;
-  defaultDifficultyBand?: number | null;
-  notes?: string | null;
-  /** Phase K1 — an admin-confirmed column rename map. */
-  columnRenames?: Record<string, string> | null;
-}
-
-export interface ContentImportResult {
-  importRunId: string;
-  sourceId: string;
-  rawRecordCount: number;
-  candidateCount: number;
-  warningCount: number;
-  status: string;
-  errorSummary: string | null;
-  reviewRoute: string;
-}
-
-// ── Phase K1 — AI-assisted import column-mapping proposal. AI proposes, the admin always reviews/
-// confirms before it's applied — see the mapping-review step in AdminContentImportComponent. ──
-
-export interface ColumnMappingSuggestion {
-  sourceColumn: string;
-  suggestedField: string | null;
-  confidence: number | null;
-}
-
-export interface ResourceImportColumnMappingResult {
-  success: boolean;
-  suggestions: ColumnMappingSuggestion[];
-  errorMessage: string | null;
-}
-
-/** Mirrors ResourceImportRecognizedFields.All (backend) — kept here so the admin review UI can
- *  offer a dropdown of every field a column could be mapped to, grouped loosely by what each is
- *  used for. */
-export const RESOURCE_IMPORT_RECOGNIZED_FIELDS: { value: string; label: string }[] = [
-  { value: 'word', label: 'word (Vocabulary)' },
-  { value: 'lemma', label: 'lemma (Vocabulary)' },
-  { value: 'headword', label: 'headword (Vocabulary)' },
-  { value: 'grammarkey', label: 'grammarKey (Grammar)' },
-  { value: 'explanation', label: 'explanation (Grammar)' },
-  { value: 'passage', label: 'passage (Reading)' },
-  { value: 'text', label: 'text (Reading/generic)' },
-  { value: 'title', label: 'title' },
-  { value: 'prompt', label: 'prompt (Writing)' },
-  { value: 'transcript', label: 'transcript (Listening)' },
-  { value: 'scenario', label: 'scenario (Speaking)' },
-  { value: 'formio', label: 'formio (Activity template)' },
-  { value: 'schema', label: 'schema (Activity template)' },
-  { value: 'template', label: 'template (Activity template)' },
-  { value: 'cefrlevel', label: 'cefrLevel' },
-  { value: 'cefr', label: 'cefr' },
-  { value: 'skill', label: 'skill' },
-  { value: 'subskill', label: 'subskill' },
-  { value: 'tags', label: 'tags' },
-  { value: 'focustags', label: 'focusTags' },
-  { value: 'difficultyband', label: 'difficultyBand' },
-];
 
 export const RESOURCE_IMPORT_MODES = ['Csv', 'Json', 'Jsonl'] as const;
 export const RESOURCE_CANDIDATE_TYPES = [

@@ -534,10 +534,6 @@ public static class DependencyInjection
         services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceImportService,
             LinguaCoach.Infrastructure.ResourceImport.ResourceImportService>();
 
-        // Phase H2 — Import Content UX v1 admin wrapper (paste text/CSV/JSON + broad type/defaults).
-        services.AddScoped<LinguaCoach.Application.ResourceImport.IContentImportService,
-            LinguaCoach.Infrastructure.ResourceImport.ContentImportService>();
-
         // Phase H3 — Lesson foundation (reviewable teaching/explanation blocks generated from
         // published Resource Bank rows).
         services.AddScoped<LinguaCoach.Application.Lessons.IAdminLessonListQuery,
@@ -691,6 +687,9 @@ public static class DependencyInjection
             LinguaCoach.Infrastructure.ResourceImport.ZipPackageInspector>();
         services.AddScoped<LinguaCoach.Application.ResourceImport.IImportPackageUploadService,
             LinguaCoach.Infrastructure.ResourceImport.ImportPackageUploadService>();
+        // Phase 4.2 — the canonical entry point for pasted text and/or loose (non-ZIP) files.
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IImportPackageSubmissionService,
+            LinguaCoach.Infrastructure.ResourceImport.ImportPackageSubmissionService>();
         services.AddScoped<LinguaCoach.Application.ResourceImport.IImportProcessingModeDecisionService,
             LinguaCoach.Infrastructure.ResourceImport.ImportProcessingModeDecisionService>();
 

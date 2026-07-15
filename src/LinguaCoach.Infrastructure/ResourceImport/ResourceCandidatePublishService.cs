@@ -92,6 +92,28 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
 
         var errors = new List<string>();
 
+        // ── Phase 4.2 — mandatory Import Execution Plan provenance gate. Every candidate this
+        // codebase can still create comes from ImportPackageProcessingService, which only ever
+        // runs against a package with an Approved/Executing plan — so a candidate whose run has
+        // no ImportPackageId, or whose package never had a plan approved, has no legitimate
+        // provenance and must never publish, regardless of its own ValidationStatus/ReviewStatus. ──
+        if (loaded.Run.ImportPackageId is not { } packageId)
+        {
+            errors.Add(
+                "This candidate's Import Run has no associated Import Package — it cannot be traced to an " +
+                "approved Import Execution Plan and cannot be published.");
+        }
+        else
+        {
+            var package = await _db.ImportPackages.AsNoTracking().FirstOrDefaultAsync(p => p.Id == packageId, ct);
+            if (package?.ApprovedImportProfileId is null)
+            {
+                errors.Add(
+                    "This candidate's Import Package has no approved Import Execution Plan — publishing is " +
+                    "blocked until the plan that governs this import is approved.");
+            }
+        }
+
         // ── Gate: English-only, re-checked live (defense-in-depth; never trust the stored
         // LanguageCode/ValidationStatus alone — this mirrors ResourceCandidateValidationService's
         // own check exactly, run again here rather than assumed still true). ──

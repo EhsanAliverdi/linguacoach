@@ -26,6 +26,19 @@ export class AdminImportPackageService {
     });
   }
 
+  /** Phase 4.2 — the canonical entry point for pasted text and/or loose (non-ZIP) files. Creates
+   *  the ImportPackage + its assets + an accepted manifest synchronously; never creates a
+   *  candidate and never calls AI. */
+  submit(cefrResourceSourceId: string, pastedText: string | null, files: File[], notes?: string):
+    Observable<ImportPackageManifestSummaryDto> {
+    const form = new FormData();
+    form.append('cefrResourceSourceId', cefrResourceSourceId);
+    if (pastedText) form.append('pastedText', pastedText);
+    for (const file of files) form.append('files', file, file.name);
+    if (notes) form.append('notes', notes);
+    return this.http.post<ImportPackageManifestSummaryDto>(`${this.base}/submit`, form);
+  }
+
   /** Uploads directly to storage via the presigned URL — never through the API, so large
    *  archives never hit Kestrel's request-body size limits. */
   putToStorage(uploadUrl: string, file: File): Observable<unknown> {

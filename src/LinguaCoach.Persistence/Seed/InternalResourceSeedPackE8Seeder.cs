@@ -71,10 +71,18 @@ public static class InternalResourceSeedPackE8Seeder
         db.CefrResourceSources.Add(source);
         await db.SaveChangesAsync(ct);
 
-        var vocabularyRun = await ImportAsync(importService, source.Id, VocabularyJson, "e8-vocabulary.json", ct);
-        var grammarRun = await ImportAsync(importService, source.Id, GrammarJson, "e8-grammar.json", ct);
-        var readingRun = await ImportAsync(importService, source.Id, ReadingReferenceJson, "e8-reading-references.json", ct);
-        var readingPassageRun = await ImportAsync(importService, source.Id, ReadingPassageJson, "e8-reading-passages.json", ct);
+        // Phase 4.2 — every publishable candidate must trace back to an ImportPackage with an
+        // approved Import Execution Plan. This seeder is internal, pre-reviewed system content
+        // (not an admin-submitted import), so it creates its own package + self-approved plan the
+        // same way it already self-approves the source and each candidate below via the real
+        // domain methods — never a backdoor around the gate, just the seeder acting as its own
+        // "administrator" for controlled internal content it is solely responsible for.
+        var importPackageId = await SeedApprovedPackageAsync(db, source.Id, ct);
+
+        var vocabularyRun = await ImportAsync(importService, source.Id, VocabularyJson, "e8-vocabulary.json", importPackageId, ct);
+        var grammarRun = await ImportAsync(importService, source.Id, GrammarJson, "e8-grammar.json", importPackageId, ct);
+        var readingRun = await ImportAsync(importService, source.Id, ReadingReferenceJson, "e8-reading-references.json", importPackageId, ct);
+        var readingPassageRun = await ImportAsync(importService, source.Id, ReadingPassageJson, "e8-reading-passages.json", importPackageId, ct);
 
         logger.LogInformation(
             "InternalResourceSeedPackE8Seeder: staged vocabulary {VocabSucceeded}/{VocabTotal}, " +
@@ -132,11 +140,35 @@ public static class InternalResourceSeedPackE8Seeder
     }
 
     private static async Task<ResourceImportResult> ImportAsync(
-        IResourceImportService importService, Guid sourceId, string json, string fileName, CancellationToken ct)
+        IResourceImportService importService, Guid sourceId, string json, string fileName,
+        Guid importPackageId, CancellationToken ct)
     {
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
         return await importService.ImportAsync(
-            new ResourceImportRequest(sourceId, stream, fileName, ResourceImportMode.Json), ct);
+            new ResourceImportRequest(sourceId, stream, fileName, ResourceImportMode.Json, ImportPackageId: importPackageId), ct);
+    }
+
+    /// <summary>Phase 4.2 — self-contained package + self-approved plan for this seeder's own
+    /// internal content, so its resulting candidates satisfy the mandatory publish-provenance
+    /// gate. ApprovedByUserId is left null (no human administrator approved this — the seeder
+    /// itself, running as trusted system code, did).</summary>
+    private static async Task<Guid> SeedApprovedPackageAsync(LinguaCoachDbContext db, Guid sourceId, CancellationToken ct)
+    {
+        var package = new LinguaCoach.Domain.Entities.ImportPackage(sourceId, SourceName, DateTimeOffset.UtcNow);
+        db.ImportPackages.Add(package);
+        await db.SaveChangesAsync(ct);
+
+        var plan = new LinguaCoach.Domain.Entities.ImportProfile(
+            package.Id, 1, profileJson: "{}", sampleAssetIds: Array.Empty<Guid>(),
+            estimatedCandidateCount: 1, createdAtUtc: DateTimeOffset.UtcNow,
+            changeReason: null);
+        plan.SubmitForApproval();
+        plan.Approve(approvedByUserId: null, DateTimeOffset.UtcNow, approvedCostCeiling: 0m);
+        db.ImportProfiles.Add(plan);
+        package.ApproveProfile(plan.Id);
+        await db.SaveChangesAsync(ct);
+
+        return package.Id;
     }
 
     // ── Seed content ────────────────────────────────────────────────────────────────

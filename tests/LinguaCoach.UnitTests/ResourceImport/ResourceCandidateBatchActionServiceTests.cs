@@ -55,9 +55,31 @@ public sealed class ResourceCandidateBatchActionServiceTests : IDisposable
         return source;
     }
 
+    /// <summary>Phase 4.2 — every publishable candidate must trace back to an ImportPackage with
+    /// an approved Import Execution Plan.</summary>
+    private Guid SeedApprovedPackage(CefrResourceSource source)
+    {
+        var package = new ImportPackage(source.Id, "test-package", DateTimeOffset.UtcNow);
+        _db.ImportPackages.Add(package);
+        _db.SaveChanges();
+
+        var plan = new ImportProfile(
+            package.Id, 1, profileJson: "{}", sampleAssetIds: Array.Empty<Guid>(),
+            estimatedCandidateCount: 1, createdAtUtc: DateTimeOffset.UtcNow);
+        plan.SubmitForApproval();
+        plan.Approve(null, DateTimeOffset.UtcNow, 100m);
+        _db.ImportProfiles.Add(plan);
+        package.ApproveProfile(plan.Id);
+        _db.SaveChanges();
+
+        return package.Id;
+    }
+
     private ResourceRawRecord SeedRaw(CefrResourceSource source, string rawJson)
     {
-        var run = new ResourceImportRun(source.Id, ResourceImportMode.Csv, "test.csv", $"filehash-{Guid.NewGuid():N}", DateTimeOffset.UtcNow);
+        var run = new ResourceImportRun(
+            source.Id, ResourceImportMode.Csv, "test.csv", $"filehash-{Guid.NewGuid():N}", DateTimeOffset.UtcNow,
+            importPackageId: SeedApprovedPackage(source));
         _db.ResourceImportRuns.Add(run);
         _db.SaveChanges();
 
@@ -92,44 +114,9 @@ public sealed class ResourceCandidateBatchActionServiceTests : IDisposable
         return candidate;
     }
 
-    [Fact]
-    public async Task Batch_approve_and_publish_succeeds_for_a_mix_of_Passed_and_NeedsReview_candidates()
-    {
-        var source = SeedSource();
-        var passed = SeedCandidate(source, "hello", ResourceCandidateValidationStatus.Passed, approve: false);
-        var needsReview = SeedCandidate(source, "world", ResourceCandidateValidationStatus.NeedsReview, approve: false);
-
-        var result = await _sut.ApproveAndPublishAsync(
-            new BatchApproveAndPublishResourceCandidatesCommand(new[] { passed.Id, needsReview.Id }), null);
-
-        result.RequestedCount.Should().Be(2);
-        result.SucceededCount.Should().Be(2);
-        result.FailedCount.Should().Be(0);
-        result.Items.Should().OnlyContain(i => i.Success);
-
-        (await _db.ResourceCandidates.CountAsync(c => c.IsPublished)).Should().Be(2);
-        (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.Vocabulary)).Should().Be(2);
-    }
-
-    [Fact]
-    public async Task Batch_approve_and_publish_fails_only_the_hard_blocked_candidate_continue_on_error()
-    {
-        var source = SeedSource();
-        var needsReview = SeedCandidate(source, "hello", ResourceCandidateValidationStatus.NeedsReview, approve: false);
-        var failed = SeedCandidate(source, "bonjour", ResourceCandidateValidationStatus.Failed, approve: false);
-
-        var result = await _sut.ApproveAndPublishAsync(
-            new BatchApproveAndPublishResourceCandidatesCommand(new[] { needsReview.Id, failed.Id }), null);
-
-        result.RequestedCount.Should().Be(2);
-        result.SucceededCount.Should().Be(1);
-        result.FailedCount.Should().Be(1);
-        result.Items.Should().Contain(i => i.CandidateId == needsReview.Id && i.Success);
-        result.Items.Should().Contain(i => i.CandidateId == failed.Id && !i.Success && i.Error!.Contains("ValidationStatus"));
-
-        (await _db.ResourceCandidates.AsNoTracking().FirstAsync(c => c.Id == needsReview.Id)).IsPublished.Should().BeTrue();
-        (await _db.ResourceCandidates.AsNoTracking().FirstAsync(c => c.Id == failed.Id)).IsPublished.Should().BeFalse();
-    }
+    // Phase 4.2 — the batch ApproveAndPublish shortcut was removed (it bypassed the separate
+    // Phase 3 approve/publish review lifecycle); BatchApproveAsync + BatchPublishAsync remain and
+    // are covered below.
 
     [Fact]
     public async Task Batch_publish_treats_an_already_published_candidate_as_a_safe_no_op()

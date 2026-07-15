@@ -58,7 +58,23 @@ public sealed class ResourceCandidateAnalysisServiceTests : IDisposable
         _db.CefrResourceSources.Add(source);
         _db.SaveChanges();
 
-        var run = new ResourceImportRun(source.Id, ResourceImportMode.Csv, "test.csv", "hash123", DateTimeOffset.UtcNow);
+        // Phase 4.2 — AI analysis requires the candidate's run to trace back to an ImportPackage
+        // with an approved Import Execution Plan.
+        var package = new ImportPackage(source.Id, "test-package", DateTimeOffset.UtcNow);
+        _db.ImportPackages.Add(package);
+        _db.SaveChanges();
+        var plan = new ImportProfile(
+            package.Id, 1, profileJson: "{}", sampleAssetIds: Array.Empty<Guid>(),
+            estimatedCandidateCount: 1, createdAtUtc: DateTimeOffset.UtcNow);
+        plan.SubmitForApproval();
+        plan.Approve(null, DateTimeOffset.UtcNow, 100m);
+        _db.ImportProfiles.Add(plan);
+        package.ApproveProfile(plan.Id);
+        _db.SaveChanges();
+
+        var run = new ResourceImportRun(
+            source.Id, ResourceImportMode.Csv, "test.csv", "hash123", DateTimeOffset.UtcNow,
+            importPackageId: package.Id);
         _db.ResourceImportRuns.Add(run);
         _db.SaveChanges();
 

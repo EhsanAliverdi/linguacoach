@@ -52,9 +52,33 @@ public sealed class ResourceCandidatePublishServiceTests : IDisposable
         return source;
     }
 
+    /// <summary>Phase 4.2 — every publishable candidate must trace back to an ImportPackage with
+    /// an approved Import Execution Plan; this helper attaches that provenance by default so the
+    /// existing publish-gate tests below keep exercising their own specific gate, not this one.
+    /// See the dedicated provenance tests near the bottom of this file.</summary>
+    private Guid SeedApprovedPackage(CefrResourceSource source)
+    {
+        var package = new ImportPackage(source.Id, "test-package", DateTimeOffset.UtcNow);
+        _db.ImportPackages.Add(package);
+        _db.SaveChanges();
+
+        var plan = new ImportProfile(
+            package.Id, 1, profileJson: "{}", sampleAssetIds: Array.Empty<Guid>(),
+            estimatedCandidateCount: 1, createdAtUtc: DateTimeOffset.UtcNow);
+        plan.SubmitForApproval();
+        plan.Approve(null, DateTimeOffset.UtcNow, 100m);
+        _db.ImportProfiles.Add(plan);
+        package.ApproveProfile(plan.Id);
+        _db.SaveChanges();
+
+        return package.Id;
+    }
+
     private (ResourceImportRun Run, ResourceRawRecord Raw) SeedRunAndRaw(CefrResourceSource source, string rawJson)
     {
-        var run = new ResourceImportRun(source.Id, ResourceImportMode.Csv, "test.csv", $"filehash-{Guid.NewGuid():N}", DateTimeOffset.UtcNow);
+        var run = new ResourceImportRun(
+            source.Id, ResourceImportMode.Csv, "test.csv", $"filehash-{Guid.NewGuid():N}", DateTimeOffset.UtcNow,
+            importPackageId: SeedApprovedPackage(source));
         _db.ResourceImportRuns.Add(run);
         _db.SaveChanges();
 
@@ -624,5 +648,56 @@ public sealed class ResourceCandidatePublishServiceTests : IDisposable
     {
         Func<Task> act = async () => await _sut.PublishAsync(Guid.NewGuid(), null);
         await act.Should().ThrowAsync<ResourceImportValidationException>();
+    }
+
+    // ── Phase 4.2 — Import Execution Plan provenance gate ───────────────────────
+
+    [Fact]
+    public async Task Candidate_whose_run_has_no_import_package_cannot_publish()
+    {
+        var source = SeedSource();
+        // Deliberately bypasses SeedRunAndRaw's default provenance — simulates a legacy/orphan run.
+        var run = new ResourceImportRun(source.Id, ResourceImportMode.Csv, "test.csv", $"filehash-{Guid.NewGuid():N}", DateTimeOffset.UtcNow);
+        _db.ResourceImportRuns.Add(run);
+        _db.SaveChanges();
+        var raw = new ResourceRawRecord(run.Id, $"rawhash-{Guid.NewGuid():N}", "en", "row", rawJson: """{"word":"hello"}""");
+        raw.MarkParsed();
+        _db.ResourceRawRecords.Add(raw);
+        _db.SaveChanges();
+        var candidate = SeedCandidate(raw, ResourceCandidateType.VocabularyEntry, "hello", """{"word":"hello"}""");
+        MakePublishReady(candidate);
+
+        var result = await _sut.PublishAsync(candidate.Id, null);
+
+        result.Success.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("no associated Import Package"));
+        (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.Vocabulary)).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Candidate_whose_package_has_no_approved_plan_cannot_publish()
+    {
+        var source = SeedSource();
+        var package = new ImportPackage(source.Id, "test-package", DateTimeOffset.UtcNow);
+        _db.ImportPackages.Add(package);
+        _db.SaveChanges();
+        // No ImportProfile ever approved for this package.
+        var run = new ResourceImportRun(
+            source.Id, ResourceImportMode.Csv, "test.csv", $"filehash-{Guid.NewGuid():N}", DateTimeOffset.UtcNow,
+            importPackageId: package.Id);
+        _db.ResourceImportRuns.Add(run);
+        _db.SaveChanges();
+        var raw = new ResourceRawRecord(run.Id, $"rawhash-{Guid.NewGuid():N}", "en", "row", rawJson: """{"word":"hello"}""");
+        raw.MarkParsed();
+        _db.ResourceRawRecords.Add(raw);
+        _db.SaveChanges();
+        var candidate = SeedCandidate(raw, ResourceCandidateType.VocabularyEntry, "hello", """{"word":"hello"}""");
+        MakePublishReady(candidate);
+
+        var result = await _sut.PublishAsync(candidate.Id, null);
+
+        result.Success.Should().BeFalse();
+        result.Errors.Should().Contain(e => e.Contains("no approved Import Execution Plan"));
+        (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.Vocabulary)).Should().Be(0);
     }
 }

@@ -1,6 +1,6 @@
 <sp-admin-page-header
   title="Import Content"
-  subtitle="Import unstructured content, then review, edit, and publish the staged candidates on the Import Review page.">
+  subtitle="Submit content, review the automatic Import Execution Plan, and approve it before anything is processed.">
 </sp-admin-page-header>
 
 <sp-admin-page-body>
@@ -20,18 +20,22 @@
 
     <sp-admin-stepper [steps]="pipelineSteps" [currentIndex]="stepperIndex()" />
 
+    <!-- ── Phase 4.2 — the one unified Import submission workflow. Every submission (pasted
+         text, one file, several files, or a ZIP archive) becomes an Import Package and requires
+         an approved Import Execution Plan before anything is processed — there is no immediate
+         "import as candidates" path anymore. ── -->
     <sp-admin-section-card title="Add content">
       <p class="sp-admin-hint" style="margin-top:-8px; margin-bottom:16px;">
-        Choose a source and content type, then upload a file or type the content directly. Once
-        candidates are generated you'll be taken straight to Import Review to review, edit,
-        approve, reject, skip, and publish them — this page doesn't review candidates itself.
+        Paste content, attach one or more files, or upload a ZIP archive for large/mixed-media
+        packages — combine pasted text with files if useful. Submitting creates an Import Package
+        and generates an Import Execution Plan; you'll review and explicitly approve that plan
+        before any candidate is created or any AI call runs.
       </p>
 
-      @if (entryMode() === 'paste' && error()) { <sp-admin-alert variant="error">{{ error() }}</sp-admin-alert> }
-      @if (entryMode() === 'file' && fileError()) { <sp-admin-alert variant="error">{{ fileError() }}</sp-admin-alert> }
+      @if (submitError()) { <sp-admin-alert variant="error">{{ submitError() }}</sp-admin-alert> }
 
       <div class="sp-admin-form-stack">
-        <!-- ── Source — one registered-source list shared by both modes (Phase K23) ──────── -->
+        <!-- ── Source ──────────────────────────────────────────────────── -->
         <sp-admin-form-field label="Source" [required]="true" hint="Licensing/provenance registry entry this content will be attributed to.">
           @if (addingSource()) {
             <div style="display:flex; gap:8px;">
@@ -57,73 +61,29 @@
           <sp-admin-alert variant="warning">No sources yet — create one to continue.</sp-admin-alert>
         }
 
-        <!-- ── Content type — shown in both modes; only sent to the backend in paste mode ── -->
-        <sp-admin-form-field label="Content type" [required]="true" [hint]="resourceTypeHint">
-          <sp-admin-native-select [(ngModel)]="resourceType" name="resourceType" [options]="resourceTypeOptions" />
-        </sp-admin-form-field>
-        @if (entryMode() === 'file') {
-          <p class="sp-admin-hint">Not sent for file uploads — each row is classified automatically from its own columns during mapping review.</p>
-        }
-
         <sp-admin-form-field label="Note">
-          <sp-admin-textarea [(ngModel)]="noteDraft" [rows]="2" placeholder="Optional note for this import run…" />
+          <sp-admin-textarea [(ngModel)]="noteDraft" [rows]="2" placeholder="Optional note for this import…" />
         </sp-admin-form-field>
 
-        <!-- ── Content — segmented toggle between upload and paste (Phase K23) ──────────── -->
-        <div>
-          <div class="sp-admin-section-header-row" style="margin-bottom:6px;">
-            <label class="sp-admin-section-title" style="margin:0;">Content *</label>
-            <sp-admin-segmented-toggle [options]="entryModeOptions" [value]="entryMode()" ariaLabel="Content input mode"
-              (valueChange)="entryMode.set($any($event))" />
-          </div>
+        <!-- ── Pasted content — line-based; each non-empty line becomes one candidate input ── -->
+        <sp-admin-form-field label="Paste content" hint="One item per line. Leave blank if you're only attaching files.">
+          <sp-admin-textarea [(ngModel)]="pastedText" [rows]="8" placeholder="Type or paste content here… one item per line" />
+        </sp-admin-form-field>
 
-          @if (entryMode() === 'paste') {
-            <sp-admin-textarea [(ngModel)]="content" [rows]="10" placeholder="Type or paste content here… (one item per line, or CSV/JSON)" />
-            <p class="sp-admin-hint">
-              Format (plain text, CSV, or JSON) is detected automatically. Every candidate is analyzed and
-              classified by AI during review — CEFR level, skill, and tags aren't set here.
-            </p>
-          } @else {
-            <sp-admin-file-dropzone
-              [fileName]="selectedFile?.name ?? null"
-              hint="CSV, JSON array/object, or JSONL — max 5MB, format detected from the file extension"
-              accept=".csv,.json,.jsonl,.txt"
-              (fileSelected)="onFileSelected($event)" />
-          }
-        </div>
+        <!-- ── Files — a ZIP is routed through the large-package presigned-upload flow; anything
+             else (one or more files) is submitted inline together with any pasted text above. ── -->
+        <sp-admin-form-field label="Files" hint="Select one or more files, or a single .zip for a large/mixed-media package.">
+          <sp-admin-file-dropzone
+            [fileName]="selectedFilesLabel()"
+            hint="CSV, JSON, JSONL, text, audio, image files — or one .zip archive"
+            accept=".csv,.json,.jsonl,.txt,.zip,.mp3,.wav,.m4a,.ogg,.jpg,.jpeg,.png"
+            (fileSelected)="onFilesSelected($event)" />
+        </sp-admin-form-field>
       </div>
 
       <div class="sp-admin-form-actions" style="margin-top:1rem;">
-        @if (entryMode() === 'paste') {
-          <sp-admin-button variant="primary" [disabled]="submitting() || !selectedSourceId || !content.trim()" (clicked)="submitPaste()">
-            {{ submitting() ? 'Importing…' : 'Import as candidates' }}
-          </sp-admin-button>
-        } @else {
-          <sp-admin-button variant="primary" [disabled]="fileSubmitting() || !selectedSourceId || !selectedFile" (clicked)="submitFile()">
-            {{ fileSubmitting() ? 'Importing…' : 'Import as candidates' }}
-          </sp-admin-button>
-        }
-      </div>
-    </sp-admin-section-card>
-
-    <!-- ── Mandatory Import Execution Plan addendum (2026-07-15) — large ZIP package upload.
-         Uploads directly to storage via a presigned URL (never through this API), then always
-         routes to the Import Execution Plan page — no candidates are created here, and nothing
-         is processed until an administrator explicitly approves the plan on that page. ── -->
-    <sp-admin-section-card title="Large package (ZIP)">
-      <p class="sp-admin-hint" style="margin-top:-8px; margin-bottom:16px;">
-        For large or mixed-media archives (audio, images, many files), upload a ZIP instead. The
-        system inspects it, builds an automatic processing plan with a cost estimate, and waits
-        for your approval before creating any candidates.
-      </p>
-      @if (packageUploadError()) { <sp-admin-alert variant="error">{{ packageUploadError() }}</sp-admin-alert> }
-      <div class="sp-admin-form-stack">
-        <sp-admin-file-dropzone accept=".zip" (fileSelected)="onPackageFileSelected($event)" />
-        <sp-admin-button
-          variant="primary"
-          [disabled]="!selectedSourceId || !selectedPackageFile || packageUploading()"
-          (clicked)="uploadPackage()">
-          {{ packageUploading() ? packageUploadStage() : 'Upload package' }}
+        <sp-admin-button variant="primary" [disabled]="submitting() || !canSubmit()" (clicked)="submit()">
+          {{ submitting() ? submitStage() : 'Submit for review' }}
         </sp-admin-button>
       </div>
     </sp-admin-section-card>
@@ -142,7 +102,7 @@
       @if (loadingRecentRuns()) {
         <sp-admin-loading-state message="Loading import runs" />
       } @else if (recentRuns().length === 0) {
-        <sp-admin-empty-state title="No import runs yet" message="Runs you create on the New Import tab will show up here." />
+        <sp-admin-empty-state title="No import runs yet" message="Runs created from an approved plan will show up here." />
       } @else {
         <sp-admin-table layout="first-column-fluid">
           <table>
@@ -175,65 +135,3 @@
   }
 
 </sp-admin-page-body>
-
-<!-- ── Column-mapping review modal (Phase K1) ──────────────────────────────
-     Always shown for CSV/JSON (paste or file-upload) before the import actually runs. The AI's
-     suggestion is advisory only — every row is editable, and "Confirm and Import" is the only
-     action that ever applies a rename. Confirming navigates straight to Import Review once
-     candidate generation finishes (Phase 3). ── -->
-<sp-admin-modal
-  [open]="mappingModalOpen()"
-  title="Review column mapping"
-  variant="form"
-  (closed)="cancelMapping()">
-
-  <p class="sp-admin-hint" style="margin-bottom:1rem;">
-    An AI suggestion for how this file's columns map to recognized fields — review and adjust before importing.
-    Columns left "Leave as-is" import unchanged.
-  </p>
-
-  @if (mappingLoading()) {
-    <sp-admin-loading-state message="Getting an AI mapping suggestion" />
-  } @else {
-    @if (mappingError()) { <sp-admin-alert variant="warning">{{ mappingError() }}</sp-admin-alert> }
-
-    @if (mappingRows().length === 0 && !mappingError()) {
-      <sp-admin-empty-state title="No columns to map" message="This content has no header row to review." />
-    } @else if (mappingRows().length > 0) {
-      <sp-admin-table layout="first-column-fluid">
-        <table>
-          <thead>
-            <tr>
-              <th>File column</th>
-              <th>Maps to</th>
-              <th>AI confidence</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (row of mappingRows(); track row.column; let i = $index) {
-              <tr>
-                <td><code>{{ row.column }}</code></td>
-                <td>
-                  <select [value]="row.field" (change)="onMappingFieldChange(i, $any($event.target).value)">
-                    @for (opt of recognizedFieldOptions; track opt.value) {
-                      <option [value]="opt.value">{{ opt.label }}</option>
-                    }
-                  </select>
-                </td>
-                <td>{{ row.confidence !== null ? (row.confidence * 100).toFixed(0) + '%' : '—' }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </sp-admin-table>
-    }
-  }
-
-  <div slot="footer">
-    <sp-admin-button variant="neutral" appearance="outline" (clicked)="cancelMapping()">Cancel</sp-admin-button>
-    <sp-admin-button variant="primary" [disabled]="mappingLoading()" (clicked)="confirmMapping()">
-      Confirm and Import
-    </sp-admin-button>
-  </div>
-
-</sp-admin-modal>

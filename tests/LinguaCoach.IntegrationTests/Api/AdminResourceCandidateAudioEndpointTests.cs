@@ -2,6 +2,13 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using LinguaCoach.Application.Activity;
+using LinguaCoach.Domain.Entities;
+using LinguaCoach.Domain.Enums;
+using LinguaCoach.Infrastructure.Activity;
+using LinguaCoach.Persistence;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace LinguaCoach.IntegrationTests.Api;
 
@@ -12,34 +19,67 @@ public sealed class AdminResourceCandidateAudioEndpointTests : IClassFixture<Api
 
     public AdminResourceCandidateAudioEndpointTests(ApiTestFactory factory) => _factory = factory;
 
+    /// <summary>
+    /// Phase 4.2 — this file's purpose is testing the audio-upload/publish-gate endpoints, not
+    /// import staging, and every publishable candidate must now trace back to an ImportPackage
+    /// with an approved Import Execution Plan. Seeds directly through the DbContext (mirroring the
+    /// UnitTests project's convention) rather than round-tripping through the unified submission
+    /// endpoint, which no longer accepts an explicit "force this candidate type" override the old
+    /// content-imports endpoint had.
+    /// </summary>
     private async Task<(HttpClient Client, Guid CandidateId)> StageListeningCandidateAsync()
     {
         var token = await _factory.CreateAdminAndGetTokenAsync();
         var client = _factory.CreateClient();
         client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-        // Judgment call: title/transcript must be unique per call — ResourceCandidateValidationService's
-        // dedup gate checks content fingerprints globally across the whole test run, and this
-        // helper is called from multiple tests in this class (mirrors the same pattern documented
-        // in AdminResourceImportEndpointTests.ApproveAndPublish_UnapprovedButOtherwiseValidCandidate_PublishesInOneCall).
         var unique = Guid.NewGuid().ToString("N");
-        var sourceName = $"Listening Audio Test Source {unique}";
-        var importResp = await client.PostAsJsonAsync("/api/admin/content-imports", new
-        {
-            sourceName,
-            resourceType = "listening",
-            inputMode = "csv_text",
-            content = $"title,transcript,cefrLevel\nMorning News {unique},Good morning and welcome to the daily news {unique}.,A1",
-        });
-        Assert.Equal(HttpStatusCode.OK, importResp.StatusCode);
-        var importBody = await importResp.Content.ReadFromJsonAsync<JsonElement>();
-        var runId = importBody.GetProperty("importRunId").GetGuid();
 
-        var candidatesResp = await client.GetAsync($"/api/admin/resource-candidates?importRunId={runId}");
-        var candidatesBody = await candidatesResp.Content.ReadFromJsonAsync<JsonElement>();
-        var candidateId = candidatesBody.GetProperty("items")[0].GetProperty("candidateId").GetGuid();
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
 
-        return (client, candidateId);
+        var source = new CefrResourceSource(
+            $"Listening Audio Test Source {unique}", "AdminUpload",
+            allowsStudentDisplay: true, allowsCommercialUse: true);
+        source.ApproveForImport("cleared for test");
+        db.CefrResourceSources.Add(source);
+        await db.SaveChangesAsync();
+
+        var package = new ImportPackage(source.Id, "test-package", DateTimeOffset.UtcNow);
+        db.ImportPackages.Add(package);
+        await db.SaveChangesAsync();
+        var plan = new ImportProfile(
+            package.Id, 1, profileJson: "{}", sampleAssetIds: Array.Empty<Guid>(),
+            estimatedCandidateCount: 1, createdAtUtc: DateTimeOffset.UtcNow);
+        plan.SubmitForApproval();
+        plan.Approve(null, DateTimeOffset.UtcNow, 100m);
+        db.ImportProfiles.Add(plan);
+        package.ApproveProfile(plan.Id);
+        await db.SaveChangesAsync();
+
+        var run = new ResourceImportRun(
+            source.Id, ResourceImportMode.Json, "listening-assets", $"hash-{unique}", DateTimeOffset.UtcNow,
+            importPackageId: package.Id);
+        db.ResourceImportRuns.Add(run);
+        await db.SaveChangesAsync();
+
+        var normalizedJson = $$"""{"title":"Morning News {{unique}}","transcript":"Good morning and welcome to the daily news {{unique}}."}""";
+        var raw = new ResourceRawRecord(run.Id, $"rawhash-{unique}", "en", "row", rawJson: normalizedJson);
+        raw.MarkParsed();
+        db.ResourceRawRecords.Add(raw);
+        await db.SaveChangesAsync();
+
+        var fingerprint = new ActivityContentFingerprintService().ComputeFingerprint(
+            new ActivityContentFingerprintRequest(normalizedJson, ActivityContentShape.Unknown, null, $"Morning News {unique}"));
+        var candidate = new ResourceCandidate(
+            raw.Id, ResourceCandidateType.ListeningPassage, $"Morning News {unique}", normalizedJson, "en",
+            $"morning news {unique}", fingerprint, ResourceCandidateValidationStatus.NeedsReview);
+        candidate.ApplyAnalysis(
+            "{}", "A1", 0.95, "listening", null, 1, "[]", "[]", null, null, null, null, null, 0.9, candidate.CanonicalText);
+        db.ResourceCandidates.Add(candidate);
+        await db.SaveChangesAsync();
+
+        return (client, candidate.Id);
     }
 
     private static MultipartFormDataContent AudioForm(string text = "fake mp3 bytes", string contentType = "audio/mpeg")
@@ -110,22 +150,44 @@ public sealed class AdminResourceCandidateAudioEndpointTests : IClassFixture<Api
         var client = _factory.CreateClient();
         client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
 
-        var sourceName = $"Vocab For Audio Reject Test {Guid.NewGuid():N}";
-        var importResp = await client.PostAsJsonAsync("/api/admin/content-imports", new
-        {
-            sourceName,
-            resourceType = "vocabulary",
-            inputMode = "pasted_text",
-            content = "hello",
-        });
-        var importBody = await importResp.Content.ReadFromJsonAsync<JsonElement>();
-        var runId = importBody.GetProperty("importRunId").GetGuid();
-        var candidatesResp = await client.GetAsync($"/api/admin/resource-candidates?importRunId={runId}");
-        var candidatesBody = await candidatesResp.Content.ReadFromJsonAsync<JsonElement>();
-        var candidateId = candidatesBody.GetProperty("items")[0].GetProperty("candidateId").GetGuid();
+        var unique = Guid.NewGuid().ToString("N");
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+
+        var source = new CefrResourceSource(
+            $"Vocab For Audio Reject Test {unique}", "AdminUpload", allowsStudentDisplay: true, allowsCommercialUse: true);
+        source.ApproveForImport("cleared for test");
+        db.CefrResourceSources.Add(source);
+        await db.SaveChangesAsync();
+        var package = new ImportPackage(source.Id, "test-package", DateTimeOffset.UtcNow);
+        db.ImportPackages.Add(package);
+        await db.SaveChangesAsync();
+        var plan = new ImportProfile(
+            package.Id, 1, profileJson: "{}", sampleAssetIds: Array.Empty<Guid>(),
+            estimatedCandidateCount: 1, createdAtUtc: DateTimeOffset.UtcNow);
+        plan.SubmitForApproval();
+        plan.Approve(null, DateTimeOffset.UtcNow, 100m);
+        db.ImportProfiles.Add(plan);
+        package.ApproveProfile(plan.Id);
+        await db.SaveChangesAsync();
+        var run = new ResourceImportRun(
+            source.Id, ResourceImportMode.Csv, "test.csv", $"hash-{unique}", DateTimeOffset.UtcNow, importPackageId: package.Id);
+        db.ResourceImportRuns.Add(run);
+        await db.SaveChangesAsync();
+        var raw = new ResourceRawRecord(run.Id, $"rawhash-{unique}", "en", "row", rawJson: $$"""{"word":"hello{{unique}}"}""");
+        raw.MarkParsed();
+        db.ResourceRawRecords.Add(raw);
+        await db.SaveChangesAsync();
+        var fingerprint = new ActivityContentFingerprintService().ComputeFingerprint(
+            new ActivityContentFingerprintRequest($$"""{"word":"hello{{unique}}"}""", ActivityContentShape.Unknown, null, "hello"));
+        var candidate = new ResourceCandidate(
+            raw.Id, ResourceCandidateType.VocabularyEntry, "hello", $$"""{"word":"hello{{unique}}"}""", "en",
+            "hello", fingerprint, ResourceCandidateValidationStatus.NeedsReview);
+        db.ResourceCandidates.Add(candidate);
+        await db.SaveChangesAsync();
 
         using var form = AudioForm();
-        var response = await client.PostAsync($"/api/admin/resource-candidates/{candidateId}/audio", form);
+        var response = await client.PostAsync($"/api/admin/resource-candidates/{candidate.Id}/audio", form);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }

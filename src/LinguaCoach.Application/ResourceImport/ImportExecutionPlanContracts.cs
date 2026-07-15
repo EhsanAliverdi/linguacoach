@@ -48,6 +48,23 @@ public sealed record ImportExecutionPlanCostEstimate(
 
 public sealed record ImportExecutionPlanDecision(string Topic, string Decision, string Reason);
 
+/// <summary>
+/// Phase 4.2 (Part F) — a real preview of the proposed column mapping for one structured
+/// (CSV/JSON/JSONL) asset, built only for inline (non-ZIP) packages, since only there do
+/// <c>ImportAsset</c> rows already exist at plan-generation time. <see cref="ProposedMapping"/> is
+/// the exact confirmed-at-approval-time column-rename map that execution applies when creating
+/// candidates from this asset (see <c>ImportPackageProcessingService</c>) — the one approved-plan
+/// decision this phase makes execution actually read, so the unified submission page doesn't
+/// regress the Phase K1 header-recognition fix.
+/// </summary>
+public sealed record ImportExecutionPlanStructuredMappingPreview(
+    string AssetRelativePath,
+    IReadOnlyList<string> DetectedColumns,
+    IReadOnlyDictionary<string, string> ProposedMapping,
+    IReadOnlyList<string> IgnoredColumns,
+    int ExpectedRecordCount,
+    IReadOnlyList<string> Warnings);
+
 public sealed record ImportExecutionPlanEstimate(
     IReadOnlyList<ImportExecutionPlanDetectedGroup> DetectedGroups,
     IReadOnlyList<string> AmbiguousGroups,
@@ -58,7 +75,12 @@ public sealed record ImportExecutionPlanEstimate(
     IReadOnlyList<string> Risks,
     IReadOnlyList<ImportExecutionPlanDecision> ProposedDecisions,
     int SamplingRoundsUsed,
-    double StructureConfidence);
+    double StructureConfidence,
+    IReadOnlyList<ImportExecutionPlanStructuredMappingPreview>? StructuredMappingPreviews = null)
+{
+    public IReadOnlyList<ImportExecutionPlanStructuredMappingPreview> StructuredMappingPreviews { get; init; } =
+        StructuredMappingPreviews ?? Array.Empty<ImportExecutionPlanStructuredMappingPreview>();
+}
 
 public sealed record ImportExecutionPlanDto(
     Guid PlanId,
