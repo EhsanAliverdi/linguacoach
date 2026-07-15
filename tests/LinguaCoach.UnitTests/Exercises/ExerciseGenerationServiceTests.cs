@@ -731,6 +731,65 @@ public sealed class ActivityGenerationServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Write_from_dictation_types_transcript_sentences_with_audio_player()
+    {
+        var source = SeedSource();
+        var listening = SeedListeningPassage(source.Id,
+            transcript: "Please submit your expense report by Friday. The finance team reviews claims weekly. Late submissions may be delayed.");
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Listening", listening.Id, "Primary") },
+            RequestedActivityType: "write_from_dictation"));
+
+        result.Activity.ActivityType.Should().Be("write_from_dictation");
+        result.Activity.FormSchemaJson.Should().Contain("audioPlayer").And.Contain("textfield");
+        result.Activity.ScoringRulesJson.Should().Contain("text_normalized");
+        result.Activity.AnswerKeyJson.Should().Contain("Please submit your expense report by Friday");
+    }
+
+    [Fact]
+    public async Task Write_from_dictation_rejected_when_transcript_has_too_few_sentences()
+    {
+        var source = SeedSource();
+        var listening = SeedListeningPassage(source.Id, transcript: "Hi there.");
+
+        var act = () => _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Listening", listening.Id, "Primary") },
+            RequestedActivityType: "write_from_dictation"));
+
+        await act.Should().ThrowAsync<ExerciseValidationException>();
+    }
+
+    [Fact]
+    public async Task Repeat_sentence_splits_prompt_text_into_speaking_response_items()
+    {
+        var source = SeedSource();
+        var speaking = SeedSpeakingPrompt(source.Id,
+            "Good morning everyone. Thank you for joining the call. Let's begin with the quarterly update.");
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Speaking", speaking.Id, "Primary") },
+            RequestedActivityType: "repeat_sentence"));
+
+        result.Activity.ActivityType.Should().Be("repeat_sentence");
+        result.Activity.FormSchemaJson.Should().Contain("speakingResponse").And.Contain("Good morning everyone");
+        result.Activity.ScoringRulesJson.Should().Contain("RequiresManualOrAiEvaluation").And.Contain("true");
+    }
+
+    [Fact]
+    public async Task Repeat_sentence_rejected_when_prompt_text_has_too_few_sentences()
+    {
+        var source = SeedSource();
+        var speaking = SeedSpeakingPrompt(source.Id, "Hi there.");
+
+        var act = () => _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Speaking", speaking.Id, "Primary") },
+            RequestedActivityType: "repeat_sentence"));
+
+        await act.Should().ThrowAsync<ExerciseValidationException>();
+    }
+
+    [Fact]
     public async Task Open_writing_task_is_supported_for_writing_resources()
     {
         var source = SeedSource();

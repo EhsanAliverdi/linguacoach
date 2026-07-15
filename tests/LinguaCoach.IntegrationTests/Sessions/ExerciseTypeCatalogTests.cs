@@ -376,21 +376,55 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     }
 
     [Fact]
+    public async Task WriteFromDictation_IsBankFirstAndGenerationEligible_PhaseK22()
+    {
+        // Phase K22 — write_from_dictation got a real composer (types the resource's own
+        // transcript sentence-by-sentence while the K21 audio bridge plays it) and moved from
+        // disabled-Pattern to BankFirst/enabled.
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "write_from_dictation");
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        Assert.Equal("BankFirst", type.Category);
+        Assert.True(type.IsEnabled);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.Equal("listening", type.PrimarySkill);
+        Assert.Contains(eligible, e => e.Key == "write_from_dictation");
+    }
+
+    [Fact]
+    public async Task RepeatSentence_IsBankFirstAndGenerationEligible_PhaseK22()
+    {
+        // Phase K22 — repeat_sentence got a real composer (splits the Speaking resource's own
+        // PromptText into sentences, one speakingResponse per sentence) and moved from
+        // disabled-Pattern to BankFirst/enabled.
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "repeat_sentence");
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        Assert.Equal("BankFirst", type.Category);
+        Assert.True(type.IsEnabled);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.Equal("speaking", type.PrimarySkill);
+        Assert.Contains(eligible, e => e.Key == "repeat_sentence");
+    }
+
+    [Fact]
     public async Task LegacyAndPatternTypes_AreDisabledByDefault_DespiteBeingReady()
     {
         var service = new ExerciseTypeCatalogService(_db);
         var eligible = await service.GetGenerationEligibleAsync();
 
-        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "repeat_sentence");
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "listen_and_answer");
         Assert.Equal("ready", type.ImplementationStatus);
         Assert.False(type.IsEnabled);
         Assert.False(type.IsAvailableForGeneration);
-        Assert.DoesNotContain(eligible, e => e.Key == "repeat_sentence");
+        Assert.DoesNotContain(eligible, e => e.Key == "listen_and_answer");
     }
 
     [Theory]
-    [InlineData("write_from_dictation", "listening")]
-    [InlineData("repeat_sentence", "speaking")]
+    [InlineData("listen_and_answer", "listening")]
+    [InlineData("listen_and_gap_fill", "listening")]
     public async Task PatternTypes_AreReadyButNotEligibleUntilAdminEnables(string key, string expectedSkill)
     {
         var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == key);

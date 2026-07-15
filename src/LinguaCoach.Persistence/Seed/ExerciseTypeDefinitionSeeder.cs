@@ -151,8 +151,14 @@ public static class ExerciseTypeDefinitionSeeder
             "Read the resource's own prompt text aloud as clearly and naturally as possible. Requires manual or AI evaluation. Speaking resources only.",
             "speaking", "[\"pronunciation\", \"reading\"]", 1, 1, 1),
         // read_aloud promoted to Ready above
-        Ready(ExercisePatternKey.RepeatSentence, "Repeat Sentence", "Hear or read a short sentence, then repeat it as accurately as you can.", "speaking", "[\"listening\", \"pronunciation\"]", "Pattern", "repeat_sentence", "exact_match", "activity_generate_repeat_sentence", ActivityType.SpeakingRolePlay, ExercisePatternKey.RepeatSentence, 5, false, false),
-        // repeat_sentence promoted to Ready above
+        // Phase K22 — repeat_sentence now has a real Lesson-generation composer: splits the
+        // Speaking resource's own PromptText into sentences, one speakingResponse component per
+        // sentence — same honest unscored shape as read_aloud/answer_short_question. Same key,
+        // moves to BankFirst/enabled.
+        BankFirst(ExercisePatternKey.RepeatSentence, "Repeat Sentence",
+            "Hear or read a short sentence, then repeat it as accurately as you can. Requires manual or AI evaluation. Speaking resources only.",
+            "speaking", "[\"listening\", \"pronunciation\"]", 3, 5, 6),
+        // repeat_sentence promoted to BankFirst above
         // Phase K20 — describe_image now has a real Lesson-generation composer, sourced from
         // the Speaking resource's new optional ImageUrl field (must be set on that resource in
         // the Resource Bank edit page first). Same key, moves to BankFirst/enabled.
@@ -247,8 +253,14 @@ public static class ExerciseTypeDefinitionSeeder
             "Listen to the resource's own audio and select the displayed words that don't match what you heard — the altered words are real words from the same transcript, deterministically rotated into the wrong positions. Listening resources only.",
             "listening", "[]", 2, 3, 4),
         // highlight_incorrect_words promoted to BankFirst above
-        Ready(ExercisePatternKey.WriteFromDictation, "Write From Dictation", "Listen to short audio clips and type exactly what you hear.", "listening", "[\"writing\"]", "Pattern", "write_from_dictation", "exact_match", "activity_generate_write_from_dictation", ActivityType.ListeningComprehension, ExercisePatternKey.WriteFromDictation, 5, false, false),
-        // write_from_dictation promoted to Ready above
+        // Phase K22 — write_from_dictation now has a real Lesson-generation composer: the
+        // resource's own transcript is split into sentences, each typed and deterministically
+        // scored (text_normalized) against the transcript's own text, while the audio plays via
+        // the Phase K21 resource-audio streaming bridge. Same key, moves to BankFirst/enabled.
+        BankFirst(ExercisePatternKey.WriteFromDictation, "Write From Dictation",
+            "Listen to the resource's own audio and type exactly what you hear, sentence by sentence. Listening resources only.",
+            "listening", "[\"writing\"]", 2, 3, 5),
+        // write_from_dictation promoted to BankFirst above
 
         // Form.io Practice Gym pilot — "planned" (not "ready") so it is never queued or
         // materialized until an admin explicitly promotes it. See

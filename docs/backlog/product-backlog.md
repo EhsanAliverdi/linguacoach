@@ -1692,11 +1692,18 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
   scoring kind needed). New composer rotates real transcript words among each other's positions
   instead of generating synthetic wrong words — fully deterministic, no AI call. **30 of 40
   catalog types enabled — 75% of the full catalog.**
-- [ ] **K22 (`write_from_dictation` / `repeat_sentence`)** `Planned` — unblocked in principle by
-  the K21 audio bridge, but still need their own composer design (per-clip dictation scoring;
-  real speech scoring for repeat_sentence, which doesn't exist anywhere in the bank-first pipeline
-  yet). **Recommend manual browser testing of the 30 enabled types before further backend work** —
-  no automated test in this session ever rendered a Form.io schema live.
+- [x] **Phase K22 — `write_from_dictation` + `repeat_sentence`, composer build-out complete**
+  `Done` (2026-07-15) — same doc as above. `write_from_dictation`: built on the K21 audio bridge,
+  transcript split into up to 3 sentences (shared `SplitIntoSentences` helper), typed and
+  deterministically scored per-sentence (`text_normalized`) while the resource's full audio plays.
+  `repeat_sentence`: same honest unscored `speakingResponse` shape as `read_aloud`, PromptText
+  split into up to 5 sentences, no audio bridge needed (catalog description permits a text-only
+  prompt). **32 of 40 catalog types enabled — 80% of the full catalog.** This closes the composer
+  build-out: the remaining 8 disabled entries are all deliberate permanent decisions (4 Legacy, 3
+  redundant Pattern Engine keys, 1 inert pilot), not unfinished work.
+- [ ] **Manual browser verification** `Planned` — no automated test in this session ever rendered
+  a Form.io schema live. Recommend generating at least one Exercise of each of the 32 enabled
+  types from a real Lesson in a real browser session before further backend work in this area.
 
 ## Legacy database cleanup
 

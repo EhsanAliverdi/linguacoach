@@ -447,14 +447,37 @@ Built, this phase:
 Catalog row converted `Ready` → `BankFirst`/enabled. Full suite green (Architecture 5, Unit 2257,
 Integration 1322). **30 of 40 catalog types (75%) now enabled by default.**
 
-### Phase K22 — Decisions needed before touching
+### Phase K22 — `write_from_dictation` + `repeat_sentence` (2026-07-15, done)
 
-- `write_from_dictation` / `repeat_sentence` — now that the K21 audio-serving bridge exists, these
-  are unblocked in principle, but still need their own composer design (write_from_dictation:
-  student types what they hear, needs exact-match-per-clip scoring over multiple short clips;
-  repeat_sentence: needs real speech scoring, which doesn't exist for the bank-first pipeline any
-  more than it does for the other Speaking types — see `ComposeSpeakingPrompt`'s doc comment).
-  **Still open.**
+- `write_from_dictation` (Listening) — built on the K21 audio-serving bridge. The resource's own
+  transcript is split into up to 3 sentences (shared `SplitIntoSentences` helper, min length 10
+  chars); the student hears the resource's own full, unaltered audio (same `audioPlayer` +
+  `GetResourceAudio` streaming mechanism as `highlight_incorrect_words` — no per-sentence audio
+  clip segmentation exists or was needed, since the transcript's sentence boundaries only size the
+  typed-answer blanks) and types each sentence exactly as heard, one `textfield` per sentence,
+  scored deterministically per-sentence (`text_normalized`, same leniency precedent as
+  `BuildCloze`). Rejects when the transcript has fewer than 2 usable sentences.
+- `repeat_sentence` (Speaking) — same honest, unscored `speakingResponse` shape as
+  `read_aloud`/`answer_short_question` (no real speech scoring exists anywhere in the bank-first
+  pipeline yet). Splits the Speaking resource's own PromptText into up to 5 sentences via the same
+  shared helper, one `speakingResponse` component per sentence, each showing the sentence text as
+  the prompt to repeat aloud. The catalog's own description ("Hear or read a short sentence, then
+  repeat it") already permits a text-only prompt, so this doesn't depend on the K21 audio bridge.
+  Rejects when the source text has fewer than 3 usable sentences.
+
+Both catalog rows converted `Ready` → `BankFirst`/enabled. Full test suite green after each change
+(Unit 2261, Integration 1324, Architecture 5 — all passing), including 4 new unit tests and 2 new
+integration confirmation tests. **32 of 40 catalog types (80%) now enabled by default.**
+
+This closes out the composer build-out: every catalog entry that can be built as a plain
+deterministic-or-honestly-unscored composer now has one. The remaining 8 disabled entries are all
+intentional, permanent states, not "not started":
+- 4 `Legacy`-category entries (K21 decision: kept, not deleted, permanently disabled).
+- 3 old Pattern Engine keys (`listen_and_answer`, `listen_and_gap_fill`,
+  `gap_fill_workplace_phrase`) confirmed functionally redundant with already-built BankFirst types
+  (K18) — intentionally left disabled rather than duplicated.
+- `formio_practice_gym_pilot` — intentionally inert pilot entry (`Planned`, not `Ready`), see
+  `docs/reviews/2026-07-07-ai-bank-assessment-architecture-plan.md`.
 
 ## Decisions made this pass
 
@@ -490,44 +513,41 @@ Integration 1322). **30 of 40 catalog types (75%) now enabled by default.**
 
 ## Implementation tasks produced
 
-Tracked as Phase K15 through K22 above. **K15 through K21 executed** (2026-07-14 to 2026-07-15,
-same continuous work session) — 30 of 40 catalog types now have real Lesson-generation composers
-and are enabled by default; every other type is either intentionally superseded (3 old Pattern
-Engine duplicates), intentionally inert (`formio_practice_gym_pilot`), intentionally
-permanently-disabled (4 Legacy entries, K21 decision), or blocked on real speech-scoring/
-per-clip-audio composer design (`write_from_dictation`/`repeat_sentence`, K22).
+Tracked as Phase K15 through K22 above, **all executed** (2026-07-14 to 2026-07-15, same
+continuous work session) — 32 of 40 catalog types now have real Lesson-generation composers and
+are enabled by default; every other type is intentionally left disabled (3 old Pattern Engine
+duplicates, `formio_practice_gym_pilot`, or the 4 permanently-disabled Legacy entries), not
+"not started." The composer build-out is complete.
 
 ## Final verdict
 
 **The bank-first pipeline (Import → Resource Bank → Lesson → Exercise → Module) is functionally
 complete for all 7 `PublishedResourceType`s, plus the Lesson-Body-sourced `lesson_reflection`
-type, and now includes a real audio-serving bridge for Listening resources.** 30 of 40 catalog
-types (75%) are enabled by default, every resource type
+type, and now includes a real audio-serving bridge for Listening resources.** 32 of 40 catalog
+types (80%) are enabled by default, every resource type
 (Vocabulary/Grammar/ReadingReference/ReadingPassage/Writing/Listening/Speaking) has multiple real,
 tested, deployed Exercise composers a Lesson can generate from, and the Lesson picker (K15.4)
-surfaces exactly what's enabled with zero hardcoding. The remaining 10 disabled catalog entries
-are not "not started" — each has a specific, documented reason it isn't buildable as a plain
-composer right now (see K22 above, the K21 permanent-disable decision on the 4 Legacy entries, plus
-the 3 confirmed-redundant legacy Pattern Engine keys). None of them block the core admin workflow:
-Import Content → Resource Bank → generate Lesson → generate Exercise(s) → combine into Module →
-review → approve.
+surfaces exactly what's enabled with zero hardcoding. **The composer build-out is complete** — the
+remaining 8 disabled catalog entries are all deliberate, permanent, documented decisions (3
+confirmed-redundant legacy Pattern Engine keys, the intentionally-inert pilot entry, and the 4
+permanently-disabled Legacy entries), not unfinished work. None of them block the core admin
+workflow: Import Content → Resource Bank → generate Lesson → generate Exercise(s) → combine into
+Module → review → approve.
 
 ## Next recommended action
 
-The composer build-out has reached its natural stopping point without new external input — the
-only remaining catalog item that's still a real "not built yet" is
-`write_from_dictation`/`repeat_sentence`, which needs its own composer design on top of the K21
-audio-serving bridge (and, for `repeat_sentence`, real speech scoring that doesn't exist anywhere
-in the bank-first pipeline yet). Everything else needs (a) frontend Form.io verification in a real
-browser — `reorder_paragraphs`'s `defaultValue` pre-population is a real, stated, unconfirmed
-assumption, and more broadly, confirming the `speakingResponse`/`selectboxes`/`datagrid`/
-`content`(image)/`audioPlayer`/`highlightWords` renderers actually work end-to-end for everything
-built in K16-K21, since this session's verification was build+test only, never a live browser
-check — or (b) is a deliberate, documented, permanent decision (the 4 Legacy entries, the pilot
-entry). **Recommend the user now manually test the live admin UI** — generate at least one
-Exercise of each of the 30 enabled types from a real Lesson, since automated tests cover backend
-logic/schema shape but not actual Form.io rendering/submission in the browser.
-`reorder_paragraphs`, the K18 speaking types, `describe_image`'s image `<img>` rendering, and
-`highlight_incorrect_words`'s audio playback + click-to-select are the highest-value ones to check
-first, since they're the least similar to the original, already browser-tested
-`gap_fill`/`multiple_choice_single` shape.
+The composer build-out is now complete — every catalog entry that can be built as a plain
+deterministic-or-honestly-unscored composer has one. What remains is exclusively (a) frontend
+Form.io verification in a real browser — `reorder_paragraphs`'s `defaultValue` pre-population is a
+real, stated, unconfirmed assumption, and more broadly, confirming the
+`speakingResponse`/`selectboxes`/`datagrid`/`content`(image)/`audioPlayer`/`highlightWords`
+renderers actually work end-to-end for everything built in K16-K22, since this session's
+verification was build+test only, never a live browser check — or (b) deliberate, documented,
+permanent decisions (the 4 Legacy entries, the 3 redundant Pattern Engine keys, the pilot entry).
+**Recommend the user now manually test the live admin UI** — generate at least one Exercise of
+each of the 32 enabled types from a real Lesson, since automated tests cover backend logic/schema
+shape but not actual Form.io rendering/submission in the browser. `reorder_paragraphs`, the K18
+speaking types, `describe_image`'s image `<img>` rendering, and `highlight_incorrect_words`'s /
+`write_from_dictation`'s audio playback are the highest-value ones to check first, since they're
+the least similar to the original, already browser-tested `gap_fill`/`multiple_choice_single`
+shape.

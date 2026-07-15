@@ -167,6 +167,32 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
     /// as BuildCloze) when the transcript is too short. Listening resources only.</summary>
     public const string ActivityTypeHighlightIncorrectWords = "highlight_incorrect_words";
 
+    /// <summary>Phase K22 — Listening resources only, built on the Phase K21 audio-serving
+    /// bridge. Splits the resource's own transcript into up to
+    /// <see cref="MaxDictationSentences"/> distinct sentences and asks the student to type each
+    /// one exactly as heard, deterministically scored per-sentence
+    /// (<see cref="ScoringRuleKinds.TextNormalized"/> — same leniency precedent as BuildCloze's
+    /// per-blank scoring). The student hears the resource's own unaltered full audio (one
+    /// continuous track, same <c>audioPlayer</c> streamed via
+    /// <see cref="LinguaCoach.Api.Controllers.ActivityController.GetResourceAudio"/> as
+    /// highlight_incorrect_words) rather than per-sentence clips — there is no per-sentence audio
+    /// segmentation infrastructure, and splitting the audio file itself is out of scope; the
+    /// transcript's own sentence boundaries are used only to size the typed-answer blanks.
+    /// Rejects rather than degrading when the transcript has fewer than
+    /// <see cref="MinDictationSentences"/> usable sentences.</summary>
+    public const string ActivityTypeWriteFromDictation = "write_from_dictation";
+
+    /// <summary>Phase K22 — Speaking resources only, same honest unscored shape as
+    /// <see cref="ComposeSpeakingPrompt"/>/<see cref="ActivityTypeReadAloud"/> (no real speech
+    /// scoring exists in the bank-first pipeline for any Speaking type yet). Splits the
+    /// resource's own PromptText into up to <see cref="MaxRepeatSentences"/> distinct sentences,
+    /// one <c>speakingResponse</c> component per sentence, each showing the sentence text as the
+    /// prompt to repeat aloud — the catalog's own description ("Hear or read a short sentence,
+    /// then repeat it") already allows a text-only prompt, so this doesn't need the Listening
+    /// audio bridge. Rejects rather than degrading when the source text has fewer than
+    /// <see cref="MinRepeatSentences"/> usable sentences.</summary>
+    public const string ActivityTypeRepeatSentence = "repeat_sentence";
+
     /// <summary>Phase K18 — deterministic, Speaking resources only. Shows the resource's own
     /// PromptText verbatim, student responds via the speakingResponse component, honestly
     /// unscored (RequiresManualOrAiEvaluation) — see ComposeSpeakingPrompt's doc comment for why
@@ -237,6 +263,11 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
     private const int MinReorderParagraphs = 3;
     private const int MaxHighlightAlteredWords = 3;
     private const int MinHighlightAlteredWords = 2;
+    private const int MaxDictationSentences = 3;
+    private const int MinDictationSentences = 2;
+    private const int MaxRepeatSentences = 5;
+    private const int MinRepeatSentences = 3;
+    private const int MinDictationSentenceLength = 10;
 
     private readonly LinguaCoachDbContext _db;
     private readonly IFormIoSchemaValidationService _schemaValidator;
@@ -421,6 +452,7 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
                     ActivityTypeRetellLecture,
                     ActivityTypeSummarizeGroupDiscussion,
                     ActivityTypeHighlightIncorrectWords,
+                    ActivityTypeWriteFromDictation,
                 },
             PublishedResourceType.Speaking =>
                 new[]
@@ -431,6 +463,7 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
                     ActivityTypeSpeakingRoleplayTurn,
                     ActivityTypeReadAloud,
                     ActivityTypeDescribeImage,
+                    ActivityTypeRepeatSentence,
                 },
             _ => Array.Empty<string>(),
         };
@@ -463,6 +496,8 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
                 "Read the chat message below and write a concise, professional reply.", "Your reply"),
             ActivityTypeListeningFillInBlanks => ComposeListeningFillInBlanks(primary.Snapshot),
             ActivityTypeHighlightIncorrectWords => ComposeHighlightIncorrectWords(primary.Snapshot),
+            ActivityTypeWriteFromDictation => ComposeWriteFromDictation(primary.Snapshot),
+            ActivityTypeRepeatSentence => ComposeRepeatSentence(primary.Snapshot),
             ActivityTypeSpokenResponseFromPrompt => ComposeSpeakingPrompt(primary.Snapshot,
                 "Respond aloud to the prompt below."),
             ActivityTypeRespondToSituation => ComposeSpeakingPrompt(primary.Snapshot,
@@ -926,6 +961,92 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
         {
             correctFeedback = "Correct!",
             incorrectFeedback = $"The audio actually said: {string.Join(", ", originalCleanWords)}.",
+        });
+
+        return (instructions, formSchemaJson, answerKeyJson, scoringRulesJson, feedbackPlanJson);
+    }
+
+    /// <summary>Splits free text into trimmed sentences on '.', '!', '?', discarding anything
+    /// shorter than <see cref="MinDictationSentenceLength"/> characters (too short to be a
+    /// meaningful dictation/repeat unit — e.g. a stray "Mr." abbreviation fragment). Shared by
+    /// <see cref="ComposeWriteFromDictation"/> and <see cref="ComposeRepeatSentence"/>.</summary>
+    private static List<string> SplitIntoSentences(string text) =>
+        text.Split(new[] { '.', '!', '?' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(s => s.Trim())
+            .Where(s => s.Length >= MinDictationSentenceLength)
+            .ToList();
+
+    /// <summary>Phase K22 — see <see cref="ActivityTypeWriteFromDictation"/>'s doc comment for the
+    /// full rationale. The audioPlayer component carries no source in its own schema; the
+    /// student's browser resolves the resource's own full audio via the Phase K21 resource-audio
+    /// streaming endpoint (same mechanism as highlight_incorrect_words).</summary>
+    private static (string Instructions, string FormSchemaJson, string AnswerKeyJson, string ScoringRulesJson, string FeedbackPlanJson)
+        ComposeWriteFromDictation(LessonResourceSnapshot primary)
+    {
+        var transcript = primary.Body;
+        if (string.IsNullOrWhiteSpace(transcript))
+            throw new ExerciseValidationException(
+                $"Resource '{primary.Title}' has no transcript to build a dictation exercise from — publish a transcript, or use a different Exercise type.");
+
+        var sentences = SplitIntoSentences(transcript).Take(MaxDictationSentences).ToList();
+        if (sentences.Count < MinDictationSentences)
+            throw new ExerciseValidationException(
+                $"Resource '{primary.Title}' does not have enough distinct sentences to build a dictation exercise (need at least {MinDictationSentences}, found {sentences.Count}) — use a different Exercise type.");
+
+        var instructions = "Listen to the audio, then type exactly what you hear for each sentence below.";
+        var components = new List<object> { new { type = "audioPlayer", key = "listening_audio" } };
+        var answerKey = new Dictionary<string, string>();
+        var scoringComponents = new Dictionary<string, ComponentScoringRule>();
+        for (var i = 0; i < sentences.Count; i++)
+        {
+            var key = $"answer_{i}";
+            answerKey[key] = sentences[i];
+            scoringComponents[key] = new ComponentScoringRule(ScoringRuleKinds.TextNormalized, CorrectAnswer: sentences[i], Points: 1.0);
+            components.Add(new { type = "textfield", key, label = $"Sentence {i + 1}", input = true });
+        }
+
+        var formSchemaJson = JsonSerializer.Serialize(new { components });
+        var answerKeyJson = JsonSerializer.Serialize(answerKey);
+        var scoringRulesJson = JsonSerializer.Serialize(new ScoringRulesDocument(scoringComponents));
+        var feedbackPlanJson = JsonSerializer.Serialize(new
+        {
+            correctFeedback = "Correct!",
+            incorrectFeedback = $"The audio actually said: {string.Join(" / ", sentences)}.",
+        });
+
+        return (instructions, formSchemaJson, answerKeyJson, scoringRulesJson, feedbackPlanJson);
+    }
+
+    /// <summary>Phase K22 — see <see cref="ActivityTypeRepeatSentence"/>'s doc comment for the
+    /// full rationale.</summary>
+    private static (string Instructions, string FormSchemaJson, string AnswerKeyJson, string ScoringRulesJson, string FeedbackPlanJson)
+        ComposeRepeatSentence(LessonResourceSnapshot primary)
+    {
+        if (string.IsNullOrWhiteSpace(primary.Body))
+            throw new ExerciseValidationException(
+                $"Resource '{primary.Title}' has no prompt text to build a repeat-sentence exercise from — use a different Exercise type.");
+
+        var sentences = SplitIntoSentences(primary.Body).Take(MaxRepeatSentences).ToList();
+        if (sentences.Count < MinRepeatSentences)
+            throw new ExerciseValidationException(
+                $"Resource '{primary.Title}' does not have enough distinct sentences to build a repeat-sentence exercise (need at least {MinRepeatSentences}, found {sentences.Count}) — use a different Exercise type.");
+
+        var instructions = "Read each sentence below, then repeat it aloud as accurately as you can.";
+        var components = new List<object>();
+        for (var i = 0; i < sentences.Count; i++)
+            components.Add(new { type = "speakingResponse", key = $"answer_{i}", label = $"Repeat: \"{sentences[i]}\"" });
+
+        var formSchemaJson = JsonSerializer.Serialize(new { components });
+        var answerKeyJson = JsonSerializer.Serialize(sentences.Select((s, i) => new { key = $"answer_{i}", text = s })
+            .ToDictionary(x => x.key, x => (string?)x.text));
+        var scoringComponents = sentences.Select((_, i) => $"answer_{i}")
+            .ToDictionary(key => key, _ => new ComponentScoringRule(ScoringRuleKinds.Speaking, RequiresManualOrAiEvaluation: true));
+        var scoringRulesJson = JsonSerializer.Serialize(new ScoringRulesDocument(scoringComponents));
+        var feedbackPlanJson = JsonSerializer.Serialize(new
+        {
+            correctFeedback = (string?)null,
+            incorrectFeedback = (string?)null,
+            note = "Open-ended spoken response — requires manual or AI evaluation, not deterministically scored.",
         });
 
         return (instructions, formSchemaJson, answerKeyJson, scoringRulesJson, feedbackPlanJson);
