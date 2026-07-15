@@ -134,17 +134,68 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         return e;
     }
 
+    /// <summary>Phase 2 (2026-07-15 exercise pipeline boundary consolidation) — this whole test
+    /// file predates the removal of the direct "generate from resources" entry point
+    /// (<c>IGenerateActivityFromResourcesHandler</c>) and exercises the shared deterministic
+    /// composition logic (still fully intact — see <see cref="ActivityGenerationService.ComposeAndSaveAsync"/>)
+    /// via what used to be its own public request/entry point. Rather than hand-editing 50+ call
+    /// sites, this drop-in-compatible shim seeds a throwaway Lesson (and LessonResourceLinks for
+    /// the same resources each test already selects) and routes through the sole surviving
+    /// <see cref="IGenerateActivityFromLessonHandler"/> entry point — exactly what a real caller
+    /// must do post-Phase-2. <c>DefaultCefrLevel</c>/<c>DefaultSkill</c>/<c>DefaultSubskill</c>/
+    /// <c>DefaultContextTags</c>/<c>DefaultFocusTags</c>/<c>DefaultDifficultyBand</c> become the
+    /// seeded Lesson's own fields, matching how a real Lesson-based call already derives those
+    /// defaults from the Lesson itself.</summary>
+    private sealed record TestResourcesRequest(
+        IReadOnlyList<ExerciseResourceLinkInput> Resources,
+        string? RequestedActivityType = null,
+        string? Title = null,
+        string? DefaultCefrLevel = null,
+        string? DefaultSkill = null,
+        string? DefaultSubskill = null,
+        IReadOnlyList<string>? DefaultContextTags = null,
+        IReadOnlyList<string>? DefaultFocusTags = null,
+        int? DefaultDifficultyBand = null,
+        string? Notes = null,
+        Guid? CreatedByUserId = null);
+
+    private async Task<GenerateExerciseResult> GenerateFromResourcesAsync(
+        TestResourcesRequest request, CancellationToken ct = default)
+    {
+        var lesson = new Lesson(
+            "Test Lesson", "Test lesson body.", LessonSourceMode.Manual,
+            request.DefaultCefrLevel, request.DefaultSkill, request.DefaultSubskill,
+            contextTagsJson: request.DefaultContextTags is { Count: > 0 } ? JsonSerializer.Serialize(request.DefaultContextTags) : "[]",
+            focusTagsJson: request.DefaultFocusTags is { Count: > 0 } ? JsonSerializer.Serialize(request.DefaultFocusTags) : "[]",
+            difficultyBand: request.DefaultDifficultyBand);
+        _db.Lessons.Add(lesson);
+        _db.SaveChanges();
+
+        foreach (var r in request.Resources)
+        {
+            if (!LessonResourceLookup.TryParseResourceType(r.ResourceType, out var type)
+                || !LessonResourceLookup.TryParseRole(r.Role, out var role))
+                continue;
+            _db.LessonResourceLinks.Add(new LessonResourceLink(lesson.Id, type, r.ResourceId, role));
+        }
+        if (request.Resources.Count > 0)
+            _db.SaveChanges();
+
+        return await _sut.HandleAsync(new GenerateActivityFromLessonRequest(
+            lesson.Id, request.RequestedActivityType, request.Title, request.Notes, request.CreatedByUserId), ct);
+    }
+
     [Fact]
     public async Task Generate_from_resources_creates_pending_review_activity_not_approved()
     {
         var source = SeedSource();
         var vocab = SeedVocabulary(source.Id);
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") }));
 
         result.Activity.ReviewStatus.Should().Be("PendingReview");
-        result.Activity.SourceMode.Should().Be("GeneratedFromResources");
+        result.Activity.SourceMode.Should().Be("GeneratedFromLesson");
         result.Activity.GenerationProvider.Should().Be("Deterministic");
         (await _db.Exercises.CountAsync()).Should().Be(1);
     }
@@ -155,7 +206,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var vocab = SeedVocabulary(source.Id);
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") },
             DefaultSkill: "Vocabulary", DefaultSubskill: "CoreWords", DefaultDifficultyBand: 3));
 
@@ -171,7 +222,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var vocab = SeedVocabulary(source.Id);
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") },
             RequestedActivityType: "gap_fill"));
 
@@ -187,7 +238,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var vocab = SeedVocabulary(source.Id, word: "resilient");
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") },
             RequestedActivityType: "gap_fill"));
 
@@ -202,7 +253,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var vocab = SeedVocabulary(source.Id);
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") }));
 
         result.Activity.Links.Should().ContainSingle(l => l.ResourceType == "Vocabulary" && l.ResourceId == vocab.Id);
@@ -214,7 +265,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var grammar = SeedGrammar(source.Id);
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Grammar", grammar.Id, "Primary") }));
 
         result.Activity.Links.Should().ContainSingle(l => l.ResourceType == "Grammar" && l.ResourceId == grammar.Id);
@@ -227,7 +278,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var reference = SeedReadingReference(source.Id);
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("ReadingReference", reference.Id, "Primary") }));
 
         result.Activity.Links.Should().ContainSingle(l => l.ResourceType == "ReadingReference");
@@ -243,7 +294,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var vocab = SeedVocabulary(source.Id);
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") },
             RequestedActivityType: "gap_fill"));
 
@@ -258,7 +309,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var reference = SeedReadingReference(source.Id);
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("ReadingReference", reference.Id, "Primary") }));
 
         result.Activity.ReviewStatus.Should().Be("PendingReview");
@@ -272,7 +323,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var passage = SeedReadingPassage(source.Id);
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("ReadingPassage", passage.Id, "Primary") }));
 
         result.Activity.Links.Should().ContainSingle(l => l.ResourceType == "ReadingPassage" && l.ResourceId == passage.Id);
@@ -285,7 +336,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var vocab1 = SeedVocabulary(source.Id, "resilient", "able to recover quickly");
         SeedVocabulary(source.Id, "diligent", "showing care in one's work");
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Vocabulary", vocab1.Id, "Primary") },
             RequestedActivityType: "multiple_choice_single"));
 
@@ -299,7 +350,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var vocab = SeedVocabulary(source.Id);
 
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") },
             RequestedActivityType: "multiple_choice_single"));
 
@@ -384,7 +435,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
     [Fact]
     public async Task Generate_with_invalid_resource_id_is_rejected()
     {
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Vocabulary", Guid.NewGuid(), "Primary") }));
 
         await act.Should().ThrowAsync<ExerciseValidationException>();
@@ -397,7 +448,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var vocab = SeedVocabulary(source.Id);
 
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Listening", vocab.Id, "Primary") }));
 
         await act.Should().ThrowAsync<ExerciseValidationException>();
@@ -410,7 +461,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var vocab = SeedVocabulary(source.Id);
         var originalWord = ResourceBankItemContent.Deserialize<VocabularyContent>(vocab.ContentJson).Word;
 
-        await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") }));
 
         var reloaded = await _db.ResourceBankItems.FirstAsync(v => v.Id == vocab.Id);
@@ -442,7 +493,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var passage = SeedReadingPassage(source.Id);
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("ReadingPassage", passage.Id, "Primary") },
             RequestedActivityType: "reading_fill_in_blanks"));
 
@@ -457,7 +508,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var passage = SeedReadingPassage(source.Id);
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("ReadingPassage", passage.Id, "Primary") },
             RequestedActivityType: "reading_fill_in_blanks"));
 
@@ -472,7 +523,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var reference = SeedReadingReference(source.Id);
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("ReadingReference", reference.Id, "Primary") },
             RequestedActivityType: "reading_fill_in_blanks"));
 
@@ -490,7 +541,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         _db.ResourceBankItems.Add(e);
         await _db.SaveChangesAsync();
 
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("ReadingReference", e.Id, "Primary") },
             RequestedActivityType: "reading_fill_in_blanks"));
 
@@ -506,7 +557,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var passage = SeedReadingPassage(source.Id);
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("ReadingPassage", passage.Id, "Primary") },
             RequestedActivityType: "reading_writing_fill_in_blanks"));
 
@@ -525,7 +576,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         _db.ResourceBankItems.Add(e);
         await _db.SaveChangesAsync();
 
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("ReadingReference", e.Id, "Primary") },
             RequestedActivityType: "reading_writing_fill_in_blanks"));
 
@@ -543,7 +594,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         SeedVocabulary(source.Id, "diligent", "showing care in one's work");
         SeedVocabulary(source.Id, "candid", "open and honest in expression");
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Vocabulary", vocab1.Id, "Primary") },
             RequestedActivityType: "phrase_match"));
 
@@ -559,7 +610,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var vocab = SeedVocabulary(source.Id);
 
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") },
             RequestedActivityType: "phrase_match"));
 
@@ -573,7 +624,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var reference = SeedReadingReference(source.Id);
 
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("ReadingReference", reference.Id, "Primary") },
             RequestedActivityType: "phrase_match"));
 
@@ -595,7 +646,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         _db.ResourceBankItems.Add(e);
         await _db.SaveChangesAsync();
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("ReadingPassage", e.Id, "Primary") },
             RequestedActivityType: "reorder_paragraphs"));
 
@@ -617,7 +668,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         _db.ResourceBankItems.Add(e);
         await _db.SaveChangesAsync();
 
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("ReadingPassage", e.Id, "Primary") },
             RequestedActivityType: "reorder_paragraphs"));
 
@@ -631,7 +682,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var vocab = SeedVocabulary(source.Id);
 
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") },
             RequestedActivityType: "reorder_paragraphs"));
 
@@ -644,7 +695,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var vocab = SeedVocabulary(source.Id);
 
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") },
             RequestedActivityType: "reading_writing_fill_in_blanks"));
 
@@ -657,7 +708,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var vocab = SeedVocabulary(source.Id);
 
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") },
             RequestedActivityType: "reading_fill_in_blanks"));
 
@@ -672,7 +723,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var writing = SeedWritingPrompt(source.Id, "Reply to the customer complaint below.");
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Writing", writing.Id, "Primary") },
             RequestedActivityType: "email_reply"));
 
@@ -687,7 +738,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var writing = SeedWritingPrompt(source.Id, "Hey, can you send me the report by EOD?");
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Writing", writing.Id, "Primary") },
             RequestedActivityType: "teams_chat_simulation"));
 
@@ -703,7 +754,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var listening = SeedListeningPassage(source.Id,
             transcript: "Please remember to submit your expense report before the Friday deadline arrives.");
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Listening", listening.Id, "Primary") },
             RequestedActivityType: "highlight_incorrect_words"));
 
@@ -723,7 +774,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var listening = SeedListeningPassage(source.Id, transcript: "Hi there.");
 
-        var act = () => _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = () => GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Listening", listening.Id, "Primary") },
             RequestedActivityType: "highlight_incorrect_words"));
 
@@ -737,7 +788,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var listening = SeedListeningPassage(source.Id,
             transcript: "Please submit your expense report by Friday. The finance team reviews claims weekly. Late submissions may be delayed.");
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Listening", listening.Id, "Primary") },
             RequestedActivityType: "write_from_dictation"));
 
@@ -753,7 +804,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var listening = SeedListeningPassage(source.Id, transcript: "Hi there.");
 
-        var act = () => _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = () => GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Listening", listening.Id, "Primary") },
             RequestedActivityType: "write_from_dictation"));
 
@@ -767,7 +818,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var speaking = SeedSpeakingPrompt(source.Id,
             "Good morning everyone. Thank you for joining the call. Let's begin with the quarterly update.");
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Speaking", speaking.Id, "Primary") },
             RequestedActivityType: "repeat_sentence"));
 
@@ -782,7 +833,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var speaking = SeedSpeakingPrompt(source.Id, "Hi there.");
 
-        var act = () => _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = () => GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Speaking", speaking.Id, "Primary") },
             RequestedActivityType: "repeat_sentence"));
 
@@ -795,7 +846,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var writing = SeedWritingPrompt(source.Id);
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Writing", writing.Id, "Primary") },
             RequestedActivityType: "open_writing_task"));
 
@@ -808,7 +859,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var writing = SeedWritingPrompt(source.Id);
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Writing", writing.Id, "Primary") },
             RequestedActivityType: "write_essay"));
 
@@ -821,7 +872,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var writing = SeedWritingPrompt(source.Id);
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Writing", writing.Id, "Primary") }));
 
         result.Activity.ActivityType.Should().Be("email_reply");
@@ -835,7 +886,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var reference = SeedReadingReference(source.Id);
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("ReadingReference", reference.Id, "Primary") },
             RequestedActivityType: "summarize_written_text"));
 
@@ -850,7 +901,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var passage = SeedReadingPassage(source.Id);
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("ReadingPassage", passage.Id, "Primary") },
             RequestedActivityType: "summarize_written_text"));
 
@@ -863,7 +914,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var writing = SeedWritingPrompt(source.Id);
 
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Writing", writing.Id, "Primary") },
             RequestedActivityType: "summarize_written_text"));
 
@@ -878,7 +929,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var listening = SeedListeningPassage(source.Id);
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Listening", listening.Id, "Primary") },
             RequestedActivityType: "listening_fill_in_blanks"));
 
@@ -893,7 +944,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var listening = SeedListeningPassage(source.Id, transcript: null);
 
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Listening", listening.Id, "Primary") },
             RequestedActivityType: "listening_fill_in_blanks"));
 
@@ -907,7 +958,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var writing = SeedWritingPrompt(source.Id);
 
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Writing", writing.Id, "Primary") },
             RequestedActivityType: "listening_fill_in_blanks"));
 
@@ -923,7 +974,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var speaking = SeedSpeakingPrompt(source.Id, "Talk about a challenge you faced at work.");
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Speaking", speaking.Id, "Primary") },
             RequestedActivityType: "spoken_response_from_prompt"));
 
@@ -942,7 +993,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var speaking = SeedSpeakingPrompt(source.Id);
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Speaking", speaking.Id, "Primary") },
             RequestedActivityType: activityType));
 
@@ -955,7 +1006,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var speaking = SeedSpeakingPrompt(source.Id);
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Speaking", speaking.Id, "Primary") }));
 
         result.Activity.ActivityType.Should().Be("spoken_response_from_prompt");
@@ -970,7 +1021,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var lecture = SeedListeningLecture(source.Id);
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Listening", lecture.Id, "Primary") },
             RequestedActivityType: "summarize_spoken_text"));
 
@@ -987,7 +1038,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var lecture = SeedListeningLecture(source.Id);
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Listening", lecture.Id, "Primary") },
             RequestedActivityType: activityType));
 
@@ -1001,7 +1052,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var lecture = SeedListeningLecture(source.Id);
 
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Listening", lecture.Id, "Primary") },
             RequestedActivityType: "gap_fill"));
 
@@ -1016,7 +1067,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var speaking = SeedSpeakingPrompt(source.Id, imageUrl: "https://example.com/office.jpg");
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Speaking", speaking.Id, "Primary") },
             RequestedActivityType: "describe_image"));
 
@@ -1031,7 +1082,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var speaking = SeedSpeakingPrompt(source.Id); // no imageUrl
 
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Speaking", speaking.Id, "Primary") },
             RequestedActivityType: "describe_image"));
 
@@ -1046,7 +1097,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var speaking = SeedSpeakingPrompt(source.Id);
 
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Speaking", speaking.Id, "Primary") },
             RequestedActivityType: "gap_fill"));
 
@@ -1059,7 +1110,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var writing = SeedWritingPrompt(source.Id);
 
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Writing", writing.Id, "Primary") },
             RequestedActivityType: "gap_fill"));
 
@@ -1072,7 +1123,7 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         var source = SeedSource();
         var vocab = SeedVocabulary(source.Id);
 
-        await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") }));
 
         (await _db.StudentProfiles.CountAsync()).Should().Be(0);

@@ -5,7 +5,6 @@ import { environment } from '../../../environments/environment';
 import {
   ExerciseDto,
   ExerciseListResult,
-  GenerateActivityFromResourcesRequestBody,
   GenerateActivityFromLessonRequestBody,
   GenerateExerciseResult,
   UpdateExerciseRequestBody,
@@ -46,14 +45,6 @@ export class AdminExerciseService {
 
   get(id: string): Observable<ExerciseDto> {
     return this.http.get<ExerciseDto>(`${this.base}/${id}`);
-  }
-
-  generateFromResources(body: GenerateActivityFromResourcesRequestBody): Observable<GenerateExerciseResult> {
-    return this.http.post<GenerateExerciseResult>(`${this.base}/generate-from-resources`, body);
-  }
-
-  generateFromResourcesWithAi(body: GenerateActivityFromResourcesRequestBody): Observable<GenerateExerciseResult> {
-    return this.http.post<GenerateExerciseResult>(`${this.base}/generate-from-resources/ai`, body);
   }
 
   generateFromLesson(body: GenerateActivityFromLessonRequestBody): Observable<GenerateExerciseResult> {

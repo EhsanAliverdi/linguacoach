@@ -27,7 +27,7 @@ public sealed class AdminModuleEndpointTests : IClassFixture<ApiTestFactory>
         db.Lessons.Add(lesson);
 
         var activity = new Exercise($"Activity {Guid.NewGuid():N}", "Instructions.", "gap_fill",
-            ExerciseRendererType.Formio, ExerciseSourceMode.Manual, cefrLevel: cefrLevel, skill: skill);
+            ExerciseRendererType.Formio, ExerciseSourceMode.Manual, cefrLevel: cefrLevel, skill: skill, lessonId: lesson.Id);
         activity.Approve(null);
         db.Exercises.Add(activity);
 

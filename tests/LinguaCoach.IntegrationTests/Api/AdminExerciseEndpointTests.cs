@@ -75,8 +75,11 @@ public sealed class AdminExerciseEndpointTests : IClassFixture<ApiTestFactory>
         Assert.True(body.TryGetProperty("items", out _));
     }
 
+    // Phase 2 (2026-07-15 exercise pipeline boundary consolidation) — the direct
+    // "generate-from-resources" endpoint (no Lesson context) was removed entirely; every Exercise
+    // now requires a Lesson (Resource Bank → Lesson → Exercise is the only supported flow).
     [Fact]
-    public async Task Admin_can_generate_activity_from_resource_bank_row()
+    public async Task Generate_from_resources_endpoint_no_longer_exists()
     {
         var vocabId = await SeedVocabularyAsync($"word-{Guid.NewGuid():N}");
         var token = await _factory.CreateAdminAndGetTokenAsync();
@@ -88,13 +91,27 @@ public sealed class AdminExerciseEndpointTests : IClassFixture<ApiTestFactory>
             resources = new[] { new { resourceType = "Vocabulary", resourceId = vocabId, role = "Primary" } },
         });
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-        var activity = body.GetProperty("activity");
-        Assert.Equal("PendingReview", activity.GetProperty("reviewStatus").GetString());
-        Assert.Equal("GeneratedFromResources", activity.GetProperty("sourceMode").GetString());
-        Assert.Equal("Formio", activity.GetProperty("rendererType").GetString());
-        Assert.Single(activity.GetProperty("links").EnumerateArray());
+        Assert.True(
+            response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.MethodNotAllowed,
+            $"Expected the removed endpoint to be unreachable, got {response.StatusCode}.");
+    }
+
+    [Fact]
+    public async Task Generate_from_resources_ai_endpoint_no_longer_exists()
+    {
+        var vocabId = await SeedVocabularyAsync($"word-{Guid.NewGuid():N}");
+        var token = await _factory.CreateAdminAndGetTokenAsync();
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        var response = await client.PostAsJsonAsync("/api/admin/exercises/generate-from-resources/ai", new
+        {
+            resources = new[] { new { resourceType = "Vocabulary", resourceId = vocabId, role = "Primary" } },
+        });
+
+        Assert.True(
+            response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.MethodNotAllowed,
+            $"Expected the removed endpoint to be unreachable, got {response.StatusCode}.");
     }
 
     [Fact]
@@ -126,11 +143,9 @@ public sealed class AdminExerciseEndpointTests : IClassFixture<ApiTestFactory>
         var token = await _factory.CreateAdminAndGetTokenAsync();
         var client = _factory.CreateClient();
         client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        var lessonId = await GenerateLessonAsync(client, vocabId);
 
-        var genResp = await client.PostAsJsonAsync("/api/admin/exercises/generate-from-resources", new
-        {
-            resources = new[] { new { resourceType = "Vocabulary", resourceId = vocabId, role = "Primary" } },
-        });
+        var genResp = await client.PostAsJsonAsync("/api/admin/exercises/generate-from-lesson", new { lessonId });
         var genBody = await genResp.Content.ReadFromJsonAsync<JsonElement>();
         var id = genBody.GetProperty("activity").GetProperty("id").GetGuid();
 
@@ -139,10 +154,7 @@ public sealed class AdminExerciseEndpointTests : IClassFixture<ApiTestFactory>
         var approveBody = await approveResp.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal("Approved", approveBody.GetProperty("reviewStatus").GetString());
 
-        var genResp2 = await client.PostAsJsonAsync("/api/admin/exercises/generate-from-resources", new
-        {
-            resources = new[] { new { resourceType = "Vocabulary", resourceId = vocabId, role = "Primary" } },
-        });
+        var genResp2 = await client.PostAsJsonAsync("/api/admin/exercises/generate-from-lesson", new { lessonId });
         var genBody2 = await genResp2.Content.ReadFromJsonAsync<JsonElement>();
         var id2 = genBody2.GetProperty("activity").GetProperty("id").GetGuid();
 
@@ -153,7 +165,7 @@ public sealed class AdminExerciseEndpointTests : IClassFixture<ApiTestFactory>
     }
 
     [Fact]
-    public async Task Generate_from_resources_does_not_publish_or_assign_anything()
+    public async Task Generate_from_lesson_does_not_publish_or_assign_anything()
     {
         var vocabId = await SeedVocabularyAsync($"word-{Guid.NewGuid():N}");
 
@@ -169,11 +181,9 @@ public sealed class AdminExerciseEndpointTests : IClassFixture<ApiTestFactory>
         var token = await _factory.CreateAdminAndGetTokenAsync();
         var client = _factory.CreateClient();
         client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+        var lessonId = await GenerateLessonAsync(client, vocabId);
 
-        await client.PostAsJsonAsync("/api/admin/exercises/generate-from-resources", new
-        {
-            resources = new[] { new { resourceType = "Vocabulary", resourceId = vocabId, role = "Primary" } },
-        });
+        await client.PostAsJsonAsync("/api/admin/exercises/generate-from-lesson", new { lessonId });
 
         using (var scope = _factory.Services.CreateScope())
         {

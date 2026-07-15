@@ -21,8 +21,8 @@ namespace LinguaCoach.Infrastructure.Exercises;
 /// failure rolls back everything from this call, matching the "admin wants to know immediately,
 /// not silently get a partial result" intent the fail-fast design already stated.
 ///
-/// Phase K14 — "multiple_choice_single" is routed to the AI-assisted resources-based handler
-/// instead of the deterministic Lesson-based one. The deterministic composer's distractors are
+/// Phase K14 — "multiple_choice_single" is routed to the AI-assisted Lesson-based handler
+/// instead of the deterministic one. The deterministic composer's distractors are
 /// pulled from other same-CEFR-level Resource Bank rows purely by creation order — with no
 /// subskill/category tagging on the data (confirmed empty for the whole Vocabulary bank), that
 /// produces semantically random, often nonsensical wrong answers (e.g. "zoo"/"yourself"/"yours"
@@ -58,18 +58,18 @@ public sealed class LessonExerciseBatchGenerationService : IGenerateActivitiesFr
     };
 
     private readonly IGenerateActivityFromLessonHandler _singleHandler;
-    private readonly IGenerateActivityFromResourcesWithAiHandler _aiResourcesHandler;
+    private readonly IGenerateActivityFromLessonWithAiHandler _aiLessonHandler;
     private readonly IModuleAutoLinkService _moduleAutoLink;
     private readonly LinguaCoachDbContext _db;
 
     public LessonExerciseBatchGenerationService(
         IGenerateActivityFromLessonHandler singleHandler,
-        IGenerateActivityFromResourcesWithAiHandler aiResourcesHandler,
+        IGenerateActivityFromLessonWithAiHandler aiLessonHandler,
         IModuleAutoLinkService moduleAutoLink,
         LinguaCoachDbContext db)
     {
         _singleHandler = singleHandler;
-        _aiResourcesHandler = aiResourcesHandler;
+        _aiLessonHandler = aiLessonHandler;
         _moduleAutoLink = moduleAutoLink;
         _db = db;
     }
@@ -97,19 +97,14 @@ public sealed class LessonExerciseBatchGenerationService : IGenerateActivitiesFr
                     ? null
                     : $"{request.TitlePrefix} ({created.Count + 1})";
 
-                ExerciseDto activity;
-                if (spec.ActivityType is not null && AiOnlyOrAiPreferredTypes.Contains(spec.ActivityType))
-                {
-                    var resourcesRequest = await BuildResourcesRequestAsync(request.LessonId, spec.ActivityType, title, request.Notes, request.CreatedByUserId, ct);
-                    var result = await _aiResourcesHandler.HandleAsync(resourcesRequest, ct);
-                    activity = result.Activity;
-                }
-                else
-                {
-                    var result = await _singleHandler.HandleAsync(new GenerateActivityFromLessonRequest(
-                        request.LessonId, spec.ActivityType, title, request.Notes, request.CreatedByUserId), ct);
-                    activity = result.Activity;
-                }
+                var lessonRequest = new GenerateActivityFromLessonRequest(
+                    request.LessonId, spec.ActivityType, title, request.Notes, request.CreatedByUserId);
+
+                var isAiPreferred = spec.ActivityType is not null && AiOnlyOrAiPreferredTypes.Contains(spec.ActivityType);
+                var result = isAiPreferred
+                    ? await _aiLessonHandler.HandleAsync(lessonRequest, ct)
+                    : await _singleHandler.HandleAsync(lessonRequest, ct);
+                var activity = result.Activity;
 
                 // Phase 1 (2026-07-15 pipeline safety audit) — this is a Lesson-based batch, so
                 // every Exercise it creates must retain the Lesson relationship regardless of which
@@ -129,43 +124,5 @@ public sealed class LessonExerciseBatchGenerationService : IGenerateActivitiesFr
         await transaction.CommitAsync(ct);
 
         return new GenerateActivitiesFromLessonResult(created, moduleId, $"/admin/modules/{moduleId}");
-    }
-
-    /// <summary>Mirrors exactly what <see cref="ActivityGenerationService"/>'s own "from Lesson"
-    /// handler does to resolve a Lesson's linked resources — reused here so the AI resources-based
-    /// handler receives the same resource/role set and the same Lesson-derived defaults
-    /// (CefrLevel/Skill/Subskill/tags/difficulty) a deterministic call would have used.</summary>
-    private async Task<GenerateActivityFromResourcesRequest> BuildResourcesRequestAsync(
-        Guid lessonId, string? activityType, string? title, string? notes, Guid? createdByUserId, CancellationToken ct)
-    {
-        var lesson = await _db.Lessons.FirstOrDefaultAsync(l => l.Id == lessonId, ct)
-            ?? throw new ExerciseValidationException($"Lesson '{lessonId}' was not found.");
-
-        var lessonLinks = await _db.LessonResourceLinks.Where(l => l.LessonId == lesson.Id).ToListAsync(ct);
-        if (lessonLinks.Count == 0)
-            throw new ExerciseValidationException("This Lesson has no linked resources to generate an Activity from.");
-
-        var resources = lessonLinks
-            .Select(link => new ExerciseResourceLinkInput(link.ResourceType.ToString(), link.ResourceId, link.Role.ToString()))
-            .ToList();
-
-        return new GenerateActivityFromResourcesRequest(
-            resources, activityType, title ?? lesson.Title,
-            lesson.CefrLevel, lesson.Skill, lesson.Subskill,
-            ParseTags(lesson.ContextTagsJson), ParseTags(lesson.FocusTagsJson), lesson.DifficultyBand,
-            notes, createdByUserId, LessonId: lesson.Id);
-    }
-
-    private static List<string> ParseTags(string? json)
-    {
-        if (string.IsNullOrWhiteSpace(json)) return new List<string>();
-        try
-        {
-            return System.Text.Json.JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
-        }
-        catch (System.Text.Json.JsonException)
-        {
-            return new List<string>();
-        }
     }
 }

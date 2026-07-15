@@ -1048,17 +1048,24 @@ but not fixed there to keep that phase narrowly scoped to the two confirmed corr
 
 ### TODO-027 — Direct Resource→Exercise generation path: keep or deprecate?
 
-**What:** `IGenerateActivityFromResourcesHandler`/`IGenerateActivityFromResourcesWithAiHandler`
-remain fully implemented and API-reachable with no `LessonId`, bypassing the "Exercises come from
+**Status: RESOLVED** — Phase 2 (2026-07-15, `docs/reviews/2026-07-15-phase-2-exercise-pipeline-boundary-review.md`)
+removed `IGenerateActivityFromResourcesHandler`/`IGenerateActivityFromResourcesWithAiHandler` and
+the `generate-from-resources`/`generate-from-resources/ai` endpoints entirely. Every Exercise now
+requires a Lesson (`Exercise.LessonId` is a non-nullable `Guid`). An architecture-test guard
+(`ExercisePipelineBoundaryTests.cs`) prevents reintroduction.
+
+**What (original):** `IGenerateActivityFromResourcesHandler`/`IGenerateActivityFromResourcesWithAiHandler`
+remained fully implemented and API-reachable with no `LessonId`, bypassing the "Exercises come from
 Lessons" framing. The 2026-07-15 architecture audit flagged this as an open product question
 (is it an intentional supported alternative, or vestigial?); Phase 1 (2026-07-15) deliberately
 left it untouched — its working rules explicitly forbade removing or redesigning the direct
 Resource-to-Exercise capability.
 
-**Why:** A future frontend change wiring this path up would silently reintroduce "Exercises can
-bypass Lessons" as live behavior without anyone deciding that as a product choice.
+**Why (original):** A future frontend change wiring this path up would silently reintroduce
+"Exercises can bypass Lessons" as live behavior without anyone deciding that as a product choice.
 
 **Context:** `docs/reviews/2026-07-15-content-creation-pipeline-architecture-audit.md` ("Questions
 or ambiguities discovered during the audit", item 1).
 
-**Deferred from:** Content Creation Pipeline architecture audit, 2026-07-15.
+**Deferred from:** Content Creation Pipeline architecture audit, 2026-07-15. **Resolved:** Phase 2,
+2026-07-15.

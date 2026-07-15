@@ -47,10 +47,11 @@ public sealed class ModuleGenerationServiceTests : IDisposable
         return item;
     }
 
-    private Exercise SeedActivity(bool approved, string title = "Gap fill: resilient", string cefrLevel = "B2", string skill = "Vocabulary")
+    private Exercise SeedActivity(bool approved, string title = "Gap fill: resilient", string cefrLevel = "B2", string skill = "Vocabulary", Guid? lessonId = null)
     {
         var activity = new Exercise(title, "Type the missing word.", "gap_fill", ExerciseRendererType.Formio,
-            ExerciseSourceMode.Manual, cefrLevel: cefrLevel, skill: skill, estimatedMinutes: 5);
+            ExerciseSourceMode.Manual, cefrLevel: cefrLevel, skill: skill, estimatedMinutes: 5,
+            lessonId: lessonId ?? SeedLesson(true, title, cefrLevel, skill).Id);
         if (approved) activity.Approve(null);
         _db.Exercises.Add(activity);
         _db.SaveChanges();
@@ -285,8 +286,12 @@ public sealed class ModuleGenerationServiceTests : IDisposable
     [Fact]
     public async Task Generate_from_activity_rejected_when_no_compatible_lesson_exists()
     {
-        SeedLesson(approved: true, cefrLevel: "A1", skill: "Vocabulary");
-        var activity = SeedActivity(approved: true, cefrLevel: "C1", skill: "Grammar");
+        var incompatibleLesson = SeedLesson(approved: true, cefrLevel: "A1", skill: "Vocabulary");
+        // Exercise.LessonId is now mandatory but is unrelated to the "find a compatible Lesson"
+        // search below (which matches by CefrLevel/Skill across every approved Lesson, independent
+        // of any Exercise's own LessonId) — pointing it at the deliberately-incompatible Lesson
+        // above keeps this test from accidentally seeding a second, matching Lesson.
+        var activity = SeedActivity(approved: true, cefrLevel: "C1", skill: "Grammar", lessonId: incompatibleLesson.Id);
 
         var act = async () => await _sut.HandleAsync(new GenerateModuleFromExerciseRequest(activity.Id));
 

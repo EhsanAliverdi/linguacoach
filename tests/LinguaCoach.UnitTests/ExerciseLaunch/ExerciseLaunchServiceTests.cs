@@ -59,11 +59,13 @@ public sealed class ExerciseLaunchServiceTests : IDisposable
         ExerciseRendererType rendererType = ExerciseRendererType.Formio,
         string? formSchemaJson = ValidFormSchema,
         string? scoringRulesJson = ValidScoring,
-        string? answerKeyJson = "{\"word_answer\":\"resilient\"}")
+        string? answerKeyJson = "{\"word_answer\":\"resilient\"}",
+        Guid? lessonId = null)
     {
         var activity = new Exercise("Gap fill: resilient", "Type the missing word.", activityType, rendererType,
             ExerciseSourceMode.Manual, cefrLevel: "B1", skill: "Vocabulary", estimatedMinutes: 5,
-            formSchemaJson: formSchemaJson, answerKeyJson: answerKeyJson, scoringRulesJson: scoringRulesJson);
+            formSchemaJson: formSchemaJson, answerKeyJson: answerKeyJson, scoringRulesJson: scoringRulesJson,
+            lessonId: lessonId ?? SeedLesson().Id);
         if (approved) activity.Approve(null);
         _db.Exercises.Add(activity);
         _db.SaveChanges();
@@ -86,7 +88,7 @@ public sealed class ExerciseLaunchServiceTests : IDisposable
 
         if (linkActivity)
         {
-            activity ??= SeedActivity();
+            activity ??= SeedActivity(lessonId: lesson.Id);
             _db.ModuleExerciseLinks.Add(new ModuleExerciseLink(module.Id, activity.Id, ModuleExerciseRole.PrimaryPractice, 0));
         }
 

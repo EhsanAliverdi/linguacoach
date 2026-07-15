@@ -13,13 +13,16 @@ using Microsoft.EntityFrameworkCore;
 namespace LinguaCoach.Infrastructure.Exercises;
 
 /// <summary>
-/// Phase H4 — deterministic "Generate Activity" composer, for both entry points
-/// (<see cref="IGenerateActivityFromResourcesHandler"/>/<see cref="IGenerateActivityFromLessonHandler"/>).
-/// Builds a pending-review <see cref="Exercise"/> draft directly from the fields of one
-/// or more selected published Resource Bank rows — no AI provider call, matching Phase H3's
-/// <c>LessonGenerationService</c> decision (no existing AI service in this codebase generates a
-/// scored practice exercise from source text). Never modifies the resources or Lesson it reads
-/// from, never creates a Module row, never assigns anything to a student.
+/// Phase H4 — deterministic "Generate Activity" composer for <see cref="IGenerateActivityFromLessonHandler"/>.
+/// Builds a pending-review <see cref="Exercise"/> draft from the fields of the resources linked to
+/// an existing Lesson — no AI provider call, matching Phase H3's <c>LessonGenerationService</c>
+/// decision (no existing AI service in this codebase generates a scored practice exercise from
+/// source text). Never modifies the resources or Lesson it reads from, never creates a Module row,
+/// never assigns anything to a student.
+///
+/// Phase 2 (2026-07-15) — the direct "generate from Resource Bank items with no Lesson" entry
+/// point (<c>IGenerateActivityFromResourcesHandler</c>) was removed; every Exercise now requires a
+/// Lesson.
 ///
 /// Supported <c>ActivityType</c>s:
 /// <list type="bullet">
@@ -78,7 +81,7 @@ namespace LinguaCoach.Infrastructure.Exercises;
 /// placement/onboarding/reorder_paragraphs scoring, so a future runtime integration can reuse
 /// <see cref="LinguaCoach.Application.FormIo.ComponentAnswerScorer"/> as-is.
 /// </summary>
-public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHandler, IGenerateActivityFromLessonHandler
+public sealed class ActivityGenerationService : IGenerateActivityFromLessonHandler
 {
     private const string GenerationProvider = "Deterministic";
     private const string GenerationModel = "activity-draft-composer-v1";
@@ -282,38 +285,6 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
         ExerciseResourceLinkInput Input, PublishedResourceType Type, LessonResourceRole Role, LessonResourceSnapshot Snapshot);
 
     public async Task<GenerateExerciseResult> HandleAsync(
-        GenerateActivityFromResourcesRequest request, CancellationToken ct = default)
-    {
-        if (request.Resources is not { Count: > 0 })
-            throw new ExerciseValidationException("At least one resource is required to generate an Activity.");
-        if (request.DefaultCefrLevel is not null && !CefrLevelConstants.IsValid(request.DefaultCefrLevel))
-            throw new ExerciseValidationException($"Default CEFR level '{request.DefaultCefrLevel}' is not a valid CEFR level.");
-        if (request.DefaultDifficultyBand is < 1 or > 5)
-            throw new ExerciseValidationException("Default difficulty band must be between 1 and 5.");
-
-        var resolved = new List<ResolvedResource>();
-        foreach (var input in request.Resources)
-        {
-            if (!LessonResourceLookup.TryParseResourceType(input.ResourceType, out var resourceType))
-                throw new ExerciseValidationException($"Unsupported resource type '{input.ResourceType}'.");
-            if (!LessonResourceLookup.TryParseRole(input.Role, out var role))
-                throw new ExerciseValidationException($"Unsupported resource link role '{input.Role}'.");
-
-            var snapshot = await LessonResourceLookup.FindAsync(_db, resourceType, input.ResourceId, ct)
-                ?? throw new ExerciseValidationException(
-                    $"Resource '{input.ResourceType}:{input.ResourceId}' was not found in the published Resource Bank.");
-
-            resolved.Add(new ResolvedResource(input, resourceType, role, snapshot));
-        }
-
-        return await ComposeAndSaveAsync(
-            resolved, request.RequestedActivityType, request.Title,
-            request.DefaultCefrLevel, request.DefaultSkill, request.DefaultSubskill,
-            request.DefaultContextTags, request.DefaultFocusTags, request.DefaultDifficultyBand,
-            request.Notes, request.CreatedByUserId, lessonId: request.LessonId, ct);
-    }
-
-    public async Task<GenerateExerciseResult> HandleAsync(
         GenerateActivityFromLessonRequest request, CancellationToken ct = default)
     {
         var lesson = await _db.Lessons.FirstOrDefaultAsync(l => l.Id == request.LessonId, ct)
@@ -423,7 +394,7 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
         int? defaultDifficultyBand,
         string? notes,
         Guid? createdByUserId,
-        Guid? lessonId,
+        Guid lessonId,
         CancellationToken ct)
     {
         var primaryMatch = resolved.FirstOrDefault(r => r.Role == LessonResourceRole.Primary);
@@ -534,7 +505,6 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
             : MergeTagArrays(resolved.Select(r => r.Snapshot.FocusTagsJson));
         var difficultyBand = defaultDifficultyBand ?? primary.Snapshot.DifficultyBand;
 
-        var sourceMode = lessonId.HasValue ? ExerciseSourceMode.GeneratedFromLesson : ExerciseSourceMode.GeneratedFromResources;
         var description = $"Deterministic draft — review and edit before approval. Generated from: "
             + string.Join(", ", resolved.Select(r => r.Snapshot.Title)) + "."
             + (notes is not null ? $" {notes.Trim()}" : string.Empty);
@@ -543,7 +513,7 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
         try
         {
             activity = new Exercise(
-                resolvedTitle, instructions, activityType, ExerciseRendererType.Formio, sourceMode,
+                resolvedTitle, instructions, activityType, ExerciseRendererType.Formio, ExerciseSourceMode.GeneratedFromLesson,
                 description, patternKey: null, formSchemaJson, answerKeyJson, scoringRulesJson, feedbackPlanJson,
                 cefrLevel, skill, subskill,
                 JsonSerializer.Serialize(contextTags), JsonSerializer.Serialize(focusTags),

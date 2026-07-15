@@ -48,7 +48,8 @@ public sealed class ModuleCommandHandlerTests : IDisposable
 
     private Exercise SeedActivity()
     {
-        var activity = new Exercise("Gap fill", "Type the missing word.", "gap_fill", ExerciseRendererType.Formio, ExerciseSourceMode.Manual);
+        var activity = new Exercise("Gap fill", "Type the missing word.", "gap_fill", ExerciseRendererType.Formio,
+            ExerciseSourceMode.Manual, lessonId: SeedLesson().Id);
         _db.Exercises.Add(activity);
         _db.SaveChanges();
         return activity;

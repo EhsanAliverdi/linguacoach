@@ -78,9 +78,12 @@ public sealed class Exercise : BaseEntity
     public int? DifficultyBand { get; private set; }
     public int? EstimatedMinutes { get; private set; }
 
-    /// <summary>Optional link to the <see cref="Lesson"/> this Activity practices — null when
-    /// generated directly from Resource Bank rows or authored manually with no Lesson chosen.</summary>
-    public Guid? LessonId { get; private set; }
+    /// <summary>The <see cref="Lesson"/> this Activity practices or assesses — mandatory since
+    /// Phase 2 (2026-07-15 exercise pipeline boundary consolidation). Every Exercise, generated or
+    /// manually authored, must have exactly one instructional parent Lesson; there is no supported
+    /// path from Resource Bank items directly to an Exercise. <see cref="ExerciseResourceLink"/> is
+    /// separate source provenance and does not replace this.</summary>
+    public Guid LessonId { get; private set; }
 
     public ExerciseSourceMode SourceMode { get; private set; }
 
@@ -126,12 +129,14 @@ public sealed class Exercise : BaseEntity
         string focusTagsJson = "[]",
         int? difficultyBand = null,
         int? estimatedMinutes = null,
-        Guid? lessonId = null,
+        Guid lessonId = default,
         string? generationProvider = null,
         string? generationModel = null,
         Guid? createdByUserId = null)
     {
         ValidateAuthorableFields(title, instructions, activityType, cefrLevel, difficultyBand, estimatedMinutes);
+        if (lessonId == Guid.Empty)
+            throw new ArgumentException("LessonId is required — every Exercise must have a Lesson.", nameof(lessonId));
 
         Title = title.Trim();
         Instructions = instructions.Trim();

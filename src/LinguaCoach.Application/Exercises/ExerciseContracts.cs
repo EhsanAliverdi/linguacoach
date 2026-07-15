@@ -41,7 +41,7 @@ public sealed record ExerciseDto(
     string FocusTagsJson,
     int? DifficultyBand,
     int? EstimatedMinutes,
-    Guid? LessonId,
+    Guid LessonId,
     string SourceMode,
     string? GenerationProvider,
     string? GenerationModel,
@@ -120,7 +120,7 @@ public sealed record CreateExerciseCommand(
     IReadOnlyList<string>? FocusTags,
     int? DifficultyBand,
     int? EstimatedMinutes,
-    Guid? LessonId,
+    Guid LessonId,
     IReadOnlyList<ExerciseResourceLinkInput>? Links,
     Guid? CreatedByUserId
 );

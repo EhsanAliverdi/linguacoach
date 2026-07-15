@@ -337,3 +337,13 @@ were fixed in a narrowly scoped follow-up phase, without acting on any of the br
 architecture/versioning/catalogue findings above. See
 `docs/reviews/2026-07-15-phase-1-pipeline-safety-data-integrity-fixes.md` for the fix, root-cause
 detail, tests, and validation.
+
+## Phase 2 follow-up (2026-07-15)
+
+The direct Resource-to-Exercise generation path this audit flagged as a structural risk ("Exercise
+| Exercises are created from Lessons" row in the gap table above, and open question #1) was removed
+entirely. `Exercise.LessonId` is now a required, non-nullable field at every layer, and an
+architecture-test guard prevents reintroduction. See
+`docs/reviews/2026-07-15-phase-2-exercise-pipeline-boundary-review.md` and
+`docs/architecture/exercise-pipeline-boundary.md` for the removal detail, data migration, and the
+final content-boundary rule.

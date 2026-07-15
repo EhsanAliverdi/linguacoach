@@ -37,7 +37,7 @@ internal sealed class ExerciseConfiguration : IEntityTypeConfiguration<Exercise>
         builder.Property(e => e.DifficultyBand).HasColumnName("difficulty_band");
         builder.Property(e => e.EstimatedMinutes).HasColumnName("estimated_minutes");
 
-        builder.Property(e => e.LessonId).HasColumnName("lesson_id");
+        builder.Property(e => e.LessonId).HasColumnName("lesson_id").IsRequired();
         builder.Property(e => e.SourceMode).HasColumnName("source_mode").HasConversion<string>().HasMaxLength(32).IsRequired();
         builder.Property(e => e.GenerationProvider).HasColumnName("generation_provider").HasMaxLength(100);
         builder.Property(e => e.GenerationModel).HasColumnName("generation_model").HasMaxLength(100);

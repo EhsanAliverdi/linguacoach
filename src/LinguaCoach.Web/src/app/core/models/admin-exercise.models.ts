@@ -1,8 +1,10 @@
 // Phase H4 — Exercise foundation. Reviewable, editable practice task designs generated from (or
-// authored about) selected published Resource Bank rows, optionally linked to a Lesson — the
-// "Practice" half of a future Module. Distinct from the existing runtime LearningActivity
-// (per-student delivery record) and the legacy ActivityTemplate Form.io pilot (removed in I2A).
-// Every create/generate action stages a pending-review row.
+// authored about) an existing Lesson — the "Practice" half of a future Module. Distinct from the
+// existing runtime LearningActivity (per-student delivery record) and the legacy ActivityTemplate
+// Form.io pilot (removed in I2A). Every create/generate action stages a pending-review row.
+//
+// Phase 2 (2026-07-15 exercise pipeline boundary consolidation) — direct "generate from Resource
+// Bank rows with no Lesson" is no longer supported; every Exercise requires a Lesson.
 
 import { DiagnosticIssue } from './admin-repair.models';
 
@@ -34,7 +36,7 @@ export interface ExerciseDto {
   focusTagsJson: string;
   difficultyBand: number | null;
   estimatedMinutes: number | null;
-  lessonId: string | null;
+  lessonId: string;
   sourceMode: string;
   generationProvider: string | null;
   generationModel: string | null;
@@ -67,19 +69,6 @@ export interface ExerciseResourceLinkInput {
   resourceType: string;
   resourceId: string;
   role: string;
-}
-
-export interface GenerateActivityFromResourcesRequestBody {
-  resources: ExerciseResourceLinkInput[];
-  requestedActivityType?: string | null;
-  title?: string | null;
-  defaultCefrLevel?: string | null;
-  defaultSkill?: string | null;
-  defaultSubskill?: string | null;
-  defaultContextTags?: string[] | null;
-  defaultFocusTags?: string[] | null;
-  defaultDifficultyBand?: number | null;
-  notes?: string | null;
 }
 
 export interface GenerateActivityFromLessonRequestBody {
@@ -136,7 +125,7 @@ export interface GenerateActivitiesFromLessonResult {
 }
 
 export const ACTIVITY_REVIEW_STATUSES = ['NotRequired', 'PendingReview', 'Approved', 'Rejected'] as const;
-export const ACTIVITY_SOURCE_MODES = ['Manual', 'GeneratedFromResources', 'GeneratedFromLesson', 'Imported'] as const;
+export const ACTIVITY_SOURCE_MODES = ['Manual', 'GeneratedFromLesson', 'Imported'] as const;
 export const ACTIVITY_RENDERER_TYPES = ['Formio', 'Custom', 'Legacy'] as const;
 export const ACTIVITY_TYPES = ['gap_fill', 'multiple_choice_single', 'short_answer'] as const;
 

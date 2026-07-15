@@ -46,12 +46,12 @@ public sealed class PracticeGymModuleSelectionServiceTests : IDisposable
         return item;
     }
 
-    private Exercise SeedActivity(bool approved, string cefrLevel = "B1", string skill = "Vocabulary")
+    private Exercise SeedActivity(bool approved, Guid lessonId, string cefrLevel = "B1", string skill = "Vocabulary")
     {
         var activity = new Exercise("Gap fill: resilient", "Type the missing word.", "gap_fill", ExerciseRendererType.Formio,
             ExerciseSourceMode.Manual, cefrLevel: cefrLevel, skill: skill, estimatedMinutes: 5,
             formSchemaJson: "{\"components\":[]}", answerKeyJson: "{\"word_answer\":\"resilient\"}",
-            scoringRulesJson: "{\"word\":{\"kind\":\"exact\"}}");
+            scoringRulesJson: "{\"word\":{\"kind\":\"exact\"}}", lessonId: lessonId);
         if (approved) activity.Approve(null);
         _db.Exercises.Add(activity);
         _db.SaveChanges();
@@ -80,7 +80,7 @@ public sealed class PracticeGymModuleSelectionServiceTests : IDisposable
         _db.SaveChanges();
 
         var lesson = SeedLesson(linkApprovedLesson, cefrLevel ?? "B1", skill ?? "Vocabulary");
-        var activity = SeedActivity(linkApprovedActivity, cefrLevel ?? "B1", skill ?? "Vocabulary");
+        var activity = SeedActivity(linkApprovedActivity, lesson.Id, cefrLevel ?? "B1", skill ?? "Vocabulary");
 
         _db.ModuleLessonLinks.Add(new ModuleLessonLink(module.Id, lesson.Id, LessonResourceRole.Primary, 0));
         _db.ModuleExerciseLinks.Add(new ModuleExerciseLink(module.Id, activity.Id, ModuleExerciseRole.PrimaryPractice, 0));
@@ -432,7 +432,8 @@ public sealed class PracticeGymModuleSelectionServiceTests : IDisposable
         var activity = new Exercise("Gap fill: launchable", "Type the missing word.", "gap_fill", ExerciseRendererType.Formio,
             ExerciseSourceMode.Manual, cefrLevel: "B1", skill: "Vocabulary", estimatedMinutes: 5,
             formSchemaJson: "{\"components\":[{\"key\":\"answer\",\"type\":\"textfield\"}]}",
-            scoringRulesJson: "{\"Components\":{\"answer\":{\"Kind\":\"text_normalized\",\"CorrectAnswer\":\"resilient\"}}}");
+            scoringRulesJson: "{\"Components\":{\"answer\":{\"Kind\":\"text_normalized\",\"CorrectAnswer\":\"resilient\"}}}",
+            lessonId: lesson.Id);
         activity.Approve(null);
         _db.Exercises.Add(activity);
         _db.SaveChanges();

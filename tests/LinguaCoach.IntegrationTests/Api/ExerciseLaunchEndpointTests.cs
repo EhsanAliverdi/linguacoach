@@ -43,7 +43,8 @@ public sealed class ExerciseLaunchEndpointTests : IClassFixture<ApiTestFactory>
             ExerciseRendererType.Formio, ExerciseSourceMode.Manual, cefrLevel: "B1", skill: "Vocabulary", estimatedMinutes: 5,
             formSchemaJson: "{\"components\":[{\"key\":\"answer\",\"type\":\"textfield\"}]}",
             answerKeyJson: "{\"answer\":\"resilient\"}",
-            scoringRulesJson: "{\"Components\":{\"answer\":{\"Kind\":\"text_normalized\",\"CorrectAnswer\":\"resilient\"}}}");
+            scoringRulesJson: "{\"Components\":{\"answer\":{\"Kind\":\"text_normalized\",\"CorrectAnswer\":\"resilient\"}}}",
+            lessonId: lesson.Id);
         activity.Approve(null);
         db.Exercises.Add(activity);
 
@@ -71,7 +72,8 @@ public sealed class ExerciseLaunchEndpointTests : IClassFixture<ApiTestFactory>
         var activity = new Exercise($"Activity {Guid.NewGuid():N}", "Write a paragraph.", "short_answer",
             ExerciseRendererType.Formio, ExerciseSourceMode.Manual, cefrLevel: "B1", skill: "Vocabulary", estimatedMinutes: 5,
             formSchemaJson: "{\"components\":[{\"key\":\"answer\",\"type\":\"textarea\"}]}",
-            scoringRulesJson: "{\"Components\":{\"answer\":{\"Kind\":\"text_normalized\",\"RequiresManualOrAiEvaluation\":true}}}");
+            scoringRulesJson: "{\"Components\":{\"answer\":{\"Kind\":\"text_normalized\",\"RequiresManualOrAiEvaluation\":true}}}",
+            lessonId: lesson.Id);
         activity.Approve(null);
         db.Exercises.Add(activity);
 

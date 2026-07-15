@@ -564,11 +564,9 @@ public static class DependencyInjection
         services.AddScoped<LinguaCoach.Application.Exercises.IAdminRejectExerciseHandler,
             LinguaCoach.Infrastructure.Exercises.AdminRejectExerciseHandler>();
         services.AddScoped<LinguaCoach.Infrastructure.Exercises.ActivityGenerationService>();
-        services.AddScoped<LinguaCoach.Application.Exercises.IGenerateActivityFromResourcesHandler>(
-            sp => sp.GetRequiredService<LinguaCoach.Infrastructure.Exercises.ActivityGenerationService>());
         services.AddScoped<LinguaCoach.Application.Exercises.IGenerateActivityFromLessonHandler>(
             sp => sp.GetRequiredService<LinguaCoach.Infrastructure.Exercises.ActivityGenerationService>());
-        services.AddScoped<LinguaCoach.Application.Exercises.IGenerateActivityFromResourcesWithAiHandler,
+        services.AddScoped<LinguaCoach.Application.Exercises.IGenerateActivityFromLessonWithAiHandler,
             LinguaCoach.Infrastructure.Exercises.AiExerciseGenerationService>();
         // Phase K5 — "Generate Exercises from Lesson" with an admin-picked count/type per Exercise,
         // auto-linking a Module afterward (registered after IModuleAutoLinkService below).

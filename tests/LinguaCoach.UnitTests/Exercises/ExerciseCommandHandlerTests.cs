@@ -36,7 +36,16 @@ public sealed class ExerciseCommandHandlerTests : IDisposable
         _db.Dispose();
     }
 
-    private static CreateExerciseCommand ManualCommand(
+    private Guid SeedLesson()
+    {
+        var lesson = new LinguaCoach.Domain.Entities.Lesson(
+            "Learn resilient", "resilient means able to recover quickly", LinguaCoach.Domain.Enums.LessonSourceMode.Manual);
+        _db.Lessons.Add(lesson);
+        _db.SaveChanges();
+        return lesson.Id;
+    }
+
+    private CreateExerciseCommand ManualCommand(
         string title = "Gap fill: resilient",
         string instructions = "Type the word that means 'able to recover quickly'.") =>
         new(title, instructions, "gap_fill", "Formio", Description: "Manual draft",
@@ -44,7 +53,7 @@ public sealed class ExerciseCommandHandlerTests : IDisposable
             AnswerKeyJson: "{\"answer\":\"resilient\"}", ScoringRulesJson: "{\"Components\":{}}", FeedbackPlanJson: null,
             CefrLevel: "B1", Skill: "Vocabulary", Subskill: "Tenses",
             ContextTags: new[] { "travel" }, FocusTags: new[] { "past-experience" },
-            DifficultyBand: 3, EstimatedMinutes: 5, LessonId: null, Links: null, CreatedByUserId: null);
+            DifficultyBand: 3, EstimatedMinutes: 5, LessonId: SeedLesson(), Links: null, CreatedByUserId: null);
 
     [Fact]
     public async Task Create_manual_activity_is_pending_review()

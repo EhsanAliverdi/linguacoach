@@ -6,6 +6,7 @@ using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.Ai;
 using LinguaCoach.Infrastructure.Exercises;
+using LinguaCoach.Infrastructure.Lessons;
 using LinguaCoach.Infrastructure.Onboarding;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -14,13 +15,21 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace LinguaCoach.UnitTests.Exercises;
 
 /// <summary>
-/// Phase J2b — AI-assisted "Generate Activity" composer ("from resources" entry point only).
-/// Uses SQLite in-memory plus the SwappableFakeAiProvider/FakeAiProviderResolver/
+/// Phase J2b — AI-assisted "Generate Activity" composer for the Lesson-based entry point. Uses
+/// SQLite in-memory plus the SwappableFakeAiProvider/FakeAiProviderResolver/
 /// NeverCalledUsageQuotaService fakes already defined internal to
 /// LinguaCoach.UnitTests.ResourceImport (same assembly, so reusable here) — never calls a real AI
 /// provider. Special attention to the safety checks that don't exist for Lesson generation:
 /// gap_fill answer-leak detection, and multiple_choice_single's correct-answer/scoring never being
 /// AI-supplied.
+///
+/// Phase 2 (2026-07-15 exercise pipeline boundary consolidation) — this file predates the removal
+/// of the direct "generate from resources" entry point and exercises the shared AI composition
+/// logic (still fully intact) via what used to be its own public request/entry point. Rather than
+/// hand-editing 25+ call sites, <see cref="GenerateFromResourcesAsync"/> seeds a throwaway Lesson
+/// (and a LessonResourceLink for the same resource each test already selects) and routes through
+/// the sole surviving <see cref="IGenerateActivityFromLessonWithAiHandler"/> entry point — exactly
+/// what a real caller must do post-Phase-2.
 /// </summary>
 public sealed class AiExerciseGenerationServiceTests : IDisposable
 {
@@ -86,6 +95,45 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
         return e;
     }
 
+    private sealed record TestResourcesRequest(
+        IReadOnlyList<ExerciseResourceLinkInput> Resources,
+        string? RequestedActivityType = null,
+        string? Title = null,
+        string? DefaultCefrLevel = null,
+        string? DefaultSkill = null,
+        string? DefaultSubskill = null,
+        IReadOnlyList<string>? DefaultContextTags = null,
+        IReadOnlyList<string>? DefaultFocusTags = null,
+        int? DefaultDifficultyBand = null,
+        string? Notes = null,
+        Guid? CreatedByUserId = null);
+
+    private async Task<GenerateExerciseResult> GenerateFromResourcesAsync(
+        TestResourcesRequest request, CancellationToken ct = default)
+    {
+        var lesson = new Lesson(
+            "Test Lesson", "Test lesson body.", LessonSourceMode.Manual,
+            request.DefaultCefrLevel, request.DefaultSkill, request.DefaultSubskill,
+            contextTagsJson: request.DefaultContextTags is { Count: > 0 } ? System.Text.Json.JsonSerializer.Serialize(request.DefaultContextTags) : "[]",
+            focusTagsJson: request.DefaultFocusTags is { Count: > 0 } ? System.Text.Json.JsonSerializer.Serialize(request.DefaultFocusTags) : "[]",
+            difficultyBand: request.DefaultDifficultyBand);
+        _db.Lessons.Add(lesson);
+        _db.SaveChanges();
+
+        foreach (var r in request.Resources)
+        {
+            if (!LessonResourceLookup.TryParseResourceType(r.ResourceType, out var type)
+                || !LessonResourceLookup.TryParseRole(r.Role, out var role))
+                continue;
+            _db.LessonResourceLinks.Add(new LessonResourceLink(lesson.Id, type, r.ResourceId, role));
+        }
+        if (request.Resources.Count > 0)
+            _db.SaveChanges();
+
+        return await _sut.HandleAsync(new GenerateActivityFromLessonRequest(
+            lesson.Id, request.RequestedActivityType, request.Title, request.Notes, request.CreatedByUserId), ct);
+    }
+
     // ── gap_fill ─────────────────────────────────────────────────────────────
 
     [Fact]
@@ -95,7 +143,7 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
         var vocab = SeedVocabulary(source.Id);
         _provider.NextResponses.Enqueue("""{"promptText": "After the layoffs, the team remained ___ and kept working hard.", "distractors": []}""");
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") },
             RequestedActivityType: "gap_fill"));
 
@@ -114,7 +162,7 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
         _provider.NextResponses.Enqueue("""{"promptText": "This sentence has no blank at all.", "distractors": []}""");
         _provider.NextResponses.Enqueue("""{"promptText": "The team stayed ___ under pressure.", "distractors": []}""");
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") },
             RequestedActivityType: "gap_fill"));
 
@@ -131,7 +179,7 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
         _provider.NextResponses.Enqueue("""{"promptText": "Being resilient, the team stayed ___ under pressure.", "distractors": []}""");
         _provider.NextResponses.Enqueue("""{"promptText": "The resilient team kept working despite the ___.", "distractors": []}""");
 
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") },
             RequestedActivityType: "gap_fill"));
 
@@ -151,7 +199,7 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
         _provider.NextResponses.Enqueue(
             """{"promptText": "", "distractors": ["easily discouraged by setbacks", "unable to adapt to change", "overly cautious in decisions"]}""");
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") },
             RequestedActivityType: "multiple_choice_single"));
 
@@ -170,7 +218,7 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
         _provider.NextResponses.Enqueue("""{"promptText": "", "distractors": ["able to recover quickly"]}""");
         _provider.NextResponses.Enqueue("""{"promptText": "", "distractors": ["ABLE TO RECOVER QUICKLY"]}""");
 
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") },
             RequestedActivityType: "multiple_choice_single"));
 
@@ -186,7 +234,7 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
         var source = SeedSource();
         var vocab = SeedVocabulary(source.Id, notes: null);
 
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") },
             RequestedActivityType: "multiple_choice_single"));
 
@@ -204,7 +252,7 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
         var reading = SeedReadingReference(source.Id);
         _provider.NextResponses.Enqueue("""{"promptText": "Why was the flight delayed?", "distractors": []}""");
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("ReadingReference", reading.Id, "Primary") },
             RequestedActivityType: "short_answer"));
 
@@ -225,7 +273,7 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
         _provider.NextResponses.Enqueue(
             """{"promptText": "Why was the flight delayed?", "correctAnswerText": "Bad weather", "distractors": ["Mechanical issues", "Crew shortage", "Air traffic control"]}""");
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("ReadingReference", reading.Id, "Primary") },
             RequestedActivityType: "reading_multiple_choice_single"));
 
@@ -246,7 +294,7 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
         _provider.NextResponses.Enqueue(
             """{"promptText": "Why was the flight delayed?", "correctAnswerText": "", "distractors": ["A", "B", "C"]}""");
 
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("ReadingReference", reading.Id, "Primary") },
             RequestedActivityType: "reading_multiple_choice_single"));
 
@@ -265,7 +313,7 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
         _db.ResourceBankItems.Add(e);
         await _db.SaveChangesAsync();
 
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("ReadingReference", e.Id, "Primary") },
             RequestedActivityType: "reading_multiple_choice_single"));
 
@@ -280,7 +328,7 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
         var source = SeedSource();
         var vocab = SeedVocabulary(source.Id);
 
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") },
             RequestedActivityType: "reading_multiple_choice_single"));
 
@@ -298,7 +346,7 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
         _provider.NextResponses.Enqueue(
             """{"promptText": "Select all reasons the flight was delayed.", "correctAnswersText": ["Bad weather", "Late crew arrival"], "distractors": ["Mechanical issues", "Overbooking"]}""");
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("ReadingReference", reading.Id, "Primary") },
             RequestedActivityType: "reading_multiple_choice_multi"));
 
@@ -318,7 +366,7 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
         _provider.NextResponses.Enqueue(
             """{"promptText": "Select all that apply.", "correctAnswersText": [], "distractors": ["A", "B"]}""");
 
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("ReadingReference", reading.Id, "Primary") },
             RequestedActivityType: "reading_multiple_choice_multi"));
 
@@ -337,7 +385,7 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
         _db.ResourceBankItems.Add(e);
         await _db.SaveChangesAsync();
 
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("ReadingReference", e.Id, "Primary") },
             RequestedActivityType: "reading_multiple_choice_multi"));
 
@@ -368,7 +416,7 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
         _provider.NextResponses.Enqueue(
             """{"promptText": "Why was the meeting moved?", "correctAnswerText": "A scheduling conflict", "distractors": ["Bad weather", "Room unavailable", "Low attendance"]}""");
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Listening", listening.Id, "Primary") },
             RequestedActivityType: "listening_multiple_choice_single"));
 
@@ -383,7 +431,7 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
         var source = SeedSource();
         var listening = SeedListeningPassage(source.Id, transcript: null);
 
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Listening", listening.Id, "Primary") },
             RequestedActivityType: "listening_multiple_choice_single"));
 
@@ -400,7 +448,7 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
         _provider.NextResponses.Enqueue(
             """{"promptText": "Select all reasons given for the change.", "correctAnswersText": ["A scheduling conflict", "Room availability"], "distractors": ["Budget cuts", "Staff shortage"]}""");
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Listening", listening.Id, "Primary") },
             RequestedActivityType: "listening_multiple_choice_multi"));
 
@@ -415,7 +463,7 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
         var source = SeedSource();
         var vocab = SeedVocabulary(source.Id);
 
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") },
             RequestedActivityType: "listening_multiple_choice_single"));
 
@@ -434,7 +482,7 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
         _provider.NextResponses.Enqueue(
             """{"promptText": "Which summary best matches what you heard?", "correctAnswerText": "The meeting was moved to Friday due to a conflict.", "distractors": ["The meeting was cancelled entirely.", "The meeting time stayed the same.", "The meeting was moved to Monday."]}""");
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Listening", listening.Id, "Primary") },
             RequestedActivityType: "highlight_correct_summary"));
 
@@ -449,7 +497,7 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
         var source = SeedSource();
         var listening = SeedListeningPassage(source.Id, transcript: null);
 
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Listening", listening.Id, "Primary") },
             RequestedActivityType: "highlight_correct_summary"));
 
@@ -468,7 +516,7 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
         var listening = SeedListeningPassage(source.Id, "The meeting has been moved to Friday due to a scheduling conflict.");
         _provider.NextResponses.Enqueue("""{"distractors": ["cancelled", "postponed", "rescheduled"]}""");
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var result = await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Listening", listening.Id, "Primary") },
             RequestedActivityType: "select_missing_word"));
 
@@ -486,7 +534,7 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
         _provider.NextResponses.Enqueue("""{"distractors": ["meeting"]}""");
         _provider.NextResponses.Enqueue("""{"distractors": ["MEETING"]}""");
 
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Listening", listening.Id, "Primary") },
             RequestedActivityType: "select_missing_word"));
 
@@ -501,7 +549,7 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
         var source = SeedSource();
         var listening = SeedListeningPassage(source.Id, "It is a go.");
 
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Listening", listening.Id, "Primary") },
             RequestedActivityType: "select_missing_word"));
 
@@ -519,7 +567,7 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
         var vocab = SeedVocabulary(source.Id);
         _provider.ThrowUnavailable = true;
 
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") },
             RequestedActivityType: "gap_fill"));
 
@@ -531,22 +579,21 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
     [Fact]
     public async Task No_resources_throws_before_any_ai_call()
     {
-        var act = async () => await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+        var act = async () => await GenerateFromResourcesAsync(new TestResourcesRequest(
             Array.Empty<ExerciseResourceLinkInput>()));
 
         (await act.Should().ThrowAsync<ExerciseValidationException>())
-            .WithMessage("*At least one resource is required*");
+            .WithMessage("*no linked resources*");
         _provider.CallCount.Should().Be(0);
     }
 
-    // ── LessonId provenance (Phase 1, 2026-07-15 pipeline safety audit) ────────
-    // Previously this handler always hardcoded lessonId: null on the Exercise it created, even
-    // when the request was synthesized from a Lesson's own resources (see
-    // LessonExerciseBatchGenerationService.BuildResourcesRequestAsync) — dropping the Lesson
-    // relationship for every AI-preferred activity type generated from a Lesson.
+    // ── LessonId provenance (Phase 1, 2026-07-15 pipeline safety audit; Phase 2, 2026-07-15
+    // exercise pipeline boundary consolidation) — Phase 1 fixed AI-preferred types silently
+    // dropping Exercise.LessonId; Phase 2 removed the resources-only entry point entirely, so
+    // there is no longer any way to call this handler without a Lesson at all.
 
     [Fact]
-    public async Task Request_with_lesson_id_creates_exercise_retaining_lesson_id()
+    public async Task Ai_generated_exercise_from_lesson_always_retains_lesson_id()
     {
         var source = SeedSource();
         var vocab = SeedVocabulary(source.Id);
@@ -554,12 +601,14 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
             LessonSourceMode.Manual, "B1", "Vocabulary");
         _db.Lessons.Add(lesson);
         _db.SaveChanges();
+        _db.LessonResourceLinks.Add(new LessonResourceLink(
+            lesson.Id, PublishedResourceType.Vocabulary, vocab.Id, LessonResourceRole.Primary));
+        _db.SaveChanges();
         _provider.NextResponses.Enqueue(
             """{"promptText": "", "distractors": ["easily discouraged by setbacks", "unable to adapt to change", "overly cautious in decisions"]}""");
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
-            new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") },
-            RequestedActivityType: "multiple_choice_single", LessonId: lesson.Id));
+        var result = await _sut.HandleAsync(new GenerateActivityFromLessonRequest(
+            lesson.Id, RequestedActivityType: "multiple_choice_single"));
 
         result.Activity.LessonId.Should().Be(lesson.Id);
         result.Activity.SourceMode.Should().Be("GeneratedFromLesson");
@@ -568,18 +617,17 @@ public sealed class AiExerciseGenerationServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task Request_without_lesson_id_creates_exercise_with_null_lesson_id()
+    public async Task Ai_generation_fails_clearly_for_lesson_with_no_linked_resources()
     {
-        var source = SeedSource();
-        var vocab = SeedVocabulary(source.Id);
-        _provider.NextResponses.Enqueue(
-            """{"promptText": "", "distractors": ["easily discouraged by setbacks", "unable to adapt to change", "overly cautious in decisions"]}""");
+        var lesson = new Lesson("Empty Lesson", "No resources linked.", LessonSourceMode.Manual, "B1", "Vocabulary");
+        _db.Lessons.Add(lesson);
+        _db.SaveChanges();
 
-        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
-            new[] { new ExerciseResourceLinkInput("Vocabulary", vocab.Id, "Primary") },
-            RequestedActivityType: "multiple_choice_single"));
+        var act = async () => await _sut.HandleAsync(new GenerateActivityFromLessonRequest(
+            lesson.Id, RequestedActivityType: "multiple_choice_single"));
 
-        result.Activity.LessonId.Should().BeNull();
-        result.Activity.SourceMode.Should().Be("GeneratedFromResources");
+        (await act.Should().ThrowAsync<ExerciseValidationException>())
+            .WithMessage("*no linked resources*");
+        (await _db.Exercises.CountAsync()).Should().Be(0);
     }
 }

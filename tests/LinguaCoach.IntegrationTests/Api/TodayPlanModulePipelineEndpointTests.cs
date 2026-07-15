@@ -41,7 +41,7 @@ public sealed class TodayPlanModulePipelineEndpointTests : IClassFixture<Session
         var activity = new Exercise($"Activity {Guid.NewGuid():N}", "Instructions.", "gap_fill",
             ExerciseRendererType.Formio, ExerciseSourceMode.Manual, cefrLevel: cefrLevel, skill: "Vocabulary",
             formSchemaJson: "{\"components\":[]}", answerKeyJson: "{\"word_answer\":\"secret\"}",
-            scoringRulesJson: "{\"word\":{\"kind\":\"exact\"}}");
+            scoringRulesJson: "{\"word\":{\"kind\":\"exact\"}}", lessonId: lesson.Id);
         activity.Approve(null);
         db.Exercises.Add(activity);
 

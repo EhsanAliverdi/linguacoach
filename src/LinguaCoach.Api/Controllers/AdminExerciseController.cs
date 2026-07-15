@@ -30,9 +30,7 @@ public sealed class AdminExerciseController : ControllerBase
     private readonly IAdminUpdateExerciseHandler _updateHandler;
     private readonly IAdminApproveExerciseHandler _approveHandler;
     private readonly IAdminRejectExerciseHandler _rejectHandler;
-    private readonly IGenerateActivityFromResourcesHandler _generateFromResourcesHandler;
     private readonly IGenerateActivityFromLessonHandler _generateFromLessonHandler;
-    private readonly IGenerateActivityFromResourcesWithAiHandler _generateFromResourcesWithAiHandler;
     private readonly IGenerateActivitiesFromLessonHandler _generateActivitiesFromLessonHandler;
     private readonly IExerciseArchiveHandler _archiveHandler;
     private readonly IAdminExercisePreviewSubmitHandler _previewSubmitHandler;
@@ -45,9 +43,7 @@ public sealed class AdminExerciseController : ControllerBase
         IAdminUpdateExerciseHandler updateHandler,
         IAdminApproveExerciseHandler approveHandler,
         IAdminRejectExerciseHandler rejectHandler,
-        IGenerateActivityFromResourcesHandler generateFromResourcesHandler,
         IGenerateActivityFromLessonHandler generateFromLessonHandler,
-        IGenerateActivityFromResourcesWithAiHandler generateFromResourcesWithAiHandler,
         IGenerateActivitiesFromLessonHandler generateActivitiesFromLessonHandler,
         IExerciseArchiveHandler archiveHandler,
         IAdminExercisePreviewSubmitHandler previewSubmitHandler,
@@ -59,9 +55,7 @@ public sealed class AdminExerciseController : ControllerBase
         _updateHandler = updateHandler;
         _approveHandler = approveHandler;
         _rejectHandler = rejectHandler;
-        _generateFromResourcesHandler = generateFromResourcesHandler;
         _generateFromLessonHandler = generateFromLessonHandler;
-        _generateFromResourcesWithAiHandler = generateFromResourcesWithAiHandler;
         _generateActivitiesFromLessonHandler = generateActivitiesFromLessonHandler;
         _archiveHandler = archiveHandler;
         _previewSubmitHandler = previewSubmitHandler;
@@ -104,25 +98,6 @@ public sealed class AdminExerciseController : ControllerBase
                 body.FormSchemaJson, body.AnswerKeyJson, body.ScoringRulesJson, body.FeedbackPlanJson,
                 body.CefrLevel, body.Skill, body.Subskill, body.ContextTags, body.FocusTags,
                 body.DifficultyBand, body.EstimatedMinutes, body.LessonId, body.Links, GetCurrentUserId()), ct);
-            return Ok(result);
-        }
-        catch (ExerciseValidationException ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
-    }
-
-    // POST api/admin/exercises/generate-from-resources
-    [HttpPost("generate-from-resources")]
-    public async Task<IActionResult> GenerateFromResources(
-        [FromBody] GenerateActivityFromResourcesRequestBody body, CancellationToken ct)
-    {
-        try
-        {
-            var result = await _generateFromResourcesHandler.HandleAsync(new GenerateActivityFromResourcesRequest(
-                body.Resources, body.RequestedActivityType, body.Title, body.DefaultCefrLevel, body.DefaultSkill,
-                body.DefaultSubskill, body.DefaultContextTags, body.DefaultFocusTags, body.DefaultDifficultyBand,
-                body.Notes, GetCurrentUserId()), ct);
             return Ok(result);
         }
         catch (ExerciseValidationException ex)
@@ -175,26 +150,10 @@ public sealed class AdminExerciseController : ControllerBase
         }
     }
 
-    // POST api/admin/exercises/generate-from-resources/ai
-    // Phase J2b — AI-assisted alternative to the deterministic action above. A separate action:
-    // the deterministic action is untouched and always available, regardless of AI availability.
-    [HttpPost("generate-from-resources/ai")]
-    public async Task<IActionResult> GenerateFromResourcesWithAi(
-        [FromBody] GenerateActivityFromResourcesRequestBody body, CancellationToken ct)
-    {
-        try
-        {
-            var result = await _generateFromResourcesWithAiHandler.HandleAsync(new GenerateActivityFromResourcesRequest(
-                body.Resources, body.RequestedActivityType, body.Title, body.DefaultCefrLevel, body.DefaultSkill,
-                body.DefaultSubskill, body.DefaultContextTags, body.DefaultFocusTags, body.DefaultDifficultyBand,
-                body.Notes, GetCurrentUserId()), ct);
-            return Ok(result);
-        }
-        catch (ExerciseValidationException ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
-    }
+    // Phase 2 (2026-07-15) — the single-item "generate-from-resources/ai" endpoint was removed
+    // (no Lesson context, and no frontend caller — confirmed dead). AI-preferred Exercise types
+    // remain reachable through "generate-from-lesson/batch" below, which already routes to
+    // IGenerateActivityFromLessonWithAiHandler internally for those types.
 
     // PUT api/admin/exercises/{id}
     [HttpPut("{id:guid}")]
@@ -347,21 +306,13 @@ public sealed class AdminExerciseController : ControllerBase
     public sealed record ExerciseIdsRequest(IReadOnlyList<Guid> Ids);
 
     public sealed record CreateExerciseRequestBody(
-        string Title, string Instructions, string ActivityType, string RendererType,
+        string Title, string Instructions, string ActivityType, string RendererType, Guid LessonId,
         string? Description = null, string? PatternKey = null, string? FormSchemaJson = null,
         string? AnswerKeyJson = null, string? ScoringRulesJson = null, string? FeedbackPlanJson = null,
         string? CefrLevel = null, string? Skill = null, string? Subskill = null,
         IReadOnlyList<string>? ContextTags = null, IReadOnlyList<string>? FocusTags = null,
-        int? DifficultyBand = null, int? EstimatedMinutes = null, Guid? LessonId = null,
+        int? DifficultyBand = null, int? EstimatedMinutes = null,
         IReadOnlyList<ExerciseResourceLinkInput>? Links = null
-    );
-
-    public sealed record GenerateActivityFromResourcesRequestBody(
-        IReadOnlyList<ExerciseResourceLinkInput> Resources,
-        string? RequestedActivityType = null, string? Title = null, string? DefaultCefrLevel = null,
-        string? DefaultSkill = null, string? DefaultSubskill = null,
-        IReadOnlyList<string>? DefaultContextTags = null, IReadOnlyList<string>? DefaultFocusTags = null,
-        int? DefaultDifficultyBand = null, string? Notes = null
     );
 
     public sealed record GenerateActivityFromLessonRequestBody(

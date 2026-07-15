@@ -16,13 +16,19 @@ using Microsoft.Extensions.Logging;
 namespace LinguaCoach.Infrastructure.Exercises;
 
 /// <summary>
-/// Phase J2b — AI-assisted "Generate Activity" composer, "from resources" entry point only. Builds
-/// a pending-review <see cref="Exercise"/> draft the same way <see cref="ActivityGenerationService"/>
+/// Phase J2b — AI-assisted "Generate Activity" composer for <see cref="IGenerateActivityFromLessonWithAiHandler"/>.
+/// Builds a pending-review <see cref="Exercise"/> draft the same way <see cref="ActivityGenerationService"/>
 /// does, but AI supplies the framing content (gap-fill sentence / multiple-choice distractors /
 /// comprehension question) instead of the deterministic composer's fixed templates. For
 /// gap_fill/multiple_choice_single/short_answer, the correct answer, scoring rule, and answer key
 /// are always deterministically derived from the resource's own fields — never AI-supplied — see
-/// <see cref="IGenerateActivityFromResourcesWithAiHandler"/>'s doc comment for why.
+/// <see cref="IGenerateActivityFromLessonWithAiHandler"/>'s doc comment for why.
+///
+/// Phase 2 (2026-07-15) — resolves the Lesson's own resource links itself (mirroring
+/// <see cref="ActivityGenerationService.HandleAsync(GenerateActivityFromLessonRequest, CancellationToken)"/>)
+/// instead of accepting a caller-supplied resources list with no Lesson context — the removed
+/// <c>IGenerateActivityFromResourcesWithAiHandler</c> entry point used to hardcode
+/// <c>lessonId: null</c>.
 ///
 /// Phase K17 — <see cref="ActivityGenerationService.ActivityTypeReadingMultipleChoiceSingle"/>,
 /// <see cref="ActivityGenerationService.ActivityTypeReadingMultipleChoiceMulti"/>, and
@@ -40,7 +46,7 @@ namespace LinguaCoach.Infrastructure.Exercises;
 /// throw pattern: this is a synchronous admin-triggered action the admin is actively waiting on, so
 /// failure after the retry throws rather than degrading silently.
 /// </summary>
-public sealed class AiExerciseGenerationService : IGenerateActivityFromResourcesWithAiHandler
+public sealed class AiExerciseGenerationService : IGenerateActivityFromLessonWithAiHandler
 {
     public const string GeneratePromptKey = "exercise_generate_from_resources";
 
@@ -71,8 +77,63 @@ public sealed class AiExerciseGenerationService : IGenerateActivityFromResources
     private readonly record struct ResolvedResource(
         ExerciseResourceLinkInput Input, PublishedResourceType Type, LessonResourceRole Role, LessonResourceSnapshot Snapshot);
 
+    /// <summary>Internal-only composition parameters — always constructed from an already-resolved
+    /// Lesson inside <see cref="HandleAsync(GenerateActivityFromLessonRequest, CancellationToken)"/>.
+    /// Never a public entry point: there is no way to reach this composer without first resolving a
+    /// Lesson, which is exactly what makes the removed direct "generate from resources" workflow
+    /// impossible to reintroduce accidentally.</summary>
+    private sealed record ExerciseCompositionRequest(
+        Guid LessonId,
+        IReadOnlyList<ExerciseResourceLinkInput> Resources,
+        string? RequestedActivityType,
+        string? Title,
+        string? DefaultCefrLevel,
+        string? DefaultSkill,
+        string? DefaultSubskill,
+        IReadOnlyList<string>? DefaultContextTags,
+        IReadOnlyList<string>? DefaultFocusTags,
+        int? DefaultDifficultyBand,
+        string? Notes,
+        Guid? CreatedByUserId);
+
     public async Task<GenerateExerciseResult> HandleAsync(
-        GenerateActivityFromResourcesRequest request, CancellationToken ct = default)
+        GenerateActivityFromLessonRequest request, CancellationToken ct = default)
+    {
+        var lesson = await _db.Lessons.FirstOrDefaultAsync(l => l.Id == request.LessonId, ct)
+            ?? throw new ExerciseValidationException($"Lesson '{request.LessonId}' was not found.");
+
+        var lessonLinks = await _db.LessonResourceLinks
+            .Where(l => l.LessonId == lesson.Id).ToListAsync(ct);
+        if (lessonLinks.Count == 0)
+            throw new ExerciseValidationException(
+                "This Lesson has no linked resources to generate an Activity from.");
+
+        var resources = lessonLinks
+            .Select(link => new ExerciseResourceLinkInput(link.ResourceType.ToString(), link.ResourceId, link.Role.ToString()))
+            .ToList();
+
+        return await ComposeAsync(new ExerciseCompositionRequest(
+            lesson.Id, resources, request.RequestedActivityType, request.Title ?? lesson.Title,
+            lesson.CefrLevel, lesson.Skill, lesson.Subskill,
+            ParseTags(lesson.ContextTagsJson), ParseTags(lesson.FocusTagsJson), lesson.DifficultyBand,
+            request.Notes, request.CreatedByUserId), ct);
+    }
+
+    private static List<string> ParseTags(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return new List<string>();
+        try
+        {
+            return JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
+        }
+        catch (JsonException)
+        {
+            return new List<string>();
+        }
+    }
+
+    private async Task<GenerateExerciseResult> ComposeAsync(
+        ExerciseCompositionRequest request, CancellationToken ct = default)
     {
         if (request.Resources is not { Count: > 0 })
             throw new ExerciseValidationException("At least one resource is required to generate an Activity.");
@@ -266,19 +327,11 @@ public sealed class AiExerciseGenerationService : IGenerateActivityFromResources
             + $"Generated from: {string.Join(", ", resolved.Select(r => r.Snapshot.Title))}."
             + (request.Notes is not null ? $" {request.Notes.Trim()}" : string.Empty);
 
-        // Phase 1 (2026-07-15 pipeline safety audit) — request.LessonId is set when this request
-        // was synthesized from a Lesson's own resources (LessonExerciseBatchGenerationService's
-        // AI-preferred-type routing); previously hardcoded to null here, which silently dropped
-        // Exercise.LessonId for every AI-generated Exercise reached via that path. SourceMode
-        // mirrors ExerciseGenerationService.ComposeAndSaveAsync's own lessonId.HasValue check for
-        // consistency between the deterministic and AI composers.
-        var sourceMode = request.LessonId.HasValue ? ExerciseSourceMode.GeneratedFromLesson : ExerciseSourceMode.GeneratedFromResources;
-
         Exercise activity;
         try
         {
             activity = new Exercise(
-                resolvedTitle, instructions, activityType, ExerciseRendererType.Formio, sourceMode,
+                resolvedTitle, instructions, activityType, ExerciseRendererType.Formio, ExerciseSourceMode.GeneratedFromLesson,
                 description, patternKey: null, formSchemaJson, answerKeyJson, scoringRulesJson, feedbackPlanJson,
                 cefrLevel, skill, subskill,
                 JsonSerializer.Serialize(contextTags), JsonSerializer.Serialize(focusTags),

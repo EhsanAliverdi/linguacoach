@@ -52,7 +52,7 @@ public sealed class AdminModulePreviewServiceTests : IDisposable
         return item;
     }
 
-    private Exercise SeedGapFillExercise()
+    private Exercise SeedGapFillExercise(Guid lessonId)
     {
         var formSchema = JsonSerializer.Serialize(new
         {
@@ -70,21 +70,22 @@ public sealed class AdminModulePreviewServiceTests : IDisposable
         var activity = new Exercise(
             "Gap fill: resilient", "Type the missing word.", "gap_fill", ExerciseRendererType.Formio,
             ExerciseSourceMode.Manual, formSchemaJson: formSchema, answerKeyJson: answerKey,
-            scoringRulesJson: scoringRules, feedbackPlanJson: feedbackPlan, cefrLevel: "B2", skill: "Vocabulary", estimatedMinutes: 3);
+            scoringRulesJson: scoringRules, feedbackPlanJson: feedbackPlan, cefrLevel: "B2", skill: "Vocabulary",
+            estimatedMinutes: 3, lessonId: lessonId);
         activity.Approve(null);
         _db.Exercises.Add(activity);
         _db.SaveChanges();
         return activity;
     }
 
-    private Exercise SeedShortAnswerExercise()
+    private Exercise SeedShortAnswerExercise(Guid lessonId)
     {
         var scoringRules = JsonSerializer.Serialize(new ScoringRulesDocument(
             new Dictionary<string, ComponentScoringRule> { ["answer"] = new(ScoringRuleKinds.TextNormalized, RequiresManualOrAiEvaluation: true) }));
         var activity = new Exercise(
             "Comprehension question", "Answer the question.", "short_answer", ExerciseRendererType.Formio,
             ExerciseSourceMode.Manual, formSchemaJson: """{"components":[{"type":"textarea","key":"answer"}]}""",
-            scoringRulesJson: scoringRules, cefrLevel: "B1", skill: "Reading");
+            scoringRulesJson: scoringRules, cefrLevel: "B1", skill: "Reading", lessonId: lessonId);
         activity.Approve(null);
         _db.Exercises.Add(activity);
         _db.SaveChanges();
@@ -105,7 +106,7 @@ public sealed class AdminModulePreviewServiceTests : IDisposable
     public async Task Preview_works_for_a_pending_review_module_not_just_approved()
     {
         var lesson = SeedLesson();
-        var activity = SeedGapFillExercise();
+        var activity = SeedGapFillExercise(lesson.Id);
         var moduleId = await CreatePendingModuleAsync(lesson, activity);
 
         var result = await _sut.HandleAsync(moduleId);
@@ -124,7 +125,7 @@ public sealed class AdminModulePreviewServiceTests : IDisposable
     public async Task Preview_never_exposes_answer_key_or_scoring_rules()
     {
         var lesson = SeedLesson();
-        var activity = SeedGapFillExercise();
+        var activity = SeedGapFillExercise(lesson.Id);
         var moduleId = await CreatePendingModuleAsync(lesson, activity);
 
         var result = await _sut.HandleAsync(moduleId);
@@ -139,7 +140,7 @@ public sealed class AdminModulePreviewServiceTests : IDisposable
     public async Task Preview_of_short_answer_exercise_reports_not_scorable_with_a_reason()
     {
         var lesson = SeedLesson();
-        var activity = SeedShortAnswerExercise();
+        var activity = SeedShortAnswerExercise(lesson.Id);
         var moduleId = await CreatePendingModuleAsync(lesson, activity);
 
         var result = await _sut.HandleAsync(moduleId);
@@ -162,7 +163,7 @@ public sealed class AdminModulePreviewServiceTests : IDisposable
     public async Task Submitting_the_correct_answer_scores_100_percent_with_correct_feedback()
     {
         var lesson = SeedLesson();
-        var activity = SeedGapFillExercise();
+        var activity = SeedGapFillExercise(lesson.Id);
         var moduleId = await CreatePendingModuleAsync(lesson, activity);
 
         var answers = new Dictionary<string, JsonElement>
@@ -183,7 +184,7 @@ public sealed class AdminModulePreviewServiceTests : IDisposable
     public async Task Submitting_a_wrong_answer_scores_0_percent_with_incorrect_feedback()
     {
         var lesson = SeedLesson();
-        var activity = SeedGapFillExercise();
+        var activity = SeedGapFillExercise(lesson.Id);
         var moduleId = await CreatePendingModuleAsync(lesson, activity);
 
         var answers = new Dictionary<string, JsonElement>
@@ -203,7 +204,7 @@ public sealed class AdminModulePreviewServiceTests : IDisposable
     public async Task Submitting_against_an_unscorable_exercise_returns_scored_false_with_reason()
     {
         var lesson = SeedLesson();
-        var activity = SeedShortAnswerExercise();
+        var activity = SeedShortAnswerExercise(lesson.Id);
         var moduleId = await CreatePendingModuleAsync(lesson, activity);
 
         var result = await _sut.HandleAsync(new ModulePreviewSubmitRequest(moduleId, new Dictionary<string, JsonElement>()));
@@ -217,7 +218,7 @@ public sealed class AdminModulePreviewServiceTests : IDisposable
     public async Task Preview_submit_never_creates_a_learning_activity_or_attempt()
     {
         var lesson = SeedLesson();
-        var activity = SeedGapFillExercise();
+        var activity = SeedGapFillExercise(lesson.Id);
         var moduleId = await CreatePendingModuleAsync(lesson, activity);
 
         await _sut.HandleAsync(new ModulePreviewSubmitRequest(

@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-13 (Phase K1)
+lastUpdated: 2026-07-15 (Phase 2 — exercise pipeline boundary consolidation)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,41 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-13 (Phase K1)
+Last updated: 2026-07-15 (Phase 2 — exercise pipeline boundary consolidation)
+
+## Phase 2: Exercise pipeline boundary consolidation — every Exercise requires a Lesson (2026-07-15)
+
+Follow-up to Phase 1 (2026-07-15 pipeline safety fixes). Removed the direct "Resource Bank items →
+Exercise" generation path entirely; the only supported Exercise creation flow is now
+**Resource Bank → Lesson → Exercise**. `Exercise.LessonId` changed from `Guid?` to `Guid` (required)
+at domain, EF configuration, and database level (migration `Phase_2_RequireExerciseLessonId`).
+
+**Removed:** `IGenerateActivityFromResourcesHandler`, `IGenerateActivityFromResourcesWithAiHandler`,
+`GenerateActivityFromResourcesRequest`, the `POST api/admin/exercises/generate-from-resources` and
+`/generate-from-resources/ai` endpoints, and the corresponding (already-dead, never called from any
+component) Angular service methods. `ExerciseSourceMode.GeneratedFromResources` removed from the
+enum (migration `Phase_2_ConvertGeneratedFromResourcesSourceMode` converted existing rows to
+`GeneratedFromLesson`).
+
+**Added:** `IGenerateActivityFromLessonWithAiHandler` — the AI composer (`AiExerciseGenerationService`)
+now resolves a Lesson's own linked resources itself (mirroring the deterministic composer) instead
+of accepting a caller-supplied resources list with no Lesson context.
+`LessonExerciseBatchGenerationService` was simplified: AI-preferred and deterministic activity
+types now both construct the same `GenerateActivityFromLessonRequest` and pick a handler, instead of
+synthesizing a separate resources-shaped request for the AI path.
+
+**Data migration on `linguacoach_dev`:** found 5 Exercises with `LessonId == null` (all archived,
+`SourceMode = GeneratedFromResources`, leftover from the now-removed direct path). All 5 had exactly
+one candidate Lesson (via their `ExerciseResourceLink` → `LessonResourceLink` match) and were
+repaired in place — zero rows deleted.
+
+**Architecture guard:** `tests/LinguaCoach.ArchitectureTests/ExercisePipelineBoundaryTests.cs`
+fails the build if a type/endpoint matching the removed pattern is reintroduced.
+
+**Tests:** 2,272 unit + 1,325 integration + 8 architecture tests pass. Angular production build and
+`tsc --noEmit` both clean (no Angular runtime behavior changed — only removed two never-called
+service methods and a request-body model). Full details, root-cause analysis, and deferred findings
+in `docs/reviews/2026-07-15-phase-2-exercise-pipeline-boundary-review.md`.
 
 ## Phase K1: AI-assisted import column-mapping + better error messages (2026-07-13)
 

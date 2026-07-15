@@ -63,10 +63,11 @@ public sealed class AiModuleGenerationServiceTests : IDisposable
         return item;
     }
 
-    private Exercise SeedActivity(bool approved, string title = "Gap fill: resilient", string cefrLevel = "B2", string skill = "Vocabulary")
+    private Exercise SeedActivity(bool approved, string title = "Gap fill: resilient", string cefrLevel = "B2", string skill = "Vocabulary", Guid? lessonId = null)
     {
         var activity = new Exercise(title, "Type the missing word.", "gap_fill", ExerciseRendererType.Formio,
-            ExerciseSourceMode.Manual, cefrLevel: cefrLevel, skill: skill, estimatedMinutes: 5);
+            ExerciseSourceMode.Manual, cefrLevel: cefrLevel, skill: skill, estimatedMinutes: 5,
+            lessonId: lessonId ?? SeedLesson(true, title, cefrLevel, skill).Id);
         if (approved) activity.Approve(null);
         _db.Exercises.Add(activity);
         _db.SaveChanges();

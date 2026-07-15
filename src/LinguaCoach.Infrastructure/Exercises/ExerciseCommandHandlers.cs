@@ -19,8 +19,7 @@ public sealed class AdminCreateExerciseHandler : IAdminCreateExerciseHandler
         if (!Enum.TryParse<ExerciseRendererType>(command.RendererType, ignoreCase: true, out var rendererType))
             throw new ExerciseValidationException($"Unsupported renderer type '{command.RendererType}'.");
 
-        if (command.LessonId.HasValue
-            && !await _db.Lessons.AnyAsync(l => l.Id == command.LessonId.Value, ct))
+        if (!await _db.Lessons.AnyAsync(l => l.Id == command.LessonId, ct))
             throw new ExerciseValidationException($"Lesson '{command.LessonId}' was not found.");
 
         Exercise item;
