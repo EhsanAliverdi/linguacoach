@@ -1,6 +1,7 @@
 import { Formio } from '@formio/js';
 import { AudioPlayerComponent } from './components/audio-player.component';
 import { SpeakingResponseComponent } from './components/speaking-response.component';
+import { HighlightWordsComponent } from './components/highlight-words.component';
 
 let registered = false;
 
@@ -18,4 +19,5 @@ export function registerCustomFormioComponents(): void {
   registered = true;
   (Formio as any).Components.addComponent('audioPlayer', AudioPlayerComponent);
   (Formio as any).Components.addComponent('speakingResponse', SpeakingResponseComponent);
+  (Formio as any).Components.addComponent('highlightWords', HighlightWordsComponent);
 }

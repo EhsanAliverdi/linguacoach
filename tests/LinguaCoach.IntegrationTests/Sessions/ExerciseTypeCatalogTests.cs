@@ -359,6 +359,23 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     }
 
     [Fact]
+    public async Task HighlightIncorrectWords_IsBankFirstAndGenerationEligible_PhaseK21()
+    {
+        // Phase K21 — highlight_incorrect_words got a real composer (rotates real transcript
+        // words into altered positions, streams the resource's own audio via the new Phase K21
+        // audio-serving bridge) and moved from disabled-Pattern to BankFirst/enabled.
+        var type = await _db.ExerciseTypeDefinitions.SingleAsync(e => e.Key == "highlight_incorrect_words");
+        var service = new ExerciseTypeCatalogService(_db);
+        var eligible = await service.GetGenerationEligibleAsync();
+
+        Assert.Equal("BankFirst", type.Category);
+        Assert.True(type.IsEnabled);
+        Assert.True(type.IsAvailableForGeneration);
+        Assert.Equal("listening", type.PrimarySkill);
+        Assert.Contains(eligible, e => e.Key == "highlight_incorrect_words");
+    }
+
+    [Fact]
     public async Task LegacyAndPatternTypes_AreDisabledByDefault_DespiteBeingReady()
     {
         var service = new ExerciseTypeCatalogService(_db);
@@ -372,7 +389,6 @@ public sealed class ExerciseTypeCatalogTests : IDisposable
     }
 
     [Theory]
-    [InlineData("highlight_incorrect_words", "listening")]
     [InlineData("write_from_dictation", "listening")]
     [InlineData("repeat_sentence", "speaking")]
     public async Task PatternTypes_AreReadyButNotEligibleUntilAdminEnables(string key, string expectedSkill)

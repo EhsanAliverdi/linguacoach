@@ -122,6 +122,14 @@ export class ExerciseRendererComponent {
     }
   }
 
+  /** Phase K21 — resolved lazily (not fetched via a signed-URL round-trip like the legacy
+   *  listening endpoints) since this is a plain authenticated streaming endpoint; the
+   *  audioPlayer component itself no-ops if this URL 404s (no Listening resource linked) or if
+   *  the schema has no audioPlayer component at all — see FormioRendererComponent. */
+  get formIoResourceAudioUrl(): string | null {
+    return this.formIoSchema ? `/api/activity/${this.activity.activityId}/resource-audio` : null;
+  }
+
   submitFormIoAnswer(): void {
     this.formioRenderer?.submitForm();
   }

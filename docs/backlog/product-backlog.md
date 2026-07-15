@@ -1682,12 +1682,21 @@ From competitive gap review (2026-06-09). See sprint doc for full matrix.
   deliberately simplified from an original multi-turn chat design to single-turn (no multi-turn
   Form.io component exists), reuses `ComposeWritingPrompt` unchanged, documented as a deliberate
   simplification. **29 of 40 catalog types enabled — 72.5% of the full catalog.**
-- [ ] **K21 (`highlight_incorrect_words` / `write_from_dictation` / `repeat_sentence` / pilot entry
-  / 4 Legacy entries)** `Planned` — same doc as above, each item individually scoped with its
-  specific blocker documented (new custom component, real audio infrastructure, or product
-  decision); pick up whichever gets unblocked first. **Recommend manual browser testing of the 29
-  enabled types before further backend work** — no automated test in this session ever rendered a
-  Form.io schema live.
+- [x] **Phase K21 — `highlight_incorrect_words` + audio-serving bridge** `Done` (2026-07-15) —
+  same doc as above. K21 admin decision: the 4 Legacy catalog entries stay permanently disabled
+  (not deleted — their ActivityType enum values are still used elsewhere in the domain). Built a
+  real audio-serving bridge (`ActivityController.GetResourceAudio`) so a bank-first
+  (FormIoSchemaJson) Exercise can stream a Listening resource's own stored audio to the student —
+  the only prior precedent was admin-only/pre-publish. Built a new `highlightWords` Form.io
+  component (click-to-select tokens, scored via the existing `multiple_choice` kind, no new
+  scoring kind needed). New composer rotates real transcript words among each other's positions
+  instead of generating synthetic wrong words — fully deterministic, no AI call. **30 of 40
+  catalog types enabled — 75% of the full catalog.**
+- [ ] **K22 (`write_from_dictation` / `repeat_sentence`)** `Planned` — unblocked in principle by
+  the K21 audio bridge, but still need their own composer design (per-clip dictation scoring;
+  real speech scoring for repeat_sentence, which doesn't exist anywhere in the bank-first pipeline
+  yet). **Recommend manual browser testing of the 30 enabled types before further backend work** —
+  no automated test in this session ever rendered a Form.io schema live.
 
 ## Legacy database cleanup
 

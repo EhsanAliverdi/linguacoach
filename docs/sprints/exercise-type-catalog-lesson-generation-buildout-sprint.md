@@ -393,22 +393,68 @@ Both catalog rows converted `Ready` → `BankFirst`/enabled. Full test suite gre
 change (Unit 2255, Integration 1322, Architecture 5 — all passing). **29 of 40 catalog types
 (72.5%) now enabled by default.**
 
-### Phase K21 — Decisions needed before touching
+### Phase K21 — `highlight_incorrect_words` + audio-serving bridge (2026-07-15, done)
 
-- `formio_practice_gym_pilot` (`ImplementationStatus = planned`, `Pilot` category) — confirm
-  whether this pilot is still active work or should be dropped from the catalog. **Still open.**
-- The 4 `Legacy`-category catalog entries (`listening_comprehension`, `speaking_roleplay`,
-  `vocabulary_practice`, `writing_scenario`) — predate the bank-first resource-type model, don't
-  map cleanly to any of the 7 `PublishedResourceType`s. Currently disabled (correct default), but
-  whether to delete outright vs. leave as permanently-disabled catalog entries is still an open
-  product call — no urgency, they're inert either way. **Still open.**
-- `write_from_dictation` / `repeat_sentence` — need real audio-serving/recording infrastructure
-  that doesn't exist yet; investigated, nothing to build a composer on top of without first
-  building that infrastructure. Building a text-only fake would misrepresent the exercise
-  ("reject rather than degrade"). **Still open, needs a scoping decision.**
-- `highlight_incorrect_words` — needs a new custom Form.io Angular component; no existing
-  component supports click-to-highlight-word scoring. Significant frontend work, unverifiable
-  without a browser session. **Still open.**
+K21 opened with a product decision on the 4 Legacy-category catalog entries
+(`listening_comprehension`, `speaking_roleplay`, `vocabulary_practice`, `writing_scenario`):
+**keep as permanently-disabled catalog entries, do not delete** — their `ActivityType` enum
+values are general-purpose and still used elsewhere in the domain, so removing the rows risks
+orphaning pre-bank-first Activity data for no benefit. Documented directly in
+`ExerciseTypeDefinitionSeeder.cs`. `formio_practice_gym_pilot` was already correctly documented as
+intentionally inert (`Planned`, references the K18-era architecture-plan review) — no change
+needed.
+
+Initial investigation found `highlight_incorrect_words` needed more than "a new Form.io
+component": it also needs audio playback, and **no student-facing endpoint existed to serve a
+published Listening resource's stored audio to a bank-first (FormIoSchemaJson) Exercise** — the
+only precedent, `ResourceCandidateAudioService`, is pre-publish and admin-only, and the existing
+`/api/activity/{id}/audio` endpoint only serves TTS-generated audio for the legacy
+AiGeneratedContentJson pipeline (gated on `ActivityType.ListeningComprehension`, which a
+bank-first activity never meaningfully has — see `ExerciseLaunchService.MapToLearningActivityType`).
+This same gap blocks `write_from_dictation`/`repeat_sentence` too.
+
+Separately discovered: dedicated Angular renderer components for all three
+(`highlight-incorrect-words`, `write-from-dictation`, `repeat-sentence`) already exist in
+`exercise-renderer.component.ts`, reading from the legacy `raw`/`stagedExerciseData` content
+shape — but every K15-K20 composer exclusively emits `FormIoSchemaJson`, which
+`ActivityGetHandler` short-circuits on before any of that legacy-shape logic runs. Those renderers
+are effectively orphaned dead code for the bank-first pipeline. Decided via AskUserQuestion to
+keep every bank-first type on one consistent Form.io-based rendering mechanism rather than bridge
+into the legacy renderer shape — built a new custom Form.io component instead.
+
+Built, this phase:
+- **Audio-serving bridge**: `ActivityController.GetResourceAudio` (`GET
+  /api/activity/{activityId}/resource-audio`) — resolves `StudentExerciseLaunch` (by
+  `LearningActivityId` + `StudentId`, proving ownership the same way the H10 launch bridge already
+  does) → `ExerciseId` → `ExerciseResourceLink` (Listening) → `ResourceBankItem.ContentJson` →
+  `ListeningPassageContent.AudioStorageKey`, streamed via the existing `IFileStorageService`.
+  `ExerciseRendererComponent.formIoResourceAudioUrl` passes this URL into
+  `FormioRendererComponent`'s already-generic `audioSrc` input for every FormIoSchemaJson
+  activity — a no-op when no `audioPlayer` component is present or the endpoint 404s (no Listening
+  resource linked).
+- **New Form.io component**: `highlightWords` (`shared/formio/components/highlight-words.component.ts`)
+  — renders schema-authored word tokens as clickable spans, submits a plain string array of
+  selected token ids, scored via the existing `ScoringRuleKinds.MultipleChoice` kind (unordered
+  set-equality against backend-only `CorrectAnswers`) — no new scoring kind needed. Added to
+  `FormIoSchemaValidationService`'s allow-list.
+- **New composer**: `ComposeHighlightIncorrectWords` — picks up to 3 distinct eligible content
+  words (same length/alphabetic/distinct filter as `BuildCloze`) from the resource's own
+  transcript, then **rotates their text among each other's positions** (word A takes word B's
+  slot, wrapping around) instead of generating synthetic wrong words — every "wrong" word shown is
+  a real word actually said elsewhere in the same transcript, fully deterministic, no AI call.
+  Rejects (doesn't degrade) when fewer than 2 eligible content words exist. 2 new unit tests.
+
+Catalog row converted `Ready` → `BankFirst`/enabled. Full suite green (Architecture 5, Unit 2257,
+Integration 1322). **30 of 40 catalog types (75%) now enabled by default.**
+
+### Phase K22 — Decisions needed before touching
+
+- `write_from_dictation` / `repeat_sentence` — now that the K21 audio-serving bridge exists, these
+  are unblocked in principle, but still need their own composer design (write_from_dictation:
+  student types what they hear, needs exact-match-per-clip scoring over multiple short clips;
+  repeat_sentence: needs real speech scoring, which doesn't exist for the bank-first pipeline any
+  more than it does for the other Speaking types — see `ComposeSpeakingPrompt`'s doc comment).
+  **Still open.**
 
 ## Decisions made this pass
 
@@ -444,39 +490,44 @@ change (Unit 2255, Integration 1322, Architecture 5 — all passing). **29 of 40
 
 ## Implementation tasks produced
 
-Tracked as Phase K15 through K21 above. **K15 through K20 executed** (2026-07-14 to 2026-07-15,
-same continuous work session) — 29 of 40 catalog types now have real Lesson-generation composers
+Tracked as Phase K15 through K22 above. **K15 through K21 executed** (2026-07-14 to 2026-07-15,
+same continuous work session) — 30 of 40 catalog types now have real Lesson-generation composers
 and are enabled by default; every other type is either intentionally superseded (3 old Pattern
-Engine duplicates), intentionally inert (`formio_practice_gym_pilot`), or blocked on something
-outside "write a composer" (new scoring kind, new Form.io component, real audio infrastructure, or
-a K21 product decision on the 4 Legacy entries).
+Engine duplicates), intentionally inert (`formio_practice_gym_pilot`), intentionally
+permanently-disabled (4 Legacy entries, K21 decision), or blocked on real speech-scoring/
+per-clip-audio composer design (`write_from_dictation`/`repeat_sentence`, K22).
 
 ## Final verdict
 
 **The bank-first pipeline (Import → Resource Bank → Lesson → Exercise → Module) is functionally
 complete for all 7 `PublishedResourceType`s, plus the Lesson-Body-sourced `lesson_reflection`
-type.** 29 of 40 catalog types (72.5%) are enabled by default, every resource type
+type, and now includes a real audio-serving bridge for Listening resources.** 30 of 40 catalog
+types (75%) are enabled by default, every resource type
 (Vocabulary/Grammar/ReadingReference/ReadingPassage/Writing/Listening/Speaking) has multiple real,
 tested, deployed Exercise composers a Lesson can generate from, and the Lesson picker (K15.4)
-surfaces exactly what's enabled with zero hardcoding. The remaining 11 disabled catalog entries
+surfaces exactly what's enabled with zero hardcoding. The remaining 10 disabled catalog entries
 are not "not started" — each has a specific, documented reason it isn't buildable as a plain
-composer right now (see K21 above, plus the 3 confirmed-redundant legacy Pattern Engine keys).
-None of them block the core admin workflow: Import Content → Resource Bank → generate Lesson →
-generate Exercise(s) → combine into Module → review → approve.
+composer right now (see K22 above, the K21 permanent-disable decision on the 4 Legacy entries, plus
+the 3 confirmed-redundant legacy Pattern Engine keys). None of them block the core admin workflow:
+Import Content → Resource Bank → generate Lesson → generate Exercise(s) → combine into Module →
+review → approve.
 
 ## Next recommended action
 
-The composer build-out has reached its natural stopping point without new external input — every
-remaining item needs one of: (a) frontend Form.io verification in a real browser
-(`reorder_paragraphs`'s `defaultValue` pre-population is a real, stated, unconfirmed assumption —
-and more broadly, confirming the `speakingResponse`/`selectboxes`/`datagrid`/`content`(image)
-renderers actually work end-to-end for everything built in K16-K20, since this session's
-verification was build+test only, never a live browser check), (b) a new custom Form.io component
-(`highlight_incorrect_words`), (c) real audio-serving/recording infrastructure
-(`write_from_dictation`, `repeat_sentence`), or (d) product decisions on the pilot entry/the 4
-Legacy entries (K21). **Recommend the user now manually test the live admin UI** — generate at
-least one Exercise of each of the 29 enabled types from a real Lesson, since automated tests cover
-backend logic/schema shape but not actual Form.io rendering/submission in the browser.
-`reorder_paragraphs`, the K18 speaking types, and `describe_image`'s image `<img>` rendering are
-the highest-value ones to check first, since they're the least similar to the original, already
-browser-tested `gap_fill`/`multiple_choice_single` shape.
+The composer build-out has reached its natural stopping point without new external input — the
+only remaining catalog item that's still a real "not built yet" is
+`write_from_dictation`/`repeat_sentence`, which needs its own composer design on top of the K21
+audio-serving bridge (and, for `repeat_sentence`, real speech scoring that doesn't exist anywhere
+in the bank-first pipeline yet). Everything else needs (a) frontend Form.io verification in a real
+browser — `reorder_paragraphs`'s `defaultValue` pre-population is a real, stated, unconfirmed
+assumption, and more broadly, confirming the `speakingResponse`/`selectboxes`/`datagrid`/
+`content`(image)/`audioPlayer`/`highlightWords` renderers actually work end-to-end for everything
+built in K16-K21, since this session's verification was build+test only, never a live browser
+check — or (b) is a deliberate, documented, permanent decision (the 4 Legacy entries, the pilot
+entry). **Recommend the user now manually test the live admin UI** — generate at least one
+Exercise of each of the 30 enabled types from a real Lesson, since automated tests cover backend
+logic/schema shape but not actual Form.io rendering/submission in the browser.
+`reorder_paragraphs`, the K18 speaking types, `describe_image`'s image `<img>` rendering, and
+`highlight_incorrect_words`'s audio playback + click-to-select are the highest-value ones to check
+first, since they're the least similar to the original, already browser-tested
+`gap_fill`/`multiple_choice_single` shape.

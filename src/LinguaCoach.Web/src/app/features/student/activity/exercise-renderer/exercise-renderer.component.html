@@ -2,6 +2,7 @@
   <app-formio-renderer
     [schema]="formIoSchema"
     [disabled]="disabled"
+    [audioSrc]="formIoResourceAudioUrl"
     (submit)="onFormIoSubmitted($event)"
   />
   <button (click)="submitFormIoAnswer()"

@@ -155,6 +155,18 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
     /// answer" exception. Listening resources only.</summary>
     public const string ActivityTypeSelectMissingWord = "select_missing_word";
 
+    /// <summary>Phase K21 — the correct answer is deterministic: N distinct content words from
+    /// the resource's own transcript are rotated among each other's positions (word A takes word
+    /// B's slot and vice versa), so every "wrong" word shown really is a real word from the same
+    /// transcript, just in the wrong place — no AI call, no synthetic distractor text. The student
+    /// hears the resource's own unaltered audio (streamed via
+    /// <see cref="LinguaCoach.Api.Controllers.ActivityController.GetResourceAudio"/>, Phase K21's
+    /// audio-serving bridge for the bank-first pipeline) and clicks the displayed words that don't
+    /// match what they heard. Requires at least <see cref="MinHighlightAlteredWords"/> distinct
+    /// eligible content words in the transcript — rejects rather than degrading (same discipline
+    /// as BuildCloze) when the transcript is too short. Listening resources only.</summary>
+    public const string ActivityTypeHighlightIncorrectWords = "highlight_incorrect_words";
+
     /// <summary>Phase K18 — deterministic, Speaking resources only. Shows the resource's own
     /// PromptText verbatim, student responds via the speakingResponse component, honestly
     /// unscored (RequiresManualOrAiEvaluation) — see ComposeSpeakingPrompt's doc comment for why
@@ -223,6 +235,8 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
     private const int MinPhraseMatchPairs = 2;
     private const int MaxReorderParagraphs = 6;
     private const int MinReorderParagraphs = 3;
+    private const int MaxHighlightAlteredWords = 3;
+    private const int MinHighlightAlteredWords = 2;
 
     private readonly LinguaCoachDbContext _db;
     private readonly IFormIoSchemaValidationService _schemaValidator;
@@ -406,6 +420,7 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
                     ActivityTypeSummarizeSpokenText,
                     ActivityTypeRetellLecture,
                     ActivityTypeSummarizeGroupDiscussion,
+                    ActivityTypeHighlightIncorrectWords,
                 },
             PublishedResourceType.Speaking =>
                 new[]
@@ -447,6 +462,7 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
             ActivityTypeTeamsChatSimulation => ComposeWritingPrompt(primary.Snapshot,
                 "Read the chat message below and write a concise, professional reply.", "Your reply"),
             ActivityTypeListeningFillInBlanks => ComposeListeningFillInBlanks(primary.Snapshot),
+            ActivityTypeHighlightIncorrectWords => ComposeHighlightIncorrectWords(primary.Snapshot),
             ActivityTypeSpokenResponseFromPrompt => ComposeSpeakingPrompt(primary.Snapshot,
                 "Respond aloud to the prompt below."),
             ActivityTypeRespondToSituation => ComposeSpeakingPrompt(primary.Snapshot,
@@ -838,6 +854,82 @@ public sealed class ActivityGenerationService : IGenerateActivityFromResourcesHa
         ComposeListeningFillInBlanks(LessonResourceSnapshot primary) =>
         BuildCloze(primary.Body, primary.Title,
             "Read the transcript below and fill in each numbered blank.", "publish a transcript, or use a different Exercise type");
+
+    /// <summary>Phase K21 — see <see cref="ActivityTypeHighlightIncorrectWords"/>'s doc comment
+    /// for the full rationale. Picks up to <see cref="MaxHighlightAlteredWords"/> distinct
+    /// eligible content words (same length&gt;=5/alphabetic/distinct filter as BuildCloze), then
+    /// rotates their text among each other's positions — word[i] displays word[i+1]'s text (wrapping
+    /// around) — so every altered word is a real word actually said elsewhere in the transcript,
+    /// and (since all rotated words are distinct by construction) always differs from its own
+    /// original slot. The audioPlayer component carries no source in its own schema; the student's
+    /// browser resolves it via the resource-audio streaming endpoint (see
+    /// ExerciseRendererComponent.formIoResourceAudioUrl / ActivityController.GetResourceAudio).</summary>
+    private static (string Instructions, string FormSchemaJson, string AnswerKeyJson, string ScoringRulesJson, string FeedbackPlanJson)
+        ComposeHighlightIncorrectWords(LessonResourceSnapshot primary)
+    {
+        var transcript = primary.Body;
+        if (string.IsNullOrWhiteSpace(transcript))
+            throw new ExerciseValidationException(
+                $"Resource '{primary.Title}' has no transcript to build a highlight-incorrect-words exercise from — publish a transcript, or use a different Exercise type.");
+
+        var words = transcript.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+        var alteredIndexes = new List<int>();
+        var seenWords = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        for (var i = 0; i < words.Length && alteredIndexes.Count < MaxHighlightAlteredWords; i++)
+        {
+            var clean = words[i].Trim('.', ',', ';', ':', '!', '?', '"', '\'', '(', ')');
+            if (clean.Length < MinClozeWordLength || !clean.All(char.IsLetter)) continue;
+            if (!seenWords.Add(clean)) continue;
+            alteredIndexes.Add(i);
+        }
+
+        if (alteredIndexes.Count < MinHighlightAlteredWords)
+            throw new ExerciseValidationException(
+                $"Resource '{primary.Title}' does not have enough distinct content words to build a highlight-incorrect-words exercise (need at least {MinHighlightAlteredWords}, found {alteredIndexes.Count}) — use a different Exercise type.");
+
+        var originalCleanWords = alteredIndexes
+            .Select(idx => words[idx].Trim('.', ',', ';', ':', '!', '?', '"', '\'', '(', ')'))
+            .ToList();
+
+        var tokens = new List<(string Id, string Text)>();
+        var alteredTokenIds = new List<string>();
+        var alteredSet = new HashSet<int>(alteredIndexes);
+        for (var i = 0; i < words.Length; i++)
+        {
+            var id = $"t{i}";
+            var rotatedPosition = alteredIndexes.IndexOf(i);
+            var text = rotatedPosition >= 0
+                ? originalCleanWords[(rotatedPosition + 1) % originalCleanWords.Count]
+                : words[i];
+            tokens.Add((id, text));
+            if (alteredSet.Contains(i)) alteredTokenIds.Add(id);
+        }
+
+        var instructions = "Listen to the audio, then select every displayed word that does not match what you heard.";
+        var formSchemaJson = JsonSerializer.Serialize(new
+        {
+            components = new object[]
+            {
+                new { type = "audioPlayer", key = "listening_audio" },
+                new
+                {
+                    type = "highlightWords", key = "answer", input = true,
+                    label = instructions,
+                    tokens = tokens.Select(t => new { id = t.Id, text = t.Text }).ToArray(),
+                },
+            }
+        });
+        var answerKeyJson = JsonSerializer.Serialize(new Dictionary<string, string[]> { ["answer"] = alteredTokenIds.ToArray() });
+        var scoringRulesJson = JsonSerializer.Serialize(new ScoringRulesDocument(
+            new Dictionary<string, ComponentScoringRule> { ["answer"] = new(ScoringRuleKinds.MultipleChoice, CorrectAnswers: alteredTokenIds, Points: 1.0) }));
+        var feedbackPlanJson = JsonSerializer.Serialize(new
+        {
+            correctFeedback = "Correct!",
+            incorrectFeedback = $"The audio actually said: {string.Join(", ", originalCleanWords)}.",
+        });
+
+        return (instructions, formSchemaJson, answerKeyJson, scoringRulesJson, feedbackPlanJson);
+    }
 
     /// <summary>Phase K18 — "choose the correct word for each blank", not "type the word":
     /// otherwise identical word-selection to <see cref="ComposeReadingFillInBlanksAsync"/>, but

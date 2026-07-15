@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.Ai;
+using LinguaCoach.Application.ResourceImport;
 using LinguaCoach.Application.Speaking;
 using LinguaCoach.Application.Writing;
 using LinguaCoach.Domain;
@@ -214,6 +215,53 @@ public sealed class ActivityController : ControllerBase
             url,
             expiresAt = signed.ExpiresAt.ToUniversalTime().ToString("o")
         });
+    }
+
+    /// <summary>
+    /// Phase K21 — streams the stored audio for a bank-first (FormIoSchemaJson) Exercise's linked
+    /// Listening resource. Distinct from <see cref="GetAudio"/>/<see cref="GetAudioUrl"/> above,
+    /// which serve TTS-generated audio for the legacy AiGeneratedContentJson pipeline only (gated
+    /// on ActivityType.ListeningComprehension) — a bank-first activity never has that ActivityType
+    /// set meaningfully (see ExerciseLaunchService.MapToLearningActivityType) and its audio is a
+    /// real uploaded file already stored on the ResourceBankItem, not something to generate.
+    /// Ownership is proven by the existence of a StudentExerciseLaunch row for this student and
+    /// activity — the same launch bridge ExerciseLaunchService creates — rather than the
+    /// LearningModule/LearningPath chain the legacy endpoints use, since Practice Gym launches
+    /// have no LearningModuleId.
+    /// </summary>
+    [HttpGet("{activityId:guid}/resource-audio")]
+    public async Task<IActionResult> GetResourceAudio(Guid activityId, CancellationToken ct = default)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == Guid.Empty) return Unauthorized();
+
+        var profile = await _db.StudentProfiles.FirstOrDefaultAsync(p => p.UserId == userId, ct);
+        if (profile is null) return Unauthorized();
+
+        var launch = await _db.StudentExerciseLaunches
+            .Where(l => l.LearningActivityId == activityId && l.StudentId == profile.Id)
+            .OrderByDescending(l => l.LaunchedAt)
+            .FirstOrDefaultAsync(ct);
+        if (launch is null) return NotFound();
+
+        var resourceLink = await _db.ExerciseResourceLinks
+            .Where(l => l.ExerciseId == launch.ExerciseId && l.ResourceType == PublishedResourceType.Listening)
+            .FirstOrDefaultAsync(ct);
+        if (resourceLink is null) return NotFound();
+
+        var contentJson = await _db.ResourceBankItems
+            .Where(r => r.Id == resourceLink.ResourceId)
+            .Select(r => r.ContentJson)
+            .FirstOrDefaultAsync(ct);
+        if (contentJson is null) return NotFound();
+
+        var listening = ResourceBankItemContent.Deserialize<ListeningPassageContent>(contentJson);
+        if (!await _storage.ExistsAsync(listening.AudioStorageKey, ct)) return NotFound();
+
+        await using var stream = await _storage.ReadAsync(listening.AudioStorageKey, ct);
+        using var ms = new MemoryStream();
+        await stream.CopyToAsync(ms, ct);
+        return File(ms.ToArray(), listening.AudioContentType);
     }
 
     /// <summary>

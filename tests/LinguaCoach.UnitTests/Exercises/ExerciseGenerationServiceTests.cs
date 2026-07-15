@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FluentAssertions;
 using LinguaCoach.Application.Exercises;
 using LinguaCoach.Application.Lessons;
@@ -693,6 +694,40 @@ public sealed class ActivityGenerationServiceTests : IDisposable
         result.Activity.ActivityType.Should().Be("teams_chat_simulation");
         result.Activity.FormSchemaJson.Should().Contain("Hey, can you send me the report by EOD?").And.Contain("textarea");
         result.Activity.ScoringRulesJson.Should().Contain("RequiresManualOrAiEvaluation").And.Contain("true");
+    }
+
+    [Fact]
+    public async Task Highlight_incorrect_words_rotates_real_transcript_words_into_altered_positions()
+    {
+        var source = SeedSource();
+        var listening = SeedListeningPassage(source.Id,
+            transcript: "Please remember to submit your expense report before the Friday deadline arrives.");
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Listening", listening.Id, "Primary") },
+            RequestedActivityType: "highlight_incorrect_words"));
+
+        result.Activity.ActivityType.Should().Be("highlight_incorrect_words");
+        result.Activity.FormSchemaJson.Should().Contain("audioPlayer").And.Contain("highlightWords");
+        result.Activity.FormSchemaJson.Should().NotContain("correctAnswer").And.NotContain("correctAnswers");
+        result.Activity.ScoringRulesJson.Should().Contain("multiple_choice");
+
+        using var answerKey = JsonDocument.Parse(result.Activity.AnswerKeyJson);
+        var alteredIds = answerKey.RootElement.GetProperty("answer").EnumerateArray().Select(e => e.GetString()).ToList();
+        alteredIds.Should().HaveCountGreaterThanOrEqualTo(2);
+    }
+
+    [Fact]
+    public async Task Highlight_incorrect_words_rejected_when_transcript_has_too_few_content_words()
+    {
+        var source = SeedSource();
+        var listening = SeedListeningPassage(source.Id, transcript: "Hi there.");
+
+        var act = () => _sut.HandleAsync(new GenerateActivityFromResourcesRequest(
+            new[] { new ExerciseResourceLinkInput("Listening", listening.Id, "Primary") },
+            RequestedActivityType: "highlight_incorrect_words"));
+
+        await act.Should().ThrowAsync<ExerciseValidationException>();
     }
 
     [Fact]

@@ -1166,6 +1166,15 @@ li.active .wizard-page-label,
 .sf-speaking-btn-stop { @apply bg-red-600 text-white hover:bg-red-700; }
 .sf-speaking-btn-rerecord { @apply bg-white text-gray-700 ring-1 ring-gray-300 hover:bg-gray-50; }
 
+.sf-highlight-words { @apply rounded-xl bg-slate-50 px-4 py-3; }
+.sf-highlight-label { @apply mb-2 text-sm font-medium text-slate-800; }
+.sf-highlight-question { @apply mb-2 text-sm text-slate-600; }
+.sf-highlight-tokens { @apply leading-loose; }
+.sf-highlight-token {
+  @apply mr-1 inline-block cursor-pointer rounded px-1 py-0.5 text-sm text-slate-800 transition-colors hover:bg-slate-200;
+}
+.sf-highlight-token-selected { @apply bg-amber-200 text-amber-900 hover:bg-amber-300; }
+
 /* ── Phase E3 — resource candidate rendered preview: student-visible vs admin-only panels ───
    Visually/structurally distinct per spec — a colored left border + tinted background per panel,
    not just two unlabeled blocks of similar-looking text. */

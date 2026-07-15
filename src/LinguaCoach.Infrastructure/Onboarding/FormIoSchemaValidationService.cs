@@ -21,6 +21,11 @@ public sealed class FormIoSchemaValidationService : IFormIoSchemaValidationServi
         // presentational-only (no answer data), speakingResponse carries only an uploaded audio
         // storage-key reference, never an authored correct answer.
         "audioPlayer", "speakingResponse",
+        // Phase K21 — highlightWords (highlight_incorrect_words) carries only its own displayed
+        // token text/ids, submitting the student's selected token ids as its answer value; the
+        // set of *which* ids are correct lives only in ScoringRulesJson (backend-only), never in
+        // this schema.
+        "highlightWords",
         // Stock Form.io "Data Grid" (Phase C3, 2026-07-08 — reorder_paragraphs template
         // migration), used with its built-in "reorder" setting for drag-to-reorder lists. Its
         // own nested "components" (row template) are still recursively validated below via

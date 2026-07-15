@@ -62,6 +62,13 @@ public static class ExerciseTypeDefinitionSeeder
 
     private static IReadOnlyList<ExerciseTypeDefinition> BuildBaseDefinitions() =>
     [
+        // Phase K21 — the 4 Legacy-category entries below predate the bank-first resource-type
+        // model and don't map cleanly to any PublishedResourceType. Product decision: leave them
+        // as permanently-disabled catalog entries (Ready(...) already seeds IsEnabled=false) rather
+        // than deleting outright — their ActivityType enum values are general-purpose and still
+        // used by other parts of the domain, so removing the catalog rows risks orphaning any
+        // pre-bank-first Activity data without any offsetting benefit. They are inert and will
+        // never be re-enabled; do not build new composers for them.
         Ready("listening_comprehension", "Listening Comprehension", "Legacy listening activity with workplace audio and questions.", "listening", "[]", "Legacy", "listening", "listening_comprehension", "activity_generate_listening", ActivityType.ListeningComprehension, null, 8, true, false),
         Ready("writing_scenario", "Writing Scenario", "Legacy workplace writing activity.", "writing", "[]", "Legacy", "writing", "writing_scenario", "activity_generate_writing", ActivityType.WritingScenario, null, 8, false, false),
         Ready("speaking_roleplay", "Speaking Roleplay", "Legacy speaking roleplay activity.", "speaking", "[]", "Legacy", "speaking", "speaking_roleplay", "activity_generate_speaking_roleplay", ActivityType.SpeakingRolePlay, null, 6, false, false),
@@ -231,8 +238,15 @@ public static class ExerciseTypeDefinitionSeeder
             "Choose the word that completes the blank in the resource's own transcript — the correct word is picked deterministically, AI only supplies wrong-word distractors. Listening resources only.",
             "listening", "[]", 1, 1, 1),
         // select_missing_word promoted to Ready above
-        Ready(ExercisePatternKey.HighlightIncorrectWords, "Highlight Incorrect Words", "Listen to a short audio script and select the transcript words that differ from it.", "listening", "[\"reading\"]", "Pattern", "highlight_incorrect_words", "keyed_selection", "activity_generate_highlight_incorrect_words", ActivityType.ListeningComprehension, ExercisePatternKey.HighlightIncorrectWords, 5, false, false),
-        // highlight_incorrect_words promoted to Ready above
+        // Phase K21 — highlight_incorrect_words now has a real Lesson-generation composer
+        // (ComposeHighlightIncorrectWords: rotates real transcript words among each other's
+        // positions, deterministic correct-answer set, streams the resource's own real audio via
+        // the new Phase K21 audio-serving bridge — see ExerciseGenerationService.cs). Same key,
+        // moves to BankFirst/enabled.
+        BankFirst(ExercisePatternKey.HighlightIncorrectWords, "Highlight Incorrect Words",
+            "Listen to the resource's own audio and select the displayed words that don't match what you heard — the altered words are real words from the same transcript, deterministically rotated into the wrong positions. Listening resources only.",
+            "listening", "[]", 2, 3, 4),
+        // highlight_incorrect_words promoted to BankFirst above
         Ready(ExercisePatternKey.WriteFromDictation, "Write From Dictation", "Listen to short audio clips and type exactly what you hear.", "listening", "[\"writing\"]", "Pattern", "write_from_dictation", "exact_match", "activity_generate_write_from_dictation", ActivityType.ListeningComprehension, ExercisePatternKey.WriteFromDictation, 5, false, false),
         // write_from_dictation promoted to Ready above
 
