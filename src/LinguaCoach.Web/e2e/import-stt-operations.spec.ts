@@ -74,6 +74,18 @@ async function mockAdmin(page: Page) {
     });
   });
 
+  await page.route(`**/api/admin/import-packages/${PACKAGE_ID}/plan/${PLAN_ID}/ai-operations`, async route => {
+    await route.fulfill({
+      status: 200, contentType: 'application/json',
+      body: JSON.stringify([{
+        operationId: 'ai-op-1', resourceCandidateId: 'cand-1', sourceLabel: 'hello', operationType: 'candidate_enrich',
+        providerName: 'openai', modelName: 'gpt-4o-mini', status: 'Succeeded', attemptNumber: 1,
+        resultReusable: true, inputTokens: 100, outputTokens: 50, calculatedCost: 0.02, currency: 'USD',
+        startedAtUtc: '2026-01-01T00:00:00Z', completedAtUtc: '2026-01-01T00:01:00Z', safeErrorMessage: null,
+      }]),
+    });
+  });
+
   // Catch-all for other admin API calls the layout/shell makes on load (notifications, sidebar
   // counts, etc.) — falls through to the specific import-packages handlers above, otherwise
   // returns an empty/benign response so the shell renders without hitting the real backend.
@@ -103,6 +115,18 @@ test('admin: completed STT operation shows provider/model, cost, attempts, and r
   await expect(page.getByText('STT operations', { exact: true })).toBeVisible();
   await expect(page.getByText('audio.mp3').first()).toBeVisible();
   await expect(page.getByText(/openai.*whisper-1/)).toBeVisible();
-  await expect(page.getByText('Reused on retry — no extra charge')).toBeVisible();
+  await expect(page.getByText('Reused on retry — no extra charge').first()).toBeVisible();
   await expect(page.getByRole('cell', { name: 'USD 0.03' })).toBeVisible();
+});
+
+test('admin: completed AI enrichment operation shows provider/model, tokens, cost, and reused state', async ({ page }) => {
+  await mockAdmin(page);
+  await adminLogin(page);
+  await page.goto(`/admin/content/import/packages/${PACKAGE_ID}/plan`);
+
+  await expect(page.getByText('AI operations', { exact: true })).toBeVisible();
+  await expect(page.getByText('hello').first()).toBeVisible();
+  await expect(page.getByText(/openai.*gpt-4o-mini/)).toBeVisible();
+  await expect(page.getByText('100 in / 50 out')).toBeVisible();
+  await expect(page.getByRole('cell', { name: 'USD 0.02' })).toBeVisible();
 });

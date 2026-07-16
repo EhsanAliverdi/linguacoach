@@ -8,7 +8,9 @@ using Microsoft.Extensions.Logging;
 namespace LinguaCoach.Infrastructure.Ai;
 
 /// <summary>AI execution result enriched with provider and model metadata.</summary>
-public sealed record AiExecutionResult(string ResponseJson, string ProviderName, string ModelName, bool IsFallback);
+public sealed record AiExecutionResult(
+    string ResponseJson, string ProviderName, string ModelName, bool IsFallback,
+    int InputTokens = 0, int OutputTokens = 0, decimal CostUsd = 0m);
 
 public sealed class AiExecutionService
 {
@@ -242,7 +244,10 @@ public sealed class AiExecutionService
             successResponse!.ResponseJson,
             successResponse.ProviderName ?? pair.Primary.ProviderName,
             successResponse.ModelName ?? pair.Primary.ModelName,
-            isFallback);
+            isFallback,
+            successResponse.InputTokens,
+            successResponse.OutputTokens,
+            successResponse.CostUsd);
     }
 
     private static string ResolveGovernanceKey(string featureKey) =>

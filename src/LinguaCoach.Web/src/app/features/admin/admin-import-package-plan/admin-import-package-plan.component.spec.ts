@@ -1,7 +1,7 @@
 import { of, throwError } from 'rxjs';
 import { AdminImportPackagePlanComponent } from './admin-import-package-plan.component';
 import { AdminImportPackageService } from '../../../core/services/admin-import-package.service';
-import { ImportExecutionPlanDto, ImportPlanPreviewResult, ImportSttOperationSummaryDto } from '../../../core/models/admin-import-package.models';
+import { ImportAiEnrichmentOperationSummaryDto, ImportExecutionPlanDto, ImportPlanPreviewResult, ImportSttOperationSummaryDto } from '../../../core/models/admin-import-package.models';
 
 /**
  * Phase 4.4A — focused unit coverage for the editable plan draft workflow (include/exclude,
@@ -59,7 +59,7 @@ describe('AdminImportPackagePlanComponent', () => {
   function makeComponent(svc: Partial<AdminImportPackageService>) {
     const routeStub = { snapshot: { paramMap: { get: () => 'pkg-1' } } } as any;
     const routerStub = { navigate: jasmine.createSpy('navigate') } as any;
-    const withDefaults: Partial<AdminImportPackageService> = { getSttOperations: () => of([]), ...svc };
+    const withDefaults: Partial<AdminImportPackageService> = { getSttOperations: () => of([]), getAiOperations: () => of([]), ...svc };
     return new AdminImportPackagePlanComponent(withDefaults as AdminImportPackageService, routeStub, routerStub);
   }
 
@@ -455,6 +455,95 @@ describe('AdminImportPackagePlanComponent', () => {
         getManifest: () => of({} as any), getPlan: () => of(basePlan()),
         generatePlan: () => of(basePlan({ planId: 'plan-2' })),
         getSttOperations: (_pkg, planId) => { requestedPlanId = planId; return of([]); },
+      });
+      component.ngOnInit();
+      component.generatePlan();
+
+      expect(requestedPlanId).toBe('plan-2');
+    });
+  });
+
+  describe('AI operations (Phase 4.4D)', () => {
+    function aiRow(overrides: Partial<ImportAiEnrichmentOperationSummaryDto> = {}): ImportAiEnrichmentOperationSummaryDto {
+      return {
+        operationId: 'ai-op-1',
+        resourceCandidateId: 'cand-1',
+        sourceLabel: 'hello',
+        operationType: 'candidate_enrich',
+        providerName: 'openai',
+        modelName: 'gpt-4o-mini',
+        status: 'Succeeded',
+        attemptNumber: 1,
+        resultReusable: true,
+        inputTokens: 100,
+        outputTokens: 50,
+        calculatedCost: 0.02,
+        currency: 'USD',
+        startedAtUtc: '2026-01-01T00:00:00Z',
+        completedAtUtc: '2026-01-01T00:01:00Z',
+        safeErrorMessage: null,
+        ...overrides,
+      };
+    }
+
+    it('shows an empty state when no AI operations have run yet', () => {
+      const component = makeComponent({
+        getManifest: () => of({} as any), getPlan: () => of(basePlan()), getAiOperations: () => of([]),
+      });
+      component.ngOnInit();
+
+      expect(component.aiOperations()).toEqual([]);
+      expect(component.aiOperationsLoading()).toBeFalse();
+    });
+
+    it('shows an error state when the AI operations request fails', () => {
+      const component = makeComponent({
+        getManifest: () => of({} as any), getPlan: () => of(basePlan()),
+        getAiOperations: () => throwError(() => ({ error: { error: 'boom' } })),
+      });
+      component.ngOnInit();
+
+      expect(component.aiOperationsError()).toBe('boom');
+      expect(component.aiOperations()).toBeNull();
+    });
+
+    it('displays a completed, reused operation without duplicate-charge semantics', () => {
+      const component = makeComponent({
+        getManifest: () => of({} as any), getPlan: () => of(basePlan()),
+        getAiOperations: () => of([aiRow()]),
+      });
+      component.ngOnInit();
+
+      const rows = component.aiOperations()!;
+      expect(rows.length).toBe(1);
+      expect(rows[0].status).toBe('Succeeded');
+      expect(rows[0].resultReusable).toBeTrue();
+      expect(rows[0].inputTokens).toBe(100);
+      expect(rows[0].outputTokens).toBe(50);
+    });
+
+    it('displays a failed operation with its safe error message', () => {
+      const component = makeComponent({
+        getManifest: () => of({} as any), getPlan: () => of(basePlan()),
+        getAiOperations: () => of([aiRow({
+          operationId: 'ai-op-2', status: 'Failed', resultReusable: false, calculatedCost: null,
+          safeErrorMessage: 'AI response could not be parsed after retry.',
+        })]),
+      });
+      component.ngOnInit();
+
+      const rows = component.aiOperations()!;
+      expect(rows[0].status).toBe('Failed');
+      expect(rows[0].safeErrorMessage).toBe('AI response could not be parsed after retry.');
+      expect(rows[0].calculatedCost).toBeNull();
+    });
+
+    it('refreshes AI operations after regenerating the plan', () => {
+      let requestedPlanId = '';
+      const component = makeComponent({
+        getManifest: () => of({} as any), getPlan: () => of(basePlan()),
+        generatePlan: () => of(basePlan({ planId: 'plan-2' })),
+        getAiOperations: (_pkg, planId) => { requestedPlanId = planId; return of([]); },
       });
       component.ngOnInit();
       component.generatePlan();

@@ -122,6 +122,9 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     // Phase 4.4B — immutable, append-only audit trail of admin-approved cost ceiling increases
     public DbSet<ImportCostCeilingAmendment> ImportCostCeilingAmendments => Set<ImportCostCeilingAmendment>();
 
+    // Phase 4.4D — durable, retry-safe billable-operation ledger (AI candidate-enrichment scope)
+    public DbSet<ImportAiEnrichmentOperation> ImportAiEnrichmentOperations => Set<ImportAiEnrichmentOperation>();
+
     // Phase H3 — Lesson foundation (reviewable teaching/explanation blocks generated from
     // published Resource Bank rows; the "Learn" half of a future Module)
     public DbSet<Lesson> Lessons => Set<Lesson>();

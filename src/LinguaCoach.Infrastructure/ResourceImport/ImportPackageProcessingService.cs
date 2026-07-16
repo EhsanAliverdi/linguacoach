@@ -322,19 +322,22 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
 
                 if (package.ProcessingMode != ImportProcessingMode.Direct && result.SucceededCount > 0)
                 {
-                    var (aiCost, ceilingHit) = await CheckAndAccrueAiCostAsync(result.SucceededCount, runningCost, ceiling, tolerance, ct);
-                    runningCost += aiCost;
-                    // Phase 4.4 (Workstream B2) — persisted immediately, in the same save as the
-                    // asset/candidate state already tracked above, so a crash right after this line
-                    // never loses track of cost that was already (about to be) spent.
-                    package.AccrueCost(aiCost, "USD");
-                    await _db.SaveChangesAsync(ct);
-                    if (ceilingHit)
+                    // Phase 4.4D — cost is no longer pre-accrued for the whole batch here. Each
+                    // candidate's AI operation is claimed, ceiling-checked, and (on success)
+                    // ledgered + accrued individually inside ResourceCandidateAnalysisService — the
+                    // exact same "one save, never drifts apart" discipline the STT path already
+                    // uses, just moved to the actual per-operation call site.
+                    var analysisResult = await _batchAnalysisService.AnalyzePendingForRunAsync(result.RunId, ct);
+                    // Re-sync the local running total with whatever AI enrichment actually
+                    // accrued (per-candidate, inside ResourceCandidateAnalysisService) so the STT
+                    // ceiling check later in this same pass compares against the true total.
+                    runningCost = package.AccruedCost;
+                    if (analysisResult.CeilingReached)
                     {
                         package.UpdateProgress(candidatesCreatedCount: candidatesCreated, candidatesFailedCount: candidatesFailed);
-                        return $"Projected cost reached ${runningCost:N2}, at or above the approved ${ceiling:N2} ceiling, before AI enrichment for run {result.RunId} completed.";
+                        return analysisResult.PauseReason
+                            ?? $"Projected cost reached the approved ${ceiling:N2} ceiling before AI enrichment for run {result.RunId} completed.";
                     }
-                    await _batchAnalysisService.AnalyzePendingForRunAsync(result.RunId, ct);
                 }
             }
             catch (Exception ex)
@@ -474,25 +477,6 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
 
         package.UpdateProgress(candidatesCreatedCount: candidatesCreated, candidatesFailedCount: candidatesFailed);
         return null;
-    }
-
-    private async Task<(decimal AiCost, bool CeilingHit)> CheckAndAccrueAiCostAsync(
-        int candidateCount, decimal runningCost, decimal ceiling, decimal tolerance, CancellationToken ct)
-    {
-        // Phase 4.4 (Workstream B7) — fail closed: unresolved pricing must never silently become
-        // $0 (the pre-4.4 behaviour here). ImportExecutionPlanApprovalService already validates
-        // this at approval time for a plan with structured files, so reaching this with no pricing
-        // means the pricing configuration changed out from under an already-approved plan.
-        var pricing = await _pricingResolver.ResolveAsync(_costOptions.AssumedAiProviderName, _costOptions.AssumedAiModelName, ct)
-            ?? throw new ImportPricingUnavailableException(
-                _costOptions.AssumedAiProviderName, _costOptions.AssumedAiModelName, "AI candidate enrichment");
-
-        var inputTokens = (long)candidateCount * _costOptions.AssumedInputTokensPerCandidate;
-        var outputTokens = (long)candidateCount * _costOptions.AssumedOutputTokensPerCandidate;
-        var cost = inputTokens / 1000m * pricing.InputPer1KTokens + outputTokens / 1000m * pricing.OutputPer1KTokens;
-
-        var projected = runningCost + cost;
-        return (cost, projected > ceiling * (1 + tolerance));
     }
 
     private async Task<ResourceImportRun> GetOrCreateAudioImportRunAsync(ImportPackage package, CancellationToken ct)

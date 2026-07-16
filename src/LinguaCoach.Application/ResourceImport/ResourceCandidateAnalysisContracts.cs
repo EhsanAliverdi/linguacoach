@@ -45,7 +45,14 @@ public sealed record ResourceCandidateAnalysisResult(
     string? ErrorMessage,
     ResourceCandidateAnalysisOutput? Output,
     string? ProviderName,
-    string? ModelName);
+    string? ModelName,
+    /// <summary>Phase 4.4D — true when the projected cost of this specific AI operation would
+    /// reach or exceed the plan's approved ceiling; the provider was deliberately NOT called.
+    /// Distinct from a normal analysis failure (<see cref="Success"/> false for other reasons) —
+    /// callers must stop attempting further candidates in the same run when this is true rather
+    /// than treating it as a per-candidate error to skip past.</summary>
+    bool CeilingReached = false,
+    string? PauseReason = null);
 
 public interface IResourceCandidateAnalysisService
 {
@@ -64,7 +71,12 @@ public sealed record ResourceCandidateBatchAnalysisResult(
     int CandidatesAnalyzed,
     int SucceededCount,
     int FailedCount,
-    bool BatchLimitReached);
+    bool BatchLimitReached,
+    /// <summary>Phase 4.4D — true when the approved cost ceiling was reached mid-batch; the
+    /// remaining not-yet-processed candidates in this run were left untouched (still eligible for
+    /// analysis once the ceiling is amended and processing resumes).</summary>
+    bool CeilingReached = false,
+    string? PauseReason = null);
 
 public interface IResourceCandidateBatchAnalysisService
 {

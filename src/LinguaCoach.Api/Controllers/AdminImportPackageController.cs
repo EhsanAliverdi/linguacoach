@@ -27,6 +27,7 @@ public sealed class AdminImportPackageController : ControllerBase
     private readonly IImportPlanPreviewService _planPreviewService;
     private readonly IImportCostCeilingAmendmentService _costCeilingAmendmentService;
     private readonly IImportSttOperationSummaryQuery _sttOperationSummaryQuery;
+    private readonly IImportAiEnrichmentOperationSummaryQuery _aiOperationSummaryQuery;
 
     public AdminImportPackageController(
         IImportPackageUploadService uploadService,
@@ -36,7 +37,8 @@ public sealed class AdminImportPackageController : ControllerBase
         IImportPlanDraftService planDraftService,
         IImportPlanPreviewService planPreviewService,
         IImportCostCeilingAmendmentService costCeilingAmendmentService,
-        IImportSttOperationSummaryQuery sttOperationSummaryQuery)
+        IImportSttOperationSummaryQuery sttOperationSummaryQuery,
+        IImportAiEnrichmentOperationSummaryQuery aiOperationSummaryQuery)
     {
         _uploadService = uploadService;
         _submissionService = submissionService;
@@ -46,6 +48,7 @@ public sealed class AdminImportPackageController : ControllerBase
         _planPreviewService = planPreviewService;
         _costCeilingAmendmentService = costCeilingAmendmentService;
         _sttOperationSummaryQuery = sttOperationSummaryQuery;
+        _aiOperationSummaryQuery = aiOperationSummaryQuery;
     }
 
     // POST api/admin/import-packages/submit  multipart/form-data:
@@ -296,6 +299,17 @@ public sealed class AdminImportPackageController : ControllerBase
     public async Task<IActionResult> GetSttOperationSummaries(Guid packageId, Guid planId, CancellationToken ct)
     {
         var result = await _sttOperationSummaryQuery.GetForPlanAsync(packageId, planId, ct);
+        return result is null ? NotFound() : Ok(result);
+    }
+
+    // GET api/admin/import-packages/{packageId}/plan/{planId}/ai-operations — Phase 4.4D —
+    // read-only visibility into the durable AI candidate-enrichment operation ledger for one plan.
+    // No provider credentials, no raw AI response body; every row is scoped to this exact package
+    // + plan.
+    [HttpGet("{packageId:guid}/plan/{planId:guid}/ai-operations")]
+    public async Task<IActionResult> GetAiOperationSummaries(Guid packageId, Guid planId, CancellationToken ct)
+    {
+        var result = await _aiOperationSummaryQuery.GetForPlanAsync(packageId, planId, ct);
         return result is null ? NotFound() : Ok(result);
     }
 

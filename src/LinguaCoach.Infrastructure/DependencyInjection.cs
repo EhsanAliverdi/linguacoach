@@ -728,6 +728,12 @@ public static class DependencyInjection
         // Phase 4.4C — read-only STT operation-ledger visibility for the admin plan page.
         services.AddScoped<LinguaCoach.Application.ResourceImport.IImportSttOperationSummaryQuery,
             LinguaCoach.Infrastructure.ResourceImport.ImportSttOperationSummaryQuery>();
+        // Phase 4.4D — durable, retry-safe AI candidate-enrichment operation ledger + its read-only
+        // admin visibility, generalizing the STT ledger pattern.
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IImportAiEnrichmentOperationLedger,
+            LinguaCoach.Infrastructure.ResourceImport.ImportAiEnrichmentOperationLedger>();
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IImportAiEnrichmentOperationSummaryQuery,
+            LinguaCoach.Infrastructure.ResourceImport.ImportAiEnrichmentOperationSummaryQuery>();
 
         // Phase 16F/16G — Speaking Evaluation Foundation + Provider-Backed Evaluation
         if (configuration is not null)

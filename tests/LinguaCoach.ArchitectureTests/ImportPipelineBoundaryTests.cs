@@ -412,4 +412,85 @@ public class ImportPipelineBoundaryTests
         var amendmentServiceMethods = typeof(IImportCostCeilingAmendmentService).GetMethods().Select(m => m.Name).ToList();
         Assert.Contains("AmendAsync", amendmentServiceMethods);
     }
+
+    // ── Phase 4.4D (2026-07-16) — durable AI candidate-enrichment operation ledger, generalizing
+    // the STT ledger pattern. Mirrors this file's existing STT-ledger guards exactly. ──
+
+    /// <summary>Exactly one ledger row may ever exist per logical AI enrichment operation —
+    /// guards against the unique index being accidentally dropped from the EF configuration.
+    /// </summary>
+    [Fact]
+    public void Ai_enrichment_operation_logical_key_has_a_unique_index_configured()
+    {
+        using var db = new LinguaCoach.Persistence.LinguaCoachDbContext(
+            new Microsoft.EntityFrameworkCore.DbContextOptionsBuilder<LinguaCoach.Persistence.LinguaCoachDbContext>()
+                .UseSqlite("DataSource=:memory:").Options);
+
+        var entityType = db.Model.FindEntityType(typeof(LinguaCoach.Domain.Entities.ImportAiEnrichmentOperation));
+        Assert.NotNull(entityType);
+
+        var hasUniqueIndexOnLogicalKey = entityType!.GetIndexes().Any(i =>
+            i.IsUnique && i.Properties.Count == 1 &&
+            i.Properties[0].Name == nameof(LinguaCoach.Domain.Entities.ImportAiEnrichmentOperation.LogicalOperationKey));
+
+        Assert.True(hasUniqueIndexOnLogicalKey,
+            "ImportAiEnrichmentOperation.LogicalOperationKey must have a unique index — this is the DB-level " +
+            "dedup guarantee preventing two workers from claiming (and charging) the same logical operation twice.");
+    }
+
+    /// <summary>Same monetary-type discipline as the existing Phase 4.4 cost entities, extended to
+    /// the AI enrichment ledger.</summary>
+    [Fact]
+    public void Monetary_properties_on_the_ai_enrichment_ledger_use_decimal_not_double_or_float()
+    {
+        var monetaryNameFragments = new[] { "Cost", "Price", "Ceiling" };
+        var offending = new List<string>();
+        foreach (var prop in typeof(LinguaCoach.Domain.Entities.ImportAiEnrichmentOperation).GetProperties(BindingFlags.Public | BindingFlags.Instance))
+        {
+            if (!monetaryNameFragments.Any(f => prop.Name.Contains(f, StringComparison.Ordinal))) continue;
+            var underlying = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+            if (underlying == typeof(double) || underlying == typeof(float))
+                offending.Add($"ImportAiEnrichmentOperation.{prop.Name} is {underlying.Name}");
+        }
+
+        Assert.True(offending.Count == 0,
+            "Found a monetary property using double/float instead of decimal: " + string.Join(", ", offending));
+    }
+
+    /// <summary>No controller may depend on the AI enrichment ledger directly — only
+    /// ResourceCandidateAnalysisService (via ImportPackageProcessingService's batch call)
+    /// orchestrates that claim/call/mark sequence.</summary>
+    [Fact]
+    public void Import_package_controller_does_not_depend_on_the_AI_enrichment_ledger_directly()
+    {
+        var controllerType = typeof(LinguaCoach.Api.Controllers.AdminImportPackageController);
+        var offending = new List<string>();
+        foreach (var ctor in controllerType.GetConstructors())
+        {
+            foreach (var param in ctor.GetParameters())
+            {
+                if (param.ParameterType == typeof(IImportAiEnrichmentOperationLedger))
+                    offending.Add($"{controllerType.Name} depends on {param.ParameterType.Name}");
+            }
+        }
+
+        Assert.True(offending.Count == 0,
+            "AdminImportPackageController must not depend on the AI enrichment ledger directly: " + string.Join(", ", offending));
+    }
+
+    /// <summary>Provider credentials/API keys must never be persisted on the ledger row itself —
+    /// guards against a future field accidentally storing one.</summary>
+    [Fact]
+    public void Ai_enrichment_ledger_does_not_have_a_property_that_looks_like_a_credential()
+    {
+        var forbiddenNameFragments = new[] { "ApiKey", "Secret", "Credential", "AuthToken", "AccessToken" };
+        var offending = typeof(LinguaCoach.Domain.Entities.ImportAiEnrichmentOperation)
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(p => forbiddenNameFragments.Any(f => p.Name.Contains(f, StringComparison.OrdinalIgnoreCase)))
+            .Select(p => p.Name)
+            .ToList();
+
+        Assert.True(offending.Count == 0,
+            "Found a credential-shaped property on ImportAiEnrichmentOperation: " + string.Join(", ", offending));
+    }
 }

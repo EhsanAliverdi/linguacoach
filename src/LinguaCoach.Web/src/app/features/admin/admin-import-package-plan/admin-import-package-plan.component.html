@@ -199,6 +199,60 @@
         }
       </sp-admin-section-card>
 
+      <sp-admin-section-card title="AI operations">
+        <p class="sp-admin-hint" style="margin-top:-8px;margin-bottom:12px;">
+          The durable AI candidate-enrichment ledger for this plan. A reused successful operation is
+          not called again and does not accrue cost a second time.
+        </p>
+
+        @if (aiOperationsLoading()) {
+          <sp-admin-loading-state message="Loading AI operations" />
+        } @else if (aiOperationsError()) {
+          <sp-admin-alert variant="error">{{ aiOperationsError() }}</sp-admin-alert>
+        } @else if (!aiOperations() || aiOperations()!.length === 0) {
+          <p class="sp-admin-hint">No AI operations have run yet for this plan.</p>
+        } @else {
+          <table style="width:100%;">
+            <thead>
+              <tr>
+                <th style="text-align:left;">Source</th>
+                <th style="text-align:left;">Status</th>
+                <th style="text-align:left;">Provider / model</th>
+                <th style="text-align:left;">Attempts</th>
+                <th style="text-align:left;">Tokens</th>
+                <th style="text-align:left;">Cost</th>
+                <th style="text-align:left;">Completed</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (op of aiOperations(); track op.operationId) {
+                <tr>
+                  <td>{{ op.sourceLabel }}</td>
+                  <td>
+                    <sp-admin-badge [tone]="op.status === 'Succeeded' ? 'success' : (op.status === 'Failed' ? 'danger' : 'neutral')">
+                      {{ op.status }}
+                    </sp-admin-badge>
+                    @if (op.resultReusable) {
+                      <sp-admin-badge tone="neutral">Reused on retry — no extra charge</sp-admin-badge>
+                    }
+                  </td>
+                  <td>{{ op.providerName }}{{ op.modelName ? ' / ' + op.modelName : '' }}</td>
+                  <td>{{ op.attemptNumber }}</td>
+                  <td>{{ op.inputTokens !== null ? (op.inputTokens + ' in / ' + op.outputTokens + ' out') : '—' }}</td>
+                  <td>{{ op.calculatedCost !== null ? (op.currency + ' ' + (op.calculatedCost | number:'1.2-4')) : '—' }}</td>
+                  <td>{{ op.completedAtUtc ? (op.completedAtUtc | date:'short') : '—' }}</td>
+                </tr>
+                @if (op.status === 'Failed' && op.safeErrorMessage) {
+                  <tr>
+                    <td colspan="7"><p class="sp-admin-hint" style="margin:0;">{{ op.safeErrorMessage }}</p></td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        }
+      </sp-admin-section-card>
+
       @if (p.isEditable) {
         <sp-admin-section-card title="Edit source groups">
           <p class="sp-admin-hint" style="margin-top:-8px;margin-bottom:12px;">

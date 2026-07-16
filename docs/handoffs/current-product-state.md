@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-16 (Phase 4.4C — cost path cleanup and STT operation visibility)
+lastUpdated: 2026-07-16 (Phase 4.4D — durable AI operation ledger, real audio measurement deferred)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,43 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-16 (Phase 4.4C — cost path cleanup and STT operation visibility)
+Last updated: 2026-07-16 (Phase 4.4D — durable AI operation ledger, real audio measurement deferred)
+
+## Phase 4.4D: Durable AI operation accounting (2026-07-16)
+
+**Scope note:** confirmed with the user before starting as "AI operation ledger first" — real
+audio-duration measurement (the other half of the brief) was explicitly deferred again, tracked in
+`TODOS.md`. The flat 5-minute-per-file STT duration assumption is unchanged.
+
+**AI operation ledger:** new `ImportAiEnrichmentOperation` entity + `IImportAiEnrichmentOperationLedger`,
+generalizing Phase 4.4's STT ledger pattern exactly (unique-indexed logical key, Pending →
+Succeeded/Failed lifecycle, terminal success, retry-safe). Wired into
+`ResourceCandidateAnalysisService.AnalyzeAsync` — the real per-candidate AI call site — replacing
+the old whole-batch, pre-call `CheckAndAccrueAiCostAsync` estimate in `ImportPackageProcessingService`
+(removed). Operation identity: package + candidate + candidate content checksum (`ResourceRawRecord.RawHash`)
++ provider/model + prompt version + processing mode — any material change to prompt, model,
+profile, or mode produces a different operation. `AiExecutionResult` now also carries real
+`InputTokens`/`OutputTokens`/`CostUsd` (previously computed internally but never returned to
+callers) — used as the actual cost basis when available, falling back to the existing
+per-candidate token assumption when a provider doesn't report usage.
+
+**Ceiling and pricing:** per-candidate, checked before the call, using `package.AccruedCost + one
+candidate's estimated cost ≤ approvedCeiling * (1 + tolerance)` — a reached ceiling pauses the plan
+with the same `PausedForCostApproval` mechanism the STT path already uses, leaves the claimed
+ledger row untouched for later resumption, and never calls the provider. Pricing resolution is
+fail-closed (`ImportPricingUnavailableException`), scoped to only the AI-structured processing
+modes — a Direct-mode package (or a package/candidate with no `ProcessingMode` set, matching legacy
+test fixtures) never requires AI pricing, mirroring the existing production gate.
+
+**Admin visibility:** new `GET .../plan/{planId}/ai-operations` (package/plan-scoped, no
+credentials, no raw AI response body) plus an "AI operations" card on the plan page (loading/
+empty/error/populated states, mirroring the STT operations card exactly).
+
+One additive migration (`Phase_4_4D_AiEnrichmentOperations`, new table only). 2352 unit (+14) /
+1321 integration (+4) / 26 architecture (+4) tests pass. `npx tsc --noEmit` and the production
+Angular build are clean. Playwright: 4/4 pass (2 pre-existing + 2 new). Karma still blocked by the
+same pre-existing baseline TypeScript errors. Full detail:
+`docs/reviews/2026-07-16-phase-4-4d-audio-measurement-and-ai-accounting-review.md`.
 
 ## Phase 4.4C: Cost path cleanup and STT operation visibility (2026-07-16)
 

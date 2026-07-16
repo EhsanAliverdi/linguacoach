@@ -1,5 +1,6 @@
 using FluentAssertions;
 using LinguaCoach.Application.Ai;
+using LinguaCoach.Application.ResourceImport;
 using LinguaCoach.Application.UsageGovernance;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
@@ -8,7 +9,9 @@ using LinguaCoach.Infrastructure.Ai;
 using LinguaCoach.Infrastructure.ResourceImport;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 
 namespace LinguaCoach.UnitTests.ResourceImport;
 
@@ -40,9 +43,12 @@ public sealed class ResourceCandidateAnalysisServiceTests : IDisposable
 
         var aiExecution = new AiExecutionService(
             _db, new FakeAiProviderResolver(_provider), new NeverCalledUsageQuotaService(), NullLogger<AiExecutionService>.Instance);
+        var aiLedger = new ImportAiEnrichmentOperationLedger(_db);
+        var pricingResolver = new AiPricingResolver(_db, new ConfigurationBuilder().Build());
 
         _sut = new ResourceCandidateAnalysisService(
-            _db, new DbPromptAiContextBuilder(_db), aiExecution, NullLogger<ResourceCandidateAnalysisService>.Instance);
+            _db, new DbPromptAiContextBuilder(_db), aiExecution, aiLedger, pricingResolver,
+            Options.Create(new ImportCostEstimationOptions()), NullLogger<ResourceCandidateAnalysisService>.Instance);
     }
 
     public void Dispose()
@@ -51,7 +57,9 @@ public sealed class ResourceCandidateAnalysisServiceTests : IDisposable
         _db.Dispose();
     }
 
-    private ResourceCandidate SeedCandidate(ResourceCandidateValidationStatus status = ResourceCandidateValidationStatus.NeedsReview)
+    private ResourceCandidate SeedCandidate(
+        ResourceCandidateValidationStatus status = ResourceCandidateValidationStatus.NeedsReview,
+        decimal approvedCostCeiling = 100m, bool billable = false)
     {
         var source = new CefrResourceSource("Test Source", "CC-BY-4.0", allowsStudentDisplay: true, allowsCommercialUse: true);
         source.ApproveForImport("cleared for test");
@@ -63,11 +71,18 @@ public sealed class ResourceCandidateAnalysisServiceTests : IDisposable
         var package = new ImportPackage(source.Id, "test-package", DateTimeOffset.UtcNow);
         _db.ImportPackages.Add(package);
         _db.SaveChanges();
+        // Phase 4.4D — durable ledgering/cost-ceiling enforcement only applies to the billable
+        // AI-structuring modes; most existing tests exercise AnalyzeAsync directly against a
+        // package with no ProcessingMode set (never billable in production), matching pre-4.4D
+        // behavior. Tests exercising the ledger/ceiling path opt in via billable: true.
+        if (billable)
+            package.SetProcessingMode(ImportProcessingMode.FullAiAssisted, "test");
+        _db.SaveChanges();
         var plan = new ImportProfile(
             package.Id, 1, profileJson: "{}", sampleAssetIds: Array.Empty<Guid>(),
             estimatedCandidateCount: 1, createdAtUtc: DateTimeOffset.UtcNow);
         plan.SubmitForApproval();
-        plan.Approve(null, DateTimeOffset.UtcNow, 100m);
+        plan.Approve(null, DateTimeOffset.UtcNow, approvedCostCeiling);
         _db.ImportProfiles.Add(plan);
         package.ApproveProfile(plan.Id);
         _db.SaveChanges();
@@ -94,6 +109,14 @@ public sealed class ResourceCandidateAnalysisServiceTests : IDisposable
         _db.SaveChanges();
 
         return candidate;
+    }
+
+    private void SeedPricingOverride(decimal inputPer1K = 0.01m, decimal outputPer1K = 0.03m)
+    {
+        _db.AiModelPricingOverrides.Add(new AiModelPricingOverride(
+            "openai", "gpt-4o-mini", inputPer1K, outputPer1K, "USD",
+            DateTime.UtcNow.AddDays(-1), null, null, null));
+        _db.SaveChanges();
     }
 
     private const string ValidAiJson = """
@@ -210,6 +233,69 @@ public sealed class ResourceCandidateAnalysisServiceTests : IDisposable
 
         result.Success.Should().BeFalse();
         result.ErrorMessage.Should().Be("Candidate not found.");
+    }
+
+    // ── Phase 4.4D — durable AI operation ledger, fail-closed pricing, cost-ceiling enforcement.
+    // These tests set billable: true (FullAiAssisted processing mode) — the only mode in which
+    // AnalyzeAsync's ledger/pricing/ceiling machinery activates, matching production exactly
+    // (ImportPackageProcessingService never routes a Direct-mode package through AI enrichment). ──
+
+    [Fact]
+    public async Task Identical_successful_AI_operation_is_reused_after_retry_no_second_provider_call_no_duplicate_cost()
+    {
+        SeedPricingOverride();
+        var candidate = SeedCandidate(billable: true);
+        _provider.NextResponses.Enqueue(ValidAiJson);
+
+        var first = await _sut.AnalyzeAsync(candidate.Id);
+        first.Success.Should().BeTrue();
+        _provider.CallCount.Should().Be(1);
+
+        var packageAfterFirst = await _db.ImportPackages.FirstAsync();
+        var costAfterFirst = packageAfterFirst.AccruedCost;
+        costAfterFirst.Should().BeGreaterThan(0);
+
+        // Simulate a retry (e.g. the batch service re-selecting this candidate on a later pass).
+        var second = await _sut.AnalyzeAsync(candidate.Id);
+
+        second.Success.Should().BeTrue();
+        _provider.CallCount.Should().Be(1, "the provider must not be called again for an already-succeeded operation");
+
+        var packageAfterSecond = await _db.ImportPackages.FirstAsync();
+        packageAfterSecond.AccruedCost.Should().Be(costAfterFirst, "cost must not be accrued twice for the same logical operation");
+
+        (await _db.ImportAiEnrichmentOperations.CountAsync()).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Missing_pricing_prevents_the_provider_call()
+    {
+        // No AiModelPricingOverride seeded and no configuration — pricing cannot resolve.
+        var candidate = SeedCandidate(billable: true);
+        _provider.NextResponses.Enqueue(ValidAiJson);
+
+        Func<Task> act = () => _sut.AnalyzeAsync(candidate.Id);
+
+        await act.Should().ThrowAsync<ImportPricingUnavailableException>();
+        _provider.CallCount.Should().Be(0, "the provider must never be called when required pricing is unresolved");
+    }
+
+    [Fact]
+    public async Task Cost_ceiling_blocks_the_next_AI_call_before_execution()
+    {
+        SeedPricingOverride(inputPer1K: 10m, outputPer1K: 10m); // deliberately expensive
+        var candidate = SeedCandidate(billable: true, approvedCostCeiling: 0.01m); // far below one call's estimated cost
+        _provider.NextResponses.Enqueue(ValidAiJson);
+
+        var result = await _sut.AnalyzeAsync(candidate.Id);
+
+        result.Success.Should().BeFalse();
+        result.CeilingReached.Should().BeTrue();
+        result.PauseReason.Should().NotBeNullOrWhiteSpace();
+        _provider.CallCount.Should().Be(0, "the provider must never be called once the projected cost would exceed the ceiling");
+
+        var package = await _db.ImportPackages.FirstAsync();
+        package.AccruedCost.Should().Be(0, "no cost may be accrued for a call that was never made");
     }
 }
 

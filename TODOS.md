@@ -140,26 +140,30 @@ and `TODO-4.4A-PLAYWRIGHT` (narrowed above) for the remaining CSV mapping-editor
 ### TODO-4.4-AUDIO-DURATION-PROBE — Real audio-duration measurement (ffprobe or equivalent)
 **What:** Replace the flat 5-minutes-per-file STT cost assumption with real measured duration
 (`IAudioDurationProbe` abstraction, bounded/timeout-safe external-process or media-metadata-library
-wrapper), persisted on `ImportAsset` and used by both plan estimation and the STT ledger's
-`AssumedMinutes`.
+wrapper), persisted on `ImportAsset` (duration, checksum, measurement status, measured timestamp,
+safe error) and reused when the checksum is unchanged. Used in plan estimates, STT next-operation
+estimates, cost-ceiling checks, and final STT cost calculation.
 **Why:** Deferred per the backend-first scoping decision — introducing an external-binary runtime
 dependency (ffprobe) or a new media-metadata library is a materially separate, higher-risk piece of
-work than the plan-editing/cost-ledger slice delivered this phase.
+work than the cost-ledger work delivered this phase. **Explicitly re-confirmed deferred in Phase
+4.4D** (the user chose "AI operation ledger first," scoping real audio measurement out entirely
+again) — still the single largest remaining gap in this phase's cost-accounting accuracy: the
+flat 5-minute assumption remains in `ImportPackageProcessingService`'s STT path unchanged.
 **Context:** `ImportSttOperation.AssumedMinutes` already exists as a named field ready to receive a
 real measured value instead of the constant `5m` currently passed by `ImportPackageProcessingService`.
-**Deferred from:** Phase 4.4 engineering session, 2026-07-16.
+**Deferred from:** Phase 4.4 engineering session, 2026-07-16; re-deferred Phase 4.4D, 2026-07-16.
 
-### TODO-4.4-AI-ENRICHMENT-LEDGER — Durable operation ledger for AI candidate-enrichment calls
-**What:** Extend the `ImportSttOperation`-style durable, retry-safe, unique-key-constrained ledger
-pattern to AI candidate-enrichment calls (currently only cost-tracked via the in-memory
-`CheckAndAccrueAiCostAsync` delta plus `ImportPackage.AccruedCost`, with fail-closed pricing but no
-per-call ledger row/idempotency guarantee against a duplicate `IResourceCandidateBatchAnalysisService`
-invocation on retry).
-**Why:** Deferred — the phase brief explicitly called STT "the highest-risk duplicate-cost path"
-and this session scoped the ledger to that. AI enrichment's actual duplicate-call risk is lower
-today (batch analysis is idempotent per already-analyzed candidate, not per raw provider call), but
-a full operation-level ledger would still improve auditability parity with STT.
-**Deferred from:** Phase 4.4 engineering session, 2026-07-16.
+### TODO-4.4-AI-ENRICHMENT-LEDGER — ~~Durable operation ledger for AI candidate-enrichment calls~~ FIXED in Phase 4.4D
+**Fixed 2026-07-16 (Phase 4.4D).** New `ImportAiEnrichmentOperation` entity + `IImportAiEnrichmentOperationLedger`,
+generalizing the STT ledger pattern exactly (unique-indexed logical key, claim/mark-succeeded/
+mark-failed lifecycle, terminal Succeeded state, one-save-with-package-cost discipline). Wired into
+`ResourceCandidateAnalysisService.AnalyzeAsync` — the actual per-candidate AI call site — rather
+than the old whole-batch `CheckAndAccrueAiCostAsync` pre-check in `ImportPackageProcessingService`
+(now removed). Operation identity: package + candidate + candidate content checksum + provider/
+model + prompt version + processing mode. Ceiling is checked per-candidate, before the call, using
+persisted `ImportPackage.AccruedCost`; a reached ceiling pauses the plan exactly like the STT path
+does, preserving already-completed candidates. See
+`docs/reviews/2026-07-16-phase-4-4d-audio-measurement-and-ai-accounting-review.md` for full detail.
 
 ### TODO-4.4-PLAYWRIGHT — E2E coverage for plan editing and cost-paused states
 **What:** Add Playwright specs once `TODO-4.4-PLAN-EDITOR-UI` ships: submit → edit mapping → preview
@@ -187,6 +191,42 @@ actually declares. Confirmed unreachable by real end users (no browser file inpu
 path with a separator); reachable only via a directly-crafted API call, which is exactly what the
 regression test exercises. Regression test:
 `ImportPlanEditingAndCostAccountingTests.Loose_file_with_directory_separator_in_name_is_flattened_to_the_root_group`.
+
+---
+
+## Phase 4.4D — Real audio measurement and AI operation accounting (2026-07-16)
+
+Review: docs/reviews/2026-07-16-phase-4-4d-audio-measurement-and-ai-accounting-review.md
+
+The full brief bundled two large, mostly-independent efforts: real audio-duration measurement
+(new `ffprobe`-class external dependency) and a durable AI candidate-enrichment operation ledger
+generalizing the STT pattern with unified STT+AI cost-ceiling math. Scoped via `AskUserQuestion`
+to **"AI operation ledger first"**, explicitly deferring real audio-duration measurement entirely
+(see `TODO-4.4-AUDIO-DURATION-PROBE` above, re-confirmed deferred).
+
+### TODO-4.4D-JSON-AI-OPERATION-HISTORY-UI — Amendment-history-style list for AI operations
+**What:** The Cost details card's amendment-history table pattern (Phase 4.4B) was not extended to
+show a chronological "cost events" combined view across STT + AI operations — the two operation
+types are shown in separate cards (STT operations, AI operations), each already sortable/readable
+on its own, but there is no single "everything that spent money on this package, in order" view.
+**Why:** Deferred — not requested by the Phase 4.4D brief's admin-visibility section, which asked
+for "an AI operations section beside STT," delivered as-is. A combined chronological view is a
+nice-to-have refinement, not a coverage gap.
+**Deferred from:** Phase 4.4D engineering session, 2026-07-16.
+
+### TODO-4.4D-PLAYWRIGHT-AI-SUCCESS-PATH — Playwright coverage of a real (fake-provider) AI success
+**What:** No fake `IAiProvider` is substituted in the API integration/Playwright test host (unlike
+STT's auto-substituted `FakeSpeechToTextService`), so no test in this session drives a real AI
+success through the actual HTTP processing pipeline end-to-end — the ledger's reuse/no-double-
+charge/ceiling critical proofs are covered at the unit level (`ResourceCandidateAnalysisServiceTests`,
+`ImportAiEnrichmentOperationLedgerTests`) with a fake `IAiProvider`, and the admin-visibility/
+combined-cost proofs are covered at the integration level with directly-seeded ledger rows
+(`ImportAiEnrichmentOperationSummaryTests`) rather than a live processing run.
+**Why:** Deferred — registering a fake AI provider in the API test host is a reasonable, bounded
+follow-up (mirrors the existing STT precedent) but was not required to prove any of the phase's
+17 critical-test requirements, all of which are covered by the unit + integration split described
+above.
+**Deferred from:** Phase 4.4D engineering session, 2026-07-16.
 
 ---
 

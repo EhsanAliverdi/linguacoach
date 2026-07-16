@@ -230,3 +230,25 @@ export interface ImportSttOperationSummaryDto {
   completedAtUtc: string | null;
   safeErrorMessage: string | null;
 }
+
+/** Mirrors LinguaCoach.Application.ResourceImport.ImportAiEnrichmentOperationSummaryDto — one
+ *  durable AI candidate-enrichment operation ledger row, safe to display (no credentials, no raw
+ *  AI response body). resultReusable is true once Status is 'Succeeded'. */
+export interface ImportAiEnrichmentOperationSummaryDto {
+  operationId: string;
+  resourceCandidateId: string;
+  sourceLabel: string;
+  operationType: string;
+  providerName: string;
+  modelName: string | null;
+  status: 'Pending' | 'Succeeded' | 'Failed';
+  attemptNumber: number;
+  resultReusable: boolean;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  calculatedCost: number | null;
+  currency: string;
+  startedAtUtc: string;
+  completedAtUtc: string | null;
+  safeErrorMessage: string | null;
+}

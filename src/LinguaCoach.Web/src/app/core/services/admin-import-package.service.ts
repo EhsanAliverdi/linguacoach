@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
+  ImportAiEnrichmentOperationSummaryDto,
   ImportExecutionGroupInstruction,
   ImportExecutionPlanDto,
   ImportPackageManifestSummaryDto,
@@ -120,5 +121,11 @@ export class AdminImportPackageService {
    *  provider credentials, no full transcript text. */
   getSttOperations(packageId: string, planId: string): Observable<ImportSttOperationSummaryDto[]> {
     return this.http.get<ImportSttOperationSummaryDto[]>(`${this.base}/${packageId}/plan/${planId}/stt-operations`);
+  }
+
+  /** Phase 4.4D — read-only visibility into the durable AI candidate-enrichment operation ledger
+   *  for this plan. No provider credentials, no raw AI response body. */
+  getAiOperations(packageId: string, planId: string): Observable<ImportAiEnrichmentOperationSummaryDto[]> {
+    return this.http.get<ImportAiEnrichmentOperationSummaryDto[]>(`${this.base}/${packageId}/plan/${planId}/ai-operations`);
   }
 }

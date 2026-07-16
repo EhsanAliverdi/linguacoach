@@ -76,6 +76,10 @@ async function mockAdmin(page: Page) {
     });
   });
 
+  await page.route(`**/api/admin/import-packages/${PACKAGE_ID}/plan/${PLAN_ID}/ai-operations`, async route => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) });
+  });
+
   await page.route(`**/api/admin/import-packages/${PACKAGE_ID}/plan/${PLAN_ID}/amend-ceiling`, async route => {
     const body = route.request().postDataJSON();
     if (body.expectedConcurrencyStamp !== planState.concurrencyStamp) {

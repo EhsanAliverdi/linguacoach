@@ -8,6 +8,7 @@ using LinguaCoach.Infrastructure.Ai;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace LinguaCoach.Infrastructure.ResourceImport;
 
@@ -33,20 +34,31 @@ public sealed class ResourceCandidateAnalysisService : IResourceCandidateAnalysi
     // discipline, applied per-field here instead of per-file.
     private const int MaxTextVariableLength = 4000;
 
+    private const string OperationType = "candidate_enrich";
+
     private readonly LinguaCoachDbContext _db;
     private readonly IAiContextBuilder _contextBuilder;
     private readonly AiExecutionService _aiExecution;
+    private readonly IImportAiEnrichmentOperationLedger _aiLedger;
+    private readonly IAiPricingResolver _pricingResolver;
+    private readonly ImportCostEstimationOptions _costOptions;
     private readonly ILogger<ResourceCandidateAnalysisService> _logger;
 
     public ResourceCandidateAnalysisService(
         LinguaCoachDbContext db,
         IAiContextBuilder contextBuilder,
         AiExecutionService aiExecution,
+        IImportAiEnrichmentOperationLedger aiLedger,
+        IAiPricingResolver pricingResolver,
+        IOptions<ImportCostEstimationOptions> costOptions,
         ILogger<ResourceCandidateAnalysisService> logger)
     {
         _db = db;
         _contextBuilder = contextBuilder;
         _aiExecution = aiExecution;
+        _aiLedger = aiLedger;
+        _pricingResolver = pricingResolver;
+        _costOptions = costOptions.Value;
         _logger = logger;
     }
 
@@ -63,18 +75,80 @@ public sealed class ResourceCandidateAnalysisService : IResourceCandidateAnalysi
         // the only caller left in this codebase (ImportPackageProcessingService, via the batch
         // service) already only runs post-approval, but this keeps the invariant enforced at the
         // application-service level too, not just by "nothing else calls this anymore." ──
-        var hasApprovedPlanProvenance = await (
+        var provenance = await (
             from r in _db.ResourceImportRuns
             where r.Id == rawRecord.ResourceImportRunId && r.ImportPackageId != null
             join p in _db.ImportPackages on r.ImportPackageId equals p.Id
-            select p.ApprovedImportProfileId != null)
+            select new { PackageId = p.Id, ApprovedProfileId = p.ApprovedImportProfileId })
             .FirstOrDefaultAsync(ct);
-        if (!hasApprovedPlanProvenance)
+        if (provenance?.ApprovedProfileId is null)
         {
             return await FailGracefullyAsync(
                 candidate,
                 "This candidate has no Import Package with an approved Import Execution Plan — AI analysis is blocked.",
                 null, null, ct);
+        }
+
+        var package = await _db.ImportPackages.FirstAsync(p => p.Id == provenance.PackageId, ct);
+        var plan = await _db.ImportProfiles.FirstAsync(p => p.Id == provenance.ApprovedProfileId, ct);
+        var processingModeString = package.ProcessingMode?.ToString() ?? "Direct";
+
+        // ── Phase 4.4D — durable ledgering/cost-ceiling enforcement only applies to the billable
+        // AI-structuring modes (FullAiAssisted/SampleDriven); a Direct-mode package's candidates
+        // are never routed through AI enrichment in production (ImportPackageProcessingService
+        // only calls the batch analysis service when ProcessingMode != Direct) — this mirrors that
+        // same gate here so a package with no AI-enrichment cost never needs AI pricing configured. ──
+        var requiresCostTracking = package.ProcessingMode is not (null or ImportProcessingMode.Direct);
+
+        ImportAiClaimResult? claim = null;
+        LinguaCoach.Application.Ai.ResolvedModelPricing? pricing = null;
+
+        if (requiresCostTracking)
+        {
+            // Fail closed: unresolved pricing must never silently become $0. Resolved against the
+            // assumed provider/model (ImportCostEstimationOptions) — the same assumption the STT
+            // ledger and the plan-estimate/approval-time checks already use, since the concrete
+            // provider that ends up serving the call is resolved independently per feature key
+            // inside AiExecutionService and isn't known until after the call.
+            pricing = await _pricingResolver.ResolveAsync(_costOptions.AssumedAiProviderName, _costOptions.AssumedAiModelName, ct)
+                ?? throw new ImportPricingUnavailableException(
+                    _costOptions.AssumedAiProviderName, _costOptions.AssumedAiModelName, "AI candidate enrichment");
+
+            var logicalKey = ImportAiEnrichmentOperationKey.Compute(
+                package.Id, candidateId, rawRecord.RawHash, _costOptions.AssumedAiProviderName, _costOptions.AssumedAiModelName,
+                AnalyzePromptKey, processingModeString);
+            claim = await _aiLedger.ClaimAsync(
+                package.Id, plan.Id, candidateId, logicalKey, OperationType,
+                _costOptions.AssumedAiProviderName, AnalyzePromptKey, processingModeString, ct);
+
+            if (claim.Outcome == ImportAiClaimOutcome.AlreadySucceeded)
+            {
+                // Phase 4.4D critical proof — a completed identical operation is reused after
+                // retry: no second provider call, no duplicate cost. Re-applies the previously
+                // stored, already-parsed output (never the raw AI response body).
+                var reused = JsonSerializer.Deserialize<ResourceCandidateAnalysisOutput>(claim.Operation.ResultReferenceJson!)!;
+                ApplyOutputToCandidate(candidate, reused, claim.Operation.ResultReferenceJson!);
+                await _db.SaveChangesAsync(ct);
+                return new ResourceCandidateAnalysisResult(
+                    candidateId, true, null, reused, claim.Operation.ProviderName, claim.Operation.ModelName);
+            }
+
+            // ── Before any billable provider call: accrued + estimated-next ≤ ceiling. If not,
+            // pause rather than call — the claimed (Pending) ledger row is left untouched so it
+            // can be re-entered once the ceiling is amended and processing resumes. ──
+            var estimatedCost =
+                _costOptions.AssumedInputTokensPerCandidate / 1000m * pricing.InputPer1KTokens +
+                _costOptions.AssumedOutputTokensPerCandidate / 1000m * pricing.OutputPer1KTokens;
+            var ceiling = plan.ApprovedCostCeiling ?? decimal.MaxValue;
+            var tolerance = (decimal)_costOptions.CostCeilingToleranceFraction;
+            var projected = package.AccruedCost + estimatedCost;
+            if (projected > ceiling * (1 + tolerance))
+            {
+                var pauseReason = $"Projected cost reached ${projected:N2}, at or above the approved ${ceiling:N2} " +
+                    $"ceiling, before AI enrichment for candidate {candidateId}.";
+                return new ResourceCandidateAnalysisResult(
+                    candidateId, false, pauseReason, null, null, null, CeilingReached: true, PauseReason: pauseReason);
+            }
         }
 
         var variables = new Dictionary<string, string>
@@ -98,7 +172,7 @@ public sealed class ResourceCandidateAnalysisService : IResourceCandidateAnalysi
         {
             _logger.LogWarning(ex,
                 "Failed to build resource candidate analysis prompt for {CandidateId} (non-blocking).", candidateId);
-            return await FailGracefullyAsync(candidate, $"Could not build AI prompt: {ex.Message}", null, null, ct);
+            return await FailClaimedAsync(claim?.Operation, candidate, $"Could not build AI prompt: {ex.Message}", null, null, ct);
         }
 
         AiExecutionResult execResult;
@@ -113,7 +187,7 @@ public sealed class ResourceCandidateAnalysisService : IResourceCandidateAnalysi
             _logger.LogWarning(ex,
                 "AI provider unavailable for resource candidate analysis {CandidateId} CorrelationId={CorrelationId} (non-blocking).",
                 candidateId, correlationId);
-            return await FailGracefullyAsync(candidate, $"AI provider unavailable: {ex.Message}", null, null, ct);
+            return await FailClaimedAsync(claim?.Operation, candidate, $"AI provider unavailable: {ex.Message}", null, null, ct);
         }
 
         var parsed = TryParseOutput(execResult.ResponseJson, out var cleanedJson, out var parseError);
@@ -130,22 +204,49 @@ public sealed class ResourceCandidateAnalysisService : IResourceCandidateAnalysi
                 _logger.LogWarning(ex,
                     "AI provider unavailable on retry for resource candidate analysis {CandidateId} CorrelationId={CorrelationId} (non-blocking).",
                     candidateId, correlationId);
-                return await FailGracefullyAsync(candidate, $"AI provider unavailable on retry: {ex.Message}", null, null, ct);
+                return await FailClaimedAsync(claim?.Operation, candidate, $"AI provider unavailable on retry: {ex.Message}", null, null, ct);
             }
 
             parsed = TryParseOutput(execResult.ResponseJson, out cleanedJson, out parseError);
 
             if (parsed is null)
             {
-                return await FailGracefullyAsync(
-                    candidate,
+                return await FailClaimedAsync(
+                    claim?.Operation, candidate,
                     $"AI response could not be parsed after retry: {parseError}",
                     execResult.ProviderName, execResult.ModelName, ct);
             }
         }
 
+        var resultReferenceJson = JsonSerializer.Serialize(parsed);
+        ApplyOutputToCandidate(candidate, parsed, resultReferenceJson);
+
+        if (requiresCostTracking)
+        {
+            // Actual measured usage when the provider reported it; falls back to the same
+            // assumption used for the pre-call ceiling estimate when it didn't (e.g. a fake/test
+            // provider).
+            var inputTokens = execResult.InputTokens > 0 ? execResult.InputTokens : _costOptions.AssumedInputTokensPerCandidate;
+            var outputTokens = execResult.OutputTokens > 0 ? execResult.OutputTokens : _costOptions.AssumedOutputTokensPerCandidate;
+            var calculatedCost = inputTokens / 1000m * pricing!.InputPer1KTokens + outputTokens / 1000m * pricing.OutputPer1KTokens;
+
+            await _aiLedger.MarkSucceededAsync(
+                claim!.Operation, resultReferenceJson, calculatedCost, "USD", inputTokens, outputTokens,
+                pricing.InputPer1KTokens, pricing.OutputPer1KTokens, execResult.ModelName, ct);
+            package.AccrueCost(calculatedCost, "USD");
+        }
+
+        // Candidate (and, when cost-tracked, ledger row + package cost) — one save, never drifts
+        // apart from a crash between separate saves (mirrors the STT ledger's exact discipline).
+        await _db.SaveChangesAsync(ct);
+
+        return new ResourceCandidateAnalysisResult(
+            candidateId, true, null, parsed, execResult.ProviderName, execResult.ModelName);
+    }
+
+    private static void ApplyOutputToCandidate(ResourceCandidate candidate, ResourceCandidateAnalysisOutput parsed, string analysisJson) =>
         candidate.ApplyAnalysis(
-            cleanedJson,
+            analysisJson,
             parsed.CefrLevel,
             parsed.CefrConfidence,
             parsed.PrimarySkill,
@@ -161,10 +262,16 @@ public sealed class ResourceCandidateAnalysisService : IResourceCandidateAnalysi
             parsed.QualityScore,
             parsed.SearchText);
 
-        await _db.SaveChangesAsync(ct);
-
-        return new ResourceCandidateAnalysisResult(
-            candidateId, true, null, parsed, execResult.ProviderName, execResult.ModelName);
+    /// <summary>Marks an already-claimed AI ledger operation Failed (persists immediately, per
+    /// <see cref="IImportAiEnrichmentOperationLedger.MarkFailedAsync"/>'s contract), then applies
+    /// the same graceful candidate downgrade <see cref="FailGracefullyAsync"/> uses.</summary>
+    private async Task<ResourceCandidateAnalysisResult> FailClaimedAsync(
+        ImportAiEnrichmentOperation? operation, ResourceCandidate candidate, string errorMessage,
+        string? providerName, string? modelName, CancellationToken ct)
+    {
+        if (operation is not null)
+            await _aiLedger.MarkFailedAsync(operation, errorMessage, ct);
+        return await FailGracefullyAsync(candidate, errorMessage, providerName, modelName, ct);
     }
 
     private async Task<(ResourceCandidate Candidate, ResourceRawRecord RawRecord, CefrResourceSource Source)?> LoadContextAsync(

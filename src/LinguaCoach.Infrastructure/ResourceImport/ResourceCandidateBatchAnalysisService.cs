@@ -54,6 +54,9 @@ public sealed class ResourceCandidateBatchAnalysisService : IResourceCandidateBa
 
         var succeeded = 0;
         var failed = 0;
+        var analyzed = 0;
+        var ceilingReached = false;
+        string? pauseReason = null;
 
         foreach (var candidateId in toProcess)
         {
@@ -65,6 +68,19 @@ public sealed class ResourceCandidateBatchAnalysisService : IResourceCandidateBa
             try
             {
                 var result = await _analysisService.AnalyzeAsync(candidateId, ct);
+                analyzed++;
+
+                // Phase 4.4D — the cost ceiling was reached before this candidate's AI call was
+                // made (provider never called, no cost accrued). Stop the batch immediately —
+                // the ceiling won't change for the rest of this run, and every remaining
+                // candidate is still eligible for analysis once processing resumes.
+                if (result.CeilingReached)
+                {
+                    ceilingReached = true;
+                    pauseReason = result.PauseReason;
+                    break;
+                }
+
                 // Re-validate immediately so ValidationStatus reflects whatever the analysis
                 // just wrote (or, on graceful analysis failure, reflects the untouched fields —
                 // ValidateAsync is idempotent either way).
@@ -73,15 +89,18 @@ public sealed class ResourceCandidateBatchAnalysisService : IResourceCandidateBa
             }
             catch
             {
+                analyzed++;
                 failed++;
             }
         }
 
         return new ResourceCandidateBatchAnalysisResult(
             CandidatesConsidered: candidateIds.Count,
-            CandidatesAnalyzed: toProcess.Count,
+            CandidatesAnalyzed: analyzed,
             SucceededCount: succeeded,
             FailedCount: failed,
-            BatchLimitReached: batchLimitReached);
+            BatchLimitReached: batchLimitReached,
+            CeilingReached: ceilingReached,
+            PauseReason: pauseReason);
     }
 }
