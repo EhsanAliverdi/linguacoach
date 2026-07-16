@@ -653,6 +653,9 @@ public static class DependencyInjection
         // Phase E3 — read-only rendered preview for a staged ResourceCandidate.
         services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceCandidatePreviewService,
             LinguaCoach.Infrastructure.ResourceImport.ResourceCandidatePreviewService>();
+        // Phase 4.5 — the single typed-schema parse/validate/serialize service for candidate content.
+        services.AddSingleton<LinguaCoach.Application.ResourceImport.IResourceCandidateContentSerializer,
+            LinguaCoach.Infrastructure.ResourceImport.ResourceCandidateContentSerializer>();
         // Phase E4 — publishes an approved, validated ResourceCandidate into its target Cefr* bank table.
         services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceCandidatePublishService,
             LinguaCoach.Infrastructure.ResourceImport.ResourceCandidatePublishService>();

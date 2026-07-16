@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-16 (Phase 4.4E — real audio duration measurement)
+lastUpdated: 2026-07-16 (Phase 4.5 — typed multimodal candidate schemas)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,41 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-16 (Phase 4.4E — real audio duration measurement)
+Last updated: 2026-07-16 (Phase 4.5 — typed multimodal candidate schemas)
+
+## Phase 4.5: Typed multimodal candidate schemas (2026-07-16)
+
+Replaces the generic `NormalizedJson` free-form field-name conventions with typed, validated
+candidate content schemas for the six candidate types with a real publish target: Vocabulary,
+Grammar, Reading, Listening, Speaking, Writing.
+
+**Central typed schema layer:** new `CandidateContent` discriminated record hierarchy (Application)
++ `IResourceCandidateContentSerializer`/`ResourceCandidateContentSerializer` (Infrastructure) — the
+single place that parses, validates, and serializes a candidate's `NormalizedJson`. No new
+persistence column: canonical field names are written going forward, pre-4.5 rows are read through
+the same alias table the parser already needed (a deliberate, visible bridge, not a hidden
+fallback — see the interface's doc comment).
+
+**Gated at three points:**
+- **Package-driven creation** (`ResourceImportService`'s Gate 4) — a package-gated CSV/JSON row that
+  doesn't satisfy its type's typed schema is rejected clearly, never silently staged malformed. The
+  legacy ungated single-file upload path remains permissive (unchanged pre-4.5 behavior — see
+  `TODO-4.5-GENERIC-CSV-STRICT-VALIDATION`).
+- **Admin approval** (`AdminResourceCandidateApproveHandler`) — cannot approve a candidate whose
+  typed content fails to parse/validate (with the same CanonicalText-fallback leniency publish uses).
+- **Publish** (`ResourceCandidatePublishService`) — now builds every Resource Bank entity's content
+  from the typed, validated schema instead of ad hoc field-alias lookups scattered per type.
+
+**Candidate Review UI:** the raw NormalizedJson textarea is no longer the primary editing
+experience — replaced with type-aware forms (Word/Definition/PartOfSpeech/Examples for Vocabulary,
+Title/Explanation/Examples/CommonMistakes for Grammar, etc.), inline per-field server validation
+errors, and Approve & Publish disabled whenever the candidate's typed content is invalid. The raw
+JSON textarea remains only for the two types with no typed schema (ActivityTemplateCandidate/Unknown).
+
+**Asset provenance:** new `ImportAssetProvenanceGuard` enforces that a candidate can only link
+(`ImportCandidateAssetLink`) an asset from its own `ImportPackage` — see
+`TODO-4.5-ZIP-CROSS-PACKAGE-UI` for the (currently absent) UI path that would let an admin attempt
+otherwise.
 
 ## Phase 4.4E: Real audio duration measurement (2026-07-16)
 

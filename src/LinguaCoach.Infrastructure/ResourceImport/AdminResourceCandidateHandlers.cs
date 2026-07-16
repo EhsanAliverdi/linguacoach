@@ -174,12 +174,22 @@ public sealed class AdminResourceCandidateNotesHandler : IAdminResourceCandidate
 }
 
 /// <summary>Phase E4 — admin approval step, separate from ValidationStatus (deterministic) and
-/// from IResourceCandidatePublishService (which never runs here).</summary>
+/// from IResourceCandidatePublishService (which never runs here). Phase 4.5 — additionally hard-
+/// blocks approval when the candidate's typed content schema is invalid, so an admin can never
+/// approve (and, downstream, publish) a candidate whose content the typed editor itself would
+/// reject. Uses the same CanonicalText-fallback leniency as publish (see
+/// <see cref="IResourceCandidateContentSerializer.Parse"/>'s doc comment) so this never blocks a
+/// candidate that would have published successfully before this phase.</summary>
 public sealed class AdminResourceCandidateApproveHandler : IAdminResourceCandidateApproveHandler
 {
     private readonly LinguaCoachDbContext _db;
+    private readonly IResourceCandidateContentSerializer _contentSerializer;
 
-    public AdminResourceCandidateApproveHandler(LinguaCoachDbContext db) => _db = db;
+    public AdminResourceCandidateApproveHandler(LinguaCoachDbContext db, IResourceCandidateContentSerializer contentSerializer)
+    {
+        _db = db;
+        _contentSerializer = contentSerializer;
+    }
 
     public async Task<AdminResourceCandidateDto> HandleAsync(
         ApproveResourceCandidateCommand command, CancellationToken ct = default)
@@ -192,6 +202,18 @@ public sealed class AdminResourceCandidateApproveHandler : IAdminResourceCandida
                    select new { Candidate = c, Run = run })
                 .FirstOrDefaultAsync(ct)
             ?? throw new ResourceImportValidationException($"Resource candidate '{command.CandidateId}' was not found.");
+
+        if (_contentSerializer.SupportsTypedSchema(result.Candidate.CandidateType))
+        {
+            var parsed = _contentSerializer.Parse(
+                result.Candidate.CandidateType, result.Candidate.NormalizedJson, result.Candidate.CanonicalText);
+            if (!parsed.Success || parsed.Content is null)
+                throw new CandidateContentValidationException(parsed.Errors);
+
+            var validation = _contentSerializer.Validate(result.Candidate.CandidateType, parsed.Content);
+            if (!validation.IsValid)
+                throw new CandidateContentValidationException(validation.Errors);
+        }
 
         result.Candidate.Approve(command.Notes);
         await _db.SaveChangesAsync(ct);
@@ -283,12 +305,16 @@ public sealed class AdminResourceCandidateContentUpdateHandler : IAdminResourceC
 {
     private readonly LinguaCoachDbContext _db;
     private readonly IResourceCandidateValidationService _validationService;
+    private readonly IResourceCandidateContentSerializer _contentSerializer;
 
     public AdminResourceCandidateContentUpdateHandler(
-        LinguaCoachDbContext db, IResourceCandidateValidationService validationService)
+        LinguaCoachDbContext db,
+        IResourceCandidateValidationService validationService,
+        IResourceCandidateContentSerializer contentSerializer)
     {
         _db = db;
         _validationService = validationService;
+        _contentSerializer = contentSerializer;
     }
 
     public async Task<AdminResourceCandidateDto> HandleAsync(
@@ -303,11 +329,35 @@ public sealed class AdminResourceCandidateContentUpdateHandler : IAdminResourceC
                 .FirstOrDefaultAsync(ct)
             ?? throw new ResourceImportValidationException($"Resource candidate '{command.CandidateId}' was not found.");
 
+        // Phase 4.5 — the type-aware editor's write path: validate strictly (no CanonicalText
+        // fallback — an explicit edit that clears a required field is a real error) and persist
+        // only the canonical-field-name JSON the serializer produces. Never partially persists an
+        // invalid edit — validation runs entirely before UpdateContent is called.
+        var normalizedJsonToPersist = command.NormalizedJson;
+        if (command.TypedContentJson is not null)
+        {
+            if (!_contentSerializer.SupportsTypedSchema(result.Candidate.CandidateType))
+            {
+                throw new ResourceImportValidationException(
+                    $"CandidateType '{result.Candidate.CandidateType}' has no typed schema — use NormalizedJson instead.");
+            }
+
+            var parsed = _contentSerializer.Parse(result.Candidate.CandidateType, command.TypedContentJson);
+            if (!parsed.Success || parsed.Content is null)
+                throw new CandidateContentValidationException(parsed.Errors);
+
+            var validation = _contentSerializer.Validate(result.Candidate.CandidateType, parsed.Content);
+            if (!validation.IsValid)
+                throw new CandidateContentValidationException(validation.Errors);
+
+            normalizedJsonToPersist = _contentSerializer.Serialize(parsed.Content);
+        }
+
         try
         {
             result.Candidate.UpdateContent(
                 command.CanonicalText,
-                command.NormalizedJson,
+                normalizedJsonToPersist,
                 command.CefrLevel,
                 command.PrimarySkill,
                 command.Subskill,

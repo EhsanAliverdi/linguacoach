@@ -474,9 +474,15 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
                     // Part D/Part 8 — preserve the candidate↔asset relationship so a later
                     // Resource Bank publish (and Lesson generation reading it) can trace the
                     // published item back to its source audio/transcript files.
+                    // Phase 4.5 — every linked asset must belong to this same package; a candidate
+                    // can never reference an asset staged under a different ImportPackage.
+                    ImportAssetProvenanceGuard.EnsureAssetBelongsToPackage(audio, package.Id);
                     _db.ImportCandidateAssetLinks.Add(new ImportCandidateAssetLink(candidate.Id, audio.Id, ImportAssetRole.Audio));
                     if (matchingTranscript is not null)
+                    {
+                        ImportAssetProvenanceGuard.EnsureAssetBelongsToPackage(matchingTranscript, package.Id);
                         _db.ImportCandidateAssetLinks.Add(new ImportCandidateAssetLink(candidate.Id, matchingTranscript.Id, ImportAssetRole.Transcript));
+                    }
 
                     candidatesCreated++;
                 }

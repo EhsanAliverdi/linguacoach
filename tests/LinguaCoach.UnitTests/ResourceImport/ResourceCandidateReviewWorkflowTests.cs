@@ -35,7 +35,7 @@ public sealed class ResourceCandidateReviewWorkflowTests : IDisposable
 
         _skipHandler = new AdminResourceCandidateSkipHandler(_db);
         _validationService = new ResourceCandidateValidationService(_db, new FormIoSchemaValidationService());
-        _contentUpdateHandler = new AdminResourceCandidateContentUpdateHandler(_db, _validationService);
+        _contentUpdateHandler = new AdminResourceCandidateContentUpdateHandler(_db, _validationService, new ResourceCandidateContentSerializer());
     }
 
     public void Dispose()
@@ -264,6 +264,61 @@ public sealed class ResourceCandidateReviewWorkflowTests : IDisposable
     }
 
     [Fact]
+    public async Task Typed_content_edit_round_trips_without_losing_fields()
+    {
+        var source = SeedSource();
+        var candidate = SeedCandidate(source);
+
+        var dto = await _contentUpdateHandler.HandleAsync(new UpdateResourceCandidateContentCommand(
+            candidate.Id,
+            TypedContentJson: """{"word":"greeting","definition":"a friendly hello","partOfSpeech":"noun","examples":["Hi there!"]}"""));
+
+        dto.TypedContentJson.Should().NotBeNull();
+        dto.TypedContentJson!.Should().Contain("\"word\":\"greeting\"");
+        dto.TypedContentJson!.Should().Contain("\"partOfSpeech\":\"noun\"");
+        dto.TypedContentJson!.Should().Contain("Hi there!");
+        dto.ContentValidationErrors.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Typed_content_edit_with_a_missing_required_field_is_rejected_and_never_persisted()
+    {
+        var source = SeedSource();
+        var candidate = SeedCandidate(source);
+        var originalNormalizedJson = candidate.NormalizedJson;
+
+        var act = async () => await _contentUpdateHandler.HandleAsync(new UpdateResourceCandidateContentCommand(
+            candidate.Id, TypedContentJson: """{"definition":"a friendly hello"}"""));
+
+        var exception = await act.Should().ThrowAsync<CandidateContentValidationException>();
+        exception.Which.Errors.Should().ContainSingle(e => e.FieldName == "word");
+
+        var reloaded = await _db.ResourceCandidates.AsNoTracking().FirstAsync(c => c.Id == candidate.Id);
+        reloaded.NormalizedJson.Should().Be(originalNormalizedJson, "an invalid typed edit must never be persisted");
+    }
+
+    [Fact]
+    public async Task Invalid_candidate_content_cannot_be_approved()
+    {
+        // A candidate whose NormalizedJson is not a parseable JSON object at all (e.g. corrupted
+        // by a direct data edit outside the typed editor) fails the approve-time Parse gate — this
+        // is the one case the CanonicalText fallback (which only fills a field's *value*, not a
+        // wholesale unparseable document) cannot rescue.
+        var source = SeedSource();
+        var candidate = SeedCandidate(source);
+        candidate.UpdateContent(normalizedJson: "not valid json {{{");
+        await _db.SaveChangesAsync();
+
+        var approveHandler = new AdminResourceCandidateApproveHandler(_db, new ResourceCandidateContentSerializer());
+        var act = async () => await approveHandler.HandleAsync(new ApproveResourceCandidateCommand(candidate.Id));
+
+        await act.Should().ThrowAsync<CandidateContentValidationException>();
+
+        var reloaded = await _db.ResourceCandidates.AsNoTracking().FirstAsync(c => c.Id == candidate.Id);
+        reloaded.ReviewStatus.Should().NotBe(ResourceCandidateReviewStatus.Approved, "an unparseable candidate must never be approved");
+    }
+
+    [Fact]
     public async Task Content_update_handler_throws_ResourceImportValidationException_for_unknown_candidate()
     {
         var act = async () => await _contentUpdateHandler.HandleAsync(
@@ -279,7 +334,7 @@ public sealed class ResourceCandidateReviewWorkflowTests : IDisposable
         var candidate = SeedCandidate(source);
         candidate.Approve();
         await _db.SaveChangesAsync();
-        var publishResult = await new ResourceCandidatePublishService(_db).PublishAsync(candidate.Id, null);
+        var publishResult = await new ResourceCandidatePublishService(_db, new ResourceCandidateContentSerializer()).PublishAsync(candidate.Id, null);
         publishResult.Success.Should().BeTrue(because: string.Join("; ", publishResult.Errors));
 
         var act = async () => await _contentUpdateHandler.HandleAsync(

@@ -146,7 +146,21 @@ public sealed record AdminResourceCandidateDto(
     bool CanAttemptPublish,
     /// <summary>Non-null only when <see cref="CanAttemptPublish"/> is false and the candidate isn't
     /// already published — the specific hard-error reason(s) from the last validation run.</summary>
-    string? PublishBlockReason
+    string? PublishBlockReason,
+    /// <summary>
+    /// Phase 4.5 — the canonical-field-name JSON view of this candidate's content, as the typed
+    /// Candidate Review editor understands it (e.g. <c>{"word":"...","definition":"..."}</c> for a
+    /// VocabularyEntry). Null for CandidateType values with no typed schema
+    /// (ActivityTemplateCandidate/Unknown) — the editor falls back to the raw NormalizedJson field
+    /// for those. Derived from NormalizedJson via <see cref="IResourceCandidateContentSerializer"/>,
+    /// never persisted separately.
+    /// </summary>
+    string? TypedContentJson = null,
+    /// <summary>Structured per-field errors from validating <see cref="TypedContentJson"/> against
+    /// its typed schema (with CanonicalText as a fallback, mirroring publish's leniency — see
+    /// <see cref="IResourceCandidateContentSerializer.Parse"/>). Empty when valid or when the
+    /// candidate's type has no typed schema. The Candidate Review UI shows these before approval.</summary>
+    IReadOnlyList<CandidateFieldError>? ContentValidationErrors = null
 );
 
 public sealed record ListAdminResourceCandidatesQuery(
@@ -261,10 +275,23 @@ public interface IAdminResourceCandidateSkipHandler
 /// reflect the edited content immediately, not stale pre-edit gates. Rejected for an
 /// already-published candidate — edit through the Resource Bank instead.
 /// </summary>
+/// <summary>
+/// Phase 4.5 — <paramref name="TypedContentJson"/> is the type-aware Candidate Review editor's
+/// primary write path: a JSON object shaped exactly like the candidate's typed schema (e.g.
+/// <c>{"word":"...","definition":"...","partOfSpeech":"...","examples":[...]}</c> for a
+/// VocabularyEntry candidate — see <see cref="CandidateContent"/>'s concrete types). The handler
+/// parses and validates it through <see cref="IResourceCandidateContentSerializer"/> with no
+/// CanonicalText fallback (an explicit edit with an empty required field is a real error, not
+/// something to silently rescue) and throws <see cref="CandidateContentValidationException"/> —
+/// never persists anything — if it fails. <paramref name="NormalizedJson"/> is kept only for
+/// legacy/raw callers that still want to write an arbitrary JSON blob directly (bypasses typed
+/// validation entirely; <paramref name="TypedContentJson"/> wins when both are given).
+/// </summary>
 public sealed record UpdateResourceCandidateContentCommand(
     Guid CandidateId,
     string? CanonicalText = null,
     string? NormalizedJson = null,
+    string? TypedContentJson = null,
     string? CefrLevel = null,
     string? PrimarySkill = null,
     string? Subskill = null,

@@ -61,10 +61,12 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
     public const int MaxReadingExcerptLength = 500;
 
     private readonly LinguaCoachDbContext _db;
+    private readonly IResourceCandidateContentSerializer _contentSerializer;
 
-    public ResourceCandidatePublishService(LinguaCoachDbContext db)
+    public ResourceCandidatePublishService(LinguaCoachDbContext db, IResourceCandidateContentSerializer contentSerializer)
     {
         _db = db;
+        _contentSerializer = contentSerializer;
     }
 
     public async Task<ResourceCandidatePublishResult> PublishAsync(
@@ -170,7 +172,7 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
         if (errors.Count > 0)
             return new ResourceCandidatePublishResult(false, null, null, null, errors);
 
-        var (entity, entityTypeName, mappingErrors) = BuildTargetEntity(candidate, loaded.Source);
+        var (entity, entityTypeName, mappingErrors) = this.BuildTargetEntity(candidate, loaded.Source);
         if (entity is null)
             return new ResourceCandidatePublishResult(false, null, null, null, mappingErrors);
 
@@ -187,31 +189,47 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
         return new ResourceCandidatePublishResult(true, entityTypeName, entity.Id, publishedAtUtc, Array.Empty<string>());
     }
 
-    private static (BaseEntity? Entity, string? EntityTypeName, List<string> Errors) BuildTargetEntity(
+    private (BaseEntity? Entity, string? EntityTypeName, List<string> Errors) BuildTargetEntity(
         ResourceCandidate candidate, CefrResourceSource source)
     {
         var errors = new List<string>();
-        var fields = ResourceCandidateFieldHelper.ParseFields(candidate.NormalizedJson);
+
+        if (_contentSerializer.SupportsTypedSchema(candidate.CandidateType))
+        {
+            var parseResult = _contentSerializer.Parse(candidate.CandidateType, candidate.NormalizedJson, candidate.CanonicalText);
+            if (!parseResult.Success || parseResult.Content is null)
+            {
+                errors.AddRange(parseResult.Errors.Select(e => $"{e.FieldName}: {e.Message}"));
+                return (null, null, errors);
+            }
+
+            var validation = _contentSerializer.Validate(candidate.CandidateType, parseResult.Content);
+            if (!validation.IsValid)
+            {
+                errors.AddRange(validation.Errors.Select(e => $"{e.FieldName}: {e.Message}"));
+                return (null, null, errors);
+            }
+        }
 
         switch (candidate.CandidateType)
         {
             case ResourceCandidateType.VocabularyEntry:
-                return BuildVocabularyEntry(candidate, source.Id, fields, errors);
+                return BuildVocabularyEntry(candidate, source.Id, errors);
 
             case ResourceCandidateType.GrammarProfileEntry:
-                return BuildGrammarProfileEntry(candidate, source.Id, fields, errors);
+                return BuildGrammarProfileEntry(candidate, source.Id, errors);
 
             case ResourceCandidateType.ReadingPassage:
-                return BuildReadingReferenceOrPassage(candidate, source, fields, errors);
+                return BuildReadingReferenceOrPassage(candidate, source, errors);
 
             case ResourceCandidateType.WritingPrompt:
-                return BuildWritingPromptEntity(candidate, source.Id, fields, errors);
+                return BuildWritingPromptEntity(candidate, source.Id, errors);
 
             case ResourceCandidateType.ListeningPassage:
-                return BuildListeningEntity(candidate, source, fields, errors);
+                return BuildListeningEntity(candidate, source, errors);
 
             case ResourceCandidateType.SpeakingPrompt:
-                return BuildSpeakingPromptEntity(candidate, source.Id, fields, errors);
+                return BuildSpeakingPromptEntity(candidate, source.Id, errors);
 
             case ResourceCandidateType.ActivityTemplateCandidate:
                 errors.Add(
@@ -229,8 +247,8 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
         }
     }
 
-    private static (BaseEntity?, string?, List<string>) BuildVocabularyEntry(
-        ResourceCandidate candidate, Guid sourceId, IReadOnlyDictionary<string, string?> fields, List<string> errors)
+    private (BaseEntity?, string?, List<string>) BuildVocabularyEntry(
+        ResourceCandidate candidate, Guid sourceId, List<string> errors)
     {
         if (string.IsNullOrWhiteSpace(candidate.CefrLevel))
         {
@@ -238,11 +256,10 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
             return (null, null, errors);
         }
 
-        // Same field-name convention ResourceCandidatePreviewService's BuildVocabularyPreview
-        // uses — reused via ResourceCandidateFieldHelper rather than duplicated.
-        var word = (ResourceCandidateFieldHelper.GetFieldCI(fields, "word", "lemma", "headword") ?? candidate.CanonicalText).Trim();
-        var partOfSpeech = ResourceCandidateFieldHelper.GetFieldCI(fields, "partofspeech", "pos")?.Trim();
-        var notes = ResourceCandidateFieldHelper.GetFieldCI(fields, "definition", "meaning")?.Trim();
+        var typed = (VocabularyCandidateContent)_contentSerializer.Parse(candidate.CandidateType, candidate.NormalizedJson, candidate.CanonicalText).Content!;
+        var word = (string.IsNullOrWhiteSpace(typed.Word) ? candidate.CanonicalText : typed.Word).Trim();
+        var partOfSpeech = typed.PartOfSpeech?.Trim();
+        var notes = typed.Definition?.Trim();
 
         try
         {
@@ -261,8 +278,8 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
         }
     }
 
-    private static (BaseEntity?, string?, List<string>) BuildGrammarProfileEntry(
-        ResourceCandidate candidate, Guid sourceId, IReadOnlyDictionary<string, string?> fields, List<string> errors)
+    private (BaseEntity?, string?, List<string>) BuildGrammarProfileEntry(
+        ResourceCandidate candidate, Guid sourceId, List<string> errors)
     {
         if (string.IsNullOrWhiteSpace(candidate.CefrLevel))
         {
@@ -270,8 +287,9 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
             return (null, null, errors);
         }
 
-        var grammarPoint = (ResourceCandidateFieldHelper.GetFieldCI(fields, "grammarkey", "title") ?? candidate.CanonicalText).Trim();
-        var description = ResourceCandidateFieldHelper.GetFieldCI(fields, "explanation")?.Trim();
+        var typed = (GrammarCandidateContent)_contentSerializer.Parse(candidate.CandidateType, candidate.NormalizedJson, candidate.CanonicalText).Content!;
+        var grammarPoint = (string.IsNullOrWhiteSpace(typed.Title) ? candidate.CanonicalText : typed.Title).Trim();
+        var description = typed.Explanation?.Trim();
 
         try
         {
@@ -290,8 +308,8 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
         }
     }
 
-    private static (BaseEntity?, string?, List<string>) BuildWritingPromptEntity(
-        ResourceCandidate candidate, Guid sourceId, IReadOnlyDictionary<string, string?> fields, List<string> errors)
+    private (BaseEntity?, string?, List<string>) BuildWritingPromptEntity(
+        ResourceCandidate candidate, Guid sourceId, List<string> errors)
     {
         if (string.IsNullOrWhiteSpace(candidate.CefrLevel))
         {
@@ -299,12 +317,12 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
             return (null, null, errors);
         }
 
-        var promptText = (ResourceCandidateFieldHelper.GetFieldCI(fields, "prompt") ?? candidate.CanonicalText).Trim();
-        var title = ResourceCandidateFieldHelper.GetFieldCI(fields, "title")?.Trim()
-            ?? (promptText.Length <= 80 ? promptText : promptText[..80].Trim() + "…");
-        var genre = ResourceCandidateFieldHelper.GetFieldCI(fields, "genre", "tasktype")?.Trim();
-        var suggestedMinWords = ParseSuggestedMinWords(
-            ResourceCandidateFieldHelper.GetFieldCI(fields, "minwords", "suggestedminwords"));
+        var typed = (WritingCandidateContent)_contentSerializer.Parse(candidate.CandidateType, candidate.NormalizedJson, candidate.CanonicalText).Content!;
+        var promptText = (string.IsNullOrWhiteSpace(typed.PromptText) ? candidate.CanonicalText : typed.PromptText).Trim();
+        var title = !string.IsNullOrWhiteSpace(typed.Title) ? typed.Title.Trim()
+            : (promptText.Length <= 80 ? promptText : promptText[..80].Trim() + "…");
+        var genre = typed.Genre?.Trim();
+        var suggestedMinWords = typed.SuggestedMinWords is > 0 ? typed.SuggestedMinWords : null;
 
         try
         {
@@ -323,11 +341,8 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
         }
     }
 
-    private static int? ParseSuggestedMinWords(string? raw) =>
-        int.TryParse(raw?.Trim(), out var value) && value > 0 ? value : null;
-
-    private static (BaseEntity?, string?, List<string>) BuildListeningEntity(
-        ResourceCandidate candidate, CefrResourceSource source, IReadOnlyDictionary<string, string?> fields, List<string> errors)
+    private (BaseEntity?, string?, List<string>) BuildListeningEntity(
+        ResourceCandidate candidate, CefrResourceSource source, List<string> errors)
     {
         if (string.IsNullOrWhiteSpace(candidate.CefrLevel))
         {
@@ -342,8 +357,9 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
             return (null, null, errors);
         }
 
-        var title = ResourceCandidateFieldHelper.GetFieldCI(fields, "title")?.Trim() ?? candidate.CanonicalText.Trim();
-        var transcript = ResourceCandidateFieldHelper.GetFieldCI(fields, "transcript")?.Trim();
+        var typed = (ListeningCandidateContent)_contentSerializer.Parse(candidate.CandidateType, candidate.NormalizedJson, candidate.CanonicalText).Content!;
+        var title = !string.IsNullOrWhiteSpace(typed.Title) ? typed.Title.Trim() : candidate.CanonicalText.Trim();
+        var transcript = typed.Transcript?.Trim();
 
         try
         {
@@ -363,8 +379,8 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
         }
     }
 
-    private static (BaseEntity?, string?, List<string>) BuildSpeakingPromptEntity(
-        ResourceCandidate candidate, Guid sourceId, IReadOnlyDictionary<string, string?> fields, List<string> errors)
+    private (BaseEntity?, string?, List<string>) BuildSpeakingPromptEntity(
+        ResourceCandidate candidate, Guid sourceId, List<string> errors)
     {
         if (string.IsNullOrWhiteSpace(candidate.CefrLevel))
         {
@@ -372,11 +388,11 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
             return (null, null, errors);
         }
 
-        var promptText = (ResourceCandidateFieldHelper.GetFieldCI(fields, "scenario") ?? candidate.CanonicalText).Trim();
-        var title = ResourceCandidateFieldHelper.GetFieldCI(fields, "title")?.Trim()
-            ?? (promptText.Length <= 80 ? promptText : promptText[..80].Trim() + "…");
-        var suggestedDurationSeconds = ParseSuggestedDurationSeconds(
-            ResourceCandidateFieldHelper.GetFieldCI(fields, "durationseconds", "suggesteddurationseconds"));
+        var typed = (SpeakingCandidateContent)_contentSerializer.Parse(candidate.CandidateType, candidate.NormalizedJson, candidate.CanonicalText).Content!;
+        var promptText = (string.IsNullOrWhiteSpace(typed.PromptText) ? candidate.CanonicalText : typed.PromptText).Trim();
+        var title = !string.IsNullOrWhiteSpace(typed.Title) ? typed.Title.Trim()
+            : (promptText.Length <= 80 ? promptText : promptText[..80].Trim() + "…");
+        var suggestedDurationSeconds = typed.SuggestedDurationSeconds is > 0 ? typed.SuggestedDurationSeconds : null;
 
         try
         {
@@ -395,11 +411,8 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
         }
     }
 
-    private static int? ParseSuggestedDurationSeconds(string? raw) =>
-        int.TryParse(raw?.Trim(), out var value) && value > 0 ? value : null;
-
-    private static (BaseEntity?, string?, List<string>) BuildReadingReferenceOrPassage(
-        ResourceCandidate candidate, CefrResourceSource source, IReadOnlyDictionary<string, string?> fields, List<string> errors)
+    private (BaseEntity?, string?, List<string>) BuildReadingReferenceOrPassage(
+        ResourceCandidate candidate, CefrResourceSource source, List<string> errors)
     {
         if (string.IsNullOrWhiteSpace(candidate.CefrLevel))
         {
@@ -407,12 +420,13 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
             return (null, null, errors);
         }
 
-        var passage = (ResourceCandidateFieldHelper.GetFieldCI(fields, "passage", "text") ?? candidate.CanonicalText).Trim();
-        var title = ResourceCandidateFieldHelper.GetFieldCI(fields, "title")?.Trim();
+        var typed = (ReadingCandidateContent)_contentSerializer.Parse(candidate.CandidateType, candidate.NormalizedJson, candidate.CanonicalText).Content!;
+        var passage = (string.IsNullOrWhiteSpace(typed.PassageText) ? candidate.CanonicalText : typed.PassageText).Trim();
+        var title = typed.Title?.Trim();
 
         if (passage.Length <= MaxReadingExcerptLength)
         {
-            var textType = ResourceCandidateFieldHelper.GetFieldCI(fields, "texttype", "type")?.Trim();
+            var textType = typed.TextType?.Trim();
             var difficultyNotes = title is null ? null : $"Title: {title}";
 
             try

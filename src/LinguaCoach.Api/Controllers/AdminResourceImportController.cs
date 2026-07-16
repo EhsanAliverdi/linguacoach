@@ -198,10 +198,14 @@ public sealed class AdminResourceCandidateController : ControllerBase
         try
         {
             var result = await _contentUpdateHandler.HandleAsync(new UpdateResourceCandidateContentCommand(
-                candidateId, request.CanonicalText, request.NormalizedJson, request.CefrLevel,
+                candidateId, request.CanonicalText, request.NormalizedJson, request.TypedContentJson, request.CefrLevel,
                 request.PrimarySkill, request.Subskill, request.DifficultyBand,
                 request.ContextTags, request.FocusTags), ct);
             return Ok(result);
+        }
+        catch (CandidateContentValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message, fieldErrors = ex.Errors });
         }
         catch (ResourceImportValidationException ex)
         {
@@ -323,6 +327,10 @@ public sealed class AdminResourceCandidateController : ControllerBase
             var result = await _approveHandler.HandleAsync(new ApproveResourceCandidateCommand(candidateId, request.Notes), ct);
             return Ok(result);
         }
+        catch (CandidateContentValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message, fieldErrors = ex.Errors });
+        }
         catch (ResourceImportValidationException ex)
         {
             return NotFound(new { error = ex.Message });
@@ -440,6 +448,7 @@ public sealed class AdminResourceCandidateController : ControllerBase
     public sealed record UpdateCandidateContentRequest(
         string? CanonicalText = null,
         string? NormalizedJson = null,
+        string? TypedContentJson = null,
         string? CefrLevel = null,
         string? PrimarySkill = null,
         string? Subskill = null,

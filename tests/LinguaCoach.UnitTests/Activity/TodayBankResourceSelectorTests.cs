@@ -244,9 +244,9 @@ public sealed class TodayBankResourceSelectorTests : IDisposable
     [Fact]
     public async Task Discovers_content_seeded_by_the_phase_e6_internal_seed_pack()
     {
-        var importService = new ResourceImportService(_db, new ActivityContentFingerprintService());
+        var importService = new ResourceImportService(_db, new ActivityContentFingerprintService(), new ResourceCandidateContentSerializer());
         var validationService = new ResourceCandidateValidationService(_db, new FormIoSchemaValidationService());
-        var publishService = new ResourceCandidatePublishService(_db);
+        var publishService = new ResourceCandidatePublishService(_db, new ResourceCandidateContentSerializer());
         await InternalResourceSeedPackSeeder.SeedAsync(
             _db, importService, validationService, publishService, NullLogger.Instance);
 
@@ -562,9 +562,9 @@ public sealed class TodayBankResourceSelectorTests : IDisposable
     [Fact]
     public async Task Discovers_full_passages_seeded_by_the_phase_e7_internal_seed_pack()
     {
-        var importService = new ResourceImportService(_db, new ActivityContentFingerprintService());
+        var importService = new ResourceImportService(_db, new ActivityContentFingerprintService(), new ResourceCandidateContentSerializer());
         var validationService = new ResourceCandidateValidationService(_db, new FormIoSchemaValidationService());
-        var publishService = new ResourceCandidatePublishService(_db);
+        var publishService = new ResourceCandidatePublishService(_db, new ResourceCandidateContentSerializer());
         await InternalResourceSeedPackSeeder.SeedAsync(
             _db, importService, validationService, publishService, NullLogger.Instance);
 

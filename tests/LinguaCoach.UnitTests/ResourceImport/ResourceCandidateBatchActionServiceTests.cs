@@ -31,10 +31,10 @@ public sealed class ResourceCandidateBatchActionServiceTests : IDisposable
         _db.Database.OpenConnection();
         _db.Database.EnsureCreated();
 
-        var approveHandler = new AdminResourceCandidateApproveHandler(_db);
+        var approveHandler = new AdminResourceCandidateApproveHandler(_db, new ResourceCandidateContentSerializer());
         var rejectHandler = new AdminResourceCandidateRejectHandler(_db);
         var skipHandler = new AdminResourceCandidateSkipHandler(_db);
-        var publishService = new ResourceCandidatePublishService(_db);
+        var publishService = new ResourceCandidatePublishService(_db, new ResourceCandidateContentSerializer());
         _sut = new ResourceCandidateBatchActionService(_db, approveHandler, rejectHandler, skipHandler, publishService);
     }
 
@@ -123,7 +123,7 @@ public sealed class ResourceCandidateBatchActionServiceTests : IDisposable
     {
         var source = SeedSource();
         var candidate = SeedCandidate(source, "hello", ResourceCandidateValidationStatus.Passed);
-        var firstPublish = await new ResourceCandidatePublishService(_db).PublishAsync(candidate.Id, null);
+        var firstPublish = await new ResourceCandidatePublishService(_db, new ResourceCandidateContentSerializer()).PublishAsync(candidate.Id, null);
         firstPublish.Success.Should().BeTrue();
 
         var result = await _sut.PublishAsync(new BatchPublishResourceCandidatesCommand(new[] { candidate.Id }), null);
@@ -183,7 +183,7 @@ public sealed class ResourceCandidateBatchActionServiceTests : IDisposable
         var candidate = SeedCandidate(source, "hello", ResourceCandidateValidationStatus.Passed, approve: false);
         await _sut.SkipAsync(new BatchSkipResourceCandidatesCommand(new[] { candidate.Id }));
 
-        var result = await new ResourceCandidatePublishService(_db).PublishAsync(candidate.Id, null);
+        var result = await new ResourceCandidatePublishService(_db, new ResourceCandidateContentSerializer()).PublishAsync(candidate.Id, null);
 
         result.Success.Should().BeFalse();
         result.Errors.Should().Contain(e => e.Contains("ReviewStatus"));
@@ -197,7 +197,7 @@ public sealed class ResourceCandidateBatchActionServiceTests : IDisposable
         var candidate = SeedCandidate(source, "hello", ResourceCandidateValidationStatus.Passed, approve: false);
         await _sut.RejectAsync(new BatchRejectResourceCandidatesCommand(new[] { candidate.Id }, "no good"));
 
-        var result = await new ResourceCandidatePublishService(_db).PublishAsync(candidate.Id, null);
+        var result = await new ResourceCandidatePublishService(_db, new ResourceCandidateContentSerializer()).PublishAsync(candidate.Id, null);
 
         result.Success.Should().BeFalse();
         result.Errors.Should().Contain(e => e.Contains("ReviewStatus"));

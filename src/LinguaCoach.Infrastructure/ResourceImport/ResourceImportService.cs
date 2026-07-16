@@ -78,11 +78,14 @@ public sealed class ResourceImportService : IResourceImportService
 
     private readonly LinguaCoachDbContext _db;
     private readonly IActivityContentFingerprintService _fingerprint;
+    private readonly IResourceCandidateContentSerializer _contentSerializer;
 
-    public ResourceImportService(LinguaCoachDbContext db, IActivityContentFingerprintService fingerprint)
+    public ResourceImportService(
+        LinguaCoachDbContext db, IActivityContentFingerprintService fingerprint, IResourceCandidateContentSerializer contentSerializer)
     {
         _db = db;
         _fingerprint = fingerprint;
+        _contentSerializer = contentSerializer;
     }
 
     public async Task<ResourceImportResult> ImportAsync(ResourceImportRequest request, CancellationToken ct = default)
@@ -242,6 +245,35 @@ public sealed class ResourceImportService : IResourceImportService
             ? (forcedType, ExtractCanonicalTextForType(row, forcedType))
             : InferCandidateType(row);
 
+        var normalizedJson = JsonSerializer.Serialize(
+            row.OrderBy(kv => kv.Key, StringComparer.Ordinal).ToDictionary(kv => kv.Key, kv => kv.Value));
+
+        // ── Gate 4 (Phase 4.5) — typed content validation. Only enforced for candidates staged
+        // through the gated, plan-driven package pipeline (ImportPackageId set) — the legacy,
+        // ungated single-file E1 admin upload stays permissive/unchanged (NeedsReview, fix it in
+        // the Candidate Review UI), matching this codebase's existing precedent of tightening only
+        // the plan-gated path (see AdminResourceImportController's class doc comment). Never
+        // creates a malformed typed-schema candidate — the row is rejected clearly instead.
+        // Deliberately no CanonicalText fallback here (unlike publish's leniency, which exists only
+        // to keep pre-4.5 legacy rows publishable) — a freshly-staged package-driven row must carry
+        // its own real typed field, not merely happen to share a value with whatever field
+        // CanonicalText was inferred from. ─────────────────────────────────────────────────────
+        if (request.ImportPackageId is not null && _contentSerializer.SupportsTypedSchema(candidateType))
+        {
+            var parsed = _contentSerializer.Parse(candidateType, normalizedJson);
+            var validation = parsed.Success && parsed.Content is not null
+                ? _contentSerializer.Validate(candidateType, parsed.Content)
+                : CandidateContentValidationResult.Invalid(parsed.Errors);
+
+            if (!validation.IsValid)
+            {
+                var reason = "This row does not satisfy the typed schema for candidate type " +
+                    $"'{candidateType}': " + string.Join("; ", validation.Errors.Select(e => $"{e.FieldName}: {e.Message}"));
+                RejectRow(runId, row, rawJson, rawHash, languageVerdict.DetectedLanguageCode, reason, ref rejected, ref warnings);
+                return;
+            }
+        }
+
         var metadata = MergeRowMetadata(row, request);
         var recordWarningsJson = metadata.Warnings.Count > 0
             ? JsonSerializer.Serialize(metadata.Warnings)
@@ -254,8 +286,6 @@ public sealed class ResourceImportService : IResourceImportService
         _db.ResourceRawRecords.Add(record);
         warnings += metadata.Warnings.Count;
 
-        var normalizedJson = JsonSerializer.Serialize(
-            row.OrderBy(kv => kv.Key, StringComparer.Ordinal).ToDictionary(kv => kv.Key, kv => kv.Value));
         var searchText = string.Join(' ', row.Values.Where(v => !string.IsNullOrWhiteSpace(v))).ToLowerInvariant();
 
         var fingerprint = _fingerprint.ComputeFingerprint(new ActivityContentFingerprintRequest(

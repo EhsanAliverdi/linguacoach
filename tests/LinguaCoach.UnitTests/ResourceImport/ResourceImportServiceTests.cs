@@ -30,7 +30,7 @@ public sealed class ResourceImportServiceTests : IDisposable
         _db.Database.OpenConnection();
         _db.Database.EnsureCreated();
 
-        _sut = new ResourceImportService(_db, new ActivityContentFingerprintService());
+        _sut = new ResourceImportService(_db, new ActivityContentFingerprintService(), new ResourceCandidateContentSerializer());
     }
 
     public void Dispose()
@@ -268,6 +268,85 @@ public sealed class ResourceImportServiceTests : IDisposable
         var candidate = await _db.ResourceCandidates.SingleAsync();
         candidate.CandidateType.Should().Be(ResourceCandidateType.GrammarProfileEntry);
         candidate.CanonicalText.Should().Be("hello");
+    }
+
+    // ── Phase 4.5 — Gate 4: typed content validation, package-driven pipeline only ─────────────
+
+    [Fact]
+    public async Task Package_driven_CSV_row_maps_into_typed_candidate_fields()
+    {
+        var source = SeedApprovedSource();
+        var csv = "word,definition,partOfSpeech\nhello,a greeting,interjection\n";
+
+        await _sut.ImportAsync(new ResourceImportRequest(
+            source.Id, ToStream(csv), "package.csv", ResourceImportMode.Csv,
+            DefaultCandidateType: ResourceCandidateType.VocabularyEntry, ImportPackageId: Guid.NewGuid()));
+
+        var candidate = await _db.ResourceCandidates.SingleAsync();
+        var serializer = new ResourceCandidateContentSerializer();
+        var parsed = serializer.Parse(candidate.CandidateType, candidate.NormalizedJson);
+
+        parsed.Success.Should().BeTrue();
+        var typed = (VocabularyCandidateContent)parsed.Content!;
+        typed.Word.Should().Be("hello");
+        typed.Definition.Should().Be("a greeting");
+        typed.PartOfSpeech.Should().Be("interjection");
+    }
+
+    [Fact]
+    public async Task Package_driven_JSON_row_maps_into_typed_listening_candidate_fields()
+    {
+        var source = SeedApprovedSource();
+        var json = """[{"title":"Morning News","transcript":"Good morning."}]""";
+
+        await _sut.ImportAsync(new ResourceImportRequest(
+            source.Id, ToStream(json), "package.json", ResourceImportMode.Json,
+            DefaultCandidateType: ResourceCandidateType.ListeningPassage, ImportPackageId: Guid.NewGuid()));
+
+        var candidate = await _db.ResourceCandidates.SingleAsync();
+        var serializer = new ResourceCandidateContentSerializer();
+        var typed = (ListeningCandidateContent)serializer.Parse(candidate.CandidateType, candidate.NormalizedJson).Content!;
+
+        typed.Title.Should().Be("Morning News");
+        typed.Transcript.Should().Be("Good morning.");
+    }
+
+    [Fact]
+    public async Task Package_driven_row_missing_a_required_typed_field_is_rejected_clearly_not_silently_staged()
+    {
+        var source = SeedApprovedSource();
+        // Forced GrammarProfileEntry with only "explanation" present — Gate 3 accepts the row (a
+        // recognized grammar field), but Gate 4's strict (no-CanonicalText-fallback) typed
+        // validation requires "title"/"grammarKey" too, which this row never carries.
+        var csv = "explanation\nhabitual actions\n";
+
+        var result = await _sut.ImportAsync(new ResourceImportRequest(
+            source.Id, ToStream(csv), "package-invalid.csv", ResourceImportMode.Csv,
+            DefaultCandidateType: ResourceCandidateType.GrammarProfileEntry, ImportPackageId: Guid.NewGuid()));
+
+        result.SucceededCount.Should().Be(0);
+        result.RejectedCount.Should().Be(1);
+        (await _db.ResourceCandidates.CountAsync()).Should().Be(0);
+
+        var rejectedRaw = await _db.ResourceRawRecords.SingleAsync();
+        rejectedRaw.ExtractionWarningsJson.Should().Contain("typed schema");
+    }
+
+    [Fact]
+    public async Task Ungated_legacy_single_file_import_stays_permissive_even_with_a_content_gap()
+    {
+        // No ImportPackageId — the pre-4.5, ungated E1 upload path — must remain exactly as
+        // permissive as before this phase: content gaps stage as NeedsReview, never hard-rejected.
+        var source = SeedApprovedSource();
+        var csv = "word\nhello\n";
+
+        var result = await _sut.ImportAsync(new ResourceImportRequest(
+            source.Id, ToStream(csv), "ungated.csv", ResourceImportMode.Csv,
+            DefaultCandidateType: ResourceCandidateType.VocabularyEntry));
+
+        result.SucceededCount.Should().Be(1);
+        result.RejectedCount.Should().Be(0);
+        (await _db.ResourceCandidates.CountAsync()).Should().Be(1);
     }
 
     [Fact]

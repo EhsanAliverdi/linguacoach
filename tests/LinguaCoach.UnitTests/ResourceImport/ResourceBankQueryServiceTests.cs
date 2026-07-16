@@ -32,7 +32,7 @@ public sealed class ResourceBankQueryServiceTests : IDisposable
         _db.Database.EnsureCreated();
 
         _sut = new ResourceBankQueryService(_db);
-        _publishService = new ResourceCandidatePublishService(_db);
+        _publishService = new ResourceCandidatePublishService(_db, new ResourceCandidateContentSerializer());
     }
 
     public void Dispose()

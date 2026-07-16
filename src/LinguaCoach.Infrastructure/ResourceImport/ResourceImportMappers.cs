@@ -59,8 +59,38 @@ internal static class ResourceImportMappers
         record.CreatedAt
     );
 
+    // Stateless — safe to instantiate directly in this static mapper rather than threading a
+    // serializer instance through every ToDto call site (see IResourceCandidateContentSerializer's
+    // doc comment: it holds no state, only field-alias tables).
+    private static readonly IResourceCandidateContentSerializer ContentSerializer = new ResourceCandidateContentSerializer();
+
     public static AdminResourceCandidateDto ToDto(
-        ResourceCandidate candidate, Guid importRunId, Guid sourceId) => new(
+        ResourceCandidate candidate, Guid importRunId, Guid sourceId)
+    {
+        string? typedContentJson = null;
+        IReadOnlyList<CandidateFieldError>? contentValidationErrors = null;
+
+        if (ContentSerializer.SupportsTypedSchema(candidate.CandidateType))
+        {
+            var parsed = ContentSerializer.Parse(candidate.CandidateType, candidate.NormalizedJson, candidate.CanonicalText);
+            if (parsed.Success && parsed.Content is not null)
+            {
+                typedContentJson = ContentSerializer.Serialize(parsed.Content);
+                var validation = ContentSerializer.Validate(candidate.CandidateType, parsed.Content);
+                contentValidationErrors = validation.IsValid ? Array.Empty<CandidateFieldError>() : validation.Errors;
+            }
+            else
+            {
+                contentValidationErrors = parsed.Errors;
+            }
+        }
+
+        return ToDtoCore(candidate, importRunId, sourceId, typedContentJson, contentValidationErrors);
+    }
+
+    private static AdminResourceCandidateDto ToDtoCore(
+        ResourceCandidate candidate, Guid importRunId, Guid sourceId,
+        string? typedContentJson, IReadOnlyList<CandidateFieldError>? contentValidationErrors) => new(
         candidate.Id,
         candidate.ResourceRawRecordId,
         importRunId,
@@ -97,6 +127,8 @@ internal static class ResourceImportMappers
         candidate.PublishedEntityId,
         candidate.PublishedByUserId,
         ResourceCandidatePublishGateHelper.CanAttemptPublish(candidate),
-        ResourceCandidatePublishGateHelper.DescribeHardBlock(candidate)
+        ResourceCandidatePublishGateHelper.DescribeHardBlock(candidate),
+        typedContentJson,
+        contentValidationErrors
     );
 }

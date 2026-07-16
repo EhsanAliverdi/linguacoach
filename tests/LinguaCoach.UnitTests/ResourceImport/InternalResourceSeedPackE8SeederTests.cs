@@ -44,9 +44,9 @@ public sealed class InternalResourceSeedPackE8SeederTests : IDisposable
         _db.Database.OpenConnection();
         _db.Database.EnsureCreated();
 
-        _importService = new ResourceImportService(_db, new ActivityContentFingerprintService());
+        _importService = new ResourceImportService(_db, new ActivityContentFingerprintService(), new ResourceCandidateContentSerializer());
         _validationService = new ResourceCandidateValidationService(_db, new FormIoSchemaValidationService());
-        _publishService = new ResourceCandidatePublishService(_db);
+        _publishService = new ResourceCandidatePublishService(_db, new ResourceCandidateContentSerializer());
         _queryService = new ResourceBankQueryService(_db);
     }
 

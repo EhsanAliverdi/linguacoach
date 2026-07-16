@@ -134,6 +134,18 @@ export interface AdminResourceCandidateDto {
   canAttemptPublish: boolean;
   /** Non-null only when canAttemptPublish is false and the candidate isn't already published. */
   publishBlockReason: string | null;
+  /** Phase 4.5 — canonical-field-name JSON view of this candidate's content (e.g.
+   *  {"word":"...","definition":"..."} for VocabularyEntry). Null when CandidateType has no typed
+   *  schema (ActivityTemplateCandidate/Unknown) — fall back to normalizedJson for those. */
+  typedContentJson: string | null;
+  /** Structured per-field errors from validating typedContentJson. Empty when valid or untyped. */
+  contentValidationErrors: CandidateFieldErrorDto[] | null;
+}
+
+/** Phase 4.5 — one structured validation failure on a typed candidate content field. */
+export interface CandidateFieldErrorDto {
+  fieldName: string;
+  message: string;
 }
 
 export interface AdminResourceCandidateListResult {
@@ -168,12 +180,61 @@ export interface SkipCandidateRequestBody {
 export interface UpdateCandidateContentRequestBody {
   canonicalText?: string | null;
   normalizedJson?: string | null;
+  /** Phase 4.5 — the typed editor's write path; a JSON object shaped like the candidate's typed
+   *  schema (e.g. {"word":"...","definition":"..."}). Wins over normalizedJson when both are set. */
+  typedContentJson?: string | null;
   cefrLevel?: string | null;
   primarySkill?: string | null;
   subskill?: string | null;
   difficultyBand?: number | null;
   contextTags?: string[] | null;
   focusTags?: string[] | null;
+}
+
+// ── Phase 4.5 — typed candidate content shapes, mirroring the backend's CandidateContent
+// discriminated records. Used by the type-aware Candidate Review editor. ──────────────────────
+
+export interface VocabularyCandidateContent {
+  word: string;
+  definition: string;
+  partOfSpeech?: string | null;
+  examples?: string[] | null;
+}
+
+export interface GrammarCandidateContent {
+  title: string;
+  explanation: string;
+  examples?: string[] | null;
+  commonMistakes?: string[] | null;
+}
+
+export interface ReadingCandidateContent {
+  passageText: string;
+  title?: string | null;
+  textType?: string | null;
+  referenceSource?: string | null;
+}
+
+export interface ListeningCandidateContent {
+  title: string;
+  transcript?: string | null;
+}
+
+export interface SpeakingCandidateContent {
+  title: string;
+  promptText: string;
+  instructions?: string | null;
+  context?: string | null;
+  suggestedDurationSeconds?: number | null;
+}
+
+export interface WritingCandidateContent {
+  title: string;
+  promptText: string;
+  instructions?: string | null;
+  genre?: string | null;
+  suggestedMinWords?: number | null;
+  expectedLevel?: string | null;
 }
 
 export interface BatchCandidateReasonRequestBody {

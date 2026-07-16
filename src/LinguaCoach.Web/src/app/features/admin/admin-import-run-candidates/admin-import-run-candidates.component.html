@@ -126,6 +126,12 @@
                   @if (!item.isPublished && !item.canAttemptPublish && item.publishBlockReason) {
                     <div class="sp-admin-hint" style="color:var(--sp-admin-danger,#b91c1c);">{{ item.publishBlockReason }}</div>
                   }
+                  @if (!item.isPublished && hasContentErrors(item)) {
+                    <div class="sp-admin-hint" style="color:var(--sp-admin-danger,#b91c1c);">
+                      Content invalid — {{ item.contentValidationErrors![0].fieldName }}: {{ item.contentValidationErrors![0].message }}
+                      @if (item.contentValidationErrors!.length > 1) { (+{{ item.contentValidationErrors!.length - 1 }} more) }
+                    </div>
+                  }
                 </td>
                 <td><sp-admin-badge tone="neutral">{{ item.candidateType }}</sp-admin-badge></td>
                 <td>{{ item.cefrLevel ?? '—' }}</td>
@@ -140,7 +146,7 @@
                 </td>
                 <td>
                   <div class="sp-admin-form-actions" style="flex-wrap:nowrap;">
-                    @if (!item.isPublished && item.canAttemptPublish) {
+                    @if (!item.isPublished && item.canAttemptPublish && !hasContentErrors(item)) {
                       <sp-admin-button
                         variant="primary" size="sm"
                         [disabled]="publishingId() === item.candidateId"
@@ -265,16 +271,103 @@
   (closed)="closeEdit()">
 
   <p class="sp-admin-hint">
-    Editable until published. The Content JSON field carries every type-specific field
-    (word/definition/title/body/examples/etc — the field names this candidate's type recognizes).
+    Editable until published.
   </p>
   <div class="sp-admin-form-stack">
     <sp-admin-form-field label="Display text (CanonicalText)">
       <sp-admin-textarea [(ngModel)]="editDraft.canonicalText" [rows]="2" />
     </sp-admin-form-field>
-    <sp-admin-form-field label="Content JSON" hint="Must be valid JSON — this is where type-specific fields live">
-      <sp-admin-textarea [(ngModel)]="editDraft.normalizedJson" [rows]="8" />
-    </sp-admin-form-field>
+
+    <!-- Phase 4.5 — type-aware editor forms. One block per typed candidate type; the raw
+         Content JSON textarea is the fallback only for types with no typed schema
+         (ActivityTemplateCandidate/Unknown). -->
+    @if (editTargetType() === 'VocabularyEntry') {
+      <sp-admin-form-field label="Word" [error]="fieldError('word') ?? ''">
+        <sp-admin-textarea [(ngModel)]="editDraft.typed.word" [rows]="1" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Definition" [error]="fieldError('definition') ?? ''">
+        <sp-admin-textarea [(ngModel)]="editDraft.typed.definition" [rows]="2" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Part of speech">
+        <sp-admin-textarea [(ngModel)]="editDraft.typed.partOfSpeech" [rows]="1" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Examples" hint="Comma-separated">
+        <sp-admin-textarea [(ngModel)]="editDraft.typed.examples" [rows]="2" />
+      </sp-admin-form-field>
+    } @else if (editTargetType() === 'GrammarProfileEntry') {
+      <sp-admin-form-field label="Title" [error]="fieldError('title') ?? ''">
+        <sp-admin-textarea [(ngModel)]="editDraft.typed.title" [rows]="1" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Explanation" [error]="fieldError('explanation') ?? ''">
+        <sp-admin-textarea [(ngModel)]="editDraft.typed.explanation" [rows]="3" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Examples" hint="Comma-separated">
+        <sp-admin-textarea [(ngModel)]="editDraft.typed.examples" [rows]="2" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Common mistakes" hint="Comma-separated">
+        <sp-admin-textarea [(ngModel)]="editDraft.typed.commonMistakes" [rows]="2" />
+      </sp-admin-form-field>
+    } @else if (editTargetType() === 'ReadingPassage') {
+      <sp-admin-form-field label="Title (required for full-length passages)">
+        <sp-admin-textarea [(ngModel)]="editDraft.typed.title" [rows]="1" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Passage text" [error]="fieldError('passageText') ?? ''">
+        <sp-admin-textarea [(ngModel)]="editDraft.typed.passageText" [rows]="6" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Text type">
+        <sp-admin-textarea [(ngModel)]="editDraft.typed.textType" [rows]="1" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Reference source">
+        <sp-admin-textarea [(ngModel)]="editDraft.typed.referenceSource" [rows]="1" />
+      </sp-admin-form-field>
+    } @else if (editTargetType() === 'ListeningPassage') {
+      <sp-admin-form-field label="Title" [error]="fieldError('title') ?? ''">
+        <sp-admin-textarea [(ngModel)]="editDraft.typed.title" [rows]="1" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Transcript">
+        <sp-admin-textarea [(ngModel)]="editDraft.typed.transcript" [rows]="4" />
+      </sp-admin-form-field>
+    } @else if (editTargetType() === 'SpeakingPrompt') {
+      <sp-admin-form-field label="Title" [error]="fieldError('title') ?? ''">
+        <sp-admin-textarea [(ngModel)]="editDraft.typed.title" [rows]="1" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Prompt text" [error]="fieldError('promptText') ?? ''">
+        <sp-admin-textarea [(ngModel)]="editDraft.typed.promptText" [rows]="3" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Instructions">
+        <sp-admin-textarea [(ngModel)]="editDraft.typed.instructions" [rows]="2" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Context">
+        <sp-admin-textarea [(ngModel)]="editDraft.typed.context" [rows]="2" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Suggested duration (seconds)">
+        <sp-admin-textarea [(ngModel)]="editDraft.typed.suggestedDurationSeconds" [rows]="1" />
+      </sp-admin-form-field>
+    } @else if (editTargetType() === 'WritingPrompt') {
+      <sp-admin-form-field label="Title" [error]="fieldError('title') ?? ''">
+        <sp-admin-textarea [(ngModel)]="editDraft.typed.title" [rows]="1" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Prompt text" [error]="fieldError('promptText') ?? ''">
+        <sp-admin-textarea [(ngModel)]="editDraft.typed.promptText" [rows]="3" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Instructions">
+        <sp-admin-textarea [(ngModel)]="editDraft.typed.instructions" [rows]="2" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Genre">
+        <sp-admin-textarea [(ngModel)]="editDraft.typed.genre" [rows]="1" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Suggested min. words">
+        <sp-admin-textarea [(ngModel)]="editDraft.typed.suggestedMinWords" [rows]="1" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Expected level">
+        <sp-admin-textarea [(ngModel)]="editDraft.typed.expectedLevel" [rows]="1" />
+      </sp-admin-form-field>
+    } @else {
+      <sp-admin-form-field label="Content JSON" hint="Must be valid JSON — this candidate type has no typed schema">
+        <sp-admin-textarea [(ngModel)]="editDraft.normalizedJson" [rows]="8" />
+      </sp-admin-form-field>
+    }
+
     <sp-admin-form-field label="CEFR level">
       <sp-admin-textarea [(ngModel)]="editDraft.cefrLevel" [rows]="1" placeholder="e.g. B1" />
     </sp-admin-form-field>

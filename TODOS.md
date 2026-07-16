@@ -5,6 +5,39 @@ Each item includes context, motivation, and the phase where it was deferred.
 
 ---
 
+## Phase 4.5 — Typed multimodal candidate schemas (2026-07-16)
+
+Review: docs/reviews/2026-07-16-phase-4-5-typed-multimodal-candidate-schemas-review.md
+
+Replaced generic NormalizedJson candidate conventions with typed, validated candidate schemas for
+the six Resource Candidate types that have a real publish target (Vocabulary, Grammar, Reading,
+Listening, Speaking, Writing). No migration was needed — the typed schema is a parse/validate/
+serialize layer over the existing NormalizedJson column, with a deliberate legacy-alias bridge (not
+a hidden fallback) documented on `IResourceCandidateContentSerializer`.
+
+### TODO-4.5-ZIP-CROSS-PACKAGE-UI — Asset-reference selection UI for Listening candidates
+**What:** The Candidate Review editor does not let an admin pick an *existing* ImportAsset to link
+to a candidate (only the existing raw audio-file-upload flow). `ImportAssetProvenanceGuard` enforces
+same-package linking at the one call site that creates links today
+(`ImportPackageProcessingService`'s Listening-candidate creation), but there is no UI path yet where
+an admin could attempt a cross-package link in the first place.
+**Why:** Deferred — building asset-selection UI was out of this phase's scope ("Do not build
+Resource Bank media preview" / "Do not build ... new upload infrastructure"). The guard exists and
+is tested so the invariant holds the moment such a UI is added.
+**Deferred from:** Phase 4.5 engineering session, 2026-07-16.
+
+### TODO-4.5-GENERIC-CSV-STRICT-VALIDATION — Extend Gate 4 typed validation to legacy single-file uploads
+**What:** `ResourceImportService`'s Gate 4 typed-content validation only runs when
+`ImportPackageId` is set (the gated, plan-driven pipeline). The legacy ungated single-file admin
+upload (`AdminResourceImportController`'s original E1 flow) still stages candidates permissively,
+exactly as before this phase.
+**Why:** Deliberately scoped this way to avoid breaking the many existing `ResourceImportServiceTests`
+built around that permissive behavior, and because the legacy path predates the Import Execution
+Plan gate entirely — tightening it is a separate, larger decision than this phase's brief.
+**Deferred from:** Phase 4.5 engineering session, 2026-07-16.
+
+---
+
 ## Phase 4.4 — Editable import plans and durable cost accounting (2026-07-16)
 
 Review: docs/reviews/2026-07-16-phase-4-4-editable-plans-and-durable-cost-accounting-review.md

@@ -11,10 +11,47 @@ import {
   AdminResourceImportRunDto,
   AdminResourceCandidateReviewSummaryDto,
   BatchResourceCandidateActionResult,
+  CandidateFieldErrorDto,
   ResourceCandidatePreviewDto,
   ResourceCandidatePublishResult,
   UpdateCandidateContentRequestBody,
 } from '../../../core/models/admin-resource-import.models';
+
+/** Phase 4.5 — the six candidate types with a typed schema and a type-aware editor form. Matches
+ *  IResourceCandidateContentSerializer.SupportsTypedSchema's supported set on the backend.
+ *  ActivityTemplateCandidate/Unknown fall back to the raw NormalizedJson textarea. */
+const TYPED_SCHEMA_CANDIDATE_TYPES = new Set([
+  'VocabularyEntry', 'GrammarProfileEntry', 'ReadingPassage', 'ListeningPassage', 'SpeakingPrompt', 'WritingPrompt',
+]);
+
+/** One typed-editor draft shape wide enough to cover every supported candidate type's fields —
+ *  only the fields relevant to the candidate being edited are read/written at a time. */
+interface TypedContentDraft {
+  word: string;
+  definition: string;
+  partOfSpeech: string;
+  title: string;
+  explanation: string;
+  passageText: string;
+  textType: string;
+  referenceSource: string;
+  transcript: string;
+  promptText: string;
+  instructions: string;
+  context: string;
+  genre: string;
+  expectedLevel: string;
+  suggestedDurationSeconds: string;
+  suggestedMinWords: string;
+  examples: string;
+  commonMistakes: string;
+}
+
+const EMPTY_TYPED_DRAFT: TypedContentDraft = {
+  word: '', definition: '', partOfSpeech: '', title: '', explanation: '', passageText: '', textType: '',
+  referenceSource: '', transcript: '', promptText: '', instructions: '', context: '', genre: '', expectedLevel: '',
+  suggestedDurationSeconds: '', suggestedMinWords: '', examples: '', commonMistakes: '',
+};
 import { FormioRendererComponent } from '../../../shared/formio/formio-renderer.component';
 import {
   SpAdminAlertComponent,
@@ -126,8 +163,12 @@ export class AdminImportRunCandidatesComponent implements OnInit {
   // ── Phase 3 — candidate content editing ─────────────────────────────────────
   editModalOpen = signal(false);
   editTargetId = signal<string | null>(null);
+  editTargetType = signal<string>('');
   editSaving = signal(false);
   editError = signal('');
+  /** Phase 4.5 — structured per-field errors from the server's typed validation gate, shown
+   *  inline next to the offending field rather than as one flattened error string. */
+  editFieldErrors = signal<CandidateFieldErrorDto[]>([]);
   editDraft: {
     canonicalText: string;
     normalizedJson: string;
@@ -137,7 +178,25 @@ export class AdminImportRunCandidatesComponent implements OnInit {
     difficultyBand: string;
     contextTags: string;
     focusTags: string;
-  } = { canonicalText: '', normalizedJson: '', cefrLevel: '', primarySkill: '', subskill: '', difficultyBand: '', contextTags: '', focusTags: '' };
+    typed: TypedContentDraft;
+  } = { canonicalText: '', normalizedJson: '', cefrLevel: '', primarySkill: '', subskill: '', difficultyBand: '', contextTags: '', focusTags: '', typed: { ...EMPTY_TYPED_DRAFT } };
+
+  /** True when this candidate type has a typed schema and the type-aware form should render
+   *  instead of the raw NormalizedJson textarea. */
+  hasTypedSchema(candidateType: string): boolean {
+    return TYPED_SCHEMA_CANDIDATE_TYPES.has(candidateType);
+  }
+
+  fieldError(fieldName: string): string | null {
+    return this.editFieldErrors().find(e => e.fieldName === fieldName)?.message ?? null;
+  }
+
+  /** Phase 4.5 — a row-level "invalid, cannot approve" signal surfaced before the admin even
+   *  attempts Approve & Publish, per the DTO's ContentValidationErrors (server-computed, using the
+   *  same CanonicalText-fallback leniency Approve/Publish themselves apply). */
+  hasContentErrors(item: AdminResourceCandidateDto): boolean {
+    return (item.contentValidationErrors?.length ?? 0) > 0;
+  }
 
   // ── Preview drawer ───────────────────────────────────────────────────────
   previewDrawerOpen = signal(false);
@@ -356,7 +415,9 @@ export class AdminImportRunCandidatesComponent implements OnInit {
       actions.push({ id: 'edit', label: 'Edit', icon: 'edit', tone: 'default' });
       // Phase K2 — hard-blocked candidates (Failed/Pending ValidationStatus) never show the
       // publish action; the specific blocker (item.publishBlockReason) is shown inline instead.
-      if (item.canAttemptPublish) {
+      // Phase 4.5 — also hard-blocked when the typed content schema itself is invalid, even if
+      // ValidationStatus happens to be Passed/NeedsReview (the two gates are independent).
+      if (item.canAttemptPublish && !this.hasContentErrors(item)) {
         actions.push({ id: 'approve-and-publish', label: 'Approve & Publish', icon: 'check', tone: 'default' });
       }
       if (item.reviewStatus !== 'Rejected') actions.push({ id: 'reject', label: 'Reject', icon: 'delete', tone: 'danger' });
@@ -406,7 +467,9 @@ export class AdminImportRunCandidatesComponent implements OnInit {
 
   openEdit(item: AdminResourceCandidateDto): void {
     this.editTargetId.set(item.candidateId);
+    this.editTargetType.set(item.candidateType);
     this.editError.set('');
+    this.editFieldErrors.set(item.contentValidationErrors ?? []);
     this.editDraft = {
       canonicalText: item.canonicalText,
       normalizedJson: this.prettyJson(item.normalizedJson),
@@ -416,6 +479,7 @@ export class AdminImportRunCandidatesComponent implements OnInit {
       difficultyBand: item.difficultyBand?.toString() ?? '',
       contextTags: this.parseTagsToCsv(item.contextTagsJson),
       focusTags: this.parseTagsToCsv(item.focusTagsJson),
+      typed: this.parseTypedContent(item),
     };
     this.editModalOpen.set(true);
   }
@@ -424,18 +488,107 @@ export class AdminImportRunCandidatesComponent implements OnInit {
     this.editModalOpen.set(false);
   }
 
+  /** Phase 4.5 — reads the DTO's typedContentJson (already canonical-field-named) into the wide
+   *  TypedContentDraft form. Falls back to an empty draft for untyped candidate types (the raw
+   *  NormalizedJson textarea is used instead — see hasTypedSchema()). */
+  private parseTypedContent(item: AdminResourceCandidateDto): TypedContentDraft {
+    const draft = { ...EMPTY_TYPED_DRAFT };
+    if (!item.typedContentJson) return draft;
+    try {
+      const parsed = JSON.parse(item.typedContentJson) as Record<string, unknown>;
+      const asString = (v: unknown) => (typeof v === 'string' ? v : '');
+      const asCsv = (v: unknown) => (Array.isArray(v) ? v.join(', ') : '');
+      const asNumberString = (v: unknown) => (typeof v === 'number' ? String(v) : '');
+      draft.word = asString(parsed['word']);
+      draft.definition = asString(parsed['definition']);
+      draft.partOfSpeech = asString(parsed['partOfSpeech']);
+      draft.title = asString(parsed['title']);
+      draft.explanation = asString(parsed['explanation']);
+      draft.passageText = asString(parsed['passageText']);
+      draft.textType = asString(parsed['textType']);
+      draft.referenceSource = asString(parsed['referenceSource']);
+      draft.transcript = asString(parsed['transcript']);
+      draft.promptText = asString(parsed['promptText']);
+      draft.instructions = asString(parsed['instructions']);
+      draft.context = asString(parsed['context']);
+      draft.genre = asString(parsed['genre']);
+      draft.expectedLevel = asString(parsed['expectedLevel']);
+      draft.suggestedDurationSeconds = asNumberString(parsed['suggestedDurationSeconds']);
+      draft.suggestedMinWords = asNumberString(parsed['suggestedMinWords']);
+      draft.examples = asCsv(parsed['examples']);
+      draft.commonMistakes = asCsv(parsed['commonMistakes']);
+    } catch {
+      // Leave the draft empty — this only happens if the server produced malformed JSON, which
+      // the typed serializer never does; defensive rather than reachable in practice.
+    }
+    return draft;
+  }
+
+  /** Phase 4.5 — builds the canonical-field-name JSON object the server's typed serializer
+   *  expects, using only the fields relevant to this candidate's own type. */
+  private buildTypedContentJson(candidateType: string, typed: TypedContentDraft): string | null {
+    const csvToArray = (v: string) => {
+      const items = v.split(',').map(s => s.trim()).filter(s => s.length > 0);
+      return items.length > 0 ? items : undefined;
+    };
+    const numberOrUndefined = (v: string) => (v.trim() ? Number(v.trim()) : undefined);
+
+    switch (candidateType) {
+      case 'VocabularyEntry':
+        return JSON.stringify({
+          word: typed.word.trim(), definition: typed.definition.trim(),
+          partOfSpeech: typed.partOfSpeech.trim() || undefined, examples: csvToArray(typed.examples),
+        });
+      case 'GrammarProfileEntry':
+        return JSON.stringify({
+          title: typed.title.trim(), explanation: typed.explanation.trim(),
+          examples: csvToArray(typed.examples), commonMistakes: csvToArray(typed.commonMistakes),
+        });
+      case 'ReadingPassage':
+        return JSON.stringify({
+          passageText: typed.passageText.trim(), title: typed.title.trim() || undefined,
+          textType: typed.textType.trim() || undefined, referenceSource: typed.referenceSource.trim() || undefined,
+        });
+      case 'ListeningPassage':
+        return JSON.stringify({ title: typed.title.trim(), transcript: typed.transcript.trim() || undefined });
+      case 'SpeakingPrompt':
+        return JSON.stringify({
+          title: typed.title.trim(), promptText: typed.promptText.trim(),
+          instructions: typed.instructions.trim() || undefined, context: typed.context.trim() || undefined,
+          suggestedDurationSeconds: numberOrUndefined(typed.suggestedDurationSeconds),
+        });
+      case 'WritingPrompt':
+        return JSON.stringify({
+          title: typed.title.trim(), promptText: typed.promptText.trim(),
+          instructions: typed.instructions.trim() || undefined, genre: typed.genre.trim() || undefined,
+          suggestedMinWords: numberOrUndefined(typed.suggestedMinWords), expectedLevel: typed.expectedLevel.trim() || undefined,
+        });
+      default:
+        return null;
+    }
+  }
+
   confirmEdit(): void {
     const id = this.editTargetId();
     if (!id) return;
 
+    const candidateType = this.editTargetType();
+    const isTyped = this.hasTypedSchema(candidateType);
+
     let normalizedJson: string | null = null;
-    const trimmedJson = this.editDraft.normalizedJson.trim();
-    if (trimmedJson) {
-      try {
-        normalizedJson = JSON.stringify(JSON.parse(trimmedJson));
-      } catch {
-        this.editError.set('Content JSON is not valid JSON — fix it before saving.');
-        return;
+    let typedContentJson: string | null = null;
+
+    if (isTyped) {
+      typedContentJson = this.buildTypedContentJson(candidateType, this.editDraft.typed);
+    } else {
+      const trimmedJson = this.editDraft.normalizedJson.trim();
+      if (trimmedJson) {
+        try {
+          normalizedJson = JSON.stringify(JSON.parse(trimmedJson));
+        } catch {
+          this.editError.set('Content JSON is not valid JSON — fix it before saving.');
+          return;
+        }
       }
     }
 
@@ -450,6 +603,7 @@ export class AdminImportRunCandidatesComponent implements OnInit {
     const body: UpdateCandidateContentRequestBody = {
       canonicalText: this.editDraft.canonicalText.trim() || null,
       normalizedJson,
+      typedContentJson,
       cefrLevel: this.editDraft.cefrLevel.trim() || null,
       primarySkill: this.editDraft.primarySkill.trim() || null,
       subskill: this.editDraft.subskill.trim() || null,
@@ -460,6 +614,7 @@ export class AdminImportRunCandidatesComponent implements OnInit {
 
     this.editSaving.set(true);
     this.editError.set('');
+    this.editFieldErrors.set([]);
     this.candidateSvc.updateContent(id, body).subscribe({
       next: () => {
         this.editSaving.set(false);
@@ -467,7 +622,11 @@ export class AdminImportRunCandidatesComponent implements OnInit {
         this.actionSuccess.set('Candidate content updated.');
         this.refreshAfterAction();
       },
-      error: err => { this.editSaving.set(false); this.editError.set(err.error?.error ?? 'Could not save candidate content.'); },
+      error: err => {
+        this.editSaving.set(false);
+        this.editError.set(err.error?.error ?? 'Could not save candidate content.');
+        this.editFieldErrors.set(err.error?.fieldErrors ?? []);
+      },
     });
   }
 

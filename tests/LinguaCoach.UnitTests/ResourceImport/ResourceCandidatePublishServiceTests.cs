@@ -30,7 +30,7 @@ public sealed class ResourceCandidatePublishServiceTests : IDisposable
         _db.Database.OpenConnection();
         _db.Database.EnsureCreated();
 
-        _sut = new ResourceCandidatePublishService(_db);
+        _sut = new ResourceCandidatePublishService(_db, new ResourceCandidateContentSerializer());
     }
 
     public void Dispose()
@@ -601,6 +601,23 @@ public sealed class ResourceCandidatePublishServiceTests : IDisposable
         (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.Vocabulary)).Should().Be(0);
         (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.Grammar)).Should().Be(0);
         (await _db.ResourceBankItems.CountAsync(x => x.Type == PublishedResourceType.ReadingReference)).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Candidate_with_unparseable_typed_content_cannot_be_published()
+    {
+        // Phase 4.5 — a candidate whose NormalizedJson isn't parseable JSON at all (bypassing the
+        // typed editor's own validation, e.g. via direct data corruption) fails the publish-time
+        // typed-schema gate rather than being silently mapped with blank fields.
+        var source = SeedSource();
+        var (_, raw) = SeedRunAndRaw(source, """{"word":"hello"}""");
+        var candidate = SeedCandidate(raw, ResourceCandidateType.VocabularyEntry, "hello", "not valid json {{{");
+        MakePublishReady(candidate);
+
+        var result = await _sut.PublishAsync(candidate.Id, null);
+
+        result.Success.Should().BeFalse();
+        (await _db.ResourceBankItems.CountAsync()).Should().Be(0);
     }
 
     // ── Idempotency + raw-record integrity ──────────────────────────────────────

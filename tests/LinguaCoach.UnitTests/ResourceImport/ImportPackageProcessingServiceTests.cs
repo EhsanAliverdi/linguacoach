@@ -61,7 +61,7 @@ public sealed class ImportPackagePlanProcessingTests : IDisposable
             _db, new FakeAiProviderResolver(aiProvider), new NeverCalledUsageQuotaService(), NullLogger<AiExecutionService>.Instance);
         var pricingResolver = new AiPricingResolver(_db, new ConfigurationBuilder().Build());
         var fingerprint = new ActivityContentFingerprintService();
-        var resourceImportService = new ResourceImportService(_db, fingerprint);
+        var resourceImportService = new ResourceImportService(_db, fingerprint, new ResourceCandidateContentSerializer());
         _sttService = new FakeSpeechToTextService(new ConfigurationBuilder().Build(), NullLogger<FakeSpeechToTextService>.Instance);
 
         var columnMappingService = new ResourceImportColumnMappingService(
@@ -191,6 +191,14 @@ public sealed class ImportPackagePlanProcessingTests : IDisposable
         candidate!.NormalizedJson.Should().Contain(FakeSpeechToTextService.PlaceholderTranscript);
         candidate.TranscriptOrigin.Should().Be(MetadataOrigin.AITranscribed);
         candidate.AudioStorageKey.Should().NotBeNullOrEmpty();
+
+        // Phase 4.5 — the candidate's audio provenance is a real ImportCandidateAssetLink, not
+        // just a copied storage key, and every linked asset belongs to this same package.
+        var links = await _db.ImportCandidateAssetLinks.Where(l => l.ResourceCandidateId == candidate.Id).ToListAsync();
+        links.Should().ContainSingle(l => l.Role == ImportAssetRole.Audio);
+        var linkedAssetIds = links.Select(l => l.ImportAssetId).ToList();
+        var linkedAssets = await _db.ImportAssets.Where(a => linkedAssetIds.Contains(a.Id)).ToListAsync();
+        linkedAssets.Should().OnlyContain(a => a.ImportPackageId == packageId);
     }
 
     // ── Phase 4.4E — real, persisted, reusable audio-duration measurement replaces the flat
