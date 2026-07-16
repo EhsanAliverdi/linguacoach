@@ -21,7 +21,7 @@ public sealed class LocalFileStorageService : IFileStorageService
         _logger = logger;
     }
 
-    public async Task<string> SaveAsync(string key, Stream content, string contentType, CancellationToken cancellationToken = default)
+    public async Task<string> SaveAsync(string key, Stream content, string contentType, CancellationToken cancellationToken = default, long? knownSizeBytes = null)
     {
         var fullPath = GetFullPath(key);
         Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
@@ -82,9 +82,20 @@ public sealed class LocalFileStorageService : IFileStorageService
 
     public Task<SignedUrlResult> GenerateUploadUrlAsync(string key, TimeSpan expiry, string contentType, CancellationToken cancellationToken = default)
     {
-        // Local storage has no signed PUT — callers fall back to an authenticated API upload endpoint.
-        var expiresAt = DateTimeOffset.UtcNow.Add(expiry);
-        return Task.FromResult(new SignedUrlResult($"local://{key}", expiresAt));
+        // Phase 4.7 (2026-07-17 reliable large uploads) — local storage has no signed-PUT concept
+        // and, prior to this phase, silently returned an unusable "local://" marker with no
+        // receiving endpoint on the other end (confirmed broken end-to-end — see
+        // docs/reviews/2026-07-15-phase-4-1-large-import-validation-and-gap-audit.md Part C).
+        // Rather than continue shipping that dead end, fail immediately and actionably: the Import
+        // Package upload flow now always goes through the resumable chunked-upload session
+        // endpoints (IImportUploadSessionService), which write through SaveAsync/ReadAsync and so
+        // work identically on Local or MinIO — nothing should call this method for a package
+        // upload anymore. Any other caller still requesting a presigned PUT against Local storage
+        // gets a clear, immediate error instead of a broken URL discovered later.
+        throw new NotSupportedException(
+            "Local file storage does not support presigned direct-to-storage uploads. " +
+            "Use the resumable chunked-upload session endpoints (POST .../upload-sessions) instead, " +
+            "which work against both Local and MinIO backends.");
     }
 
     public Task<string?> HealthCheckAsync(CancellationToken cancellationToken = default)

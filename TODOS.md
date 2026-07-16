@@ -5,6 +5,49 @@ Each item includes context, motivation, and the phase where it was deferred.
 
 ---
 
+## Phase 4.7 — Reliable large uploads (2026-07-17)
+
+Review: docs/reviews/2026-07-17-phase-4-7-reliable-large-uploads-review.md
+
+Replaced the single-request ZIP upload with a resumable, chunked, memory-safe session workflow
+(`ImportUploadSession`/`ImportUploadSessionPart`), fixed `MinioFileStorageService`'s full-object
+buffering on both read and write, retired the broken `local://` presigned-PUT dead end, and rebuilt
+the Angular ZIP-upload flow around real byte progress + resume/retry/cancel. Also fixed a
+pre-existing Angular bug (`canSubmit`/`selectedFilesLabel` computed() signals never re-evaluating).
+
+### TODO-4.7-LIVE-MINIO-SMOKE-TEST — Verify streaming paths against a real MinIO instance
+**What:** No live MinIO instance was available in this session's environment. The new
+`MinioFileStorageService.ReadAsync` (temp-file-backed streaming) and `SaveAsync` (size-hinted
+direct streaming) paths were verified via unit tests against `FakeFileStorageService` and by
+reasoning about the removed `MemoryStream` allocations, not against a running MinIO server.
+**Why it matters:** confirms the memory-safety fix actually holds under the real MinIO .NET SDK
+(6.0.4) behavior, not just the fake.
+**Deferred from:** Phase 4.7.
+
+### TODO-4.7-PARALLEL-PART-UPLOAD — Parallelize Angular part uploads
+**What:** The Angular client uploads session parts sequentially (one `PUT` at a time). The server
+already supports parts arriving in any order (contiguity is only checked at `Complete`), so
+parallel upload is a pure client-side improvement for large-archive wall-clock time.
+**Deferred from:** Phase 4.7 (deliberate simplicity choice, not required by the brief).
+
+### TODO-4.7-EXPIRED-SESSION-CLEANUP — Sweep job for abandoned upload sessions/parts
+**What:** An expired `ImportUploadSession` simply stops accepting parts/completing; its row and any
+already-uploaded part objects are not proactively deleted. A background job could sweep sessions
+past `ExpiresAtUtc` that never completed or were aborted.
+**Deferred from:** Phase 4.7 (not required by the brief; low-impact — orphaned storage only, no
+correctness issue).
+
+### TODO-4.7-ANGULAR-TEST-SUITE-BLOCKED (carried over, unrelated to this phase's changes)
+**What:** `npm test -- --watch=false --browsers=ChromeHeadless` currently fails to start (Karma
+"Found 1 load error") due to pre-existing TypeScript errors in unrelated files — a `feedbackPolicy`
+field missing from several `ActivityFeedbackDto` test fixtures and a `moduleSuggestions` field
+missing from a `PracticeGymSuggestionsResponse` fixture, both added by an earlier, unrelated phase.
+Confirmed via `git stash` that these errors exist identically without any Phase 4.7 changes applied.
+**Deferred from:** Phase 4.7 (found during this phase's validation, not introduced by it — fixing
+unrelated pre-existing spec files was out of this phase's scope).
+
+---
+
 ## Phase 4.6 — Media review and downstream discovery (2026-07-16)
 
 Review: docs/reviews/2026-07-16-phase-4-6-media-review-and-downstream-discovery-review.md

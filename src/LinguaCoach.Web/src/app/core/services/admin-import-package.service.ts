@@ -1,15 +1,18 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpEvent } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
+  CreateImportUploadSessionResult,
   ImportAiEnrichmentOperationSummaryDto,
   ImportExecutionGroupInstruction,
   ImportExecutionPlanDto,
   ImportPackageManifestSummaryDto,
   ImportPlanPreviewResult,
   ImportSttOperationSummaryDto,
+  ImportUploadSessionStatusDto,
   RequestImportPackageUploadResult,
+  UploadImportSessionPartResult,
 } from '../models/admin-import-package.models';
 
 /**
@@ -55,6 +58,45 @@ export class AdminImportPackageService {
 
   getManifest(packageId: string): Observable<ImportPackageManifestSummaryDto> {
     return this.http.get<ImportPackageManifestSummaryDto>(`${this.base}/${packageId}/manifest`);
+  }
+
+  // ── Phase 4.7 (2026-07-17 reliable large uploads) — resumable, chunked-upload sessions. This
+  // is what the page now uses for every ZIP archive; works identically whether the API's storage
+  // backend is Local or MinIO, since bytes are always proxied through the API in bounded parts. ──
+
+  createUploadSession(
+    cefrResourceSourceId: string, originalFileName: string, declaredTotalSizeBytes: number,
+    declaredChecksumSha256: string | null, notes?: string,
+  ): Observable<CreateImportUploadSessionResult> {
+    return this.http.post<CreateImportUploadSessionResult>(`${this.base}/upload-sessions`, {
+      cefrResourceSourceId, originalFileName, declaredTotalSizeBytes, declaredChecksumSha256, notes: notes ?? null,
+    });
+  }
+
+  /** Uploads one part with real byte-level progress events — the caller filters
+   *  `HttpEventType.UploadProgress` out of the returned event stream to drive a progress bar. */
+  uploadSessionPart(
+    sessionId: string, partNumber: number, chunk: Blob, checksumSha256?: string,
+  ): Observable<HttpEvent<UploadImportSessionPartResult>> {
+    const params = new URLSearchParams({ declaredSizeBytes: String(chunk.size) });
+    if (checksumSha256) params.set('checksumSha256', checksumSha256);
+    return this.http.put<UploadImportSessionPartResult>(
+      `${this.base}/upload-sessions/${sessionId}/parts/${partNumber}?${params.toString()}`,
+      chunk,
+      { reportProgress: true, observe: 'events', headers: { 'Content-Type': 'application/octet-stream' } },
+    );
+  }
+
+  getUploadSessionStatus(sessionId: string): Observable<ImportUploadSessionStatusDto> {
+    return this.http.get<ImportUploadSessionStatusDto>(`${this.base}/upload-sessions/${sessionId}`);
+  }
+
+  completeUploadSession(sessionId: string): Observable<ImportPackageManifestSummaryDto> {
+    return this.http.post<ImportPackageManifestSummaryDto>(`${this.base}/upload-sessions/${sessionId}/complete`, {});
+  }
+
+  abortUploadSession(sessionId: string): Observable<unknown> {
+    return this.http.post(`${this.base}/upload-sessions/${sessionId}/abort`, {});
   }
 
   /** Automatic — deterministic clustering + a bounded AI review + cost/time estimate. No manual

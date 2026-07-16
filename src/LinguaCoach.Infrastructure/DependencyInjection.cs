@@ -693,6 +693,11 @@ public static class DependencyInjection
             LinguaCoach.Infrastructure.ResourceImport.ZipPackageInspector>();
         services.AddScoped<LinguaCoach.Application.ResourceImport.IImportPackageUploadService,
             LinguaCoach.Infrastructure.ResourceImport.ImportPackageUploadService>();
+        // Phase 4.7 (2026-07-17) — resumable, chunked-upload session lifecycle; this is what the
+        // Import UI actually calls for ZIP archives now (see ImportUploadSessionContracts.cs for
+        // why the older single-shot presigned-PUT service above remains but is no longer used by it).
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IImportUploadSessionService,
+            LinguaCoach.Infrastructure.ResourceImport.ImportUploadSessionService>();
         // Phase 4.2 — the canonical entry point for pasted text and/or loose (non-ZIP) files.
         services.AddScoped<LinguaCoach.Application.ResourceImport.IImportPackageSubmissionService,
             LinguaCoach.Infrastructure.ResourceImport.ImportPackageSubmissionService>();

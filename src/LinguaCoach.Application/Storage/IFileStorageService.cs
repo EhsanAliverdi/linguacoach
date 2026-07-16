@@ -2,11 +2,20 @@ namespace LinguaCoach.Application.Storage;
 
 public interface IFileStorageService
 {
+    /// <summary>
+    /// Phase 4.7 (2026-07-17 reliable large uploads) — <paramref name="knownSizeBytes"/> is an
+    /// optional size hint. When supplied, an implementation that would otherwise need to fully
+    /// buffer <paramref name="content"/> to learn its length up front (e.g. MinIO's
+    /// <c>PutObjectArgs.WithObjectSize</c>) can skip that buffering entirely and stream directly —
+    /// see <c>MinioFileStorageService.SaveAsync</c>. Existing callers that omit it keep the prior
+    /// (buffered) behavior; new large-upload code paths always supply it.
+    /// </summary>
     Task<string> SaveAsync(
         string key,
         Stream content,
         string contentType,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        long? knownSizeBytes = null);
 
     Task<Stream> ReadAsync(
         string key,

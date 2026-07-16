@@ -10,6 +10,44 @@ export interface RequestImportPackageUploadResult {
   storageKey: string;
 }
 
+// Phase 4.7 (2026-07-17 reliable large uploads) — resumable, chunked-upload session lifecycle.
+// Replaces the direct-to-storage presigned-PUT flow above (requestUpload/putToStorage/
+// confirmUpload) as the path the Import UI actually uses for ZIP archives; that older flow is
+// kept only for API compatibility (see AdminImportPackageController's doc comments).
+
+export interface CreateImportUploadSessionResult {
+  sessionId: string;
+  partSizeBytes: number;
+  totalPartsExpected: number;
+  expiresAtUtc: string;
+}
+
+export interface UploadImportSessionPartResult {
+  partNumber: number;
+  sizeBytes: number;
+  sha256Checksum: string | null;
+  uploadedAtUtc: string;
+}
+
+export interface ImportUploadSessionPartSummary {
+  partNumber: number;
+  sizeBytes: number;
+  sha256Checksum: string | null;
+  uploadedAtUtc: string;
+}
+
+export interface ImportUploadSessionStatusDto {
+  sessionId: string;
+  status: 'Created' | 'InProgress' | 'Completed' | 'Aborted';
+  originalFileName: string;
+  declaredTotalSizeBytes: number;
+  partSizeBytes: number;
+  totalPartsExpected: number;
+  uploadedParts: ImportUploadSessionPartSummary[];
+  importPackageId: string | null;
+  expiresAtUtc: string;
+}
+
 export interface ImportPackageFolderGroup {
   folderPath: string;
   fileCount: number;

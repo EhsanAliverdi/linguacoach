@@ -52,8 +52,28 @@ public sealed class MinioFileStorageService : IFileStorageService
             .Build();
     }
 
-    public async Task<string> SaveAsync(string key, Stream content, string contentType, CancellationToken cancellationToken = default)
+    public async Task<string> SaveAsync(string key, Stream content, string contentType, CancellationToken cancellationToken = default, long? knownSizeBytes = null)
     {
+        // Phase 4.7 (2026-07-17 reliable large uploads) — when the caller already knows the exact
+        // size (every large-upload part/assembly call does), stream straight to MinIO without
+        // buffering the whole payload into a MemoryStream first. Callers that don't supply a size
+        // hint (pre-existing, typically-small uploads such as TTS/speaking audio) keep the prior
+        // buffered behavior — WithObjectSize needs a known length either way, and buffering a
+        // small payload is not the problem this phase fixes.
+        if (knownSizeBytes.HasValue)
+        {
+            var sizedArgs = new PutObjectArgs()
+                .WithBucket(_bucketName)
+                .WithObject(key)
+                .WithStreamData(content)
+                .WithObjectSize(knownSizeBytes.Value)
+                .WithContentType(contentType);
+
+            await _minio.PutObjectAsync(sizedArgs, cancellationToken);
+            _logger.LogDebug("MinIO saved (streamed) Key={Key} Bytes={Bytes}", key, knownSizeBytes.Value);
+            return key;
+        }
+
         var ms = new MemoryStream();
         await content.CopyToAsync(ms, cancellationToken);
         ms.Position = 0;
@@ -72,15 +92,26 @@ public sealed class MinioFileStorageService : IFileStorageService
 
     public async Task<Stream> ReadAsync(string key, CancellationToken cancellationToken = default)
     {
-        var ms = new MemoryStream();
-        var args = new GetObjectArgs()
-            .WithBucket(_bucketName)
-            .WithObject(key)
-            .WithCallbackStream(stream => stream.CopyTo(ms));
+        // Phase 4.7 (2026-07-17 reliable large uploads) — previously buffered the entire object
+        // into a MemoryStream (a 2GB archive meant a 2GB in-process allocation). ZipArchive (Read
+        // mode) needs a seekable stream, so a plain forward-only pass-through isn't an option
+        // either; a temp-file-backed FileStream gives the same seekability with bounded memory —
+        // MinIO's callback stream is copied straight to disk, never fully held in RAM.
+        var tempPath = Path.Combine(Path.GetTempPath(), $"minio-read-{Guid.NewGuid():N}.tmp");
+        await using (var fileWriter = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 81920, useAsync: true))
+        {
+            var args = new GetObjectArgs()
+                .WithBucket(_bucketName)
+                .WithObject(key)
+                .WithCallbackStream(stream => stream.CopyTo(fileWriter));
 
-        await _minio.GetObjectAsync(args, cancellationToken);
-        ms.Position = 0;
-        return ms;
+            await _minio.GetObjectAsync(args, cancellationToken);
+        }
+
+        var readStream = new FileStream(
+            tempPath, FileMode.Open, FileAccess.Read, FileShare.Read,
+            bufferSize: 81920, options: FileOptions.DeleteOnClose | FileOptions.Asynchronous);
+        return readStream;
     }
 
     public async Task DeleteAsync(string key, CancellationToken cancellationToken = default)

@@ -93,46 +93,7 @@ internal sealed class ImportPackageUploadService : IImportPackageUploadService
                 "Upload was not found in storage. Confirm the upload finished successfully before retrying.");
         }
 
-        package.MoveToStatus(ImportPackageStatus.InspectingPackage);
-        await _db.SaveChangesAsync(ct);
-
-        await using var archiveStream = await _storage.ReadAsync(package.ArchiveStorageKey, ct);
-        // ZipArchive (Read mode) requires a seekable stream — copy to a seekable buffer only if
-        // the storage-layer stream itself isn't seekable (MinIO reads are already fully-buffered
-        // MemoryStreams; Local reads are seekable FileStreams).
-        Stream seekableStream = archiveStream;
-        MemoryStream? bufferedCopy = null;
-        if (!archiveStream.CanSeek)
-        {
-            bufferedCopy = new MemoryStream();
-            await archiveStream.CopyToAsync(bufferedCopy, ct);
-            bufferedCopy.Position = 0;
-            seekableStream = bufferedCopy;
-        }
-
-        ImportPackageManifest manifest;
-        try
-        {
-            manifest = await _inspector.InspectAsync(seekableStream, ct);
-        }
-        finally
-        {
-            bufferedCopy?.Dispose();
-        }
-
-        var manifestJson = JsonSerializer.Serialize(manifest);
-
-        if (!manifest.IsAccepted)
-        {
-            package.MarkFailed(manifest.RejectionReason ?? "Archive was rejected during inspection.", DateTimeOffset.UtcNow);
-            await _db.SaveChangesAsync(ct);
-            return ToSummary(package, manifest);
-        }
-
-        package.SetManifest(manifestJson, manifest.EntryCount);
-        await _db.SaveChangesAsync(ct);
-
-        return ToSummary(package, manifest);
+        return await ImportPackageInspectionRunner.InspectAndPersistAsync(package, _db, _storage, _inspector, ct);
     }
 
     public async Task<ImportPackageManifestSummaryDto?> GetManifestSummaryAsync(Guid importPackageId, CancellationToken ct = default)

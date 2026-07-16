@@ -125,6 +125,10 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     // Phase 4.4D — durable, retry-safe billable-operation ledger (AI candidate-enrichment scope)
     public DbSet<ImportAiEnrichmentOperation> ImportAiEnrichmentOperations => Set<ImportAiEnrichmentOperation>();
 
+    // Phase 4.7 — resumable, chunked-upload session lifecycle for large Import Package archives
+    public DbSet<ImportUploadSession> ImportUploadSessions => Set<ImportUploadSession>();
+    public DbSet<ImportUploadSessionPart> ImportUploadSessionParts => Set<ImportUploadSessionPart>();
+
     // Phase H3 — Lesson foundation (reviewable teaching/explanation blocks generated from
     // published Resource Bank rows; the "Learn" half of a future Module)
     public DbSet<Lesson> Lessons => Set<Lesson>();

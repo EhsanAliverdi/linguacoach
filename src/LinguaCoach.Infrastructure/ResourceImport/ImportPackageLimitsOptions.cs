@@ -52,4 +52,22 @@ public sealed class ImportPackageLimitsOptions
 
     public int MaxConcurrentPackageJobs { get; set; } = 2;
     public int MaxJobRetries { get; set; } = 3;
+
+    /// <summary>Phase 4.7 (2026-07-17 reliable large uploads) — size of each chunk the client
+    /// uploads to the API for a resumable session-based upload. 32 MB keeps every part comfortably
+    /// bounded in memory (streamed straight to storage, never buffered whole) and small enough to
+    /// retry quickly on a flaky connection without resending a large amount of data.</summary>
+    public long ChunkedUploadPartSizeBytes { get; set; } = 32 * 1024 * 1024; // 32 MB
+
+    /// <summary>Ceiling on the number of parts a single session may declare — derived from
+    /// <see cref="MaxCompressedSizeBytes"/> / <see cref="ChunkedUploadPartSizeBytes"/> with
+    /// headroom; guards against a caller declaring an absurd part count to exhaust session-part
+    /// bookkeeping rows.</summary>
+    public int MaxUploadPartCount { get; set; } = 128;
+
+    /// <summary>How long an upload session may sit idle (no completion) before it is considered
+    /// expired and must be recreated. Parts already uploaded are not implicitly deleted by
+    /// expiry alone — an explicit abort (or a fresh completion attempt, which will reject due to
+    /// expiry) is what triggers cleanup.</summary>
+    public int UploadSessionExpiryHours { get; set; } = 24;
 }

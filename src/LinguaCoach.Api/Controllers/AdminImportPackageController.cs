@@ -20,6 +20,7 @@ namespace LinguaCoach.Api.Controllers;
 public sealed class AdminImportPackageController : ControllerBase
 {
     private readonly IImportPackageUploadService _uploadService;
+    private readonly IImportUploadSessionService _uploadSessionService;
     private readonly IImportPackageSubmissionService _submissionService;
     private readonly IImportExecutionPlanGenerationService _planGenerationService;
     private readonly IImportExecutionPlanApprovalService _planApprovalService;
@@ -31,6 +32,7 @@ public sealed class AdminImportPackageController : ControllerBase
 
     public AdminImportPackageController(
         IImportPackageUploadService uploadService,
+        IImportUploadSessionService uploadSessionService,
         IImportPackageSubmissionService submissionService,
         IImportExecutionPlanGenerationService planGenerationService,
         IImportExecutionPlanApprovalService planApprovalService,
@@ -41,6 +43,7 @@ public sealed class AdminImportPackageController : ControllerBase
         IImportAiEnrichmentOperationSummaryQuery aiOperationSummaryQuery)
     {
         _uploadService = uploadService;
+        _uploadSessionService = uploadSessionService;
         _submissionService = submissionService;
         _planGenerationService = planGenerationService;
         _planApprovalService = planApprovalService;
@@ -111,6 +114,112 @@ public sealed class AdminImportPackageController : ControllerBase
         {
             var result = await _uploadService.ConfirmUploadAsync(new ConfirmImportPackageUploadCommand(packageId), ct);
             return Ok(result);
+        }
+        catch (ResourceImportValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    // ── Phase 4.7 (2026-07-17 reliable large uploads) — resumable, chunked-upload sessions.
+    // This is what the Import UI now calls for every ZIP archive, regardless of storage backend.
+    // See ImportUploadSessionContracts.cs for the full design rationale. ──
+
+    // POST api/admin/import-packages/upload-sessions
+    [HttpPost("upload-sessions")]
+    public async Task<IActionResult> CreateUploadSession([FromBody] CreateUploadSessionBody body, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _uploadSessionService.CreateAsync(new CreateImportUploadSessionCommand(
+                body.CefrResourceSourceId, body.OriginalFileName, body.DeclaredTotalSizeBytes,
+                CurrentUserId(), body.DeclaredChecksumSha256, body.Notes), ct);
+            return Ok(result);
+        }
+        catch (ResourceImportValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    // PUT api/admin/import-packages/upload-sessions/{sessionId}/parts/{partNumber}?declaredSizeBytes=...&checksumSha256=...
+    // Raw request body = the chunk's bytes. Re-uploading the same partNumber replaces it — this is
+    // the "retry a failed part" path, no separate endpoint needed.
+    [HttpPut("upload-sessions/{sessionId:guid}/parts/{partNumber:int}")]
+    [RequestSizeLimit(64_000_000)]
+    public async Task<IActionResult> UploadSessionPart(
+        Guid sessionId, int partNumber, [FromQuery] long declaredSizeBytes, [FromQuery] string? checksumSha256, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _uploadSessionService.UploadPartAsync(new UploadImportSessionPartCommand(
+                sessionId, partNumber, Request.Body, declaredSizeBytes, CurrentUserId(), checksumSha256), ct);
+            return Ok(result);
+        }
+        catch (ImportUploadSessionForbiddenException)
+        {
+            return Forbid();
+        }
+        catch (ResourceImportValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    // GET api/admin/import-packages/upload-sessions/{sessionId} — current status + which parts
+    // have already been received, so a refreshed page can resume without re-uploading them.
+    [HttpGet("upload-sessions/{sessionId:guid}")]
+    public async Task<IActionResult> GetUploadSessionStatus(Guid sessionId, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _uploadSessionService.GetStatusAsync(sessionId, CurrentUserId(), ct);
+            return Ok(result);
+        }
+        catch (ImportUploadSessionForbiddenException)
+        {
+            return Forbid();
+        }
+        catch (ResourceImportValidationException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    // POST api/admin/import-packages/upload-sessions/{sessionId}/complete — idempotent; assembles
+    // parts, verifies size/checksum, creates the ImportPackage, and runs inspection. Calling this
+    // again after success returns the same package summary without reprocessing.
+    [HttpPost("upload-sessions/{sessionId:guid}/complete")]
+    public async Task<IActionResult> CompleteUploadSession(Guid sessionId, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _uploadSessionService.CompleteAsync(
+                new CompleteImportUploadSessionCommand(sessionId, CurrentUserId()), ct);
+            return Ok(result);
+        }
+        catch (ImportUploadSessionForbiddenException)
+        {
+            return Forbid();
+        }
+        catch (ResourceImportValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    // POST api/admin/import-packages/upload-sessions/{sessionId}/abort
+    [HttpPost("upload-sessions/{sessionId:guid}/abort")]
+    public async Task<IActionResult> AbortUploadSession(Guid sessionId, CancellationToken ct)
+    {
+        try
+        {
+            await _uploadSessionService.AbortAsync(new AbortImportUploadSessionCommand(sessionId, CurrentUserId()), ct);
+            return Ok(new { status = "Aborted" });
+        }
+        catch (ImportUploadSessionForbiddenException)
+        {
+            return Forbid();
         }
         catch (ResourceImportValidationException ex)
         {
@@ -321,6 +430,10 @@ public sealed class AdminImportPackageController : ControllerBase
 
     public sealed record RequestImportPackageUploadBody(
         Guid CefrResourceSourceId, string OriginalFileName, long DeclaredSizeBytes, string? Notes);
+
+    public sealed record CreateUploadSessionBody(
+        Guid CefrResourceSourceId, string OriginalFileName, long DeclaredTotalSizeBytes,
+        string? DeclaredChecksumSha256, string? Notes);
 
     public sealed record GeneratePlanBody(string? ChangeReason);
 

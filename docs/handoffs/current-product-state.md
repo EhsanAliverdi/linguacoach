@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-16 (Phase 4.6 — media review and downstream discovery)
+lastUpdated: 2026-07-17 (Phase 4.7 — reliable large uploads)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,43 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-16 (Phase 4.6 — media review and downstream discovery)
+Last updated: 2026-07-17 (Phase 4.7 — reliable large uploads)
+
+## Phase 4.7: Reliable large uploads (2026-07-17)
+
+Replaces the fragile single-request ZIP upload (`upload-request` → presigned PUT → `confirm-upload`)
+with a resumable, chunked, memory-safe upload workflow for Import Packages. Review:
+`docs/reviews/2026-07-17-phase-4-7-reliable-large-uploads-review.md`.
+
+**Upload-session lifecycle:** new `ImportUploadSession`/`ImportUploadSessionPart` entities. Client
+creates a session (`POST .../upload-sessions`), uploads bounded 32MB parts one at a time
+(`PUT .../upload-sessions/{id}/parts/{n}`, retryable/resumable using the same session id), then
+completes (`POST .../upload-sessions/{id}/complete` — idempotent, verifies part contiguity/size/
+checksum before assembling and creating the `ImportPackage`, which then goes through the existing
+inspection pipeline unchanged). `POST .../upload-sessions/{id}/abort` cancels; a completed session
+cannot be aborted and an aborted session can never complete. Every session-scoped endpoint enforces
+that the requesting user matches the session's creator (403 otherwise).
+
+**Storage-backend-agnostic by design:** chunks are proxied through the API (not client-direct-to-
+storage presigned PUT per part — the installed Minio SDK exposes no public multipart primitives),
+so the same code path works whether the configured backend is Local or MinIO. The previously
+broken `local://` presigned-PUT marker for Local storage now throws a clear error instead of
+silently failing end-to-end.
+
+**Memory safety:** `MinioFileStorageService.ReadAsync` no longer fully buffers an object into a
+`MemoryStream` (was a full-archive-sized allocation, e.g. up to 2GB) — it now streams to a
+temp file and returns a `FileStream`. `SaveAsync` streams directly (no buffering) whenever the
+caller supplies a known size, which every large-upload call site does.
+
+**Angular:** `admin-content-import` now shows real byte-level upload progress (`HttpEventType.
+UploadProgress`), supports Cancel (aborts the session), and resumes an interrupted upload using the
+same session id (persisted in `sessionStorage`, keyed by source+filename+size) — a failed part is
+retried simply by clicking Submit again, no full restart. Also fixed a pre-existing bug where
+`canSubmit`/`selectedFilesLabel` were `computed()` signals over non-signal fields and so never
+re-evaluated after the first render (found via Playwright reproduction while building this phase).
+
+**Proven upload ceiling: still 2GB** (`ImportPackageLimitsOptions.MaxCompressedSizeBytes`, unchanged).
+Not raised this phase — see the review doc's "Proven upload limit" section for why.
 
 ## Phase 4.6: Media review and downstream discovery (2026-07-16)
 

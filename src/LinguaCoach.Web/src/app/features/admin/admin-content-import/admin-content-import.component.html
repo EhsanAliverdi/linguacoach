@@ -81,10 +81,25 @@
         </sp-admin-form-field>
       </div>
 
+      <!-- ── Phase 4.7 — real byte-level progress for a chunked ZIP upload, with cancel. ── -->
+      @if (submitting() && totalUploadBytes() > 0) {
+        <div class="sp-admin-hint" style="margin-top:8px;">
+          {{ submitStage() }} — {{ uploadPercent() }}%
+          <div style="height:6px; border-radius:3px; background:var(--sp-admin-border); overflow:hidden; margin-top:4px;">
+            <div [style.width.%]="uploadPercent()" style="height:100%; background:var(--sp-admin-primary);"></div>
+          </div>
+        </div>
+      }
+
       <div class="sp-admin-form-actions" style="margin-top:1rem;">
         <sp-admin-button variant="primary" [disabled]="submitting() || !canSubmit()" (clicked)="submit()">
           {{ submitting() ? submitStage() : 'Submit for review' }}
         </sp-admin-button>
+        @if (activeUploadSessionId()) {
+          <sp-admin-button variant="neutral" appearance="outline" [disabled]="cancellingUpload()" (clicked)="cancelUpload()">
+            {{ cancellingUpload() ? 'Cancelling…' : 'Cancel upload' }}
+          </sp-admin-button>
+        }
       </div>
     </sp-admin-section-card>
   }

@@ -2,6 +2,8 @@ import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { HttpEventType } from '@angular/common/http';
+import { Observable, firstValueFrom } from 'rxjs';
 import { AdminResourceImportRunService, AdminResourceSourceService } from '../../../core/services/admin-resource-import.service';
 import { AdminImportPackageService } from '../../../core/services/admin-import-package.service';
 import {
@@ -87,17 +89,37 @@ export class AdminContentImportComponent implements OnInit {
   pastedText = '';
   selectedFiles: File[] = [];
 
-  readonly selectedFilesLabel = computed(() =>
-    this.selectedFiles.length === 0 ? null
+  // Phase 4.7 bugfix — these were previously Angular computed() signals, but they read plain
+  // (non-signal) fields (selectedFiles/pastedText/selectedSourceId are ngModel-bound instance
+  // properties, not signals). A computed() with zero signal dependencies memoizes its first
+  // result forever and never re-evaluates, so the Submit button silently stayed disabled after
+  // the very first render pass in the real (non-unit-test) app — plain methods recompute on every
+  // call, matching how they're already invoked in the template (`canSubmit()`, `selectedFilesLabel()`).
+  selectedFilesLabel(): string | null {
+    return this.selectedFiles.length === 0 ? null
       : this.selectedFiles.length === 1 ? this.selectedFiles[0].name
-      : `${this.selectedFiles.length} files selected`);
+      : `${this.selectedFiles.length} files selected`;
+  }
 
-  readonly canSubmit = computed(() =>
-    !!this.selectedSourceId && (this.pastedText.trim().length > 0 || this.selectedFiles.length > 0));
+  canSubmit(): boolean {
+    return !!this.selectedSourceId && (this.pastedText.trim().length > 0 || this.selectedFiles.length > 0);
+  }
 
   submitting = signal(false);
   submitStage = signal('Submitting…');
   submitError = signal('');
+
+  // ── Phase 4.7 (2026-07-17 reliable large uploads) — resumable, chunked ZIP upload state.
+  // uploadedBytes/totalBytes drive a real byte-level progress bar (not a static stage string);
+  // activeUploadSessionId being set is what makes the Cancel button available. ──
+  uploadedBytes = signal(0);
+  totalUploadBytes = signal(0);
+  readonly uploadPercent = computed(() => {
+    const total = this.totalUploadBytes();
+    return total === 0 ? 0 : Math.min(100, Math.round((this.uploadedBytes() / total) * 100));
+  });
+  activeUploadSessionId = signal<string | null>(null);
+  cancellingUpload = signal(false);
 
   // ── Source ────────────────────────────────────────────────────────────
   sources = signal<AdminResourceSourceDto[]>([]);
@@ -232,7 +254,7 @@ export class AdminContentImportComponent implements OnInit {
     }
 
     if (this.isZipSubmission) {
-      this.submitZip(this.selectedFiles[0]);
+      void this.submitZip(this.selectedFiles[0]);
       return;
     }
 
@@ -259,58 +281,138 @@ export class AdminContentImportComponent implements OnInit {
     });
   }
 
-  private submitZip(file: File): void {
+  /** Phase 4.7 (2026-07-17 reliable large uploads) — sessionStorage key so a page refresh (or a
+   *  manual retry after a failed part) can resume the same upload session instead of restarting
+   *  it. Keyed by source+name+size, since re-selecting the same file is what the browser actually
+   *  lets a user do after a refresh (there is no way to reattach a File handle automatically). */
+  private resumeKey(file: File): string {
+    return `import-upload-session:${this.selectedSourceId}:${file.name}:${file.size}`;
+  }
+
+  private saveResumeState(file: File, sessionId: string): void {
+    sessionStorage.setItem(this.resumeKey(file), sessionId);
+  }
+
+  private clearResumeState(file: File): void {
+    sessionStorage.removeItem(this.resumeKey(file));
+  }
+
+  private async submitZip(file: File): Promise<void> {
     if (file.size > ZIP_MAX_SINGLE_FILE_BYTES) {
       this.submitError.set('This archive exceeds the configured package size limit. Split it into smaller archives.');
       return;
     }
 
     this.submitting.set(true);
-    this.submitStage.set('Requesting upload URL…');
+    this.submitError.set('');
+    this.totalUploadBytes.set(file.size);
+    this.uploadedBytes.set(0);
 
-    this.packageSvc.requestUpload(this.selectedSourceId, file.name, file.size, this.noteDraft.trim() || undefined).subscribe({
-      next: uploadResult => {
-        this.submitStage.set('Uploading to storage…');
-        this.packageSvc.putToStorage(uploadResult.uploadUrl, file).subscribe({
-          next: () => {
-            this.submitStage.set('Inspecting package…');
-            this.packageSvc.confirmUpload(uploadResult.importPackageId).subscribe({
-              next: manifest => {
-                if (!manifest.isAccepted) {
-                  this.submitting.set(false);
-                  this.submitError.set(manifest.rejectionReason ?? 'Package was rejected during inspection.');
-                  return;
-                }
-                this.submitStage.set('Generating plan…');
-                this.packageSvc.generatePlan(uploadResult.importPackageId).subscribe({
-                  next: () => {
-                    this.submitting.set(false);
-                    this.router.navigate(['/admin/content/import/packages', uploadResult.importPackageId, 'plan']);
-                  },
-                  error: err => {
-                    this.submitting.set(false);
-                    this.router.navigate(['/admin/content/import/packages', uploadResult.importPackageId, 'plan']);
-                    this.submitError.set(err.error?.error ?? 'Could not generate a plan automatically — retry from the plan page.');
-                  },
-                });
-              },
-              error: err => {
-                this.submitting.set(false);
-                this.submitError.set(err.error?.error ?? 'Could not confirm the upload.');
-              },
-            });
-          },
-          error: () => {
-            this.submitting.set(false);
-            this.submitError.set(
-              'Upload to storage failed. If this environment uses local file storage (no MinIO), ' +
-              'direct browser upload is not yet supported there — configure MinIO to use large-package upload.');
-          },
-        });
-      },
-      error: err => {
+    try {
+      // ── Resume: if a session for this exact source+file+size is already in progress, reuse it
+      // and skip parts already uploaded, rather than restarting from byte zero. ──
+      let sessionId = sessionStorage.getItem(this.resumeKey(file));
+      let partSizeBytes: number;
+      let totalPartsExpected: number;
+      const alreadyUploaded = new Set<number>();
+
+      if (sessionId) {
+        try {
+          const status = await firstValueFrom(this.packageSvc.getUploadSessionStatus(sessionId));
+          if (status.status === 'Aborted' || status.status === 'Completed') throw new Error('stale-session');
+          partSizeBytes = status.partSizeBytes;
+          totalPartsExpected = status.totalPartsExpected;
+          for (const p of status.uploadedParts) { alreadyUploaded.add(p.partNumber); this.uploadedBytes.update(b => b + p.sizeBytes); }
+          this.submitStage.set('Resuming upload…');
+        } catch {
+          sessionId = null; // stale/expired/aborted — fall through and create a fresh session
+        }
+      }
+
+      if (!sessionId) {
+        this.submitStage.set('Starting upload session…');
+        const created = await firstValueFrom(this.packageSvc.createUploadSession(
+          this.selectedSourceId, file.name, file.size, null, this.noteDraft.trim() || undefined));
+        sessionId = created.sessionId;
+        partSizeBytes = created.partSizeBytes;
+        totalPartsExpected = created.totalPartsExpected;
+        this.saveResumeState(file, sessionId);
+        this.submitStage.set('Uploading…');
+      }
+
+      this.activeUploadSessionId.set(sessionId);
+
+      for (let partNumber = 1; partNumber <= totalPartsExpected!; partNumber++) {
+        if (alreadyUploaded.has(partNumber)) continue;
+        if (this.activeUploadSessionId() === null) return; // cancelled mid-loop
+
+        const start = (partNumber - 1) * partSizeBytes!;
+        const end = Math.min(start + partSizeBytes!, file.size);
+        const chunk = file.slice(start, end);
+
+        let uploadedThisPartSoFar = 0;
+        await firstValueFrom(new Observable<void>(observer => {
+          const sub = this.packageSvc.uploadSessionPart(sessionId!, partNumber, chunk).subscribe({
+            next: event => {
+              if (event.type === HttpEventType.UploadProgress && event.total) {
+                this.uploadedBytes.update(b => b - uploadedThisPartSoFar + event.loaded);
+                uploadedThisPartSoFar = event.loaded;
+              } else if (event.type === HttpEventType.Response) {
+                observer.next(); observer.complete();
+              }
+            },
+            error: err => observer.error(err),
+          });
+          return () => sub.unsubscribe();
+        }));
+      }
+
+      if (this.activeUploadSessionId() === null) return; // cancelled
+
+      this.submitStage.set('Verifying upload…');
+      const manifest = await firstValueFrom(this.packageSvc.completeUploadSession(sessionId));
+      this.clearResumeState(file);
+      this.activeUploadSessionId.set(null);
+
+      if (!manifest.isAccepted) {
         this.submitting.set(false);
-        this.submitError.set(err.error?.error ?? 'Could not start the upload.');
+        this.submitError.set(manifest.rejectionReason ?? 'Package was rejected during inspection.');
+        return;
+      }
+
+      this.submitStage.set('Generating plan…');
+      try {
+        await firstValueFrom(this.packageSvc.generatePlan(manifest.importPackageId));
+      } catch (err: any) {
+        this.submitError.set(err?.error?.error ?? 'Could not generate a plan automatically — retry from the plan page.');
+      }
+      this.submitting.set(false);
+      this.router.navigate(['/admin/content/import/packages', manifest.importPackageId, 'plan']);
+    } catch (err: any) {
+      this.submitting.set(false);
+      this.activeUploadSessionId.set(null);
+      this.submitError.set(
+        err?.error?.error ?? 'Upload failed. Fix the connection issue and click Submit again — the upload will resume, not restart.');
+    }
+  }
+
+  /** Cancels an in-progress chunked upload — aborts the server-side session (deleting any
+   *  already-received parts) and clears local resume state, so a subsequent submit starts fresh. */
+  cancelUpload(): void {
+    const sessionId = this.activeUploadSessionId();
+    if (!sessionId) return;
+    this.cancellingUpload.set(true);
+    this.activeUploadSessionId.set(null);
+    this.packageSvc.abortUploadSession(sessionId).subscribe({
+      next: () => {
+        this.cancellingUpload.set(false);
+        this.submitting.set(false);
+        if (this.selectedFiles[0]) this.clearResumeState(this.selectedFiles[0]);
+        this.submitError.set('Upload cancelled.');
+      },
+      error: () => {
+        this.cancellingUpload.set(false);
+        this.submitting.set(false);
       },
     });
   }

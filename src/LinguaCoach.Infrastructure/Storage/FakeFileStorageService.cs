@@ -11,13 +11,19 @@ public sealed class FakeFileStorageService : IFileStorageService
 {
     private readonly ConcurrentDictionary<string, (byte[] Bytes, string ContentType)> _store = new();
 
-    public async Task<string> SaveAsync(string key, Stream content, string contentType, CancellationToken cancellationToken = default)
+    public async Task<string> SaveAsync(string key, Stream content, string contentType, CancellationToken cancellationToken = default, long? knownSizeBytes = null)
     {
         using var ms = new MemoryStream();
         await content.CopyToAsync(ms, cancellationToken);
         _store[key] = (ms.ToArray(), contentType);
+        LastSaveUsedKnownSize = knownSizeBytes.HasValue;
         return key;
     }
+
+    /// <summary>Phase 4.7 test hook — records whether the most recent <see cref="SaveAsync"/>
+    /// call supplied a size hint, so tests can assert large-upload code paths avoid the
+    /// "buffer to learn the length" pattern without needing a real MinIO instance.</summary>
+    public bool? LastSaveUsedKnownSize { get; private set; }
 
     public Task<Stream> ReadAsync(string key, CancellationToken cancellationToken = default)
     {

@@ -1,5 +1,6 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
+import { HttpEventType } from '@angular/common/http';
 import { of, throwError } from 'rxjs';
 import { AdminContentImportComponent } from './admin-content-import.component';
 import { AdminResourceImportRunService, AdminResourceSourceService } from '../../../core/services/admin-resource-import.service';
@@ -34,6 +35,7 @@ describe('AdminContentImportComponent', () => {
   function setup(submitResult = SUBMIT_RESULT) {
     packageSvc = jasmine.createSpyObj('AdminImportPackageService', [
       'submit', 'requestUpload', 'putToStorage', 'confirmUpload', 'generatePlan',
+      'createUploadSession', 'uploadSessionPart', 'getUploadSessionStatus', 'completeUploadSession', 'abortUploadSession',
     ]);
     packageSvc.submit.and.returnValue(of(submitResult));
 
@@ -128,5 +130,85 @@ describe('AdminContentImportComponent', () => {
     expect((component as any).submitFile).toBeUndefined();
     expect((component as any).confirmMapping).toBeUndefined();
     expect((component as any).uploadPackage).toBeUndefined();
+  });
+
+  // ── Phase 4.7 (2026-07-17 reliable large uploads) — the resumable, chunked-upload ZIP flow. ──
+  describe('ZIP upload (resumable, chunked)', () => {
+    function zipFile(name: string, bytes: number): File {
+      return new File([new Uint8Array(bytes)], name, { type: 'application/zip' });
+    }
+
+    function fakePutEvents(partNumber: number, sizeBytes: number) {
+      return of(
+        { type: HttpEventType.UploadProgress, loaded: sizeBytes, total: sizeBytes } as any,
+        { type: HttpEventType.Response, body: { partNumber, sizeBytes, sha256Checksum: null, uploadedAtUtc: new Date().toISOString() } } as any,
+      );
+    }
+
+    beforeEach(() => sessionStorage.clear());
+
+    it('uploads every part, completes the session, generates a plan, and navigates to it', fakeAsync(() => {
+      setup();
+      component.selectedSourceId = 'src-1';
+      const file = zipFile('words.zip', 30);
+
+      packageSvc.createUploadSession.and.returnValue(of({ sessionId: 'sess-1', partSizeBytes: 10, totalPartsExpected: 3, expiresAtUtc: new Date().toISOString() }));
+      packageSvc.uploadSessionPart.and.callFake((sessionId: string, partNumber: number) => fakePutEvents(partNumber, 10));
+      packageSvc.completeUploadSession.and.returnValue(of(SUBMIT_RESULT));
+      packageSvc.generatePlan.and.returnValue(of({} as any));
+
+      component.onFilesSelected(file);
+      component.submit();
+      tick();
+
+      expect(packageSvc.createUploadSession).toHaveBeenCalledWith('src-1', 'words.zip', 30, null, undefined);
+      expect(packageSvc.uploadSessionPart).toHaveBeenCalledTimes(3);
+      expect(packageSvc.completeUploadSession).toHaveBeenCalledWith('sess-1');
+      expect(router.navigate).toHaveBeenCalledWith(['/admin/content/import/packages', 'pkg-1', 'plan']);
+      expect(component.activeUploadSessionId()).toBeNull();
+    }));
+
+    it('resumes an existing session for the same source/file/size instead of restarting', fakeAsync(() => {
+      setup();
+      component.selectedSourceId = 'src-1';
+      const file = zipFile('words.zip', 30);
+      sessionStorage.setItem(`import-upload-session:src-1:words.zip:30`, 'sess-existing');
+
+      packageSvc.getUploadSessionStatus.and.returnValue(of({
+        sessionId: 'sess-existing', status: 'InProgress', originalFileName: 'words.zip',
+        declaredTotalSizeBytes: 30, partSizeBytes: 10, totalPartsExpected: 3,
+        uploadedParts: [{ partNumber: 1, sizeBytes: 10, sha256Checksum: null, uploadedAtUtc: new Date().toISOString() }],
+        importPackageId: null, expiresAtUtc: new Date().toISOString(),
+      }));
+      packageSvc.uploadSessionPart.and.callFake((sessionId: string, partNumber: number) => fakePutEvents(partNumber, 10));
+      packageSvc.completeUploadSession.and.returnValue(of(SUBMIT_RESULT));
+      packageSvc.generatePlan.and.returnValue(of({} as any));
+
+      component.onFilesSelected(file);
+      component.submit();
+      tick();
+
+      expect(packageSvc.createUploadSession).not.toHaveBeenCalled();
+      // Only parts 2 and 3 should be (re-)uploaded — part 1 was already present.
+      expect(packageSvc.uploadSessionPart).toHaveBeenCalledTimes(2);
+      expect(packageSvc.completeUploadSession).toHaveBeenCalledWith('sess-existing');
+    }));
+
+    it('cancelling an in-progress upload aborts the session and clears resume state', () => {
+      setup();
+      component.selectedSourceId = 'src-1';
+      const file = zipFile('words.zip', 30);
+      component.onFilesSelected(file);
+
+      packageSvc.abortUploadSession.and.returnValue(of({}));
+      (component as any).activeUploadSessionId.set('sess-1');
+      sessionStorage.setItem('import-upload-session:src-1:words.zip:30', 'sess-1');
+
+      component.cancelUpload();
+
+      expect(packageSvc.abortUploadSession).toHaveBeenCalledWith('sess-1');
+      expect(component.activeUploadSessionId()).toBeNull();
+      expect(sessionStorage.getItem('import-upload-session:src-1:words.zip:30')).toBeNull();
+    });
   });
 });
