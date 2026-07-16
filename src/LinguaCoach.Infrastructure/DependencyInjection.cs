@@ -725,6 +725,9 @@ public static class DependencyInjection
         // Phase 4.4B — audited, concurrency-checked cost ceiling amendment and controlled resume.
         services.AddScoped<LinguaCoach.Application.ResourceImport.IImportCostCeilingAmendmentService,
             LinguaCoach.Infrastructure.ResourceImport.ImportCostCeilingAmendmentService>();
+        // Phase 4.4C — read-only STT operation-ledger visibility for the admin plan page.
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IImportSttOperationSummaryQuery,
+            LinguaCoach.Infrastructure.ResourceImport.ImportSttOperationSummaryQuery>();
 
         // Phase 16F/16G — Speaking Evaluation Foundation + Provider-Backed Evaluation
         if (configuration is not null)

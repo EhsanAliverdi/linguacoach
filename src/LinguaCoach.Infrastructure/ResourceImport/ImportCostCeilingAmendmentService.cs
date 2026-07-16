@@ -6,11 +6,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LinguaCoach.Infrastructure.ResourceImport;
 
-// ── Phase 4.4B — the audited, concurrency-checked replacement for the pre-4.4B
-// ApproveRevisedCostCeilingAsync path. "Cost ceiling may only be increased through an explicit
-// audited admin action" — every successful call here both raises the ceiling AND persists an
-// immutable ImportCostCeilingAmendment row in the same SaveChangesAsync, so the two can never
-// drift apart (no amendment without a ceiling change, no ceiling change without an amendment). ──
+// ── Phase 4.4B — the audited, concurrency-checked replacement for the unaudited
+// ApproveRevisedCostCeilingAsync path (removed in Phase 4.4C — see ImportPipelineBoundaryTests for
+// the guard preventing it from returning). "Cost ceiling may only be increased through an
+// explicit audited admin action" — every successful call here both raises the ceiling AND
+// persists an immutable ImportCostCeilingAmendment row in the same SaveChangesAsync, so the two
+// can never drift apart (no amendment without a ceiling change, no ceiling change without an
+// amendment). ──
 
 internal sealed class ImportCostCeilingAmendmentService : IImportCostCeilingAmendmentService
 {

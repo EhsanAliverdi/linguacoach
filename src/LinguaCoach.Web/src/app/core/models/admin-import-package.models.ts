@@ -210,3 +210,23 @@ export interface ImportCostCeilingAmendmentDto {
   administratorUserId: string | null;
   createdAtUtc: string;
 }
+
+/** Mirrors LinguaCoach.Application.ResourceImport.ImportSttOperationSummaryDto — one durable STT
+ *  operation ledger row, safe to display (no credentials, no full transcript text).
+ *  resultReusable is true once Status is 'Succeeded' — a future retry of this exact operation
+ *  reuses the result and does not call the provider or accrue cost again. */
+export interface ImportSttOperationSummaryDto {
+  operationId: string;
+  assetFileName: string;
+  assetRelativePath: string;
+  providerName: string;
+  modelName: string | null;
+  status: 'Pending' | 'Succeeded' | 'Failed';
+  attemptNumber: number;
+  resultReusable: boolean;
+  calculatedCost: number | null;
+  currency: string;
+  startedAtUtc: string;
+  completedAtUtc: string | null;
+  safeErrorMessage: string | null;
+}

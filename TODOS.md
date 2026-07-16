@@ -79,24 +79,25 @@ amendment-history table (previous → new ceiling, reason, timestamp per row). S
 new `ImportExecutionPlanDto` fields (`AccruedCost`, `AccruedCostCurrency`, `RemainingCeiling`,
 `CeilingAmendments`) — nothing is recomputed client-side.
 
-### TODO-4.4A-STT-OPERATION-SUMMARY — STT operation ledger visibility in the admin UI
-**What:** Surface `ImportSttOperation` rows (asset, status, provider/model, cost, reused/attempt
-count) on the package/plan page.
-**Why:** Deferred — no UI reads the ledger table today; it's only ever inspected via direct DB
-query or the integration tests that assert against it.
-**Deferred from:** Phase 4.4A engineering session, 2026-07-16.
+### TODO-4.4A-STT-OPERATION-SUMMARY — ~~STT operation ledger visibility in the admin UI~~ FIXED in Phase 4.4C
+**Fixed 2026-07-16 (Phase 4.4C).** New read-only `GET .../plan/{planId}/stt-operations` endpoint
+(`IImportSttOperationSummaryQuery`) plus an "STT operations" card on the plan page: file, status,
+provider/model, attempt count, calculated cost, completion time, and (for failed operations) a
+bounded, safe error message. `ResultReusable` (true once `Succeeded`) makes clear a reused
+operation was not called or charged again. Package/plan-scoped by construction (queries filter by
+both `ImportPackageId` and `ImportProfileId`); no provider credentials or transcript text exposed.
 
 ### TODO-4.4A-PLAYWRIGHT — E2E coverage for the plan editor
 **What:** Add Playwright specs covering: submit CSV → edit mapping/routing → preview → save →
 approve exact revision → verify read-only approved state → process → verify edited value in
-Candidate Review; plus a stale-concurrency-conflict scenario and a cost-paused/resume scenario.
-**Why:** Deferred — still blocked by the same pre-existing Karma/build-time TypeScript baseline
-errors (`feedbackPolicy`, `moduleSuggestions`) noted since Phase 4.2/4.3/4.4; this phase's own
-Angular unit spec compiles cleanly in isolation (`npx tsc --noEmit` shows no new errors) but the
-full Karma bundle still fails at the pre-existing unrelated spec files. Still tracked from
-Phase 4.2 (`TODO-4.2-PLAYWRIGHT`) and Phase 4.4 (`TODO-4.4-PLAYWRIGHT`). Still open after
-Phase 4.4B — see `TODO-4.4B-PLAYWRIGHT` below for the additional ceiling-amendment scenario this
-phase would have added.
+Candidate Review.
+**Why:** Still not done — this phase's scope was cost/STT, not the CSV mapping editor. **No longer
+blocked by Karma**, though: Phase 4.4C proved Playwright builds and runs independently of the
+Karma/`feedbackPolicy`/`moduleSuggestions` baseline blocker (`e2e/import-cost-ceiling-amendment.spec.ts`
+and `e2e/import-stt-operations.spec.ts` both run and pass) — the cost-paused/resume and STT-summary
+scenarios originally listed here are now covered by those two specs. Only the CSV mapping-editor
+end-to-end flow itself remains unwritten. Still tracked from Phase 4.2 (`TODO-4.2-PLAYWRIGHT`) and
+Phase 4.4 (`TODO-4.4-PLAYWRIGHT`).
 **Deferred from:** Phase 4.4A engineering session, 2026-07-16.
 
 ---
@@ -109,17 +110,30 @@ the Angular amendment form and cost-details/amendment-history display, replacing
 approve-revised-ceiling call. Deferred: the STT operation-summary view and Playwright coverage —
 both already tracked above as `TODO-4.4A-STT-OPERATION-SUMMARY` and `TODO-4.4A-PLAYWRIGHT`/below.
 
-### TODO-4.4B-PLAYWRIGHT — E2E coverage for the audited ceiling-amendment flow
-**What:** Add a Playwright spec: seed/drive a package into `PausedForCostApproval` → open the plan
-page → review cost details (accrued/ceiling/remaining/pause reason) → submit a higher ceiling and
-reason → verify the amendment appears in history → verify the package resumes. Plus a stale-
-concurrency variant (open the page in two contexts, amend from one, verify the other gets reload
-guidance).
-**Why:** Deferred — same pre-existing Karma/TypeScript baseline blocker as `TODO-4.4A-PLAYWRIGHT`
-prevents running any Angular browser test suite productively this session; the backend and
-component-level (non-rendered) coverage for this exact flow is in place and passing
-(`ImportCostCeilingAmendmentTests.cs`, `admin-import-package-plan.component.spec.ts`).
-**Deferred from:** Phase 4.4B engineering session, 2026-07-16.
+### TODO-4.4B-PLAYWRIGHT — ~~E2E coverage for the audited ceiling-amendment flow~~ FIXED in Phase 4.4C
+**Fixed 2026-07-16 (Phase 4.4C).** `e2e/import-cost-ceiling-amendment.spec.ts` — two specs, fully
+mocked at the network layer (`page.route`, no real backend, no real AI/STT call): a cost-paused
+package shows accrued/ceiling/pause reason, and submitting a higher ceiling + reason resumes the
+package and shows it in amendment history. Both run and pass under
+`npx playwright test --workers=1` (Karma's pre-existing baseline blocker does not affect
+Playwright, which builds its own bundle independently — see the Phase 4.4C review for why). A
+stale-concurrency Playwright scenario (two browser contexts racing the same amendment) was not
+added — the backend/component-level coverage for that exact case already exists and passes
+(`ImportCostCeilingAmendmentTests.cs`, `admin-import-package-plan.component.spec.ts`); a true
+dual-context Playwright variant is a reasonable future addition, not re-opened as a TODO here since
+it's a refinement, not a gap.
+
+---
+
+## Phase 4.4C — Cost path cleanup and STT operation visibility (2026-07-16)
+
+Removed the unaudited pre-4.4B `approve-revised-ceiling` endpoint/service method/command/frontend
+call entirely (the audited `amend-ceiling` path from Phase 4.4B is now the only way to raise a
+ceiling and resume), added architecture-test guards preventing it from returning, added a read-only
+STT operation-summary query + Angular section, and added the two Playwright specs this phase's
+predecessors deferred. No new deferrals from this session — see `TODO-4.4A-JSON-MAPPING-UI` and
+`TODO-4.4A-COST-SUMMARY-PANEL` (unchanged) for what's still open in the plan-editor/cost UI space,
+and `TODO-4.4A-PLAYWRIGHT` (narrowed above) for the remaining CSV mapping-editor E2E flow.
 
 ---
 

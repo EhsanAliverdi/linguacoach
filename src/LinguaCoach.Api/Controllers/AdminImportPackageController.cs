@@ -26,6 +26,7 @@ public sealed class AdminImportPackageController : ControllerBase
     private readonly IImportPlanDraftService _planDraftService;
     private readonly IImportPlanPreviewService _planPreviewService;
     private readonly IImportCostCeilingAmendmentService _costCeilingAmendmentService;
+    private readonly IImportSttOperationSummaryQuery _sttOperationSummaryQuery;
 
     public AdminImportPackageController(
         IImportPackageUploadService uploadService,
@@ -34,7 +35,8 @@ public sealed class AdminImportPackageController : ControllerBase
         IImportExecutionPlanApprovalService planApprovalService,
         IImportPlanDraftService planDraftService,
         IImportPlanPreviewService planPreviewService,
-        IImportCostCeilingAmendmentService costCeilingAmendmentService)
+        IImportCostCeilingAmendmentService costCeilingAmendmentService,
+        IImportSttOperationSummaryQuery sttOperationSummaryQuery)
     {
         _uploadService = uploadService;
         _submissionService = submissionService;
@@ -43,6 +45,7 @@ public sealed class AdminImportPackageController : ControllerBase
         _planDraftService = planDraftService;
         _planPreviewService = planPreviewService;
         _costCeilingAmendmentService = costCeilingAmendmentService;
+        _sttOperationSummaryQuery = sttOperationSummaryQuery;
     }
 
     // POST api/admin/import-packages/submit  multipart/form-data:
@@ -260,27 +263,12 @@ public sealed class AdminImportPackageController : ControllerBase
         }
     }
 
-    // POST api/admin/import-packages/{packageId}/plan/{planId}/approve-revised-ceiling — resumes
-    // a plan paused mid-execution because projected cost exceeded the approved ceiling (Part 6).
-    [HttpPost("{packageId:guid}/plan/{planId:guid}/approve-revised-ceiling")]
-    public async Task<IActionResult> ApproveRevisedCeiling(Guid packageId, Guid planId, [FromBody] ApprovePlanBody body, CancellationToken ct)
-    {
-        try
-        {
-            var result = await _planApprovalService.ApproveRevisedCostCeilingAsync(
-                new ApproveRevisedCostCeilingCommand(packageId, planId, body.ApprovedCostCeiling), ct);
-            return Ok(result);
-        }
-        catch (ResourceImportValidationException ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
-    }
-
     // POST api/admin/import-packages/{packageId}/plan/{planId}/amend-ceiling — Phase 4.4B — the
-    // audited, concurrency-checked replacement for approve-revised-ceiling: requires a reason,
-    // requires the new ceiling to exceed the current one, requires the plan to actually be
-    // PausedForCostApproval, and persists an immutable amendment audit row before resuming.
+    // one and only path to raise a paused plan's ceiling and resume it: audited (persists an
+    // immutable amendment row), concurrency-checked (409 on a stale ExpectedConcurrencyStamp),
+    // and requires the plan to actually be PausedForCostApproval and the new ceiling to exceed
+    // the current one. Phase 4.4C removed the prior unaudited approve-revised-ceiling endpoint —
+    // see ImportPipelineBoundaryTests for the guard preventing it from returning.
     [HttpPost("{packageId:guid}/plan/{planId:guid}/amend-ceiling")]
     public async Task<IActionResult> AmendCostCeiling(
         Guid packageId, Guid planId, [FromBody] AmendCostCeilingBody body, CancellationToken ct)
@@ -299,6 +287,16 @@ public sealed class AdminImportPackageController : ControllerBase
         {
             return BadRequest(new { error = ex.Message });
         }
+    }
+
+    // GET api/admin/import-packages/{packageId}/plan/{planId}/stt-operations — Phase 4.4C —
+    // read-only visibility into the durable STT operation ledger for one plan. No provider
+    // credentials, no full transcript text; every row is scoped to this exact package + plan.
+    [HttpGet("{packageId:guid}/plan/{planId:guid}/stt-operations")]
+    public async Task<IActionResult> GetSttOperationSummaries(Guid packageId, Guid planId, CancellationToken ct)
+    {
+        var result = await _sttOperationSummaryQuery.GetForPlanAsync(packageId, planId, ct);
+        return result is null ? NotFound() : Ok(result);
     }
 
     private Guid? CurrentUserId()

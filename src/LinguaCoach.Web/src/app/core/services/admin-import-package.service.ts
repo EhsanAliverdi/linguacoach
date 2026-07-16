@@ -7,6 +7,7 @@ import {
   ImportExecutionPlanDto,
   ImportPackageManifestSummaryDto,
   ImportPlanPreviewResult,
+  ImportSttOperationSummaryDto,
   RequestImportPackageUploadResult,
 } from '../models/admin-import-package.models';
 
@@ -76,15 +77,8 @@ export class AdminImportPackageService {
     return this.http.post<ImportExecutionPlanDto>(`${this.base}/${packageId}/plan/${planId}/reject`, { reason });
   }
 
-  /** @deprecated Phase 4.4B — superseded by amendCostCeiling(), which requires a reason and a
-   *  concurrency stamp and persists an audit record. Kept only because the backend endpoint still
-   *  exists for backward compatibility; the admin UI no longer calls this. */
-  approveRevisedCeiling(packageId: string, planId: string, newApprovedCostCeiling: number): Observable<ImportExecutionPlanDto> {
-    return this.http.post<ImportExecutionPlanDto>(
-      `${this.base}/${packageId}/plan/${planId}/approve-revised-ceiling`, { approvedCostCeiling: newApprovedCostCeiling });
-  }
-
-  /** Phase 4.4B — the audited, concurrency-checked ceiling amendment: requires the plan to
+  /** Phase 4.4B — the audited, concurrency-checked ceiling amendment (Phase 4.4C removed the
+   *  prior unaudited approve-revised-ceiling endpoint this superseded): requires the plan to
    *  actually be paused for cost, the new ceiling to exceed the current one, and a reason. On
    *  success, persists an immutable amendment audit row and resumes the package — never
    *  automatic, never silent. A stale expectedConcurrencyStamp is rejected with 409. */
@@ -120,5 +114,11 @@ export class AdminImportPackageService {
   ): Observable<ImportPlanPreviewResult> {
     return this.http.post<ImportPlanPreviewResult>(
       `${this.base}/${packageId}/plan/preview`, { groupInstructions, maxSampleRowsPerGroup: maxSampleRowsPerGroup ?? null });
+  }
+
+  /** Phase 4.4C — read-only visibility into the durable STT operation ledger for this plan. No
+   *  provider credentials, no full transcript text. */
+  getSttOperations(packageId: string, planId: string): Observable<ImportSttOperationSummaryDto[]> {
+    return this.http.get<ImportSttOperationSummaryDto[]>(`${this.base}/${packageId}/plan/${planId}/stt-operations`);
   }
 }

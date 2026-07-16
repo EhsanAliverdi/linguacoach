@@ -72,23 +72,6 @@ internal sealed class ImportExecutionPlanApprovalService : IImportExecutionPlanA
         return await ToDtoAsync(package, plan, ct);
     }
 
-    /// <summary>Phase 4.4 (pre-4.4B) simple resume path — kept working unchanged for backward
-    /// compatibility, but no longer used by the admin UI. Phase 4.4B's
-    /// <see cref="IImportCostCeilingAmendmentService"/> is the audited, concurrency-checked
-    /// replacement: it validates the package is actually paused for cost, requires the new ceiling
-    /// to exceed the current one, and persists an immutable <c>ImportCostCeilingAmendment</c> audit
-    /// row before resuming. This method still performs none of those checks.</summary>
-    public async Task<ImportExecutionPlanDto> ApproveRevisedCostCeilingAsync(ApproveRevisedCostCeilingCommand command, CancellationToken ct = default)
-    {
-        var (package, plan) = await LoadAsync(command.ImportPackageId, command.PlanId, ct);
-
-        plan.ApproveRevisedCeilingAndResume(command.NewApprovedCostCeiling);
-        package.MoveToStatus(ImportPackageStatus.Queued);
-
-        await _db.SaveChangesAsync(ct);
-        return await ToDtoAsync(package, plan, ct);
-    }
-
     public async Task<ImportExecutionPlanDto?> GetCurrentPlanAsync(Guid importPackageId, CancellationToken ct = default)
     {
         var package = await _db.ImportPackages.FirstOrDefaultAsync(p => p.Id == importPackageId, ct);

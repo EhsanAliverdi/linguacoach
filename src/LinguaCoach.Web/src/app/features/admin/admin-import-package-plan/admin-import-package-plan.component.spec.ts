@@ -1,7 +1,7 @@
 import { of, throwError } from 'rxjs';
 import { AdminImportPackagePlanComponent } from './admin-import-package-plan.component';
 import { AdminImportPackageService } from '../../../core/services/admin-import-package.service';
-import { ImportExecutionPlanDto, ImportPlanPreviewResult } from '../../../core/models/admin-import-package.models';
+import { ImportExecutionPlanDto, ImportPlanPreviewResult, ImportSttOperationSummaryDto } from '../../../core/models/admin-import-package.models';
 
 /**
  * Phase 4.4A — focused unit coverage for the editable plan draft workflow (include/exclude,
@@ -59,7 +59,8 @@ describe('AdminImportPackagePlanComponent', () => {
   function makeComponent(svc: Partial<AdminImportPackageService>) {
     const routeStub = { snapshot: { paramMap: { get: () => 'pkg-1' } } } as any;
     const routerStub = { navigate: jasmine.createSpy('navigate') } as any;
-    return new AdminImportPackagePlanComponent(svc as AdminImportPackageService, routeStub, routerStub);
+    const withDefaults: Partial<AdminImportPackageService> = { getSttOperations: () => of([]), ...svc };
+    return new AdminImportPackagePlanComponent(withDefaults as AdminImportPackageService, routeStub, routerStub);
   }
 
   it('loads a Draft/AwaitingApproval plan into editable form controls', () => {
@@ -367,6 +368,98 @@ describe('AdminImportPackagePlanComponent', () => {
       expect(component.plan()?.status).toBe('Executing');
       expect(component.plan()?.ceilingAmendments.length).toBe(1);
       expect(component.resumeModalOpen()).toBeFalse();
+    });
+  });
+
+  describe('STT operations (Phase 4.4C)', () => {
+    function sttRow(overrides: Partial<ImportSttOperationSummaryDto> = {}): ImportSttOperationSummaryDto {
+      return {
+        operationId: 'op-1',
+        assetFileName: 'audio.mp3',
+        assetRelativePath: 'audio.mp3',
+        providerName: 'openai',
+        modelName: 'whisper-1',
+        status: 'Succeeded',
+        attemptNumber: 1,
+        resultReusable: true,
+        calculatedCost: 0.03,
+        currency: 'USD',
+        startedAtUtc: '2026-01-01T00:00:00Z',
+        completedAtUtc: '2026-01-01T00:01:00Z',
+        safeErrorMessage: null,
+        ...overrides,
+      };
+    }
+
+    it('shows a loading state while the STT operations request is in flight', () => {
+      const component = makeComponent({ getManifest: () => of({} as any), getPlan: () => of(basePlan()) });
+      component.ngOnInit();
+      component.sttOperationsLoading.set(true);
+      expect(component.sttOperationsLoading()).toBeTrue();
+    });
+
+    it('shows an empty state when no STT operations have run yet', () => {
+      const component = makeComponent({
+        getManifest: () => of({} as any), getPlan: () => of(basePlan()), getSttOperations: () => of([]),
+      });
+      component.ngOnInit();
+
+      expect(component.sttOperations()).toEqual([]);
+      expect(component.sttOperationsLoading()).toBeFalse();
+    });
+
+    it('shows an error state when the STT operations request fails', () => {
+      const component = makeComponent({
+        getManifest: () => of({} as any), getPlan: () => of(basePlan()),
+        getSttOperations: () => throwError(() => ({ error: { error: 'boom' } })),
+      });
+      component.ngOnInit();
+
+      expect(component.sttOperationsError()).toBe('boom');
+      expect(component.sttOperations()).toBeNull();
+    });
+
+    it('displays a completed, reused operation without duplicate-charge semantics', () => {
+      const component = makeComponent({
+        getManifest: () => of({} as any), getPlan: () => of(basePlan()),
+        getSttOperations: () => of([sttRow()]),
+      });
+      component.ngOnInit();
+
+      const rows = component.sttOperations()!;
+      expect(rows.length).toBe(1);
+      expect(rows[0].status).toBe('Succeeded');
+      expect(rows[0].resultReusable).toBeTrue();
+      expect(rows[0].attemptNumber).toBe(1);
+    });
+
+    it('displays a failed operation with its safe error message', () => {
+      const component = makeComponent({
+        getManifest: () => of({} as any), getPlan: () => of(basePlan()),
+        getSttOperations: () => of([sttRow({
+          operationId: 'op-2', status: 'Failed', resultReusable: false, calculatedCost: null,
+          completedAtUtc: '2026-01-01T00:01:00Z', safeErrorMessage: 'STT provider returned no transcript.',
+        })]),
+      });
+      component.ngOnInit();
+
+      const rows = component.sttOperations()!;
+      expect(rows[0].status).toBe('Failed');
+      expect(rows[0].safeErrorMessage).toBe('STT provider returned no transcript.');
+      expect(rows[0].calculatedCost).toBeNull();
+    });
+
+    it('refreshes STT operations after regenerating the plan', () => {
+      let requestedPlanId = '';
+      const component = makeComponent({
+        getManifest: () => of({} as any), getPlan: () => of(basePlan()),
+        generatePlan: () => of(basePlan({ planId: 'plan-2' })),
+        getSttOperations: (_pkg, planId) => { requestedPlanId = planId; return of([]); },
+      });
+      component.ngOnInit();
+      component.generatePlan();
+
+      expect(requestedPlanId).toBe('plan-2');
     });
   });
 });

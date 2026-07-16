@@ -135,11 +135,6 @@ public sealed record RejectImportExecutionPlanCommand(
     Guid? RejectedByUserId,
     string Reason);
 
-public sealed record ApproveRevisedCostCeilingCommand(
-    Guid ImportPackageId,
-    Guid PlanId,
-    decimal NewApprovedCostCeiling);
-
 /// <summary>Thrown when a plan fails Part 9's pre-approval quality validation (e.g. STT required
 /// but no STT provider configured, candidate estimate exceeds configured limits). Distinct from
 /// <see cref="ResourceImportValidationException"/> so callers can surface it as a blocked-approval
@@ -383,6 +378,5 @@ public interface IImportExecutionPlanApprovalService
 {
     Task<ImportExecutionPlanDto> ApproveAsync(ApproveImportExecutionPlanCommand command, CancellationToken ct = default);
     Task<ImportExecutionPlanDto> RejectAsync(RejectImportExecutionPlanCommand command, CancellationToken ct = default);
-    Task<ImportExecutionPlanDto> ApproveRevisedCostCeilingAsync(ApproveRevisedCostCeilingCommand command, CancellationToken ct = default);
     Task<ImportExecutionPlanDto?> GetCurrentPlanAsync(Guid importPackageId, CancellationToken ct = default);
 }

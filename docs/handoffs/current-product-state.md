@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-16 (Phase 4.4B — audited cost ceiling amendment)
+lastUpdated: 2026-07-16 (Phase 4.4C — cost path cleanup and STT operation visibility)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,35 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-16 (Phase 4.4B — audited cost ceiling amendment)
+Last updated: 2026-07-16 (Phase 4.4C — cost path cleanup and STT operation visibility)
+
+## Phase 4.4C: Cost path cleanup and STT operation visibility (2026-07-16)
+
+**Backend cleanup:** the pre-4.4B, unaudited `POST .../plan/{planId}/approve-revised-ceiling`
+endpoint, its `ApproveRevisedCostCeilingCommand`, and its `IImportExecutionPlanApprovalService.
+ApproveRevisedCostCeilingAsync` implementation are all deleted — the audited `amend-ceiling`
+endpoint from Phase 4.4B is now the only way to raise a paused plan's ceiling and resume it. Three
+new architecture-test guards (`ImportPipelineBoundaryTests`) fail the build if the old type, route,
+or a second resume-capable method on the approval service interface ever comes back. The Angular
+service's now-unused `approveRevisedCeiling()` method was removed too.
+
+**STT operation visibility:** new read-only `GET .../plan/{planId}/stt-operations`
+(`IImportSttOperationSummaryQuery`) returns each ledgered `ImportSttOperation` as a safe summary —
+file name, provider/model, status, attempt count, calculated cost, timestamps, and (for failures) a
+bounded, safe error message. `ResultReusable` (true once `Succeeded`) is the honest "won't be
+charged again" signal. Scoped by construction to the requested package + plan; no provider
+credentials, no transcript text. New "STT operations" card on the plan page with loading/empty/
+error/populated states.
+
+**Playwright:** two specs now run and pass (`e2e/import-cost-ceiling-amendment.spec.ts`,
+`e2e/import-stt-operations.spec.ts`), fully network-mocked (`page.route`), proving Playwright is
+*not* blocked by the pre-existing Karma/`feedbackPolicy`/`moduleSuggestions` baseline issue — Karma
+bundles the whole spec suite together and fails there; Playwright's own build is independent.
+
+2338 unit / 1317 integration (+6) / 22 architecture (+3) tests pass. `npx tsc --noEmit` and the
+production Angular build are clean (same pre-existing baseline errors, zero new). Karma still
+blocked by the same pre-existing baseline TypeScript errors — confirmed unchanged, not worsened.
+Full detail: `docs/reviews/2026-07-16-phase-4-4c-cost-cleanup-and-stt-visibility-review.md`.
 
 ## Phase 4.4B: Audited cost ceiling amendment (2026-07-16)
 

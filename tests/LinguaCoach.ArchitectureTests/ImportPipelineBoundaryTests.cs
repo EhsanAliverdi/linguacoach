@@ -342,4 +342,74 @@ public class ImportPipelineBoundaryTests
         Assert.True(hasUniqueIndexOnLogicalKey,
             "ImportSttOperation.LogicalOperationKey must have a unique index — this is the DB-level dedup guarantee.");
     }
+
+    // ── Phase 4.4C (2026-07-16) — removes the unaudited approve-revised-ceiling resume path.
+    // Phase 4.4B's audited amend-ceiling endpoint is now the only way to raise a paused plan's
+    // ceiling and resume it. These tests fail the build if the old, unaudited path comes back. ──
+
+    /// <summary>The removed unaudited command/DTO type must not be reintroduced anywhere.</summary>
+    [Fact]
+    public void No_unaudited_cost_ceiling_resume_type_exists_in_any_layer()
+    {
+        var forbiddenTypeNames = new[] { "ApproveRevisedCostCeilingCommand" };
+        var offending = new List<string>();
+        foreach (var assembly in new[]
+                 {
+                     typeof(LinguaCoach.Domain.AssemblyMarker).Assembly,
+                     typeof(LinguaCoach.Application.AssemblyMarker).Assembly,
+                     typeof(LinguaCoach.Infrastructure.DependencyInjection).Assembly,
+                     typeof(LinguaCoach.Api.Controllers.AdminImportPackageController).Assembly,
+                 })
+        {
+            offending.AddRange(assembly.GetTypes()
+                .Where(t => forbiddenTypeNames.Contains(t.Name))
+                .Select(t => t.FullName ?? t.Name));
+        }
+
+        Assert.True(offending.Count == 0,
+            "Found a reintroduced unaudited cost-ceiling-resume type: " + string.Join(", ", offending) +
+            ". Use IImportCostCeilingAmendmentService.AmendAsync instead.");
+    }
+
+    /// <summary>No public route may match the shape of the removed unaudited resume endpoint.</summary>
+    [Fact]
+    public void No_unaudited_cost_ceiling_resume_route_exists()
+    {
+        var controllerAssembly = typeof(LinguaCoach.Api.Controllers.AdminImportPackageController).Assembly;
+        var offending = new List<string>();
+
+        foreach (var type in controllerAssembly.GetTypes())
+        {
+            if (!typeof(Microsoft.AspNetCore.Mvc.ControllerBase).IsAssignableFrom(type)) continue;
+
+            foreach (var method in type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+            {
+                var attrs = method.GetCustomAttributes(inherit: false).Select(a => a.ToString() ?? string.Empty);
+                if (attrs.Any(a => a.Contains("approve-revised-ceiling", StringComparison.OrdinalIgnoreCase)))
+                    offending.Add($"{type.Name}.{method.Name}");
+            }
+        }
+
+        Assert.True(offending.Count == 0,
+            "Found a reintroduced unaudited approve-revised-ceiling route: " + string.Join(", ", offending) +
+            ". amend-ceiling is the only route that may raise a paused plan's ceiling.");
+    }
+
+    /// <summary>Positive check — <c>IImportExecutionPlanApprovalService</c> (the interface the
+    /// removed unaudited method lived on) no longer declares any resume-shaped method; only
+    /// <c>IImportCostCeilingAmendmentService.AmendAsync</c> may raise a ceiling and resume.
+    /// </summary>
+    [Fact]
+    public void Approval_service_interface_no_longer_declares_a_ceiling_resume_method()
+    {
+        var approvalServiceMethods = typeof(IImportExecutionPlanApprovalService)
+            .GetMethods()
+            .Select(m => m.Name)
+            .ToList();
+
+        Assert.DoesNotContain("ApproveRevisedCostCeilingAsync", approvalServiceMethods);
+
+        var amendmentServiceMethods = typeof(IImportCostCeilingAmendmentService).GetMethods().Select(m => m.Name).ToList();
+        Assert.Contains("AmendAsync", amendmentServiceMethods);
+    }
 }
