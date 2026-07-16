@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-17 (Phase 4.7 — reliable large uploads)
+lastUpdated: 2026-07-17 (Phase 4.8 — security, concurrency and idempotency)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,45 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-17 (Phase 4.7 — reliable large uploads)
+Last updated: 2026-07-17 (Phase 4.8 — security, concurrency and idempotency)
+
+## Phase 4.8: Security, concurrency and idempotency (2026-07-17)
+
+Hardens Import Package processing so retries, crashes, concurrent workers, and unsafe archives
+cannot create duplicate work or corrupt package state. Review:
+`docs/reviews/2026-07-17-phase-4-8-security-concurrency-and-idempotency-review.md`.
+
+**Durable claim/lease:** `ImportPackage` gained `ClaimedByWorkerId`/`ClaimedAtUtc`/
+`ClaimExpiresAtUtc`/`ConcurrencyStamp` (a real EF concurrency token, portable across SQLite and
+Postgres). `ImportPackageProcessingService.ProcessPendingAsync` now atomically claims a package
+before touching it — a concurrent claim attempt against a stale row fails with
+`DbUpdateConcurrencyException` rather than racing. An expired lease (crashed worker) is
+automatically reclaimable; an active lease cannot be stolen. `[DisallowConcurrentExecution]` on the
+Quartz job remains, but is no longer the only protection.
+
+**Archive revalidation:** the legacy single-shot upload path (`ImportPackageUploadService`) now
+records a whole-archive checksum at inspection time (previously only the Phase 4.7 chunked-upload
+path did). Extraction (`ExtractAssetsAsync`) revalidates that checksum against the live stored
+archive before opening it, re-runs the full ZIP safety validator (`ZipEntrySafetyValidator`, shared
+with `ZipPackageInspector`) against every live entry rather than trusting the stored manifest, and
+rejects duplicate normalized archive paths within one extraction pass.
+
+**Upload-session completion:** `ImportUploadSession.ConcurrencyStamp` closes the double-completion
+race — two concurrent `CompleteAsync` calls for the same session can no longer both create an
+`ImportPackage`; the loser falls back to the same idempotent already-completed response a normal
+duplicate call returns.
+
+**Scope:** no new checkpoint stages beyond the existing two (`Extract`/`MapAndCreateCandidates`);
+STT/AI-enrichment ledger dedup (unique `LogicalOperationKey` index) was reviewed and found already
+correct under concurrency, unchanged this phase. No Resource-type, TTS, media-transcoding, or
+upload-redesign work.
+
+**Migration:** one additive migration, `Phase_4_8_ImportPackageClaimAndConcurrency`. 2,454 unit
+(+18) / 1,331 integration (unchanged) / 30 architecture (+4) tests pass. `npx tsc --noEmit` and the
+production Angular build are clean (same pre-existing baseline errors as prior phases, none new;
+no frontend files touched this phase). Karma remains blocked by the pre-existing `TODO-H8-2`
+spec-fixture gaps. Playwright was not run this phase (per instruction — manual verification
+deferred to the user).
 
 ## Phase 4.7: Reliable large uploads (2026-07-17)
 

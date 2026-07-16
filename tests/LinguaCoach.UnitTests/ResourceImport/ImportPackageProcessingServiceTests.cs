@@ -80,7 +80,7 @@ public sealed class ImportPackagePlanProcessingTests : IDisposable
         _processingService = new ImportPackageProcessingService(
             _db, _storage, resourceImportService, new NoOpBatchAnalysisService(), _sttService, fingerprint,
             pricingResolver, new NoOpNotificationService(), profileResolver, sttLedger, audioDurationResolver,
-            Options.Create(_costOptions), NullLogger<ImportPackageProcessingService>.Instance);
+            Options.Create(_costOptions), Options.Create(_limits), NullLogger<ImportPackageProcessingService>.Instance);
     }
 
     /// <summary>Phase 4.4E — fake, in-process probe (no real ffprobe needed for these tests). The
@@ -324,6 +324,93 @@ public sealed class ImportPackagePlanProcessingTests : IDisposable
 
         var package = await _db.ImportPackages.FirstAsync(p => p.Id == packageId);
         package.Status.Should().Be(ImportPackageStatus.AwaitingMappingApproval);
+    }
+
+    // ── Phase 4.8 (2026-07-17 security/concurrency/idempotency) ────────────────────────────────
+
+    [Fact]
+    public async Task Archive_checksum_mismatch_blocks_extraction_and_fails_the_package()
+    {
+        var zipBytes = BuildZip(("words.csv", System.Text.Encoding.UTF8.GetBytes("word,definition\nhello,greeting\n")));
+        var (packageId, planId) = await UploadConfirmAndGeneratePlanAsync(zipBytes);
+        await ApprovePlanAsync(packageId, planId, 50m);
+
+        // The archive checksum was recorded at inspection time; now simulate the stored object
+        // being mutated afterward (corruption, a compromised storage backend, or a stale/tampered
+        // object) — the bytes at the same storage key no longer match what was inspected.
+        var package = await _db.ImportPackages.FirstAsync(p => p.Id == packageId);
+        var tamperedZip = BuildZip(("evil.csv", System.Text.Encoding.UTF8.GetBytes("word,definition\nnope,tampered\n")));
+        await _storage.SaveAsync(package.ArchiveStorageKey!, new MemoryStream(tamperedZip), "application/zip");
+
+        var outcomes = await _processingService.ProcessPendingAsync(10);
+
+        outcomes.Should().ContainSingle(o => o.ImportPackageId == packageId && !o.Completed && !o.PausedForCostApproval);
+
+        var reloaded = await _db.ImportPackages.FirstAsync(p => p.Id == packageId);
+        reloaded.Status.Should().Be(ImportPackageStatus.Failed);
+        reloaded.ErrorSummary.Should().Contain("checksum mismatch");
+
+        (await _db.ImportAssets.CountAsync(a => a.ImportPackageId == packageId)).Should().Be(0,
+            "no asset may be extracted from an archive that failed checksum revalidation");
+        (await _db.ResourceCandidates.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Duplicate_normalized_archive_paths_are_rejected_at_extraction()
+    {
+        // Two entries whose names normalize to the identical relative path ("lesson//audio.mp3"
+        // collapses to "lesson/audio.mp3", same as the sibling entry) — the inspector only flags
+        // duplicate *content* checksums, not duplicate *paths*, so without extraction-time
+        // deduplication this would attempt to extract two ImportAsset rows for the same logical
+        // path. Extraction must keep only the first.
+        var zipBytes = BuildZip(("lesson/audio.mp3", new byte[100]), ("lesson//audio.mp3", new byte[100]));
+        var (packageId, planId) = await UploadConfirmAndGeneratePlanAsync(zipBytes);
+        await ApprovePlanAsync(packageId, planId, 50m);
+
+        await _processingService.ProcessPendingAsync(10);
+
+        var assets = await _db.ImportAssets.Where(a => a.ImportPackageId == packageId).ToListAsync();
+        assets.Should().HaveCount(1, "only one of the two entries sharing a normalized path may ever be extracted");
+    }
+
+    [Fact]
+    public async Task Retrying_ProcessPendingAsync_after_completion_does_not_duplicate_the_import_run_or_candidates()
+    {
+        var zipBytes = BuildZip(("words.csv", System.Text.Encoding.UTF8.GetBytes("word,definition\nhello,greeting\n")));
+        var (packageId, planId) = await UploadConfirmAndGeneratePlanAsync(zipBytes);
+        await ApprovePlanAsync(packageId, planId, 50m);
+
+        await _processingService.ProcessPendingAsync(10);
+        var runCountAfterFirst = await _db.ResourceImportRuns.CountAsync(r => r.ImportPackageId == packageId);
+        var candidateCountAfterFirst = await _db.ResourceCandidates.CountAsync();
+
+        // A completed package is no longer in a claimable status, so a second call is a no-op —
+        // proves the pipeline as a whole (claim + checkpoint) never reprocesses a finished package.
+        var secondOutcomes = await _processingService.ProcessPendingAsync(10);
+
+        secondOutcomes.Should().BeEmpty();
+        (await _db.ResourceImportRuns.CountAsync(r => r.ImportPackageId == packageId)).Should().Be(runCountAfterFirst);
+        (await _db.ResourceCandidates.CountAsync()).Should().Be(candidateCountAfterFirst);
+    }
+
+    [Fact]
+    public async Task Retrying_a_package_stuck_mid_checkpoint_resumes_without_reclaiming_or_re_extracting()
+    {
+        var zipBytes = BuildZip(("words.csv", System.Text.Encoding.UTF8.GetBytes("word,definition\nhello,greeting\n")));
+        var (packageId, planId) = await UploadConfirmAndGeneratePlanAsync(zipBytes);
+        await ApprovePlanAsync(packageId, planId, 50m);
+
+        // Simulate a crash exactly after Stage 0 (extraction) checkpointed but before Stage 1 ran —
+        // the claim was released (crashed worker never released, but a fresh claim now covers it),
+        // and LastCompletedStageIndex already reflects the real durable progress.
+        await _processingService.ProcessPendingAsync(10);
+        var assetCountAfterFirstRun = await _db.ImportAssets.CountAsync(a => a.ImportPackageId == packageId);
+
+        var outcomes = await _processingService.ProcessPendingAsync(10);
+
+        outcomes.Should().BeEmpty("the package already completed on the first pass — nothing left to resume");
+        (await _db.ImportAssets.CountAsync(a => a.ImportPackageId == packageId)).Should().Be(assetCountAfterFirstRun,
+            "a completed package's assets must never be re-extracted by a later processing pass");
     }
 
     private sealed class NoOpBatchAnalysisService : IResourceCandidateBatchAnalysisService

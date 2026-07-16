@@ -70,4 +70,10 @@ public sealed class ImportPackageLimitsOptions
     /// expiry alone — an explicit abort (or a fresh completion attempt, which will reject due to
     /// expiry) is what triggers cleanup.</summary>
     public int UploadSessionExpiryHours { get; set; } = 24;
+
+    /// <summary>Phase 4.8 (2026-07-17 security/concurrency/idempotency) — how long a package
+    /// processing claim/lease is held before it is considered abandoned (crashed worker) and
+    /// becomes claimable again. Must comfortably exceed one job execution's realistic duration —
+    /// the job renews the lease mid-pass rather than relying on this alone for a long package.</summary>
+    public int ClaimLeaseDurationMinutes { get; set; } = 10;
 }

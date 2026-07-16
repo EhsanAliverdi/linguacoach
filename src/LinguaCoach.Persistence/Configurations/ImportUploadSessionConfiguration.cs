@@ -34,6 +34,9 @@ internal sealed class ImportUploadSessionConfiguration : IEntityTypeConfiguratio
         builder.Property(e => e.CompletedAtUtc).HasColumnName("completed_at_utc");
         builder.Property(e => e.AbortedAtUtc).HasColumnName("aborted_at_utc");
 
+        // Phase 4.8 — real EF concurrency token; see the entity's doc comment on ConcurrencyStamp.
+        builder.Property(e => e.ConcurrencyStamp).HasColumnName("concurrency_stamp").IsRequired().IsConcurrencyToken();
+
         builder.HasOne<CefrResourceSource>()
             .WithMany()
             .HasForeignKey(e => e.CefrResourceSourceId)

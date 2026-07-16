@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Security.Cryptography;
 using System.Text.Json;
 using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.Ai;
@@ -38,6 +39,11 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
     private const int StageExtract = 0;
     private const int StageMapAndCreateCandidates = 1;
 
+    /// <summary>Phase 4.8 — a stable per-process identifier for the durable claim/lease (see
+    /// <c>ImportPackage.Claim</c>). Not a Guid regenerated per call — stable for the process's
+    /// lifetime so admin diagnostics/logs can attribute a stuck claim to a specific node/process.</summary>
+    private static readonly string WorkerId = $"{Environment.MachineName}:{Environment.ProcessId}";
+
     private readonly LinguaCoachDbContext _db;
     private readonly IFileStorageService _storage;
     private readonly IResourceImportService _resourceImportService;
@@ -50,6 +56,8 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
     private readonly IImportSttOperationLedger _sttLedger;
     private readonly IImportAssetAudioDurationResolver _audioDurationResolver;
     private readonly ImportCostEstimationOptions _costOptions;
+    private readonly ImportPackageLimitsOptions _limits;
+    private readonly TimeSpan _leaseDuration;
     private readonly ILogger<ImportPackageProcessingService> _logger;
 
     public ImportPackageProcessingService(
@@ -65,6 +73,7 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
         IImportSttOperationLedger sttLedger,
         IImportAssetAudioDurationResolver audioDurationResolver,
         IOptions<ImportCostEstimationOptions> costOptions,
+        IOptions<ImportPackageLimitsOptions> limits,
         ILogger<ImportPackageProcessingService> logger)
     {
         _db = db;
@@ -79,6 +88,8 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
         _sttLedger = sttLedger;
         _audioDurationResolver = audioDurationResolver;
         _costOptions = costOptions.Value;
+        _limits = limits.Value;
+        _leaseDuration = TimeSpan.FromMinutes(_limits.ClaimLeaseDurationMinutes);
         _logger = logger;
     }
 
@@ -86,7 +97,7 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
     {
         // Ordered client-side (not via OrderBy in the query) — SQLite (used by every test project
         // per this codebase's convention) cannot translate ORDER BY on a DateTimeOffset column.
-        var packages = (await _db.ImportPackages
+        var candidates = (await _db.ImportPackages
             .Where(p => p.Status == ImportPackageStatus.Queued
                      || p.Status == ImportPackageStatus.Extracting
                      || p.Status == ImportPackageStatus.Mapping
@@ -94,15 +105,81 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
             .Where(p => p.ApprovedImportProfileId != null)
             .ToListAsync(ct))
             .OrderBy(p => p.StartedAtUtc)
-            .Take(maxPackages)
             .ToList();
 
+        // Phase 4.8 — each candidate must be atomically claimed (see TryClaimAsync) before this
+        // worker may touch it; a package another live worker already holds a lease on, or that
+        // fails the claim due to a concurrent winner, is skipped this pass rather than processed
+        // twice. Up to maxPackages *successfully claimed* packages are processed per call — a
+        // skipped-due-to-claim-conflict package does not count against the budget.
         var outcomes = new List<ImportPackageProcessingOutcome>();
-        foreach (var package in packages)
+        foreach (var package in candidates)
         {
-            outcomes.Add(await ProcessOnePackageAsync(package, ct));
+            if (outcomes.Count >= maxPackages) break;
+            ct.ThrowIfCancellationRequested();
+
+            if (!await TryClaimAsync(package, DateTimeOffset.UtcNow, ct))
+            {
+                _logger.LogInformation(
+                    "ImportPackageProcessingService: package {PackageId} is claimed by another worker — skipping this pass.",
+                    package.Id);
+                continue;
+            }
+
+            try
+            {
+                outcomes.Add(await ProcessOnePackageAsync(package, ct));
+            }
+            finally
+            {
+                await ReleaseClaimAsync(package, ct);
+            }
         }
         return outcomes;
+    }
+
+    /// <summary>Attempts to acquire the processing lease via a database-level optimistic
+    /// concurrency check — see <c>ImportPackage.Claim</c> and the entity's <c>ConcurrencyStamp</c>
+    /// doc comment. Two workers racing to claim the same package can both pass the in-memory
+    /// <c>IsClaimable</c> check, but only one's <c>SaveChangesAsync</c> can win; the loser gets
+    /// <see cref="DbUpdateConcurrencyException"/>, reloads the now-current row, and returns false.</summary>
+    private async Task<bool> TryClaimAsync(ImportPackage package, DateTimeOffset nowUtc, CancellationToken ct)
+    {
+        if (!package.IsClaimable(nowUtc))
+            return false;
+
+        package.Claim(WorkerId, nowUtc, _leaseDuration);
+        try
+        {
+            await _db.SaveChangesAsync(ct);
+            return true;
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            await _db.Entry(package).ReloadAsync(ct);
+            return false;
+        }
+    }
+
+    /// <summary>Releases the lease after a processing pass (success, pause, or failure) so the
+    /// package does not have to sit out the full lease duration before it can be picked up again
+    /// (e.g. immediately after an admin resolves a cost-approval pause). Safe to call even if this
+    /// worker's own claim was already superseded — a concurrency conflict here just means someone
+    /// else's lease is now authoritative, which is not this worker's problem to fix.</summary>
+    private async Task ReleaseClaimAsync(ImportPackage package, CancellationToken ct)
+    {
+        if (!string.Equals(package.ClaimedByWorkerId, WorkerId, StringComparison.Ordinal))
+            return;
+
+        package.ReleaseClaim();
+        try
+        {
+            await _db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            // Another process's expiry-recovery claim already superseded ours — nothing to release.
+        }
     }
 
     private async Task<ImportPackageProcessingOutcome> ProcessOnePackageAsync(ImportPackage package, CancellationToken ct)
@@ -138,6 +215,9 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
                 await _db.SaveChangesAsync(ct);
             }
 
+            // Phase 4.8 — renew the lease between stages so a slow/large package's second stage
+            // does not run past the original claim's expiry and invite a second worker to steal it.
+            package.RenewClaim(WorkerId, DateTimeOffset.UtcNow, _leaseDuration);
             package.MoveToStatus(ImportPackageStatus.CreatingCandidates);
             await _db.SaveChangesAsync(ct);
 
@@ -227,8 +307,38 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
 
         try
         {
+            // Phase 4.8 — revalidate the whole-archive checksum against what was recorded at
+            // upload/inspection time before trusting a single byte of it. A storage object mutated
+            // between inspection and extraction (or a stale/tampered manifest) is rejected here
+            // rather than silently extracted.
+            if (!string.IsNullOrEmpty(package.ArchiveChecksum))
+            {
+                seekable.Position = 0;
+                var actualChecksum = await ComputeStreamChecksumAsync(seekable, ct);
+                if (!string.Equals(actualChecksum, package.ArchiveChecksum, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new ImportPackageInspectionException(
+                        $"Archive checksum mismatch at extraction time for package '{package.Id}': expected " +
+                        $"{package.ArchiveChecksum}, computed {actualChecksum}. The stored archive may have " +
+                        "changed since inspection — extraction aborted.");
+                }
+            }
+            seekable.Position = 0;
+
             using var zip = new ZipArchive(seekable, ZipArchiveMode.Read, leaveOpen: true);
             var filesInspected = 0;
+
+            // Phase 4.8 — entry-count ceiling re-checked against the live archive (not just the
+            // stored manifest) before extracting anything.
+            var liveEntryCount = zip.Entries.Count(e => !string.IsNullOrEmpty(e.Name));
+            if (liveEntryCount > _limits.MaxEntryCount)
+            {
+                throw new ImportPackageInspectionException(
+                    $"Archive contains {liveEntryCount:N0} entries at extraction time for package '{package.Id}', " +
+                    $"exceeding the configured limit of {_limits.MaxEntryCount:N0}. Extraction aborted.");
+            }
+
+            var extractedPathsThisPass = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var entry in manifest.Entries.Where(e => !e.IsSuspicious))
             {
@@ -238,6 +348,28 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
 
                 var zipEntry = zip.GetEntry(entry.RelativePath) ?? zip.Entries.FirstOrDefault(e => e.FullName.Replace('\\', '/').TrimStart('/') == entry.RelativePath);
                 if (zipEntry is null) continue;
+
+                // Phase 4.8 — reapply the full hardened safety validator (path traversal, per-file
+                // size, compression ratio, nested-archive rejection, bounded zip-bomb-guarded
+                // checksum) against the live entry, never trusting the stored manifest's
+                // IsSuspicious flag alone. Also rejects a duplicate normalized path within the
+                // archive being extracted right now, even if the manifest didn't flag one (a
+                // manifest built from a since-mutated archive object could disagree with reality).
+                var revalidated = ZipEntrySafetyValidator.Validate(zipEntry, _limits);
+                if (revalidated.IsSuspicious)
+                {
+                    _logger.LogWarning(
+                        "ImportPackageProcessingService: entry '{Path}' failed extraction-time safety revalidation for package {PackageId}: {Reason}",
+                        entry.RelativePath, package.Id, revalidated.Reason);
+                    continue;
+                }
+                if (!extractedPathsThisPass.Add(revalidated.RelativePath))
+                {
+                    _logger.LogWarning(
+                        "ImportPackageProcessingService: duplicate archive path '{Path}' rejected at extraction time for package {PackageId}.",
+                        revalidated.RelativePath, package.Id);
+                    continue;
+                }
 
                 var storageKey = _storage.GenerateKey(package.CefrResourceSourceId.ToString(), "import-package-assets", entry.FileExtension);
                 await using (var entryStream = zipEntry.Open())
@@ -263,6 +395,20 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
     }
 
     private static ImportAssetMediaType DetectMediaType(string extension) => ImportAssetClassification.Classify(extension).MediaType;
+
+    /// <summary>Phase 4.8 — whole-stream SHA-256 used to revalidate an archive's checksum at
+    /// extraction time. The stream's total length is already bounded by the upload/inspection-time
+    /// <c>MaxCompressedSizeBytes</c> check, so no additional read cap is needed here.</summary>
+    private static async Task<string> ComputeStreamChecksumAsync(Stream stream, CancellationToken ct)
+    {
+        using var sha256 = SHA256.Create();
+        var buffer = new byte[81920];
+        int bytesRead;
+        while ((bytesRead = await stream.ReadAsync(buffer, ct)) > 0)
+            sha256.TransformBlock(buffer, 0, bytesRead, null, 0);
+        sha256.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+        return Convert.ToHexString(sha256.Hash!).ToLowerInvariant();
+    }
 
     // ── Stage 1 — mapping + candidate creation, cost-ceiling enforced ──────────────────────
 

@@ -62,6 +62,22 @@ public sealed class ImportPackage : BaseEntity
     public decimal AccruedCost { get; private set; }
     public string AccruedCostCurrency { get; private set; } = "USD";
 
+    // ── Phase 4.8 (2026-07-17 security/concurrency/idempotency) — durable claim/lease so two
+    // background workers (or two nodes, if ever run without Quartz clustering) cannot process the
+    // same package at once. Backed by a database-level optimistic concurrency check on
+    // <see cref="ConcurrencyStamp"/> (see <c>ImportPackageConfiguration</c>) — a worker's claim
+    // attempt is a normal EF SaveChanges that fails with a concurrency exception if another worker
+    // committed a claim first, never a race two readers can both win. ──
+    public string? ClaimedByWorkerId { get; private set; }
+    public DateTimeOffset? ClaimedAtUtc { get; private set; }
+    public DateTimeOffset? ClaimExpiresAtUtc { get; private set; }
+
+    /// <summary>Database-level optimistic concurrency token (see
+    /// <c>ImportPackageConfiguration.Configure</c>'s <c>IsConcurrencyToken()</c>) — every claim,
+    /// renewal, or release regenerates this, so a concurrent writer's SaveChanges against a stale
+    /// value fails atomically instead of silently overwriting the claim.</summary>
+    public Guid ConcurrencyStamp { get; private set; }
+
     private ImportPackage() { }
 
     public ImportPackage(
@@ -88,6 +104,7 @@ public sealed class ImportPackage : BaseEntity
         CompressedSizeBytes = compressedSizeBytes;
         Notes = notes?.Trim();
         Status = ImportPackageStatus.Uploaded;
+        ConcurrencyStamp = Guid.NewGuid();
     }
 
     public void SetManifest(string manifestJson, int filesInspectedCount)
@@ -100,6 +117,20 @@ public sealed class ImportPackage : BaseEntity
         Status = ImportPackageStatus.Uploaded == Status || Status == ImportPackageStatus.InspectingPackage
             ? ImportPackageStatus.AwaitingSample
             : Status;
+    }
+
+    /// <summary>Phase 4.8 — records the whole-archive checksum at inspection time for a package
+    /// whose upload path didn't already know it (the legacy single-shot upload flow never
+    /// computed one before this phase; the Phase 4.7 chunked-upload session flow already sets it
+    /// via the constructor since it computes the checksum while assembling the archive). This is
+    /// the value <see cref="ImportPackageProcessingService"/> revalidates the live archive against
+    /// before ever extracting from it.</summary>
+    public void SetArchiveChecksum(string checksum)
+    {
+        if (string.IsNullOrWhiteSpace(checksum))
+            throw new ArgumentException("Checksum is required.", nameof(checksum));
+
+        ArchiveChecksum = checksum.Trim();
     }
 
     public void SetProcessingMode(ImportProcessingMode mode, string reason)
@@ -189,5 +220,54 @@ public sealed class ImportPackage : BaseEntity
 
         AccruedCost += amount;
         AccruedCostCurrency = currency;
+    }
+
+    /// <summary>True when no worker currently holds a live lease — either never claimed, or the
+    /// prior claim's lease has expired (a crashed worker never releases explicitly, so expiry is
+    /// the only recovery path for that case).</summary>
+    public bool IsClaimable(DateTimeOffset nowUtc)
+        => ClaimedByWorkerId is null || ClaimExpiresAtUtc is null || nowUtc > ClaimExpiresAtUtc.Value;
+
+    /// <summary>Acquires the processing lease. Throws if another worker currently holds a live
+    /// lease — callers must check <see cref="IsClaimable"/> first; the real race protection is the
+    /// database-level concurrency check on the following <c>SaveChangesAsync</c>, not this
+    /// in-memory guard (which only protects against a caller misusing its own already-loaded,
+    /// possibly-stale instance).</summary>
+    public void Claim(string workerId, DateTimeOffset nowUtc, TimeSpan leaseDuration)
+    {
+        if (string.IsNullOrWhiteSpace(workerId))
+            throw new ArgumentException("WorkerId is required.", nameof(workerId));
+        if (!IsClaimable(nowUtc))
+            throw new InvalidOperationException(
+                $"Package '{Id}' is already claimed by worker '{ClaimedByWorkerId}' until {ClaimExpiresAtUtc:O}.");
+
+        ClaimedByWorkerId = workerId.Trim();
+        ClaimedAtUtc = nowUtc;
+        ClaimExpiresAtUtc = nowUtc.Add(leaseDuration);
+        ConcurrencyStamp = Guid.NewGuid();
+    }
+
+    /// <summary>Extends the lease held by the same worker — used for a long-running processing
+    /// pass so the lease does not expire mid-work and invite a second worker to steal it.</summary>
+    public void RenewClaim(string workerId, DateTimeOffset nowUtc, TimeSpan leaseDuration)
+    {
+        if (!string.Equals(ClaimedByWorkerId, workerId, StringComparison.Ordinal))
+            throw new InvalidOperationException($"Package '{Id}' is not currently claimed by worker '{workerId}'.");
+
+        ClaimExpiresAtUtc = nowUtc.Add(leaseDuration);
+        ConcurrencyStamp = Guid.NewGuid();
+    }
+
+    /// <summary>Releases the lease so the package is immediately claimable again — called after a
+    /// processing pass whether it succeeded, paused, or failed, so a package that legitimately
+    /// remains in a claimable status (still <c>Extracting</c>/<c>Mapping</c>/etc. because more
+    /// checkpointed work remains) does not have to wait out the full lease duration before the
+    /// next pass can pick it up.</summary>
+    public void ReleaseClaim()
+    {
+        ClaimedByWorkerId = null;
+        ClaimedAtUtc = null;
+        ClaimExpiresAtUtc = null;
+        ConcurrencyStamp = Guid.NewGuid();
     }
 }

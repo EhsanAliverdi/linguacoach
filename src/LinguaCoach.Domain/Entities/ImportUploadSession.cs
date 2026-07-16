@@ -46,6 +46,13 @@ public sealed class ImportUploadSession : BaseEntity
     public DateTimeOffset? CompletedAtUtc { get; private set; }
     public DateTimeOffset? AbortedAtUtc { get; private set; }
 
+    /// <summary>Phase 4.8 — real EF concurrency token (see <c>ImportUploadSessionConfiguration</c>)
+    /// so two concurrent <c>CompleteAsync</c> calls for the same session cannot both pass the
+    /// "not yet completed" check and both create an <see cref="ImportPackage"/> — the second
+    /// writer's SaveChanges fails atomically and the caller falls back to the idempotent
+    /// already-completed path.</summary>
+    public Guid ConcurrencyStamp { get; private set; }
+
     private ImportUploadSession() { }
 
     public ImportUploadSession(
@@ -83,6 +90,7 @@ public sealed class ImportUploadSession : BaseEntity
         CreatedAtUtc = createdAtUtc;
         ExpiresAtUtc = createdAtUtc.Add(expiry);
         Status = ImportUploadSessionStatus.Created;
+        ConcurrencyStamp = Guid.NewGuid();
     }
 
     public bool IsOwnedBy(Guid? userId)
@@ -94,7 +102,10 @@ public sealed class ImportUploadSession : BaseEntity
     public void MarkInProgress()
     {
         if (Status == ImportUploadSessionStatus.Created)
+        {
             Status = ImportUploadSessionStatus.InProgress;
+            ConcurrencyStamp = Guid.NewGuid();
+        }
     }
 
     public void Complete(Guid importPackageId, DateTimeOffset completedAtUtc)
@@ -102,11 +113,13 @@ public sealed class ImportUploadSession : BaseEntity
         Status = ImportUploadSessionStatus.Completed;
         ImportPackageId = importPackageId;
         CompletedAtUtc = completedAtUtc;
+        ConcurrencyStamp = Guid.NewGuid();
     }
 
     public void Abort(DateTimeOffset abortedAtUtc)
     {
         Status = ImportUploadSessionStatus.Aborted;
         AbortedAtUtc = abortedAtUtc;
+        ConcurrencyStamp = Guid.NewGuid();
     }
 }

@@ -359,4 +359,70 @@ public sealed class ImportUploadSessionServiceTests : IDisposable
 
         _storage.LastSaveUsedKnownSize.Should().BeTrue();
     }
+
+    // ── Phase 4.8 (2026-07-17 security/concurrency/idempotency) ────────────────────────────────
+
+    [Fact]
+    public async Task Expired_session_cannot_accept_a_part_or_complete()
+    {
+        var sourceId = await SeedSourceAsync();
+        var created = await _sessions.CreateAsync(new CreateImportUploadSessionCommand(sourceId, "words.zip", 10, null));
+
+        // Force the session's expiry into the past — simulates real time passing well beyond
+        // UploadSessionExpiryHours without needing to wait or fake the clock.
+        var session = await _db.ImportUploadSessions.FirstAsync(s => s.Id == created.SessionId);
+        _db.Entry(session).Property(nameof(ImportUploadSession.ExpiresAtUtc)).CurrentValue = DateTimeOffset.UtcNow.AddHours(-1);
+        await _db.SaveChangesAsync();
+
+        var payload = new byte[] { 1, 2, 3 };
+        var uploadAct = async () => await _sessions.UploadPartAsync(new UploadImportSessionPartCommand(
+            created.SessionId, 1, new MemoryStream(payload), payload.Length, null));
+        await uploadAct.Should().ThrowAsync<ResourceImportValidationException>().WithMessage("*expired*");
+
+        var completeAct = async () => await _sessions.CompleteAsync(new CompleteImportUploadSessionCommand(created.SessionId, null));
+        await completeAct.Should().ThrowAsync<ResourceImportValidationException>().WithMessage("*expired*");
+
+        (await _db.ImportPackages.CountAsync(p => p.CefrResourceSourceId == sourceId)).Should().Be(0);
+    }
+
+    /// <summary>Proves the actual database-level guarantee behind "duplicate completion stays
+    /// idempotent": <see cref="ImportUploadSession.ConcurrencyStamp"/> is a real EF concurrency
+    /// token, so a second writer racing to complete the same session with a stale in-memory copy
+    /// (exactly what two concurrent <c>CompleteAsync</c> calls would each hold, both having loaded
+    /// the session before either committed) cannot silently overwrite the winner's completion —
+    /// its <c>SaveChangesAsync</c> fails atomically instead. <c>CompleteAsync</c> itself catches
+    /// exactly this exception and falls back to the idempotent already-completed path (see the
+    /// duplicate-completion test above and the try/catch around its own SaveChangesAsync call).
+    /// </summary>
+    [Fact]
+    public async Task A_stale_concurrent_write_to_a_just_completed_session_is_rejected_at_the_database_level()
+    {
+        var sourceId = await SeedSourceAsync();
+        var zipBytes = BuildSmallCsvZip();
+
+        var created = await _sessions.CreateAsync(new CreateImportUploadSessionCommand(sourceId, "words.zip", zipBytes.Length, null));
+        var parts = SplitIntoParts(zipBytes, created.PartSizeBytes);
+        await UploadAllPartsAsync(created.SessionId, parts);
+
+        // A second, independent DbContext sharing the same underlying open SQLite connection —
+        // mirrors a second API request's scoped DbContext, which loaded the session before the
+        // first request's CompleteAsync committed.
+        var connection = _db.Database.GetDbConnection();
+        var secondOptions = new DbContextOptionsBuilder<LinguaCoachDbContext>().UseSqlite(connection).Options;
+        await using var secondDb = new LinguaCoachDbContext(secondOptions);
+        var staleSessionCopy = await secondDb.ImportUploadSessions.FirstAsync(s => s.Id == created.SessionId);
+        staleSessionCopy.Status.Should().Be(ImportUploadSessionStatus.InProgress);
+
+        var first = await _sessions.CompleteAsync(new CompleteImportUploadSessionCommand(created.SessionId, null));
+        first.IsAccepted.Should().BeTrue();
+
+        // The second request's stale in-memory copy now attempts the same transition — this is
+        // the exact write CompleteAsync's own concurrency catch block exists to survive.
+        staleSessionCopy.Complete(Guid.NewGuid(), DateTimeOffset.UtcNow);
+        var act = async () => await secondDb.SaveChangesAsync();
+        await act.Should().ThrowAsync<DbUpdateConcurrencyException>();
+
+        var packageCount = await _db.ImportPackages.CountAsync(p => p.CefrResourceSourceId == sourceId);
+        packageCount.Should().Be(1, "a stale concurrent writer must never be able to create a second ImportPackage for one session");
+    }
 }

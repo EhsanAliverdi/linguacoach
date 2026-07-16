@@ -1,5 +1,4 @@
 using System.IO.Compression;
-using System.Security.Cryptography;
 using LinguaCoach.Application.ResourceImport;
 using Microsoft.Extensions.Options;
 
@@ -11,13 +10,11 @@ namespace LinguaCoach.Infrastructure.ResourceImport;
 // storage-service temp download — never a live network upload stream). Every entry is bounds-
 // checked against declared metadata *before* any bytes are decompressed, then the checksum read
 // itself is capped at the entry's own declared length so a lying central-directory size cannot
-// be used to smuggle a zip bomb past the pre-check. ──
+// be used to smuggle a zip bomb past the pre-check. Per-entry validation itself lives in
+// ZipEntrySafetyValidator (Phase 4.8), shared with extraction-time revalidation. ──
 
 internal sealed class ZipPackageInspector : IZipPackageInspector
 {
-    private static readonly HashSet<string> NestedArchiveExtensions = new(StringComparer.OrdinalIgnoreCase)
-        { ".zip", ".rar", ".7z", ".tar", ".gz", ".tgz", ".bz2" };
-
     private static readonly Dictionary<string, string> ExtensionToMimeType = new(StringComparer.OrdinalIgnoreCase)
     {
         [".csv"] = "text/csv",
@@ -86,33 +83,6 @@ internal sealed class ZipPackageInspector : IZipPackageInspector
             {
                 ct.ThrowIfCancellationRequested();
 
-                var relativePath = NormalizeRelativePath(entry.FullName);
-                var isSuspicious = false;
-                string? suspiciousReason = null;
-
-                if (IsPathTraversal(entry.FullName, relativePath))
-                {
-                    isSuspicious = true;
-                    suspiciousReason = "Entry path escapes the archive root (path traversal).";
-                }
-                else if (entry.Length > _limits.MaxIndividualFileSizeBytes)
-                {
-                    isSuspicious = true;
-                    suspiciousReason = $"Entry declares {entry.Length:N0} bytes, exceeding the per-file limit of {_limits.MaxIndividualFileSizeBytes:N0}.";
-                }
-                else if (entry.CompressedLength > 0 &&
-                         entry.Length / (double)entry.CompressedLength > _limits.MaxCompressionRatioPerEntry)
-                {
-                    isSuspicious = true;
-                    suspiciousReason = $"Entry compression ratio {entry.Length / (double)Math.Max(entry.CompressedLength, 1):N0}:1 exceeds the configured limit of {_limits.MaxCompressionRatioPerEntry}:1.";
-                }
-                else if (_limits.MaxNestedArchiveDepth <= 0 &&
-                         NestedArchiveExtensions.Contains(Path.GetExtension(entry.Name)))
-                {
-                    isSuspicious = true;
-                    suspiciousReason = "Nested archives are not supported in this processing mode.";
-                }
-
                 expandedSizeBytes += entry.Length;
                 if (expandedSizeBytes > _limits.MaxExpandedSizeBytes)
                 {
@@ -121,42 +91,19 @@ internal sealed class ZipPackageInspector : IZipPackageInspector
                         compressedSizeBytes));
                 }
 
-                string checksum;
-                if (isSuspicious)
-                {
-                    checksum = string.Empty;
-                }
-                else
-                {
-                    try
-                    {
-                        checksum = ComputeBoundedChecksum(entry);
-                    }
-                    catch (InvalidDataException)
-                    {
-                        isSuspicious = true;
-                        suspiciousReason = "Entry could not be read — likely encrypted or corrupt.";
-                        checksum = string.Empty;
-                    }
-                    catch (ZipBombGuardException)
-                    {
-                        isSuspicious = true;
-                        suspiciousReason = "Entry's decompressed size exceeded its declared length (possible zip bomb).";
-                        checksum = string.Empty;
-                    }
-                }
+                var validated = ZipEntrySafetyValidator.Validate(entry, _limits);
 
                 var extension = Path.GetExtension(entry.Name);
                 entries.Add(new ImportPackageManifestEntry(
-                    relativePath,
+                    validated.RelativePath,
                     entry.Name,
                     extension,
                     entry.CompressedLength,
                     entry.Length,
                     ExtensionToMimeType.GetValueOrDefault(extension),
-                    checksum,
-                    isSuspicious,
-                    suspiciousReason));
+                    validated.Checksum,
+                    validated.IsSuspicious,
+                    validated.Reason));
             }
 
             var suspiciousEntries = entries.Where(e => e.IsSuspicious).ToList();
@@ -213,55 +160,4 @@ internal sealed class ZipPackageInspector : IZipPackageInspector
             DuplicateChecksumEntries: Array.Empty<ImportPackageManifestEntry>(),
             UnsupportedEntries: Array.Empty<ImportPackageManifestEntry>(),
             SuspiciousEntries: Array.Empty<ImportPackageManifestEntry>());
-
-    private static bool IsPathTraversal(string fullName, string normalizedRelativePath)
-    {
-        if (Path.IsPathRooted(fullName) || fullName.Contains(':'))
-            return true;
-
-        var segments = fullName.Split('/', '\\');
-        return segments.Any(s => s == "..") || normalizedRelativePath.StartsWith("..", StringComparison.Ordinal);
-    }
-
-    private static string NormalizeRelativePath(string fullName)
-    {
-        var normalized = fullName.Replace('\\', '/').TrimStart('/');
-        var combined = new List<string>();
-        foreach (var segment in normalized.Split('/'))
-        {
-            if (segment is "" or ".")
-                continue;
-            if (segment == "..")
-            {
-                if (combined.Count > 0) combined.RemoveAt(combined.Count - 1);
-                else combined.Add("..");
-                continue;
-            }
-            combined.Add(segment);
-        }
-        return string.Join('/', combined);
-    }
-
-    /// <summary>Reads the entry's decompressed bytes only far enough to hash them, aborting if
-    /// the stream produces more bytes than <see cref="ZipArchiveEntry.Length"/> declared — the
-    /// defense against a central directory that understates an entry's true expanded size.</summary>
-    private static string ComputeBoundedChecksum(ZipArchiveEntry entry)
-    {
-        using var entryStream = entry.Open();
-        using var sha256 = SHA256.Create();
-        var buffer = new byte[81920];
-        long totalRead = 0;
-        int bytesRead;
-        while ((bytesRead = entryStream.Read(buffer, 0, buffer.Length)) > 0)
-        {
-            totalRead += bytesRead;
-            if (totalRead > entry.Length)
-                throw new ZipBombGuardException();
-            sha256.TransformBlock(buffer, 0, bytesRead, null, 0);
-        }
-        sha256.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
-        return Convert.ToHexString(sha256.Hash!).ToLowerInvariant();
-    }
-
-    private sealed class ZipBombGuardException : Exception;
 }

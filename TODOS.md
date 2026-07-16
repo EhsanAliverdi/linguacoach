@@ -5,6 +5,48 @@ Each item includes context, motivation, and the phase where it was deferred.
 
 ---
 
+## Phase 4.8 — Security, concurrency and idempotency (2026-07-17)
+
+Review: docs/reviews/2026-07-17-phase-4-8-security-concurrency-and-idempotency-review.md
+
+Added a durable claim/lease to `ImportPackage` (DB-level optimistic concurrency, not just
+`[DisallowConcurrentExecution]`), extraction-time archive checksum + ZIP safety revalidation
+(closing the "trust the manifest unconditionally" gap), and concurrency-safe upload-session
+completion.
+
+### TODO-4.8-UPLOAD-SESSION-STORAGE-WRITE-RACE — Redundant storage write on concurrent completion
+**What:** Two concurrent `CompleteAsync` calls for the same upload session can both write the
+assembled archive to the same deterministic `FinalStorageKey` before the DB-level concurrency
+conflict is detected. The DB row (and thus which `ImportPackage` survives) is correctly protected;
+the loser's storage write is wasted but harmless since checksum verification happens against each
+caller's own assembly before either commits.
+**Why it matters:** low-impact (no correctness issue, no data corruption) but a redundant write
+under real concurrent load; closing it fully would need a storage-level lease.
+**Deferred from:** Phase 4.8 (explicitly out of scope — "no resumable-upload redesign beyond
+security fixes").
+
+### TODO-4.8-CHECKPOINT-GRANULARITY — Finer-grained processing checkpoints
+**What:** `ImportPackage.LastCompletedStageIndex` still distinguishes only two stages (`Extract`,
+`MapAndCreateCandidates`). The fuller `ImportPackageStatus` enum
+(`Transcribing`/`Enriching`/`Validating`/etc.) already exists but is unused by the processing
+service, which jumps straight `Extracting → CreatingCandidates → ReadyForReview`.
+**Why it matters:** a crash deep inside the STT/AI-enrichment loop still resumes from the start of
+`MapAndCreateCandidatesAsync`, relying on per-asset/per-operation idempotency guards (already
+correct) rather than a coarser-grained checkpoint — functionally safe but reprocesses more asset
+scanning than strictly necessary on a large package.
+**Deferred from:** Phase 4.8 (would require restructuring `MapAndCreateCandidatesAsync`'s internal
+loop — judged a separate, larger change beyond "harden the existing mechanism").
+
+### TODO-4.8-DEAD-LETTER — No max-attempt cutoff for repeatedly failing packages
+**What:** `ImportPackage` has no retry/attempt counter of its own (unlike the STT/AI ledgers, which
+have `AttemptNumber`). A package that fails repeatedly stays `Failed` until an admin/operator
+intervenes — there is no automatic dead-letter or alerting threshold.
+**Why it matters:** noted originally in the Phase 4.4 review as a gap; still open after 4.8, since
+this phase's scope was concurrency/security, not retry-policy design.
+**Deferred from:** Phase 4.4, reconfirmed still open in Phase 4.8.
+
+---
+
 ## Phase 4.7 — Reliable large uploads (2026-07-17)
 
 Review: docs/reviews/2026-07-17-phase-4-7-reliable-large-uploads-review.md

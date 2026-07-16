@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text.Json;
 using LinguaCoach.Application.ResourceImport;
 using LinguaCoach.Application.Storage;
@@ -56,6 +57,19 @@ internal static class ImportPackageInspectionRunner
         ImportPackageManifest manifest;
         try
         {
+            // Phase 4.8 — the legacy single-shot upload path (ImportPackageUploadService) never
+            // recorded a whole-archive checksum; the Phase 4.7 chunked-upload session path already
+            // has one (computed while assembling the parts) set on the package before this runs.
+            // Recording it here, regardless of path, is what makes extraction-time checksum
+            // revalidation (ImportPackageProcessingService.ExtractAssetsAsync) meaningful for every
+            // ZIP-based package, not just chunked-upload ones.
+            if (string.IsNullOrEmpty(package.ArchiveChecksum))
+            {
+                var checksum = await ComputeChecksumAsync(seekableStream, ct);
+                package.SetArchiveChecksum(checksum);
+                seekableStream.Position = 0;
+            }
+
             manifest = await inspector.InspectAsync(seekableStream, ct);
         }
         finally
@@ -76,5 +90,16 @@ internal static class ImportPackageInspectionRunner
         await db.SaveChangesAsync(ct);
 
         return ImportPackageManifestSummaryMapper.ToSummary(package, manifest);
+    }
+
+    private static async Task<string> ComputeChecksumAsync(Stream stream, CancellationToken ct)
+    {
+        using var sha256 = SHA256.Create();
+        var buffer = new byte[81920];
+        int bytesRead;
+        while ((bytesRead = await stream.ReadAsync(buffer, ct)) > 0)
+            sha256.TransformBlock(buffer, 0, bytesRead, null, 0);
+        sha256.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+        return Convert.ToHexString(sha256.Hash!).ToLowerInvariant();
     }
 }

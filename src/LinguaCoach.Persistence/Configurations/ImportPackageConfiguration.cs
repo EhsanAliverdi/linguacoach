@@ -45,6 +45,16 @@ internal sealed class ImportPackageConfiguration : IEntityTypeConfiguration<Impo
         builder.Property(e => e.AccruedCost).HasColumnName("accrued_cost").HasPrecision(12, 4).IsRequired().HasDefaultValue(0m);
         builder.Property(e => e.AccruedCostCurrency).HasColumnName("accrued_cost_currency").HasMaxLength(8).IsRequired().HasDefaultValue("USD");
 
+        // Phase 4.8 — durable claim/lease. ConcurrencyStamp is a real EF concurrency token (works
+        // portably across SQLite and Postgres, unlike a Postgres-only xmin column) — every UPDATE
+        // EF issues for this entity includes it in the WHERE clause, so a concurrent claim attempt
+        // against a stale value affects zero rows and throws DbUpdateConcurrencyException instead
+        // of silently overwriting the winner's claim.
+        builder.Property(e => e.ClaimedByWorkerId).HasColumnName("claimed_by_worker_id").HasMaxLength(200);
+        builder.Property(e => e.ClaimedAtUtc).HasColumnName("claimed_at_utc");
+        builder.Property(e => e.ClaimExpiresAtUtc).HasColumnName("claim_expires_at_utc");
+        builder.Property(e => e.ConcurrencyStamp).HasColumnName("concurrency_stamp").IsRequired().IsConcurrencyToken();
+
         builder.HasOne<CefrResourceSource>()
             .WithMany()
             .HasForeignKey(e => e.CefrResourceSourceId)
@@ -52,5 +62,6 @@ internal sealed class ImportPackageConfiguration : IEntityTypeConfiguration<Impo
 
         builder.HasIndex(e => e.CefrResourceSourceId).HasDatabaseName("ix_import_packages_source");
         builder.HasIndex(e => e.Status).HasDatabaseName("ix_import_packages_status");
+        builder.HasIndex(e => e.ClaimExpiresAtUtc).HasDatabaseName("ix_import_packages_claim_expires");
     }
 }

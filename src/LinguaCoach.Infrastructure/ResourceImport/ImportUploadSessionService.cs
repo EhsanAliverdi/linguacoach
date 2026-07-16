@@ -264,7 +264,27 @@ internal sealed class ImportUploadSessionService : IImportUploadSessionService
 
         _db.ImportPackages.Add(package);
         session.Complete(package.Id, DateTimeOffset.UtcNow);
-        await _db.SaveChangesAsync(ct);
+
+        // Phase 4.8 — two concurrent CompleteAsync calls for the same session can both pass every
+        // check above (both observe Status == InProgress before either commits) and both reach
+        // this point. ConcurrencyStamp is a real EF concurrency token (see
+        // ImportUploadSessionConfiguration), so only the first writer's SaveChangesAsync succeeds;
+        // the second gets DbUpdateConcurrencyException and falls back to the same idempotent
+        // already-completed path a normal duplicate completion call takes — never a second
+        // ImportPackage row for one session.
+        try
+        {
+            await _db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            _db.Entry(package).State = EntityState.Detached;
+            await _db.Entry(session).ReloadAsync(ct);
+            if (session.Status == ImportUploadSessionStatus.Completed && session.ImportPackageId is not null)
+                return await GetExistingPackageSummaryAsync(session.ImportPackageId.Value, ct);
+            throw new ResourceImportValidationException(
+                "Upload session completion conflicted with a concurrent request. Retry the request.");
+        }
 
         // Only now — after every part is verified present, contiguous, size-matched, and
         // checksum-verified — does inspection/plan-eligible processing begin.
