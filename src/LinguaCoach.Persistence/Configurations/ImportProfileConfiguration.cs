@@ -54,8 +54,14 @@ internal sealed class ImportProfileConfiguration : IEntityTypeConfiguration<Impo
         builder.Property(e => e.PauseReason).HasColumnName("pause_reason").HasMaxLength(2000);
 
         // Phase 4.4 — application-checked optimistic concurrency (see ImportProfile.ConcurrencyStamp's
-        // doc comment for why this is a plain Guid column, not an EF-native rowversion/xmin token).
-        builder.Property(e => e.ConcurrencyStamp).HasColumnName("concurrency_stamp").IsRequired();
+        // doc comment for why this is a plain Guid column, not a Postgres xmin token). Phase 4.4B
+        // additionally marks it an EF concurrency token: EF includes the originally-loaded value in
+        // every UPDATE/DELETE's WHERE clause, so a genuine simultaneous write race (two requests
+        // reading the same stamp before either commits — the one gap the application-level "check
+        // then mutate" comparison alone cannot close) throws DbUpdateConcurrencyException instead of
+        // silently letting the second writer overwrite the first. IImportCostCeilingAmendmentService
+        // catches this and maps it to the same 409 a sequential stale request gets.
+        builder.Property(e => e.ConcurrencyStamp).HasColumnName("concurrency_stamp").IsRequired().IsConcurrencyToken();
 
         builder.HasOne<ImportPackage>()
             .WithMany()

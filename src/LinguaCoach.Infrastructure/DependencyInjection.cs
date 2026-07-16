@@ -722,6 +722,9 @@ public static class DependencyInjection
         // Phase 4.4 (Workstream B) — durable, retry-safe STT operation ledger.
         services.AddScoped<LinguaCoach.Application.ResourceImport.IImportSttOperationLedger,
             LinguaCoach.Infrastructure.ResourceImport.ImportSttOperationLedger>();
+        // Phase 4.4B — audited, concurrency-checked cost ceiling amendment and controlled resume.
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IImportCostCeilingAmendmentService,
+            LinguaCoach.Infrastructure.ResourceImport.ImportCostCeilingAmendmentService>();
 
         // Phase 16F/16G — Speaking Evaluation Foundation + Provider-Backed Evaluation
         if (configuration is not null)

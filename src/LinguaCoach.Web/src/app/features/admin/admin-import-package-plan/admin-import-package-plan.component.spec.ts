@@ -48,6 +48,10 @@ describe('AdminImportPackagePlanComponent', () => {
       groupInstructions: [
         { groupKey: '(root)', included: true, resourceType: 'vocabularyEntry' as any, fieldMappings: {}, sampleRelativePaths: ['data.csv'] },
       ],
+      accruedCost: 0,
+      accruedCostCurrency: 'USD',
+      remainingCeiling: null,
+      ceilingAmendments: [],
       ...overrides,
     };
   }
@@ -261,5 +265,108 @@ describe('AdminImportPackagePlanComponent', () => {
 
     expect(component.concurrencyConflict()).toBeFalse();
     expect(component.plan()?.concurrencyStamp).toBe('stamp-2');
+  });
+
+  describe('cost ceiling amendment (Phase 4.4B)', () => {
+    function pausedPlan(overrides: Partial<ImportExecutionPlanDto> = {}) {
+      return basePlan({
+        status: 'PausedForCostApproval',
+        isEditable: false,
+        pauseReason: 'Projected cost would exceed the approved ceiling.',
+        approvedCostCeiling: 0.03,
+        accruedCost: 0.03,
+        remainingCeiling: 0,
+        ...overrides,
+      });
+    }
+
+    it('displays the paused cost state (accrued, ceiling, remaining, pause reason)', () => {
+      const component = makeComponent({ getManifest: () => of({} as any), getPlan: () => of(pausedPlan()) });
+      component.ngOnInit();
+
+      expect(component.plan()?.status).toBe('PausedForCostApproval');
+      expect(component.plan()?.accruedCost).toBe(0.03);
+      expect(component.plan()?.approvedCostCeiling).toBe(0.03);
+      expect(component.plan()?.remainingCeiling).toBe(0);
+      expect(component.plan()?.pauseReason).toContain('exceed');
+    });
+
+    it('submits the new ceiling, reason, and current concurrency stamp', () => {
+      let sent: any = null;
+      const svc: Partial<AdminImportPackageService> = {
+        getManifest: () => of({} as any),
+        getPlan: () => of(pausedPlan()),
+        amendCostCeiling: (pkg, plan, stamp, ceiling, reason) => {
+          sent = { pkg, plan, stamp, ceiling, reason };
+          return of(basePlan({ status: 'Executing', isEditable: false, approvedCostCeiling: ceiling }));
+        },
+      };
+      const component = makeComponent(svc);
+      component.ngOnInit();
+      component.openResume();
+      component.resumeCostCeiling = 5;
+      component.resumeReason = 'need more budget';
+      component.confirmResume();
+
+      expect(sent.stamp).toBe('stamp-1');
+      expect(sent.ceiling).toBe(5);
+      expect(sent.reason).toBe('need more budget');
+    });
+
+    it('rejects a new ceiling that does not exceed the current one before calling the backend', () => {
+      let called = false;
+      const svc: Partial<AdminImportPackageService> = {
+        getManifest: () => of({} as any),
+        getPlan: () => of(pausedPlan()),
+        amendCostCeiling: () => { called = true; return of(pausedPlan()); },
+      };
+      const component = makeComponent(svc);
+      component.ngOnInit();
+      component.openResume();
+      component.resumeCostCeiling = 0.03; // not greater than the current ceiling
+      component.resumeReason = 'trying anyway';
+      component.confirmResume();
+
+      expect(called).toBeFalse();
+      expect(component.resumeError()).toContain('greater');
+    });
+
+    it('shows stale-conflict guidance on a 409 without resuming', () => {
+      const svc: Partial<AdminImportPackageService> = {
+        getManifest: () => of({} as any),
+        getPlan: () => of(pausedPlan()),
+        amendCostCeiling: () => throwError(() => ({ status: 409, error: { error: 'stale' } })),
+      };
+      const component = makeComponent(svc);
+      component.ngOnInit();
+      component.openResume();
+      component.resumeCostCeiling = 5;
+      component.resumeReason = 'reason';
+      component.confirmResume();
+
+      expect(component.resumeConcurrencyConflict()).toBeTrue();
+      expect(component.plan()?.status).toBe('PausedForCostApproval'); // not resumed
+    });
+
+    it('refreshes package/plan state after a successful amendment', () => {
+      const svc: Partial<AdminImportPackageService> = {
+        getManifest: () => of({} as any),
+        getPlan: () => of(pausedPlan()),
+        amendCostCeiling: () => of(basePlan({
+          status: 'Executing', isEditable: false, approvedCostCeiling: 5, accruedCost: 0.03, remainingCeiling: 4.97,
+          ceilingAmendments: [{ amendmentId: 'a1', previousCeiling: 0.03, newCeiling: 5, currency: 'USD', reason: 'need more budget', administratorUserId: 'admin-1', createdAtUtc: '2026-01-01T00:00:00Z' }],
+        })),
+      };
+      const component = makeComponent(svc);
+      component.ngOnInit();
+      component.openResume();
+      component.resumeCostCeiling = 5;
+      component.resumeReason = 'need more budget';
+      component.confirmResume();
+
+      expect(component.plan()?.status).toBe('Executing');
+      expect(component.plan()?.ceilingAmendments.length).toBe(1);
+      expect(component.resumeModalOpen()).toBeFalse();
+    });
   });
 });

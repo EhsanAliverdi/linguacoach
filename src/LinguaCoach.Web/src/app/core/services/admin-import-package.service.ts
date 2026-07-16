@@ -76,9 +76,24 @@ export class AdminImportPackageService {
     return this.http.post<ImportExecutionPlanDto>(`${this.base}/${packageId}/plan/${planId}/reject`, { reason });
   }
 
+  /** @deprecated Phase 4.4B — superseded by amendCostCeiling(), which requires a reason and a
+   *  concurrency stamp and persists an audit record. Kept only because the backend endpoint still
+   *  exists for backward compatibility; the admin UI no longer calls this. */
   approveRevisedCeiling(packageId: string, planId: string, newApprovedCostCeiling: number): Observable<ImportExecutionPlanDto> {
     return this.http.post<ImportExecutionPlanDto>(
       `${this.base}/${packageId}/plan/${planId}/approve-revised-ceiling`, { approvedCostCeiling: newApprovedCostCeiling });
+  }
+
+  /** Phase 4.4B — the audited, concurrency-checked ceiling amendment: requires the plan to
+   *  actually be paused for cost, the new ceiling to exceed the current one, and a reason. On
+   *  success, persists an immutable amendment audit row and resumes the package — never
+   *  automatic, never silent. A stale expectedConcurrencyStamp is rejected with 409. */
+  amendCostCeiling(
+    packageId: string, planId: string, expectedConcurrencyStamp: string, newApprovedCostCeiling: number, reason: string,
+  ): Observable<ImportExecutionPlanDto> {
+    return this.http.post<ImportExecutionPlanDto>(
+      `${this.base}/${packageId}/plan/${planId}/amend-ceiling`,
+      { expectedConcurrencyStamp, newApprovedCostCeiling, reason });
   }
 
   /** Phase 4.4A — saves an edited draft's group instructions. Requires the plan's current

@@ -58,24 +58,26 @@ is itself weaker for JSON today (see the Phase 4.4 review's known limitations), 
 would need backend detection work first to be genuinely useful, not just a cosmetic control.
 **Deferred from:** Phase 4.4A engineering session, 2026-07-16.
 
-### TODO-4.4A-CEILING-AMENDMENT-AUDIT — Concurrency-checked, audited ceiling amendment
-**What:** Harden `POST .../plan/{planId}/approve-revised-ceiling` (and its Angular modal, both
-pre-existing since before Phase 4.4) to require a concurrency stamp, record the previous ceiling,
-actor, timestamp, and an admin-supplied reason as an auditable amendment record — matching the
-"explicit audited admin action" requirement for ceiling increases.
-**Why:** Deferred — the existing resume flow works and is safe (still requires explicit admin
-confirmation, still cannot silently exceed the new ceiling), but lacks the audit trail and
-concurrency guard the original brief specified.
-**Deferred from:** Phase 4.4A engineering session, 2026-07-16.
+### TODO-4.4A-CEILING-AMENDMENT-AUDIT — ~~Concurrency-checked, audited ceiling amendment~~ FIXED in Phase 4.4B
+**Fixed 2026-07-16 (Phase 4.4B).** New `POST .../plan/{planId}/amend-ceiling` endpoint
+(`IImportCostCeilingAmendmentService`) requires a concurrency stamp (409 on stale), requires the
+plan to actually be `PausedForCostApproval`, requires the new ceiling to exceed the current one,
+and requires a reason. Every successful call persists an immutable `ImportCostCeilingAmendment`
+audit row (previous ceiling, new ceiling, currency, reason, administrator, timestamp) in the same
+`SaveChangesAsync` as the resume — audit and resume can never drift apart. `ImportProfile.
+ConcurrencyStamp` is now also an EF concurrency token (`IsConcurrencyToken()`), so a genuine
+simultaneous write race throws `DbUpdateConcurrencyException` (mapped to the same 409) instead of
+silently letting the second writer overwrite the first — see the Phase 4.4B review's "concurrency
+mechanism" section. The pre-existing `approve-revised-ceiling` endpoint/service method is left in
+place, unused by the admin UI, explicitly marked superseded in its doc comment (not deleted, to
+avoid any unforeseen breakage).
 
-### TODO-4.4A-COST-SUMMARY-PANEL — Dedicated cost/pause-state summary panel
-**What:** A clearer, purpose-built display distinguishing draft estimate / approved estimate /
-approved ceiling / accrued cost / remaining ceiling / currency, replacing today's scattered
-estimate-card + pause-alert presentation.
-**Why:** Deferred — the underlying data (`ImportPackage.AccruedCost`, `ImportProfile.
-ApprovedCostCeiling`/`PauseReason`) is already returned and shown, just not laid out as a unified
-summary component.
-**Deferred from:** Phase 4.4A engineering session, 2026-07-16.
+### TODO-4.4A-COST-SUMMARY-PANEL — ~~Dedicated cost/pause-state summary panel~~ FIXED in Phase 4.4B
+**Fixed 2026-07-16 (Phase 4.4B).** A "Cost details" card now shows approved ceiling, accrued cost
+(actual, backend-calculated), remaining ceiling, and — while paused — the pause reason plus an
+amendment-history table (previous → new ceiling, reason, timestamp per row). Sourced entirely from
+new `ImportExecutionPlanDto` fields (`AccruedCost`, `AccruedCostCurrency`, `RemainingCeiling`,
+`CeilingAmendments`) — nothing is recomputed client-side.
 
 ### TODO-4.4A-STT-OPERATION-SUMMARY — STT operation ledger visibility in the admin UI
 **What:** Surface `ImportSttOperation` rows (asset, status, provider/model, cost, reused/attempt
@@ -92,8 +94,32 @@ Candidate Review; plus a stale-concurrency-conflict scenario and a cost-paused/r
 errors (`feedbackPolicy`, `moduleSuggestions`) noted since Phase 4.2/4.3/4.4; this phase's own
 Angular unit spec compiles cleanly in isolation (`npx tsc --noEmit` shows no new errors) but the
 full Karma bundle still fails at the pre-existing unrelated spec files. Still tracked from
-Phase 4.2 (`TODO-4.2-PLAYWRIGHT`) and Phase 4.4 (`TODO-4.4-PLAYWRIGHT`).
+Phase 4.2 (`TODO-4.2-PLAYWRIGHT`) and Phase 4.4 (`TODO-4.4-PLAYWRIGHT`). Still open after
+Phase 4.4B — see `TODO-4.4B-PLAYWRIGHT` below for the additional ceiling-amendment scenario this
+phase would have added.
 **Deferred from:** Phase 4.4A engineering session, 2026-07-16.
+
+---
+
+## Phase 4.4B — Audited cost ceiling amendment (2026-07-16)
+
+This phase was explicitly scoped down (confirmed with the user before starting) to: the audited
+ceiling-amendment backend (entity, migration, endpoint, real EF-level concurrency protection) plus
+the Angular amendment form and cost-details/amendment-history display, replacing the old
+approve-revised-ceiling call. Deferred: the STT operation-summary view and Playwright coverage —
+both already tracked above as `TODO-4.4A-STT-OPERATION-SUMMARY` and `TODO-4.4A-PLAYWRIGHT`/below.
+
+### TODO-4.4B-PLAYWRIGHT — E2E coverage for the audited ceiling-amendment flow
+**What:** Add a Playwright spec: seed/drive a package into `PausedForCostApproval` → open the plan
+page → review cost details (accrued/ceiling/remaining/pause reason) → submit a higher ceiling and
+reason → verify the amendment appears in history → verify the package resumes. Plus a stale-
+concurrency variant (open the page in two contexts, amend from one, verify the other gets reload
+guidance).
+**Why:** Deferred — same pre-existing Karma/TypeScript baseline blocker as `TODO-4.4A-PLAYWRIGHT`
+prevents running any Angular browser test suite productively this session; the backend and
+component-level (non-rendered) coverage for this exact flow is in place and passing
+(`ImportCostCeilingAmendmentTests.cs`, `admin-import-package-plan.component.spec.ts`).
+**Deferred from:** Phase 4.4B engineering session, 2026-07-16.
 
 ---
 

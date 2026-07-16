@@ -1,5 +1,8 @@
 using System.Text.Json;
 using LinguaCoach.Application.ResourceImport;
+using LinguaCoach.Domain.Entities;
+using LinguaCoach.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 namespace LinguaCoach.Infrastructure.ResourceImport;
 
@@ -24,5 +27,20 @@ internal static class ImportPlanDtoHelpers
         {
             return Array.Empty<ImportExecutionGroupInstruction>();
         }
+    }
+
+    /// <summary>Phase 4.4B — loads a plan's full ceiling-amendment audit history, oldest first, for
+    /// display in <see cref="ImportExecutionPlanDto.CeilingAmendments"/>.</summary>
+    public static async Task<IReadOnlyList<ImportCostCeilingAmendmentDto>> LoadCeilingAmendmentsAsync(
+        LinguaCoachDbContext db, Guid planId, CancellationToken ct)
+    {
+        // Ordered client-side — SQLite (the test provider) cannot translate ORDER BY over a
+        // DateTimeOffset column server-side.
+        var rows = await db.ImportCostCeilingAmendments
+            .Where(a => a.ImportProfileId == planId)
+            .ToListAsync(ct);
+
+        return rows.OrderBy(a => a.CreatedAtUtc).Select(a => new ImportCostCeilingAmendmentDto(
+            a.Id, a.PreviousCeiling, a.NewCeiling, a.Currency, a.Reason, a.AdministratorUserId, a.CreatedAtUtc)).ToList();
     }
 }

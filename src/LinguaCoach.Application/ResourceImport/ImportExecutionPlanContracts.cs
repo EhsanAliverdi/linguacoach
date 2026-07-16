@@ -106,7 +106,16 @@ public sealed record ImportExecutionPlanDto(
     bool IsEditable,
     /// <summary>Phase 4.4 — the typed group instructions this plan's <c>ProfileJson</c> currently
     /// holds, for a UI to render editable controls against without parsing JSON itself.</summary>
-    IReadOnlyList<ImportExecutionGroupInstruction> GroupInstructions);
+    IReadOnlyList<ImportExecutionGroupInstruction> GroupInstructions,
+    /// <summary>Phase 4.4B — the package's durable running total spent so far (authoritative,
+    /// backend-calculated — never recomputed client-side).</summary>
+    decimal AccruedCost,
+    string AccruedCostCurrency,
+    /// <summary>Phase 4.4B — <c>ApprovedCostCeiling - AccruedCost</c>, or null when no ceiling is
+    /// approved yet. Backend-calculated so the client never has to reproduce the subtraction.</summary>
+    decimal? RemainingCeiling,
+    /// <summary>Phase 4.4B — every past ceiling amendment for this plan, oldest first.</summary>
+    IReadOnlyList<ImportCostCeilingAmendmentDto> CeilingAmendments);
 
 public sealed record GenerateImportExecutionPlanCommand(Guid ImportPackageId, string? ChangeReason = null);
 

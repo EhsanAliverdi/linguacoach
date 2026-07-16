@@ -190,4 +190,23 @@ export interface ImportExecutionPlanDto {
   /** Phase 4.4 — the plan's actual executable instructions (what PUT/preview/approve operate
    *  on) — the single source of truth for the editor's form model. */
   groupInstructions: ImportExecutionGroupInstruction[];
+  /** Phase 4.4B — the package's durable running total spent so far (backend-calculated). */
+  accruedCost: number;
+  accruedCostCurrency: string;
+  /** Phase 4.4B — approvedCostCeiling - accruedCost, or null when no ceiling is approved yet. */
+  remainingCeiling: number | null;
+  /** Phase 4.4B — every past ceiling amendment for this plan, oldest first. */
+  ceilingAmendments: ImportCostCeilingAmendmentDto[];
+}
+
+/** Mirrors LinguaCoach.Application.ResourceImport.ImportCostCeilingAmendmentDto — one immutable,
+ *  audited record of an administrator raising a paused plan's approved cost ceiling. */
+export interface ImportCostCeilingAmendmentDto {
+  amendmentId: string;
+  previousCeiling: number;
+  newCeiling: number;
+  currency: string;
+  reason: string;
+  administratorUserId: string | null;
+  createdAtUtc: string;
 }

@@ -134,8 +134,10 @@ export class AdminImportPackagePlanComponent implements OnInit {
 
   resumeModalOpen = signal(false);
   resumeCostCeiling: number | null = null;
+  resumeReason = '';
   resuming = signal(false);
   resumeError = signal('');
+  resumeConcurrencyConflict = signal(false);
 
   constructor(
     private packageSvc: AdminImportPackageService,
@@ -392,20 +394,32 @@ export class AdminImportPackagePlanComponent implements OnInit {
   }
 
   openResume(): void {
-    this.resumeCostCeiling = this.plan()?.approvedCostCeiling ?? null;
+    const plan = this.plan();
+    this.resumeCostCeiling = plan?.approvedCostCeiling ?? null;
+    this.resumeReason = '';
     this.resumeError.set('');
+    this.resumeConcurrencyConflict.set(false);
     this.resumeModalOpen.set(true);
   }
 
+  /** Phase 4.4B — audited, concurrency-checked ceiling amendment. Requires a new ceiling strictly
+   *  greater than the current one and a reason; never resumes silently or automatically. */
   confirmResume(): void {
     const plan = this.plan();
-    if (!plan || this.resumeCostCeiling === null || this.resumeCostCeiling < 0) {
-      this.resumeError.set('A revised cost ceiling (>= 0) is required.');
+    if (!plan) return;
+    const currentCeiling = plan.approvedCostCeiling ?? 0;
+    if (this.resumeCostCeiling === null || this.resumeCostCeiling <= currentCeiling) {
+      this.resumeError.set(`The new ceiling must be greater than the current approved ceiling (${currentCeiling}).`);
+      return;
+    }
+    if (!this.resumeReason.trim()) {
+      this.resumeError.set('A reason is required to raise the approved cost ceiling.');
       return;
     }
     this.resuming.set(true);
     this.resumeError.set('');
-    this.packageSvc.approveRevisedCeiling(this.packageId, plan.planId, this.resumeCostCeiling).subscribe({
+    this.resumeConcurrencyConflict.set(false);
+    this.packageSvc.amendCostCeiling(this.packageId, plan.planId, plan.concurrencyStamp, this.resumeCostCeiling, this.resumeReason.trim()).subscribe({
       next: updated => {
         this.plan.set(updated);
         this.rebuildForm(updated);
@@ -413,8 +427,13 @@ export class AdminImportPackagePlanComponent implements OnInit {
         this.resumeModalOpen.set(false);
       },
       error: err => {
-        this.resumeError.set(err.error?.error ?? 'Could not resume this plan.');
         this.resuming.set(false);
+        if (err.status === 409) {
+          this.resumeConcurrencyConflict.set(true);
+          this.resumeError.set(err.error?.error ?? 'This plan was changed elsewhere since you loaded it. Reload before amending the ceiling.');
+          return;
+        }
+        this.resumeError.set(err.error?.error ?? 'Could not amend the cost ceiling.');
       },
     });
   }

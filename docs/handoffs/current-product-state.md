@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-16 (Phase 4.4A — admin plan editor and cost operations UI, core-editor slice)
+lastUpdated: 2026-07-16 (Phase 4.4B — audited cost ceiling amendment)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,37 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-16 (Phase 4.4A — admin plan editor and cost operations UI, core-editor slice)
+Last updated: 2026-07-16 (Phase 4.4B — audited cost ceiling amendment)
+
+## Phase 4.4B: Audited cost ceiling amendment (2026-07-16)
+
+**Scope note:** confirmed with the user before starting as "backend + core Angular amendment
+flow," deferring the STT operation-summary view and Playwright coverage.
+
+**Backend:** new immutable, append-only `ImportCostCeilingAmendment` entity (previous ceiling, new
+ceiling, currency, reason, administrator, timestamp) plus `POST api/admin/import-packages/
+{packageId}/plan/{planId}/amend-ceiling` (`IImportCostCeilingAmendmentService`) — the audited
+replacement for the old `approve-revised-ceiling` path. Validates, in order: concurrency stamp
+(409 on stale), plan is actually `PausedForCostApproval` (400 otherwise), new ceiling strictly
+greater than the current one (400 otherwise), and a non-blank reason. On success, persists the
+audit row and resumes the package in the same `SaveChangesAsync` — there is no automatic or
+partial resume. `ImportProfile.ConcurrencyStamp` is now also an EF `IsConcurrencyToken()`, so a
+genuine simultaneous write race (two requests reading the same stamp before either commits — the
+gap the existing app-level "check then mutate" comparison alone can't close) throws
+`DbUpdateConcurrencyException`, caught and mapped to the same 409 a sequential stale request gets.
+`ImportExecutionPlanDto` now also carries `AccruedCost`, `AccruedCostCurrency`, `RemainingCeiling`,
+and `CeilingAmendments` (full audit history), backend-calculated, on every plan read.
+
+**Frontend:** `AdminImportPackagePlanComponent` gained a "Cost details" card (approved ceiling,
+accrued cost, remaining ceiling, pause reason while paused, amendment-history table) and the
+resume modal now requires a reason and sends the plan's concurrency stamp to the new endpoint,
+with the same stale-conflict/reload-guidance pattern as draft save and approval.
+
+One additive migration (`Phase_4_4B_CostCeilingAmendments`, new table only). 2338 unit / 1311
+integration (+8) / 19 architecture tests pass. `npx tsc --noEmit` and the production Angular build
+are clean (same pre-existing baseline errors as Phase 4.4A, zero new). Karma still blocked by the
+same pre-existing baseline TypeScript errors; Playwright not added. Full detail:
+`docs/reviews/2026-07-16-phase-4-4b-audited-cost-ceiling-amendment-review.md`.
 
 ## Phase 4.4A: Admin plan editor and cost operations UI — core-editor slice (2026-07-16)
 

@@ -58,7 +58,7 @@ internal sealed class ImportExecutionPlanApprovalService : IImportExecutionPlanA
         foreach (var other in otherApproved) other.Supersede();
 
         await _db.SaveChangesAsync(ct);
-        return ToDto(package, plan);
+        return await ToDtoAsync(package, plan, ct);
     }
 
     public async Task<ImportExecutionPlanDto> RejectAsync(RejectImportExecutionPlanCommand command, CancellationToken ct = default)
@@ -69,9 +69,15 @@ internal sealed class ImportExecutionPlanApprovalService : IImportExecutionPlanA
         package.MoveToStatus(ImportPackageStatus.Failed);
 
         await _db.SaveChangesAsync(ct);
-        return ToDto(package, plan);
+        return await ToDtoAsync(package, plan, ct);
     }
 
+    /// <summary>Phase 4.4 (pre-4.4B) simple resume path — kept working unchanged for backward
+    /// compatibility, but no longer used by the admin UI. Phase 4.4B's
+    /// <see cref="IImportCostCeilingAmendmentService"/> is the audited, concurrency-checked
+    /// replacement: it validates the package is actually paused for cost, requires the new ceiling
+    /// to exceed the current one, and persists an immutable <c>ImportCostCeilingAmendment</c> audit
+    /// row before resuming. This method still performs none of those checks.</summary>
     public async Task<ImportExecutionPlanDto> ApproveRevisedCostCeilingAsync(ApproveRevisedCostCeilingCommand command, CancellationToken ct = default)
     {
         var (package, plan) = await LoadAsync(command.ImportPackageId, command.PlanId, ct);
@@ -80,7 +86,7 @@ internal sealed class ImportExecutionPlanApprovalService : IImportExecutionPlanA
         package.MoveToStatus(ImportPackageStatus.Queued);
 
         await _db.SaveChangesAsync(ct);
-        return ToDto(package, plan);
+        return await ToDtoAsync(package, plan, ct);
     }
 
     public async Task<ImportExecutionPlanDto?> GetCurrentPlanAsync(Guid importPackageId, CancellationToken ct = default)
@@ -94,7 +100,7 @@ internal sealed class ImportExecutionPlanApprovalService : IImportExecutionPlanA
             .FirstOrDefaultAsync(ct);
         if (plan is null) return null;
 
-        return ToDto(package, plan);
+        return await ToDtoAsync(package, plan, ct);
     }
 
     private async Task<(ImportPackage Package, ImportProfile Plan)> LoadAsync(Guid packageId, Guid planId, CancellationToken ct)
@@ -151,17 +157,21 @@ internal sealed class ImportExecutionPlanApprovalService : IImportExecutionPlanA
                 _costOptions.AssumedAiProviderName, _costOptions.AssumedAiModelName, "AI candidate enrichment");
     }
 
-    private static ImportExecutionPlanDto ToDto(ImportPackage package, ImportProfile plan)
+    private async Task<ImportExecutionPlanDto> ToDtoAsync(ImportPackage package, ImportProfile plan, CancellationToken ct)
     {
         var estimate = string.IsNullOrEmpty(plan.PlanEstimateJson)
             ? null
             : JsonSerializer.Deserialize<ImportExecutionPlanEstimate>(plan.PlanEstimateJson);
+        var amendments = await ImportPlanDtoHelpers.LoadCeilingAmendmentsAsync(_db, plan.Id, ct);
 
         return new ImportExecutionPlanDto(
             plan.Id, package.Id, plan.Version, plan.Status, package.ProcessingMode, package.ProcessingModeReason,
             estimate!, plan.ApprovedCostCeiling, plan.CreatedAtUtc, plan.ApprovedAtUtc, plan.ApprovedByUserId,
             plan.RejectedAtUtc, plan.RejectionReason, plan.PauseReason, plan.ChangeReason,
             plan.ConcurrencyStamp, plan.Status is ImportProfileStatus.Draft or ImportProfileStatus.AwaitingApproval,
-            ImportPlanDtoHelpers.DeserializeGroupInstructionsSafe(plan.ProfileJson));
+            ImportPlanDtoHelpers.DeserializeGroupInstructionsSafe(plan.ProfileJson),
+            package.AccruedCost, package.AccruedCostCurrency,
+            plan.ApprovedCostCeiling.HasValue ? plan.ApprovedCostCeiling.Value - package.AccruedCost : null,
+            amendments);
     }
 }

@@ -25,6 +25,7 @@ public sealed class AdminImportPackageController : ControllerBase
     private readonly IImportExecutionPlanApprovalService _planApprovalService;
     private readonly IImportPlanDraftService _planDraftService;
     private readonly IImportPlanPreviewService _planPreviewService;
+    private readonly IImportCostCeilingAmendmentService _costCeilingAmendmentService;
 
     public AdminImportPackageController(
         IImportPackageUploadService uploadService,
@@ -32,7 +33,8 @@ public sealed class AdminImportPackageController : ControllerBase
         IImportExecutionPlanGenerationService planGenerationService,
         IImportExecutionPlanApprovalService planApprovalService,
         IImportPlanDraftService planDraftService,
-        IImportPlanPreviewService planPreviewService)
+        IImportPlanPreviewService planPreviewService,
+        IImportCostCeilingAmendmentService costCeilingAmendmentService)
     {
         _uploadService = uploadService;
         _submissionService = submissionService;
@@ -40,6 +42,7 @@ public sealed class AdminImportPackageController : ControllerBase
         _planApprovalService = planApprovalService;
         _planDraftService = planDraftService;
         _planPreviewService = planPreviewService;
+        _costCeilingAmendmentService = costCeilingAmendmentService;
     }
 
     // POST api/admin/import-packages/submit  multipart/form-data:
@@ -274,6 +277,30 @@ public sealed class AdminImportPackageController : ControllerBase
         }
     }
 
+    // POST api/admin/import-packages/{packageId}/plan/{planId}/amend-ceiling — Phase 4.4B — the
+    // audited, concurrency-checked replacement for approve-revised-ceiling: requires a reason,
+    // requires the new ceiling to exceed the current one, requires the plan to actually be
+    // PausedForCostApproval, and persists an immutable amendment audit row before resuming.
+    [HttpPost("{packageId:guid}/plan/{planId:guid}/amend-ceiling")]
+    public async Task<IActionResult> AmendCostCeiling(
+        Guid packageId, Guid planId, [FromBody] AmendCostCeilingBody body, CancellationToken ct)
+    {
+        try
+        {
+            var result = await _costCeilingAmendmentService.AmendAsync(new AmendImportCostCeilingCommand(
+                packageId, planId, body.ExpectedConcurrencyStamp, body.NewApprovedCostCeiling, body.Reason, CurrentUserId()), ct);
+            return Ok(result);
+        }
+        catch (ImportPlanConcurrencyConflictException ex)
+        {
+            return Conflict(new { error = ex.Message, currentConcurrencyStamp = ex.CurrentConcurrencyStamp });
+        }
+        catch (ResourceImportValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
     private Guid? CurrentUserId()
     {
         var idClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -296,4 +323,7 @@ public sealed class AdminImportPackageController : ControllerBase
 
     public sealed record PreviewPlanDraftBody(
         IReadOnlyList<ImportExecutionGroupInstruction> GroupInstructions, int? MaxSampleRowsPerGroup);
+
+    public sealed record AmendCostCeilingBody(
+        Guid ExpectedConcurrencyStamp, decimal NewApprovedCostCeiling, string Reason);
 }

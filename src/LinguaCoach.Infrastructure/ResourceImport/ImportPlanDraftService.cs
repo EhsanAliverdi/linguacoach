@@ -42,7 +42,7 @@ internal sealed class ImportPlanDraftService : IImportPlanDraftService
             JsonSerializer.Serialize(estimate));
 
         await _db.SaveChangesAsync(ct);
-        return ToDto(package, plan, estimate);
+        return await ToDtoAsync(package, plan, estimate, ct);
     }
 
     public async Task<ImportExecutionPlanDto> ReviseAsync(ReviseApprovedImportPlanCommand command, CancellationToken ct = default)
@@ -89,7 +89,7 @@ internal sealed class ImportPlanDraftService : IImportPlanDraftService
         var estimate = string.IsNullOrEmpty(revision.PlanEstimateJson)
             ? null
             : JsonSerializer.Deserialize<ImportExecutionPlanEstimate>(revision.PlanEstimateJson);
-        return ToDto(package, revision, estimate);
+        return await ToDtoAsync(package, revision, estimate, ct);
     }
 
     private async Task<(ImportPackage Package, ImportProfile Plan)> LoadEditableAsync(
@@ -117,11 +117,18 @@ internal sealed class ImportPlanDraftService : IImportPlanDraftService
         catch (JsonException) { return null; }
     }
 
-    private static ImportExecutionPlanDto ToDto(ImportPackage package, ImportProfile plan, ImportExecutionPlanEstimate? estimate) =>
-        new(
+    private async Task<ImportExecutionPlanDto> ToDtoAsync(
+        ImportPackage package, ImportProfile plan, ImportExecutionPlanEstimate? estimate, CancellationToken ct)
+    {
+        var amendments = await ImportPlanDtoHelpers.LoadCeilingAmendmentsAsync(_db, plan.Id, ct);
+        return new ImportExecutionPlanDto(
             plan.Id, package.Id, plan.Version, plan.Status, package.ProcessingMode, package.ProcessingModeReason,
             estimate!, plan.ApprovedCostCeiling, plan.CreatedAtUtc, plan.ApprovedAtUtc, plan.ApprovedByUserId,
             plan.RejectedAtUtc, plan.RejectionReason, plan.PauseReason, plan.ChangeReason,
             plan.ConcurrencyStamp, plan.Status is ImportProfileStatus.Draft or ImportProfileStatus.AwaitingApproval,
-            ImportPlanDtoHelpers.DeserializeGroupInstructionsSafe(plan.ProfileJson));
+            ImportPlanDtoHelpers.DeserializeGroupInstructionsSafe(plan.ProfileJson),
+            package.AccruedCost, package.AccruedCostCurrency,
+            plan.ApprovedCostCeiling.HasValue ? plan.ApprovedCostCeiling.Value - package.AccruedCost : null,
+            amendments);
+    }
 }
