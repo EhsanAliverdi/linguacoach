@@ -74,6 +74,14 @@ public class ApiTestFactory : WebApplicationFactory<Program>, IAsyncLifetime
             services.AddSingleton<LinguaCoach.Infrastructure.Storage.FakeFileStorageService>();
             services.AddSingleton<LinguaCoach.Application.Storage.IFileStorageService>(
                 sp => sp.GetRequiredService<LinguaCoach.Infrastructure.Storage.FakeFileStorageService>());
+
+            // Phase 4.4E — replace the real ffprobe-shelling IAudioDurationProbe with a fake for
+            // all tests; see FakeAudioDurationProbe's doc comment for why (no ffprobe dependency
+            // in the test/CI environment).
+            RemoveAll<LinguaCoach.Application.ResourceImport.IAudioDurationProbe>(services);
+            services.AddSingleton<FakeAudioDurationProbe>();
+            services.AddSingleton<LinguaCoach.Application.ResourceImport.IAudioDurationProbe>(
+                sp => sp.GetRequiredService<FakeAudioDurationProbe>());
         });
 
         builder.UseSetting("Jwt:Key", TestJwtKey);

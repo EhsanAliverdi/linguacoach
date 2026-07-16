@@ -34,7 +34,13 @@ public sealed class ImportPlanDraftServiceTests : IDisposable
         _db.Database.EnsureCreated();
 
         var pricingResolver = new AiPricingResolver(_db, new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
-        var estimateService = new ImportPlanEstimateService(pricingResolver, Options.Create(new LinguaCoach.Infrastructure.ResourceImport.ImportCostEstimationOptions()));
+        // Phase 4.4E — no ImportAsset rows exist for these tests' packages, so the estimate
+        // always falls back to the labeled per-file assumption; the probe is never actually
+        // invoked, but a real resolver must still be constructible.
+        var audioDurationResolver = new ImportAssetAudioDurationResolver(
+            new LinguaCoach.Infrastructure.Storage.FakeFileStorageService(), new NeverCalledAudioDurationProbe());
+        var estimateService = new ImportPlanEstimateService(
+            pricingResolver, _db, audioDurationResolver, Options.Create(new LinguaCoach.Infrastructure.ResourceImport.ImportCostEstimationOptions()));
         _draftService = new ImportPlanDraftService(_db, estimateService);
     }
 
@@ -282,5 +288,11 @@ public sealed class ImportPlanDraftServiceTests : IDisposable
             package.Id, plan.Id, "too late"));
 
         await act.Should().ThrowAsync<ResourceImportValidationException>();
+    }
+
+    private sealed class NeverCalledAudioDurationProbe : IAudioDurationProbe
+    {
+        public Task<AudioDurationProbeResult> ProbeDurationAsync(Stream audioStream, string fileExtension, CancellationToken ct = default) =>
+            throw new InvalidOperationException("No ImportAsset rows exist in these tests — the probe should never be invoked.");
     }
 }

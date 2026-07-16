@@ -229,6 +229,10 @@ export interface ImportSttOperationSummaryDto {
   startedAtUtc: string;
   completedAtUtc: string | null;
   safeErrorMessage: string | null;
+  /** Phase 4.4E — the asset's real, measured audio duration (never the old flat five-minute
+   *  assumption) — null if not yet measured or measurement failed. */
+  measuredAudioDurationSeconds: number | null;
+  audioDurationMeasurementStatus: 'NotMeasured' | 'Measured' | 'Failed';
 }
 
 /** Mirrors LinguaCoach.Application.ResourceImport.ImportAiEnrichmentOperationSummaryDto — one

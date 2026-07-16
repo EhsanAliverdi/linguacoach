@@ -50,6 +50,8 @@ internal sealed class ImportExecutionPlanGenerationService : IImportExecutionPla
     private readonly ImportCostEstimationOptions _costOptions;
     private readonly ILogger<ImportExecutionPlanGenerationService> _logger;
 
+    private readonly IImportAssetAudioDurationResolver _audioDurationResolver;
+
     public ImportExecutionPlanGenerationService(
         LinguaCoachDbContext db,
         IZipPackageInspector inspector,
@@ -61,6 +63,7 @@ internal sealed class ImportExecutionPlanGenerationService : IImportExecutionPla
         IFileStorageService storage,
         IResourceImportService resourceImportService,
         IResourceImportColumnMappingService columnMappingService,
+        IImportAssetAudioDurationResolver audioDurationResolver,
         IOptions<ImportPackageLimitsOptions> limits,
         IOptions<ImportCostEstimationOptions> costOptions,
         ILogger<ImportExecutionPlanGenerationService> logger)
@@ -75,6 +78,7 @@ internal sealed class ImportExecutionPlanGenerationService : IImportExecutionPla
         _storage = storage;
         _resourceImportService = resourceImportService;
         _columnMappingService = columnMappingService;
+        _audioDurationResolver = audioDurationResolver;
         _limits = limits.Value;
         _costOptions = costOptions.Value;
         _logger = logger;
@@ -109,7 +113,7 @@ internal sealed class ImportExecutionPlanGenerationService : IImportExecutionPla
             if (idx >= 0) groups[idx] = update;
         }
 
-        var volume = BuildVolumeEstimate(manifest, groups);
+        var volume = await BuildVolumeEstimateAsync(package.Id, manifest, groups, ct);
         var time = BuildTimeEstimate(volume);
         var cost = await BuildCostEstimateAsync(volume, modeDecision.Mode, ct);
         var risks = BuildRisks(manifest, ambiguousGroups, unsupportedNotes, volume);
@@ -477,8 +481,8 @@ internal sealed class ImportExecutionPlanGenerationService : IImportExecutionPla
 
     // ── Part 4 — volume / time / cost estimation ────────────────────────────────────────────
 
-    private ImportExecutionPlanVolumeEstimate BuildVolumeEstimate(
-        ImportPackageManifest manifest, List<ImportExecutionPlanDetectedGroup> groups)
+    private async Task<ImportExecutionPlanVolumeEstimate> BuildVolumeEstimateAsync(
+        Guid packageId, ImportPackageManifest manifest, List<ImportExecutionPlanDetectedGroup> groups, CancellationToken ct)
     {
         var byExtension = manifest.Entries
             .GroupBy(e => e.FileExtension, StringComparer.OrdinalIgnoreCase)
@@ -489,8 +493,18 @@ internal sealed class ImportExecutionPlanGenerationService : IImportExecutionPla
             .Where(e => TranscriptExtensions.Contains(e.FileExtension))
             .Select(e => System.IO.Path.GetFileNameWithoutExtension(e.RelativePath))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var audioMissingTranscript = audioEntries
-            .Count(e => !transcriptStems.Contains(System.IO.Path.GetFileNameWithoutExtension(e.RelativePath)));
+        var audioEntriesMissingTranscript = audioEntries
+            .Where(e => !transcriptStems.Contains(System.IO.Path.GetFileNameWithoutExtension(e.RelativePath)))
+            .ToList();
+
+        // Phase 4.4E — real, persisted, reusable duration measurement, used here too where
+        // possible. ImportAsset rows already exist at plan-generation time for inline/loose-file
+        // submissions (Phase 4.2), so those can be measured for real; a ZIP package's assets are
+        // not materialized until the approved plan's Extract stage runs, so those entries still
+        // use the labeled five-minute-per-file estimate below (an *estimate*, not a billed
+        // amount — execution itself never falls back to this once the real asset exists, see
+        // ImportPackageProcessingService).
+        var estimatedAudioMinutes = await EstimateAudioMinutesAsync(packageId, audioEntriesMissingTranscript, ct);
 
         var imageCount = manifest.Entries.Count(e => ImageExtensions.Contains(e.FileExtension));
 
@@ -508,12 +522,46 @@ internal sealed class ImportExecutionPlanGenerationService : IImportExecutionPla
             manifest.EntryCount,
             byExtension,
             expectedCandidateCount,
-            audioMissingTranscript,
-            audioMissingTranscript * 5.0, // assumed average minutes/file — see AssumedAudioMinutesPerFile note below
+            audioEntriesMissingTranscript.Count,
+            estimatedAudioMinutes,
             ExpectedTtsCandidates: 0, // TTS is opt-in only; default plan never assumes automatic TTS
             EstimatedTtsCharacters: 0,
             ExpectedImageAnalysisCount: imageCount,
             UnmatchedFileCount: manifest.UnsupportedEntries.Count + manifest.SuspiciousEntries.Count);
+    }
+
+    /// <summary>Real-measures whichever audio-missing-transcript entries already have a
+    /// materialized <see cref="ImportAsset"/> row (matched by relative path); falls back to the
+    /// labeled five-minute-per-file estimate for any entry that doesn't (not yet extracted) or
+    /// whose measurement fails — this is an estimate shown to the admin before approval, not a
+    /// billed amount, so degrading gracefully here (unlike execution, which never does) is
+    /// appropriate.</summary>
+    private async Task<double> EstimateAudioMinutesAsync(
+        Guid packageId, IReadOnlyList<ImportPackageManifestEntry> audioEntriesMissingTranscript, CancellationToken ct)
+    {
+        if (audioEntriesMissingTranscript.Count == 0) return 0.0;
+
+        var assetsByPath = await _db.ImportAssets
+            .Where(a => a.ImportPackageId == packageId)
+            .ToDictionaryAsync(a => a.RelativePath, StringComparer.OrdinalIgnoreCase, ct);
+
+        double totalMinutes = 0.0;
+        foreach (var entry in audioEntriesMissingTranscript)
+        {
+            if (assetsByPath.TryGetValue(entry.RelativePath, out var asset))
+            {
+                var measurement = await _audioDurationResolver.ResolveAsync(asset, ct);
+                if (measurement.Success)
+                {
+                    totalMinutes += (double)(measurement.DurationSeconds!.Value / 60m);
+                    continue;
+                }
+            }
+            totalMinutes += 5.0; // no materialized asset yet, or measurement failed — labeled estimate only
+        }
+
+        await _db.SaveChangesAsync(ct); // persist whatever measurements were just recorded
+        return totalMinutes;
     }
 
     private ImportExecutionPlanTimeEstimate BuildTimeEstimate(ImportExecutionPlanVolumeEstimate volume)

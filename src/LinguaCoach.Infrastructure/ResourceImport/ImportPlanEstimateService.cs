@@ -3,6 +3,8 @@ using LinguaCoach.Application.Ai;
 using LinguaCoach.Application.ResourceImport;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
+using LinguaCoach.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace LinguaCoach.Infrastructure.ResourceImport;
@@ -29,11 +31,17 @@ internal sealed class ImportPlanEstimateService : IImportPlanEstimateService
         { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
 
     private readonly IAiPricingResolver _pricingResolver;
+    private readonly LinguaCoachDbContext _db;
+    private readonly IImportAssetAudioDurationResolver _audioDurationResolver;
     private readonly ImportCostEstimationOptions _costOptions;
 
-    public ImportPlanEstimateService(IAiPricingResolver pricingResolver, IOptions<ImportCostEstimationOptions> costOptions)
+    public ImportPlanEstimateService(
+        IAiPricingResolver pricingResolver, LinguaCoachDbContext db, IImportAssetAudioDurationResolver audioDurationResolver,
+        IOptions<ImportCostEstimationOptions> costOptions)
     {
         _pricingResolver = pricingResolver;
+        _db = db;
+        _audioDurationResolver = audioDurationResolver;
         _costOptions = costOptions.Value;
     }
 
@@ -65,7 +73,7 @@ internal sealed class ImportPlanEstimateService : IImportPlanEstimateService
             return new ImportExecutionPlanDetectedGroup(i.GroupKey, description, count, i.SampleRelativePaths, i.ResourceType, 1.0);
         }).ToList();
 
-        var volume = BuildVolumeEstimate(includedEntries);
+        var volume = await BuildVolumeEstimateAsync(package.Id, includedEntries, ct);
         var time = BuildTimeEstimate(volume);
         var hasStructuredFiles = includedEntries.Any(e => StructuredDataExtensions.Contains(e.FileExtension));
         var cost = await BuildCostEstimateAsync(volume, package.ProcessingMode ?? ImportProcessingMode.Direct, hasStructuredFiles, ct);
@@ -75,7 +83,8 @@ internal sealed class ImportPlanEstimateService : IImportPlanEstimateService
             Array.Empty<string>(), Array.Empty<ImportExecutionPlanDecision>(), SamplingRoundsUsed: 0, StructureConfidence: 1.0);
     }
 
-    private static ImportExecutionPlanVolumeEstimate BuildVolumeEstimate(IReadOnlyList<ImportPackageManifestEntry> entries)
+    private async Task<ImportExecutionPlanVolumeEstimate> BuildVolumeEstimateAsync(
+        Guid packageId, IReadOnlyList<ImportPackageManifestEntry> entries, CancellationToken ct)
     {
         var byExtension = entries
             .GroupBy(e => e.FileExtension, StringComparer.OrdinalIgnoreCase)
@@ -86,8 +95,15 @@ internal sealed class ImportPlanEstimateService : IImportPlanEstimateService
             .Where(e => TranscriptExtensions.Contains(e.FileExtension))
             .Select(e => Path.GetFileNameWithoutExtension(e.RelativePath))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var audioMissingTranscript = audioEntries
-            .Count(e => !transcriptStems.Contains(Path.GetFileNameWithoutExtension(e.RelativePath)));
+        var audioEntriesMissingTranscript = audioEntries
+            .Where(e => !transcriptStems.Contains(Path.GetFileNameWithoutExtension(e.RelativePath)))
+            .ToList();
+
+        // Phase 4.4E — real measurement where a materialized ImportAsset already exists (inline/
+        // loose-file submissions); the labeled five-minute-per-file estimate otherwise (a ZIP
+        // package's assets aren't extracted yet) — see ImportExecutionPlanGenerationService's
+        // twin of this method for the identical rationale.
+        var estimatedAudioMinutes = await EstimateAudioMinutesAsync(packageId, audioEntriesMissingTranscript, ct);
 
         var imageCount = entries.Count(e => ImageExtensions.Contains(e.FileExtension));
 
@@ -98,9 +114,37 @@ internal sealed class ImportPlanEstimateService : IImportPlanEstimateService
                 !transcriptStems.Contains(Path.GetFileNameWithoutExtension(e.RelativePath))));
 
         return new ImportExecutionPlanVolumeEstimate(
-            entries.Count, byExtension, expectedCandidateCount, audioMissingTranscript,
-            audioMissingTranscript * 5.0, ExpectedTtsCandidates: 0, EstimatedTtsCharacters: 0,
+            entries.Count, byExtension, expectedCandidateCount, audioEntriesMissingTranscript.Count,
+            estimatedAudioMinutes, ExpectedTtsCandidates: 0, EstimatedTtsCharacters: 0,
             ExpectedImageAnalysisCount: imageCount, UnmatchedFileCount: 0);
+    }
+
+    private async Task<double> EstimateAudioMinutesAsync(
+        Guid packageId, IReadOnlyList<ImportPackageManifestEntry> audioEntriesMissingTranscript, CancellationToken ct)
+    {
+        if (audioEntriesMissingTranscript.Count == 0) return 0.0;
+
+        var assetsByPath = await _db.ImportAssets
+            .Where(a => a.ImportPackageId == packageId)
+            .ToDictionaryAsync(a => a.RelativePath, StringComparer.OrdinalIgnoreCase, ct);
+
+        double totalMinutes = 0.0;
+        foreach (var entry in audioEntriesMissingTranscript)
+        {
+            if (assetsByPath.TryGetValue(entry.RelativePath, out var asset))
+            {
+                var measurement = await _audioDurationResolver.ResolveAsync(asset, ct);
+                if (measurement.Success)
+                {
+                    totalMinutes += (double)(measurement.DurationSeconds!.Value / 60m);
+                    continue;
+                }
+            }
+            totalMinutes += 5.0; // no materialized asset yet, or measurement failed — labeled estimate only
+        }
+
+        await _db.SaveChangesAsync(ct);
+        return totalMinutes;
     }
 
     private ImportExecutionPlanTimeEstimate BuildTimeEstimate(ImportExecutionPlanVolumeEstimate volume)

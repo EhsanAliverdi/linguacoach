@@ -46,6 +46,19 @@ public sealed class ImportAsset : BaseEntity
     /// reads back out is documented, not opaque.</summary>
     public string? ProcessingMetadataJson { get; private set; }
 
+    // ── Phase 4.4E — real, persisted, reusable audio-duration measurement. Replaces the flat
+    // five-minute-per-file assumption previously used for STT cost estimation/billing. Reused
+    // whenever AudioDurationMeasurementChecksum still matches the asset's current Checksum
+    // (content-addressed, mirroring the STT/AI operation ledgers' own identity discipline) —
+    // remeasured whenever it doesn't. ──
+    public decimal? AudioDurationSeconds { get; private set; }
+    /// <summary>The <see cref="Checksum"/> value that was actually measured — compared against
+    /// the current <see cref="Checksum"/> to decide reuse vs. remeasurement.</summary>
+    public string? AudioDurationMeasurementChecksum { get; private set; }
+    public ImportAudioDurationMeasurementStatus AudioDurationMeasurementStatus { get; private set; } = ImportAudioDurationMeasurementStatus.NotMeasured;
+    public DateTimeOffset? AudioDurationMeasuredAtUtc { get; private set; }
+    public string? AudioDurationMeasurementError { get; private set; }
+
     private ImportAsset() { }
 
     public ImportAsset(
@@ -137,4 +150,36 @@ public sealed class ImportAsset : BaseEntity
     }
 
     public void SetWarnings(string? validationWarningsJson) => ValidationWarningsJson = validationWarningsJson;
+
+    /// <summary>True when a prior successful measurement is still valid for this asset's current
+    /// content (i.e. the content has not changed since it was measured) — the caller should reuse
+    /// <see cref="AudioDurationSeconds"/> rather than remeasuring.</summary>
+    public bool HasReusableAudioDurationMeasurement() =>
+        AudioDurationMeasurementStatus == ImportAudioDurationMeasurementStatus.Measured
+        && AudioDurationMeasurementChecksum == Checksum
+        && AudioDurationSeconds is not null;
+
+    public void RecordAudioDurationMeasured(decimal durationSeconds, DateTimeOffset measuredAtUtc)
+    {
+        if (durationSeconds <= 0)
+            throw new ArgumentOutOfRangeException(nameof(durationSeconds), "A measured audio duration must be positive.");
+
+        AudioDurationSeconds = durationSeconds;
+        AudioDurationMeasurementChecksum = Checksum;
+        AudioDurationMeasurementStatus = ImportAudioDurationMeasurementStatus.Measured;
+        AudioDurationMeasuredAtUtc = measuredAtUtc;
+        AudioDurationMeasurementError = null;
+    }
+
+    public void RecordAudioDurationMeasurementFailed(string reason, DateTimeOffset measuredAtUtc)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new ArgumentException("A failure reason is required.", nameof(reason));
+
+        AudioDurationSeconds = null;
+        AudioDurationMeasurementChecksum = Checksum;
+        AudioDurationMeasurementStatus = ImportAudioDurationMeasurementStatus.Failed;
+        AudioDurationMeasuredAtUtc = measuredAtUtc;
+        AudioDurationMeasurementError = reason.Trim();
+    }
 }

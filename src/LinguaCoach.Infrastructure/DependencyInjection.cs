@@ -734,6 +734,17 @@ public static class DependencyInjection
             LinguaCoach.Infrastructure.ResourceImport.ImportAiEnrichmentOperationLedger>();
         services.AddScoped<LinguaCoach.Application.ResourceImport.IImportAiEnrichmentOperationSummaryQuery,
             LinguaCoach.Infrastructure.ResourceImport.ImportAiEnrichmentOperationSummaryQuery>();
+        // Phase 4.4E — real, persisted, reusable audio-duration measurement (replaces the flat
+        // five-minute-per-file assumption).
+        if (configuration is not null)
+            services.Configure<LinguaCoach.Infrastructure.ResourceImport.AudioDurationProbeOptions>(
+                configuration.GetSection(LinguaCoach.Infrastructure.ResourceImport.AudioDurationProbeOptions.SectionName));
+        else
+            services.Configure<LinguaCoach.Infrastructure.ResourceImport.AudioDurationProbeOptions>(_ => { });
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IAudioDurationProbe,
+            LinguaCoach.Infrastructure.ResourceImport.AudioDurationProbe>();
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IImportAssetAudioDurationResolver,
+            LinguaCoach.Infrastructure.ResourceImport.ImportAssetAudioDurationResolver>();
 
         // Phase 16F/16G — Speaking Evaluation Foundation + Provider-Backed Evaluation
         if (configuration is not null)

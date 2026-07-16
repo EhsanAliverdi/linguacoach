@@ -70,6 +70,7 @@ async function mockAdmin(page: Page) {
         providerName: 'openai', modelName: 'whisper-1', status: 'Succeeded', attemptNumber: 2,
         resultReusable: true, calculatedCost: 0.03, currency: 'USD',
         startedAtUtc: '2026-01-01T00:00:00Z', completedAtUtc: '2026-01-01T00:01:00Z', safeErrorMessage: null,
+        measuredAudioDurationSeconds: 300, audioDurationMeasurementStatus: 'Measured',
       }]),
     });
   });

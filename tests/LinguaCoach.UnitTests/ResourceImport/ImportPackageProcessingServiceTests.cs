@@ -36,6 +36,7 @@ public sealed class ImportPackagePlanProcessingTests : IDisposable
     private readonly ImportExecutionPlanGenerationService _planGenerationService;
     private readonly ImportExecutionPlanApprovalService _approvalService;
     private readonly ImportPackageProcessingService _processingService;
+    private readonly FakeSpeechToTextService _sttService;
 
     public ImportPackagePlanProcessingTests()
     {
@@ -61,24 +62,31 @@ public sealed class ImportPackagePlanProcessingTests : IDisposable
         var pricingResolver = new AiPricingResolver(_db, new ConfigurationBuilder().Build());
         var fingerprint = new ActivityContentFingerprintService();
         var resourceImportService = new ResourceImportService(_db, fingerprint);
-        var sttService = new FakeSpeechToTextService(new ConfigurationBuilder().Build(), NullLogger<FakeSpeechToTextService>.Instance);
+        _sttService = new FakeSpeechToTextService(new ConfigurationBuilder().Build(), NullLogger<FakeSpeechToTextService>.Instance);
 
         var columnMappingService = new ResourceImportColumnMappingService(
             new DbPromptAiContextBuilder(_db), aiExecution, NullLogger<ResourceImportColumnMappingService>.Instance);
 
+        var audioDurationResolver = new ImportAssetAudioDurationResolver(_storage, AudioProbe);
+
         _uploadService = new ImportPackageUploadService(_db, _storage, inspector, Options.Create(_limits));
         _planGenerationService = new ImportExecutionPlanGenerationService(
             _db, inspector, modeDecision, new DbPromptAiContextBuilder(_db), aiExecution, pricingResolver,
-            new NoOpNotificationService(), _storage, resourceImportService, columnMappingService,
+            new NoOpNotificationService(), _storage, resourceImportService, columnMappingService, audioDurationResolver,
             Options.Create(_limits), Options.Create(_costOptions), NullLogger<ImportExecutionPlanGenerationService>.Instance);
         _approvalService = new ImportExecutionPlanApprovalService(_db, pricingResolver, Options.Create(_costOptions));
         var profileResolver = new ApprovedImportProfileResolver(_db);
         var sttLedger = new ImportSttOperationLedger(_db);
         _processingService = new ImportPackageProcessingService(
-            _db, _storage, resourceImportService, new NoOpBatchAnalysisService(), sttService, fingerprint,
-            pricingResolver, new NoOpNotificationService(), profileResolver, sttLedger,
+            _db, _storage, resourceImportService, new NoOpBatchAnalysisService(), _sttService, fingerprint,
+            pricingResolver, new NoOpNotificationService(), profileResolver, sttLedger, audioDurationResolver,
             Options.Create(_costOptions), NullLogger<ImportPackageProcessingService>.Instance);
     }
+
+    /// <summary>Phase 4.4E — fake, in-process probe (no real ffprobe needed for these tests). The
+    /// real <see cref="ImportAssetAudioDurationResolver"/> is used unmodified so reuse-by-checksum
+    /// logic is exercised genuinely — only the actual measurement call is faked.</summary>
+    private readonly FakeAudioDurationProbe AudioProbe = new();
 
     public void Dispose()
     {
@@ -185,6 +193,91 @@ public sealed class ImportPackagePlanProcessingTests : IDisposable
         candidate.AudioStorageKey.Should().NotBeNullOrEmpty();
     }
 
+    // ── Phase 4.4E — real, persisted, reusable audio-duration measurement replaces the flat
+    // five-minute assumption entirely. ──
+
+    [Fact]
+    public async Task Real_measured_duration_replaces_the_five_minute_assumption_in_STT_cost()
+    {
+        AudioProbe.NextDurationSeconds = 600m; // 10 minutes — double the old flat 5-minute assumption
+        var zipBytes = BuildZip(("lesson/audio.mp3", new byte[100]));
+        var (packageId, planId) = await UploadConfirmAndGeneratePlanAsync(zipBytes);
+        await ApprovePlanAsync(packageId, planId, 50m);
+
+        await _processingService.ProcessPendingAsync(10);
+
+        var package = await _db.ImportPackages.FirstAsync(p => p.Id == packageId);
+        var expectedCost = 10m * _costOptions.SttCostPerMinute; // 10 measured minutes, not 5 assumed
+        package.AccruedCost.Should().Be(expectedCost);
+
+        var asset = await _db.ImportAssets.FirstAsync(a => a.ImportPackageId == packageId && a.FileExtension == ".mp3");
+        asset.AudioDurationSeconds.Should().Be(600m);
+        asset.AudioDurationMeasurementStatus.Should().Be(ImportAudioDurationMeasurementStatus.Measured);
+    }
+
+    [Fact]
+    public async Task Measured_duration_changes_the_cost_ceiling_calculation()
+    {
+        // 20 measured minutes at the default STT rate comfortably exceeds a $0.05 ceiling, even
+        // though the old flat 5-minute assumption would not have.
+        AudioProbe.NextDurationSeconds = 20m * 60m;
+        var zipBytes = BuildZip(("lesson/audio.mp3", new byte[100]));
+        var (packageId, planId) = await UploadConfirmAndGeneratePlanAsync(zipBytes);
+        await ApprovePlanAsync(packageId, planId, 0.05m);
+
+        await _processingService.ProcessPendingAsync(10);
+
+        var plan = await _db.ImportProfiles.FirstAsync(p => p.Id == planId);
+        plan.Status.Should().Be(ImportProfileStatus.PausedForCostApproval);
+        _sttService.CallCount.Should().Be(0, "the ceiling must be checked against the real measured duration before the provider is ever called");
+    }
+
+    [Fact]
+    public async Task Audio_duration_measurement_failure_fails_the_asset_clearly_without_calling_STT()
+    {
+        AudioProbe.NextFailureStatus = AudioDurationProbeStatus.UnsupportedOrCorrupt;
+        AudioProbe.NextFailureMessage = "ffprobe exited with code 1: Invalid data found when processing input";
+        var zipBytes = BuildZip(("lesson/audio.mp3", new byte[100]));
+        var (packageId, planId) = await UploadConfirmAndGeneratePlanAsync(zipBytes);
+        await ApprovePlanAsync(packageId, planId, 50m);
+
+        await _processingService.ProcessPendingAsync(10);
+
+        _sttService.CallCount.Should().Be(0, "duration must be known before STT is ever called — no silent five-minute fallback");
+        var asset = await _db.ImportAssets.FirstAsync(a => a.ImportPackageId == packageId && a.FileExtension == ".mp3");
+        asset.ProcessingState.Should().Be(ImportAssetProcessingState.Failed);
+        asset.AudioDurationMeasurementStatus.Should().Be(ImportAudioDurationMeasurementStatus.Failed);
+        asset.AudioDurationMeasurementError.Should().Contain("Invalid data");
+
+        var candidate = await _db.ResourceCandidates.FirstOrDefaultAsync(c => c.CandidateType == ResourceCandidateType.ListeningPassage);
+        candidate.Should().BeNull("no candidate may be created for audio whose duration could not be measured");
+    }
+
+    [Fact]
+    public async Task Retry_does_not_remeasure_an_unchanged_audio_asset()
+    {
+        var zipBytes = BuildZip(("lesson/audio.mp3", new byte[100]));
+        var (packageId, planId) = await UploadConfirmAndGeneratePlanAsync(zipBytes);
+        await ApprovePlanAsync(packageId, planId, 50m);
+
+        await _processingService.ProcessPendingAsync(10);
+        AudioProbe.CallCount.Should().Be(1);
+
+        // Simulate the crash-recovery window a real retry would hit (stage/asset progress not
+        // yet checkpointed, but the measurement — already persisted in its own save — survives),
+        // mirroring ImportPlanEditingAndCostAccountingTests' STT retry test.
+        var package = await _db.ImportPackages.FirstAsync(p => p.Id == packageId);
+        var asset = await _db.ImportAssets.FirstAsync(a => a.ImportPackageId == packageId && a.FileExtension == ".mp3");
+        _db.Entry(asset).Property(nameof(ImportAsset.ProcessingState)).CurrentValue = ImportAssetProcessingState.Inspected;
+        package.MoveToStatus(ImportPackageStatus.CreatingCandidates);
+        _db.Entry(package).Property(nameof(ImportPackage.LastCompletedStageIndex)).CurrentValue = 0;
+        await _db.SaveChangesAsync();
+
+        await _processingService.ProcessPendingAsync(10);
+
+        AudioProbe.CallCount.Should().Be(1, "the stored measurement must be reused, not remeasured, when the asset's content checksum is unchanged");
+    }
+
     [Fact]
     public async Task Processing_pauses_for_cost_approval_when_projected_cost_exceeds_the_ceiling()
     {
@@ -211,5 +304,25 @@ public sealed class ImportPackagePlanProcessingTests : IDisposable
     {
         public Task<ResourceCandidateBatchAnalysisResult> AnalyzePendingForRunAsync(Guid resourceImportRunId, CancellationToken ct = default)
             => Task.FromResult(new ResourceCandidateBatchAnalysisResult(0, 0, 0, 0, false));
+    }
+
+    /// <summary>Phase 4.4E — fake <see cref="IAudioDurationProbe"/> returning a configurable
+    /// duration (default 5 minutes, matching the previous flat assumption, so existing tests that
+    /// don't care about the exact value keep working unchanged) or a configurable failure. Tracks
+    /// call count so tests can prove reuse-by-checksum skips a remeasurement.</summary>
+    private sealed class FakeAudioDurationProbe : IAudioDurationProbe
+    {
+        public decimal NextDurationSeconds { get; set; } = 300m; // 5 minutes, matches the old flat assumption
+        public AudioDurationProbeStatus? NextFailureStatus { get; set; }
+        public string? NextFailureMessage { get; set; }
+        public int CallCount { get; private set; }
+
+        public Task<AudioDurationProbeResult> ProbeDurationAsync(Stream audioStream, string fileExtension, CancellationToken ct = default)
+        {
+            CallCount++;
+            if (NextFailureStatus is { } status)
+                return Task.FromResult(AudioDurationProbeResult.Failed(status, NextFailureMessage ?? "Simulated probe failure."));
+            return Task.FromResult(AudioDurationProbeResult.Ok(NextDurationSeconds));
+        }
     }
 }

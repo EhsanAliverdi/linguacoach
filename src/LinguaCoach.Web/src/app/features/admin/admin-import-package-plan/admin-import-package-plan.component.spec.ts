@@ -387,6 +387,8 @@ describe('AdminImportPackagePlanComponent', () => {
         startedAtUtc: '2026-01-01T00:00:00Z',
         completedAtUtc: '2026-01-01T00:01:00Z',
         safeErrorMessage: null,
+        measuredAudioDurationSeconds: 300,
+        audioDurationMeasurementStatus: 'Measured',
         ...overrides,
       };
     }

@@ -26,7 +26,11 @@ public sealed record ImportSttOperationSummaryDto(
     string Currency,
     DateTimeOffset StartedAtUtc,
     DateTimeOffset? CompletedAtUtc,
-    string? SafeErrorMessage);
+    string? SafeErrorMessage,
+    /// <summary>Phase 4.4E — the asset's real, measured audio duration (never the old flat
+    /// five-minute assumption) — null if not yet measured or measurement failed.</summary>
+    decimal? MeasuredAudioDurationSeconds,
+    string AudioDurationMeasurementStatus);
 
 public interface IImportSttOperationSummaryQuery
 {

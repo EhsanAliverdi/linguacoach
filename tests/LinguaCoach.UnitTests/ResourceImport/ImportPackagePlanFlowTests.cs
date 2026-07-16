@@ -58,12 +58,25 @@ public sealed class ImportPackagePlanFlowTests : IDisposable
         var columnMappingService = new ResourceImportColumnMappingService(
             new DbPromptAiContextBuilder(_db), aiExecution, NullLogger<ResourceImportColumnMappingService>.Instance);
 
+        var audioDurationResolver = new ImportAssetAudioDurationResolver(_storage, new AlwaysFailAudioDurationProbe());
+
         _uploadService = new ImportPackageUploadService(_db, _storage, inspector, Options.Create(_limits));
         _planGenerationService = new ImportExecutionPlanGenerationService(
             _db, inspector, modeDecision, new DbPromptAiContextBuilder(_db), aiExecution, pricingResolver,
-            new NoOpNotificationService(), _storage, resourceImportService, columnMappingService,
+            new NoOpNotificationService(), _storage, resourceImportService, columnMappingService, audioDurationResolver,
             Options.Create(_limits), Options.Create(_costOptions), NullLogger<ImportExecutionPlanGenerationService>.Instance);
         _approvalService = new ImportExecutionPlanApprovalService(_db, pricingResolver, Options.Create(_costOptions));
+    }
+
+    /// <summary>Phase 4.4E — this test file doesn't exercise audio-duration specifics; a probe
+    /// that always reports "unavailable" is enough to prove plan generation degrades gracefully
+    /// to the labeled estimate for a ZIP package's not-yet-materialized assets (this file's ZIP
+    /// packages never have a real ImportAsset row for their audio entries at plan-generation
+    /// time anyway, so this probe is never actually invoked by these tests).</summary>
+    private sealed class AlwaysFailAudioDurationProbe : IAudioDurationProbe
+    {
+        public Task<AudioDurationProbeResult> ProbeDurationAsync(Stream audioStream, string fileExtension, CancellationToken ct = default) =>
+            Task.FromResult(AudioDurationProbeResult.Failed(AudioDurationProbeStatus.ToolUnavailable, "Not used in this test file."));
     }
 
     public void Dispose()

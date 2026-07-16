@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-16 (Phase 4.4D — durable AI operation ledger, real audio measurement deferred)
+lastUpdated: 2026-07-16 (Phase 4.4E — real audio duration measurement)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,46 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-16 (Phase 4.4D — durable AI operation ledger, real audio measurement deferred)
+Last updated: 2026-07-16 (Phase 4.4E — real audio duration measurement)
+
+## Phase 4.4E: Real audio duration measurement (2026-07-16)
+
+Closes `TODO-4.4-AUDIO-DURATION-PROBE` — the last major deferred item from the original Phase 4.4
+brief. The flat five-minute-per-audio-file assumption is now **deleted**, not just unused.
+
+**Probe:** new `IAudioDurationProbe`/`AudioDurationProbe` — shells out to `ffprobe` (configurable
+path/timeout via `AudioDurationProbeOptions`, defaulting to the bare tool name resolved via PATH,
+never a hardcoded machine-specific path). Reads container/format metadata only
+(`-show_entries format=duration`) — never transcribes or decodes audio content. Arguments are
+passed via `ProcessStartInfo.ArgumentList` (never a concatenated command-line string, no shell
+invoked) — no shell-injection surface. Bounded by both a configurable timeout and the caller's
+`CancellationToken`.
+
+**Persistence and reuse:** `ImportAsset` gained `AudioDurationSeconds`, `AudioDurationMeasurementChecksum`,
+`AudioDurationMeasurementStatus`, `AudioDurationMeasuredAtUtc`, `AudioDurationMeasurementError`.
+`IImportAssetAudioDurationResolver` reuses a prior measurement when the asset's content checksum is
+unchanged, remeasures otherwise. A measurement failure fails that specific audio asset clearly (no
+STT call, no cost accrued, no candidate created) — never a silent five-minute fallback.
+
+**Wired into:** `ImportPackageProcessingService`'s STT cost-ceiling check and final calculated
+cost (the constant `assumedMinutes = 5m` is deleted entirely); `ImportExecutionPlanGenerationService`
+and `ImportPlanEstimateService`'s volume/cost estimates (real measurement where an `ImportAsset`
+already exists — i.e. loose/inline submissions; the labeled five-minute *estimate* only for
+ZIP-packaged audio not yet extracted — see `TODO-4.4E-ZIP-PREEXTRACTION-MEASUREMENT`); the STT
+operation summary DTO/UI (`measuredAudioDurationSeconds`, `audioDurationMeasurementStatus`).
+
+**Test environment:** no ffprobe binary is installed in this session's dev/CI environment. The API
+test host (`ApiTestFactory`) substitutes a `FakeAudioDurationProbe` (mirroring the existing
+`FakeFileStorageService` override) so all pre-existing STT/AI/ceiling integration tests continue to
+pass unchanged. The real `AudioDurationProbe` class is covered by focused, environment-independent
+unit tests (missing-binary, unsupported-extension, pre-cancelled-token) — the real-ffprobe happy
+path is not verified this session, tracked as `TODO-4.4E-FFPROBE-HAPPY-PATH-VERIFICATION`.
+
+One additive migration (`Phase_4_4E_AudioDurationMeasurement`, 5 new nullable columns on
+`import_assets`). 2367 unit (+15) / 1322 integration (+1) / 26 architecture (unchanged) tests pass.
+`npx tsc --noEmit` and the production Angular build are clean. Playwright: 4/4 pass (unchanged
+specs re-verified). Karma still blocked by the same pre-existing baseline TypeScript errors. Full
+detail: `docs/reviews/2026-07-16-phase-4-4e-real-audio-duration-measurement-review.md`.
 
 ## Phase 4.4D: Durable AI operation accounting (2026-07-16)
 

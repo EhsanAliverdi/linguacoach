@@ -167,6 +167,7 @@
                 <th style="text-align:left;">Status</th>
                 <th style="text-align:left;">Provider / model</th>
                 <th style="text-align:left;">Attempts</th>
+                <th style="text-align:left;">Measured duration</th>
                 <th style="text-align:left;">Cost</th>
                 <th style="text-align:left;">Completed</th>
               </tr>
@@ -185,12 +186,21 @@
                   </td>
                   <td>{{ op.providerName }}{{ op.modelName ? ' / ' + op.modelName : '' }}</td>
                   <td>{{ op.attemptNumber }}</td>
+                  <td>
+                    @if (op.audioDurationMeasurementStatus === 'Measured' && op.measuredAudioDurationSeconds !== null) {
+                      {{ op.measuredAudioDurationSeconds | number:'1.0-1' }}s
+                    } @else if (op.audioDurationMeasurementStatus === 'Failed') {
+                      <sp-admin-badge tone="danger">Not measured</sp-admin-badge>
+                    } @else {
+                      —
+                    }
+                  </td>
                   <td>{{ op.calculatedCost !== null ? (op.currency + ' ' + (op.calculatedCost | number:'1.2-4')) : '—' }}</td>
                   <td>{{ op.completedAtUtc ? (op.completedAtUtc | date:'short') : '—' }}</td>
                 </tr>
                 @if (op.status === 'Failed' && op.safeErrorMessage) {
                   <tr>
-                    <td colspan="6"><p class="sp-admin-hint" style="margin:0;">{{ op.safeErrorMessage }}</p></td>
+                    <td colspan="7"><p class="sp-admin-hint" style="margin:0;">{{ op.safeErrorMessage }}</p></td>
                   </tr>
                 }
               }

@@ -50,7 +50,9 @@ internal sealed class ImportSttOperationSummaryQuery : IImportSttOperationSummar
                     o.Currency,
                     o.StartedAtUtc,
                     o.CompletedAtUtc,
-                    TruncateSafeErrorMessage(o.FailureReason));
+                    TruncateSafeErrorMessage(o.FailureReason),
+                    asset?.AudioDurationSeconds,
+                    asset?.AudioDurationMeasurementStatus.ToString() ?? "NotMeasured");
             })
             .ToList();
     }

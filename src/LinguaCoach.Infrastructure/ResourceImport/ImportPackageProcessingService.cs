@@ -48,6 +48,7 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
     private readonly INotificationService _notifications;
     private readonly IApprovedImportProfileResolver _profileResolver;
     private readonly IImportSttOperationLedger _sttLedger;
+    private readonly IImportAssetAudioDurationResolver _audioDurationResolver;
     private readonly ImportCostEstimationOptions _costOptions;
     private readonly ILogger<ImportPackageProcessingService> _logger;
 
@@ -62,6 +63,7 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
         INotificationService notifications,
         IApprovedImportProfileResolver profileResolver,
         IImportSttOperationLedger sttLedger,
+        IImportAssetAudioDurationResolver audioDurationResolver,
         IOptions<ImportCostEstimationOptions> costOptions,
         ILogger<ImportPackageProcessingService> logger)
     {
@@ -75,6 +77,7 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
         _notifications = notifications;
         _profileResolver = profileResolver;
         _sttLedger = sttLedger;
+        _audioDurationResolver = audioDurationResolver;
         _costOptions = costOptions.Value;
         _logger = logger;
     }
@@ -395,8 +398,24 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
                 }
                 else
                 {
-                    const decimal assumedMinutes = 5m; // flat per-file assumption, see plan estimate's documented limitation
-                    var sttCostIfCharged = assumedMinutes * _costOptions.SttCostPerMinute;
+                    // Phase 4.4E — real, persisted, reusable duration measurement replaces the
+                    // flat five-minute assumption entirely. A measurement failure must not
+                    // silently fall back to an assumption — it fails this specific audio asset
+                    // clearly (no STT call, no cost, no candidate) rather than billing off an
+                    // invented number.
+                    var measurement = await _audioDurationResolver.ResolveAsync(audio, ct);
+                    if (!measurement.Success)
+                    {
+                        audio.MarkFailed(measurement.ErrorMessage ?? "Could not measure audio duration.");
+                        await _db.SaveChangesAsync(ct); // persists the measurement failure and the asset's failed state together
+                        candidatesFailed++;
+                        continue;
+                    }
+                    if (!measurement.WasReused)
+                        await _db.SaveChangesAsync(ct); // persist the fresh measurement durably before billing off it
+
+                    var measuredMinutes = measurement.DurationSeconds!.Value / 60m;
+                    var sttCostIfCharged = measuredMinutes * _costOptions.SttCostPerMinute;
                     var projectedSttCost = runningCost + sttCostIfCharged;
                     if (projectedSttCost > ceiling * (1 + tolerance))
                     {
@@ -409,7 +428,7 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
                     // entry before ever calling the provider, so a crash/retry can never re-call
                     // STT — or accrue cost — for content it already transcribed.
                     var logicalKey = ImportSttOperationKey.Compute(package.Id, audio.Id, audio.Checksum);
-                    var claim = await _sttLedger.ClaimAsync(package.Id, plan.Id, audio.Id, logicalKey, "openai", assumedMinutes, ct);
+                    var claim = await _sttLedger.ClaimAsync(package.Id, plan.Id, audio.Id, logicalKey, "openai", measuredMinutes, ct);
 
                     if (claim.Outcome == ImportSttClaimOutcome.AlreadySucceeded)
                     {

@@ -137,21 +137,21 @@ and `TODO-4.4A-PLAYWRIGHT` (narrowed above) for the remaining CSV mapping-editor
 
 ---
 
-### TODO-4.4-AUDIO-DURATION-PROBE — Real audio-duration measurement (ffprobe or equivalent)
-**What:** Replace the flat 5-minutes-per-file STT cost assumption with real measured duration
-(`IAudioDurationProbe` abstraction, bounded/timeout-safe external-process or media-metadata-library
-wrapper), persisted on `ImportAsset` (duration, checksum, measurement status, measured timestamp,
-safe error) and reused when the checksum is unchanged. Used in plan estimates, STT next-operation
-estimates, cost-ceiling checks, and final STT cost calculation.
-**Why:** Deferred per the backend-first scoping decision — introducing an external-binary runtime
-dependency (ffprobe) or a new media-metadata library is a materially separate, higher-risk piece of
-work than the cost-ledger work delivered this phase. **Explicitly re-confirmed deferred in Phase
-4.4D** (the user chose "AI operation ledger first," scoping real audio measurement out entirely
-again) — still the single largest remaining gap in this phase's cost-accounting accuracy: the
-flat 5-minute assumption remains in `ImportPackageProcessingService`'s STT path unchanged.
-**Context:** `ImportSttOperation.AssumedMinutes` already exists as a named field ready to receive a
-real measured value instead of the constant `5m` currently passed by `ImportPackageProcessingService`.
-**Deferred from:** Phase 4.4 engineering session, 2026-07-16; re-deferred Phase 4.4D, 2026-07-16.
+### TODO-4.4-AUDIO-DURATION-PROBE — ~~Real audio-duration measurement (ffprobe or equivalent)~~ FIXED in Phase 4.4E
+**Fixed 2026-07-16 (Phase 4.4E).** New `IAudioDurationProbe`/`AudioDurationProbe` (real, ffprobe-
+shelling, configurable path/timeout, safe `ArgumentList`-based invocation — no shell, no injection
+surface) + `IImportAssetAudioDurationResolver` (reuse-by-checksum / remeasure-on-change, mutating
+`ImportAsset`'s new measurement fields). Wired into `ImportPackageProcessingService`'s STT path
+(replacing the flat `assumedMinutes = 5m` constant entirely — deleted, not just unused), the
+cost-ceiling check, the final STT calculated cost, and (best-effort, for assets already
+materialized at plan-generation time — i.e. loose/inline submissions) the plan volume/cost
+estimate in both `ImportExecutionPlanGenerationService` and `ImportPlanEstimateService`. A
+measurement failure fails that specific audio asset clearly (no STT call, no cost, no candidate) —
+never a silent fallback. See
+`docs/reviews/2026-07-16-phase-4-4e-real-audio-duration-measurement-review.md` for full detail,
+including the one known limitation: ZIP packages whose assets aren't yet extracted at plan-
+generation time still show the labeled five-minute-per-file *estimate* (not a billed amount) for
+those entries specifically, since real content isn't available to measure before Extract runs.
 
 ### TODO-4.4-AI-ENRICHMENT-LEDGER — ~~Durable operation ledger for AI candidate-enrichment calls~~ FIXED in Phase 4.4D
 **Fixed 2026-07-16 (Phase 4.4D).** New `ImportAiEnrichmentOperation` entity + `IImportAiEnrichmentOperationLedger`,
@@ -227,6 +227,42 @@ follow-up (mirrors the existing STT precedent) but was not required to prove any
 17 critical-test requirements, all of which are covered by the unit + integration split described
 above.
 **Deferred from:** Phase 4.4D engineering session, 2026-07-16.
+
+---
+
+## Phase 4.4E — Real audio duration measurement (2026-07-16)
+
+Review: docs/reviews/2026-07-16-phase-4-4e-real-audio-duration-measurement-review.md
+
+Closes `TODO-4.4-AUDIO-DURATION-PROBE`, the last major deferred item from the original Phase 4.4
+brief. No further scoping question was needed — the brief was already a single, bounded effort.
+
+### TODO-4.4E-ZIP-PREEXTRACTION-MEASUREMENT — Real duration for ZIP-packaged audio before Extract
+**What:** A ZIP package's `ImportAsset` rows are not materialized until the approved plan's Extract
+stage runs, so `ImportExecutionPlanGenerationService`/`ImportPlanEstimateService` cannot measure
+those files' real duration at plan-generation time — they still show the labeled five-minute-per-
+file *estimate* for ZIP-packaged audio specifically (loose/inline submissions, whose assets exist
+immediately, already get real measurement in the plan estimate). Execution itself always measures
+for real regardless of package type — this gap is estimate-only, never a billed amount.
+**Why:** Deferred — closing it would mean either extracting ZIP contents earlier (a real
+architectural change to the Extract/plan-generation ordering) or teaching plan generation to read
+directly from the ZIP archive without materializing `ImportAsset` rows (duplicate storage-access
+logic). Both are materially larger than this session's scope.
+**Deferred from:** Phase 4.4E engineering session, 2026-07-16.
+
+### TODO-4.4E-FFPROBE-HAPPY-PATH-VERIFICATION — Verify the real ffprobe success path
+**What:** `AudioDurationProbe`'s "successfully parses ffprobe's JSON output for a real audio file"
+path has not been exercised against an actual installed ffprobe binary — this dev/CI environment
+does not have one installed. All `AudioDurationProbeTests` are scoped to paths that don't require
+ffprobe to be present (missing binary, unsupported extension, pre-cancelled token). The JSON-
+parsing logic (`TryParseDurationSeconds`) is straightforward and code-reviewed but not exercised
+end-to-end against a real binary.
+**Why:** Deferred — no ffprobe installation is available in this session's environment; installing
+one is an environment/infra change outside this session's scope.
+**Context:** A future session with ffprobe available (or a CI image that installs it) should add
+one test that runs the real probe against a small real audio fixture and asserts the reported
+duration is within a tolerance of the fixture's known real duration.
+**Deferred from:** Phase 4.4E engineering session, 2026-07-16.
 
 ---
 

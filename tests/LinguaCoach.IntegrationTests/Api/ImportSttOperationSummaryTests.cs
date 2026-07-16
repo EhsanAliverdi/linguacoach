@@ -147,6 +147,39 @@ public sealed class ImportSttOperationSummaryTests : IClassFixture<ApiTestFactor
         Assert.False(row.TryGetProperty("apiKey", out _));
     }
 
+    /// <summary>Phase 4.4E — real, persisted, reusable audio-duration measurement replaces the
+    /// flat five-minute assumption; the measured value (not the old assumption) is what the STT
+    /// summary and the package's accrued cost both reflect.</summary>
+    [Fact]
+    public async Task Stt_summary_reflects_the_real_measured_duration_not_the_old_flat_assumption()
+    {
+        var client = await AdminClientAsync();
+        var probe = _factory.Services.GetRequiredService<FakeAudioDurationProbe>(); // singleton — shared across this test class
+        var originalDuration = probe.NextDurationSeconds;
+        probe.NextDurationSeconds = 600m; // 10 minutes — double the old flat 5-minute assumption
+        try
+        {
+            var (packageId, planId) = await CreateApprovedPlanWithOneSttOperationAsync(client, $"STT Measured Duration Source {Guid.NewGuid():N}");
+
+            var resp = await client.GetAsync($"/api/admin/import-packages/{packageId}/plan/{planId}/stt-operations");
+            var rows = (await resp.Content.ReadFromJsonAsync<JsonElement>()).EnumerateArray().ToList();
+            var row = rows[0];
+
+            Assert.Equal(600m, row.GetProperty("measuredAudioDurationSeconds").GetDecimal());
+            Assert.Equal("Measured", row.GetProperty("audioDurationMeasurementStatus").GetString());
+
+            using var verifyScope = _factory.Services.CreateScope();
+            var db = verifyScope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var package = await db.ImportPackages.FirstAsync(p => p.Id == packageId);
+            var costOptions = verifyScope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<LinguaCoach.Infrastructure.ResourceImport.ImportCostEstimationOptions>>().Value;
+            Assert.Equal(10m * costOptions.SttCostPerMinute, package.AccruedCost);
+        }
+        finally
+        {
+            probe.NextDurationSeconds = originalDuration; // never leak state into other tests sharing this singleton
+        }
+    }
+
     [Fact]
     public async Task Reused_STT_operation_after_retry_still_reports_a_single_attempt_and_no_double_charge()
     {

@@ -37,6 +37,14 @@ internal sealed class ImportAssetConfiguration : IEntityTypeConfiguration<Import
         builder.Property(e => e.UploadedAtUtc).HasColumnName("uploaded_at_utc").IsRequired();
         builder.Property(e => e.ProcessingMetadataJson).HasColumnName("processing_metadata_json");
 
+        // Phase 4.4E — real, persisted, reusable audio-duration measurement.
+        builder.Property(e => e.AudioDurationSeconds).HasColumnName("audio_duration_seconds").HasPrecision(10, 3);
+        builder.Property(e => e.AudioDurationMeasurementChecksum).HasColumnName("audio_duration_measurement_checksum").HasMaxLength(128);
+        builder.Property(e => e.AudioDurationMeasurementStatus).HasColumnName("audio_duration_measurement_status")
+            .HasConversion<string>().HasMaxLength(32).IsRequired().HasDefaultValue(LinguaCoach.Domain.Enums.ImportAudioDurationMeasurementStatus.NotMeasured);
+        builder.Property(e => e.AudioDurationMeasuredAtUtc).HasColumnName("audio_duration_measured_at_utc");
+        builder.Property(e => e.AudioDurationMeasurementError).HasColumnName("audio_duration_measurement_error").HasMaxLength(2000);
+
         builder.HasOne<ImportPackage>()
             .WithMany()
             .HasForeignKey(e => e.ImportPackageId)
