@@ -5,6 +5,26 @@ Each item includes context, motivation, and the phase where it was deferred.
 
 ---
 
+## Phase 4.6 — Media review and downstream discovery (2026-07-16)
+
+Review: docs/reviews/2026-07-16-phase-4-6-media-review-and-downstream-discovery-review.md
+
+Threaded real audio duration from `ImportAsset` through to `ResourceCandidate`, published
+`ListeningPassageContent`, and `LessonResourceSnapshot`; added safe media metadata to Candidate
+Review; added authenticated audio access (signed-URL/stream-fallback) + media metadata to the
+unified Resource Bank; extended the Lesson resource lookup with typed media discovery fields
+(data-only — Lesson generation itself remains text-composition only, unchanged). Full brief
+implemented — no deferred items from this phase besides items already carried over from 4.5/4.4E
+below.
+
+### TODO-4.4E-FFPROBE-HAPPY-PATH-VERIFICATION (carried over, unaffected by 4.6)
+No live ffprobe binary in this session's environment — duration threading added in Phase 4.6 was
+verified against the existing `FakeAudioDurationProbe`/`FakeFileStorageService` test harness. The
+real-ffprobe happy path (a genuine measured duration from a real audio file) remains unverified.
+**Deferred from:** Phase 4.4E, still open after Phase 4.6.
+
+---
+
 ## Phase 4.5 — Typed multimodal candidate schemas (2026-07-16)
 
 Review: docs/reviews/2026-07-16-phase-4-5-typed-multimodal-candidate-schemas-review.md

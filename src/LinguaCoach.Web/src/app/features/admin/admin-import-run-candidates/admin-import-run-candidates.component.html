@@ -514,6 +514,32 @@
               </div>
               @if (audioUploadError()) { <sp-admin-alert variant="error">{{ audioUploadError() }}</sp-admin-alert> }
             </sp-admin-form-field>
+            @if (p.media) {
+              <sp-admin-form-field label="Media details">
+                @switch (p.media.state) {
+                  @case ('Missing') {
+                    <sp-admin-alert variant="warning">No media attached yet.</sp-admin-alert>
+                  }
+                  @case ('Invalid') {
+                    <sp-admin-alert variant="error">Attached media does not match the expected type for this candidate.</sp-admin-alert>
+                  }
+                  @case ('Unsupported') {
+                    <sp-admin-alert variant="error">Attached media's content-type is not supported.</sp-admin-alert>
+                  }
+                  @case ('Unavailable') {
+                    <sp-admin-alert variant="warning">Attached media's availability could not be confirmed.</sp-admin-alert>
+                  }
+                }
+                <ul class="sp-admin-hint" style="margin:0.25rem 0 0; padding-left:1.1rem;">
+                  @if (p.media.fileName) { <li>File: {{ p.media.fileName }}</li> }
+                  @if (p.media.mediaType) { <li>Type: {{ p.media.mediaType }}</li> }
+                  @if (p.media.sizeBytes) { <li>Size: {{ (p.media.sizeBytes! / 1024) | number:'1.0-1' }} KB</li> }
+                  @if (p.media.durationSeconds) { <li>Duration: {{ p.media.durationSeconds }}s</li> }
+                  @if (p.media.provenanceOrigin) { <li>Transcript origin: {{ p.media.provenanceOrigin }}</li> }
+                  @if (p.media.providerName) { <li>Provider/model: {{ p.media.providerName }} / {{ p.media.modelName }}</li> }
+                </ul>
+              </sp-admin-form-field>
+            }
           </div>
         }
         @case ('SpeakingPrompt') {

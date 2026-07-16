@@ -112,12 +112,12 @@ public sealed class UnifiedResourceBankQueryServiceTests : IDisposable
 
     private ResourceBankItem SeedListening(
         string title, string cefr = "B1", string? subskill = null, int? difficulty = null,
-        string? contextTagsJson = null, string? focusTagsJson = null)
+        string? contextTagsJson = null, string? focusTagsJson = null, decimal? audioDurationSeconds = null)
     {
         var e = new ResourceBankItem(
             PublishedResourceType.Listening, _sourceId, cefr,
             ResourceBankItemContent.Serialize(new ListeningPassageContent(
-                title, "A transcript.", "resource-import-audio/test.mp3", "audio/mpeg", null)),
+                title, "A transcript.", "resource-import-audio/test.mp3", "audio/mpeg", null, audioDurationSeconds)),
             subskill, difficulty, contextTagsJson, focusTagsJson);
         _db.ResourceBankItems.Add(e);
         return e;
@@ -202,6 +202,40 @@ public sealed class UnifiedResourceBankQueryServiceTests : IDisposable
         var result = await _query.ListUnifiedAsync(new UnifiedResourceBankListFilter());
 
         result.Items.Should().ContainSingle(i => i.Type == UnifiedResourceBankItemType.Listening && i.Title == "Morning News");
+    }
+
+    /// <summary>Phase 4.6 — the unified list/detail DTO must surface HasAudio/AudioContentType/
+    /// AudioDurationSeconds for a published Listening row (previously silently dropped), while
+    /// never exposing the raw AudioStorageKey.</summary>
+    [Fact]
+    public async Task Unified_listening_row_surfaces_audio_metadata_but_not_the_raw_storage_key()
+    {
+        var entry = SeedListening("Morning News", audioDurationSeconds: 87.5m);
+        _db.SaveChanges();
+
+        var byId = await _query.GetUnifiedByIdAsync(entry.Id);
+
+        byId.Should().NotBeNull();
+        byId!.HasAudio.Should().BeTrue();
+        byId.AudioContentType.Should().Be("audio/mpeg");
+        byId.AudioDurationSeconds.Should().Be(87.5m);
+    }
+
+    /// <summary>Phase 4.6 — the edit DTO (admin-only, informational) does carry AudioStorageKey,
+    /// for parity with Speaking's ImageUrl — but it is never accepted back by
+    /// UpdateResourceBankItemCommand (replacing published audio is out of scope for this phase).</summary>
+    [Fact]
+    public async Task Edit_dto_for_listening_surfaces_audio_storage_key_content_type_and_duration()
+    {
+        var entry = SeedListening("Morning News", audioDurationSeconds: 42m);
+        _db.SaveChanges();
+
+        var edit = await _query.GetEditDtoAsync(entry.Id);
+
+        edit.Should().NotBeNull();
+        edit!.AudioStorageKey.Should().Be("resource-import-audio/test.mp3");
+        edit.AudioContentType.Should().Be("audio/mpeg");
+        edit.AudioDurationSeconds.Should().Be(42m);
     }
 
     [Fact]

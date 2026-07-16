@@ -322,7 +322,9 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
             ParseJsonStringArray(entry.ContextTagsJson), ParseJsonStringArray(entry.FocusTagsJson),
             entry.DifficultyBand, source.Id, source.Name, entry.ContentFingerprint, "Published",
             entry.CreatedAt, entry.UpdatedAt, "CefrListeningPassage", null,
-            null, null, null, entry.IsArchived);
+            null, null, null, entry.IsArchived,
+            HasAudio: !string.IsNullOrWhiteSpace(c.AudioStorageKey), AudioContentType: c.AudioContentType,
+            AudioDurationSeconds: c.AudioDurationSeconds);
     }
 
     private static UnifiedResourceBankItemDto MapSpeaking(ResourceBankItem entry, CefrResourceSource source)
@@ -334,7 +336,8 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
             ParseJsonStringArray(entry.ContextTagsJson), ParseJsonStringArray(entry.FocusTagsJson),
             entry.DifficultyBand, source.Id, source.Name, entry.ContentFingerprint, "Published",
             entry.CreatedAt, entry.UpdatedAt, "CefrSpeakingPrompt", null,
-            null, null, null, entry.IsArchived);
+            null, null, null, entry.IsArchived,
+            ImageUrl: c.ImageUrl);
     }
 
     private static UnifiedResourceBankItemDto MapWritingPrompt(ResourceBankItem entry, CefrResourceSource source)
@@ -469,7 +472,12 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
             case PublishedResourceType.Listening:
             {
                 var c = ResourceBankItemContent.Deserialize<ListeningPassageContent>(entry.ContentJson);
-                return empty with { Type = UnifiedResourceBankItemType.Listening, Title = c.Title, Transcript = c.Transcript };
+                return empty with
+                {
+                    Type = UnifiedResourceBankItemType.Listening, Title = c.Title, Transcript = c.Transcript,
+                    AudioStorageKey = c.AudioStorageKey, AudioContentType = c.AudioContentType,
+                    AudioDurationSeconds = c.AudioDurationSeconds
+                };
             }
             case PublishedResourceType.Speaking:
             {

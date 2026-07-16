@@ -71,7 +71,14 @@ public sealed record UnifiedResourceBankItemDto(
     int? LinkedLearnCount,
     int? LinkedActivityCount,
     int? LinkedModuleCount,
-    bool IsArchived
+    bool IsArchived,
+    // ── Phase 4.6 — media discovery/display fields. Deliberately no raw storage key here (see
+    // ResourceBankMediaContracts.cs's doc comment) — playback goes through the new
+    // audio-url/audio endpoints on AdminResourceBankController, keyed by this row's own Id. ──
+    bool HasAudio = false,
+    string? AudioContentType = null,
+    decimal? AudioDurationSeconds = null,
+    string? ImageUrl = null
 );
 
 public sealed record UnifiedResourceBankListResult(
@@ -194,5 +201,14 @@ public sealed record ResourceBankItemEditDto(
     int? SuggestedMinWords,
     string? Transcript,
     int? SuggestedDurationSeconds,
-    string? ImageUrl
+    string? ImageUrl,
+    // Phase 4.6 — Listening audio parity with Speaking's ImageUrl above. AudioStorageKey is
+    // surfaced here (the edit DTO is admin-only and read-only informational display: "an audio
+    // file named X is currently attached") but is NOT accepted back by UpdateResourceBankItemCommand
+    // — replacing a published item's audio file is out of scope for this phase (no upload
+    // infrastructure was built for it); admins wanting to change it must do so pre-publish, on the
+    // originating candidate.
+    string? AudioStorageKey = null,
+    string? AudioContentType = null,
+    decimal? AudioDurationSeconds = null
 );

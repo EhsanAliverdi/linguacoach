@@ -201,6 +201,24 @@ public sealed class ImportPackagePlanProcessingTests : IDisposable
         linkedAssets.Should().OnlyContain(a => a.ImportPackageId == packageId);
     }
 
+    /// <summary>Phase 4.6 — the audio's real measured duration (already resolved for the STT-cost
+    /// path in Phase 4.4E) now also flows onto the created ResourceCandidate itself, not just the
+    /// ImportAsset it was measured on.</summary>
+    [Fact]
+    public async Task Listening_candidate_carries_the_measured_audio_duration()
+    {
+        AudioProbe.NextDurationSeconds = 123.4m;
+        var zipBytes = BuildZip(("lesson/audio.mp3", new byte[100]));
+        var (packageId, planId) = await UploadConfirmAndGeneratePlanAsync(zipBytes);
+        await ApprovePlanAsync(packageId, planId, 50m);
+
+        await _processingService.ProcessPendingAsync(10);
+
+        var candidate = await _db.ResourceCandidates.FirstOrDefaultAsync(c => c.CandidateType == ResourceCandidateType.ListeningPassage);
+        candidate.Should().NotBeNull();
+        candidate!.AudioDurationSeconds.Should().Be(123.4m);
+    }
+
     // ── Phase 4.4E — real, persisted, reusable audio-duration measurement replaces the flat
     // five-minute assumption entirely. ──
 

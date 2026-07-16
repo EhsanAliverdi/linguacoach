@@ -55,6 +55,7 @@ internal sealed class ResourceCandidateConfiguration : IEntityTypeConfiguration<
 
         builder.Property(e => e.AudioStorageKey).HasColumnName("audio_storage_key").HasMaxLength(500);
         builder.Property(e => e.AudioContentType).HasColumnName("audio_content_type").HasMaxLength(100);
+        builder.Property(e => e.AudioDurationSeconds).HasColumnName("audio_duration_seconds");
 
         builder.Property(e => e.TranscriptOrigin).HasColumnName("transcript_origin").HasConversion<string>().HasMaxLength(32);
         builder.Property(e => e.TranscriptConfidence).HasColumnName("transcript_confidence");

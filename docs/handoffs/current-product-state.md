@@ -1,6 +1,6 @@
 ---
 status: current
-lastUpdated: 2026-07-16 (Phase 4.5 — typed multimodal candidate schemas)
+lastUpdated: 2026-07-16 (Phase 4.6 — media review and downstream discovery)
 owner: product
 supersedes:
 supersededBy:
@@ -8,7 +8,38 @@ supersededBy:
 
 # SpeakPath — Current Product State
 
-Last updated: 2026-07-16 (Phase 4.5 — typed multimodal candidate schemas)
+Last updated: 2026-07-16 (Phase 4.6 — media review and downstream discovery)
+
+## Phase 4.6: Media review and downstream discovery (2026-07-16)
+
+Closes the gap where Phase 4.4E's real audio-duration measurement stopped at `ImportAsset` and
+Phase 4.5's typed schemas never surfaced media metadata to a reviewer or the Resource Bank.
+
+**Duration threading:** `ResourceCandidate` gained `AudioDurationSeconds` (one additive migration).
+`ImportPackageProcessingService` now resolves duration for every Listening audio asset (previously
+only on the STT-transcription branch, for cost purposes) and sets it on the created candidate.
+`ResourceCandidatePublishService` copies it into `ListeningPassageContent`
+(`ResourceBankItemContent.cs`) at publish time. `LessonResourceLookup`'s `LessonResourceSnapshot`
+now carries `AudioStorageKey`/`AudioContentType`/`AudioDurationSeconds`/`MediaType` for Listening and
+`ImageUrl`/`MediaType` for Speaking — discovery only, Lesson generation itself is unchanged
+(text-composition only, per the Phase 4.5 audit finding).
+
+**Candidate Review media metadata:** `ResourceCandidatePreviewDto` gained `Media` — filename, media
+type, size, duration, transcript provenance (origin/confidence/provider/model), and a
+`ResourceCandidateMediaState` (`Ok`/`Missing`/`Invalid`/`Unsupported`/`Unavailable`). Never a raw
+storage key. The Candidate Review Angular page renders this alongside the existing audio player.
+
+**Resource Bank media access:** `ResourceBankQueryService.MapListening` previously silently dropped
+`AudioStorageKey`/`AudioContentType` from the published item's list/detail DTO — fixed (surfaced as
+`HasAudio`/`AudioContentType`/`AudioDurationSeconds`, never the raw key). New
+`IResourceBankMediaService`/`GET /api/admin/resource-bank/{id}/audio-url` +
+`GET /api/admin/resource-bank/{id}/audio` mirror the existing candidate-audio signed-url/stream
+pattern. `admin-resource-bank-detail.component` now shows an audio player + transcript + duration
+for Listening items and the prompt image for Speaking items with one set.
+
+**Security:** every new media endpoint enforces the existing Admin `[Authorize]` gate, resolves the
+storage key only from the resource's own `ContentJson` (never client-supplied), and returns 404 for
+a non-existent or wrong-type resource — no arbitrary storage-key access is possible.
 
 ## Phase 4.5: Typed multimodal candidate schemas (2026-07-16)
 

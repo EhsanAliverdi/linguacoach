@@ -678,6 +678,9 @@ public static class DependencyInjection
         // Phase K1 — AI-assisted import column-mapping proposal.
         services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceImportColumnMappingService,
             LinguaCoach.Infrastructure.ResourceImport.ResourceImportColumnMappingService>();
+        // Phase 4.6 — authenticated audio access for a published Listening Resource Bank item.
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceBankMediaService,
+            LinguaCoach.Infrastructure.ResourceImport.ResourceBankMediaService>();
 
         // Phase 4 (2026-07-15) — large-scale AI import packages. App never crashes on a missing
         // "ImportPackageLimits" config section — sensible defaults are baked into the options class.

@@ -529,6 +529,51 @@ public sealed class ResourceCandidatePublishServiceTests : IDisposable
         rows[0].SourceId.Should().Be(source.Id);
     }
 
+    /// <summary>Phase 4.6 — a candidate's real measured audio duration (threaded from its linked
+    /// ImportAsset by ImportPackageProcessingService) must be preserved verbatim into
+    /// ListeningPassageContent at publish time — never dropped, never re-derived.</summary>
+    [Fact]
+    public async Task Publishing_listening_candidate_preserves_audio_duration_into_ListeningPassageContent()
+    {
+        var source = SeedSource();
+        var rawJson = """{"title":"Morning News","transcript":"Good morning and welcome to the daily news."}""";
+        var (_, raw) = SeedRunAndRaw(source, rawJson);
+        var candidate = SeedCandidate(raw, ResourceCandidateType.ListeningPassage, "Morning News", rawJson);
+        MakePublishReady(candidate, primarySkill: "listening");
+        candidate.AttachAudio("resource-import-audio/abc123.mp3", "audio/mpeg");
+        candidate.SetAudioDuration(97.5m);
+        _db.SaveChanges();
+
+        var result = await _sut.PublishAsync(candidate.Id, null);
+
+        result.Success.Should().BeTrue();
+        var rows = await _db.ResourceBankItems.Where(x => x.Type == PublishedResourceType.Listening).ToListAsync();
+        var content = ResourceBankItemContent.Deserialize<ListeningPassageContent>(rows[0].ContentJson);
+        content.AudioDurationSeconds.Should().Be(97.5m);
+    }
+
+    /// <summary>Phase 4.6 — a candidate whose audio duration was never measured (e.g. a manual
+    /// upload with no linked ImportAsset) must still publish — a null duration is a valid "not
+    /// known" state, never a publish blocker.</summary>
+    [Fact]
+    public async Task Publishing_listening_candidate_with_unknown_audio_duration_still_publishes()
+    {
+        var source = SeedSource();
+        var rawJson = """{"title":"Morning News","transcript":"Good morning and welcome to the daily news."}""";
+        var (_, raw) = SeedRunAndRaw(source, rawJson);
+        var candidate = SeedCandidate(raw, ResourceCandidateType.ListeningPassage, "Morning News", rawJson);
+        MakePublishReady(candidate, primarySkill: "listening");
+        candidate.AttachAudio("resource-import-audio/abc123.mp3", "audio/mpeg");
+        _db.SaveChanges();
+
+        var result = await _sut.PublishAsync(candidate.Id, null);
+
+        result.Success.Should().BeTrue();
+        var rows = await _db.ResourceBankItems.Where(x => x.Type == PublishedResourceType.Listening).ToListAsync();
+        var content = ResourceBankItemContent.Deserialize<ListeningPassageContent>(rows[0].ContentJson);
+        content.AudioDurationSeconds.Should().BeNull();
+    }
+
     [Fact]
     public async Task Publishing_speaking_prompt_candidate_creates_exactly_one_row_with_mapped_fields()
     {

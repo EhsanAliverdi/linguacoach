@@ -85,6 +85,10 @@ export class AdminResourceBankDetailComponent implements OnInit {
   repairSuccess = signal('');
   repairError = signal('');
 
+  // ── Phase 4.6 — published Listening audio playback ───────────────────────
+  audioUrl = signal<string | null>(null);
+  audioLoading = signal(false);
+
   constructor(
     private bankSvc: AdminUnifiedResourceBankService,
     private lessonSvc: AdminLessonService,
@@ -101,13 +105,41 @@ export class AdminResourceBankDetailComponent implements OnInit {
   load(): void {
     this.loading.set(true);
     this.error.set('');
+    this.audioUrl.set(null);
     this.bankSvc.get(this.itemId).subscribe({
-      next: item => { this.item.set(item); this.loading.set(false); },
+      next: item => {
+        this.item.set(item);
+        this.loading.set(false);
+        if (item.type === 'listening' && item.hasAudio) this.loadAudioUrl();
+      },
       error: err => { this.loading.set(false); this.error.set(err.error?.error ?? 'Could not load this Resource Bank item.'); },
     });
     this.bankSvc.diagnose(this.itemId).subscribe({
       next: issues => this.issues.set(issues),
       error: () => this.issues.set([]),
+    });
+  }
+
+  /** Phase 4.6 — same signed-URL-or-authenticated-blob pattern already used for candidate audio
+   *  preview (AdminResourceCandidateComponent.loadAudioUrl): a signed absolute http(s) URL binds
+   *  directly to `<audio src>`; the local-storage streaming fallback is fetched as an
+   *  authenticated blob since a plain `<audio src>` can't send a Bearer token. Never renders a raw
+   *  storage key/URL from the API response directly. */
+  loadAudioUrl(): void {
+    this.audioLoading.set(true);
+    this.bankSvc.getAudioUrl(this.itemId).subscribe({
+      next: r => {
+        if (/^https?:\/\//i.test(r.url)) {
+          this.audioLoading.set(false);
+          this.audioUrl.set(r.url);
+          return;
+        }
+        this.bankSvc.getAudioBlobUrl(this.itemId).subscribe({
+          next: blobUrl => { this.audioLoading.set(false); this.audioUrl.set(blobUrl); },
+          error: () => { this.audioLoading.set(false); this.audioUrl.set(null); },
+        });
+      },
+      error: () => { this.audioLoading.set(false); this.audioUrl.set(null); },
     });
   }
 

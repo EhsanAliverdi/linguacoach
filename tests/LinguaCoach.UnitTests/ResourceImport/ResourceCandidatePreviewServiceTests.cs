@@ -2,13 +2,16 @@ using System.Text.Json;
 using FluentAssertions;
 using LinguaCoach.Application.Activity;
 using LinguaCoach.Application.Onboarding;
+using LinguaCoach.Application.ResourceImport;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.Activity;
 using LinguaCoach.Infrastructure.Onboarding;
 using LinguaCoach.Infrastructure.ResourceImport;
+using LinguaCoach.Infrastructure.Storage;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace LinguaCoach.UnitTests.ResourceImport;
 
@@ -31,7 +34,8 @@ public sealed class ResourceCandidatePreviewServiceTests : IDisposable
         _db.Database.OpenConnection();
         _db.Database.EnsureCreated();
 
-        _sut = new ResourceCandidatePreviewService(_db, new FormIoSchemaValidationService());
+        var audioService = new ResourceCandidateAudioService(_db, new FakeFileStorageService(), NullLogger<ResourceCandidateAudioService>.Instance);
+        _sut = new ResourceCandidatePreviewService(_db, new FormIoSchemaValidationService(), audioService);
     }
 
     public void Dispose()
@@ -257,5 +261,100 @@ public sealed class ResourceCandidatePreviewServiceTests : IDisposable
         preview.AiAnalysisSummary.Should().NotBeNull();
         preview.AiAnalysisSummary!.CefrLevel.Should().Be("A1");
         preview.AiAnalysisSummary.QualityScore.Should().Be(0.9);
+    }
+
+    // ── Phase 4.6 — safe media metadata for a candidate's attached media ────
+
+    [Fact]
+    public async Task NonListening_candidate_has_no_media_metadata()
+    {
+        var source = SeedSource();
+        var (_, raw) = SeedRunAndRaw(source, """{"word":"hello"}""");
+        var candidate = SeedCandidate(raw, ResourceCandidateType.VocabularyEntry, "hello", """{"word":"hello"}""");
+
+        var preview = await _sut.GetPreviewAsync(candidate.Id);
+
+        preview!.Media.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Listening_candidate_without_audio_reports_Missing_media_state()
+    {
+        var source = SeedSource();
+        var (_, raw) = SeedRunAndRaw(source, """{"title":"News"}""");
+        var candidate = SeedCandidate(raw, ResourceCandidateType.ListeningPassage, "News", """{"title":"News"}""");
+
+        var preview = await _sut.GetPreviewAsync(candidate.Id);
+
+        preview!.Media.Should().NotBeNull();
+        preview.Media!.State.Should().Be(ResourceCandidateMediaState.Missing);
+    }
+
+    [Fact]
+    public async Task Listening_candidate_with_valid_audio_reports_Ok_media_state_with_duration_and_provenance()
+    {
+        var source = SeedSource();
+        var (_, raw) = SeedRunAndRaw(source, """{"title":"News","transcript":"Good morning."}""");
+        var candidate = SeedCandidate(raw, ResourceCandidateType.ListeningPassage, "News", """{"title":"News","transcript":"Good morning."}""");
+        candidate.AttachAudio("resource-import-audio/x.mp3", "audio/mpeg");
+        candidate.SetAudioDuration(65.2m);
+        candidate.SetGeneratedTranscript("Good morning.", 0.87, "openai", "whisper-1");
+        _db.SaveChanges();
+
+        var preview = await _sut.GetPreviewAsync(candidate.Id);
+
+        preview!.Media.Should().NotBeNull();
+        preview.Media!.State.Should().Be(ResourceCandidateMediaState.Ok);
+        preview.Media.MediaType.Should().Be("audio/mpeg");
+        preview.Media.DurationSeconds.Should().Be(65.2m);
+        preview.Media.ProvenanceOrigin.Should().Be("AITranscribed");
+        preview.Media.ProvenanceConfidence.Should().Be(0.87);
+        preview.Media.ProviderName.Should().Be("openai");
+        preview.Media.ModelName.Should().Be("whisper-1");
+    }
+
+    [Fact]
+    public async Task Listening_candidate_with_unsupported_content_type_reports_Unsupported_media_state()
+    {
+        var source = SeedSource();
+        var (_, raw) = SeedRunAndRaw(source, """{"title":"News"}""");
+        var candidate = SeedCandidate(raw, ResourceCandidateType.ListeningPassage, "News", """{"title":"News"}""");
+        candidate.AttachAudio("resource-import-audio/x.bin", "application/octet-stream");
+        _db.SaveChanges();
+
+        var preview = await _sut.GetPreviewAsync(candidate.Id);
+
+        preview!.Media.Should().NotBeNull();
+        preview.Media!.State.Should().Be(ResourceCandidateMediaState.Unsupported);
+    }
+
+    [Fact]
+    public async Task Listening_candidate_with_a_linked_asset_of_the_wrong_media_type_reports_Invalid_media_state()
+    {
+        var source = SeedSource();
+        var (_, raw) = SeedRunAndRaw(source, """{"title":"News"}""");
+        var candidate = SeedCandidate(raw, ResourceCandidateType.ListeningPassage, "News", """{"title":"News"}""");
+        candidate.AttachAudio("resource-import-audio/x.mp3", "audio/mpeg");
+        _db.SaveChanges();
+
+        var package = new ImportPackage(source.Id, "test-package", DateTimeOffset.UtcNow);
+        _db.ImportPackages.Add(package);
+        _db.SaveChanges();
+
+        // An asset whose own DetectedMediaType is Image, wrongly linked with the Audio role —
+        // simulates a candidate whose media reference doesn't actually match what it claims.
+        var wrongAsset = new ImportAsset(
+            package.Id, "cover.jpg", "cover.jpg", "resource-import-audio/x.mp3", "image/jpeg",
+            ImportAssetMediaType.Image, ".jpg", 1024, "checksum-1", DateTimeOffset.UtcNow);
+        _db.ImportAssets.Add(wrongAsset);
+        _db.SaveChanges();
+        _db.ImportCandidateAssetLinks.Add(new ImportCandidateAssetLink(candidate.Id, wrongAsset.Id, ImportAssetRole.Audio));
+        _db.SaveChanges();
+
+        var preview = await _sut.GetPreviewAsync(candidate.Id);
+
+        preview!.Media.Should().NotBeNull();
+        preview.Media!.State.Should().Be(ResourceCandidateMediaState.Invalid);
+        preview.Media.FileName.Should().Be("cover.jpg");
     }
 }

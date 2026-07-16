@@ -189,6 +189,58 @@ public sealed class ResourceCandidateReviewWorkflowTests : IDisposable
         await act.Should().ThrowAsync<ResourceImportValidationException>();
     }
 
+    // ── Phase 4.6 — audio duration threading (domain) ───────────────────────
+
+    [Fact]
+    public void SetAudioDuration_stores_a_positive_value()
+    {
+        var candidate = new ResourceCandidate(
+            Guid.NewGuid(), ResourceCandidateType.ListeningPassage, "News", """{"title":"News"}""", "en",
+            "news", "fp1", ResourceCandidateValidationStatus.Passed);
+
+        candidate.SetAudioDuration(42.3m);
+
+        candidate.AudioDurationSeconds.Should().Be(42.3m);
+    }
+
+    [Fact]
+    public void SetAudioDuration_accepts_null_as_a_valid_not_known_state()
+    {
+        var candidate = new ResourceCandidate(
+            Guid.NewGuid(), ResourceCandidateType.ListeningPassage, "News", """{"title":"News"}""", "en",
+            "news", "fp1", ResourceCandidateValidationStatus.Passed);
+
+        var act = () => candidate.SetAudioDuration(null);
+
+        act.Should().NotThrow();
+        candidate.AudioDurationSeconds.Should().BeNull();
+    }
+
+    [Fact]
+    public void SetAudioDuration_rejects_a_non_positive_value()
+    {
+        var candidate = new ResourceCandidate(
+            Guid.NewGuid(), ResourceCandidateType.ListeningPassage, "News", """{"title":"News"}""", "en",
+            "news", "fp1", ResourceCandidateValidationStatus.Passed);
+
+        var act = () => candidate.SetAudioDuration(0m);
+
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void SetAudioDuration_throws_for_an_already_published_candidate()
+    {
+        var candidate = new ResourceCandidate(
+            Guid.NewGuid(), ResourceCandidateType.ListeningPassage, "News", """{"title":"News"}""", "en",
+            "news", "fp1", ResourceCandidateValidationStatus.Passed);
+        candidate.MarkPublished("CefrListeningPassage", Guid.NewGuid(), DateTimeOffset.UtcNow, null);
+
+        var act = () => candidate.SetAudioDuration(30m);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*already been published*");
+    }
+
     // ── Content editing (domain) ────────────────────────────────────────────
 
     [Fact]

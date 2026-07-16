@@ -355,6 +355,23 @@ export interface ResourceCandidateRenderedPreviewDto {
   fieldSummary: string[] | null;
 }
 
+// ── Phase 4.6 — safe media metadata for a candidate's attached media (Listening's audio today).
+// Never carries a raw storage key/credential — playback stays behind the existing audio-url/audio
+// endpoints, keyed by candidate id. ──
+export type ResourceCandidateMediaState = 'Ok' | 'Missing' | 'Invalid' | 'Unsupported' | 'Unavailable';
+
+export interface ResourceCandidateMediaMetadataDto {
+  state: ResourceCandidateMediaState;
+  fileName: string | null;
+  mediaType: string | null;
+  sizeBytes: number | null;
+  durationSeconds: number | null;
+  provenanceOrigin: string | null;
+  provenanceConfidence: number | null;
+  providerName: string | null;
+  modelName: string | null;
+}
+
 export interface ResourceCandidatePreviewDto {
   candidateId: string;
   candidateType: string;
@@ -385,6 +402,9 @@ export interface ResourceCandidatePreviewDto {
   canPreview: boolean;
   previewWarnings: string[];
   adminOnlyActivityMetadataJson: string | null;
+  /** Phase 4.6 — null for candidate types with no media (Vocabulary/Grammar/Reading/Speaking/
+   *  Writing today — only ListeningPassage populates this). */
+  media: ResourceCandidateMediaMetadataDto | null;
 }
 
 // ── Phase E4 — approve/reject/publish workflow ──────────────────────────────────
@@ -453,6 +473,12 @@ export interface UnifiedResourceBankItemDto {
   linkedActivityCount: number | null;
   linkedModuleCount: number | null;
   isArchived: boolean;
+  // Phase 4.6 — media discovery/display fields. No raw storage key here (playback goes through
+  // AdminUnifiedResourceBankService.getAudioUrl/getAudioBlobUrl, keyed by this row's own id).
+  hasAudio: boolean;
+  audioContentType: string | null;
+  audioDurationSeconds: number | null;
+  imageUrl: string | null;
 }
 
 export interface UnifiedResourceBankListResult {
@@ -504,6 +530,11 @@ export interface ResourceBankItemEditDto {
   transcript: string | null;
   suggestedDurationSeconds: number | null;
   imageUrl: string | null;
+  // Phase 4.6 — Listening audio parity with Speaking's imageUrl above. Informational/read-only —
+  // never sent back by UpdateResourceBankItemRequest (replacing published audio is out of scope).
+  audioStorageKey: string | null;
+  audioContentType: string | null;
+  audioDurationSeconds: number | null;
 }
 
 export interface UpdateResourceBankItemRequest {

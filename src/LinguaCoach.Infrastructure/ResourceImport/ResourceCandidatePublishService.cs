@@ -367,7 +367,8 @@ public sealed class ResourceCandidatePublishService : IResourceCandidatePublishS
             var entity = new ResourceBankItem(
                 PublishedResourceType.Listening, source.Id, candidate.CefrLevel,
                 ResourceBankItemContent.Serialize(new ListeningPassageContent(
-                    title, transcript, candidate.AudioStorageKey, candidate.AudioContentType, source.AttributionText)),
+                    title, transcript, candidate.AudioStorageKey, candidate.AudioContentType, source.AttributionText,
+                    candidate.AudioDurationSeconds)),
                 candidate.Subskill, difficultyBand, candidate.ContextTagsJson, candidate.FocusTagsJson,
                 candidate.ContentFingerprint);
             return (entity, "CefrListeningPassage", errors);

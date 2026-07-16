@@ -303,4 +303,18 @@ export class AdminUnifiedResourceBankService {
   listWithIssues(): Observable<RepairableItemSummary[]> {
     return this.http.get<RepairableItemSummary[]>(`${this.base}/with-issues`);
   }
+
+  /** Phase 4.6 — short-lived signed URL (or local-storage streaming endpoint) for a published
+   *  Listening item's audio. Mirrors AdminResourceCandidateService.getAudioUrl exactly. */
+  getAudioUrl(id: string): Observable<ResourceCandidateAudioUrlResult> {
+    return this.http.get<ResourceCandidateAudioUrlResult>(`${this.base}/${id}/audio-url`);
+  }
+
+  /** Phase 4.6 — fetches the local-storage streaming fallback as an authenticated blob. A plain
+   *  `<audio src>` binding can't send a Bearer token, so this is only used when getAudioUrl's URL
+   *  isn't directly fetchable (same pattern as AdminResourceCandidateService.getAudioBlobUrl). */
+  getAudioBlobUrl(id: string): Observable<string> {
+    return this.http.get(`${this.base}/${id}/audio`, { responseType: 'blob' }).pipe(
+      map(blob => URL.createObjectURL(blob)));
+  }
 }

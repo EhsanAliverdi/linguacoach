@@ -104,6 +104,29 @@
       </div>
     </sp-admin-section-card>
 
+    @if (d.type === 'listening' && d.hasAudio) {
+      <sp-admin-section-card title="Audio">
+        <div class="sp-admin-form-stack">
+          @if (audioLoading()) {
+            <sp-admin-loading-state message="Loading audio" />
+          } @else if (audioUrl()) {
+            <audio controls [src]="audioUrl()!" style="width:100%;"></audio>
+          }
+          @if (d.audioContentType) { <sp-admin-form-field label="Format">{{ d.audioContentType }}</sp-admin-form-field> }
+          @if (d.audioDurationSeconds) {
+            <sp-admin-form-field label="Duration">{{ d.audioDurationSeconds }}s</sp-admin-form-field>
+          }
+          @if (d.summary) { <sp-admin-form-field label="Transcript">{{ d.summary }}</sp-admin-form-field> }
+        </div>
+      </sp-admin-section-card>
+    }
+
+    @if (d.type === 'speaking' && d.imageUrl) {
+      <sp-admin-section-card title="Prompt image">
+        <img [src]="d.imageUrl" alt="Speaking prompt image" style="max-width:100%; border-radius:0.5rem;" />
+      </sp-admin-section-card>
+    }
+
     @if (supportsGeneration(d)) {
       <sp-admin-section-card title="Generate">
         <p class="sp-admin-hint" style="margin-bottom:0.5rem;">

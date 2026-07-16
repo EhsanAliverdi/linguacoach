@@ -38,13 +38,18 @@ public sealed class ResourceCandidatePreviewService : IResourceCandidatePreviewS
         "correctanswer", "correctanswers", "score", "quiz",
     };
 
+    // Phase 4.6 — mirrors ResourceCandidateAudioService's own allowlist check (reused via the
+    // service's public IsAllowedMimeType rather than duplicating the mime list a second time).
     private readonly LinguaCoachDbContext _db;
     private readonly IFormIoSchemaValidationService _formIoValidator;
+    private readonly IResourceCandidateAudioService _audioService;
 
-    public ResourceCandidatePreviewService(LinguaCoachDbContext db, IFormIoSchemaValidationService formIoValidator)
+    public ResourceCandidatePreviewService(
+        LinguaCoachDbContext db, IFormIoSchemaValidationService formIoValidator, IResourceCandidateAudioService audioService)
     {
         _db = db;
         _formIoValidator = formIoValidator;
+        _audioService = audioService;
     }
 
     public async Task<ResourceCandidatePreviewDto?> GetPreviewAsync(Guid candidateId, CancellationToken ct = default)
@@ -109,6 +114,7 @@ public sealed class ResourceCandidatePreviewService : IResourceCandidatePreviewS
 
         var adminOnlyMetadataJson = ExtractAdminOnlyActivityMetadata(candidate);
         var title = DeriveTitle(candidate, rawFields);
+        var media = await BuildMediaMetadataAsync(candidate, ct);
 
         return new ResourceCandidatePreviewDto(
             candidate.Id,
@@ -139,7 +145,55 @@ public sealed class ResourceCandidatePreviewService : IResourceCandidatePreviewS
             runSummary,
             canPreview,
             previewWarnings,
-            adminOnlyMetadataJson);
+            adminOnlyMetadataJson,
+            media);
+    }
+
+    /// <summary>
+    /// Phase 4.6 — safe media metadata for a candidate's attached media. Only ListeningPassage
+    /// carries media today (see AttachAudio) — every other candidate type returns null. Never
+    /// exposes AudioStorageKey itself; playback stays behind the existing audio-url/audio
+    /// streaming endpoints, keyed by candidate id.
+    /// </summary>
+    private async Task<ResourceCandidateMediaMetadataDto?> BuildMediaMetadataAsync(ResourceCandidate candidate, CancellationToken ct)
+    {
+        if (candidate.CandidateType != ResourceCandidateType.ListeningPassage)
+            return null;
+
+        if (string.IsNullOrWhiteSpace(candidate.AudioStorageKey))
+        {
+            return new ResourceCandidateMediaMetadataDto(
+                ResourceCandidateMediaState.Missing, FileName: null, MediaType: null, SizeBytes: null,
+                DurationSeconds: null, ProvenanceOrigin: null, ProvenanceConfidence: null, ProviderName: null, ModelName: null);
+        }
+
+        // Best-effort enrichment from the linked audio ImportAsset (filename/size/detected media
+        // type) — a candidate whose audio was uploaded manually (no ImportPackage/ImportAsset,
+        // e.g. via the direct upload endpoint) has no link row and falls back to what the
+        // candidate itself carries.
+        var linkedAsset = await (
+            from link in _db.ImportCandidateAssetLinks
+            join asset in _db.ImportAssets on link.ImportAssetId equals asset.Id
+            where link.ResourceCandidateId == candidate.Id && link.Role == ImportAssetRole.Audio
+            select asset)
+            .FirstOrDefaultAsync(ct);
+
+        var state = ResourceCandidateMediaState.Ok;
+        if (!_audioService.IsAllowedMimeType(candidate.AudioContentType ?? string.Empty))
+            state = ResourceCandidateMediaState.Unsupported;
+        else if (linkedAsset is not null && linkedAsset.DetectedMediaType != ImportAssetMediaType.Audio)
+            state = ResourceCandidateMediaState.Invalid;
+
+        return new ResourceCandidateMediaMetadataDto(
+            state,
+            FileName: linkedAsset?.OriginalFileName,
+            MediaType: candidate.AudioContentType,
+            SizeBytes: linkedAsset?.UncompressedSizeBytes,
+            DurationSeconds: candidate.AudioDurationSeconds,
+            ProvenanceOrigin: candidate.TranscriptOrigin?.ToString(),
+            ProvenanceConfidence: candidate.TranscriptConfidence,
+            ProviderName: candidate.SttProviderName,
+            ModelName: candidate.SttModelName);
     }
 
     // ── Rendered preview model per candidate type ───────────────────────────────

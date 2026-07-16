@@ -388,6 +388,12 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
 
                 string? transcriptText = null;
                 var origin = MetadataOrigin.SourceMetadata;
+                // Phase 4.6 — the audio's measured duration, threaded onto the candidate below
+                // regardless of which branch supplies the transcript. Best-effort: a measurement
+                // failure here never blocks candidate creation (unlike the STT branch, where a
+                // failed measurement blocks — because that branch's failure also means no cost
+                // basis exists to safely proceed with billing).
+                decimal? resolvedDurationSeconds = null;
 
                 if (matchingTranscript is not null)
                 {
@@ -395,6 +401,21 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
                     using var reader = new StreamReader(transcriptStream);
                     transcriptText = await reader.ReadToEndAsync(ct);
                     matchingTranscript.MarkProcessed();
+
+                    try
+                    {
+                        var supplementaryMeasurement = await _audioDurationResolver.ResolveAsync(audio, ct);
+                        if (supplementaryMeasurement.Success)
+                        {
+                            resolvedDurationSeconds = supplementaryMeasurement.DurationSeconds;
+                            if (!supplementaryMeasurement.WasReused)
+                                await _db.SaveChangesAsync(ct);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "ImportPackageProcessingService: could not measure audio duration for {File} (supplied-transcript path) — continuing without it.", audio.RelativePath);
+                    }
                 }
                 else
                 {
@@ -414,6 +435,7 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
                     if (!measurement.WasReused)
                         await _db.SaveChangesAsync(ct); // persist the fresh measurement durably before billing off it
 
+                    resolvedDurationSeconds = measurement.DurationSeconds;
                     var measuredMinutes = measurement.DurationSeconds!.Value / 60m;
                     var sttCostIfCharged = measuredMinutes * _costOptions.SttCostPerMinute;
                     var projectedSttCost = runningCost + sttCostIfCharged;
@@ -468,7 +490,7 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
 
                 try
                 {
-                    var candidate = CreateListeningCandidate(run.Id, audio, transcriptText, origin);
+                    var candidate = CreateListeningCandidate(run.Id, audio, transcriptText, origin, resolvedDurationSeconds);
                     audio.MarkProcessed();
 
                     // Part D/Part 8 — preserve the candidate↔asset relationship so a later
@@ -519,7 +541,8 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
         return run;
     }
 
-    private ResourceCandidate CreateListeningCandidate(Guid runId, ImportAsset audio, string? transcriptText, MetadataOrigin transcriptOrigin)
+    private ResourceCandidate CreateListeningCandidate(
+        Guid runId, ImportAsset audio, string? transcriptText, MetadataOrigin transcriptOrigin, decimal? audioDurationSeconds = null)
     {
         var title = System.IO.Path.GetFileNameWithoutExtension(audio.RelativePath);
         var normalizedJson = JsonSerializer.Serialize(new Dictionary<string, string?>
@@ -540,6 +563,8 @@ internal sealed class ImportPackageProcessingService : IImportPackageProcessingS
             rawRecord.Id, ResourceCandidateType.ListeningPassage, title, normalizedJson, "en",
             title.ToLowerInvariant(), fingerprint, ResourceCandidateValidationStatus.NeedsReview);
         candidate.AttachAudio(audio.StorageKey, audio.MimeType);
+        if (audioDurationSeconds is not null)
+            candidate.SetAudioDuration(audioDurationSeconds);
         if (!string.IsNullOrWhiteSpace(transcriptText))
         {
             if (transcriptOrigin == MetadataOrigin.AITranscribed)

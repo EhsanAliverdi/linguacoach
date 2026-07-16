@@ -42,6 +42,47 @@ public sealed record ResourceCandidateRawRecordSummaryDto(
     string ExtractionStatus,
     string Excerpt);
 
+// ── Phase 4.6 — safe media metadata for a candidate with an attached media file (Listening's
+// audio today; the shape is generic so a future media-bearing type can reuse it). Never carries a
+// raw storage key/credential — only display-safe facts plus the candidate's own field-level
+// provenance (see ResourceCandidate.TranscriptOrigin/TranscriptConfidence/SttProviderName/
+// SttModelName). Playback itself goes through the existing audio-url/audio streaming endpoints,
+// keyed by candidate id — never by a client-supplied storage key. ──
+
+/// <summary>State of a candidate's attached media, distinct from whether the candidate as a whole
+/// can be approved/published (see ResourceCandidatePublishService's own gates, which are the
+/// actual enforcement point — this is a display/diagnostic signal for the reviewer).</summary>
+public enum ResourceCandidateMediaState
+{
+    /// <summary>Media is attached and passes every known-good check (allowed mime type, and, when
+    /// a linked ImportAsset is available, its detected media type is Audio).</summary>
+    Ok,
+    /// <summary>No media has been attached yet — e.g. a ListeningPassage candidate before its
+    /// audio upload step.</summary>
+    Missing,
+    /// <summary>Media is attached but the linked ImportAsset's own detected media type does not
+    /// match what this candidate type requires (e.g. an image file linked as a Listening
+    /// candidate's audio asset).</summary>
+    Invalid,
+    /// <summary>Media is attached but its content-type is not in the supported allowlist.</summary>
+    Unsupported,
+    /// <summary>Media is attached and otherwise looks valid, but its presence in storage could not
+    /// be confirmed (reserved for the streaming endpoint's own live storage check — the preview DTO
+    /// itself never performs a live storage round-trip, to keep every preview request cheap).</summary>
+    Unavailable
+}
+
+public sealed record ResourceCandidateMediaMetadataDto(
+    ResourceCandidateMediaState State,
+    string? FileName,
+    string? MediaType,
+    long? SizeBytes,
+    decimal? DurationSeconds,
+    string? ProvenanceOrigin,
+    double? ProvenanceConfidence,
+    string? ProviderName,
+    string? ModelName);
+
 public sealed record ResourceCandidateImportRunSummaryDto(
     Guid ImportRunId,
     Guid SourceId,
@@ -135,7 +176,11 @@ public sealed record ResourceCandidatePreviewDto(
     /// <summary>Scoring/rubric/answer-key-shaped fields found on an ActivityTemplateCandidate
     /// row's raw data, if any — admin-only, NEVER merged into RenderedPreviewModel's
     /// student-visible slot. Null for every other candidate type or when none were found.</summary>
-    string? AdminOnlyActivityMetadataJson);
+    string? AdminOnlyActivityMetadataJson,
+    /// <summary>Phase 4.6 — safe media metadata for this candidate's attached media, if any. Null
+    /// for candidate types that carry no media (Vocabulary/Grammar/Reading/Speaking/Writing today
+    /// — only ListeningPassage populates this).</summary>
+    ResourceCandidateMediaMetadataDto? Media = null);
 
 public interface IResourceCandidatePreviewService
 {

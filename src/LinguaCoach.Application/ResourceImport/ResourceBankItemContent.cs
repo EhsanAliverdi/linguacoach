@@ -39,13 +39,21 @@ public sealed record WritingPromptContent(
 /// <summary>Phase J5c — a published listening passage. <see cref="AudioStorageKey"/>/
 /// <see cref="AudioContentType"/> are copied verbatim from the source
 /// <see cref="Domain.Entities.ResourceCandidate"/> at publish time — the publish gate requires
-/// them to already be set (see ResourceCandidatePublishService), so they are never null here.</summary>
+/// them to already be set (see ResourceCandidatePublishService), so they are never null here.
+///
+/// Phase 4.6 — <see cref="AudioDurationSeconds"/> is copied verbatim from
+/// <see cref="Domain.Entities.ResourceCandidate.AudioDurationSeconds"/> at publish time. Unlike
+/// AudioStorageKey/AudioContentType, this is legitimately nullable: a candidate's duration is only
+/// known when it was threaded from a package-linked ImportAsset's Phase 4.4E measurement — a
+/// manually-uploaded candidate audio file (no linked ImportAsset) has no duration source and
+/// publishes with this null, which is a valid "not known" state, never a publish blocker.</summary>
 public sealed record ListeningPassageContent(
     string Title,
     string? Transcript,
     string AudioStorageKey,
     string AudioContentType,
-    string? AttributionText);
+    string? AttributionText,
+    decimal? AudioDurationSeconds = null);
 
 /// <summary>Phase J5d — a published speaking reference prompt: a role-play/task scenario the
 /// student speaks a response to. Text-only, matching WritingPromptContent's shape — no reference

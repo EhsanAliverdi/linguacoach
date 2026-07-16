@@ -10,6 +10,14 @@ namespace LinguaCoach.Infrastructure.Lessons;
 /// <see cref="LinguaCoach.Domain.Entities.LessonResourceLink"/> stores. Used both to validate a
 /// resource reference exists before linking it, and as the raw material for the deterministic
 /// draft composer (<see cref="LessonGenerationService"/>).</summary>
+/// <summary>
+/// Phase 4.6 — <see cref="AudioStorageKey"/>/<see cref="AudioContentType"/>/
+/// <see cref="AudioDurationSeconds"/>/<see cref="MediaType"/>/<see cref="ImageUrl"/> are discovery
+/// fields only: they surface a Listening/Speaking resource's media so a future consumer can use it,
+/// but exercise/lesson generation itself remains text-composition only and does not read them (see
+/// LessonGenerationService — deliberately unchanged by this phase). All null for resource types
+/// with no associated media (Vocabulary/Grammar/Reading/Writing).
+/// </summary>
 internal sealed record LessonResourceSnapshot(
     string Title,
     string? Body,
@@ -19,7 +27,12 @@ internal sealed record LessonResourceSnapshot(
     string? ContextTagsJson,
     string? FocusTagsJson,
     int? DifficultyBand,
-    string? ContentFingerprint
+    string? ContentFingerprint,
+    string? MediaType = null,
+    string? AudioStorageKey = null,
+    string? AudioContentType = null,
+    decimal? AudioDurationSeconds = null,
+    string? ImageUrl = null
 );
 
 internal static class LessonResourceLookup
@@ -74,13 +87,16 @@ internal static class LessonResourceLookup
             {
                 var c = ResourceBankItemContent.Deserialize<ListeningPassageContent>(e.ContentJson);
                 return new LessonResourceSnapshot(c.Title, c.Transcript, e.CefrLevel, "Listening", e.Subskill,
-                    e.ContextTagsJson, e.FocusTagsJson, e.DifficultyBand, null);
+                    e.ContextTagsJson, e.FocusTagsJson, e.DifficultyBand, null,
+                    MediaType: "Audio", AudioStorageKey: c.AudioStorageKey, AudioContentType: c.AudioContentType,
+                    AudioDurationSeconds: c.AudioDurationSeconds);
             }
             case PublishedResourceType.Speaking:
             {
                 var c = ResourceBankItemContent.Deserialize<SpeakingPromptContent>(e.ContentJson);
                 return new LessonResourceSnapshot(c.Title, c.PromptText, e.CefrLevel, "Speaking", e.Subskill,
-                    e.ContextTagsJson, e.FocusTagsJson, e.DifficultyBand, null);
+                    e.ContextTagsJson, e.FocusTagsJson, e.DifficultyBand, null,
+                    MediaType: c.ImageUrl is not null ? "Image" : null, ImageUrl: c.ImageUrl);
             }
             default:
                 return null;

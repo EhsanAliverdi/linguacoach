@@ -20,15 +20,38 @@ public sealed class AdminResourceBankController : ControllerBase
     private readonly IResourceBankArchiveHandler _archiveHandler;
     private readonly IResourceBankItemUpdateHandler _updateHandler;
     private readonly IResourceBankRepairService _repairService;
+    private readonly IResourceBankMediaService _mediaService;
 
     public AdminResourceBankController(
         IResourceBankQueryService bankQueryService, IResourceBankArchiveHandler archiveHandler,
-        IResourceBankItemUpdateHandler updateHandler, IResourceBankRepairService repairService)
+        IResourceBankItemUpdateHandler updateHandler, IResourceBankRepairService repairService,
+        IResourceBankMediaService mediaService)
     {
         _bankQueryService = bankQueryService;
         _archiveHandler = archiveHandler;
         _updateHandler = updateHandler;
         _repairService = repairService;
+        _mediaService = mediaService;
+    }
+
+    // GET api/admin/resource-bank/{id}/audio-url
+    // Phase 4.6 — short-lived signed URL (or, for local storage, the authenticated streaming
+    // endpoint below) for a published Listening item's audio. Mirrors the candidate audio-url
+    // route exactly. 404 for anything that isn't a Listening item with audio recorded.
+    [HttpGet("api/admin/resource-bank/{id:guid}/audio-url")]
+    public async Task<IActionResult> GetAudioUrl(Guid id, CancellationToken ct)
+    {
+        var result = await _mediaService.GetAudioUrlAsync(id, ct);
+        return result is null ? NotFound(new { error = "No audio is available for this Resource Bank item." }) : Ok(result);
+    }
+
+    // GET api/admin/resource-bank/{id}/audio
+    // Phase 4.6 — raw audio stream, the local-storage fallback for GetAudioUrl's signed URL.
+    [HttpGet("api/admin/resource-bank/{id:guid}/audio")]
+    public async Task<IActionResult> GetAudio(Guid id, CancellationToken ct)
+    {
+        var result = await _mediaService.GetAudioStreamAsync(id, ct);
+        return result is null ? NotFound() : File(result.Bytes, result.ContentType);
     }
 
     // GET api/admin/resource-bank?type=&cefrLevel=&skill=&subskill=&contextTag=&focusTag=

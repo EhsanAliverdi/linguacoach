@@ -82,6 +82,14 @@ public sealed class ResourceCandidate : BaseEntity
     public string? AudioStorageKey { get; private set; }
     public string? AudioContentType { get; private set; }
 
+    // ── Phase 4.6 — real audio duration threaded from the linked ImportAsset's Phase 4.4E
+    // measurement (see ImportAssetAudioDurationResolver), so a Listening candidate carries the
+    // same duration onward into ListeningPassageContent at publish time instead of it staying
+    // stranded on ImportAsset (previously only consumed by STT cost estimation). Null when the
+    // candidate's audio has no known duration (manual upload with no linked ImportAsset, or a
+    // measurement that failed) — never a guessed/assumed value.
+    public decimal? AudioDurationSeconds { get; private set; }
+
     // ── Phase 4 (2026-07-15 large-scale AI import packages) — transcript/audio provenance and
     // general field-level provenance for candidates staged from an ImportPackage. ─────────────
     /// <summary>Null when this candidate has no transcript (e.g. audio not yet transcribed) or
@@ -379,6 +387,25 @@ public sealed class ResourceCandidate : BaseEntity
 
         AudioStorageKey = storageKey.Trim();
         AudioContentType = contentType.Trim();
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Phase 4.6 — records the real measured duration of this candidate's linked audio asset (see
+    /// <see cref="ImportAsset.AudioDurationSeconds"/>). Safe to call with null (e.g. a measurement
+    /// failed or no linked asset exists) — a null duration is a legitimate "not known" state, never
+    /// an error. Blocked once published, mirroring <see cref="AttachAudio"/>'s guard: audio-related
+    /// fields on a published candidate are immutable.
+    /// </summary>
+    public void SetAudioDuration(decimal? durationSeconds)
+    {
+        if (IsPublished)
+            throw new InvalidOperationException(
+                "Cannot change the audio duration on a resource candidate that has already been published.");
+        if (durationSeconds is <= 0)
+            throw new ArgumentOutOfRangeException(nameof(durationSeconds), "A recorded audio duration must be positive.");
+
+        AudioDurationSeconds = durationSeconds;
         UpdatedAtUtc = DateTime.UtcNow;
     }
 
