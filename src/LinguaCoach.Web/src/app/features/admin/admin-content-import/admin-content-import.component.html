@@ -5,13 +5,9 @@
 
 <sp-admin-page-body>
 
-  <!-- ── Page tabs (Phase J4B follow-up — shared sp-admin-tab-bar pattern) ──── -->
-  <div class="sp-admin-tab-bar" role="tablist" aria-label="Import content sections">
-    <button type="button" role="tab" class="sp-admin-tab" [class.sp-admin-tab--active]="activeTab() === 'new'"
-      [attr.aria-selected]="activeTab() === 'new'" (click)="selectTab('new')">New Import</button>
-    <button type="button" role="tab" class="sp-admin-tab" [class.sp-admin-tab--active]="activeTab() === 'history'"
-      [attr.aria-selected]="activeTab() === 'history'" (click)="selectTab('history')">Import History</button>
-  </div>
+  <!-- ── Page tabs ────────────────────────────────────────────────────────── -->
+  <sp-admin-tabs [tabs]="tabItems" [active]="activeTab()" ariaLabel="Import content sections"
+    (activeChange)="selectTab($any($event))" />
 
   <!-- ══════════════════════════════════════════════════════════════════ -->
   <!-- Tab: New Import                                                     -->

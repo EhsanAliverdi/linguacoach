@@ -28,12 +28,8 @@
   } @else {
 
   <!-- ── Tab bar ──────────────────────────────────────────────────── -->
-  <div class="sp-admin-tab-bar" role="tablist" aria-label="AI configuration sections">
-    @for (t of tabs; track t.key) {
-    <button type="button" role="tab" class="sp-admin-tab" [class.sp-admin-tab--active]="activeTab() === t.key"
-      [attr.aria-selected]="activeTab() === t.key" (click)="activeTab.set(t.key)">{{ t.label }}</button>
-    }
-  </div>
+  <sp-admin-tabs [tabs]="tabItems" [active]="activeTab()" ariaLabel="AI configuration sections"
+    (activeChange)="activeTab.set($any($event))" />
 
   <!-- ══ LLM CATEGORIES ═══════════════════════════════════════════ -->
   @if (activeTab() === 'llm') {

@@ -52,11 +52,32 @@
       }
     },
     {
+      "label": "Free: Port 4200",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-Command",
+        "$conns = Get-NetTCPConnection -LocalPort 4200 -State Listen -ErrorAction SilentlyContinue; if ($conns) { $conns | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { Write-Host \"Stopping stale process $_ on port 4200\"; Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue } } else { Write-Host 'Port 4200 is already free.' }"
+      ],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": [],
+      "presentation": {
+        "label": "Frontend",
+        "group": "linguacoach",
+        "reveal": "silent",
+        "panel": "dedicated"
+      }
+    },
+    {
       "label": "Start: Frontend",
       "type": "shell",
       "command": "npm start",
       "options": { "cwd": "${workspaceFolder}/src/LinguaCoach.Web" },
       "isBackground": true,
+      "dependsOn": ["Free: Port 4200"],
+      "dependsOrder": "sequence",
       "problemMatcher": {
         "pattern": { "regexp": "^$" },
         "background": {

@@ -78,3 +78,4 @@ export * from './services/admin-toast.service';
 export * from './components/stepper/sp-admin-stepper.component';
 export * from './components/segmented-toggle/sp-admin-segmented-toggle.component';
 export * from './components/file-dropzone/sp-admin-file-dropzone.component';
+export * from './components/tabs/sp-admin-tabs.component';

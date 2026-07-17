@@ -36,6 +36,8 @@ import {
   SpAdminTextareaComponent,
   SpAdminFormFieldComponent,
   SpAdminTableFooterComponent,
+  SpAdminTabItem,
+  SpAdminTabsComponent,
 } from '../../../design-system/admin';
 import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design-system/admin/components/breakdown-bars/sp-admin-breakdown-bars.component';
 
@@ -69,6 +71,7 @@ import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design
     SpAdminButtonGroupComponent,
     SpAdminBreakdownBarsComponent,
     SpAdminTableFooterComponent,
+    SpAdminTabsComponent,
   ],
   templateUrl: './admin-notifications.component.html',
 })
@@ -102,6 +105,18 @@ export class AdminNotificationsComponent implements OnInit {
   outboxFailedOnly = false;
 
   activeTab: 'notifications' | 'outbox' | 'config' | 'templates' = 'notifications';
+  readonly tabItems = computed<SpAdminTabItem[]>(() => [
+    { value: 'notifications', label: 'Notifications' },
+    { value: 'outbox', label: 'Delivery Queue' },
+    { value: 'config', label: 'Configuration' },
+    { value: 'templates', label: 'Templates', count: this.templatesTotal() > 0 ? this.templatesTotal() : undefined },
+  ]);
+
+  selectTab(tab: 'notifications' | 'outbox' | 'config' | 'templates'): void {
+    this.activeTab = tab;
+    if (tab === 'config') this.onConfigTabActivated();
+    if (tab === 'templates') this.onTemplatesTabActivated();
+  }
 
   retryingId = signal<string | null>(null);
   cancellingId = signal<string | null>(null);

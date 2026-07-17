@@ -43,20 +43,8 @@
   </sp-admin-card>
 
   <!-- ── Tabs ── -->
-  <div class="sp-admin-tab-bar" role="tablist" aria-label="Student detail sections">
-    <button role="tab" type="button" class="sp-admin-tab"
-      [class.sp-admin-tab--active]="activeTab() === 'overview'"
-      [attr.aria-selected]="activeTab() === 'overview'"
-      (click)="activeTab.set('overview')">Overview</button>
-    <button role="tab" type="button" class="sp-admin-tab"
-      [class.sp-admin-tab--active]="activeTab() === 'activity'"
-      [attr.aria-selected]="activeTab() === 'activity'"
-      (click)="activeTab.set('activity')">Activity</button>
-    <button role="tab" type="button" class="sp-admin-tab"
-      [class.sp-admin-tab--active]="activeTab() === 'settings'"
-      [attr.aria-selected]="activeTab() === 'settings'"
-      (click)="activeTab.set('settings')">Settings</button>
-  </div>
+  <sp-admin-tabs [tabs]="tabItems" [active]="activeTab()" ariaLabel="Student detail sections"
+    (activeChange)="activeTab.set($any($event))" />
 
   <!-- ══ OVERVIEW TAB ══ -->
   @if (activeTab() === 'overview') {

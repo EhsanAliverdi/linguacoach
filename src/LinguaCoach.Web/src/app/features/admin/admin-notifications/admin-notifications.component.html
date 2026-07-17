@@ -27,21 +27,8 @@
   }
 
   <!-- Tab bar -->
-  <div class="sp-admin-tab-bar" role="tablist" aria-label="Notification sections">
-    <button type="button" role="tab" class="sp-admin-tab" [class.sp-admin-tab--active]="activeTab === 'notifications'" [attr.aria-selected]="activeTab === 'notifications'"
-      (click)="activeTab = 'notifications'">Notifications</button>
-    <button type="button" role="tab" class="sp-admin-tab" [class.sp-admin-tab--active]="activeTab === 'outbox'" [attr.aria-selected]="activeTab === 'outbox'"
-      (click)="activeTab = 'outbox'">Delivery Queue</button>
-    <button type="button" role="tab" class="sp-admin-tab" [class.sp-admin-tab--active]="activeTab === 'config'" [attr.aria-selected]="activeTab === 'config'"
-      (click)="activeTab = 'config'; onConfigTabActivated()">Configuration</button>
-    <button type="button" role="tab" class="sp-admin-tab" [class.sp-admin-tab--active]="activeTab === 'templates'" [attr.aria-selected]="activeTab === 'templates'"
-      (click)="activeTab = 'templates'; onTemplatesTabActivated()">
-      Templates
-      @if (templatesTotal() > 0) {
-        <span class="sp-admin-tab-count">{{ templatesTotal() }}</span>
-      }
-    </button>
-  </div>
+  <sp-admin-tabs [tabs]="tabItems()" [active]="activeTab" ariaLabel="Notification sections"
+    (activeChange)="selectTab($any($event))" />
 
   <!-- ── Notifications tab ──────────────────────────────────────────────────── -->
   @if (activeTab === 'notifications') {

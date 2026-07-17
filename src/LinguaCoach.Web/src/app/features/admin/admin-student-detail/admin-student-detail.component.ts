@@ -37,6 +37,8 @@ import {
   SpAdminPageHeaderComponent,
   SpAdminSlideOverComponent,
   SpAdminTableComponent,
+  SpAdminTabItem,
+  SpAdminTabsComponent,
   SpAdminTextareaComponent,
 } from '../../../design-system/admin';
 import { lifecycleLabel, lifecycleTone, onboardingLabel, onboardingTone } from '../../../design-system/admin/utils/admin-badge.utils';
@@ -79,6 +81,7 @@ interface StudentEditForm {
     SpAdminPageHeaderComponent,
     SpAdminSlideOverComponent,
     SpAdminTableComponent,
+    SpAdminTabsComponent,
     SpAdminTextareaComponent,
   ],
   templateUrl: './admin-student-detail.component.html',
@@ -88,6 +91,11 @@ export class AdminStudentDetailComponent implements OnInit {
   loading = signal(true);
   error = signal('');
   activeTab = signal<'overview' | 'activity' | 'settings'>('overview');
+  readonly tabItems: SpAdminTabItem[] = [
+    { value: 'overview', label: 'Overview' },
+    { value: 'activity', label: 'Activity' },
+    { value: 'settings', label: 'Settings' },
+  ];
 
   memory = signal<AdminStudentLearningMemory | null>(null);
   memoryLoading = signal(true);

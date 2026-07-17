@@ -29,6 +29,8 @@ import {
   SpAdminStepperComponent,
   SpAdminTableComponent,
   SpAdminTableFooterComponent,
+  SpAdminTabItem,
+  SpAdminTabsComponent,
   SpAdminTextareaComponent,
 } from '../../../design-system/admin';
 
@@ -73,6 +75,7 @@ const ZIP_MAX_SINGLE_FILE_BYTES = 2_000_000_000;
     SpAdminStepperComponent,
     SpAdminTableComponent,
     SpAdminTableFooterComponent,
+    SpAdminTabsComponent,
     SpAdminTextareaComponent,
   ],
   templateUrl: './admin-content-import.component.html',
@@ -83,6 +86,10 @@ export class AdminContentImportComponent implements OnInit {
 
   // ── Page tabs (Phase J4B) ────────────────────────────────────────────────
   activeTab = signal<ImportPageTab>('new');
+  readonly tabItems: SpAdminTabItem[] = [
+    { value: 'new', label: 'New Import' },
+    { value: 'history', label: 'Import History' },
+  ];
 
   // ── Unified submission fields (Phase 4.2) ────────────────────────────────
   noteDraft = '';

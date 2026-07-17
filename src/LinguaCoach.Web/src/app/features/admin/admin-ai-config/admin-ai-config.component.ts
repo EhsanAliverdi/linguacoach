@@ -30,6 +30,8 @@ import {
   SpAdminSlideOverComponent,
   SpAdminTableActionsComponent,
   SpAdminTableComponent,
+  SpAdminTabItem,
+  SpAdminTabsComponent,
 } from '../../../design-system/admin';
 
 type AiConfigTab = 'llm' | 'tts' | 'credentials' | 'pricing' | 'rate-limits';
@@ -101,6 +103,7 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
     SpAdminPageBodyComponent, SpAdminPageHeaderComponent, SpAdminSlideOverComponent,
     SpAdminTableActionsComponent, SpAdminTableComponent,
     SpAdminNotImplementedStateComponent, SpAdminButtonGroupComponent, SpAdminIconComponent, SpAdminProviderAvatarComponent,
+    SpAdminTabsComponent,
   ],
   templateUrl: './admin-ai-config.component.html',
   styleUrl: './admin-ai-config.component.css',
@@ -118,12 +121,12 @@ export class AdminAiConfigComponent implements OnInit {
 
   configuringCategory = signal<CategoryState | null>(null);
 
-  readonly tabs: { key: AiConfigTab; label: string }[] = [
-    { key: 'llm',         label: 'LLM Categories' },
-    { key: 'tts',         label: 'Text-to-Speech' },
-    { key: 'credentials', label: 'Provider Credentials' },
-    { key: 'pricing',     label: 'Model Pricing' },
-    { key: 'rate-limits', label: 'Rate Limits' },
+  readonly tabItems: SpAdminTabItem[] = [
+    { value: 'llm',         label: 'LLM Categories' },
+    { value: 'tts',         label: 'Text-to-Speech' },
+    { value: 'credentials', label: 'Provider Credentials' },
+    { value: 'pricing',     label: 'Model Pricing' },
+    { value: 'rate-limits', label: 'Rate Limits' },
   ];
   activeTab = signal<AiConfigTab>('llm');
 

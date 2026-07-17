@@ -1,0 +1,83 @@
+/* Bridges Flowbite's semantic Tailwind tokens (bg-brand-softer, text-fg-brand,
+   rounded-base, border-default, bg-neutral-tertiary, ...) onto SpeakPath's own
+   --sp-admin-* design tokens, so any Flowbite Blocks markup pasted into an
+   sp-admin-* component renders in the admin brand instead of Flowbite's default
+   blue. Loaded after flowbite/src/themes/default.css so these values win. */
+@theme {
+  /* ── Brand (maps to the existing --color-brand-* indigo scale) ─────────── */
+  --color-brand-softer: var(--color-brand-50);
+  --color-brand-soft: var(--color-brand-100);
+  --color-brand-subtle: var(--color-brand-200);
+  --color-brand-medium: var(--color-brand-200);
+  --color-brand: var(--color-brand-500);
+  --color-brand-strong: var(--color-brand-700);
+  --color-brand-light: var(--color-brand-400);
+
+  --color-fg-brand-subtle: var(--color-brand-300);
+  --color-fg-brand: var(--color-brand-600);
+  --color-fg-brand-strong: var(--color-brand-800);
+
+  /* ── Status: success (already close to sp-admin-green #13B07C) ─────────── */
+  --color-success-soft: var(--color-success-50);
+  --color-success-medium: var(--color-success-100);
+  --color-success-subtle: var(--color-success-100);
+  --color-success: var(--color-success-600);
+  --color-success-strong: #0a7468; /* --sp-admin-green-ink */
+  --color-fg-success: var(--color-success-600);
+  --color-fg-success-strong: #0a7468;
+
+  /* ── Status: danger (sp-admin-danger #EF4444 / ink #DC2626) ─────────────── */
+  --color-danger-soft: #fee2e2;
+  --color-danger-medium: #fecaca;
+  --color-danger-subtle: #fecaca;
+  --color-danger: #ef4444;
+  --color-danger-strong: #dc2626;
+  --color-fg-danger: #ef4444;
+  --color-fg-danger-strong: #dc2626;
+
+  /* ── Status: warning (sp-admin-warn #F0982C / ink #B26410) ──────────────── */
+  --color-warning-soft: #fff1dc;
+  --color-warning-medium: #f6e2c2;
+  --color-warning-subtle: #f6e2c2;
+  --color-warning: #f0982c;
+  --color-warning-strong: #b26410;
+  --color-fg-warning-subtle: #f0982c;
+  --color-fg-warning: #b26410;
+
+  /* ── Text ────────────────────────────────────────────────────────────── */
+  --color-body: #4b4462; /* --sp-admin-text-secondary */
+  --color-body-subtle: #8b85a0; /* --sp-admin-text-muted */
+  --color-heading: #211b36; /* --sp-admin-text */
+  --color-fg-disabled: #bdb8cc; /* --sp-admin-text-dim */
+
+  /* ── Neutral surfaces / borders ──────────────────────────────────────── */
+  --color-neutral-primary: #ffffff; /* --sp-admin-surface */
+  --color-neutral-primary-soft: #fbfafe; /* --sp-admin-surface-subtle */
+  --color-neutral-primary-medium: #ffffff;
+  --color-neutral-primary-strong: #ffffff;
+  --color-neutral-secondary: #f6f4fb; /* --sp-admin-bg */
+  --color-neutral-secondary-soft: #f6f4fb;
+  --color-neutral-secondary-medium: #f6f4fb;
+  --color-neutral-tertiary: #ece9f5; /* --sp-admin-border */
+  --color-neutral-tertiary-soft: #f4f2fc; /* --sp-admin-border-subtle */
+  --color-neutral-tertiary-medium: #e2def0; /* --sp-admin-border-2 */
+  --color-neutral-quaternary: #e2def0;
+
+  --color-buffer: #ffffff;
+  --color-buffer-medium: #ffffff;
+  --color-default: #e2def0; /* --sp-admin-border-2 */
+  --color-default-subtle: #ece9f5; /* --sp-admin-border */
+  --color-default-medium: #e2def0;
+  --color-default-strong: #bdb8cc;
+
+  /* ── Radius: align rounded-base with sp-admin's card radius ────────────── */
+  --radius-base: 14px; /* --sp-admin-radius-md */
+  --radius: 9px; /* --sp-admin-radius-btn */
+  --radius-sm: 8px;
+  --radius-xs: 6px;
+  --radius-lg: 18px;
+
+  /* ── Font: match sp-admin's Plus Jakarta Sans stack ─────────────────────── */
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-body: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, sans-serif;
+}

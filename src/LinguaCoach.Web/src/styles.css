@@ -1,6 +1,17 @@
 @import "tailwindcss";
 @source "./**/*.{html,ts}";
+@source "../node_modules/flowbite";
+
+/* ── Cascade priority: our tokens → Flowbite → TailAdmin → Tailwind base ──
+   admin-tokens.css defines --sp-admin-* (source of truth). Flowbite's theme
+   is imported next and immediately overridden by flowbite-admin-theme.css,
+   which maps Flowbite's semantic tokens (bg-brand-softer, text-fg-brand,
+   rounded-base, ...) onto the --sp-admin-* values above. TailAdmin's legacy
+   --color-brand-500 / --color-gray-* scale (below) stays as a fallback layer
+   for pages that predate this component, sitting under both. ─────────────── */
 @import "./app/design-system/admin/tokens/admin-tokens.css";
+@import "flowbite/src/themes/default.css";
+@import "./app/design-system/admin/tokens/flowbite-admin-theme.css";
 
 /* ── TailAdmin Layout One: design tokens + utility classes ──────────────── */
 @custom-variant dark (&:is(.dark *));
