@@ -85,3 +85,40 @@ public interface ITodayPlanModuleAssignmentRecorder
         TodayPlanModuleSelectionResult selectionResult,
         CancellationToken ct = default);
 }
+
+/// <summary>Phase rehaul (2026-07-17) — fleet-wide, read-only aggregate over
+/// <c>StudentTodayPlanModuleAssignment</c> for the admin "Today Delivery Health" page. Replaces
+/// the deleted legacy generation-buffer/readiness-pool health surfaces (see
+/// docs/reviews/2026-07-10-phase-i2b-*.md, -i2c-*.md).</summary>
+public sealed record TodayPlanDeliveryHealthResult(
+    TodayPlanDeliveryHealthToday Today,
+    IReadOnlyList<TodayPlanDeliveryHealthCefrBucket> ByCefrLevel,
+    IReadOnlyList<TodayPlanDeliveryHealthTrendBucket> Trend,
+    IReadOnlyList<TodayPlanDeliveryHealthFallbackReason> TopFallbackReasons,
+    IReadOnlyList<TodayPlanDeliveryHealthBankCoverage> BankCoverage);
+
+public sealed record TodayPlanDeliveryHealthToday(
+    int EligibleStudents,
+    int SelectedCount,
+    int FallbackOnlyCount,
+    int NoAssignmentCount);
+
+public sealed record TodayPlanDeliveryHealthCefrBucket(
+    string CefrLevel,
+    int EligibleStudents,
+    int SelectedCount,
+    int FallbackOnlyCount);
+
+public sealed record TodayPlanDeliveryHealthTrendBucket(
+    DateTime Date,
+    int SelectedCount,
+    int FallbackOnlyCount);
+
+public sealed record TodayPlanDeliveryHealthFallbackReason(
+    string Reason,
+    int Count);
+
+public sealed record TodayPlanDeliveryHealthBankCoverage(
+    string CefrLevel,
+    int EligibleStudents,
+    int ApprovedModuleCount);

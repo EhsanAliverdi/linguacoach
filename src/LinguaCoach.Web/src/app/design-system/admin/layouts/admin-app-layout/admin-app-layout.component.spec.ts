@@ -60,7 +60,9 @@ describe('AdminAppLayoutComponent (Phase 10UI-FIX-2)', () => {
     const text = host.querySelector('sp-admin-sidebar')!.textContent ?? '';
     expect(text).toContain('Overview');
     expect(text).toContain('AI System');
-    expect(text).toContain('Analytics');
+    // Rehaul (2026-07-17): the "Analytics" section (single "Usage & Analytics" item, 100%
+    // redundant with AI Usage + the dashboard) was removed. See
+    // docs/reviews/2026-07-17-usage-analytics-page-removal-review.md.
     // Phase G1: "Content" was split into bank-first IA sections.
     expect(text).toContain('Content Banks');
     expect(text).toContain('Delivery');

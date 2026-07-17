@@ -169,36 +169,6 @@ public sealed class AdminEndpointTests : IClassFixture<ApiTestFactory>
         Assert.True(body.GetProperty("mustChangePassword").GetBoolean());
     }
 
-    [Fact]
-    public async Task CancelGenerationBatch_AsAdmin_MarksRunningBatchFailed()
-    {
-        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
-        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", adminToken);
-
-        var batch = new GenerationBatch(
-            Guid.NewGuid(),
-            GenerationTriggerReason.ManualAdmin,
-            requestedSessionCount: 4);
-        batch.MarkRunning();
-
-        using (var scope = _factory.Services.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
-            db.GenerationBatches.Add(batch);
-            await db.SaveChangesAsync();
-        }
-
-        var response = await _client.PostAsync($"/api/admin/generation/batches/{batch.Id}/cancel", null);
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        using var verifyScope = _factory.Services.CreateScope();
-        var verifyDb = verifyScope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
-        var saved = verifyDb.GenerationBatches.Single(b => b.Id == batch.Id);
-        Assert.Equal(GenerationBatchStatus.Failed, saved.Status);
-        Assert.Equal(GenerationBatch.AdminCancelledFailureReason, saved.FailureReason);
-        Assert.NotNull(saved.CompletedAtUtc);
-    }
-
     // ── GET /api/admin/students/{id} ──────────────────────────────────────────
 
     [Fact]

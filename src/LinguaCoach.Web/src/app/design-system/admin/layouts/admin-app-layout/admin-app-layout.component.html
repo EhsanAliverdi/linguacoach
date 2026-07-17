@@ -80,14 +80,6 @@
       </ul>
     </div>
     <div class="mb-2">
-      <sp-admin-sidebar-section label="Analytics" [collapsed]="false" />
-      <ul class="flex flex-col gap-1">
-        <li><sp-admin-sidebar-nav-item label="Usage & Analytics" route="/admin/usage-analytics" [collapsed]="false" (itemClick)="closeDrawer()">
-          <sp-admin-icon name="activity" />
-        </sp-admin-sidebar-nav-item></li>
-      </ul>
-    </div>
-    <div class="mb-2">
       <!-- Phase I3 — the full I-track target: one Content Studio section, no second "Ops" tier.
            Onboarding/Placement promoted in; Review Queue removed (redundant with Placement Items
            once ActivityTemplate was deleted in I2A). -->
@@ -119,7 +111,7 @@
     <div class="mb-2">
       <sp-admin-sidebar-section label="Delivery" [collapsed]="false" />
       <ul class="flex flex-col gap-1">
-        <li><sp-admin-sidebar-nav-item label="Today Delivery Health" route="/admin/lessons" [collapsed]="false" (itemClick)="closeDrawer()">
+        <li><sp-admin-sidebar-nav-item label="Delivery Health" route="/admin/lessons" [collapsed]="false" (itemClick)="closeDrawer()">
           <sp-admin-icon name="activity" />
         </sp-admin-sidebar-nav-item></li>
       </ul>
@@ -235,16 +227,6 @@
         </ul>
       </div>
 
-      <!-- ANALYTICS -->
-      <div class="mb-2">
-        <sp-admin-sidebar-section label="Analytics" [collapsed]="collapsed()" />
-        <ul class="flex flex-col gap-1">
-          <li><sp-admin-sidebar-nav-item label="Usage & Analytics" route="/admin/usage-analytics" [collapsed]="collapsed()">
-            <sp-admin-icon name="activity" />
-          </sp-admin-sidebar-nav-item></li>
-        </ul>
-      </div>
-
       <!-- CONTENT STUDIO (Phase I3 — the full I-track target: Import -> Resource Bank ->
            Lessons -> Exercises -> Modules -> Onboarding -> Placement, one section, no
            second "Ops" tier. Review Queue removed — it only ever covered PlacementItemDefinition
@@ -282,7 +264,7 @@
       <div class="mb-2">
         <sp-admin-sidebar-section label="Delivery" [collapsed]="collapsed()" />
         <ul class="flex flex-col gap-1">
-          <li><sp-admin-sidebar-nav-item label="Today Delivery Health" route="/admin/lessons" [collapsed]="collapsed()">
+          <li><sp-admin-sidebar-nav-item label="Delivery Health" route="/admin/lessons" [collapsed]="collapsed()">
             <sp-admin-icon name="activity" />
           </sp-admin-sidebar-nav-item></li>
         </ul>

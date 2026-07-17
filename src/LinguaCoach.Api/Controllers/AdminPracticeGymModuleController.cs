@@ -1,4 +1,5 @@
 using LinguaCoach.Application.PracticeGymModules;
+using LinguaCoach.Domain.Constants;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
 using Microsoft.AspNetCore.Authorization;
@@ -99,5 +100,96 @@ public sealed class AdminPracticeGymModuleController : ControllerBase
         });
 
         return Ok(new { studentId, lookbackDays, assignments = items });
+    }
+
+    /// <summary>
+    /// Phase rehaul (2026-07-17) — fleet-wide, read-only delivery health for Practice Gym's
+    /// bank-first module pipeline. Mirrors <c>AdminTodayPlanModuleController.GetDeliveryHealth</c>;
+    /// "suggested" here means at least one Module was suggested that day (any status other than
+    /// <see cref="PracticeGymModuleAssignmentStatus.FallbackOnly"/>).
+    /// </summary>
+    [HttpGet("api/admin/practice-gym/delivery-health")]
+    public async Task<IActionResult> GetDeliveryHealth([FromQuery] int? days, CancellationToken ct)
+    {
+        var lookbackDays = days is > 0 and <= 90 ? days.Value : 7;
+        var today = DateTime.UtcNow.Date;
+        var since = today.AddDays(-(lookbackDays - 1));
+        var sinceOffset = new DateTimeOffset(since, TimeSpan.Zero);
+
+        var eligibleByCefr = await _db.StudentProfiles.AsNoTracking()
+            .Where(p => p.CefrLevel != null)
+            .GroupBy(p => p.CefrLevel!)
+            .Select(g => new { CefrLevel = g.Key, Count = g.Count() })
+            .ToListAsync(ct);
+        var totalEligible = eligibleByCefr.Sum(g => g.Count);
+
+        // SQLite's EF provider cannot translate DateTimeOffset comparisons server-side (same
+        // constraint documented in PracticeGymModuleAssignmentRecorder) — fetch then filter client-side.
+        var windowAssignments = (await _db.StudentPracticeGymModuleAssignments.AsNoTracking()
+            .Select(a => new { a.StudentId, a.SuggestedAt, a.Status, a.FallbackReason })
+            .ToListAsync(ct))
+            .Where(a => a.SuggestedAt >= sinceOffset)
+            .ToList();
+
+        var todaysAssignments = windowAssignments.Where(a => a.SuggestedAt.Date == today).ToList();
+        // A student can be suggested-to multiple times per day; count distinct students.
+        var todaySelectedStudents = todaysAssignments
+            .Where(a => a.Status != PracticeGymModuleAssignmentStatus.FallbackOnly)
+            .Select(a => a.StudentId).Distinct().ToHashSet();
+        var todayFallbackStudents = todaysAssignments
+            .Where(a => a.Status == PracticeGymModuleAssignmentStatus.FallbackOnly)
+            .Select(a => a.StudentId).Distinct()
+            .Where(id => !todaySelectedStudents.Contains(id)).ToHashSet();
+        var todayResult = new PracticeGymDeliveryHealthToday(
+            EligibleStudents: totalEligible,
+            SelectedCount: todaySelectedStudents.Count,
+            FallbackOnlyCount: todayFallbackStudents.Count,
+            NoAssignmentCount: Math.Max(0, totalEligible - todaySelectedStudents.Count - todayFallbackStudents.Count));
+
+        var studentCefr = await _db.StudentProfiles.AsNoTracking()
+            .Where(p => p.CefrLevel != null)
+            .Select(p => new { p.Id, p.CefrLevel })
+            .ToDictionaryAsync(p => p.Id, p => p.CefrLevel!, ct);
+
+        var byCefrLevel = eligibleByCefr
+            .Select(g => new PracticeGymDeliveryHealthCefrBucket(
+                CefrLevel: g.CefrLevel,
+                EligibleStudents: g.Count,
+                SelectedCount: todaySelectedStudents.Count(id => studentCefr.TryGetValue(id, out var level) && level == g.CefrLevel),
+                FallbackOnlyCount: todayFallbackStudents.Count(id => studentCefr.TryGetValue(id, out var level) && level == g.CefrLevel)))
+            .OrderBy(b => Array.IndexOf(CefrLevelConstants.All.ToArray(), b.CefrLevel))
+            .ToList();
+
+        var trend = Enumerable.Range(0, lookbackDays)
+            .Select(offset => since.AddDays(offset))
+            .Select(date => new PracticeGymDeliveryHealthTrendBucket(
+                Date: date,
+                SelectedCount: windowAssignments.Count(a => a.SuggestedAt.Date == date && a.Status != PracticeGymModuleAssignmentStatus.FallbackOnly),
+                FallbackOnlyCount: windowAssignments.Count(a => a.SuggestedAt.Date == date && a.Status == PracticeGymModuleAssignmentStatus.FallbackOnly)))
+            .ToList();
+
+        var topFallbackReasons = windowAssignments
+            .Where(a => a.Status == PracticeGymModuleAssignmentStatus.FallbackOnly && !string.IsNullOrWhiteSpace(a.FallbackReason))
+            .GroupBy(a => a.FallbackReason!)
+            .Select(g => new PracticeGymDeliveryHealthFallbackReason(g.Key, g.Count()))
+            .OrderByDescending(r => r.Count)
+            .Take(5)
+            .ToList();
+
+        var approvedModulesByCefr = await _db.Modules.AsNoTracking()
+            .Where(m => m.ReviewStatus == AdminReviewStatus.Approved && !m.IsArchived && m.CefrLevel != null)
+            .GroupBy(m => m.CefrLevel!)
+            .Select(g => new { CefrLevel = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(g => g.CefrLevel, g => g.Count, ct);
+
+        var bankCoverage = eligibleByCefr
+            .Select(g => new PracticeGymDeliveryHealthBankCoverage(
+                CefrLevel: g.CefrLevel,
+                EligibleStudents: g.Count,
+                ApprovedModuleCount: approvedModulesByCefr.GetValueOrDefault(g.CefrLevel, 0)))
+            .OrderBy(b => Array.IndexOf(CefrLevelConstants.All.ToArray(), b.CefrLevel))
+            .ToList();
+
+        return Ok(new PracticeGymDeliveryHealthResult(todayResult, byCefrLevel, trend, topFallbackReasons, bankCoverage));
     }
 }

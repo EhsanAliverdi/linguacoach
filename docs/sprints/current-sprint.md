@@ -10,6 +10,12 @@ supersededBy:
 
 Last updated: 2026-07-10
 
+> **2026-07-17 addendum:** the admin `/admin/lessons` page (this doc's H9B-era entries below still
+> call it "Today Delivery Health") was rehauled and renamed **"Delivery Health"** — dead legacy-
+> generation UI removed, replaced with real bank-first module-selection health for Today and
+> Practice Gym. See `docs/reviews/2026-07-17-today-delivery-health-bank-first-rehaul-review.md` and
+> the matching `docs/roadmap/road-map.md` Decision Log entry.
+
 ---
 
 ## Active sprint

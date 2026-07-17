@@ -109,3 +109,41 @@ public interface IPracticeGymModuleAssignmentRecorder
         PracticeGymModuleSelectionResult selectionResult,
         CancellationToken ct = default);
 }
+
+/// <summary>Phase rehaul (2026-07-17) — fleet-wide, read-only aggregate over
+/// <c>StudentPracticeGymModuleAssignment</c> for the admin "Today Delivery Health" page. Mirrors
+/// <c>TodayPlanDeliveryHealthResult</c>; "suggested" here means at least one Module was suggested
+/// (<see cref="Domain.Enums.PracticeGymModuleAssignmentStatus.Suggested"/> or later in the
+/// lifecycle), analogous to Today's "Selected".</summary>
+public sealed record PracticeGymDeliveryHealthResult(
+    PracticeGymDeliveryHealthToday Today,
+    IReadOnlyList<PracticeGymDeliveryHealthCefrBucket> ByCefrLevel,
+    IReadOnlyList<PracticeGymDeliveryHealthTrendBucket> Trend,
+    IReadOnlyList<PracticeGymDeliveryHealthFallbackReason> TopFallbackReasons,
+    IReadOnlyList<PracticeGymDeliveryHealthBankCoverage> BankCoverage);
+
+public sealed record PracticeGymDeliveryHealthToday(
+    int EligibleStudents,
+    int SelectedCount,
+    int FallbackOnlyCount,
+    int NoAssignmentCount);
+
+public sealed record PracticeGymDeliveryHealthCefrBucket(
+    string CefrLevel,
+    int EligibleStudents,
+    int SelectedCount,
+    int FallbackOnlyCount);
+
+public sealed record PracticeGymDeliveryHealthTrendBucket(
+    DateTime Date,
+    int SelectedCount,
+    int FallbackOnlyCount);
+
+public sealed record PracticeGymDeliveryHealthFallbackReason(
+    string Reason,
+    int Count);
+
+public sealed record PracticeGymDeliveryHealthBankCoverage(
+    string CefrLevel,
+    int EligibleStudents,
+    int ApprovedModuleCount);

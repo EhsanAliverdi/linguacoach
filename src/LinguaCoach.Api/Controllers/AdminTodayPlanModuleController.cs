@@ -1,4 +1,5 @@
 using LinguaCoach.Application.TodayPlanModules;
+using LinguaCoach.Domain.Constants;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Persistence;
 using Microsoft.AspNetCore.Authorization;
@@ -95,5 +96,93 @@ public sealed class AdminTodayPlanModuleController : ControllerBase
         });
 
         return Ok(new { studentId, lookbackDays, assignments = items });
+    }
+
+    /// <summary>
+    /// Phase rehaul (2026-07-17) — fleet-wide, read-only delivery health for Today's bank-first
+    /// module pipeline: what fraction of eligible (CEFR-placed) students got a Module selected
+    /// today vs. fell back, broken down by CEFR level, a trend over the lookback window, the
+    /// top fallback reasons, and a bank-coverage check flagging CEFR levels with eligible
+    /// students but zero approved Modules. Replaces the deleted legacy generation-buffer/
+    /// readiness-pool health surfaces (see docs/reviews/2026-07-10-phase-i2b-*.md, -i2c-*.md).
+    /// </summary>
+    [HttpGet("api/admin/today-plan/delivery-health")]
+    public async Task<IActionResult> GetDeliveryHealth([FromQuery] int? days, CancellationToken ct)
+    {
+        var lookbackDays = days is > 0 and <= 90 ? days.Value : 7;
+        var today = DateTime.UtcNow.Date;
+        var since = today.AddDays(-(lookbackDays - 1));
+
+        // Eligible = has a CEFR level, i.e. can actually be matched by the selector.
+        var eligibleByCefr = await _db.StudentProfiles.AsNoTracking()
+            .Where(p => p.CefrLevel != null)
+            .GroupBy(p => p.CefrLevel!)
+            .Select(g => new { CefrLevel = g.Key, Count = g.Count() })
+            .ToListAsync(ct);
+        var totalEligible = eligibleByCefr.Sum(g => g.Count);
+
+        var windowAssignments = await _db.StudentTodayPlanModuleAssignments.AsNoTracking()
+            .Where(a => a.AssignedForDate >= since && a.AssignedForDate <= today)
+            .Select(a => new { a.StudentId, a.AssignedForDate, a.Status, a.FallbackReason })
+            .ToListAsync(ct);
+
+        var todaysAssignments = windowAssignments.Where(a => a.AssignedForDate == today).ToList();
+        var todaySelected = todaysAssignments.Count(a => a.Status != TodayPlanModuleAssignmentStatus.FallbackOnly);
+        var todayFallback = todaysAssignments.Count(a => a.Status == TodayPlanModuleAssignmentStatus.FallbackOnly);
+        var todayResult = new TodayPlanDeliveryHealthToday(
+            EligibleStudents: totalEligible,
+            SelectedCount: todaySelected,
+            FallbackOnlyCount: todayFallback,
+            NoAssignmentCount: Math.Max(0, totalEligible - todaysAssignments.Count));
+
+        var studentCefr = await _db.StudentProfiles.AsNoTracking()
+            .Where(p => p.CefrLevel != null)
+            .Select(p => new { p.Id, p.CefrLevel })
+            .ToDictionaryAsync(p => p.Id, p => p.CefrLevel!, ct);
+
+        var byCefrLevel = eligibleByCefr
+            .Select(g => new TodayPlanDeliveryHealthCefrBucket(
+                CefrLevel: g.CefrLevel,
+                EligibleStudents: g.Count,
+                SelectedCount: todaysAssignments.Count(a =>
+                    studentCefr.TryGetValue(a.StudentId, out var level) && level == g.CefrLevel
+                    && a.Status != TodayPlanModuleAssignmentStatus.FallbackOnly),
+                FallbackOnlyCount: todaysAssignments.Count(a =>
+                    studentCefr.TryGetValue(a.StudentId, out var level) && level == g.CefrLevel
+                    && a.Status == TodayPlanModuleAssignmentStatus.FallbackOnly)))
+            .OrderBy(b => Array.IndexOf(CefrLevelConstants.All.ToArray(), b.CefrLevel))
+            .ToList();
+
+        var trend = Enumerable.Range(0, lookbackDays)
+            .Select(offset => since.AddDays(offset))
+            .Select(date => new TodayPlanDeliveryHealthTrendBucket(
+                Date: date,
+                SelectedCount: windowAssignments.Count(a => a.AssignedForDate == date && a.Status != TodayPlanModuleAssignmentStatus.FallbackOnly),
+                FallbackOnlyCount: windowAssignments.Count(a => a.AssignedForDate == date && a.Status == TodayPlanModuleAssignmentStatus.FallbackOnly)))
+            .ToList();
+
+        var topFallbackReasons = windowAssignments
+            .Where(a => a.Status == TodayPlanModuleAssignmentStatus.FallbackOnly && !string.IsNullOrWhiteSpace(a.FallbackReason))
+            .GroupBy(a => a.FallbackReason!)
+            .Select(g => new TodayPlanDeliveryHealthFallbackReason(g.Key, g.Count()))
+            .OrderByDescending(r => r.Count)
+            .Take(5)
+            .ToList();
+
+        var approvedModulesByCefr = await _db.Modules.AsNoTracking()
+            .Where(m => m.ReviewStatus == AdminReviewStatus.Approved && !m.IsArchived && m.CefrLevel != null)
+            .GroupBy(m => m.CefrLevel!)
+            .Select(g => new { CefrLevel = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(g => g.CefrLevel, g => g.Count, ct);
+
+        var bankCoverage = eligibleByCefr
+            .Select(g => new TodayPlanDeliveryHealthBankCoverage(
+                CefrLevel: g.CefrLevel,
+                EligibleStudents: g.Count,
+                ApprovedModuleCount: approvedModulesByCefr.GetValueOrDefault(g.CefrLevel, 0)))
+            .OrderBy(b => Array.IndexOf(CefrLevelConstants.All.ToArray(), b.CefrLevel))
+            .ToList();
+
+        return Ok(new TodayPlanDeliveryHealthResult(todayResult, byCefrLevel, trend, topFallbackReasons, bankCoverage));
     }
 }

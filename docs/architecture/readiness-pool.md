@@ -1,12 +1,23 @@
 ---
-status: current
-lastUpdated: 2026-07-09 (Phase G1)
+status: superseded
+lastUpdated: 2026-07-17 (Delivery Health rehaul)
 owner: architecture
 supersedes:
-supersededBy:
+supersededBy: docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md
 ---
 
-# Student Activity Readiness Pool
+# Student Activity Readiness Pool (deleted — historical record)
+
+> **Superseded (2026-07-10, Phase I2C):** everything documented below — `StudentActivityReadinessItem`,
+> `IStudentActivityReadinessPoolService`, `ReadinessPoolReplenishmentService`/`Job`,
+> `AdminReadinessPoolController` — was **deleted entirely**. Today and Practice Gym are served
+> exclusively by the bank-first module pipeline (`ITodayPlanModuleSelectionService` /
+> `IPracticeGymModuleSelectionService`), with no readiness-pool/AI-generation fallback left. See
+> `docs/reviews/2026-07-10-phase-i2b-today-module-only-collapse-review.md` and
+> `-i2c-readiness-pool-removal-review.md` for the removal, and
+> `docs/reviews/2026-07-17-today-delivery-health-bank-first-rehaul-review.md` for the admin
+> "Delivery Health" page that replaced the pool-health surfaces this doc used to describe. Kept
+> below as a historical record only — do not treat anything past this notice as current.
 
 ## Purpose
 

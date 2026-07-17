@@ -101,11 +101,7 @@ export const routes: Routes = [
       },
       {
         path: 'lessons',
-        loadComponent: () => import('./features/admin/admin-today-delivery-health/admin-today-delivery-health.component').then(m => m.AdminTodayDeliveryHealthComponent),
-      },
-      {
-        path: 'usage-analytics',
-        loadComponent: () => import('./features/admin/admin-usage-analytics/admin-usage-analytics.component').then(m => m.AdminUsageAnalyticsComponent),
+        loadComponent: () => import('./features/admin/admin-delivery-health/admin-delivery-health.component').then(m => m.AdminDeliveryHealthComponent),
       },
       {
         path: 'notifications',

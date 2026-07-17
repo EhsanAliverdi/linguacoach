@@ -1,0 +1,175 @@
+<sp-admin-page-header
+  title="Delivery Health"
+  subtitle="Bank-first module selection status for Today and Practice Gym: what fraction of eligible students got a Module today vs. fell back, and where the content bank has coverage gaps." />
+
+<sp-admin-page-body>
+
+  <sp-admin-alert variant="info">
+    Today and Practice Gym are served by the <strong>bank-first module pipeline</strong> — a
+    deterministic selector choosing from approved <strong>Modules</strong> in the Content Banks.
+    When no compatible Module exists for a student, the pipeline honestly reports nothing available
+    rather than generating fallback content. This page shows how often that happens fleet-wide.
+  </sp-admin-alert>
+
+  <!-- ── Today Plan ─────────────────────────────────────────────────────── -->
+  <div class="sp-admin-table-section-header sp-admin-table-section-header--no-divider">
+    <h2 class="sp-admin-table-section-title">Today</h2>
+  </div>
+
+  @if (todayLoading()) {
+    <sp-admin-loading-state message="Loading Today delivery health" />
+  } @else if (todayError()) {
+    <sp-admin-error-state title="Today delivery health unavailable" [message]="todayError()" />
+  } @else if (todayHealth()) {
+    <div class="sp-admin-kpi-row" aria-label="Today delivery health summary">
+      <sp-admin-kpi-card label="Eligible students" variant="indigo" layout="tile" icon="users"
+        [value]="todayHealth()!.today.eligibleStudents" />
+      <sp-admin-kpi-card label="Selected today" variant="teal" layout="tile" icon="check"
+        [value]="todayHealth()!.today.selectedCount" />
+      <sp-admin-kpi-card label="Fallback today" variant="amber" layout="tile" icon="alert"
+        [value]="todayHealth()!.today.fallbackOnlyCount" />
+      <sp-admin-kpi-card label="No assignment yet" variant="violet" layout="tile" icon="clock"
+        [value]="todayHealth()!.today.noAssignmentCount" />
+    </div>
+
+    <div class="sp-admin-two-col-start">
+      <sp-admin-card title="Selected vs. fallback, by CEFR level">
+        <div class="sp-admin-card-body-md">
+          <sp-admin-ring-metric [pct]="todaySelectedRatePct()" label="Selected today" tone="teal" />
+        </div>
+        @if (todayCefrBreakdown().length > 0) {
+          <sp-admin-breakdown-bars [items]="todayCefrBreakdown()" [showPct]="false" />
+        } @else {
+          <sp-admin-visual-placeholder state="not-available" title="No eligible students" message="No CEFR-placed students yet." />
+        }
+      </sp-admin-card>
+
+      <sp-admin-graph-card title="Selected count — last 7 days"
+        [status]="todayTrendValues().length === 0 ? 'unavailable' : 'live'">
+        @if (todayTrendValues().length > 0) {
+          <sp-admin-area-chart [data]="todayTrendValues()" [labels]="todayTrendLabels()"
+            color="#0D9488" [height]="160" prefix="" [decimals]="0" ariaLabel="Today selected count over time" />
+        } @else {
+          <sp-admin-visual-placeholder state="not-available" title="No trend data" message="No assignments recorded yet." />
+        }
+      </sp-admin-graph-card>
+    </div>
+
+    @if (todayHealth()!.topFallbackReasons.length > 0) {
+      <sp-admin-card title="Top fallback reasons (Today, last 7 days)">
+        @for (r of todayHealth()!.topFallbackReasons; track r.reason) {
+          <div class="sp-admin-settings-row">
+            <span class="sp-admin-settings-row-label">{{ r.reason }}</span>
+            <sp-admin-badge tone="warning" appearance="soft" size="sm">{{ r.count }}</sp-admin-badge>
+          </div>
+        }
+      </sp-admin-card>
+    }
+
+    @if (todayBankGaps().length > 0) {
+      <sp-admin-alert variant="warning">
+        <strong>Bank coverage gap:</strong>
+        @for (g of todayBankGaps(); track g.cefrLevel) {
+          {{ g.cefrLevel }} ({{ g.eligibleStudents }} student{{ g.eligibleStudents === 1 ? '' : 's' }}, 0 approved modules){{ !$last ? ', ' : '' }}
+        }
+      </sp-admin-alert>
+    }
+  }
+
+  <!-- ── Practice Gym ───────────────────────────────────────────────────── -->
+  <div class="sp-admin-table-section-header sp-admin-table-section-header--no-divider">
+    <h2 class="sp-admin-table-section-title">Practice Gym</h2>
+  </div>
+
+  @if (practiceGymLoading()) {
+    <sp-admin-loading-state message="Loading Practice Gym delivery health" />
+  } @else if (practiceGymError()) {
+    <sp-admin-error-state title="Practice Gym delivery health unavailable" [message]="practiceGymError()" />
+  } @else if (practiceGymHealth()) {
+    <div class="sp-admin-kpi-row" aria-label="Practice Gym delivery health summary">
+      <sp-admin-kpi-card label="Eligible students" variant="indigo" layout="tile" icon="users"
+        [value]="practiceGymHealth()!.today.eligibleStudents" />
+      <sp-admin-kpi-card label="Suggested today" variant="teal" layout="tile" icon="check"
+        [value]="practiceGymHealth()!.today.selectedCount" />
+      <sp-admin-kpi-card label="Fallback today" variant="amber" layout="tile" icon="alert"
+        [value]="practiceGymHealth()!.today.fallbackOnlyCount" />
+      <sp-admin-kpi-card label="No assignment yet" variant="violet" layout="tile" icon="clock"
+        [value]="practiceGymHealth()!.today.noAssignmentCount" />
+    </div>
+
+    <div class="sp-admin-two-col-start">
+      <sp-admin-card title="Suggested vs. fallback, by CEFR level">
+        <div class="sp-admin-card-body-md">
+          <sp-admin-ring-metric [pct]="practiceGymSelectedRatePct()" label="Suggested today" tone="teal" />
+        </div>
+        @if (practiceGymCefrBreakdown().length > 0) {
+          <sp-admin-breakdown-bars [items]="practiceGymCefrBreakdown()" [showPct]="false" />
+        } @else {
+          <sp-admin-visual-placeholder state="not-available" title="No eligible students" message="No CEFR-placed students yet." />
+        }
+      </sp-admin-card>
+
+      <sp-admin-graph-card title="Suggested count — last 7 days"
+        [status]="practiceGymTrendValues().length === 0 ? 'unavailable' : 'live'">
+        @if (practiceGymTrendValues().length > 0) {
+          <sp-admin-area-chart [data]="practiceGymTrendValues()" [labels]="practiceGymTrendLabels()"
+            color="#7C3AED" [height]="160" prefix="" [decimals]="0" ariaLabel="Practice Gym suggested count over time" />
+        } @else {
+          <sp-admin-visual-placeholder state="not-available" title="No trend data" message="No assignments recorded yet." />
+        }
+      </sp-admin-graph-card>
+    </div>
+
+    @if (practiceGymHealth()!.topFallbackReasons.length > 0) {
+      <sp-admin-card title="Top fallback reasons (Practice Gym, last 7 days)">
+        @for (r of practiceGymHealth()!.topFallbackReasons; track r.reason) {
+          <div class="sp-admin-settings-row">
+            <span class="sp-admin-settings-row-label">{{ r.reason }}</span>
+            <sp-admin-badge tone="warning" appearance="soft" size="sm">{{ r.count }}</sp-admin-badge>
+          </div>
+        }
+      </sp-admin-card>
+    }
+
+    @if (practiceGymBankGaps().length > 0) {
+      <sp-admin-alert variant="warning">
+        <strong>Bank coverage gap:</strong>
+        @for (g of practiceGymBankGaps(); track g.cefrLevel) {
+          {{ g.cefrLevel }} ({{ g.eligibleStudents }} student{{ g.eligibleStudents === 1 ? '' : 's' }}, 0 approved modules){{ !$last ? ', ' : '' }}
+        }
+      </sp-admin-alert>
+    }
+  }
+
+  <!-- ── Mastery validation (unchanged) ────────────────────────────────── -->
+  <div class="sp-admin-two-col-start">
+    <sp-admin-graph-card title="Mastery validation"
+      subtitle="System-wide diagnostic across active students. No AI calls, read-only."
+      [status]="masteryLoading() ? 'loading' : masteryError() ? 'unavailable' : (masteryBreakdownItems().length === 0 ? 'unavailable' : 'live')">
+      @if (masteryLoading()) {
+        <sp-admin-visual-placeholder state="not-available" skeleton="chart" title="Mastery validation" message="Loading..." />
+      } @else if (masteryError()) {
+        <sp-admin-error-state title="Mastery validation unavailable" [message]="masteryError()" />
+      } @else if (masteryValidation()) {
+        <p class="sp-admin-section-sub">
+          {{ masteryValidation()!.totalStudentsEvaluated }} students evaluated,
+          {{ masteryValidation()!.totalObjectivesEvaluated }} objectives evaluated.
+        </p>
+        @if (masteryBreakdownItems().length > 0) {
+          <sp-admin-breakdown-bars [items]="masteryBreakdownItems()" [showPct]="false" />
+        } @else {
+          <sp-admin-visual-placeholder state="not-available" title="Mastery validation" message="No objective evidence to evaluate yet" />
+        }
+        @for (warning of masteryValidation()!.warnings; track warning) {
+          <sp-admin-alert variant="warning">{{ warning }}</sp-admin-alert>
+        }
+        <p class="sp-admin-section-sub" style="margin-top:0.5rem">
+          {{ masteryValidation()!.masteredExcludedFromNewLearning }} mastered objectives excluded from new learning.
+          Last refreshed: {{ masteryValidation()!.generatedAt | date:'HH:mm:ss' }}
+          <sp-admin-button size="xs" appearance="ghost" variant="neutral" (clicked)="refreshMasteryValidation()">Refresh</sp-admin-button>
+        </p>
+      }
+    </sp-admin-graph-card>
+  </div>
+
+</sp-admin-page-body>

@@ -11,8 +11,7 @@ import {
   AdminStudentDetail,
   StudentAuditHistoryItem,
   AdminTodayPlanModulePreview, AdminPracticeGymModulePreview,
-  AdminGenerationSettings, AdminUpdateGenerationSettingsRequest,
-  AdminGenerationBatchesResponse, AdminGenerateLessonsResponse,
+  AdminDeliveryHealth,
   StudentListQuery, PagedResponse, AiModelPricingItem,
   AiModelPricingOverrideItem, CreatePricingOverrideRequest, UpdatePricingOverrideRequest,
   AdminNotificationItem, AdminOutboxItem,
@@ -174,20 +173,17 @@ export class AdminApiService {
   getMasteryValidationSummary(): Observable<MasteryValidationSummary> {
     return this.http.get<MasteryValidationSummary>(`${this.api}/mastery/validation-summary`);
   }
-  generateLessonsForStudent(studentProfileId: string, count?: number): Observable<AdminGenerateLessonsResponse> {
-    const qs = count !== undefined ? `?count=${count}` : '';
-    return this.http.post<AdminGenerateLessonsResponse>(`${this.api}/students/${studentProfileId}/generate-lessons${qs}`, null);
-  }
 
-  // Generation settings + batches
-  getGenerationSettings(): Observable<AdminGenerationSettings> {
-    return this.http.get<AdminGenerationSettings>(`${this.api}/generation/settings`);
+  /** Rehaul (2026-07-17) — fleet-wide Today Plan delivery health (selected-vs-fallback, by CEFR
+   * level, trend, top fallback reasons, bank coverage). Read-only. */
+  getTodayPlanDeliveryHealth(days?: number): Observable<AdminDeliveryHealth> {
+    const qs = days !== undefined ? `?days=${days}` : '';
+    return this.http.get<AdminDeliveryHealth>(`${this.api}/today-plan/delivery-health${qs}`);
   }
-  updateGenerationSettings(req: AdminUpdateGenerationSettingsRequest): Observable<AdminGenerationSettings> {
-    return this.http.patch<AdminGenerationSettings>(`${this.api}/generation/settings`, req);
-  }
-  getGenerationBatches(): Observable<AdminGenerationBatchesResponse> {
-    return this.http.get<AdminGenerationBatchesResponse>(`${this.api}/generation/batches`);
+  /** Rehaul (2026-07-17) — fleet-wide Practice Gym delivery health. Read-only. */
+  getPracticeGymDeliveryHealth(days?: number): Observable<AdminDeliveryHealth> {
+    const qs = days !== undefined ? `?days=${days}` : '';
+    return this.http.get<AdminDeliveryHealth>(`${this.api}/practice-gym/delivery-health${qs}`);
   }
 
   // Prompts

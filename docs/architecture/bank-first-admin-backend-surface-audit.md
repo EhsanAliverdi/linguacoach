@@ -1,10 +1,19 @@
 ---
 status: current
-lastUpdated: 2026-07-09 (Phase G1)
+lastUpdated: 2026-07-17 (Delivery Health rehaul — see note below)
 owner: architecture
 supersedes:
 supersededBy:
 ---
+
+> **Update (2026-07-17):** the `/admin/lessons` row below (§3) predates Phase I2B/I2C, which
+> deleted the entire legacy generation pipeline and the readiness pool this row assumed was still
+> load-bearing. The page (renamed "Delivery Health") was rehauled to drop the dead generation-
+> settings/batches/buffer UI and instead surface real bank-first module-selection health (Today +
+> Practice Gym selected-vs-fallback rates, CEFR breakdown, bank coverage gaps). See
+> `docs/reviews/2026-07-17-today-delivery-health-bank-first-rehaul-review.md`. The `/admin/lessons`
+> route classification/priority below is historical context for *why* the page looked the way it
+> did before this rehaul — treat the row's "Current purpose" column as outdated.
 
 # Bank-First Admin/Backend Surface Audit (Phase G0)
 

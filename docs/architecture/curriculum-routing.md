@@ -10,6 +10,12 @@ supersededBy:
 
 Introduced in Phase 10L.
 
+> **Forward reference (2026-07-17, docs-only):** this flat objective/tag model is targeted for
+> replacement by a skill-graph + goal-vector + AI-composer architecture — see
+> `docs/architecture/adaptive-curriculum-skill-graph.md`. Nothing below is deleted or changed yet;
+> this doc still describes the current, live implementation. The replacement is phased and has not
+> started.
+
 ---
 
 ## Purpose

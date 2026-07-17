@@ -245,4 +245,39 @@ public sealed class TodayPlanModulePipelineEndpointTests : IClassFixture<Session
         var resp = await client.GetAsync($"/api/admin/students/{studentProfileId}/readiness");
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
     }
+
+    // ── Rehaul (2026-07-17): fleet-wide delivery-health aggregate ──────────────────────────────
+
+    [Fact]
+    public async Task DeliveryHealth_returns_today_byCefrLevel_trend_and_bankCoverage_sections()
+    {
+        await SeedApprovedModuleAsync(cefrLevel: "B1");
+        await _factory.CreateCourseReadyStudentAsync($"h6_health_{Guid.NewGuid():N}@test.com");
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.GetAsync("/api/admin/today-plan/delivery-health?days=7");
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var today = body.GetProperty("today");
+        // CreateCourseReadyStudentAsync doesn't set CefrLevel (placement is a separate step), so
+        // eligibility (CefrLevel != null) isn't guaranteed here — just assert the shape is sane.
+        Assert.True(today.GetProperty("eligibleStudents").GetInt32() >= 0);
+        Assert.True(body.GetProperty("byCefrLevel").ValueKind == JsonValueKind.Array);
+        Assert.Equal(7, body.GetProperty("trend").GetArrayLength());
+        Assert.True(body.GetProperty("topFallbackReasons").ValueKind == JsonValueKind.Array);
+        Assert.True(body.GetProperty("bankCoverage").ValueKind == JsonValueKind.Array);
+    }
+
+    [Fact]
+    public async Task NonAdmin_rejected_for_delivery_health_endpoint()
+    {
+        var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"h6_health_nonadmin_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(_factory, token);
+
+        var resp = await client.GetAsync("/api/admin/today-plan/delivery-health");
+        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
+    }
 }

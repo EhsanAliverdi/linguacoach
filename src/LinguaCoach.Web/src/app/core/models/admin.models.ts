@@ -908,79 +908,50 @@ export interface AdminAiUsageTrendResponse { period: string; buckets: AdminAggAi
 export interface AiUsageCategoryBreakdownItem { category: string; requestCount: number; totalTokens: number; cost: number; failedCalls: number; }
 export interface AdminAiUsageCategoryBreakdownResponse { period: string; categories: AiUsageCategoryBreakdownItem[]; }
 
-// ── Generation settings ────────────────────────────────────────────────────────
+// ── Delivery health (rehaul 2026-07-17) ─────────────────────────────────────────
+// Fleet-wide, read-only aggregate over the bank-first module-assignment pipeline. Shared shape
+// for both Today Plan (`selectedCount`) and Practice Gym (`selectedCount` maps to "suggested").
+// Replaces the deleted legacy lesson-generation-buffer/readiness-pool health surfaces — see
+// docs/reviews/2026-07-10-phase-i2b-*.md, -i2c-*.md and
+// docs/reviews/2026-07-17-today-delivery-health-bank-first-rehaul-review.md.
 
-export interface AdminGenerationSettings {
-  readyLessonBufferSize: number;
-  refillThreshold: number;
-  refillBatchSize: number;
-  maxGenerationAttempts: number;
-  generationTimeoutSeconds: number;
-  ttsTimeoutSeconds: number;
-  maxConcurrentGenerationJobs: number;
-  maxConcurrentTtsJobs: number;
-  enableBackgroundGeneration: boolean;
-  enableTtsGeneration: boolean;
-  practiceGymReadyExercisesPerType: number;
-  practiceGymRefillThresholdPerType: number;
-  practiceGymRefillCountPerType: number;
-  updatedAtUtc: string | null;
+export interface AdminDeliveryHealthToday {
+  eligibleStudents: number;
+  selectedCount: number;
+  fallbackOnlyCount: number;
+  noAssignmentCount: number;
 }
 
-export interface AdminUpdateGenerationSettingsRequest {
-  readyLessonBufferSize: number;
-  refillThreshold: number;
-  refillBatchSize: number;
-  maxGenerationAttempts: number;
-  generationTimeoutSeconds: number;
-  ttsTimeoutSeconds: number;
-  maxConcurrentGenerationJobs: number;
-  maxConcurrentTtsJobs: number;
-  enableBackgroundGeneration: boolean;
-  enableTtsGeneration: boolean;
-  practiceGymReadyExercisesPerType: number;
-  practiceGymRefillThresholdPerType: number;
-  practiceGymRefillCountPerType: number;
+export interface AdminDeliveryHealthCefrBucket {
+  cefrLevel: string;
+  eligibleStudents: number;
+  selectedCount: number;
+  fallbackOnlyCount: number;
 }
 
-// ── Generation batches ─────────────────────────────────────────────────────────
-
-export interface AdminGenerationBatchSummary {
-  queued: number;
-  running: number;
-  failed: number;
-  lastSuccessfulGenerationUtc: string | null;
+export interface AdminDeliveryHealthTrendBucket {
+  date: string;
+  selectedCount: number;
+  fallbackOnlyCount: number;
 }
 
-export interface AdminReadyBufferEntry {
-  studentProfileId: string;
-  readyCount: number;
+export interface AdminDeliveryHealthFallbackReason {
+  reason: string;
+  count: number;
 }
 
-export interface AdminGenerationBatchItem {
-  id: string;
-  studentProfileId: string;
-  triggerReason: string;
-  status: string;
-  requestedSessionCount: number;
-  completedSessionCount: number;
-  providerName: string | null;
-  modelName: string | null;
-  startedAtUtc: string | null;
-  completedAtUtc: string | null;
-  failureReason: string | null;
-  createdAt: string;
+export interface AdminDeliveryHealthBankCoverage {
+  cefrLevel: string;
+  eligibleStudents: number;
+  approvedModuleCount: number;
 }
 
-export interface AdminGenerationBatchesResponse {
-  summary: AdminGenerationBatchSummary;
-  readyBufferPerStudent: AdminReadyBufferEntry[];
-  batches: AdminGenerationBatchItem[];
-}
-
-export interface AdminGenerateLessonsResponse {
-  queued: boolean;
-  requestedCount: number;
+export interface AdminDeliveryHealth {
+  today: AdminDeliveryHealthToday;
+  byCefrLevel: AdminDeliveryHealthCefrBucket[];
+  trend: AdminDeliveryHealthTrendBucket[];
+  topFallbackReasons: AdminDeliveryHealthFallbackReason[];
+  bankCoverage: AdminDeliveryHealthBankCoverage[];
 }
 
 // Phase 13A — Adaptive Placement Engine
