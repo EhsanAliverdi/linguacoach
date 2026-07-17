@@ -12,6 +12,8 @@ import {
   StudentAuditHistoryItem,
   AdminTodayPlanModulePreview, AdminPracticeGymModulePreview,
   AdminDeliveryHealth,
+  SkillGraphTaxonomy, SkillGraphNodeListResponse, SkillGraphNodeDetail,
+  SkillGraphDraftResponse, SkillGraphBatchActionResponse, SkillGraphCoverageResponse,
   StudentListQuery, PagedResponse, AiModelPricingItem,
   AiModelPricingOverrideItem, CreatePricingOverrideRequest, UpdatePricingOverrideRequest,
   AdminNotificationItem, AdminOutboxItem,
@@ -184,6 +186,33 @@ export class AdminApiService {
   getPracticeGymDeliveryHealth(days?: number): Observable<AdminDeliveryHealth> {
     const qs = days !== undefined ? `?days=${days}` : '';
     return this.http.get<AdminDeliveryHealth>(`${this.api}/practice-gym/delivery-health${qs}`);
+  }
+
+  // Adaptive Curriculum Sprint 1 — skill graph (AI-drafted, admin-batch-approved).
+  getSkillGraphTaxonomy(): Observable<SkillGraphTaxonomy> {
+    return this.http.get<SkillGraphTaxonomy>(`${this.api}/skill-graph/taxonomy`);
+  }
+  getSkillGraphNodes(params: { cefrLevel?: string; skill?: string; reviewStatus?: string; page?: number; pageSize?: number }): Observable<SkillGraphNodeListResponse> {
+    const qs = Object.entries(params)
+      .filter(([, v]) => v !== undefined && v !== '')
+      .map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`)
+      .join('&');
+    return this.http.get<SkillGraphNodeListResponse>(`${this.api}/skill-graph/nodes${qs ? '?' + qs : ''}`);
+  }
+  getSkillGraphNode(id: string): Observable<SkillGraphNodeDetail> {
+    return this.http.get<SkillGraphNodeDetail>(`${this.api}/skill-graph/nodes/${id}`);
+  }
+  draftSkillGraph(cefrLevel: string, skill: string): Observable<SkillGraphDraftResponse> {
+    return this.http.post<SkillGraphDraftResponse>(`${this.api}/skill-graph/draft`, { cefrLevel, skill });
+  }
+  batchApproveSkillGraphNodes(ids: string[]): Observable<SkillGraphBatchActionResponse> {
+    return this.http.post<SkillGraphBatchActionResponse>(`${this.api}/skill-graph/nodes/batch/approve`, { ids });
+  }
+  batchRejectSkillGraphNodes(ids: string[], reason: string): Observable<SkillGraphBatchActionResponse> {
+    return this.http.post<SkillGraphBatchActionResponse>(`${this.api}/skill-graph/nodes/batch/reject`, { ids, reason });
+  }
+  getSkillGraphCoverage(): Observable<SkillGraphCoverageResponse> {
+    return this.http.get<SkillGraphCoverageResponse>(`${this.api}/skill-graph/coverage`);
   }
 
   // Prompts

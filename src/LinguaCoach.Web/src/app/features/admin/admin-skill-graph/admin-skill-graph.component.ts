@@ -1,0 +1,256 @@
+import { Component, OnInit, signal, computed } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import {
+  SpAdminAlertComponent,
+  SpAdminBadgeComponent,
+  SpAdminButtonComponent,
+  SpAdminCardComponent,
+  SpAdminCheckboxComponent,
+  SpAdminErrorStateComponent,
+  SpAdminFormFieldComponent,
+  SpAdminLoadingStateComponent,
+  SpAdminPageBodyComponent,
+  SpAdminPageHeaderComponent,
+  SpAdminPaginationComponent,
+  SpAdminSelectComponent,
+  SpAdminTableComponent,
+} from '../../../design-system/admin';
+import { AdminApiService } from '../../../core/services/admin.api.service';
+import {
+  SkillGraphTaxonomy,
+  SkillGraphNodeListItem,
+  SkillGraphCoverageEntry,
+} from '../../../core/models/admin.models';
+
+@Component({
+  selector: 'app-admin-skill-graph',
+  standalone: true,
+  templateUrl: './admin-skill-graph.component.html',
+  imports: [
+    CommonModule,
+    FormsModule,
+    SpAdminAlertComponent,
+    SpAdminBadgeComponent,
+    SpAdminButtonComponent,
+    SpAdminCardComponent,
+    SpAdminCheckboxComponent,
+    SpAdminErrorStateComponent,
+    SpAdminFormFieldComponent,
+    SpAdminLoadingStateComponent,
+    SpAdminPageBodyComponent,
+    SpAdminPageHeaderComponent,
+    SpAdminPaginationComponent,
+    SpAdminSelectComponent,
+    SpAdminTableComponent,
+  ],
+})
+export class AdminSkillGraphComponent implements OnInit {
+  constructor(private api: AdminApiService) {}
+
+  // ── Taxonomy (for dropdowns) ─────────────────────────────────────────────
+  taxonomy = signal<SkillGraphTaxonomy | null>(null);
+  cefrLevelOptions = computed(() =>
+    (this.taxonomy()?.cefrLevels ?? []).map(l => ({ value: l, label: l })));
+  skillOptions = computed(() =>
+    (this.taxonomy()?.skills ?? []).map(s => ({ value: s, label: s })));
+
+  // ── Coverage matrix ──────────────────────────────────────────────────────
+  coverageLoading = signal(true);
+  coverageError = signal('');
+  coverage = signal<SkillGraphCoverageEntry[]>([]);
+  coverageGaps = computed(() => this.coverage().filter(c => c.hasGap));
+
+  // ── Draft trigger ────────────────────────────────────────────────────────
+  draftCefrLevel = '';
+  draftSkill = '';
+  draftPending = signal(false);
+  draftStatus = signal('');
+  draftError = signal('');
+
+  // ── Nodes table ──────────────────────────────────────────────────────────
+  nodesLoading = signal(true);
+  nodesError = signal('');
+  nodes = signal<SkillGraphNodeListItem[]>([]);
+  nodesPage = signal(1);
+  readonly nodesPageSize = 25;
+  nodesTotalPages = signal(1);
+
+  filterCefrLevel = '';
+  filterSkill = '';
+  filterReviewStatus = '';
+  readonly reviewStatusOptions = [
+    { value: 'PendingReview', label: 'Pending review' },
+    { value: 'Approved', label: 'Approved' },
+    { value: 'Rejected', label: 'Rejected' },
+  ];
+
+  selectedIds = signal<Set<string>>(new Set());
+  hasSelection = computed(() => this.selectedIds().size > 0);
+
+  batchPending = signal(false);
+  batchStatus = signal('');
+  batchError = signal('');
+  rejectReason = '';
+
+  ngOnInit(): void {
+    this.loadTaxonomy();
+    this.loadCoverage();
+    this.loadNodes();
+  }
+
+  private loadTaxonomy(): void {
+    this.api.getSkillGraphTaxonomy().subscribe({
+      next: t => this.taxonomy.set(t),
+      error: () => { /* dropdowns just stay empty; not fatal to the rest of the page */ },
+    });
+  }
+
+  loadCoverage(): void {
+    this.coverageLoading.set(true);
+    this.coverageError.set('');
+    this.api.getSkillGraphCoverage().subscribe({
+      next: r => { this.coverage.set(r.matrix); this.coverageLoading.set(false); },
+      error: err => {
+        this.coverageError.set(err?.error?.error ?? 'Could not load coverage.');
+        this.coverageLoading.set(false);
+      },
+    });
+  }
+
+  loadNodes(): void {
+    this.nodesLoading.set(true);
+    this.nodesError.set('');
+    this.api.getSkillGraphNodes({
+      cefrLevel: this.filterCefrLevel || undefined,
+      skill: this.filterSkill || undefined,
+      reviewStatus: this.filterReviewStatus || undefined,
+      page: this.nodesPage(),
+      pageSize: this.nodesPageSize,
+    }).subscribe({
+      next: r => {
+        this.nodes.set(r.items);
+        this.nodesTotalPages.set(r.totalPages);
+        this.nodesLoading.set(false);
+      },
+      error: err => {
+        this.nodesError.set(err?.error?.error ?? 'Could not load nodes.');
+        this.nodesLoading.set(false);
+      },
+    });
+  }
+
+  onFilterChange(): void {
+    this.nodesPage.set(1);
+    this.selectedIds.set(new Set());
+    this.loadNodes();
+  }
+
+  onNodesPageChange(page: number): void {
+    this.nodesPage.set(page);
+    this.loadNodes();
+  }
+
+  runDraft(): void {
+    if (!this.draftCefrLevel || !this.draftSkill) {
+      this.draftError.set('Choose a CEFR level and skill.');
+      return;
+    }
+    this.draftPending.set(true);
+    this.draftStatus.set('');
+    this.draftError.set('');
+    this.api.draftSkillGraph(this.draftCefrLevel, this.draftSkill).subscribe({
+      next: r => {
+        this.draftPending.set(false);
+        if (!r.queued) {
+          this.draftError.set(r.error ?? 'Drafting failed.');
+          return;
+        }
+        this.draftStatus.set(
+          `Drafted ${r.createdCount} node(s)` +
+          (r.droppedEdgeCount ? `, dropped ${r.droppedEdgeCount} edge(s) that would cycle` : '') + '.');
+        this.loadNodes();
+        this.loadCoverage();
+      },
+      error: err => {
+        this.draftPending.set(false);
+        this.draftError.set(err?.error?.error ?? 'Drafting failed.');
+      },
+    });
+  }
+
+  draftForGap(entry: SkillGraphCoverageEntry): void {
+    this.draftCefrLevel = entry.cefrLevel;
+    this.draftSkill = entry.skill;
+    this.runDraft();
+  }
+
+  toggleSelected(id: string, checked: boolean): void {
+    const next = new Set(this.selectedIds());
+    if (checked) next.add(id); else next.delete(id);
+    this.selectedIds.set(next);
+  }
+
+  isSelected(id: string): boolean {
+    return this.selectedIds().has(id);
+  }
+
+  clearSelection(): void {
+    this.selectedIds.set(new Set());
+  }
+
+  batchApprove(): void {
+    const ids = Array.from(this.selectedIds());
+    if (ids.length === 0) return;
+    this.batchPending.set(true);
+    this.batchStatus.set('');
+    this.batchError.set('');
+    this.api.batchApproveSkillGraphNodes(ids).subscribe({
+      next: r => {
+        this.batchPending.set(false);
+        this.batchStatus.set(`Approved ${r.succeeded} of ${r.requestedCount}.`);
+        this.clearSelection();
+        this.loadNodes();
+        this.loadCoverage();
+      },
+      error: err => {
+        this.batchPending.set(false);
+        this.batchError.set(err?.error?.error ?? 'Approve failed.');
+      },
+    });
+  }
+
+  batchReject(): void {
+    const ids = Array.from(this.selectedIds());
+    if (ids.length === 0) return;
+    if (!this.rejectReason.trim()) {
+      this.batchError.set('A rejection reason is required.');
+      return;
+    }
+    this.batchPending.set(true);
+    this.batchStatus.set('');
+    this.batchError.set('');
+    this.api.batchRejectSkillGraphNodes(ids, this.rejectReason.trim()).subscribe({
+      next: r => {
+        this.batchPending.set(false);
+        this.batchStatus.set(`Rejected ${r.succeeded} of ${r.requestedCount}.`);
+        this.rejectReason = '';
+        this.clearSelection();
+        this.loadNodes();
+      },
+      error: err => {
+        this.batchPending.set(false);
+        this.batchError.set(err?.error?.error ?? 'Reject failed.');
+      },
+    });
+  }
+
+  reviewStatusTone(status: string): 'success' | 'warning' | 'danger' | 'neutral' {
+    switch (status) {
+      case 'Approved': return 'success';
+      case 'PendingReview': return 'warning';
+      case 'Rejected': return 'danger';
+      default: return 'neutral';
+    }
+  }
+}

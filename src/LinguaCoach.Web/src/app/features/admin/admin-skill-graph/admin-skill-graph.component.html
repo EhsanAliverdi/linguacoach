@@ -1,0 +1,161 @@
+<sp-admin-page-header
+  title="Skill Graph"
+  subtitle="AI-drafted, admin-batch-approved skill/prerequisite graph — the target replacement for the flat Curriculum taxonomy. See docs/architecture/adaptive-curriculum-skill-graph.md." />
+
+<sp-admin-page-body>
+
+  <sp-admin-alert variant="info">
+    This graph is <strong>additive only</strong> right now — nothing in Today or Practice Gym
+    consumes it yet. Draft, review, and approve nodes here; later sprints wire mastery and delivery
+    to this graph and retire the flat Curriculum objectives.
+  </sp-admin-alert>
+
+  <!-- Coverage matrix -->
+  <sp-admin-card title="Coverage — approved nodes per CEFR level x skill">
+    @if (coverageLoading()) {
+      <sp-admin-loading-state message="Loading coverage" />
+    } @else if (coverageError()) {
+      <sp-admin-error-state title="Coverage unavailable" [message]="coverageError()" />
+    } @else {
+      @if (coverageGaps().length > 0) {
+        <sp-admin-alert variant="warning">
+          {{ coverageGaps().length }} CEFR level x skill combination(s) have zero approved nodes.
+        </sp-admin-alert>
+      }
+      <sp-admin-table variant="data" density="compact" layout="first-column-fluid" minWidth="600px">
+        <table>
+          <thead>
+            <tr>
+              <th>CEFR level</th>
+              <th>Skill</th>
+              <th>Approved</th>
+              <th>Pending</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (entry of coverage(); track entry.cefrLevel + entry.skill) {
+              <tr>
+                <td>{{ entry.cefrLevel }}</td>
+                <td>{{ entry.skill }}</td>
+                <td>{{ entry.approvedCount }}</td>
+                <td>{{ entry.pendingCount }}</td>
+                <td>
+                  @if (entry.hasGap) {
+                    <sp-admin-button size="xs" appearance="outline" variant="primary" (clicked)="draftForGap(entry)">
+                      Draft
+                    </sp-admin-button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </sp-admin-table>
+    }
+  </sp-admin-card>
+
+  <!-- Draft trigger -->
+  <sp-admin-card title="Draft nodes for one CEFR level x skill">
+    <p class="sp-admin-section-sub">Triggers one bounded AI call proposing 2-5 competency nodes. Every proposed CEFR level, skill, and subskill is validated against the real taxonomy — an AI hallucination is dropped, never applied.</p>
+    <div class="sp-admin-form-grid" style="display:flex; gap:12px; align-items:flex-end;">
+      <sp-admin-form-field label="CEFR level">
+        <sp-admin-select [options]="cefrLevelOptions()" [(ngModel)]="draftCefrLevel" placeholder="Select level" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Skill">
+        <sp-admin-select [options]="skillOptions()" [(ngModel)]="draftSkill" placeholder="Select skill" />
+      </sp-admin-form-field>
+      <sp-admin-button variant="primary" size="sm" [disabled]="draftPending()" (clicked)="runDraft()">
+        {{ draftPending() ? 'Drafting…' : 'Draft now' }}
+      </sp-admin-button>
+    </div>
+    @if (draftStatus()) {
+      <sp-admin-alert variant="success">{{ draftStatus() }}</sp-admin-alert>
+    }
+    @if (draftError()) {
+      <sp-admin-alert variant="error">{{ draftError() }}</sp-admin-alert>
+    }
+  </sp-admin-card>
+
+  <!-- Nodes table -->
+  <sp-admin-card title="Nodes">
+    <div class="sp-admin-filter-bar" style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; margin-bottom:12px;">
+      <sp-admin-form-field label="CEFR level">
+        <sp-admin-select [options]="cefrLevelOptions()" [(ngModel)]="filterCefrLevel" placeholder="All" (ngModelChange)="onFilterChange()" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Skill">
+        <sp-admin-select [options]="skillOptions()" [(ngModel)]="filterSkill" placeholder="All" (ngModelChange)="onFilterChange()" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Review status">
+        <sp-admin-select [options]="reviewStatusOptions" [(ngModel)]="filterReviewStatus" placeholder="All" (ngModelChange)="onFilterChange()" />
+      </sp-admin-form-field>
+    </div>
+
+    @if (hasSelection()) {
+      <div class="sp-admin-settings-row" style="margin-bottom:12px;">
+        <span class="sp-admin-settings-row-label">{{ selectedIds().size }} selected</span>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="text" placeholder="Rejection reason" [(ngModel)]="rejectReason"
+            style="padding:6px 10px; border:1px solid #d1d5db; border-radius:6px; font-size:13px;" />
+          <sp-admin-button size="sm" variant="danger" appearance="outline" [disabled]="batchPending()" (clicked)="batchReject()">
+            Reject selected
+          </sp-admin-button>
+          <sp-admin-button size="sm" variant="primary" [disabled]="batchPending()" (clicked)="batchApprove()">
+            Approve selected
+          </sp-admin-button>
+        </div>
+      </div>
+    }
+    @if (batchStatus()) {
+      <sp-admin-alert variant="success">{{ batchStatus() }}</sp-admin-alert>
+    }
+    @if (batchError()) {
+      <sp-admin-alert variant="error">{{ batchError() }}</sp-admin-alert>
+    }
+
+    @if (nodesLoading()) {
+      <sp-admin-loading-state message="Loading nodes" />
+    } @else if (nodesError()) {
+      <sp-admin-error-state title="Nodes unavailable" [message]="nodesError()" />
+    } @else if (nodes().length === 0) {
+      <p class="sp-admin-section-sub">No nodes match the current filters. Draft some above.</p>
+    } @else {
+      <sp-admin-table variant="data" density="compact" layout="first-column-fluid" minWidth="800px">
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th>Title</th>
+              <th>CEFR</th>
+              <th>Skill</th>
+              <th>Subskill</th>
+              <th>Difficulty</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (node of nodes(); track node.id) {
+              <tr>
+                <td>
+                  <sp-admin-checkbox [ngModel]="isSelected(node.id)" [ngModelOptions]="{standalone: true}" (checkedChange)="toggleSelected(node.id, $event)" />
+                </td>
+                <td>{{ node.title }}</td>
+                <td>{{ node.cefrLevel }}</td>
+                <td>{{ node.skill }}</td>
+                <td>{{ node.subskill || '—' }}</td>
+                <td>{{ node.difficultyBand }}</td>
+                <td>
+                  <sp-admin-badge [tone]="reviewStatusTone(node.reviewStatus)" appearance="soft" size="sm">
+                    {{ node.reviewStatus }}
+                  </sp-admin-badge>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </sp-admin-table>
+      <sp-admin-pagination [page]="nodesPage()" [totalPages]="nodesTotalPages()" (pageChange)="onNodesPageChange($event)" />
+    }
+  </sp-admin-card>
+
+</sp-admin-page-body>

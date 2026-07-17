@@ -146,6 +146,13 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<ModuleLessonLink> ModuleLessonLinks => Set<ModuleLessonLink>();
     public DbSet<ModuleExerciseLink> ModuleExerciseLinks => Set<ModuleExerciseLink>();
 
+    // Adaptive Curriculum Sprint 1 — skill/prerequisite graph (AI-drafted, admin-batch-approved),
+    // target replacement for the flat CurriculumObjective taxonomy. See
+    // docs/architecture/adaptive-curriculum-skill-graph.md. Additive only in Sprint 1 — nothing
+    // consumes this yet.
+    public DbSet<SkillGraphNode> SkillGraphNodes => Set<SkillGraphNode>();
+    public DbSet<SkillGraphPrerequisiteEdge> SkillGraphPrerequisiteEdges => Set<SkillGraphPrerequisiteEdge>();
+
     // Phase H6 (renamed I4 Pass 3) — Today Plan Module Pipeline (additive bookkeeping: which
     // Module, if any, the deterministic selector chose for a student on a given date)
     public DbSet<StudentTodayPlanModuleAssignment> StudentTodayPlanModuleAssignments => Set<StudentTodayPlanModuleAssignment>();

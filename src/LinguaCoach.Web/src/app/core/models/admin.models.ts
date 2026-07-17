@@ -1496,3 +1496,76 @@ export interface StudentReadinessRepairResult {
   afterSummary: string | null;
   auditLogId: string | null;
 }
+
+// ── Adaptive Curriculum Sprint 1 — skill graph ──────────────────────────────────
+// See docs/architecture/adaptive-curriculum-skill-graph.md. Additive only — nothing outside
+// /admin/skill-graph reads these yet.
+
+export interface SkillGraphTaxonomy {
+  cefrLevels: string[];
+  skills: string[];
+  subskillsBySkill: Record<string, string[]>;
+}
+
+export interface SkillGraphNodeListItem {
+  id: string;
+  key: string;
+  title: string;
+  description: string;
+  cefrLevel: string;
+  skill: string;
+  subskill: string | null;
+  difficultyBand: number;
+  reviewStatus: 'NotRequired' | 'PendingReview' | 'Approved' | 'Rejected';
+  isActive: boolean;
+  rejectionReason: string | null;
+  createdAt: string;
+}
+
+export interface SkillGraphNodeListResponse {
+  items: SkillGraphNodeListItem[];
+  totalCount: number;
+  totalPages: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface SkillGraphNodePrerequisiteRef {
+  id: string;
+  key: string;
+  title: string;
+}
+
+export interface SkillGraphNodeDetail extends SkillGraphNodeListItem {
+  descriptionForAi: string | null;
+  reviewedByUserId: string | null;
+  approvedAtUtc: string | null;
+  rejectedAtUtc: string | null;
+  prerequisites: SkillGraphNodePrerequisiteRef[];
+}
+
+export interface SkillGraphDraftResponse {
+  queued: boolean;
+  createdCount: number;
+  droppedEdgeCount?: number;
+  error: string | null;
+}
+
+export interface SkillGraphBatchActionResponse {
+  requestedCount: number;
+  succeeded: number;
+  failed: number;
+  limitReached: boolean;
+}
+
+export interface SkillGraphCoverageEntry {
+  cefrLevel: string;
+  skill: string;
+  approvedCount: number;
+  pendingCount: number;
+  hasGap: boolean;
+}
+
+export interface SkillGraphCoverageResponse {
+  matrix: SkillGraphCoverageEntry[];
+}

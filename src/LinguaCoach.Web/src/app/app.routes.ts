@@ -96,6 +96,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/admin-curriculum/admin-curriculum.component').then(m => m.AdminCurriculumComponent),
       },
       {
+        path: 'skill-graph',
+        loadComponent: () => import('./features/admin/admin-skill-graph/admin-skill-graph.component').then(m => m.AdminSkillGraphComponent),
+      },
+      {
         path: 'usage-policies',
         loadComponent: () => import('./features/admin/admin-usage-policies/admin-usage-policies.component').then(m => m.AdminUsagePoliciesComponent),
       },

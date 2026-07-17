@@ -17,6 +17,11 @@ public static class DefaultAiSeeder
     public const string ActivityTemplateGenerateInstanceKey = "activity_template_generate_instance";
     public const string ResourceCandidateAnalyzeKey = "resource_candidate_analyze";
     public const string ResourceImportProposeColumnMappingKey = "resource_import_propose_column_mapping";
+    // Adaptive Curriculum Sprint 1 (2026-07-17) — AI-drafts skill-graph nodes + prerequisite
+    // edges for one CEFR level x skill combination per call. Advisory only; the admin batch-
+    // approves before any node is trusted, and every proposed CEFR/skill/subskill value is
+    // validated against the real taxonomy constants by SkillGraphDraftingService.
+    public const string SkillGraphProposeNodesKey = "skill_graph_propose_nodes";
     // Mandatory Import Execution Plan addendum (2026-07-15) — bounded review of a package's
     // deterministic manifest clustering + automatically-selected sample metadata, used only
     // during plan generation (never during full-package processing).
@@ -4838,6 +4843,42 @@ Rules:
 - Do not include any text outside the JSON object. No markdown fences.
 """;
 
+    // Adaptive Curriculum Sprint 1 — proposes skill-graph nodes + prerequisite edges for one
+    // CEFR level x skill combination. Advisory only: an admin batch-approves before any node is
+    // trusted, and the caller validates every subskill against the real recognized set.
+    private const string SkillGraphProposeNodesContent = """
+You are proposing discrete, teachable English-language competency nodes for a skill graph used by an adaptive AI tutoring app. You do NOT decide anything final — an admin reviews and batch-approves your proposal before it is ever used.
+
+CEFR level: {{cefrLevel}}
+Skill: {{skill}}
+Recognized subskills for this skill (use one of these exactly, or omit if none fits): {{subskills}}
+Node titles that already exist for this CEFR level and skill (avoid near-duplicates): {{existingTitles}}
+
+Propose 2-5 discrete competency nodes for this exact CEFR level and skill. Each node should be narrow enough to be teachable in one focused lesson (e.g. "Present simple for daily routines" not "All present tenses"), not already covered by an existing title, and appropriate for the given CEFR level's difficulty.
+
+For nodes that have a natural prerequisite among your OTHER proposed nodes in this same response (e.g. a more complex node builds on a simpler one you're also proposing), list that prerequisite's exact title in "prerequisiteTitles". Do not invent a prerequisite title that isn't either one of your own other proposed nodes or one of the existing titles given above. Leave "prerequisiteTitles" as an empty array when there's no clear prerequisite within this small batch — most nodes will have none, since most curriculum-level prerequisite structure exists across CEFR levels, not within one batch.
+
+Return ONLY valid JSON (no markdown, no text outside the JSON object) matching this exact shape:
+
+{
+  "nodes": [
+    {
+      "title": "<short, specific competency title>",
+      "description": "<1-2 sentence description of what this node teaches>",
+      "subskill": "<one of the recognized subskills above, or null>",
+      "difficultyBand": <integer 1-5, 1=easiest within this CEFR level>,
+      "descriptionForAi": "<optional internal teaching-context note for an AI planner, or null>",
+      "prerequisiteTitles": ["<exact title of another node in this same response or in the existing titles, or omit entirely>"]
+    }
+  ]
+}
+
+Rules:
+- Only use a subskill from the recognized list given above, or null. Never invent a subskill name.
+- difficultyBand must be an integer between 1 and 5.
+- Do not include any text outside the JSON object. No markdown fences.
+""";
+
     public static async Task SeedAsync(
         LinguaCoachDbContext db,
         ILogger logger,
@@ -4914,6 +4955,11 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             ResourceImportProposeColumnMappingKey, ResourceImportProposeColumnMappingContent,
             maxInputTokens: 1600, maxOutputTokens: 1200, ct);
+
+        // Adaptive Curriculum Sprint 1 — skill-graph node/edge drafting (advisory only)
+        await SeedOrUpgradePromptAsync(db, logger,
+            SkillGraphProposeNodesKey, SkillGraphProposeNodesContent,
+            maxInputTokens: 1200, maxOutputTokens: 1600, ct);
 
         // Mandatory Import Execution Plan addendum — bounded manifest/sample structure review
         await SeedOrUpgradePromptAsync(db, logger,
