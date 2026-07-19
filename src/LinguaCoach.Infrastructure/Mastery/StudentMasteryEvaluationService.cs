@@ -2,6 +2,8 @@ using LinguaCoach.Application.Mastery;
 using LinguaCoach.Application.Memory;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
+using LinguaCoach.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -10,10 +12,27 @@ namespace LinguaCoach.Infrastructure.Mastery;
 /// <summary>
 /// Deterministic mastery evaluation engine. No AI calls.
 /// Reads StudentLearningEvent history and applies rule-based thresholds.
+///
+/// Adaptive Curriculum Sprint 4 — <see cref="EvaluateStudentAsync"/>'s grouping key changed from
+/// the flat CurriculumObjectiveKey()/PrimarySkill fallback chain to resolved
+/// <c>SkillGraphNode</c> keys (see <see cref="ResolveNodeKeysByActivityIdAsync"/>). An event fans
+/// out to EVERY approved node its Module is linked to (a Module can cover several nodes — same
+/// "fan out, don't force a single pick" pattern Sprint 3 used for goal-vector implicit drift from
+/// Module.ContextTagsJson), so one event can now contribute evidence to more than one bucket, and
+/// an event with no resolvable node (legacy content with no StudentExerciseLaunch row) contributes
+/// to none. This is an accepted, deliberate hard cutover — see
+/// docs/reviews/2026-07-20-adaptive-curriculum-sprint4-node-mastery-review.md for the tradeoffs.
+///
+/// <see cref="EvaluateObjectiveMasteryAsync"/> is UNCHANGED — still grouped by the legacy
+/// CurriculumObjectiveKey()/PrimarySkill chain — because it serves a different, still-live
+/// consumer (LearningPlanService's own CurriculumObjective-keyed per-plan-objective progress
+/// tracking), which was confirmed NOT superseded this sprint (its own sequencing logic is still
+/// built entirely on CurriculumObjective/CurriculumRoutingService, a separate migration).
 /// </summary>
 public sealed class StudentMasteryEvaluationService : IStudentMasteryEvaluationService
 {
     private readonly IStudentLearningLedger _ledger;
+    private readonly LinguaCoachDbContext _db;
     private readonly MasteryOptions _opts;
     private readonly ILogger<StudentMasteryEvaluationService> _logger;
 
@@ -33,10 +52,12 @@ public sealed class StudentMasteryEvaluationService : IStudentMasteryEvaluationS
 
     public StudentMasteryEvaluationService(
         IStudentLearningLedger ledger,
+        LinguaCoachDbContext db,
         IOptions<MasteryOptions> opts,
         ILogger<StudentMasteryEvaluationService> logger)
     {
         _ledger = ledger;
+        _db = db;
         _opts = opts.Value;
         _logger = logger;
     }
@@ -51,19 +72,14 @@ public sealed class StudentMasteryEvaluationService : IStudentMasteryEvaluationS
         CancellationToken ct = default)
     {
         var events = await _ledger.GetRecentAsync(studentId, limit: 200, ct: ct);
-
-        // Group events by primary skill (our proxy for objective key when no explicit key).
-        var byObjective = events
-            .Where(e => e.PrimarySkill is not null || e.CurriculumObjectiveKey() is not null)
-            .GroupBy(e => e.CurriculumObjectiveKey() ?? e.PrimarySkill!)
-            .ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.OccurredAtUtc).ToList());
+        var byNode = await GroupByNodeKeyAsync(events, ct);
 
         var mastered = new List<string>();
         var completed = new List<string>();  // NeedsReview signal = sufficient completion evidence
         var weak = new List<string>();
         var atRisk = new List<string>();
 
-        foreach (var (key, keyEvents) in byObjective)
+        foreach (var (key, keyEvents) in byNode)
         {
             var signal = ComputeSignal(key, keyEvents);
             switch (signal.MasteryStatus)
@@ -101,6 +117,49 @@ public sealed class StudentMasteryEvaluationService : IStudentMasteryEvaluationS
             SkippedCount = 0,
             MarkedReviewOnlyCount = 0
         };
+    }
+
+    /// <summary>Adaptive Curriculum Sprint 4 — resolves each event to the approved, active
+    /// <c>SkillGraphNode</c> key(s) its underlying Module is linked to, via
+    /// ActivityId → StudentExerciseLaunch → ModuleId → ModuleSkillGraphNodeLink → SkillGraphNode,
+    /// and fans each event out into every matching node's bucket (an event with zero resolvable
+    /// nodes — legacy content, no StudentExerciseLaunch row — contributes to no bucket). One
+    /// batched query resolves all events' node keys up front rather than querying per event.
+    /// Preserves <c>events</c>' newest-first order within each bucket, required by
+    /// <see cref="ComputeSignal"/>'s consecutive-streak counting.</summary>
+    private async Task<Dictionary<string, List<StudentLearningEvent>>> GroupByNodeKeyAsync(
+        IReadOnlyList<StudentLearningEvent> events, CancellationToken ct)
+    {
+        var activityIds = events.Where(e => e.ActivityId.HasValue).Select(e => e.ActivityId!.Value).Distinct().ToList();
+
+        var nodeKeysByActivityId = activityIds.Count == 0
+            ? new Dictionary<Guid, List<string>>()
+            : (await _db.StudentExerciseLaunches.AsNoTracking()
+                .Where(l => activityIds.Contains(l.LearningActivityId))
+                .Join(_db.ModuleSkillGraphNodeLinks.AsNoTracking(), l => l.ModuleId, link => link.ModuleId,
+                    (l, link) => new { l.LearningActivityId, link.SkillGraphNodeId })
+                .Join(_db.SkillGraphNodes.AsNoTracking()
+                        .Where(n => n.ReviewStatus == Domain.Enums.AdminReviewStatus.Approved && n.IsActive),
+                    x => x.SkillGraphNodeId, n => n.Id, (x, n) => new { x.LearningActivityId, n.Key })
+                .ToListAsync(ct))
+                .GroupBy(x => x.LearningActivityId)
+                .ToDictionary(g => g.Key, g => g.Select(x => x.Key).Distinct(StringComparer.OrdinalIgnoreCase).ToList());
+
+        var buckets = new Dictionary<string, List<StudentLearningEvent>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var e in events) // already newest-first per the ledger contract — preserved below
+        {
+            if (e.ActivityId is null) continue;
+            if (!nodeKeysByActivityId.TryGetValue(e.ActivityId.Value, out var nodeKeys) || nodeKeys.Count == 0) continue;
+
+            foreach (var key in nodeKeys)
+            {
+                if (!buckets.TryGetValue(key, out var list))
+                    buckets[key] = list = [];
+                list.Add(e);
+            }
+        }
+
+        return buckets;
     }
 
     public async Task<ObjectiveMasterySignal> EvaluateObjectiveMasteryAsync(

@@ -38,6 +38,7 @@ public sealed class StudentMasteryClassificationEdgeCaseTests : IDisposable
         var opts = Options.Create(new MasteryOptions());
         _sut = new StudentMasteryEvaluationService(
             _ledger,
+            _db,
             opts,
             NullLogger<StudentMasteryEvaluationService>.Instance);
 

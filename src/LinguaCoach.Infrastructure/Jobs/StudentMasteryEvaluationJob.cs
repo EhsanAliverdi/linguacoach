@@ -77,6 +77,14 @@ public sealed class StudentMasteryEvaluationJob : IJob
                     report.DemotedCount);
 
                 // Phase 12F — mark objectives Mastered or Completed in the learning plan.
+                // KNOWN GAP — Adaptive Curriculum Sprint 4: report.MasteredObjectiveKeys/
+                // CompletedObjectiveKeys are now resolved SkillGraphNode keys, not
+                // CurriculumObjective keys, so MarkObjectiveMasteredAsync/MarkObjectiveCompletedAsync
+                // below will not find a matching plan objective for them and gracefully no-op via
+                // their existing "objective_not_in_plan" result — confirmed safe, not a crash risk.
+                // The learning plan's own objective auto-advance is effectively inert until Sprint 5
+                // retires CurriculumObjective/LearningPlanService's sequencing outright. Deliberate,
+                // documented — see docs/reviews/2026-07-20-adaptive-curriculum-sprint4-node-mastery-review.md.
                 foreach (var masteredKey in report.MasteredObjectiveKeys)
                 {
                     try

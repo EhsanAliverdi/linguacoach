@@ -40,6 +40,7 @@ public sealed class StudentMasteryEvaluationServiceTests : IDisposable
         var opts = Options.Create(new MasteryOptions());
         _sut = new StudentMasteryEvaluationService(
             _ledger,
+            _db,
             opts,
             NullLogger<StudentMasteryEvaluationService>.Instance);
 
@@ -132,41 +133,53 @@ public sealed class StudentMasteryEvaluationServiceTests : IDisposable
     }
 
     // -------------------------------------------------------------------------
-    // 11. EvaluateStudent returns mastered count
+    // 11. Adaptive Curriculum Sprint 4 — EvaluateStudentAsync groups by resolved SkillGraphNode
+    //     key, not by skill/objective string. An event only counts once it resolves through
+    //     ActivityId -> StudentExerciseLaunch -> Module -> ModuleSkillGraphNodeLink -> SkillGraphNode.
     // -------------------------------------------------------------------------
     [Fact]
-    public async Task EvaluateStudent_ReturnsMasteredCount()
+    public async Task EvaluateStudent_ReturnsMasteredCount_ForNodeLinkedEvents()
+    {
+        var (activityId, nodeKey) = await SeedModuleLinkedToNodeAsync();
+        _ledger.SetEvents(_studentId, MasteredEvents("speaking", activityId));
+
+        var report = await _sut.EvaluateStudentAsync(_studentId, MasteryEvaluationReason.Manual);
+
+        report.StudentId.Should().Be(_studentId);
+        report.MasteredObjectiveKeys.Should().Contain(nodeKey);
+        report.MasteredObjectiveKeys.Count.Should().BeGreaterThanOrEqualTo(1);
+    }
+
+    // -------------------------------------------------------------------------
+    // 12. Adaptive Curriculum Sprint 4 — events with no resolvable node (legacy content, no
+    //     StudentExerciseLaunch row) contribute to no bucket: EvaluateStudentAsync's node-based
+    //     grouping is a hard cutover, not a fallback onto the old skill/objective-key grouping.
+    // -------------------------------------------------------------------------
+    [Fact]
+    public async Task EvaluateStudent_LegacyEventsWithNoActivityId_ProduceNoMasteredKeys()
     {
         _ledger.SetEvents(_studentId, MasteredEvents("speaking"));
 
         var report = await _sut.EvaluateStudentAsync(_studentId, MasteryEvaluationReason.Manual);
 
-        report.StudentId.Should().Be(_studentId);
-        report.MasteredObjectiveKeys.Should().Contain("speaking");
-        report.MasteredObjectiveKeys.Count.Should().BeGreaterThanOrEqualTo(1);
+        report.MasteredObjectiveKeys.Should().BeEmpty();
     }
 
     // -------------------------------------------------------------------------
-    // 12. Phase 8: mastery grouping prefers CurriculumObjectiveKey over PatternKey when both
-    //     are set — events from two different patterns sharing one objective key accumulate
-    //     into a single objective's evidence instead of being split.
+    // 13. Adaptive Curriculum Sprint 4 — one Module linked to multiple nodes fans a single
+    //     event set out into every linked node's evidence bucket (mirrors Sprint 3's goal-tag
+    //     fan-out for implicit engagement drift).
     // -------------------------------------------------------------------------
     [Fact]
-    public async Task EvaluateStudent_GroupsByCurriculumObjectiveKey_AcrossDifferentPatternKeys()
+    public async Task EvaluateStudent_FansOutToEveryLinkedNode()
     {
-        const string objectiveKey = "b1.speaking.roleplay_ordering";
-        _ledger.SetEvents(_studentId,
-        [
-            MakeEventWithObjective("pattern_a", objectiveKey, LearningEventOutcome.Mastered, 90),
-            MakeEventWithObjective("pattern_b", objectiveKey, LearningEventOutcome.Practised, 85),
-            MakeEventWithObjective("pattern_a", objectiveKey, LearningEventOutcome.Practised, 88),
-            MakeEventWithObjective("pattern_b", objectiveKey, LearningEventOutcome.Practised, 82),
-            MakeEventWithObjective("pattern_a", objectiveKey, LearningEventOutcome.Practised, 84),
-        ]);
+        var (activityId, firstNodeKey, secondNodeKey) = await SeedModuleLinkedToTwoNodesAsync();
+        _ledger.SetEvents(_studentId, MasteredEvents("speaking", activityId));
 
         var report = await _sut.EvaluateStudentAsync(_studentId, MasteryEvaluationReason.Manual);
 
-        report.MasteredObjectiveKeys.Should().Contain(objectiveKey);
+        report.MasteredObjectiveKeys.Should().Contain(firstNodeKey);
+        report.MasteredObjectiveKeys.Should().Contain(secondNodeKey);
     }
 
     // -------------------------------------------------------------------------
@@ -184,24 +197,102 @@ public sealed class StudentMasteryEvaluationServiceTests : IDisposable
             score: score,
             normalizedScore: score / 100.0);
 
-    private StudentLearningEvent MakeEvent(string skill, LearningEventOutcome outcome, double score) =>
+    private StudentLearningEvent MakeEvent(string skill, LearningEventOutcome outcome, double score, Guid? activityId = null) =>
         new(
             studentProfileId: _studentId,
             source: LearningEventSource.PracticeGym,
             outcome: outcome,
+            activityId: activityId,
             primarySkill: skill,
             patternKey: skill,
             score: score,
             normalizedScore: score / 100.0);
 
-    private IReadOnlyList<StudentLearningEvent> MasteredEvents(string skill) =>
+    private IReadOnlyList<StudentLearningEvent> MasteredEvents(string skill, Guid? activityId = null) =>
     [
-        MakeEvent(skill, LearningEventOutcome.Mastered, 90),
-        MakeEvent(skill, LearningEventOutcome.Practised, 85),
-        MakeEvent(skill, LearningEventOutcome.Practised, 88),
-        MakeEvent(skill, LearningEventOutcome.Practised, 82),
-        MakeEvent(skill, LearningEventOutcome.Practised, 84)
+        MakeEvent(skill, LearningEventOutcome.Mastered, 90, activityId),
+        MakeEvent(skill, LearningEventOutcome.Practised, 85, activityId),
+        MakeEvent(skill, LearningEventOutcome.Practised, 88, activityId),
+        MakeEvent(skill, LearningEventOutcome.Practised, 82, activityId),
+        MakeEvent(skill, LearningEventOutcome.Practised, 84, activityId)
     ];
+
+    /// <summary>Seeds an approved Module linked to one approved, active SkillGraphNode, plus the
+    /// StudentExerciseLaunch bridge row a real completed attempt would leave behind, so a
+    /// StudentLearningEvent carrying the returned ActivityId resolves to the returned node key.</summary>
+    private async Task<(Guid ActivityId, string NodeKey)> SeedModuleLinkedToNodeAsync(string nodeKey = "b2.speaking.fluency_test")
+    {
+        var module = new Module("Test Module", ModuleSourceMode.Manual, cefrLevel: "B2", skill: "speaking", difficultyBand: 2);
+        module.Approve(null);
+        _db.Modules.Add(module);
+
+        var node = new SkillGraphNode(nodeKey, "Test Node", "Test node description.", "B2", "speaking", difficultyBand: 2);
+        node.Approve(null);
+        _db.SkillGraphNodes.Add(node);
+
+        var (exerciseId, activityId) = await SeedExerciseAndActivityAsync();
+
+        await _db.SaveChangesAsync();
+
+        _db.ModuleSkillGraphNodeLinks.Add(new ModuleSkillGraphNodeLink(module.Id, node.Id, confidence: 1.0));
+        _db.StudentExerciseLaunches.Add(new StudentExerciseLaunch(
+            _studentId, module.Id, exerciseId, activityId, ExerciseLaunchSource.PracticeGym, DateTimeOffset.UtcNow));
+
+        await _db.SaveChangesAsync();
+
+        return (activityId, node.Key);
+    }
+
+    /// <summary>Seeds the minimal real Lesson/Exercise/LearningActivity chain StudentExerciseLaunch's
+    /// restrict-delete FKs require, and returns their ids for use in a launch row.</summary>
+    private async Task<(Guid ExerciseId, Guid ActivityId)> SeedExerciseAndActivityAsync()
+    {
+        var lesson = new Lesson("Test Lesson", "Body.", LessonSourceMode.Manual, cefrLevel: "B2", skill: "speaking");
+        _db.Lessons.Add(lesson);
+        await _db.SaveChangesAsync();
+
+        var exercise = new Exercise(
+            "Test Exercise", "Instructions.", "roleplay", ExerciseRendererType.Formio, ExerciseSourceMode.Manual,
+            cefrLevel: "B2", skill: "speaking", lessonId: lesson.Id);
+        _db.Exercises.Add(exercise);
+
+        var activity = new LearningActivity(
+            ActivityType.SpeakingRolePlay, ActivitySource.AiGenerated, "Test Activity", "B2", "{}");
+        _db.LearningActivities.Add(activity);
+
+        await _db.SaveChangesAsync();
+
+        return (exercise.Id, activity.Id);
+    }
+
+    /// <summary>Same as <see cref="SeedModuleLinkedToNodeAsync"/> but one Module linked to two
+    /// nodes, to verify one event set fans out into both buckets.</summary>
+    private async Task<(Guid ActivityId, string FirstNodeKey, string SecondNodeKey)> SeedModuleLinkedToTwoNodesAsync()
+    {
+        var module = new Module("Fan-Out Test Module", ModuleSourceMode.Manual, cefrLevel: "B2", skill: "speaking", difficultyBand: 2);
+        module.Approve(null);
+        _db.Modules.Add(module);
+
+        var firstNode = new SkillGraphNode("b2.speaking.fanout_a", "Fan-Out Node A", "Test node description.", "B2", "speaking", difficultyBand: 2);
+        firstNode.Approve(null);
+        var secondNode = new SkillGraphNode("b2.speaking.fanout_b", "Fan-Out Node B", "Test node description.", "B2", "speaking", difficultyBand: 3);
+        secondNode.Approve(null);
+        _db.SkillGraphNodes.AddRange(firstNode, secondNode);
+
+        await _db.SaveChangesAsync();
+
+        var (exerciseId, activityId) = await SeedExerciseAndActivityAsync();
+
+        _db.ModuleSkillGraphNodeLinks.AddRange(
+            new ModuleSkillGraphNodeLink(module.Id, firstNode.Id, confidence: 1.0),
+            new ModuleSkillGraphNodeLink(module.Id, secondNode.Id, confidence: 1.0));
+        _db.StudentExerciseLaunches.Add(new StudentExerciseLaunch(
+            _studentId, module.Id, exerciseId, activityId, ExerciseLaunchSource.PracticeGym, DateTimeOffset.UtcNow));
+
+        await _db.SaveChangesAsync();
+
+        return (activityId, firstNode.Key, secondNode.Key);
+    }
 
 }
 

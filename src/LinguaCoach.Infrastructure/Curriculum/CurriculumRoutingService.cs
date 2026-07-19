@@ -235,6 +235,9 @@ public sealed class CurriculumRoutingService : ICurriculumRoutingService
         }
 
         // Rule 5: Mastery exclusion (mirrors FilterByMastered logic).
+        // KNOWN GAP — Adaptive Curriculum Sprint 4: see the doc comment on FilterByMastered above.
+        // `key` here is a CurriculumObjective key; MasteredObjectiveKeys now holds skill-graph node
+        // keys, so this is effectively always false. Deliberate, documented, not a crash risk.
         var isMastered = request.MasteredObjectiveKeys.Contains(key, StringComparer.OrdinalIgnoreCase);
         if (isMastered)
         {
@@ -277,6 +280,19 @@ public sealed class CurriculumRoutingService : ICurriculumRoutingService
         return runnable;
     }
 
+    /// <summary>
+    /// KNOWN GAP — Adaptive Curriculum Sprint 4: <c>request.MasteredObjectiveKeys</c> is populated
+    /// from <c>StudentMasteryReport.MasteredObjectiveKeys</c>, which as of Sprint 4 contains
+    /// resolved <c>SkillGraphNode</c> keys (e.g. "b2.speaking.fluency_test"), not
+    /// <see cref="CurriculumObjective"/>.Key values. Since <see cref="CurriculumObjective"/> keys
+    /// and skill-graph node keys are drawn from different, unrelated key spaces, this comparison
+    /// now never matches any real candidate — this filter is effectively a no-op (falls through to
+    /// "keep all candidates"). This is not a crash risk: mastered-content exclusion is degraded,
+    /// not broken. Deliberately left as-is rather than bridged, per the Sprint 4 decision — see
+    /// docs/reviews/2026-07-20-adaptive-curriculum-sprint4-node-mastery-review.md. Superseded (not
+    /// fixed) when Sprint 5 retires <see cref="CurriculumObjective"/>/CurriculumRoutingService
+    /// outright in favor of the AI composer.
+    /// </summary>
     private static IReadOnlyList<CurriculumObjective> FilterByMastered(
         IReadOnlyList<CurriculumObjective> candidates,
         CurriculumRoutingRequest request)
