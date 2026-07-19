@@ -686,6 +686,9 @@ public static class DependencyInjection
             LinguaCoach.Infrastructure.SkillGraph.SkillGraphDraftingService>();
         services.AddScoped<LinguaCoach.Application.SkillGraph.ISkillGraphValidationService,
             LinguaCoach.Infrastructure.SkillGraph.SkillGraphValidationService>();
+        // Adaptive Curriculum Sprint 2 — Module-to-skill-graph-node AI re-tagging.
+        services.AddScoped<LinguaCoach.Application.SkillGraph.IModuleSkillGraphTaggingService,
+            LinguaCoach.Infrastructure.SkillGraph.ModuleSkillGraphTaggingService>();
 
         // Phase 4 (2026-07-15) — large-scale AI import packages. App never crashes on a missing
         // "ImportPackageLimits" config section — sensible defaults are baked into the options class.

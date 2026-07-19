@@ -22,6 +22,10 @@ public static class DefaultAiSeeder
     // approves before any node is trusted, and every proposed CEFR/skill/subskill value is
     // validated against the real taxonomy constants by SkillGraphDraftingService.
     public const string SkillGraphProposeNodesKey = "skill_graph_propose_nodes";
+    // Adaptive Curriculum Sprint 2 (2026-07-20) — AI-proposes which approved skill-graph nodes an
+    // existing Module covers. Advisory only; every proposed node key is validated against the real
+    // candidate list by ModuleSkillGraphTaggingService before being trusted.
+    public const string ModuleSkillGraphProposeCoverageKey = "module_skill_graph_propose_coverage";
     // Mandatory Import Execution Plan addendum (2026-07-15) — bounded review of a package's
     // deterministic manifest clustering + automatically-selected sample metadata, used only
     // during plan generation (never during full-package processing).
@@ -4879,6 +4883,36 @@ Rules:
 - Do not include any text outside the JSON object. No markdown fences.
 """;
 
+    // Adaptive Curriculum Sprint 2 — proposes which approved skill-graph nodes an existing Module
+    // covers. Advisory only: the caller validates every proposed key against the real candidate
+    // list before applying anything.
+    private const string ModuleSkillGraphProposeCoverageContent = """
+You are matching an existing English-language learning Module to the skill-graph competency nodes it teaches or practices, for an adaptive AI tutoring app. You do NOT decide anything final — every match you propose is checked against a fixed candidate list before it is ever applied.
+
+Module title: {{moduleTitle}}
+Module description: {{moduleDescription}}
+Module CEFR level: {{cefrLevel}}
+Module skill: {{skill}}
+
+Candidate nodes this Module might cover (JSON array of {key, title}):
+{{candidateNodesJson}}
+
+From the candidate list above ONLY, identify which node(s) this Module actually teaches or practices, based on its title and description. Most modules match 1-3 nodes, not the whole list. Only include a node if the Module's content genuinely aligns with it — do not force a match just to include something.
+
+Return ONLY valid JSON (no markdown, no text outside the JSON object) matching this exact shape:
+
+{
+  "matches": [
+    { "key": "<exact key from the candidate list>", "confidence": <number 0-1> }
+  ]
+}
+
+Rules:
+- Only use a "key" value that appears exactly in the candidate list given above. Never invent a key.
+- If nothing in the candidate list genuinely matches, return an empty "matches" array.
+- Do not include any text outside the JSON object. No markdown fences.
+""";
+
     public static async Task SeedAsync(
         LinguaCoachDbContext db,
         ILogger logger,
@@ -4960,6 +4994,11 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             SkillGraphProposeNodesKey, SkillGraphProposeNodesContent,
             maxInputTokens: 1200, maxOutputTokens: 1600, ct);
+
+        // Adaptive Curriculum Sprint 2 — Module-to-skill-graph-node coverage tagging (advisory only)
+        await SeedOrUpgradePromptAsync(db, logger,
+            ModuleSkillGraphProposeCoverageKey, ModuleSkillGraphProposeCoverageContent,
+            maxInputTokens: 1600, maxOutputTokens: 900, ct);
 
         // Mandatory Import Execution Plan addendum — bounded manifest/sample structure review
         await SeedOrUpgradePromptAsync(db, logger,

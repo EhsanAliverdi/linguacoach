@@ -31,4 +31,23 @@ public static class CurriculumContextTagConstants
 
     public static bool IsValid(string? tag) =>
         tag is not null && All.Contains(tag, StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Adaptive Curriculum Sprint 2 — curated subset of <see cref="All"/> that represents a genuine
+    /// student life-goal/motivation ("why is this student learning English"), as opposed to a
+    /// skill/format descriptor or admin catch-all. This is the taxonomy Sprint 3's per-student goal
+    /// vector will draw from — see docs/architecture/adaptive-curriculum-skill-graph.md. Deliberately
+    /// a curated subset of the existing tag list, not a new taxonomy: Pronunciation/
+    /// ListeningConfidence/WritingConfidence describe a skill focus, not a motivation;
+    /// ExamInspired describes content format; Custom is an admin escape hatch — none of these answer
+    /// "why," so none belong in the goal vector.
+    /// </summary>
+    public static readonly IReadOnlyList<string> GoalTags =
+    [
+        GeneralEnglish, DayToDay, Travel, StudyAcademic,
+        MigrationSettlement, JobInterviews, SocialConversation, Workplace
+    ];
+
+    public static bool IsGoalTag(string? tag) =>
+        tag is not null && GoalTags.Contains(tag, StringComparer.OrdinalIgnoreCase);
 }

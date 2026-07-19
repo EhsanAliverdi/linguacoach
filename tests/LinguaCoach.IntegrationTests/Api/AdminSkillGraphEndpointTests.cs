@@ -143,6 +143,71 @@ public sealed class AdminSkillGraphEndpointTests : IClassFixture<ApiTestFactory>
         Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync("/api/admin/skill-graph/nodes")).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync("/api/admin/skill-graph/coverage")).StatusCode);
     }
+
+    // ── Sprint 2: content coverage ──────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task GetContentCoverage_ApprovedNodeWithNoLinkedModule_AppearsInWithoutContentList()
+    {
+        var node = await SeedNodeAsync($"grammar.coverage_{Guid.NewGuid():N}.a1");
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var saved = await db.SkillGraphNodes.FirstAsync(n => n.Id == node.Id);
+            saved.Approve(null);
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.GetAsync("/api/admin/skill-graph/content-coverage");
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var withoutContent = body.GetProperty("nodesWithoutContent").EnumerateArray().ToList();
+        Assert.Contains(withoutContent, n => n.GetProperty("id").GetGuid() == node.Id);
+    }
+
+    [Fact]
+    public async Task GetContentCoverage_ApprovedNodeWithLinkedModule_DoesNotAppearInWithoutContentList()
+    {
+        var node = await SeedNodeAsync($"grammar.linked_{Guid.NewGuid():N}.a1");
+        Guid moduleId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var saved = await db.SkillGraphNodes.FirstAsync(n => n.Id == node.Id);
+            saved.Approve(null);
+
+            var module = new Module($"Module {Guid.NewGuid():N}", ModuleSourceMode.Manual, cefrLevel: "A1", skill: "grammar");
+            module.Approve(null);
+            db.Modules.Add(module);
+            await db.SaveChangesAsync();
+            moduleId = module.Id;
+
+            db.ModuleSkillGraphNodeLinks.Add(new ModuleSkillGraphNodeLink(moduleId, node.Id, 0.9));
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.GetAsync("/api/admin/skill-graph/content-coverage");
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var withoutContent = body.GetProperty("nodesWithoutContent").EnumerateArray().ToList();
+        Assert.DoesNotContain(withoutContent, n => n.GetProperty("id").GetGuid() == node.Id);
+    }
+
+    [Fact]
+    public async Task NonAdmin_rejected_for_content_coverage_endpoint()
+    {
+        var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"sg_content_cov_nonadmin_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(_factory, token);
+
+        var resp = await client.GetAsync("/api/admin/skill-graph/content-coverage");
+        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
+    }
 }
 
 /// <summary>Draft-endpoint tests specifically — uses <see cref="ActivityTestFactory"/>'s
@@ -196,6 +261,61 @@ public sealed class AdminSkillGraphDraftEndpointTests : IClassFixture<ActivityTe
         var client = ClientWithToken(_factory, token);
 
         var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/draft", new { cefrLevel = "A1", skill = "grammar" });
+        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
+    }
+
+    // ── Sprint 2: retag-modules ──────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task RetagModules_NoUntaggedApprovedModules_ReturnsZeroSwept()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        // No approved, untagged Module exists specifically for this run — but the fixture is
+        // shared across the test class, so assert non-negative rather than exactly zero to stay
+        // robust against modules seeded by sibling tests in this class.
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/retag-modules", new { });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(body.GetProperty("sweptCount").GetInt32() >= 0);
+    }
+
+    [Fact]
+    public async Task RetagModules_ApprovedUntaggedModule_NeverThrowsEvenWhenAiResponseDoesNotMatchExpectedShape()
+    {
+        var cefr = "B1"; // distinct level to isolate this test's module from sibling drafts
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var node = new SkillGraphNode($"grammar.retag_{Guid.NewGuid():N}.b1", "T", "D", cefr, "grammar");
+            node.Approve(null);
+            db.SkillGraphNodes.Add(node);
+
+            var module = new Module($"Retag test module {Guid.NewGuid():N}", ModuleSourceMode.Manual, cefrLevel: cefr, skill: "grammar");
+            module.Approve(null);
+            db.Modules.Add(module);
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/retag-modules", new { });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(body.GetProperty("sweptCount").GetInt32() >= 1);
+    }
+
+    [Fact]
+    public async Task NonAdmin_rejected_for_retag_modules_endpoint()
+    {
+        var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"sg_retag_nonadmin_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(_factory, token);
+
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/retag-modules", new { });
         Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
     }
 }

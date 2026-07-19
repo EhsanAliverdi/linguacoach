@@ -14,6 +14,7 @@ import {
   AdminDeliveryHealth,
   SkillGraphTaxonomy, SkillGraphNodeListResponse, SkillGraphNodeDetail,
   SkillGraphDraftResponse, SkillGraphBatchActionResponse, SkillGraphCoverageResponse,
+  SkillGraphRetagResponse, SkillGraphContentCoverageResponse,
   StudentListQuery, PagedResponse, AiModelPricingItem,
   AiModelPricingOverrideItem, CreatePricingOverrideRequest, UpdatePricingOverrideRequest,
   AdminNotificationItem, AdminOutboxItem,
@@ -213,6 +214,12 @@ export class AdminApiService {
   }
   getSkillGraphCoverage(): Observable<SkillGraphCoverageResponse> {
     return this.http.get<SkillGraphCoverageResponse>(`${this.api}/skill-graph/coverage`);
+  }
+  retagSkillGraphModules(): Observable<SkillGraphRetagResponse> {
+    return this.http.post<SkillGraphRetagResponse>(`${this.api}/skill-graph/retag-modules`, {});
+  }
+  getSkillGraphContentCoverage(): Observable<SkillGraphContentCoverageResponse> {
+    return this.http.get<SkillGraphContentCoverageResponse>(`${this.api}/skill-graph/content-coverage`);
   }
 
   // Prompts

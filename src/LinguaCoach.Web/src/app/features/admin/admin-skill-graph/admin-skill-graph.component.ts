@@ -21,6 +21,7 @@ import {
   SkillGraphTaxonomy,
   SkillGraphNodeListItem,
   SkillGraphCoverageEntry,
+  SkillGraphNodeWithoutContent,
 } from '../../../core/models/admin.models';
 
 @Component({
@@ -68,6 +69,16 @@ export class AdminSkillGraphComponent implements OnInit {
   draftStatus = signal('');
   draftError = signal('');
 
+  // ── Content coverage (Sprint 2) ──────────────────────────────────────────
+  contentCoverageLoading = signal(true);
+  contentCoverageError = signal('');
+  nodesWithContent = signal(0);
+  nodesWithoutContent = signal<SkillGraphNodeWithoutContent[]>([]);
+
+  retagPending = signal(false);
+  retagStatus = signal('');
+  retagError = signal('');
+
   // ── Nodes table ──────────────────────────────────────────────────────────
   nodesLoading = signal(true);
   nodesError = signal('');
@@ -97,6 +108,44 @@ export class AdminSkillGraphComponent implements OnInit {
     this.loadTaxonomy();
     this.loadCoverage();
     this.loadNodes();
+    this.loadContentCoverage();
+  }
+
+  loadContentCoverage(): void {
+    this.contentCoverageLoading.set(true);
+    this.contentCoverageError.set('');
+    this.api.getSkillGraphContentCoverage().subscribe({
+      next: r => {
+        this.nodesWithContent.set(r.nodesWithContent);
+        this.nodesWithoutContent.set(r.nodesWithoutContent);
+        this.contentCoverageLoading.set(false);
+      },
+      error: err => {
+        this.contentCoverageError.set(err?.error?.error ?? 'Could not load content coverage.');
+        this.contentCoverageLoading.set(false);
+      },
+    });
+  }
+
+  retagModules(): void {
+    this.retagPending.set(true);
+    this.retagStatus.set('');
+    this.retagError.set('');
+    this.api.retagSkillGraphModules().subscribe({
+      next: r => {
+        this.retagPending.set(false);
+        const totalMatched = r.results.reduce((sum, m) => sum + m.matchedCount, 0);
+        this.retagStatus.set(
+          r.sweptCount === 0
+            ? 'No untagged approved Modules found.'
+            : `Re-tagged ${r.sweptCount} module(s), ${totalMatched} node link(s) applied.`);
+        this.loadContentCoverage();
+      },
+      error: err => {
+        this.retagPending.set(false);
+        this.retagError.set(err?.error?.error ?? 'Re-tagging failed.');
+      },
+    });
   }
 
   private loadTaxonomy(): void {

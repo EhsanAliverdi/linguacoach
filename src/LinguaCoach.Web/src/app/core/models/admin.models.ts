@@ -1569,3 +1569,32 @@ export interface SkillGraphCoverageEntry {
 export interface SkillGraphCoverageResponse {
   matrix: SkillGraphCoverageEntry[];
 }
+
+// Sprint 2 — Module-to-node content coverage (distinct from node-existence coverage above).
+
+export interface SkillGraphRetagModuleResult {
+  moduleId: string;
+  moduleTitle: string;
+  matchedCount: number;
+  error: string | null;
+}
+
+export interface SkillGraphRetagResponse {
+  sweptCount: number;
+  results: SkillGraphRetagModuleResult[];
+}
+
+export interface SkillGraphNodeWithoutContent {
+  id: string;
+  key: string;
+  title: string;
+  cefrLevel: string;
+  skill: string;
+}
+
+export interface SkillGraphContentCoverageResponse {
+  totalApprovedNodes: number;
+  nodesWithContent: number;
+  nodesWithoutContentCount: number;
+  nodesWithoutContent: SkillGraphNodeWithoutContent[];
+}

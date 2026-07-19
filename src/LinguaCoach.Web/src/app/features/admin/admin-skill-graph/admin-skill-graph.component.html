@@ -77,6 +77,52 @@
     }
   </sp-admin-card>
 
+  <!-- Content coverage (Sprint 2) -->
+  <sp-admin-card title="Content coverage — approved nodes with real Module content">
+    <p class="sp-admin-section-sub">An approved node with no linked Module has no real content teaching it yet. Re-tagging AI-matches up to 20 untagged approved Modules per run against approved nodes for their own CEFR level/skill, and auto-applies every validated match — no per-link approval step.</p>
+    <div class="sp-admin-form-footer">
+      <sp-admin-button variant="primary" size="sm" [disabled]="retagPending()" (clicked)="retagModules()">
+        {{ retagPending() ? 'Re-tagging…' : 'Re-tag next batch of Modules' }}
+      </sp-admin-button>
+    </div>
+    @if (retagStatus()) {
+      <sp-admin-alert variant="success">{{ retagStatus() }}</sp-admin-alert>
+    }
+    @if (retagError()) {
+      <sp-admin-alert variant="error">{{ retagError() }}</sp-admin-alert>
+    }
+
+    @if (contentCoverageLoading()) {
+      <sp-admin-loading-state message="Loading content coverage" />
+    } @else if (contentCoverageError()) {
+      <sp-admin-error-state title="Content coverage unavailable" [message]="contentCoverageError()" />
+    } @else {
+      <p class="sp-admin-section-sub">{{ nodesWithContent() }} approved node(s) have linked content; {{ nodesWithoutContent().length }} do not.</p>
+      @if (nodesWithoutContent().length > 0) {
+        <sp-admin-table variant="data" density="compact" layout="first-column-fluid" minWidth="500px">
+          <table>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>CEFR</th>
+                <th>Skill</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (n of nodesWithoutContent(); track n.id) {
+                <tr>
+                  <td>{{ n.title }}</td>
+                  <td>{{ n.cefrLevel }}</td>
+                  <td>{{ n.skill }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </sp-admin-table>
+      }
+    }
+  </sp-admin-card>
+
   <!-- Nodes table -->
   <sp-admin-card title="Nodes">
     <div class="sp-admin-filter-bar" style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; margin-bottom:12px;">

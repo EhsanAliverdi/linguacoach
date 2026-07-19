@@ -23,17 +23,24 @@ namespace LinguaCoach.Api.Controllers;
 public sealed class AdminSkillGraphController : ControllerBase
 {
     private const int MaxBatchSize = 200;
+    // Sprint 2 — bounds one re-tag sweep call to a small number of Modules per call (real AI calls,
+    // one per Module), mirroring the per-combination bounding SkillGraphDraftingService already
+    // uses. An admin can call the endpoint again to sweep the next batch.
+    private const int MaxModulesPerRetagSweep = 20;
 
     private readonly LinguaCoachDbContext _db;
     private readonly ISkillGraphDraftingService _drafting;
     private readonly ISkillGraphValidationService _validation;
+    private readonly IModuleSkillGraphTaggingService _tagging;
 
     public AdminSkillGraphController(
-        LinguaCoachDbContext db, ISkillGraphDraftingService drafting, ISkillGraphValidationService validation)
+        LinguaCoachDbContext db, ISkillGraphDraftingService drafting, ISkillGraphValidationService validation,
+        IModuleSkillGraphTaggingService tagging)
     {
         _db = db;
         _drafting = drafting;
         _validation = validation;
+        _tagging = tagging;
     }
 
     [HttpGet("taxonomy")]
@@ -263,6 +270,91 @@ public sealed class AdminSkillGraphController : ControllerBase
         }
 
         return Ok(new { matrix });
+    }
+
+    /// <summary>Sprint 2 — AI re-tags up to <see cref="MaxModulesPerRetagSweep"/> approved Modules
+    /// that have no skill-graph coverage links yet: for each, proposes matches against the approved
+    /// nodes for that Module's own CEFR level/skill, and auto-applies every validated match (per the
+    /// explicit "auto-apply, spot-checked via coverage dashboard" decision — no per-link approval
+    /// step). Call again to sweep the next batch of untagged Modules.</summary>
+    [HttpPost("retag-modules")]
+    public async Task<IActionResult> RetagModules(CancellationToken ct)
+    {
+        var taggedModuleIds = await _db.ModuleSkillGraphNodeLinks.AsNoTracking()
+            .Select(l => l.ModuleId).Distinct().ToListAsync(ct);
+
+        var candidateModules = await _db.Modules.AsNoTracking()
+            .Where(m => m.ReviewStatus == AdminReviewStatus.Approved && !m.IsArchived && !taggedModuleIds.Contains(m.Id)
+                && m.CefrLevel != null && m.Skill != null)
+            .OrderBy(m => m.CreatedAt)
+            .Take(MaxModulesPerRetagSweep)
+            .ToListAsync(ct);
+
+        var results = new List<object>();
+        foreach (var module in candidateModules)
+        {
+            var candidateNodes = await _db.SkillGraphNodes.AsNoTracking()
+                .Where(n => n.ReviewStatus == AdminReviewStatus.Approved && n.IsActive
+                    && n.CefrLevel == module.CefrLevel && n.Skill == module.Skill)
+                .Select(n => new SkillGraphNodeCandidate(n.Id, n.Key, n.Title))
+                .ToListAsync(ct);
+
+            if (candidateNodes.Count == 0)
+            {
+                results.Add(new { moduleId = module.Id, moduleTitle = module.Title, matchedCount = 0, error = (string?)null });
+                continue;
+            }
+
+            var tagging = await _tagging.ProposeCoverageAsync(
+                new ModuleSkillGraphTaggingRequest(module.Id, module.Title, module.Description ?? "", module.CefrLevel!, module.Skill!, candidateNodes), ct);
+
+            if (!tagging.Success)
+            {
+                results.Add(new { moduleId = module.Id, moduleTitle = module.Title, matchedCount = 0, error = tagging.ErrorMessage });
+                continue;
+            }
+
+            foreach (var match in tagging.Matches)
+                _db.ModuleSkillGraphNodeLinks.Add(new ModuleSkillGraphNodeLink(module.Id, match.NodeId, match.Confidence));
+
+            results.Add(new { moduleId = module.Id, moduleTitle = module.Title, matchedCount = tagging.Matches.Count, error = (string?)null });
+        }
+
+        await _db.SaveChangesAsync(ct);
+
+        return Ok(new { sweptCount = candidateModules.Count, results });
+    }
+
+    /// <summary>Sprint 2 — per-node content coverage: how many approved Modules are actually linked
+    /// to each approved node. Distinct from <see cref="GetCoverage"/> (which counts nodes
+    /// themselves, not content linked to them) — this is the gap that matters once the graph is
+    /// approved: an approved node with zero linked Modules has no real content behind it yet.</summary>
+    [HttpGet("content-coverage")]
+    public async Task<IActionResult> GetContentCoverage(CancellationToken ct)
+    {
+        var linkedCounts = await _db.ModuleSkillGraphNodeLinks.AsNoTracking()
+            .GroupBy(l => l.SkillGraphNodeId)
+            .Select(g => new { NodeId = g.Key, Count = g.Count() })
+            .ToListAsync(ct);
+        var linkedCountsByNode = linkedCounts.ToDictionary(c => c.NodeId, c => c.Count);
+
+        var approvedNodes = await _db.SkillGraphNodes.AsNoTracking()
+            .Where(n => n.ReviewStatus == AdminReviewStatus.Approved && n.IsActive)
+            .Select(n => new { n.Id, n.Key, n.Title, n.CefrLevel, n.Skill })
+            .ToListAsync(ct);
+
+        var nodesWithoutContent = approvedNodes
+            .Where(n => !linkedCountsByNode.ContainsKey(n.Id))
+            .Select(n => new { n.Id, n.Key, n.Title, n.CefrLevel, n.Skill })
+            .ToList();
+
+        return Ok(new
+        {
+            totalApprovedNodes = approvedNodes.Count,
+            nodesWithContent = approvedNodes.Count - nodesWithoutContent.Count,
+            nodesWithoutContentCount = nodesWithoutContent.Count,
+            nodesWithoutContent,
+        });
     }
 
     private static (List<Guid> Ids, bool LimitReached) Bound(IReadOnlyList<Guid> ids)

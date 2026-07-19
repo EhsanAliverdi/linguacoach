@@ -74,3 +74,38 @@ public sealed record SkillGraphNodeDraftProposal(
     int DifficultyBand,
     string? DescriptionForAi,
     IReadOnlyList<string> PrerequisiteTitles);
+
+/// <summary>Sprint 2 — AI-proposes which approved <c>SkillGraphNode</c>s an existing
+/// <c>Module</c> covers. Advisory only: every proposed node key is validated against the real
+/// candidate list given in the request before being trusted — an AI-hallucinated key is dropped,
+/// never applied. Unlike node drafting (Sprint 1, admin-batch-approved), this result is
+/// auto-applied per the explicit "auto-apply, spot-checked via coverage dashboard" decision — there
+/// is no separate approval step for individual tag links.</summary>
+public interface IModuleSkillGraphTaggingService
+{
+    Task<ModuleSkillGraphTaggingResult> ProposeCoverageAsync(
+        ModuleSkillGraphTaggingRequest request, CancellationToken ct = default);
+}
+
+/// <summary>One Module's re-tagging request. <c>CandidateNodes</c> is the real, already
+/// CEFR/skill-filtered set of approved nodes the AI is allowed to choose from — bounded per
+/// AGENTS.md and because a hallucinated node key must be structurally impossible to apply, not just
+/// filtered after the fact.</summary>
+public sealed record ModuleSkillGraphTaggingRequest(
+    Guid ModuleId,
+    string ModuleTitle,
+    string ModuleDescription,
+    string CefrLevel,
+    string Skill,
+    IReadOnlyList<SkillGraphNodeCandidate> CandidateNodes);
+
+/// <summary>A candidate node the AI is allowed to match a Module against — Title is included so the
+/// AI has enough context to judge relevance; Key is the value it must echo back exactly.</summary>
+public sealed record SkillGraphNodeCandidate(Guid Id, string Key, string Title);
+
+public sealed record ModuleSkillGraphTaggingResult(
+    bool Success,
+    IReadOnlyList<ModuleSkillGraphNodeMatch> Matches,
+    string? ErrorMessage);
+
+public sealed record ModuleSkillGraphNodeMatch(Guid NodeId, double Confidence);
