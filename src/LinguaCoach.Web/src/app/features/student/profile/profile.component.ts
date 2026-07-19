@@ -13,6 +13,7 @@ import {
   ProfileService,
   StudentProfileResponse,
   UpdateLearningPreferencesRequest,
+  StudentGoalWeight,
 } from '../../../core/services/profile.service';
 import {
   NotificationPreferencesService,
@@ -25,23 +26,22 @@ import {
   PlacementConfig,
 } from '../../../core/models/placement.models';
 
-/** Keys must match the onboarding "learning_goals" MultipleChoiceQuestion choices
- * (OnboardingFlowSeeder.cs) exactly — StudentProfile.LearningGoals stores raw choice keys,
- * and this page must recognise them as selected, not just goals picked here. Extra
- * profile-only options (not offered during onboarding) get their own keys. */
-const PREDEFINED_LEARNING_GOALS: ReadonlyArray<{ key: string; label: string }> = [
-  { key: 'day_to_day', label: 'Day-to-day English' },
-  { key: 'travel', label: 'Travel English' },
-  { key: 'work', label: 'Workplace English' },
-  { key: 'study', label: 'Academic English' },
-  { key: 'migration', label: 'Migration & settlement' },
-  { key: 'job_interview', label: 'Job interviews' },
-  { key: 'social', label: 'Social conversation' },
-  { key: 'pronunciation', label: 'Pronunciation' },
-  { key: 'listening_confidence', label: 'Listening confidence' },
-  { key: 'writing_confidence', label: 'Writing confidence' },
-  { key: 'exam_inspired_practice', label: 'Exam-inspired practice' },
-];
+/** Adaptive Curriculum Sprint 3 — replaces the old free-list "Learning goals" chips below.
+ * Keys must match CurriculumContextTagConstants.GoalTags exactly (Domain/Constants), since these
+ * are the same tags approved bank-first content is actually tagged with — the old chip list above
+ * used a different, unrelated key vocabulary (OnboardingFlowSeeder.cs) that never matched content
+ * tags, so it could never actually drive what a student sees. See
+ * docs/architecture/adaptive-curriculum-skill-graph.md. */
+const GOAL_TAG_LABELS: Readonly<Record<string, string>> = {
+  general_english: 'General English',
+  day_to_day: 'Day-to-day English',
+  travel: 'Travel English',
+  study_academic: 'Academic English',
+  migration_settlement: 'Migration & settlement',
+  job_interviews: 'Job interviews',
+  social_conversation: 'Social conversation',
+  workplace: 'Workplace English',
+};
 
 /** Keys must match the onboarding "focus_areas" MultipleChoiceQuestion choices
  * (OnboardingFlowSeeder.cs) exactly — see note on PREDEFINED_LEARNING_GOALS above. */
@@ -203,32 +203,40 @@ const SUPPORT_LANGUAGES = [
         }
       </div>
 
-      <!-- Section 3: Learning goals -->
-      <div class="sp-section-h"><h3>Learning goals</h3></div>
-      <div class="sp-card" style="padding:18px;margin-bottom:16px">
-        <div style="font-size:12px;color:var(--sp-muted);margin-bottom:10px">Select what you want to achieve</div>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px" data-testid="learning-goals-chips">
-          @for (goal of predefinedGoals; track goal.key) {
-            <button
-              type="button"
-              (click)="toggleGoal(goal.key)"
-              class="sp-pref-chip"
-              [class.sp-pref-chip--on]="isGoalSelected(goal.key)"
-              [attr.aria-pressed]="isGoalSelected(goal.key)"
-              [attr.data-testid]="'goal-chip-' + goal.key"
-            >{{ goal.label }}</button>
+      <!-- Section 3: My Goals (Adaptive Curriculum Sprint 3) -->
+      <div class="sp-section-h"><h3>My Goals</h3></div>
+      <div class="sp-card" style="padding:18px;margin-bottom:16px" data-testid="my-goals-section">
+        <div style="font-size:12px;color:var(--sp-muted);margin-bottom:14px">
+          How much does each of these matter to you right now? This shapes which topics you see most —
+          you can change it anytime, and it also adjusts on its own as you practice.
+        </div>
+        @if (goalsLoading()) {
+          <div style="font-size:13px;color:var(--sp-muted)">Loading your goals...</div>
+        }
+        @if (!goalsLoading()) {
+          <div style="display:flex;flex-direction:column;gap:14px" data-testid="goal-weight-list">
+            @for (tag of goalTags(); track tag) {
+              <div [attr.data-testid]="'goal-weight-' + tag">
+                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">
+                  <span style="font-size:13px;font-weight:600;color:var(--sp-ink)">{{ goalLabel(tag) }}</span>
+                  <span style="font-size:11px;color:var(--sp-muted)">{{ goalPercent(tag) }}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  [value]="goalPercent(tag)"
+                  (change)="onGoalWeightChange(tag, $event)"
+                  [attr.data-testid]="'goal-slider-' + tag"
+                  style="width:100%"
+                />
+              </div>
+            }
+          </div>
+          @if (goalsSaveStatus()) {
+            <div style="font-size:11px;color:var(--sp-brand);margin-top:10px" data-testid="goals-save-status">{{ goalsSaveStatus() }}</div>
           }
-        </div>
-        <div>
-          <label style="font-size:12px;font-weight:600;color:var(--sp-muted);display:block;margin-bottom:4px">Custom goal</label>
-          <input
-            [(ngModel)]="form.customLearningGoal"
-            placeholder="Something not on the list"
-            maxlength="200"
-            data-testid="custom-goal-input"
-            style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--sp-border);border-radius:var(--sp-r-md);font-size:13px;color:var(--sp-ink);background:var(--sp-canvas)"
-          />
-        </div>
+        }
       </div>
 
       <!-- Section 4: Focus areas -->
@@ -410,7 +418,6 @@ const SUPPORT_LANGUAGES = [
   `,
 })
 export class ProfileComponent implements OnInit {
-  readonly predefinedGoals = PREDEFINED_LEARNING_GOALS;
   readonly predefinedFocusAreas = PREDEFINED_FOCUS_AREAS;
   readonly supportLanguages = SUPPORT_LANGUAGES;
   readonly sessionLengths = [10, 15, 20, 30, 45];
@@ -448,8 +455,6 @@ export class ProfileComponent implements OnInit {
     supportLanguageCode: string | null;
     supportLanguageName: string | null;
     translationHelpPreference: number | null;
-    learningGoals: string[];
-    customLearningGoal: string | null;
     focusAreas: string[];
     customFocusArea: string | null;
     difficultyPreference: number | null;
@@ -459,13 +464,18 @@ export class ProfileComponent implements OnInit {
     supportLanguageCode: null,
     supportLanguageName: null,
     translationHelpPreference: null,
-    learningGoals: [],
-    customLearningGoal: null,
     focusAreas: [],
     customFocusArea: null,
     difficultyPreference: null,
     preferredSessionDurationMinutes: null,
   };
+
+  // Adaptive Curriculum Sprint 3 — My Goals (weighted goal vector), replaces the old
+  // free-list "Learning goals" chips above.
+  goalTags = signal<string[]>([]);
+  goalWeights = signal<Map<string, number>>(new Map());
+  goalsLoading = signal(true);
+  goalsSaveStatus = signal('');
 
   avatarLetter = computed(() => {
     const p = this.profile();
@@ -492,6 +502,8 @@ export class ProfileComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.loadGoals();
+
     this.profileService.getProfile().subscribe({
       next: p => {
         this.profile.set(p);
@@ -500,8 +512,6 @@ export class ProfileComponent implements OnInit {
           supportLanguageCode: p.supportLanguageCode ?? null,
           supportLanguageName: p.supportLanguageName ?? null,
           translationHelpPreference: this.translationHelpToInt(p.translationHelpPreference),
-          learningGoals: p.learningGoals ?? [],
-          customLearningGoal: p.customLearningGoal ?? null,
           focusAreas: p.focusAreas ?? [],
           customFocusArea: p.customFocusArea ?? null,
           difficultyPreference: this.difficultyToInt(p.difficultyPreference),
@@ -571,16 +581,45 @@ export class ProfileComponent implements OnInit {
     });
   }
 
-  isGoalSelected(goal: string): boolean {
-    return this.form.learningGoals.includes(goal);
+  // Adaptive Curriculum Sprint 3 — My Goals (weighted goal vector).
+  private loadGoals(): void {
+    this.goalsLoading.set(true);
+    this.profileService.getGoals().subscribe({
+      next: r => {
+        this.goalTags.set(r.goalTags);
+        const map = new Map<string, number>();
+        for (const g of r.goals) map.set(g.goalTag, g.weight);
+        this.goalWeights.set(map);
+        this.goalsLoading.set(false);
+      },
+      error: () => this.goalsLoading.set(false),
+    });
   }
 
-  toggleGoal(goal: string): void {
-    if (this.isGoalSelected(goal)) {
-      this.form.learningGoals = this.form.learningGoals.filter(g => g !== goal);
-    } else if (this.form.learningGoals.length < 10) {
-      this.form.learningGoals = [...this.form.learningGoals, goal];
-    }
+  goalLabel(tag: string): string {
+    return GOAL_TAG_LABELS[tag] ?? tag;
+  }
+
+  goalPercent(tag: string): number {
+    return Math.round((this.goalWeights().get(tag) ?? 0) * 100);
+  }
+
+  onGoalWeightChange(tag: string, event: Event): void {
+    const percent = Number((event.target as HTMLInputElement).value);
+    const weight = Math.max(0, Math.min(1, percent / 100));
+
+    const next = new Map(this.goalWeights());
+    next.set(tag, weight);
+    this.goalWeights.set(next);
+
+    this.goalsSaveStatus.set('Saving...');
+    this.profileService.setGoalWeight(tag, weight).subscribe({
+      next: () => {
+        this.goalsSaveStatus.set('Saved.');
+        setTimeout(() => this.goalsSaveStatus.set(''), 2000);
+      },
+      error: () => this.goalsSaveStatus.set('Could not save — please try again.'),
+    });
   }
 
   isFocusAreaSelected(area: string): boolean {
@@ -610,8 +649,6 @@ export class ProfileComponent implements OnInit {
       supportLanguageCode: this.form.supportLanguageCode || null,
       supportLanguageName: this.form.supportLanguageName || null,
       translationHelpPreference: this.form.translationHelpPreference,
-      learningGoals: this.form.learningGoals,
-      customLearningGoal: this.form.customLearningGoal || null,
       focusAreas: this.form.focusAreas,
       customFocusArea: this.form.customFocusArea || null,
       difficultyPreference: this.form.difficultyPreference,

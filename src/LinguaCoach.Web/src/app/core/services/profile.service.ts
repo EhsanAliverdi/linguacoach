@@ -24,6 +24,19 @@ export interface StudentProfileResponse {
   learningPreferencesUpdatedAt: string | null;
 }
 
+// Adaptive Curriculum Sprint 3 — a student's own weighted goal vector.
+export interface StudentGoalWeight {
+  goalTag: string;
+  weight: number;
+  source: 'Explicit' | 'Implicit';
+  updatedAtUtc: string;
+}
+
+export interface StudentGoalsResponse {
+  goalTags: string[];
+  goals: StudentGoalWeight[];
+}
+
 export interface UpdateLearningPreferencesRequest {
   preferredName?: string | null;
   supportLanguageCode?: string | null;
@@ -49,5 +62,13 @@ export class ProfileService {
 
   updatePreferences(request: UpdateLearningPreferencesRequest): Observable<void> {
     return this.http.put<void>(`${this.api}/profile/preferences`, request);
+  }
+
+  getGoals(): Observable<StudentGoalsResponse> {
+    return this.http.get<StudentGoalsResponse>(`${this.api}/profile/goals`);
+  }
+
+  setGoalWeight(goalTag: string, weight: number): Observable<void> {
+    return this.http.put<void>(`${this.api}/profile/goals/${goalTag}`, { weight });
   }
 }

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using LinguaCoach.Application.Activity;
+using LinguaCoach.Application.GoalVector;
 using LinguaCoach.Application.Learning;
 using LinguaCoach.Application.LearningPlan;
 using LinguaCoach.Application.Memory;
@@ -10,6 +11,7 @@ using LinguaCoach.Application.Writing;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.Ai;
+using LinguaCoach.Infrastructure.GoalVector;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -34,6 +36,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
     private readonly IWritingEvaluationService _writingEvaluation;
     private readonly IActivityContentFingerprintService _fingerprintService;
     private readonly IActivityFeedbackPolicyProvider _feedbackPolicyProvider;
+    private readonly IStudentGoalVectorService _goalVector;
     private readonly ILogger<ActivitySubmitHandler> _logger;
 
     public ActivitySubmitHandler(
@@ -53,6 +56,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         IWritingEvaluationService writingEvaluation,
         IActivityContentFingerprintService fingerprintService,
         IActivityFeedbackPolicyProvider feedbackPolicyProvider,
+        IStudentGoalVectorService goalVector,
         ILogger<ActivitySubmitHandler> logger)
     {
         _db = db;
@@ -71,6 +75,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
         _writingEvaluation = writingEvaluation;
         _fingerprintService = fingerprintService;
         _feedbackPolicyProvider = feedbackPolicyProvider;
+        _goalVector = goalVector;
         _logger = logger;
     }
 
@@ -596,6 +601,15 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             // as SourceTemplateId/SourceBankItemId already being permanently null since Pass A.
             const bool isIntentionalReview = false;
 
+            // Adaptive Curriculum Sprint 3 — this attempt's bank-first Module (if any), via the
+            // H10 launch bridge, is the only current source of a real ContextTagsJson snapshot for
+            // this attempt. Best-effort: a legacy-generated activity has no StudentExerciseLaunch
+            // row and simply yields no context tags, same as it always has.
+            var moduleContextTagsJson = await _db.StudentExerciseLaunches.AsNoTracking()
+                .Where(l => l.LearningActivityId == activity.Id)
+                .Join(_db.Modules.AsNoTracking(), l => l.ModuleId, m => m.Id, (l, m) => m.ContextTagsJson)
+                .FirstOrDefaultAsync(ct);
+
             var fingerprint = _fingerprintService.ComputeFingerprint(new ActivityContentFingerprintRequest(
                 ContentJson: contentJson,
                 ContentShape: contentShape,
@@ -617,7 +631,7 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
                 subskill: null,
                 cefrLevel: profile.CefrLevel,
                 curriculumObjectiveKey: curriculumObjectiveKey,
-                contextTagsJson: null,
+                contextTagsJson: moduleContextTagsJson,
                 focusTagsJson: null,
                 isIntentionalReview: isIntentionalReview,
                 reviewReason: null);
@@ -628,6 +642,22 @@ public sealed class ActivitySubmitHandler : ISubmitActivityAttemptHandler
             _logger.LogInformation(
                 "UsageLog written ActivityId={ActivityId} Fingerprint={Fingerprint} IsIntentionalReview={IsIntentionalReview}",
                 activity.Id, fingerprint, isIntentionalReview);
+
+            // Adaptive Curriculum Sprint 3 — implicit goal-vector drift from real engagement.
+            // Best-effort and isolated from the usage-log write above: a drift failure must never
+            // roll back or block the usage log (already saved) or the student's real attempt.
+            var contextTags = StudentGoalVectorService.ParseContextTags(moduleContextTagsJson);
+            if (contextTags.Count > 0)
+            {
+                try
+                {
+                    await _goalVector.RecordImplicitEngagementAsync(profile.Id, contextTags, ct);
+                }
+                catch (Exception goalEx)
+                {
+                    _logger.LogWarning(goalEx, "Implicit goal-vector drift failed for StudentId={StudentId} (non-blocking).", profile.Id);
+                }
+            }
         }
         catch (Exception ex)
         {

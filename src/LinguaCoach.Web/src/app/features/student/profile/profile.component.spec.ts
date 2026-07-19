@@ -3,7 +3,7 @@ import { of, throwError } from 'rxjs';
 import { provideRouter } from '@angular/router';
 import { ProfileComponent } from './profile.component';
 import { AuthService } from '../../../core/services/auth.service';
-import { ProfileService, StudentProfileResponse } from '../../../core/services/profile.service';
+import { ProfileService, StudentProfileResponse, StudentGoalsResponse } from '../../../core/services/profile.service';
 import { NotificationPreferencesService, NotificationPreferenceItem } from '../../../core/services/notification-preferences.service';
 import { PlacementService } from '../../../core/services/placement.service';
 import { AdaptivePlacementSummary, PlacementConfig } from '../../../core/models/placement.models';
@@ -36,6 +36,13 @@ const MOCK_PROFILE: StudentProfileResponse = {
   preferredSessionDurationMinutes: 20,
   difficultyPreference: 'Balanced',
   learningPreferencesUpdatedAt: null,
+};
+
+const MOCK_GOALS: StudentGoalsResponse = {
+  goalTags: ['general_english', 'day_to_day', 'travel', 'study_academic', 'migration_settlement', 'job_interviews', 'social_conversation', 'workplace'],
+  goals: [
+    { goalTag: 'day_to_day', weight: 0.4, source: 'Explicit', updatedAtUtc: '2026-07-01T00:00:00Z' },
+  ],
 };
 
 const MOCK_PLACEMENT: AdaptivePlacementSummary = {
@@ -74,9 +81,11 @@ describe('ProfileComponent', () => {
   let placementService: jasmine.SpyObj<PlacementService>;
 
   beforeEach(() => {
-    profileService = jasmine.createSpyObj('ProfileService', ['getProfile', 'updatePreferences']);
+    profileService = jasmine.createSpyObj('ProfileService', ['getProfile', 'updatePreferences', 'getGoals', 'setGoalWeight']);
     profileService.getProfile.and.returnValue(of(MOCK_PROFILE));
     profileService.updatePreferences.and.returnValue(of(undefined));
+    profileService.getGoals.and.returnValue(of(MOCK_GOALS));
+    profileService.setGoalWeight.and.returnValue(of(undefined));
 
     authService = jasmine.createSpyObj('AuthService', ['logout'], {
       currentUser: () => ({ email: 'jane@example.com', role: 'Student', mustChangePassword: false }),
@@ -149,45 +158,47 @@ describe('ProfileComponent', () => {
 
   // â”€â”€ Learning goals multi-select â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-  it('renders learning goals chip list', fakeAsync(() => {
+  it('loads goals on init', fakeAsync(() => {
+    create();
+    tick();
+    expect(profileService.getGoals).toHaveBeenCalledTimes(1);
+  }));
+
+  it('renders one slider per recognized goal tag', fakeAsync(() => {
     const fixture = create();
     tick();
     fixture.detectChanges();
-    const chipsEl = fixture.nativeElement.querySelector('[data-testid="learning-goals-chips"]');
-    expect(chipsEl).toBeTruthy();
-    const buttons = chipsEl.querySelectorAll('button');
-    expect(buttons.length).toBeGreaterThan(5);
+    const listEl = fixture.nativeElement.querySelector('[data-testid="goal-weight-list"]');
+    expect(listEl).toBeTruthy();
+    expect(listEl.querySelectorAll('input[type="range"]').length).toBe(MOCK_GOALS.goalTags.length);
   }));
 
-  it('toggleGoal adds goal to form.learningGoals', fakeAsync(() => {
+  it('goalPercent reflects the loaded weight for a set goal', fakeAsync(() => {
     const fixture = create();
     tick();
     fixture.detectChanges();
     const component = fixture.componentInstance;
-    const initialCount = component.form.learningGoals.length;
-    component.toggleGoal('travel');
-    expect(component.form.learningGoals).toContain('travel');
-    expect(component.form.learningGoals.length).toBe(initialCount + 1);
+    expect(component.goalPercent('day_to_day')).toBe(40);
   }));
 
-  it('toggleGoal removes goal when already selected', fakeAsync(() => {
+  it('goalPercent defaults to 0 for an unset goal', fakeAsync(() => {
     const fixture = create();
     tick();
     fixture.detectChanges();
     const component = fixture.componentInstance;
-    // 'day_to_day' is already in MOCK_PROFILE.learningGoals
-    const initialCount = component.form.learningGoals.length;
-    component.toggleGoal('day_to_day');
-    expect(component.form.learningGoals).not.toContain('day_to_day');
-    expect(component.form.learningGoals.length).toBe(initialCount - 1);
+    expect(component.goalPercent('travel')).toBe(0);
   }));
 
-  it('custom goal input is present', fakeAsync(() => {
+  it('onGoalWeightChange calls setGoalWeight with the normalized 0-1 value', fakeAsync(() => {
     const fixture = create();
     tick();
     fixture.detectChanges();
-    const input = fixture.nativeElement.querySelector('[data-testid="custom-goal-input"]');
-    expect(input).toBeTruthy();
+    const component = fixture.componentInstance;
+    const fakeEvent = { target: { value: '70' } } as unknown as Event;
+    component.onGoalWeightChange('travel', fakeEvent);
+    tick();
+    expect(profileService.setGoalWeight).toHaveBeenCalledWith('travel', 0.7);
+    expect(component.goalPercent('travel')).toBe(70);
   }));
 
   // â”€â”€ Support language â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -226,13 +237,11 @@ describe('ProfileComponent', () => {
     fixture.detectChanges();
     const component = fixture.componentInstance;
     component.form.preferredName = 'Janie';
-    component.form.learningGoals = ['day_to_day', 'travel'];
     component.save();
     tick();
     expect(profileService.updatePreferences).toHaveBeenCalledWith(
       jasmine.objectContaining({
         preferredName: 'Janie',
-        learningGoals: ['day_to_day', 'travel'],
       })
     );
   }));
@@ -262,26 +271,20 @@ describe('ProfileComponent', () => {
 
   // â”€â”€ Chip selected states â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-  it('selected chip has aria-pressed=true', fakeAsync(() => {
+  it('slider for a goal with a saved weight reflects that value', fakeAsync(() => {
     const fixture = create();
     tick();
     fixture.detectChanges();
-    const chips = fixture.nativeElement.querySelectorAll('[data-testid="learning-goals-chips"] button');
-    const selectedChip = Array.from(chips as NodeListOf<HTMLButtonElement>).find(
-      (b: HTMLButtonElement) => b.textContent?.trim() === 'Day-to-day English'
-    );
-    expect(selectedChip!.getAttribute('aria-pressed')).toBe('true');
+    const slider = fixture.nativeElement.querySelector('[data-testid="goal-slider-day_to_day"]') as HTMLInputElement;
+    expect(slider.value).toBe('40');
   }));
 
-  it('unselected chip has aria-pressed=false', fakeAsync(() => {
+  it('slider for a goal with no saved weight defaults to 0', fakeAsync(() => {
     const fixture = create();
     tick();
     fixture.detectChanges();
-    const chips = fixture.nativeElement.querySelectorAll('[data-testid="learning-goals-chips"] button');
-    const unselectedChip = Array.from(chips as NodeListOf<HTMLButtonElement>).find(
-      (b: HTMLButtonElement) => b.textContent?.trim() === 'Travel English'
-    );
-    expect(unselectedChip!.getAttribute('aria-pressed')).toBe('false');
+    const slider = fixture.nativeElement.querySelector('[data-testid="goal-slider-travel"]') as HTMLInputElement;
+    expect(slider.value).toBe('0');
   }));
 
   it('difficulty chip shows selected state for Balanced', fakeAsync(() => {
@@ -412,22 +415,22 @@ describe('ProfileComponent', () => {
     expect(fixture.componentInstance.prefsLoading()).toBeFalse();
   }));
 
-  // ── Learning goals: Workplace selectable not default (#6) ─────────────────
+  // ── My Goals: Workplace selectable not default (#6) ────────────────────────
 
-  it('Workplace English chip is present in the goal list', fakeAsync(() => {
+  it('Workplace slider is present in the goal list', fakeAsync(() => {
     const fixture = create();
     tick();
     fixture.detectChanges();
-    const chip = fixture.nativeElement.querySelector('[data-testid="goal-chip-work"]');
-    expect(chip).toBeTruthy();
+    const slider = fixture.nativeElement.querySelector('[data-testid="goal-slider-workplace"]');
+    expect(slider).toBeTruthy();
   }));
 
-  it('Workplace English is not pre-selected by default', fakeAsync(() => {
+  it('Workplace is not weighted by default', fakeAsync(() => {
     const fixture = create();
     tick();
     fixture.detectChanges();
-    const chip = fixture.nativeElement.querySelector('[data-testid="goal-chip-work"]');
-    expect(chip.getAttribute('aria-pressed')).toBe('false');
+    const slider = fixture.nativeElement.querySelector('[data-testid="goal-slider-workplace"]') as HTMLInputElement;
+    expect(slider.value).toBe('0');
   }));
 
   // ── Placement summary (#14, #15) ──────────────────────────────────────────

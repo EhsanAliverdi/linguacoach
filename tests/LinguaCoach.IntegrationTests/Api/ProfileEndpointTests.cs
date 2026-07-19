@@ -129,4 +129,89 @@ public sealed class ProfileEndpointTests : IClassFixture<ActivityTestFactory>
 
         Assert.Equal(initialCefr, afterCefr);
     }
+
+    // ── Adaptive Curriculum Sprint 3: My Goals ──────────────────────────────────
+
+    [Fact]
+    public async Task GetGoals_Unauthenticated_Returns401()
+    {
+        var client = _factory.CreateClient();
+        var resp = await client.GetAsync("/api/profile/goals");
+        Assert.Equal(HttpStatusCode.Unauthorized, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetGoals_NewStudent_ReturnsTaxonomyWithNoGoalsSet()
+    {
+        var (token, _) = await _factory.CreateOnboardedStudentAsync($"goals_get_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(token);
+
+        var resp = await client.GetAsync("/api/profile/goals");
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(body.GetProperty("goalTags").GetArrayLength() == 8);
+        Assert.Equal(0, body.GetProperty("goals").GetArrayLength());
+    }
+
+    [Fact]
+    public async Task SetGoal_ValidTag_PersistsAndReturnsInGet()
+    {
+        var (token, _) = await _factory.CreateOnboardedStudentAsync($"goals_set_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(token);
+
+        var putResp = await client.PutAsJsonAsync("/api/profile/goals/travel", new { weight = 0.6 });
+        Assert.Equal(HttpStatusCode.NoContent, putResp.StatusCode);
+
+        var getResp = await client.GetAsync("/api/profile/goals");
+        var body = await getResp.Content.ReadFromJsonAsync<JsonElement>();
+        var goal = body.GetProperty("goals").EnumerateArray().Single();
+        Assert.Equal("travel", goal.GetProperty("goalTag").GetString());
+        Assert.Equal(0.6, goal.GetProperty("weight").GetDouble());
+        Assert.Equal("Explicit", goal.GetProperty("source").GetString());
+    }
+
+    [Fact]
+    public async Task SetGoal_InvalidTag_ReturnsBadRequest()
+    {
+        var (token, _) = await _factory.CreateOnboardedStudentAsync($"goals_invalid_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(token);
+
+        var resp = await client.PutAsJsonAsync("/api/profile/goals/not_a_real_tag", new { weight = 0.5 });
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task SetGoal_NonGoalContextTag_ReturnsBadRequest()
+    {
+        // "pronunciation" is a real CurriculumContextTagConstants value but not a goal tag.
+        var (token, _) = await _factory.CreateOnboardedStudentAsync($"goals_notgoal_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(token);
+
+        var resp = await client.PutAsJsonAsync("/api/profile/goals/pronunciation", new { weight = 0.5 });
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task SetGoal_Twice_UpdatesInPlaceNotDuplicate()
+    {
+        var (token, _) = await _factory.CreateOnboardedStudentAsync($"goals_twice_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(token);
+
+        await client.PutAsJsonAsync("/api/profile/goals/travel", new { weight = 0.2 });
+        await client.PutAsJsonAsync("/api/profile/goals/travel", new { weight = 0.9 });
+
+        var body = await (await client.GetAsync("/api/profile/goals")).Content.ReadFromJsonAsync<JsonElement>();
+        var goals = body.GetProperty("goals").EnumerateArray().ToList();
+        Assert.Single(goals);
+        Assert.Equal(0.9, goals[0].GetProperty("weight").GetDouble());
+    }
+
+    [Fact]
+    public async Task SetGoal_Unauthenticated_Returns401()
+    {
+        var client = _factory.CreateClient();
+        var resp = await client.PutAsJsonAsync("/api/profile/goals/travel", new { weight = 0.5 });
+        Assert.Equal(HttpStatusCode.Unauthorized, resp.StatusCode);
+    }
 }

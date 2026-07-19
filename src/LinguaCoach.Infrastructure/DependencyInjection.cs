@@ -689,6 +689,11 @@ public static class DependencyInjection
         // Adaptive Curriculum Sprint 2 — Module-to-skill-graph-node AI re-tagging.
         services.AddScoped<LinguaCoach.Application.SkillGraph.IModuleSkillGraphTaggingService,
             LinguaCoach.Infrastructure.SkillGraph.ModuleSkillGraphTaggingService>();
+        // Adaptive Curriculum Sprint 3 — per-student weighted goal vector.
+        services.AddScoped<LinguaCoach.Application.GoalVector.IStudentGoalVectorService,
+            LinguaCoach.Infrastructure.GoalVector.StudentGoalVectorService>();
+        services.AddScoped<LinguaCoach.Application.GoalVector.IStudentGoalVectorBackfillService,
+            LinguaCoach.Infrastructure.GoalVector.StudentGoalVectorBackfillService>();
 
         // Phase 4 (2026-07-15) — large-scale AI import packages. App never crashes on a missing
         // "ImportPackageLimits" config section — sensible defaults are baked into the options class.
