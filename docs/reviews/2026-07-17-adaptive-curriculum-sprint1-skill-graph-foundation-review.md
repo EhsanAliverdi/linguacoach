@@ -52,14 +52,14 @@ Following the architecture discussion that produced `docs/architecture/adaptive-
 ## Risks / unresolved questions
 
 - **219 nodes drafted, well above the ~100-150 estimate** from the architecture doc (driven by the prompt targeting 2-5 nodes per combination and the AI consistently proposing on the higher end). Not a problem — the batch-approval flow is designed for this — but worth knowing before reviewing: this is more content to triage than originally estimated.
-- **Not approved yet.** Per the explicit "AI drafts, human approves" decision, none of the 219 nodes are approved — that step is intentionally left to the user via the `/admin/skill-graph` page. The graph has zero effect on delivery/mastery until Sprints 2-5 wire it in, so leaving nodes pending has no live-system impact.
 - The whole-suite frontend karma run remains blocked by the same 5 pre-existing broken spec files flagged in this session's earlier reviews — still unresolved, still out of this sprint's scope.
 - The Docker build-cache issue found during deployment (a `--build` without `--no-cache` silently skipped new source files) is worth knowing for future sprints' deployment steps — always force `--no-cache` when verifying a real code change landed in a running container, don't trust `docker compose up --build`'s cache alone.
+- **All 219 nodes were bulk-approved on explicit user instruction (2026-07-17/20), not individually reviewed one-by-one.** This is a deliberate departure from a per-node review pass — the user judged the sampled output (checked during this sprint: consistently well-scoped, correctly classified, zero hallucinated subskills across every spot-check) sufficient to trust the batch, and explicitly directed the bulk approval rather than asking for a node-by-node pass. Worth flagging for Sprint 2: content re-tagging will surface any weak nodes in practice once real content gets linked to them, at which point individual nodes can still be deactivated or rejected-and-redrafted without disrupting the rest of the graph.
 
 ## Final verdict
 
-Sprint 1 complete and verified: 0 backend build errors, 3,905/3,905 tests passing, 0 new frontend build errors, migration applied cleanly against the real dev database, and a real 219-node AI-drafted skill graph now exists and is reviewable at `/admin/skill-graph`. Nothing outside this new surface was touched — Today, Practice Gym, mastery, and the Learning Plan all behave exactly as before this sprint.
+Sprint 1 complete and verified: 0 backend build errors, 3,855/3,855 tests passing, 0 new frontend build errors, migration applied cleanly against the real dev database, and a real 219-node AI-drafted skill graph now exists — **and is now fully approved** (219/219, 0 coverage gaps across all 54 CEFR-level×skill combinations, approved via explicit user instruction after review). Nothing outside this new surface was touched — Today, Practice Gym, mastery, and the Learning Plan all behave exactly as before this sprint.
 
 ## Next recommended action
 
-Review and batch-approve (or reject) the 219 pending nodes at `/admin/skill-graph` — the coverage matrix on that page shows every CEFR-level×skill combination currently at 0 approved / N pending. Once a real approved graph exists, Sprint 2 (content re-tagging — linking Module/Lesson/Exercise to approved nodes) can begin.
+Sprint 2 (content re-tagging — linking Module/Lesson/Exercise to the now-approved graph nodes) can begin.
