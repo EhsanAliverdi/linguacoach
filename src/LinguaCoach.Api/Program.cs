@@ -306,6 +306,16 @@ if (!app.Environment.IsEnvironment("Testing"))
         scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.ResourceImport.IResourceCandidateValidationService>(),
         scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.ResourceImport.IResourceCandidatePublishService>(),
         seederLogger);
+    // Sprint 9 — a third, independent internal English depth-expansion pack (C1/C2 vocabulary and
+    // grammar), idempotent by its own source name, flowing through the same staging → validation →
+    // approval → publish pipeline as the E6/E7/E8 packs above. Fills a live-confirmed gap: prior to
+    // this, zero Vocabulary/Grammar resources existed above B2 anywhere in the bank.
+    await LinguaCoach.Persistence.Seed.InternalResourceSeedPackC1C2Seeder.SeedAsync(
+        db,
+        scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.ResourceImport.IResourceImportService>(),
+        scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.ResourceImport.IResourceCandidateValidationService>(),
+        scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.ResourceImport.IResourceCandidatePublishService>(),
+        seederLogger);
     // Storage + Quartz startup health checks (warn-only — do not block startup).
     var storage = scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.Storage.IFileStorageService>();
     var storageError = await storage.HealthCheckAsync();
