@@ -316,6 +316,18 @@ if (!app.Environment.IsEnvironment("Testing"))
         scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.ResourceImport.IResourceCandidateValidationService>(),
         scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.ResourceImport.IResourceCandidatePublishService>(),
         seederLogger);
+    // Sprint 9 — Listening depth pack. Unlike the text-only packs above, this one synthesizes real
+    // audio via Gemini TTS (using the admin-configured ai_provider_credentials key, since this
+    // dev environment has no GEMINI_API_KEY env var) — a no-op if no Gemini key is configured.
+    await LinguaCoach.Infrastructure.ResourceImport.InternalResourceSeedPackListeningSeeder.SeedAsync(
+        db,
+        scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.ResourceImport.IResourceImportService>(),
+        scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.ResourceImport.IResourceCandidateValidationService>(),
+        scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.ResourceImport.IResourceCandidatePublishService>(),
+        scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.ResourceImport.IResourceCandidateContentSerializer>(),
+        scope.ServiceProvider,
+        scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.Storage.IFileStorageService>(),
+        seederLogger);
     // Storage + Quartz startup health checks (warn-only — do not block startup).
     var storage = scope.ServiceProvider.GetRequiredService<LinguaCoach.Application.Storage.IFileStorageService>();
     var storageError = await storage.HealthCheckAsync();
