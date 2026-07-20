@@ -62,6 +62,14 @@ export class DashboardComponent implements OnInit {
     return s ? s.reviewItems.length : null;
   });
 
+  /** Sprint 9 — surfaces TodayPlanModuleSelectionService.BuildReason's own "broadened beyond an
+   * exact CEFR match" wording as a visible badge, rather than silently serving review/scaffold
+   * content with no indication to the student that it isn't an exact-level match. */
+  isTodaySelectionBroadened = computed(() => {
+    const reason = this.todayPlan()?.selectionReason;
+    return !!reason && reason.toLowerCase().includes('broadened');
+  });
+
   constructor(
     private summaryService: DashboardSummaryService,
     private placementService: PlacementService,
