@@ -191,6 +191,7 @@ public sealed class LearningPlanService : ILearningPlanService
                 LessonQueueTarget: _options.PlannedLessonCount,
                 LastCompletedAt: null,
                 CurrentObjectiveKey: null,
+                CurrentObjectiveSkill: null,
                 NextObjectiveKey: null,
                 ObjectivesCompletedToday: 0);
         }
@@ -239,16 +240,20 @@ public sealed class LearningPlanService : ILearningPlanService
             .ToList();
 
         string? currentObjectiveKey;
+        string? currentObjectiveSkill;
         string? nextObjectiveKey;
 
         if (inProgressObj is not null)
         {
             currentObjectiveKey = inProgressObj.ObjectiveKey;
+            currentObjectiveSkill = inProgressObj.Skill;
             nextObjectiveKey = activeOrdered.FirstOrDefault()?.ObjectiveKey;
         }
         else
         {
-            currentObjectiveKey = activeOrdered.FirstOrDefault()?.ObjectiveKey;
+            var currentActive = activeOrdered.FirstOrDefault();
+            currentObjectiveKey = currentActive?.ObjectiveKey;
+            currentObjectiveSkill = currentActive?.Skill;
             nextObjectiveKey = activeOrdered.Skip(1).FirstOrDefault()?.ObjectiveKey;
         }
 
@@ -275,6 +280,7 @@ public sealed class LearningPlanService : ILearningPlanService
             LessonQueueTarget: plan.PlannedLessonCount,
             LastCompletedAt: lastCompletedAtNullable,
             CurrentObjectiveKey: currentObjectiveKey,
+            CurrentObjectiveSkill: currentObjectiveSkill,
             NextObjectiveKey: nextObjectiveKey,
             ObjectivesCompletedToday: objectivesCompletedToday);
     }

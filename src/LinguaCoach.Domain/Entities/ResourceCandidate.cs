@@ -369,6 +369,30 @@ public sealed class ResourceCandidate : BaseEntity
     }
 
     /// <summary>
+    /// Platform Reliability Sprint 8 — one-time data repair, NOT a general unpublish feature (this
+    /// codebase deliberately has no unpublish step — see this class's own doc comment). Clears the
+    /// publish-state fields on a candidate whose <see cref="PublishedEntityType"/> points at a bank
+    /// table that no longer exists (the Phase I0 "drop typed bank tables" migration dropped
+    /// CefrGrammarProfileEntry/CefrReadingReference/CefrReadingPassage without migrating candidates
+    /// that had already published into them, permanently orphaning their publish reference). The
+    /// caller MUST verify <see cref="PublishedEntityId"/> does not resolve to any real, current bank
+    /// row before calling this — it is never safe to call against a candidate whose publish target
+    /// genuinely still exists.
+    /// </summary>
+    public void RepairOrphanedPublishReference()
+    {
+        if (!IsPublished)
+            throw new InvalidOperationException("Cannot repair a candidate that was never published.");
+
+        IsPublished = false;
+        PublishedEntityType = null;
+        PublishedEntityId = null;
+        PublishedAtUtc = null;
+        PublishedByUserId = null;
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
+    /// <summary>
     /// Phase J5c — attaches (or replaces) this candidate's uploaded audio file reference. The
     /// actual bytes are written to storage by the caller (see IResourceCandidateAudioService)
     /// before this is called — this method only records the resulting key. Blocked once the

@@ -201,6 +201,14 @@ public static class PlacementItemBankSeeder
         new("grammar", "B2", "multiple_choice", "Choose the correct form: 'The data ___ been analysed.' (A) have (B) has (C) had", "A"),
         new("grammar", "B2", "gap_fill", "Complete: 'It is essential that he ___ on time.' (be/is/was)", "be"),
 
+        new("grammar", "C1", "multiple_choice", "Select: 'Not only ___ late, but she also forgot the documents.' (A) she was (B) was she (C) she is", "B"),
+        new("grammar", "C1", "multiple_choice", "Choose: 'I wish I ___ harder for the exam.' (A) study (B) studied (C) had studied", "C"),
+        new("grammar", "C1", "gap_fill", "Complete: 'Were it not for his help, we ___ have finished on time.' (would not/will not/do not)", "would not"),
+
+        new("grammar", "C2", "multiple_choice", "Select the most natural: 'Rarely ___ such dedication.' (A) I have seen (B) have I seen (C) I saw", "B"),
+        new("grammar", "C2", "multiple_choice", "Choose: 'She would rather you ___ him about it now.' (A) tell (B) told (C) will tell", "B"),
+        new("grammar", "C2", "gap_fill", "Complete: 'No sooner ___ the room than the phone rang.' (had she entered/she had entered/she entered)", "had she entered"),
+
         // Vocabulary
         new("vocabulary", "A1", "multiple_choice", "What does 'big' mean? (A) large (B) small (C) fast", "A"),
         new("vocabulary", "A1", "multiple_choice", "Which word means 'to eat in the morning'? (A) breakfast (B) lunch (C) dinner", "A"),
@@ -217,6 +225,14 @@ public static class PlacementItemBankSeeder
         new("vocabulary", "B2", "multiple_choice", "What does 'ubiquitous' mean? (A) rare (B) everywhere (C) ancient", "B"),
         new("vocabulary", "B2", "multiple_choice", "Select the most formal: (A) get (B) obtain (C) grab", "B"),
         new("vocabulary", "B2", "gap_fill", "Complete: 'The new policy was met with widespread ___.' (resistance/resist/resistant)", "resistance"),
+
+        new("vocabulary", "C1", "multiple_choice", "What does 'meticulous' mean? (A) careless (B) extremely careful and precise (C) fast", "B"),
+        new("vocabulary", "C1", "multiple_choice", "Choose the best word: 'His argument was ___; every point followed logically.' (A) cogent (B) vague (C) tedious", "A"),
+        new("vocabulary", "C1", "gap_fill", "Complete: 'The negotiations reached a ___ after months of disagreement.' (impasse/success/beginning)", "impasse"),
+
+        new("vocabulary", "C2", "multiple_choice", "What does 'perfunctory' mean? (A) done with great care (B) done as a routine, without genuine interest (C) done quickly with enthusiasm", "B"),
+        new("vocabulary", "C2", "multiple_choice", "Select the closest meaning to 'equivocate': (A) speak clearly (B) avoid committing to a clear position (C) agree strongly", "B"),
+        new("vocabulary", "C2", "gap_fill", "Complete: 'Her ___ remarks left no doubt about her disapproval.' (caustic/kind/neutral)", "caustic"),
 
         // Reading — the passage is shown as a read-only block before the question (never crammed
         // into the question's own label). B2 items reference "the passage"/"the text" explicitly,
@@ -243,6 +259,26 @@ public static class PlacementItemBankSeeder
             "Complete the inference: 'The author suggests that the problem is ___.' (systemic/individual/minor)", "systemic",
             Passage: "After the third factory recall this year, executives blamed a single supplier for the defects. But industry analysts point out that similar failures have occurred across multiple suppliers and product lines, suggesting the root cause lies deeper than any one vendor."),
 
+        new("reading", "C1", "multiple_choice",
+            "The passage suggests that the committee's actions: (A) fully satisfied its transparency promise (B) undermined its own credibility (C) had no effect on public perception", "B",
+            Passage: "Although the committee had promised transparency throughout the review process, journalists noted that key documents were released only after repeated requests, and even then, in heavily redacted form. Whatever the committee's intentions, the pattern of disclosure did little to dispel suspicions that something was being concealed."),
+        new("reading", "C1", "multiple_choice",
+            "The director's response to the critics is best described as: (A) full agreement (B) a rejection of the premise (C) indifference", "B",
+            Passage: "Critics have long argued that the museum's acquisition policy favors spectacle over scholarship, prioritizing pieces that draw crowds rather than those of genuine historical significance. The museum's director has dismissed this as reductive, insisting that popular appeal and academic rigor need not be mutually exclusive."),
+        new("reading", "C1", "gap_fill",
+            "Complete the inference: 'The press coverage ___ the report's own caution.' (misrepresented/confirmed/echoed)", "misrepresented",
+            Passage: "The report's authors were careful to note that correlation does not imply causation, yet the press coverage that followed largely ignored this caveat, presenting the findings as definitive proof of a causal link."),
+
+        new("reading", "C2", "multiple_choice",
+            "The author's silence should be interpreted as: (A) agreement (B) a considered choice not to engage on those terms (C) indecision", "B",
+            Passage: "It would be tempting to read the author's reticence on the matter as tacit approval; a more careful reading, however, suggests a deliberate refusal to be drawn into a debate she regards as fundamentally miscast."),
+        new("reading", "C2", "multiple_choice",
+            "The narrator's unreliability stems primarily from: (A) deliberate lies (B) a mismatch between confidence and accuracy (C) lack of detail", "B",
+            Passage: "The novel's narrator is unreliable not through overt deception but through a subtler mechanism: an unwavering confidence in judgments that the surrounding text quietly, repeatedly undermines."),
+        new("reading", "C2", "gap_fill",
+            "Complete the inference: 'The term stakeholder engagement, as used in the report, was ___.' (misleading/accurate/thorough)", "misleading",
+            Passage: "What the report calls 'stakeholder engagement' amounted, on closer inspection, to a single meeting attended by a self-selected group already sympathetic to the proposal."),
+
         // Listening — the visible question never repeats the spoken transcript verbatim (that
         // would make the "listening" skill answerable by reading alone). ListeningScript is
         // backend-only and synthesized to audio by AdaptivePlacementAudioService.
@@ -266,6 +302,20 @@ public static class PlacementItemBankSeeder
             ListeningScript: "The proposal has some promising ideas, but honestly, it still needs quite a bit of work before it's ready to move forward."),
         new("listening", "B2", "gap_fill", "Complete what you hear: 'The analysis was ___.' (inconclusive/concluded/conclusive)", "inconclusive", ListeningScript: "The analysis was inconclusive."),
 
+        new("listening", "C1", "multiple_choice", "The speaker's attitude toward the proposal is best described as: (A) enthusiastic (B) cautiously skeptical (C) completely opposed", "B",
+            ListeningScript: "It's an interesting idea, I'll give them that, but I'm not sure the numbers really add up yet. I'd want to see a lot more evidence before I'd back it fully."),
+        new("listening", "C1", "multiple_choice", "What does the speaker imply about the deadline? (A) it is unrealistic (B) it is generous (C) it has already passed", "A",
+            ListeningScript: "Three weeks to redo the entire system? Sure, if we all stop sleeping."),
+        new("listening", "C1", "gap_fill", "Complete what you hear: 'The findings were, to put it mildly, ___.' (surprising/expected/boring)", "surprising",
+            ListeningScript: "The findings were, to put it mildly, surprising."),
+
+        new("listening", "C2", "multiple_choice", "The tone of the speaker's remark is best described as: (A) sincere praise (B) irony (C) confusion", "B",
+            ListeningScript: "Oh, brilliant, another meeting that could have been an email."),
+        new("listening", "C2", "multiple_choice", "What does the speaker suggest about the colleague's explanation? (A) it was convincing (B) it was evasive (C) it was too technical", "B",
+            ListeningScript: "He talked for ten minutes and somehow still didn't answer the question."),
+        new("listening", "C2", "gap_fill", "Complete what you hear: 'The committee's decision was, frankly, ___.' (baffling/predictable/welcome)", "baffling",
+            ListeningScript: "The committee's decision was, frankly, baffling."),
+
         // Writing (self-assessment proxy - deterministic)
         new("writing", "A1", "multiple_choice", "Which sentence is correct? (A) 'I writed a letter.' (B) 'I wrote a letter.' (C) 'I writing a letter.'", "B"),
         new("writing", "A1", "multiple_choice", "Which is correctly punctuated? (A) 'hello how are you' (B) 'Hello, how are you?' (C) 'Hello how are you!'", "B"),
@@ -282,6 +332,14 @@ public static class PlacementItemBankSeeder
         new("writing", "B2", "multiple_choice", "Which best hedges a claim? (A) 'It is certain that' (B) 'Evidence suggests that' (C) 'Everyone knows that'", "B"),
         new("writing", "B2", "multiple_choice", "Which shows strongest cohesion? (A) 'And also too' (B) 'Moreover' (C) 'Plus also'", "B"),
         new("writing", "B2", "gap_fill", "Complete: 'The findings ___ that further research is needed.' (indicate/indicates/indicating)", "indicate"),
+
+        new("writing", "C1", "multiple_choice", "Which best conveys measured criticism in formal writing? (A) 'This is completely wrong.' (B) 'This approach appears to have notable limitations.' (C) 'This is a disaster.'", "B"),
+        new("writing", "C1", "multiple_choice", "Which sentence demonstrates the most sophisticated cohesion? (A) 'It rained. We stayed inside.' (B) 'Given the persistent rain, we opted to remain indoors.' (C) 'It rained and we stayed inside.'", "B"),
+        new("writing", "C1", "gap_fill", "Complete: 'The proposal, ___ promising, requires further scrutiny before approval.' (while/despite/because)", "while"),
+
+        new("writing", "C2", "multiple_choice", "Which best achieves nuanced hedging appropriate for an academic conclusion? (A) 'This proves the theory.' (B) 'This lends some support to the theory, though further research is warranted.' (C) 'This theory is definitely true.'", "B"),
+        new("writing", "C2", "multiple_choice", "Which shows the most precise register for a formal rebuttal? (A) 'You're wrong.' (B) 'With respect, I would contend that this interpretation overlooks key evidence.' (C) 'That's not right at all.'", "B"),
+        new("writing", "C2", "gap_fill", "Complete: 'Far from resolving the dispute, the ruling ___ tensions between the two parties.' (exacerbated/reduced/ignored)", "exacerbated"),
 
         // Speaking — recorded via the "speakingResponse" Form.io component and scored by
         // IPlacementSpeakingScorer/ISpeakingEvaluationProvider (AI evaluation), not by comparison.
@@ -300,5 +358,13 @@ public static class PlacementItemBankSeeder
         new("speaking", "B2", "speaking_response", "Explain a decision you disagreed with at work, and how you handled it professionally.", ""),
         new("speaking", "B2", "speaking_response", "Describe a complex project you worked on and the trade-offs you had to consider.", ""),
         new("speaking", "B2", "speaking_response", "Discuss a trend in your industry and explain why you think it matters.", ""),
+
+        new("speaking", "C1", "speaking_response", "Discuss a controversial decision made by an organization you're familiar with, and explain the different perspectives involved.", ""),
+        new("speaking", "C1", "speaking_response", "Describe a situation where you had to persuade someone who initially disagreed with you. What approach did you take?", ""),
+        new("speaking", "C1", "speaking_response", "Talk about a significant change in your field or industry over the past few years, and its broader implications.", ""),
+
+        new("speaking", "C2", "speaking_response", "Analyze the trade-offs involved in a major decision you observed or were part of, weighing the competing priorities.", ""),
+        new("speaking", "C2", "speaking_response", "Discuss an ethical dilemma relevant to your profession, presenting arguments on more than one side.", ""),
+        new("speaking", "C2", "speaking_response", "Reflect on how your perspective on a complex issue has evolved over time, and what prompted that shift.", ""),
     ];
 }

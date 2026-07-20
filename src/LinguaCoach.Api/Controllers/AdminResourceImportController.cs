@@ -101,6 +101,7 @@ public sealed class AdminResourceCandidateController : ControllerBase
     private readonly IResourceCandidatePublishService _publishService;
     private readonly IResourceCandidateBatchActionService _batchActionService;
     private readonly IResourceCandidateAudioService _audioService;
+    private readonly IResourceCandidateOrphanRepairService _orphanRepairService;
 
     public AdminResourceCandidateController(
         IAdminResourceCandidateListQuery listQuery,
@@ -116,7 +117,8 @@ public sealed class AdminResourceCandidateController : ControllerBase
         IAdminResourceCandidateContentUpdateHandler contentUpdateHandler,
         IResourceCandidatePublishService publishService,
         IResourceCandidateBatchActionService batchActionService,
-        IResourceCandidateAudioService audioService)
+        IResourceCandidateAudioService audioService,
+        IResourceCandidateOrphanRepairService orphanRepairService)
     {
         _listQuery = listQuery;
         _getQuery = getQuery;
@@ -132,6 +134,7 @@ public sealed class AdminResourceCandidateController : ControllerBase
         _publishService = publishService;
         _batchActionService = batchActionService;
         _audioService = audioService;
+        _orphanRepairService = orphanRepairService;
     }
 
     // GET api/admin/resource-candidates?page=1&pageSize=20&sourceId=&importRunId=&candidateType=&
@@ -412,6 +415,18 @@ public sealed class AdminResourceCandidateController : ControllerBase
     {
         var result = await _batchActionService.PublishAsync(
             new BatchPublishResourceCandidatesCommand(request.CandidateIds), GetCurrentUserId(), ct);
+        return Ok(result);
+    }
+
+    // POST api/admin/resource-candidates/repair-orphaned-publish
+    // Platform Reliability Sprint 8.1 — one-time repair for candidates whose publish reference was
+    // orphaned by the Phase I0 "drop typed bank tables" migration (see
+    // IResourceCandidateOrphanRepairService for the full rationale). Idempotent: candidates that no
+    // longer match the dead-type signature are simply not returned on a re-run.
+    [HttpPost("repair-orphaned-publish")]
+    public async Task<IActionResult> RepairOrphanedPublish(CancellationToken ct)
+    {
+        var result = await _orphanRepairService.RepairOrphanedPublishReferencesAsync(ct);
         return Ok(result);
     }
 

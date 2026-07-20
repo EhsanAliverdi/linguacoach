@@ -230,7 +230,8 @@ public sealed class StudentProgressSummaryHandler : IStudentProgressSummaryHandl
             ObjectivesRemaining: plan.ObjectivesRemaining,
             CompletionPercentage: plan.CompletionPercentage,
             CurrentObjectiveKey: plan.CurrentObjectiveKey,
-            CurrentObjectiveSkill: ExtractSkillFromObjectiveKey(plan.CurrentObjectiveKey),
+            CurrentObjectiveSkill: string.IsNullOrEmpty(plan.CurrentObjectiveSkill)
+                ? null : CapitalizeSkill(plan.CurrentObjectiveSkill),
             ObjectivesCompletedToday: plan.ObjectivesCompletedToday);
     }
 
@@ -256,14 +257,6 @@ public sealed class StudentProgressSummaryHandler : IStudentProgressSummaryHandl
         var baseIdx = Array.IndexOf(order, baseline.ToUpper());
         var currIdx = Array.IndexOf(order, current.ToUpper());
         return baseIdx >= 0 && currIdx > baseIdx;
-    }
-
-    private static string? ExtractSkillFromObjectiveKey(string? key)
-    {
-        if (key == null) return null;
-        // Convention: "b1_speaking_professional_conversation" → "speaking"
-        var parts = key.Split('_');
-        return parts.Length >= 2 ? CapitalizeSkill(parts[1]) : null;
     }
 
     private static string CapitalizeSkill(string skill)

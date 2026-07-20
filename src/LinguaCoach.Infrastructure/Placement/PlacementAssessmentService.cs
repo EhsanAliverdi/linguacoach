@@ -71,7 +71,7 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
     private static bool IsUsed(PlacementItemTemplate template, IReadOnlyCollection<PlacementAssessmentItem> issuedItems) =>
         issuedItems.Any(issued => issued.SourceItemDefinitionId == template.DefinitionId);
 
-    private static readonly string[] CefrLevels = ["A1", "A2", "B1", "B2"];
+    private static readonly string[] CefrLevels = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
     private static readonly Dictionary<string, string> SkillLabels = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -214,8 +214,7 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
             return true;
         }
 
-        var allConfident = _opts.SkillsToAssess.All(skill =>
-            states.TryGetValue(skill, out var s) && s.Confidence >= _opts.ConfidenceThreshold);
+        var allConfident = _opts.SkillsToAssess.All(skill => IsSkillDone(skill, states));
 
         if (allConfident)
         {
@@ -225,7 +224,7 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
 
         // Check whether all item bank slots are exhausted for pending skills
         var allExhausted = _opts.SkillsToAssess
-            .Where(skill => !states.TryGetValue(skill, out var s) || s.Confidence < _opts.ConfidenceThreshold)
+            .Where(skill => !IsSkillDone(skill, states))
             .All(skill => !itemBank.Any(t => t.Skill == skill && !IsUsed(t, items)));
 
         if (allExhausted)
@@ -238,6 +237,20 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
         return false;
     }
 
+    /// <summary>A skill is "done" only once it has crossed the confidence threshold AND
+    /// accumulated at least <see cref="PlacementAssessmentOptions.MinItems"/> evidence — without
+    /// the evidence floor, a lucky/skilled 3-item initial streak (2 items at the starting level +
+    /// 1 above, all correct) already crosses the confidence formula's threshold via its
+    /// consecutive-success bonus, locking a skill's estimated level in at whatever level that
+    /// streak happened to reach and permanently excluding it from ever being served a harder item —
+    /// silently capping the reported CEFR level well below the student's true ceiling. Confirmed
+    /// via a live adaptive-placement walkthrough (Sprint 8): every non-speaking skill saturated at
+    /// B1 after exactly 3 correct answers, never once being offered a B2/C1/C2 item.</summary>
+    private bool IsSkillDone(string skill, Dictionary<string, SkillConfidenceState> states) =>
+        states.TryGetValue(skill, out var s)
+        && s.Confidence >= _opts.ConfidenceThreshold
+        && s.EvidenceCount >= _opts.MinItems;
+
     // ── Skill selection (assess least-evidenced skill first) ────────────────────
 
     private string? SelectNextSkill(
@@ -248,8 +261,19 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
         return _opts.SkillsToAssess
             .Where(skill =>
             {
-                if (states.TryGetValue(skill, out var s) && s.Confidence >= _opts.ConfidenceThreshold)
-                    return false; // already confident enough
+                if (IsSkillDone(skill, states))
+                    return false; // already confident enough with sufficient evidence
+                // Never queue a second item for a skill that already has one outstanding —
+                // without this, every submission's "add one more item for the least-evidenced
+                // skill" pass would keep piling extra items onto whichever skill is still 0
+                // evidence while its own initial batch hasn't been answered yet. Those extra
+                // items always default to the fallback level (SelectNextTemplate's
+                // lastForSkill-is-null branch), so a skill could accumulate enough same/low-level
+                // evidence to cross the confidence threshold before ever being served a higher
+                // level — reaching "confident" while parked at the starting level instead of
+                // climbing. Confirmed via a live adaptive-placement walkthrough (Sprint 8).
+                if (items.Any(i => i.Skill == skill && !i.IsCorrect.HasValue))
+                    return false;
                 return itemBank.Any(t => t.Skill == skill && !IsUsed(t, items));
             })
             .OrderBy(skill => states.TryGetValue(skill, out var s) ? s.EvidenceCount : 0)
@@ -645,7 +669,7 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
     {
         var state = skillStates.TryGetValue(skill, out var s) ? s
             : new SkillConfidenceState(_opts.StartingLevelFallback, 0, 0, 0, 0);
-        if (state.Confidence >= _opts.ConfidenceThreshold) return null;
+        if (IsSkillDone(skill, skillStates)) return null;
 
         var itemBank = await LoadItemBankAsync(ct);
         var template = SelectNextTemplate(assessment.Items, skill, state, itemBank);
@@ -857,7 +881,7 @@ public sealed class PlacementAssessmentService : IPlacementAssessmentService
             var state = ComputeSkillConfidence(items, skill, _opts.StartingLevelFallback);
             var exhausted = !itemBank.Any(t => t.Skill == skill && !IsUsed(t, items));
             var completed = wholeAssessmentDone
-                || state.Confidence >= _opts.ConfidenceThreshold
+                || (state.Confidence >= _opts.ConfidenceThreshold && state.EvidenceCount >= _opts.MinItems)
                 || (exhausted && state.EvidenceCount > 0);
             var percent = completed
                 ? 100.0

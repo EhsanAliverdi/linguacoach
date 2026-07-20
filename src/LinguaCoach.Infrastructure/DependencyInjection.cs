@@ -649,6 +649,10 @@ public static class DependencyInjection
         // Phase E4 — publishes an approved, validated ResourceCandidate into its target Cefr* bank table.
         services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceCandidatePublishService,
             LinguaCoach.Infrastructure.ResourceImport.ResourceCandidatePublishService>();
+        // Platform Reliability Sprint 8 — one-time repair for candidates orphaned by the Phase I0
+        // typed-table-drop migration.
+        services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceCandidateOrphanRepairService,
+            LinguaCoach.Infrastructure.ResourceImport.ResourceCandidateOrphanRepairService>();
         // Phase E5 — read-only browse/search over the published Cefr* bank tables.
         services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceBankQueryService,
             LinguaCoach.Infrastructure.ResourceImport.ResourceBankQueryService>();

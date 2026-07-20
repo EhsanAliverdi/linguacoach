@@ -326,6 +326,7 @@ public sealed class LearningPlanDomainTests
             LessonQueueTarget: 10,
             LastCompletedAt: null,
             CurrentObjectiveKey: "obj-1",
+            CurrentObjectiveSkill: "speaking",
             NextObjectiveKey: "obj-2",
             ObjectivesCompletedToday: 1);
 

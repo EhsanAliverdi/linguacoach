@@ -167,6 +167,7 @@ public sealed class LearningPlanCompletionTests
             LessonQueueTarget: 10,
             LastCompletedAt: DateTime.UtcNow.AddHours(-1),
             CurrentObjectiveKey: null,
+            CurrentObjectiveSkill: null,
             NextObjectiveKey: null,
             ObjectivesCompletedToday: 0);
 

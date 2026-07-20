@@ -228,7 +228,7 @@ public sealed class ThrowingLearningPlanService : ILearningPlanService
     public Task<LearningPlanProgressSummary> GetProgressAsync(Guid studentProfileId, CancellationToken ct = default)
         => Task.FromResult(new LearningPlanProgressSummary(
             studentProfileId, "A2", 0, 0, 0, 0, 0, 0, 0, 0, 0.0, 0.0,
-            "initial", 0, 0, null, null, null, 0));
+            "initial", 0, 0, null, null, null, null, 0));
 
     public Task<PlannedObjectiveContext?> GetNextPlannedObjectiveAsync(Guid studentProfileId, string? preferredSkill = null, CancellationToken ct = default)
         => Task.FromResult<PlannedObjectiveContext?>(null);

@@ -85,6 +85,23 @@ public sealed class ResourceImportRun : BaseEntity
         CompletedAtUtc = completedAtUtc;
     }
 
+    /// <summary>Platform Reliability Sprint 8 — one-time backfill for runs created by an internal
+    /// seed-pack seeder before it started creating a self-approved <see cref="ImportPackage"/>/
+    /// <see cref="ImportProfile"/> for its own content (Phase 4.2's mandatory publish-provenance
+    /// gate postdates those runs, and this codebase's seeders are idempotent-by-source-name, so
+    /// they never re-run to pick up the gate once a source already exists). Only valid when this
+    /// run genuinely has no package yet — never call this to reassign an already-linked run.</summary>
+    public void AssignRetroactiveImportPackage(Guid importPackageId)
+    {
+        if (ImportPackageId is not null)
+            throw new InvalidOperationException(
+                $"ResourceImportRun {Id} already has ImportPackageId {ImportPackageId} — cannot reassign.");
+        if (importPackageId == Guid.Empty)
+            throw new ArgumentException("importPackageId must not be empty.", nameof(importPackageId));
+
+        ImportPackageId = importPackageId;
+    }
+
     /// <summary>Finalizes counts/status after row-level processing completes.</summary>
     public void Complete(
         int totalRecordCount,

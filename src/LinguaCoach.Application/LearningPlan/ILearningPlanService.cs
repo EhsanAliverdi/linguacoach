@@ -151,6 +151,11 @@ public sealed record LearningPlanProgressSummary(
     DateTime? LastCompletedAt,
     /// <summary>Key of the current InProgress objective, or first Active objective if none InProgress.</summary>
     string? CurrentObjectiveKey,
+    /// <summary>Skill of the same objective as <see cref="CurrentObjectiveKey"/>, read directly from
+    /// the objective's own Skill column — never parsed from the key, whose format is not
+    /// guaranteed to encode skill at a fixed position (see Sprint 7's dot-delimited
+    /// SkillGraphNode keys vs. pre-Sprint-7 underscore-delimited keys).</summary>
+    string? CurrentObjectiveSkill,
     /// <summary>Key of the next Active objective in planned order after the current one.</summary>
     string? NextObjectiveKey,
     /// <summary>Count of objectives completed or mastered since midnight UTC today.</summary>

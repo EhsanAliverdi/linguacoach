@@ -28,16 +28,16 @@ public sealed class PlacementItemBankSeederTests : IDisposable
     }
 
     [Fact]
-    public async Task SeedAsync_WhenEmpty_Backfills72Items()
+    public async Task SeedAsync_WhenEmpty_Backfills108Items()
     {
         await PlacementItemBankSeeder.SeedAsync(_db);
 
         var count = await _db.PlacementItemDefinitions.CountAsync();
-        Assert.Equal(72, count);
+        Assert.Equal(108, count);
     }
 
     [Fact]
-    public async Task SeedAsync_CoversSixSkillsAndFourCefrLevels()
+    public async Task SeedAsync_CoversSixSkillsAndSixCefrLevels()
     {
         await PlacementItemBankSeeder.SeedAsync(_db);
 
@@ -45,7 +45,7 @@ public sealed class PlacementItemBankSeederTests : IDisposable
         var levels = await _db.PlacementItemDefinitions.Select(i => i.CefrLevel).Distinct().ToListAsync();
 
         Assert.Equal(6, skills.Count);
-        Assert.Equal(4, levels.Count);
+        Assert.Equal(6, levels.Count);
     }
 
     [Fact]
@@ -55,7 +55,7 @@ public sealed class PlacementItemBankSeederTests : IDisposable
         await PlacementItemBankSeeder.SeedAsync(_db);
 
         var count = await _db.PlacementItemDefinitions.CountAsync();
-        Assert.Equal(72, count);
+        Assert.Equal(108, count);
     }
 
     [Fact]
@@ -71,7 +71,7 @@ public sealed class PlacementItemBankSeederTests : IDisposable
 
         var reloaded = await _db.PlacementItemDefinitions.FirstAsync(i => i.Id == item.Id);
         Assert.Equal("B2", reloaded.CefrLevel);
-        Assert.Equal(72, await _db.PlacementItemDefinitions.CountAsync());
+        Assert.Equal(108, await _db.PlacementItemDefinitions.CountAsync());
     }
 
     [Fact]
@@ -101,7 +101,7 @@ public sealed class PlacementItemBankSeederTests : IDisposable
         Assert.Equal(3, reloaded.Count);
         Assert.All(reloaded, i => Assert.False(string.IsNullOrWhiteSpace(i.FormIoSchemaJson)));
         Assert.All(reloaded, i => Assert.False(string.IsNullOrWhiteSpace(i.ScoringRulesJson)));
-        Assert.Equal(72, await _db.PlacementItemDefinitions.CountAsync());
+        Assert.Equal(108, await _db.PlacementItemDefinitions.CountAsync());
     }
 
     // ── Form.io-native authoring ──────────────────────────────────────────────

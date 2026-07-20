@@ -41,7 +41,7 @@ const CATEGORY_LABELS: Record<string, string> = {
     <!-- Error -->
     @if (!loading() && error()) {
       <div class="sp-card sp-card-warning" style="padding:20px;text-align:center;margin-bottom:20px">
-        <div style="font-size:28px;margin-bottom:8px">âš ï¸</div>
+        <div style="font-size:28px;margin-bottom:8px">⚠️</div>
         <p style="font-size:14px;font-weight:600;color:var(--sp-ink);margin-bottom:4px">Could not load vocabulary</p>
         <p style="font-size:13px;color:var(--sp-muted);margin-bottom:12px">{{ error() }}</p>
         <button class="sp-button-secondary" (click)="load()">Try again</button>
@@ -51,13 +51,13 @@ const CATEGORY_LABELS: Record<string, string> = {
     <!-- Empty state: authenticated but no entries -->
     @if (!loading() && !error() && allItems().length === 0) {
       <div class="sp-empty-state">
-        <div style="font-size:36px;margin-bottom:12px">ðŸ“–</div>
+        <div style="font-size:36px;margin-bottom:12px">📖</div>
         <h3 style="font-size:16px;font-weight:800;color:var(--sp-ink);margin-bottom:8px">No vocabulary yet</h3>
         <p style="font-size:13px;color:var(--sp-muted);line-height:1.6;max-width:290px;text-align:center">
           Your vocabulary list will grow as you complete writing activities.
         </p>
         <a routerLink="/activity" class="sp-button-primary" style="margin-top:16px;display:inline-flex">
-          Start practising â†’
+          Start practising →
         </a>
       </div>
     }
@@ -143,7 +143,7 @@ const CATEGORY_LABELS: Record<string, string> = {
               {{ categoryLabel(item.category) }}
             </span>
             @if (item.seenCount > 1) {
-              <span style="font-size:11px;color:var(--sp-muted)">Seen {{ item.seenCount }}Ã—</span>
+              <span style="font-size:11px;color:var(--sp-muted)">Seen {{ item.seenCount }}×</span>
             }
             @if (item.sourceActivityTitle) {
               <span style="font-size:11px;color:var(--sp-faint)">From: {{ item.sourceActivityTitle }}</span>
