@@ -153,6 +153,38 @@ describe('PlacementComponent', () => {
     expect(fixture.componentInstance.canSubmit()).toBeTrue();
   });
 
+  it('canSubmit is false for a speaking item with no recording uploaded yet', () => {
+    const speakingItem: AdaptivePlacementNextItem = { ...mockItem, itemType: 'speakingResponse' };
+    const { fixture } = setup({
+      getAdaptiveCurrent: () => of(makeSummary()),
+      getAdaptiveNextItem: () => of(speakingItem),
+    });
+    fixture.detectChanges();
+    expect(fixture.componentInstance.canSubmit()).toBeFalse();
+  });
+
+  it('canSubmit becomes true for a speaking item once a real recording (with storageKey) is set', () => {
+    const speakingItem: AdaptivePlacementNextItem = { ...mockItem, itemType: 'speakingResponse' };
+    const { fixture } = setup({
+      getAdaptiveCurrent: () => of(makeSummary()),
+      getAdaptiveNextItem: () => of(speakingItem),
+    });
+    fixture.detectChanges();
+    fixture.componentInstance.onFormChange({ answer: { storageKey: 'stored-key', mimeType: 'audio/webm', durationSeconds: 4 } });
+    expect(fixture.componentInstance.canSubmit()).toBeTrue();
+  });
+
+  it('canSubmit stays false for a speaking item when the answer is an empty/cleared value', () => {
+    const speakingItem: AdaptivePlacementNextItem = { ...mockItem, itemType: 'speakingResponse' };
+    const { fixture } = setup({
+      getAdaptiveCurrent: () => of(makeSummary()),
+      getAdaptiveNextItem: () => of(speakingItem),
+    });
+    fixture.detectChanges();
+    fixture.componentInstance.onFormChange({ answer: null });
+    expect(fixture.componentInstance.canSubmit()).toBeFalse();
+  });
+
   // ── onFormSubmit() ────────────────────────────────────────────────────────
 
   it('onFormSubmit() sends the full submission data object', () => {

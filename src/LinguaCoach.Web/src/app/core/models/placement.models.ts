@@ -51,7 +51,11 @@ export interface AdaptivePlacementNextItem {
   itemId: string;
   skill: string;
   targetCefrLevel: string;
-  itemType: 'multiple_choice' | 'gap_fill';
+  /** Backend value is the Form.io component type extracted from the item's own schema
+   * (PlacementItemSchemaLabel.ExtractComponentType) — not the legacy pre-Form.io
+   * "multiple_choice"/"gap_fill" labels. Typed loosely since new component types can be added
+   * to the item bank without a frontend contract change. */
+  itemType: string;
   prompt: string;
   itemOrder: number;
   answeredCount: number;

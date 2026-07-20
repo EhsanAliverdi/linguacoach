@@ -55,7 +55,7 @@ export class PlacementComponent implements OnInit {
           this.assessmentId, item.itemId, blob, mimeType, durationSeconds)),
     };
   });
-  private latestSubmissionData: Record<string, any> = {};
+  private latestSubmissionData = signal<Record<string, any>>({});
   private itemStartTime = 0;
   private assessmentId = '';
   private skill = '';
@@ -74,7 +74,19 @@ export class PlacementComponent implements OnInit {
 
   questionNumber = computed(() => (this.currentItem()?.answeredCount ?? 0) + 1);
 
-  canSubmit = computed(() => !!this.currentItem() && !!this.parsedSchema() && this.state() !== 'submitting');
+  /** Speaking items store their recording as `{ storageKey, mimeType, durationSeconds }` on the
+   * "answer" key once uploaded (see SpeakingResponseComponent) — without this check, Form.io's
+   * own validation treats the "speakingResponse" input type as satisfied by any non-empty value
+   * (including one the student never actually recorded), letting an empty speaking answer submit
+   * silently and score as a false failure rather than blocking submission with a clear message. */
+  canSubmit = computed(() => {
+    if (!this.currentItem() || !this.parsedSchema() || this.state() === 'submitting') return false;
+    if (this.currentItem()?.itemType === 'speakingResponse') {
+      const answer = this.latestSubmissionData()['answer'];
+      return !!answer && typeof answer === 'object' && !!answer.storageKey;
+    }
+    return true;
+  });
 
   constructor(
     private placement: PlacementService,
@@ -147,7 +159,7 @@ export class PlacementComponent implements OnInit {
   private setCurrentItem(item: AdaptivePlacementNextItem): void {
     this.revokeAudioUrl();
     this.currentItem.set(item);
-    this.latestSubmissionData = {};
+    this.latestSubmissionData.set({});
     this.itemStartTime = Date.now();
     this.state.set('question');
 
@@ -167,7 +179,7 @@ export class PlacementComponent implements OnInit {
   }
 
   onFormChange(data: any): void {
-    this.latestSubmissionData = data ?? {};
+    this.latestSubmissionData.set(data ?? {});
   }
 
   /** Triggers Form.io's own validation/submit pipeline; the actual answer submission happens
@@ -181,7 +193,7 @@ export class PlacementComponent implements OnInit {
     const item = this.currentItem();
     if (!item || !this.assessmentId || this.state() === 'submitting') return;
 
-    const submissionData = (data ?? this.latestSubmissionData) as Record<string, unknown>;
+    const submissionData = (data ?? this.latestSubmissionData()) as Record<string, unknown>;
     const durationSeconds = Math.max(1, Math.round((Date.now() - this.itemStartTime) / 1000));
 
     this.state.set('submitting');

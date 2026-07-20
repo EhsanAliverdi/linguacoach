@@ -80,6 +80,7 @@ const baseFeedback: ActivityFeedbackDto = {
   missingExpectedPoints: null,
   suggestedImprovedResponse: null,
   patternEvaluation: null,
+  feedbackPolicy: null,
 };
 
 describe('ActivityLessonComponent — submission and feedback loop', () => {

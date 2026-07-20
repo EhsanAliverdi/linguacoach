@@ -103,6 +103,7 @@ export function makeFeedback(overrides: Partial<ActivityFeedbackDto> = {}): Acti
     missingExpectedPoints: null,
     suggestedImprovedResponse: null,
     patternEvaluation: null,
+    feedbackPolicy: null,
     ...overrides,
   };
 }

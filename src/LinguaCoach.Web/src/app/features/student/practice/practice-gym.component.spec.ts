@@ -13,6 +13,7 @@ const emptySuggestions: PracticeGymSuggestionsResponse = {
   suggestedItems: [], continueItems: [], reviewItems: [],
   readyCount: 0, reviewOnlyCount: 0, reservedCount: 0,
   isReplenishmentRecommended: false, generatedAtUtc: new Date().toISOString(),
+  moduleSuggestions: null,
 };
 
 function makeSuggestionItem(overrides: Partial<PracticeGymSuggestionItem> = {}): PracticeGymSuggestionItem {

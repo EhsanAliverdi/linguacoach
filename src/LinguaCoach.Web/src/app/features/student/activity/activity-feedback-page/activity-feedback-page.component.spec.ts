@@ -33,6 +33,7 @@ const baseFeedback: ActivityFeedbackDto = {
   missingExpectedPoints: null,
   suggestedImprovedResponse: null,
   patternEvaluation: null,
+  feedbackPolicy: null,
 };
 
 function makeWritingEval(overrides: Partial<WritingEvaluationDto> = {}): WritingEvaluationDto {

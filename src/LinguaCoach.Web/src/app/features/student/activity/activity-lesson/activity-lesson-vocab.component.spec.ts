@@ -65,7 +65,7 @@ const vocabActivity: ActivityDto = {
 const vocabFeedback: ActivityFeedbackDto = {
   attemptId: 'attempt-1',
   score: 100,
-  coachSummary: 'Perfect â€” you got both correct!',
+  coachSummary: 'Perfect — you got both correct!',
   focusFirst: false,
   changes: [],
   correctedText: null,
@@ -91,9 +91,10 @@ const vocabFeedback: ActivityFeedbackDto = {
   missingExpectedPoints: null,
   suggestedImprovedResponse: null,
   patternEvaluation: null,
+  feedbackPolicy: null,
 };
 
-describe('ActivityLessonComponent â€” VocabularyPractice', () => {
+describe('ActivityLessonComponent — VocabularyPractice', () => {
   let activityService: jasmine.SpyObj<ActivityService>;
   let router: jasmine.SpyObj<Router>;
 
@@ -211,7 +212,7 @@ describe('ActivityLessonComponent â€” VocabularyPractice', () => {
 
     expect(activityService.submitVocabAttempt).toHaveBeenCalled();
     const html: string = fixture.nativeElement.textContent;
-    expect(html).toContain('Perfect â€” you got both correct!');
+    expect(html).toContain('Perfect — you got both correct!');
   }));
 
   it('does not show raw JSON in VocabularyPractice feedback', fakeAsync(() => {
