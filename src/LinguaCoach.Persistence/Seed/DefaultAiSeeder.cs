@@ -5094,9 +5094,20 @@ Rules:
             maxInputTokens: 2200, maxOutputTokens: 1600, ct);
 
         // Phase J2b — AI-assisted "Generate Activity" composer.
+        // Sprint 9 bugfix — maxInputTokens was 1200, but a live call against a real resource
+        // (even a short one) consistently estimates ~2200-2260 tokens for this exact template
+        // family (confirmed live: the sibling LessonGenerateFromResourcesKey/
+        // ModuleGenerateFromResourceKey prompts both already use 2200 for the same reason). At
+        // 1200, DbPromptAiContextBuilder's budget check rejected every single call before ever
+        // reaching the AI provider — not just for the newly-routed highlight_correct_summary/
+        // select_missing_word, but for every AI-routed exercise type (multiple_choice_single
+        // included), confirmed via a live repro. AI-assisted exercise generation had likely never
+        // worked end-to-end in this environment. Set to 3000 (real headroom above the observed
+        // ~2260 ceiling, not just matched to it) since a longer Listening transcript than any
+        // tested so far could push estimated tokens higher.
         await SeedOrUpgradePromptAsync(db, logger,
             ExerciseGenerateFromResourcesKey, ExerciseGenerateFromResourcesContent,
-            maxInputTokens: 1200, maxOutputTokens: 700, ct);
+            maxInputTokens: 3000, maxOutputTokens: 700, ct);
 
         // Phase J2c — AI-assisted "Generate Module" composer.
         await SeedOrUpgradePromptAsync(db, logger,

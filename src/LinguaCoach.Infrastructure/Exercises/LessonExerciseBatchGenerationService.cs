@@ -36,6 +36,18 @@ namespace LinguaCoach.Infrastructure.Exercises;
 /// than multiple_choice_single: it has no deterministic composer at all (no fact field on a
 /// ReadingReference/ReadingPassage row to derive a correct answer from — see
 /// ActivityGenerationService.ActivityTypeReadingMultipleChoiceSingle's doc comment).
+///
+/// Sprint 9 bugfix — "highlight_correct_summary" and "select_missing_word" were never in this
+/// set despite AiExerciseGenerationService having always implemented real composers for both
+/// (see its own ActivityTypeHighlightCorrectSummary/ActivityTypeSelectMissingWord doc comments,
+/// "AI-only activity type, no deterministic composer exists"). The deterministic single handler
+/// (ActivityGenerationService) explicitly rejects both for Listening resources, and — since the
+/// standalone single-item "generate-from-resources/ai" endpoint was removed (Phase 2, 2026-07-15)
+/// — this batch dispatcher's AiOnlyOrAiPreferredTypes set was the *only* remaining path that could
+/// ever reach the AI handler for them. Omitting them here meant every admin generation attempt for
+/// either type hit the deterministic handler's rejection, live-confirmed via a real API call
+/// (400: "Activity type 'select_missing_word' is not supported for resource type 'Listening'").
+/// Not a broken composer — genuinely unreachable code, now fixed.
 /// </summary>
 public sealed class LessonExerciseBatchGenerationService : IGenerateActivitiesFromLessonHandler
 {
@@ -55,6 +67,8 @@ public sealed class LessonExerciseBatchGenerationService : IGenerateActivitiesFr
         ActivityGenerationService.ActivityTypeReadingMultipleChoiceMulti,
         ActivityGenerationService.ActivityTypeListeningMultipleChoiceSingle,
         ActivityGenerationService.ActivityTypeListeningMultipleChoiceMulti,
+        ActivityGenerationService.ActivityTypeHighlightCorrectSummary,
+        ActivityGenerationService.ActivityTypeSelectMissingWord,
     };
 
     private readonly IGenerateActivityFromLessonHandler _singleHandler;
