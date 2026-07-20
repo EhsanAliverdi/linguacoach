@@ -699,6 +699,10 @@ public static class DependencyInjection
         // PracticeGymModuleSelectionService.
         services.AddScoped<LinguaCoach.Application.Composer.ICurriculumComposerService,
             LinguaCoach.Infrastructure.Composer.CurriculumComposerService>();
+        // Adaptive Curriculum Sprint 6 — bulk content seeding, chains existing single-item
+        // Lesson/Exercise/Module generation handlers rather than reinventing generation logic.
+        services.AddScoped<LinguaCoach.Application.ContentSeeding.IContentSeedingService,
+            LinguaCoach.Infrastructure.ContentSeeding.ContentSeedingService>();
 
         // Phase 4 (2026-07-15) — large-scale AI import packages. App never crashes on a missing
         // "ImportPackageLimits" config section — sensible defaults are baked into the options class.
