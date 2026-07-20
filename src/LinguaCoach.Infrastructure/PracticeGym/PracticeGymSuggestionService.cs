@@ -1,3 +1,4 @@
+using LinguaCoach.Application.LearningPlan;
 using LinguaCoach.Application.PracticeGym;
 using LinguaCoach.Application.PracticeGymModules;
 using LinguaCoach.Domain.Entities;
@@ -32,17 +33,20 @@ public sealed class PracticeGymSuggestionService : IPracticeGymSuggestionService
     private readonly LinguaCoachDbContext _db;
     private readonly IPracticeGymModuleSelectionService _moduleSelector;
     private readonly IPracticeGymModuleAssignmentRecorder _moduleAssignmentRecorder;
+    private readonly ILearningPlanService _learningPlan;
     private readonly ILogger<PracticeGymSuggestionService> _logger;
 
     public PracticeGymSuggestionService(
         LinguaCoachDbContext db,
         IPracticeGymModuleSelectionService moduleSelector,
         IPracticeGymModuleAssignmentRecorder moduleAssignmentRecorder,
+        ILearningPlanService learningPlan,
         ILogger<PracticeGymSuggestionService> logger)
     {
         _db = db;
         _moduleSelector = moduleSelector;
         _moduleAssignmentRecorder = moduleAssignmentRecorder;
+        _learningPlan = learningPlan;
         _logger = logger;
     }
 
@@ -69,10 +73,29 @@ public sealed class PracticeGymSuggestionService : IPracticeGymSuggestionService
         PracticeGymModuleSelectionResult? moduleSuggestions = null;
         try
         {
+            // Soft preference only, mirroring Today's wiring — the top-priority planned
+            // objective's skill (current objectives → weak skills → review → reinforcement, per
+            // GetPracticeGymObjectivesAsync's own ordering) is handed to the selector as one
+            // ranking input, never a hard filter, so a missing/failed lookup just degrades to the
+            // prior skill-agnostic behavior.
+            string? requestedSkill = null;
+            try
+            {
+                var objectives = await _learningPlan.GetPracticeGymObjectivesAsync(profileId, maxCount: 1, ct: ct);
+                requestedSkill = objectives.Count > 0 ? objectives[0].PrimarySkill : null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex,
+                    "Could not resolve Practice Gym planned objectives for student {StudentProfileId}; module selection proceeds without a requested skill.",
+                    profileId);
+            }
+
             moduleSuggestions = await _moduleSelector.SelectAsync(
                 new PracticeGymModuleSelectionRequest(
                     StudentId: profileId,
                     CefrLevel: profile?.CefrLevel,
+                    RequestedSkill: requestedSkill,
                     FocusAreas: focusTags,
                     ContextTags: contextTags),
                 ct);

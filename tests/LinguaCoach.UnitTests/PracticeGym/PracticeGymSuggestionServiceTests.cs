@@ -1,4 +1,5 @@
 using FluentAssertions;
+using LinguaCoach.Application.LearningPlan;
 using LinguaCoach.Application.PracticeGym;
 using LinguaCoach.Application.PracticeGymModules;
 using LinguaCoach.Infrastructure.PracticeGym;
@@ -45,7 +46,36 @@ public sealed class PracticeGymSuggestionServiceTests : IDisposable
         _sut = new PracticeGymSuggestionService(
             _db,
             new FallbackOnlyModuleSelectionService(), new NoOpModuleAssignmentRecorder(),
+            new NoOpLearningPlanService(),
             NullLogger<PracticeGymSuggestionService>.Instance);
+    }
+
+    // Requested-skill soft-preference lookup — returns no objectives so RequestedSkill stays
+    // null, matching this test file's prior (pre-Sprint-9) behavior.
+    private sealed class NoOpLearningPlanService : ILearningPlanService
+    {
+        public Task<StudentJourneyResult> GetJourneyAsync(Guid studentProfileId, CancellationToken ct = default) =>
+            throw new NotSupportedException();
+        public Task<StudentJourneyResult> GetJourneyForUserAsync(Guid userId, CancellationToken ct = default) =>
+            throw new NotSupportedException();
+        public Task<LearningPlanSummary> GetOrCreatePlanAsync(Guid studentProfileId, CancellationToken ct = default) =>
+            throw new NotSupportedException();
+        public Task<LearningPlanSummary> RegeneratePlanAsync(Guid studentProfileId, string reason, CancellationToken ct = default) =>
+            throw new NotSupportedException();
+        public Task<LearningPlanProgressSummary> GetProgressAsync(Guid studentProfileId, CancellationToken ct = default) =>
+            throw new NotSupportedException();
+        public Task<PlannedObjectiveContext?> GetNextPlannedObjectiveAsync(Guid studentProfileId, string? preferredSkill = null, CancellationToken ct = default) =>
+            throw new NotSupportedException();
+        public Task<IReadOnlyList<PlannedObjectiveContext>> GetPracticeGymObjectivesAsync(Guid studentProfileId, int maxCount = 5, CancellationToken ct = default) =>
+            Task.FromResult<IReadOnlyList<PlannedObjectiveContext>>([]);
+        public Task MarkObjectiveInProgressAsync(Guid studentProfileId, string objectiveKey, CancellationToken ct = default) =>
+            throw new NotSupportedException();
+        public Task MarkObjectiveCompletedAsync(Guid studentProfileId, string objectiveKey, CancellationToken ct = default) =>
+            throw new NotSupportedException();
+        public Task MarkObjectiveMasteredAsync(Guid studentProfileId, string objectiveKey, CancellationToken ct = default) =>
+            throw new NotSupportedException();
+        public Task<LearningPlanObjectiveProgressUpdate> TryUpdateObjectiveProgressAsync(Guid studentProfileId, string objectiveKey, CancellationToken ct = default) =>
+            throw new NotSupportedException();
     }
 
     // Phase H7 — stubs so these tests are unaffected by the additive Practice Gym module

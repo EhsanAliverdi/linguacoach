@@ -1,4 +1,5 @@
 using LinguaCoach.Application.TodayPlanModules;
+using LinguaCoach.Application.LearningPlan;
 using LinguaCoach.Application.Sessions;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -21,17 +22,20 @@ public sealed class SessionQueryHandler : IGetTodaysSessionHandler, IGetSessionH
     private readonly LinguaCoachDbContext _db;
     private readonly ITodayPlanModuleSelectionService _moduleSelector;
     private readonly ITodayPlanModuleAssignmentRecorder _moduleAssignmentRecorder;
+    private readonly ILearningPlanService _learningPlan;
     private readonly ILogger<SessionQueryHandler> _logger;
 
     public SessionQueryHandler(
         LinguaCoachDbContext db,
         ITodayPlanModuleSelectionService moduleSelector,
         ITodayPlanModuleAssignmentRecorder moduleAssignmentRecorder,
+        ILearningPlanService learningPlan,
         ILogger<SessionQueryHandler> logger)
     {
         _db = db;
         _moduleSelector = moduleSelector;
         _moduleAssignmentRecorder = moduleAssignmentRecorder;
+        _learningPlan = learningPlan;
         _logger = logger;
     }
 
@@ -44,12 +48,30 @@ public sealed class SessionQueryHandler : IGetTodaysSessionHandler, IGetSessionH
         TodayPlanModuleSelectionResult? todayPlan = null;
         try
         {
+            // Soft preference only — the composer treats RequestedSkill as one ranking input
+            // among several (weakness/goal matches, CEFR fit), never a hard filter, so a null or
+            // stale value here degrades to the prior skill-agnostic behavior rather than starving
+            // the plan of candidates.
+            string? requestedSkill = null;
+            try
+            {
+                var plannedObjective = await _learningPlan.GetNextPlannedObjectiveAsync(profile.Id, ct: ct);
+                requestedSkill = plannedObjective?.PrimarySkill;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex,
+                    "Could not resolve next planned objective for student {StudentProfileId}; Today selection proceeds without a requested skill.",
+                    profile.Id);
+            }
+
             todayPlan = await _moduleSelector.SelectAsync(
                 new TodayPlanModuleSelectionRequest(
                     StudentId: profile.Id,
                     CefrLevel: profile.CefrLevel,
                     LearningPlanId: null,
-                    TargetDate: DateTime.UtcNow.Date),
+                    TargetDate: DateTime.UtcNow.Date,
+                    RequestedSkill: requestedSkill),
                 ct);
 
             await _moduleAssignmentRecorder.RecordAsync(profile.Id, DateTime.UtcNow.Date, todayPlan, ct);
