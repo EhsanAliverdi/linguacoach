@@ -11,7 +11,7 @@ import {
   AdminPlacementLatestResponse, AdminPlacementProgress, AdminStudentPracticeSummary,
   AdminLearningPlanProgress, AdminStudentProgressSummary, AdminStudentSpeakingAttemptsResult,
   AdminWritingEvaluationItemDto, StudentReadinessSummary, StudentReadinessRepairRequest,
-  StudentReadinessRepairResult,
+  StudentReadinessRepairResult, AdminStudentMastery,
 } from '../../../core/models/admin.models';
 import { ToastService } from '../../../core/services/toast.service';
 import { UsageGovernanceService, StudentEffectivePolicy, UsagePolicy } from '../../../core/services/usage-governance.service';
@@ -169,6 +169,11 @@ export class AdminStudentDetailComponent implements OnInit {
   practiceGymModulePreviewLoading = signal(true);
   practiceGymModulePreviewError = signal('');
 
+  // Sprint 11 — per-student mastery view (Phase I2C regression restore)
+  mastery = signal<AdminStudentMastery | null>(null);
+  masteryLoading = signal(true);
+  masteryError = signal('');
+
   // Phase 20D — Pilot readiness audit + repair
   readiness = signal<StudentReadinessSummary | null>(null);
   readinessLoading = signal(true);
@@ -306,6 +311,7 @@ export class AdminStudentDetailComponent implements OnInit {
     this.loadPlacement(id);
     this.loadSpeakingAttempts(id);
     this.loadWritingEvaluations(id);
+    this.loadMastery(id);
   }
 
   private loadStudent(id: string): void {
@@ -347,6 +353,15 @@ export class AdminStudentDetailComponent implements OnInit {
     this.adminApi.getPracticeGymModulePreview(id).subscribe({
       next: p => { this.practiceGymModulePreview.set(p); this.practiceGymModulePreviewLoading.set(false); },
       error: () => { this.practiceGymModulePreviewError.set('Could not load Practice Gym module preview.'); this.practiceGymModulePreviewLoading.set(false); },
+    });
+  }
+
+  private loadMastery(id: string): void {
+    this.masteryLoading.set(true);
+    this.masteryError.set('');
+    this.adminApi.getStudentMastery(id).subscribe({
+      next: m => { this.mastery.set(m); this.masteryLoading.set(false); },
+      error: () => { this.masteryError.set('Could not load mastery data.'); this.masteryLoading.set(false); },
     });
   }
 

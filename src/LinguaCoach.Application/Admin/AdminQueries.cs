@@ -151,13 +151,39 @@ public sealed record AdminStudentDetailDto(
     // Phase 14B — learning readiness
     bool IsLearningReady,
     DateTime? LastPlacementCompletedAt,
-    bool LearningPlanExists);
+    bool LearningPlanExists,
+    /// <summary>Sprint 11 — the real per-student weighted goal vector (Sprint 3, explicit +
+    /// implicit) driving Today/Practice Gym's "goal match" selection signal. Previously computed
+    /// and consumed by the selectors but never visible anywhere in admin, so an admin debugging
+    /// why a Module was/wasn't selected for a real pilot student had no way to see the weights
+    /// actually driving that decision.</summary>
+    IReadOnlyList<AdminStudentGoalWeightDto> GoalWeights);
+
+public sealed record AdminStudentGoalWeightDto(
+    string GoalTag, double Weight, string Source, DateTimeOffset UpdatedAtUtc);
+
+/// <summary>Sprint 11 — restores per-student mastery visibility to admin (a Phase I2C regression:
+/// the old readiness-pool-era per-student mastery view was deleted along with the pool it served,
+/// and nothing replaced it). Backed by the real, already-working
+/// <see cref="Mastery.IStudentMasteryEvaluationService"/> — the same deterministic evaluator
+/// Today/Practice Gym's weakness-match selection signal already uses — never a separate/simplified
+/// calculation.</summary>
+public sealed record AdminStudentMasteryDto(
+    DateTime EvaluatedAtUtc,
+    IReadOnlyList<AdminMasterySkillGraphNodeDto> Mastered,
+    IReadOnlyList<AdminMasterySkillGraphNodeDto> Completed,
+    IReadOnlyList<AdminMasterySkillGraphNodeDto> Weak,
+    IReadOnlyList<AdminMasterySkillGraphNodeDto> AtRisk);
+
+public sealed record AdminMasterySkillGraphNodeDto(
+    string Key, string? Title, string? Skill, string? CefrLevel);
 
 public interface IAdminStudentQuery
 {
     Task<IReadOnlyList<StudentListItem>> ListStudentsAsync(bool includeArchived = false, CancellationToken ct = default);
     Task<PagedResponse<StudentListItem>> ListStudentsPagedAsync(StudentListQuery query, CancellationToken ct = default);
     Task<AdminStudentDetailDto?> GetStudentDetailAsync(Guid studentProfileId, CancellationToken ct = default);
+    Task<AdminStudentMasteryDto?> GetStudentMasteryAsync(Guid studentProfileId, CancellationToken ct = default);
     Task<StudentListItem> UpdateStudentAsync(UpdateStudentProfileCommand command, CancellationToken ct = default);
     Task<StudentListItem> ArchiveStudentAsync(ArchiveStudentCommand command, CancellationToken ct = default);
     Task<StudentListItem> ReactivateStudentAsync(ReactivateStudentCommand command, CancellationToken ct = default);

@@ -9,6 +9,8 @@ import {
   AiConfigCategoryItem, UpdateAiCategoryRequest, CategoryTestResult,
   ResetStudentRequest, ResetStudentResponse, AdminStats, AdminActivityHistoryItem,
   AdminStudentDetail,
+  AdminStudentMastery,
+  DataIntegritySweepResult,
   StudentAuditHistoryItem,
   AdminTodayPlanModulePreview, AdminPracticeGymModulePreview,
   AdminDeliveryHealth,
@@ -116,6 +118,12 @@ export class AdminApiService {
   }
   getStudentAuditHistory(studentProfileId: string): Observable<StudentAuditHistoryItem[]> {
     return this.http.get<StudentAuditHistoryItem[]>(`${this.api}/students/${studentProfileId}/audit-history`);
+  }
+  getStudentMastery(studentProfileId: string): Observable<AdminStudentMastery> {
+    return this.http.get<AdminStudentMastery>(`${this.api}/students/${studentProfileId}/mastery`);
+  }
+  getDataIntegritySweep(): Observable<DataIntegritySweepResult> {
+    return this.http.get<DataIntegritySweepResult>(`${this.api}/data-integrity`);
   }
   getStudentPracticeSummary(studentId: string): Observable<AdminStudentPracticeSummary> {
     return this.http.get<AdminStudentPracticeSummary>(`${this.api}/students/${studentId}/practice-summary`);

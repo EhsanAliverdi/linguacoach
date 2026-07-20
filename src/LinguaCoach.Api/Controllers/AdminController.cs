@@ -24,6 +24,7 @@ public sealed class AdminController : ControllerBase
     private readonly IAdminTemplateHandler _templateHandler;
     private readonly INotificationPreferenceService _notificationPreferences;
     private readonly IAdminAuthEventHandler _authEvents;
+    private readonly IDataIntegritySweepService _dataIntegritySweep;
 
     public AdminController(
         ICreateStudentHandler createStudentHandler,
@@ -36,7 +37,8 @@ public sealed class AdminController : ControllerBase
         IAdminNotificationHandler notificationHandler,
         IAdminTemplateHandler templateHandler,
         INotificationPreferenceService notificationPreferences,
-        IAdminAuthEventHandler authEvents)
+        IAdminAuthEventHandler authEvents,
+        IDataIntegritySweepService dataIntegritySweep)
     {
         _createStudentHandler = createStudentHandler;
         _studentQuery = studentQuery;
@@ -49,7 +51,14 @@ public sealed class AdminController : ControllerBase
         _templateHandler = templateHandler;
         _notificationPreferences = notificationPreferences;
         _authEvents = authEvents;
+        _dataIntegritySweep = dataIntegritySweep;
     }
+
+    // Sprint 11 — unified data-integrity sweep: orphan/FK checks + aggregated per-entity
+    // content-completeness counts, previously scattered across separate admin pages.
+    [HttpGet("data-integrity")]
+    public async Task<IActionResult> GetDataIntegritySweep(CancellationToken ct)
+        => Ok(await _dataIntegritySweep.RunAsync(ct));
 
 
     // ── Exercise type catalog ────────────────────────────────────────────────
@@ -147,6 +156,15 @@ public sealed class AdminController : ControllerBase
     {
         var history = await _studentQuery.GetStudentAuditHistoryAsync(studentId, ct);
         return history is null ? NotFound(new { error = "Student not found." }) : Ok(history);
+    }
+
+    // Sprint 11 — restores per-student mastery visibility (deleted in Phase I2C along with the
+    // readiness pool it served).
+    [HttpGet("students/{studentId:guid}/mastery")]
+    public async Task<IActionResult> GetStudentMastery(Guid studentId, CancellationToken ct)
+    {
+        var mastery = await _studentQuery.GetStudentMasteryAsync(studentId, ct);
+        return mastery is null ? NotFound(new { error = "Student not found." }) : Ok(mastery);
     }
 
     [HttpGet("stats")]

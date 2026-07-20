@@ -326,6 +326,49 @@ export interface AdminStudentDetail {
   isLearningReady: boolean;
   lastPlacementCompletedAt: string | null;
   learningPlanExists: boolean;
+  // Sprint 11 — the real per-student weighted goal vector driving Today/Practice Gym's
+  // "goal match" selection signal, previously invisible anywhere in admin.
+  goalWeights: AdminStudentGoalWeight[];
+}
+
+export interface AdminStudentGoalWeight {
+  goalTag: string;
+  weight: number;
+  source: string;
+  updatedAtUtc: string;
+}
+
+// Sprint 11 — restores per-student mastery visibility (deleted in Phase I2C along with the
+// readiness pool it served). Backed by the same deterministic mastery evaluator Today/Practice
+// Gym's weakness-match selection already uses.
+export interface AdminMasterySkillGraphNode {
+  key: string;
+  title: string | null;
+  skill: string | null;
+  cefrLevel: string | null;
+}
+
+export interface AdminStudentMastery {
+  evaluatedAtUtc: string;
+  mastered: AdminMasterySkillGraphNode[];
+  completed: AdminMasterySkillGraphNode[];
+  weak: AdminMasterySkillGraphNode[];
+  atRisk: AdminMasterySkillGraphNode[];
+}
+
+// Sprint 11 — unified data-integrity sweep.
+export interface DataIntegrityCategoryResult {
+  category: string;
+  description: string;
+  totalChecked: number;
+  issuesFound: number;
+  healthy: boolean;
+}
+
+export interface DataIntegritySweepResult {
+  ranAtUtc: string;
+  categories: DataIntegrityCategoryResult[];
+  allHealthy: boolean;
 }
 
 // ── Admin notification center ──────────────────────────────────────────────

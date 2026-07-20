@@ -273,6 +273,69 @@
         }
       </sp-admin-card>
 
+      <!-- Goal weights — Sprint 3 (explicit + implicit), never previously surfaced in admin -->
+      <sp-admin-card title="Goal weights" data-testid="goal-weights-card">
+        @if (s.goalWeights.length) {
+          <ul class="sp-admin-simple-list">
+            @for (gw of s.goalWeights; track gw.goalTag) {
+              <li>
+                {{ gw.goalTag }} — {{ gw.weight | number: '1.0-2' }}
+                <sp-admin-badge tone="neutral">{{ gw.source }}</sp-admin-badge>
+              </li>
+            }
+          </ul>
+        } @else {
+          <sp-admin-empty-state message="No goal weights recorded." />
+        }
+      </sp-admin-card>
+
+      <!-- Mastery — Sprint 11, restores the Phase I2C per-student mastery regression -->
+      <sp-admin-card title="Mastery" data-testid="mastery-card">
+        @if (masteryLoading()) {
+          <sp-admin-loading-state message="Loading mastery" />
+        } @else if (masteryError()) {
+          <sp-admin-error-state title="Mastery unavailable" [message]="masteryError()" />
+        } @else if (mastery()) {
+          @let m = mastery()!;
+          <div class="sp-admin-grid sp-admin-gap-3">
+            <div>
+              <div class="sp-admin-section-title">Mastered</div>
+              @if (m.mastered.length) {
+                <ul class="sp-admin-simple-list">@for (n of m.mastered; track n.key) { <li>{{ n.title ?? n.key }}</li> }</ul>
+              } @else {
+                <p class="sp-admin-section-sub">None yet.</p>
+              }
+            </div>
+            <div>
+              <div class="sp-admin-section-title">Completed</div>
+              @if (m.completed.length) {
+                <ul class="sp-admin-simple-list">@for (n of m.completed; track n.key) { <li>{{ n.title ?? n.key }}</li> }</ul>
+              } @else {
+                <p class="sp-admin-section-sub">None yet.</p>
+              }
+            </div>
+            <div>
+              <div class="sp-admin-section-title">Weak</div>
+              @if (m.weak.length) {
+                <ul class="sp-admin-simple-list">@for (n of m.weak; track n.key) { <li>{{ n.title ?? n.key }}</li> }</ul>
+              } @else {
+                <p class="sp-admin-section-sub">None recorded.</p>
+              }
+            </div>
+            <div>
+              <div class="sp-admin-section-title">At risk</div>
+              @if (m.atRisk.length) {
+                <ul class="sp-admin-simple-list">@for (n of m.atRisk; track n.key) { <li>{{ n.title ?? n.key }}</li> }</ul>
+              } @else {
+                <p class="sp-admin-section-sub">None recorded.</p>
+              }
+            </div>
+          </div>
+        } @else {
+          <sp-admin-empty-state message="Mastery data not available." />
+        }
+      </sp-admin-card>
+
       <!-- Pilot readiness — Phase 20D -->
       <sp-admin-card title="Pilot readiness" data-testid="pilot-readiness-card">
         @if (readinessLoading()) {

@@ -2,6 +2,7 @@ using System.Text.Json;
 using LinguaCoach.Application.Admin;
 using LinguaCoach.Application.Ai;
 using LinguaCoach.Application.LearningPlan;
+using LinguaCoach.Application.Mastery;
 using LinguaCoach.Application.Notifications;
 using LinguaCoach.Application.Speaking;
 using LinguaCoach.Application.Storage;
@@ -213,6 +214,13 @@ public sealed class AdminHandler :
                 && (p.Status == LearningPlanStatus.Active
                     || p.Status == LearningPlanStatus.Regenerating), ct);
 
+        var goalWeights = await _db.StudentGoalWeights
+            .AsNoTracking()
+            .Where(g => g.StudentId == profile.Id)
+            .OrderByDescending(g => g.Weight)
+            .Select(g => new AdminStudentGoalWeightDto(g.GoalTag, g.Weight, g.Source.ToString(), g.UpdatedAtUtc))
+            .ToListAsync(ct);
+
         return new AdminStudentDetailDto(
             profile.Id,
             profile.UserId,
@@ -246,7 +254,41 @@ public sealed class AdminHandler :
             progressInfo,
             isLearningReady,
             lastPlacementCompletedAt,
-            learningPlanExists);
+            learningPlanExists,
+            goalWeights);
+    }
+
+    public async Task<AdminStudentMasteryDto?> GetStudentMasteryAsync(Guid studentProfileId, CancellationToken ct = default)
+    {
+        var exists = await _db.StudentProfiles.AsNoTracking().AnyAsync(p => p.Id == studentProfileId, ct);
+        if (!exists) return null;
+
+        var mastery = _services.GetRequiredService<IStudentMasteryEvaluationService>();
+        var report = await mastery.EvaluateStudentAsync(studentProfileId, MasteryEvaluationReason.Manual, ct);
+
+        var allKeys = report.MasteredObjectiveKeys
+            .Concat(report.CompletedObjectiveKeys)
+            .Concat(report.WeakObjectiveKeys)
+            .Concat(report.AtRiskObjectiveKeys)
+            .Distinct()
+            .ToList();
+
+        var nodesByKey = await _db.SkillGraphNodes
+            .AsNoTracking()
+            .Where(n => allKeys.Contains(n.Key))
+            .ToDictionaryAsync(n => n.Key, ct);
+
+        AdminMasterySkillGraphNodeDto ToNodeDto(string key) =>
+            nodesByKey.TryGetValue(key, out var node)
+                ? new AdminMasterySkillGraphNodeDto(key, node.Title, node.Skill, node.CefrLevel)
+                : new AdminMasterySkillGraphNodeDto(key, null, null, null);
+
+        return new AdminStudentMasteryDto(
+            report.EvaluatedAtUtc,
+            report.MasteredObjectiveKeys.Select(ToNodeDto).ToList(),
+            report.CompletedObjectiveKeys.Select(ToNodeDto).ToList(),
+            report.WeakObjectiveKeys.Select(ToNodeDto).ToList(),
+            report.AtRiskObjectiveKeys.Select(ToNodeDto).ToList());
     }
 
     public async Task<AdminStatsItem> GetStatsAsync(CancellationToken ct = default)

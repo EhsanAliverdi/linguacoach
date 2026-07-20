@@ -663,6 +663,10 @@ public static class DependencyInjection
         services.AddScoped<LinguaCoach.Infrastructure.AdminRepair.AdminRepairFieldGenerator>();
         services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceBankRepairService,
             LinguaCoach.Infrastructure.ResourceImport.ResourceBankRepairService>();
+        // Sprint 11 — unified data-integrity sweep (orphan/FK checks + aggregated per-entity
+        // content-completeness counts above, in one view).
+        services.AddScoped<LinguaCoach.Application.Admin.IDataIntegritySweepService,
+            LinguaCoach.Infrastructure.Admin.DataIntegritySweepService>();
         // Phase K5 — admin edit of a published Resource Bank item's content/metadata.
         services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceBankItemUpdateHandler,
             LinguaCoach.Infrastructure.ResourceImport.ResourceBankItemUpdateHandler>();

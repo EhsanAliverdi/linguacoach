@@ -1,10 +1,59 @@
-<sp-admin-page-header title="Diagnostics" subtitle="System status, health indicators, recent events, and correlation ID lookup.">
+<sp-admin-page-header title="Diagnostics" subtitle="AI-generation health, system status, recent events, and correlation ID lookup. See Data integrity below for FK/orphan checks across student data.">
   <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="loadStatus(); loadEvents()">
     Refresh
   </sp-admin-button>
 </sp-admin-page-header>
 
 <sp-admin-page-body>
+
+  <!-- ── Data integrity sweep (Sprint 11) — distinct from AI-generation health below: orphan/FK
+       checks across student plans/objectives/attempts/launches, plus aggregated per-entity
+       (Module/Lesson/Exercise/Resource Bank) issue counts. ───────────────────────────────── -->
+  <sp-admin-card title="Data integrity" variant="section" padding="md">
+    <sp-admin-button slot="actions" variant="neutral" appearance="outline" size="sm" (clicked)="loadDataIntegrity()">
+      Refresh
+    </sp-admin-button>
+
+    @if (loadingDataIntegrity()) {
+      <sp-admin-loading-state message="Running data integrity sweep" />
+    } @else if (dataIntegrityError()) {
+      <sp-admin-error-state title="Data integrity sweep unavailable" [message]="dataIntegrityError()" />
+    } @else if (dataIntegrity()) {
+      @let sweep = dataIntegrity()!;
+      <div class="sp-admin-flex sp-admin-items-center sp-admin-gap-3 sp-admin-mb-3">
+        <sp-admin-badge [tone]="sweep.allHealthy ? 'success' : 'danger'">
+          {{ sweep.allHealthy ? 'All healthy' : 'Issues found' }}
+        </sp-admin-badge>
+        <span class="sp-admin-text-xs sp-admin-text-muted">Last run: {{ formatDateTime(sweep.ranAtUtc) }}</span>
+      </div>
+      <sp-admin-table>
+        <table>
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Description</th>
+              <th>Checked</th>
+              <th>Issues</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (c of sweep.categories; track c.category) {
+              <tr>
+                <td>{{ c.category }}</td>
+                <td>{{ c.description }}</td>
+                <td>{{ c.totalChecked }}</td>
+                <td>{{ c.issuesFound }}</td>
+                <td><sp-admin-badge [tone]="c.healthy ? 'success' : 'danger'">{{ c.healthy ? 'Healthy' : 'Issues' }}</sp-admin-badge></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </sp-admin-table>
+    } @else {
+      <sp-admin-empty-state message="Data integrity sweep not available." />
+    }
+  </sp-admin-card>
 
   <!-- ── KPI strip ─────────────────────────────────────────────────────────── -->
   @if (kpiSummary(); as kpi) {

@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DiagnosticsService, DiagnosticsStatus, DiagnosticEventItem } from '../../../core/services/diagnostics.service';
 import { GenerationQualityService, GenerationQualitySummary } from '../../../core/services/generation-quality.service';
+import { AdminApiService } from '../../../core/services/admin.api.service';
+import { DataIntegritySweepResult } from '../../../core/models/admin.models';
 import { SpAdminEventFeedComponent, EventFeedItem } from '../../../design-system/admin/components/event-feed/sp-admin-event-feed.component';
 import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design-system/admin/components/breakdown-bars/sp-admin-breakdown-bars.component';
 import {
@@ -160,12 +162,32 @@ export class AdminDiagnosticsComponent implements OnInit, OnDestroy {
   readonly qAbandonedWarning = computed(() => this.generationQuality()?.abandonedWarning ?? null);
   readonly qRetentionDays = computed(() => this.generationQuality()?.retentionDays ?? 90);
 
-  constructor(private svc: DiagnosticsService, private qualitySvc: GenerationQualityService) {}
+  // ── Data integrity sweep (Sprint 11) — FK/orphan checks + aggregated per-entity issue counts,
+  // distinct from the AI-generation health data above. ──────────────────────
+  dataIntegrity = signal<DataIntegritySweepResult | null>(null);
+  loadingDataIntegrity = signal(false);
+  dataIntegrityError = signal('');
+
+  constructor(
+    private svc: DiagnosticsService,
+    private qualitySvc: GenerationQualityService,
+    private adminApi: AdminApiService,
+  ) {}
 
   ngOnInit(): void {
     this.loadStatus();
     this.loadEvents();
     this.loadGenerationQuality();
+    this.loadDataIntegrity();
+  }
+
+  loadDataIntegrity(): void {
+    this.loadingDataIntegrity.set(true);
+    this.dataIntegrityError.set('');
+    this.adminApi.getDataIntegritySweep().subscribe({
+      next: r => { this.dataIntegrity.set(r); this.loadingDataIntegrity.set(false); },
+      error: err => { this.loadingDataIntegrity.set(false); this.dataIntegrityError.set(err.error?.error ?? 'Could not load data integrity sweep.'); },
+    });
   }
 
   ngOnDestroy(): void {
