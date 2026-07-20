@@ -109,7 +109,14 @@ public sealed class CurriculumComposerService : ICurriculumComposerService
         }
 
         if (parsed.Count == 0)
-            return Failure("AI ranking produced no recognized candidate id.");
+        {
+            // Preserve the AI's own real explanation when it gave one (e.g. "No content matched
+            // the requested skill") — a valid, well-formed response with an empty ranking is not
+            // the same failure mode as unparseable/hallucinated output, and callers that inspect
+            // FailureReason (e.g. to decide whether to retry with a broadened request) need the
+            // real reason, not a generic message that discards it.
+            return Failure(reason ?? "AI ranking produced no recognized candidate id.");
+        }
 
         return new ComposerRankingResult(true, parsed, reason, null);
     }

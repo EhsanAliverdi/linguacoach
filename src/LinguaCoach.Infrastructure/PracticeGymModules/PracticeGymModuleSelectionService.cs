@@ -257,9 +257,31 @@ public sealed class PracticeGymModuleSelectionService : IPracticeGymModuleSelect
                 RequestedObjectiveKey: request.RequestedObjectiveKey,
                 RequestedDifficulty: request.RequestedDifficulty), ct);
 
+            // Sprint 9 bugfix (see TodayPlanModuleSelectionService's identical fix) — the pool-level
+            // narrow-then-degrade above only protects the *pool* handed to the composer; the
+            // composer is still separately told RequestedSkill explicitly and can treat it as a
+            // hard filter within its own reasoning, returning an empty ranking even when the
+            // (already-degraded) pool contains real candidates of a different skill. Not gated on
+            // composerResult.Success — RankCandidatesAsync returns Success=false for a valid
+            // "zero ranked ids" response too, so a Success==true check here would never fire.
+            // Retry once without the skill hint before falling back to legacy content.
+            if (composerResult.RankedModuleIds.Count == 0 && request.RequestedSkill is not null)
+            {
+                warnings.Add($"No content matched the requested skill '{request.RequestedSkill}' — broadened to all skills.");
+                composerResult = await _composer.RankCandidatesAsync(new ComposerRankingRequest(
+                    StudentId: request.StudentId,
+                    SurfaceName: "PracticeGym",
+                    Candidates: composerCandidates,
+                    MaxResults: maxSuggestions,
+                    RequestedSkill: null,
+                    RequestedSubskill: request.RequestedSubskill,
+                    RequestedObjectiveKey: request.RequestedObjectiveKey,
+                    RequestedDifficulty: request.RequestedDifficulty), ct);
+            }
+
             if (!composerResult.Success || composerResult.RankedModuleIds.Count == 0)
                 return Fallback(targetCefr, warnings,
-                    $"AI composer could not select content: {composerResult.FailureReason ?? "no candidate was ranked"}.");
+                    $"AI composer could not select content: {composerResult.FailureReason ?? composerResult.SelectionReason ?? "no candidate was ranked"}.");
 
             var byModuleId = pool.ToDictionary(e => e.Module.Id);
             var suggestions = new List<PracticeGymModuleSuggestion>();

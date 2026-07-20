@@ -208,9 +208,33 @@ public sealed class TodayPlanModuleSelectionService : ITodayPlanModuleSelectionS
                 RequestedSkill: request.RequestedSkill,
                 PreferredSessionLengthMinutes: request.PreferredSessionLengthMinutes), ct);
 
+            // Sprint 9 bugfix — RequestedSkill must be a soft preference the composer can ignore
+            // when it leaves no candidates (this is the actual contract every caller/doc-comment
+            // already claims), not a hard filter. Live-confirmed: the AI composer took the hint
+            // literally and returned an empty ranking (with a real, sensible reason — "No content
+            // matched the requested 'skill'" — that RankCandidatesAsync's own Success=false/empty
+            // convention for "zero ranked ids" discards) when the pool had zero Modules of that
+            // skill — which used to never happen because RequestedSkill was always null before
+            // this sprint wired it in. Not gated on composerResult.Success: RankCandidatesAsync
+            // returns Success=false for this exact "valid response, zero ids" case too, so a
+            // Success==true check here would never fire. Degrade to the broad pool exactly once,
+            // mirroring Practice Gym's own narrow-then-degrade pattern, before falling back to
+            // legacy Today content.
+            if (composerResult.RankedModuleIds.Count == 0 && request.RequestedSkill is not null)
+            {
+                warnings.Add($"No content matched the requested skill '{request.RequestedSkill}' — broadened to all skills.");
+                composerResult = await _composer.RankCandidatesAsync(new ComposerRankingRequest(
+                    StudentId: request.StudentId,
+                    SurfaceName: "Today",
+                    Candidates: composerCandidates,
+                    MaxResults: maxModules,
+                    RequestedSkill: null,
+                    PreferredSessionLengthMinutes: request.PreferredSessionLengthMinutes), ct);
+            }
+
             if (!composerResult.Success || composerResult.RankedModuleIds.Count == 0)
                 return Fallback(targetCefr, warnings,
-                    $"AI composer could not select content: {composerResult.FailureReason ?? "no candidate was ranked"}.");
+                    $"AI composer could not select content: {composerResult.FailureReason ?? composerResult.SelectionReason ?? "no candidate was ranked"}.");
 
             var byModuleId = pool.ToDictionary(e => e.Module.Id);
             var selected = new List<SelectedModuleResult>();
