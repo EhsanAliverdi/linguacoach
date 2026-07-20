@@ -16,7 +16,7 @@ import {
   AdminDeliveryHealth,
   SkillGraphTaxonomy, SkillGraphNodeListResponse, SkillGraphNodeDetail,
   SkillGraphDraftResponse, SkillGraphBatchActionResponse, SkillGraphCoverageResponse,
-  SkillGraphRetagResponse, SkillGraphContentCoverageResponse,
+  SkillGraphRetagResponse, SkillGraphContentCoverageResponse, SkillGraphResponse,
   StudentListQuery, PagedResponse, AiModelPricingItem,
   AiModelPricingOverrideItem, CreatePricingOverrideRequest, UpdatePricingOverrideRequest,
   AdminNotificationItem, AdminOutboxItem,
@@ -228,6 +228,10 @@ export class AdminApiService {
   }
   getSkillGraphContentCoverage(): Observable<SkillGraphContentCoverageResponse> {
     return this.http.get<SkillGraphContentCoverageResponse>(`${this.api}/skill-graph/content-coverage`);
+  }
+  // Sprint 13 — bulk nodes+edges payload backing the Cytoscape/Dagre graph view.
+  getSkillGraph(): Observable<SkillGraphResponse> {
+    return this.http.get<SkillGraphResponse>(`${this.api}/skill-graph/graph`);
   }
 
   // Prompts

@@ -123,8 +123,38 @@
     }
   </sp-admin-card>
 
-  <!-- Nodes table -->
+  <!-- Nodes table / graph -->
   <sp-admin-card title="Nodes">
+    <div style="display:flex; gap:8px; margin-bottom:12px;">
+      <sp-admin-button size="sm" [variant]="viewMode() === 'table' ? 'primary' : 'neutral'" appearance="outline" (clicked)="setViewMode('table')">
+        Table
+      </sp-admin-button>
+      <sp-admin-button size="sm" [variant]="viewMode() === 'graph' ? 'primary' : 'neutral'" appearance="outline" (clicked)="setViewMode('graph')">
+        Graph
+      </sp-admin-button>
+    </div>
+
+    @if (viewMode() === 'graph') {
+      @if (graphLoading()) {
+        <sp-admin-loading-state message="Loading skill graph" />
+      } @else if (graphError()) {
+        <sp-admin-error-state title="Skill graph unavailable" [message]="graphError()" />
+      } @else {
+        <sp-admin-graph-card
+          title="Skill graph" [subtitle]="graphNodes().length + ' nodes, ' + graphEdges().length + ' prerequisite edges'"
+          status="live">
+          <sp-admin-skill-graph-viz [nodes]="graphNodes()" [edges]="graphEdges()" (nodeSelected)="selectedGraphNode.set($event)" />
+        </sp-admin-graph-card>
+        @if (selectedGraphNode(); as sel) {
+          <div class="sp-admin-mt-2 sp-admin-text-xs">
+            <strong>{{ sel.title }}</strong> — {{ sel.cefrLevel }} / {{ sel.skill }}
+            @if (sel.subskill) { / {{ sel.subskill }} }
+            <sp-admin-badge [tone]="reviewStatusTone(sel.reviewStatus)" appearance="soft" size="sm">{{ sel.reviewStatus }}</sp-admin-badge>
+          </div>
+        }
+      }
+    } @else {
+
     <div class="sp-admin-filter-bar" style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; margin-bottom:12px;">
       <sp-admin-form-field label="CEFR level">
         <sp-admin-select [options]="cefrLevelOptions()" [(ngModel)]="filterCefrLevel" placeholder="All" (ngModelChange)="onFilterChange()" />
@@ -201,6 +231,8 @@
         </table>
       </sp-admin-table>
       <sp-admin-pagination [page]="nodesPage()" [totalPages]="nodesTotalPages()" (pageChange)="onNodesPageChange($event)" />
+    }
+
     }
   </sp-admin-card>
 

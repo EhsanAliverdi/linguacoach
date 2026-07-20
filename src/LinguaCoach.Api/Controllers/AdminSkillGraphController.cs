@@ -89,6 +89,28 @@ public sealed class AdminSkillGraphController : ControllerBase
         });
     }
 
+    /// <summary>Sprint 13 — bulk payload for the Cytoscape/Dagre graph view: every active node
+    /// (219/219 at last count, cheap regardless of ReviewStatus so a PendingReview node is visible
+    /// pre-approval too) plus every prerequisite edge in one call — the paginated <see cref="GetNodes"/>
+    /// never includes edges, and <see cref="GetNode"/> only resolves one node's own prerequisites.</summary>
+    [HttpGet("graph")]
+    public async Task<IActionResult> GetGraph(CancellationToken ct)
+    {
+        var nodes = await _db.SkillGraphNodes.AsNoTracking()
+            .Where(n => n.IsActive)
+            .Select(n => new
+            {
+                n.Id, n.Key, n.Title, n.CefrLevel, n.Skill, n.Subskill, n.DifficultyBand, n.ReviewStatus,
+            })
+            .ToListAsync(ct);
+
+        var edges = await _db.SkillGraphPrerequisiteEdges.AsNoTracking()
+            .Select(e => new { e.NodeId, e.PrerequisiteNodeId })
+            .ToListAsync(ct);
+
+        return Ok(new { nodes, edges });
+    }
+
     [HttpGet("nodes/{id:guid}")]
     public async Task<IActionResult> GetNode(Guid id, CancellationToken ct)
     {

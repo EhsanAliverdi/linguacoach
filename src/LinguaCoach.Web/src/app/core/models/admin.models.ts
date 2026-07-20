@@ -1641,3 +1641,26 @@ export interface SkillGraphContentCoverageResponse {
   nodesWithoutContentCount: number;
   nodesWithoutContent: SkillGraphNodeWithoutContent[];
 }
+
+// Sprint 13 — bulk nodes+edges payload for the Cytoscape/Dagre graph view.
+
+export interface SkillGraphNode {
+  id: string;
+  key: string;
+  title: string;
+  cefrLevel: string;
+  skill: string;
+  subskill: string | null;
+  difficultyBand: number;
+  reviewStatus: 'NotRequired' | 'PendingReview' | 'Approved' | 'Rejected';
+}
+
+export interface SkillGraphEdge {
+  nodeId: string;
+  prerequisiteNodeId: string;
+}
+
+export interface SkillGraphResponse {
+  nodes: SkillGraphNode[];
+  edges: SkillGraphEdge[];
+}

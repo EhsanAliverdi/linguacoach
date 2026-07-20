@@ -22,7 +22,11 @@ import {
   SkillGraphNodeListItem,
   SkillGraphCoverageEntry,
   SkillGraphNodeWithoutContent,
+  SkillGraphNode,
+  SkillGraphEdge,
 } from '../../../core/models/admin.models';
+import { SpAdminGraphCardComponent } from '../../../design-system/admin/components/graph-card/sp-admin-graph-card.component';
+import { SpAdminSkillGraphVizComponent } from './skill-graph-viz/sp-admin-skill-graph-viz.component';
 
 @Component({
   selector: 'app-admin-skill-graph',
@@ -44,10 +48,45 @@ import {
     SpAdminPaginationComponent,
     SpAdminSelectComponent,
     SpAdminTableComponent,
+    SpAdminGraphCardComponent,
+    SpAdminSkillGraphVizComponent,
   ],
 })
 export class AdminSkillGraphComponent implements OnInit {
   constructor(private api: AdminApiService) {}
+
+  // ── Sprint 13 — Table/Graph view toggle + bulk nodes+edges for the visual view ────────────
+  viewMode = signal<'table' | 'graph'>('table');
+  graphLoading = signal(false);
+  graphError = signal('');
+  graphNodes = signal<SkillGraphNode[]>([]);
+  graphEdges = signal<SkillGraphEdge[]>([]);
+  graphLoaded = false;
+  selectedGraphNode = signal<SkillGraphNode | null>(null);
+
+  setViewMode(mode: 'table' | 'graph'): void {
+    this.viewMode.set(mode);
+    if (mode === 'graph' && !this.graphLoaded) {
+      this.loadGraph();
+    }
+  }
+
+  loadGraph(): void {
+    this.graphLoading.set(true);
+    this.graphError.set('');
+    this.api.getSkillGraph().subscribe({
+      next: r => {
+        this.graphNodes.set(r.nodes);
+        this.graphEdges.set(r.edges);
+        this.graphLoading.set(false);
+        this.graphLoaded = true;
+      },
+      error: err => {
+        this.graphError.set(err?.error?.error ?? 'Could not load the skill graph.');
+        this.graphLoading.set(false);
+      },
+    });
+  }
 
   // ── Taxonomy (for dropdowns) ─────────────────────────────────────────────
   taxonomy = signal<SkillGraphTaxonomy | null>(null);
