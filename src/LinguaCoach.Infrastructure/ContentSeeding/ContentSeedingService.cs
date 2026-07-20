@@ -20,16 +20,19 @@ public sealed class ContentSeedingService : IContentSeedingService
     private const int MaxResourcesPerCall = 60;
     private const int MaxCandidateNodes = 60;
 
-    // Vocabulary/Grammar are the only two resource types with a fully deterministic gap_fill
-    // composer (ExerciseGenerationService's Vocabulary/Grammar supported-type bucket) — kept
-    // AI-free for bulk generation to avoid hallucination risk at scale. See the Sprint 6 review.
-    private static readonly (PublishedResourceType Type, string TypeName)[] SeedableResourceTypes =
+    // Every resource type below has a fully deterministic composer (ExerciseGenerationService) —
+    // kept AI-free for bulk generation to avoid hallucination risk at scale. See the Sprint 6
+    // review. Reading (reading_fill_in_blanks, Phase K16/K17's deterministic cloze over the
+    // resource's own excerpt/passage text) added in Sprint 9 once Sprint 8.1 recovered real
+    // ReadingReference/ReadingPassage bank content to seed from — previously this list only had
+    // Vocabulary/Grammar because Reading resources didn't exist in the bank at all.
+    private static readonly (PublishedResourceType Type, string TypeName, string ActivityType)[] SeedableResourceTypes =
     [
-        (PublishedResourceType.Vocabulary, "Vocabulary"),
-        (PublishedResourceType.Grammar, "Grammar")
+        (PublishedResourceType.Vocabulary, "Vocabulary", "gap_fill"),
+        (PublishedResourceType.Grammar, "Grammar", "gap_fill"),
+        (PublishedResourceType.ReadingReference, "ReadingReference", "reading_fill_in_blanks"),
+        (PublishedResourceType.ReadingPassage, "ReadingPassage", "reading_fill_in_blanks"),
     ];
-
-    private const string GapFillActivityType = "gap_fill";
 
     private readonly LinguaCoachDbContext _db;
     private readonly IGenerateLessonFromResourcesHandler _lessonHandler;
@@ -63,7 +66,7 @@ public sealed class ContentSeedingService : IContentSeedingService
 
         foreach (var cefrLevel in cefrLevels)
         {
-            foreach (var (resourceType, typeName) in SeedableResourceTypes)
+            foreach (var (resourceType, typeName, activityType) in SeedableResourceTypes)
             {
                 if (items.Count >= MaxResourcesPerCall) break;
 
@@ -81,7 +84,7 @@ public sealed class ContentSeedingService : IContentSeedingService
 
                 foreach (var resourceId in candidateResourceIds)
                 {
-                    var item = await SeedOneAsync(resourceType, typeName, resourceId, cefrLevel, exercisesPerLesson, request.CreatedByUserId, ct);
+                    var item = await SeedOneAsync(resourceType, typeName, activityType, resourceId, cefrLevel, exercisesPerLesson, request.CreatedByUserId, ct);
                     items.Add(item);
                 }
             }
@@ -95,7 +98,7 @@ public sealed class ContentSeedingService : IContentSeedingService
     }
 
     private async Task<ContentSeedingItemResult> SeedOneAsync(
-        PublishedResourceType resourceType, string typeName, Guid resourceId, string cefrLevel,
+        PublishedResourceType resourceType, string typeName, string activityType, Guid resourceId, string cefrLevel,
         int exercisesPerLesson, Guid? createdByUserId, CancellationToken ct)
     {
         try
@@ -108,7 +111,7 @@ public sealed class ContentSeedingService : IContentSeedingService
 
             var activitiesResult = await _activitiesHandler.HandleAsync(new GenerateActivitiesFromLessonRequest(
                 LessonId: lessonId,
-                Specs: [new ActivityGenerationSpec(GapFillActivityType, exercisesPerLesson)],
+                Specs: [new ActivityGenerationSpec(activityType, exercisesPerLesson)],
                 Notes: "Adaptive Curriculum Sprint 6 — bulk-seeded content.",
                 CreatedByUserId: createdByUserId), ct);
             var moduleId = activitiesResult.ModuleId;

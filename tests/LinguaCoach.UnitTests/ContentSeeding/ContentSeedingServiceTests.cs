@@ -85,6 +85,18 @@ public sealed class ContentSeedingServiceTests : IDisposable
         return item;
     }
 
+    private ResourceBankItem SeedReadingReference(string cefrLevel, string excerpt)
+    {
+        var source = SeedSource();
+        var item = new ResourceBankItem(
+            PublishedResourceType.ReadingReference, source.Id, cefrLevel,
+            ResourceBankItemContent.Serialize(new ReadingReferenceContent(
+                TextType: "Notice", DifficultyNotes: null, ReferenceExcerpt: excerpt)));
+        _db.ResourceBankItems.Add(item);
+        _db.SaveChanges();
+        return item;
+    }
+
     [Fact]
     public async Task Seeds_a_real_approved_module_from_a_vocabulary_resource()
     {
@@ -102,6 +114,33 @@ public sealed class ContentSeedingServiceTests : IDisposable
         module.ReviewStatus.Should().Be(AdminReviewStatus.Approved);
         module.CefrLevel.Should().Be("B1");
         module.Skill.Should().Be("Vocabulary");
+    }
+
+    [Fact]
+    public async Task Seeds_a_real_approved_module_from_a_reading_reference_resource()
+    {
+        // Sprint 9 — Reading extension. Needs enough long content words (>=5 chars) for the
+        // deterministic reading_fill_in_blanks cloze algorithm to find blanks from.
+        SeedReadingReference("B1", "Employees must submit expense reports before the monthly deadline arrives.");
+
+        var result = await _sut.RunAsync(new ContentSeedingRequest(CefrLevels: ["B1"]));
+
+        result.ResourcesConsidered.Should().Be(1);
+        result.ModulesCreatedAndApproved.Should().Be(1);
+        var item = result.Items.Should().ContainSingle().Subject;
+        item.Success.Should().BeTrue();
+        item.ModuleId.Should().NotBeNull();
+
+        var module = await _db.Modules.AsNoTracking().SingleAsync(m => m.Id == item.ModuleId);
+        module.ReviewStatus.Should().Be(AdminReviewStatus.Approved);
+        module.CefrLevel.Should().Be("B1");
+
+        var moduleId = item.ModuleId!.Value;
+        var exerciseLinks = await _db.ModuleExerciseLinks.AsNoTracking().Where(l => l.ModuleId == moduleId).ToListAsync();
+        exerciseLinks.Should().NotBeEmpty();
+        var exercise = await _db.Exercises.AsNoTracking().SingleAsync(e => e.Id == exerciseLinks[0].ExerciseId);
+        exercise.ActivityType.Should().Be("reading_fill_in_blanks");
+        exercise.ReviewStatus.Should().Be(AdminReviewStatus.Approved);
     }
 
     [Fact]
