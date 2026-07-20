@@ -112,6 +112,12 @@ public sealed class AdminResourceCandidateReviewSummaryQueryHandler : IAdminReso
         var rejectedCount = rows.Count(r => r.ReviewStatus == ResourceCandidateReviewStatus.Rejected);
         var skippedCount = rows.Count(r => r.ReviewStatus == ResourceCandidateReviewStatus.Skipped);
         var pendingReviewCount = rows.Count(r => !r.IsPublished && r.ReviewStatus == ResourceCandidateReviewStatus.PendingReview);
+        // Sprint 12 — the exact "stuck, no admin alert" scenario Sprint 8.1 had to repair by hand:
+        // approved for publish, but validation never actually passed, so PublishAsync's own gate
+        // will keep rejecting it forever with nothing surfacing the backlog.
+        var stuckApprovedUnpublishableCount = rows.Count(r => !r.IsPublished
+            && r.ReviewStatus == ResourceCandidateReviewStatus.Approved
+            && r.ValidationStatus != ResourceCandidateValidationStatus.Passed);
 
         return new AdminResourceCandidateReviewSummaryDto(
             TotalCount: rows.Count,
@@ -122,7 +128,8 @@ public sealed class AdminResourceCandidateReviewSummaryQueryHandler : IAdminReso
             PublishableCount: passedCount + needsReviewCount,
             RejectedCount: rejectedCount,
             SkippedCount: skippedCount,
-            PendingReviewCount: pendingReviewCount);
+            PendingReviewCount: pendingReviewCount,
+            StuckApprovedUnpublishableCount: stuckApprovedUnpublishableCount);
     }
 }
 

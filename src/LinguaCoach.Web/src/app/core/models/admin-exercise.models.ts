@@ -127,7 +127,6 @@ export interface GenerateActivitiesFromLessonResult {
 export const ACTIVITY_REVIEW_STATUSES = ['NotRequired', 'PendingReview', 'Approved', 'Rejected'] as const;
 export const ACTIVITY_SOURCE_MODES = ['Manual', 'GeneratedFromLesson', 'Imported'] as const;
 export const ACTIVITY_RENDERER_TYPES = ['Formio', 'Custom', 'Legacy'] as const;
-export const ACTIVITY_TYPES = ['gap_fill', 'multiple_choice_single', 'short_answer'] as const;
 
 // ── Phase K7 — admin "preview as a learner" for a standalone Exercise ────────────────
 export interface ExercisePreviewComponentResult {

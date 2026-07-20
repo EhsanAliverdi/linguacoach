@@ -3,13 +3,14 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Observable, catchError, concatMap, from, map, of, toArray } from 'rxjs';
-import { AdminUnifiedResourceBankService } from '../../../core/services/admin-resource-import.service';
+import { AdminUnifiedResourceBankService, AdminResourceCandidateService } from '../../../core/services/admin-resource-import.service';
 import { AdminLessonService } from '../../../core/services/admin-lesson.service';
 import {
   UnifiedResourceBankItemDto,
   UnifiedResourceBankItemType,
   UNIFIED_RESOURCE_BANK_TYPES,
   RESOURCE_BANK_CEFR_LEVELS,
+  AdminResourceCandidateReviewSummaryDto,
 } from '../../../core/models/admin-resource-import.models';
 import { IssuesSummary } from '../../../core/models/admin-repair.models';
 import { AdminBulkRepairService } from '../../../core/services/admin-bulk-repair.service';
@@ -108,7 +109,16 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
   typeFilter = signal<string>('all');
   cefrLevelFilter = signal<string>('all');
   skillFilter = signal<string>('all');
+  // Sprint 12 — "Delete" always only archived; there was previously no way to see archived items
+  // or reach Unarchive from this list, and no way to isolate resources with zero downstream
+  // Lesson/Exercise ("Unused").
+  showArchived = signal(false);
+  unusedOnly = signal(false);
   page = signal(1);
+
+  // Sprint 12 — global import-backlog summary (untriaged + stuck-approved-unpublishable counts),
+  // reusing the existing per-run summary endpoint with no importRunId/sourceId for a global count.
+  importBacklog = signal<AdminResourceCandidateReviewSummaryDto | null>(null);
 
   readonly pageSize = PAGE_SIZE;
   totalCount = signal(0);
@@ -154,6 +164,7 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
   constructor(
     private bankSvc: AdminUnifiedResourceBankService,
     private lessonSvc: AdminLessonService,
+    private candidateSvc: AdminResourceCandidateService,
     public bulkRepair: AdminBulkRepairService,
     private router: Router,
     private route: ActivatedRoute,
@@ -166,6 +177,14 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
     }
     this.loadAll();
     this.loadIssuesSummary();
+    this.loadImportBacklog();
+  }
+
+  loadImportBacklog(): void {
+    this.candidateSvc.summary().subscribe({
+      next: summary => this.importBacklog.set(summary),
+      error: () => this.importBacklog.set(null),
+    });
   }
 
   loadIssuesSummary(): void {
@@ -191,7 +210,9 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
     const cefrLevel = this.cefrLevelFilter() === 'all' ? undefined : this.cefrLevelFilter();
     const skill = this.skillFilter() === 'all' ? undefined : this.skillFilter();
     this.bankSvc
-      .list(this.page(), this.pageSize, type, cefrLevel, skill, undefined, undefined, undefined, undefined, this.searchQuery() || undefined)
+      .list(
+        this.page(), this.pageSize, type, cefrLevel, skill, undefined, undefined, undefined, undefined,
+        this.searchQuery() || undefined, undefined, this.showArchived(), this.unusedOnly())
       .subscribe({
         next: result => {
           this.items.set(result.items);
@@ -229,6 +250,19 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
     this.loadAll();
   }
 
+  toggleShowArchived(): void {
+    this.showArchived.set(!this.showArchived());
+    this.page.set(1);
+    this.selectedIds.set(new Set());
+    this.loadAll();
+  }
+
+  toggleUnusedOnly(): void {
+    this.unusedOnly.set(!this.unusedOnly());
+    this.page.set(1);
+    this.loadAll();
+  }
+
   onPageChange(page: number): void {
     this.page.set(page);
     this.selectedIds.set(new Set());
@@ -244,25 +278,39 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
   }
 
   rowActions(_item: UnifiedResourceBankItemDto): SpAdminRowAction[] {
-    return [
-      { id: 'view', label: 'View', icon: 'view' },
-      { id: 'edit', label: 'Edit', icon: 'edit' },
-      { id: 'delete', label: 'Delete', icon: 'delete', tone: 'danger', dividerBefore: true },
-    ];
+    return this.showArchived()
+      ? [
+          { id: 'view', label: 'View', icon: 'view' },
+          { id: 'edit', label: 'Edit', icon: 'edit' },
+          { id: 'unarchive', label: 'Unarchive', icon: 'restore', dividerBefore: true },
+        ]
+      : [
+          { id: 'view', label: 'View', icon: 'view' },
+          { id: 'edit', label: 'Edit', icon: 'edit' },
+          { id: 'archive', label: 'Archive', icon: 'delete', tone: 'danger', dividerBefore: true },
+        ];
   }
 
   onRowAction(actionId: string, item: UnifiedResourceBankItemDto): void {
     switch (actionId) {
       case 'view': this.openDetail(item); break;
       case 'edit': this.router.navigate(['/admin/resource-bank', item.id, 'edit']); break;
-      case 'delete': this.deleteItem(item); break;
+      case 'archive': this.archiveItem(item); break;
+      case 'unarchive': this.unarchiveItem(item); break;
     }
   }
 
-  private deleteItem(item: UnifiedResourceBankItemDto): void {
+  private archiveItem(item: UnifiedResourceBankItemDto): void {
     this.bankSvc.archive([item.id]).subscribe({
-      next: () => { this.bulkResultSummary.set(`"${item.title}" deleted.`); this.loadAll(); },
-      error: err => { this.generateError.set(err.error?.error ?? 'Could not delete this item.'); },
+      next: () => { this.bulkResultSummary.set(`"${item.title}" archived.`); this.loadAll(); },
+      error: err => { this.generateError.set(err.error?.error ?? 'Could not archive this item.'); },
+    });
+  }
+
+  private unarchiveItem(item: UnifiedResourceBankItemDto): void {
+    this.bankSvc.unarchive([item.id]).subscribe({
+      next: () => { this.bulkResultSummary.set(`"${item.title}" unarchived.`); this.loadAll(); },
+      error: err => { this.generateError.set(err.error?.error ?? 'Could not unarchive this item.'); },
     });
   }
 
@@ -340,6 +388,23 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
         this.loadAll();
       },
       error: err => { this.bulkRunning.set(false); this.generateError.set(err.error?.error ?? 'Could not archive the selected items.'); },
+    });
+  }
+
+  bulkUnarchive(): void {
+    const ids = Array.from(this.selectedIds());
+    if (ids.length === 0) return;
+    this.bulkRunning.set(true);
+    this.generateError.set('');
+    this.bulkResultSummary.set('');
+    this.bankSvc.unarchive(ids).subscribe({
+      next: result => {
+        this.bulkRunning.set(false);
+        this.bulkResultSummary.set(`${result.succeededCount} of ${result.requestedCount} unarchived.`);
+        this.selectedIds.set(new Set());
+        this.loadAll();
+      },
+      error: err => { this.bulkRunning.set(false); this.generateError.set(err.error?.error ?? 'Could not unarchive the selected items.'); },
     });
   }
 

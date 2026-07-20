@@ -44,7 +44,7 @@
       <sp-admin-select
         size="sm" placeholder="All types"
         [ngModel]="activityTypeFilter()" (ngModelChange)="onActivityTypeFilterChange($event)"
-        [options]="activityTypeOptions" aria-label="Filter by activity type" />
+        [options]="activityTypeOptions()" aria-label="Filter by activity type" />
       <sp-admin-select
         size="sm" placeholder="All levels"
         [ngModel]="cefrLevelFilter()" (ngModelChange)="onCefrLevelFilterChange($event)"

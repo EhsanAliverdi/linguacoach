@@ -55,13 +55,14 @@ public sealed class AdminResourceBankController : ControllerBase
     }
 
     // GET api/admin/resource-bank?type=&cefrLevel=&skill=&subskill=&contextTag=&focusTag=
-    //     &difficultyBand=&search=&sourceId=&page=1&pageSize=20
+    //     &difficultyBand=&search=&sourceId=&page=1&pageSize=20&archivedOnly=&unusedOnly=
     [HttpGet("api/admin/resource-bank")]
     public async Task<IActionResult> ListUnified(
         [FromQuery] string? type = null, [FromQuery] string? cefrLevel = null, [FromQuery] string? skill = null,
         [FromQuery] string? subskill = null, [FromQuery] string? contextTag = null, [FromQuery] string? focusTag = null,
         [FromQuery] int? difficultyBand = null, [FromQuery] string? search = null, [FromQuery] Guid? sourceId = null,
-        [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 20,
+        [FromQuery] bool archivedOnly = false, [FromQuery] bool unusedOnly = false, CancellationToken ct = default)
     {
         UnifiedResourceBankItemType? parsedType = null;
         if (!string.IsNullOrWhiteSpace(type))
@@ -73,7 +74,8 @@ public sealed class AdminResourceBankController : ControllerBase
 
         var result = await _bankQueryService.ListUnifiedAsync(
             new UnifiedResourceBankListFilter(
-                parsedType, cefrLevel, skill, subskill, contextTag, focusTag, difficultyBand, search, sourceId, page, pageSize),
+                parsedType, cefrLevel, skill, subskill, contextTag, focusTag, difficultyBand, search, sourceId, page, pageSize,
+                archivedOnly, unusedOnly),
             ct);
         return Ok(result);
     }

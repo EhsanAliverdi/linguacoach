@@ -4,10 +4,10 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Observable, catchError, concatMap, from, map, of, toArray } from 'rxjs';
 import { AdminExerciseService } from '../../../core/services/admin-exercise.service';
+import { AdminService } from '../../../core/services/admin.service';
 import {
   ExerciseDto,
   ACTIVITY_REVIEW_STATUSES,
-  ACTIVITY_TYPES,
 } from '../../../core/models/admin-exercise.models';
 import { RESOURCE_BANK_CEFR_LEVELS } from '../../../core/models/admin-resource-import.models';
 import { IssuesSummary } from '../../../core/models/admin-repair.models';
@@ -89,8 +89,12 @@ export class AdminExercisesComponent implements OnInit {
   readonly totalPages = computed(() => Math.max(1, Math.ceil(this.totalCount() / this.pageSize)));
 
   readonly statusOptions = [{ value: 'all', label: 'All statuses' }, ...ACTIVITY_REVIEW_STATUSES.map(s => ({ value: s, label: s }))];
-  readonly activityTypeOptions = [{ value: 'all', label: 'All types' }, ...ACTIVITY_TYPES.map(t => ({ value: t, label: t }))];
   readonly cefrLevelOptions = [{ value: 'all', label: 'All levels' }, ...RESOURCE_BANK_CEFR_LEVELS.map(l => ({ value: l, label: l }))];
+
+  // Sprint 12 — was a hardcoded 3-item const (gap_fill/multiple_choice_single/short_answer) that
+  // never matched the real ~25+ ActivityType catalog; now pulled live from
+  // GET api/admin/exercise-types, same source admin-lesson-detail's generate modal already uses.
+  activityTypeOptions = signal([{ value: 'all', label: 'All types' }]);
 
   // ── Phase K4 — bulk selection + bulk actions ────────────────────────────────
   selectedIds = signal<Set<string>>(new Set());
@@ -111,6 +115,7 @@ export class AdminExercisesComponent implements OnInit {
 
   constructor(
     private exerciseSvc: AdminExerciseService,
+    private adminSvc: AdminService,
     public bulkRepair: AdminBulkRepairService,
     private router: Router,
   ) {}
@@ -118,6 +123,17 @@ export class AdminExercisesComponent implements OnInit {
   ngOnInit(): void {
     this.loadAll();
     this.loadIssuesSummary();
+    this.loadActivityTypeOptions();
+  }
+
+  private loadActivityTypeOptions(): void {
+    this.adminSvc.listExerciseTypes().subscribe({
+      next: types => this.activityTypeOptions.set([
+        { value: 'all', label: 'All types' },
+        ...types.map(t => ({ value: t.key, label: t.displayName })),
+      ]),
+      error: () => { /* keep the 'All types' fallback */ },
+    });
   }
 
   loadIssuesSummary(): void {

@@ -373,6 +373,54 @@ public sealed class UnifiedResourceBankQueryServiceTests : IDisposable
         result.Items.Should().ContainSingle().Which.Title.Should().Be("negotiate");
     }
 
+    // ── Sprint 12 — Archived/Unused filters ───────────────────────────────────────
+
+    [Fact]
+    public async Task ArchivedOnly_false_excludes_archived_rows_default_behavior_unchanged()
+    {
+        var active = SeedVocab("garden");
+        var archived = SeedVocab("negotiate");
+        archived.Archive();
+        _db.SaveChanges();
+
+        var result = await _query.ListUnifiedAsync(new UnifiedResourceBankListFilter());
+
+        result.Items.Should().ContainSingle().Which.Title.Should().Be("garden");
+    }
+
+    [Fact]
+    public async Task ArchivedOnly_true_returns_only_archived_rows()
+    {
+        var active = SeedVocab("garden");
+        var archived = SeedVocab("negotiate");
+        archived.Archive();
+        _db.SaveChanges();
+
+        var result = await _query.ListUnifiedAsync(new UnifiedResourceBankListFilter(ArchivedOnly: true));
+
+        result.Items.Should().ContainSingle().Which.Title.Should().Be("negotiate");
+        result.Items[0].IsArchived.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task UnusedOnly_filters_to_items_with_zero_linked_learn_and_activity_counts()
+    {
+        var unused = SeedVocab("garden");
+        var used = SeedVocab("negotiate");
+        _db.SaveChanges();
+
+        var lesson = new Lesson("A lesson", "Lesson body text.", LessonSourceMode.Manual);
+        _db.Lessons.Add(lesson);
+        _db.SaveChanges();
+        _db.LessonResourceLinks.Add(new LessonResourceLink(
+            lesson.Id, PublishedResourceType.Vocabulary, used.Id, LessonResourceRole.Primary));
+        _db.SaveChanges();
+
+        var result = await _query.ListUnifiedAsync(new UnifiedResourceBankListFilter(UnusedOnly: true));
+
+        result.Items.Should().ContainSingle().Which.Title.Should().Be("garden");
+    }
+
     // ── Robustness ──────────────────────────────────────────────────────────────
 
     [Fact]

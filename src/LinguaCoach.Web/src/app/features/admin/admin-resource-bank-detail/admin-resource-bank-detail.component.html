@@ -127,33 +127,42 @@
       </sp-admin-section-card>
     }
 
-    @if (supportsGeneration(d)) {
-      <sp-admin-section-card title="Generate">
+    <sp-admin-section-card title="Generate">
+      @if (supportsGeneration(d)) {
         <p class="sp-admin-hint" style="margin-bottom:0.5rem;">
           Resource Bank items only generate a Lesson directly — Exercises are generated from a
           Lesson (with a count and type you choose there), and a Module is created automatically
           once a Lesson has Exercises.
         </p>
-        <div class="sp-admin-form-actions" style="flex-wrap:wrap;">
-          <sp-admin-button variant="primary" [disabled]="generatingLearn()" (clicked)="generateLearn()">
+      } @else {
+        <p class="sp-admin-hint" style="margin-bottom:0.5rem;">
+          Generation isn't wired up for {{ typeLabel(d.type) }} resources yet — Lesson/Exercise
+          generation only reads Vocabulary/Grammar/Reading resources so far.
+        </p>
+      }
+      <div class="sp-admin-form-actions" style="flex-wrap:wrap;">
+        <span [title]="supportsGeneration(d) ? '' : typeLabel(d.type) + ' resources are not yet supported by Lesson generation.'">
+          <sp-admin-button variant="primary" [disabled]="!supportsGeneration(d) || generatingLearn()" (clicked)="generateLearn()">
             {{ generatingLearn() ? 'Generating…' : 'Generate Learn' }}
           </sp-admin-button>
-          <sp-admin-button variant="primary" appearance="outline" [disabled]="generatingLearnAi()" (clicked)="generateLearnWithAi()">
+        </span>
+        <span [title]="supportsGeneration(d) ? '' : typeLabel(d.type) + ' resources are not yet supported by Lesson generation.'">
+          <sp-admin-button variant="primary" appearance="outline" [disabled]="!supportsGeneration(d) || generatingLearnAi()" (clicked)="generateLearnWithAi()">
             {{ generatingLearnAi() ? 'Generating…' : 'Generate Learn (AI)' }}
           </sp-admin-button>
-        </div>
-      </sp-admin-section-card>
-    }
+        </span>
+      </div>
+    </sp-admin-section-card>
 
     <sp-admin-section-card title="Manage">
       <div class="sp-admin-form-actions">
         @if (d.isArchived) {
           <sp-admin-button variant="neutral" appearance="outline" [disabled]="archiving()" (clicked)="unarchive()">
-            {{ archiving() ? 'Working…' : 'Restore' }}
+            {{ archiving() ? 'Working…' : 'Unarchive' }}
           </sp-admin-button>
         } @else {
           <sp-admin-button variant="danger" appearance="outline" [disabled]="archiving()" (clicked)="archive()">
-            {{ archiving() ? 'Working…' : 'Delete' }}
+            {{ archiving() ? 'Working…' : 'Archive' }}
           </sp-admin-button>
         }
       </div>

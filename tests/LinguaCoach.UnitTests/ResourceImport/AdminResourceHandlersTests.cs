@@ -187,4 +187,24 @@ public sealed class AdminResourceHandlersTests : IDisposable
         summary.PublishedCount.Should().Be(0);
         summary.PublishableCount.Should().Be(3); // Passed + NeedsReview
     }
+
+    [Fact]
+    public async Task Review_summary_reports_stuck_approved_but_unpublishable_candidates_separately()
+    {
+        // Sprint 12 — this is exactly the Sprint 8.1 scenario: approved for publish, but
+        // validation never reached Passed, so PublishAsync's own gate rejects it forever.
+        var (source, raw) = await SeedSourceAndRawAsync();
+        var stuckFailed = SeedCandidateAt(_db, raw, "a", ResourceCandidateValidationStatus.Failed);
+        stuckFailed.Approve();
+        var stuckPending = SeedCandidateAt(_db, raw, "b", ResourceCandidateValidationStatus.Pending);
+        stuckPending.Approve();
+        // A normal not-yet-approved Failed candidate should NOT count here — only Approved ones.
+        SeedCandidateAt(_db, raw, "c", ResourceCandidateValidationStatus.Failed);
+        await _db.SaveChangesAsync();
+
+        var summaryQuery = new AdminResourceCandidateReviewSummaryQueryHandler(_db);
+        var summary = await summaryQuery.HandleAsync(new GetAdminResourceCandidateReviewSummaryQuery());
+
+        summary.StuckApprovedUnpublishableCount.Should().Be(2);
+    }
 }

@@ -238,7 +238,7 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
         var query =
             from e in _db.ResourceBankItems
             join s in _db.CefrResourceSources on e.SourceId equals s.Id
-            where !e.IsArchived
+            where e.IsArchived == filter.ArchivedOnly
             select new QueryRow { Entry = e, Source = s };
 
         if (filter.Type.HasValue)
@@ -291,6 +291,11 @@ public sealed class ResourceBankQueryService : IResourceBankQueryService
         }
 
         items = await WithLinkedCountsAsync(items, ct);
+
+        if (filter.UnusedOnly)
+        {
+            items = items.Where(i => (i.LinkedLearnCount ?? 0) == 0 && (i.LinkedActivityCount ?? 0) == 0).ToList();
+        }
 
         return new UnifiedResourceBankListResult(items, totalCount);
     }

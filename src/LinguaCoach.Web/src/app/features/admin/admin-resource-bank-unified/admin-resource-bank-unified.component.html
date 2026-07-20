@@ -19,6 +19,19 @@
     </sp-admin-alert>
   }
 
+  <!-- Sprint 12 — global import backlog summary: untriaged + stuck-approved-unpublishable
+       candidates, across every import run/source, not scoped to a single run's own page. -->
+  @if (importBacklog(); as backlog) {
+    @if (backlog.pendingReviewCount > 0 || backlog.stuckApprovedUnpublishableCount > 0) {
+      <sp-admin-alert variant="warning">
+        Import backlog: {{ backlog.pendingReviewCount }} candidate(s) awaiting review
+        @if (backlog.stuckApprovedUnpublishableCount > 0) {
+          , {{ backlog.stuckApprovedUnpublishableCount }} approved but stuck (validation never passed — cannot publish)
+        }.
+      </sp-admin-alert>
+    }
+  }
+
   @if (error()) {
     <sp-admin-error-state title="Could not load the resource bank" [message]="error()" />
   }
@@ -54,6 +67,16 @@
         size="sm" placeholder="All skills"
         [ngModel]="skillFilter()" (ngModelChange)="onSkillFilterChange($event)"
         [options]="skillOptions" aria-label="Filter by skill" />
+      <sp-admin-button
+        [variant]="showArchived() ? 'primary' : 'neutral'" appearance="outline" size="sm"
+        (clicked)="toggleShowArchived()">
+        {{ showArchived() ? 'Showing archived' : 'Show archived' }}
+      </sp-admin-button>
+      <sp-admin-button
+        [variant]="unusedOnly() ? 'primary' : 'neutral'" appearance="outline" size="sm"
+        (clicked)="toggleUnusedOnly()">
+        {{ unusedOnly() ? 'Showing unused only' : 'Unused only' }}
+      </sp-admin-button>
       <span class="sp-admin-filter-count">{{ totalCount() }} resource{{ totalCount() !== 1 ? 's' : '' }}</span>
     </sp-admin-filter-bar>
 
@@ -67,14 +90,21 @@
         <div class="sp-admin-form-actions" style="flex-wrap:wrap;align-items:center;margin-bottom:0.75rem;">
           <span class="sp-admin-hint">{{ selectedCount() }} selected</span>
           <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="clearSelection()">Clear</sp-admin-button>
-          <sp-admin-button
-            variant="neutral" size="sm" [disabled]="bulkRunning() || selectedSupportGeneration().length === 0"
-            (clicked)="bulkGenerateLearn()">
-            {{ bulkRunning() ? 'Working…' : 'Generate Learn (' + selectedSupportGeneration().length + ')' }}
-          </sp-admin-button>
-          <sp-admin-button variant="danger" appearance="outline" size="sm" [disabled]="bulkRunning()" (clicked)="bulkArchive()">
-            {{ bulkRunning() ? 'Working…' : 'Delete selected' }}
-          </sp-admin-button>
+          @if (!showArchived()) {
+            <sp-admin-button
+              variant="neutral" size="sm" [disabled]="bulkRunning() || selectedSupportGeneration().length === 0"
+              [title]="selectedSupportGeneration().length === 0 ? 'None of the selected items support Learn generation yet (Writing/Listening/Speaking are not wired in).' : ''"
+              (clicked)="bulkGenerateLearn()">
+              {{ bulkRunning() ? 'Working…' : 'Generate Learn (' + selectedSupportGeneration().length + ')' }}
+            </sp-admin-button>
+            <sp-admin-button variant="danger" appearance="outline" size="sm" [disabled]="bulkRunning()" (clicked)="bulkArchive()">
+              {{ bulkRunning() ? 'Working…' : 'Archive selected' }}
+            </sp-admin-button>
+          } @else {
+            <sp-admin-button variant="primary" appearance="outline" size="sm" [disabled]="bulkRunning()" (clicked)="bulkUnarchive()">
+              {{ bulkRunning() ? 'Working…' : 'Unarchive selected' }}
+            </sp-admin-button>
+          }
         </div>
       }
 

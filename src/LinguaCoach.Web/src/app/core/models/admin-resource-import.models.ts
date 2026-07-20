@@ -169,6 +169,9 @@ export interface AdminResourceCandidateReviewSummaryDto {
   skippedCount: number;
   /** Phase 3 — awaiting an explicit admin decision, not yet published. */
   pendingReviewCount: number;
+  /** Sprint 12 — Approved but ValidationStatus never reached Passed: stuck behind PublishAsync's
+   * own gate with no prior alert. */
+  stuckApprovedUnpublishableCount: number;
 }
 
 // ── Phase 3 (2026-07-15 import candidate review workflow) — skip + content editing ─────

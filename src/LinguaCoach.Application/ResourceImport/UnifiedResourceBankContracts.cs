@@ -39,7 +39,14 @@ public sealed record UnifiedResourceBankListFilter(
     string? SearchText = null,
     Guid? SourceId = null,
     int Page = 1,
-    int PageSize = 20
+    int PageSize = 20,
+    // Sprint 12 — the list previously always excluded archived rows with no way to browse them;
+    // ArchivedOnly=true flips to only-archived so an "Archived" tab can make Unarchive reachable.
+    bool ArchivedOnly = false,
+    // Sprint 12 — "zero downstream Lesson/Exercise". Applied in memory after WithLinkedCountsAsync,
+    // same limitation as the existing Skill filter above: TotalCount reflects the pre-filter page,
+    // not the post-filter item count.
+    bool UnusedOnly = false
 );
 
 /// <summary>One row of the unified Resource Bank view. <see cref="SourceTable"/> and

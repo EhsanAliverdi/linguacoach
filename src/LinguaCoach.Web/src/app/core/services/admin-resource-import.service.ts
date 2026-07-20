@@ -244,6 +244,8 @@ export class AdminUnifiedResourceBankService {
     difficultyBand?: number,
     search?: string,
     sourceId?: string,
+    archivedOnly?: boolean,
+    unusedOnly?: boolean,
   ): Observable<UnifiedResourceBankListResult> {
     let params = new HttpParams().set('page', page).set('pageSize', pageSize);
     if (type) params = params.set('type', type);
@@ -255,6 +257,8 @@ export class AdminUnifiedResourceBankService {
     if (difficultyBand !== undefined && difficultyBand !== null) params = params.set('difficultyBand', difficultyBand);
     if (search) params = params.set('search', search);
     if (sourceId) params = params.set('sourceId', sourceId);
+    if (archivedOnly) params = params.set('archivedOnly', archivedOnly);
+    if (unusedOnly) params = params.set('unusedOnly', unusedOnly);
     return this.http.get<UnifiedResourceBankListResult>(this.base, { params });
   }
 

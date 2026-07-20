@@ -218,7 +218,11 @@ public sealed record AdminResourceCandidateReviewSummaryDto(
     /// <summary>Phase 3 — admin-skipped ("intentionally ignored"), regardless of ValidationStatus.</summary>
     int SkippedCount = 0,
     /// <summary>Phase 3 — awaiting an explicit admin decision (Approve/Reject/Skip), not yet published.</summary>
-    int PendingReviewCount = 0
+    int PendingReviewCount = 0,
+    /// <summary>Sprint 12 — Approved but ValidationStatus never reached Passed: stuck forever
+    /// behind PublishAsync's own gate with no prior alert (the exact class of bug Sprint 8.1
+    /// repaired by hand for 76 candidates before this counter existed).</summary>
+    int StuckApprovedUnpublishableCount = 0
 );
 
 public sealed record GetAdminResourceCandidateReviewSummaryQuery(Guid? ImportRunId = null, Guid? SourceId = null);
