@@ -58,7 +58,7 @@ public sealed class ModuleCommandHandlerTests : IDisposable
     private CreateModuleCommand ManualCommand(Guid lessonId, Guid activityId, string title = "Grammar module") =>
         new(title, new[] { new ModuleLessonLinkInput(lessonId, "Primary") },
             new[] { new ModuleExerciseLinkInput(activityId, "PrimaryPractice") },
-            Description: "Manual draft", ObjectiveKey: null, CefrLevel: "B1", Skill: "Vocabulary", Subskill: "CoreWords",
+            Description: "Manual draft", CefrLevel: "B1", Skill: "Vocabulary", Subskill: "CoreWords",
             ContextTags: new[] { "travel" }, FocusTags: new[] { "past-experience" }, DifficultyBand: 3,
             EstimatedMinutes: 10, FeedbackPlanJson: "{\"completionMessage\":\"Well done\"}", CreatedByUserId: null);
 

@@ -286,7 +286,8 @@ if (!app.Environment.IsEnvironment("Testing"))
     await ExercisePatternSeeder.SeedAsync(db, seederLogger);
     await ExerciseTypeDefinitionSeeder.SeedAsync(db, seederLogger);
     await PlacementItemBankSeeder.SeedAsync(db);
-    await LinguaCoach.Persistence.Seed.CurriculumObjectiveSeeder.SeedAsync(db, seederLogger);
+    // CurriculumObjectiveSeeder retired in Adaptive Curriculum Sprint 7 — replaced by
+    // SkillGraphDraftingService's AI-drafted, admin-approved skill graph (Sprint 1).
     await LinguaCoach.Persistence.Seed.UsageGovernanceSeeder.SeedAsync(db);
     await LinguaCoach.Persistence.Seed.NotificationTemplateSeeder.SeedAsync(db, seederLogger);
     await LinguaCoach.Persistence.Seed.OnboardingTemplateSeeder.SeedAsync(db, seederLogger);

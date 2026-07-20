@@ -23,11 +23,11 @@ namespace LinguaCoach.Infrastructure.Mastery;
 /// to none. This is an accepted, deliberate hard cutover — see
 /// docs/reviews/2026-07-20-adaptive-curriculum-sprint4-node-mastery-review.md for the tradeoffs.
 ///
-/// <see cref="EvaluateObjectiveMasteryAsync"/> is UNCHANGED — still grouped by the legacy
-/// CurriculumObjectiveKey()/PrimarySkill chain — because it serves a different, still-live
-/// consumer (LearningPlanService's own CurriculumObjective-keyed per-plan-objective progress
-/// tracking), which was confirmed NOT superseded this sprint (its own sequencing logic is still
-/// built entirely on CurriculumObjective/CurriculumRoutingService, a separate migration).
+/// Adaptive Curriculum Sprint 7 — <see cref="EvaluateObjectiveMasteryAsync"/> is now node-based
+/// too: <c>LearningPlanService</c>'s plan objectives are keyed by resolved <c>SkillGraphNode</c>
+/// keys (CurriculumObjective/CurriculumRoutingService retired this sprint), so this method now
+/// reuses <see cref="GroupByNodeKeyAsync"/>'s resolution/fan-out and looks up the single requested
+/// node key, rather than the old CurriculumObjectiveKey()/PrimarySkill string match.
 /// </summary>
 public sealed class StudentMasteryEvaluationService : IStudentMasteryEvaluationService
 {
@@ -168,10 +168,8 @@ public sealed class StudentMasteryEvaluationService : IStudentMasteryEvaluationS
         CancellationToken ct = default)
     {
         var allEvents = await _ledger.GetRecentAsync(studentId, limit: 200, ct: ct);
-        // Ledger contract: GetRecentAsync returns events newest-first. Preserve that order.
-        var relevant = allEvents
-            .Where(e => string.Equals(e.CurriculumObjectiveKey() ?? e.PrimarySkill, objectiveKey, StringComparison.OrdinalIgnoreCase))
-            .ToList();
+        var byNode = await GroupByNodeKeyAsync(allEvents, ct);
+        var relevant = byNode.TryGetValue(objectiveKey, out var list) ? list : [];
 
         return ComputeSignal(objectiveKey, relevant);
     }
@@ -272,15 +270,4 @@ public sealed class StudentMasteryEvaluationService : IStudentMasteryEvaluationS
         return MasteryStatus.NeedsPractice;
     }
 
-}
-
-/// <summary>Extension to extract the curriculum objective key from a learning event.</summary>
-file static class LearningEventExtensions
-{
-    // Phase 8 (AI Bank-First Teaching Architecture): StudentLearningEvent.CurriculumObjectiveKey
-    // is now a real field, populated where the writer knows it (see ActivitySubmitHandler).
-    // PatternKey remains the fallback proxy for events written before this field existed, or by
-    // callers that don't yet resolve a real objective key — backward compatible, no threshold
-    // logic below this method changes.
-    public static string? CurriculumObjectiveKey(this StudentLearningEvent e) => e.CurriculumObjectiveKey ?? e.PatternKey;
 }

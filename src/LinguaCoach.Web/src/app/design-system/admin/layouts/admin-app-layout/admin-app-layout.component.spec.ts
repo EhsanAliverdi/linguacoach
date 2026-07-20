@@ -161,7 +161,7 @@ describe('AdminAppLayoutComponent — nav links and shell (Phase 10UI-FIX-2)', (
     const links = getAllNavLinks(host);
     const routes = links.map(l => l.getAttribute('ng-reflect-router-link') ?? l.getAttribute('routerLink'));
     const required = ['/admin', '/admin/students', '/admin/ai-config', '/admin/prompts',
-      '/admin/usage', '/admin/usage-policies', '/admin/curriculum',
+      '/admin/usage', '/admin/usage-policies', '/admin/skill-graph',
       '/admin/exercise-types', '/admin/notifications',
       '/admin/integrations', '/admin/diagnostics', '/admin/security'];
     for (const r of required) {
@@ -201,10 +201,10 @@ describe('AdminAppLayoutComponent — nav links and shell (Phase 10UI-FIX-2)', (
     expect(text).toContain('Usage Policies');
   });
 
-  it('Curriculum link renders in desktop sidebar', () => {
+  it('Skill Graph link renders in desktop sidebar', () => {
     const { host } = setup();
     const text = host.querySelector('sp-admin-sidebar')?.textContent ?? '';
-    expect(text).toContain('Curriculum');
+    expect(text).toContain('Skill Graph');
   });
 
   it('Security link renders in desktop sidebar', () => {
@@ -227,12 +227,12 @@ describe('AdminAppLayoutComponent — nav links and shell (Phase 10UI-FIX-2)', (
     expect(sidebarText.toLowerCase()).not.toContain('logout');
   });
 
-  it('mobile drawer contains Usage Policies and Curriculum links', () => {
+  it('mobile drawer contains Usage Policies and Skill Graph links', () => {
     const { host } = setup();
     const drawerEl = host.querySelector('aside') as HTMLElement;
     const text = drawerEl?.textContent ?? '';
     expect(text).toContain('Usage Policies');
-    expect(text).toContain('Curriculum');
+    expect(text).toContain('Skill Graph');
   });
 
   it('mobile drawer contains Security link', () => {
@@ -281,7 +281,7 @@ describe('AdminAppLayoutComponent — nav links and shell (Phase 10UI-FIX-2)', (
     const asides = Array.from(host.querySelectorAll('aside')) as HTMLElement[];
     for (const aside of asides) {
       const headingText = aside.textContent ?? '';
-      for (const section of ['Learning Setup', 'Curriculum', 'Exercise Types']) {
+      for (const section of ['Learning Setup', 'Skill Graph', 'Exercise Types']) {
         const occurrences = headingText.split(section).length - 1;
         expect(occurrences).withContext(`"${section}" should appear exactly once in ${aside.getAttribute('aria-label') ?? aside.className}`).toBe(1);
       }

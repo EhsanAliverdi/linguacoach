@@ -9,7 +9,7 @@ internal static class ModuleMappers
         Module item,
         IReadOnlyList<ModuleLessonLink> lessonLinks,
         IReadOnlyList<ModuleExerciseLink> exerciseLinks) => new(
-        item.Id, item.Title, item.Description, item.ObjectiveKey, item.CefrLevel, item.Skill, item.Subskill,
+        item.Id, item.Title, item.Description, item.CefrLevel, item.Skill, item.Subskill,
         item.ContextTagsJson, item.FocusTagsJson, item.DifficultyBand, item.EstimatedMinutes, item.FeedbackPlanJson,
         item.SourceMode.ToString(), item.GenerationProvider, item.GenerationModel, item.ReviewStatus.ToString(),
         item.CreatedByUserId, item.ReviewedByUserId, item.ApprovedAtUtc, item.RejectedAtUtc,

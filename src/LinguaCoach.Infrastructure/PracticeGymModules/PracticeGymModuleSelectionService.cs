@@ -161,8 +161,16 @@ public sealed class PracticeGymModuleSelectionService : IPracticeGymModuleSelect
 
             if (!string.IsNullOrWhiteSpace(request.RequestedObjectiveKey))
             {
+                // Adaptive Curriculum Sprint 7 — RequestedObjectiveKey now refers to a
+                // SkillGraphNode key (Module.ObjectiveKey was retired this sprint); narrow via the
+                // real ModuleSkillGraphNodeLink coverage instead of a free-text field match.
+                var moduleIdsForNode = await _db.ModuleSkillGraphNodeLinks.AsNoTracking()
+                    .Join(_db.SkillGraphNodes.AsNoTracking().Where(n => n.Key == request.RequestedObjectiveKey),
+                        l => l.SkillGraphNodeId, n => n.Id, (l, n) => l.ModuleId)
+                    .ToListAsync(ct);
+
                 var objectiveMatches = eligible
-                    .Where(e => string.Equals(e.Module.ObjectiveKey, request.RequestedObjectiveKey, StringComparison.OrdinalIgnoreCase))
+                    .Where(e => moduleIdsForNode.Contains(e.Module.Id))
                     .ToList();
                 if (objectiveMatches.Count > 0)
                     pool = objectiveMatches;
@@ -216,6 +224,7 @@ public sealed class PracticeGymModuleSelectionService : IPracticeGymModuleSelect
 
             var nodeMasteryWeaknessModuleIds = await ResolveNodeMasteryWeaknessMatchModuleIdsAsync(request.StudentId, pool, ct);
             var topGoalTags = await ResolveTopGoalTagsAsync(request.StudentId, ct);
+            var primaryNodeKeyByModuleId = await ResolvePrimaryNodeKeysAsync(pool, ct);
 
             bool IsRemediation(Module module) =>
                 request.WeaknessSignals is { Count: > 0 } && module.Skill is not null
@@ -231,7 +240,7 @@ public sealed class PracticeGymModuleSelectionService : IPracticeGymModuleSelect
                 EstimatedMinutes: e.Module.EstimatedMinutes,
                 ContextTags: SafeParseStringArray(e.Module.ContextTagsJson),
                 FocusTags: SafeParseStringArray(e.Module.FocusTagsJson),
-                ObjectiveKey: e.Module.ObjectiveKey,
+                ObjectiveKey: primaryNodeKeyByModuleId.GetValueOrDefault(e.Module.Id),
                 IsWeaknessMatch: nodeMasteryWeaknessModuleIds.Contains(e.Module.Id) || IsRemediation(e.Module),
                 IsGoalMatch: topGoalTags.Count > 0
                     && SafeParseStringArray(e.Module.ContextTagsJson).Any(t => topGoalTags.Contains(t)),
@@ -341,6 +350,25 @@ public sealed class PracticeGymModuleSelectionService : IPracticeGymModuleSelect
             .ToListAsync(ct);
 
         return links.Where(x => gapNodeKeys.Contains(x.Key)).Select(x => x.ModuleId).ToHashSet();
+    }
+
+    /// <summary>Adaptive Curriculum Sprint 7 — one representative skill-graph node key per pool
+    /// Module (its first linked node, if any), used only as descriptive context for the composer's
+    /// prompt (<c>ComposerCandidate.ObjectiveKey</c>) — replaces the retired <c>Module.ObjectiveKey</c>
+    /// free-text field with a real, validated relationship.</summary>
+    private async Task<Dictionary<Guid, string>> ResolvePrimaryNodeKeysAsync(
+        List<(Module Module, List<Lesson> Learns, List<Exercise> Activities)> pool, CancellationToken ct)
+    {
+        var poolModuleIds = pool.Select(e => e.Module.Id).ToList();
+        var links = await _db.ModuleSkillGraphNodeLinks.AsNoTracking()
+            .Where(l => poolModuleIds.Contains(l.ModuleId))
+            .Join(_db.SkillGraphNodes.AsNoTracking(), l => l.SkillGraphNodeId, n => n.Id,
+                (l, n) => new { l.ModuleId, n.Key })
+            .ToListAsync(ct);
+
+        return links
+            .GroupBy(x => x.ModuleId)
+            .ToDictionary(g => g.Key, g => g.First().Key);
     }
 
     /// <summary>Adaptive Curriculum Sprint 5 — the student's top-weighted <c>StudentGoalWeight</c>

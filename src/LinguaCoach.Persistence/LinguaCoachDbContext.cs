@@ -53,7 +53,7 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<StudentFlowSubmission> StudentFlowSubmissions => Set<StudentFlowSubmission>();
 
     // Phase 10K — Curriculum syllabus foundation
-    public DbSet<CurriculumObjective> CurriculumObjectives => Set<CurriculumObjective>();
+    // CurriculumObjective retired in Adaptive Curriculum Sprint 7 — replaced by SkillGraphNode.
     public DbSet<CefrResourceSource> CefrResourceSources => Set<CefrResourceSource>();
     public DbSet<CefrDescriptor> CefrDescriptors => Set<CefrDescriptor>();
 
@@ -147,9 +147,8 @@ public sealed class LinguaCoachDbContext : IdentityDbContext<ApplicationUser, Id
     public DbSet<ModuleExerciseLink> ModuleExerciseLinks => Set<ModuleExerciseLink>();
 
     // Adaptive Curriculum Sprint 1 — skill/prerequisite graph (AI-drafted, admin-batch-approved),
-    // target replacement for the flat CurriculumObjective taxonomy. See
-    // docs/architecture/adaptive-curriculum-skill-graph.md. Additive only in Sprint 1 — nothing
-    // consumes this yet.
+    // replacement for CurriculumObjective (retired in Sprint 7). See
+    // docs/architecture/adaptive-curriculum-skill-graph.md.
     public DbSet<SkillGraphNode> SkillGraphNodes => Set<SkillGraphNode>();
     public DbSet<SkillGraphPrerequisiteEdge> SkillGraphPrerequisiteEdges => Set<SkillGraphPrerequisiteEdge>();
 

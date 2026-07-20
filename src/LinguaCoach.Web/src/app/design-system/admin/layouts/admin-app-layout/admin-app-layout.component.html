@@ -119,9 +119,6 @@
     <div class="mb-2">
       <sp-admin-sidebar-section label="Learning Setup" [collapsed]="false" />
       <ul class="flex flex-col gap-1">
-        <li><sp-admin-sidebar-nav-item label="Curriculum" route="/admin/curriculum" [collapsed]="false" (itemClick)="closeDrawer()">
-          <sp-admin-icon name="book" />
-        </sp-admin-sidebar-nav-item></li>
         <li><sp-admin-sidebar-nav-item label="Skill Graph" route="/admin/skill-graph" [collapsed]="false" (itemClick)="closeDrawer()">
           <sp-admin-icon name="grid" />
         </sp-admin-sidebar-nav-item></li>
@@ -273,13 +270,10 @@
         </ul>
       </div>
 
-      <!-- LEARNING SETUP (curriculum + capability config, not the content bank) -->
+      <!-- LEARNING SETUP (skill graph + capability config, not the content bank) -->
       <div class="mb-2">
         <sp-admin-sidebar-section label="Learning Setup" [collapsed]="collapsed()" />
         <ul class="flex flex-col gap-1">
-          <li><sp-admin-sidebar-nav-item label="Curriculum" route="/admin/curriculum" [collapsed]="collapsed()">
-            <sp-admin-icon name="book" />
-          </sp-admin-sidebar-nav-item></li>
           <li><sp-admin-sidebar-nav-item label="Skill Graph" route="/admin/skill-graph" [collapsed]="collapsed()">
             <sp-admin-icon name="grid" />
           </sp-admin-sidebar-nav-item></li>

@@ -76,7 +76,6 @@ public sealed class PracticeGymModuleSelectionServiceTests : IDisposable
         string? cefrLevel = "B1",
         string? skill = "Vocabulary",
         string? subskill = null,
-        string? objectiveKey = null,
         int? difficultyBand = null,
         int? estimatedMinutes = 10,
         string contextTagsJson = "[]",
@@ -85,7 +84,7 @@ public sealed class PracticeGymModuleSelectionServiceTests : IDisposable
         bool linkApprovedActivity = true)
     {
         var module = new Module("Resilience Module", ModuleSourceMode.Manual,
-            objectiveKey: objectiveKey, cefrLevel: cefrLevel, skill: skill, subskill: subskill,
+            cefrLevel: cefrLevel, skill: skill, subskill: subskill,
             estimatedMinutes: estimatedMinutes, contextTagsJson: contextTagsJson, focusTagsJson: focusTagsJson,
             difficultyBand: difficultyBand);
         if (approved) module.Approve(null);

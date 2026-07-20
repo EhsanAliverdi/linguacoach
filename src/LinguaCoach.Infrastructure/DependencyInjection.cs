@@ -40,8 +40,6 @@ using LinguaCoach.Application.Sessions;
 using LinguaCoach.Infrastructure.Placement;
 using LinguaCoach.Infrastructure.Sessions;
 using LinguaCoach.Infrastructure.Speaking;
-using LinguaCoach.Application.Curriculum;
-using LinguaCoach.Infrastructure.Curriculum;
 using LinguaCoach.Application.PracticeGym;
 using Microsoft.Extensions.Options;
 using LinguaCoach.Application.Profile;
@@ -383,19 +381,11 @@ public static class DependencyInjection
         services.AddScoped<ICompleteExerciseHandler>(sp => sp.GetRequiredService<SessionLifecycleHandler>());
         services.AddScoped<IExercisePatternRepository, ExercisePatternRepository>();
 
-        // Curriculum syllabus (Phase 10K)
-        services.AddScoped<CurriculumSyllabusQueryService>();
-        services.AddScoped<ICurriculumSyllabusQuery>(sp => sp.GetRequiredService<CurriculumSyllabusQueryService>());
-        services.AddScoped<IAdminCurriculumSyllabusQuery>(sp => sp.GetRequiredService<CurriculumSyllabusQueryService>());
-
-        // Curriculum write service (Phase 10Q)
-        services.AddScoped<ICurriculumObjectiveWriteService, CurriculumObjectiveWriteService>();
-
-        // Curriculum routing (Phase 10L)
-        services.AddScoped<ICurriculumRoutingService, CurriculumRoutingService>();
-
-        // Curriculum validation (Phase 11B)
-        services.AddScoped<ICurriculumValidationService, CurriculumValidationService>();
+        // Adaptive Curriculum Sprint 7 — CurriculumObjective/CurriculumRoutingService/
+        // CurriculumObjectiveWriteService/CurriculumSyllabusQueryService/CurriculumValidationService
+        // and their DI registrations (formerly here, Phases 10K/10L/10Q/11B) were retired this
+        // sprint — replaced by SkillGraphRoutingService (registered below). See
+        // docs/reviews/2026-07-20-adaptive-curriculum-sprint7-legacy-retirement-review.md.
 
         // Phase I2C: the student activity readiness pool (Phase 10M) and its replenishment engine
         // (Phase 10N) were deleted — see docs/reviews/2026-07-10-phase-i2c-readiness-pool-removal-review.md.
@@ -703,6 +693,10 @@ public static class DependencyInjection
         // Lesson/Exercise/Module generation handlers rather than reinventing generation logic.
         services.AddScoped<LinguaCoach.Application.ContentSeeding.IContentSeedingService,
             LinguaCoach.Infrastructure.ContentSeeding.ContentSeedingService>();
+        // Adaptive Curriculum Sprint 7 — node-based plan-generation routing, replaces
+        // ICurriculumRoutingService/CurriculumObjective (retired this sprint).
+        services.AddScoped<LinguaCoach.Application.SkillGraph.ISkillGraphRoutingService,
+            LinguaCoach.Infrastructure.SkillGraph.SkillGraphRoutingService>();
 
         // Phase 4 (2026-07-15) — large-scale AI import packages. App never crashes on a missing
         // "ImportPackageLimits" config section — sensible defaults are baked into the options class.

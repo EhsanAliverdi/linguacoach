@@ -155,7 +155,7 @@ public sealed class AiModuleGenerationService : IGenerateModuleFromResourceWithA
         try
         {
             module = new Module(
-                resolvedTitle, ModuleSourceMode.GeneratedFromResources, description, objectiveKey: null,
+                resolvedTitle, ModuleSourceMode.GeneratedFromResources, description,
                 cefrLevel, skill, subskill,
                 JsonSerializer.Serialize(contextTags), JsonSerializer.Serialize(focusTags),
                 difficultyBand, estimatedMinutes, feedbackPlanJson,

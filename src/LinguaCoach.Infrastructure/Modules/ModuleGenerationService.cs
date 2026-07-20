@@ -196,7 +196,7 @@ public sealed class ModuleGenerationService :
         try
         {
             module = new Module(
-                resolvedTitle, sourceMode, description, objectiveKey: null,
+                resolvedTitle, sourceMode, description,
                 cefrLevel, skill, subskill,
                 JsonSerializer.Serialize(contextTags), JsonSerializer.Serialize(focusTags),
                 difficultyBand, estimatedMinutes, feedbackPlanJson,

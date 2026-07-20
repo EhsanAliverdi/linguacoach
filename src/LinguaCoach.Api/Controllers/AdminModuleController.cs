@@ -131,7 +131,7 @@ public sealed class AdminModuleController : ControllerBase
         try
         {
             var result = await _createHandler.HandleAsync(new CreateModuleCommand(
-                body.Title, body.LessonLinks, body.ExerciseLinks, body.Description, body.ObjectiveKey,
+                body.Title, body.LessonLinks, body.ExerciseLinks, body.Description,
                 body.CefrLevel, body.Skill, body.Subskill, body.ContextTags, body.FocusTags,
                 body.DifficultyBand, body.EstimatedMinutes, body.FeedbackPlanJson, GetCurrentUserId()), ct);
             return Ok(result);
@@ -355,7 +355,7 @@ public sealed class AdminModuleController : ControllerBase
 
     public sealed record CreateModuleRequestBody(
         string Title, IReadOnlyList<ModuleLessonLinkInput> LessonLinks, IReadOnlyList<ModuleExerciseLinkInput> ExerciseLinks,
-        string? Description = null, string? ObjectiveKey = null, string? CefrLevel = null, string? Skill = null,
+        string? Description = null, string? CefrLevel = null, string? Skill = null,
         string? Subskill = null, IReadOnlyList<string>? ContextTags = null, IReadOnlyList<string>? FocusTags = null,
         int? DifficultyBand = null, int? EstimatedMinutes = null, string? FeedbackPlanJson = null
     );

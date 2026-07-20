@@ -47,8 +47,6 @@ import { AdminDiagnosticsComponent } from './admin-diagnostics/admin-diagnostics
 import { AdminIntegrationsComponent } from './admin-integrations/admin-integrations.component';
 import { AdminPromptsComponent } from './admin-prompts/admin-prompts.component';
 import { AdminStudentsComponent } from './admin-students/admin-students.component';
-import { AdminCurriculumComponent } from './admin-curriculum/admin-curriculum.component';
-import { CurriculumService } from '../../core/services/curriculum.service';
 import { AdminApiService } from '../../core/services/admin.api.service';
 import { AiUsageService } from '../../core/services/ai-usage.service';
 import { DiagnosticsService } from '../../core/services/diagnostics.service';
@@ -142,27 +140,9 @@ describe('admin wrapper migration', () => {
     expect(query(fixture.nativeElement, 'sp-admin-table-actions')).toBeTruthy();
   });
 
-  it('curriculum create form uses sp-admin-form-field wrappers (10X-G-F)', () => {
-    const curriculum = jasmine.createSpyObj('CurriculumService', ['listObjectives', 'getTaxonomy', 'getValidationSummary', 'getCoverageMatrix']);
-    curriculum.listObjectives.and.returnValue(of([]));
-    curriculum.getTaxonomy.and.returnValue(of({
-      cefrLevels: ['A1', 'B1'], skills: ['writing', 'speaking'], contextTags: ['general_english'], focusTags: [],
-    }));
-    curriculum.getValidationSummary.and.returnValue(of({ isValid: true, totalObjectivesChecked: 0, errorCount: 0, warningCount: 0, coverageGapCount: 0, errors: [], warnings: [], coverageGaps: [] }));
-    curriculum.getCoverageMatrix.and.returnValue(of({ cefrLevels: [], skills: [], cells: [] }));
-
-    TestBed.configureTestingModule({
-      imports: [AdminCurriculumComponent],
-      providers: [provideRouter([]), { provide: CurriculumService, useValue: curriculum }],
-    });
-
-    const fixture = TestBed.createComponent(AdminCurriculumComponent);
-    fixture.detectChanges();
-    fixture.componentInstance.startCreate();
-    fixture.detectChanges();
-
-    expect(fixture.nativeElement.querySelectorAll('sp-admin-form-field').length).toBeGreaterThanOrEqual(6);
-  });
+  // The "curriculum create form uses sp-admin-form-field wrappers" test was removed in Adaptive
+  // Curriculum Sprint 7 — AdminCurriculumComponent/CurriculumService were retired along with
+  // CurriculumObjective/CurriculumRoutingService (superseded by the skill-graph admin surface).
 
   it('AI Config page renders with wrapper cards', () => {
     const adminApi = jasmine.createSpyObj('AdminApiService', ['listAiCategories', 'listAiProviders', 'listAiPricing', 'listAiPricingOverrides']);

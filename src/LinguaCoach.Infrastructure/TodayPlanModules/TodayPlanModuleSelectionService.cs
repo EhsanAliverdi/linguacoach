@@ -181,6 +181,7 @@ public sealed class TodayPlanModuleSelectionService : ITodayPlanModuleSelectionS
 
             var weaknessModuleIds = await ResolveWeaknessMatchModuleIdsAsync(request.StudentId, pool, ct);
             var topGoalTags = await ResolveTopGoalTagsAsync(request.StudentId, ct);
+            var primaryNodeKeyByModuleId = await ResolvePrimaryNodeKeysAsync(pool, ct);
 
             var composerCandidates = pool.Select(e => new ComposerCandidate(
                 ModuleId: e.Module.Id,
@@ -192,7 +193,7 @@ public sealed class TodayPlanModuleSelectionService : ITodayPlanModuleSelectionS
                 EstimatedMinutes: e.Module.EstimatedMinutes,
                 ContextTags: SafeParseStringArray(e.Module.ContextTagsJson),
                 FocusTags: SafeParseStringArray(e.Module.FocusTagsJson),
-                ObjectiveKey: e.Module.ObjectiveKey,
+                ObjectiveKey: primaryNodeKeyByModuleId.GetValueOrDefault(e.Module.Id),
                 IsWeaknessMatch: weaknessModuleIds.Contains(e.Module.Id),
                 IsGoalMatch: topGoalTags.Count > 0
                     && SafeParseStringArray(e.Module.ContextTagsJson).Any(t => topGoalTags.Contains(t)),
@@ -298,6 +299,25 @@ public sealed class TodayPlanModuleSelectionService : ITodayPlanModuleSelectionS
                 .Select(g => g.GoalTag)
                 .ToListAsync(ct),
             StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Adaptive Curriculum Sprint 7 — one representative skill-graph node key per pool
+    /// Module (its first linked node, if any), used only as descriptive context for the composer's
+    /// prompt (<c>ComposerCandidate.ObjectiveKey</c>) — replaces the retired <c>Module.ObjectiveKey</c>
+    /// free-text field with a real, validated relationship.</summary>
+    private async Task<Dictionary<Guid, string>> ResolvePrimaryNodeKeysAsync(
+        List<(Module Module, List<Lesson> Learns, List<Exercise> Activities)> pool, CancellationToken ct)
+    {
+        var poolModuleIds = pool.Select(e => e.Module.Id).ToList();
+        var links = await _db.ModuleSkillGraphNodeLinks.AsNoTracking()
+            .Where(l => poolModuleIds.Contains(l.ModuleId))
+            .Join(_db.SkillGraphNodes.AsNoTracking(), l => l.SkillGraphNodeId, n => n.Id,
+                (l, n) => new { l.ModuleId, n.Key })
+            .ToListAsync(ct);
+
+        return links
+            .GroupBy(x => x.ModuleId)
+            .ToDictionary(g => g.Key, g => g.First().Key);
+    }
 
     private static string BuildReason(
         Module module, TodayPlanModuleSelectionRequest request, bool usedBroadenedCefr, bool isWeaknessMatch)

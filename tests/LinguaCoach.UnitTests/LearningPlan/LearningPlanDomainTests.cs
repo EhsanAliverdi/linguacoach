@@ -419,17 +419,8 @@ public sealed class LearningPlanDomainTests
         plan.Objectives.Should().HaveCount(5);
     }
 
-    // 30. PreferredObjectiveKey is part of CurriculumRoutingRequest (Phase 12D addition).
-    [Fact]
-    public void CurriculumRoutingRequest_HasPreferredObjectiveKey()
-    {
-        var req = new LinguaCoach.Application.Curriculum.CurriculumRoutingRequest
-        {
-            StudentId = Guid.NewGuid(),
-            Source = "test",
-            PreferredObjectiveKey = "b2_speaking_01"
-        };
-
-        req.PreferredObjectiveKey.Should().Be("b2_speaking_01");
-    }
+    // Test 30 (PreferredObjectiveKey on CurriculumRoutingRequest) removed in Adaptive Curriculum
+    // Sprint 7 — CurriculumRoutingRequest/CurriculumObjective were retired; PreferredObjectiveKey
+    // had no equivalent on SkillGraphRoutingRequest since LearningPlanService never used it (its
+    // only other caller, AdminCurriculumController's routing-preview diagnostic, is retired too).
 }

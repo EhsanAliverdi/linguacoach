@@ -24,7 +24,7 @@ public sealed class AdminCreateModuleHandler : IAdminCreateModuleHandler
         try
         {
             module = new Module(
-                command.Title, ModuleSourceMode.Manual, command.Description, command.ObjectiveKey,
+                command.Title, ModuleSourceMode.Manual, command.Description,
                 command.CefrLevel, command.Skill, command.Subskill,
                 ToJsonArray(command.ContextTags), ToJsonArray(command.FocusTags),
                 command.DifficultyBand, command.EstimatedMinutes, command.FeedbackPlanJson,

@@ -25,9 +25,9 @@ public sealed class Module : BaseEntity
     public string Title { get; private set; } = string.Empty;
     public string? Description { get; private set; }
 
-    /// <summary>Optional alignment to a curriculum objective/concept, for future use. Null for
-    /// H5-generated drafts.</summary>
-    public string? ObjectiveKey { get; private set; }
+    // ObjectiveKey (free-text alignment to the retired CurriculumObjective taxonomy) was removed
+    // in Adaptive Curriculum Sprint 7 — real Module-to-competency alignment is now
+    // ModuleSkillGraphNodeLink, a validated many-to-many relationship, not a free-text field.
 
     public string? CefrLevel { get; private set; }
     public string? Skill { get; private set; }
@@ -72,7 +72,6 @@ public sealed class Module : BaseEntity
         string title,
         ModuleSourceMode sourceMode,
         string? description = null,
-        string? objectiveKey = null,
         string? cefrLevel = null,
         string? skill = null,
         string? subskill = null,
@@ -90,7 +89,6 @@ public sealed class Module : BaseEntity
         Title = title.Trim();
         SourceMode = sourceMode;
         Description = description?.Trim();
-        ObjectiveKey = objectiveKey?.Trim();
         CefrLevel = cefrLevel?.Trim().ToUpperInvariant();
         Skill = skill?.Trim();
         Subskill = subskill?.Trim();

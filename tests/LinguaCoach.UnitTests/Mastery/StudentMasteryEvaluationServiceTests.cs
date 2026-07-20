@@ -59,74 +59,72 @@ public sealed class StudentMasteryEvaluationServiceTests : IDisposable
     }
 
     // -------------------------------------------------------------------------
-    // 1. InsufficientEvidence when fewer than 3 events
+    // Adaptive Curriculum Sprint 7 — EvaluateObjectiveMasteryAsync now resolves the requested
+    // objectiveKey as a SkillGraphNode key (reusing GroupByNodeKeyAsync), since
+    // LearningPlanService's plan objectives are node-keyed after CurriculumObjective's retirement.
+    // Events must carry a real ActivityId resolving through StudentExerciseLaunch/Module/
+    // ModuleSkillGraphNodeLink to count — a plain skill string no longer matches anything.
     // -------------------------------------------------------------------------
+
+    // 1. InsufficientEvidence when fewer than 3 events
     [Fact]
     public async Task MasteryStatus_InsufficientEvidence_WhenFewerThan3Events()
     {
+        var (activityId, nodeKey) = await SeedModuleLinkedToNodeAsync();
         _ledger.SetEvents(_studentId, [
-            MakeEvent("speaking", LearningEventOutcome.Practised, 80)
+            MakeEvent("speaking", LearningEventOutcome.Practised, 80, activityId)
         ]);
 
-        var signal = await _sut.EvaluateObjectiveMasteryAsync(_studentId, "speaking");
+        var signal = await _sut.EvaluateObjectiveMasteryAsync(_studentId, nodeKey);
 
         signal.MasteryStatus.Should().Be(MasteryStatus.InsufficientEvidence);
         signal.EvidenceCount.Should().Be(1);
     }
 
-    // -------------------------------------------------------------------------
     // 2. Mastered when >= 5 events, 3 consecutive successes, avg >= 80
-    // -------------------------------------------------------------------------
     [Fact]
     public async Task MasteryStatus_Mastered_When5EventsConsecutiveSuccessHighScore()
     {
-        _ledger.SetEvents(_studentId, [
-            MakeEvent("speaking", LearningEventOutcome.Mastered, 90),
-            MakeEvent("speaking", LearningEventOutcome.Practised, 85),
-            MakeEvent("speaking", LearningEventOutcome.Practised, 88),
-            MakeEvent("speaking", LearningEventOutcome.Practised, 82),
-            MakeEvent("speaking", LearningEventOutcome.Practised, 84)
-        ]);
+        var (activityId, nodeKey) = await SeedModuleLinkedToNodeAsync();
+        _ledger.SetEvents(_studentId, MasteredEvents("speaking", activityId));
 
-        var signal = await _sut.EvaluateObjectiveMasteryAsync(_studentId, "speaking");
+        var signal = await _sut.EvaluateObjectiveMasteryAsync(_studentId, nodeKey);
 
         signal.MasteryStatus.Should().Be(MasteryStatus.Mastered);
         signal.ConsecutiveSuccesses.Should().BeGreaterOrEqualTo(3);
         signal.RecentAverageScore.Should().BeGreaterOrEqualTo(80);
     }
 
-    // -------------------------------------------------------------------------
     // 3. AtRisk when 2+ consecutive failures (most-recent first)
-    // -------------------------------------------------------------------------
     [Fact]
     public async Task MasteryStatus_AtRisk_WhenConsecutiveFailures()
     {
+        var (activityId, nodeKey) = await SeedModuleLinkedToNodeAsync();
         // Events are ordered newest-first by the ledger. Two most-recent are failures.
         _ledger.SetEvents(_studentId, [
-            MakeEvent("grammar", LearningEventOutcome.Failed, 20),  // newest
-            MakeEvent("grammar", LearningEventOutcome.Failed, 15),
-            MakeEvent("grammar", LearningEventOutcome.Practised, 70) // oldest
+            MakeEvent("speaking", LearningEventOutcome.Failed, 20, activityId),  // newest
+            MakeEvent("speaking", LearningEventOutcome.Failed, 15, activityId),
+            MakeEvent("speaking", LearningEventOutcome.Practised, 70, activityId) // oldest
         ]);
 
-        var signal = await _sut.EvaluateObjectiveMasteryAsync(_studentId, "grammar");
+        var signal = await _sut.EvaluateObjectiveMasteryAsync(_studentId, nodeKey);
 
         signal.MasteryStatus.Should().Be(MasteryStatus.AtRisk);
         signal.ConsecutiveFailures.Should().BeGreaterOrEqualTo(2);
     }
 
-    // -------------------------------------------------------------------------
-    // 4. NeedsReview when mixed but last event success, avg 50–79
-    // -------------------------------------------------------------------------
+    // 4. NeedsReview when mixed but last event success, avg 50-79
     [Fact]
     public async Task MasteryStatus_NeedsReview_WhenMixedButHighAvg()
     {
+        var (activityId, nodeKey) = await SeedModuleLinkedToNodeAsync();
         _ledger.SetEvents(_studentId, [
-            MakeEvent("vocabulary", LearningEventOutcome.Practised, 75),
-            MakeEvent("vocabulary", LearningEventOutcome.NeedsReview, 55),
-            MakeEvent("vocabulary", LearningEventOutcome.Practised, 70)
+            MakeEvent("speaking", LearningEventOutcome.Practised, 75, activityId),
+            MakeEvent("speaking", LearningEventOutcome.NeedsReview, 55, activityId),
+            MakeEvent("speaking", LearningEventOutcome.Practised, 70, activityId)
         ]);
 
-        var signal = await _sut.EvaluateObjectiveMasteryAsync(_studentId, "vocabulary");
+        var signal = await _sut.EvaluateObjectiveMasteryAsync(_studentId, nodeKey);
 
         signal.MasteryStatus.Should().BeOneOf(MasteryStatus.NeedsReview, MasteryStatus.NeedsPractice);
         signal.EvidenceCount.Should().Be(3);
@@ -185,17 +183,6 @@ public sealed class StudentMasteryEvaluationServiceTests : IDisposable
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
-
-    private StudentLearningEvent MakeEventWithObjective(
-        string patternKey, string curriculumObjectiveKey, LearningEventOutcome outcome, double score) =>
-        new(
-            studentProfileId: _studentId,
-            source: LearningEventSource.PracticeGym,
-            outcome: outcome,
-            patternKey: patternKey,
-            curriculumObjectiveKey: curriculumObjectiveKey,
-            score: score,
-            normalizedScore: score / 100.0);
 
     private StudentLearningEvent MakeEvent(string skill, LearningEventOutcome outcome, double score, Guid? activityId = null) =>
         new(

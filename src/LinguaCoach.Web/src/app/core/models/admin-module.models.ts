@@ -28,7 +28,6 @@ export interface ModuleDto {
   id: string;
   title: string;
   description: string | null;
-  objectiveKey: string | null;
   cefrLevel: string | null;
   skill: string | null;
   subskill: string | null;
@@ -100,7 +99,6 @@ export interface CreateModuleRequestBody {
   lessonLinks: ModuleLessonLinkInput[];
   exerciseLinks: ModuleExerciseLinkInput[];
   description?: string | null;
-  objectiveKey?: string | null;
   cefrLevel?: string | null;
   skill?: string | null;
   subskill?: string | null;

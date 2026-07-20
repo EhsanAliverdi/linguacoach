@@ -58,7 +58,7 @@ public sealed class ModuleAutoLinkService : IModuleAutoLinkService
 
         var module = new Module(
             lesson.Title, ModuleSourceMode.GeneratedFromLessonAndExercises,
-            description: null, objectiveKey: null, lesson.CefrLevel, lesson.Skill, lesson.Subskill,
+            description: null, lesson.CefrLevel, lesson.Skill, lesson.Subskill,
             lesson.ContextTagsJson, lesson.FocusTagsJson, lesson.DifficultyBand, estimatedMinutes: null,
             feedbackPlanJson: null, generationProvider: "Deterministic", generationModel: "auto-link-v1",
             createdByUserId: createdByUserId);

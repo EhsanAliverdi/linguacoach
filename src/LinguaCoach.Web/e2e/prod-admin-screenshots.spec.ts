@@ -80,9 +80,10 @@ test('prod: capture all admin pages', async ({ page }) => {
   await nav(page, '/admin/lessons');
   await page.screenshot({ path: shot('09-lessons'), fullPage: true });
 
-  // 10 — Curriculum
-  await nav(page, '/admin/curriculum');
-  await page.screenshot({ path: shot('10-curriculum'), fullPage: true });
+  // 10 — Skill Graph (Adaptive Curriculum Sprint 7 — admin-curriculum retired, superseded by
+  // the skill-graph admin surface built in Sprint 1)
+  await nav(page, '/admin/skill-graph');
+  await page.screenshot({ path: shot('10-skill-graph'), fullPage: true });
 
   // 11 — Exercise Types
   await nav(page, '/admin/exercise-types');

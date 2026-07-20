@@ -18,7 +18,6 @@ internal sealed class ModuleConfiguration : IEntityTypeConfiguration<Module>
 
         builder.Property(e => e.Title).HasColumnName("title").HasMaxLength(300).IsRequired();
         builder.Property(e => e.Description).HasColumnName("description");
-        builder.Property(e => e.ObjectiveKey).HasColumnName("objective_key").HasMaxLength(128);
 
         builder.Property(e => e.CefrLevel).HasColumnName("cefr_level").HasMaxLength(10);
         builder.Property(e => e.Skill).HasColumnName("skill").HasMaxLength(100);

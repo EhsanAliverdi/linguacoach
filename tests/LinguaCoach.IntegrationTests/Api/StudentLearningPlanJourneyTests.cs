@@ -3,6 +3,8 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using LinguaCoach.Application.LearningPlan;
+using LinguaCoach.Domain.Constants;
+using LinguaCoach.Domain.Entities;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -161,6 +163,19 @@ public sealed class StudentLearningPlanJourneyTests : IClassFixture<PlacementTes
         {
             var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
             var profile = await db.StudentProfiles.FirstAsync(p => p.UserId == userId);
+
+            // Adaptive Curriculum Sprint 7 — plan generation now routes against real
+            // SkillGraphNode candidates (CurriculumObjective retired), so this test needs at
+            // least one Approved/active node at the student's normalized CEFR level (A1, since
+            // CreateOnboardedStudentAsync never sets CefrLevel) for the skill
+            // BuildObjectiveSequenceAsync's rotation tries first.
+            var node = new SkillGraphNode(
+                $"a1.speaking.journey_test_{Guid.NewGuid():N}", "Journey Test Node", "Test node description.",
+                CefrLevelConstants.A1, CurriculumSkillConstants.Speaking);
+            node.Approve(null);
+            db.SkillGraphNodes.Add(node);
+            await db.SaveChangesAsync();
+
             var learningPlan = scope.ServiceProvider.GetRequiredService<ILearningPlanService>();
             await learningPlan.GetOrCreatePlanAsync(profile.Id);
         }

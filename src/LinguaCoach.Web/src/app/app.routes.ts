@@ -92,10 +92,6 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/admin-integrations/admin-integrations.component').then(m => m.AdminIntegrationsComponent),
       },
       {
-        path: 'curriculum',
-        loadComponent: () => import('./features/admin/admin-curriculum/admin-curriculum.component').then(m => m.AdminCurriculumComponent),
-      },
-      {
         path: 'skill-graph',
         loadComponent: () => import('./features/admin/admin-skill-graph/admin-skill-graph.component').then(m => m.AdminSkillGraphComponent),
       },

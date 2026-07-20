@@ -1,7 +1,7 @@
-using LinguaCoach.Application.Curriculum;
 using LinguaCoach.Application.Learning;
 using LinguaCoach.Application.LearningPlan;
 using LinguaCoach.Application.Mastery;
+using LinguaCoach.Application.SkillGraph;
 using LinguaCoach.Domain.Constants;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
@@ -15,7 +15,8 @@ namespace LinguaCoach.Infrastructure.LearningPlan;
 /// <summary>
 /// Deterministic Learning Plan orchestrator.
 /// Generates and refreshes student learning plans by coordinating:
-///   - CurriculumRoutingService (objective selection)
+///   - SkillGraphRoutingService (objective selection — Adaptive Curriculum Sprint 7, replaces
+///     CurriculumRoutingService/CurriculumObjective, retired this sprint)
 ///   - StudentMasteryEvaluationService (mastery state)
 ///   - LearnerPreferences (goal context, difficulty, focus)
 ///
@@ -29,7 +30,7 @@ public sealed class LearningPlanService : ILearningPlanService
     private const string SourceWeak = "LearningPlanService:WeakSkill";
 
     private readonly LinguaCoachDbContext _db;
-    private readonly ICurriculumRoutingService _routing;
+    private readonly ISkillGraphRoutingService _routing;
     private readonly IStudentMasteryEvaluationService _mastery;
     private readonly ILearningGoalContextResolver _goalContextResolver;
     private readonly LearningPlanOptions _options;
@@ -37,7 +38,7 @@ public sealed class LearningPlanService : ILearningPlanService
 
     public LearningPlanService(
         LinguaCoachDbContext db,
-        ICurriculumRoutingService routing,
+        ISkillGraphRoutingService routing,
         IStudentMasteryEvaluationService mastery,
         ILearningGoalContextResolver goalContextResolver,
         IOptions<LearningPlanOptions> options,
@@ -134,7 +135,7 @@ public sealed class LearningPlanService : ILearningPlanService
                 obj.CefrLevel,
                 obj.PrimarySkill,
                 obj.ContextTags.FirstOrDefault() ?? CurriculumContextTagConstants.GeneralEnglish,
-                title: null,
+                title: obj.Title,
                 priority: obj.Priority,
                 source: obj.Source,
                 plannedOrder: obj.PlannedOrder,
@@ -729,33 +730,28 @@ public sealed class LearningPlanService : ILearningPlanService
             if (results.Count(r => !r.IsReview) >= _options.PlannedLessonCount)
                 break;
 
-            var request = new CurriculumRoutingRequest
-            {
-                StudentId = profile.Id,
-                CurrentCefrLevel = cefrLevel,
-                PrimarySkill = skill,
-                Source = SourcePlan,
-                ResolvedLearningGoalContext = goalContext,
-                FocusAreas = profile.FocusAreas ?? [],
-                CustomFocusArea = profile.CustomFocusArea,
-                DifficultyPreference = profile.DifficultyPreference?.ToString(),
-                MasteredObjectiveKeys = masteredKeys,
-                AllowReviewOfMastered = false,
-                Mode = RoutingMode.NewLearning,
-                AllowReviewOrScaffold = false
-            };
+            var request = new SkillGraphRoutingRequest(
+                StudentId: profile.Id,
+                CurrentCefrLevel: cefrLevel,
+                Source: SourcePlan,
+                ResolvedLearningGoalContext: goalContext,
+                PrimarySkill: skill,
+                FocusAreas: profile.FocusAreas ?? [],
+                CustomFocusArea: profile.CustomFocusArea,
+                DifficultyPreference: profile.DifficultyPreference?.ToString(),
+                AllowReviewOrScaffold: false);
 
             var rec = await _routing.RecommendAsync(request, ct);
 
-            if (rec.CurriculumObjectiveKey is null || seenKeys.Contains(rec.CurriculumObjectiveKey))
+            if (rec.NodeKey is null || seenKeys.Contains(rec.NodeKey))
                 continue;
 
-            seenKeys.Add(rec.CurriculumObjectiveKey);
+            seenKeys.Add(rec.NodeKey);
             results.Add(new ObjectiveCandidate(
-                ObjectiveKey: rec.CurriculumObjectiveKey,
+                ObjectiveKey: rec.NodeKey,
+                Title: rec.NodeTitle,
                 CefrLevel: rec.TargetCefrLevel,
                 PrimarySkill: rec.PrimarySkill ?? skill,
-                SecondarySkills: rec.SecondarySkills,
                 ContextTags: rec.ContextTags,
                 Priority: plannedOrder,
                 Source: SourcePlan,
@@ -772,20 +768,15 @@ public sealed class LearningPlanService : ILearningPlanService
                 continue;
 
             // Route in review mode to confirm the key is still valid/runnable.
-            var request = new CurriculumRoutingRequest
-            {
-                StudentId = profile.Id,
-                CurrentCefrLevel = cefrLevel,
-                Source = SourceWeak,
-                ResolvedLearningGoalContext = goalContext,
-                MasteredObjectiveKeys = masteredKeys,
-                AllowReviewOfMastered = true,
-                Mode = RoutingMode.Review,
-                AllowReviewOrScaffold = true
-            };
+            var request = new SkillGraphRoutingRequest(
+                StudentId: profile.Id,
+                CurrentCefrLevel: cefrLevel,
+                Source: SourceWeak,
+                ResolvedLearningGoalContext: goalContext,
+                AllowReviewOrScaffold: true);
 
             var rec = await _routing.RecommendAsync(request, ct);
-            var key = rec.CurriculumObjectiveKey ?? weakKey;
+            var key = rec.NodeKey ?? weakKey;
 
             if (seenKeys.Contains(key))
                 continue;
@@ -793,9 +784,9 @@ public sealed class LearningPlanService : ILearningPlanService
             seenKeys.Add(key);
             results.Add(new ObjectiveCandidate(
                 ObjectiveKey: key,
+                Title: rec.NodeTitle,
                 CefrLevel: rec.TargetCefrLevel,
                 PrimarySkill: rec.PrimarySkill ?? CurriculumSkillConstants.Speaking,
-                SecondarySkills: rec.SecondarySkills,
                 ContextTags: rec.ContextTags,
                 Priority: plannedOrder,
                 Source: SourceWeak,
@@ -814,9 +805,9 @@ public sealed class LearningPlanService : ILearningPlanService
             seenKeys.Add(masteredKey);
             results.Add(new ObjectiveCandidate(
                 ObjectiveKey: masteredKey,
+                Title: null,
                 CefrLevel: cefrLevel,
                 PrimarySkill: CurriculumSkillConstants.Speaking,
-                SecondarySkills: [],
                 ContextTags: [],
                 Priority: plannedOrder,
                 Source: SourceReview,
@@ -901,7 +892,7 @@ public sealed class LearningPlanService : ILearningPlanService
             ObjectiveKey: c.ObjectiveKey,
             CefrLevel: c.CefrLevel,
             PrimarySkill: c.PrimarySkill,
-            SecondarySkills: c.SecondarySkills,
+            SecondarySkills: [],
             ContextTags: c.ContextTags,
             IsReview: c.IsReview,
             Priority: c.Priority,
@@ -924,9 +915,9 @@ public sealed class LearningPlanService : ILearningPlanService
 
     private sealed record ObjectiveCandidate(
         string ObjectiveKey,
+        string? Title,
         string CefrLevel,
         string PrimarySkill,
-        IReadOnlyList<string> SecondarySkills,
         IReadOnlyList<string> ContextTags,
         int Priority,
         string Source,
