@@ -1,4 +1,6 @@
 using System.Text.Json;
+using LinguaCoach.Application.Composer;
+using LinguaCoach.Application.Mastery;
 using LinguaCoach.Application.Modules;
 using LinguaCoach.Application.PracticeGymModules;
 using LinguaCoach.Domain.Constants;
@@ -10,25 +12,38 @@ using Microsoft.EntityFrameworkCore;
 namespace LinguaCoach.Infrastructure.PracticeGymModules;
 
 /// <summary>
-/// Phase H7 — deterministic (no AI) Practice Gym module selector. Pure/read-only: never writes to
-/// the database, never mutates a <see cref="Module"/>/<see cref="Lesson"/>/
-/// <see cref="Exercise"/>, never creates Module attempts or mastery updates. Never
-/// throws for "no suitable content" — degrades to
+/// Phase H7 — Practice Gym module selector. Pure/read-only: never writes to the database, never
+/// mutates a <see cref="Module"/>/<see cref="Lesson"/>/<see cref="Exercise"/>, never creates
+/// Module attempts or mastery updates. Never throws for "no suitable content" — degrades to
 /// <see cref="PracticeGymModuleSelectionResult.FallbackRequired"/> instead, and the outer
 /// try/catch guarantees the same for any unexpected error, so a caller can always safely fall
 /// back to the existing readiness-pool-backed Practice Gym suggestions. Mirrors H6's
 /// <c>TodayPlanModuleSelectionService</c>, extended for Practice Gym's self-directed
 /// skill/subskill/objective request and weakness-signal soft preferences.
+///
+/// Adaptive Curriculum Sprint 5 — eligibility/narrowing (Approved/non-archived, has an approved
+/// Lesson+Exercise, self-directed skill/subskill/objective narrowing, CEFR match, the 14-day
+/// reuse-cooldown) stays deterministic and unchanged; the mechanical <c>ScoreModule</c> heuristic
+/// that used to rank the eligible pool has been replaced with <see cref="ICurriculumComposerService"/>
+/// — see <c>TodayPlanModuleSelectionService</c>'s doc comment for the full rationale. Hard cutover:
+/// no fallback to the old scoring heuristic.
 /// </summary>
 public sealed class PracticeGymModuleSelectionService : IPracticeGymModuleSelectionService
 {
     private static readonly TimeSpan ReuseCooldown = TimeSpan.FromDays(14);
+    private static readonly TimeSpan NoveltyWindow = TimeSpan.FromDays(3);
+    private const double GoalMatchWeightThreshold = 0.5;
 
     private readonly LinguaCoachDbContext _db;
+    private readonly ICurriculumComposerService _composer;
+    private readonly IStudentMasteryEvaluationService _mastery;
 
-    public PracticeGymModuleSelectionService(LinguaCoachDbContext db)
+    public PracticeGymModuleSelectionService(
+        LinguaCoachDbContext db, ICurriculumComposerService composer, IStudentMasteryEvaluationService mastery)
     {
         _db = db;
+        _composer = composer;
+        _mastery = mastery;
     }
 
     public async Task<PracticeGymModuleSelectionResult> SelectAsync(
@@ -91,6 +106,23 @@ public sealed class PracticeGymModuleSelectionService : IPracticeGymModuleSelect
             if (request.RecentSuggestedModuleIds is not null)
                 foreach (var id in request.RecentSuggestedModuleIds)
                     recentModuleIds.Add(id);
+
+            // Adaptive Curriculum Sprint 5 — a tighter novelty band than the hard cooldown above:
+            // skills (not specific Modules) practised in the last 3 days, handed to the composer as
+            // a soft "you just did this" signal rather than a hard exclusion.
+            var noveltyWindowStart = now.Subtract(NoveltyWindow);
+            var recentlyPractisedModuleIds = studentAssignments
+                .Where(a => a.SuggestedAt >= noveltyWindowStart)
+                .Select(a => a.ModuleId!.Value)
+                .ToHashSet();
+            var recentlyPractisedSkills = recentlyPractisedModuleIds.Count == 0
+                ? new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                : new HashSet<string>(
+                    await _db.Modules.AsNoTracking()
+                        .Where(m => recentlyPractisedModuleIds.Contains(m.Id) && m.Skill != null)
+                        .Select(m => m.Skill!)
+                        .ToListAsync(ct),
+                    StringComparer.OrdinalIgnoreCase);
 
             var eligible = new List<(Module Module, List<Lesson> Learns, List<Exercise> Activities)>();
 
@@ -180,38 +212,55 @@ public sealed class PracticeGymModuleSelectionService : IPracticeGymModuleSelect
             if (pool.Count == 0)
                 return Fallback(targetCefr, warnings, "No eligible Module remained after skill/subskill/objective/CEFR filtering.");
 
-            var scored = pool
-                .Select(e => (Entry: e, Score: ScoreModule(e.Module, request)))
-                .OrderByDescending(x => x.Score)
-                .ToList();
-
-            var suggestions = new List<PracticeGymModuleSuggestion>();
-            var usedSkills = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var maxSuggestions = Math.Max(1, request.MaxSuggestions);
 
-            foreach (var (entry, _) in scored)
+            var nodeMasteryWeaknessModuleIds = await ResolveNodeMasteryWeaknessMatchModuleIdsAsync(request.StudentId, pool, ct);
+            var topGoalTags = await ResolveTopGoalTagsAsync(request.StudentId, ct);
+
+            bool IsRemediation(Module module) =>
+                request.WeaknessSignals is { Count: > 0 } && module.Skill is not null
+                && request.WeaknessSignals.Contains(module.Skill, StringComparer.OrdinalIgnoreCase);
+
+            var composerCandidates = pool.Select(e => new ComposerCandidate(
+                ModuleId: e.Module.Id,
+                Title: e.Module.Title,
+                Skill: e.Module.Skill,
+                Subskill: e.Module.Subskill,
+                CefrLevel: e.Module.CefrLevel,
+                DifficultyBand: e.Module.DifficultyBand,
+                EstimatedMinutes: e.Module.EstimatedMinutes,
+                ContextTags: SafeParseStringArray(e.Module.ContextTagsJson),
+                FocusTags: SafeParseStringArray(e.Module.FocusTagsJson),
+                ObjectiveKey: e.Module.ObjectiveKey,
+                IsWeaknessMatch: nodeMasteryWeaknessModuleIds.Contains(e.Module.Id) || IsRemediation(e.Module),
+                IsGoalMatch: topGoalTags.Count > 0
+                    && SafeParseStringArray(e.Module.ContextTagsJson).Any(t => topGoalTags.Contains(t)),
+                RecentlyPractisedSameSkill: e.Module.Skill is not null && recentlyPractisedSkills.Contains(e.Module.Skill)))
+                .ToList();
+
+            var composerResult = await _composer.RankCandidatesAsync(new ComposerRankingRequest(
+                StudentId: request.StudentId,
+                SurfaceName: "PracticeGym",
+                Candidates: composerCandidates,
+                MaxResults: maxSuggestions,
+                RequestedSkill: request.RequestedSkill,
+                RequestedSubskill: request.RequestedSubskill,
+                RequestedObjectiveKey: request.RequestedObjectiveKey,
+                RequestedDifficulty: request.RequestedDifficulty), ct);
+
+            if (!composerResult.Success || composerResult.RankedModuleIds.Count == 0)
+                return Fallback(targetCefr, warnings,
+                    $"AI composer could not select content: {composerResult.FailureReason ?? "no candidate was ranked"}.");
+
+            var byModuleId = pool.ToDictionary(e => e.Module.Id);
+            var suggestions = new List<PracticeGymModuleSuggestion>();
+
+            foreach (var moduleId in composerResult.RankedModuleIds)
             {
-                if (suggestions.Count >= maxSuggestions)
-                    break;
-
-                // Balanced-coverage guard only applies when the student didn't request a specific
-                // skill — a self-directed request should be honored, not diversified away from.
-                if (string.IsNullOrWhiteSpace(request.RequestedSkill)
-                    && suggestions.Count > 0 && entry.Module.Skill is not null && usedSkills.Contains(entry.Module.Skill))
-                {
-                    var moreDiverseOptionRemains = scored.Any(s =>
-                        s.Entry.Module.Id != entry.Module.Id
-                        && !suggestions.Exists(sug => sug.ModuleId == s.Entry.Module.Id)
-                        && (s.Entry.Module.Skill is null || !usedSkills.Contains(s.Entry.Module.Skill)));
-
-                    if (moreDiverseOptionRemains)
-                        continue;
-                }
+                if (!byModuleId.TryGetValue(moduleId, out var entry)) continue; // defensive; composer already validates ids
 
                 var isLowerLevel = usedBroadenedCefr && IsLowerCefrLevel(entry.Module.CefrLevel, targetCefr);
-                var isRemediation = request.WeaknessSignals is { Count: > 0 }
-                    && entry.Module.Skill is not null
-                    && request.WeaknessSignals.Contains(entry.Module.Skill, StringComparer.OrdinalIgnoreCase);
+                var isRemediation = IsRemediation(entry.Module);
 
                 // Phase H10 — precompute launch eligibility so the client can show Start/disabled
                 // without an extra round trip. Re-validated fresh at actual launch time too.
@@ -240,19 +289,16 @@ public sealed class PracticeGymModuleSelectionService : IPracticeGymModuleSelect
                     LinkedActivitySummaries: entry.Activities.Select(ToActivitySummary).ToList(),
                     CanLaunch: launchEligibility.CanLaunch,
                     UnsupportedReason: launchEligibility.UnsupportedReason));
-
-                if (entry.Module.Skill is not null)
-                    usedSkills.Add(entry.Module.Skill);
             }
 
             if (suggestions.Count == 0)
-                return Fallback(targetCefr, warnings, "No Module could be selected after scoring.");
+                return Fallback(targetCefr, warnings, "AI composer's ranked ids did not match any eligible candidate.");
 
             return new PracticeGymModuleSelectionResult(
                 Suggestions: suggestions,
                 FallbackRequired: false,
                 FallbackReason: null,
-                SelectionReason: suggestions[0].Reason,
+                SelectionReason: composerResult.SelectionReason ?? suggestions[0].Reason,
                 TargetCefrLevel: targetCefr,
                 Warnings: warnings);
         }
@@ -272,48 +318,40 @@ public sealed class PracticeGymModuleSelectionService : IPracticeGymModuleSelect
         TargetCefrLevel: targetCefr,
         Warnings: warnings);
 
-    private static double ScoreModule(Module module, PracticeGymModuleSelectionRequest request)
+    /// <summary>Adaptive Curriculum Sprint 5 — resolves which of the pool's Modules cover a
+    /// skill-graph node the student is currently Weak/AtRisk on, via
+    /// <see cref="IStudentMasteryEvaluationService.EvaluateStudentAsync"/> (Sprint 4's node-based
+    /// grouping) joined through <c>ModuleSkillGraphNodeLink</c>. Distinct from (and combined with,
+    /// by the caller) <c>request.WeaknessSignals</c>' ledger-derived weak-skill signal — both are
+    /// real, deterministic facts handed to the composer, never inferred by the AI itself.</summary>
+    private async Task<HashSet<Guid>> ResolveNodeMasteryWeaknessMatchModuleIdsAsync(
+        Guid studentId, List<(Module Module, List<Lesson> Learns, List<Exercise> Activities)> pool, CancellationToken ct)
     {
-        double score = 0;
+        var report = await _mastery.EvaluateStudentAsync(studentId, MasteryEvaluationReason.ContentDelivery, ct);
+        var gapNodeKeys = new HashSet<string>(
+            report.WeakObjectiveKeys.Concat(report.AtRiskObjectiveKeys), StringComparer.OrdinalIgnoreCase);
+        if (gapNodeKeys.Count == 0)
+            return [];
 
-        if (!string.IsNullOrWhiteSpace(request.RequestedSkill)
-            && string.Equals(module.Skill, request.RequestedSkill, StringComparison.OrdinalIgnoreCase))
-            score += 20;
+        var poolModuleIds = pool.Select(e => e.Module.Id).ToList();
+        var links = await _db.ModuleSkillGraphNodeLinks.AsNoTracking()
+            .Where(l => poolModuleIds.Contains(l.ModuleId))
+            .Join(_db.SkillGraphNodes.AsNoTracking(), l => l.SkillGraphNodeId, n => n.Id,
+                (l, n) => new { l.ModuleId, n.Key })
+            .ToListAsync(ct);
 
-        if (!string.IsNullOrWhiteSpace(request.RequestedSubskill)
-            && string.Equals(module.Subskill, request.RequestedSubskill, StringComparison.OrdinalIgnoreCase))
-            score += 12;
-
-        if (!string.IsNullOrWhiteSpace(request.RequestedObjectiveKey)
-            && string.Equals(module.ObjectiveKey, request.RequestedObjectiveKey, StringComparison.OrdinalIgnoreCase))
-            score += 15;
-
-        if (request.WeaknessSignals is { Count: > 0 } && module.Skill is not null
-            && request.WeaknessSignals.Contains(module.Skill, StringComparer.OrdinalIgnoreCase))
-            score += 8;
-
-        if (request.FocusAreas is { Count: > 0 })
-        {
-            var focusTags = SafeParseStringArray(module.FocusTagsJson);
-            if (focusTags.Any(t => request.FocusAreas.Contains(t, StringComparer.OrdinalIgnoreCase)))
-                score += 6;
-        }
-
-        if (request.ContextTags is { Count: > 0 })
-        {
-            var contextTags = SafeParseStringArray(module.ContextTagsJson);
-            var overlap = contextTags.Count(t => request.ContextTags.Contains(t, StringComparer.OrdinalIgnoreCase));
-            score += overlap * 2;
-        }
-
-        if (request.RequestedDifficulty is { } preferredDifficulty && module.DifficultyBand is { } band)
-        {
-            var diff = Math.Abs(preferredDifficulty - band);
-            score += Math.Max(0, 3 - diff);
-        }
-
-        return score;
+        return links.Where(x => gapNodeKeys.Contains(x.Key)).Select(x => x.ModuleId).ToHashSet();
     }
+
+    /// <summary>Adaptive Curriculum Sprint 5 — the student's top-weighted <c>StudentGoalWeight</c>
+    /// tags (Sprint 3), a real, deterministic fact handed to the composer.</summary>
+    private async Task<HashSet<string>> ResolveTopGoalTagsAsync(Guid studentId, CancellationToken ct) =>
+        new(
+            await _db.StudentGoalWeights.AsNoTracking()
+                .Where(g => g.StudentId == studentId && g.Weight >= GoalMatchWeightThreshold)
+                .Select(g => g.GoalTag)
+                .ToListAsync(ct),
+            StringComparer.OrdinalIgnoreCase);
 
     private static string BuildReason(
         Module module, PracticeGymModuleSelectionRequest request, bool usedBroadenedCefr, bool isRemediation)

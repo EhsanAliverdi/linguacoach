@@ -76,42 +76,15 @@ public sealed class StudentMasteryEvaluationJob : IJob
                     report.AtRiskObjectiveKeys.Count,
                     report.DemotedCount);
 
-                // Phase 12F — mark objectives Mastered or Completed in the learning plan.
-                // KNOWN GAP — Adaptive Curriculum Sprint 4: report.MasteredObjectiveKeys/
-                // CompletedObjectiveKeys are now resolved SkillGraphNode keys, not
-                // CurriculumObjective keys, so MarkObjectiveMasteredAsync/MarkObjectiveCompletedAsync
-                // below will not find a matching plan objective for them and gracefully no-op via
-                // their existing "objective_not_in_plan" result — confirmed safe, not a crash risk.
-                // The learning plan's own objective auto-advance is effectively inert until Sprint 5
-                // retires CurriculumObjective/LearningPlanService's sequencing outright. Deliberate,
-                // documented — see docs/reviews/2026-07-20-adaptive-curriculum-sprint4-node-mastery-review.md.
-                foreach (var masteredKey in report.MasteredObjectiveKeys)
-                {
-                    try
-                    {
-                        await _learningPlan.MarkObjectiveMasteredAsync(studentId, masteredKey, ct);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogWarning(ex,
-                            "StudentMasteryEvaluationJob: MarkObjectiveMasteredAsync failed for objective '{Key}' student {StudentId}.",
-                            masteredKey, studentId);
-                    }
-                }
-
-                foreach (var completedKey in report.CompletedObjectiveKeys)
-                {
-                    try
-                    {
-                        await _learningPlan.MarkObjectiveCompletedAsync(studentId, completedKey, ct);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogWarning(ex,
-                            "StudentMasteryEvaluationJob: MarkObjectiveCompletedAsync failed for objective '{Key}' student {StudentId}.",
-                            completedKey, studentId);
-                    }
-                }
+                // Phase 12F's per-objective MarkObjectiveMasteredAsync/MarkObjectiveCompletedAsync
+                // sweep (over report.MasteredObjectiveKeys/CompletedObjectiveKeys) was removed in
+                // Adaptive Curriculum Sprint 5 — Sprint 4 made it permanently dead code: those keys
+                // are resolved SkillGraphNode keys, an unrelated key space to the CurriculumObjective
+                // keys LearningPlanService's plan objectives are keyed by, so every call always
+                // no-op'd via "objective_not_in_plan". See
+                // docs/reviews/2026-07-20-adaptive-curriculum-sprint5-ai-composer-review.md.
+                // planNeedsRefresh below is unrelated and still meaningful — it still triggers plan
+                // regeneration purely from the report's counts, independent of this removed sweep.
 
                 // Regenerate plan when objectives changed or plan is exhausted.
                 var planNeedsRefresh = report.DemotedCount > 0

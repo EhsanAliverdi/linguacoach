@@ -82,6 +82,14 @@ public class ApiTestFactory : WebApplicationFactory<Program>, IAsyncLifetime
             services.AddSingleton<FakeAudioDurationProbe>();
             services.AddSingleton<LinguaCoach.Application.ResourceImport.IAudioDurationProbe>(
                 sp => sp.GetRequiredService<FakeAudioDurationProbe>());
+
+            // Adaptive Curriculum Sprint 5 — replace the real AI-backed curriculum composer with a
+            // deterministic pass-through fake for all tests (no real AI provider/credentials in the
+            // test/CI environment).
+            RemoveAll<LinguaCoach.Application.Composer.ICurriculumComposerService>(services);
+            services.AddSingleton<FakeCurriculumComposerService>();
+            services.AddSingleton<LinguaCoach.Application.Composer.ICurriculumComposerService>(
+                sp => sp.GetRequiredService<FakeCurriculumComposerService>());
         });
 
         builder.UseSetting("Jwt:Key", TestJwtKey);

@@ -26,6 +26,11 @@ public static class DefaultAiSeeder
     // existing Module covers. Advisory only; every proposed node key is validated against the real
     // candidate list by ModuleSkillGraphTaggingService before being trusted.
     public const string ModuleSkillGraphProposeCoverageKey = "module_skill_graph_propose_coverage";
+    // Adaptive Curriculum Sprint 5 (2026-07-20) — AI-ranks an already-eligible, CEFR-filtered
+    // candidate pool for Today/Practice Gym delivery, reasoning over goal-vector relevance and
+    // skill-graph mastery-gap flags the caller already computed. Advisory only; every ranked id is
+    // validated against the real candidate list by CurriculumComposerService before being trusted.
+    public const string CurriculumComposerRankCandidatesKey = "curriculum_composer_rank_candidates";
     // Mandatory Import Execution Plan addendum (2026-07-15) — bounded review of a package's
     // deterministic manifest clustering + automatically-selected sample metadata, used only
     // during plan generation (never during full-package processing).
@@ -4913,6 +4918,43 @@ Rules:
 - Do not include any text outside the JSON object. No markdown fences.
 """;
 
+    // Adaptive Curriculum Sprint 5 — ranks an already-eligible, already CEFR-filtered content
+    // candidate pool for Today/Practice Gym delivery. Advisory only: the caller validates every
+    // ranked id against the real candidate list before applying anything.
+    private const string CurriculumComposerRankCandidatesContent = """
+You are choosing which learning content to serve next to an English-language student on the "{{surfaceName}}" surface of an adaptive AI tutoring app that replaces a human teacher. You do NOT decide anything final — every id you return is checked against a fixed candidate list before it is ever applied.
+
+Student's requested skill (if self-directed): {{requestedSkill}}
+Student's requested subskill (if self-directed): {{requestedSubskill}}
+Student's requested objective (if self-directed): {{requestedObjectiveKey}}
+Student's preferred session length in minutes (if given): {{preferredSessionLengthMinutes}}
+Student's requested difficulty band 1-5 (if given): {{requestedDifficulty}}
+Maximum items to select: {{maxResults}}
+
+Candidate content (JSON array; each item is already confirmed eligible — approved, CEFR-appropriate, and not recently repeated for this student):
+{{candidatesJson}}
+
+Each candidate carries two real signals already computed for this student — trust them as given, do not re-derive them:
+- "isWeaknessMatch": true means this candidate covers a skill-graph node the student is currently weak on or at risk of losing — a real gap-closing opportunity.
+- "isGoalMatch": true means this candidate's content tags match one of the student's stated top learning goals (e.g. workplace English, travel).
+- "recentlyPractisedSameSkill": true means the student worked on this exact skill within the last few days — prefer variety unless a requested skill/subskill overrides it.
+
+Like a good teacher planning a lesson, prioritize in this order: (1) an explicit requested skill/subskill/objective if one is given, (2) isWeaknessMatch candidates — closing a real gap beats novelty, (3) isGoalMatch candidates — relevance to what the student actually wants English for, (4) skill diversity across the selected set when nothing above forces a choice — avoid recentlyPractisedSameSkill candidates unless nothing else is available. When a preferred session length is given, prefer candidates whose estimatedMinutes is close to it, as a tie-breaker below the priorities above.
+
+Return ONLY valid JSON (no markdown, no text outside the JSON object) matching this exact shape:
+
+{
+  "rankedModuleIds": ["<id from the candidate list>", "..."],
+  "reason": "<one short sentence explaining the top pick, for admin diagnostics>"
+}
+
+Rules:
+- Only use an id that appears exactly in the candidate list given above. Never invent an id.
+- Order rankedModuleIds by preference — first is the best pick. Return at most {{maxResults}} ids.
+- If nothing in the candidate list is a reasonable fit, return an empty "rankedModuleIds" array.
+- Do not include any text outside the JSON object. No markdown fences.
+""";
+
     public static async Task SeedAsync(
         LinguaCoachDbContext db,
         ILogger logger,
@@ -4999,6 +5041,10 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             ModuleSkillGraphProposeCoverageKey, ModuleSkillGraphProposeCoverageContent,
             maxInputTokens: 1600, maxOutputTokens: 900, ct);
+
+        await SeedOrUpgradePromptAsync(db, logger,
+            CurriculumComposerRankCandidatesKey, CurriculumComposerRankCandidatesContent,
+            maxInputTokens: 3200, maxOutputTokens: 700, ct);
 
         // Mandatory Import Execution Plan addendum — bounded manifest/sample structure review
         await SeedOrUpgradePromptAsync(db, logger,

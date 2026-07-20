@@ -1,4 +1,6 @@
 using FluentAssertions;
+using LinguaCoach.Application.Composer;
+using LinguaCoach.Application.Mastery;
 using LinguaCoach.Application.PracticeGymModules;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
@@ -9,13 +11,22 @@ using Microsoft.EntityFrameworkCore;
 namespace LinguaCoach.UnitTests.PracticeGymModules;
 
 /// <summary>
-/// Phase H7 — deterministic Practice Gym module selector. Uses SQLite in-memory (matches H6's
+/// Phase H7 — Practice Gym module selector. Uses SQLite in-memory (matches H6's
 /// <c>TodayPlanModuleSelectionServiceTests</c> conventions) with directly-seeded Module
 /// Definitions/Lessons/Exercises. All fixture content is synthetic.
+///
+/// Adaptive Curriculum Sprint 5 — ranking is delegated to <see cref="ICurriculumComposerService"/>
+/// (a real AI call in production), so these tests use
+/// <see cref="LinguaCoach.UnitTests.TodayPlanModules.FakeCurriculumComposerService"/> (pass-through
+/// by default, or a programmable ranking override) and
+/// <see cref="LinguaCoach.UnitTests.TodayPlanModules.FakeStudentMasteryEvaluationService"/> — never
+/// a real AI call, per this repo's "tests use fake providers, never real AI" convention.
 /// </summary>
 public sealed class PracticeGymModuleSelectionServiceTests : IDisposable
 {
     private readonly LinguaCoachDbContext _db;
+    private readonly LinguaCoach.UnitTests.TodayPlanModules.FakeCurriculumComposerService _composer;
+    private readonly LinguaCoach.UnitTests.TodayPlanModules.FakeStudentMasteryEvaluationService _mastery;
     private readonly PracticeGymModuleSelectionService _sut;
 
     public PracticeGymModuleSelectionServiceTests()
@@ -27,7 +38,9 @@ public sealed class PracticeGymModuleSelectionServiceTests : IDisposable
         _db.Database.OpenConnection();
         _db.Database.EnsureCreated();
 
-        _sut = new PracticeGymModuleSelectionService(_db);
+        _composer = new LinguaCoach.UnitTests.TodayPlanModules.FakeCurriculumComposerService();
+        _mastery = new LinguaCoach.UnitTests.TodayPlanModules.FakeStudentMasteryEvaluationService();
+        _sut = new PracticeGymModuleSelectionService(_db, _composer, _mastery);
     }
 
     public void Dispose()
@@ -218,10 +231,14 @@ public sealed class PracticeGymModuleSelectionServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task Weakness_signals_influence_selection_and_mark_remediation()
+    public async Task Weakness_signals_flag_candidate_and_mark_remediation_when_composer_picks_it()
     {
         SeedModule(cefrLevel: "B1", skill: "Vocabulary");
         var writingModule = SeedModule(cefrLevel: "B1", skill: "Writing");
+
+        // The composer's ranking is an AI decision in production; here we force it to pick the
+        // flagged candidate so we can assert the resulting suggestion carries IsRemediation.
+        _composer.RankingOverride = req => [req.Candidates.Single(c => c.IsWeaknessMatch).ModuleId];
 
         var result = await _sut.SelectAsync(Request(Guid.NewGuid(), weaknessSignals: ["Writing"], maxSuggestions: 1));
 
@@ -231,26 +248,66 @@ public sealed class PracticeGymModuleSelectionServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task Context_and_focus_tags_influence_selection()
+    public async Task Goal_vector_match_is_computed_and_passed_to_composer()
     {
-        SeedModule(cefrLevel: "B1", skill: "Vocabulary", focusTagsJson: "[\"phrasal_verbs\"]", contextTagsJson: "[\"workplace\"]");
-        var matching = SeedModule(cefrLevel: "B1", skill: "Grammar", focusTagsJson: "[\"reported_speech\"]", contextTagsJson: "[\"travel\"]");
+        var studentId = Guid.NewGuid();
+        var profile = new StudentProfile(studentId);
+        _db.StudentProfiles.Add(profile);
+        _db.SaveChanges();
 
-        var result = await _sut.SelectAsync(Request(Guid.NewGuid(),
-            focusAreas: ["reported_speech"], contextTags: ["travel"], maxSuggestions: 1));
+        var goalMatching = SeedModule(cefrLevel: "B1", skill: "Vocabulary", contextTagsJson: "[\"workplace\"]");
+        _db.StudentGoalWeights.Add(new StudentGoalWeight(profile.Id, "workplace", 0.8, StudentGoalWeightSource.Explicit));
+        _db.SaveChanges();
 
-        result.Suggestions.Should().ContainSingle(s => s.ModuleId == matching.Id);
+        await _sut.SelectAsync(Request(profile.Id));
+
+        var candidate = _composer.LastRequest!.Candidates.Single(c => c.ModuleId == goalMatching.Id);
+        candidate.IsGoalMatch.Should().BeTrue();
     }
 
     [Fact]
-    public async Task Estimated_minutes_and_difficulty_are_used_where_feasible()
+    public async Task Requested_difficulty_is_passed_to_composer()
     {
         SeedModule(cefrLevel: "B1", skill: "Vocabulary", difficultyBand: 5);
-        var closeFit = SeedModule(cefrLevel: "B1", skill: "Grammar", difficultyBand: 2);
+        SeedModule(cefrLevel: "B1", skill: "Grammar", difficultyBand: 2);
 
-        var result = await _sut.SelectAsync(Request(Guid.NewGuid(), difficulty: 2, maxSuggestions: 1));
+        await _sut.SelectAsync(Request(Guid.NewGuid(), difficulty: 2, maxSuggestions: 1));
 
-        result.Suggestions.Should().ContainSingle(s => s.ModuleId == closeFit.Id);
+        _composer.LastRequest!.RequestedDifficulty.Should().Be(2);
+        _composer.LastRequest.Candidates.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task Skill_graph_weakness_match_is_computed_and_passed_to_composer()
+    {
+        var studentId = Guid.NewGuid();
+        var weakModule = SeedModule(cefrLevel: "B1", skill: "Vocabulary");
+
+        var node = new SkillGraphNode("b1.vocabulary.gap_test_gym", "Gap Test Node", "desc", "B1", "Vocabulary");
+        node.Approve(null);
+        _db.SkillGraphNodes.Add(node);
+        _db.SaveChanges();
+        _db.ModuleSkillGraphNodeLinks.Add(new ModuleSkillGraphNodeLink(weakModule.Id, node.Id));
+        _db.SaveChanges();
+
+        _mastery.WeakObjectiveKeys = ["b1.vocabulary.gap_test_gym"];
+
+        await _sut.SelectAsync(Request(studentId));
+
+        var candidate = _composer.LastRequest!.Candidates.Single(c => c.ModuleId == weakModule.Id);
+        candidate.IsWeaknessMatch.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Composer_failure_returns_fallback_not_exception()
+    {
+        SeedModule(cefrLevel: "B1", skill: "Vocabulary");
+        _composer.ForceFailure = true;
+
+        var act = async () => await _sut.SelectAsync(Request(Guid.NewGuid()));
+
+        var result = await act.Should().NotThrowAsync();
+        result.Subject.FallbackRequired.Should().BeTrue();
     }
 
     [Fact]

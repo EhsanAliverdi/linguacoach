@@ -302,16 +302,20 @@ public sealed class CurriculumRoutingServiceTests
     }
 
     // ── Phase 11B: mastered objective filtering ──────────────────────────────
+    // Adaptive Curriculum Sprint 5 — the mastery-exclusion filter itself was removed (Sprint 4 made
+    // it permanently dead code: MasteredObjectiveKeys is sourced from skill-graph node keys, an
+    // unrelated key space to CurriculumObjective.Key, so it could never match a real candidate).
+    // These tests now document that MasteredObjectiveKeys has no effect on candidate selection.
 
     [Fact]
-    public async Task Recommend_MasteredObjective_ExcludedFromNewLearning()
+    public async Task Recommend_MasteredObjectiveKeys_HaveNoEffect_KeySpacesUnrelated()
     {
-        var mastered = MakeObjective("b2_writing_general", CefrLevelConstants.B2,
+        var writing = MakeObjective("b2_writing_general", CefrLevelConstants.B2,
             CurriculumSkillConstants.Writing, [CurriculumContextTagConstants.GeneralEnglish]);
-        var notMastered = MakeObjective("b2_listening_general", CefrLevelConstants.B2,
+        var listening = MakeObjective("b2_listening_general", CefrLevelConstants.B2,
             CurriculumSkillConstants.Listening, [CurriculumContextTagConstants.GeneralEnglish]);
 
-        var svc = BuildService([mastered, notMastered]);
+        var svc = BuildService([writing, listening]);
         var req = new CurriculumRoutingRequest
         {
             StudentId = Guid.NewGuid(),
@@ -329,8 +333,10 @@ public sealed class CurriculumRoutingServiceTests
 
         var rec = await svc.RecommendAsync(req);
 
-        // Mastered writing objective should be excluded; listening returned instead.
-        Assert.Equal("b2_listening_general", rec.CurriculumObjectiveKey);
+        // "b2_writing_general" is still a valid candidate even though it's listed as mastered —
+        // the mastery-exclusion filter was removed. Recommendation is decided by ordinary scoring,
+        // not by mastery status.
+        Assert.Contains(rec.CurriculumObjectiveKey, new[] { "b2_writing_general", "b2_listening_general" });
     }
 
     [Fact]
@@ -366,7 +372,7 @@ public sealed class CurriculumRoutingServiceTests
     // ── Phase 11C: RoutingMode on request ───────────────────────────────────
 
     [Fact]
-    public async Task Recommend_NewLearningMode_ExcludesMasteredObjective()
+    public async Task Recommend_NewLearningMode_MasteredObjectiveKeys_NoLongerExcluded()
     {
         var mastered = MakeObjective("b2_writing_general", CefrLevelConstants.B2,
             CurriculumSkillConstants.Writing, [CurriculumContextTagConstants.GeneralEnglish]);
@@ -390,7 +396,7 @@ public sealed class CurriculumRoutingServiceTests
 
         var rec = await svc.RecommendAsync(req);
 
-        Assert.Equal("b2_listening_general", rec.CurriculumObjectiveKey);
+        Assert.Contains(rec.CurriculumObjectiveKey, new[] { "b2_writing_general", "b2_listening_general" });
     }
 
     [Fact]
@@ -869,8 +875,10 @@ public sealed class CurriculumRoutingServicePreferredObjectiveTests
     // ── Test 8: mastered objective excluded when Mode=NewLearning ────────────
 
     [Fact]
-    public async Task Recommend_PreferredObjectiveKey_Mastered_NewLearning_Rejected()
+    public async Task Recommend_PreferredObjectiveKey_MasteredObjectiveKeys_NoLongerRejected()
     {
+        // Adaptive Curriculum Sprint 5 — the preferred-objective mastery-exclusion rule (former
+        // "Rule 5") was removed along with FilterByMastered; see the Phase 11B tests above for why.
         var preferred = MakeObjective("b2_writing_general", CefrLevelConstants.B2,
             CurriculumSkillConstants.Writing, [CurriculumContextTagConstants.GeneralEnglish],
             isReviewable: false);
@@ -892,8 +900,8 @@ public sealed class CurriculumRoutingServicePreferredObjectiveTests
 
         var rec = await svc.RecommendAsync(req);
 
-        Assert.NotEqual(RoutingReason.LearningPlan, rec.RoutingReason);
-        Assert.NotEqual("b2_writing_general", rec.CurriculumObjectiveKey);
+        Assert.Equal(RoutingReason.LearningPlan, rec.RoutingReason);
+        Assert.Equal("b2_writing_general", rec.CurriculumObjectiveKey);
     }
 
     // ── Test 9: mastered reviewable accepted when AllowReviewOfMastered=true ─
@@ -968,8 +976,10 @@ public sealed class CurriculumRoutingServicePreferredObjectiveTests
     // ── Test 12: mastery exclusion wins over preferred key (non-reviewable) ──
 
     [Fact]
-    public async Task Recommend_PreferredObjectiveKey_Mastered_NotReviewable_Rejected()
+    public async Task Recommend_PreferredObjectiveKey_MasteredAndNotReviewable_NoLongerRejected()
     {
+        // Adaptive Curriculum Sprint 5 — see the note on
+        // Recommend_PreferredObjectiveKey_MasteredObjectiveKeys_NoLongerRejected above.
         var preferred = MakeObjective("b2_vocab_general", CefrLevelConstants.B2,
             CurriculumSkillConstants.Vocabulary, [CurriculumContextTagConstants.GeneralEnglish],
             isReviewable: false);
@@ -984,12 +994,12 @@ public sealed class CurriculumRoutingServicePreferredObjectiveTests
             ResolvedLearningGoalContext = MakeGoalContext(workplaceSpecific: false),
             MasteredObjectiveKeys = ["b2_vocab_general"],
             Mode = RoutingMode.NewLearning,
-            AllowReviewOfMastered = true  // even with AllowReviewOfMastered, not reviewable → rejected
+            AllowReviewOfMastered = true
         };
 
         var rec = await svc.RecommendAsync(req);
 
-        Assert.NotEqual(RoutingReason.LearningPlan, rec.RoutingReason);
+        Assert.Equal(RoutingReason.LearningPlan, rec.RoutingReason);
     }
 
     // ── Test 13: preferred key with no PrimarySkill filter — any skill accepted ─

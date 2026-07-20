@@ -694,6 +694,11 @@ public static class DependencyInjection
             LinguaCoach.Infrastructure.GoalVector.StudentGoalVectorService>();
         services.AddScoped<LinguaCoach.Application.GoalVector.IStudentGoalVectorBackfillService,
             LinguaCoach.Infrastructure.GoalVector.StudentGoalVectorBackfillService>();
+        // Adaptive Curriculum Sprint 5 — AI composer ranking, replaces the mechanical CEFR+tag
+        // scoring heuristic previously inline in TodayPlanModuleSelectionService/
+        // PracticeGymModuleSelectionService.
+        services.AddScoped<LinguaCoach.Application.Composer.ICurriculumComposerService,
+            LinguaCoach.Infrastructure.Composer.CurriculumComposerService>();
 
         // Phase 4 (2026-07-15) — large-scale AI import packages. App never crashes on a missing
         // "ImportPackageLimits" config section — sensible defaults are baked into the options class.
