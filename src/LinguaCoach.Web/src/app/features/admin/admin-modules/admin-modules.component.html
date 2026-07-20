@@ -79,6 +79,7 @@
               <th class="sp-admin-fluid-col">Title</th>
               <th>Level</th>
               <th>Skill / Subskill</th>
+              <th>Tags</th>
               <th>Lessons</th>
               <th>Exercises</th>
               <th>Est. minutes</th>
@@ -96,6 +97,20 @@
                 <td>
                   {{ item.skill ?? '—' }}
                   @if (item.subskill) { <div class="sp-admin-text-muted">{{ item.subskill }}</div> }
+                </td>
+                <td style="max-width:180px">
+                  @if (allTags(item).length === 0) {
+                    <span class="sp-admin-text-muted">—</span>
+                  } @else {
+                    <div style="display:flex;gap:4px;flex-wrap:wrap">
+                      @for (tag of allTags(item).slice(0, 3); track tag) {
+                        <sp-admin-badge tone="neutral" appearance="soft" size="sm">{{ tag }}</sp-admin-badge>
+                      }
+                      @if (allTags(item).length > 3) {
+                        <span class="sp-admin-text-muted">+{{ allTags(item).length - 3 }}</span>
+                      }
+                    </div>
+                  }
                 </td>
                 <td>{{ item.lessonLinks.length }}</td>
                 <td>{{ item.exerciseLinks.length }}</td>

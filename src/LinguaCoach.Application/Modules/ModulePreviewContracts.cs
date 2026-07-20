@@ -40,12 +40,19 @@ public sealed record ModulePreviewResult(
     string? ModuleDescription,
     string ModuleReviewStatus,
     ModulePreviewLessonDto? Lesson,
-    ModulePreviewExerciseDto? Exercise,
+    /// <summary>Sprint 10 — every linked Exercise, ordered by SortOrder. Previously hard-capped to
+    /// the first linked Exercise only (`.FirstOrDefaultAsync`), so a Module with 2+ Exercises could
+    /// never preview anything past the first one.</summary>
+    IReadOnlyList<ModulePreviewExerciseDto> Exercises,
     string? ModuleFeedbackPlanJson);
 
 public sealed record ModulePreviewSubmitRequest(
     Guid ModuleId,
-    IReadOnlyDictionary<string, JsonElement> Answers);
+    IReadOnlyDictionary<string, JsonElement> Answers,
+    /// <summary>Sprint 10 — which linked Exercise to score against, when the Module has more than
+    /// one. Null falls back to the first Exercise by SortOrder (the pre-Sprint-10 behavior),
+    /// preserving compatibility for any caller that doesn't yet pass a selector.</summary>
+    Guid? ExerciseId = null);
 
 public sealed record ModulePreviewComponentResult(
     string ComponentKey,

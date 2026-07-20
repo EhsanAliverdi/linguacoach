@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, signal } from '@angular/core';
+import { Component, OnInit, ViewChild, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -73,6 +73,10 @@ export class AdminModuleDetailComponent implements OnInit {
   previewSchema = signal<any>(null);
   previewSubmitting = signal(false);
   previewResult = signal<ModulePreviewSubmitResult | null>(null);
+  // Sprint 10 — which linked Exercise (by index into previewData().exercises) is currently shown
+  // in the preview modal, when a Module has more than one.
+  selectedExerciseIndex = signal(0);
+  selectedExercise = computed(() => this.previewData()?.exercises?.[this.selectedExerciseIndex()] ?? null);
 
   @ViewChild(FormioRendererComponent) previewFormioRenderer?: FormioRendererComponent;
 
@@ -127,6 +131,18 @@ export class AdminModuleDetailComponent implements OnInit {
 
   backToList(): void {
     this.router.navigateByUrl('/admin/modules');
+  }
+
+  /** Sprint 10 — ContextTagsJson/FocusTagsJson were present in the API response but never bound
+   * in this template at all. */
+  parseTags(json: string | null | undefined): string[] {
+    if (!json) return [];
+    try {
+      const parsed = JSON.parse(json);
+      return Array.isArray(parsed) ? parsed.filter(t => typeof t === 'string') : [];
+    } catch {
+      return [];
+    }
   }
 
   statusTone(status: string): 'success' | 'neutral' | 'danger' | 'warning' {
@@ -200,19 +216,14 @@ export class AdminModuleDetailComponent implements OnInit {
     this.previewData.set(null);
     this.previewSchema.set(null);
     this.previewResult.set(null);
+    this.selectedExerciseIndex.set(0);
     this.previewModalOpen.set(true);
 
     this.moduleSvc.preview(item.id).subscribe({
       next: result => {
         this.previewLoading.set(false);
         this.previewData.set(result);
-        if (result.exercise?.formSchemaJson) {
-          try {
-            this.previewSchema.set(JSON.parse(result.exercise.formSchemaJson));
-          } catch {
-            this.previewSchema.set(null);
-          }
-        }
+        this.loadSchemaForSelectedExercise();
       },
       error: err => {
         this.previewLoading.set(false);
@@ -225,17 +236,40 @@ export class AdminModuleDetailComponent implements OnInit {
     this.previewModalOpen.set(false);
   }
 
+  /** Sprint 10 — switches the preview modal to a different linked Exercise (previously the modal
+   * could only ever show the first-linked Exercise, with no way to reach the rest). */
+  selectExercise(index: number): void {
+    this.selectedExerciseIndex.set(index);
+    this.previewResult.set(null);
+    this.previewError.set('');
+    this.loadSchemaForSelectedExercise();
+  }
+
+  private loadSchemaForSelectedExercise(): void {
+    const schemaJson = this.selectedExercise()?.formSchemaJson;
+    if (!schemaJson) {
+      this.previewSchema.set(null);
+      return;
+    }
+    try {
+      this.previewSchema.set(JSON.parse(schemaJson));
+    } catch {
+      this.previewSchema.set(null);
+    }
+  }
+
   submitPreviewAnswer(): void {
     this.previewFormioRenderer?.submitForm();
   }
 
   onPreviewExerciseSubmit(answers: Record<string, unknown>): void {
     const module = this.previewData();
-    if (!module) return;
+    const exercise = this.selectedExercise();
+    if (!module || !exercise) return;
 
     this.previewSubmitting.set(true);
     this.previewError.set('');
-    this.moduleSvc.previewSubmit(module.moduleId, { answers }).subscribe({
+    this.moduleSvc.previewSubmit(module.moduleId, { answers, exerciseId: exercise.exerciseId }).subscribe({
       next: result => {
         this.previewSubmitting.set(false);
         this.previewResult.set(result);

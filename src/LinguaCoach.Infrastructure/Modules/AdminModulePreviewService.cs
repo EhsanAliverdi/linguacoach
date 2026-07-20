@@ -31,8 +31,8 @@ public sealed class AdminModulePreviewService : IAdminModulePreviewQuery, IAdmin
 
         var lessonLink = await _db.ModuleLessonLinks.AsNoTracking()
             .Where(l => l.ModuleId == moduleId).OrderBy(l => l.SortOrder).FirstOrDefaultAsync(ct);
-        var exerciseLink = await _db.ModuleExerciseLinks.AsNoTracking()
-            .Where(l => l.ModuleId == moduleId).OrderBy(l => l.SortOrder).FirstOrDefaultAsync(ct);
+        var exerciseLinks = await _db.ModuleExerciseLinks.AsNoTracking()
+            .Where(l => l.ModuleId == moduleId).OrderBy(l => l.SortOrder).ToListAsync(ct);
 
         ModulePreviewLessonDto? lessonDto = null;
         if (lessonLink is not null)
@@ -44,30 +44,38 @@ public sealed class AdminModulePreviewService : IAdminModulePreviewQuery, IAdmin
                     ParseStringArray(lesson.ExamplesJson), ParseStringArray(lesson.CommonMistakesJson), lesson.UsageNotes);
         }
 
-        ModulePreviewExerciseDto? exerciseDto = null;
-        if (exerciseLink is not null)
-        {
-            var exercise = await _db.Exercises.AsNoTracking().FirstOrDefaultAsync(a => a.Id == exerciseLink.ExerciseId, ct);
-            if (exercise is not null)
+        var exerciseIds = exerciseLinks.Select(l => l.ExerciseId).ToList();
+        var exercises = await _db.Exercises.AsNoTracking()
+            .Where(a => exerciseIds.Contains(a.Id)).ToListAsync(ct);
+        var exerciseById = exercises.ToDictionary(a => a.Id);
+
+        var exerciseDtos = exerciseLinks
+            .Where(l => exerciseById.ContainsKey(l.ExerciseId))
+            .Select(l =>
             {
+                var exercise = exerciseById[l.ExerciseId];
                 var eligibility = ExerciseLaunchEligibility.Evaluate(exercise);
-                exerciseDto = new ModulePreviewExerciseDto(
+                return new ModulePreviewExerciseDto(
                     exercise.Id, exercise.Title, exercise.Instructions, exercise.ActivityType,
                     exercise.RendererType.ToString(), exercise.FormSchemaJson, exercise.EstimatedMinutes,
                     eligibility.CanLaunch, eligibility.UnsupportedReason);
-            }
-        }
+            })
+            .ToList();
 
         return new ModulePreviewResult(
             module.Id, module.Title, module.Description, module.ReviewStatus.ToString(),
-            lessonDto, exerciseDto, module.FeedbackPlanJson);
+            lessonDto, exerciseDtos, module.FeedbackPlanJson);
     }
 
     public async Task<ModulePreviewSubmitResult> HandleAsync(ModulePreviewSubmitRequest request, CancellationToken ct = default)
     {
-        var exerciseLink = await _db.ModuleExerciseLinks.AsNoTracking()
-            .Where(l => l.ModuleId == request.ModuleId).OrderBy(l => l.SortOrder).FirstOrDefaultAsync(ct)
-            ?? throw new ModuleValidationException($"Module '{request.ModuleId}' has no linked Exercise to preview.");
+        var exerciseLinksQuery = _db.ModuleExerciseLinks.AsNoTracking()
+            .Where(l => l.ModuleId == request.ModuleId);
+        var exerciseLink = request.ExerciseId is { } requestedExerciseId
+            ? await exerciseLinksQuery.FirstOrDefaultAsync(l => l.ExerciseId == requestedExerciseId, ct)
+                ?? throw new ModuleValidationException($"Exercise '{requestedExerciseId}' is not linked to Module '{request.ModuleId}'.")
+            : await exerciseLinksQuery.OrderBy(l => l.SortOrder).FirstOrDefaultAsync(ct)
+                ?? throw new ModuleValidationException($"Module '{request.ModuleId}' has no linked Exercise to preview.");
 
         var exercise = await _db.Exercises.AsNoTracking().FirstOrDefaultAsync(a => a.Id == exerciseLink.ExerciseId, ct)
             ?? throw new ModuleValidationException($"Exercise '{exerciseLink.ExerciseId}' linked to this Module was not found.");

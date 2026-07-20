@@ -45,8 +45,15 @@ public sealed record ModuleDto(
     DateTime UpdatedAtUtc,
     IReadOnlyList<ModuleLessonLinkDto> LessonLinks,
     IReadOnlyList<ModuleExerciseLinkDto> ExerciseLinks,
-    bool IsArchived = false
+    bool IsArchived = false,
+    /// <summary>Sprint 10 — the real skill-graph-node coverage tags (from
+    /// ModuleSkillGraphNodeLink), distinct from ContextTagsJson/FocusTagsJson (free-text tags
+    /// authored on the Module itself). Previously invisible on the admin Module pages despite
+    /// existing in the data since Adaptive Curriculum Sprint 2.</summary>
+    IReadOnlyList<ModuleSkillGraphNodeTagDto>? SkillGraphNodeTags = null
 );
+
+public sealed record ModuleSkillGraphNodeTagDto(Guid NodeId, string Key, string Title);
 
 public sealed record ListModulesQuery(
     int Page = 1,

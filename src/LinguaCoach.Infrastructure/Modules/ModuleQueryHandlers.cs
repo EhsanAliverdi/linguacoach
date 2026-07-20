@@ -74,12 +74,19 @@ public sealed class AdminModuleListQueryHandler : IAdminModuleListQuery
             .Where(l => itemIds.Contains(l.ModuleId)).ToListAsync(ct);
         var exerciseLinks = await _db.ModuleExerciseLinks
             .Where(l => itemIds.Contains(l.ModuleId)).ToListAsync(ct);
+        var nodeTags = await (
+            from link in _db.ModuleSkillGraphNodeLinks
+            where itemIds.Contains(link.ModuleId)
+            join node in _db.SkillGraphNodes on link.SkillGraphNodeId equals node.Id
+            select new { link.ModuleId, Tag = new ModuleSkillGraphNodeTagDto(node.Id, node.Key, node.Title) })
+            .ToListAsync(ct);
         var learnLookup = lessonLinks.ToLookup(l => l.ModuleId);
         var activityLookup = exerciseLinks.ToLookup(l => l.ModuleId);
+        var nodeTagLookup = nodeTags.ToLookup(x => x.ModuleId, x => x.Tag);
 
         return new ModuleListResult(
             items.Select(m => ModuleMappers.ToDto(
-                m, learnLookup[m.Id].ToList(), activityLookup[m.Id].ToList())).ToList(),
+                m, learnLookup[m.Id].ToList(), activityLookup[m.Id].ToList(), nodeTagLookup[m.Id].ToList())).ToList(),
             totalCount);
     }
 
@@ -101,7 +108,13 @@ public sealed class AdminModuleGetQueryHandler : IAdminModuleGetQuery
             .Where(l => l.ModuleId == item.Id).ToListAsync(ct);
         var exerciseLinks = await _db.ModuleExerciseLinks
             .Where(l => l.ModuleId == item.Id).ToListAsync(ct);
+        var nodeTags = await (
+            from link in _db.ModuleSkillGraphNodeLinks
+            where link.ModuleId == item.Id
+            join node in _db.SkillGraphNodes on link.SkillGraphNodeId equals node.Id
+            select new ModuleSkillGraphNodeTagDto(node.Id, node.Key, node.Title))
+            .ToListAsync(ct);
 
-        return ModuleMappers.ToDto(item, lessonLinks, exerciseLinks);
+        return ModuleMappers.ToDto(item, lessonLinks, exerciseLinks, nodeTags);
     }
 }

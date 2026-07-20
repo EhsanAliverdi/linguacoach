@@ -8,7 +8,8 @@ internal static class ModuleMappers
     public static ModuleDto ToDto(
         Module item,
         IReadOnlyList<ModuleLessonLink> lessonLinks,
-        IReadOnlyList<ModuleExerciseLink> exerciseLinks) => new(
+        IReadOnlyList<ModuleExerciseLink> exerciseLinks,
+        IReadOnlyList<ModuleSkillGraphNodeTagDto>? skillGraphNodeTags = null) => new(
         item.Id, item.Title, item.Description, item.CefrLevel, item.Skill, item.Subskill,
         item.ContextTagsJson, item.FocusTagsJson, item.DifficultyBand, item.EstimatedMinutes, item.FeedbackPlanJson,
         item.SourceMode.ToString(), item.GenerationProvider, item.GenerationModel, item.ReviewStatus.ToString(),
@@ -16,7 +17,8 @@ internal static class ModuleMappers
         item.RejectionReason, item.ReviewNotes, item.CreatedAt, item.UpdatedAtUtc,
         lessonLinks.OrderBy(l => l.SortOrder).Select(ToLessonLinkDto).ToList(),
         exerciseLinks.OrderBy(l => l.SortOrder).Select(ToExerciseLinkDto).ToList(),
-        item.IsArchived);
+        item.IsArchived,
+        skillGraphNodeTags ?? []);
 
     public static ModuleLessonLinkDto ToLessonLinkDto(ModuleLessonLink link) => new(
         link.Id, link.LessonId, link.Role.ToString(), link.SortOrder, link.SnapshotTitle);

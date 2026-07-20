@@ -92,11 +92,11 @@ public sealed class AdminModulePreviewServiceTests : IDisposable
         return activity;
     }
 
-    private async Task<Guid> CreatePendingModuleAsync(Lesson lesson, Exercise exercise)
+    private async Task<Guid> CreatePendingModuleAsync(Lesson lesson, params Exercise[] exercises)
     {
         var result = await _moduleGen.HandleAsync(new GenerateModuleFromItemsRequest(
             new[] { new ModuleLessonLinkInput(lesson.Id, "Primary") },
-            new[] { new ModuleExerciseLinkInput(exercise.Id, "PrimaryPractice") }));
+            exercises.Select(e => new ModuleExerciseLinkInput(e.Id, "PrimaryPractice")).ToArray()));
         return result.Module.Id;
     }
 
@@ -116,9 +116,9 @@ public sealed class AdminModulePreviewServiceTests : IDisposable
         result.Lesson.Should().NotBeNull();
         result.Lesson!.Title.Should().Be("Resilient");
         result.Lesson.Examples.Should().ContainSingle().Which.Should().Contain("resilient");
-        result.Exercise.Should().NotBeNull();
-        result.Exercise!.CanScore.Should().BeTrue();
-        result.Exercise.UnscorableReason.Should().BeNull();
+        result.Exercises.Should().ContainSingle();
+        result.Exercises[0].CanScore.Should().BeTrue();
+        result.Exercises[0].UnscorableReason.Should().BeNull();
     }
 
     [Fact]
@@ -133,7 +133,7 @@ public sealed class AdminModulePreviewServiceTests : IDisposable
         // ModulePreviewExerciseDto has no AnswerKeyJson/ScoringRulesJson property at all — this
         // assertion documents the intent; the compiler itself enforces it (DTO shape has no field
         // to leak through). Confirm the schema shown is the student-safe one.
-        result!.Exercise!.FormSchemaJson.Should().NotContain("resilient");
+        result!.Exercises[0].FormSchemaJson.Should().NotContain("resilient");
     }
 
     [Fact]
@@ -145,8 +145,27 @@ public sealed class AdminModulePreviewServiceTests : IDisposable
 
         var result = await _sut.HandleAsync(moduleId);
 
-        result!.Exercise!.CanScore.Should().BeFalse();
-        result.Exercise.UnscorableReason.Should().Contain("not launchable yet");
+        result!.Exercises[0].CanScore.Should().BeFalse();
+        result.Exercises[0].UnscorableReason.Should().Contain("not launchable yet");
+    }
+
+    [Fact]
+    public async Task Preview_of_a_module_with_multiple_exercises_returns_all_of_them_in_sort_order()
+    {
+        var lesson = SeedLesson();
+        var gapFill = SeedGapFillExercise(lesson.Id);
+        var shortAnswer = SeedShortAnswerExercise(lesson.Id);
+        var moduleId = await CreatePendingModuleAsync(lesson, gapFill, shortAnswer);
+
+        var result = await _sut.HandleAsync(moduleId);
+
+        // Regression test — AdminModulePreviewService used to hard-cap to the first linked
+        // Exercise (.FirstOrDefaultAsync), so a Module with 2+ Exercises could never preview
+        // anything past the first one.
+        result!.Exercises.Should().HaveCount(2);
+        result.Exercises.Select(e => e.ExerciseId).Should().BeEquivalentTo([gapFill.Id, shortAnswer.Id]);
+        result.Exercises.Should().Contain(e => e.ExerciseId == gapFill.Id && e.CanScore);
+        result.Exercises.Should().Contain(e => e.ExerciseId == shortAnswer.Id && !e.CanScore);
     }
 
     [Fact]
@@ -233,6 +252,53 @@ public sealed class AdminModulePreviewServiceTests : IDisposable
     {
         var act = async () => await _sut.HandleAsync(
             new ModulePreviewSubmitRequest(Guid.NewGuid(), new Dictionary<string, JsonElement>()));
+
+        await act.Should().ThrowAsync<ModuleValidationException>();
+    }
+
+    [Fact]
+    public async Task Submitting_with_no_ExerciseId_scores_against_the_first_exercise_by_sort_order()
+    {
+        var lesson = SeedLesson();
+        var gapFill = SeedGapFillExercise(lesson.Id);
+        var shortAnswer = SeedShortAnswerExercise(lesson.Id);
+        var moduleId = await CreatePendingModuleAsync(lesson, gapFill, shortAnswer);
+
+        var result = await _sut.HandleAsync(new ModulePreviewSubmitRequest(
+            moduleId, new Dictionary<string, JsonElement> { ["answer"] = JsonSerializer.SerializeToElement("resilient") }));
+
+        // gapFill is linked first, so a request with no ExerciseId must still score against it
+        // (backward-compatible default), not the unscorable shortAnswer exercise.
+        result.Scored.Should().BeTrue();
+        result.AllCorrect.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Submitting_with_an_explicit_ExerciseId_scores_against_that_exercise_not_the_first_one()
+    {
+        var lesson = SeedLesson();
+        var gapFill = SeedGapFillExercise(lesson.Id);
+        var shortAnswer = SeedShortAnswerExercise(lesson.Id);
+        var moduleId = await CreatePendingModuleAsync(lesson, gapFill, shortAnswer);
+
+        var result = await _sut.HandleAsync(new ModulePreviewSubmitRequest(
+            moduleId, new Dictionary<string, JsonElement>(), ExerciseId: shortAnswer.Id));
+
+        // Regression test — the selector must actually change which Exercise gets scored, not
+        // silently ignore it and always score the first-linked one.
+        result.Scored.Should().BeFalse();
+        result.UnscorableReason.Should().Contain("not launchable yet");
+    }
+
+    [Fact]
+    public async Task Submitting_with_an_ExerciseId_not_linked_to_the_module_throws()
+    {
+        var lesson = SeedLesson();
+        var gapFill = SeedGapFillExercise(lesson.Id);
+        var moduleId = await CreatePendingModuleAsync(lesson, gapFill);
+
+        var act = async () => await _sut.HandleAsync(new ModulePreviewSubmitRequest(
+            moduleId, new Dictionary<string, JsonElement>(), ExerciseId: Guid.NewGuid()));
 
         await act.Should().ThrowAsync<ModuleValidationException>();
     }

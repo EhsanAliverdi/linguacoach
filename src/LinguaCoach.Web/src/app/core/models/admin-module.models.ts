@@ -24,6 +24,16 @@ export interface ModuleExerciseLinkDto {
   snapshotTitle: string | null;
 }
 
+// Sprint 10 — the real skill-graph-node coverage tags (ModuleSkillGraphNodeLink), distinct from
+// contextTagsJson/focusTagsJson (free-text tags authored on the Module itself). Previously
+// invisible on the admin Module pages despite existing in the data since Adaptive Curriculum
+// Sprint 2.
+export interface ModuleSkillGraphNodeTagDto {
+  nodeId: string;
+  key: string;
+  title: string;
+}
+
 export interface ModuleDto {
   id: string;
   title: string;
@@ -51,6 +61,7 @@ export interface ModuleDto {
   lessonLinks: ModuleLessonLinkDto[];
   exerciseLinks: ModuleExerciseLinkDto[];
   isArchived: boolean;
+  skillGraphNodeTags: ModuleSkillGraphNodeTagDto[];
 }
 
 export interface ModuleListResult {
@@ -164,12 +175,17 @@ export interface ModulePreviewResult {
   moduleDescription: string | null;
   moduleReviewStatus: string;
   lesson: ModulePreviewLessonDto | null;
-  exercise: ModulePreviewExerciseDto | null;
+  // Sprint 10 — every linked Exercise, ordered by SortOrder (previously hard-capped to the first
+  // linked Exercise only).
+  exercises: ModulePreviewExerciseDto[];
   moduleFeedbackPlanJson: string | null;
 }
 
 export interface ModulePreviewSubmitRequestBody {
   answers: Record<string, unknown>;
+  // Sprint 10 — which linked Exercise to score against, when the Module has more than one. Omit
+  // to fall back to the first Exercise by SortOrder.
+  exerciseId?: string;
 }
 
 export interface ModulePreviewComponentResult {

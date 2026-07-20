@@ -65,6 +65,22 @@
         <sp-admin-form-field label="Difficulty band">{{ d.difficultyBand ?? '—' }}</sp-admin-form-field>
         <sp-admin-form-field label="Estimated minutes">{{ d.estimatedMinutes ?? '—' }}</sp-admin-form-field>
 
+        <sp-admin-form-field label="Context tags" [hint]="parseTags(d.contextTagsJson).length === 0 ? 'None' : ''">
+          @for (tag of parseTags(d.contextTagsJson); track tag) {
+            <sp-admin-badge tone="neutral" appearance="soft" size="sm">{{ tag }}</sp-admin-badge>
+          }
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Focus tags" [hint]="parseTags(d.focusTagsJson).length === 0 ? 'None' : ''">
+          @for (tag of parseTags(d.focusTagsJson); track tag) {
+            <sp-admin-badge tone="neutral" appearance="soft" size="sm">{{ tag }}</sp-admin-badge>
+          }
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Skill-graph nodes" [hint]="d.skillGraphNodeTags.length === 0 ? 'Not tagged to any skill-graph node' : ''">
+          @for (tag of d.skillGraphNodeTags; track tag.nodeId) {
+            <sp-admin-badge tone="info" appearance="soft" size="sm">{{ tag.title }}</sp-admin-badge>
+          }
+        </sp-admin-form-field>
+
         <sp-admin-form-field label="Linked Lessons" [hint]="d.lessonLinks.length === 0 ? 'None linked' : ''">
           @for (link of d.lessonLinks; track link.linkId) {
             <div>
@@ -166,7 +182,23 @@
           </sp-admin-form-field>
         }
 
-        @if (p.exercise; as exercise) {
+        @if (p.exercises.length > 1) {
+          <sp-admin-form-field label="Exercise">
+            <div class="sp-admin-form-stack" style="flex-direction:row;gap:8px;flex-wrap:wrap">
+              @for (ex of p.exercises; track ex.exerciseId; let i = $index) {
+                <sp-admin-button
+                  [variant]="i === selectedExerciseIndex() ? 'primary' : 'neutral'"
+                  [appearance]="i === selectedExerciseIndex() ? 'solid' : 'outline'"
+                  size="sm"
+                  (clicked)="selectExercise(i)">
+                  {{ i + 1 }}. {{ ex.title }}
+                </sp-admin-button>
+              }
+            </div>
+          </sp-admin-form-field>
+        }
+
+        @if (selectedExercise(); as exercise) {
           <sp-admin-form-field label="Practice">
             <h4>{{ exercise.title }}</h4>
             <p>{{ exercise.instructions }}</p>

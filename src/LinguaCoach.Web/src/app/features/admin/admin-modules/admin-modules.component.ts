@@ -240,6 +240,25 @@ export class AdminModulesComponent implements OnInit {
     return 'neutral';
   }
 
+  /** Sprint 10 — the list page showed skill/subskill/difficulty/estimated-minutes but no tags at
+   * all (context tags, focus tags, or real skill-graph-node coverage). Combines all three into one
+   * compact list for the dense table row. */
+  allTags(item: ModuleDto): string[] {
+    const parse = (json: string): string[] => {
+      try {
+        const parsed = JSON.parse(json);
+        return Array.isArray(parsed) ? parsed.filter(t => typeof t === 'string') : [];
+      } catch {
+        return [];
+      }
+    };
+    return [
+      ...parse(item.contextTagsJson),
+      ...parse(item.focusTagsJson),
+      ...item.skillGraphNodeTags.map(t => t.title),
+    ];
+  }
+
   // ── Selection ────────────────────────────────────────────────────────────────
 
   isSelected(id: string): boolean {
