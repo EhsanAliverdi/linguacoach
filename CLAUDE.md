@@ -196,13 +196,37 @@ npx playwright test e2e/admin-students-reset.spec.ts
 
 ### Docker
 
+The `web` container serves a **baked production build** (multi-stage Dockerfile: `ng build` →
+copied into nginx) — it is the only supported way to run the frontend locally in this repo.
+**Never run `npm start`/`ng serve` locally against this repo**: it binds to the same port 4200 as
+the Docker `web` container and silently shadows it on IPv6, so `curl`/browser hits against
+`localhost:4200` land on the stray local process instead of Docker, making live verification lie.
+If you ever see this (e.g. `curl http://localhost:4200` doesn't show `@vite/client`-free static
+HTML), find and kill the stray `node.exe`/`ng serve` process before trusting any Docker-based check.
+
+Because `web` is a baked build, a plain `docker compose up -d` does **not** pick up new frontend
+code — it keeps serving whatever was last built. Use one of:
+
 ```bash
 # Start API + PostgreSQL together (migrations run on startup)
 docker compose up --build
 
+# One-off rebuild of just the web (and/or api) image + redeploy after a code change
+docker compose build --no-cache api web
+docker compose up -d api web
+
+# Active development: auto-rebuild + restart the web container on every source change.
+# `--watch` cannot combine with `-d` — start detached first, then watch in its own terminal:
+docker compose up -d
+docker compose watch
+
 # Teardown including volumes
 docker compose down -v
 ```
+
+Every code-change verification cycle in this repo (see the mandatory per-step workflow) must end
+with an actual rebuild+redeploy of any container whose image changed — never assume `docker compose
+up -d` alone reflects the latest code.
 
 ---
 

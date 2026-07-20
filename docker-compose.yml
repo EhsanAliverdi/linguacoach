@@ -107,6 +107,21 @@ services:
     depends_on:
       api:
         condition: service_healthy
+    # `docker compose watch` (or `docker compose up -d --watch`) rebuilds+restarts this service
+    # automatically whenever source changes — the image is a baked production nginx build (see
+    # Dockerfile), so without this a plain `up -d` keeps serving whatever was last built, silently
+    # going stale after any code change. `dist`/`node_modules` are excluded since they're
+    # container-internal build output, not source the container should react to.
+    develop:
+      watch:
+        - action: rebuild
+          path: ./src/LinguaCoach.Web/src
+        - action: rebuild
+          path: ./src/LinguaCoach.Web/package.json
+        - action: rebuild
+          path: ./src/LinguaCoach.Web/package-lock.json
+        - action: rebuild
+          path: ./src/LinguaCoach.Web/angular.json
 
 volumes:
   postgres_data:
