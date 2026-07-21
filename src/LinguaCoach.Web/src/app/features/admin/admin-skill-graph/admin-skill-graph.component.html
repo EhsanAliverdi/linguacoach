@@ -235,8 +235,7 @@
       }
     </div>
     } @else {
-
-    <div style="padding: 16px 18px 0;">
+    <div style="padding: 12px 18px 0;">
     <div class="sp-admin-filter-bar" style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; margin-bottom:12px;">
       <sp-admin-form-field label="CEFR level">
         <sp-admin-select [options]="cefrLevelOptions()" [(ngModel)]="filterCefrLevel" placeholder="All" (ngModelChange)="onFilterChange()" />
@@ -250,18 +249,16 @@
     </div>
 
     @if (hasSelection()) {
-      <div class="sp-admin-settings-row" style="margin-bottom:12px;">
-        <span class="sp-admin-settings-row-label">{{ selectedIds().size }} selected</span>
-        <div style="display:flex; gap:8px; align-items:center;">
-          <input type="text" placeholder="Rejection reason" [(ngModel)]="rejectReason"
-            style="padding:6px 10px; border:1px solid #d1d5db; border-radius:6px; font-size:13px;" />
-          <sp-admin-button size="sm" variant="danger" appearance="outline" [disabled]="batchPending()" (clicked)="batchReject()">
-            Reject selected
-          </sp-admin-button>
-          <sp-admin-button size="sm" variant="primary" [disabled]="batchPending()" (clicked)="batchApprove()">
-            Approve selected
-          </sp-admin-button>
-        </div>
+      <div class="sp-admin-form-actions" style="flex-wrap:wrap; align-items:center; margin-bottom:12px;">
+        <span class="sp-admin-hint">{{ selectedIds().size }} selected</span>
+        <input type="text" placeholder="Rejection reason" [(ngModel)]="rejectReason"
+          style="padding:6px 10px; border:1px solid #d1d5db; border-radius:6px; font-size:13px;" />
+        <sp-admin-button size="sm" variant="danger" appearance="outline" [disabled]="batchPending()" (clicked)="batchReject()">
+          Reject selected
+        </sp-admin-button>
+        <sp-admin-button size="sm" variant="primary" [disabled]="batchPending()" (clicked)="batchApprove()">
+          Approve selected
+        </sp-admin-button>
       </div>
     }
     @if (batchStatus()) {

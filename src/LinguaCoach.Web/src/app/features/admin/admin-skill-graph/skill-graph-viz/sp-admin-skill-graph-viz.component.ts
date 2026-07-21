@@ -1,5 +1,6 @@
 import { Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import cytoscape, { Core, ElementDefinition } from 'cytoscape';
 import coseBilkent from 'cytoscape-cose-bilkent';
 import { SkillGraphEdge, SkillGraphNode } from '../../../../core/models/admin.models';
@@ -44,7 +45,7 @@ const SKILL_BOX_COLORS: Record<string, string> = {
 @Component({
   selector: 'sp-admin-skill-graph-viz',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="sp-sgv-legend">
       @for (level of cefrLevels; track level) {
@@ -57,9 +58,32 @@ const SKILL_BOX_COLORS: Record<string, string> = {
           <span class="sp-sgv-legend-dot" [style.background]="cefrColor(level)"></span>{{ level }}
         </button>
       }
+      <input
+        type="text"
+        class="sp-sgv-search"
+        placeholder="Find a node by title…"
+        [(ngModel)]="searchTerm"
+        (input)="onSearchInput()"
+      />
+      @if (searchMatches.length > 0) {
+        <span class="sp-sgv-search-nav">
+          <button type="button" class="sp-sgv-icon-btn" (click)="jumpToMatch(-1)" title="Previous match">‹</button>
+          {{ searchMatchIndex + 1 }}/{{ searchMatches.length }}
+          <button type="button" class="sp-sgv-icon-btn" (click)="jumpToMatch(1)" title="Next match">›</button>
+        </span>
+      } @else if (searchTerm) {
+        <span class="sp-sgv-search-nav sp-sgv-search-nav--empty">No match</span>
+      }
       <span class="sp-sgv-legend-count">{{ visibleCount }} of {{ nodes.length }} nodes shown</span>
     </div>
-    <div #cyContainer class="sp-sgv-canvas"></div>
+    <div class="sp-sgv-canvas-wrap">
+      <div #cyContainer class="sp-sgv-canvas"></div>
+      <div class="sp-sgv-zoom-controls">
+        <button type="button" class="sp-sgv-icon-btn" (click)="zoomBy(1.3)" title="Zoom in">+</button>
+        <button type="button" class="sp-sgv-icon-btn" (click)="zoomBy(1 / 1.3)" title="Zoom out">−</button>
+        <button type="button" class="sp-sgv-icon-btn" (click)="fitToView()" title="Fit to view">⤢</button>
+      </div>
+    </div>
   `,
   styles: [`
     .sp-sgv-legend { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
@@ -71,8 +95,26 @@ const SKILL_BOX_COLORS: Record<string, string> = {
     .sp-sgv-legend-item:hover { background: var(--sp-admin-border, #ECE9F5); }
     .sp-sgv-legend-item--off { opacity: 0.35; }
     .sp-sgv-legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .sp-sgv-search {
+      font-size: 11px; padding: 4px 8px; border: 1px solid var(--sp-admin-border, #ECE9F5);
+      border-radius: 6px; width: 160px; color: var(--sp-admin-text, #211B36);
+    }
+    .sp-sgv-search-nav { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--sp-admin-text-muted, #8B85A0); }
+    .sp-sgv-search-nav--empty { color: var(--sp-admin-danger, #DC2626); }
     .sp-sgv-legend-count { font-size: 11px; color: var(--sp-admin-text-dim, #BDB8CC); margin-left: auto; }
+    .sp-sgv-canvas-wrap { position: relative; }
     .sp-sgv-canvas { width: 100%; height: 620px; border: 1px solid var(--sp-admin-border, #ECE9F5); border-radius: 10px; background: var(--sp-admin-surface, #fff); }
+    .sp-sgv-zoom-controls {
+      position: absolute; bottom: 12px; right: 12px; display: flex; flex-direction: column; gap: 4px;
+      background: var(--sp-admin-surface, #fff); border: 1px solid var(--sp-admin-border, #ECE9F5);
+      border-radius: 8px; padding: 4px; box-shadow: 0 2px 8px rgba(0,0,0,.08);
+    }
+    .sp-sgv-icon-btn {
+      width: 26px; height: 26px; border: none; background: none; cursor: pointer;
+      font-size: 15px; font-weight: 700; color: var(--sp-admin-text, #211B36); border-radius: 5px;
+      display: flex; align-items: center; justify-content: center; line-height: 1;
+    }
+    .sp-sgv-icon-btn:hover { background: var(--sp-admin-border, #ECE9F5); }
   `],
 })
 export class SpAdminSkillGraphVizComponent implements OnChanges, OnDestroy {
@@ -85,6 +127,13 @@ export class SpAdminSkillGraphVizComponent implements OnChanges, OnDestroy {
   readonly cefrLevels = CEFR_LEVELS;
   activeLevels = new Set<string>(CEFR_LEVELS);
   visibleCount = 0;
+
+  // Sprint 14.4 — Google-Maps-style navigation: explicit zoom in/out/fit controls (mouse wheel
+  // alone was the only way to zoom before, and with 219 nodes finding a specific one by panning
+  // around was impractical) plus a find-by-title search that centers and highlights matches.
+  searchTerm = '';
+  searchMatches: string[] = [];
+  searchMatchIndex = -1;
 
   private cy: Core | null = null;
 
@@ -116,6 +165,8 @@ export class SpAdminSkillGraphVizComponent implements OnChanges, OnDestroy {
     if (!this.container || this.nodes.length === 0) return;
 
     this.cy?.destroy();
+    this.searchMatches = [];
+    this.searchMatchIndex = -1;
 
     const visibleNodes = this.nodes.filter(n => this.activeLevels.has(n.cefrLevel));
     this.visibleCount = visibleNodes.length;
@@ -193,6 +244,14 @@ export class SpAdminSkillGraphVizComponent implements OnChanges, OnDestroy {
             opacity: 0.85,
           },
         },
+        {
+          selector: '.sp-sgv-highlight',
+          style: {
+            'border-width': 3,
+            'border-color': '#F0982C',
+            'z-index': 999,
+          },
+        },
       ],
       layout: {
         name: 'cose-bilkent',
@@ -200,6 +259,8 @@ export class SpAdminSkillGraphVizComponent implements OnChanges, OnDestroy {
         ...({ nodeDimensionsIncludeLabels: true, animate: false, padding: 30, idealEdgeLength: 80 } as any),
       } as cytoscape.LayoutOptions,
       wheelSensitivity: 0.2,
+      minZoom: 0.1,
+      maxZoom: 4,
     });
 
     this.cy.on('tap', 'node', evt => {
@@ -216,5 +277,48 @@ export class SpAdminSkillGraphVizComponent implements OnChanges, OnDestroy {
 
   private skillBoxColor(label: string): string {
     return SKILL_BOX_COLORS[label.toLowerCase()] ?? '#F6F4FB';
+  }
+
+  // ── Sprint 14.4 — zoom/pan controls ──────────────────────────────────────
+
+  zoomBy(factor: number): void {
+    if (!this.cy) return;
+    const level = Math.max(this.cy.minZoom(), Math.min(this.cy.maxZoom(), this.cy.zoom() * factor));
+    this.cy.animate({ zoom: level, duration: 150 });
+  }
+
+  fitToView(): void {
+    this.cy?.animate({ fit: { eles: this.cy.elements(), padding: 30 }, duration: 200 });
+  }
+
+  onSearchInput(): void {
+    if (!this.cy || !this.searchTerm.trim()) {
+      this.searchMatches = [];
+      this.searchMatchIndex = -1;
+      return;
+    }
+    const term = this.searchTerm.trim().toLowerCase();
+    this.searchMatches = this.cy
+      .nodes('[!isParent]')
+      .filter(n => (n.data('label') as string).toLowerCase().includes(term))
+      .map(n => n.id());
+    this.searchMatchIndex = this.searchMatches.length > 0 ? 0 : -1;
+    if (this.searchMatchIndex >= 0) this.centerOnMatch();
+  }
+
+  jumpToMatch(delta: number): void {
+    if (this.searchMatches.length === 0) return;
+    this.searchMatchIndex = (this.searchMatchIndex + delta + this.searchMatches.length) % this.searchMatches.length;
+    this.centerOnMatch();
+  }
+
+  private centerOnMatch(): void {
+    if (!this.cy || this.searchMatchIndex < 0) return;
+    const id = this.searchMatches[this.searchMatchIndex];
+    const ele = this.cy.getElementById(id);
+    if (ele.empty()) return;
+    this.cy.animate({ center: { eles: ele }, zoom: Math.max(this.cy.zoom(), 1.2), duration: 250 });
+    this.cy.elements().removeClass('sp-sgv-highlight');
+    ele.addClass('sp-sgv-highlight');
   }
 }
