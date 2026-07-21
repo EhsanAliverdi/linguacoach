@@ -1647,7 +1647,7 @@ describe('SpAdminSystemHealthComponent (10UI-DASHBOARD-PARITY-2)', () => {
   });
 });
 
-describe('SpAdminDonutChartComponent (10UI-DASHBOARD-PARITY-2)', () => {
+describe('SpAdminDonutChartComponent (ApexCharts rewrite)', () => {
   it('renders title', async () => {
     await TestBed.configureTestingModule({ imports: [DonutHostComponent] }).compileComponents();
     const fix = TestBed.createComponent(DonutHostComponent);
@@ -1655,26 +1655,20 @@ describe('SpAdminDonutChartComponent (10UI-DASHBOARD-PARITY-2)', () => {
     expect(fix.nativeElement.querySelector('.sp-donut-title').textContent.trim()).toBe('AI cost by type');
   });
 
-  it('renders correct number of legend rows', async () => {
+  it('renders the apx-chart element', async () => {
     await TestBed.configureTestingModule({ imports: [DonutHostComponent] }).compileComponents();
     const fix = TestBed.createComponent(DonutHostComponent);
     fix.detectChanges();
-    expect(fix.nativeElement.querySelectorAll('.sp-donut-legend-row').length).toBe(4);
+    expect(fix.nativeElement.querySelector('apx-chart')).toBeTruthy();
   });
 
-  it('renders SVG circles for segments plus center', async () => {
-    await TestBed.configureTestingModule({ imports: [DonutHostComponent] }).compileComponents();
-    const fix = TestBed.createComponent(DonutHostComponent);
-    fix.detectChanges();
-    expect(fix.nativeElement.querySelectorAll('circle').length).toBe(5);
-  });
-
-  it('computes dashArray on ngOnChanges', () => {
+  it('builds one series value + label per segment on ngOnChanges', () => {
     const c = new SpAdminDonutChartComponent();
     c.segments = [{ label: 'A', pct: 50, color: '#000' }, { label: 'B', pct: 50, color: '#fff' }];
     c.ngOnChanges();
-    expect(c.computed.length).toBe(2);
-    expect(c.computed[0].dashArray).toContain(' ');
+    expect(c.apexSeries).toEqual([50, 50]);
+    expect(c.apexLabels).toEqual(['A', 'B']);
+    expect(c.apexColors).toEqual(['#000', '#fff']);
   });
 });
 

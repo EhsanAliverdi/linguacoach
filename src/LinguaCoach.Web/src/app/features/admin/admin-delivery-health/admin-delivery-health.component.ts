@@ -15,6 +15,7 @@ import { SpAdminRingMetricComponent } from '../../../design-system/admin/compone
 import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design-system/admin/components/breakdown-bars/sp-admin-breakdown-bars.component';
 import { SpAdminGraphCardComponent } from '../../../design-system/admin/components/graph-card/sp-admin-graph-card.component';
 import { SpAdminAreaChartComponent } from '../../../design-system/admin/components/area-chart/sp-admin-area-chart.component';
+import { SpAdminChartSeries } from '../../../design-system/admin/components/chart/chart-common';
 import { SpAdminVisualPlaceholderComponent } from '../../../design-system/admin/components/visual-placeholder/sp-admin-visual-placeholder.component';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import { AdminDeliveryHealth, MasteryValidationSummary } from '../../../core/models/admin.models';
@@ -121,8 +122,11 @@ export class AdminDeliveryHealthComponent implements OnInit {
 
   todayTrendValues = computed<number[]>(() => (this.todayHealth()?.trend ?? []).map(t => t.selectedCount));
   todayTrendLabels = computed<string[]>(() => (this.todayHealth()?.trend ?? []).map(t => t.date.slice(5)));
+  todayTrendSeries = computed<SpAdminChartSeries[]>(() => [{ name: 'Selected', data: this.todayTrendValues(), color: '#0D9488' }]);
+
   practiceGymTrendValues = computed<number[]>(() => (this.practiceGymHealth()?.trend ?? []).map(t => t.selectedCount));
   practiceGymTrendLabels = computed<string[]>(() => (this.practiceGymHealth()?.trend ?? []).map(t => t.date.slice(5)));
+  practiceGymTrendSeries = computed<SpAdminChartSeries[]>(() => [{ name: 'Suggested', data: this.practiceGymTrendValues(), color: '#7C3AED' }]);
 
   todayBankGaps = computed(() => (this.todayHealth()?.bankCoverage ?? []).filter(b => b.approvedModuleCount === 0));
   practiceGymBankGaps = computed(() => (this.practiceGymHealth()?.bankCoverage ?? []).filter(b => b.approvedModuleCount === 0));

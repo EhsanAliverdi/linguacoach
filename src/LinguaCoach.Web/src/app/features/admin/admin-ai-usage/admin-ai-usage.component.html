@@ -216,11 +216,9 @@
   } @else {
     <div class="sp-admin-card-body-md">
       <sp-admin-area-chart
-        [data]="trendChartValues()"
-        [labels]="trendChartLabels()"
-        color="#5B4BE8"
+        [series]="trendChartSeries()"
+        [categories]="trendChartLabels()"
         [height]="160"
-        prefix=""
         [decimals]="0"
         ariaLabel="Calls over time chart" />
     </div>

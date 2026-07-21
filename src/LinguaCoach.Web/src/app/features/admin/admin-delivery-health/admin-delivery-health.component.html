@@ -47,8 +47,8 @@
       <sp-admin-graph-card title="Selected count — last 7 days"
         [status]="todayTrendValues().length === 0 ? 'unavailable' : 'live'">
         @if (todayTrendValues().length > 0) {
-          <sp-admin-area-chart [data]="todayTrendValues()" [labels]="todayTrendLabels()"
-            color="#0D9488" [height]="160" prefix="" [decimals]="0" ariaLabel="Today selected count over time" />
+          <sp-admin-area-chart [series]="todayTrendSeries()" [categories]="todayTrendLabels()"
+            [height]="160" [decimals]="0" ariaLabel="Today selected count over time" />
         } @else {
           <sp-admin-visual-placeholder state="not-available" title="No trend data" message="No assignments recorded yet." />
         }
@@ -112,8 +112,8 @@
       <sp-admin-graph-card title="Suggested count — last 7 days"
         [status]="practiceGymTrendValues().length === 0 ? 'unavailable' : 'live'">
         @if (practiceGymTrendValues().length > 0) {
-          <sp-admin-area-chart [data]="practiceGymTrendValues()" [labels]="practiceGymTrendLabels()"
-            color="#7C3AED" [height]="160" prefix="" [decimals]="0" ariaLabel="Practice Gym suggested count over time" />
+          <sp-admin-area-chart [series]="practiceGymTrendSeries()" [categories]="practiceGymTrendLabels()"
+            [height]="160" [decimals]="0" ariaLabel="Practice Gym suggested count over time" />
         } @else {
           <sp-admin-visual-placeholder state="not-available" title="No trend data" message="No assignments recorded yet." />
         }

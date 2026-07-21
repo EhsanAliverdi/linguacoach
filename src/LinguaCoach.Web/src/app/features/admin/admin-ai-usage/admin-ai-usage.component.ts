@@ -31,6 +31,7 @@ import { SpAdminRingMetricComponent } from '../../../design-system/admin/compone
 import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design-system/admin/components/breakdown-bars/sp-admin-breakdown-bars.component';
 import { SpAdminGraphCardComponent } from '../../../design-system/admin/components/graph-card/sp-admin-graph-card.component';
 import { SpAdminAreaChartComponent } from '../../../design-system/admin/components/area-chart/sp-admin-area-chart.component';
+import { SpAdminChartSeries } from '../../../design-system/admin/components/chart/chart-common';
 import { SpAdminDonutChartComponent, DonutSegment } from '../../../design-system/admin/components/donut-chart/sp-admin-donut-chart.component';
 import { SpAdminSlideOverComponent } from '../../../design-system/admin';
 
@@ -422,6 +423,8 @@ export class AdminAiUsageComponent implements OnInit {
     this.trendBuckets().map(b => b.callCount));
   readonly trendChartLabels = computed<string[]>(() =>
     this.trendBuckets().map(b => b.date.slice(5))); // MM-DD
+  readonly trendChartSeries = computed<SpAdminChartSeries[]>(() =>
+    [{ name: 'Calls', data: this.trendChartValues(), color: '#5B4BE8' }]);
 
   readonly successRingPct = computed<number>(() => {
     const s = this.summary();
