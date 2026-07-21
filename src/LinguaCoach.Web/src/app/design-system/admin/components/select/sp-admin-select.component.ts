@@ -44,7 +44,7 @@ export type SpAdminSelectState = 'default' | 'error' | 'success' | 'disabled';
       (blur)="onBlur()"
     >
       @if (placeholder) {
-        <option value="" disabled [selected]="!value">{{ placeholder }}</option>
+        <option value="" [disabled]="required" [selected]="!value">{{ placeholder }}</option>
       }
       @for (option of options; track option.value) {
         <option [value]="option.value">{{ option.label }}</option>
