@@ -233,10 +233,13 @@
     }
     </div>
     <sp-admin-table
+      #nodesTableRef
       [flush]="true" variant="data" density="compact" layout="first-column-fluid" minWidth="800px"
       [loading]="nodesLoading()" [error]="nodesError()" errorTitle="Nodes unavailable"
       [filters]="nodesFilters()" (filterChange)="onNodesFilterChange($event)"
       [bulkEditable]="true" [bulkEditMode]="nodesBulkEditMode()" (bulkEditModeChange)="onNodesBulkEditModeChange($event)"
+      [columns]="nodesColumns" [rows]="nodes()" (selectionChange)="onNodesSelectionChange($event)"
+      emptyMessage="No nodes match the current filters. Draft some above."
     >
       @if (hasSelection()) {
         <div selectionBar class="sp-admin-form-actions">
@@ -251,61 +254,25 @@
           </sp-admin-button>
         </div>
       }
-      @if (nodes().length === 0) {
-        <p class="sp-admin-section-sub" style="padding:16px 18px;">No nodes match the current filters. Draft some above.</p>
-      } @else {
-        <table>
-          <thead>
-            <tr>
-              <th>
-                <span class="sp-admin-flex-row" style="gap:6px;">
-                  @if (nodesBulkEditMode()) {
-                    <sp-admin-checkbox [ngModel]="allNodesOnPageSelected()" [ngModelOptions]="{standalone: true}" (checkedChange)="toggleSelectAllNodesOnPage($event)" />
-                  }
-                  Title
-                </span>
-              </th>
-              <th>CEFR</th>
-              <th>Skill</th>
-              <th>Subskill</th>
-              <th>Difficulty</th>
-              <th>Tags</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (node of nodes(); track node.id) {
-              <tr>
-                <td class="sp-admin-td-title">
-                  <span class="sp-admin-flex-row" style="gap:6px;">
-                    @if (nodesBulkEditMode()) {
-                      <sp-admin-checkbox [ngModel]="isSelected(node.id)" [ngModelOptions]="{standalone: true}" (checkedChange)="toggleSelected(node.id, $event)" />
-                    }
-                    {{ node.title }}
-                  </span>
-                </td>
-                <td>{{ node.cefrLevel }}</td>
-                <td>{{ node.skill }}</td>
-                <td>{{ node.subskill || '—' }}</td>
-                <td>{{ node.difficultyBand }}</td>
-                <td>
-                  @if (node.contextTags.length || node.focusTags.length) {
-                    @for (tag of node.contextTags; track tag) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
-                    @for (tag of node.focusTags; track tag) { <sp-admin-badge tone="purple" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
-                  } @else {
-                    <span class="sp-admin-text-muted">—</span>
-                  }
-                </td>
-                <td>
-                  <sp-admin-badge [tone]="reviewStatusTone(node.reviewStatus)" appearance="soft" size="sm">
-                    {{ node.reviewStatus }}
-                  </sp-admin-badge>
-                </td>
-              </tr>
+      <ng-template #cell let-row let-col="col">
+        @switch (col.key) {
+          @case ('subskill') { {{ $any(row).subskill || '—' }} }
+          @case ('tags') {
+            @if ($any(row).contextTags.length || $any(row).focusTags.length) {
+              @for (tag of $any(row).contextTags; track tag) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
+              @for (tag of $any(row).focusTags; track tag) { <sp-admin-badge tone="purple" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
+            } @else {
+              <span class="sp-admin-text-muted">—</span>
             }
-          </tbody>
-        </table>
-      }
+          }
+          @case ('reviewStatus') {
+            <sp-admin-badge [tone]="reviewStatusTone($any(row).reviewStatus)" appearance="soft" size="sm">
+              {{ $any(row).reviewStatus }}
+            </sp-admin-badge>
+          }
+          @default { {{ row[col.key] }} }
+        }
+      </ng-template>
     </sp-admin-table>
     @if (!nodesLoading() && !nodesError() && nodes().length > 0) {
       <sp-admin-table-footer>

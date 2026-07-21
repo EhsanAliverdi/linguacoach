@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -23,6 +23,7 @@ import {
   SpAdminSectionHeaderComponent,
   SpAdminSelectComponent,
   SpAdminSlideOverComponent,
+  SpAdminTableColumn,
   SpAdminTableComponent,
   SpAdminTableFilter,
   SpAdminTableFooterComponent,
@@ -74,6 +75,8 @@ import { AdminBulkRepairService } from '../../../core/services/admin-bulk-repair
 })
 export class AdminSkillGraphComponent implements OnInit {
   constructor(private api: AdminApiService, public bulkRepair: AdminBulkRepairService) {}
+
+  @ViewChild('nodesTableRef') nodesTableRef?: SpAdminTableComponent;
 
   // ── Sprint 14.1 — node tag issue count + bulk "Fix All with AI" ──────────────────────────
   nodeIssuesSummary = signal<IssuesSummary | null>(null);
@@ -258,6 +261,25 @@ export class AdminSkillGraphComponent implements OnInit {
     if (!enabled) this.clearSelection();
   }
 
+  // Sprint 14.8 — Nodes table fully data-driven (columns/rows/cellTemplate): the table owns
+  // thead/tbody, bold title, and the titleColumn checkbox. (selectionChange) emits row INDICES
+  // into the currently-bound `nodes()` page, mapped here to real node ids for the batch API.
+  readonly nodesColumns: SpAdminTableColumn[] = [
+    { key: 'title', label: 'Title', titleColumn: true },
+    { key: 'cefrLevel', label: 'CEFR' },
+    { key: 'skill', label: 'Skill' },
+    { key: 'subskill', label: 'Subskill' },
+    { key: 'difficultyBand', label: 'Difficulty' },
+    { key: 'tags', label: 'Tags' },
+    { key: 'reviewStatus', label: 'Status' },
+  ];
+
+  onNodesSelectionChange(indices: number[]): void {
+    const rows = this.nodes();
+    const ids = indices.map(i => rows[i]?.id).filter((id): id is string => !!id);
+    this.selectedIds.set(new Set(ids));
+  }
+
   batchPending = signal(false);
   batchStatus = signal('');
   batchError = signal('');
@@ -413,28 +435,9 @@ export class AdminSkillGraphComponent implements OnInit {
     this.runDraft();
   }
 
-  toggleSelected(id: string, checked: boolean): void {
-    const next = new Set(this.selectedIds());
-    if (checked) next.add(id); else next.delete(id);
-    this.selectedIds.set(next);
-  }
-
-  isSelected(id: string): boolean {
-    return this.selectedIds().has(id);
-  }
-
-  allNodesOnPageSelected = computed(() =>
-    this.nodes().length > 0 && this.nodes().every(n => this.selectedIds().has(n.id)));
-
-  toggleSelectAllNodesOnPage(checked: boolean): void {
-    const next = new Set(this.selectedIds());
-    if (checked) this.nodes().forEach(n => next.add(n.id));
-    else this.nodes().forEach(n => next.delete(n.id));
-    this.selectedIds.set(next);
-  }
-
   clearSelection(): void {
     this.selectedIds.set(new Set());
+    this.nodesTableRef?.clearSelection();
   }
 
   batchApprove(): void {

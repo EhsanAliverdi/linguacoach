@@ -463,6 +463,12 @@ export class SpAdminTableComponent {
     this.filterChange.emit({ key: filter.key, value });
   }
 
+  /** Clears row selection without leaving bulk-edit mode — call via a template ref after a bulk action succeeds. */
+  clearSelection(): void {
+    this.selectedRows.clear();
+    this.selectionChange.emit([]);
+  }
+
   get outerClasses(): string {
     if (this.flush) return 'sp-adm-table-flush';
     const variantMap: Record<SpAdminTableVariant, string> = {
