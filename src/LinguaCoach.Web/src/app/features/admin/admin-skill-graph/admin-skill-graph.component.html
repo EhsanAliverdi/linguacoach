@@ -270,7 +270,7 @@
               {{ $any(row).reviewStatus }}
             </sp-admin-badge>
           }
-          @default { {{ row[col.key] }} }
+          @default { {{ $any(row)[col.key] }} }
         }
       </ng-template>
     </sp-admin-table>

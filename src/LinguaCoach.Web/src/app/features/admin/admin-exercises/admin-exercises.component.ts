@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -27,9 +27,10 @@ import {
   SpAdminPageHeaderComponent,
   SpAdminPaginationComponent,
   SpAdminRowAction,
-  SpAdminSelectComponent,
   SpAdminTableActionsComponent,
+  SpAdminTableColumn,
   SpAdminTableComponent,
+  SpAdminTableFilter,
   SpAdminTableFooterComponent,
   SpAdminTextareaComponent,
 } from '../../../design-system/admin';
@@ -63,7 +64,6 @@ interface BulkItemResult { success: boolean; title: string; error: string | null
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
     SpAdminPaginationComponent,
-    SpAdminSelectComponent,
     SpAdminTableActionsComponent,
     SpAdminTableComponent,
     SpAdminTableFooterComponent,
@@ -72,6 +72,35 @@ interface BulkItemResult { success: boolean; title: string; error: string | null
   templateUrl: './admin-exercises.component.html',
 })
 export class AdminExercisesComponent implements OnInit {
+  @ViewChild('exercisesTableRef') exercisesTableRef?: SpAdminTableComponent;
+
+  readonly exerciseColumns: SpAdminTableColumn[] = [
+    { key: 'title', label: 'Title', titleColumn: true },
+    { key: 'activityType', label: 'Type' },
+    { key: 'rendererType', label: 'Renderer' },
+    { key: 'cefrLevel', label: 'Level' },
+    { key: 'lessonId', label: 'Lesson' },
+    { key: 'reviewStatus', label: 'Status' },
+    { key: 'createdAt', label: 'Created' },
+    { key: 'actions', label: 'Actions', align: 'right' },
+  ];
+
+  exercisesBulkEditMode = signal(false);
+  onExercisesBulkEditModeChange(enabled: boolean): void {
+    this.exercisesBulkEditMode.set(enabled);
+    if (!enabled) this.clearSelection();
+  }
+
+  onExercisesSelectionChange(indices: number[]): void {
+    const rows = this.items();
+    const ids = indices.map(i => rows[i]?.id).filter((id): id is string => !!id);
+    this.selectedIds.set(new Set(ids));
+  }
+
+  onRowClick(row: unknown): void {
+    this.openDetail(row as unknown as ExerciseDto);
+  }
+
   items = signal<ExerciseDto[]>([]);
   loading = signal(true);
   error = signal('');
@@ -104,10 +133,6 @@ export class AdminExercisesComponent implements OnInit {
   bulkRejectReasonDraft = '';
 
   readonly selectedCount = computed(() => this.selectedIds().size);
-  readonly allVisibleSelected = computed(() => {
-    const items = this.items();
-    return items.length > 0 && items.every(i => this.selectedIds().has(i.id));
-  });
 
   // ── Phase K9/K11 — top-level issue count + bulk "Fix All with AI" (runs in a root service so
   // its progress toast survives navigating away from this page). ────────────────────────────
@@ -198,6 +223,18 @@ export class AdminExercisesComponent implements OnInit {
     this.loadAll();
   }
 
+  exercisesFilters = computed<SpAdminTableFilter[]>(() => [
+    { key: 'status', label: 'Status', options: this.statusOptions, value: this.statusFilter() },
+    { key: 'activityType', label: 'Type', options: this.activityTypeOptions(), value: this.activityTypeFilter() },
+    { key: 'cefrLevel', label: 'Level', options: this.cefrLevelOptions, value: this.cefrLevelFilter() },
+  ]);
+
+  onExercisesFilterChange(event: { key: string; value: string }): void {
+    if (event.key === 'status') this.onStatusFilterChange(event.value);
+    else if (event.key === 'activityType') this.onActivityTypeFilterChange(event.value);
+    else if (event.key === 'cefrLevel') this.onCefrLevelFilterChange(event.value);
+  }
+
   onPageChange(page: number): void {
     this.page.set(page);
     this.selectedIds.set(new Set());
@@ -240,27 +277,9 @@ export class AdminExercisesComponent implements OnInit {
 
   // ── Selection ────────────────────────────────────────────────────────────────
 
-  isSelected(id: string): boolean {
-    return this.selectedIds().has(id);
-  }
-
-  toggleSelected(id: string, event: Event): void {
-    event.stopPropagation();
-    const next = new Set(this.selectedIds());
-    if (next.has(id)) next.delete(id); else next.add(id);
-    this.selectedIds.set(next);
-  }
-
-  toggleSelectAllVisible(): void {
-    if (this.allVisibleSelected()) {
-      this.selectedIds.set(new Set());
-      return;
-    }
-    this.selectedIds.set(new Set(this.items().map(i => i.id)));
-  }
-
   clearSelection(): void {
     this.selectedIds.set(new Set());
+    this.exercisesTableRef?.clearSelection();
   }
 
   // ── Bulk actions ─────────────────────────────────────────────────────────────

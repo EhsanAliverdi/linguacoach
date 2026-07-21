@@ -72,7 +72,7 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
                     <label class="sp-adm-toolbar-filter-label">{{ filter.label }}</label>
                     <sp-admin-select
                       [options]="filter.options"
-                      [placeholder]="filter.placeholder || 'All'"
+                      [placeholder]="filter.placeholder ?? ''"
                       size="sm"
                       [ngModel]="filter.value"
                       [ngModelOptions]="{standalone: true}"
@@ -147,10 +147,10 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
               }
               <tbody>
                 @for (row of rows; track $index) {
-                  <tr [class]="trClass($index)">
+                  <tr [class]="trClass($index)" [class.sp-adm-tr-clickable]="rowClickable" (click)="rowClickable && rowClick.emit(row)">
                     @if (selectable) {
                       <td class="sp-adm-td sp-adm-td-check">
-                        <input type="checkbox" [checked]="isSelected($index)" (change)="onSelectRow($index, $event)" [attr.aria-label]="'Select row ' + ($index + 1)" />
+                        <input type="checkbox" [checked]="isSelected($index)" (change)="onSelectRow($index, $event)" (click)="$event.stopPropagation()" [attr.aria-label]="'Select row ' + ($index + 1)" />
                       </td>
                     }
                     @for (column of columns; track column.key) {
@@ -161,12 +161,12 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
                       >
                       <span class="inline-flex items-center gap-2">
                         @if (bulkEditMode && column.titleColumn) {
-                          <input type="checkbox" class="sp-adm-bulk-checkbox" [checked]="isSelected($index)" (change)="onSelectRow($index, $event)" [attr.aria-label]="'Select row ' + ($index + 1)" />
+                          <input type="checkbox" class="sp-adm-bulk-checkbox" [checked]="isSelected($index)" (change)="onSelectRow($index, $event)" (click)="$event.stopPropagation()" [attr.aria-label]="'Select row ' + ($index + 1)" />
                         }
                         @if (cellTemplate) {
                           <ng-container *ngTemplateOutlet="cellTemplate; context: { $implicit: row, col: column }" />
                         } @else {
-                          {{ row[column.key] }}
+                          {{ $any(row)[column.key] }}
                         }
                       </span>
                     </td>
@@ -356,6 +356,7 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
     .sp-adm-tr-hover:hover { background:var(--sp-admin-bg,#F6F4FB); }
     .sp-adm-tr-stripe-odd  { background:var(--sp-admin-surface-subtle,#FBFAFE); }
     .sp-adm-tr-stripe-even { background:#fff; }
+    .sp-adm-tr-clickable { cursor:pointer; }
 
     /* Borders */
     .sp-adm-table-bordered th, .sp-adm-table-bordered td { border:1px solid var(--sp-admin-border,#ECE9F5); }
@@ -409,10 +410,13 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
   `],
 })
 export class SpAdminTableComponent {
-  @ContentChild('cell') cellTemplate?: TemplateRef<{ $implicit: Record<string, unknown>; col: SpAdminTableColumn }>;
+  @ContentChild('cell') cellTemplate?: TemplateRef<{ $implicit: unknown; col: SpAdminTableColumn }>;
 
   @Input() columns: SpAdminTableColumn[] = [];
-  @Input() rows: Record<string, unknown>[] = [];
+  /** Any row shape — a concrete DTO array is fine (no index signature needed). Access fields via
+   * `$any(row).fieldName` in a #cell template; the default (no cellTemplate) renderer does the
+   * same internally for `column.key`. */
+  @Input() rows: unknown[] = [];
   @Input() loading = false;
   @Input() error = '';
   @Input() errorTitle = 'Could not load data';
@@ -446,6 +450,11 @@ export class SpAdminTableComponent {
   @Output() bulkEditModeChange = new EventEmitter<boolean>();
   @Output() sortChange = new EventEmitter<SpAdminSortChange>();
   @Output() selectionChange = new EventEmitter<number[]>();
+  /** Data-driven mode only. When true, rows get a pointer cursor and emit (rowClick) on click — for
+   * "click a row to open its detail" pages. Interactive cell content (checkboxes, action menus) must
+   * stopPropagation() itself to avoid also triggering the row click, same as the built-in checkboxes do. */
+  @Input() rowClickable = false;
+  @Output() rowClick = new EventEmitter<unknown>();
 
   private selectedRows = new Set<number>();
 

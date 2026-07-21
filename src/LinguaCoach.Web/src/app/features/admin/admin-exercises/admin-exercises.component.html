@@ -37,27 +37,20 @@
       <sp-admin-input
         search size="sm" placeholder="Search title or instructions..."
         [value]="searchQuery()" (input)="onSearch($event)" aria-label="Search Exercises" />
-      <sp-admin-select
-        size="sm" placeholder="All statuses"
-        [ngModel]="statusFilter()" (ngModelChange)="onStatusFilterChange($event)"
-        [options]="statusOptions" aria-label="Filter by review status" />
-      <sp-admin-select
-        size="sm" placeholder="All types"
-        [ngModel]="activityTypeFilter()" (ngModelChange)="onActivityTypeFilterChange($event)"
-        [options]="activityTypeOptions()" aria-label="Filter by activity type" />
-      <sp-admin-select
-        size="sm" placeholder="All levels"
-        [ngModel]="cefrLevelFilter()" (ngModelChange)="onCefrLevelFilterChange($event)"
-        [options]="cefrLevelOptions" aria-label="Filter by CEFR level" />
       <span class="sp-admin-filter-count">{{ totalCount() }} item{{ totalCount() !== 1 ? 's' : '' }}</span>
     </sp-admin-filter-bar>
 
-    @if (items().length === 0) {
-      <sp-admin-empty-state title="No Exercises" message="Use Generate Exercise on a Resource Bank row or Lesson to create the first draft." />
-    } @else {
-
+    <sp-admin-table
+      #exercisesTableRef
+      layout="first-column-fluid"
+      [columns]="exerciseColumns" [rows]="items()" (selectionChange)="onExercisesSelectionChange($event)"
+      [filters]="exercisesFilters()" (filterChange)="onExercisesFilterChange($event)"
+      [bulkEditable]="true" [bulkEditMode]="exercisesBulkEditMode()" (bulkEditModeChange)="onExercisesBulkEditModeChange($event)"
+      [rowClickable]="true" (rowClick)="onRowClick($event)"
+      emptyMessage="No Exercises. Use Generate Exercise on a Resource Bank row or Lesson to create the first draft."
+    >
       @if (selectedCount() > 0) {
-        <div class="sp-admin-form-actions" style="flex-wrap:wrap;align-items:center;margin-bottom:0.75rem;">
+        <div selectionBar class="sp-admin-form-actions">
           <span class="sp-admin-hint">{{ selectedCount() }} selected</span>
           <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="clearSelection()">Clear</sp-admin-button>
           <sp-admin-button variant="neutral" size="sm" [disabled]="bulkRunning()" (clicked)="bulkApprove()">
@@ -71,52 +64,36 @@
           </sp-admin-button>
         </div>
       }
-
-      <sp-admin-table layout="first-column-fluid">
-        <table>
-          <thead>
-            <tr>
-              <th style="width:40px;"><input type="checkbox" [checked]="allVisibleSelected()" (change)="toggleSelectAllVisible()" aria-label="Select all visible" /></th>
-              <th class="sp-admin-fluid-col">Title</th>
-              <th>Type</th>
-              <th>Renderer</th>
-              <th>Level</th>
-              <th>Lesson</th>
-              <th>Status</th>
-              <th>Created</th>
-              <th class="sp-admin-th-actions">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (item of items(); track item.id) {
-              <tr (click)="openDetail(item)" style="cursor:pointer">
-                <td style="width:40px;"><input type="checkbox" [checked]="isSelected(item.id)" (click)="toggleSelected(item.id, $event)" aria-label="Select exercise" /></td>
-                <td class="sp-admin-fluid-col"><strong>{{ item.title }}</strong></td>
-                <td>
-                  <sp-admin-badge tone="neutral">{{ item.activityType }}</sp-admin-badge>
-                  @if (!item.canLaunchOnceApproved) {
-                    <sp-admin-badge tone="warning" appearance="soft" size="sm" [title]="item.launchUnsupportedReason">
-                      Not launchable yet
-                    </sp-admin-badge>
-                  }
-                </td>
-                <td>{{ item.rendererType }}</td>
-                <td>{{ item.cefrLevel ?? '—' }}</td>
-                <td>{{ item.lessonId ? 'Linked' : '—' }}</td>
-                <td><sp-admin-badge [tone]="statusTone(item.reviewStatus)">{{ item.reviewStatus }}</sp-admin-badge></td>
-                <td>{{ item.createdAt | date:'short' }}</td>
-                <td (click)="$event.stopPropagation()">
-                  <sp-admin-table-actions [richActions]="rowActions(item)" (actionSelected)="onRowAction($event, item)" />
-                </td>
-              </tr>
+      <ng-template #cell let-row let-col="col">
+        @switch (col.key) {
+          @case ('activityType') {
+            <sp-admin-badge tone="neutral">{{ $any(row).activityType }}</sp-admin-badge>
+            @if (!$any(row).canLaunchOnceApproved) {
+              <sp-admin-badge tone="warning" appearance="soft" size="sm" [title]="$any(row).launchUnsupportedReason">
+                Not launchable yet
+              </sp-admin-badge>
             }
-          </tbody>
-        </table>
-        <sp-admin-table-footer>
-          Page {{ page() }} of {{ totalPages() }} · {{ totalCount() }} items
-          <sp-admin-pagination slot="actions" [page]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
-        </sp-admin-table-footer>
-      </sp-admin-table>
+          }
+          @case ('cefrLevel') { {{ $any(row).cefrLevel ?? '—' }} }
+          @case ('lessonId') { {{ $any(row).lessonId ? 'Linked' : '—' }} }
+          @case ('reviewStatus') {
+            <sp-admin-badge [tone]="statusTone($any(row).reviewStatus)">{{ $any(row).reviewStatus }}</sp-admin-badge>
+          }
+          @case ('createdAt') { {{ $any(row).createdAt | date:'short' }} }
+          @case ('actions') {
+            <span (click)="$event.stopPropagation()">
+              <sp-admin-table-actions [richActions]="rowActions($any(row))" (actionSelected)="onRowAction($event, $any(row))" />
+            </span>
+          }
+          @default { {{ $any(row)[col.key] }} }
+        }
+      </ng-template>
+    </sp-admin-table>
+    @if (items().length > 0) {
+    <sp-admin-table-footer>
+      Page {{ page() }} of {{ totalPages() }} · {{ totalCount() }} items
+      <sp-admin-pagination slot="actions" [page]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
+    </sp-admin-table-footer>
     }
   }
 
