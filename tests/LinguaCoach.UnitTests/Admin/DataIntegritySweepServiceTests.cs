@@ -99,6 +99,78 @@ public sealed class DataIntegritySweepServiceTests : IDisposable
         attemptCategory.TotalChecked.Should().Be(1);
     }
 
+    // ── Sprint 14 — student_learning_plans/student_flow_submissions/
+    // student_today_plan_module_assignments/student_practice_gym_module_assignments have no
+    // enforced DB-level FK to student_profiles (confirmed live during Sprint 14's junk
+    // test-account cleanup, which produced real orphans in exactly these tables) — these checks
+    // close that gap. ────────────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task Detects_a_learning_plan_orphaned_by_a_deleted_student_profile()
+    {
+        var plan = new StudentLearningPlan(Guid.NewGuid(), "B1", "initial");
+        _db.StudentLearningPlans.Add(plan);
+        await _db.SaveChangesAsync();
+
+        var result = await _sut.RunAsync();
+
+        var category = result.Categories.Single(c => c.Category == "Learning Plans");
+        category.IssuesFound.Should().Be(1);
+        category.Healthy.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Detects_a_flow_submission_orphaned_by_a_deleted_student_profile()
+    {
+        var submission = new StudentFlowSubmission(Guid.NewGuid(), StudentFlowKind.Onboarding, Guid.NewGuid(), "{}");
+        _db.StudentFlowSubmissions.Add(submission);
+        await _db.SaveChangesAsync();
+
+        var result = await _sut.RunAsync();
+
+        var category = result.Categories.Single(c => c.Category == "Flow Submissions");
+        category.IssuesFound.Should().Be(1);
+        category.Healthy.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Detects_a_today_plan_assignment_orphaned_by_a_deleted_student_profile()
+    {
+        var module = new Module("A module", ModuleSourceMode.Manual);
+        _db.Modules.Add(module);
+        await _db.SaveChangesAsync();
+
+        var assignment = new StudentTodayPlanModuleAssignment(
+            Guid.NewGuid(), module.Id, DateTime.UtcNow.Date, TodayPlanModuleAssignmentStatus.Selected);
+        _db.StudentTodayPlanModuleAssignments.Add(assignment);
+        await _db.SaveChangesAsync();
+
+        var result = await _sut.RunAsync();
+
+        var category = result.Categories.Single(c => c.Category == "Today Plan Module Assignments");
+        category.IssuesFound.Should().Be(1);
+        category.Healthy.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Detects_a_practice_gym_assignment_orphaned_by_a_deleted_student_profile()
+    {
+        var module = new Module("A module", ModuleSourceMode.Manual);
+        _db.Modules.Add(module);
+        await _db.SaveChangesAsync();
+
+        var assignment = new StudentPracticeGymModuleAssignment(
+            Guid.NewGuid(), module.Id, DateTimeOffset.UtcNow, PracticeGymModuleAssignmentStatus.Suggested);
+        _db.StudentPracticeGymModuleAssignments.Add(assignment);
+        await _db.SaveChangesAsync();
+
+        var result = await _sut.RunAsync();
+
+        var category = result.Categories.Single(c => c.Category == "Practice Gym Module Assignments");
+        category.IssuesFound.Should().Be(1);
+        category.Healthy.Should().BeFalse();
+    }
+
     [Fact]
     public async Task Aggregates_the_existing_per_entity_issue_counts_from_the_four_repair_services()
     {

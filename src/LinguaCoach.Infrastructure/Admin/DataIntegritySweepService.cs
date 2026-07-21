@@ -69,6 +69,49 @@ public sealed class DataIntegritySweepService : IDataIntegritySweepService
             "StudentExerciseLaunch rows whose StudentId, ExerciseId, or LearningActivityId does not resolve.",
             totalLaunches, orphanedLaunches, orphanedLaunches == 0));
 
+        // ── Sprint 14 — these four tables have NO enforced FK to student_profiles at the DB
+        // level (confirmed via pg_constraint against the live dev DB during Sprint 14's junk
+        // test-account cleanup, which produced real orphans here that this sweep did not
+        // previously catch) — application-level-only references, so a student hard-delete
+        // anywhere (admin tooling or direct DB access) can silently orphan these without any
+        // DB-level rejection. ──
+
+        var totalPlans = await _db.StudentLearningPlans.CountAsync(ct);
+        var orphanedPlans = await _db.StudentLearningPlans
+            .Where(p => !_db.StudentProfiles.Any(sp => sp.Id == p.StudentProfileId))
+            .CountAsync(ct);
+        categories.Add(new DataIntegrityCategoryResult(
+            "Learning Plans",
+            "StudentLearningPlan rows whose StudentProfileId does not resolve (no enforced DB-level FK).",
+            totalPlans, orphanedPlans, orphanedPlans == 0));
+
+        var totalFlowSubmissions = await _db.StudentFlowSubmissions.CountAsync(ct);
+        var orphanedFlowSubmissions = await _db.StudentFlowSubmissions
+            .Where(f => !_db.StudentProfiles.Any(sp => sp.Id == f.StudentId))
+            .CountAsync(ct);
+        categories.Add(new DataIntegrityCategoryResult(
+            "Flow Submissions",
+            "StudentFlowSubmission rows (onboarding/placement) whose StudentId does not resolve (no enforced DB-level FK).",
+            totalFlowSubmissions, orphanedFlowSubmissions, orphanedFlowSubmissions == 0));
+
+        var totalTodayAssignments = await _db.StudentTodayPlanModuleAssignments.CountAsync(ct);
+        var orphanedTodayAssignments = await _db.StudentTodayPlanModuleAssignments
+            .Where(a => !_db.StudentProfiles.Any(sp => sp.Id == a.StudentId))
+            .CountAsync(ct);
+        categories.Add(new DataIntegrityCategoryResult(
+            "Today Plan Module Assignments",
+            "StudentTodayPlanModuleAssignment rows whose StudentId does not resolve (no enforced DB-level FK).",
+            totalTodayAssignments, orphanedTodayAssignments, orphanedTodayAssignments == 0));
+
+        var totalGymAssignments = await _db.StudentPracticeGymModuleAssignments.CountAsync(ct);
+        var orphanedGymAssignments = await _db.StudentPracticeGymModuleAssignments
+            .Where(a => !_db.StudentProfiles.Any(sp => sp.Id == a.StudentId))
+            .CountAsync(ct);
+        categories.Add(new DataIntegrityCategoryResult(
+            "Practice Gym Module Assignments",
+            "StudentPracticeGymModuleAssignment rows whose StudentId does not resolve (no enforced DB-level FK).",
+            totalGymAssignments, orphanedGymAssignments, orphanedGymAssignments == 0));
+
         // ── Existing per-entity content-completeness checks — previously each on its own
         // separate, unconnected admin page; unified into this one sweep view. ──
 

@@ -194,6 +194,7 @@ function makeStudentDetail(overrides: Partial<AdminStudentDetail> = {}): AdminSt
     isLearningReady: true,
     lastPlacementCompletedAt: null,
     learningPlanExists: true,
+    goalWeights: [],
     ...overrides,
   };
 }

@@ -68,6 +68,7 @@ describe('AdminImportRunCandidatesComponent', () => {
       summary: () => of({
         totalCount: 0, publishedCount: 0, passedCount: 0, needsReviewCount: 0, blockedCount: 0,
         publishableCount: 0, rejectedCount: 0, skippedCount: 0, pendingReviewCount: 0,
+        stuckApprovedUnpublishableCount: 0,
       }),
       ...svc,
     };

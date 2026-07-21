@@ -330,11 +330,6 @@ export const routes: Routes = [
         loadComponent: () => import('./features/student/assessment/cefr-assessment/cefr-assessment.component').then(m => m.CefrAssessmentComponent),
       },
       {
-        path: 'speaking',
-        canActivate: [placementRequiredRedirectGuard],
-        loadComponent: () => import('./features/student/speaking/speaking-session/speaking-session.component').then(m => m.SpeakingSessionComponent),
-      },
-      {
         path: 'progress',
         canActivate: [placementRequiredRedirectGuard],
         loadComponent: () => import('./features/student/progress/progress.component').then(m => m.ProgressComponent),

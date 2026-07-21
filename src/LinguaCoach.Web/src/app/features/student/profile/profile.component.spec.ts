@@ -119,15 +119,14 @@ describe('ProfileComponent', () => {
 
   // â”€â”€ Section rendering â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-  it('renders all 6 sections after profile loads', fakeAsync(() => {
+  it('renders all 5 sections after profile loads', fakeAsync(() => {
     const fixture = create();
     tick();
     fixture.detectChanges();
     const html = fixture.nativeElement.innerHTML;
     expect(html).toContain('Account');
     expect(html).toContain('Level');
-    expect(html).toContain('Learning goals');
-    expect(html).toContain('Focus areas');
+    expect(html).toContain('My Goals');
     expect(html).toContain('Support language');
     expect(html).toContain('Practice preferences');
   }));

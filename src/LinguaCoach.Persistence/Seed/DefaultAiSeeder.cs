@@ -5042,9 +5042,13 @@ Rules:
             ModuleSkillGraphProposeCoverageKey, ModuleSkillGraphProposeCoverageContent,
             maxInputTokens: 1600, maxOutputTokens: 900, ct);
 
+        // Sprint 14 — 3200 was undersized for A1's candidate pool (observed ~3260 tokens live,
+        // blocking Today/Practice Gym entirely for every A1 student); raised with real headroom
+        // above the observed ceiling, matching the precedent set by Sprint 9's
+        // exercise_generate_from_resources token-budget fix (never just barely above observed).
         await SeedOrUpgradePromptAsync(db, logger,
             CurriculumComposerRankCandidatesKey, CurriculumComposerRankCandidatesContent,
-            maxInputTokens: 3200, maxOutputTokens: 700, ct);
+            maxInputTokens: 4200, maxOutputTokens: 700, ct);
 
         // Mandatory Import Execution Plan addendum — bounded manifest/sample structure review
         await SeedOrUpgradePromptAsync(db, logger,

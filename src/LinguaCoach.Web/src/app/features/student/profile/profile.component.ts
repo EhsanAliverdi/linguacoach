@@ -43,23 +43,6 @@ const GOAL_TAG_LABELS: Readonly<Record<string, string>> = {
   workplace: 'Workplace English',
 };
 
-/** Keys must match the onboarding "focus_areas" MultipleChoiceQuestion choices
- * (OnboardingFlowSeeder.cs) exactly — see note on PREDEFINED_LEARNING_GOALS above. */
-const PREDEFINED_FOCUS_AREAS: ReadonlyArray<{ key: string; label: string }> = [
-  { key: 'speaking', label: 'Speaking' },
-  { key: 'listening', label: 'Listening' },
-  { key: 'writing', label: 'Writing' },
-  { key: 'reading', label: 'Reading' },
-  { key: 'vocabulary', label: 'Vocabulary' },
-  { key: 'grammar', label: 'Grammar' },
-  { key: 'pronunciation', label: 'Pronunciation' },
-  { key: 'fluency', label: 'Fluency' },
-  { key: 'confidence', label: 'Confidence' },
-  { key: 'interviews', label: 'Interviews' },
-  { key: 'travel_conversations', label: 'Travel conversations' },
-  { key: 'social_conversation', label: 'Social conversation' },
-];
-
 const CEFR_EXPLANATIONS: Record<string, string> = {
   A1: 'Beginner — can understand and use basic phrases',
   A2: 'Elementary — can communicate in simple routine tasks',
@@ -239,33 +222,6 @@ const SUPPORT_LANGUAGES = [
         }
       </div>
 
-      <!-- Section 4: Focus areas -->
-      <div class="sp-section-h"><h3>Focus areas</h3></div>
-      <div class="sp-card" style="padding:18px;margin-bottom:16px">
-        <div style="font-size:12px;color:var(--sp-muted);margin-bottom:10px">Select skills to focus on</div>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px">
-          @for (area of predefinedFocusAreas; track area.key) {
-            <button
-              type="button"
-              (click)="toggleFocusArea(area.key)"
-              class="sp-pref-chip"
-              [class.sp-pref-chip--on]="isFocusAreaSelected(area.key)"
-              [attr.aria-pressed]="isFocusAreaSelected(area.key)"
-              [attr.data-testid]="'focus-chip-' + area.key"
-            >{{ area.label }}</button>
-          }
-        </div>
-        <div>
-          <label style="font-size:12px;font-weight:600;color:var(--sp-muted);display:block;margin-bottom:4px">Custom focus area</label>
-          <input
-            [(ngModel)]="form.customFocusArea"
-            placeholder="Something else"
-            maxlength="200"
-            style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--sp-border);border-radius:var(--sp-r-md);font-size:13px;color:var(--sp-ink);background:var(--sp-canvas)"
-          />
-        </div>
-      </div>
-
       <!-- Section 5: Support language -->
       <div class="sp-section-h"><h3>Support language</h3></div>
       <div class="sp-card" style="padding:18px;margin-bottom:16px">
@@ -418,7 +374,6 @@ const SUPPORT_LANGUAGES = [
   `,
 })
 export class ProfileComponent implements OnInit {
-  readonly predefinedFocusAreas = PREDEFINED_FOCUS_AREAS;
   readonly supportLanguages = SUPPORT_LANGUAGES;
   readonly sessionLengths = [10, 15, 20, 30, 45];
 
@@ -455,8 +410,6 @@ export class ProfileComponent implements OnInit {
     supportLanguageCode: string | null;
     supportLanguageName: string | null;
     translationHelpPreference: number | null;
-    focusAreas: string[];
-    customFocusArea: string | null;
     difficultyPreference: number | null;
     preferredSessionDurationMinutes: number | null;
   } = {
@@ -464,8 +417,6 @@ export class ProfileComponent implements OnInit {
     supportLanguageCode: null,
     supportLanguageName: null,
     translationHelpPreference: null,
-    focusAreas: [],
-    customFocusArea: null,
     difficultyPreference: null,
     preferredSessionDurationMinutes: null,
   };
@@ -512,8 +463,6 @@ export class ProfileComponent implements OnInit {
           supportLanguageCode: p.supportLanguageCode ?? null,
           supportLanguageName: p.supportLanguageName ?? null,
           translationHelpPreference: this.translationHelpToInt(p.translationHelpPreference),
-          focusAreas: p.focusAreas ?? [],
-          customFocusArea: p.customFocusArea ?? null,
           difficultyPreference: this.difficultyToInt(p.difficultyPreference),
           preferredSessionDurationMinutes: p.preferredSessionDurationMinutes ?? null,
         };
@@ -622,18 +571,6 @@ export class ProfileComponent implements OnInit {
     });
   }
 
-  isFocusAreaSelected(area: string): boolean {
-    return this.form.focusAreas.includes(area);
-  }
-
-  toggleFocusArea(area: string): void {
-    if (this.isFocusAreaSelected(area)) {
-      this.form.focusAreas = this.form.focusAreas.filter(a => a !== area);
-    } else if (this.form.focusAreas.length < 10) {
-      this.form.focusAreas = [...this.form.focusAreas, area];
-    }
-  }
-
   onSupportLanguageChange(code: string | null): void {
     const lang = this.supportLanguages.find(l => l.code === code);
     this.form.supportLanguageName = lang?.name ?? null;
@@ -649,8 +586,6 @@ export class ProfileComponent implements OnInit {
       supportLanguageCode: this.form.supportLanguageCode || null,
       supportLanguageName: this.form.supportLanguageName || null,
       translationHelpPreference: this.form.translationHelpPreference,
-      focusAreas: this.form.focusAreas,
-      customFocusArea: this.form.customFocusArea || null,
       difficultyPreference: this.form.difficultyPreference,
       preferredSessionDurationMinutes: this.form.preferredSessionDurationMinutes,
     };
