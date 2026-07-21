@@ -223,3 +223,18 @@ Must be run by the `linguacoach` owner role or a Postgres superuser.
 **Why:** Misleads the student into thinking they have a confirmed level when the system itself hasn't committed to one. Need to find where the Progress page's "current level" figure is computed/sourced and reconcile it with the canonical `StudentProfile.CefrLevel` field the admin panel reads.
 
 **Depends on:** Nothing blocking — can be picked up directly.
+
+---
+
+## TODO-13: Migrate remaining admin tables to the sp-admin-table reference pattern
+
+**Added:** 2026-07-22
+**Related:** `docs/reviews/2026-07-22-admin-table-standard-and-migration-audit.md`
+
+**What:** The Skill Graph "Nodes" table was converted to a fully data-driven `sp-admin-table` usage — `[columns]`/`[rows]`/`[cellTemplate]`, auto-bold title column, `[filters]` in the table's own toolbar, `[bulkEditable]`/`[selectionBar]` for bulk actions — replacing a hand-written `<table>` and page-level filter/bulk-action markup. 19 other admin pages still use a hand-written `<table>` with none of these: every filter dropdown and bulk-action bar is built outside `<sp-admin-table>`, and every bulk-selectable page uses an always-visible leading checkbox column instead of the toggleable pattern. Two pages (admin-placement-items, admin-prompts) have a title-like column with no bolding at all.
+
+**Why:** Keeps every admin table visually and behaviorally consistent without redefining the same markup per page, per explicit user direction. The full per-page divergence ranking and migration-cost estimate is in the linked review.
+
+**Fix:** Work through the review's punch list. Suggested order: the four Low-divergence quick wins first (admin-dashboard, admin-content-import, admin-onboarding, admin-placement-items) to validate the pattern on simple tables, then the always-visible-checkbox-column pages (admin-exercises, admin-modules, admin-lessons) for the clearest functional upgrade, then the rest by divergence. Treat each page as its own small change, not one large sweep.
+
+**Depends on:** Nothing blocking — can be picked up directly, one page at a time.
