@@ -92,10 +92,12 @@
       [count]="nodesWithContent()"
       countLabel="/ {{ totalApprovedNodes() }} covered"
       [countTone]="nodesWithContent() === totalApprovedNodes() && totalApprovedNodes() > 0 ? 'success' : 'warning'">
-      <sp-admin-button slot="actions" variant="primary" size="sm" [disabled]="retagPending()" (clicked)="retagModules()">
-        {{ retagPending() ? 'Sweeping…' : 'Sweep next batch of untagged Modules' }}
-      </sp-admin-button>
-      <sp-admin-help-icon slot="actions" key="admin.skillGraph.sweepUntaggedModules" title="Sweep untagged Modules" />
+      <div slot="actions" style="display:inline-flex;">
+        <sp-admin-button variant="primary" size="sm" groupPosition="start" [disabled]="retagPending()" (clicked)="retagModules()">
+          {{ retagPending() ? 'Sweeping…' : 'Sweep next batch of untagged Modules' }}
+        </sp-admin-button>
+        <sp-admin-help-icon attached variant="primary" size="sm" key="admin.skillGraph.sweepUntaggedModules" title="Sweep untagged Modules" />
+      </div>
     </sp-admin-section-header>
     <div style="padding: 16px 18px;">
       @if (retagStatus()) {

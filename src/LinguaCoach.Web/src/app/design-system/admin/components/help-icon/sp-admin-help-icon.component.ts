@@ -1,8 +1,14 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, booleanAttribute } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { SpAdminIconComponent } from '../icon/sp-admin-icon.component';
 import { SpAdminSlideOverComponent } from '../slide-over/sp-admin-slide-over.component';
+import {
+  SpAdminButtonComponent,
+  SpAdminButtonVariant,
+  SpAdminButtonAppearance,
+  SpAdminButtonSize,
+} from '../button/sp-admin-button.component';
 import { AdminHelpContentService } from '../../../../core/services/admin-help-content.service';
 
 /**
@@ -10,21 +16,45 @@ import { AdminHelpContentService } from '../../../../core/services/admin-help-co
  * the backend's static help-content map (see LinguaCoach.Api/HelpContent/help-content.json).
  * Self-contained — each usage owns its own slide-over, no shared open-state to wire up.
  *
- * Usage: <sp-admin-help-icon key="admin.skillGraph.sweepUntaggedModules" title="Sweep untagged Modules" />
+ * Standalone usage (floating circular icon, any context):
+ *   <sp-admin-help-icon key="admin.skillGraph.sweepUntaggedModules" title="Sweep untagged Modules" />
+ *
+ * Attached usage (Flowbite-style joined segment at the end of a button): set `attached` and
+ * match `variant`/`appearance`/`size` to the adjacent <sp-admin-button> so the seam lines up.
+ * Defaults to variant="primary" appearance="solid" — the common case (a solid primary action
+ * button) — override both when the adjacent button uses a different variant/appearance.
+ *   <div class="sp-admin-attached-group">
+ *     <sp-admin-button variant="primary" size="sm" groupPosition="start" ...>Sweep</sp-admin-button>
+ *     <sp-admin-help-icon attached variant="primary" size="sm" key="..." title="..." />
+ *   </div>
  */
 @Component({
   selector: 'sp-admin-help-icon',
   standalone: true,
-  imports: [CommonModule, SpAdminIconComponent, SpAdminSlideOverComponent],
+  imports: [CommonModule, SpAdminIconComponent, SpAdminSlideOverComponent, SpAdminButtonComponent],
   template: `
-    <button
-      type="button"
-      class="sp-admin-help-icon-btn"
-      (click)="open()"
-      [attr.aria-label]="'Help: ' + (title || key)"
-    >
-      <sp-admin-icon name="info" size="sm" tone="muted" />
-    </button>
+    @if (attached) {
+      <sp-admin-button
+        [variant]="variant"
+        [appearance]="appearance"
+        [size]="size"
+        [iconOnly]="true"
+        groupPosition="end"
+        [attr.aria-label]="'Help: ' + (title || key)"
+        (clicked)="open()"
+      >
+        <sp-admin-icon name="info" [size]="size === 'lg' ? 'sm' : 'xs'" tone="inherit" />
+      </sp-admin-button>
+    } @else {
+      <button
+        type="button"
+        class="sp-admin-help-icon-btn"
+        (click)="open()"
+        [attr.aria-label]="'Help: ' + (title || key)"
+      >
+        <sp-admin-icon name="info" size="sm" tone="muted" />
+      </button>
+    }
 
     <sp-admin-slide-over
       [open]="isOpen"
@@ -76,6 +106,15 @@ import { AdminHelpContentService } from '../../../../core/services/admin-help-co
 export class SpAdminHelpIconComponent {
   @Input({ required: true }) key!: string;
   @Input() title = '';
+
+  /** Renders as a joined sp-admin-button segment (icon-only, groupPosition="end") instead of a floating circular icon. */
+  @Input({ transform: booleanAttribute }) attached = false;
+  /** Only used when `attached` — match the adjacent button's variant so the seam is a single continuous color. */
+  @Input() variant: SpAdminButtonVariant = 'primary';
+  /** Only used when `attached` — match the adjacent button's appearance. */
+  @Input() appearance: SpAdminButtonAppearance = 'solid';
+  /** Only used when `attached` — match the adjacent button's size so heights line up. */
+  @Input() size: SpAdminButtonSize = 'sm';
 
   isOpen = false;
   loading = false;

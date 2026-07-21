@@ -6,6 +6,8 @@ export type SpAdminButtonVariant = 'primary' | 'secondary' | 'success' | 'danger
   | 'ghost'; // @deprecated: use appearance='ghost' variant='neutral'
 export type SpAdminButtonAppearance = 'solid' | 'outline' | 'soft' | 'ghost' | 'link';
 export type SpAdminButtonSize = 'xs' | 'sm' | 'md' | 'lg';
+/** Position within a Flowbite-style joined button group. 'none' = standalone (default). */
+export type SpAdminButtonGroupPosition = 'none' | 'start' | 'middle' | 'end';
 
 @Component({
   selector: 'sp-admin-button',
@@ -158,6 +160,24 @@ export type SpAdminButtonSize = 'xs' | 'sm' | 'md' | 'lg';
     .sp-adm-btn-icon-only.sp-adm-btn-md { padding:9px;  width:40px; }
     .sp-adm-btn-icon-only.sp-adm-btn-lg { padding:11px; width:48px; }
 
+    /* --- Group position (Flowbite-style joined segments, e.g. a button + attached
+       help-icon segment): flattens the shared edge and overlaps borders by 1px so a
+       bordered appearance (outline/soft) doesn't show a doubled seam. Solid/ghost
+       appearances have no border, so the 1px overlap is visually a no-op for them. --- */
+    .sp-adm-btn-group-start,
+    .sp-adm-btn-group-middle,
+    .sp-adm-btn-group-end {
+      position: relative;
+    }
+    .sp-adm-btn-group-start  { border-top-right-radius:0; border-bottom-right-radius:0; }
+    .sp-adm-btn-group-middle { border-radius:0; margin-left:-1px; }
+    .sp-adm-btn-group-end    { border-top-left-radius:0; border-bottom-left-radius:0; margin-left:-1px; }
+    .sp-adm-btn-group-start:focus-visible,
+    .sp-adm-btn-group-middle:focus-visible,
+    .sp-adm-btn-group-end:focus-visible {
+      z-index: 1;
+    }
+
     .sp-adm-btn-spinner {
       width:14px; height:14px; border-radius:50%;
       border:2px solid currentColor; border-right-color:transparent;
@@ -177,6 +197,7 @@ export class SpAdminButtonComponent {
   @Input() loading = false;
   @Input() fullWidth = false;
   @Input() iconOnly = false;
+  @Input() groupPosition: SpAdminButtonGroupPosition = 'none';
   /** @deprecated use fullWidth */
   @Input() block = false;
   @Input() leadingIcon?: SpAdminIconName;
@@ -194,6 +215,7 @@ export class SpAdminButtonComponent {
     ];
     if (this.fullWidth || this.block) classes.push('sp-adm-btn-block');
     if (this.iconOnly) classes.push('sp-adm-btn-icon-only');
+    if (this.groupPosition !== 'none') classes.push(`sp-adm-btn-group-${this.groupPosition}`);
     return classes.join(' ');
   }
 }
