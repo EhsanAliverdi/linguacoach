@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -18,7 +18,6 @@ import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
   SpAdminButtonComponent,
-  SpAdminCheckboxComponent,
   SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
   SpAdminFilterBarComponent,
@@ -30,9 +29,10 @@ import {
   SpAdminPageHeaderComponent,
   SpAdminPaginationComponent,
   SpAdminRowAction,
-  SpAdminSelectComponent,
   SpAdminTableActionsComponent,
+  SpAdminTableColumn,
   SpAdminTableComponent,
+  SpAdminTableFilter,
   SpAdminTableFooterComponent,
 } from '../../../design-system/admin';
 
@@ -84,7 +84,6 @@ const PAGE_SIZE = 20;
     SpAdminAlertComponent,
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
-    SpAdminCheckboxComponent,
     SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
     SpAdminFilterBarComponent,
@@ -95,7 +94,6 @@ const PAGE_SIZE = 20;
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
     SpAdminPaginationComponent,
-    SpAdminSelectComponent,
     SpAdminTableActionsComponent,
     SpAdminTableComponent,
     SpAdminTableFooterComponent,
@@ -103,6 +101,36 @@ const PAGE_SIZE = 20;
   templateUrl: './admin-resource-bank-unified.component.html',
 })
 export class AdminResourceBankUnifiedComponent implements OnInit {
+  @ViewChild('resourceBankTableRef') resourceBankTableRef?: SpAdminTableComponent;
+
+  readonly resourceBankColumns: SpAdminTableColumn[] = [
+    { key: 'type', label: 'Type' },
+    { key: 'title', label: 'Title', titleColumn: true },
+    { key: 'cefrLevel', label: 'Level' },
+    { key: 'skill', label: 'Skill / Subskill' },
+    { key: 'contextTags', label: 'Context' },
+    { key: 'focusTags', label: 'Focus' },
+    { key: 'difficultyBand', label: 'Difficulty' },
+    { key: 'linked', label: 'Learn / Activity / Module' },
+    { key: 'actions', label: 'Actions', align: 'right' },
+  ];
+
+  resourceBankBulkEditMode = signal(false);
+  onResourceBankBulkEditModeChange(enabled: boolean): void {
+    this.resourceBankBulkEditMode.set(enabled);
+    if (!enabled) this.clearSelection();
+  }
+
+  onResourceBankSelectionChange(indices: number[]): void {
+    const rows = this.items();
+    const ids = indices.map(i => rows[i]?.id).filter((id): id is string => !!id);
+    this.selectedIds.set(new Set(ids));
+  }
+
+  onRowClick(row: unknown): void {
+    this.openDetail(row as unknown as UnifiedResourceBankItemDto);
+  }
+
   items = signal<UnifiedResourceBankItemDto[]>([]);
   loading = signal(true);
   error = signal('');
@@ -150,10 +178,6 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
   bulkResultSummary = signal('');
 
   readonly selectedCount = computed(() => this.selectedIds().size);
-  readonly allVisibleSelected = computed(() => {
-    const items = this.items();
-    return items.length > 0 && items.every(i => this.selectedIds().has(i.id));
-  });
   readonly selectedSupportGeneration = computed(() => {
     const ids = this.selectedIds();
     return this.items().filter(i => ids.has(i.id) && TYPES_SUPPORTING_GENERATION.has(i.type));
@@ -252,6 +276,18 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
     this.loadAll();
   }
 
+  resourceBankFilters = computed<SpAdminTableFilter[]>(() => [
+    { key: 'type', label: 'Type', options: this.typeOptions, value: this.typeFilter() },
+    { key: 'cefrLevel', label: 'Level', options: this.cefrLevelOptions, value: this.cefrLevelFilter() },
+    { key: 'skill', label: 'Skill', options: this.skillOptions, value: this.skillFilter() },
+  ]);
+
+  onResourceBankFilterChange(event: { key: string; value: string }): void {
+    if (event.key === 'type') this.onTypeFilterChange(event.value);
+    else if (event.key === 'cefrLevel') this.onCefrLevelFilterChange(event.value);
+    else if (event.key === 'skill') this.onSkillFilterChange(event.value);
+  }
+
   toggleShowArchived(): void {
     this.showArchived.set(!this.showArchived());
     this.page.set(1);
@@ -318,26 +354,9 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
 
   // ── Selection ────────────────────────────────────────────────────────────────
 
-  isSelected(id: string): boolean {
-    return this.selectedIds().has(id);
-  }
-
-  toggleSelected(id: string): void {
-    const next = new Set(this.selectedIds());
-    if (next.has(id)) next.delete(id); else next.add(id);
-    this.selectedIds.set(next);
-  }
-
-  toggleSelectAllVisible(): void {
-    if (this.allVisibleSelected()) {
-      this.selectedIds.set(new Set());
-      return;
-    }
-    this.selectedIds.set(new Set(this.items().map(i => i.id)));
-  }
-
   clearSelection(): void {
     this.selectedIds.set(new Set());
+    this.resourceBankTableRef?.clearSelection();
   }
 
   // ── Bulk actions ─────────────────────────────────────────────────────────────

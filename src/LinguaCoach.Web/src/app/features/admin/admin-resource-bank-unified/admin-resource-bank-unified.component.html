@@ -55,39 +55,34 @@
       <sp-admin-input
         search size="sm" placeholder="Search title, word, or excerpt..."
         [value]="searchQuery()" (input)="onSearch($event)" aria-label="Search resource bank" />
-      <sp-admin-select
-        size="sm" placeholder="All types"
-        [ngModel]="typeFilter()" (ngModelChange)="onTypeFilterChange($event)"
-        [options]="typeOptions" aria-label="Filter by type" />
-      <sp-admin-select
-        size="sm" placeholder="All levels"
-        [ngModel]="cefrLevelFilter()" (ngModelChange)="onCefrLevelFilterChange($event)"
-        [options]="cefrLevelOptions" aria-label="Filter by CEFR level" />
-      <sp-admin-select
-        size="sm" placeholder="All skills"
-        [ngModel]="skillFilter()" (ngModelChange)="onSkillFilterChange($event)"
-        [options]="skillOptions" aria-label="Filter by skill" />
-      <sp-admin-button
-        [variant]="showArchived() ? 'primary' : 'neutral'" appearance="outline" size="sm"
-        (clicked)="toggleShowArchived()">
-        {{ showArchived() ? 'Showing archived' : 'Show archived' }}
-      </sp-admin-button>
-      <sp-admin-button
-        [variant]="unusedOnly() ? 'primary' : 'neutral'" appearance="outline" size="sm"
-        (clicked)="toggleUnusedOnly()">
-        {{ unusedOnly() ? 'Showing unused only' : 'Unused only' }}
-      </sp-admin-button>
       <span class="sp-admin-filter-count">{{ totalCount() }} resource{{ totalCount() !== 1 ? 's' : '' }}</span>
     </sp-admin-filter-bar>
 
-    @if (items().length === 0) {
-      <sp-admin-empty-state title="No resources" message="No published resources match these filters." />
-    } @else {
-
+    <sp-admin-table
+      #resourceBankTableRef
+      layout="first-column-fluid"
+      [columns]="resourceBankColumns" [rows]="items()" (selectionChange)="onResourceBankSelectionChange($event)"
+      [filters]="resourceBankFilters()" (filterChange)="onResourceBankFilterChange($event)"
+      [bulkEditable]="true" [bulkEditMode]="resourceBankBulkEditMode()" (bulkEditModeChange)="onResourceBankBulkEditModeChange($event)"
+      [rowClickable]="true" (rowClick)="onRowClick($event)"
+      emptyMessage="No resources. No published resources match these filters."
+    >
+      <ng-container tableActions>
+        <sp-admin-button
+          [variant]="showArchived() ? 'primary' : 'neutral'" appearance="outline" size="sm"
+          (clicked)="toggleShowArchived()">
+          {{ showArchived() ? 'Showing archived' : 'Show archived' }}
+        </sp-admin-button>
+        <sp-admin-button
+          [variant]="unusedOnly() ? 'primary' : 'neutral'" appearance="outline" size="sm"
+          (clicked)="toggleUnusedOnly()">
+          {{ unusedOnly() ? 'Showing unused only' : 'Unused only' }}
+        </sp-admin-button>
+      </ng-container>
       <!-- Phase K3 — bulk toolbar. Generate actions only apply to selected rows whose type
            supports generation (see selectedSupportGeneration); archive applies to every selection. -->
       @if (selectedCount() > 0) {
-        <div class="sp-admin-form-actions" style="flex-wrap:wrap;align-items:center;margin-bottom:0.75rem;">
+        <div selectionBar class="sp-admin-form-actions">
           <span class="sp-admin-hint">{{ selectedCount() }} selected</span>
           <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="clearSelection()">Clear</sp-admin-button>
           @if (!showArchived()) {
@@ -107,73 +102,54 @@
           }
         </div>
       }
-
-      <sp-admin-table layout="first-column-fluid">
-        <table>
-          <thead>
-            <tr>
-              <th style="width:40px;"><sp-admin-checkbox [ngModel]="allVisibleSelected()" [ngModelOptions]="{standalone: true}" (checkedChange)="toggleSelectAllVisible()" aria-label="Select all visible" /></th>
-              <th>Type</th>
-              <th class="sp-admin-fluid-col">Title</th>
-              <th>Level</th>
-              <th>Skill / Subskill</th>
-              <th>Context</th>
-              <th>Focus</th>
-              <th>Difficulty</th>
-              <th>Learn / Activity / Module</th>
-              <th class="sp-admin-th-actions">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (item of items(); track item.id) {
-              <tr (click)="openDetail(item)" style="cursor:pointer">
-                <td style="width:40px;" (click)="$event.stopPropagation()">
-                  <sp-admin-checkbox [ngModel]="isSelected(item.id)" [ngModelOptions]="{standalone: true}" (checkedChange)="toggleSelected(item.id)" aria-label="Select resource" />
-                </td>
-                <td><sp-admin-badge tone="info" appearance="soft">{{ typeLabel(item.type) }}</sp-admin-badge></td>
-                <td class="sp-admin-fluid-col">
-                  <strong>{{ item.title }}</strong>
-                  @if (item.summary) { <div class="sp-admin-text-muted">{{ item.summary }}</div> }
-                  @if (item.isArchived) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">Archived</sp-admin-badge> }
-                </td>
-                <td><sp-admin-badge tone="neutral">{{ item.cefrLevel }}</sp-admin-badge></td>
-                <td>
-                  {{ item.skill ?? '—' }}
-                  @if (item.subskill) { <div class="sp-admin-text-muted">{{ item.subskill }}</div> }
-                </td>
-                <td>
-                  @if (item.contextTags.length > 0) {
-                    @for (tag of item.contextTags; track tag) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
-                  } @else { — }
-                </td>
-                <td>
-                  @if (item.focusTags.length > 0) {
-                    @for (tag of item.focusTags; track tag) { <sp-admin-badge tone="purple" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
-                  } @else { — }
-                </td>
-                <td>{{ item.difficultyBand ?? '—' }}</td>
-                <td>
-                  @if (item.linkedLearnCount) {
-                    <sp-admin-badge tone="success" appearance="soft">{{ item.linkedLearnCount }} Learn</sp-admin-badge>
-                  } @else {
-                    <span class="sp-admin-text-muted">Not generated yet</span>
-                  }
-                  @if (item.linkedModuleCount) {
-                    <sp-admin-badge tone="success" appearance="soft">{{ item.linkedModuleCount }} Module</sp-admin-badge>
-                  }
-                </td>
-                <td (click)="$event.stopPropagation()">
-                  <sp-admin-table-actions [richActions]="rowActions(item)" (actionSelected)="onRowAction($event, item)" />
-                </td>
-              </tr>
+      <ng-template #cell let-row let-col="col">
+        @switch (col.key) {
+          @case ('type') { <sp-admin-badge tone="info" appearance="soft">{{ typeLabel($any(row).type) }}</sp-admin-badge> }
+          @case ('title') {
+            {{ $any(row).title }}
+            @if ($any(row).summary) { <div class="sp-admin-text-muted" style="font-weight:400;">{{ $any(row).summary }}</div> }
+            @if ($any(row).isArchived) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">Archived</sp-admin-badge> }
+          }
+          @case ('cefrLevel') { <sp-admin-badge tone="neutral">{{ $any(row).cefrLevel }}</sp-admin-badge> }
+          @case ('skill') {
+            {{ $any(row).skill ?? '—' }}
+            @if ($any(row).subskill) { <div class="sp-admin-text-muted">{{ $any(row).subskill }}</div> }
+          }
+          @case ('contextTags') {
+            @if ($any(row).contextTags.length > 0) {
+              @for (tag of $any(row).contextTags; track tag) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
+            } @else { — }
+          }
+          @case ('focusTags') {
+            @if ($any(row).focusTags.length > 0) {
+              @for (tag of $any(row).focusTags; track tag) { <sp-admin-badge tone="purple" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
+            } @else { — }
+          }
+          @case ('difficultyBand') { {{ $any(row).difficultyBand ?? '—' }} }
+          @case ('linked') {
+            @if ($any(row).linkedLearnCount) {
+              <sp-admin-badge tone="success" appearance="soft">{{ $any(row).linkedLearnCount }} Learn</sp-admin-badge>
+            } @else {
+              <span class="sp-admin-text-muted">Not generated yet</span>
             }
-          </tbody>
-        </table>
-        <sp-admin-table-footer>
-          Page {{ page() }} of {{ totalPages() }} · {{ totalCount() }} resources
-          <sp-admin-pagination slot="actions" [page]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
-        </sp-admin-table-footer>
-      </sp-admin-table>
+            @if ($any(row).linkedModuleCount) {
+              <sp-admin-badge tone="success" appearance="soft">{{ $any(row).linkedModuleCount }} Module</sp-admin-badge>
+            }
+          }
+          @case ('actions') {
+            <span (click)="$event.stopPropagation()">
+              <sp-admin-table-actions [richActions]="rowActions($any(row))" (actionSelected)="onRowAction($event, $any(row))" />
+            </span>
+          }
+          @default { {{ $any(row)[col.key] }} }
+        }
+      </ng-template>
+    </sp-admin-table>
+    @if (items().length > 0) {
+    <sp-admin-table-footer>
+      Page {{ page() }} of {{ totalPages() }} · {{ totalCount() }} resources
+      <sp-admin-pagination slot="actions" [page]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
+    </sp-admin-table-footer>
     }
   }
 
