@@ -1,6 +1,5 @@
-<sp-admin-page-header
-  title="Skill Graph"
-  subtitle="AI-drafted, admin-batch-approved skill/prerequisite graph — the sole curriculum unit driving Today, Practice Gym, and mastery. See docs/architecture/adaptive-curriculum-skill-graph.md.">
+<sp-admin-page-header title="Skill Graph">
+  <sp-admin-help-icon key="admin.skillGraph.overview" title="Skill Graph" />
   @if (nodeIssuesSummary() && nodeIssuesSummary()!.itemsWithIssues > 0) {
     <sp-admin-button variant="primary" appearance="outline" size="sm" [disabled]="bulkRepair.running()" (clicked)="fixAllNodesWithAi()">
       {{ bulkRepair.running() ? 'Fixing…' : 'Fix All with AI (' + nodeIssuesSummary()!.itemsWithIssues + ')' }}
