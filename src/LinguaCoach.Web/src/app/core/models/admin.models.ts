@@ -1563,6 +1563,8 @@ export interface SkillGraphNodeListItem {
   isActive: boolean;
   rejectionReason: string | null;
   createdAt: string;
+  contextTags: string[];
+  focusTags: string[];
 }
 
 export interface SkillGraphNodeListResponse {
@@ -1653,6 +1655,8 @@ export interface SkillGraphNode {
   subskill: string | null;
   difficultyBand: number;
   reviewStatus: 'NotRequired' | 'PendingReview' | 'Approved' | 'Rejected';
+  contextTags: string[];
+  focusTags: string[];
 }
 
 export interface SkillGraphEdge {

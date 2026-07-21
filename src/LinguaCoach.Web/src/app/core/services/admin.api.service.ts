@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { IssuesSummary, RepairableItemSummary } from '../models/admin-repair.models';
 import {
   AdminTemplateItem, AdminTemplateListQuery,
   AdminCreateTemplateRequest, AdminUpdateTemplateRequest, AdminTemplatePreviewResult,
@@ -232,6 +233,17 @@ export class AdminApiService {
   // Sprint 13 — bulk nodes+edges payload backing the Cytoscape/Dagre graph view.
   getSkillGraph(): Observable<SkillGraphResponse> {
     return this.http.get<SkillGraphResponse>(`${this.api}/skill-graph/graph`);
+  }
+  // Sprint 14.1 — node context/focus tag diagnose+AI-repair (same shape as Resource Bank's, reused
+  // by AdminBulkRepairService for the "Fix All with AI" toast-progress flow).
+  getSkillGraphNodeIssuesSummary(): Observable<IssuesSummary> {
+    return this.http.get<IssuesSummary>(`${this.api}/skill-graph/nodes/issues-summary`);
+  }
+  listSkillGraphNodesWithIssues(): Observable<RepairableItemSummary[]> {
+    return this.http.get<RepairableItemSummary[]>(`${this.api}/skill-graph/nodes/with-issues`);
+  }
+  repairSkillGraphNode(id: string): Observable<unknown> {
+    return this.http.post(`${this.api}/skill-graph/nodes/${id}/repair`, {});
   }
 
   // Prompts

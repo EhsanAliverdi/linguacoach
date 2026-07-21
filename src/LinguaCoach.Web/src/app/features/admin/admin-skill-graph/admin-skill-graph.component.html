@@ -1,6 +1,12 @@
 <sp-admin-page-header
   title="Skill Graph"
-  subtitle="AI-drafted, admin-batch-approved skill/prerequisite graph — the target replacement for the flat Curriculum taxonomy. See docs/architecture/adaptive-curriculum-skill-graph.md." />
+  subtitle="AI-drafted, admin-batch-approved skill/prerequisite graph — the target replacement for the flat Curriculum taxonomy. See docs/architecture/adaptive-curriculum-skill-graph.md.">
+  @if (nodeIssuesSummary() && nodeIssuesSummary()!.itemsWithIssues > 0) {
+    <sp-admin-button variant="primary" appearance="outline" size="sm" [disabled]="bulkRepair.running()" (clicked)="fixAllNodesWithAi()">
+      {{ bulkRepair.running() ? 'Fixing…' : 'Fix All with AI (' + nodeIssuesSummary()!.itemsWithIssues + ')' }}
+    </sp-admin-button>
+  }
+</sp-admin-page-header>
 
 <sp-admin-page-body>
 
@@ -9,6 +15,12 @@
     consumes it yet. Draft, review, and approve nodes here; later sprints wire mastery and delivery
     to this graph and retire the flat Curriculum objectives.
   </sp-admin-alert>
+
+  @if (nodeIssuesSummary() && nodeIssuesSummary()!.itemsWithIssues > 0) {
+    <sp-admin-alert variant="warning">
+      {{ nodeIssuesSummary()!.itemsWithIssues }} of {{ nodeIssuesSummary()!.totalItems }} node(s) are missing context/focus tags.
+    </sp-admin-alert>
+  }
 
   <!-- Coverage matrix -->
   <sp-admin-card title="Coverage — approved nodes per CEFR level x skill">
@@ -150,6 +162,14 @@
             <strong>{{ sel.title }}</strong> — {{ sel.cefrLevel }} / {{ sel.skill }}
             @if (sel.subskill) { / {{ sel.subskill }} }
             <sp-admin-badge [tone]="reviewStatusTone(sel.reviewStatus)" appearance="soft" size="sm">{{ sel.reviewStatus }}</sp-admin-badge>
+            @if (sel.contextTags.length || sel.focusTags.length) {
+              <div class="sp-admin-mt-1">
+                @for (tag of sel.contextTags; track tag) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
+                @for (tag of sel.focusTags; track tag) { <sp-admin-badge tone="purple" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
+              </div>
+            } @else {
+              <div class="sp-admin-mt-1 sp-admin-text-muted">No tags yet.</div>
+            }
           </div>
         }
       }
@@ -206,6 +226,7 @@
               <th>Skill</th>
               <th>Subskill</th>
               <th>Difficulty</th>
+              <th>Tags</th>
               <th>Status</th>
             </tr>
           </thead>
@@ -220,6 +241,14 @@
                 <td>{{ node.skill }}</td>
                 <td>{{ node.subskill || '—' }}</td>
                 <td>{{ node.difficultyBand }}</td>
+                <td>
+                  @if (node.contextTags.length || node.focusTags.length) {
+                    @for (tag of node.contextTags; track tag) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
+                    @for (tag of node.focusTags; track tag) { <sp-admin-badge tone="purple" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
+                  } @else {
+                    <span class="sp-admin-text-muted">—</span>
+                  }
+                </td>
                 <td>
                   <sp-admin-badge [tone]="reviewStatusTone(node.reviewStatus)" appearance="soft" size="sm">
                     {{ node.reviewStatus }}

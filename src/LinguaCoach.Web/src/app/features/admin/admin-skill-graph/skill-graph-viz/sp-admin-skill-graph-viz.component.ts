@@ -1,10 +1,10 @@
 import { Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import cytoscape, { Core, ElementDefinition } from 'cytoscape';
-import dagre from 'cytoscape-dagre';
+import coseBilkent from 'cytoscape-cose-bilkent';
 import { SkillGraphEdge, SkillGraphNode } from '../../../../core/models/admin.models';
 
-cytoscape.use(dagre);
+cytoscape.use(coseBilkent);
 
 // Sprint 13 — CEFR-level color coding, lightest (A1) to darkest (C2), matching the design
 // system's existing indigo/purple palette used elsewhere in admin (see badge tones).
@@ -16,14 +16,30 @@ const CEFR_COLORS: Record<string, string> = {
   C1: '#3A2EA8',
   C2: '#211B36',
 };
+const CEFR_LEVELS = Object.keys(CEFR_COLORS);
+
+// Sprint 14.1 — light per-skill box tints for the compound "group by skill" parent nodes.
+const SKILL_BOX_COLORS: Record<string, string> = {
+  grammar: '#F4F2FE',
+  vocabulary: '#EFFAF5',
+  reading: '#FFF7EB',
+  writing: '#FDF1F1',
+  listening: '#EEF6FF',
+  speaking: '#FBF0FA',
+};
 
 /**
- * Sprint 13 — visual skill-graph view (Cytoscape.js + Dagre hierarchical layout), alongside the
- * existing table view on the admin Skill Graph page. Nodes color-coded by CEFR level; prerequisite
- * edges point from prerequisite -> dependent (Dagre reads this as the hierarchy direction).
- * Deliberately a plain wrapper around a raw DOM container (Cytoscape needs a real element to mount
- * into, unlike this design system's other chart primitives which are hand-rolled inline SVG) — see
- * sp-admin-graph-card, which is meant to wrap this for title/status/footer chrome.
+ * Sprint 13/14.1 — visual skill-graph view (Cytoscape.js + cose-bilkent compound layout),
+ * alongside the existing table view on the admin Skill Graph page.
+ *
+ * Real data reality: only ~15 prerequisite edges exist across 219 nodes (confirmed live), so a
+ * layout driven purely by those edges renders as one flat row of disconnected dots — not a useful
+ * graph. Every node DOES carry a real Skill, so nodes are grouped into compound "box" parent nodes
+ * by Skill (cose-bilkent renders these as bounded regions, matching the requested "boxes around
+ * nodes with similar feature" look) — real prerequisite edges still render as connecting lines,
+ * including across skill boxes when a prerequisite crosses skills. A CEFR-level filter (toggled via
+ * the legend chips) keeps any one view to a manageable node count, since showing all 219 at once is
+ * illegible regardless of layout.
  */
 @Component({
   selector: 'sp-admin-skill-graph-viz',
@@ -32,18 +48,31 @@ const CEFR_COLORS: Record<string, string> = {
   template: `
     <div class="sp-sgv-legend">
       @for (level of cefrLevels; track level) {
-        <span class="sp-sgv-legend-item">
+        <button
+          type="button"
+          class="sp-sgv-legend-item"
+          [class.sp-sgv-legend-item--off]="!activeLevels.has(level)"
+          (click)="toggleLevel(level)"
+        >
           <span class="sp-sgv-legend-dot" [style.background]="cefrColor(level)"></span>{{ level }}
-        </span>
+        </button>
       }
+      <span class="sp-sgv-legend-count">{{ visibleCount }} of {{ nodes.length }} nodes shown</span>
     </div>
     <div #cyContainer class="sp-sgv-canvas"></div>
   `,
   styles: [`
-    .sp-sgv-legend { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 8px; }
-    .sp-sgv-legend-item { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--sp-admin-text-muted, #8B85A0); }
+    .sp-sgv-legend { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+    .sp-sgv-legend-item {
+      display: inline-flex; align-items: center; gap: 5px; font-size: 11px;
+      color: var(--sp-admin-text-muted, #8B85A0); background: none; border: none; cursor: pointer;
+      padding: 2px 6px; border-radius: 6px;
+    }
+    .sp-sgv-legend-item:hover { background: var(--sp-admin-border, #ECE9F5); }
+    .sp-sgv-legend-item--off { opacity: 0.35; }
     .sp-sgv-legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-    .sp-sgv-canvas { width: 100%; height: 520px; border: 1px solid var(--sp-admin-border, #ECE9F5); border-radius: 10px; background: var(--sp-admin-surface, #fff); }
+    .sp-sgv-legend-count { font-size: 11px; color: var(--sp-admin-text-dim, #BDB8CC); margin-left: auto; }
+    .sp-sgv-canvas { width: 100%; height: 620px; border: 1px solid var(--sp-admin-border, #ECE9F5); border-radius: 10px; background: var(--sp-admin-surface, #fff); }
   `],
 })
 export class SpAdminSkillGraphVizComponent implements OnChanges, OnDestroy {
@@ -53,7 +82,10 @@ export class SpAdminSkillGraphVizComponent implements OnChanges, OnDestroy {
 
   @ViewChild('cyContainer', { static: true }) container!: ElementRef<HTMLDivElement>;
 
-  readonly cefrLevels = Object.keys(CEFR_COLORS);
+  readonly cefrLevels = CEFR_LEVELS;
+  activeLevels = new Set<string>(CEFR_LEVELS);
+  visibleCount = 0;
+
   private cy: Core | null = null;
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -70,18 +102,41 @@ export class SpAdminSkillGraphVizComponent implements OnChanges, OnDestroy {
     return CEFR_COLORS[level] ?? '#8B85A0';
   }
 
+  toggleLevel(level: string): void {
+    if (this.activeLevels.has(level)) {
+      if (this.activeLevels.size === 1) return; // never allow zero levels selected
+      this.activeLevels.delete(level);
+    } else {
+      this.activeLevels.add(level);
+    }
+    this.render();
+  }
+
   private render(): void {
     if (!this.container || this.nodes.length === 0) return;
 
     this.cy?.destroy();
 
-    const nodeIds = new Set(this.nodes.map(n => n.id));
+    const visibleNodes = this.nodes.filter(n => this.activeLevels.has(n.cefrLevel));
+    this.visibleCount = visibleNodes.length;
+    if (visibleNodes.length === 0) return;
+
+    const nodeIds = new Set(visibleNodes.map(n => n.id));
+    const skillsPresent = new Set(visibleNodes.map(n => n.skill || 'other'));
+
     const elements: ElementDefinition[] = [
-      ...this.nodes.map(n => ({
-        data: { id: n.id, label: n.title, cefrLevel: n.cefrLevel },
+      // Compound parent boxes, one per Skill actually present in the current filtered view.
+      ...Array.from(skillsPresent).map(skill => ({
+        data: { id: `skill:${skill}`, label: this.skillLabel(skill), isParent: true },
       })),
-      // Dagre reads edge direction as the hierarchy (source above target), so prerequisite ->
-      // dependent gives "must-master-first" nodes above the nodes that require them.
+      ...visibleNodes.map(n => ({
+        data: {
+          id: n.id,
+          label: n.title,
+          cefrLevel: n.cefrLevel,
+          parent: `skill:${n.skill || 'other'}`,
+        },
+      })),
       ...this.edges
         .filter(e => nodeIds.has(e.nodeId) && nodeIds.has(e.prerequisiteNodeId))
         .map(e => ({
@@ -94,39 +149,72 @@ export class SpAdminSkillGraphVizComponent implements OnChanges, OnDestroy {
       elements,
       style: [
         {
-          selector: 'node',
+          selector: 'node[?isParent]',
+          style: {
+            'background-color': (ele: cytoscape.NodeSingular) => this.skillBoxColor(ele.data('label')),
+            'background-opacity': 1,
+            'border-width': 1,
+            'border-color': 'var(--sp-admin-border, #ECE9F5)',
+            label: 'data(label)',
+            'text-valign': 'top',
+            'text-halign': 'center',
+            'text-margin-y': -6,
+            'font-size': '11px',
+            'font-weight': 700,
+            color: '#211B36',
+            shape: 'round-rectangle',
+            padding: '18px',
+          },
+        },
+        {
+          selector: 'node[!isParent]',
           style: {
             'background-color': (ele: cytoscape.NodeSingular) => this.cefrColor(ele.data('cefrLevel')),
             label: 'data(label)',
             'font-size': '9px',
             color: '#211B36',
             'text-valign': 'bottom',
+            'text-halign': 'center',
             'text-margin-y': 4,
             width: 22,
             height: 22,
-            'text-wrap': 'ellipsis',
-            'text-max-width': '80px',
+            'text-wrap': 'wrap',
+            'text-max-width': '90px',
           },
         },
         {
           selector: 'edge',
           style: {
             width: 1.5,
-            'line-color': '#C0BAF9',
-            'target-arrow-color': '#C0BAF9',
+            'line-color': '#5B4BE8',
+            'target-arrow-color': '#5B4BE8',
             'target-arrow-shape': 'triangle',
             'curve-style': 'bezier',
+            opacity: 0.85,
           },
         },
       ],
-      layout: { name: 'dagre', rankDir: 'TB', nodeSep: 24, rankSep: 60 } as cytoscape.LayoutOptions,
+      layout: {
+        name: 'cose-bilkent',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ...({ nodeDimensionsIncludeLabels: true, animate: false, padding: 30, idealEdgeLength: 80 } as any),
+      } as cytoscape.LayoutOptions,
       wheelSensitivity: 0.2,
     });
 
     this.cy.on('tap', 'node', evt => {
+      if (evt.target.data('isParent')) return;
       const id = evt.target.id();
       const node = this.nodes.find(n => n.id === id);
       if (node) this.nodeSelected.emit(node);
     });
+  }
+
+  private skillLabel(skill: string): string {
+    return skill.charAt(0).toUpperCase() + skill.slice(1);
+  }
+
+  private skillBoxColor(label: string): string {
+    return SKILL_BOX_COLORS[label.toLowerCase()] ?? '#F6F4FB';
   }
 }

@@ -51,6 +51,7 @@ public sealed class SkillGraphDraftingService : ISkillGraphDraftingService
             ["skill"] = request.Skill,
             ["subskills"] = string.Join(", ", subskills),
             ["existingTitles"] = existingTitles.Count > 0 ? string.Join(" | ", existingTitles) : "(none yet)",
+            ["contextTags"] = string.Join(", ", CurriculumContextTagConstants.All),
         };
 
         var correlationId = Guid.NewGuid().ToString("N")[..16];
@@ -179,8 +180,22 @@ public sealed class SkillGraphDraftingService : ISkillGraphDraftingService
                     }
                 }
 
+                var contextTags = new List<string>();
+                if (node.TryGetProperty("contextTags", out var tagsEl) && tagsEl.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var t in tagsEl.EnumerateArray())
+                    {
+                        if (t.ValueKind == JsonValueKind.String && t.GetString() is { } tv
+                            && CurriculumContextTagConstants.IsValid(tv))
+                        {
+                            contextTags.Add(tv.ToLowerInvariant());
+                        }
+                    }
+                }
+
                 proposals.Add(new SkillGraphNodeDraftProposal(
-                    title, description.Trim(), cefrLevel, skill, subskill, difficultyBand, descriptionForAi, prereqTitles));
+                    title, description.Trim(), cefrLevel, skill, subskill, difficultyBand, descriptionForAi,
+                    prereqTitles, contextTags));
             }
 
             return proposals;

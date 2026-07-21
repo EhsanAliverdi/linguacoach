@@ -27,6 +27,8 @@ import {
 } from '../../../core/models/admin.models';
 import { SpAdminGraphCardComponent } from '../../../design-system/admin/components/graph-card/sp-admin-graph-card.component';
 import { SpAdminSkillGraphVizComponent } from './skill-graph-viz/sp-admin-skill-graph-viz.component';
+import { IssuesSummary } from '../../../core/models/admin-repair.models';
+import { AdminBulkRepairService } from '../../../core/services/admin-bulk-repair.service';
 
 @Component({
   selector: 'app-admin-skill-graph',
@@ -53,7 +55,31 @@ import { SpAdminSkillGraphVizComponent } from './skill-graph-viz/sp-admin-skill-
   ],
 })
 export class AdminSkillGraphComponent implements OnInit {
-  constructor(private api: AdminApiService) {}
+  constructor(private api: AdminApiService, public bulkRepair: AdminBulkRepairService) {}
+
+  // ── Sprint 14.1 — node tag issue count + bulk "Fix All with AI" ──────────────────────────
+  nodeIssuesSummary = signal<IssuesSummary | null>(null);
+
+  loadNodeIssuesSummary(): void {
+    this.api.getSkillGraphNodeIssuesSummary().subscribe({
+      next: summary => this.nodeIssuesSummary.set(summary),
+      error: () => this.nodeIssuesSummary.set(null),
+    });
+  }
+
+  fixAllNodesWithAi(): void {
+    this.bulkRepair.run({
+      entityLabel: 'Skill Graph Node',
+      listWithIssues: () => this.api.listSkillGraphNodesWithIssues(),
+      repairOne: id => this.api.repairSkillGraphNode(id),
+      onDone: () => {
+        this.loadNodeIssuesSummary();
+        this.loadNodes();
+        this.graphLoaded = false;
+        if (this.viewMode() === 'graph') this.loadGraph();
+      },
+    });
+  }
 
   // ── Sprint 13 — Table/Graph view toggle + bulk nodes+edges for the visual view ────────────
   viewMode = signal<'table' | 'graph'>('table');
@@ -148,6 +174,7 @@ export class AdminSkillGraphComponent implements OnInit {
     this.loadCoverage();
     this.loadNodes();
     this.loadContentCoverage();
+    this.loadNodeIssuesSummary();
   }
 
   loadContentCoverage(): void {

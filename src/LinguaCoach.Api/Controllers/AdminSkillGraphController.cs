@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.Json;
 using LinguaCoach.Application.SkillGraph;
 using LinguaCoach.Domain.Constants;
 using LinguaCoach.Domain.Entities;
@@ -32,16 +33,47 @@ public sealed class AdminSkillGraphController : ControllerBase
     private readonly ISkillGraphDraftingService _drafting;
     private readonly ISkillGraphValidationService _validation;
     private readonly IModuleSkillGraphTaggingService _tagging;
+    private readonly ISkillGraphNodeRepairService _repair;
 
     public AdminSkillGraphController(
         LinguaCoachDbContext db, ISkillGraphDraftingService drafting, ISkillGraphValidationService validation,
-        IModuleSkillGraphTaggingService tagging)
+        IModuleSkillGraphTaggingService tagging, ISkillGraphNodeRepairService repair)
     {
         _db = db;
         _drafting = drafting;
         _validation = validation;
         _tagging = tagging;
+        _repair = repair;
     }
+
+    // ── Sprint 14.1 — node tag diagnose+AI-repair, mirrors Resource Bank's
+    // issues-summary/with-issues/{id}/repair/repair-all shape exactly so the frontend can reuse
+    // the existing AdminBulkRepairService (client-driven loop + toast progress) unchanged. ──
+
+    [HttpGet("nodes/issues-summary")]
+    public async Task<IActionResult> GetNodeIssuesSummary(CancellationToken ct)
+        => Ok(await _repair.GetIssuesSummaryAsync(ct));
+
+    [HttpGet("nodes/with-issues")]
+    public async Task<IActionResult> ListNodesWithIssues(CancellationToken ct)
+        => Ok(await _repair.ListWithIssuesAsync(ct));
+
+    [HttpPost("nodes/{id:guid}/repair")]
+    public async Task<IActionResult> RepairNode(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            return Ok(await _repair.RepairAsync(id, ct));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { error = ex.Message });
+        }
+    }
+
+    [HttpPost("nodes/repair-all")]
+    public async Task<IActionResult> RepairAllNodes(CancellationToken ct)
+        => Ok(await _repair.RepairAllAsync(ct));
 
     [HttpGet("taxonomy")]
     public IActionResult GetTaxonomy()
@@ -70,15 +102,22 @@ public sealed class AdminSkillGraphController : ControllerBase
             query = query.Where(n => n.ReviewStatus == status);
 
         var totalCount = await query.CountAsync(ct);
-        var items = await query
+        var rawItems = await query
             .OrderBy(n => n.CefrLevel).ThenBy(n => n.Skill).ThenBy(n => n.Title)
             .Skip((page - 1) * pageSize).Take(pageSize)
             .Select(n => new
             {
                 n.Id, n.Key, n.Title, n.Description, n.CefrLevel, n.Skill, n.Subskill,
-                n.DifficultyBand, n.ReviewStatus, n.IsActive, n.RejectionReason, n.CreatedAt
+                n.DifficultyBand, n.ReviewStatus, n.IsActive, n.RejectionReason, n.CreatedAt,
+                n.ContextTagsJson, n.FocusTagsJson,
             })
             .ToListAsync(ct);
+        var items = rawItems.Select(n => new
+        {
+            n.Id, n.Key, n.Title, n.Description, n.CefrLevel, n.Skill, n.Subskill,
+            n.DifficultyBand, n.ReviewStatus, n.IsActive, n.RejectionReason, n.CreatedAt,
+            ContextTags = ParseTags(n.ContextTagsJson), FocusTags = ParseTags(n.FocusTagsJson),
+        });
 
         return Ok(new
         {
@@ -96,19 +135,33 @@ public sealed class AdminSkillGraphController : ControllerBase
     [HttpGet("graph")]
     public async Task<IActionResult> GetGraph(CancellationToken ct)
     {
-        var nodes = await _db.SkillGraphNodes.AsNoTracking()
+        var rawNodes = await _db.SkillGraphNodes.AsNoTracking()
             .Where(n => n.IsActive)
             .Select(n => new
             {
                 n.Id, n.Key, n.Title, n.CefrLevel, n.Skill, n.Subskill, n.DifficultyBand, n.ReviewStatus,
+                n.ContextTagsJson, n.FocusTagsJson,
             })
             .ToListAsync(ct);
+
+        var nodes = rawNodes.Select(n => new
+        {
+            n.Id, n.Key, n.Title, n.CefrLevel, n.Skill, n.Subskill, n.DifficultyBand, n.ReviewStatus,
+            ContextTags = ParseTags(n.ContextTagsJson), FocusTags = ParseTags(n.FocusTagsJson),
+        });
 
         var edges = await _db.SkillGraphPrerequisiteEdges.AsNoTracking()
             .Select(e => new { e.NodeId, e.PrerequisiteNodeId })
             .ToListAsync(ct);
 
         return Ok(new { nodes, edges });
+    }
+
+    private static List<string> ParseTags(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return [];
+        try { return JsonSerializer.Deserialize<List<string>>(json) ?? []; }
+        catch (JsonException) { return []; }
     }
 
     [HttpGet("nodes/{id:guid}")]
@@ -127,6 +180,7 @@ public sealed class AdminSkillGraphController : ControllerBase
             node.Id, node.Key, node.Title, node.Description, node.CefrLevel, node.Skill, node.Subskill,
             node.DifficultyBand, node.DescriptionForAi, node.ReviewStatus, node.IsActive,
             node.RejectionReason, node.ReviewedByUserId, node.ApprovedAtUtc, node.RejectedAtUtc,
+            ContextTags = ParseTags(node.ContextTagsJson), FocusTags = ParseTags(node.FocusTagsJson),
             prerequisites,
         });
     }
@@ -176,7 +230,8 @@ public sealed class AdminSkillGraphController : ControllerBase
 
             var node = new SkillGraphNode(
                 key, proposal.Title, proposal.Description, proposal.CefrLevel, proposal.Skill,
-                proposal.Subskill, proposal.DifficultyBand, proposal.DescriptionForAi);
+                proposal.Subskill, proposal.DifficultyBand, proposal.DescriptionForAi,
+                contextTagsJson: proposal.ContextTags.Count > 0 ? JsonSerializer.Serialize(proposal.ContextTags) : null);
             _db.SkillGraphNodes.Add(node);
             created.Add(node);
             byTitle[proposal.Title] = node;

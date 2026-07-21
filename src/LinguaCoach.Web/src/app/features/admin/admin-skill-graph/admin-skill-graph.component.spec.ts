@@ -26,6 +26,7 @@ const NODES: SkillGraphNodeListResponse = {
       id: 'n1', key: 'grammar.present_simple.a1', title: 'Present simple', description: 'D',
       cefrLevel: 'A1', skill: 'grammar', subskill: null, difficultyBand: 1,
       reviewStatus: 'PendingReview', isActive: true, rejectionReason: null, createdAt: '2026-07-17T00:00:00Z',
+      contextTags: [], focusTags: [],
     },
   ],
   totalCount: 1, totalPages: 1, page: 1, pageSize: 25,
@@ -49,6 +50,10 @@ function makeApi(overrides: Partial<Record<string, unknown>> = {}) {
       of<SkillGraphBatchActionResponse>({ requestedCount: 1, succeeded: 1, failed: 0, limitReached: false })),
     batchRejectSkillGraphNodes: jasmine.createSpy('batchRejectSkillGraphNodes').and.returnValue(
       of<SkillGraphBatchActionResponse>({ requestedCount: 1, succeeded: 1, failed: 0, limitReached: false })),
+    getSkillGraphContentCoverage: jasmine.createSpy('getSkillGraphContentCoverage').and.returnValue(
+      of({ totalApprovedNodes: 0, nodesWithContent: 0, nodesWithoutContentCount: 0, nodesWithoutContent: [] })),
+    getSkillGraphNodeIssuesSummary: jasmine.createSpy('getSkillGraphNodeIssuesSummary').and.returnValue(
+      of({ totalItems: 0, itemsWithIssues: 0 })),
     ...overrides,
   };
 }

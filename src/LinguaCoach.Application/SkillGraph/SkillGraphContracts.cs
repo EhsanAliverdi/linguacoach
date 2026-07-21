@@ -1,3 +1,5 @@
+using LinguaCoach.Application.AdminRepair;
+
 namespace LinguaCoach.Application.SkillGraph;
 
 /// <summary>Sprint 1 — deterministic (no AI) validation of the skill graph. Mirrors
@@ -73,7 +75,10 @@ public sealed record SkillGraphNodeDraftProposal(
     string? Subskill,
     int DifficultyBand,
     string? DescriptionForAi,
-    IReadOnlyList<string> PrerequisiteTitles);
+    IReadOnlyList<string> PrerequisiteTitles,
+    // Sprint 14.1 — validated against CurriculumContextTagConstants.All before ever being trusted,
+    // same policy as Subskill above.
+    IReadOnlyList<string> ContextTags);
 
 /// <summary>Sprint 2 — AI-proposes which approved <c>SkillGraphNode</c>s an existing
 /// <c>Module</c> covers. Advisory only: every proposed node key is validated against the real
@@ -109,3 +114,30 @@ public sealed record ModuleSkillGraphTaggingResult(
     string? ErrorMessage);
 
 public sealed record ModuleSkillGraphNodeMatch(Guid NodeId, double Confidence);
+
+// ── Sprint 14.1 — "diagnose then AI-repair" for SkillGraphNode, mirroring the same
+// IModuleRepairService/ILessonRepairService/IExerciseRepairService/IResourceBankRepairService
+// shape (see AdminRepairContracts). Diagnoses missing
+// ContextTagsJson/FocusTagsJson and AI-fills them from CurriculumContextTagConstants.All — the
+// same validated vocabulary Module/Sprint-3-goal-vector routing already use, so backfilled tags
+// actually match real content-selection logic. ──
+
+public sealed record SkillGraphNodeRepairResult(
+    SkillGraphNodeDto Item,
+    IReadOnlyList<DiagnosticIssue> IssuesFixed,
+    IReadOnlyList<DiagnosticIssue> IssuesRemaining,
+    string? ProviderName,
+    string? ModelName);
+
+public sealed record SkillGraphNodeDto(
+    Guid Id, string Key, string Title, string CefrLevel, string Skill, string? Subskill,
+    IReadOnlyList<string> ContextTags, IReadOnlyList<string> FocusTags);
+
+public interface ISkillGraphNodeRepairService
+{
+    Task<IReadOnlyList<DiagnosticIssue>> DiagnoseAsync(Guid id, CancellationToken ct = default);
+    Task<SkillGraphNodeRepairResult> RepairAsync(Guid id, CancellationToken ct = default);
+    Task<IssuesSummary> GetIssuesSummaryAsync(CancellationToken ct = default);
+    Task<BulkRepairResult> RepairAllAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<RepairableItemSummary>> ListWithIssuesAsync(CancellationToken ct = default);
+}

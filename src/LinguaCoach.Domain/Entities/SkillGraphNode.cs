@@ -55,6 +55,19 @@ public sealed class SkillGraphNode : BaseEntity
 
     public DateTime UpdatedAtUtc { get; private set; }
 
+    /// <summary>Real-world context/motivation tags (e.g. "workplace", "travel") — must be values
+    /// from <see cref="CurriculumContextTagConstants.All"/>, the same validated vocabulary
+    /// <see cref="Module"/>'s ContextTagsJson/FocusTagsJson and the Sprint 3 goal-vector routing
+    /// already use, so a node's tags are guaranteed to actually match real content-selection
+    /// logic (see SkillGraphRoutingService.ContextOverlapScore) rather than an invented vocabulary
+    /// that can never match anything, the exact defect Sprint 14 found and removed on the Profile
+    /// page's old "Focus areas" chips.</summary>
+    public string ContextTagsJson { get; private set; } = "[]";
+
+    /// <summary>Finer-grained descriptors (e.g. "pronunciation", "exam_inspired") — same validated
+    /// vocabulary as <see cref="ContextTagsJson"/>.</summary>
+    public string FocusTagsJson { get; private set; } = "[]";
+
     private SkillGraphNode() { }
 
     public SkillGraphNode(
@@ -65,7 +78,9 @@ public sealed class SkillGraphNode : BaseEntity
         string skill,
         string? subskill = null,
         int difficultyBand = 1,
-        string? descriptionForAi = null)
+        string? descriptionForAi = null,
+        string? contextTagsJson = null,
+        string? focusTagsJson = null)
     {
         if (string.IsNullOrWhiteSpace(key))
             throw new ArgumentException("Key is required.", nameof(key));
@@ -90,8 +105,23 @@ public sealed class SkillGraphNode : BaseEntity
         Subskill = subskill?.Trim().ToLowerInvariant();
         DifficultyBand = difficultyBand;
         DescriptionForAi = descriptionForAi?.Trim();
+        ContextTagsJson = string.IsNullOrWhiteSpace(contextTagsJson) ? "[]" : contextTagsJson;
+        FocusTagsJson = string.IsNullOrWhiteSpace(focusTagsJson) ? "[]" : focusTagsJson;
         ReviewStatus = AdminReviewStatus.PendingReview;
         IsActive = true;
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
+    /// <summary>Sprint 14.1 — sets context/focus tags, e.g. AI-repair backfill on a node drafted
+    /// before tags existed. Deliberately NOT blocked by ReviewStatus (unlike core content fields —
+    /// see <see cref="Module.UpdateDraft"/>'s approved-block): almost every existing node is
+    /// already Approved from the Sprint 1 bulk-approval sweep, and tags are supplementary routing
+    /// metadata, not re-reviewable core content, so gating this on approval would make backfilling
+    /// tags onto the real existing dataset impossible.</summary>
+    public void UpdateTags(string? contextTagsJson, string? focusTagsJson)
+    {
+        ContextTagsJson = string.IsNullOrWhiteSpace(contextTagsJson) ? ContextTagsJson : contextTagsJson;
+        FocusTagsJson = string.IsNullOrWhiteSpace(focusTagsJson) ? FocusTagsJson : focusTagsJson;
         UpdatedAtUtc = DateTime.UtcNow;
     }
 

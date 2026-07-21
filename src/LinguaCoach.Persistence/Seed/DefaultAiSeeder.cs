@@ -4862,10 +4862,13 @@ CEFR level: {{cefrLevel}}
 Skill: {{skill}}
 Recognized subskills for this skill (use one of these exactly, or omit if none fits): {{subskills}}
 Node titles that already exist for this CEFR level and skill (avoid near-duplicates): {{existingTitles}}
+Recognized context/focus tags (use ONLY values from this exact list, or omit): {{contextTags}}
 
 Propose 2-5 discrete competency nodes for this exact CEFR level and skill. Each node should be narrow enough to be teachable in one focused lesson (e.g. "Present simple for daily routines" not "All present tenses"), not already covered by an existing title, and appropriate for the given CEFR level's difficulty.
 
 For nodes that have a natural prerequisite among your OTHER proposed nodes in this same response (e.g. a more complex node builds on a simpler one you're also proposing), list that prerequisite's exact title in "prerequisiteTitles". Do not invent a prerequisite title that isn't either one of your own other proposed nodes or one of the existing titles given above. Leave "prerequisiteTitles" as an empty array when there's no clear prerequisite within this small batch — most nodes will have none, since most curriculum-level prerequisite structure exists across CEFR levels, not within one batch.
+
+For "contextTags", pick 1-3 real-world contexts this competency is most useful for (e.g. a node about ordering food fits "day_to_day" or "travel"; a node about formal requests fits "workplace" or "job_interviews") from the recognized list above ONLY. Leave empty if nothing genuinely fits — do not force a tag.
 
 Return ONLY valid JSON (no markdown, no text outside the JSON object) matching this exact shape:
 
@@ -4877,6 +4880,7 @@ Return ONLY valid JSON (no markdown, no text outside the JSON object) matching t
       "subskill": "<one of the recognized subskills above, or null>",
       "difficultyBand": <integer 1-5, 1=easiest within this CEFR level>,
       "descriptionForAi": "<optional internal teaching-context note for an AI planner, or null>",
+      "contextTags": ["<0-3 values from the recognized context/focus tags list above>"],
       "prerequisiteTitles": ["<exact title of another node in this same response or in the existing titles, or omit entirely>"]
     }
   ]
@@ -4884,6 +4888,7 @@ Return ONLY valid JSON (no markdown, no text outside the JSON object) matching t
 
 Rules:
 - Only use a subskill from the recognized list given above, or null. Never invent a subskill name.
+- Only use contextTags values from the recognized list given above. Never invent a tag.
 - difficultyBand must be an integer between 1 and 5.
 - Do not include any text outside the JSON object. No markdown fences.
 """;
@@ -5032,10 +5037,13 @@ Rules:
             ResourceImportProposeColumnMappingKey, ResourceImportProposeColumnMappingContent,
             maxInputTokens: 1600, maxOutputTokens: 1200, ct);
 
-        // Adaptive Curriculum Sprint 1 — skill-graph node/edge drafting (advisory only)
+        // Adaptive Curriculum Sprint 1 — skill-graph node/edge drafting (advisory only).
+        // Sprint 14.1 — added contextTags to the prompt/response shape; budgets raised with real
+        // headroom (matching the Sprint 9/Sprint 14 token-budget-fix precedent — never just barely
+        // above the observed content size).
         await SeedOrUpgradePromptAsync(db, logger,
             SkillGraphProposeNodesKey, SkillGraphProposeNodesContent,
-            maxInputTokens: 1200, maxOutputTokens: 1600, ct);
+            maxInputTokens: 1800, maxOutputTokens: 2000, ct);
 
         // Adaptive Curriculum Sprint 2 — Module-to-skill-graph-node coverage tagging (advisory only)
         await SeedOrUpgradePromptAsync(db, logger,

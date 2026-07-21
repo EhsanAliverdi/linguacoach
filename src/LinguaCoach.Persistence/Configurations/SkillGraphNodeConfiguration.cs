@@ -30,6 +30,8 @@ internal sealed class SkillGraphNodeConfiguration : IEntityTypeConfiguration<Ski
         builder.Property(e => e.RejectionReason).HasColumnName("rejection_reason").HasMaxLength(1000);
         builder.Property(e => e.IsActive).HasColumnName("is_active").IsRequired();
         builder.Property(e => e.UpdatedAtUtc).HasColumnName("updated_at_utc").IsRequired();
+        builder.Property(e => e.ContextTagsJson).HasColumnName("context_tags_json").HasDefaultValue("[]").IsRequired();
+        builder.Property(e => e.FocusTagsJson).HasColumnName("focus_tags_json").HasDefaultValue("[]").IsRequired();
 
         builder.HasIndex(e => e.Key).IsUnique().HasDatabaseName("ix_skill_graph_nodes_key");
         builder.HasIndex(e => new { e.CefrLevel, e.Skill, e.IsActive }).HasDatabaseName("ix_skill_graph_nodes_cefr_skill_active");
