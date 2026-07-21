@@ -97,6 +97,9 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
             </div>
           </div>
         }
+        <div class="sp-adm-selection-row">
+          <ng-content select="[selectionBar]" />
+        </div>
         @if (columns.length === 0) {
           <div [class]="scrollClass" [style.--sp-admin-table-min-width]="minWidth" [class.sp-adm-fixed-layout]="fixedLayout" [class.sp-adm-fluid-layout]="layout === 'first-column-fluid'">
             <ng-content />
@@ -301,6 +304,11 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
       text-transform:uppercase; letter-spacing:.04em;
     }
     .sp-adm-toolbar-actions { display:flex; gap:8px; align-items:center; flex-shrink:0; flex-wrap:wrap; }
+
+    /* Selection/bulk-action row — sits directly under the toolbar row (filters + Bulk edit),
+       above the table. Empty (0 height) when the page projects nothing into [selectionBar]. */
+    .sp-adm-selection-row { padding:0 16px; }
+    .sp-adm-selection-row:empty { display:none; }
 
     .sp-adm-bulk-checkbox { width:15px; height:15px; cursor:pointer; accent-color:var(--sp-admin-primary,#5B4BE8); flex-shrink:0; }
 
