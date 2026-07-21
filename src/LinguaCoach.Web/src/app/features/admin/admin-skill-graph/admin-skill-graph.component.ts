@@ -186,10 +186,32 @@ export class AdminSkillGraphComponent implements OnInit {
 
   coveragePage = signal(1);
   readonly coveragePageSize = 20;
-  coverageTotalPages = computed(() => Math.max(1, Math.ceil(this.coverageNodes().length / this.coveragePageSize)));
+
+  // Sprint 14.7 — filtering as a table feature (sp-admin-table's [filters]/(filterChange)).
+  // All nodes are already loaded client-side, so filtering narrows coverageNodes() in memory
+  // rather than round-tripping to the API.
+  coverageFilterCefrLevel = signal('');
+  coverageFilterSkill = signal('');
+  contentCoverageFilters = computed<SpAdminTableFilter[]>(() => [
+    { key: 'cefrLevel', label: 'CEFR level', options: this.cefrLevelOptions(), value: this.coverageFilterCefrLevel(), placeholder: 'All' },
+    { key: 'skill', label: 'Skill', options: this.skillOptions(), value: this.coverageFilterSkill(), placeholder: 'All' },
+  ]);
+  onContentCoverageFilterChange(event: { key: string; value: string }): void {
+    if (event.key === 'cefrLevel') this.coverageFilterCefrLevel.set(event.value);
+    else if (event.key === 'skill') this.coverageFilterSkill.set(event.value);
+    this.coveragePage.set(1);
+  }
+  filteredCoverageNodes = computed(() => {
+    const cefr = this.coverageFilterCefrLevel();
+    const skill = this.coverageFilterSkill();
+    return this.coverageNodes().filter(n =>
+      (!cefr || n.cefrLevel === cefr) && (!skill || n.skill === skill));
+  });
+
+  coverageTotalPages = computed(() => Math.max(1, Math.ceil(this.filteredCoverageNodes().length / this.coveragePageSize)));
   pagedCoverageNodes = computed(() => {
     const start = (this.coveragePage() - 1) * this.coveragePageSize;
-    return this.coverageNodes().slice(start, start + this.coveragePageSize);
+    return this.filteredCoverageNodes().slice(start, start + this.coveragePageSize);
   });
   onCoveragePageChange(page: number): void {
     this.coveragePage.set(page);

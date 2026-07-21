@@ -100,46 +100,55 @@
     } @else if (coverageNodes().length === 0) {
       <div style="padding: 16px 18px;"><sp-admin-empty-state message="No approved nodes yet." /></div>
     } @else {
-      <sp-admin-table [flush]="true" variant="data" density="compact" layout="first-column-fluid" minWidth="700px">
-        <table>
-          <thead>
-            <tr>
-              <th class="sp-admin-fluid-col">Title</th>
-              <th>CEFR</th>
-              <th>Skill</th>
-              <th>Tags</th>
-              <th>Linked Modules</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (n of pagedCoverageNodes(); track n.id) {
-              <tr (click)="openCoverageNode(n)" style="cursor:pointer">
-                <td class="sp-admin-fluid-col">{{ n.title }}</td>
-                <td><sp-admin-badge tone="neutral">{{ n.cefrLevel }}</sp-admin-badge></td>
-                <td>{{ n.skill }}</td>
-                <td>
-                  @if (n.contextTags.length || n.focusTags.length) {
-                    @for (tag of n.contextTags; track tag) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
-                  } @else {
-                    <span class="sp-admin-text-muted">—</span>
-                  }
-                </td>
-                <td>
-                  @if (n.linkedModuleCount > 0) {
-                    <sp-admin-badge tone="success" appearance="soft">{{ n.linkedModuleCount }}</sp-admin-badge>
-                  } @else {
-                    <sp-admin-badge tone="warning" appearance="soft">0</sp-admin-badge>
-                  }
-                </td>
+      <sp-admin-table
+        [flush]="true" variant="data" density="compact" layout="first-column-fluid" minWidth="700px"
+        [filters]="contentCoverageFilters()" (filterChange)="onContentCoverageFilterChange($event)"
+      >
+        @if (filteredCoverageNodes().length === 0) {
+          <p class="sp-admin-section-sub" style="padding:16px 18px;">No nodes match the current filters.</p>
+        } @else {
+          <table>
+            <thead>
+              <tr>
+                <th class="sp-admin-fluid-col">Title</th>
+                <th>CEFR</th>
+                <th>Skill</th>
+                <th>Tags</th>
+                <th>Linked Modules</th>
               </tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              @for (n of pagedCoverageNodes(); track n.id) {
+                <tr (click)="openCoverageNode(n)" style="cursor:pointer">
+                  <td class="sp-admin-fluid-col sp-admin-td-title">{{ n.title }}</td>
+                  <td><sp-admin-badge tone="neutral">{{ n.cefrLevel }}</sp-admin-badge></td>
+                  <td>{{ n.skill }}</td>
+                  <td>
+                    @if (n.contextTags.length || n.focusTags.length) {
+                      @for (tag of n.contextTags; track tag) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
+                    } @else {
+                      <span class="sp-admin-text-muted">—</span>
+                    }
+                  </td>
+                  <td>
+                    @if (n.linkedModuleCount > 0) {
+                      <sp-admin-badge tone="success" appearance="soft">{{ n.linkedModuleCount }}</sp-admin-badge>
+                    } @else {
+                      <sp-admin-badge tone="warning" appearance="soft">0</sp-admin-badge>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
       </sp-admin-table>
+      @if (filteredCoverageNodes().length > 0) {
       <sp-admin-table-footer>
-        <span>{{ coverageNodes().length }} node(s) — click a row for detail.</span>
+        <span>{{ filteredCoverageNodes().length }} node(s) — click a row for detail.</span>
         <sp-admin-pagination slot="actions" [page]="coveragePage()" [totalPages]="coverageTotalPages()" (pageChange)="onCoveragePageChange($event)" />
       </sp-admin-table-footer>
+      }
     }
   </sp-admin-card>
 
