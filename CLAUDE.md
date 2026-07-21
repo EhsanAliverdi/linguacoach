@@ -194,39 +194,35 @@ npm run e2e                        # playwright test
 npx playwright test e2e/admin-students-reset.spec.ts
 ```
 
-### Docker
+### Docker (backend) + ng serve (frontend)
 
-The `web` container serves a **baked production build** (multi-stage Dockerfile: `ng build` →
-copied into nginx) — it is the only supported way to run the frontend locally in this repo.
-**Never run `npm start`/`ng serve` locally against this repo**: it binds to the same port 4200 as
-the Docker `web` container and silently shadows it on IPv6, so `curl`/browser hits against
-`localhost:4200` land on the stray local process instead of Docker, making live verification lie.
-If you ever see this (e.g. `curl http://localhost:4200` doesn't show `@vite/client`-free static
-HTML), find and kill the stray `node.exe`/`ng serve` process before trusting any Docker-based check.
+Frontend development runs via `ng serve` (`npm start` from `src/LinguaCoach.Web`), **not** the
+Docker `web` container. The `web` container is a baked production build (multi-stage Dockerfile:
+`ng build` → nginx) and is slow to iterate against — only use it to sanity-check a real production
+build, not for day-to-day dev.
 
-Because `web` is a baked build, a plain `docker compose up -d` does **not** pick up new frontend
-code — it keeps serving whatever was last built. Use one of:
+**Do not start the `web` container during active frontend dev** — it binds host port 4200, the
+same port `ng serve` defaults to, and having both up is confusing/conflicting. Only run it when you
+specifically want to verify the baked production build.
 
 ```bash
-# Start API + PostgreSQL together (migrations run on startup)
-docker compose up --build
+# Start backend only (API + PostgreSQL + MinIO; migrations run on API startup)
+docker compose up --build db minio api
 
-# One-off rebuild of just the web (and/or api) image + redeploy after a code change
-docker compose build --no-cache api web
-docker compose up -d api web
+# Rebuild just the API after a backend code change
+docker compose build --no-cache api
+docker compose up -d api
 
-# Active development: auto-rebuild + restart the web container on every source change.
-# `--watch` cannot combine with `-d` — start detached first, then watch in its own terminal:
-docker compose up -d
-docker compose watch
+# Frontend dev server (separate terminal)
+cd src/LinguaCoach.Web
+npm start                          # ng serve on http://localhost:4200, proxies /api -> http://localhost:8080 (proxy.conf.json)
 
-# Teardown including volumes
+# Full teardown including volumes
 docker compose down -v
 ```
 
-Every code-change verification cycle in this repo (see the mandatory per-step workflow) must end
-with an actual rebuild+redeploy of any container whose image changed — never assume `docker compose
-up -d` alone reflects the latest code.
+If you ever need to check the actual production build, run the `web` service explicitly
+(`docker compose up -d --build web`) and stop `ng serve` first to avoid the port-4200 clash.
 
 ---
 
