@@ -258,12 +258,21 @@
     }
     </div>
     @if (!nodesLoading() && !nodesError() && nodes().length > 0) {
-      <sp-admin-table [flush]="true" variant="data" density="compact" layout="first-column-fluid" minWidth="800px">
+      <sp-admin-table
+        [flush]="true" variant="data" density="compact" layout="first-column-fluid" minWidth="800px"
+        [bulkEditable]="true" [bulkEditMode]="nodesBulkEditMode()" (bulkEditModeChange)="onNodesBulkEditModeChange($event)"
+      >
         <table>
           <thead>
             <tr>
-              <th></th>
-              <th>Title</th>
+              <th>
+                <span class="sp-admin-flex-row" style="gap:6px;">
+                  @if (nodesBulkEditMode()) {
+                    <sp-admin-checkbox [ngModel]="allNodesOnPageSelected()" [ngModelOptions]="{standalone: true}" (checkedChange)="toggleSelectAllNodesOnPage($event)" />
+                  }
+                  Title
+                </span>
+              </th>
               <th>CEFR</th>
               <th>Skill</th>
               <th>Subskill</th>
@@ -275,10 +284,14 @@
           <tbody>
             @for (node of nodes(); track node.id) {
               <tr>
-                <td>
-                  <sp-admin-checkbox [ngModel]="isSelected(node.id)" [ngModelOptions]="{standalone: true}" (checkedChange)="toggleSelected(node.id, $event)" />
+                <td class="sp-admin-td-title">
+                  <span class="sp-admin-flex-row" style="gap:6px;">
+                    @if (nodesBulkEditMode()) {
+                      <sp-admin-checkbox [ngModel]="isSelected(node.id)" [ngModelOptions]="{standalone: true}" (checkedChange)="toggleSelected(node.id, $event)" />
+                    }
+                    {{ node.title }}
+                  </span>
                 </td>
-                <td>{{ node.title }}</td>
                 <td>{{ node.cefrLevel }}</td>
                 <td>{{ node.skill }}</td>
                 <td>{{ node.subskill || '—' }}</td>

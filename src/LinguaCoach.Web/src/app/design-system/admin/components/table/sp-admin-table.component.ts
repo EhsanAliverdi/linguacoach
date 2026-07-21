@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { SpAdminEmptyStateComponent } from '../empty-state/sp-admin-empty-state.component';
 import { SpAdminErrorStateComponent } from '../error-state/sp-admin-error-state.component';
 import { SpAdminLoadingStateComponent } from '../loading-state/sp-admin-loading-state.component';
+import { SpAdminButtonComponent } from '../button/sp-admin-button.component';
 
 export interface SpAdminTableColumn {
   key: string;
@@ -11,6 +12,10 @@ export interface SpAdminTableColumn {
   sortable?: boolean;
   width?: string;
   align?: 'left' | 'center' | 'right';
+  /** Marks this as the table's title column — bold by default (data-driven [columns]/[rows] mode only). */
+  titleColumn?: boolean;
+  /** Opts a titleColumn out of the default bold styling. */
+  nobold?: boolean;
 }
 
 /** Column definition for projection-mode tables — drives colgroup and table-layout:fixed. */
@@ -39,86 +44,108 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
 @Component({
   selector: 'sp-admin-table',
   standalone: true,
-  imports: [CommonModule, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminLoadingStateComponent],
+  imports: [CommonModule, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminLoadingStateComponent, SpAdminButtonComponent],
   template: `
     <div [class]="outerClasses">
       @if (loading) {
         <sp-admin-loading-state message="Loading records" />
       } @else if (error) {
         <sp-admin-error-state [title]="errorTitle" [message]="error" />
-      } @else if (columns.length === 0) {
-        <div [class]="scrollClass" [style.--sp-admin-table-min-width]="minWidth" [class.sp-adm-fixed-layout]="fixedLayout" [class.sp-adm-fluid-layout]="layout === 'first-column-fluid'">
-          <ng-content />
-        </div>
-      } @else if (!rows.length) {
-        <sp-admin-empty-state [message]="emptyMessage" />
       } @else {
-        <div [class]="scrollClass" [style.--sp-admin-table-min-width]="minWidth">
-          <table class="sp-adm-table w-full border-collapse" [style.min-width]="minWidth || null" [class.sp-adm-table-bordered]="variant === 'bordered'">
-            @if (showHeader) {
-              <thead [class]="theadClass" [class.sp-adm-thead-sticky]="stickyHeader">
-                <tr [class]="theadRowClass">
-                  @if (selectable) {
-                    <th scope="col" class="sp-adm-th sp-adm-th-check" style="width:40px">
-                      <input type="checkbox" [checked]="allSelected" (change)="onSelectAll($event)" aria-label="Select all" />
-                    </th>
-                  }
-                  @for (column of columns; track column.key) {
-                    <th
-                      scope="col"
-                      [class]="thClass(column)"
-                      [style.width]="column.width || null"
-                      [attr.aria-sort]="sortAriaLabel(column)"
-                      (click)="column.sortable && onSortClick(column.key)"
-                      (keydown.enter)="column.sortable && onSortClick(column.key)"
-                      [attr.tabindex]="column.sortable ? 0 : null"
-                      [attr.role]="column.sortable ? 'button' : null"
-                    >
-                      <span class="inline-flex items-center gap-1 select-none">
-                        {{ column.label }}
-                        @if (column.sortable) {
-                          <span class="sp-adm-sort-icon" aria-hidden="true">{{ sortIcon(column.key) }}</span>
+        @if (bulkEditable) {
+          <div class="sp-adm-bulk-toolbar">
+            <sp-admin-button
+              size="sm"
+              [variant]="bulkEditMode ? 'primary' : 'neutral'"
+              [appearance]="bulkEditMode ? 'solid' : 'outline'"
+              (clicked)="toggleBulkEdit()"
+            >
+              {{ bulkEditMode ? 'Done' : 'Bulk edit' }}
+            </sp-admin-button>
+          </div>
+        }
+        @if (columns.length === 0) {
+          <div [class]="scrollClass" [style.--sp-admin-table-min-width]="minWidth" [class.sp-adm-fixed-layout]="fixedLayout" [class.sp-adm-fluid-layout]="layout === 'first-column-fluid'">
+            <ng-content />
+          </div>
+        } @else if (!rows.length) {
+          <sp-admin-empty-state [message]="emptyMessage" />
+        } @else {
+          <div [class]="scrollClass" [style.--sp-admin-table-min-width]="minWidth">
+            <table class="sp-adm-table w-full border-collapse" [style.min-width]="minWidth || null" [class.sp-adm-table-bordered]="variant === 'bordered'">
+              @if (showHeader) {
+                <thead [class]="theadClass" [class.sp-adm-thead-sticky]="stickyHeader">
+                  <tr [class]="theadRowClass">
+                    @if (selectable) {
+                      <th scope="col" class="sp-adm-th sp-adm-th-check" style="width:40px">
+                        <input type="checkbox" [checked]="allSelected" (change)="onSelectAll($event)" aria-label="Select all" />
+                      </th>
+                    }
+                    @for (column of columns; track column.key) {
+                      <th
+                        scope="col"
+                        [class]="thClass(column)"
+                        [style.width]="column.width || null"
+                        [attr.aria-sort]="sortAriaLabel(column)"
+                        (click)="column.sortable && onSortClick(column.key)"
+                        (keydown.enter)="column.sortable && onSortClick(column.key)"
+                        [attr.tabindex]="column.sortable ? 0 : null"
+                        [attr.role]="column.sortable ? 'button' : null"
+                      >
+                        <span class="inline-flex items-center gap-1 select-none">
+                          @if (bulkEditMode && column.titleColumn) {
+                            <input type="checkbox" class="sp-adm-bulk-checkbox" [checked]="allSelected" (change)="onSelectAll($event)" (click)="$event.stopPropagation()" aria-label="Select all" />
+                          }
+                          {{ column.label }}
+                          @if (column.sortable) {
+                            <span class="sp-adm-sort-icon" aria-hidden="true">{{ sortIcon(column.key) }}</span>
+                          }
+                        </span>
+                      </th>
+                    }
+                    @if (hasActions) {
+                      <th scope="col" [class]="thClass(null)">Actions</th>
+                    }
+                  </tr>
+                </thead>
+              }
+              <tbody>
+                @for (row of rows; track $index) {
+                  <tr [class]="trClass($index)">
+                    @if (selectable) {
+                      <td class="sp-adm-td sp-adm-td-check">
+                        <input type="checkbox" [checked]="isSelected($index)" (change)="onSelectRow($index, $event)" [attr.aria-label]="'Select row ' + ($index + 1)" />
+                      </td>
+                    }
+                    @for (column of columns; track column.key) {
+                    <td
+                        [class]="tdClass(column)"
+                        [style.text-align]="column.align || 'left'"
+                        [style.width]="column.width || null"
+                      >
+                      <span class="inline-flex items-center gap-2">
+                        @if (bulkEditMode && column.titleColumn) {
+                          <input type="checkbox" class="sp-adm-bulk-checkbox" [checked]="isSelected($index)" (change)="onSelectRow($index, $event)" [attr.aria-label]="'Select row ' + ($index + 1)" />
+                        }
+                        @if (cellTemplate) {
+                          <ng-container *ngTemplateOutlet="cellTemplate; context: { $implicit: row, col: column }" />
+                        } @else {
+                          {{ row[column.key] }}
                         }
                       </span>
-                    </th>
-                  }
-                  @if (hasActions) {
-                    <th scope="col" [class]="thClass(null)">Actions</th>
-                  }
-                </tr>
-              </thead>
-            }
-            <tbody>
-              @for (row of rows; track $index) {
-                <tr [class]="trClass($index)">
-                  @if (selectable) {
-                    <td class="sp-adm-td sp-adm-td-check">
-                      <input type="checkbox" [checked]="isSelected($index)" (change)="onSelectRow($index, $event)" [attr.aria-label]="'Select row ' + ($index + 1)" />
                     </td>
-                  }
-                  @for (column of columns; track column.key) {
-                  <td
-                      [class]="tdClass(column)"
-                      [style.text-align]="column.align || 'left'"
-                      [style.width]="column.width || null"
-                    >
-                    @if (cellTemplate) {
-                      <ng-container *ngTemplateOutlet="cellTemplate; context: { $implicit: row, col: column }" />
-                    } @else {
-                      {{ row[column.key] }}
                     }
-                  </td>
-                  }
-                  @if (hasActions) {
-                    <td [class]="tdClass(null)">
-                      <ng-content select="[rowActions]" />
-                    </td>
-                  }
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+                    @if (hasActions) {
+                      <td [class]="tdClass(null)">
+                        <ng-content select="[rowActions]" />
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
       }
     </div>
   `,
@@ -226,6 +253,14 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
     .sp-adm-thead-basic  { }
     .sp-adm-thead-data   { }
     .sp-adm-thead-sticky { position:sticky; top:0; z-index:2; }
+
+    /* Bulk-edit toggle toolbar — sits above the table (or projected content) when bulkEditable is set */
+    .sp-adm-bulk-toolbar { display:flex; justify-content:flex-end; padding:12px 16px; }
+    .sp-adm-bulk-checkbox { width:15px; height:15px; cursor:pointer; accent-color:var(--sp-admin-primary,#5B4BE8); flex-shrink:0; }
+
+    /* Title column — bold by default (data-driven mode via column.titleColumn; projection-mode
+       pages apply this class directly to their own <td>). Opt out with column.nobold. */
+    :host ::ng-deep .sp-admin-td-title { font-weight:700; color:var(--sp-admin-text,#211B36); }
 
     .sp-adm-thead-row-basic  { border-bottom:1px solid var(--sp-admin-border-subtle,#F4F2FC); }
     .sp-adm-thead-row-data   { border-bottom:2px solid var(--sp-admin-border,#ECE9F5); }
@@ -342,10 +377,28 @@ export class SpAdminTableComponent {
   @Input() layout: SpAdminTableLayout = 'auto';
   /** Column definitions for projection-mode tables (width + optional align). */
   @Input() colDefs: SpAdminColDef[] = [];
+  /** Shows a "Bulk edit" toggle button above the table (data-driven or projected). */
+  @Input() bulkEditable = false;
+  /**
+   * Bulk-edit toggle state — two-way bindable. In data-driven [columns]/[rows] mode, a checkbox
+   * is automatically merged into the titleColumn's header/cells while this is true. Projection-mode
+   * pages should bind this and render their own checkbox next to their title cell to match.
+   */
+  @Input() bulkEditMode = false;
+  @Output() bulkEditModeChange = new EventEmitter<boolean>();
   @Output() sortChange = new EventEmitter<SpAdminSortChange>();
   @Output() selectionChange = new EventEmitter<number[]>();
 
   private selectedRows = new Set<number>();
+
+  toggleBulkEdit(): void {
+    this.bulkEditMode = !this.bulkEditMode;
+    this.bulkEditModeChange.emit(this.bulkEditMode);
+    if (!this.bulkEditMode) {
+      this.selectedRows.clear();
+      this.selectionChange.emit([]);
+    }
+  }
 
   get outerClasses(): string {
     if (this.flush) return 'sp-adm-table-flush';
@@ -385,6 +438,7 @@ export class SpAdminTableComponent {
   tdClass(column: SpAdminTableColumn | null): string {
     const cls = ['sp-adm-td', `sp-adm-td-${this.density}`];
     if (column?.muted) cls.push('sp-adm-table-muted');
+    if (column?.titleColumn && !column?.nobold) cls.push('sp-admin-td-title');
     if (this.variant === 'bordered') cls.push('sp-adm-td-bordered');
     return cls.join(' ');
   }

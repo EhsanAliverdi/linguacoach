@@ -227,6 +227,14 @@ export class AdminSkillGraphComponent implements OnInit {
   selectedIds = signal<Set<string>>(new Set());
   hasSelection = computed(() => this.selectedIds().size > 0);
 
+  // Sprint 14.5 — Bulk edit toggle (sp-admin-table's new bulkEditable pattern): checkbox lives
+  // merged into the Title cell instead of an always-visible leading column.
+  nodesBulkEditMode = signal(false);
+  onNodesBulkEditModeChange(enabled: boolean): void {
+    this.nodesBulkEditMode.set(enabled);
+    if (!enabled) this.clearSelection();
+  }
+
   batchPending = signal(false);
   batchStatus = signal('');
   batchError = signal('');
@@ -375,6 +383,16 @@ export class AdminSkillGraphComponent implements OnInit {
 
   isSelected(id: string): boolean {
     return this.selectedIds().has(id);
+  }
+
+  allNodesOnPageSelected = computed(() =>
+    this.nodes().length > 0 && this.nodes().every(n => this.selectedIds().has(n.id)));
+
+  toggleSelectAllNodesOnPage(checked: boolean): void {
+    const next = new Set(this.selectedIds());
+    if (checked) this.nodes().forEach(n => next.add(n.id));
+    else this.nodes().forEach(n => next.delete(n.id));
+    this.selectedIds.set(next);
   }
 
   clearSelection(): void {
