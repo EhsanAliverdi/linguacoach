@@ -8,9 +8,13 @@ import {
   SpAdminButtonComponent,
   SpAdminCardComponent,
   SpAdminCheckboxComponent,
+  SpAdminCoverageHeatmapComponent,
   SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
   SpAdminFormFieldComponent,
+  SpAdminHeatmapCell,
+  SpAdminHeatmapColumn,
+  SpAdminHeatmapRow,
   SpAdminHelpIconComponent,
   SpAdminLoadingStateComponent,
   SpAdminPageBodyComponent,
@@ -49,6 +53,7 @@ import { AdminBulkRepairService } from '../../../core/services/admin-bulk-repair
     SpAdminButtonComponent,
     SpAdminCardComponent,
     SpAdminCheckboxComponent,
+    SpAdminCoverageHeatmapComponent,
     SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
     SpAdminFormFieldComponent,
@@ -138,6 +143,31 @@ export class AdminSkillGraphComponent implements OnInit {
   coverageError = signal('');
   coverage = signal<SkillGraphCoverageEntry[]>([]);
   coverageGaps = computed(() => this.coverage().filter(c => c.hasGap));
+
+  // Sprint 14.4 — coverage heatmap (replaces the flat table). Row color per CEFR level, matching
+  // the standalone design reference; skills come from the taxonomy so column order is stable.
+  private readonly cefrColors: Record<string, string> = {
+    A1: '#13B07C', A2: '#10B5A4', B1: '#5B4BE8', B2: '#B45CF0', C1: '#FF7A59', C2: '#F0982C',
+  };
+  heatmapRows = computed<SpAdminHeatmapRow[]>(() =>
+    this.cefrLevelOptions().map(o => ({ key: o.value, label: o.value, color: this.cefrColors[o.value] })));
+  heatmapColumns = computed<SpAdminHeatmapColumn[]>(() =>
+    this.skillOptions().map(o => ({ key: o.value, label: o.value })));
+  heatmapCells = computed<SpAdminHeatmapCell[]>(() =>
+    this.coverage().map(e => ({
+      rowKey: e.cefrLevel,
+      columnKey: e.skill,
+      value: e.approvedCount,
+      secondaryValue: e.pendingCount || undefined,
+      clickable: e.hasGap,
+    })));
+  totalApprovedCoverage = computed(() => this.coverage().reduce((s, e) => s + e.approvedCount, 0));
+  totalPendingCoverage = computed(() => this.coverage().reduce((s, e) => s + e.pendingCount, 0));
+
+  onHeatmapCellClick(cell: SpAdminHeatmapCell): void {
+    const entry = this.coverage().find(e => e.cefrLevel === cell.rowKey && e.skill === cell.columnKey);
+    if (entry) this.draftForGap(entry);
+  }
 
   // ── Draft trigger ────────────────────────────────────────────────────────
   draftCefrLevel = '';

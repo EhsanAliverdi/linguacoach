@@ -17,7 +17,8 @@
   }
 
   <!-- Coverage matrix -->
-  <sp-admin-card title="Coverage — approved nodes per CEFR level x skill">
+  <sp-admin-card title="Node Coverages">
+    <sp-admin-help-icon slot="actions" key="admin.skillGraph.nodeCoverage" title="Node Coverage" />
     @if (coverageLoading()) {
       <sp-admin-loading-state message="Loading coverage" />
     } @else if (coverageError()) {
@@ -28,36 +29,20 @@
           {{ coverageGaps().length }} CEFR level x skill combination(s) have zero approved nodes.
         </sp-admin-alert>
       }
-      <sp-admin-table variant="data" density="compact" layout="first-column-fluid" minWidth="600px">
-        <table>
-          <thead>
-            <tr>
-              <th>CEFR level</th>
-              <th>Skill</th>
-              <th>Approved</th>
-              <th>Pending</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (entry of coverage(); track entry.cefrLevel + entry.skill) {
-              <tr>
-                <td>{{ entry.cefrLevel }}</td>
-                <td>{{ entry.skill }}</td>
-                <td>{{ entry.approvedCount }}</td>
-                <td>{{ entry.pendingCount }}</td>
-                <td>
-                  @if (entry.hasGap) {
-                    <sp-admin-button size="xs" appearance="outline" variant="primary" (clicked)="draftForGap(entry)">
-                      Draft
-                    </sp-admin-button>
-                  }
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </sp-admin-table>
+      <div class="sp-admin-flex-row" style="margin-bottom:14px; flex-wrap:wrap;">
+        <sp-admin-badge tone="success">{{ totalApprovedCoverage() }} approved</sp-admin-badge>
+        <sp-admin-badge tone="warning">{{ totalPendingCoverage() }} pending</sp-admin-badge>
+        <span class="sp-admin-text-muted" style="font-size:12.5px;">across {{ heatmapRows().length }} levels and {{ heatmapColumns().length }} skills</span>
+      </div>
+      <sp-admin-coverage-heatmap
+        [rows]="heatmapRows()"
+        [columns]="heatmapColumns()"
+        [cells]="heatmapCells()"
+        valueLabel="approved"
+        secondaryLabel="pending"
+        emptyMessage="No CEFR levels or skills in the taxonomy yet."
+        (cellClick)="onHeatmapCellClick($event)"
+      />
     }
   </sp-admin-card>
 
@@ -93,10 +78,10 @@
       countLabel="/ {{ totalApprovedNodes() }} covered"
       [countTone]="nodesWithContent() === totalApprovedNodes() && totalApprovedNodes() > 0 ? 'success' : 'warning'">
       <div slot="actions" style="display:inline-flex;">
-        <sp-admin-button variant="primary" size="sm" groupPosition="start" [disabled]="retagPending()" (clicked)="retagModules()">
-          {{ retagPending() ? 'Sweeping…' : 'Sweep next batch of untagged Modules' }}
+        <sp-admin-button variant="neutral" appearance="outline" size="sm" groupPosition="start" [disabled]="retagPending()" (clicked)="retagModules()">
+          {{ retagPending() ? 'Sweeping…' : 'Sweep untagged Module' }}
         </sp-admin-button>
-        <sp-admin-help-icon attached variant="primary" size="sm" key="admin.skillGraph.sweepUntaggedModules" title="Sweep untagged Modules" />
+        <sp-admin-help-icon attached variant="neutral" appearance="outline" size="sm" key="admin.skillGraph.sweepUntaggedModules" title="Sweep untagged Modules" />
       </div>
     </sp-admin-section-header>
     <div style="padding: 16px 18px;">

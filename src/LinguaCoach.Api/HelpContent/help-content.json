@@ -1,3 +1,4 @@
 {
-  "admin.skillGraph.sweepUntaggedModules": "<p>Sweeping AI-matches up to 20 <strong>untagged</strong> approved Modules per run against approved nodes sharing their CEFR level/skill, and auto-applies every validated match.</p><p>This targets Modules that have never been tagged at all — it is a separate pass from the coverage list below, so a run reporting \"0 links applied\" can still be working correctly if none of this batch's Modules matched an approved node.</p>"
+  "admin.skillGraph.sweepUntaggedModules": "<p>Sweeping AI-matches up to 20 <strong>untagged</strong> approved Modules per run against approved nodes sharing their CEFR level/skill, and auto-applies every validated match.</p><p>This targets Modules that have never been tagged at all — it is a separate pass from the coverage list below, so a run reporting \"0 links applied\" can still be working correctly if none of this batch's Modules matched an approved node.</p>",
+  "admin.skillGraph.nodeCoverage": "<p>Darker cells have more approved nodes. The amber badge marks pending nodes awaiting review.</p><p>Click a gap cell (zero approved nodes) to draft nodes for that CEFR level and skill.</p>"
 }

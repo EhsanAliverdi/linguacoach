@@ -73,6 +73,7 @@ export * from './components/dashboard-list/sp-admin-dashboard-list.component';
 export * from './components/area-chart/sp-admin-area-chart.component';
 export * from './components/bar-chart/sp-admin-bar-chart.component';
 export * from './components/heatmap/sp-admin-heatmap.component';
+export * from './components/coverage-heatmap/sp-admin-coverage-heatmap.component';
 export * from './services/admin-drawer.service';
 export * from './services/admin-modal.service';
 export * from './services/admin-toast.service';
