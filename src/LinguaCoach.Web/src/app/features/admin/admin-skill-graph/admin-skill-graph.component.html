@@ -226,10 +226,10 @@
     } @else {
     <div style="padding: 12px 18px 0;">
     @if (hasSelection()) {
-      <div class="sp-admin-form-actions" style="flex-wrap:wrap; align-items:center; margin-bottom:12px;">
+      <div class="sp-admin-form-actions" style="margin-bottom:12px;">
         <span class="sp-admin-hint">{{ selectedIds().size }} selected</span>
         <input type="text" placeholder="Rejection reason" [(ngModel)]="rejectReason"
-          style="padding:6px 10px; border:1px solid #d1d5db; border-radius:6px; font-size:13px;" />
+          class="sp-admin-native-input" style="max-width:220px; width:auto; flex:1 1 220px;" />
         <sp-admin-button size="sm" variant="danger" appearance="outline" [disabled]="batchPending()" (clicked)="batchReject()">
           Reject selected
         </sp-admin-button>

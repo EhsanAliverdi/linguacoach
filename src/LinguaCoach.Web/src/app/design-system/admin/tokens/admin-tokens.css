@@ -1427,3 +1427,22 @@
   margin-top: 3px;
 }
 
+/* ── Form actions bar — selection/context row above a table (e.g. "N selected" + bulk buttons,
+   or a chosen-value + "Change" button). Used widely; was previously unstyled everywhere. ── */
+.sp-admin-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  background: var(--sp-admin-surface-subtle, #FBFAFE);
+  border: 1px solid var(--sp-admin-border, #ECE9F5);
+  border-radius: 10px;
+}
+.sp-admin-hint {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--sp-admin-text-secondary, #4B4462);
+  white-space: nowrap;
+}
+
