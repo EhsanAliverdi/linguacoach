@@ -63,7 +63,7 @@ export interface SpAdminHeatmapCell {
             }
             @for (row of rows; track row.key) {
               <div class="sp-hmap-rowhead" [style.color]="row.color || 'var(--sp-admin-primary,#5B4BE8)'">{{ row.label }}</div>
-              @for (col of columns; track col.key) {
+              @for (col of columns; track col.key; let ci = $index) {
                 @let cell = cellOf(row.key, col.key);
                 @let hovered = hoverKey === cellKey(row.key, col.key);
                 <div
@@ -81,7 +81,9 @@ export interface SpAdminHeatmapCell {
                     <span class="sp-hmap-secondary" [attr.title]="cell!.secondaryValue + ' ' + secondaryLabel">{{ cell!.secondaryValue }}</span>
                   }
                   @if (hovered) {
-                    <div class="sp-hmap-tooltip">
+                    <div class="sp-hmap-tooltip"
+                      [class.sp-hmap-tooltip--first]="ci === 0"
+                      [class.sp-hmap-tooltip--last]="ci === columns.length - 1">
                       {{ row.label }} · {{ col.label }}: {{ cell?.value ?? 0 }} {{ valueLabel }}{{ cell?.secondaryValue ? ', ' + cell!.secondaryValue + ' ' + secondaryLabel : '' }}
                     </div>
                   }
@@ -109,8 +111,13 @@ export interface SpAdminHeatmapCell {
       border: 1px solid var(--sp-admin-border, #ECE9F5);
     }
 
+    /* overflow-x:auto forces the browser to compute overflow-y as auto too (CSS overflow
+       spec), and hover's transform:scale()/box-shadow paint outside the grid's laid-out
+       box without growing it — so edge cells can bleed past this container and trigger
+       spurious scrollbars. The grid's own padding below reserves real layout space for
+       that bleed so it never actually exceeds this box. */
     .sp-hmap-scroll { overflow-x: auto; }
-    .sp-hmap-grid { display: grid; gap: 4px; min-width: 560px; }
+    .sp-hmap-grid { display: grid; gap: 4px; min-width: 560px; padding: 12px; }
 
     .sp-hmap-colhead {
       font-size: 10.5px; font-weight: 800; color: var(--sp-admin-text-muted, #8B85A0);
@@ -144,6 +151,10 @@ export interface SpAdminHeatmapCell {
       font-size: 11px; font-weight: 700; padding: 4px 8px; border-radius: 6px;
       white-space: nowrap; text-transform: capitalize; z-index: 5;
     }
+    /* Edge columns: anchor to the cell's outer edge instead of centering, so a tooltip wider
+       than the cell can't bleed past the grid's left/right boundary and trigger a scrollbar. */
+    .sp-hmap-tooltip--first { left: 0; transform: none; }
+    .sp-hmap-tooltip--last  { left: auto; right: 0; transform: none; }
   `],
 })
 export class SpAdminCoverageHeatmapComponent implements OnChanges {
