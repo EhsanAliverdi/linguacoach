@@ -24,6 +24,7 @@ import {
   SpAdminSelectComponent,
   SpAdminSlideOverComponent,
   SpAdminTableComponent,
+  SpAdminTableFilter,
   SpAdminTableFooterComponent,
 } from '../../../design-system/admin';
 import { AdminApiService } from '../../../core/services/admin.api.service';
@@ -215,9 +216,9 @@ export class AdminSkillGraphComponent implements OnInit {
   nodesTotalPages = signal(1);
   nodesTotalCount = signal(0);
 
-  filterCefrLevel = '';
-  filterSkill = '';
-  filterReviewStatus = '';
+  filterCefrLevel = signal('');
+  filterSkill = signal('');
+  filterReviewStatus = signal('');
   readonly reviewStatusOptions = [
     { value: 'PendingReview', label: 'Pending review' },
     { value: 'Approved', label: 'Approved' },
@@ -311,9 +312,9 @@ export class AdminSkillGraphComponent implements OnInit {
     this.nodesLoading.set(true);
     this.nodesError.set('');
     this.api.getSkillGraphNodes({
-      cefrLevel: this.filterCefrLevel || undefined,
-      skill: this.filterSkill || undefined,
-      reviewStatus: this.filterReviewStatus || undefined,
+      cefrLevel: this.filterCefrLevel() || undefined,
+      skill: this.filterSkill() || undefined,
+      reviewStatus: this.filterReviewStatus() || undefined,
       page: this.nodesPage(),
       pageSize: this.nodesPageSize,
     }).subscribe({
@@ -334,6 +335,21 @@ export class AdminSkillGraphComponent implements OnInit {
     this.nodesPage.set(1);
     this.selectedIds.set(new Set());
     this.loadNodes();
+  }
+
+  // Sprint 14.6 — filters are now a table feature (sp-admin-table's [filters]/(filterChange)),
+  // rendered in the same toolbar row as the Bulk edit toggle, instead of a hand-authored filter bar.
+  nodesFilters = computed<SpAdminTableFilter[]>(() => [
+    { key: 'cefrLevel', label: 'CEFR level', options: this.cefrLevelOptions(), value: this.filterCefrLevel(), placeholder: 'All' },
+    { key: 'skill', label: 'Skill', options: this.skillOptions(), value: this.filterSkill(), placeholder: 'All' },
+    { key: 'reviewStatus', label: 'Review status', options: this.reviewStatusOptions, value: this.filterReviewStatus(), placeholder: 'All' },
+  ]);
+
+  onNodesFilterChange(event: { key: string; value: string }): void {
+    if (event.key === 'cefrLevel') this.filterCefrLevel.set(event.value);
+    else if (event.key === 'skill') this.filterSkill.set(event.value);
+    else if (event.key === 'reviewStatus') this.filterReviewStatus.set(event.value);
+    this.onFilterChange();
   }
 
   onNodesPageChange(page: number): void {

@@ -1,9 +1,20 @@
 import { Component, ContentChild, Input, Output, EventEmitter, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { SpAdminEmptyStateComponent } from '../empty-state/sp-admin-empty-state.component';
 import { SpAdminErrorStateComponent } from '../error-state/sp-admin-error-state.component';
 import { SpAdminLoadingStateComponent } from '../loading-state/sp-admin-loading-state.component';
 import { SpAdminButtonComponent } from '../button/sp-admin-button.component';
+import { SpAdminSelectComponent, SpAdminSelectOption } from '../select/sp-admin-select.component';
+
+/** A single dropdown filter rendered in the table's toolbar row (left side, next to actions). */
+export interface SpAdminTableFilter {
+  key: string;
+  label: string;
+  options: SpAdminSelectOption[];
+  value: string;
+  placeholder?: string;
+}
 
 export interface SpAdminTableColumn {
   key: string;
@@ -44,7 +55,7 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
 @Component({
   selector: 'sp-admin-table',
   standalone: true,
-  imports: [CommonModule, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminLoadingStateComponent, SpAdminButtonComponent],
+  imports: [CommonModule, FormsModule, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminLoadingStateComponent, SpAdminButtonComponent, SpAdminSelectComponent],
   template: `
     <div [class]="outerClasses">
       @if (loading) {
@@ -52,16 +63,38 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
       } @else if (error) {
         <sp-admin-error-state [title]="errorTitle" [message]="error" />
       } @else {
-        @if (bulkEditable) {
-          <div class="sp-adm-bulk-toolbar">
-            <sp-admin-button
-              size="sm"
-              [variant]="bulkEditMode ? 'primary' : 'neutral'"
-              [appearance]="bulkEditMode ? 'solid' : 'outline'"
-              (clicked)="toggleBulkEdit()"
-            >
-              {{ bulkEditMode ? 'Done' : 'Bulk edit' }}
-            </sp-admin-button>
+        @if (filters.length || bulkEditable) {
+          <div class="sp-adm-toolbar-row">
+            @if (filters.length) {
+              <div class="sp-adm-toolbar-filters">
+                @for (filter of filters; track filter.key) {
+                  <div class="sp-adm-toolbar-filter">
+                    <label class="sp-adm-toolbar-filter-label">{{ filter.label }}</label>
+                    <sp-admin-select
+                      [options]="filter.options"
+                      [placeholder]="filter.placeholder || 'All'"
+                      size="sm"
+                      [ngModel]="filter.value"
+                      [ngModelOptions]="{standalone: true}"
+                      (ngModelChange)="onFilterValueChange(filter, $event)"
+                    />
+                  </div>
+                }
+              </div>
+            }
+            <div class="sp-adm-toolbar-actions">
+              <ng-content select="[tableActions]" />
+              @if (bulkEditable) {
+                <sp-admin-button
+                  size="sm"
+                  [variant]="bulkEditMode ? 'primary' : 'neutral'"
+                  [appearance]="bulkEditMode ? 'solid' : 'outline'"
+                  (clicked)="toggleBulkEdit()"
+                >
+                  {{ bulkEditMode ? 'Done' : 'Bulk edit' }}
+                </sp-admin-button>
+              }
+            </div>
           </div>
         }
         @if (columns.length === 0) {
@@ -254,8 +287,21 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
     .sp-adm-thead-data   { }
     .sp-adm-thead-sticky { position:sticky; top:0; z-index:2; }
 
-    /* Bulk-edit toggle toolbar — sits above the table (or projected content) when bulkEditable is set */
-    .sp-adm-bulk-toolbar { display:flex; justify-content:flex-end; padding:12px 16px; }
+    /* Toolbar row — filters (left) + tableActions slot + Bulk edit toggle (right), same row.
+       Sits above the table (or projected content) whenever filters or bulkEditable are set. */
+    .sp-adm-toolbar-row {
+      display:flex; align-items:flex-end; justify-content:space-between;
+      gap:12px; flex-wrap:wrap; padding:12px 16px;
+      border-bottom:1px solid var(--sp-admin-border-subtle,#F4F2FC);
+    }
+    .sp-adm-toolbar-filters { display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; }
+    .sp-adm-toolbar-filter { display:flex; flex-direction:column; gap:4px; min-width:140px; }
+    .sp-adm-toolbar-filter-label {
+      font-size:11px; font-weight:700; color:var(--sp-admin-text-muted,#8B85A0);
+      text-transform:uppercase; letter-spacing:.04em;
+    }
+    .sp-adm-toolbar-actions { display:flex; gap:8px; align-items:center; flex-shrink:0; flex-wrap:wrap; }
+
     .sp-adm-bulk-checkbox { width:15px; height:15px; cursor:pointer; accent-color:var(--sp-admin-primary,#5B4BE8); flex-shrink:0; }
 
     /* Title column — bold by default (data-driven mode via column.titleColumn; projection-mode
@@ -377,6 +423,9 @@ export class SpAdminTableComponent {
   @Input() layout: SpAdminTableLayout = 'auto';
   /** Column definitions for projection-mode tables (width + optional align). */
   @Input() colDefs: SpAdminColDef[] = [];
+  /** Dropdown filters rendered in the toolbar row, left side, next to the Bulk edit toggle/actions. */
+  @Input() filters: SpAdminTableFilter[] = [];
+  @Output() filterChange = new EventEmitter<{ key: string; value: string }>();
   /** Shows a "Bulk edit" toggle button above the table (data-driven or projected). */
   @Input() bulkEditable = false;
   /**
@@ -398,6 +447,11 @@ export class SpAdminTableComponent {
       this.selectedRows.clear();
       this.selectionChange.emit([]);
     }
+  }
+
+  onFilterValueChange(filter: SpAdminTableFilter, value: string): void {
+    filter.value = value;
+    this.filterChange.emit({ key: filter.key, value });
   }
 
   get outerClasses(): string {

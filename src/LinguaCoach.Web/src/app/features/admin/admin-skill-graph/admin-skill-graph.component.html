@@ -217,18 +217,6 @@
     </div>
     } @else {
     <div style="padding: 12px 18px 0;">
-    <div class="sp-admin-filter-bar" style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; margin-bottom:12px;">
-      <sp-admin-form-field label="CEFR level">
-        <sp-admin-select [options]="cefrLevelOptions()" [(ngModel)]="filterCefrLevel" placeholder="All" (ngModelChange)="onFilterChange()" />
-      </sp-admin-form-field>
-      <sp-admin-form-field label="Skill">
-        <sp-admin-select [options]="skillOptions()" [(ngModel)]="filterSkill" placeholder="All" (ngModelChange)="onFilterChange()" />
-      </sp-admin-form-field>
-      <sp-admin-form-field label="Review status">
-        <sp-admin-select [options]="reviewStatusOptions" [(ngModel)]="filterReviewStatus" placeholder="All" (ngModelChange)="onFilterChange()" />
-      </sp-admin-form-field>
-    </div>
-
     @if (hasSelection()) {
       <div class="sp-admin-form-actions" style="flex-wrap:wrap; align-items:center; margin-bottom:12px;">
         <span class="sp-admin-hint">{{ selectedIds().size }} selected</span>
@@ -248,20 +236,16 @@
     @if (batchError()) {
       <sp-admin-alert variant="error">{{ batchError() }}</sp-admin-alert>
     }
-
-    @if (nodesLoading()) {
-      <sp-admin-loading-state message="Loading nodes" />
-    } @else if (nodesError()) {
-      <sp-admin-error-state title="Nodes unavailable" [message]="nodesError()" />
-    } @else if (nodes().length === 0) {
-      <p class="sp-admin-section-sub">No nodes match the current filters. Draft some above.</p>
-    }
     </div>
-    @if (!nodesLoading() && !nodesError() && nodes().length > 0) {
-      <sp-admin-table
-        [flush]="true" variant="data" density="compact" layout="first-column-fluid" minWidth="800px"
-        [bulkEditable]="true" [bulkEditMode]="nodesBulkEditMode()" (bulkEditModeChange)="onNodesBulkEditModeChange($event)"
-      >
+    <sp-admin-table
+      [flush]="true" variant="data" density="compact" layout="first-column-fluid" minWidth="800px"
+      [loading]="nodesLoading()" [error]="nodesError()" errorTitle="Nodes unavailable"
+      [filters]="nodesFilters()" (filterChange)="onNodesFilterChange($event)"
+      [bulkEditable]="true" [bulkEditMode]="nodesBulkEditMode()" (bulkEditModeChange)="onNodesBulkEditModeChange($event)"
+    >
+      @if (nodes().length === 0) {
+        <p class="sp-admin-section-sub" style="padding:16px 18px;">No nodes match the current filters. Draft some above.</p>
+      } @else {
         <table>
           <thead>
             <tr>
@@ -313,7 +297,9 @@
             }
           </tbody>
         </table>
-      </sp-admin-table>
+      }
+    </sp-admin-table>
+    @if (!nodesLoading() && !nodesError() && nodes().length > 0) {
       <sp-admin-table-footer>
         <span>{{ nodesTotalCount() }} node(s).</span>
         <sp-admin-pagination slot="actions" [page]="nodesPage()" [totalPages]="nodesTotalPages()" (pageChange)="onNodesPageChange($event)" />
