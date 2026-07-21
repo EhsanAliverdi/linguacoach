@@ -47,8 +47,8 @@
   </sp-admin-card>
 
   <!-- Draft trigger -->
-  <sp-admin-card title="Draft nodes for one CEFR level x skill">
-    <p class="sp-admin-section-sub">Triggers one bounded AI call proposing 2-5 competency nodes. Every proposed CEFR level, skill, and subskill is validated against the real taxonomy — an AI hallucination is dropped, never applied.</p>
+  <sp-admin-card title="Draft nodes">
+    <sp-admin-help-icon slot="actions" key="admin.skillGraph.draftNodes" title="Draft nodes" />
     <div class="sp-admin-form-grid" style="display:flex; gap:12px; align-items:flex-end;">
       <sp-admin-form-field label="CEFR level">
         <sp-admin-select [options]="cefrLevelOptions()" [(ngModel)]="draftCefrLevel" placeholder="Select level" />
