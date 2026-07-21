@@ -147,7 +147,7 @@ public sealed class AdminSkillGraphEndpointTests : IClassFixture<ApiTestFactory>
     // ── Sprint 2: content coverage ──────────────────────────────────────────────────────────────
 
     [Fact]
-    public async Task GetContentCoverage_ApprovedNodeWithNoLinkedModule_AppearsInWithoutContentList()
+    public async Task GetContentCoverage_ApprovedNodeWithNoLinkedModule_ReportsZeroLinkedModules()
     {
         var node = await SeedNodeAsync($"grammar.coverage_{Guid.NewGuid():N}.a1");
         using (var scope = _factory.Services.CreateScope())
@@ -165,12 +165,12 @@ public sealed class AdminSkillGraphEndpointTests : IClassFixture<ApiTestFactory>
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
 
         var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
-        var withoutContent = body.GetProperty("nodesWithoutContent").EnumerateArray().ToList();
-        Assert.Contains(withoutContent, n => n.GetProperty("id").GetGuid() == node.Id);
+        var nodes = body.GetProperty("nodes").EnumerateArray().ToList();
+        Assert.Contains(nodes, n => n.GetProperty("id").GetGuid() == node.Id && n.GetProperty("linkedModuleCount").GetInt32() == 0);
     }
 
     [Fact]
-    public async Task GetContentCoverage_ApprovedNodeWithLinkedModule_DoesNotAppearInWithoutContentList()
+    public async Task GetContentCoverage_ApprovedNodeWithLinkedModule_ReportsTheRealLinkedModule()
     {
         var node = await SeedNodeAsync($"grammar.linked_{Guid.NewGuid():N}.a1");
         Guid moduleId;
@@ -195,8 +195,10 @@ public sealed class AdminSkillGraphEndpointTests : IClassFixture<ApiTestFactory>
 
         var resp = await client.GetAsync("/api/admin/skill-graph/content-coverage");
         var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
-        var withoutContent = body.GetProperty("nodesWithoutContent").EnumerateArray().ToList();
-        Assert.DoesNotContain(withoutContent, n => n.GetProperty("id").GetGuid() == node.Id);
+        var nodes = body.GetProperty("nodes").EnumerateArray().ToList();
+        var thisNode = nodes.Single(n => n.GetProperty("id").GetGuid() == node.Id);
+        Assert.Equal(1, thisNode.GetProperty("linkedModuleCount").GetInt32());
+        Assert.Equal(moduleId, thisNode.GetProperty("linkedModules")[0].GetProperty("id").GetGuid());
     }
 
     [Fact]

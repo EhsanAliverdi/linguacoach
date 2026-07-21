@@ -1627,21 +1627,32 @@ export interface SkillGraphRetagModuleResult {
 export interface SkillGraphRetagResponse {
   sweptCount: number;
   results: SkillGraphRetagModuleResult[];
+  remainingUntaggedModuleCount: number;
 }
 
-export interface SkillGraphNodeWithoutContent {
+export interface SkillGraphLinkedModuleRef {
+  id: string;
+  title: string;
+}
+
+// Sprint 14.2 — every approved node (not just gap ones), with its real linked-Module list.
+export interface SkillGraphCoverageNode {
   id: string;
   key: string;
   title: string;
   cefrLevel: string;
   skill: string;
+  contextTags: string[];
+  focusTags: string[];
+  linkedModuleCount: number;
+  linkedModules: SkillGraphLinkedModuleRef[];
 }
 
 export interface SkillGraphContentCoverageResponse {
   totalApprovedNodes: number;
   nodesWithContent: number;
   nodesWithoutContentCount: number;
-  nodesWithoutContent: SkillGraphNodeWithoutContent[];
+  nodes: SkillGraphCoverageNode[];
 }
 
 // Sprint 13 — bulk nodes+edges payload for the Cytoscape/Dagre graph view.

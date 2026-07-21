@@ -400,9 +400,9 @@ describe('AdminAiConfigComponent', () => {
     await setup();
     component.openCreateOverride();
     const f = component.overrideForm()!;
-    component['overrideForm'].set({ ...f, providerName: '', modelName: '', inputPricePer1KTokens: 0.002, outputPricePer1KTokens: 0.008 });
+    component['overrideForm'].set({ ...f, providerName: 'openai', modelName: '', inputPricePer1KTokens: 0.002, outputPricePer1KTokens: 0.008 });
     component.saveOverride();
-    expect(component.overrideForm()!.error).toContain('Select a model');
+    expect(component.overrideForm()!.error).toContain('Enter a model name');
   });
 
   it('saveOverride with negative price sets error', async () => {

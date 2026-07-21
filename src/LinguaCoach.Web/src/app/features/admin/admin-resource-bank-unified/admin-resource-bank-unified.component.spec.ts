@@ -4,6 +4,7 @@ import { of } from 'rxjs';
 import { AdminResourceBankUnifiedComponent } from './admin-resource-bank-unified.component';
 import {
   AdminUnifiedResourceBankService,
+  AdminResourceCandidateService,
 } from '../../../core/services/admin-resource-import.service';
 import { AdminLessonService } from '../../../core/services/admin-lesson.service';
 import { AdminExerciseService } from '../../../core/services/admin-exercise.service';
@@ -15,10 +16,13 @@ const EMPTY_RESULT: UnifiedResourceBankListResult = { items: [], totalCount: 0 }
 describe('AdminResourceBankUnifiedComponent', () => {
   let fixture: ComponentFixture<AdminResourceBankUnifiedComponent>;
   let component: AdminResourceBankUnifiedComponent;
-  let bankSvc: { list: jasmine.Spy };
+  let bankSvc: { list: jasmine.Spy; issuesSummary: jasmine.Spy };
 
   async function setup(typeParam: string | null = null) {
-    bankSvc = { list: jasmine.createSpy('list').and.returnValue(of(EMPTY_RESULT)) };
+    bankSvc = {
+      list: jasmine.createSpy('list').and.returnValue(of(EMPTY_RESULT)),
+      issuesSummary: jasmine.createSpy('issuesSummary').and.returnValue(of({ totalItems: 0, itemsWithIssues: 0 })),
+    };
     await TestBed.configureTestingModule({
       imports: [AdminResourceBankUnifiedComponent],
       providers: [
@@ -27,6 +31,10 @@ describe('AdminResourceBankUnifiedComponent', () => {
         { provide: AdminLessonService, useValue: {} },
         { provide: AdminExerciseService, useValue: {} },
         { provide: AdminModuleService, useValue: {} },
+        { provide: AdminResourceCandidateService, useValue: { summary: () => of({
+          totalCount: 0, publishedCount: 0, passedCount: 0, needsReviewCount: 0, blockedCount: 0,
+          publishableCount: 0, rejectedCount: 0, skippedCount: 0, pendingReviewCount: 0, stuckApprovedUnpublishableCount: 0,
+        }) } },
         {
           provide: ActivatedRoute,
           useValue: {
@@ -46,7 +54,7 @@ describe('AdminResourceBankUnifiedComponent', () => {
   it('pre-seeds the type filter from a valid ?type= query param', async () => {
     await setup('vocabulary');
     expect(component.typeFilter()).toBe('vocabulary');
-    expect(bankSvc.list).toHaveBeenCalledWith(1, 20, 'vocabulary', undefined, undefined, undefined, undefined, undefined, undefined, undefined);
+    expect(bankSvc.list).toHaveBeenCalledWith(1, 20, 'vocabulary', undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, false, false);
   });
 
   it('ignores an unrecognized ?type= query param and falls back to "all"', async () => {

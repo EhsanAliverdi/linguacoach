@@ -1,27 +1,32 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
   SpAdminButtonComponent,
   SpAdminCardComponent,
   SpAdminCheckboxComponent,
+  SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
   SpAdminFormFieldComponent,
   SpAdminLoadingStateComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminPaginationComponent,
+  SpAdminSectionHeaderComponent,
   SpAdminSelectComponent,
+  SpAdminSlideOverComponent,
   SpAdminTableComponent,
+  SpAdminTableFooterComponent,
 } from '../../../design-system/admin';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import {
   SkillGraphTaxonomy,
   SkillGraphNodeListItem,
   SkillGraphCoverageEntry,
-  SkillGraphNodeWithoutContent,
+  SkillGraphCoverageNode,
   SkillGraphNode,
   SkillGraphEdge,
 } from '../../../core/models/admin.models';
@@ -37,19 +42,24 @@ import { AdminBulkRepairService } from '../../../core/services/admin-bulk-repair
   imports: [
     CommonModule,
     FormsModule,
+    RouterLink,
     SpAdminAlertComponent,
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
     SpAdminCardComponent,
     SpAdminCheckboxComponent,
+    SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
     SpAdminFormFieldComponent,
     SpAdminLoadingStateComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
     SpAdminPaginationComponent,
+    SpAdminSectionHeaderComponent,
     SpAdminSelectComponent,
+    SpAdminSlideOverComponent,
     SpAdminTableComponent,
+    SpAdminTableFooterComponent,
     SpAdminGraphCardComponent,
     SpAdminSkillGraphVizComponent,
   ],
@@ -134,11 +144,31 @@ export class AdminSkillGraphComponent implements OnInit {
   draftStatus = signal('');
   draftError = signal('');
 
-  // ── Content coverage (Sprint 2) ──────────────────────────────────────────
+  // ── Content coverage (Sprint 2, expanded Sprint 14.2) ─────────────────────
   contentCoverageLoading = signal(true);
   contentCoverageError = signal('');
+  totalApprovedNodes = signal(0);
   nodesWithContent = signal(0);
-  nodesWithoutContent = signal<SkillGraphNodeWithoutContent[]>([]);
+  coverageNodes = signal<SkillGraphCoverageNode[]>([]);
+
+  coveragePage = signal(1);
+  readonly coveragePageSize = 20;
+  coverageTotalPages = computed(() => Math.max(1, Math.ceil(this.coverageNodes().length / this.coveragePageSize)));
+  pagedCoverageNodes = computed(() => {
+    const start = (this.coveragePage() - 1) * this.coveragePageSize;
+    return this.coverageNodes().slice(start, start + this.coveragePageSize);
+  });
+  onCoveragePageChange(page: number): void {
+    this.coveragePage.set(page);
+  }
+
+  selectedCoverageNode = signal<SkillGraphCoverageNode | null>(null);
+  openCoverageNode(node: SkillGraphCoverageNode): void {
+    this.selectedCoverageNode.set(node);
+  }
+  closeCoverageNode(): void {
+    this.selectedCoverageNode.set(null);
+  }
 
   retagPending = signal(false);
   retagStatus = signal('');
@@ -182,8 +212,10 @@ export class AdminSkillGraphComponent implements OnInit {
     this.contentCoverageError.set('');
     this.api.getSkillGraphContentCoverage().subscribe({
       next: r => {
+        this.totalApprovedNodes.set(r.totalApprovedNodes);
         this.nodesWithContent.set(r.nodesWithContent);
-        this.nodesWithoutContent.set(r.nodesWithoutContent);
+        this.coverageNodes.set(r.nodes);
+        this.coveragePage.set(1);
         this.contentCoverageLoading.set(false);
       },
       error: err => {
@@ -201,10 +233,11 @@ export class AdminSkillGraphComponent implements OnInit {
       next: r => {
         this.retagPending.set(false);
         const totalMatched = r.results.reduce((sum, m) => sum + m.matchedCount, 0);
+        const remaining = `${r.remainingUntaggedModuleCount} untagged Module(s) remain.`;
         this.retagStatus.set(
           r.sweptCount === 0
-            ? 'No untagged approved Modules found.'
-            : `Re-tagged ${r.sweptCount} module(s), ${totalMatched} node link(s) applied.`);
+            ? `No untagged approved Modules found. ${remaining}`
+            : `Swept ${r.sweptCount} Module(s), applied ${totalMatched} node link(s). ${remaining}`);
         this.loadContentCoverage();
       },
       error: err => {

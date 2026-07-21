@@ -89,51 +89,108 @@
     }
   </sp-admin-card>
 
-  <!-- Content coverage (Sprint 2) -->
-  <sp-admin-card title="Content coverage — approved nodes with real Module content">
-    <p class="sp-admin-section-sub">An approved node with no linked Module has no real content teaching it yet. Re-tagging AI-matches up to 20 untagged approved Modules per run against approved nodes for their own CEFR level/skill, and auto-applies every validated match — no per-link approval step.</p>
-    <div class="sp-admin-form-footer">
-      <sp-admin-button variant="primary" size="sm" [disabled]="retagPending()" (clicked)="retagModules()">
-        {{ retagPending() ? 'Re-tagging…' : 'Re-tag next batch of Modules' }}
+  <!-- Content coverage (Sprint 2, expanded Sprint 14.2) -->
+  <sp-admin-card padding="none" variant="bordered" [hasHeader]="true" [headerDivider]="true">
+    <sp-admin-section-header
+      slot="header"
+      title="Content coverage"
+      description="Every approved node and the real Modules linked to it. A node with zero linked Modules has no real content teaching it yet."
+      [count]="nodesWithContent()"
+      countLabel="/ {{ totalApprovedNodes() }} covered"
+      [countTone]="nodesWithContent() === totalApprovedNodes() && totalApprovedNodes() > 0 ? 'success' : 'warning'">
+      <sp-admin-button slot="actions" variant="primary" size="sm" [disabled]="retagPending()" (clicked)="retagModules()">
+        {{ retagPending() ? 'Sweeping…' : 'Sweep next batch of untagged Modules' }}
       </sp-admin-button>
+    </sp-admin-section-header>
+    <div style="padding: 16px 18px;">
+      <p class="sp-admin-section-sub">Sweeping AI-matches up to 20 <strong>untagged</strong> approved Modules per run against approved nodes sharing their CEFR level/skill, and auto-applies every validated match. This targets Modules that have never been tagged at all — it is a separate pass from the coverage list below, so a run reporting "0 links applied" can still be working correctly if none of this batch's Modules matched an approved node.</p>
+      @if (retagStatus()) {
+        <sp-admin-alert variant="success">{{ retagStatus() }}</sp-admin-alert>
+      }
+      @if (retagError()) {
+        <sp-admin-alert variant="error">{{ retagError() }}</sp-admin-alert>
+      }
     </div>
-    @if (retagStatus()) {
-      <sp-admin-alert variant="success">{{ retagStatus() }}</sp-admin-alert>
-    }
-    @if (retagError()) {
-      <sp-admin-alert variant="error">{{ retagError() }}</sp-admin-alert>
-    }
 
     @if (contentCoverageLoading()) {
-      <sp-admin-loading-state message="Loading content coverage" />
+      <div style="padding: 16px 18px;"><sp-admin-loading-state message="Loading content coverage" /></div>
     } @else if (contentCoverageError()) {
-      <sp-admin-error-state title="Content coverage unavailable" [message]="contentCoverageError()" />
+      <div style="padding: 16px 18px;"><sp-admin-error-state title="Content coverage unavailable" [message]="contentCoverageError()" /></div>
+    } @else if (coverageNodes().length === 0) {
+      <div style="padding: 16px 18px;"><sp-admin-empty-state message="No approved nodes yet." /></div>
     } @else {
-      <p class="sp-admin-section-sub">{{ nodesWithContent() }} approved node(s) have linked content; {{ nodesWithoutContent().length }} do not.</p>
-      @if (nodesWithoutContent().length > 0) {
-        <sp-admin-table variant="data" density="compact" layout="first-column-fluid" minWidth="500px">
-          <table>
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>CEFR</th>
-                <th>Skill</th>
+      <sp-admin-table [flush]="true" variant="data" density="compact" layout="first-column-fluid" minWidth="700px">
+        <table>
+          <thead>
+            <tr>
+              <th class="sp-admin-fluid-col">Title</th>
+              <th>CEFR</th>
+              <th>Skill</th>
+              <th>Tags</th>
+              <th>Linked Modules</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (n of pagedCoverageNodes(); track n.id) {
+              <tr (click)="openCoverageNode(n)" style="cursor:pointer">
+                <td class="sp-admin-fluid-col">{{ n.title }}</td>
+                <td><sp-admin-badge tone="neutral">{{ n.cefrLevel }}</sp-admin-badge></td>
+                <td>{{ n.skill }}</td>
+                <td>
+                  @if (n.contextTags.length || n.focusTags.length) {
+                    @for (tag of n.contextTags; track tag) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
+                  } @else {
+                    <span class="sp-admin-text-muted">—</span>
+                  }
+                </td>
+                <td>
+                  @if (n.linkedModuleCount > 0) {
+                    <sp-admin-badge tone="success" appearance="soft">{{ n.linkedModuleCount }}</sp-admin-badge>
+                  } @else {
+                    <sp-admin-badge tone="warning" appearance="soft">0</sp-admin-badge>
+                  }
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              @for (n of nodesWithoutContent(); track n.id) {
-                <tr>
-                  <td>{{ n.title }}</td>
-                  <td>{{ n.cefrLevel }}</td>
-                  <td>{{ n.skill }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </sp-admin-table>
-      }
+            }
+          </tbody>
+        </table>
+      </sp-admin-table>
+      <sp-admin-table-footer>
+        <span>{{ coverageNodes().length }} node(s) — click a row for detail.</span>
+        <sp-admin-pagination slot="actions" [page]="coveragePage()" [totalPages]="coverageTotalPages()" (pageChange)="onCoveragePageChange($event)" />
+      </sp-admin-table-footer>
     }
   </sp-admin-card>
+
+  <!-- Content coverage — node detail slide-over -->
+  <sp-admin-slide-over
+    [open]="!!selectedCoverageNode()"
+    [title]="selectedCoverageNode()?.title ?? ''"
+    [subtitle]="(selectedCoverageNode()?.cefrLevel ?? '') + ' · ' + (selectedCoverageNode()?.skill ?? '')"
+    (closed)="closeCoverageNode()">
+    @if (selectedCoverageNode(); as n) {
+      <div class="sp-admin-section-h"><h3>Tags</h3></div>
+      @if (n.contextTags.length || n.focusTags.length) {
+        <div class="sp-admin-mb-3">
+          @for (tag of n.contextTags; track tag) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
+          @for (tag of n.focusTags; track tag) { <sp-admin-badge tone="purple" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
+        </div>
+      } @else {
+        <p class="sp-admin-section-sub">No tags yet — use "Fix All with AI" on the Nodes table below.</p>
+      }
+
+      <div class="sp-admin-section-h"><h3>Linked Modules ({{ n.linkedModuleCount }})</h3></div>
+      @if (n.linkedModules.length > 0) {
+        <ul class="sp-admin-simple-list">
+          @for (m of n.linkedModules; track m.id) {
+            <li><a [routerLink]="['/admin/modules', m.id]">{{ m.title }}</a></li>
+          }
+        </ul>
+      } @else {
+        <p class="sp-admin-section-sub">No Module is linked to this node yet — either no Module for this CEFR level/skill has been re-tagged, or none matched.</p>
+      }
+    }
+  </sp-admin-slide-over>
 
   <!-- Nodes table / graph -->
   <sp-admin-card title="Nodes">

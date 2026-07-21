@@ -112,7 +112,7 @@
         <table>
           <thead>
             <tr>
-              <th style="width:40px;"><input type="checkbox" [checked]="allVisibleSelected()" (change)="toggleSelectAllVisible()" aria-label="Select all visible" /></th>
+              <th style="width:40px;"><sp-admin-checkbox [ngModel]="allVisibleSelected()" [ngModelOptions]="{standalone: true}" (checkedChange)="toggleSelectAllVisible()" aria-label="Select all visible" /></th>
               <th>Type</th>
               <th class="sp-admin-fluid-col">Title</th>
               <th>Level</th>
@@ -127,7 +127,9 @@
           <tbody>
             @for (item of items(); track item.id) {
               <tr (click)="openDetail(item)" style="cursor:pointer">
-                <td style="width:40px;"><input type="checkbox" [checked]="isSelected(item.id)" (click)="toggleSelected(item.id, $event)" aria-label="Select resource" /></td>
+                <td style="width:40px;" (click)="$event.stopPropagation()">
+                  <sp-admin-checkbox [ngModel]="isSelected(item.id)" [ngModelOptions]="{standalone: true}" (checkedChange)="toggleSelected(item.id)" aria-label="Select resource" />
+                </td>
                 <td><sp-admin-badge tone="info" appearance="soft">{{ typeLabel(item.type) }}</sp-admin-badge></td>
                 <td class="sp-admin-fluid-col">
                   <strong>{{ item.title }}</strong>

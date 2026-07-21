@@ -399,7 +399,20 @@ public sealed class AdminSkillGraphController : ControllerBase
 
         await _db.SaveChangesAsync(ct);
 
-        return Ok(new { sweptCount = candidateModules.Count, results });
+        // Sprint 14.2 — "Re-tag next batch" previously gave no sense of progress (this sweeps
+        // untagged Modules, a different set from whatever nodes the content-coverage table
+        // currently shows as gaps, so a report of "0 links applied" looked like nothing happened
+        // even when it correctly matched every candidate). Reporting how many untagged Modules
+        // remain (re-queried fresh, after this sweep's own links were just saved) makes "next
+        // batch" mean something concrete.
+        var stillTaggedModuleIds = await _db.ModuleSkillGraphNodeLinks.AsNoTracking()
+            .Select(l => l.ModuleId).Distinct().ToListAsync(ct);
+        var remainingUntaggedModuleCount = await _db.Modules.AsNoTracking()
+            .Where(m => m.ReviewStatus == AdminReviewStatus.Approved && !m.IsArchived
+                && m.CefrLevel != null && m.Skill != null && !stillTaggedModuleIds.Contains(m.Id))
+            .CountAsync(ct);
+
+        return Ok(new { sweptCount = candidateModules.Count, results, remainingUntaggedModuleCount });
     }
 
     /// <summary>Sprint 2 — per-node content coverage: how many approved Modules are actually linked
@@ -409,28 +422,43 @@ public sealed class AdminSkillGraphController : ControllerBase
     [HttpGet("content-coverage")]
     public async Task<IActionResult> GetContentCoverage(CancellationToken ct)
     {
-        var linkedCounts = await _db.ModuleSkillGraphNodeLinks.AsNoTracking()
-            .GroupBy(l => l.SkillGraphNodeId)
-            .Select(g => new { NodeId = g.Key, Count = g.Count() })
+        // Sprint 14.2 — previously only returned the gap list (nodes with zero linked Modules),
+        // which made the admin table a dead end (no way to browse the nodes that DO have
+        // content, no module titles/links, no tags). Now returns every approved node with its
+        // real linked-Module list, so the frontend can render one paginated, row-clickable table
+        // instead of a bare gap dump.
+        var links = await _db.ModuleSkillGraphNodeLinks.AsNoTracking()
+            .Join(_db.Modules.AsNoTracking(), l => l.ModuleId, m => m.Id, (l, m) => new { l.SkillGraphNodeId, m.Id, m.Title })
             .ToListAsync(ct);
-        var linkedCountsByNode = linkedCounts.ToDictionary(c => c.NodeId, c => c.Count);
+        var linksByNode = links.GroupBy(l => l.SkillGraphNodeId).ToDictionary(g => g.Key, g => g.ToList());
 
-        var approvedNodes = await _db.SkillGraphNodes.AsNoTracking()
+        var rawNodes = await _db.SkillGraphNodes.AsNoTracking()
             .Where(n => n.ReviewStatus == AdminReviewStatus.Approved && n.IsActive)
-            .Select(n => new { n.Id, n.Key, n.Title, n.CefrLevel, n.Skill })
+            .Select(n => new { n.Id, n.Key, n.Title, n.CefrLevel, n.Skill, n.ContextTagsJson, n.FocusTagsJson })
             .ToListAsync(ct);
 
-        var nodesWithoutContent = approvedNodes
-            .Where(n => !linkedCountsByNode.ContainsKey(n.Id))
-            .Select(n => new { n.Id, n.Key, n.Title, n.CefrLevel, n.Skill })
-            .ToList();
+        var nodes = rawNodes.Select(n =>
+        {
+            var linkedModules = linksByNode.TryGetValue(n.Id, out var l)
+                ? l.Select(x => new { x.Id, x.Title }).ToList()
+                : [];
+            return new
+            {
+                n.Id, n.Key, n.Title, n.CefrLevel, n.Skill,
+                ContextTags = ParseTags(n.ContextTagsJson), FocusTags = ParseTags(n.FocusTagsJson),
+                LinkedModuleCount = linkedModules.Count,
+                LinkedModules = linkedModules,
+            };
+        }).ToList();
+
+        var nodesWithoutContentCount = nodes.Count(n => n.LinkedModuleCount == 0);
 
         return Ok(new
         {
-            totalApprovedNodes = approvedNodes.Count,
-            nodesWithContent = approvedNodes.Count - nodesWithoutContent.Count,
-            nodesWithoutContentCount = nodesWithoutContent.Count,
-            nodesWithoutContent,
+            totalApprovedNodes = nodes.Count,
+            nodesWithContent = nodes.Count - nodesWithoutContentCount,
+            nodesWithoutContentCount,
+            nodes,
         });
     }
 

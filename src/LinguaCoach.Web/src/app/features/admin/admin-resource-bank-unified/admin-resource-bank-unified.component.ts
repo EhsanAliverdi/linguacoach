@@ -18,6 +18,7 @@ import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
   SpAdminButtonComponent,
+  SpAdminCheckboxComponent,
   SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
   SpAdminFilterBarComponent,
@@ -83,6 +84,7 @@ const PAGE_SIZE = 20;
     SpAdminAlertComponent,
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
+    SpAdminCheckboxComponent,
     SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
     SpAdminFilterBarComponent,
@@ -320,8 +322,7 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
     return this.selectedIds().has(id);
   }
 
-  toggleSelected(id: string, event: Event): void {
-    event.stopPropagation();
+  toggleSelected(id: string): void {
     const next = new Set(this.selectedIds());
     if (next.has(id)) next.delete(id); else next.add(id);
     this.selectedIds.set(next);

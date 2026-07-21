@@ -34,14 +34,13 @@
   <!-- ══ LLM CATEGORIES ═══════════════════════════════════════════ -->
   @if (activeTab() === 'llm') {
   <div class="sp-admin-section-stack">
-    <div class="sp-admin-section-header-row">
-      <p class="sp-admin-section-sub">
-        Set a provider and model per category. Resolution order: category-specific → Default LLM → 503 error.
-      </p>
-      <sp-admin-badge [tone]="configSummary().llmConfigured === configSummary().llmTotal ? 'success' : 'warning'">
-        {{ configSummary().llmConfigured }}/{{ configSummary().llmTotal }} configured
-      </sp-admin-badge>
-    </div>
+    <sp-admin-section-header
+      variant="plain"
+      title="LLM categories"
+      description="Set a provider and model per category. Resolution order: category-specific → Default LLM → 503 error."
+      [count]="configSummary().llmConfigured + '/' + configSummary().llmTotal"
+      countLabel="configured"
+      [countTone]="configSummary().llmConfigured === configSummary().llmTotal ? 'success' : 'warning'" />
 
     <div class="sp-admin-card-grid-2">
       @for (cs of llmCategories(); track cs.item.categoryKey) {
@@ -61,15 +60,13 @@
   <!-- ══ TTS CATEGORIES ═══════════════════════════════════════════ -->
   @if (activeTab() === 'tts') {
   <div class="sp-admin-section-stack">
-    <div class="sp-admin-section-header-row">
-      <p class="sp-admin-section-sub">
-        TTS is independent of LLM config. Supports openai, gemini, and qwen. Anthropic has no TTS API. Leave blank to
-        disable TTS (returns 503).
-      </p>
-      <sp-admin-badge [tone]="configSummary().ttsConfigured > 0 ? 'success' : 'neutral'">
-        {{ configSummary().ttsConfigured }}/{{ configSummary().ttsTotal }} configured
-      </sp-admin-badge>
-    </div>
+    <sp-admin-section-header
+      variant="plain"
+      title="TTS categories"
+      description="TTS is independent of LLM config. Supports openai, gemini, and qwen. Anthropic has no TTS API. Leave blank to disable TTS (returns 503)."
+      [count]="configSummary().ttsConfigured + '/' + configSummary().ttsTotal"
+      countLabel="configured"
+      [countTone]="configSummary().ttsConfigured > 0 ? 'success' : 'neutral'" />
 
     <div class="sp-admin-card-grid-2">
       @for (cs of ttsCategories(); track cs.item.categoryKey) {
@@ -90,15 +87,15 @@
   <!-- ══ PROVIDER CREDENTIALS ═════════════════════════════════════ -->
   @if (activeTab() === 'credentials') {
   <div>
-    <div class="sp-admin-section-header-row sp-admin-mb-4">
-      <p class="sp-admin-section-sub">
-        One API key per provider applies to all features using it.
-        "Test connection" checks every model with the stored key.
-      </p>
-      <sp-admin-button variant="neutral" appearance="outline" size="sm" leadingIcon="refresh" [disabled]="testAllBusy()" (click)="testAllConnections()">
+    <sp-admin-section-header
+      variant="plain"
+      title="Provider credentials"
+      description="One API key per provider applies to all features using it. &quot;Test connection&quot; checks every model with the stored key."
+      class="sp-admin-mb-4">
+      <sp-admin-button slot="actions" variant="neutral" appearance="outline" size="sm" leadingIcon="refresh" [disabled]="testAllBusy()" (click)="testAllConnections()">
         {{ testAllBusy() ? 'Testing…' : 'Test all connections' }}
       </sp-admin-button>
-    </div>
+    </sp-admin-section-header>
     <div class="sp-admin-card-list">
       @for (ps of providers(); track ps.catalog.providerName) {
       <div class="sp-admin-card-list-item">
@@ -196,16 +193,15 @@
   <!-- ══ MODEL PRICING ════════════════════════════════════════════ -->
   @if (activeTab() === 'pricing') {
   <div>
-    <div class="sp-admin-section-header-row">
-      <p class="sp-admin-section-sub">
-        <strong class="sp-admin-text-strong">Config pricing</strong> — Read from openrouter.com. Add
-        overrides to change runtime pricing without redeploying.
-      </p>
-      <sp-admin-button variant="secondary" appearance="solid" (click)="openCreateOverride()">
+    <sp-admin-section-header
+      variant="plain"
+      title="Config pricing"
+      description="Read from openrouter.com. Add overrides to change runtime pricing without redeploying.">
+      <sp-admin-button slot="actions" variant="secondary" appearance="solid" (click)="openCreateOverride()">
         <sp-admin-icon slot="leading" name="plus" size="xs" [strokeWidth]="2.5" />
         Add override
       </sp-admin-button>
-    </div>
+    </sp-admin-section-header>
 
     @if (pricing().length === 0) {
     <sp-admin-empty-state title="No pricing configured"
@@ -214,10 +210,11 @@
     <div class="sp-admin-section-stack">
       @for (group of pricingByProvider(); track group.provider) {
       <sp-admin-card padding="none" variant="bordered" [hasHeader]="true" [headerDivider]="true">
-        <div slot="header" class="sp-admin-provider-header">
-          <span class="sp-admin-provider-label">{{ group.provider | uppercase }}</span>
-          <sp-admin-badge tone="neutral">{{ group.rows.length }} model{{ group.rows.length === 1 ? '' : 's' }}</sp-admin-badge>
-        </div>
+        <sp-admin-section-header
+          slot="header"
+          [title]="group.provider | uppercase"
+          [count]="group.rows.length"
+          [countLabel]="group.rows.length === 1 ? 'model' : 'models'" />
         <sp-admin-table [columns]="[]" variant="simple" [flush]="true" minWidth="400px">
           <table class="sp-aic-pricing-table">
             <colgroup>
@@ -257,13 +254,13 @@
 
     <!-- Pricing overrides -->
     <sp-admin-card padding="none" variant="bordered" [hasHeader]="true" [headerDivider]="true" aria-label="Pricing overrides">
-      <div slot="header" class="sp-admin-provider-header">
-        <div>
-          <div class="sp-admin-card-title">Pricing overrides</div>
-          <div class="sp-admin-section-sub">Overrides take precedence over config at runtime. Active overrides with a valid effective range are applied.</div>
-        </div>
-        <sp-admin-badge [tone]="overrides().length ? 'warning' : 'neutral'">{{ overrides().length }} active</sp-admin-badge>
-      </div>
+      <sp-admin-section-header
+        slot="header"
+        title="Pricing overrides"
+        description="Overrides take precedence over config at runtime. Active overrides with a valid effective range are applied."
+        [count]="overrides().length"
+        countLabel="active"
+        [countTone]="overrides().length ? 'warning' : 'neutral'" />
       @if (overrides().length === 0) {
       <sp-admin-empty-state title="No overrides" message="Config pricing is used. Add an override to change runtime pricing." />
       } @else {
