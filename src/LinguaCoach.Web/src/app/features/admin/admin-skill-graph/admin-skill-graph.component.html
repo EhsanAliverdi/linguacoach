@@ -1,6 +1,6 @@
 <sp-admin-page-header
   title="Skill Graph"
-  subtitle="AI-drafted, admin-batch-approved skill/prerequisite graph — the target replacement for the flat Curriculum taxonomy. See docs/architecture/adaptive-curriculum-skill-graph.md.">
+  subtitle="AI-drafted, admin-batch-approved skill/prerequisite graph — the sole curriculum unit driving Today, Practice Gym, and mastery. See docs/architecture/adaptive-curriculum-skill-graph.md.">
   @if (nodeIssuesSummary() && nodeIssuesSummary()!.itemsWithIssues > 0) {
     <sp-admin-button variant="primary" appearance="outline" size="sm" [disabled]="bulkRepair.running()" (clicked)="fixAllNodesWithAi()">
       {{ bulkRepair.running() ? 'Fixing…' : 'Fix All with AI (' + nodeIssuesSummary()!.itemsWithIssues + ')' }}
@@ -9,12 +9,6 @@
 </sp-admin-page-header>
 
 <sp-admin-page-body>
-
-  <sp-admin-alert variant="info">
-    This graph is <strong>additive only</strong> right now — nothing in Today or Practice Gym
-    consumes it yet. Draft, review, and approve nodes here; later sprints wire mastery and delivery
-    to this graph and retire the flat Curriculum objectives.
-  </sp-admin-alert>
 
   @if (nodeIssuesSummary() && nodeIssuesSummary()!.itemsWithIssues > 0) {
     <sp-admin-alert variant="warning">
