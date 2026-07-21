@@ -40,23 +40,20 @@
       <sp-admin-input
         search size="sm" placeholder="Search title or description..."
         [value]="searchQuery()" (input)="onSearch($event)" aria-label="Search Modules" />
-      <sp-admin-select
-        size="sm" placeholder="All statuses"
-        [ngModel]="statusFilter()" (ngModelChange)="onStatusFilterChange($event)"
-        [options]="statusOptions" aria-label="Filter by review status" />
-      <sp-admin-select
-        size="sm" placeholder="All levels"
-        [ngModel]="cefrLevelFilter()" (ngModelChange)="onCefrLevelFilterChange($event)"
-        [options]="cefrLevelOptions" aria-label="Filter by CEFR level" />
       <span class="sp-admin-filter-count">{{ totalCount() }} item{{ totalCount() !== 1 ? 's' : '' }}</span>
     </sp-admin-filter-bar>
 
-    @if (items().length === 0) {
-      <sp-admin-empty-state title="No Modules" message="Use Create Module to compose the first draft from a Lesson and Exercise." />
-    } @else {
-
+    <sp-admin-table
+      #modulesTableRef
+      layout="first-column-fluid"
+      [columns]="moduleColumns" [rows]="items()" (selectionChange)="onModulesSelectionChange($event)"
+      [filters]="modulesFilters()" (filterChange)="onModulesFilterChange($event)"
+      [bulkEditable]="true" [bulkEditMode]="modulesBulkEditMode()" (bulkEditModeChange)="onModulesBulkEditModeChange($event)"
+      [rowClickable]="true" (rowClick)="onRowClick($event)"
+      emptyMessage="No Modules. Use Create Module to compose the first draft from a Lesson and Exercise."
+    >
       @if (selectedCount() > 0) {
-        <div class="sp-admin-form-actions" style="flex-wrap:wrap;align-items:center;margin-bottom:0.75rem;">
+        <div selectionBar class="sp-admin-form-actions">
           <span class="sp-admin-hint">{{ selectedCount() }} selected</span>
           <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="clearSelection()">Clear</sp-admin-button>
           <sp-admin-button variant="neutral" size="sm" [disabled]="bulkRunning()" (clicked)="bulkApprove()">
@@ -70,65 +67,48 @@
           </sp-admin-button>
         </div>
       }
-
-      <sp-admin-table layout="first-column-fluid">
-        <table>
-          <thead>
-            <tr>
-              <th style="width:40px;"><input type="checkbox" [checked]="allVisibleSelected()" (change)="toggleSelectAllVisible()" aria-label="Select all visible" /></th>
-              <th class="sp-admin-fluid-col">Title</th>
-              <th>Level</th>
-              <th>Skill / Subskill</th>
-              <th>Tags</th>
-              <th>Lessons</th>
-              <th>Exercises</th>
-              <th>Est. minutes</th>
-              <th>Source</th>
-              <th>Status</th>
-              <th class="sp-admin-th-actions">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (item of items(); track item.id) {
-              <tr (click)="openDetail(item)" style="cursor:pointer">
-                <td style="width:40px;"><input type="checkbox" [checked]="isSelected(item.id)" (click)="toggleSelected(item.id, $event)" aria-label="Select module" /></td>
-                <td class="sp-admin-fluid-col"><strong>{{ item.title }}</strong></td>
-                <td>{{ item.cefrLevel ?? '—' }}</td>
-                <td>
-                  {{ item.skill ?? '—' }}
-                  @if (item.subskill) { <div class="sp-admin-text-muted">{{ item.subskill }}</div> }
-                </td>
-                <td style="max-width:180px">
-                  @if (allTags(item).length === 0) {
-                    <span class="sp-admin-text-muted">—</span>
-                  } @else {
-                    <div style="display:flex;gap:4px;flex-wrap:wrap">
-                      @for (tag of allTags(item).slice(0, 3); track tag) {
-                        <sp-admin-badge tone="neutral" appearance="soft" size="sm">{{ tag }}</sp-admin-badge>
-                      }
-                      @if (allTags(item).length > 3) {
-                        <span class="sp-admin-text-muted">+{{ allTags(item).length - 3 }}</span>
-                      }
-                    </div>
-                  }
-                </td>
-                <td>{{ item.lessonLinks.length }}</td>
-                <td>{{ item.exerciseLinks.length }}</td>
-                <td>{{ item.estimatedMinutes ?? '—' }}</td>
-                <td><sp-admin-badge tone="neutral">{{ item.sourceMode }}</sp-admin-badge></td>
-                <td><sp-admin-badge [tone]="statusTone(item.reviewStatus)">{{ item.reviewStatus }}</sp-admin-badge></td>
-                <td (click)="$event.stopPropagation()">
-                  <sp-admin-table-actions [richActions]="rowActions(item)" (actionSelected)="onRowAction($event, item)" />
-                </td>
-              </tr>
+      <ng-template #cell let-row let-col="col">
+        @switch (col.key) {
+          @case ('cefrLevel') { {{ $any(row).cefrLevel ?? '—' }} }
+          @case ('skill') {
+            {{ $any(row).skill ?? '—' }}
+            @if ($any(row).subskill) { <div class="sp-admin-text-muted">{{ $any(row).subskill }}</div> }
+          }
+          @case ('tags') {
+            @if (allTags($any(row)).length === 0) {
+              <span class="sp-admin-text-muted">—</span>
+            } @else {
+              <div style="display:flex;gap:4px;flex-wrap:wrap">
+                @for (tag of allTags($any(row)).slice(0, 3); track tag) {
+                  <sp-admin-badge tone="neutral" appearance="soft" size="sm">{{ tag }}</sp-admin-badge>
+                }
+                @if (allTags($any(row)).length > 3) {
+                  <span class="sp-admin-text-muted">+{{ allTags($any(row)).length - 3 }}</span>
+                }
+              </div>
             }
-          </tbody>
-        </table>
-        <sp-admin-table-footer>
-          Page {{ page() }} of {{ totalPages() }} · {{ totalCount() }} items
-          <sp-admin-pagination slot="actions" [page]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
-        </sp-admin-table-footer>
-      </sp-admin-table>
+          }
+          @case ('lessonLinks') { {{ $any(row).lessonLinks.length }} }
+          @case ('exerciseLinks') { {{ $any(row).exerciseLinks.length }} }
+          @case ('estimatedMinutes') { {{ $any(row).estimatedMinutes ?? '—' }} }
+          @case ('sourceMode') { <sp-admin-badge tone="neutral">{{ $any(row).sourceMode }}</sp-admin-badge> }
+          @case ('reviewStatus') {
+            <sp-admin-badge [tone]="statusTone($any(row).reviewStatus)">{{ $any(row).reviewStatus }}</sp-admin-badge>
+          }
+          @case ('actions') {
+            <span (click)="$event.stopPropagation()">
+              <sp-admin-table-actions [richActions]="rowActions($any(row))" (actionSelected)="onRowAction($event, $any(row))" />
+            </span>
+          }
+          @default { {{ $any(row)[col.key] }} }
+        }
+      </ng-template>
+    </sp-admin-table>
+    @if (items().length > 0) {
+    <sp-admin-table-footer>
+      Page {{ page() }} of {{ totalPages() }} · {{ totalCount() }} items
+      <sp-admin-pagination slot="actions" [page]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
+    </sp-admin-table-footer>
     }
   }
 

@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -32,7 +32,9 @@ import {
   SpAdminRowAction,
   SpAdminSelectComponent,
   SpAdminTableActionsComponent,
+  SpAdminTableColumn,
   SpAdminTableComponent,
+  SpAdminTableFilter,
   SpAdminTableFooterComponent,
   SpAdminTextareaComponent,
 } from '../../../design-system/admin';
@@ -74,6 +76,37 @@ interface BulkItemResult { success: boolean; title: string; error: string | null
   templateUrl: './admin-modules.component.html',
 })
 export class AdminModulesComponent implements OnInit {
+  @ViewChild('modulesTableRef') modulesTableRef?: SpAdminTableComponent;
+
+  readonly moduleColumns: SpAdminTableColumn[] = [
+    { key: 'title', label: 'Title', titleColumn: true },
+    { key: 'cefrLevel', label: 'Level' },
+    { key: 'skill', label: 'Skill / Subskill' },
+    { key: 'tags', label: 'Tags' },
+    { key: 'lessonLinks', label: 'Lessons' },
+    { key: 'exerciseLinks', label: 'Exercises' },
+    { key: 'estimatedMinutes', label: 'Est. minutes' },
+    { key: 'sourceMode', label: 'Source' },
+    { key: 'reviewStatus', label: 'Status' },
+    { key: 'actions', label: 'Actions', align: 'right' },
+  ];
+
+  modulesBulkEditMode = signal(false);
+  onModulesBulkEditModeChange(enabled: boolean): void {
+    this.modulesBulkEditMode.set(enabled);
+    if (!enabled) this.clearSelection();
+  }
+
+  onModulesSelectionChange(indices: number[]): void {
+    const rows = this.items();
+    const ids = indices.map(i => rows[i]?.id).filter((id): id is string => !!id);
+    this.selectedIds.set(new Set(ids));
+  }
+
+  onRowClick(row: unknown): void {
+    this.openDetail(row as unknown as ModuleDto);
+  }
+
   items = signal<ModuleDto[]>([]);
   loading = signal(true);
   error = signal('');
@@ -100,10 +133,6 @@ export class AdminModulesComponent implements OnInit {
   bulkRejectReasonDraft = '';
 
   readonly selectedCount = computed(() => this.selectedIds().size);
-  readonly allVisibleSelected = computed(() => {
-    const items = this.items();
-    return items.length > 0 && items.every(i => this.selectedIds().has(i.id));
-  });
 
   // ── Phase K3 — real Create Module modal: searchable Lesson/Exercise dropdowns instead of
   // pasting raw GUIDs. Backed by moduleSvc.create() (POST /api/admin/modules), which — unlike
@@ -200,6 +229,16 @@ export class AdminModulesComponent implements OnInit {
     this.loadAll();
   }
 
+  modulesFilters = computed<SpAdminTableFilter[]>(() => [
+    { key: 'status', label: 'Status', options: this.statusOptions, value: this.statusFilter() },
+    { key: 'cefrLevel', label: 'Level', options: this.cefrLevelOptions, value: this.cefrLevelFilter() },
+  ]);
+
+  onModulesFilterChange(event: { key: string; value: string }): void {
+    if (event.key === 'status') this.onStatusFilterChange(event.value);
+    else if (event.key === 'cefrLevel') this.onCefrLevelFilterChange(event.value);
+  }
+
   onPageChange(page: number): void {
     this.page.set(page);
     this.selectedIds.set(new Set());
@@ -261,27 +300,9 @@ export class AdminModulesComponent implements OnInit {
 
   // ── Selection ────────────────────────────────────────────────────────────────
 
-  isSelected(id: string): boolean {
-    return this.selectedIds().has(id);
-  }
-
-  toggleSelected(id: string, event: Event): void {
-    event.stopPropagation();
-    const next = new Set(this.selectedIds());
-    if (next.has(id)) next.delete(id); else next.add(id);
-    this.selectedIds.set(next);
-  }
-
-  toggleSelectAllVisible(): void {
-    if (this.allVisibleSelected()) {
-      this.selectedIds.set(new Set());
-      return;
-    }
-    this.selectedIds.set(new Set(this.items().map(i => i.id)));
-  }
-
   clearSelection(): void {
     this.selectedIds.set(new Set());
+    this.modulesTableRef?.clearSelection();
   }
 
   // ── Bulk actions ─────────────────────────────────────────────────────────────
