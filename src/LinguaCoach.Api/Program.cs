@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
+using LinguaCoach.Api.HelpContent;
 using LinguaCoach.Api.Middleware;
 using LinguaCoach.Api.Quartz;
 using LinguaCoach.Infrastructure;
@@ -237,6 +238,9 @@ if (enableDiagEvents)
 
 // ── Infrastructure services ─────────────────────────────────────────────────
 builder.Services.AddInfrastructure(builder.Configuration);
+
+// ── Admin help content (static, dev-authored, never edited at runtime) ─────
+builder.Services.AddSingleton<IHelpContentProvider, HelpContentProvider>();
 
 // ── Quartz background jobs (lesson buffer / TTS / cleanup) ──────────────────
 // Runs inside the API process as IHostedService. Skipped in Testing (SQLite has no Quartz schema).

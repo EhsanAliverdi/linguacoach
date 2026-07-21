@@ -95,9 +95,9 @@
       <sp-admin-button slot="actions" variant="primary" size="sm" [disabled]="retagPending()" (clicked)="retagModules()">
         {{ retagPending() ? 'Sweeping…' : 'Sweep next batch of untagged Modules' }}
       </sp-admin-button>
+      <sp-admin-help-icon slot="actions" key="admin.skillGraph.sweepUntaggedModules" title="Sweep untagged Modules" />
     </sp-admin-section-header>
     <div style="padding: 16px 18px;">
-      <p class="sp-admin-section-sub">Sweeping AI-matches up to 20 <strong>untagged</strong> approved Modules per run against approved nodes sharing their CEFR level/skill, and auto-applies every validated match. This targets Modules that have never been tagged at all — it is a separate pass from the coverage list below, so a run reporting "0 links applied" can still be working correctly if none of this batch's Modules matched an approved node.</p>
       @if (retagStatus()) {
         <sp-admin-alert variant="success">{{ retagStatus() }}</sp-admin-alert>
       }

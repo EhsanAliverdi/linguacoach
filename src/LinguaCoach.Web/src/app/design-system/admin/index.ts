@@ -58,6 +58,7 @@ export * from './components/avatar/sp-admin-avatar.component';
 export * from './components/identity-cell/sp-admin-identity-cell.component';
 export * from './components/table-footer/sp-admin-table-footer.component';
 export * from './components/icon/sp-admin-icon.component';
+export * from './components/help-icon/sp-admin-help-icon.component';
 export * from './components/provider-avatar/sp-admin-provider-avatar.component';
 export * from './components/toggle/sp-admin-toggle.component';
 export * from './components/stack/sp-admin-stack.component';

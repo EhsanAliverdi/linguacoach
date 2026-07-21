@@ -22,6 +22,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="HelpContent\help-content.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\LinguaCoach.Application\LinguaCoach.Application.csproj" />
     <ProjectReference Include="..\LinguaCoach.Infrastructure\LinguaCoach.Infrastructure.csproj" />
     <ProjectReference Include="..\LinguaCoach.Persistence\LinguaCoach.Persistence.csproj" />
