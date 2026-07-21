@@ -181,6 +181,7 @@ export class AdminSkillGraphComponent implements OnInit {
   nodesPage = signal(1);
   readonly nodesPageSize = 25;
   nodesTotalPages = signal(1);
+  nodesTotalCount = signal(0);
 
   filterCefrLevel = '';
   filterSkill = '';
@@ -279,6 +280,7 @@ export class AdminSkillGraphComponent implements OnInit {
       next: r => {
         this.nodes.set(r.items);
         this.nodesTotalPages.set(r.totalPages);
+        this.nodesTotalCount.set(r.totalCount);
         this.nodesLoading.set(false);
       },
       error: err => {

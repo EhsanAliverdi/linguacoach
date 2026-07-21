@@ -193,17 +193,20 @@
   </sp-admin-slide-over>
 
   <!-- Nodes table / graph -->
-  <sp-admin-card title="Nodes">
-    <div style="display:flex; gap:8px; margin-bottom:12px;">
-      <sp-admin-button size="sm" [variant]="viewMode() === 'table' ? 'primary' : 'neutral'" appearance="outline" (clicked)="setViewMode('table')">
-        Table
-      </sp-admin-button>
-      <sp-admin-button size="sm" [variant]="viewMode() === 'graph' ? 'primary' : 'neutral'" appearance="outline" (clicked)="setViewMode('graph')">
-        Graph
-      </sp-admin-button>
-    </div>
+  <sp-admin-card padding="none" variant="bordered" [hasHeader]="true" [headerDivider]="true">
+    <sp-admin-section-header slot="header" title="Nodes" [count]="nodesTotalCount()" countLabel="nodes">
+      <div slot="actions" style="display:flex; gap:8px;">
+        <sp-admin-button size="sm" [variant]="viewMode() === 'table' ? 'primary' : 'neutral'" appearance="outline" (clicked)="setViewMode('table')">
+          Table
+        </sp-admin-button>
+        <sp-admin-button size="sm" [variant]="viewMode() === 'graph' ? 'primary' : 'neutral'" appearance="outline" (clicked)="setViewMode('graph')">
+          Graph
+        </sp-admin-button>
+      </div>
+    </sp-admin-section-header>
 
     @if (viewMode() === 'graph') {
+    <div style="padding: 16px 18px;">
       @if (graphLoading()) {
         <sp-admin-loading-state message="Loading skill graph" />
       } @else if (graphError()) {
@@ -230,8 +233,10 @@
           </div>
         }
       }
+    </div>
     } @else {
 
+    <div style="padding: 16px 18px 0;">
     <div class="sp-admin-filter-bar" style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; margin-bottom:12px;">
       <sp-admin-form-field label="CEFR level">
         <sp-admin-select [options]="cefrLevelOptions()" [(ngModel)]="filterCefrLevel" placeholder="All" (ngModelChange)="onFilterChange()" />
@@ -272,8 +277,10 @@
       <sp-admin-error-state title="Nodes unavailable" [message]="nodesError()" />
     } @else if (nodes().length === 0) {
       <p class="sp-admin-section-sub">No nodes match the current filters. Draft some above.</p>
-    } @else {
-      <sp-admin-table variant="data" density="compact" layout="first-column-fluid" minWidth="800px">
+    }
+    </div>
+    @if (!nodesLoading() && !nodesError() && nodes().length > 0) {
+      <sp-admin-table [flush]="true" variant="data" density="compact" layout="first-column-fluid" minWidth="800px">
         <table>
           <thead>
             <tr>
@@ -316,7 +323,10 @@
           </tbody>
         </table>
       </sp-admin-table>
-      <sp-admin-pagination [page]="nodesPage()" [totalPages]="nodesTotalPages()" (pageChange)="onNodesPageChange($event)" />
+      <sp-admin-table-footer>
+        <span>{{ nodesTotalCount() }} node(s).</span>
+        <sp-admin-pagination slot="actions" [page]="nodesPage()" [totalPages]="nodesTotalPages()" (pageChange)="onNodesPageChange($event)" />
+      </sp-admin-table-footer>
     }
 
     }
