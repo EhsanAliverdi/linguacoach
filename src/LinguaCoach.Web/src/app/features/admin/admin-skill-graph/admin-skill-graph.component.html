@@ -239,7 +239,7 @@
       [bulkEditable]="true" [bulkEditMode]="nodesBulkEditMode()" (bulkEditModeChange)="onNodesBulkEditModeChange($event)"
     >
       @if (hasSelection()) {
-        <div selectionBar class="sp-admin-form-actions" style="margin-bottom:12px;">
+        <div selectionBar class="sp-admin-form-actions">
           <span class="sp-admin-hint">{{ selectedIds().size }} selected</span>
           <input type="text" placeholder="Rejection reason" [(ngModel)]="rejectReason"
             class="sp-admin-native-input" style="max-width:220px; width:auto; flex:1 1 220px;" />

@@ -306,9 +306,10 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
     .sp-adm-toolbar-actions { display:flex; gap:8px; align-items:center; flex-shrink:0; flex-wrap:wrap; }
 
     /* Selection/bulk-action row — sits directly under the toolbar row (filters + Bulk edit),
-       above the table. Empty (0 height) when the page projects nothing into [selectionBar]. */
-    .sp-adm-selection-row { padding:0 16px; }
-    .sp-adm-selection-row:empty { display:none; }
+       above the table. Own top/bottom margin keeps it clear of the toolbar's border-bottom line
+       above and the table's first row below. Empty (0 height) when the page projects nothing. */
+    .sp-adm-selection-row { padding:0 16px; margin:12px 0; }
+    .sp-adm-selection-row:empty { display:none; margin:0; }
 
     .sp-adm-bulk-checkbox { width:15px; height:15px; cursor:pointer; accent-color:var(--sp-admin-primary,#5B4BE8); flex-shrink:0; }
 
