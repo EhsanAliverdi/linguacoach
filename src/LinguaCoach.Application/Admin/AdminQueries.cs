@@ -326,7 +326,8 @@ public sealed record AiModelPricingItem(
     decimal OutputPer1KTokens,
     string Currency,
     string Source,
-    bool IsConfigured);
+    bool IsConfigured,
+    decimal? InputPer1KCharacters = null);
 
 // ── AI model pricing overrides ────────────────────────────────────────────────
 
@@ -344,7 +345,8 @@ public sealed record AiModelPricingOverrideItem(
     DateTime CreatedAtUtc,
     DateTime? UpdatedAtUtc,
     Guid? CreatedByAdminUserId,
-    Guid? UpdatedByAdminUserId);
+    Guid? UpdatedByAdminUserId,
+    decimal? InputPricePer1KCharacters = null);
 
 public sealed record CreatePricingOverrideCommand(
     string ProviderName,
@@ -355,7 +357,8 @@ public sealed record CreatePricingOverrideCommand(
     DateTime EffectiveFromUtc,
     DateTime? EffectiveToUtc,
     string? Notes,
-    Guid AdminUserId);
+    Guid AdminUserId,
+    decimal? InputPricePer1KCharacters = null);
 
 public sealed record UpdatePricingOverrideCommand(
     Guid Id,
@@ -365,7 +368,8 @@ public sealed record UpdatePricingOverrideCommand(
     DateTime EffectiveFromUtc,
     DateTime? EffectiveToUtc,
     string? Notes,
-    Guid AdminUserId);
+    Guid AdminUserId,
+    decimal? InputPricePer1KCharacters = null);
 
 public sealed record DeactivatePricingOverrideCommand(
     Guid Id,

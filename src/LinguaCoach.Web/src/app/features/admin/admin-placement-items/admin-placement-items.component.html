@@ -45,28 +45,24 @@
       <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert>
     }
 
-    <sp-admin-filter-bar>
-      <sp-admin-input
-        search
-        size="sm"
-        placeholder="Search questions..."
-        [value]="searchQuery()"
-        (input)="onSearch($event)"
-        aria-label="Search placement items" />
-      <span class="sp-admin-filter-count">{{ totalCount() }} item{{ totalCount() !== 1 ? 's' : '' }}</span>
-      <a actions routerLink="/admin/placement-items/new">
-        <sp-admin-button variant="primary" size="sm">
-          Add item
-        </sp-admin-button>
-      </a>
-    </sp-admin-filter-bar>
-
     <sp-admin-table
       layout="first-column-fluid"
       [columns]="itemColumns" [rows]="items()"
+      [searchable]="true" searchPlaceholder="Search questions..."
+      [searchValue]="searchQuery()" (searchChange)="onSearchChange($event)"
       [filters]="itemsFilters()" (filterChange)="onItemsFilterChange($event)"
       emptyMessage="No items. Add items to the placement bank for this skill."
+      [paginationPage]="page()" [paginationTotalPages]="totalPages()"
+      [paginationLabel]="'Page ' + page() + ' of ' + totalPages() + ' · ' + totalCount() + ' items'"
+      (paginationPageChange)="onPageChange($event)"
     >
+      <ng-container tableActions>
+        <a routerLink="/admin/placement-items/new">
+          <sp-admin-button variant="primary" size="sm">
+            Add item
+          </sp-admin-button>
+        </a>
+      </ng-container>
       <ng-template #cell let-row let-col="col">
         @switch (col.key) {
           @case ('skill') { <sp-admin-badge tone="neutral">{{ $any(row).skill }}</sp-admin-badge> }
@@ -83,16 +79,6 @@
         }
       </ng-template>
     </sp-admin-table>
-    @if (items().length > 0) {
-    <sp-admin-table-footer>
-      Page {{ page() }} of {{ totalPages() }} · {{ totalCount() }} items
-      <sp-admin-pagination
-        slot="actions"
-        [page]="page()"
-        [totalPages]="totalPages()"
-        (pageChange)="onPageChange($event)" />
-    </sp-admin-table-footer>
-    }
   }
 
 </sp-admin-page-body>

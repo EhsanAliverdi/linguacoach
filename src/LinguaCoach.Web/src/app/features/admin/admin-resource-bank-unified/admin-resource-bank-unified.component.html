@@ -51,18 +51,16 @@
     <sp-admin-loading-state message="Loading resource bank" />
   } @else {
 
-    <sp-admin-filter-bar>
-      <sp-admin-input
-        search size="sm" placeholder="Search title, word, or excerpt..."
-        [value]="searchQuery()" (input)="onSearch($event)" aria-label="Search resource bank" />
-      <span class="sp-admin-filter-count">{{ totalCount() }} resource{{ totalCount() !== 1 ? 's' : '' }}</span>
-    </sp-admin-filter-bar>
-
     <sp-admin-table
       #resourceBankTableRef
-      layout="first-column-fluid"
+      variant="data" density="compact" layout="first-column-fluid" [rightAlignNonTitleColumns]="true"
       [columns]="resourceBankColumns" [rows]="items()" (selectionChange)="onResourceBankSelectionChange($event)"
+      [searchable]="true" searchPlaceholder="Search title, word, or excerpt..."
+      [searchValue]="searchQuery()" (searchChange)="onSearchChange($event)"
       [filters]="resourceBankFilters()" (filterChange)="onResourceBankFilterChange($event)"
+      [paginationPage]="page()" [paginationTotalPages]="totalPages()"
+      [paginationLabel]="'Page ' + page() + ' of ' + totalPages() + ' · ' + totalCount() + ' resources'"
+      (paginationPageChange)="onPageChange($event)"
       [bulkEditable]="true" [bulkEditMode]="resourceBankBulkEditMode()" (bulkEditModeChange)="onResourceBankBulkEditModeChange($event)"
       [rowClickable]="true" (rowClick)="onRowClick($event)"
       emptyMessage="No resources. No published resources match these filters."
@@ -145,12 +143,6 @@
         }
       </ng-template>
     </sp-admin-table>
-    @if (items().length > 0) {
-    <sp-admin-table-footer>
-      Page {{ page() }} of {{ totalPages() }} · {{ totalCount() }} resources
-      <sp-admin-pagination slot="actions" [page]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
-    </sp-admin-table-footer>
-    }
   }
 
 </sp-admin-page-body>

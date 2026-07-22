@@ -26,6 +26,17 @@ public static class AiPricingOptions
         return new AiModelPricing(input.Value, output.Value);
     }
 
+    /// <summary>Config fallback for non-token-billed models (TTS) — independent of the token-pricing
+    /// lookup above, since a TTS model's config section will never have Input/OutputPer1KTokens.</summary>
+    public static decimal? GetProviderCharacterPricing(IConfiguration configuration, string providerName, string modelName)
+    {
+        if (string.IsNullOrWhiteSpace(modelName)) return null;
+
+        var section = configuration.GetSection($"{providerName}:Pricing:{modelName}");
+        var perCharacter = section.GetValue<decimal?>("PricePer1KCharacters");
+        return perCharacter is >= 0 ? perCharacter : null;
+    }
+
     public static decimal EstimateCostUsd(int inputTokens, int outputTokens, AiModelPricing pricing)
     {
         if (inputTokens < 0) throw new ArgumentOutOfRangeException(nameof(inputTokens));

@@ -190,6 +190,7 @@ export interface AiModelPricingItem {
   currency: string;
   source: string;
   isConfigured: boolean;
+  inputPer1KCharacters?: number | null;
 }
 
 export interface AiModelPricingOverrideItem {
@@ -207,6 +208,7 @@ export interface AiModelPricingOverrideItem {
   updatedAtUtc: string | null;
   createdByAdminUserId: string | null;
   updatedByAdminUserId: string | null;
+  inputPricePer1KCharacters?: number | null;
 }
 
 export interface CreatePricingOverrideRequest {
@@ -218,6 +220,7 @@ export interface CreatePricingOverrideRequest {
   effectiveFromUtc: string;
   effectiveToUtc?: string | null;
   notes?: string | null;
+  inputPricePer1KCharacters?: number | null;
 }
 
 export interface UpdatePricingOverrideRequest {
@@ -227,6 +230,7 @@ export interface UpdatePricingOverrideRequest {
   effectiveFromUtc: string;
   effectiveToUtc?: string | null;
   notes?: string | null;
+  inputPricePer1KCharacters?: number | null;
 }
 
 export interface UpdateAiCategoryRequest {

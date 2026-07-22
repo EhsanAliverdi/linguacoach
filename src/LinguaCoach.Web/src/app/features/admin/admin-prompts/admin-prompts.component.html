@@ -16,19 +16,11 @@
   </div>
 
   <!-- Prompt library -->
-  <sp-admin-card variant="default" padding="none" [hasHeader]="true" [headerDivider]="false">
-    <!-- Library header: title + filter row in one block -->
-    <div slot="header" class="sp-admin-card-header-block">
-      <div class="sp-admin-card-section-title">Prompt library</div>
-      <sp-admin-filter-bar layout="responsive" density="compact">
-        <sp-admin-form-field search label="Search prompts" size="sm">
-          <sp-admin-input [ngModel]="searchTerm()" (ngModelChange)="setSearchTerm($event)" size="sm"
-            placeholder="Search by key…" />
-        </sp-admin-form-field>
-        <sp-admin-button actions variant="neutral" appearance="outline" size="sm" (click)="load()"
-          [loading]="loading()">Refresh</sp-admin-button>
-      </sp-admin-filter-bar>
-    </div>
+  <sp-admin-card variant="default" padding="none" [hasHeader]="true" [headerDivider]="true">
+    <sp-admin-section-header slot="header" title="Prompt library" [count]="filteredPrompts().length" countLabel="prompts">
+      <sp-admin-button slot="actions" variant="neutral" appearance="outline" size="sm" (click)="load()"
+        [loading]="loading()">Refresh</sp-admin-button>
+    </sp-admin-section-header>
 
     @if (loading()) {
     <sp-admin-loading-state message="Loading prompt templates" />
@@ -41,9 +33,14 @@
     <sp-admin-table
       variant="data" density="comfortable" [flush]="true" layout="first-column-fluid"
       [columns]="promptColumns" [rows]="pagedPrompts()"
+      [searchable]="true" searchPlaceholder="Search by key…"
+      [searchValue]="searchTerm()" (searchChange)="setSearchTerm($event)"
       [filters]="promptsFilters()" (filterChange)="onPromptsFilterChange($event)"
       [rowClickable]="true" (rowClick)="onRowClick($event)"
       [emptyMessage]="emptyMessage()"
+      [paginationPage]="page()" [paginationTotalPages]="totalPages()"
+      [paginationLabel]="'Page ' + page() + ' of ' + totalPages() + ' · ' + filteredPrompts().length + ' prompt' + (filteredPrompts().length !== 1 ? 's' : '')"
+      (paginationPageChange)="page.set($event)"
     >
       <ng-template #cell let-row let-col="col">
         @switch (col.key) {
@@ -73,10 +70,6 @@
         }
       </ng-template>
     </sp-admin-table>
-    @if (totalPages() > 1) {
-    <sp-admin-pagination [page]="page()" [totalPages]="totalPages()" [totalRows]="filteredPrompts().length"
-      (pageChange)="page.set($event)" />
-    }
     }
   </sp-admin-card>
 </sp-admin-page-body>

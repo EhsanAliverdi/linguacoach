@@ -1,6 +1,7 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import {
@@ -58,6 +59,8 @@ interface OverrideFormState {
   modelName: string;
   inputPricePer1KTokens: number | null;
   outputPricePer1KTokens: number | null;
+  /** Per-character price for non-token-billed models (TTS) — blank/null for LLM rows. */
+  inputPricePer1KCharacters: number | null;
   currency: string;
   effectiveFromUtc: string;
   effectiveToUtc: string;
@@ -112,20 +115,20 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
 })
 export class AdminAiConfigComponent implements OnInit {
   readonly pricingColumns: SpAdminTableColumn[] = [
-    { key: 'modelName', label: 'Model' },
-    { key: 'inputPer1KTokens', label: 'Input /K', align: 'right' },
-    { key: 'outputPer1KTokens', label: 'Output /K', align: 'right' },
+    { key: 'modelName', label: 'Model', titleColumn: true },
+    { key: 'inputPer1KTokens', label: 'Input /K' },
+    { key: 'outputPer1KTokens', label: 'Output /K' },
     { key: 'status', label: 'Status', align: 'center' },
   ];
 
   readonly overrideColumns: SpAdminTableColumn[] = [
-    { key: 'modelName', label: 'Model' },
+    { key: 'modelName', label: 'Model', titleColumn: true },
     { key: 'providerName', label: 'Group' },
-    { key: 'inputPricePer1KTokens', label: 'Input /K', align: 'right' },
-    { key: 'outputPricePer1KTokens', label: 'Output /K', align: 'right' },
+    { key: 'inputPricePer1KTokens', label: 'Input /K' },
+    { key: 'outputPricePer1KTokens', label: 'Output /K' },
+    { key: 'inputPricePer1KCharacters', label: 'Chars /K' },
     { key: 'effectiveFromUtc', label: 'Effective' },
-    { key: 'notes', label: 'Note' },
-    { key: 'actions', label: '' },
+    { key: 'actions', label: 'Actions' },
   ];
 
   categories = signal<CategoryState[]>([]);
@@ -166,9 +169,13 @@ export class AdminAiConfigComponent implements OnInit {
     };
   });
 
-  constructor(private adminApi: AdminApiService) {}
+  constructor(private adminApi: AdminApiService, private route: ActivatedRoute) {}
 
   ngOnInit(): void {
+    const tab = this.route.snapshot.queryParamMap.get('tab');
+    if (tab === 'pricing' || tab === 'llm' || tab === 'tts' || tab === 'credentials' || tab === 'rate-limits') {
+      this.activeTab.set(tab);
+    }
     forkJoin({
       categories: this.adminApi.listAiCategories(),
       catalog: this.adminApi.listAiProviders(),
@@ -263,6 +270,7 @@ export class AdminAiConfigComponent implements OnInit {
       mode: 'create', id: null,
       providerName: '', modelName: '',
       inputPricePer1KTokens: null, outputPricePer1KTokens: null,
+      inputPricePer1KCharacters: null,
       currency: 'USD',
       effectiveFromUtc: '',
       effectiveToUtc: '', notes: '',
@@ -276,6 +284,7 @@ export class AdminAiConfigComponent implements OnInit {
       providerName: o.providerName, modelName: o.modelName,
       inputPricePer1KTokens: o.inputPricePer1KTokens,
       outputPricePer1KTokens: o.outputPricePer1KTokens,
+      inputPricePer1KCharacters: o.inputPricePer1KCharacters ?? null,
       currency: o.currency,
       effectiveFromUtc: this.toDateLocal(o.effectiveFromUtc),
       effectiveToUtc: this.toDateLocal(o.effectiveToUtc),
@@ -330,6 +339,10 @@ export class AdminAiConfigComponent implements OnInit {
       this.overrideForm.set({ ...f, error: 'Prices must be >= 0.' });
       return;
     }
+    if (f.inputPricePer1KCharacters !== null && f.inputPricePer1KCharacters < 0) {
+      this.overrideForm.set({ ...f, error: 'Character price must be >= 0.' });
+      return;
+    }
     this.overrideForm.set({ ...f, busy: true, error: '' });
 
     const toUtc = (d: string): string => d ? new Date(d).toISOString() : '';
@@ -340,6 +353,7 @@ export class AdminAiConfigComponent implements OnInit {
         modelName: f.modelName.trim(),
         inputPricePer1KTokens: f.inputPricePer1KTokens,
         outputPricePer1KTokens: f.outputPricePer1KTokens,
+        inputPricePer1KCharacters: f.inputPricePer1KCharacters,
         currency: f.currency || 'USD',
         effectiveFromUtc: toUtc(f.effectiveFromUtc),
         effectiveToUtc: f.effectiveToUtc ? toUtc(f.effectiveToUtc) : null,
@@ -353,6 +367,7 @@ export class AdminAiConfigComponent implements OnInit {
       const cmd: UpdatePricingOverrideRequest = {
         inputPricePer1KTokens: f.inputPricePer1KTokens,
         outputPricePer1KTokens: f.outputPricePer1KTokens,
+        inputPricePer1KCharacters: f.inputPricePer1KCharacters,
         currency: f.currency || 'USD',
         effectiveFromUtc: toUtc(f.effectiveFromUtc),
         effectiveToUtc: f.effectiveToUtc ? toUtc(f.effectiveToUtc) : null,

@@ -66,13 +66,11 @@ import {
   SpAdminModalComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
-  SpAdminPaginationComponent,
   SpAdminSectionCardComponent,
   SpAdminSectionHeaderComponent,
   SpAdminTableActionsComponent,
   SpAdminTableColumn,
   SpAdminTableComponent,
-  SpAdminTableFooterComponent,
   SpAdminTextareaComponent,
 } from '../../../design-system/admin';
 import type { SpAdminRowAction, SpAdminTableFilter } from '../../../design-system/admin';
@@ -104,12 +102,10 @@ const CANDIDATES_PAGE_SIZE = 50;
     SpAdminModalComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
-    SpAdminPaginationComponent,
     SpAdminSectionCardComponent,
     SpAdminSectionHeaderComponent,
     SpAdminTableActionsComponent,
     SpAdminTableComponent,
-    SpAdminTableFooterComponent,
     SpAdminTextareaComponent,
     FormioRendererComponent,
   ],
@@ -125,7 +121,7 @@ export class AdminImportRunCandidatesComponent implements OnInit {
     { key: 'validationStatus', label: 'Validation' },
     { key: 'reviewStatus', label: 'Review' },
     { key: 'published', label: 'Published' },
-    { key: 'actions', label: '', align: 'right' },
+    { key: 'actions', label: 'Actions', align: 'right' },
   ];
 
   readonly candidateTypeOptions = [
@@ -347,19 +343,6 @@ export class AdminImportRunCandidatesComponent implements OnInit {
   }
 
   // ── Phase K2 — selection ────────────────────────────────────────────────────
-
-  /** Selects only the publishable (Passed/NeedsReview, not-yet-published) rows on this page. */
-  selectAllPublishableVisible(): void {
-    this.candidatesBulkEditMode.set(true);
-    const rows = this.candidates();
-    const indices: number[] = [];
-    const ids: string[] = [];
-    rows.forEach((c, i) => {
-      if (c.canAttemptPublish && !c.isPublished) { indices.push(i); ids.push(c.candidateId); }
-    });
-    this.selectedIds.set(new Set(ids));
-    this.candidatesTableRef?.setSelection(indices);
-  }
 
   clearSelection(): void {
     this.selectedIds.set(new Set());

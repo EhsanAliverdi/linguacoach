@@ -77,6 +77,57 @@ public sealed class AiUsageController : ControllerBase
             }),
             zeroCostCallCount = s.ZeroCostCallCount,
             zeroCostTotalTokens = s.ZeroCostTotalTokens,
+            zeroCostProviderModels = s.ZeroCostProviderModels.Select(z => new
+            {
+                provider = z.Provider,
+                model = z.Model,
+                callCount = z.CallCount,
+                totalTokens = z.TotalTokens,
+            }),
+        });
+    }
+
+    [HttpPost("reprice-zero-cost")]
+    public async Task<IActionResult> RepriceZeroCostBatch(
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
+        [FromQuery] string? provider = null,
+        [FromQuery] string? model = null,
+        [FromQuery] string? featureKey = null,
+        [FromQuery] string? status = null,
+        [FromQuery] string? studentId = null,
+        [FromQuery] int batchSize = 200,
+        CancellationToken ct = default)
+    {
+        var dateFilter = BuildDateFilter(from, to);
+        if (dateFilter is null) return BadRequest(new { error = "from must be before to." });
+
+        Guid? parsedStudentId = null;
+        if (!string.IsNullOrWhiteSpace(studentId))
+        {
+            if (!Guid.TryParse(studentId, out var sid))
+                return BadRequest(new { error = $"Invalid studentId '{studentId}'. Must be a valid GUID." });
+            parsedStudentId = sid;
+        }
+
+        var columnFilter = new AiUsageRecentFilter(
+            Provider:   string.IsNullOrWhiteSpace(provider)   ? null : provider.Trim(),
+            Model:      string.IsNullOrWhiteSpace(model)      ? null : model.Trim(),
+            FeatureKey: string.IsNullOrWhiteSpace(featureKey) ? null : featureKey.Trim(),
+            Status:     string.IsNullOrWhiteSpace(status)     ? null : status.Trim(),
+            StudentId:  parsedStudentId);
+
+        if (columnFilter.HasInvalidStatus)
+            return BadRequest(new { error = $"Invalid status '{status}'. Valid values: success, failed, fallback." });
+
+        var result = await _handler.RepriceZeroCostBatchAsync(dateFilter, columnFilter, batchSize, ct);
+        return Ok(new
+        {
+            processedInBatch = result.ProcessedInBatch,
+            fixedInBatch = result.FixedInBatch,
+            skippedInBatch = result.SkippedInBatch,
+            costAddedUsd = result.CostAddedUsd,
+            remainingZeroCost = result.RemainingZeroCost,
         });
     }
 

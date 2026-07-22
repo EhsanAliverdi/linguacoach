@@ -15,14 +15,10 @@ import {
   SpAdminCopyableTextComponent,
   SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
-  SpAdminFilterBarComponent,
-  SpAdminFormFieldComponent,
-  SpAdminInputComponent,
   SpAdminKpiCardComponent,
   SpAdminLoadingStateComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
-  SpAdminPaginationComponent,
   SpAdminStatusCardComponent,
   SpAdminStatusGridComponent,
   SpAdminTableColumn,
@@ -44,14 +40,10 @@ import {
     SpAdminCopyableTextComponent,
     SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
-    SpAdminFilterBarComponent,
-    SpAdminFormFieldComponent,
-    SpAdminInputComponent,
     SpAdminKpiCardComponent,
     SpAdminLoadingStateComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
-    SpAdminPaginationComponent,
     SpAdminStatusCardComponent,
     SpAdminStatusGridComponent,
     SpAdminTableComponent,
@@ -152,6 +144,13 @@ export class AdminSecurityComponent implements OnInit {
   onFilterChange(): void {
     this.eventsPage.set(1);
     this.loadEvents();
+  }
+
+  private emailSearchDebounce?: ReturnType<typeof setTimeout>;
+  onEmailSearchChange(value: string): void {
+    this.filterEmail = value;
+    clearTimeout(this.emailSearchDebounce);
+    this.emailSearchDebounce = setTimeout(() => this.onFilterChange(), 300);
   }
 
   eventsFilters = computed<SpAdminTableFilter[]>(() => [

@@ -33,21 +33,19 @@
       <sp-admin-alert [variant]="bulkResultSummary().includes('failed') ? 'warning' : 'success'">{{ bulkResultSummary() }}</sp-admin-alert>
     }
 
-    <sp-admin-filter-bar>
-      <sp-admin-input
-        search size="sm" placeholder="Search title or instructions..."
-        [value]="searchQuery()" (input)="onSearch($event)" aria-label="Search Exercises" />
-      <span class="sp-admin-filter-count">{{ totalCount() }} item{{ totalCount() !== 1 ? 's' : '' }}</span>
-    </sp-admin-filter-bar>
-
     <sp-admin-table
       #exercisesTableRef
       layout="first-column-fluid"
       [columns]="exerciseColumns" [rows]="items()" (selectionChange)="onExercisesSelectionChange($event)"
+      [searchable]="true" searchPlaceholder="Search title or instructions..."
+      [searchValue]="searchQuery()" (searchChange)="onSearchChange($event)"
       [filters]="exercisesFilters()" (filterChange)="onExercisesFilterChange($event)"
       [bulkEditable]="true" [bulkEditMode]="exercisesBulkEditMode()" (bulkEditModeChange)="onExercisesBulkEditModeChange($event)"
       [rowClickable]="true" (rowClick)="onRowClick($event)"
       emptyMessage="No Exercises. Use Generate Exercise on a Resource Bank row or Lesson to create the first draft."
+      [paginationPage]="page()" [paginationTotalPages]="totalPages()"
+      [paginationLabel]="'Page ' + page() + ' of ' + totalPages() + ' · ' + totalCount() + ' items'"
+      (paginationPageChange)="onPageChange($event)"
     >
       @if (selectedCount() > 0) {
         <div selectionBar class="sp-admin-form-actions">
@@ -89,12 +87,6 @@
         }
       </ng-template>
     </sp-admin-table>
-    @if (items().length > 0) {
-    <sp-admin-table-footer>
-      Page {{ page() }} of {{ totalPages() }} · {{ totalCount() }} items
-      <sp-admin-pagination slot="actions" [page]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
-    </sp-admin-table-footer>
-    }
   }
 
 </sp-admin-page-body>

@@ -165,18 +165,6 @@
       <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="loadEvents()">Refresh</sp-admin-button>
     </div>
 
-    <div class="sp-admin-table-section-filters">
-      <sp-admin-filter-bar layout="responsive" density="compact">
-        <sp-admin-form-field filters label="Email" size="sm">
-          <sp-admin-input
-            [(ngModel)]="filterEmail"
-            (change)="onFilterChange()"
-            placeholder="Filter by email"
-            size="sm" />
-        </sp-admin-form-field>
-      </sp-admin-filter-bar>
-    </div>
-
     @if (loadingEvents()) {
       <div class="sp-admin-card-body-md">
         <sp-admin-loading-state message="Loading auth events" />
@@ -189,8 +177,14 @@
       <sp-admin-table
         [flush]="true" variant="data" density="compact" minWidth="760px"
         [columns]="eventColumns" [rows]="events()"
+        [searchable]="true" searchPlaceholder="Filter by email"
+        [searchValue]="filterEmail" (searchChange)="onEmailSearchChange($event)"
         [filters]="eventsFilters()" (filterChange)="onEventsFilterChange($event)"
         emptyMessage="No authentication events match the current filters."
+        [paginationPage]="eventsPage()"
+        [paginationTotalPages]="eventsTotalPages()"
+        [paginationLabel]="events().length + ' of ' + eventsTotal() + ' total events.'"
+        (paginationPageChange)="onPageChange($event)"
       >
         <ng-template #cell let-row let-col="col">
           @switch (col.key) {
@@ -215,15 +209,6 @@
           }
         </ng-template>
       </sp-admin-table>
-      <div class="sp-admin-table-section-footer">
-        <span>{{ events().length }} of {{ eventsTotal() }} total events.</span>
-        @if (eventsTotalPages() > 1) {
-          <sp-admin-pagination
-            [page]="eventsPage()"
-            [totalPages]="eventsTotalPages()"
-            (pageChange)="onPageChange($event)" />
-        }
-      </div>
     }
   </div>
 

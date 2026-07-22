@@ -3,7 +3,9 @@ import { CommonModule, DOCUMENT } from '@angular/common';
 
 export type PeriodPreset = 'all' | 'today' | '7d' | '30d' | 'month' | 'custom';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { AiUsageService, AiUsageSummary, AiUsageRecentItem, AiUsageDateRange, AiUsageRecentCallFilter, AiUsageTrendBucket } from '../../../core/services/ai-usage.service';
+import { AdminAiUsageRepriceService } from '../../../core/services/admin-ai-usage-reprice.service';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import { StudentListItem, AdminAiUsageTrendResponse, AdminAiUsageCategoryBreakdownResponse } from '../../../core/models/admin.models';
 import {
@@ -19,7 +21,6 @@ import {
   SpAdminLoadingStateComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
-  SpAdminPaginationComponent,
   SpAdminTableComponent,
   SpAdminTruncatedTextComponent,
   SpAdminFlyoutComponent,
@@ -40,6 +41,7 @@ import { SpAdminSlideOverComponent } from '../../../design-system/admin';
   imports: [
     CommonModule,
     FormsModule,
+    RouterLink,
     SpAdminAlertComponent,
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
@@ -52,7 +54,6 @@ import { SpAdminSlideOverComponent } from '../../../design-system/admin';
     SpAdminLoadingStateComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
-    SpAdminPaginationComponent,
     SpAdminTableComponent,
     SpAdminTruncatedTextComponent,
     SpAdminVisualPlaceholderComponent,
@@ -233,8 +234,11 @@ export class AdminAiUsageComponent implements OnInit {
   trendPage = signal(1);
   readonly trendTotalPages = computed(() =>
     Math.max(1, Math.ceil(this.trendBuckets().length / this.trendPageSize)));
+  // Chart stays chronological (oldest→newest, left to right); the table below reads newer→older,
+  // matching every other "recent activity" table on this page.
+  readonly trendBucketsNewestFirst = computed(() => [...this.trendBuckets()].reverse());
   readonly trendBucketsPaged = computed(() => {
-    const rows = this.trendBuckets();
+    const rows = this.trendBucketsNewestFirst();
     const start = (this.trendPage() - 1) * this.trendPageSize;
     return rows.slice(start, start + this.trendPageSize);
   });
@@ -242,7 +246,7 @@ export class AdminAiUsageComponent implements OnInit {
 
   private readonly doc = inject<Document>(DOCUMENT);
 
-  constructor(private svc: AiUsageService, private adminApi: AdminApiService) {}
+  constructor(private svc: AiUsageService, private adminApi: AdminApiService, public reprice: AdminAiUsageRepriceService) {}
 
   ngOnInit(): void {
     this.loadStudentOptions();
@@ -312,6 +316,14 @@ export class AdminAiUsageComponent implements OnInit {
     });
     this.loadRecent();
     this.loadTrends();
+  }
+
+  fixZeroCostCalls(): void {
+    const s = this.summary();
+    if (!s || s.zeroCostCallCount === 0) return;
+    const range = this.buildRange(this.periodPreset());
+    const filters = this.buildColumnFilters();
+    this.reprice.run(range, filters, s.zeroCostCallCount, () => this.load());
   }
 
   private buildColumnFilters(): AiUsageRecentCallFilter {
@@ -611,5 +623,16 @@ export class AdminAiUsageComponent implements OnInit {
 
   formatTokens(n: number): string {
     return n.toLocaleString();
+  }
+
+  /** $0.0000 hides real cost on small per-call amounts (e.g. tts.listening at $0.00007) — show
+   *  more fraction digits the smaller the value is, so nonzero costs never round down to display
+   *  as $0. */
+  formatCost(n: number): string {
+    if (n === 0) return '0.0000';
+    const abs = Math.abs(n);
+    if (abs < 0.000001) return n.toFixed(8);
+    if (abs < 0.01) return n.toFixed(6);
+    return n.toFixed(4);
   }
 }

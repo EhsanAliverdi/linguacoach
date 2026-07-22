@@ -4,15 +4,6 @@
 
 <sp-admin-page-body>
 
-  <sp-admin-filter-bar density="comfortable">
-    <sp-admin-input
-      search
-      type="search"
-      placeholder="Search by email or name"
-      [ngModel]="searchTerm()"
-      (ngModelChange)="onSearchChange($event)" />
-  </sp-admin-filter-bar>
-
   @if (loading()) {
     <sp-admin-loading-state message="Loading students" />
   } @else if (error()) {
@@ -21,9 +12,14 @@
     <sp-admin-table
       variant="data" density="compact" layout="first-column-fluid" minWidth="900px"
       [columns]="studentColumns" [rows]="students()"
+      [searchable]="true" searchPlaceholder="Search by email or name"
+      [searchValue]="searchTerm()" (searchChange)="onSearchChange($event)"
       [filters]="studentsFilters()" (filterChange)="onStudentsFilterChange($event)"
       [sortColumn]="sortColumn()" [sortDirection]="sortDirection()" (sortChange)="onSortChange($event)"
       emptyMessage="No students found."
+      [paginationPage]="page()" [paginationTotalPages]="totalPages()"
+      [paginationLabel]="'Showing ' + showingFrom() + '–' + showingTo() + ' of ' + totalCount() + ' students'"
+      (paginationPageChange)="onPageChange($event)"
     >
       <ng-container tableActions>
         <sp-admin-checkbox
@@ -75,15 +71,6 @@
         }
       </ng-template>
     </sp-admin-table>
-
-    @if (students().length > 0) {
-    <sp-admin-table-footer>
-      Showing {{ showingFrom() }}–{{ showingTo() }} of {{ totalCount() }} students
-      @if (totalPages() > 1) {
-        <sp-admin-pagination slot="actions" [page]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
-      }
-    </sp-admin-table-footer>
-    }
   }
 
 </sp-admin-page-body>

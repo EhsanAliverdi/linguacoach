@@ -1,4 +1,5 @@
 using LinguaCoach.Application.Admin;
+using LinguaCoach.Application.Ai;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,8 +8,13 @@ namespace LinguaCoach.Infrastructure.Admin;
 public sealed class AiUsageHandler : IAdminAiUsageHandler
 {
     private readonly LinguaCoachDbContext _db;
+    private readonly IAiPricingResolver _pricingResolver;
 
-    public AiUsageHandler(LinguaCoachDbContext db) => _db = db;
+    public AiUsageHandler(LinguaCoachDbContext db, IAiPricingResolver pricingResolver)
+    {
+        _db = db;
+        _pricingResolver = pricingResolver;
+    }
 
     public async Task<AiUsageSummaryDto> GetSummaryAsync(AiUsageDateFilter? dateFilter = null, AiUsageRecentFilter? columnFilter = null, CancellationToken ct = default)
     {
@@ -52,6 +58,16 @@ public sealed class AiUsageHandler : IAdminAiUsageHandler
         var zeroCostCallCount   = zeroCostLogs.Count;
         var zeroCostTotalTokens = zeroCostLogs.Sum(l => (long)l.InputTokens + l.OutputTokens);
 
+        var zeroCostProviderModels = zeroCostLogs
+            .GroupBy(l => (l.ProviderName, l.ModelName))
+            .Select(g => new AiUsageZeroCostProviderModel(
+                Provider: g.Key.ProviderName,
+                Model: g.Key.ModelName,
+                CallCount: g.Count(),
+                TotalTokens: g.Sum(l => (long)l.InputTokens + l.OutputTokens)))
+            .OrderByDescending(x => x.CallCount)
+            .ToList();
+
         return new AiUsageSummaryDto(
             TotalCalls: totalCalls,
             SuccessfulCalls: successful,
@@ -64,7 +80,8 @@ public sealed class AiUsageHandler : IAdminAiUsageHandler
             ByProvider: byProvider,
             ByFeature: byFeature,
             ZeroCostCallCount: zeroCostCallCount,
-            ZeroCostTotalTokens: zeroCostTotalTokens);
+            ZeroCostTotalTokens: zeroCostTotalTokens,
+            ZeroCostProviderModels: zeroCostProviderModels);
     }
 
     public async Task<AiUsagePagedResult> GetRecentAsync(
@@ -188,6 +205,58 @@ public sealed class AiUsageHandler : IAdminAiUsageHandler
             CostUsd: l.CostUsd,
             DurationMs: l.DurationMs,
             CorrelationId: l.CorrelationId)).ToList();
+    }
+
+    public async Task<AiUsageRepriceBatchResult> RepriceZeroCostBatchAsync(
+        AiUsageDateFilter? dateFilter = null, AiUsageRecentFilter? columnFilter = null, int batchSize = 200, CancellationToken ct = default)
+    {
+        batchSize = Math.Clamp(batchSize, 1, 500);
+
+        var query = _db.AiUsageLogs.AsQueryable();
+        query = ApplyDateFilter(query, dateFilter);
+        query = ApplyColumnFilter(query, columnFilter);
+        query = query.Where(l => l.CostUsd == 0m && (l.InputTokens + l.OutputTokens) > 0);
+
+        var remainingBefore = await query.CountAsync(ct);
+        if (remainingBefore == 0)
+            return new AiUsageRepriceBatchResult(0, 0, 0, 0m, 0);
+
+        var batch = await query
+            .OrderBy(l => l.CreatedAt)
+            .Take(batchSize)
+            .ToListAsync(ct);
+
+        var pricingCache = new Dictionary<(string Provider, string Model), ResolvedModelPricing?>();
+        var fixedCount = 0;
+        var costAdded = 0m;
+
+        foreach (var log in batch)
+        {
+            var key = (log.ProviderName, log.ModelName);
+            if (!pricingCache.TryGetValue(key, out var pricing))
+            {
+                pricing = await _pricingResolver.ResolveAsync(log.ProviderName, log.ModelName, ct);
+                pricingCache[key] = pricing;
+            }
+
+            if (pricing is null) continue;
+
+            var newCost = (log.InputTokens / 1000m) * pricing.InputPer1KTokens
+                        + (log.OutputTokens / 1000m) * pricing.OutputPer1KTokens;
+            log.BackfillCost(newCost);
+            fixedCount++;
+            costAdded += newCost;
+        }
+
+        await _db.SaveChangesAsync(ct);
+
+        var remainingAfter = remainingBefore - fixedCount;
+        return new AiUsageRepriceBatchResult(
+            ProcessedInBatch: batch.Count,
+            FixedInBatch: fixedCount,
+            SkippedInBatch: batch.Count - fixedCount,
+            CostAddedUsd: costAdded,
+            RemainingZeroCost: remainingAfter);
     }
 
     // From is inclusive (>=), To is exclusive (<). UTC assumed for both.

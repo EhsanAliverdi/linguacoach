@@ -19,14 +19,12 @@ import {
   SpAdminLoadingStateComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
-  SpAdminPaginationComponent,
   SpAdminSectionHeaderComponent,
   SpAdminSelectComponent,
   SpAdminSlideOverComponent,
   SpAdminTableColumn,
   SpAdminTableComponent,
   SpAdminTableFilter,
-  SpAdminTableFooterComponent,
 } from '../../../design-system/admin';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import {
@@ -63,12 +61,10 @@ import { AdminBulkRepairService } from '../../../core/services/admin-bulk-repair
     SpAdminLoadingStateComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
-    SpAdminPaginationComponent,
     SpAdminSectionHeaderComponent,
     SpAdminSelectComponent,
     SpAdminSlideOverComponent,
     SpAdminTableComponent,
-    SpAdminTableFooterComponent,
     SpAdminGraphCardComponent,
     SpAdminSkillGraphVizComponent,
   ],

@@ -929,7 +929,8 @@ public sealed class AdminHandler :
             command.EffectiveFromUtc,
             command.EffectiveToUtc,
             command.Notes,
-            command.AdminUserId);
+            command.AdminUserId,
+            command.InputPricePer1KCharacters);
 
         _db.AiModelPricingOverrides.Add(entity);
 
@@ -956,7 +957,8 @@ public sealed class AdminHandler :
             command.EffectiveFromUtc,
             command.EffectiveToUtc,
             command.Notes,
-            command.AdminUserId);
+            command.AdminUserId,
+            command.InputPricePer1KCharacters);
 
         _db.AdminAuditLogs.Add(new AdminAuditLog(
             command.AdminUserId, "UpdatePricingOverride", "AiModelPricingOverride",
@@ -988,7 +990,8 @@ public sealed class AdminHandler :
             o.Currency, o.IsActive,
             o.EffectiveFromUtc, o.EffectiveToUtc,
             o.Notes, o.CreatedAt, o.UpdatedAtUtc,
-            o.CreatedByAdminUserId, o.UpdatedByAdminUserId);
+            o.CreatedByAdminUserId, o.UpdatedByAdminUserId,
+            o.InputPricePer1KCharacters);
 
     public async Task<AiConfigCategoryItem> UpdateCategoryAsync(UpdateAiConfigCategoryCommand command, CancellationToken ct = default)
     {

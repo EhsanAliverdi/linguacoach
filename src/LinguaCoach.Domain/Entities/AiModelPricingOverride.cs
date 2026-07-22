@@ -11,6 +11,8 @@ public sealed class AiModelPricingOverride : BaseEntity
     public string ModelName { get; private set; }
     public decimal InputPricePer1KTokens { get; private set; }
     public decimal OutputPricePer1KTokens { get; private set; }
+    /// <summary>Per-character price for non-token-billed models (TTS) — null for LLM rows.</summary>
+    public decimal? InputPricePer1KCharacters { get; private set; }
     public string Currency { get; private set; }
     public bool IsActive { get; private set; }
     public DateTime EffectiveFromUtc { get; private set; }
@@ -36,14 +38,16 @@ public sealed class AiModelPricingOverride : BaseEntity
         DateTime effectiveFromUtc,
         DateTime? effectiveToUtc,
         string? notes,
-        Guid? createdByAdminUserId)
+        Guid? createdByAdminUserId,
+        decimal? inputPricePer1KCharacters = null)
     {
-        Validate(providerName, modelName, inputPricePer1KTokens, outputPricePer1KTokens, currency, effectiveFromUtc, effectiveToUtc);
+        Validate(providerName, modelName, inputPricePer1KTokens, outputPricePer1KTokens, currency, effectiveFromUtc, effectiveToUtc, inputPricePer1KCharacters);
 
         ProviderName = providerName.Trim().ToLowerInvariant();
         ModelName = modelName.Trim();
         InputPricePer1KTokens = inputPricePer1KTokens;
         OutputPricePer1KTokens = outputPricePer1KTokens;
+        InputPricePer1KCharacters = inputPricePer1KCharacters;
         Currency = currency.Trim().ToUpperInvariant();
         IsActive = true;
         EffectiveFromUtc = effectiveFromUtc;
@@ -59,12 +63,14 @@ public sealed class AiModelPricingOverride : BaseEntity
         DateTime effectiveFromUtc,
         DateTime? effectiveToUtc,
         string? notes,
-        Guid? updatedByAdminUserId)
+        Guid? updatedByAdminUserId,
+        decimal? inputPricePer1KCharacters = null)
     {
-        Validate(ProviderName, ModelName, inputPricePer1KTokens, outputPricePer1KTokens, currency, effectiveFromUtc, effectiveToUtc);
+        Validate(ProviderName, ModelName, inputPricePer1KTokens, outputPricePer1KTokens, currency, effectiveFromUtc, effectiveToUtc, inputPricePer1KCharacters);
 
         InputPricePer1KTokens = inputPricePer1KTokens;
         OutputPricePer1KTokens = outputPricePer1KTokens;
+        InputPricePer1KCharacters = inputPricePer1KCharacters;
         Currency = currency.Trim().ToUpperInvariant();
         EffectiveFromUtc = effectiveFromUtc;
         EffectiveToUtc = effectiveToUtc;
@@ -84,12 +90,14 @@ public sealed class AiModelPricingOverride : BaseEntity
         string providerName, string modelName,
         decimal inputPrice, decimal outputPrice,
         string currency,
-        DateTime effectiveFrom, DateTime? effectiveTo)
+        DateTime effectiveFrom, DateTime? effectiveTo,
+        decimal? inputPricePer1KCharacters)
     {
         if (string.IsNullOrWhiteSpace(providerName)) throw new ArgumentException("ProviderName is required.", nameof(providerName));
         if (string.IsNullOrWhiteSpace(modelName)) throw new ArgumentException("ModelName is required.", nameof(modelName));
         if (inputPrice < 0) throw new ArgumentOutOfRangeException(nameof(inputPrice), "Input price must be >= 0.");
         if (outputPrice < 0) throw new ArgumentOutOfRangeException(nameof(outputPrice), "Output price must be >= 0.");
+        if (inputPricePer1KCharacters is < 0) throw new ArgumentOutOfRangeException(nameof(inputPricePer1KCharacters), "Character price must be >= 0.");
         if (string.IsNullOrWhiteSpace(currency)) throw new ArgumentException("Currency is required.", nameof(currency));
         if (effectiveTo.HasValue && effectiveTo.Value <= effectiveFrom)
             throw new ArgumentException("EffectiveToUtc must be after EffectiveFromUtc.", nameof(effectiveTo));

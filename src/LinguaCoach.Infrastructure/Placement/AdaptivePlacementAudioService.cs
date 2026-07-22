@@ -22,17 +22,20 @@ public sealed class AdaptivePlacementAudioService
     private readonly TtsProviderResolver _ttsResolver;
     private readonly IFileStorageService _storage;
     private readonly LinguaCoachDbContext _db;
+    private readonly IAiPricingResolver _pricingResolver;
     private readonly ILogger<AdaptivePlacementAudioService> _logger;
 
     public AdaptivePlacementAudioService(
         TtsProviderResolver ttsResolver,
         IFileStorageService storage,
         LinguaCoachDbContext db,
+        IAiPricingResolver pricingResolver,
         ILogger<AdaptivePlacementAudioService> logger)
     {
         _ttsResolver = ttsResolver;
         _storage = storage;
         _db = db;
+        _pricingResolver = pricingResolver;
         _logger = logger;
     }
 
@@ -62,7 +65,7 @@ public sealed class AdaptivePlacementAudioService
         var result = await tts.GenerateSpeechAsync(script, ttsOptions, ct);
         var durationMs = (long)(DateTime.UtcNow - started).TotalMilliseconds;
 
-        await LogTtsUsageAsync("tts.placement", ttsOptions.Model ?? result.Voice, result, durationMs, ct);
+        await LogTtsUsageAsync("tts.placement", ttsOptions.Model ?? result.Voice, result, script.Length, durationMs, ct);
 
         if (!result.Success || result.AudioBytes is null || result.AudioBytes.Length == 0)
         {
@@ -111,21 +114,28 @@ public sealed class AdaptivePlacementAudioService
     }
 
     private async Task LogTtsUsageAsync(
-        string featureKey, string? model, TtsResult result, long durationMs, CancellationToken ct)
+        string featureKey, string? model, TtsResult result, int characterCount, long durationMs, CancellationToken ct)
     {
         try
         {
+            var provider = string.IsNullOrWhiteSpace(result.Provider) ? "unknown" : result.Provider;
+            var modelName = string.IsNullOrWhiteSpace(model) ? "unknown" : model;
+            var pricing = await _pricingResolver.ResolveAsync(provider, modelName, ct);
+            var costUsd = pricing?.InputPer1KCharacters is decimal perKChars
+                ? (characterCount / 1000m) * perKChars
+                : 0m;
+
             _db.AiUsageLogs.Add(new AiUsageLog(
                 studentProfileId: null,
                 featureKey,
-                string.IsNullOrWhiteSpace(result.Provider) ? "unknown" : result.Provider,
-                string.IsNullOrWhiteSpace(model) ? "unknown" : model,
+                provider,
+                modelName,
                 isFallback: false,
                 wasSuccessful: result.Success,
                 failureReason: result.FailureReason,
                 inputTokens: 0,
                 outputTokens: 0,
-                costUsd: 0m,
+                costUsd: costUsd,
                 durationMs,
                 correlationId: null));
 

@@ -39,30 +39,23 @@
       <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert>
     }
 
-    <sp-admin-filter-bar>
-      <sp-admin-input
-        search
-        size="sm"
-        placeholder="Search templates..."
-        [value]="searchQuery()"
-        (input)="onSearch($event)"
-        aria-label="Search onboarding templates" />
-      <span class="sp-admin-filter-count">{{ filteredTemplates().length }} template{{ filteredTemplates().length !== 1 ? 's' : '' }}</span>
-      <sp-admin-button actions variant="primary" size="sm" (clicked)="openCreateForm()">
-        Create onboarding template
-      </sp-admin-button>
-    </sp-admin-filter-bar>
-
-    @if (filteredTemplates().length === 0) {
-      @if (templates().length === 0) {
-        <sp-admin-empty-state
-          title="No onboarding templates yet"
-          message="Create a template to start authoring the student onboarding wizard." />
-      } @else {
-        <sp-admin-empty-state message="No templates match your search." />
-      }
+    @if (filteredTemplates().length === 0 && templates().length === 0) {
+      <sp-admin-empty-state
+        title="No onboarding templates yet"
+        message="Create a template to start authoring the student onboarding wizard." />
     } @else {
-      <sp-admin-table variant="data" density="compact" layout="first-column-fluid" [columns]="templateColumns" [rows]="filteredTemplates()">
+      <sp-admin-table
+        variant="data" density="compact" layout="first-column-fluid"
+        [columns]="templateColumns" [rows]="filteredTemplates()"
+        [searchable]="true" searchPlaceholder="Search templates..."
+        [searchValue]="searchQuery()" (searchChange)="onSearchChange($event)"
+        emptyMessage="No templates match your search."
+      >
+        <ng-container tableActions>
+          <sp-admin-button variant="primary" size="sm" (clicked)="openCreateForm()">
+            Create onboarding template
+          </sp-admin-button>
+        </ng-container>
         <ng-template #cell let-row let-col="col">
           @switch (col.key) {
             @case ('name') { <span class="sp-admin-cell-title">{{ $any(row).name }}</span> }

@@ -9,7 +9,7 @@
   <!-- ── Data integrity sweep (Sprint 11) — distinct from AI-generation health below: orphan/FK
        checks across student plans/objectives/attempts/launches, plus aggregated per-entity
        (Module/Lesson/Exercise/Resource Bank) issue counts. ───────────────────────────────── -->
-  <sp-admin-card title="Data integrity" variant="section" padding="md">
+  <sp-admin-card title="Data integrity" variant="section" [padding]="dataIntegrity() && !loadingDataIntegrity() && !dataIntegrityError() ? 'none' : 'md'">
     <sp-admin-button slot="actions" variant="neutral" appearance="outline" size="sm" (clicked)="loadDataIntegrity()">
       Refresh
     </sp-admin-button>
@@ -20,7 +20,7 @@
       <sp-admin-error-state title="Data integrity sweep unavailable" [message]="dataIntegrityError()" />
     } @else if (dataIntegrity()) {
       @let sweep = dataIntegrity()!;
-      <div class="sp-admin-flex sp-admin-items-center sp-admin-gap-3 sp-admin-mb-3">
+      <div class="sp-admin-flex sp-admin-items-center sp-admin-gap-3" style="padding: 20px 20px 12px;">
         <sp-admin-badge [tone]="sweep.allHealthy ? 'success' : 'danger'">
           {{ sweep.allHealthy ? 'All healthy' : 'Issues found' }}
         </sp-admin-badge>
@@ -128,12 +128,16 @@
       <sp-admin-table
         [flush]="true" variant="data" density="compact" minWidth="960px"
         [columns]="eventColumns" [rows]="pagedEvents()"
+        [searchable]="true" searchPlaceholder="Search messages"
+        [searchValue]="filterQ" (searchChange)="onEventSearchChange($event)"
         [filters]="eventFilters()" (filterChange)="onEventFilterChange($event)"
+        [paginationPage]="eventsPage()" [paginationTotalPages]="eventsTotalPages()"
+        [paginationLabel]="'Showing ' + pagedEvents().length + ' of ' + events().length + ' loaded — ' + total() + ' total matching.'"
+        (paginationPageChange)="eventsPage.set($event)"
       >
         <ng-container tableActions>
           <sp-admin-input [(ngModel)]="filterCategory" (change)="loadEvents()" placeholder="Category" size="sm" />
           <sp-admin-input [(ngModel)]="filterCorrelationId" (change)="loadEvents()" placeholder="Correlation ID" size="sm" />
-          <sp-admin-input [(ngModel)]="filterQ" (change)="loadEvents()" placeholder="Search messages" size="sm" />
         </ng-container>
         <ng-template #cell let-row let-col="col">
           @switch (col.key) {
@@ -171,15 +175,6 @@
           }
         </ng-template>
       </sp-admin-table>
-      <div class="sp-admin-table-section-footer">
-        <span>Showing {{ pagedEvents().length }} of {{ events().length }} loaded &mdash; {{ total() }} total matching.</span>
-        @if (eventsTotalPages() > 1) {
-          <sp-admin-pagination
-            [page]="eventsPage()"
-            [totalPages]="eventsTotalPages()"
-            (pageChange)="eventsPage.set($event)" />
-        }
-      </div>
     }
   </div>
 

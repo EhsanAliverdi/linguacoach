@@ -34,22 +34,16 @@
     <sp-admin-empty-state message="No exercise types found." />
   } @else {
 
-    <sp-admin-filter-bar>
-      <sp-admin-input
-        search
-        size="sm"
-        placeholder="Search by name or key..."
-        [value]="searchQuery()"
-        (input)="onSearch($event)"
-        aria-label="Search exercise types" />
-      <span class="sp-admin-filter-count">{{ filteredExerciseTypes().length }} type{{ filteredExerciseTypes().length !== 1 ? 's' : '' }}</span>
-    </sp-admin-filter-bar>
-
     <sp-admin-table
       layout="first-column-fluid"
       [columns]="exerciseTypeColumns" [rows]="pagedExerciseTypes()"
+      [searchable]="true" searchPlaceholder="Search by name or key..."
+      [searchValue]="searchQuery()" (searchChange)="onSearchChange($event)"
       [filters]="exerciseTypesFilters()" (filterChange)="onExerciseTypesFilterChange($event)"
       emptyMessage="No exercise types match your filters."
+      [paginationPage]="page()" [paginationTotalPages]="totalPages()"
+      [paginationLabel]="'Page ' + page() + ' of ' + totalPages() + ' · ' + filteredExerciseTypes().length + ' types'"
+      (paginationPageChange)="page.set($event)"
     >
       <ng-template #cell let-row let-col="col">
         @switch (col.key) {
@@ -123,16 +117,6 @@
         }
       </ng-template>
     </sp-admin-table>
-    @if (filteredExerciseTypes().length > 0) {
-    <sp-admin-table-footer>
-      Page {{ page() }} of {{ totalPages() }} · {{ filteredExerciseTypes().length }} types
-      <sp-admin-pagination
-        slot="actions"
-        [page]="page()"
-        [totalPages]="totalPages()"
-        (pageChange)="page.set($event)" />
-    </sp-admin-table-footer>
-    }
   }
 
 </sp-admin-page-body>

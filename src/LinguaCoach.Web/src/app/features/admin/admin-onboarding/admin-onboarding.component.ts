@@ -10,7 +10,6 @@ import {
   SpAdminButtonComponent,
   SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
-  SpAdminFilterBarComponent,
   SpAdminFormFieldComponent,
   SpAdminInputComponent,
   SpAdminKpiCardComponent,
@@ -40,7 +39,6 @@ import type { SpAdminRowAction, SpAdminTableColumn } from '../../../design-syste
     SpAdminButtonComponent,
     SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
-    SpAdminFilterBarComponent,
     SpAdminFormFieldComponent,
     SpAdminInputComponent,
     SpAdminKpiCardComponent,
@@ -72,7 +70,7 @@ export class AdminOnboardingComponent implements OnInit {
     { key: 'status', label: 'Status' },
     { key: 'versionCount', label: 'Versions' },
     { key: 'updatedAt', label: 'Updated' },
-    { key: 'actions', label: '', align: 'right' },
+    { key: 'actions', label: 'Actions', align: 'right' },
   ];
 
   readonly publishedCount = computed(() => this.templates().filter(t => t.status === 'Published').length);
@@ -104,8 +102,8 @@ export class AdminOnboardingComponent implements OnInit {
     });
   }
 
-  onSearch(event: Event): void {
-    this.searchQuery.set((event.target as HTMLInputElement).value);
+  onSearchChange(value: string): void {
+    this.searchQuery.set(value);
   }
 
   openCreateForm(): void {

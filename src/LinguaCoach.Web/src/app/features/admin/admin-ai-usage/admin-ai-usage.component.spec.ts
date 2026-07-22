@@ -17,6 +17,7 @@ function makeSummary(overrides: Partial<AiUsageSummary> = {}): AiUsageSummary {
     successRate: 90,
     zeroCostCallCount: 0,
     zeroCostTotalTokens: 0,
+    zeroCostProviderModels: [],
     byProvider: [{ provider: 'anthropic', calls: 10, successful: 9, fallback: 2, costUsd: 0.0123 }],
     byFeature: [{ feature: 'lesson_generation', calls: 10, successful: 9, costUsd: 0.0123 }],
     ...overrides,

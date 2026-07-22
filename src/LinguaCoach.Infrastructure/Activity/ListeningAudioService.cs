@@ -17,17 +17,20 @@ public sealed class ListeningAudioService
     private readonly TtsProviderResolver _ttsResolver;
     private readonly IFileStorageService _storage;
     private readonly LinguaCoachDbContext _db;
+    private readonly IAiPricingResolver _pricingResolver;
     private readonly ILogger<ListeningAudioService> _logger;
 
     public ListeningAudioService(
         TtsProviderResolver ttsResolver,
         IFileStorageService storage,
         LinguaCoachDbContext db,
+        IAiPricingResolver pricingResolver,
         ILogger<ListeningAudioService> logger)
     {
         _ttsResolver = ttsResolver;
         _storage = storage;
         _db = db;
+        _pricingResolver = pricingResolver;
         _logger = logger;
     }
 
@@ -91,10 +94,11 @@ public sealed class ListeningAudioService
         // fields — found live 2026-07-03: TTS generation genuinely works (confirmed via a real
         // playable audio file), but every call was invisible in AI Operations/cost tracking
         // because nothing here ever wrote a usage-log row. Log it directly, matching
-        // AiExecutionService's LogUsageAsync shape (0 tokens/cost since TTS isn't priced by token
-        // in this codebase).
+        // AiExecutionService's LogUsageAsync shape. TTS isn't billed per-token, so cost is priced
+        // per-character (see IAiPricingResolver.InputPer1KCharacters) instead of via input/output
+        // tokens; still $0 until an admin configures character pricing for that provider/model.
         await LogTtsUsageAsync("tts.listening", ttsOptions.Model ?? result.Voice, result,
-            durationMs, ct);
+            content.EffectiveAudioScript!.Length, durationMs, ct);
 
         if (!result.Success || result.AudioBytes is null || result.AudioBytes.Length == 0)
         {
@@ -157,21 +161,28 @@ public sealed class ListeningAudioService
     }
 
     private async Task LogTtsUsageAsync(
-        string featureKey, string? model, TtsResult result, long durationMs, CancellationToken ct)
+        string featureKey, string? model, TtsResult result, int characterCount, long durationMs, CancellationToken ct)
     {
         try
         {
+            var provider = string.IsNullOrWhiteSpace(result.Provider) ? "unknown" : result.Provider;
+            var modelName = string.IsNullOrWhiteSpace(model) ? "unknown" : model;
+            var pricing = await _pricingResolver.ResolveAsync(provider, modelName, ct);
+            var costUsd = pricing?.InputPer1KCharacters is decimal perKChars
+                ? (characterCount / 1000m) * perKChars
+                : 0m;
+
             _db.AiUsageLogs.Add(new AiUsageLog(
                 studentProfileId: null,
                 featureKey,
-                string.IsNullOrWhiteSpace(result.Provider) ? "unknown" : result.Provider,
-                string.IsNullOrWhiteSpace(model) ? "unknown" : model,
+                provider,
+                modelName,
                 isFallback: false,
                 wasSuccessful: result.Success,
                 failureReason: result.FailureReason,
                 inputTokens: 0,
                 outputTokens: 0,
-                costUsd: 0m,
+                costUsd: costUsd,
                 durationMs,
                 correlationId: null));
 

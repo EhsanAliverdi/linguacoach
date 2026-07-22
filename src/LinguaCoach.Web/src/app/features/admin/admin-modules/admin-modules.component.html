@@ -36,21 +36,19 @@
       <sp-admin-alert [variant]="bulkResultSummary().includes('failed') ? 'warning' : 'success'">{{ bulkResultSummary() }}</sp-admin-alert>
     }
 
-    <sp-admin-filter-bar>
-      <sp-admin-input
-        search size="sm" placeholder="Search title or description..."
-        [value]="searchQuery()" (input)="onSearch($event)" aria-label="Search Modules" />
-      <span class="sp-admin-filter-count">{{ totalCount() }} item{{ totalCount() !== 1 ? 's' : '' }}</span>
-    </sp-admin-filter-bar>
-
     <sp-admin-table
       #modulesTableRef
       layout="first-column-fluid"
       [columns]="moduleColumns" [rows]="items()" (selectionChange)="onModulesSelectionChange($event)"
+      [searchable]="true" searchPlaceholder="Search title or description..."
+      [searchValue]="searchQuery()" (searchChange)="onSearchChange($event)"
       [filters]="modulesFilters()" (filterChange)="onModulesFilterChange($event)"
       [bulkEditable]="true" [bulkEditMode]="modulesBulkEditMode()" (bulkEditModeChange)="onModulesBulkEditModeChange($event)"
       [rowClickable]="true" (rowClick)="onRowClick($event)"
       emptyMessage="No Modules. Use Create Module to compose the first draft from a Lesson and Exercise."
+      [paginationPage]="page()" [paginationTotalPages]="totalPages()"
+      [paginationLabel]="'Page ' + page() + ' of ' + totalPages() + ' · ' + totalCount() + ' items'"
+      (paginationPageChange)="onPageChange($event)"
     >
       @if (selectedCount() > 0) {
         <div selectionBar class="sp-admin-form-actions">
@@ -104,12 +102,6 @@
         }
       </ng-template>
     </sp-admin-table>
-    @if (items().length > 0) {
-    <sp-admin-table-footer>
-      Page {{ page() }} of {{ totalPages() }} · {{ totalCount() }} items
-      <sp-admin-pagination slot="actions" [page]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
-    </sp-admin-table-footer>
-    }
   }
 
 </sp-admin-page-body>

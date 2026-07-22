@@ -27,7 +27,8 @@ public sealed class AiUsageSummaryTests
             ByProvider: [],
             ByFeature: [],
             ZeroCostCallCount: zeroCostCallCount,
-            ZeroCostTotalTokens: zeroCostTotalTokens);
+            ZeroCostTotalTokens: zeroCostTotalTokens,
+            ZeroCostProviderModels: []);
 
     [Fact]
     public void AiUsageSummaryDto_TokenTotals_SumCorrectly()

@@ -6,6 +6,9 @@ import { SpAdminErrorStateComponent } from '../error-state/sp-admin-error-state.
 import { SpAdminLoadingStateComponent } from '../loading-state/sp-admin-loading-state.component';
 import { SpAdminButtonComponent } from '../button/sp-admin-button.component';
 import { SpAdminSelectComponent, SpAdminSelectOption } from '../select/sp-admin-select.component';
+import { SpAdminTableFooterComponent } from '../table-footer/sp-admin-table-footer.component';
+import { SpAdminPaginationComponent } from '../pagination/sp-admin-pagination.component';
+import { SpAdminInputComponent } from '../input/sp-admin-input.component';
 
 /** A single dropdown filter rendered in the table's toolbar row (left side, next to actions). */
 export interface SpAdminTableFilter {
@@ -55,7 +58,7 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
 @Component({
   selector: 'sp-admin-table',
   standalone: true,
-  imports: [CommonModule, FormsModule, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminLoadingStateComponent, SpAdminButtonComponent, SpAdminSelectComponent],
+  imports: [CommonModule, FormsModule, SpAdminEmptyStateComponent, SpAdminErrorStateComponent, SpAdminLoadingStateComponent, SpAdminButtonComponent, SpAdminSelectComponent, SpAdminInputComponent, SpAdminTableFooterComponent, SpAdminPaginationComponent],
   template: `
     <div [class]="outerClasses">
       @if (loading) {
@@ -63,10 +66,21 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
       } @else if (error) {
         <sp-admin-error-state [title]="errorTitle" [message]="error" />
       } @else {
-        @if (filters.length || bulkEditable) {
+        @if (searchable || filters.length || bulkEditable) {
           <div class="sp-adm-toolbar-row">
-            @if (filters.length) {
+            @if (searchable || filters.length) {
               <div class="sp-adm-toolbar-filters">
+                @if (searchable) {
+                  <div class="sp-adm-toolbar-filter sp-adm-toolbar-search">
+                    <sp-admin-input
+                      [ngModel]="searchValue"
+                      [ngModelOptions]="{standalone: true}"
+                      (ngModelChange)="onSearchValueChange($event)"
+                      [placeholder]="searchPlaceholder"
+                      size="sm"
+                    />
+                  </div>
+                }
                 @for (filter of filters; track filter.key) {
                   <div class="sp-adm-toolbar-filter">
                     <label class="sp-adm-toolbar-filter-label">{{ filter.label }}</label>
@@ -104,10 +118,16 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
           <div [class]="scrollClass" [style.--sp-admin-table-min-width]="minWidth" [class.sp-adm-fixed-layout]="fixedLayout" [class.sp-adm-fluid-layout]="layout === 'first-column-fluid'">
             <ng-content />
           </div>
+          @if (paginationTotalPages !== undefined) {
+            <sp-admin-table-footer>
+              {{ paginationLabel }}
+              <sp-admin-pagination slot="actions" [page]="paginationPage ?? 1" [totalPages]="paginationTotalPages" (pageChange)="paginationPageChange.emit($event)" />
+            </sp-admin-table-footer>
+          }
         } @else if (!rows.length) {
           <sp-admin-empty-state [message]="emptyMessage" />
         } @else {
-          <div [class]="scrollClass" [style.--sp-admin-table-min-width]="minWidth">
+          <div [class]="scrollClass" [style.--sp-admin-table-min-width]="minWidth" [class.sp-adm-fixed-layout]="fixedLayout" [class.sp-adm-fluid-layout]="layout === 'first-column-fluid'">
             <table class="sp-adm-table w-full border-collapse" [style.min-width]="minWidth || null" [class.sp-adm-table-bordered]="variant === 'bordered'">
               @if (showHeader) {
                 <thead [class]="theadClass" [class.sp-adm-thead-sticky]="stickyHeader">
@@ -122,6 +142,7 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
                         scope="col"
                         [class]="thClass(column)"
                         [style.width]="column.width || null"
+                        [style.text-align]="effectiveAlign(column)"
                         [attr.aria-sort]="sortAriaLabel(column)"
                         (click)="column.sortable && onSortClick(column.key)"
                         (keydown.enter)="column.sortable && onSortClick(column.key)"
@@ -156,7 +177,7 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
                     @for (column of columns; track column.key) {
                     <td
                         [class]="tdClass(column)"
-                        [style.text-align]="column.align || 'left'"
+                        [style.text-align]="effectiveAlign(column)"
                         [style.width]="column.width || null"
                       >
                       <span class="inline-flex items-center gap-2">
@@ -188,6 +209,12 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
               </tbody>
             </table>
           </div>
+          @if (paginationTotalPages !== undefined) {
+            <sp-admin-table-footer>
+              {{ paginationLabel }}
+              <sp-admin-pagination slot="actions" [page]="paginationPage ?? 1" [totalPages]="paginationTotalPages" (pageChange)="paginationPageChange.emit($event)" />
+            </sp-admin-table-footer>
+          }
         }
       }
     </div>
@@ -306,6 +333,7 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
     }
     .sp-adm-toolbar-filters { display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; }
     .sp-adm-toolbar-filter { display:flex; flex-direction:column; gap:4px; min-width:140px; }
+    .sp-adm-toolbar-search { min-width:220px; }
     .sp-adm-toolbar-filter-label {
       font-size:11px; font-weight:700; color:var(--sp-admin-text-muted,#8B85A0);
       text-transform:uppercase; letter-spacing:.04em;
@@ -450,6 +478,13 @@ export class SpAdminTableComponent {
   /** Dropdown filters rendered in the toolbar row, left side, next to the Bulk edit toggle/actions. */
   @Input() filters: SpAdminTableFilter[] = [];
   @Output() filterChange = new EventEmitter<{ key: string; value: string }>();
+  /** Shows a search input as the first item in the toolbar's filter row — the table owns search
+   *  the same way it owns dropdown filters, so pages no longer need their own search box outside
+   *  the table. Two-way bindable via `searchValue`/`searchChange`. */
+  @Input() searchable = false;
+  @Input() searchValue = '';
+  @Input() searchPlaceholder = 'Search…';
+  @Output() searchChange = new EventEmitter<string>();
   /** Shows a "Bulk edit" toggle button above the table (data-driven or projected). */
   @Input() bulkEditable = false;
   /**
@@ -466,6 +501,21 @@ export class SpAdminTableComponent {
    * stopPropagation() itself to avoid also triggering the row click, same as the built-in checkboxes do. */
   @Input() rowClickable = false;
   @Output() rowClick = new EventEmitter<unknown>();
+  /** Data-driven mode only. When true, every column without its own explicit `align` is
+   *  right-aligned except the titleColumn (which always stays left) — the common "title on
+   *  the left, everything else lines up on the right" data-table convention. A column's own
+   *  `align` always wins over this default. */
+  @Input() rightAlignNonTitleColumns = false;
+
+  /** Optional built-in pagination footer — set `paginationTotalPages` to enable it. Renders
+   *  inside the table's own outer shell (same border as the table), so pages no longer need to
+   *  wrap [flush] table + sp-admin-table-footer in their own sp-admin-card just to visually group
+   *  them. Leave unset and keep using a manual <sp-admin-table-footer> sibling for anything beyond
+   *  the standard "Page X of Y · N items" + pager. */
+  @Input() paginationPage?: number;
+  @Input() paginationTotalPages?: number;
+  @Input() paginationLabel?: string;
+  @Output() paginationPageChange = new EventEmitter<number>();
 
   private selectedRows = new Set<number>();
 
@@ -481,6 +531,11 @@ export class SpAdminTableComponent {
   onFilterValueChange(filter: SpAdminTableFilter, value: string): void {
     filter.value = value;
     this.filterChange.emit({ key: filter.key, value });
+  }
+
+  onSearchValueChange(value: string): void {
+    this.searchValue = value;
+    this.searchChange.emit(value);
   }
 
   /** Clears row selection without leaving bulk-edit mode — call via a template ref after a bulk action succeeds. */
@@ -523,6 +578,12 @@ export class SpAdminTableComponent {
 
   get detailColspan(): number {
     return this.columns.length + (this.selectable ? 1 : 0) + (this.hasActions ? 1 : 0);
+  }
+
+  effectiveAlign(column: SpAdminTableColumn): 'left' | 'center' | 'right' {
+    if (column.align) return column.align;
+    if (this.rightAlignNonTitleColumns && !column.titleColumn) return 'right';
+    return 'left';
   }
 
   thClass(column: SpAdminTableColumn | null): string {

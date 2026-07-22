@@ -21,6 +21,8 @@ internal sealed class AiModelPricingOverrideConfiguration : IEntityTypeConfigura
             .HasColumnType("numeric(12,8)").IsRequired();
         builder.Property(e => e.OutputPricePer1KTokens).HasColumnName("output_price_per_1k_tokens")
             .HasColumnType("numeric(12,8)").IsRequired();
+        builder.Property(e => e.InputPricePer1KCharacters).HasColumnName("input_price_per_1k_characters")
+            .HasColumnType("numeric(12,8)").IsRequired(false);
         builder.Property(e => e.Currency).HasColumnName("currency").HasMaxLength(10).IsRequired();
         builder.Property(e => e.IsActive).HasColumnName("is_active").IsRequired();
         builder.Property(e => e.EffectiveFromUtc).HasColumnName("effective_from_utc").IsRequired();

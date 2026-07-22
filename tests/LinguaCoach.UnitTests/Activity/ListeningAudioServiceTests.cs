@@ -16,7 +16,7 @@ public sealed class ListeningAudioServiceTests
     // TtsProviderResolver/DbContext are sealed/unavailable in a unit test — pass null when the
     // guard fires before either is reached.
     private static ListeningAudioService CreateSut() =>
-        new(null!, null!, null!, NullLogger<ListeningAudioService>.Instance);
+        new(null!, null!, null!, null!, NullLogger<ListeningAudioService>.Instance);
 
     private static LearningActivity MakeActivity(
         ActivityType type,

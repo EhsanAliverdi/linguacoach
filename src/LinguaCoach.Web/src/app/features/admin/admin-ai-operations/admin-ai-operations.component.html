@@ -41,21 +41,28 @@
     </sp-admin-card>
 
     <!-- ── Provider / model usage ──────────────────────────────────────────────── -->
-    <sp-admin-card title="Provider / model usage" variant="section" padding="md" data-testid="ai-ops-provider-usage">
-      <sp-admin-status-grid [columns]="4">
-        <sp-admin-status-card label="Total calls" [value]="s.providerUsage.totalCalls" tone="neutral" />
-        <sp-admin-status-card label="Successful" [value]="s.providerUsage.successfulCalls" tone="success" />
-        <sp-admin-status-card label="Failed" [value]="s.providerUsage.failedCalls" [tone]="s.providerUsage.failedCalls > 0 ? 'danger' : 'neutral'" />
-        <sp-admin-status-card label="Fallback" [value]="s.providerUsage.fallbackCalls" tone="info" />
-        <sp-admin-status-card label="Input tokens" [value]="s.providerUsage.totalInputTokens" tone="neutral" />
-        <sp-admin-status-card label="Output tokens" [value]="s.providerUsage.totalOutputTokens" tone="neutral" />
-        <sp-admin-status-card label="Cost (USD)" [value]="(s.providerUsage.totalCostUsd | number:'1.2-4') ?? '—'" tone="info" />
-        <sp-admin-status-card label="Zero-cost calls" [value]="s.providerUsage.zeroCostCallCount" tone="neutral" />
-      </sp-admin-status-grid>
+    <sp-admin-card title="Provider / model usage" variant="section" padding="none" data-testid="ai-ops-provider-usage">
+      <div style="padding: 20px;">
+        <sp-admin-status-grid [columns]="4">
+          <sp-admin-status-card label="Total calls" [value]="s.providerUsage.totalCalls" tone="neutral" />
+          <sp-admin-status-card label="Successful" [value]="s.providerUsage.successfulCalls" tone="success" />
+          <sp-admin-status-card label="Failed" [value]="s.providerUsage.failedCalls" [tone]="s.providerUsage.failedCalls > 0 ? 'danger' : 'neutral'" />
+          <sp-admin-status-card label="Fallback" [value]="s.providerUsage.fallbackCalls" tone="info" />
+          <sp-admin-status-card label="Input tokens" [value]="s.providerUsage.totalInputTokens" tone="neutral" />
+          <sp-admin-status-card label="Output tokens" [value]="s.providerUsage.totalOutputTokens" tone="neutral" />
+          <sp-admin-status-card label="Cost (USD)" [value]="(s.providerUsage.totalCostUsd | number:'1.2-4') ?? '—'" tone="info" />
+          <sp-admin-status-card label="Zero-cost calls" [value]="s.providerUsage.zeroCostCallCount" tone="neutral" />
+        </sp-admin-status-grid>
+        @if (s.providerUsage.byProvider.length === 0) {
+          <sp-admin-not-implemented-state title="No provider usage yet">
+            No AI provider calls have been recorded yet.
+          </sp-admin-not-implemented-state>
+        }
+      </div>
 
       @if (s.providerUsage.byProvider.length > 0) {
         <sp-admin-table
-          [flush]="true" variant="data" density="compact" layout="first-column-fluid" minWidth="600px" style="margin-top: 1rem" data-testid="ai-ops-provider-table"
+          [flush]="true" variant="data" density="compact" layout="first-column-fluid" minWidth="600px" data-testid="ai-ops-provider-table"
           [columns]="providerUsageColumns" [rows]="s.providerUsage.byProvider"
         >
           <ng-template #cell let-row let-col="col">
@@ -65,10 +72,6 @@
             }
           </ng-template>
         </sp-admin-table>
-      } @else {
-        <sp-admin-not-implemented-state title="No provider usage yet">
-          No AI provider calls have been recorded yet.
-        </sp-admin-not-implemented-state>
       }
     </sp-admin-card>
 
@@ -118,17 +121,24 @@
     </div>
 
     <!-- ── Generation quality ───────────────────────────────────────────────────── -->
-    <sp-admin-card title="Generation quality" variant="section" padding="md" data-testid="ai-ops-generation-quality">
-      <sp-admin-status-grid [columns]="3">
-        <sp-admin-status-card label="Total validation failures" [value]="s.generationQualitySummary.totalValidationFailures" [tone]="s.generationQualitySummary.totalValidationFailures > 0 ? 'warning' : 'neutral'" />
-        <sp-admin-status-card label="Abandoned generations" [value]="s.generationQualitySummary.abandonedGenerations" [tone]="s.generationQualitySummary.abandonedGenerations > 0 ? 'danger' : 'neutral'" />
-        <sp-admin-status-card label="Recent failures" [value]="s.generationQualitySummary.recentFailureCount" tone="neutral" />
-      </sp-admin-status-grid>
-      <p class="sp-admin-section-sub" style="margin-top: 0.5rem">Retention: {{ s.generationQualitySummary.retentionDays }} days.</p>
+    <sp-admin-card title="Generation quality" variant="section" padding="none" data-testid="ai-ops-generation-quality">
+      <div style="padding: 20px;">
+        <sp-admin-status-grid [columns]="3">
+          <sp-admin-status-card label="Total validation failures" [value]="s.generationQualitySummary.totalValidationFailures" [tone]="s.generationQualitySummary.totalValidationFailures > 0 ? 'warning' : 'neutral'" />
+          <sp-admin-status-card label="Abandoned generations" [value]="s.generationQualitySummary.abandonedGenerations" [tone]="s.generationQualitySummary.abandonedGenerations > 0 ? 'danger' : 'neutral'" />
+          <sp-admin-status-card label="Recent failures" [value]="s.generationQualitySummary.recentFailureCount" tone="neutral" />
+        </sp-admin-status-grid>
+        <p class="sp-admin-section-sub" style="margin-top: 0.5rem">Retention: {{ s.generationQualitySummary.retentionDays }} days.</p>
+        @if (s.generationQualitySummary.latestFailures.length === 0) {
+          <sp-admin-not-implemented-state title="No recent generation failures">
+            No generation validation failures recorded in the retention window.
+          </sp-admin-not-implemented-state>
+        }
+      </div>
 
       @if (s.generationQualitySummary.latestFailures.length > 0) {
         <sp-admin-table
-          [flush]="true" variant="data" density="compact" layout="first-column-fluid" minWidth="800px" style="margin-top: 1rem" data-testid="ai-ops-generation-failures-table"
+          [flush]="true" variant="data" density="compact" layout="first-column-fluid" minWidth="800px" data-testid="ai-ops-generation-failures-table"
           [columns]="generationFailuresColumns" [rows]="s.generationQualitySummary.latestFailures"
         >
           <ng-template #cell let-row let-col="col">
@@ -141,10 +151,6 @@
             }
           </ng-template>
         </sp-admin-table>
-      } @else {
-        <sp-admin-not-implemented-state title="No recent generation failures">
-          No generation validation failures recorded in the retention window.
-        </sp-admin-not-implemented-state>
       }
     </sp-admin-card>
 
@@ -184,7 +190,7 @@
     </sp-admin-card>
 
     <!-- ── Recent failures (combined) ───────────────────────────────────────────── -->
-    <sp-admin-card title="Recent failures" variant="section" padding="md" data-testid="ai-ops-recent-failures">
+    <sp-admin-card title="Recent failures" variant="section" [padding]="s.recentFailures.length > 0 ? 'none' : 'md'" data-testid="ai-ops-recent-failures">
       @if (s.recentFailures.length > 0) {
         <sp-admin-table
           [flush]="true" variant="data" density="compact" layout="first-column-fluid" minWidth="900px"

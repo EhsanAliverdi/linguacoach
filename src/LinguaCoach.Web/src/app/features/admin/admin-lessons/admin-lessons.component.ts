@@ -18,20 +18,16 @@ import {
   SpAdminButtonComponent,
   SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
-  SpAdminFilterBarComponent,
   SpAdminFormFieldComponent,
-  SpAdminInputComponent,
   SpAdminLoadingStateComponent,
   SpAdminModalComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
-  SpAdminPaginationComponent,
   SpAdminRowAction,
   SpAdminTableActionsComponent,
   SpAdminTableColumn,
   SpAdminTableComponent,
   SpAdminTableFilter,
-  SpAdminTableFooterComponent,
   SpAdminTextareaComponent,
 } from '../../../design-system/admin';
 
@@ -55,17 +51,13 @@ interface BulkItemResult { success: boolean; title: string; error: string | null
     SpAdminButtonComponent,
     SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
-    SpAdminFilterBarComponent,
     SpAdminFormFieldComponent,
-    SpAdminInputComponent,
     SpAdminLoadingStateComponent,
     SpAdminModalComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
-    SpAdminPaginationComponent,
     SpAdminTableActionsComponent,
     SpAdminTableComponent,
-    SpAdminTableFooterComponent,
     SpAdminTextareaComponent,
   ],
   templateUrl: './admin-lessons.component.html',
@@ -178,8 +170,8 @@ export class AdminLessonsComponent implements OnInit {
 
   private searchDebounce?: ReturnType<typeof setTimeout>;
 
-  onSearch(event: Event): void {
-    this.searchQuery.set((event.target as HTMLInputElement).value);
+  onSearchChange(value: string): void {
+    this.searchQuery.set(value);
     this.page.set(1);
     clearTimeout(this.searchDebounce);
     this.searchDebounce = setTimeout(() => this.loadAll(), 300);

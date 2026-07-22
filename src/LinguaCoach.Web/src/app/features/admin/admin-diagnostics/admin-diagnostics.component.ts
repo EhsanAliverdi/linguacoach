@@ -21,7 +21,6 @@ import {
   SpAdminNotImplementedStateComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
-  SpAdminPaginationComponent,
   SpAdminStatusCardComponent,
   SpAdminStatusGridComponent,
   SpAdminTableComponent,
@@ -49,7 +48,6 @@ import { eventLevelLabel } from '../../../design-system/admin/utils/admin-badge.
     SpAdminNotImplementedStateComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
-    SpAdminPaginationComponent,
     SpAdminStatusCardComponent,
     SpAdminStatusGridComponent,
     SpAdminTableComponent,
@@ -260,6 +258,13 @@ export class AdminDiagnosticsComponent implements OnInit, OnDestroy {
       next: s => { this.status.set(s); this.loadingStatus.set(false); },
       error: err => { this.loadingStatus.set(false); this.statusError.set(err.error?.error ?? 'Could not load diagnostics status.'); },
     });
+  }
+
+  private eventSearchDebounce?: ReturnType<typeof setTimeout>;
+  onEventSearchChange(value: string): void {
+    this.filterQ = value;
+    clearTimeout(this.eventSearchDebounce);
+    this.eventSearchDebounce = setTimeout(() => this.loadEvents(), 300);
   }
 
   loadEvents(): void {

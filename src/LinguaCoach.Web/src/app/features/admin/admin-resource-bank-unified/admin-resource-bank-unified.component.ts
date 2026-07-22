@@ -20,20 +20,17 @@ import {
   SpAdminButtonComponent,
   SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
-  SpAdminFilterBarComponent,
   SpAdminFormFieldComponent,
   SpAdminInputComponent,
   SpAdminLoadingStateComponent,
   SpAdminModalComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
-  SpAdminPaginationComponent,
   SpAdminRowAction,
   SpAdminTableActionsComponent,
   SpAdminTableColumn,
   SpAdminTableComponent,
   SpAdminTableFilter,
-  SpAdminTableFooterComponent,
 } from '../../../design-system/admin';
 
 /** Phase H3 — UnifiedResourceBankItemType's member names match PublishedResourceType (backend
@@ -86,17 +83,14 @@ const PAGE_SIZE = 20;
     SpAdminButtonComponent,
     SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
-    SpAdminFilterBarComponent,
     SpAdminFormFieldComponent,
     SpAdminInputComponent,
     SpAdminLoadingStateComponent,
     SpAdminModalComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
-    SpAdminPaginationComponent,
     SpAdminTableActionsComponent,
     SpAdminTableComponent,
-    SpAdminTableFooterComponent,
   ],
   templateUrl: './admin-resource-bank-unified.component.html',
 })
@@ -104,8 +98,8 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
   @ViewChild('resourceBankTableRef') resourceBankTableRef?: SpAdminTableComponent;
 
   readonly resourceBankColumns: SpAdminTableColumn[] = [
-    { key: 'type', label: 'Type' },
     { key: 'title', label: 'Title', titleColumn: true },
+    { key: 'type', label: 'Type' },
     { key: 'cefrLevel', label: 'Level' },
     { key: 'skill', label: 'Skill / Subskill' },
     { key: 'contextTags', label: 'Context' },
@@ -251,8 +245,8 @@ export class AdminResourceBankUnifiedComponent implements OnInit {
 
   private searchDebounce?: ReturnType<typeof setTimeout>;
 
-  onSearch(event: Event): void {
-    this.searchQuery.set((event.target as HTMLInputElement).value);
+  onSearchChange(value: string): void {
+    this.searchQuery.set(value);
     this.page.set(1);
     clearTimeout(this.searchDebounce);
     this.searchDebounce = setTimeout(() => this.loadAll(), 300);

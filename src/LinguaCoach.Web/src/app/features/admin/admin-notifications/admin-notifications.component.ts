@@ -21,13 +21,11 @@ import {
   SpAdminCheckboxComponent,
   SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
-  SpAdminFilterBarComponent,
   SpAdminInputComponent,
   SpAdminKpiCardComponent,
   SpAdminLoadingStateComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
-  SpAdminPaginationComponent,
   SpAdminSelectComponent, SpAdminSelectOption,
   SpAdminSlideOverComponent,
   SpAdminTableActionsComponent,
@@ -35,7 +33,6 @@ import {
   SpAdminToggleComponent,
   SpAdminTextareaComponent,
   SpAdminFormFieldComponent,
-  SpAdminTableFooterComponent,
   SpAdminTabItem,
   SpAdminTabsComponent,
 } from '../../../design-system/admin';
@@ -55,14 +52,12 @@ import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design
     SpAdminCheckboxComponent,
     SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
-    SpAdminFilterBarComponent,
     SpAdminFormFieldComponent,
     SpAdminInputComponent,
     SpAdminKpiCardComponent,
     SpAdminLoadingStateComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
-    SpAdminPaginationComponent,
     SpAdminSelectComponent,
     SpAdminSlideOverComponent,
     SpAdminTableActionsComponent,
@@ -71,7 +66,6 @@ import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design
     SpAdminToggleComponent,
     SpAdminButtonGroupComponent,
     SpAdminBreakdownBarsComponent,
-    SpAdminTableFooterComponent,
     SpAdminTabsComponent,
   ],
   templateUrl: './admin-notifications.component.html',
@@ -97,7 +91,7 @@ export class AdminNotificationsComponent implements OnInit {
     { key: 'lastAttemptAtUtc', label: 'Last attempt' },
     { key: 'nextAttemptAtUtc', label: 'Next attempt' },
     { key: 'lastError', label: 'Last error' },
-    { key: 'actions', label: '' },
+    { key: 'actions', label: 'Actions' },
   ];
 
   readonly templateColumns: SpAdminTableColumn[] = [
@@ -109,7 +103,7 @@ export class AdminNotificationsComponent implements OnInit {
     { key: 'isActive', label: 'Active' },
     { key: 'version', label: 'Version' },
     { key: 'updatedAtUtc', label: 'Updated' },
-    { key: 'actions', label: '' },
+    { key: 'actions', label: 'Actions' },
   ];
 
   // ── Notification tab ───────────────────────────────────────────────────────
@@ -317,6 +311,13 @@ export class AdminNotificationsComponent implements OnInit {
 
   applyNotifFilters(): void { this.notifPage.set(1); this.loadNotifications(); }
   applyOutboxFilters(): void { this.outboxPage.set(1); this.loadOutbox(); }
+
+  private notifSearchDebounce?: ReturnType<typeof setTimeout>;
+  onNotifSearchChange(value: string): void {
+    this.notifSearch = value;
+    clearTimeout(this.notifSearchDebounce);
+    this.notifSearchDebounce = setTimeout(() => this.applyNotifFilters(), 300);
+  }
   onNotifPage(page: number): void { this.notifPage.set(page); this.loadNotifications(); }
   onOutboxPage(page: number): void { this.outboxPage.set(page); this.loadOutbox(); }
 
@@ -590,6 +591,13 @@ export class AdminNotificationsComponent implements OnInit {
 
   applyTemplateFilters(): void { this.templatesPage.set(1); this.loadTemplates(); }
   onTemplatesPage(page: number): void { this.templatesPage.set(page); this.loadTemplates(); }
+
+  private templateSearchDebounce?: ReturnType<typeof setTimeout>;
+  onTemplateSearchChange(value: string): void {
+    this.templateSearch = value;
+    clearTimeout(this.templateSearchDebounce);
+    this.templateSearchDebounce = setTimeout(() => this.applyTemplateFilters(), 300);
+  }
 
   openCreateTemplate(): void {
     this.templateFormMode = 'create';

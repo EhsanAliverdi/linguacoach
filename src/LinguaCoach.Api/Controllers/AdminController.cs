@@ -510,7 +510,8 @@ public sealed class AdminController : ControllerBase
                     request.EffectiveFromUtc ?? DateTime.UtcNow,
                     request.EffectiveToUtc,
                     request.Notes,
-                    GetCurrentUserId()), ct);
+                    GetCurrentUserId(),
+                    request.InputPricePer1KCharacters), ct);
             return Ok(result);
         }
         catch (ArgumentException ex) { return BadRequest(new { error = ex.Message }); }
@@ -529,7 +530,8 @@ public sealed class AdminController : ControllerBase
                     request.EffectiveFromUtc ?? DateTime.UtcNow,
                     request.EffectiveToUtc,
                     request.Notes,
-                    GetCurrentUserId()), ct);
+                    GetCurrentUserId(),
+                    request.InputPricePer1KCharacters), ct);
             return Ok(result);
         }
         catch (InvalidOperationException ex) { return NotFound(new { error = ex.Message }); }
@@ -906,14 +908,16 @@ public sealed record CreatePricingOverrideRequest(
     string? Currency = "USD",
     DateTime? EffectiveFromUtc = null,
     DateTime? EffectiveToUtc = null,
-    string? Notes = null);
+    string? Notes = null,
+    decimal? InputPricePer1KCharacters = null);
 public sealed record UpdatePricingOverrideRequest(
     decimal InputPricePer1KTokens,
     decimal OutputPricePer1KTokens,
     string? Currency = "USD",
     DateTime? EffectiveFromUtc = null,
     DateTime? EffectiveToUtc = null,
-    string? Notes = null);
+    string? Notes = null,
+    decimal? InputPricePer1KCharacters = null);
 
 public sealed record UpdateExerciseTypeRequest(
     bool? IsEnabled,

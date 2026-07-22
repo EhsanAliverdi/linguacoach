@@ -215,7 +215,7 @@
           [title]="group.provider | uppercase"
           [count]="group.rows.length"
           [countLabel]="group.rows.length === 1 ? 'model' : 'models'" />
-        <sp-admin-table variant="simple" [flush]="true" minWidth="400px" [columns]="pricingColumns" [rows]="group.rows">
+        <sp-admin-table variant="simple" [flush]="true" layout="first-column-fluid" minWidth="400px" [rightAlignNonTitleColumns]="true" [columns]="pricingColumns" [rows]="group.rows">
           <ng-template #cell let-row let-col="col">
             @switch (col.key) {
               @case ('modelName') { <span class="sp-admin-mono">{{ $any(row).modelName }}</span> }
@@ -247,18 +247,24 @@
       @if (overrides().length === 0) {
       <sp-admin-empty-state title="No overrides" message="Config pricing is used. Add an override to change runtime pricing." />
       } @else {
-      <sp-admin-table variant="simple" [flush]="true" minWidth="600px" [columns]="overrideColumns" [rows]="overrides()">
+      <sp-admin-table variant="simple" [flush]="true" layout="first-column-fluid" minWidth="600px" [rightAlignNonTitleColumns]="true" [columns]="overrideColumns" [rows]="overrides()">
         <ng-template #cell let-row let-col="col">
           @switch (col.key) {
             @case ('modelName') { <span class="sp-admin-mono">{{ $any(row).modelName }}</span> }
             @case ('providerName') { <sp-admin-badge tone="neutral">{{ $any(row).providerName }}</sp-admin-badge> }
             @case ('inputPricePer1KTokens') { <span class="sp-admin-num sp-admin-mono sp-admin-text-warning">${{ $any(row).inputPricePer1KTokens.toFixed(5) }}</span> }
             @case ('outputPricePer1KTokens') { <span class="sp-admin-num sp-admin-mono sp-admin-text-warning">${{ $any(row).outputPricePer1KTokens.toFixed(5) }}</span> }
+            @case ('inputPricePer1KCharacters') {
+              @if ($any(row).inputPricePer1KCharacters !== null && $any(row).inputPricePer1KCharacters !== undefined) {
+                <span class="sp-admin-num sp-admin-mono sp-admin-text-warning">${{ $any(row).inputPricePer1KCharacters.toFixed(5) }}</span>
+              } @else {
+                <span class="sp-admin-text-muted">—</span>
+              }
+            }
             @case ('effectiveFromUtc') { <span class="sp-admin-table-cell-compact">{{ $any(row).effectiveFromUtc ? ($any(row).effectiveFromUtc | date:'yyyy-MM-dd':'UTC') : 'Always' }}</span> }
-            @case ('notes') { <span class="sp-admin-table-cell-note sp-admin-truncate">{{ $any(row).notes || '—' }}</span> }
             @case ('actions') {
               @if ($any(row).isActive) {
-                <sp-admin-table-actions mode="buttons" [richActions]="[
+                <sp-admin-table-actions mode="dropdown" [richActions]="[
                     { id: 'edit', label: 'Edit', icon: 'edit' },
                     { id: 'deactivate', label: 'Deactivate', icon: 'deactivate', tone: 'danger', disabled: deactivateBusy() === $any(row).id }
                   ]" (actionSelected)="$event === 'edit' ? openEditOverride($any(row)) : deactivateOverride($any(row).id)" />
@@ -392,6 +398,10 @@
         <sp-admin-number-input prefix="$" [step]="0.00001" [min]="0" placeholder="0.00300" [(ngModel)]="f.outputPricePer1KTokens" />
       </sp-admin-form-field>
     </div>
+
+    <sp-admin-form-field label="Price / 1K characters (TTS only — leave blank for LLM models)">
+      <sp-admin-number-input prefix="$" [step]="0.00001" [min]="0" placeholder="0.01500" [(ngModel)]="f.inputPricePer1KCharacters" />
+    </sp-admin-form-field>
 
     <hr class="sp-admin-divider">
 

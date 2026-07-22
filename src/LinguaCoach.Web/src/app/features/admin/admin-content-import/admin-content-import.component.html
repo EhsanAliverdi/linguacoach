@@ -21,12 +21,7 @@
          an approved Import Execution Plan before anything is processed — there is no immediate
          "import as candidates" path anymore. ── -->
     <sp-admin-section-card title="Add content">
-      <p class="sp-admin-hint" style="margin-top:-8px; margin-bottom:16px;">
-        Paste content, attach one or more files, or upload a ZIP archive for large/mixed-media
-        packages — combine pasted text with files if useful. Submitting creates an Import Package
-        and generates an Import Execution Plan; you'll review and explicitly approve that plan
-        before any candidate is created or any AI call runs.
-      </p>
+      <sp-admin-help-icon slot="header-action" key="admin.contentImport.addContent" title="Add content" />
 
       @if (submitError()) { <sp-admin-alert variant="error">{{ submitError() }}</sp-admin-alert> }
 
@@ -105,37 +100,33 @@
   <!-- ══════════════════════════════════════════════════════════════════ -->
   @if (activeTab() === 'history') {
 
-    <sp-admin-section-card title="Import runs">
-      <sp-admin-button slot="header-action" variant="neutral" appearance="outline" size="sm" (clicked)="loadRecentRuns()">
-        Refresh
-      </sp-admin-button>
+    <sp-admin-card padding="none" [hasHeader]="true" [headerDivider]="true">
+      <sp-admin-section-header slot="header" title="Import runs" [count]="runsTotalCount()" countLabel="runs">
+        <sp-admin-button slot="actions" variant="neutral" appearance="outline" size="sm" (clicked)="loadRecentRuns()">
+          Refresh
+        </sp-admin-button>
+      </sp-admin-section-header>
 
-      @if (loadingRecentRuns()) {
-        <sp-admin-loading-state message="Loading import runs" />
-      } @else if (recentRuns().length === 0) {
-        <sp-admin-empty-state title="No import runs yet" message="Runs created from an approved plan will show up here." />
-      } @else {
-        <sp-admin-table
-          [flush]="true" variant="data" density="compact" layout="first-column-fluid"
-          [columns]="recentRunsColumns" [rows]="recentRuns()"
-          [rowClickable]="true" (rowClick)="selectRun($any($event).runId)"
-        >
-          <ng-template #cell let-row let-col="col">
-            @switch (col.key) {
-              @case ('sourceName') { <span class="sp-admin-truncate" style="max-width:520px; color:var(--sp-admin-primary); display:inline-block;">{{ $any(row).sourceName }}</span> }
-              @case ('fileName') { <span class="sp-admin-text-mono">{{ $any(row).fileName }}</span> }
-              @case ('staged') { <span style="font-weight:700;">{{ $any(row).succeededCount }} / {{ $any(row).totalRecordCount }}</span> }
-              @case ('review') { <sp-admin-badge tone="neutral">Review</sp-admin-badge> }
-              @default { {{ $any(row)[col.key] }} }
-            }
-          </ng-template>
-          <sp-admin-table-footer>
-            Page {{ runsPage() }} of {{ runsTotalPages() }} · {{ runsTotalCount() }} run{{ runsTotalCount() !== 1 ? 's' : '' }}
-            <sp-admin-pagination slot="actions" [page]="runsPage()" [totalPages]="runsTotalPages()" (pageChange)="onRunsPageChange($event)" />
-          </sp-admin-table-footer>
-        </sp-admin-table>
-      }
-    </sp-admin-section-card>
+      <sp-admin-table
+        [flush]="true" variant="data" density="compact" layout="first-column-fluid"
+        [loading]="loadingRecentRuns()" emptyMessage="No import runs yet — runs created from an approved plan will show up here."
+        [columns]="recentRunsColumns" [rows]="recentRuns()"
+        [rowClickable]="true" (rowClick)="selectRun($any($event).runId)"
+        [paginationPage]="runsPage()" [paginationTotalPages]="runsTotalPages()"
+        [paginationLabel]="'Page ' + runsPage() + ' of ' + runsTotalPages() + ' · ' + runsTotalCount() + ' run' + (runsTotalCount() !== 1 ? 's' : '')"
+        (paginationPageChange)="onRunsPageChange($event)"
+      >
+        <ng-template #cell let-row let-col="col">
+          @switch (col.key) {
+            @case ('sourceName') { <span class="sp-admin-truncate" style="max-width:520px; color:var(--sp-admin-primary); display:inline-block;">{{ $any(row).sourceName }}</span> }
+            @case ('fileName') { <span class="sp-admin-text-mono">{{ $any(row).fileName }}</span> }
+            @case ('staged') { <span style="font-weight:700;">{{ $any(row).succeededCount }} / {{ $any(row).totalRecordCount }}</span> }
+            @case ('review') { <sp-admin-badge tone="neutral">Review</sp-admin-badge> }
+            @default { {{ $any(row)[col.key] }} }
+          }
+        </ng-template>
+      </sp-admin-table>
+    </sp-admin-card>
   }
 
 </sp-admin-page-body>

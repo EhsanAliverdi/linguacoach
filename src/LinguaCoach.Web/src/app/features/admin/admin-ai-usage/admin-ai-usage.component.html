@@ -57,7 +57,7 @@
   }
   <div class="sp-admin-kpi-row" aria-label="AI usage summary">
     <sp-admin-kpi-card label="Total requests" variant="indigo" layout="tile" icon="bar-chart">{{ kpiSummary()!.totalCalls | number }}</sp-admin-kpi-card>
-    <sp-admin-kpi-card label="Total cost" variant="teal" layout="tile" icon="dollar">${{ kpiSummary()!.totalCostUsd.toFixed(4) }}</sp-admin-kpi-card>
+    <sp-admin-kpi-card label="Total cost" variant="teal" layout="tile" icon="dollar">${{ formatCost(kpiSummary()!.totalCostUsd) }}</sp-admin-kpi-card>
     <sp-admin-kpi-card label="Success rate"
       [variant]="kpiSummary()!.successRate >= 90 ? 'green' : kpiSummary()!.successRate >= 70 ? 'amber' : 'violet'"
       layout="tile" icon="check">{{ kpiSummary()!.successRate }}%</sp-admin-kpi-card>
@@ -68,10 +68,29 @@
 
   @if (summary()!.zeroCostCallCount > 0) {
     <sp-admin-alert variant="warning">
-      {{ summary()!.zeroCostCallCount }} AI call{{ summary()!.zeroCostCallCount === 1 ? '' : 's' }} in this filtered range
-      {{ summary()!.zeroCostCallCount === 1 ? 'was' : 'were' }} logged with $0 cost
-      ({{ formatTokens(summary()!.zeroCostTotalTokens) }} tokens).
-      This usually means pricing was missing at the time of the call.
+      <div style="display:flex; align-items:start; justify-content:space-between; gap:12px;">
+        <div>
+          <div>
+            {{ summary()!.zeroCostCallCount }} AI call{{ summary()!.zeroCostCallCount === 1 ? '' : 's' }} in this filtered range
+            {{ summary()!.zeroCostCallCount === 1 ? 'was' : 'were' }} logged with $0 cost
+            ({{ formatTokens(summary()!.zeroCostTotalTokens) }} tokens) because pricing was missing for these
+            provider/model{{ summary()!.zeroCostProviderModels.length === 1 ? '' : 's' }} at the time of the call:
+          </div>
+          <ul style="margin:6px 0 0 0; padding-left:18px;">
+            @for (pm of summary()!.zeroCostProviderModels; track pm.provider + pm.model) {
+              <li><strong>{{ pm.provider }} / {{ pm.model }}</strong> — {{ pm.callCount }} call{{ pm.callCount === 1 ? '' : 's' }} ({{ formatTokens(pm.totalTokens) }} tokens)</li>
+            }
+          </ul>
+          <div style="margin-top:6px;">
+            <strong>Fix now</strong> recalculates any of these rows whose pricing has since been added.
+            If a provider/model above still has none, add pricing for it on
+            <a routerLink="/admin/ai-config" [queryParams]="{ tab: 'pricing' }" style="text-decoration:underline;">AI Config → Model Pricing</a>, then run Fix now again.
+          </div>
+        </div>
+        <sp-admin-button variant="primary" appearance="outline" size="sm" style="flex-shrink:0;" [disabled]="reprice.running()" (clicked)="fixZeroCostCalls()">
+          {{ reprice.running() ? 'Fixing…' : 'Fix now' }}
+        </sp-admin-button>
+      </div>
     </sp-admin-alert>
   }
 
@@ -102,7 +121,7 @@
                   }
                 </span>
               }
-              @case ('costUsd') { <span class="sp-admin-num sp-admin-text-mono">${{ $any(row).costUsd.toFixed(4) }}</span> }
+              @case ('costUsd') { <span class="sp-admin-num sp-admin-text-mono">${{ formatCost($any(row).costUsd) }}</span> }
               @default { {{ $any(row)[col.key] }} }
             }
           </ng-template>
@@ -119,7 +138,11 @@
           <sp-admin-empty-state message="No calls yet." />
         </div>
       } @else {
-        <sp-admin-table [flush]="true" variant="data" density="compact" layout="first-column-fluid" [columns]="byFeatureColumns" [rows]="byFeaturePaged()">
+        <sp-admin-table
+          [flush]="true" variant="data" density="compact" layout="first-column-fluid" [columns]="byFeatureColumns" [rows]="byFeaturePaged()"
+          [paginationPage]="byFeaturePage()" [paginationTotalPages]="byFeatureTotalPages()"
+          (paginationPageChange)="onByFeaturePageChange($event)"
+        >
           <ng-template #cell let-row let-col="col">
             @switch (col.key) {
               @case ('feature') {
@@ -128,20 +151,11 @@
               }
               @case ('calls') { <span class="sp-admin-num">{{ $any(row).calls }}</span> }
               @case ('successful') { <span class="sp-admin-num"><sp-admin-badge tone="success">{{ $any(row).successful }}</sp-admin-badge></span> }
-              @case ('costUsd') { <span class="sp-admin-num sp-admin-text-mono">${{ $any(row).costUsd.toFixed(4) }}</span> }
+              @case ('costUsd') { <span class="sp-admin-num sp-admin-text-mono">${{ formatCost($any(row).costUsd) }}</span> }
               @default { {{ $any(row)[col.key] }} }
             }
           </ng-template>
         </sp-admin-table>
-        @if (byFeatureTotalPages() > 1) {
-          <div class="sp-admin-table-section-footer">
-            <span></span>
-            <sp-admin-pagination
-              [page]="byFeaturePage()"
-              [totalPages]="byFeatureTotalPages()"
-              (pageChange)="onByFeaturePageChange($event)" />
-          </div>
-        }
       }
     </div>
 
@@ -201,7 +215,11 @@
         [decimals]="0"
         ariaLabel="Calls over time chart" />
     </div>
-    <sp-admin-table [flush]="true" variant="data" density="compact" minWidth="640px" [columns]="trendColumns" [rows]="trendBucketsPaged()">
+    <sp-admin-table
+      [flush]="true" variant="data" density="compact" minWidth="640px" [columns]="trendColumns" [rows]="trendBucketsPaged()"
+      [paginationPage]="trendPage()" [paginationTotalPages]="trendTotalPages()"
+      (paginationPageChange)="onTrendPageChange($event)"
+    >
       <ng-template #cell let-row let-col="col">
         @switch (col.key) {
           @case ('date') { <span class="sp-admin-text-mono sp-admin-nowrap sp-admin-table-cell-compact">{{ $any(row).date }}</span> }
@@ -225,17 +243,11 @@
             </span>
           }
           @case ('totalTokens') { <span class="sp-admin-num sp-admin-text-mono">{{ $any(row).totalTokens | number }}</span> }
-          @case ('costUsd') { <span class="sp-admin-num sp-admin-text-mono">${{ $any(row).costUsd.toFixed(4) }}</span> }
+          @case ('costUsd') { <span class="sp-admin-num sp-admin-text-mono">${{ formatCost($any(row).costUsd) }}</span> }
           @default { {{ $any(row)[col.key] }} }
         }
       </ng-template>
     </sp-admin-table>
-    @if (trendTotalPages() > 1) {
-      <div class="sp-admin-table-section-footer">
-        <span></span>
-        <sp-admin-pagination [page]="trendPage()" [totalPages]="trendTotalPages()" (pageChange)="onTrendPageChange($event)" />
-      </div>
-    }
   }
 </div>
 
@@ -285,7 +297,7 @@
           }
           @case ('calls') { <span class="sp-admin-num">{{ $any(row).calls }}</span> }
           @case ('successful') { <span class="sp-admin-num"><sp-admin-badge tone="success">{{ $any(row).successful }}</sp-admin-badge></span> }
-          @case ('costUsd') { <span class="sp-admin-num sp-admin-text-mono">${{ $any(row).costUsd.toFixed(4) }}</span> }
+          @case ('costUsd') { <span class="sp-admin-num sp-admin-text-mono">${{ formatCost($any(row).costUsd) }}</span> }
           @default { {{ $any(row)[col.key] }} }
         }
       </ng-template>
@@ -328,6 +340,9 @@
         [flush]="true" variant="data" density="compact" minWidth="1080px"
         [columns]="recentCallsColumns" [rows]="filteredRecentItems()"
         [filters]="recentCallsFilters()" (filterChange)="onRecentCallsFilterChange($event)"
+        [paginationPage]="recentPage()" [paginationTotalPages]="recentTotalPages()"
+        [paginationLabel]="recentItems().length + ' of ' + (recentTotalPages() * recentPageSize) + ' loaded.'"
+        (paginationPageChange)="onRecentPageChange($event)"
       >
         <ng-container tableActions>
           @if (hasActiveRecentFilters()) {
@@ -363,7 +378,7 @@
                 {{ $any(row).inputTokens | number }}&nbsp;/&nbsp;{{ $any(row).outputTokens | number }}
               </span>
             }
-            @case ('costUsd') { <span class="sp-admin-num sp-admin-text-mono">${{ $any(row).costUsd.toFixed(4) }}</span> }
+            @case ('costUsd') { <span class="sp-admin-num sp-admin-text-mono">${{ formatCost($any(row).costUsd) }}</span> }
             @case ('durationMs') { <span class="sp-admin-num sp-admin-text-mono">{{ $any(row).durationMs | number }}ms</span> }
             @case ('correlationId') {
               @if ($any(row).correlationId) {
@@ -376,12 +391,6 @@
           }
         </ng-template>
       </sp-admin-table>
-      @if (recentTotalPages() > 1) {
-        <div class="sp-admin-table-section-footer">
-          <span>{{ recentItems().length }} of {{ recentTotalPages() * recentPageSize }} loaded.</span>
-          <sp-admin-pagination [page]="recentPage()" [totalPages]="recentTotalPages()" (pageChange)="onRecentPageChange($event)" />
-        </div>
-      }
     }
   }
 </div>

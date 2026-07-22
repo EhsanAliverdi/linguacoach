@@ -102,6 +102,9 @@
       <sp-admin-table
         [flush]="true" variant="data" density="compact" layout="first-column-fluid" minWidth="700px"
         [filters]="contentCoverageFilters()" (filterChange)="onContentCoverageFilterChange($event)"
+        [paginationPage]="coveragePage()" [paginationTotalPages]="filteredCoverageNodes().length > 0 ? coverageTotalPages() : undefined"
+        [paginationLabel]="filteredCoverageNodes().length + ' node(s) — click a row for detail.'"
+        (paginationPageChange)="onCoveragePageChange($event)"
       >
         @if (filteredCoverageNodes().length === 0) {
           <p class="sp-admin-section-sub" style="padding:16px 18px;">No nodes match the current filters.</p>
@@ -142,12 +145,6 @@
           </table>
         }
       </sp-admin-table>
-      @if (filteredCoverageNodes().length > 0) {
-      <sp-admin-table-footer>
-        <span>{{ filteredCoverageNodes().length }} node(s) — click a row for detail.</span>
-        <sp-admin-pagination slot="actions" [page]="coveragePage()" [totalPages]="coverageTotalPages()" (pageChange)="onCoveragePageChange($event)" />
-      </sp-admin-table-footer>
-      }
     }
   </sp-admin-card>
 
@@ -240,6 +237,9 @@
       [bulkEditable]="true" [bulkEditMode]="nodesBulkEditMode()" (bulkEditModeChange)="onNodesBulkEditModeChange($event)"
       [columns]="nodesColumns" [rows]="nodes()" (selectionChange)="onNodesSelectionChange($event)"
       emptyMessage="No nodes match the current filters. Draft some above."
+      [paginationPage]="nodesPage()" [paginationTotalPages]="nodesTotalPages()"
+      [paginationLabel]="nodesTotalCount() + ' node(s).'"
+      (paginationPageChange)="onNodesPageChange($event)"
     >
       @if (hasSelection()) {
         <div selectionBar class="sp-admin-form-actions">
@@ -274,12 +274,6 @@
         }
       </ng-template>
     </sp-admin-table>
-    @if (!nodesLoading() && !nodesError() && nodes().length > 0) {
-      <sp-admin-table-footer>
-        <span>{{ nodesTotalCount() }} node(s).</span>
-        <sp-admin-pagination slot="actions" [page]="nodesPage()" [totalPages]="nodesTotalPages()" (pageChange)="onNodesPageChange($event)" />
-      </sp-admin-table-footer>
-    }
 
     }
   </sp-admin-card>

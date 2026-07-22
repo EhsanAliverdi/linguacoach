@@ -63,4 +63,15 @@ public sealed class AiUsageLog : BaseEntity
         DurationMs = durationMs;
         CorrelationId = correlationId;
     }
+
+    /// <summary>
+    /// Backfills CostUsd for a historical row logged at $0 because pricing was missing at the time
+    /// of the call. The one intentional exception to "append-only, never mutated" — gated by the
+    /// caller to rows where CostUsd is currently 0 and tokens were actually consumed.
+    /// </summary>
+    public void BackfillCost(decimal costUsd)
+    {
+        if (costUsd < 0) throw new ArgumentOutOfRangeException(nameof(costUsd), "Cost cannot be negative.");
+        CostUsd = costUsd;
+    }
 }

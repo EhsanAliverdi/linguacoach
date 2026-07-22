@@ -11,19 +11,15 @@ import {
   SpAdminCodePillComponent,
   SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
-  SpAdminFilterBarComponent,
   SpAdminFormFieldComponent,
-  SpAdminInputComponent,
   SpAdminKpiCardComponent,
   SpAdminLoadingStateComponent,
   SpAdminNumberInputComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
-  SpAdminPaginationComponent,
   SpAdminSlideOverComponent,
   SpAdminTableActionsComponent,
   SpAdminTableComponent,
-  SpAdminTableFooterComponent,
   SpAdminTruncatedTextComponent,
 } from '../../../design-system/admin';
 import type { SpAdminRowAction, SpAdminSelectOption, SpAdminButtonGroupAction, SpAdminTableColumn, SpAdminTableFilter } from '../../../design-system/admin';
@@ -67,19 +63,15 @@ function skillMeta(skill: string): { bg: string; color: string; short: string; t
     SpAdminDistributionBreakdownComponent,
     SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
-    SpAdminFilterBarComponent,
     SpAdminFormFieldComponent,
-    SpAdminInputComponent,
     SpAdminKpiCardComponent,
     SpAdminLoadingStateComponent,
     SpAdminNumberInputComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
-    SpAdminPaginationComponent,
     SpAdminSlideOverComponent,
     SpAdminTableActionsComponent,
     SpAdminTableComponent,
-    SpAdminTableFooterComponent,
     SpAdminTruncatedTextComponent,
   ],
 })
@@ -91,7 +83,7 @@ export class AdminExerciseTypesComponent implements OnInit {
     { key: 'generation', label: 'Generation' },
     { key: 'itemsMDM', label: 'Items M/D/M' },
     { key: 'optionsMDM', label: 'Options M/D/M' },
-    { key: 'actions', label: '', align: 'right' },
+    { key: 'actions', label: 'Actions', align: 'right' },
   ];
 
   exerciseTypes     = signal<ExerciseTypeDefinition[]>([]);
@@ -211,8 +203,8 @@ export class AdminExerciseTypesComponent implements OnInit {
     });
   }
 
-  onSearch(event: Event): void {
-    this.searchQuery.set((event.target as HTMLInputElement).value);
+  onSearchChange(value: string): void {
+    this.searchQuery.set(value);
     this.page.set(1);
   }
 

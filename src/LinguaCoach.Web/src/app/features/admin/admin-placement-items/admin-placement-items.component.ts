@@ -10,16 +10,12 @@ import {
   SpAdminButtonComponent,
   SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
-  SpAdminFilterBarComponent,
-  SpAdminInputComponent,
   SpAdminKpiCardComponent,
   SpAdminLoadingStateComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
-  SpAdminPaginationComponent,
   SpAdminTableActionsComponent,
   SpAdminTableComponent,
-  SpAdminTableFooterComponent,
 } from '../../../design-system/admin';
 import type { SpAdminRowAction, SpAdminTableColumn, SpAdminTableFilter } from '../../../design-system/admin';
 
@@ -37,16 +33,12 @@ const PAGE_SIZE = 20;
     SpAdminButtonComponent,
     SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
-    SpAdminFilterBarComponent,
-    SpAdminInputComponent,
     SpAdminKpiCardComponent,
     SpAdminLoadingStateComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
-    SpAdminPaginationComponent,
     SpAdminTableActionsComponent,
     SpAdminTableComponent,
-    SpAdminTableFooterComponent,
   ],
   templateUrl: './admin-placement-items.component.html',
 })
@@ -76,7 +68,7 @@ export class AdminPlacementItemsComponent implements OnInit {
     { key: 'skill', label: 'Skill' },
     { key: 'cefrLevel', label: 'Level' },
     { key: 'isEnabled', label: 'Enabled' },
-    { key: 'actions', label: '', align: 'right' },
+    { key: 'actions', label: 'Actions', align: 'right' },
   ];
 
   itemsFilters = computed<SpAdminTableFilter[]>(() => [
@@ -117,8 +109,8 @@ export class AdminPlacementItemsComponent implements OnInit {
 
   private searchDebounce?: ReturnType<typeof setTimeout>;
 
-  onSearch(event: Event): void {
-    this.searchQuery.set((event.target as HTMLInputElement).value);
+  onSearchChange(value: string): void {
+    this.searchQuery.set(value);
     this.page.set(1);
     clearTimeout(this.searchDebounce);
     this.searchDebounce = setTimeout(() => this.loadAll(), 300);

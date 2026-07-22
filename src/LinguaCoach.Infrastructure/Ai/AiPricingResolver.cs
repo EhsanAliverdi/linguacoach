@@ -38,14 +38,19 @@ public sealed class AiPricingResolver : IAiPricingResolver
             .FirstOrDefaultAsync(ct);
 
         if (dbOverride is not null)
-            return new ResolvedModelPricing(dbOverride.InputPricePer1KTokens, dbOverride.OutputPricePer1KTokens);
+            return new ResolvedModelPricing(dbOverride.InputPricePer1KTokens, dbOverride.OutputPricePer1KTokens, dbOverride.InputPricePer1KCharacters);
 
-        // 2. Config fallback — try provider name with original casing first, then lower
+        // 2. Config fallback — try provider name with original casing first, then lower.
+        // Token pricing and character pricing (TTS) are independent lookups — a model may have
+        // either, both, or neither configured.
         var pricing = AiPricingOptions.GetProviderPricing(_configuration, providerName, modelName)
                    ?? AiPricingOptions.GetProviderPricing(_configuration, NormalizeProviderForConfig(providerName), modelName);
 
-        if (pricing is null) return null;
-        return new ResolvedModelPricing(pricing.InputPer1KTokens, pricing.OutputPer1KTokens);
+        var characterPricing = AiPricingOptions.GetProviderCharacterPricing(_configuration, providerName, modelName)
+                             ?? AiPricingOptions.GetProviderCharacterPricing(_configuration, NormalizeProviderForConfig(providerName), modelName);
+
+        if (pricing is null && characterPricing is null) return null;
+        return new ResolvedModelPricing(pricing?.InputPer1KTokens ?? 0m, pricing?.OutputPer1KTokens ?? 0m, characterPricing);
     }
 
     /// <summary>Maps lowercase provider name to the config section key casing (e.g. "openai" → "OpenAI").</summary>

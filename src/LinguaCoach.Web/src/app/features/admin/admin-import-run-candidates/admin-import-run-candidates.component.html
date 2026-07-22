@@ -79,14 +79,10 @@
         [columns]="candidateColumns" [rows]="candidates()" (selectionChange)="onCandidatesSelectionChange($event)"
         [bulkEditable]="true" [bulkEditMode]="candidatesBulkEditMode()" (bulkEditModeChange)="onCandidatesBulkEditModeChange($event)"
         [filters]="candidatesFilters()" (filterChange)="onCandidatesFilterChange($event)"
+        [paginationPage]="page()" [paginationTotalPages]="totalPages()"
+        [paginationLabel]="'Page ' + page() + ' of ' + totalPages() + ' · ' + totalCount() + ' candidate' + (totalCount() !== 1 ? 's' : '')"
+        (paginationPageChange)="onPageChange($event)"
       >
-        <!-- Phase K2 — "Select all publishable (this page)" makes clear the scope is this page,
-             not the whole run. Actions apply only to the checked rows. -->
-        <ng-container tableActions>
-          <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="selectAllPublishableVisible()">
-            Select all publishable (this page)
-          </sp-admin-button>
-        </ng-container>
         @if (selectedCount() > 0) {
           <div selectionBar class="sp-admin-form-actions">
             <span class="sp-admin-hint">{{ selectedCount() }} selected</span>
@@ -141,7 +137,7 @@
               }
             }
             @case ('actions') {
-              <div class="sp-admin-form-actions" style="flex-wrap:nowrap;" (click)="$event.stopPropagation()">
+              <div style="display:flex; align-items:center; gap:8px; flex-wrap:nowrap;" (click)="$event.stopPropagation()">
                 @if (!$any(row).isPublished && $any(row).canAttemptPublish && !hasContentErrors($any(row))) {
                   <sp-admin-button
                     variant="primary" size="sm"
@@ -160,12 +156,6 @@
           }
         </ng-template>
       </sp-admin-table>
-    @if (!candidatesLoading() && !candidatesError() && candidates().length > 0) {
-      <sp-admin-table-footer>
-        Page {{ page() }} of {{ totalPages() }} · {{ totalCount() }} candidate{{ totalCount() !== 1 ? 's' : '' }}
-        <sp-admin-pagination slot="actions" [page]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
-      </sp-admin-table-footer>
-    }
 
     @if (lastPublishResult(); as publishResult) {
       @if (!publishResult.success) {
