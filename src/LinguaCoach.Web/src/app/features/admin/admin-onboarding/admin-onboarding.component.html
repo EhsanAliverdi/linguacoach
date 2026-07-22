@@ -62,34 +62,21 @@
         <sp-admin-empty-state message="No templates match your search." />
       }
     } @else {
-      <sp-admin-table layout="first-column-fluid">
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Status</th>
-              <th>Versions</th>
-              <th>Updated</th>
-              <th class="sp-admin-th-actions"></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (row of filteredTemplates(); track row.templateId) {
-              <tr>
-                <td><span class="sp-admin-cell-title">{{ row.name }}</span></td>
-                <td><sp-admin-badge [tone]="statusTone(row.status)">{{ row.status }}</sp-admin-badge></td>
-                <td>{{ row.versionCount }}</td>
-                <td>{{ row.updatedAt | date:'short' }}</td>
-                <td>
-                  <sp-admin-table-actions
-                    mode="dropdown"
-                    [richActions]="rowActions(row)"
-                    (actionSelected)="onRowAction($event, row)" />
-                </td>
-              </tr>
+      <sp-admin-table layout="first-column-fluid" [columns]="templateColumns" [rows]="filteredTemplates()">
+        <ng-template #cell let-row let-col="col">
+          @switch (col.key) {
+            @case ('name') { <span class="sp-admin-cell-title">{{ $any(row).name }}</span> }
+            @case ('status') { <sp-admin-badge [tone]="statusTone($any(row).status)">{{ $any(row).status }}</sp-admin-badge> }
+            @case ('updatedAt') { {{ $any(row).updatedAt | date:'short' }} }
+            @case ('actions') {
+              <sp-admin-table-actions
+                mode="dropdown"
+                [richActions]="rowActions($any(row))"
+                (actionSelected)="onRowAction($event, $any(row))" />
             }
-          </tbody>
-        </table>
+            @default { {{ $any(row)[col.key] }} }
+          }
+        </ng-template>
       </sp-admin-table>
     }
   }

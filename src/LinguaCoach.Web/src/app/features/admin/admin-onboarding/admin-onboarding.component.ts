@@ -22,7 +22,7 @@ import {
   SpAdminTableComponent,
   SpAdminTextareaComponent,
 } from '../../../design-system/admin';
-import type { SpAdminRowAction } from '../../../design-system/admin';
+import type { SpAdminRowAction, SpAdminTableColumn } from '../../../design-system/admin';
 
 /**
  * Onboarding templates list page. Authoring (the Form.io builder) lives on its own page
@@ -66,6 +66,14 @@ export class AdminOnboardingComponent implements OnInit {
   newTemplateDescription = '';
 
   searchQuery = signal('');
+
+  readonly templateColumns: SpAdminTableColumn[] = [
+    { key: 'name', label: 'Name' },
+    { key: 'status', label: 'Status' },
+    { key: 'versionCount', label: 'Versions' },
+    { key: 'updatedAt', label: 'Updated' },
+    { key: 'actions', label: '', align: 'right' },
+  ];
 
   readonly publishedCount = computed(() => this.templates().filter(t => t.status === 'Published').length);
 
