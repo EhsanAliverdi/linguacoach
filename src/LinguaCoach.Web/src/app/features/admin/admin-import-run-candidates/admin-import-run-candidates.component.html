@@ -52,36 +52,6 @@
     @if (candidatesError()) { <sp-admin-error-state title="Could not load candidates" [message]="candidatesError()" /> }
 
     @if (!candidatesLoading() && candidates().length > 0) {
-      <!-- Phase K2 — batch toolbar. Actions apply only to the checked rows on this page (not the
-           whole run) — "Select all publishable (this page)" makes that scope explicit. -->
-      <div class="sp-admin-form-actions" style="flex-wrap:wrap;align-items:center;margin-bottom:0.75rem;">
-        <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="selectAllPublishableVisible()">
-          Select all publishable (this page)
-        </sp-admin-button>
-        @if (selectedCount() > 0) {
-          <span class="sp-admin-hint">{{ selectedCount() }} selected</span>
-          <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="clearSelection()">Clear</sp-admin-button>
-          <sp-admin-button variant="neutral" size="sm" [disabled]="batchActionRunning()" (clicked)="batchApproveSelected()">
-            Approve selected
-          </sp-admin-button>
-          <sp-admin-button variant="danger" appearance="outline" size="sm" [disabled]="batchActionRunning()" (clicked)="openBatchReject()">
-            Reject selected
-          </sp-admin-button>
-          <sp-admin-button variant="neutral" appearance="outline" size="sm" [disabled]="batchActionRunning()" (clicked)="batchSkipSelected()">
-            Skip selected
-          </sp-admin-button>
-          <!-- "Publish selected" only attempts to publish already-Approved candidates in the
-               selection — it never approves anything. Distinct from "Approve & Publish selected"
-               below, which does both in one click. -->
-          <sp-admin-button variant="neutral" size="sm" [disabled]="batchActionRunning()" (clicked)="batchPublishApprovedSelected()">
-            Publish Approved
-          </sp-admin-button>
-          <sp-admin-button variant="primary" size="sm" [disabled]="batchActionRunning()" (clicked)="batchApproveAndPublishSelected()">
-            {{ batchActionRunning() ? 'Working…' : 'Approve & Publish selected' }}
-          </sp-admin-button>
-        }
-      </div>
-
       @if (lastBatchResult(); as br) {
         <sp-admin-alert [variant]="br.failedCount > 0 ? 'warning' : 'success'">
           {{ br.succeededCount + br.alreadyPublishedCount }} of {{ br.requestedCount }} succeeded
@@ -103,72 +73,96 @@
     } @else if (candidates().length === 0) {
       <sp-admin-empty-state title="No candidates" message="This import run has no staged candidates." />
     } @else {
-      <sp-admin-table layout="first-column-fluid">
-        <table>
-          <thead>
-            <tr>
-              <th><input type="checkbox" [checked]="allVisibleSelected()" (change)="toggleSelectAllVisible()" aria-label="Select all visible" /></th>
-              <th>Text</th>
-              <th>Type</th>
-              <th>CEFR</th>
-              <th>Validation</th>
-              <th>Review</th>
-              <th>Published</th>
-              <th class="sp-admin-th-actions"></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (item of candidates(); track item.candidateId) {
-              <tr>
-                <td><input type="checkbox" [checked]="isSelected(item.candidateId)" (change)="toggleSelected(item.candidateId)" aria-label="Select candidate" /></td>
-                <td>
-                  {{ item.canonicalText }}
-                  @if (!item.isPublished && !item.canAttemptPublish && item.publishBlockReason) {
-                    <div class="sp-admin-hint" style="color:var(--sp-admin-danger,#b91c1c);">{{ item.publishBlockReason }}</div>
-                  }
-                  @if (!item.isPublished && hasContentErrors(item)) {
-                    <div class="sp-admin-hint" style="color:var(--sp-admin-danger,#b91c1c);">
-                      Content invalid — {{ item.contentValidationErrors![0].fieldName }}: {{ item.contentValidationErrors![0].message }}
-                      @if (item.contentValidationErrors!.length > 1) { (+{{ item.contentValidationErrors!.length - 1 }} more) }
-                    </div>
-                  }
-                </td>
-                <td><sp-admin-badge tone="neutral">{{ item.candidateType }}</sp-admin-badge></td>
-                <td>{{ item.cefrLevel ?? '—' }}</td>
-                <td><sp-admin-badge [tone]="validationStatusTone(item.validationStatus)">{{ item.validationStatus }}</sp-admin-badge></td>
-                <td><sp-admin-badge [tone]="reviewStatusTone(item.reviewStatus)">{{ item.reviewStatus }}</sp-admin-badge></td>
-                <td>
-                  @if (item.isPublished) {
-                    <sp-admin-badge tone="success">{{ item.publishedEntityType }}</sp-admin-badge>
-                  } @else {
-                    <sp-admin-badge tone="neutral">Not published</sp-admin-badge>
-                  }
-                </td>
-                <td>
-                  <div class="sp-admin-form-actions" style="flex-wrap:nowrap;">
-                    @if (!item.isPublished && item.canAttemptPublish && !hasContentErrors(item)) {
-                      <sp-admin-button
-                        variant="primary" size="sm"
-                        [disabled]="publishingId() === item.candidateId"
-                        (clicked)="approveAndPublish(item)">
-                        {{ publishingId() === item.candidateId ? 'Publishing…' : 'Approve & Publish' }}
-                      </sp-admin-button>
-                    }
-                    <sp-admin-table-actions
-                      mode="dropdown"
-                      [richActions]="rowActions(item)"
-                      (actionSelected)="onRowAction($event, item)" />
-                  </div>
-                </td>
-              </tr>
+      <sp-admin-table
+        #candidatesTableRef
+        layout="first-column-fluid"
+        [columns]="candidateColumns" [rows]="candidates()" (selectionChange)="onCandidatesSelectionChange($event)"
+        [bulkEditable]="true" [bulkEditMode]="candidatesBulkEditMode()" (bulkEditModeChange)="onCandidatesBulkEditModeChange($event)"
+      >
+        <!-- Phase K2 — "Select all publishable (this page)" makes clear the scope is this page,
+             not the whole run. Actions apply only to the checked rows. -->
+        <ng-container tableActions>
+          <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="selectAllPublishableVisible()">
+            Select all publishable (this page)
+          </sp-admin-button>
+        </ng-container>
+        @if (selectedCount() > 0) {
+          <div selectionBar class="sp-admin-form-actions">
+            <span class="sp-admin-hint">{{ selectedCount() }} selected</span>
+            <sp-admin-button variant="neutral" appearance="outline" size="sm" (clicked)="clearSelection()">Clear</sp-admin-button>
+            <sp-admin-button variant="neutral" size="sm" [disabled]="batchActionRunning()" (clicked)="batchApproveSelected()">
+              Approve selected
+            </sp-admin-button>
+            <sp-admin-button variant="danger" appearance="outline" size="sm" [disabled]="batchActionRunning()" (clicked)="openBatchReject()">
+              Reject selected
+            </sp-admin-button>
+            <sp-admin-button variant="neutral" appearance="outline" size="sm" [disabled]="batchActionRunning()" (clicked)="batchSkipSelected()">
+              Skip selected
+            </sp-admin-button>
+            <!-- "Publish selected" only attempts to publish already-Approved candidates in the
+                 selection — it never approves anything. Distinct from "Approve & Publish selected"
+                 below, which does both in one click. -->
+            <sp-admin-button variant="neutral" size="sm" [disabled]="batchActionRunning()" (clicked)="batchPublishApprovedSelected()">
+              Publish Approved
+            </sp-admin-button>
+            <sp-admin-button variant="primary" size="sm" [disabled]="batchActionRunning()" (clicked)="batchApproveAndPublishSelected()">
+              {{ batchActionRunning() ? 'Working…' : 'Approve & Publish selected' }}
+            </sp-admin-button>
+          </div>
+        }
+        <ng-template #cell let-row let-col="col">
+          @switch (col.key) {
+            @case ('canonicalText') {
+              {{ $any(row).canonicalText }}
+              @if (!$any(row).isPublished && !$any(row).canAttemptPublish && $any(row).publishBlockReason) {
+                <div class="sp-admin-hint" style="color:var(--sp-admin-danger,#b91c1c); font-weight:400;">{{ $any(row).publishBlockReason }}</div>
+              }
+              @if (!$any(row).isPublished && hasContentErrors($any(row))) {
+                <div class="sp-admin-hint" style="color:var(--sp-admin-danger,#b91c1c); font-weight:400;">
+                  Content invalid — {{ $any(row).contentValidationErrors[0].fieldName }}: {{ $any(row).contentValidationErrors[0].message }}
+                  @if ($any(row).contentValidationErrors.length > 1) { (+{{ $any(row).contentValidationErrors.length - 1 }} more) }
+                </div>
+              }
             }
-          </tbody>
-        </table>
-        <sp-admin-table-footer>
-          Page {{ page() }} of {{ totalPages() }} · {{ totalCount() }} candidate{{ totalCount() !== 1 ? 's' : '' }}
-          <sp-admin-pagination slot="actions" [page]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
-        </sp-admin-table-footer>
+            @case ('candidateType') { <sp-admin-badge tone="neutral">{{ $any(row).candidateType }}</sp-admin-badge> }
+            @case ('cefrLevel') { {{ $any(row).cefrLevel ?? '—' }} }
+            @case ('validationStatus') {
+              <sp-admin-badge [tone]="validationStatusTone($any(row).validationStatus)">{{ $any(row).validationStatus }}</sp-admin-badge>
+            }
+            @case ('reviewStatus') {
+              <sp-admin-badge [tone]="reviewStatusTone($any(row).reviewStatus)">{{ $any(row).reviewStatus }}</sp-admin-badge>
+            }
+            @case ('published') {
+              @if ($any(row).isPublished) {
+                <sp-admin-badge tone="success">{{ $any(row).publishedEntityType }}</sp-admin-badge>
+              } @else {
+                <sp-admin-badge tone="neutral">Not published</sp-admin-badge>
+              }
+            }
+            @case ('actions') {
+              <div class="sp-admin-form-actions" style="flex-wrap:nowrap;" (click)="$event.stopPropagation()">
+                @if (!$any(row).isPublished && $any(row).canAttemptPublish && !hasContentErrors($any(row))) {
+                  <sp-admin-button
+                    variant="primary" size="sm"
+                    [disabled]="publishingId() === $any(row).candidateId"
+                    (clicked)="approveAndPublish($any(row))">
+                    {{ publishingId() === $any(row).candidateId ? 'Publishing…' : 'Approve & Publish' }}
+                  </sp-admin-button>
+                }
+                <sp-admin-table-actions
+                  mode="dropdown"
+                  [richActions]="rowActions($any(row))"
+                  (actionSelected)="onRowAction($event, $any(row))" />
+              </div>
+            }
+            @default { {{ $any(row)[col.key] }} }
+          }
+        </ng-template>
       </sp-admin-table>
+      <sp-admin-table-footer>
+        Page {{ page() }} of {{ totalPages() }} · {{ totalCount() }} candidate{{ totalCount() !== 1 ? 's' : '' }}
+        <sp-admin-pagination slot="actions" [page]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
+      </sp-admin-table-footer>
     }
 
     @if (lastPublishResult(); as publishResult) {

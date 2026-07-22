@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnInit, computed, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Observable } from 'rxjs';
@@ -68,6 +68,7 @@ import {
   SpAdminPaginationComponent,
   SpAdminSectionCardComponent,
   SpAdminTableActionsComponent,
+  SpAdminTableColumn,
   SpAdminTableComponent,
   SpAdminTableFooterComponent,
   SpAdminTextareaComponent,
@@ -111,6 +112,30 @@ const CANDIDATES_PAGE_SIZE = 50;
   templateUrl: './admin-import-run-candidates.component.html',
 })
 export class AdminImportRunCandidatesComponent implements OnInit {
+  @ViewChild('candidatesTableRef') candidatesTableRef?: SpAdminTableComponent;
+
+  readonly candidateColumns: SpAdminTableColumn[] = [
+    { key: 'canonicalText', label: 'Text', titleColumn: true },
+    { key: 'candidateType', label: 'Type' },
+    { key: 'cefrLevel', label: 'CEFR' },
+    { key: 'validationStatus', label: 'Validation' },
+    { key: 'reviewStatus', label: 'Review' },
+    { key: 'published', label: 'Published' },
+    { key: 'actions', label: '', align: 'right' },
+  ];
+
+  candidatesBulkEditMode = signal(false);
+  onCandidatesBulkEditModeChange(enabled: boolean): void {
+    this.candidatesBulkEditMode.set(enabled);
+    if (!enabled) this.clearSelection();
+  }
+
+  onCandidatesSelectionChange(indices: number[]): void {
+    const rows = this.candidates();
+    const ids = indices.map(i => rows[i]?.candidateId).filter((id): id is string => !!id);
+    this.selectedIds.set(new Set(ids));
+  }
+
   runId = '';
   run = signal<AdminResourceImportRunDto | null>(null);
   runLoading = signal(false);
@@ -139,10 +164,6 @@ export class AdminImportRunCandidatesComponent implements OnInit {
   lastBatchResult = signal<BatchResourceCandidateActionResult | null>(null);
 
   readonly selectedCount = computed(() => this.selectedIds().size);
-  readonly allVisibleSelected = computed(() => {
-    const items = this.candidates();
-    return items.length > 0 && items.every(c => this.selectedIds().has(c.candidateId));
-  });
 
   // ── Reject modal ─────────────────────────────────────────────────────────
   rejectModalOpen = signal(false);
@@ -271,38 +292,28 @@ export class AdminImportRunCandidatesComponent implements OnInit {
 
   onPageChange(page: number): void {
     this.page.set(page);
-    this.selectedIds.set(new Set());
+    this.clearSelection();
     this.loadCandidates();
   }
 
   // ── Phase K2 — selection ────────────────────────────────────────────────────
 
-  isSelected(candidateId: string): boolean {
-    return this.selectedIds().has(candidateId);
-  }
-
-  toggleSelected(candidateId: string): void {
-    const next = new Set(this.selectedIds());
-    if (next.has(candidateId)) next.delete(candidateId); else next.add(candidateId);
-    this.selectedIds.set(next);
-  }
-
-  toggleSelectAllVisible(): void {
-    if (this.allVisibleSelected()) {
-      this.selectedIds.set(new Set());
-      return;
-    }
-    this.selectedIds.set(new Set(this.candidates().map(c => c.candidateId)));
-  }
-
   /** Selects only the publishable (Passed/NeedsReview, not-yet-published) rows on this page. */
   selectAllPublishableVisible(): void {
-    const ids = this.candidates().filter(c => c.canAttemptPublish && !c.isPublished).map(c => c.candidateId);
+    this.candidatesBulkEditMode.set(true);
+    const rows = this.candidates();
+    const indices: number[] = [];
+    const ids: string[] = [];
+    rows.forEach((c, i) => {
+      if (c.canAttemptPublish && !c.isPublished) { indices.push(i); ids.push(c.candidateId); }
+    });
     this.selectedIds.set(new Set(ids));
+    this.candidatesTableRef?.setSelection(indices);
   }
 
   clearSelection(): void {
     this.selectedIds.set(new Set());
+    this.candidatesTableRef?.clearSelection();
   }
 
   // ── Phase K2 — batch actions (operate on the current selection — see the page-scope hint in
@@ -382,7 +393,7 @@ export class AdminImportRunCandidatesComponent implements OnInit {
         this.actionSuccess.set(
           `${result.succeededCount + result.alreadyPublishedCount} of ${result.requestedCount} candidate(s) ${verb}` +
           (result.failedCount > 0 ? ` — ${result.failedCount} failed, see details below.` : '.'));
-        this.selectedIds.set(new Set());
+        this.clearSelection();
         this.refreshAfterAction();
       },
       error: err => {

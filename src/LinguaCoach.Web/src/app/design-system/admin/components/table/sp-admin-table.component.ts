@@ -478,6 +478,13 @@ export class SpAdminTableComponent {
     this.selectionChange.emit([]);
   }
 
+  /** Imperatively sets row selection (by row index) — call via a template ref for actions like
+   * "Select all publishable" that pick a specific subset rather than toggling one row/all rows. */
+  setSelection(indices: number[]): void {
+    this.selectedRows = new Set(indices);
+    this.selectionChange.emit([...this.selectedRows]);
+  }
+
   get outerClasses(): string {
     if (this.flush) return 'sp-adm-table-flush';
     const variantMap: Record<SpAdminTableVariant, string> = {
