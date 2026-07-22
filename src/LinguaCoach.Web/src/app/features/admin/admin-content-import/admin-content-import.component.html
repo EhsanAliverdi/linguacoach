@@ -115,27 +115,20 @@
       } @else if (recentRuns().length === 0) {
         <sp-admin-empty-state title="No import runs yet" message="Runs created from an approved plan will show up here." />
       } @else {
-        <sp-admin-table layout="first-column-fluid">
-          <table>
-            <thead>
-              <tr>
-                <th>Source</th>
-                <th>File</th>
-                <th>Staged</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (run of recentRuns(); track run.runId) {
-                <tr (click)="selectRun(run.runId)" style="cursor:pointer">
-                  <td class="sp-admin-truncate" style="max-width:520px; color:var(--sp-admin-primary);">{{ run.sourceName }}</td>
-                  <td class="sp-admin-text-mono">{{ run.fileName }}</td>
-                  <td style="font-weight:700;">{{ run.succeededCount }} / {{ run.totalRecordCount }}</td>
-                  <td><sp-admin-badge tone="neutral">Review</sp-admin-badge></td>
-                </tr>
-              }
-            </tbody>
-          </table>
+        <sp-admin-table
+          layout="first-column-fluid"
+          [columns]="recentRunsColumns" [rows]="recentRuns()"
+          [rowClickable]="true" (rowClick)="selectRun($any($event).runId)"
+        >
+          <ng-template #cell let-row let-col="col">
+            @switch (col.key) {
+              @case ('sourceName') { <span class="sp-admin-truncate" style="max-width:520px; color:var(--sp-admin-primary); display:inline-block;">{{ $any(row).sourceName }}</span> }
+              @case ('fileName') { <span class="sp-admin-text-mono">{{ $any(row).fileName }}</span> }
+              @case ('staged') { <span style="font-weight:700;">{{ $any(row).succeededCount }} / {{ $any(row).totalRecordCount }}</span> }
+              @case ('review') { <sp-admin-badge tone="neutral">Review</sp-admin-badge> }
+              @default { {{ $any(row)[col.key] }} }
+            }
+          </ng-template>
           <sp-admin-table-footer>
             Page {{ runsPage() }} of {{ runsTotalPages() }} · {{ runsTotalCount() }} run{{ runsTotalCount() !== 1 ? 's' : '' }}
             <sp-admin-pagination slot="actions" [page]="runsPage()" [totalPages]="runsTotalPages()" (pageChange)="onRunsPageChange($event)" />

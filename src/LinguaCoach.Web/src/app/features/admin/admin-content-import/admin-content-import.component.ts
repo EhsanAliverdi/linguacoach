@@ -33,6 +33,7 @@ import {
   SpAdminTabsComponent,
   SpAdminTextareaComponent,
 } from '../../../design-system/admin';
+import type { SpAdminTableColumn } from '../../../design-system/admin';
 
 type ImportPageTab = 'new' | 'history';
 
@@ -140,6 +141,13 @@ export class AdminContentImportComponent implements OnInit {
   newSourceError = signal('');
 
   // ── Import History tab ───────────────────────────────────────────────────
+  readonly recentRunsColumns: SpAdminTableColumn[] = [
+    { key: 'sourceName', label: 'Source' },
+    { key: 'fileName', label: 'File' },
+    { key: 'staged', label: 'Staged' },
+    { key: 'review', label: '' },
+  ];
+
   recentRuns = signal<AdminResourceImportRunDto[]>([]);
   loadingRecentRuns = signal(false);
   runsPage = signal(1);
