@@ -23,11 +23,12 @@ import {
   SpAdminPageHeaderComponent,
   SpAdminPaginationComponent,
   SpAdminRowAction,
-  SpAdminSelectComponent,
   SpAdminSlideOverComponent,
   SpAdminStackComponent,
   SpAdminTableActionsComponent,
+  SpAdminTableColumn,
   SpAdminTableComponent,
+  SpAdminTableFilter,
   SpAdminTextareaComponent,
   SpAdminVersionSelectorComponent,
 } from '../../../design-system/admin';
@@ -57,7 +58,6 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
     SpAdminPaginationComponent,
-    SpAdminSelectComponent,
     SpAdminSlideOverComponent,
     SpAdminStackComponent,
     SpAdminTableActionsComponent,
@@ -68,6 +68,19 @@ type PromptStatusFilter = 'all' | 'active' | 'inactive';
   templateUrl: './admin-prompts.component.html',
 })
 export class AdminPromptsComponent implements OnInit {
+  readonly promptColumns: SpAdminTableColumn[] = [
+    { key: 'key', label: 'Key', titleColumn: true },
+    { key: 'category', label: 'Category' },
+    { key: 'version', label: 'Version' },
+    { key: 'status', label: 'Status' },
+    { key: 'tokenBudget', label: 'Token budget', align: 'right' },
+    { key: 'actions', label: 'Actions', align: 'right' },
+  ];
+
+  onRowClick(row: unknown): void {
+    this.openView(row as PromptTemplateItem);
+  }
+
   prompts = signal<PromptTemplateItem[]>([]);
   detail = signal<PromptTemplateDetail | null>(null);
   viewPrompt = signal<PromptTemplateItem | null>(null);
@@ -320,6 +333,16 @@ export class AdminPromptsComponent implements OnInit {
   setSearchTerm(term: string): void { this.searchTerm.set(term); this.page.set(1); }
   setStatusFilter(status: PromptStatusFilter): void { this.statusFilter.set(status); this.page.set(1); }
   setCategoryFilter(cat: string): void { this.categoryFilter.set(cat); this.page.set(1); }
+
+  promptsFilters = computed<SpAdminTableFilter[]>(() => [
+    { key: 'category', label: 'Category', options: this.categoryFilterOptions(), value: this.categoryFilter(), placeholder: 'All categories' },
+    { key: 'status', label: 'Status', options: this.statusFilterOptions, value: this.statusFilter() },
+  ]);
+
+  onPromptsFilterChange(event: { key: string; value: string }): void {
+    if (event.key === 'category') this.setCategoryFilter(event.value);
+    else if (event.key === 'status') this.setStatusFilter(event.value as PromptStatusFilter);
+  }
 
   promptCategory(key: string): string {
     const first = key.split(/[._]/)[0] ?? key;

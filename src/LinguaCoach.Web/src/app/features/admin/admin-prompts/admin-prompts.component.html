@@ -25,14 +25,6 @@
           <sp-admin-input [ngModel]="searchTerm()" (ngModelChange)="setSearchTerm($event)" size="sm"
             placeholder="Search by key…" />
         </sp-admin-form-field>
-        <sp-admin-form-field filters label="Category" size="sm">
-          <sp-admin-select [ngModel]="categoryFilter()" (ngModelChange)="setCategoryFilter($event)"
-            [options]="categoryFilterOptions()" size="sm" placeholder="All categories" />
-        </sp-admin-form-field>
-        <sp-admin-form-field filters label="Status" size="sm" fixedWidth="160px">
-          <sp-admin-select [ngModel]="statusFilter()" (ngModelChange)="setStatusFilter($event)"
-            [options]="statusFilterOptions" size="sm" />
-        </sp-admin-form-field>
         <sp-admin-button actions variant="neutral" appearance="outline" size="sm" (click)="load()"
           [loading]="loading()">Refresh</sp-admin-button>
       </sp-admin-filter-bar>
@@ -45,56 +37,41 @@
       <sp-admin-error-state title="Prompt templates could not load" [message]="loadError()" />
       <sp-admin-button variant="primary" appearance="outline" size="sm" (click)="load()">Try again</sp-admin-button>
     </div>
-    } @else if (filteredPrompts().length === 0) {
-    <sp-admin-empty-state [message]="emptyMessage()" />
     } @else {
-    <sp-admin-table variant="data" density="comfortable" [flush]="true" layout="first-column-fluid">
-      <table>
-        <thead>
-          <tr>
-            <th>KEY</th>
-            <th>CATEGORY</th>
-            <th>VERSION</th>
-            <th>STATUS</th>
-            <th class="sp-admin-th-right">TOKEN BUDGET</th>
-            <th class="sp-admin-th-right">ACTIONS</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (p of pagedPrompts(); track p.id) {
-          <tr class="sp-admin-row-click" (click)="openView(p)">
-            <!-- KEY -->
-            <td>
-              <div class="sp-admin-key-cell">
-                <sp-admin-code-pill [value]="p.key" tone="primary" [maxLength]="48" />
-                @if (p.isActive && isLatestVersion(p)) {
+    <sp-admin-table
+      variant="data" density="comfortable" [flush]="true" layout="first-column-fluid"
+      [columns]="promptColumns" [rows]="pagedPrompts()"
+      [filters]="promptsFilters()" (filterChange)="onPromptsFilterChange($event)"
+      [rowClickable]="true" (rowClick)="onRowClick($event)"
+      [emptyMessage]="emptyMessage()"
+    >
+      <ng-template #cell let-row let-col="col">
+        @switch (col.key) {
+          @case ('key') {
+            <div class="sp-admin-key-cell">
+              <sp-admin-code-pill [value]="$any(row).key" tone="primary" [maxLength]="48" />
+              @if ($any(row).isActive && isLatestVersion($any(row))) {
                 <sp-admin-badge tone="info" size="sm">latest</sp-admin-badge>
-                }
-              </div>
-            </td>
-            <!-- CATEGORY -->
-            <td>
-              <span class="sp-admin-cell-text">{{ promptCategory(p.key) }}</span>
-            </td>
-            <!-- VERSION -->
-            <td class="sp-admin-version">v{{ p.version }}</td>
-            <!-- STATUS -->
-            <td>
-              <sp-admin-badge [tone]="p.isActive ? 'success' : 'neutral'" [dot]="true">
-                {{ p.isActive ? 'Active' : 'Inactive' }}
-              </sp-admin-badge>
-            </td>
-            <!-- TOKEN BUDGET -->
-            <td class="sp-admin-num sp-admin-mono-cell sp-admin-td-right">{{ tokenBudgetLabel(p) }}</td>
-            <!-- ACTIONS -->
-            <td class="sp-admin-td-right justify-end" (click)="$event.stopPropagation()">
-              <sp-admin-table-actions [richActions]="promptRowActions(p)"
-                (actionSelected)="onPromptRowAction(p, $event)" />
-            </td>
-          </tr>
+              }
+            </div>
           }
-        </tbody>
-      </table>
+          @case ('category') { <span class="sp-admin-cell-text">{{ promptCategory($any(row).key) }}</span> }
+          @case ('version') { <span class="sp-admin-version">v{{ $any(row).version }}</span> }
+          @case ('status') {
+            <sp-admin-badge [tone]="$any(row).isActive ? 'success' : 'neutral'" [dot]="true">
+              {{ $any(row).isActive ? 'Active' : 'Inactive' }}
+            </sp-admin-badge>
+          }
+          @case ('tokenBudget') { <span class="sp-admin-num sp-admin-mono-cell">{{ tokenBudgetLabel($any(row)) }}</span> }
+          @case ('actions') {
+            <span (click)="$event.stopPropagation()">
+              <sp-admin-table-actions [richActions]="promptRowActions($any(row))"
+                (actionSelected)="onPromptRowAction($any(row), $event)" />
+            </span>
+          }
+          @default { {{ $any(row)[col.key] }} }
+        }
+      </ng-template>
     </sp-admin-table>
     @if (totalPages() > 1) {
     <sp-admin-pagination [page]="page()" [totalPages]="totalPages()" [totalRows]="filteredPrompts().length"
