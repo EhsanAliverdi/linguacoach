@@ -26,6 +26,7 @@ import {
   SpAdminTruncatedTextComponent,
   SpAdminFlyoutComponent,
 } from '../../../design-system/admin';
+import type { SpAdminTableColumn, SpAdminTableFilter } from '../../../design-system/admin';
 import { SpAdminVisualPlaceholderComponent } from '../../../design-system/admin/components/visual-placeholder/sp-admin-visual-placeholder.component';
 import { SpAdminRingMetricComponent } from '../../../design-system/admin/components/ring-metric/sp-admin-ring-metric.component';
 import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design-system/admin/components/breakdown-bars/sp-admin-breakdown-bars.component';
@@ -70,6 +71,63 @@ import { SpAdminSlideOverComponent } from '../../../design-system/admin';
   templateUrl: './admin-ai-usage.component.html',
 })
 export class AdminAiUsageComponent implements OnInit {
+  readonly byProviderColumns: SpAdminTableColumn[] = [
+    { key: 'provider', label: 'Provider' },
+    { key: 'calls', label: 'Calls', align: 'right' },
+    { key: 'successful', label: 'OK', align: 'right' },
+    { key: 'fallback', label: 'Fallback', align: 'right' },
+    { key: 'costUsd', label: 'Cost', align: 'right' },
+  ];
+
+  readonly byFeatureColumns: SpAdminTableColumn[] = [
+    { key: 'feature', label: 'Feature' },
+    { key: 'calls', label: 'Calls', align: 'right' },
+    { key: 'successful', label: 'OK', align: 'right' },
+    { key: 'costUsd', label: 'Cost', align: 'right' },
+  ];
+
+  readonly trendColumns: SpAdminTableColumn[] = [
+    { key: 'date', label: 'Date' },
+    { key: 'callCount', label: 'Calls', align: 'right' },
+    { key: 'successCount', label: 'Success', align: 'right' },
+    { key: 'failureCount', label: 'Failed', align: 'right' },
+    { key: 'fallbackCount', label: 'Fallback', align: 'right' },
+    { key: 'totalTokens', label: 'Tokens', align: 'right' },
+    { key: 'costUsd', label: 'Cost', align: 'right' },
+  ];
+
+  readonly recentCallsColumns: SpAdminTableColumn[] = [
+    { key: 'createdAt', label: 'Time' },
+    { key: 'featureKey', label: 'Feature' },
+    { key: 'providerModel', label: 'Provider / Model' },
+    { key: 'status', label: 'Status' },
+    { key: 'tokens', label: 'Tokens in/out', align: 'right' },
+    { key: 'costUsd', label: 'Cost', align: 'right' },
+    { key: 'durationMs', label: 'Duration', align: 'right' },
+    { key: 'correlationId', label: 'Correlation' },
+  ];
+
+  readonly recentCallsFilters = computed<SpAdminTableFilter[]>(() => {
+    const filters: SpAdminTableFilter[] = [
+      { key: 'provider', label: 'Provider', options: this.providerOptions(), value: this.recentProviderFilter(), placeholder: 'All providers' },
+      { key: 'model', label: 'Model', options: this.modelOptions(), value: this.recentModelFilter(), placeholder: 'All models' },
+      { key: 'feature', label: 'Feature', options: this.featureOptions(), value: this.recentFeatureFilter(), placeholder: 'All features' },
+      { key: 'status', label: 'Status', options: this.recentStatusOptions, value: this.recentStatusFilter(), placeholder: 'All statuses' },
+    ];
+    if (this.studentOptions().length > 0) {
+      filters.push({ key: 'student', label: 'Student', options: this.studentOptions(), value: this.recentStudentFilter(), placeholder: 'All students' });
+    }
+    return filters;
+  });
+
+  onRecentCallsFilterChange(event: { key: string; value: string }): void {
+    if (event.key === 'provider') this.onRecentProviderChange(event.value);
+    else if (event.key === 'model') this.onRecentModelChange(event.value);
+    else if (event.key === 'feature') this.onRecentFeatureChange(event.value);
+    else if (event.key === 'status') this.onRecentStatusChange(event.value);
+    else if (event.key === 'student') this.onRecentStudentChange(event.value);
+  }
+
   summary = signal<AiUsageSummary | null>(null);
   recentItems = signal<AiUsageRecentItem[]>([]);
   loadingSummary = signal(true);
@@ -108,12 +166,6 @@ export class AdminAiUsageComponent implements OnInit {
   recentStudentFilter = signal('');
 
   // Two-way bound values for sp-admin-select
-  recentProviderFilterValue = '';
-  recentModelFilterValue = '';
-  recentFeatureFilterValue = '';
-  recentStatusFilterValue = '';
-  recentStudentFilterValue = '';
-
   // Export state
   exporting = signal(false);
   exportError = signal('');
@@ -378,11 +430,6 @@ export class AdminAiUsageComponent implements OnInit {
     this.recentFeatureFilter.set('');
     this.recentStatusFilter.set('');
     this.recentStudentFilter.set('');
-    this.recentProviderFilterValue = '';
-    this.recentModelFilterValue = '';
-    this.recentFeatureFilterValue = '';
-    this.recentStatusFilterValue = '';
-    this.recentStudentFilterValue = '';
     this.recentPage.set(1);
     this.load();
   }

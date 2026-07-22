@@ -87,35 +87,25 @@
           <sp-admin-empty-state message="No calls yet." />
         </div>
       } @else {
-        <sp-admin-table [flush]="true" variant="data" density="spacious" layout="first-column-fluid">
-          <table>
-            <thead>
-              <tr>
-                <th>Provider</th>
-                <th class="sp-admin-th-right">Calls</th>
-                <th class="sp-admin-th-right">OK</th>
-                <th class="sp-admin-th-right">Fallback</th>
-                <th class="sp-admin-th-right">Cost</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (p of summary()!.byProvider; track p.provider) {
-                <tr>
-                  <td><sp-admin-code-pill [value]="p.provider" tone="neutral" /></td>
-                  <td class="sp-admin-num">{{ p.calls }}</td>
-                  <td class="sp-admin-num"><sp-admin-badge tone="success">{{ p.successful }}</sp-admin-badge></td>
-                  <td class="sp-admin-num">
-                    @if (p.fallback > 0) {
-                      <sp-admin-badge tone="warning">{{ p.fallback }}</sp-admin-badge>
-                    } @else {
-                      <span class="sp-admin-text-muted">0</span>
-                    }
-                  </td>
-                  <td class="sp-admin-num sp-admin-text-mono">${{ p.costUsd.toFixed(4) }}</td>
-                </tr>
+        <sp-admin-table [flush]="true" variant="data" density="spacious" layout="first-column-fluid" [columns]="byProviderColumns" [rows]="summary()!.byProvider">
+          <ng-template #cell let-row let-col="col">
+            @switch (col.key) {
+              @case ('provider') { <sp-admin-code-pill [value]="$any(row).provider" tone="neutral" /> }
+              @case ('calls') { <span class="sp-admin-num">{{ $any(row).calls }}</span> }
+              @case ('successful') { <span class="sp-admin-num"><sp-admin-badge tone="success">{{ $any(row).successful }}</sp-admin-badge></span> }
+              @case ('fallback') {
+                <span class="sp-admin-num">
+                  @if ($any(row).fallback > 0) {
+                    <sp-admin-badge tone="warning">{{ $any(row).fallback }}</sp-admin-badge>
+                  } @else {
+                    <span class="sp-admin-text-muted">0</span>
+                  }
+                </span>
               }
-            </tbody>
-          </table>
+              @case ('costUsd') { <span class="sp-admin-num sp-admin-text-mono">${{ $any(row).costUsd.toFixed(4) }}</span> }
+              @default { {{ $any(row)[col.key] }} }
+            }
+          </ng-template>
         </sp-admin-table>
       }
     </div>
@@ -129,30 +119,19 @@
           <sp-admin-empty-state message="No calls yet." />
         </div>
       } @else {
-        <sp-admin-table [flush]="true" variant="data" density="compact" layout="first-column-fluid">
-          <table>
-            <thead>
-              <tr>
-                <th>Feature</th>
-                <th class="sp-admin-th-right">Calls</th>
-                <th class="sp-admin-th-right">OK</th>
-                <th class="sp-admin-th-right">Cost</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (f of byFeaturePaged(); track f.feature) {
-                <tr>
-                  <td>
-                    <sp-admin-truncated-text [value]="featureLabel(f.feature)" [maxLength]="36" />
-                    <div class="sp-admin-mt-3"><sp-admin-code-pill [value]="f.feature" tone="neutral" /></div>
-                  </td>
-                  <td class="sp-admin-num">{{ f.calls }}</td>
-                  <td class="sp-admin-num"><sp-admin-badge tone="success">{{ f.successful }}</sp-admin-badge></td>
-                  <td class="sp-admin-num sp-admin-text-mono">${{ f.costUsd.toFixed(4) }}</td>
-                </tr>
+        <sp-admin-table [flush]="true" variant="data" density="compact" layout="first-column-fluid" [columns]="byFeatureColumns" [rows]="byFeaturePaged()">
+          <ng-template #cell let-row let-col="col">
+            @switch (col.key) {
+              @case ('feature') {
+                <sp-admin-truncated-text [value]="featureLabel($any(row).feature)" [maxLength]="36" />
+                <div class="sp-admin-mt-3"><sp-admin-code-pill [value]="$any(row).feature" tone="neutral" /></div>
               }
-            </tbody>
-          </table>
+              @case ('calls') { <span class="sp-admin-num">{{ $any(row).calls }}</span> }
+              @case ('successful') { <span class="sp-admin-num"><sp-admin-badge tone="success">{{ $any(row).successful }}</sp-admin-badge></span> }
+              @case ('costUsd') { <span class="sp-admin-num sp-admin-text-mono">${{ $any(row).costUsd.toFixed(4) }}</span> }
+              @default { {{ $any(row)[col.key] }} }
+            }
+          </ng-template>
         </sp-admin-table>
         @if (byFeatureTotalPages() > 1) {
           <div class="sp-admin-table-section-footer">
@@ -222,42 +201,34 @@
         [decimals]="0"
         ariaLabel="Calls over time chart" />
     </div>
-    <sp-admin-table [flush]="true" variant="data" density="compact" minWidth="640px">
-      <table>
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th class="sp-admin-th-right">Calls</th>
-            <th class="sp-admin-th-right">Success</th>
-            <th class="sp-admin-th-right">Failed</th>
-            <th class="sp-admin-th-right">Fallback</th>
-            <th class="sp-admin-th-right">Tokens</th>
-            <th class="sp-admin-th-right">Cost</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (b of trendBucketsPaged(); track b.date) {
-            <tr [class.sp-admin-table-row-inactive]="b.callCount === 0">
-              <td class="sp-admin-text-mono sp-admin-nowrap sp-admin-table-cell-compact">{{ b.date }}</td>
-              <td class="sp-admin-num">{{ b.callCount | number }}</td>
-              <td class="sp-admin-num">
-                @if (b.successCount > 0) { <sp-admin-badge tone="success">{{ b.successCount }}</sp-admin-badge> }
-                @else { <span class="sp-admin-text-muted">0</span> }
-              </td>
-              <td class="sp-admin-num">
-                @if (b.failureCount > 0) { <sp-admin-badge tone="danger">{{ b.failureCount }}</sp-admin-badge> }
-                @else { <span class="sp-admin-text-muted">0</span> }
-              </td>
-              <td class="sp-admin-num">
-                @if (b.fallbackCount > 0) { <sp-admin-badge tone="warning">{{ b.fallbackCount }}</sp-admin-badge> }
-                @else { <span class="sp-admin-text-muted">0</span> }
-              </td>
-              <td class="sp-admin-num sp-admin-text-mono">{{ b.totalTokens | number }}</td>
-              <td class="sp-admin-num sp-admin-text-mono">${{ b.costUsd.toFixed(4) }}</td>
-            </tr>
+    <sp-admin-table [flush]="true" variant="data" density="compact" minWidth="640px" [columns]="trendColumns" [rows]="trendBucketsPaged()">
+      <ng-template #cell let-row let-col="col">
+        @switch (col.key) {
+          @case ('date') { <span class="sp-admin-text-mono sp-admin-nowrap sp-admin-table-cell-compact">{{ $any(row).date }}</span> }
+          @case ('callCount') { <span class="sp-admin-num">{{ $any(row).callCount | number }}</span> }
+          @case ('successCount') {
+            <span class="sp-admin-num">
+              @if ($any(row).successCount > 0) { <sp-admin-badge tone="success">{{ $any(row).successCount }}</sp-admin-badge> }
+              @else { <span class="sp-admin-text-muted">0</span> }
+            </span>
           }
-        </tbody>
-      </table>
+          @case ('failureCount') {
+            <span class="sp-admin-num">
+              @if ($any(row).failureCount > 0) { <sp-admin-badge tone="danger">{{ $any(row).failureCount }}</sp-admin-badge> }
+              @else { <span class="sp-admin-text-muted">0</span> }
+            </span>
+          }
+          @case ('fallbackCount') {
+            <span class="sp-admin-num">
+              @if ($any(row).fallbackCount > 0) { <sp-admin-badge tone="warning">{{ $any(row).fallbackCount }}</sp-admin-badge> }
+              @else { <span class="sp-admin-text-muted">0</span> }
+            </span>
+          }
+          @case ('totalTokens') { <span class="sp-admin-num sp-admin-text-mono">{{ $any(row).totalTokens | number }}</span> }
+          @case ('costUsd') { <span class="sp-admin-num sp-admin-text-mono">${{ $any(row).costUsd.toFixed(4) }}</span> }
+          @default { {{ $any(row)[col.key] }} }
+        }
+      </ng-template>
     </sp-admin-table>
     @if (trendTotalPages() > 1) {
       <div class="sp-admin-table-section-footer">
@@ -305,30 +276,19 @@
   [closeOnBackdrop]="true"
   (closed)="featureSlideOverOpen.set(false)">
   @if (summary()?.byFeature?.length) {
-    <sp-admin-table [flush]="true" variant="data" density="compact" layout="first-column-fluid">
-      <table>
-        <thead>
-          <tr>
-            <th>Feature</th>
-            <th class="sp-admin-th-right">Calls</th>
-            <th class="sp-admin-th-right">OK</th>
-            <th class="sp-admin-th-right">Cost</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (f of summary()!.byFeature; track f.feature) {
-            <tr>
-              <td>
-                <sp-admin-truncated-text [value]="featureLabel(f.feature)" [maxLength]="36" />
-                <div class="sp-admin-mt-3"><sp-admin-code-pill [value]="f.feature" tone="neutral" /></div>
-              </td>
-              <td class="sp-admin-num">{{ f.calls }}</td>
-              <td class="sp-admin-num"><sp-admin-badge tone="success">{{ f.successful }}</sp-admin-badge></td>
-              <td class="sp-admin-num sp-admin-text-mono">${{ f.costUsd.toFixed(4) }}</td>
-            </tr>
+    <sp-admin-table [flush]="true" variant="data" density="compact" layout="first-column-fluid" [columns]="byFeatureColumns" [rows]="summary()!.byFeature">
+      <ng-template #cell let-row let-col="col">
+        @switch (col.key) {
+          @case ('feature') {
+            <sp-admin-truncated-text [value]="featureLabel($any(row).feature)" [maxLength]="36" />
+            <div class="sp-admin-mt-3"><sp-admin-code-pill [value]="$any(row).feature" tone="neutral" /></div>
           }
-        </tbody>
-      </table>
+          @case ('calls') { <span class="sp-admin-num">{{ $any(row).calls }}</span> }
+          @case ('successful') { <span class="sp-admin-num"><sp-admin-badge tone="success">{{ $any(row).successful }}</sp-admin-badge></span> }
+          @case ('costUsd') { <span class="sp-admin-num sp-admin-text-mono">${{ $any(row).costUsd.toFixed(4) }}</span> }
+          @default { {{ $any(row)[col.key] }} }
+        }
+      </ng-template>
     </sp-admin-table>
   } @else {
     <sp-admin-empty-state message="No feature data for this period." />
@@ -359,91 +319,62 @@
       <sp-admin-error-state title="Recent calls unavailable" [message]="recentError()" />
     </div>
   } @else {
-    <div class="sp-admin-table-section-filters">
-      <sp-admin-filter-bar density="compact">
-        <sp-admin-select filters size="sm" placeholder="All providers"
-          [options]="providerOptions()" [(ngModel)]="recentProviderFilterValue"
-          (ngModelChange)="onRecentProviderChange($event)" aria-label="Filter by provider" />
-        <sp-admin-select filters size="sm" placeholder="All models"
-          [options]="modelOptions()" [(ngModel)]="recentModelFilterValue"
-          (ngModelChange)="onRecentModelChange($event)" aria-label="Filter by model" />
-        <sp-admin-select filters size="sm" placeholder="All features"
-          [options]="featureOptions()" [(ngModel)]="recentFeatureFilterValue"
-          (ngModelChange)="onRecentFeatureChange($event)" aria-label="Filter by feature" />
-        <sp-admin-select filters size="sm" placeholder="All statuses"
-          [options]="recentStatusOptions" [(ngModel)]="recentStatusFilterValue"
-          (ngModelChange)="onRecentStatusChange($event)" aria-label="Filter by status" />
-        @if (studentOptions().length > 0) {
-          <sp-admin-select filters size="sm" placeholder="All students"
-            [options]="studentOptions()" [(ngModel)]="recentStudentFilterValue"
-            (ngModelChange)="onRecentStudentChange($event)" aria-label="Filter by student" />
-        }
-        @if (hasActiveRecentFilters()) {
-          <sp-admin-button size="sm" variant="ghost" (click)="clearRecentFilters()">Clear filters</sp-admin-button>
-        }
-      </sp-admin-filter-bar>
-    </div>
-
     @if (recentItems().length === 0) {
       <div class="sp-admin-card-body-md">
         <sp-admin-empty-state message="No calls match your filters." />
       </div>
     } @else {
-      <sp-admin-table [flush]="true" variant="data" density="compact" minWidth="1080px">
-        <table>
-          <thead>
-            <tr>
-              <th>Time</th>
-              <th>Feature</th>
-              <th>Provider / Model</th>
-              <th>Status</th>
-              <th class="sp-admin-th-right">Tokens in/out</th>
-              <th class="sp-admin-th-right">Cost</th>
-              <th class="sp-admin-th-right">Duration</th>
-              <th>Correlation</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (item of filteredRecentItems(); track item.id) {
-              <tr>
-                <td class="sp-admin-text-mono sp-admin-nowrap sp-admin-table-cell-compact">{{ formatDateTime(item.createdAt) }}</td>
-                <td>
-                  <sp-admin-truncated-text [value]="featureLabel(item.featureKey)" [maxLength]="28" />
-                  <div class="sp-admin-mt-3"><sp-admin-code-pill [value]="item.featureKey" tone="neutral" /></div>
-                </td>
-                <td>
-                  <sp-admin-code-pill [value]="item.provider" tone="neutral" />
-                  <div class="sp-admin-mt-3"><sp-admin-code-pill [value]="item.model" tone="neutral" [maxLength]="28" /></div>
-                </td>
-                <td>
-                  <div class="sp-admin-badge-row">
-                    <sp-admin-badge [tone]="item.wasSuccessful ? 'success' : 'danger'">
-                      {{ item.wasSuccessful ? 'OK' : 'Failed' }}
-                    </sp-admin-badge>
-                    @if (item.isFallback) {
-                      <sp-admin-badge tone="warning">Fallback</sp-admin-badge>
-                    }
-                  </div>
-                  @if (!item.wasSuccessful && item.failureReason) {
-                    <div class="sp-admin-field-error sp-admin-text-xxs">{{ item.failureReason }}</div>
-                  }
-                </td>
-                <td class="sp-admin-num sp-admin-text-mono">
-                  {{ item.inputTokens | number }}&nbsp;/&nbsp;{{ item.outputTokens | number }}
-                </td>
-                <td class="sp-admin-num sp-admin-text-mono">${{ item.costUsd.toFixed(4) }}</td>
-                <td class="sp-admin-num sp-admin-text-mono">{{ item.durationMs | number }}ms</td>
-                <td>
-                  @if (item.correlationId) {
-                    <sp-admin-copyable-text [value]="item.correlationId" [maxLength]="12" [mono]="true" />
-                  } @else {
-                    <span class="sp-admin-text-muted">—</span>
-                  }
-                </td>
-              </tr>
+      <sp-admin-table
+        [flush]="true" variant="data" density="compact" minWidth="1080px"
+        [columns]="recentCallsColumns" [rows]="filteredRecentItems()"
+        [filters]="recentCallsFilters()" (filterChange)="onRecentCallsFilterChange($event)"
+      >
+        <ng-container tableActions>
+          @if (hasActiveRecentFilters()) {
+            <sp-admin-button size="sm" variant="ghost" (click)="clearRecentFilters()">Clear filters</sp-admin-button>
+          }
+        </ng-container>
+        <ng-template #cell let-row let-col="col">
+          @switch (col.key) {
+            @case ('createdAt') { <span class="sp-admin-text-mono sp-admin-nowrap sp-admin-table-cell-compact">{{ formatDateTime($any(row).createdAt) }}</span> }
+            @case ('featureKey') {
+              <sp-admin-truncated-text [value]="featureLabel($any(row).featureKey)" [maxLength]="28" />
+              <div class="sp-admin-mt-3"><sp-admin-code-pill [value]="$any(row).featureKey" tone="neutral" /></div>
             }
-          </tbody>
-        </table>
+            @case ('providerModel') {
+              <sp-admin-code-pill [value]="$any(row).provider" tone="neutral" />
+              <div class="sp-admin-mt-3"><sp-admin-code-pill [value]="$any(row).model" tone="neutral" [maxLength]="28" /></div>
+            }
+            @case ('status') {
+              <div class="sp-admin-badge-row">
+                <sp-admin-badge [tone]="$any(row).wasSuccessful ? 'success' : 'danger'">
+                  {{ $any(row).wasSuccessful ? 'OK' : 'Failed' }}
+                </sp-admin-badge>
+                @if ($any(row).isFallback) {
+                  <sp-admin-badge tone="warning">Fallback</sp-admin-badge>
+                }
+              </div>
+              @if (!$any(row).wasSuccessful && $any(row).failureReason) {
+                <div class="sp-admin-field-error sp-admin-text-xxs">{{ $any(row).failureReason }}</div>
+              }
+            }
+            @case ('tokens') {
+              <span class="sp-admin-num sp-admin-text-mono">
+                {{ $any(row).inputTokens | number }}&nbsp;/&nbsp;{{ $any(row).outputTokens | number }}
+              </span>
+            }
+            @case ('costUsd') { <span class="sp-admin-num sp-admin-text-mono">${{ $any(row).costUsd.toFixed(4) }}</span> }
+            @case ('durationMs') { <span class="sp-admin-num sp-admin-text-mono">{{ $any(row).durationMs | number }}ms</span> }
+            @case ('correlationId') {
+              @if ($any(row).correlationId) {
+                <sp-admin-copyable-text [value]="$any(row).correlationId" [maxLength]="12" [mono]="true" />
+              } @else {
+                <span class="sp-admin-text-muted">—</span>
+              }
+            }
+            @default { {{ $any(row)[col.key] }} }
+          }
+        </ng-template>
       </sp-admin-table>
       @if (recentTotalPages() > 1) {
         <div class="sp-admin-table-section-footer">
