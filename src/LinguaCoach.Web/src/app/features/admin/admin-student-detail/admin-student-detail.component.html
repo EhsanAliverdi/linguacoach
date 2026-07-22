@@ -463,90 +463,86 @@
         } @else if (!speakingAttempts() || speakingAttempts()!.status === 'Empty' || speakingAttempts()!.attempts.length === 0) {
           <p class="sp-admin-text-muted" data-testid="speaking-submissions-empty">No speaking recordings submitted yet.</p>
         } @else {
-          <table class="sp-adm-table" style="width:100%;border-collapse:collapse" data-testid="speaking-submissions-table">
-            <thead>
-              <tr>
-                <th style="text-align:left;padding:8px 4px;font-size:0.75rem;color:var(--sp-admin-muted,#8B85A0)">Activity</th>
-                <th style="text-align:left;padding:8px 4px;font-size:0.75rem;color:var(--sp-admin-muted,#8B85A0)">Submitted</th>
-                <th style="text-align:left;padding:8px 4px;font-size:0.75rem;color:var(--sp-admin-muted,#8B85A0)">Status</th>
-                <th style="text-align:left;padding:8px 4px;font-size:0.75rem;color:var(--sp-admin-muted,#8B85A0)">Score</th>
-                <th style="text-align:left;padding:8px 4px;font-size:0.75rem;color:var(--sp-admin-muted,#8B85A0)" data-testid="dry-run-col-header">Dry-run signal</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (attempt of speakingAttempts()!.attempts; track attempt.attemptId) {
-                <tr data-testid="speaking-attempt-row" style="border-top:1px solid var(--sp-admin-border,#E2DEF0)">
-                  <td style="padding:8px 4px;font-size:0.875rem">
-                    <span>{{ attempt.activityTitle || 'Speaking activity' }}</span>
-                    @if (attempt.activityType) {
-                      <span class="sp-admin-text-muted" style="display:block;font-size:0.75rem">{{ attempt.activityType }}</span>
-                    }
-                    @if (attempt.evaluationProvider) {
-                      <span class="sp-admin-text-muted" style="display:block;font-size:0.7rem">via {{ attempt.evaluationProvider }}{{ attempt.evaluationModel ? ' / ' + attempt.evaluationModel : '' }}</span>
-                    }
-                  </td>
-                  <td style="padding:8px 4px;font-size:0.875rem;white-space:nowrap">
-                    {{ attempt.submittedAt | date:'medium' }}
-                  </td>
-                  <td style="padding:8px 4px">
-                    <sp-admin-badge [tone]="speakingStatusTone(attempt.status)" data-testid="speaking-attempt-status">
-                      {{ speakingStatusLabel(attempt.status) }}
-                    </sp-admin-badge>
-                    @if (attempt.evaluationFailureReason) {
-                      <span class="sp-admin-text-muted" style="display:block;font-size:0.7rem;margin-top:3px" data-testid="speaking-eval-failure-reason">{{ attempt.evaluationFailureReason }}</span>
-                    }
-                    @if (attempt.evaluationFeedbackText) {
-                      <p style="font-size:0.75rem;color:var(--sp-admin-ink,#1A1535);margin:6px 0 0;line-height:1.5" data-testid="speaking-eval-feedback">{{ attempt.evaluationFeedbackText }}</p>
-                    }
-                    @if (attempt.evaluationSuggestedImprovement) {
-                      <p style="font-size:0.75rem;color:var(--sp-admin-muted,#8B85A0);margin:4px 0 0;line-height:1.5;font-style:italic">{{ attempt.evaluationSuggestedImprovement }}</p>
-                    }
-                  </td>
-                  <td style="padding:8px 4px;font-size:0.875rem" data-testid="speaking-eval-score">
-                    @if (attempt.overallScore !== null) {
-                      {{ attempt.overallScore | number:'1.0-0' }}%
+          <sp-admin-table
+            variant="data" density="compact" layout="first-column-fluid"
+            data-testid="speaking-submissions-table"
+            [columns]="speakingAttemptsColumns" [rows]="speakingAttempts()!.attempts"
+          >
+            <ng-template #cell let-row let-col="col">
+              @switch (col.key) {
+                @case ('activity') {
+                  <span>{{ $any(row).activityTitle || 'Speaking activity' }}</span>
+                  @if ($any(row).activityType) {
+                    <span class="sp-admin-text-muted" style="display:block;font-size:0.75rem">{{ $any(row).activityType }}</span>
+                  }
+                  @if ($any(row).evaluationProvider) {
+                    <span class="sp-admin-text-muted" style="display:block;font-size:0.7rem">via {{ $any(row).evaluationProvider }}{{ $any(row).evaluationModel ? ' / ' + $any(row).evaluationModel : '' }}</span>
+                  }
+                }
+                @case ('submittedAt') { <span class="sp-admin-nowrap">{{ $any(row).submittedAt | date:'medium' }}</span> }
+                @case ('status') {
+                  <sp-admin-badge [tone]="speakingStatusTone($any(row).status)" data-testid="speaking-attempt-status">
+                    {{ speakingStatusLabel($any(row).status) }}
+                  </sp-admin-badge>
+                  @if ($any(row).evaluationFailureReason) {
+                    <span class="sp-admin-text-muted" style="display:block;font-size:0.7rem;margin-top:3px" data-testid="speaking-eval-failure-reason">{{ $any(row).evaluationFailureReason }}</span>
+                  }
+                  @if ($any(row).evaluationFeedbackText) {
+                    <p style="font-size:0.75rem;color:var(--sp-admin-ink,#1A1535);margin:6px 0 0;line-height:1.5" data-testid="speaking-eval-feedback">{{ $any(row).evaluationFeedbackText }}</p>
+                  }
+                  @if ($any(row).evaluationSuggestedImprovement) {
+                    <p style="font-size:0.75rem;color:var(--sp-admin-muted,#8B85A0);margin:4px 0 0;line-height:1.5;font-style:italic">{{ $any(row).evaluationSuggestedImprovement }}</p>
+                  }
+                }
+                @case ('score') {
+                  <span data-testid="speaking-eval-score">
+                    @if ($any(row).overallScore !== null) {
+                      {{ $any(row).overallScore | number:'1.0-0' }}%
                     } @else {
                       <span class="sp-admin-text-muted">—</span>
                     }
-                  </td>
-                  <td style="padding:8px 4px;font-size:0.75rem" data-testid="speaking-dry-run-signal">
-                    @if (attempt.isApplied) {
+                  </span>
+                }
+                @case ('dryRunSignal') {
+                  <span data-testid="speaking-dry-run-signal">
+                    @if ($any(row).isApplied) {
                       <div style="display:flex;flex-direction:column;gap:2px">
-                        <sp-admin-badge tone="success" data-testid="applied-signal-badge">Applied — {{ attempt.appliedSignalType }}</sp-admin-badge>
-                        @if (attempt.appliedSignalConfidence) {
-                          <span style="color:var(--sp-admin-muted,#8B85A0)">{{ attempt.appliedSignalConfidence }} confidence</span>
+                        <sp-admin-badge tone="success" data-testid="applied-signal-badge">Applied — {{ $any(row).appliedSignalType }}</sp-admin-badge>
+                        @if ($any(row).appliedSignalConfidence) {
+                          <span style="color:var(--sp-admin-muted,#8B85A0)">{{ $any(row).appliedSignalConfidence }} confidence</span>
                         }
-                        @if (attempt.appliedAt) {
-                          <span style="color:var(--sp-admin-muted,#8B85A0);font-size:0.7rem">{{ attempt.appliedAt | date:'medium' }}</span>
+                        @if ($any(row).appliedAt) {
+                          <span style="color:var(--sp-admin-muted,#8B85A0);font-size:0.7rem">{{ $any(row).appliedAt | date:'medium' }}</span>
                         }
                         <span style="color:var(--sp-admin-muted,#8B85A0);font-size:0.7rem;font-style:italic" data-testid="signal-no-cefr">This signal does not update CEFR.</span>
                         <span style="color:var(--sp-admin-muted,#8B85A0);font-size:0.7rem;font-style:italic" data-testid="signal-no-objectives">This signal does not complete objectives.</span>
                       </div>
-                    } @else if (attempt.dryRunOutcome) {
+                    } @else if ($any(row).dryRunOutcome) {
                       <div style="display:flex;flex-direction:column;gap:2px">
                         <span style="font-weight:600;color:var(--sp-admin-muted,#8B85A0)" data-testid="dry-run-label">Dry-run only</span>
-                        <span data-testid="dry-run-outcome">{{ attempt.dryRunOutcome }}</span>
-                        @if (attempt.dryRunConfidence) {
-                          <span style="color:var(--sp-admin-muted,#8B85A0)">{{ attempt.dryRunConfidence }} confidence</span>
+                        <span data-testid="dry-run-outcome">{{ $any(row).dryRunOutcome }}</span>
+                        @if ($any(row).dryRunConfidence) {
+                          <span style="color:var(--sp-admin-muted,#8B85A0)">{{ $any(row).dryRunConfidence }} confidence</span>
                         }
-                        @if (attempt.dryRunCandidateSkill) {
-                          <span style="color:var(--sp-admin-ink,#1A1535)">Skill: {{ attempt.dryRunCandidateSkill }}</span>
+                        @if ($any(row).dryRunCandidateSkill) {
+                          <span style="color:var(--sp-admin-ink,#1A1535)">Skill: {{ $any(row).dryRunCandidateSkill }}</span>
                         }
-                        @if (attempt.dryRunBlockedReason) {
-                          <span style="color:var(--sp-admin-muted,#8B85A0);font-style:italic" data-testid="dry-run-blocked-reason">{{ attempt.dryRunBlockedReason }}</span>
+                        @if ($any(row).dryRunBlockedReason) {
+                          <span style="color:var(--sp-admin-muted,#8B85A0);font-style:italic" data-testid="dry-run-blocked-reason">{{ $any(row).dryRunBlockedReason }}</span>
                         }
-                        @if (attempt.appliedSignalBlockedReason) {
-                          <span style="color:var(--sp-admin-muted,#8B85A0);font-size:0.7rem" data-testid="applied-signal-blocked-reason">Blocked: {{ attempt.appliedSignalBlockedReason }}</span>
+                        @if ($any(row).appliedSignalBlockedReason) {
+                          <span style="color:var(--sp-admin-muted,#8B85A0);font-size:0.7rem" data-testid="applied-signal-blocked-reason">Blocked: {{ $any(row).appliedSignalBlockedReason }}</span>
                         }
                       </div>
                     } @else {
                       <span class="sp-admin-text-muted">—</span>
                     }
-                  </td>
-                </tr>
+                  </span>
+                }
+                @default { {{ $any(row)[col.key] }} }
               }
-            </tbody>
-          </table>
+            </ng-template>
+          </sp-admin-table>
         }
       </sp-admin-card>
 
@@ -564,54 +560,52 @@
             <span data-testid="writing-no-objectives" style="margin-right:12px">Objective completion disabled</span>
             <span data-testid="writing-no-lp-regen">Learning Plan regeneration disabled</span>
           </div>
-          <table class="sp-adm-table" style="width:100%;border-collapse:collapse" data-testid="writing-evaluations-table">
-            <thead>
-              <tr>
-                <th style="text-align:left;padding:8px 4px;font-size:0.75rem;color:var(--sp-admin-muted,#8B85A0)">Activity</th>
-                <th style="text-align:left;padding:8px 4px;font-size:0.75rem;color:var(--sp-admin-muted,#8B85A0)">Status</th>
-                <th style="text-align:left;padding:8px 4px;font-size:0.75rem;color:var(--sp-admin-muted,#8B85A0)">Score</th>
-                <th style="text-align:left;padding:8px 4px;font-size:0.75rem;color:var(--sp-admin-muted,#8B85A0)">Grammar / Vocab / Coherence</th>
-                <th style="text-align:left;padding:8px 4px;font-size:0.75rem;color:var(--sp-admin-muted,#8B85A0)">Feedback</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (ev of writingEvaluations(); track ev.evaluationId) {
-                <tr data-testid="writing-evaluation-row" style="border-top:1px solid var(--sp-admin-border,#E2DEF0)">
-                  <td style="padding:8px 4px;font-size:0.875rem">
-                    <span>{{ ev.activityTitle || 'Writing activity' }}</span>
-                    @if (ev.completedAtUtc) {
-                      <span style="display:block;font-size:0.7rem;color:var(--sp-admin-muted,#8B85A0)">{{ ev.completedAtUtc | date:'mediumDate' }}</span>
-                    }
-                  </td>
-                  <td style="padding:8px 4px">
-                    <sp-admin-badge [tone]="writingStatusTone(ev.status)" data-testid="writing-eval-status">{{ ev.status }}</sp-admin-badge>
-                    @if (ev.status === 'Failed' && ev.failureReason) {
-                      <span style="display:block;font-size:0.7rem;color:var(--sp-admin-muted,#8B85A0)" data-testid="writing-eval-failure-reason">{{ ev.failureReason }}</span>
-                    }
-                  </td>
-                  <td style="padding:8px 4px;font-size:0.875rem" data-testid="writing-eval-score">
-                    {{ ev.overallScore !== null ? (ev.overallScore | number:'1.0-0') : '—' }}
-                  </td>
-                  <td style="padding:8px 4px;font-size:0.75rem" data-testid="writing-eval-subscores">
-                    @if (ev.grammarScore !== null || ev.vocabularyScore !== null || ev.coherenceScore !== null) {
-                      <span>G:{{ ev.grammarScore !== null ? (ev.grammarScore | number:'1.0-0') : '—' }}</span>
-                      <span style="margin:0 4px">V:{{ ev.vocabularyScore !== null ? (ev.vocabularyScore | number:'1.0-0') : '—' }}</span>
-                      <span>C:{{ ev.coherenceScore !== null ? (ev.coherenceScore | number:'1.0-0') : '—' }}</span>
+          <sp-admin-table
+            variant="data" density="compact" layout="first-column-fluid"
+            data-testid="writing-evaluations-table"
+            [columns]="writingEvaluationsColumns" [rows]="writingEvaluations()"
+          >
+            <ng-template #cell let-row let-col="col">
+              @switch (col.key) {
+                @case ('activity') {
+                  <span>{{ $any(row).activityTitle || 'Writing activity' }}</span>
+                  @if ($any(row).completedAtUtc) {
+                    <span style="display:block;font-size:0.7rem;color:var(--sp-admin-muted,#8B85A0)">{{ $any(row).completedAtUtc | date:'mediumDate' }}</span>
+                  }
+                }
+                @case ('status') {
+                  <sp-admin-badge [tone]="writingStatusTone($any(row).status)" data-testid="writing-eval-status">{{ $any(row).status }}</sp-admin-badge>
+                  @if ($any(row).status === 'Failed' && $any(row).failureReason) {
+                    <span style="display:block;font-size:0.7rem;color:var(--sp-admin-muted,#8B85A0)" data-testid="writing-eval-failure-reason">{{ $any(row).failureReason }}</span>
+                  }
+                }
+                @case ('score') {
+                  <span data-testid="writing-eval-score">{{ $any(row).overallScore !== null ? ($any(row).overallScore | number:'1.0-0') : '—' }}</span>
+                }
+                @case ('subscores') {
+                  <span data-testid="writing-eval-subscores">
+                    @if ($any(row).grammarScore !== null || $any(row).vocabularyScore !== null || $any(row).coherenceScore !== null) {
+                      <span>G:{{ $any(row).grammarScore !== null ? ($any(row).grammarScore | number:'1.0-0') : '—' }}</span>
+                      <span style="margin:0 4px">V:{{ $any(row).vocabularyScore !== null ? ($any(row).vocabularyScore | number:'1.0-0') : '—' }}</span>
+                      <span>C:{{ $any(row).coherenceScore !== null ? ($any(row).coherenceScore | number:'1.0-0') : '—' }}</span>
                     } @else {
                       <span class="sp-admin-text-muted">—</span>
                     }
-                  </td>
-                  <td style="padding:8px 4px;font-size:0.75rem;max-width:200px" data-testid="writing-eval-feedback">
-                    @if (ev.feedbackText) {
-                      <span style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ ev.feedbackText }}</span>
+                  </span>
+                }
+                @case ('feedback') {
+                  <span data-testid="writing-eval-feedback" style="max-width:200px;display:inline-block">
+                    @if ($any(row).feedbackText) {
+                      <span style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ $any(row).feedbackText }}</span>
                     } @else {
                       <span class="sp-admin-text-muted">—</span>
                     }
-                  </td>
-                </tr>
+                  </span>
+                }
+                @default { {{ $any(row)[col.key] }} }
               }
-            </tbody>
-          </table>
+            </ng-template>
+          </sp-admin-table>
         }
       </sp-admin-card>
 

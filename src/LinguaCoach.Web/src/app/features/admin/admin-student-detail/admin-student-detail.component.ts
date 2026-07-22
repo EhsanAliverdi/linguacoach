@@ -129,6 +129,22 @@ export class AdminStudentDetailComponent implements OnInit {
     { key: 'timestamp', label: 'Date' },
   ];
 
+  readonly speakingAttemptsColumns: SpAdminTableColumn[] = [
+    { key: 'activity', label: 'Activity' },
+    { key: 'submittedAt', label: 'Submitted' },
+    { key: 'status', label: 'Status' },
+    { key: 'score', label: 'Score' },
+    { key: 'dryRunSignal', label: 'Dry-run signal' },
+  ];
+
+  readonly writingEvaluationsColumns: SpAdminTableColumn[] = [
+    { key: 'activity', label: 'Activity' },
+    { key: 'status', label: 'Status' },
+    { key: 'score', label: 'Score' },
+    { key: 'subscores', label: 'Grammar / Vocab / Coherence' },
+    { key: 'feedback', label: 'Feedback' },
+  ];
+
   memory = signal<AdminStudentLearningMemory | null>(null);
   memoryLoading = signal(true);
   memoryError = signal('');
