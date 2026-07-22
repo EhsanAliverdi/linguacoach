@@ -177,6 +177,13 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
                       </td>
                     }
                   </tr>
+                  @if (rowDetailTemplate && isRowExpanded && isRowExpanded(row, $index)) {
+                    <tr class="sp-adm-row-detail">
+                      <td [attr.colspan]="detailColspan">
+                        <ng-container *ngTemplateOutlet="rowDetailTemplate; context: { $implicit: row, index: $index }" />
+                      </td>
+                    </tr>
+                  }
                 }
               </tbody>
             </table>
@@ -357,6 +364,7 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
     .sp-adm-tr-stripe-odd  { background:var(--sp-admin-surface-subtle,#FBFAFE); }
     .sp-adm-tr-stripe-even { background:#fff; }
     .sp-adm-tr-clickable { cursor:pointer; }
+    .sp-adm-row-detail > td { padding:0; background:var(--sp-admin-surface-subtle,#FBFAFE); }
 
     /* Borders */
     .sp-adm-table-bordered th, .sp-adm-table-bordered td { border:1px solid var(--sp-admin-border,#ECE9F5); }
@@ -411,6 +419,9 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
 })
 export class SpAdminTableComponent {
   @ContentChild('cell') cellTemplate?: TemplateRef<{ $implicit: unknown; col: SpAdminTableColumn }>;
+  @ContentChild('rowDetail') rowDetailTemplate?: TemplateRef<{ $implicit: unknown; index: number }>;
+  /** When set, rows for which this returns true render `rowDetail` in a full-width row underneath (data-driven mode only). */
+  @Input() isRowExpanded?: (row: unknown, index: number) => boolean;
 
   @Input() columns: SpAdminTableColumn[] = [];
   /** Any row shape — a concrete DTO array is fine (no index signature needed). Access fields via
@@ -508,6 +519,10 @@ export class SpAdminTableComponent {
 
   get theadRowClass(): string {
     return `sp-adm-thead-row-${this.variant}`;
+  }
+
+  get detailColspan(): number {
+    return this.columns.length + (this.selectable ? 1 : 0) + (this.hasActions ? 1 : 0);
   }
 
   thClass(column: SpAdminTableColumn | null): string {

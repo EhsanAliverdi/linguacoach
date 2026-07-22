@@ -29,125 +29,110 @@
   <sp-admin-empty-state
     message="No usage policies yet. Create one to start governing AI feature usage." />
 } @else {
-  <sp-admin-table variant="data" density="compact" layout="first-column-fluid">
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Scope</th>
-            <th>Status</th>
-            <th>Default</th>
-            <th>Rules</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (p of policies(); track p.id) {
-            <tr>
-              <td>
-                <span class="sp-admin-text-strong">{{ p.name }}</span>
-                @if (p.description) {
-                  <div class="sp-admin-section-sub sp-up-desc">{{ p.description }}</div>
-                }
-              </td>
-              <td>
-                <sp-admin-badge tone="neutral">{{ p.scopeType }}</sp-admin-badge>
-              </td>
-              <td>
-                <sp-admin-badge [tone]="p.isActive ? 'success' : 'neutral'">
-                  {{ p.isActive ? 'Active' : 'Inactive' }}
-                </sp-admin-badge>
-              </td>
-              <td>
-                @if (p.isDefault) {
-                  <sp-admin-badge tone="primary">Default</sp-admin-badge>
-                } @else {
-                  <span class="sp-admin-text-muted">—</span>
-                }
-              </td>
-              <td>
-                <button class="sp-up-expand-btn" (click)="toggleExpanded(p.id)">
-                  {{ p.rules.length }} rule{{ p.rules.length === 1 ? '' : 's' }}
-                  <sp-admin-icon
-                    [name]="expandedPolicyId() === p.id ? 'chevron-down' : 'chevron-right'"
-                    size="xs" tone="primary" />
-                </button>
-              </td>
-              <td>
-                <sp-admin-table-actions mode="buttons" [richActions]="[
-                  { id: 'edit', label: 'Edit', icon: 'edit' }
-                ]" (actionSelected)="openEdit(p)" />
-              </td>
-            </tr>
-
-            <!-- Expanded rules nested table -->
-            @if (expandedPolicyId() === p.id) {
-              <tr class="sp-up-rules-row">
-                <td colspan="6">
-                  <div class="sp-up-rules-inner">
-                    @if (p.rules.length === 0) {
-                      <sp-admin-empty-state message="No rules defined for this policy." />
-                    } @else {
-                      <table class="sp-up-rules-table">
-                        <thead>
-                          <tr>
-                            <th>Feature</th>
-                            <th>Mode</th>
-                            <th>Type</th>
-                            <th>Limits</th>
-                            <th>Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          @for (rule of p.rules; track rule.id) {
-                            <tr [class.sp-admin-table-row-inactive]="!rule.isActive">
-                              <td>
-                                <sp-admin-code-pill>{{ rule.featureKey }}</sp-admin-code-pill>
-                                <span class="sp-admin-section-sub sp-up-feature-name">{{ featureName(rule.featureKey) }}</span>
-                              </td>
-                              <td>
-                                <sp-admin-badge [tone]="enforcementBadgeTone(rule.enforcementMode)">
-                                  {{ rule.enforcementMode }}
-                                </sp-admin-badge>
-                              </td>
-                              <td>
-                                <sp-admin-badge tone="neutral">{{ rule.unitType }}</sp-admin-badge>
-                              </td>
-                              <td>
-                                <div class="sp-up-limits-cell">
-                                  @for (limit of ruleLimitSummary(rule); track limit) {
-                                    <span class="sp-up-rule-limit">{{ limit }}</span>
-                                  }
-                                  @if (ruleLimitSummary(rule).length === 0) {
-                                    <span class="sp-admin-text-muted">No limits</span>
-                                  }
-                                </div>
-                              </td>
-                              <td class="sp-up-rule-actions-cell">
-                                <div class="sp-up-rule-actions-inner">
-                                  <sp-admin-table-actions [richActions]="[
-                                    { id: 'edit', label: 'Edit', icon: 'edit' },
-                                    { id: 'delete', label: 'Delete', icon: 'delete', tone: 'danger' }
-                                  ]" (actionSelected)="$event === 'edit' ? openEditRule(p.id, rule) : openDeleteRule(p.id, rule)" />
-                                </div>
-                              </td>
-                            </tr>
-                          }
-                        </tbody>
-                      </table>
-                    }
-                    <div class="sp-up-add-rule-row">
-                      <sp-admin-button size="sm" variant="secondary" appearance="soft" leadingIcon="plus" (click)="openAddRule(p.id)">
-                        Add rule
-                      </sp-admin-button>
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            }
+  <sp-admin-table
+    variant="data" density="compact" layout="first-column-fluid"
+    [columns]="policyColumns" [rows]="policies()"
+    [isRowExpanded]="isPolicyExpanded"
+  >
+    <ng-template #cell let-row let-col="col">
+      @switch (col.key) {
+        @case ('name') {
+          <span class="sp-admin-text-strong">{{ $any(row).name }}</span>
+          @if ($any(row).description) {
+            <div class="sp-admin-section-sub sp-up-desc">{{ $any(row).description }}</div>
           }
-        </tbody>
-      </table>
+        }
+        @case ('scope') { <sp-admin-badge tone="neutral">{{ $any(row).scopeType }}</sp-admin-badge> }
+        @case ('status') {
+          <sp-admin-badge [tone]="$any(row).isActive ? 'success' : 'neutral'">
+            {{ $any(row).isActive ? 'Active' : 'Inactive' }}
+          </sp-admin-badge>
+        }
+        @case ('default') {
+          @if ($any(row).isDefault) {
+            <sp-admin-badge tone="primary">Default</sp-admin-badge>
+          } @else {
+            <span class="sp-admin-text-muted">—</span>
+          }
+        }
+        @case ('rules') {
+          <button class="sp-up-expand-btn" (click)="toggleExpanded($any(row).id)">
+            {{ $any(row).rules.length }} rule{{ $any(row).rules.length === 1 ? '' : 's' }}
+            <sp-admin-icon
+              [name]="expandedPolicyId() === $any(row).id ? 'chevron-down' : 'chevron-right'"
+              size="xs" tone="primary" />
+          </button>
+        }
+        @case ('actions') {
+          <sp-admin-table-actions mode="buttons" [richActions]="[
+            { id: 'edit', label: 'Edit', icon: 'edit' }
+          ]" (actionSelected)="openEdit($any(row))" />
+        }
+        @default { {{ $any(row)[col.key] }} }
+      }
+    </ng-template>
+
+    <!-- Expanded rules nested table -->
+    <ng-template #rowDetail let-p>
+      <div class="sp-up-rules-inner">
+        @if (p.rules.length === 0) {
+          <sp-admin-empty-state message="No rules defined for this policy." />
+        } @else {
+          <table class="sp-up-rules-table">
+            <thead>
+              <tr>
+                <th>Feature</th>
+                <th>Mode</th>
+                <th>Type</th>
+                <th>Limits</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (rule of p.rules; track rule.id) {
+                <tr [class.sp-admin-table-row-inactive]="!rule.isActive">
+                  <td>
+                    <sp-admin-code-pill>{{ rule.featureKey }}</sp-admin-code-pill>
+                    <span class="sp-admin-section-sub sp-up-feature-name">{{ featureName(rule.featureKey) }}</span>
+                  </td>
+                  <td>
+                    <sp-admin-badge [tone]="enforcementBadgeTone(rule.enforcementMode)">
+                      {{ rule.enforcementMode }}
+                    </sp-admin-badge>
+                  </td>
+                  <td>
+                    <sp-admin-badge tone="neutral">{{ rule.unitType }}</sp-admin-badge>
+                  </td>
+                  <td>
+                    <div class="sp-up-limits-cell">
+                      @for (limit of ruleLimitSummary(rule); track limit) {
+                        <span class="sp-up-rule-limit">{{ limit }}</span>
+                      }
+                      @if (ruleLimitSummary(rule).length === 0) {
+                        <span class="sp-admin-text-muted">No limits</span>
+                      }
+                    </div>
+                  </td>
+                  <td class="sp-up-rule-actions-cell">
+                    <div class="sp-up-rule-actions-inner">
+                      <sp-admin-table-actions [richActions]="[
+                        { id: 'edit', label: 'Edit', icon: 'edit' },
+                        { id: 'delete', label: 'Delete', icon: 'delete', tone: 'danger' }
+                      ]" (actionSelected)="$event === 'edit' ? openEditRule(p.id, rule) : openDeleteRule(p.id, rule)" />
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+        <div class="sp-up-add-rule-row">
+          <sp-admin-button size="sm" variant="secondary" appearance="soft" leadingIcon="plus" (click)="openAddRule(p.id)">
+            Add rule
+          </sp-admin-button>
+        </div>
+      </div>
+    </ng-template>
   </sp-admin-table>
 }
 

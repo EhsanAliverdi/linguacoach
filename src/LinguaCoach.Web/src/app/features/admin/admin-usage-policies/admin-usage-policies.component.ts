@@ -34,6 +34,7 @@ import {
   SpAdminTableActionsComponent,
   SpAdminTableComponent,
 } from '../../../design-system/admin';
+import type { SpAdminTableColumn } from '../../../design-system/admin';
 
 @Component({
   selector: 'app-admin-usage-policies',
@@ -66,6 +67,17 @@ import {
   styleUrl: './admin-usage-policies.component.css',
 })
 export class AdminUsagePoliciesComponent implements OnInit {
+  readonly policyColumns: SpAdminTableColumn[] = [
+    { key: 'name', label: 'Name' },
+    { key: 'scope', label: 'Scope' },
+    { key: 'status', label: 'Status' },
+    { key: 'default', label: 'Default' },
+    { key: 'rules', label: 'Rules' },
+    { key: 'actions', label: 'Actions' },
+  ];
+
+  isPolicyExpanded = (row: unknown): boolean => this.expandedPolicyId() === (row as UsagePolicy).id;
+
   policies = signal<UsagePolicy[]>([]);
   features = signal<FeatureDefinition[]>([]);
   loading = signal(true);
