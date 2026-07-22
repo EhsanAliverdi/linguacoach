@@ -92,27 +92,19 @@
         <h2 class="sp-admin-table-section-title">Rate limit policies</h2>
         <sp-admin-badge tone="success">Implemented</sp-admin-badge>
       </div>
-      <sp-admin-table [flush]="true" variant="data" density="compact">
-        <table>
-          <thead>
-            <tr>
-              <th>Policy</th>
-              <th class="sp-admin-nowrap">Permit limit</th>
-              <th class="sp-admin-nowrap">Window</th>
-              <th class="sp-admin-nowrap">Keyed by</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (policy of settings()!.rateLimitPolicies; track policy.policyName) {
-              <tr>
-                <td><sp-admin-code-pill [value]="policy.policyName" tone="neutral" /></td>
-                <td class="sp-admin-nowrap">{{ policy.permitLimit }} req</td>
-                <td class="sp-admin-nowrap">{{ policy.windowMinutes }} min</td>
-                <td class="sp-admin-nowrap sp-admin-text-muted">{{ policy.keyedBy }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
+      <sp-admin-table
+        [flush]="true" variant="data" density="compact"
+        [columns]="ratePolicyColumns" [rows]="settings()!.rateLimitPolicies"
+      >
+        <ng-template #cell let-row let-col="col">
+          @switch (col.key) {
+            @case ('policyName') { <sp-admin-code-pill [value]="$any(row).policyName" tone="neutral" /> }
+            @case ('permitLimit') { <span class="sp-admin-nowrap">{{ $any(row).permitLimit }} req</span> }
+            @case ('windowMinutes') { <span class="sp-admin-nowrap">{{ $any(row).windowMinutes }} min</span> }
+            @case ('keyedBy') { <span class="sp-admin-nowrap sp-admin-text-muted">{{ $any(row).keyedBy }}</span> }
+            @default { {{ $any(row)[col.key] }} }
+          }
+        </ng-template>
       </sp-admin-table>
     </div>
 
@@ -175,20 +167,6 @@
 
     <div class="sp-admin-table-section-filters">
       <sp-admin-filter-bar layout="responsive" density="compact">
-        <sp-admin-form-field filters label="Event type" size="sm">
-          <sp-admin-select
-            [ngModel]="filterEventType"
-            (ngModelChange)="filterEventType = $event; onFilterChange()"
-            [options]="eventTypeOptions"
-            size="sm" />
-        </sp-admin-form-field>
-        <sp-admin-form-field filters label="Outcome" size="sm">
-          <sp-admin-select
-            [ngModel]="filterOutcome"
-            (ngModelChange)="filterOutcome = $event; onFilterChange()"
-            [options]="outcomeOptions"
-            size="sm" />
-        </sp-admin-form-field>
         <sp-admin-form-field filters label="Email" size="sm">
           <sp-admin-input
             [(ngModel)]="filterEmail"
@@ -207,51 +185,35 @@
       <div class="sp-admin-card-body-md">
         <sp-admin-error-state title="Could not load auth events" [message]="eventsError()" />
       </div>
-    } @else if (events().length === 0) {
-      <div class="sp-admin-card-body-md">
-        <sp-admin-empty-state message="No authentication events match the current filters." />
-      </div>
     } @else {
-      <sp-admin-table [flush]="true" variant="data" density="compact" minWidth="760px">
-        <table>
-          <thead>
-            <tr>
-              <th class="sp-admin-nowrap">Time</th>
-              <th class="sp-admin-nowrap">Event type</th>
-              <th class="sp-admin-nowrap">Outcome</th>
-              <th>Email</th>
-              <th class="sp-admin-nowrap">IP</th>
-              <th class="sp-admin-nowrap">Correlation</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (event of events(); track event.id) {
-              <tr [class.sp-admin-table-row--danger]="event.outcome?.toLowerCase() === 'failure'">
-                <td class="sp-admin-nowrap sp-admin-text-mono sp-admin-table-cell-compact">{{ formatDateTime(event.occurredAtUtc) }}</td>
-                <td class="sp-admin-nowrap">
-                  <sp-admin-code-pill [value]="event.eventType" tone="neutral" />
-                </td>
-                <td class="sp-admin-nowrap">
-                  <sp-admin-badge [tone]="outcomeTone(event.outcome)">{{ event.outcome }}</sp-admin-badge>
-                </td>
-                <td>
-                  <sp-admin-truncated-text [value]="event.emailOrUserName ?? '—'" [maxLength]="48" />
-                  @if (event.failureReasonCode) {
-                    <div class="sp-admin-table-cell-compact sp-admin-text-mono">{{ event.failureReasonCode }}</div>
-                  }
-                </td>
-                <td class="sp-admin-nowrap sp-admin-table-cell-compact sp-admin-text-mono">{{ event.ipAddress ?? '—' }}</td>
-                <td class="sp-admin-nowrap">
-                  @if (event.correlationId) {
-                    <sp-admin-copyable-text [value]="event.correlationId" [maxLength]="12" [mono]="true" />
-                  } @else {
-                    <span class="sp-admin-text-muted">—</span>
-                  }
-                </td>
-              </tr>
+      <sp-admin-table
+        [flush]="true" variant="data" density="compact" minWidth="760px"
+        [columns]="eventColumns" [rows]="events()"
+        [filters]="eventsFilters()" (filterChange)="onEventsFilterChange($event)"
+        emptyMessage="No authentication events match the current filters."
+      >
+        <ng-template #cell let-row let-col="col">
+          @switch (col.key) {
+            @case ('occurredAtUtc') { <span class="sp-admin-nowrap sp-admin-text-mono sp-admin-table-cell-compact">{{ formatDateTime($any(row).occurredAtUtc) }}</span> }
+            @case ('eventType') { <sp-admin-code-pill [value]="$any(row).eventType" tone="neutral" /> }
+            @case ('outcome') { <sp-admin-badge [tone]="outcomeTone($any(row).outcome)">{{ $any(row).outcome }}</sp-admin-badge> }
+            @case ('email') {
+              <sp-admin-truncated-text [value]="$any(row).emailOrUserName ?? '—'" [maxLength]="48" />
+              @if ($any(row).failureReasonCode) {
+                <div class="sp-admin-table-cell-compact sp-admin-text-mono">{{ $any(row).failureReasonCode }}</div>
+              }
             }
-          </tbody>
-        </table>
+            @case ('ipAddress') { <span class="sp-admin-nowrap sp-admin-table-cell-compact sp-admin-text-mono">{{ $any(row).ipAddress ?? '—' }}</span> }
+            @case ('correlationId') {
+              @if ($any(row).correlationId) {
+                <sp-admin-copyable-text [value]="$any(row).correlationId" [maxLength]="12" [mono]="true" />
+              } @else {
+                <span class="sp-admin-text-muted">—</span>
+              }
+            }
+            @default { {{ $any(row)[col.key] }} }
+          }
+        </ng-template>
       </sp-admin-table>
       <div class="sp-admin-table-section-footer">
         <span>{{ events().length }} of {{ eventsTotal() }} total events.</span>

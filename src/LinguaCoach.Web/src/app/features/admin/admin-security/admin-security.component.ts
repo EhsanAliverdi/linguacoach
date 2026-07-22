@@ -23,10 +23,11 @@ import {
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminPaginationComponent,
-  SpAdminSelectComponent,
   SpAdminStatusCardComponent,
   SpAdminStatusGridComponent,
+  SpAdminTableColumn,
   SpAdminTableComponent,
+  SpAdminTableFilter,
   SpAdminTruncatedTextComponent,
 } from '../../../design-system/admin';
 
@@ -51,7 +52,6 @@ import {
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
     SpAdminPaginationComponent,
-    SpAdminSelectComponent,
     SpAdminStatusCardComponent,
     SpAdminStatusGridComponent,
     SpAdminTableComponent,
@@ -60,6 +60,22 @@ import {
   templateUrl: './admin-security.component.html',
 })
 export class AdminSecurityComponent implements OnInit {
+  readonly ratePolicyColumns: SpAdminTableColumn[] = [
+    { key: 'policyName', label: 'Policy' },
+    { key: 'permitLimit', label: 'Permit limit' },
+    { key: 'windowMinutes', label: 'Window' },
+    { key: 'keyedBy', label: 'Keyed by' },
+  ];
+
+  readonly eventColumns: SpAdminTableColumn[] = [
+    { key: 'occurredAtUtc', label: 'Time' },
+    { key: 'eventType', label: 'Event type' },
+    { key: 'outcome', label: 'Outcome' },
+    { key: 'email', label: 'Email' },
+    { key: 'ipAddress', label: 'IP' },
+    { key: 'correlationId', label: 'Correlation' },
+  ];
+
   settings = signal<AdminSecuritySettings | null>(null);
   loadingSettings = signal(true);
   settingsError = signal('');
@@ -72,8 +88,8 @@ export class AdminSecurityComponent implements OnInit {
   readonly eventsPageSize = 20;
 
   filterEmail = '';
-  filterEventType = '';
-  filterOutcome = '';
+  filterEventType = signal('');
+  filterOutcome = signal('');
 
   readonly eventsTotalPages = computed(() =>
     Math.max(1, Math.ceil(this.eventsTotal() / this.eventsPageSize))
@@ -119,8 +135,8 @@ export class AdminSecurityComponent implements OnInit {
       page: this.eventsPage(),
       pageSize: this.eventsPageSize,
       email: this.filterEmail || undefined,
-      eventType: this.filterEventType || undefined,
-      outcome: this.filterOutcome || undefined,
+      eventType: this.filterEventType() || undefined,
+      outcome: this.filterOutcome() || undefined,
     };
     this.svc.getAuthEvents(params).subscribe({
       next: r => { this.events.set(r.items); this.eventsTotal.set(r.total); this.loadingEvents.set(false); },
@@ -136,6 +152,17 @@ export class AdminSecurityComponent implements OnInit {
   onFilterChange(): void {
     this.eventsPage.set(1);
     this.loadEvents();
+  }
+
+  eventsFilters = computed<SpAdminTableFilter[]>(() => [
+    { key: 'eventType', label: 'Event type', options: this.eventTypeOptions, value: this.filterEventType() },
+    { key: 'outcome', label: 'Outcome', options: this.outcomeOptions, value: this.filterOutcome() },
+  ]);
+
+  onEventsFilterChange(event: { key: string; value: string }): void {
+    if (event.key === 'eventType') this.filterEventType.set(event.value);
+    else if (event.key === 'outcome') this.filterOutcome.set(event.value);
+    this.onFilterChange();
   }
 
   outcomeTone(outcome: string): 'success' | 'danger' | 'neutral' {
