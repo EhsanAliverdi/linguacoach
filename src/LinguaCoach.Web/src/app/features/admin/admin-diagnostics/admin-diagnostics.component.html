@@ -26,29 +26,13 @@
         </sp-admin-badge>
         <span class="sp-admin-text-xs sp-admin-text-muted">Last run: {{ formatDateTime(sweep.ranAtUtc) }}</span>
       </div>
-      <sp-admin-table>
-        <table>
-          <thead>
-            <tr>
-              <th>Category</th>
-              <th>Description</th>
-              <th>Checked</th>
-              <th>Issues</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (c of sweep.categories; track c.category) {
-              <tr>
-                <td>{{ c.category }}</td>
-                <td>{{ c.description }}</td>
-                <td>{{ c.totalChecked }}</td>
-                <td>{{ c.issuesFound }}</td>
-                <td><sp-admin-badge [tone]="c.healthy ? 'success' : 'danger'">{{ c.healthy ? 'Healthy' : 'Issues' }}</sp-admin-badge></td>
-              </tr>
-            }
-          </tbody>
-        </table>
+      <sp-admin-table [columns]="dataIntegrityColumns" [rows]="sweep.categories">
+        <ng-template #cell let-row let-col="col">
+          @switch (col.key) {
+            @case ('status') { <sp-admin-badge [tone]="$any(row).healthy ? 'success' : 'danger'">{{ $any(row).healthy ? 'Healthy' : 'Issues' }}</sp-admin-badge> }
+            @default { {{ $any(row)[col.key] }} }
+          }
+        </ng-template>
       </sp-admin-table>
     } @else {
       <sp-admin-empty-state message="Data integrity sweep not available." />
@@ -128,46 +112,6 @@
       </div>
     </div>
 
-    <div class="sp-admin-table-section-filters">
-      <sp-admin-filter-bar layout="responsive" density="compact">
-        <sp-admin-form-field search label="Level" size="sm">
-          <sp-admin-select
-            [ngModel]="filterLevel"
-            (ngModelChange)="filterLevel = $event; loadEvents()"
-            [options]="levelOptions"
-            size="sm" />
-        </sp-admin-form-field>
-        <sp-admin-form-field filters label="Category" size="sm">
-          <sp-admin-input
-            [(ngModel)]="filterCategory"
-            (change)="loadEvents()"
-            placeholder="e.g. Activity"
-            size="sm" />
-        </sp-admin-form-field>
-        <sp-admin-form-field filters label="Correlation ID" size="sm">
-          <sp-admin-input
-            [(ngModel)]="filterCorrelationId"
-            (change)="loadEvents()"
-            placeholder="e.g. abc123ef0012"
-            size="sm" />
-        </sp-admin-form-field>
-        <sp-admin-form-field filters label="Search" size="sm">
-          <sp-admin-input
-            [(ngModel)]="filterQ"
-            (change)="loadEvents()"
-            placeholder="Search messages"
-            size="sm" />
-        </sp-admin-form-field>
-        <sp-admin-form-field filters label="Limit" size="sm">
-          <sp-admin-select
-            [ngModel]="filterLimit.toString()"
-            (ngModelChange)="filterLimit = +$event; loadEvents()"
-            [options]="limitOptions"
-            size="sm" />
-        </sp-admin-form-field>
-      </sp-admin-filter-bar>
-    </div>
-
     @if (loadingEvents()) {
       <div class="sp-admin-card-body-md">
         <sp-admin-loading-state message="Loading diagnostic events" />
@@ -178,60 +122,54 @@
       </div>
     } @else if (events().length === 0) {
       <div class="sp-admin-card-body-md">
-        <sp-admin-empty-state [message]="filterLevel || filterCorrelationId || filterQ ? 'No events match the current filters.' : 'Events will appear once the app is used.'" />
+        <sp-admin-empty-state [message]="filterLevel() || filterCorrelationId || filterQ ? 'No events match the current filters.' : 'Events will appear once the app is used.'" />
       </div>
     } @else {
-      <sp-admin-table [flush]="true" variant="data" density="compact" minWidth="960px">
-        <table>
-          <thead>
-            <tr>
-              <th class="sp-admin-nowrap">Time</th>
-              <th class="sp-admin-nowrap">Level</th>
-              <th>Category</th>
-              <th>Message</th>
-              <th class="sp-admin-nowrap">Correlation</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (event of pagedEvents(); track $index) {
-              <tr [class.sp-admin-table-row--danger]="event.level?.toLowerCase() === 'error'"
-                  [class.sp-admin-table-row--warning]="event.level?.toLowerCase() === 'warning'">
-                <td class="sp-admin-nowrap sp-admin-text-mono sp-admin-table-cell-compact">{{ formatDateTime(event.timestampUtc) }}</td>
-                <td class="sp-admin-nowrap">
-                  <sp-admin-badge [tone]="levelTone(event.level)">{{ eventLevelLabel(event.level) }}</sp-admin-badge>
-                </td>
-                <td class="sp-admin-nowrap">
-                  <sp-admin-code-pill [value]="event.category" tone="neutral" [maxLength]="32" />
-                </td>
-                <td>
-                  <sp-admin-truncated-text [value]="event.message" [maxLength]="120" />
-                  @if (event.path || event.statusCode || event.elapsedMs != null) {
-                    <div class="sp-admin-badge-row sp-admin-mt-3">
-                      @if (event.path) {
-                        <span class="sp-admin-cell-code">{{ event.path }}</span>
-                      }
-                      @if (event.statusCode) {
-                        <sp-admin-badge [tone]="event.statusCode >= 500 ? 'danger' : event.statusCode >= 400 ? 'warning' : 'neutral'">
-                          {{ event.statusCode }}
-                        </sp-admin-badge>
-                      }
-                      @if (event.elapsedMs != null) {
-                        <span class="sp-admin-table-cell-compact sp-admin-text-mono">{{ event.elapsedMs }}ms</span>
-                      }
-                    </div>
+      <sp-admin-table
+        [flush]="true" variant="data" density="compact" minWidth="960px"
+        [columns]="eventColumns" [rows]="pagedEvents()"
+        [filters]="eventFilters()" (filterChange)="onEventFilterChange($event)"
+      >
+        <ng-container tableActions>
+          <sp-admin-input [(ngModel)]="filterCategory" (change)="loadEvents()" placeholder="Category" size="sm" />
+          <sp-admin-input [(ngModel)]="filterCorrelationId" (change)="loadEvents()" placeholder="Correlation ID" size="sm" />
+          <sp-admin-input [(ngModel)]="filterQ" (change)="loadEvents()" placeholder="Search messages" size="sm" />
+        </ng-container>
+        <ng-template #cell let-row let-col="col">
+          @switch (col.key) {
+            @case ('timestampUtc') { <span class="sp-admin-nowrap sp-admin-text-mono sp-admin-table-cell-compact">{{ formatDateTime($any(row).timestampUtc) }}</span> }
+            @case ('level') { <span class="sp-admin-nowrap"><sp-admin-badge [tone]="levelTone($any(row).level)">{{ eventLevelLabel($any(row).level) }}</sp-admin-badge></span> }
+            @case ('category') { <span class="sp-admin-nowrap"><sp-admin-code-pill [value]="$any(row).category" tone="neutral" [maxLength]="32" /></span> }
+            @case ('message') {
+              <sp-admin-truncated-text [value]="$any(row).message" [maxLength]="120" />
+              @if ($any(row).path || $any(row).statusCode || $any(row).elapsedMs != null) {
+                <div class="sp-admin-badge-row sp-admin-mt-3">
+                  @if ($any(row).path) {
+                    <span class="sp-admin-cell-code">{{ $any(row).path }}</span>
                   }
-                </td>
-                <td class="sp-admin-nowrap">
-                  @if (event.correlationId) {
-                    <sp-admin-copyable-text [value]="event.correlationId" [maxLength]="12" [mono]="true" />
-                  } @else {
-                    <span class="sp-admin-text-muted">—</span>
+                  @if ($any(row).statusCode) {
+                    <sp-admin-badge [tone]="$any(row).statusCode >= 500 ? 'danger' : $any(row).statusCode >= 400 ? 'warning' : 'neutral'">
+                      {{ $any(row).statusCode }}
+                    </sp-admin-badge>
                   }
-                </td>
-              </tr>
+                  @if ($any(row).elapsedMs != null) {
+                    <span class="sp-admin-table-cell-compact sp-admin-text-mono">{{ $any(row).elapsedMs }}ms</span>
+                  }
+                </div>
+              }
             }
-          </tbody>
-        </table>
+            @case ('correlationId') {
+              <span class="sp-admin-nowrap">
+                @if ($any(row).correlationId) {
+                  <sp-admin-copyable-text [value]="$any(row).correlationId" [maxLength]="12" [mono]="true" />
+                } @else {
+                  <span class="sp-admin-text-muted">—</span>
+                }
+              </span>
+            }
+            @default { {{ $any(row)[col.key] }} }
+          }
+        </ng-template>
       </sp-admin-table>
       <div class="sp-admin-table-section-footer">
         <span>Showing {{ pagedEvents().length }} of {{ events().length }} loaded &mdash; {{ total() }} total matching.</span>
@@ -293,53 +231,40 @@
       @if (qLatestFailures().length > 0) {
         <div style="margin-bottom: 1.25rem;">
           <h3 class="sp-admin-section-subheading" style="margin-bottom: 0.5rem;">Latest validation failures (up to 20)</h3>
-          <sp-admin-table>
-            <table>
-              <thead>
-                <tr>
-                  <th>Time</th>
-                  <th>Pattern</th>
-                  <th>Type</th>
-                  <th>CEFR</th>
-                  <th>Attempt</th>
-                  <th>Provider / Model</th>
-                  <th>Errors</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (f of qLatestFailures(); track f.timestampUtc) {
-                  <tr>
-                    <td class="sp-admin-nowrap">{{ formatDateTime(f.timestampUtc) }}</td>
-                    <td>
-                      @if (f.patternKey) {
-                        <sp-admin-code-pill [value]="f.patternKey" />
-                      } @else {
-                        <span class="sp-admin-text-muted">—</span>
-                      }
-                    </td>
-                    <td>{{ f.activityTypeName }}</td>
-                    <td>
-                      @if (f.cefrLevel) {
-                        <sp-admin-badge tone="info">{{ f.cefrLevel }}</sp-admin-badge>
-                      } @else {
-                        <span class="sp-admin-text-muted">—</span>
-                      }
-                    </td>
-                    <td>
-                      <sp-admin-badge [tone]="f.attemptNumber === 2 ? 'danger' : 'warning'">{{ f.attemptNumber === 2 ? 'Retry' : 'First' }}</sp-admin-badge>
-                    </td>
-                    <td class="sp-admin-nowrap">
-                      @if (f.providerName) {
-                        <span>{{ f.providerName }}<br><span class="sp-admin-text-muted" style="font-size:0.75rem;">{{ f.modelName ?? '—' }}</span></span>
-                      } @else {
-                        <span class="sp-admin-text-muted">—</span>
-                      }
-                    </td>
-                    <td><sp-admin-truncated-text [value]="f.validationErrors" [maxLength]="80" /></td>
-                  </tr>
+          <sp-admin-table [columns]="validationFailureColumns" [rows]="qLatestFailures()">
+            <ng-template #cell let-row let-col="col">
+              @switch (col.key) {
+                @case ('timestampUtc') { <span class="sp-admin-nowrap">{{ formatDateTime($any(row).timestampUtc) }}</span> }
+                @case ('pattern') {
+                  @if ($any(row).patternKey) {
+                    <sp-admin-code-pill [value]="$any(row).patternKey" />
+                  } @else {
+                    <span class="sp-admin-text-muted">—</span>
+                  }
                 }
-              </tbody>
-            </table>
+                @case ('cefrLevel') {
+                  @if ($any(row).cefrLevel) {
+                    <sp-admin-badge tone="info">{{ $any(row).cefrLevel }}</sp-admin-badge>
+                  } @else {
+                    <span class="sp-admin-text-muted">—</span>
+                  }
+                }
+                @case ('attemptNumber') {
+                  <sp-admin-badge [tone]="$any(row).attemptNumber === 2 ? 'danger' : 'warning'">{{ $any(row).attemptNumber === 2 ? 'Retry' : 'First' }}</sp-admin-badge>
+                }
+                @case ('providerModel') {
+                  <span class="sp-admin-nowrap">
+                    @if ($any(row).providerName) {
+                      <span>{{ $any(row).providerName }}<br><span class="sp-admin-text-muted" style="font-size:0.75rem;">{{ $any(row).modelName ?? '—' }}</span></span>
+                    } @else {
+                      <span class="sp-admin-text-muted">—</span>
+                    }
+                  </span>
+                }
+                @case ('validationErrors') { <sp-admin-truncated-text [value]="$any(row).validationErrors" [maxLength]="80" /> }
+                @default { {{ $any(row)[col.key] }} }
+              }
+            </ng-template>
           </sp-admin-table>
         </div>
       } @else {
@@ -353,33 +278,20 @@
       @if (qProviderBreakdown().length > 0) {
         <div style="margin-bottom: 1.25rem;">
           <h3 class="sp-admin-section-subheading" style="margin-bottom: 0.5rem;">Provider / model failure breakdown</h3>
-          <sp-admin-table>
-            <table>
-              <thead>
-                <tr>
-                  <th>Provider</th>
-                  <th>Model</th>
-                  <th>Failures</th>
-                  <th>Abandoned</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (p of qProviderBreakdown(); track p.providerName + p.modelName) {
-                  <tr>
-                    <td>{{ p.providerName }}</td>
-                    <td><sp-admin-code-pill [value]="p.modelName" /></td>
-                    <td>{{ p.totalFailures }}</td>
-                    <td>
-                      @if (p.abandonedCount > 0) {
-                        <sp-admin-badge tone="danger">{{ p.abandonedCount }}</sp-admin-badge>
-                      } @else {
-                        <span class="sp-admin-text-muted">0</span>
-                      }
-                    </td>
-                  </tr>
+          <sp-admin-table [columns]="providerBreakdownColumns" [rows]="qProviderBreakdown()">
+            <ng-template #cell let-row let-col="col">
+              @switch (col.key) {
+                @case ('modelName') { <sp-admin-code-pill [value]="$any(row).modelName" /> }
+                @case ('abandonedCount') {
+                  @if ($any(row).abandonedCount > 0) {
+                    <sp-admin-badge tone="danger">{{ $any(row).abandonedCount }}</sp-admin-badge>
+                  } @else {
+                    <span class="sp-admin-text-muted">0</span>
+                  }
                 }
-              </tbody>
-            </table>
+                @default { {{ $any(row)[col.key] }} }
+              }
+            </ng-template>
           </sp-admin-table>
         </div>
       }
@@ -389,53 +301,32 @@
         <div class="sp-admin-card-grid-2" style="margin-top: 1.25rem;">
           @if (qPatternBreakdown().length > 0) {
             <sp-admin-card title="Pattern failure breakdown" variant="section" padding="md">
-              <sp-admin-table>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Pattern</th>
-                      <th>Failures</th>
-                      <th>Abandoned</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (p of qPatternBreakdown(); track p.patternKey) {
-                      <tr>
-                        <td><sp-admin-code-pill [value]="p.patternKey" /></td>
-                        <td>{{ p.totalFailures }}</td>
-                        <td>
-                          @if (p.abandonedCount > 0) {
-                            <sp-admin-badge tone="danger">{{ p.abandonedCount }}</sp-admin-badge>
-                          } @else {
-                            <span class="sp-admin-text-muted">0</span>
-                          }
-                        </td>
-                      </tr>
+              <sp-admin-table [columns]="patternBreakdownColumns" [rows]="qPatternBreakdown()">
+                <ng-template #cell let-row let-col="col">
+                  @switch (col.key) {
+                    @case ('patternKey') { <sp-admin-code-pill [value]="$any(row).patternKey" /> }
+                    @case ('abandonedCount') {
+                      @if ($any(row).abandonedCount > 0) {
+                        <sp-admin-badge tone="danger">{{ $any(row).abandonedCount }}</sp-admin-badge>
+                      } @else {
+                        <span class="sp-admin-text-muted">0</span>
+                      }
                     }
-                  </tbody>
-                </table>
+                    @default { {{ $any(row)[col.key] }} }
+                  }
+                </ng-template>
               </sp-admin-table>
             </sp-admin-card>
           }
           @if (qCefrBreakdown().length > 0) {
             <sp-admin-card title="CEFR failure breakdown" variant="section" padding="md">
-              <sp-admin-table>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>CEFR</th>
-                      <th>Failures</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (c of qCefrBreakdown(); track c.cefrLevel) {
-                      <tr>
-                        <td><sp-admin-badge tone="info">{{ c.cefrLevel }}</sp-admin-badge></td>
-                        <td>{{ c.totalFailures }}</td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
+              <sp-admin-table [columns]="cefrBreakdownColumns" [rows]="qCefrBreakdown()">
+                <ng-template #cell let-row let-col="col">
+                  @switch (col.key) {
+                    @case ('cefrLevel') { <sp-admin-badge tone="info">{{ $any(row).cefrLevel }}</sp-admin-badge> }
+                    @default { {{ $any(row)[col.key] }} }
+                  }
+                </ng-template>
               </sp-admin-table>
             </sp-admin-card>
           }
@@ -446,37 +337,24 @@
       @if (qPromptSummary().length > 0) {
         <div style="margin-top: 1.25rem;">
           <h3 class="sp-admin-section-subheading" style="margin-bottom: 0.5rem;">Active prompt version summary (retention: {{ qRetentionDays() }}d)</h3>
-          <sp-admin-table>
-            <table>
-              <thead>
-                <tr>
-                  <th>Prompt key</th>
-                  <th>Version</th>
-                  <th>Hash</th>
-                  <th>Max input tokens</th>
-                  <th>Max output tokens</th>
-                  <th>Seeded at</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (p of qPromptSummary(); track p.id) {
-                  <tr>
-                    <td><sp-admin-code-pill [value]="p.key" /></td>
-                    <td>v{{ p.version }}</td>
-                    <td>
-                      @if (p.contentHashShort) {
-                        <sp-admin-code-pill [value]="p.contentHashShort" />
-                      } @else {
-                        <span class="sp-admin-text-muted">—</span>
-                      }
-                    </td>
-                    <td>{{ p.maxInputTokens ?? '—' }}</td>
-                    <td>{{ p.maxOutputTokens ?? '—' }}</td>
-                    <td class="sp-admin-nowrap">{{ formatDateTime(p.seededAtUtc) }}</td>
-                  </tr>
+          <sp-admin-table [columns]="promptSummaryColumns" [rows]="qPromptSummary()">
+            <ng-template #cell let-row let-col="col">
+              @switch (col.key) {
+                @case ('key') { <sp-admin-code-pill [value]="$any(row).key" /> }
+                @case ('version') { v{{ $any(row).version }} }
+                @case ('contentHashShort') {
+                  @if ($any(row).contentHashShort) {
+                    <sp-admin-code-pill [value]="$any(row).contentHashShort" />
+                  } @else {
+                    <span class="sp-admin-text-muted">—</span>
+                  }
                 }
-              </tbody>
-            </table>
+                @case ('maxInputTokens') { {{ $any(row).maxInputTokens ?? '—' }} }
+                @case ('maxOutputTokens') { {{ $any(row).maxOutputTokens ?? '—' }} }
+                @case ('seededAtUtc') { <span class="sp-admin-nowrap">{{ formatDateTime($any(row).seededAtUtc) }}</span> }
+                @default { {{ $any(row)[col.key] }} }
+              }
+            </ng-template>
           </sp-admin-table>
         </div>
       }

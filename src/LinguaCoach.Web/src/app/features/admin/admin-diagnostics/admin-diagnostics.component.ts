@@ -15,8 +15,6 @@ import {
   SpAdminCopyableTextComponent,
   SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
-  SpAdminFilterBarComponent,
-  SpAdminFormFieldComponent,
   SpAdminInputComponent,
   SpAdminKpiCardComponent,
   SpAdminLoadingStateComponent,
@@ -24,12 +22,12 @@ import {
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminPaginationComponent,
-  SpAdminSelectComponent,
   SpAdminStatusCardComponent,
   SpAdminStatusGridComponent,
   SpAdminTableComponent,
   SpAdminTruncatedTextComponent,
 } from '../../../design-system/admin';
+import type { SpAdminTableColumn, SpAdminTableFilter } from '../../../design-system/admin';
 import { eventLevelLabel } from '../../../design-system/admin/utils/admin-badge.utils';
 
 @Component({
@@ -45,8 +43,6 @@ import { eventLevelLabel } from '../../../design-system/admin/utils/admin-badge.
     SpAdminCopyableTextComponent,
     SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
-    SpAdminFilterBarComponent,
-    SpAdminFormFieldComponent,
     SpAdminInputComponent,
     SpAdminKpiCardComponent,
     SpAdminLoadingStateComponent,
@@ -54,7 +50,6 @@ import { eventLevelLabel } from '../../../design-system/admin/utils/admin-badge.
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
     SpAdminPaginationComponent,
-    SpAdminSelectComponent,
     SpAdminStatusCardComponent,
     SpAdminStatusGridComponent,
     SpAdminTableComponent,
@@ -65,6 +60,70 @@ import { eventLevelLabel } from '../../../design-system/admin/utils/admin-badge.
   templateUrl: './admin-diagnostics.component.html',
 })
 export class AdminDiagnosticsComponent implements OnInit, OnDestroy {
+  readonly dataIntegrityColumns: SpAdminTableColumn[] = [
+    { key: 'category', label: 'Category' },
+    { key: 'description', label: 'Description' },
+    { key: 'totalChecked', label: 'Checked' },
+    { key: 'issuesFound', label: 'Issues' },
+    { key: 'status', label: 'Status' },
+  ];
+
+  readonly eventColumns: SpAdminTableColumn[] = [
+    { key: 'timestampUtc', label: 'Time' },
+    { key: 'level', label: 'Level' },
+    { key: 'category', label: 'Category' },
+    { key: 'message', label: 'Message' },
+    { key: 'correlationId', label: 'Correlation' },
+  ];
+
+  readonly validationFailureColumns: SpAdminTableColumn[] = [
+    { key: 'timestampUtc', label: 'Time' },
+    { key: 'pattern', label: 'Pattern' },
+    { key: 'activityTypeName', label: 'Type' },
+    { key: 'cefrLevel', label: 'CEFR' },
+    { key: 'attemptNumber', label: 'Attempt' },
+    { key: 'providerModel', label: 'Provider / Model' },
+    { key: 'validationErrors', label: 'Errors' },
+  ];
+
+  readonly providerBreakdownColumns: SpAdminTableColumn[] = [
+    { key: 'providerName', label: 'Provider' },
+    { key: 'modelName', label: 'Model' },
+    { key: 'totalFailures', label: 'Failures' },
+    { key: 'abandonedCount', label: 'Abandoned' },
+  ];
+
+  readonly patternBreakdownColumns: SpAdminTableColumn[] = [
+    { key: 'patternKey', label: 'Pattern' },
+    { key: 'totalFailures', label: 'Failures' },
+    { key: 'abandonedCount', label: 'Abandoned' },
+  ];
+
+  readonly cefrBreakdownColumns: SpAdminTableColumn[] = [
+    { key: 'cefrLevel', label: 'CEFR' },
+    { key: 'totalFailures', label: 'Failures' },
+  ];
+
+  readonly promptSummaryColumns: SpAdminTableColumn[] = [
+    { key: 'key', label: 'Prompt key' },
+    { key: 'version', label: 'Version' },
+    { key: 'contentHashShort', label: 'Hash' },
+    { key: 'maxInputTokens', label: 'Max input tokens' },
+    { key: 'maxOutputTokens', label: 'Max output tokens' },
+    { key: 'seededAtUtc', label: 'Seeded at' },
+  ];
+
+  readonly eventFilters = computed<SpAdminTableFilter[]>(() => [
+    { key: 'level', label: 'Level', options: this.levelOptions, value: this.filterLevel() },
+    { key: 'limit', label: 'Limit', options: this.limitOptions, value: this.filterLimit().toString() },
+  ]);
+
+  onEventFilterChange(event: { key: string; value: string }): void {
+    if (event.key === 'level') this.filterLevel.set(event.value);
+    else if (event.key === 'limit') this.filterLimit.set(+event.value);
+    this.loadEvents();
+  }
+
   status = signal<DiagnosticsStatus | null>(null);
   events = signal<DiagnosticEventItem[]>([]);
   total = signal(0);
@@ -73,11 +132,11 @@ export class AdminDiagnosticsComponent implements OnInit, OnDestroy {
   statusError = signal('');
   eventsError = signal('');
 
-  filterLevel = '';
+  filterLevel = signal('');
   filterCategory = '';
   filterCorrelationId = '';
   filterQ = '';
-  filterLimit = 100;
+  filterLimit = signal(100);
   eventsPage = signal(1);
   readonly eventsPageSize = 25;
 
@@ -207,11 +266,11 @@ export class AdminDiagnosticsComponent implements OnInit, OnDestroy {
     this.loadingEvents.set(true);
     this.eventsError.set('');
     this.svc.getEvents({
-      level: this.filterLevel || undefined,
+      level: this.filterLevel() || undefined,
       category: this.filterCategory || undefined,
       correlationId: this.filterCorrelationId || undefined,
       q: this.filterQ || undefined,
-      limit: this.filterLimit,
+      limit: this.filterLimit(),
     }).subscribe({
       next: r => { this.events.set(r.items); this.total.set(r.total); this.eventsPage.set(1); this.loadingEvents.set(false); },
       error: err => { this.loadingEvents.set(false); this.eventsError.set(err.error?.error ?? 'Could not load events.'); },
