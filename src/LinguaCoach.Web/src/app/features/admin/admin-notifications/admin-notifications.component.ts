@@ -39,6 +39,7 @@ import {
   SpAdminTabItem,
   SpAdminTabsComponent,
 } from '../../../design-system/admin';
+import type { SpAdminTableColumn, SpAdminTableFilter } from '../../../design-system/admin';
 import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design-system/admin/components/breakdown-bars/sp-admin-breakdown-bars.component';
 
 @Component({
@@ -76,6 +77,41 @@ import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design
   templateUrl: './admin-notifications.component.html',
 })
 export class AdminNotificationsComponent implements OnInit {
+  readonly notificationColumns: SpAdminTableColumn[] = [
+    { key: 'recipientEmail', label: 'Recipient' },
+    { key: 'title', label: 'Title' },
+    { key: 'channel', label: 'Channel' },
+    { key: 'category', label: 'Category' },
+    { key: 'severity', label: 'Severity' },
+    { key: 'status', label: 'Status' },
+    { key: 'createdAtUtc', label: 'Created' },
+    { key: 'readAtUtc', label: 'Read' },
+  ];
+
+  readonly outboxColumns: SpAdminTableColumn[] = [
+    { key: 'recipientEmail', label: 'Recipient' },
+    { key: 'channel', label: 'Channel' },
+    { key: 'status', label: 'Status' },
+    { key: 'attemptCount', label: 'Attempts' },
+    { key: 'createdAtUtc', label: 'Created' },
+    { key: 'lastAttemptAtUtc', label: 'Last attempt' },
+    { key: 'nextAttemptAtUtc', label: 'Next attempt' },
+    { key: 'lastError', label: 'Last error' },
+    { key: 'actions', label: '' },
+  ];
+
+  readonly templateColumns: SpAdminTableColumn[] = [
+    { key: 'templateKey', label: 'Key' },
+    { key: 'channel', label: 'Channel' },
+    { key: 'name', label: 'Name' },
+    { key: 'category', label: 'Category' },
+    { key: 'severity', label: 'Severity' },
+    { key: 'isActive', label: 'Active' },
+    { key: 'version', label: 'Version' },
+    { key: 'updatedAtUtc', label: 'Updated' },
+    { key: 'actions', label: '' },
+  ];
+
   // ── Notification tab ───────────────────────────────────────────────────────
   notifLoading = signal(false);
   notifError = signal('');
@@ -85,10 +121,10 @@ export class AdminNotificationsComponent implements OnInit {
   readonly notifPageSize = 20;
   notifTotalPages = computed(() => Math.max(1, Math.ceil(this.notifTotal() / this.notifPageSize)));
 
-  notifChannelFilter = '';
-  notifStatusFilter = '';
-  notifCategoryFilter = '';
-  notifSeverityFilter = '';
+  notifChannelFilter = signal('');
+  notifStatusFilter = signal('');
+  notifCategoryFilter = signal('');
+  notifSeverityFilter = signal('');
   notifSearch = '';
 
   // ── Outbox tab ─────────────────────────────────────────────────────────────
@@ -100,9 +136,9 @@ export class AdminNotificationsComponent implements OnInit {
   readonly outboxPageSize = 20;
   outboxTotalPages = computed(() => Math.max(1, Math.ceil(this.outboxTotal() / this.outboxPageSize)));
 
-  outboxChannelFilter = '';
-  outboxStatusFilter = '';
-  outboxFailedOnly = false;
+  outboxChannelFilter = signal('');
+  outboxStatusFilter = signal('');
+  outboxFailedOnly = signal(false);
 
   activeTab: 'notifications' | 'outbox' | 'config' | 'templates' = 'notifications';
   readonly tabItems = computed<SpAdminTabItem[]>(() => [
@@ -196,6 +232,45 @@ export class AdminNotificationsComponent implements OnInit {
     { value: 'Error', label: 'Error' },
   ];
 
+  readonly notifFilters = computed<SpAdminTableFilter[]>(() => [
+    { key: 'channel', label: 'Channel', options: this.channelOptions, value: this.notifChannelFilter(), placeholder: 'All channels' },
+    { key: 'status', label: 'Status', options: this.notifStatusOptions, value: this.notifStatusFilter(), placeholder: 'All statuses' },
+    { key: 'category', label: 'Category', options: this.categoryOptions, value: this.notifCategoryFilter(), placeholder: 'All categories' },
+    { key: 'severity', label: 'Severity', options: this.severityOptions, value: this.notifSeverityFilter(), placeholder: 'All severities' },
+  ]);
+
+  onNotifFilterChange(event: { key: string; value: string }): void {
+    if (event.key === 'channel') this.notifChannelFilter.set(event.value);
+    else if (event.key === 'status') this.notifStatusFilter.set(event.value);
+    else if (event.key === 'category') this.notifCategoryFilter.set(event.value);
+    else if (event.key === 'severity') this.notifSeverityFilter.set(event.value);
+    this.applyNotifFilters();
+  }
+
+  readonly outboxFilters = computed<SpAdminTableFilter[]>(() => [
+    { key: 'channel', label: 'Channel', options: this.channelOptions, value: this.outboxChannelFilter(), placeholder: 'All channels' },
+    { key: 'status', label: 'Status', options: this.outboxStatusOptions, value: this.outboxStatusFilter(), placeholder: 'All statuses' },
+  ]);
+
+  onOutboxFilterChange(event: { key: string; value: string }): void {
+    if (event.key === 'channel') this.outboxChannelFilter.set(event.value);
+    else if (event.key === 'status') this.outboxStatusFilter.set(event.value);
+    this.applyOutboxFilters();
+  }
+
+  readonly templateFilters = computed<SpAdminTableFilter[]>(() => [
+    { key: 'channel', label: 'Channel', options: this.channelOptions, value: this.templateChannelFilter(), placeholder: 'All channels' },
+    { key: 'category', label: 'Category', options: this.categoryOptions, value: this.templateCategoryFilter(), placeholder: 'All categories' },
+    { key: 'active', label: 'State', options: this.templateActiveOptions, value: this.templateActiveFilter(), placeholder: 'All states' },
+  ]);
+
+  onTemplateFilterChange(event: { key: string; value: string }): void {
+    if (event.key === 'channel') this.templateChannelFilter.set(event.value);
+    else if (event.key === 'category') this.templateCategoryFilter.set(event.value);
+    else if (event.key === 'active') this.templateActiveFilter.set(event.value);
+    this.applyTemplateFilters();
+  }
+
   constructor(private adminApi: AdminApiService) {}
 
   ngOnInit(): void {
@@ -212,10 +287,10 @@ export class AdminNotificationsComponent implements OnInit {
     const q: AdminNotificationListQuery = {
       page: this.notifPage(),
       pageSize: this.notifPageSize,
-      channel: this.notifChannelFilter || undefined,
-      status: this.notifStatusFilter || undefined,
-      category: this.notifCategoryFilter || undefined,
-      severity: this.notifSeverityFilter || undefined,
+      channel: this.notifChannelFilter() || undefined,
+      status: this.notifStatusFilter() || undefined,
+      category: this.notifCategoryFilter() || undefined,
+      severity: this.notifSeverityFilter() || undefined,
       search: this.notifSearch || undefined,
     };
     this.adminApi.listAdminNotifications(q).subscribe({
@@ -230,9 +305,9 @@ export class AdminNotificationsComponent implements OnInit {
     const q: AdminOutboxListQuery = {
       page: this.outboxPage(),
       pageSize: this.outboxPageSize,
-      channel: this.outboxChannelFilter || undefined,
-      status: this.outboxStatusFilter || undefined,
-      failedOnly: this.outboxFailedOnly || undefined,
+      channel: this.outboxChannelFilter() || undefined,
+      status: this.outboxStatusFilter() || undefined,
+      failedOnly: this.outboxFailedOnly() || undefined,
     };
     this.adminApi.listAdminOutbox(q).subscribe({
       next: (res) => { this.outbox.set(res.items); this.outboxTotal.set(res.totalCount); this.outboxLoading.set(false); },
@@ -460,9 +535,9 @@ export class AdminNotificationsComponent implements OnInit {
   readonly templatesPageSize = 20;
   templatesTotalPages = computed(() => Math.max(1, Math.ceil(this.templatesTotal() / this.templatesPageSize)));
 
-  templateChannelFilter = '';
-  templateCategoryFilter = '';
-  templateActiveFilter = '';
+  templateChannelFilter = signal('');
+  templateCategoryFilter = signal('');
+  templateActiveFilter = signal('');
   templateSearch = '';
 
   templateFormOpen = signal(false);
@@ -503,9 +578,9 @@ export class AdminNotificationsComponent implements OnInit {
     this.adminApi.listNotificationTemplates({
       page: this.templatesPage(),
       pageSize: this.templatesPageSize,
-      channel: this.templateChannelFilter || undefined,
-      category: this.templateCategoryFilter || undefined,
-      isActive: this.templateActiveFilter === 'true' ? true : this.templateActiveFilter === 'false' ? false : undefined,
+      channel: this.templateChannelFilter() || undefined,
+      category: this.templateCategoryFilter() || undefined,
+      isActive: this.templateActiveFilter() === 'true' ? true : this.templateActiveFilter() === 'false' ? false : undefined,
       search: this.templateSearch || undefined,
     }).subscribe({
       next: (res) => { this.templates.set(res.items); this.templatesTotal.set(res.totalCount); this.templatesLoading.set(false); },

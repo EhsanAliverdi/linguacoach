@@ -39,34 +39,6 @@
         [(ngModel)]="notifSearch"
         (keyup.enter)="applyNotifFilters()"
         aria-label="Search notifications" />
-      <sp-admin-select
-        size="sm"
-        placeholder="All channels"
-        [options]="channelOptions"
-        [(ngModel)]="notifChannelFilter"
-        (ngModelChange)="applyNotifFilters()"
-        aria-label="Filter by channel" />
-      <sp-admin-select
-        size="sm"
-        placeholder="All statuses"
-        [options]="notifStatusOptions"
-        [(ngModel)]="notifStatusFilter"
-        (ngModelChange)="applyNotifFilters()"
-        aria-label="Filter by status" />
-      <sp-admin-select
-        size="sm"
-        placeholder="All categories"
-        [options]="categoryOptions"
-        [(ngModel)]="notifCategoryFilter"
-        (ngModelChange)="applyNotifFilters()"
-        aria-label="Filter by category" />
-      <sp-admin-select
-        size="sm"
-        placeholder="All severities"
-        [options]="severityOptions"
-        [(ngModel)]="notifSeverityFilter"
-        (ngModelChange)="applyNotifFilters()"
-        aria-label="Filter by severity" />
     </sp-admin-filter-bar>
 
     @if (notifLoading()) {
@@ -76,35 +48,24 @@
     } @else if (notifications().length === 0) {
       <sp-admin-empty-state message="No notifications found." />
     } @else {
-      <sp-admin-table layout="first-column-fluid">
-        <table>
-          <thead>
-            <tr>
-              <th>Recipient</th>
-              <th>Title</th>
-              <th>Channel</th>
-              <th>Category</th>
-              <th>Severity</th>
-              <th>Status</th>
-              <th>Created</th>
-              <th>Read</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (item of notifications(); track item.id) {
-              <tr>
-                <td><span class="sp-admin-cell-title">{{ item.recipientEmail }}</span></td>
-                <td><span class="sp-admin-cell-title">{{ item.title }}</span></td>
-                <td><sp-admin-badge tone="neutral">{{ item.channel }}</sp-admin-badge></td>
-                <td class="sp-admin-table-cell-compact">{{ item.category }}</td>
-                <td><sp-admin-badge [tone]="severityTone(item.severity)">{{ item.severity }}</sp-admin-badge></td>
-                <td><sp-admin-badge [tone]="statusTone(item.status)">{{ item.status }}</sp-admin-badge></td>
-                <td class="sp-admin-nowrap sp-admin-table-cell-compact">{{ timeAgo(item.createdAtUtc) }}</td>
-                <td class="sp-admin-nowrap sp-admin-table-cell-compact">{{ item.readAtUtc ? timeAgo(item.readAtUtc) : '—' }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
+      <sp-admin-table
+        layout="first-column-fluid"
+        [columns]="notificationColumns" [rows]="notifications()"
+        [filters]="notifFilters()" (filterChange)="onNotifFilterChange($event)"
+      >
+        <ng-template #cell let-row let-col="col">
+          @switch (col.key) {
+            @case ('recipientEmail') { <span class="sp-admin-cell-title">{{ $any(row).recipientEmail }}</span> }
+            @case ('title') { <span class="sp-admin-cell-title">{{ $any(row).title }}</span> }
+            @case ('channel') { <sp-admin-badge tone="neutral">{{ $any(row).channel }}</sp-admin-badge> }
+            @case ('category') { <span class="sp-admin-table-cell-compact">{{ $any(row).category }}</span> }
+            @case ('severity') { <sp-admin-badge [tone]="severityTone($any(row).severity)">{{ $any(row).severity }}</sp-admin-badge> }
+            @case ('status') { <sp-admin-badge [tone]="statusTone($any(row).status)">{{ $any(row).status }}</sp-admin-badge> }
+            @case ('createdAtUtc') { <span class="sp-admin-nowrap sp-admin-table-cell-compact">{{ timeAgo($any(row).createdAtUtc) }}</span> }
+            @case ('readAtUtc') { <span class="sp-admin-nowrap sp-admin-table-cell-compact">{{ $any(row).readAtUtc ? timeAgo($any(row).readAtUtc) : '—' }}</span> }
+            @default { {{ $any(row)[col.key] }} }
+          }
+        </ng-template>
         <sp-admin-table-footer>
           Page {{ notifPage() }} of {{ notifTotalPages() }} · {{ notifTotal() }} notifications
           <sp-admin-pagination
@@ -119,28 +80,6 @@
 
   <!-- ── Outbox / delivery queue tab ──────────────────────────────────────── -->
   @if (activeTab === 'outbox') {
-    <sp-admin-filter-bar>
-      <sp-admin-select
-        size="sm"
-        placeholder="All channels"
-        [options]="channelOptions"
-        [(ngModel)]="outboxChannelFilter"
-        (ngModelChange)="applyOutboxFilters()"
-        aria-label="Filter by channel" />
-      <sp-admin-select
-        size="sm"
-        placeholder="All statuses"
-        [options]="outboxStatusOptions"
-        [(ngModel)]="outboxStatusFilter"
-        (ngModelChange)="applyOutboxFilters()"
-        aria-label="Filter by status" />
-      <sp-admin-checkbox
-        [(ngModel)]="outboxFailedOnly"
-        (ngModelChange)="applyOutboxFilters()"
-        label="Failed only"
-        aria-label="Failed only" />
-    </sp-admin-filter-bar>
-
     @if (outboxLoading()) {
       <sp-admin-loading-state message="Loading delivery queue…" />
     } @else if (outboxError()) {
@@ -148,42 +87,36 @@
     } @else if (outbox().length === 0) {
       <sp-admin-empty-state message="No outbox items found." />
     } @else {
-      <sp-admin-table>
-        <table>
-          <thead>
-            <tr>
-              <th>Recipient</th>
-              <th>Channel</th>
-              <th>Status</th>
-              <th>Attempts</th>
-              <th>Created</th>
-              <th>Last attempt</th>
-              <th>Next attempt</th>
-              <th>Last error</th>
-              <th class="sp-admin-th-actions"></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (item of outbox(); track item.id) {
-              <tr>
-                <td><span class="sp-admin-cell-title">{{ item.recipientEmail }}</span></td>
-                <td><sp-admin-badge tone="neutral">{{ item.channel }}</sp-admin-badge></td>
-                <td><sp-admin-badge [tone]="statusTone(item.status)">{{ item.status }}</sp-admin-badge></td>
-                <td class="sp-admin-num">{{ item.attemptCount }}</td>
-                <td class="sp-admin-nowrap sp-admin-table-cell-compact">{{ timeAgo(item.createdAtUtc) }}</td>
-                <td class="sp-admin-nowrap sp-admin-table-cell-compact">{{ item.lastAttemptAtUtc ? timeAgo(item.lastAttemptAtUtc) : '—' }}</td>
-                <td class="sp-admin-nowrap sp-admin-table-cell-compact">{{ item.nextAttemptAtUtc ? timeAgo(item.nextAttemptAtUtc) : '—' }}</td>
-                <td class="sp-admin-table-cell-note">{{ item.lastError ?? '—' }}</td>
-                <td>
-                  <sp-admin-table-actions
-                    mode="dropdown"
-                    [richActions]="outboxRowActions(item)"
-                    (actionSelected)="onOutboxAction($event, item)" />
-                </td>
-              </tr>
+      <sp-admin-table
+        [columns]="outboxColumns" [rows]="outbox()"
+        [filters]="outboxFilters()" (filterChange)="onOutboxFilterChange($event)"
+      >
+        <ng-container tableActions>
+          <sp-admin-checkbox
+            [ngModel]="outboxFailedOnly()"
+            (ngModelChange)="outboxFailedOnly.set($event); applyOutboxFilters()"
+            label="Failed only"
+            aria-label="Failed only" />
+        </ng-container>
+        <ng-template #cell let-row let-col="col">
+          @switch (col.key) {
+            @case ('recipientEmail') { <span class="sp-admin-cell-title">{{ $any(row).recipientEmail }}</span> }
+            @case ('channel') { <sp-admin-badge tone="neutral">{{ $any(row).channel }}</sp-admin-badge> }
+            @case ('status') { <sp-admin-badge [tone]="statusTone($any(row).status)">{{ $any(row).status }}</sp-admin-badge> }
+            @case ('attemptCount') { <span class="sp-admin-num">{{ $any(row).attemptCount }}</span> }
+            @case ('createdAtUtc') { <span class="sp-admin-nowrap sp-admin-table-cell-compact">{{ timeAgo($any(row).createdAtUtc) }}</span> }
+            @case ('lastAttemptAtUtc') { <span class="sp-admin-nowrap sp-admin-table-cell-compact">{{ $any(row).lastAttemptAtUtc ? timeAgo($any(row).lastAttemptAtUtc) : '—' }}</span> }
+            @case ('nextAttemptAtUtc') { <span class="sp-admin-nowrap sp-admin-table-cell-compact">{{ $any(row).nextAttemptAtUtc ? timeAgo($any(row).nextAttemptAtUtc) : '—' }}</span> }
+            @case ('lastError') { <span class="sp-admin-table-cell-note">{{ $any(row).lastError ?? '—' }}</span> }
+            @case ('actions') {
+              <sp-admin-table-actions
+                mode="dropdown"
+                [richActions]="outboxRowActions($any(row))"
+                (actionSelected)="onOutboxAction($event, $any(row))" />
             }
-          </tbody>
-        </table>
+            @default { {{ $any(row)[col.key] }} }
+          }
+        </ng-template>
         <sp-admin-table-footer>
           Page {{ outboxPage() }} of {{ outboxTotalPages() }} · {{ outboxTotal() }} items
           <sp-admin-pagination
@@ -304,27 +237,6 @@
         [(ngModel)]="templateSearch"
         (keyup.enter)="applyTemplateFilters()"
         aria-label="Search templates" />
-      <sp-admin-select
-        size="sm"
-        placeholder="All channels"
-        [options]="channelOptions"
-        [(ngModel)]="templateChannelFilter"
-        (ngModelChange)="applyTemplateFilters()"
-        aria-label="Filter by channel" />
-      <sp-admin-select
-        size="sm"
-        placeholder="All categories"
-        [options]="categoryOptions"
-        [(ngModel)]="templateCategoryFilter"
-        (ngModelChange)="applyTemplateFilters()"
-        aria-label="Filter by category" />
-      <sp-admin-select
-        size="sm"
-        placeholder="All states"
-        [options]="templateActiveOptions"
-        [(ngModel)]="templateActiveFilter"
-        (ngModelChange)="applyTemplateFilters()"
-        aria-label="Filter by active state" />
       <sp-admin-button size="sm" (clicked)="openCreateTemplate()" aria-label="Create template">New template</sp-admin-button>
     </sp-admin-filter-bar>
 
@@ -335,46 +247,34 @@
     } @else if (templates().length === 0) {
       <sp-admin-empty-state message="No templates found." />
     } @else {
-      <sp-admin-table layout="first-column-fluid">
-        <table>
-          <thead>
-            <tr>
-              <th>Key</th>
-              <th>Channel</th>
-              <th>Name</th>
-              <th>Category</th>
-              <th>Severity</th>
-              <th>Active</th>
-              <th>Version</th>
-              <th>Updated</th>
-              <th class="sp-admin-th-actions"></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (t of templates(); track t.id) {
-              <tr>
-                <td><span class="sp-admin-cell-code">{{ t.templateKey }}</span></td>
-                <td><sp-admin-badge tone="neutral">{{ t.channel }}</sp-admin-badge></td>
-                <td><span class="sp-admin-cell-title">{{ t.name }}</span></td>
-                <td class="sp-admin-table-cell-compact">{{ t.category }}</td>
-                <td><sp-admin-badge [tone]="severityTone(t.severity)">{{ t.severity }}</sp-admin-badge></td>
-                <td>
-                  <sp-admin-badge [tone]="t.isActive ? 'success' : 'neutral'">
-                    {{ t.isActive ? 'Active' : 'Inactive' }}
-                  </sp-admin-badge>
-                </td>
-                <td class="sp-admin-num sp-admin-table-cell-compact">{{ t.version }}</td>
-                <td class="sp-admin-nowrap sp-admin-table-cell-compact">{{ t.updatedAtUtc ? timeAgo(t.updatedAtUtc) : '—' }}</td>
-                <td>
-                  <sp-admin-table-actions
-                    mode="dropdown"
-                    [richActions]="templateRowActions(t)"
-                    (actionSelected)="onTemplateAction($event, t)" />
-                </td>
-              </tr>
+      <sp-admin-table
+        layout="first-column-fluid"
+        [columns]="templateColumns" [rows]="templates()"
+        [filters]="templateFilters()" (filterChange)="onTemplateFilterChange($event)"
+      >
+        <ng-template #cell let-row let-col="col">
+          @switch (col.key) {
+            @case ('templateKey') { <span class="sp-admin-cell-code">{{ $any(row).templateKey }}</span> }
+            @case ('channel') { <sp-admin-badge tone="neutral">{{ $any(row).channel }}</sp-admin-badge> }
+            @case ('name') { <span class="sp-admin-cell-title">{{ $any(row).name }}</span> }
+            @case ('category') { <span class="sp-admin-table-cell-compact">{{ $any(row).category }}</span> }
+            @case ('severity') { <sp-admin-badge [tone]="severityTone($any(row).severity)">{{ $any(row).severity }}</sp-admin-badge> }
+            @case ('isActive') {
+              <sp-admin-badge [tone]="$any(row).isActive ? 'success' : 'neutral'">
+                {{ $any(row).isActive ? 'Active' : 'Inactive' }}
+              </sp-admin-badge>
             }
-          </tbody>
-        </table>
+            @case ('version') { <span class="sp-admin-num sp-admin-table-cell-compact">{{ $any(row).version }}</span> }
+            @case ('updatedAtUtc') { <span class="sp-admin-nowrap sp-admin-table-cell-compact">{{ $any(row).updatedAtUtc ? timeAgo($any(row).updatedAtUtc) : '—' }}</span> }
+            @case ('actions') {
+              <sp-admin-table-actions
+                mode="dropdown"
+                [richActions]="templateRowActions($any(row))"
+                (actionSelected)="onTemplateAction($event, $any(row))" />
+            }
+            @default { {{ $any(row)[col.key] }} }
+          }
+        </ng-template>
         <sp-admin-table-footer>
           Page {{ templatesPage() }} of {{ templatesTotalPages() }} · {{ templatesTotal() }} templates
           <sp-admin-pagination
