@@ -54,23 +54,16 @@
       </sp-admin-status-grid>
 
       @if (s.providerUsage.byProvider.length > 0) {
-        <sp-admin-table variant="data" density="compact" layout="first-column-fluid" minWidth="600px" style="margin-top: 1rem" data-testid="ai-ops-provider-table">
-          <table>
-            <thead>
-              <tr><th>Provider</th><th>Calls</th><th>Successful</th><th>Fallback</th><th>Cost (USD)</th></tr>
-            </thead>
-            <tbody>
-              @for (p of s.providerUsage.byProvider; track p.provider) {
-                <tr>
-                  <td>{{ p.provider }}</td>
-                  <td>{{ p.calls }}</td>
-                  <td>{{ p.successful }}</td>
-                  <td>{{ p.fallback }}</td>
-                  <td>{{ p.costUsd | number:'1.2-4' }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
+        <sp-admin-table
+          variant="data" density="compact" layout="first-column-fluid" minWidth="600px" style="margin-top: 1rem" data-testid="ai-ops-provider-table"
+          [columns]="providerUsageColumns" [rows]="s.providerUsage.byProvider"
+        >
+          <ng-template #cell let-row let-col="col">
+            @switch (col.key) {
+              @case ('costUsd') { {{ $any(row).costUsd | number:'1.2-4' }} }
+              @default { {{ $any(row)[col.key] }} }
+            }
+          </ng-template>
         </sp-admin-table>
       } @else {
         <sp-admin-not-implemented-state title="No provider usage yet">
@@ -134,23 +127,19 @@
       <p class="sp-admin-section-sub" style="margin-top: 0.5rem">Retention: {{ s.generationQualitySummary.retentionDays }} days.</p>
 
       @if (s.generationQualitySummary.latestFailures.length > 0) {
-        <sp-admin-table variant="data" density="compact" layout="first-column-fluid" minWidth="800px" style="margin-top: 1rem" data-testid="ai-ops-generation-failures-table">
-          <table>
-            <thead>
-              <tr><th>Time</th><th>Pattern</th><th>CEFR</th><th>Provider / model</th><th>Attempt</th></tr>
-            </thead>
-            <tbody>
-              @for (f of s.generationQualitySummary.latestFailures; track f.correlationId) {
-                <tr>
-                  <td>{{ f.timestampUtc | date:'short' }}</td>
-                  <td>{{ f.patternKey ?? f.activityTypeName }}</td>
-                  <td>{{ f.cefrLevel ?? '—' }}</td>
-                  <td>{{ f.providerName ?? '—' }} / {{ f.modelName ?? '—' }}</td>
-                  <td>{{ f.attemptNumber }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
+        <sp-admin-table
+          variant="data" density="compact" layout="first-column-fluid" minWidth="800px" style="margin-top: 1rem" data-testid="ai-ops-generation-failures-table"
+          [columns]="generationFailuresColumns" [rows]="s.generationQualitySummary.latestFailures"
+        >
+          <ng-template #cell let-row let-col="col">
+            @switch (col.key) {
+              @case ('timestampUtc') { {{ $any(row).timestampUtc | date:'short' }} }
+              @case ('pattern') { {{ $any(row).patternKey ?? $any(row).activityTypeName }} }
+              @case ('cefrLevel') { {{ $any(row).cefrLevel ?? '—' }} }
+              @case ('providerModel') { {{ $any(row).providerName ?? '—' }} / {{ $any(row).modelName ?? '—' }} }
+              @default { {{ $any(row)[col.key] }} }
+            }
+          </ng-template>
         </sp-admin-table>
       } @else {
         <sp-admin-not-implemented-state title="No recent generation failures">
@@ -197,23 +186,19 @@
     <!-- ── Recent failures (combined) ───────────────────────────────────────────── -->
     <sp-admin-card title="Recent failures" variant="section" padding="md" data-testid="ai-ops-recent-failures">
       @if (s.recentFailures.length > 0) {
-        <sp-admin-table variant="data" density="compact" layout="first-column-fluid" minWidth="900px">
-          <table>
-            <thead>
-              <tr><th>Time</th><th>Area</th><th>Provider / model</th><th>Reason</th><th>Status</th></tr>
-            </thead>
-            <tbody>
-              @for (f of s.recentFailures; track f.evaluationId ?? (f.timestampUtc + f.area)) {
-                <tr [attr.data-testid]="'ai-ops-failure-row-' + f.area">
-                  <td>{{ f.timestampUtc | date:'short' }}</td>
-                  <td><sp-admin-badge tone="neutral" appearance="outline" size="sm">{{ f.area }}</sp-admin-badge></td>
-                  <td>{{ f.providerName ?? '—' }} / {{ f.modelName ?? '—' }}</td>
-                  <td class="sp-admin-section-sub">{{ f.reason }}</td>
-                  <td>{{ f.status }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
+        <sp-admin-table
+          variant="data" density="compact" layout="first-column-fluid" minWidth="900px"
+          [columns]="recentFailuresColumns" [rows]="s.recentFailures"
+        >
+          <ng-template #cell let-row let-col="col">
+            @switch (col.key) {
+              @case ('timestampUtc') { {{ $any(row).timestampUtc | date:'short' }} }
+              @case ('area') { <sp-admin-badge tone="neutral" appearance="outline" size="sm">{{ $any(row).area }}</sp-admin-badge> }
+              @case ('providerModel') { {{ $any(row).providerName ?? '—' }} / {{ $any(row).modelName ?? '—' }} }
+              @case ('reason') { <span class="sp-admin-section-sub">{{ $any(row).reason }}</span> }
+              @default { {{ $any(row)[col.key] }} }
+            }
+          </ng-template>
         </sp-admin-table>
       } @else {
         <sp-admin-not-implemented-state title="No recent failures" data-testid="ai-ops-no-recent-failures">

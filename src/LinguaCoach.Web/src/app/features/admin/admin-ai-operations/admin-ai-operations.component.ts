@@ -18,6 +18,7 @@ import {
   SpAdminStatusGridComponent,
   SpAdminTableComponent,
 } from '../../../design-system/admin';
+import type { SpAdminTableColumn } from '../../../design-system/admin';
 
 @Component({
   selector: 'app-admin-ai-operations',
@@ -45,6 +46,30 @@ export class AdminAiOperationsComponent implements OnInit {
   loading = signal(true);
   error = signal('');
   summary = signal<AdminAiOperationsSummary | null>(null);
+
+  readonly providerUsageColumns: SpAdminTableColumn[] = [
+    { key: 'provider', label: 'Provider' },
+    { key: 'calls', label: 'Calls' },
+    { key: 'successful', label: 'Successful' },
+    { key: 'fallback', label: 'Fallback' },
+    { key: 'costUsd', label: 'Cost (USD)' },
+  ];
+
+  readonly generationFailuresColumns: SpAdminTableColumn[] = [
+    { key: 'timestampUtc', label: 'Time' },
+    { key: 'pattern', label: 'Pattern' },
+    { key: 'cefrLevel', label: 'CEFR' },
+    { key: 'providerModel', label: 'Provider / model' },
+    { key: 'attemptNumber', label: 'Attempt' },
+  ];
+
+  readonly recentFailuresColumns: SpAdminTableColumn[] = [
+    { key: 'timestampUtc', label: 'Time' },
+    { key: 'area', label: 'Area' },
+    { key: 'providerModel', label: 'Provider / model' },
+    { key: 'reason', label: 'Reason' },
+    { key: 'status', label: 'Status' },
+  ];
 
   readonly isEmpty = computed(() => {
     const s = this.summary();
