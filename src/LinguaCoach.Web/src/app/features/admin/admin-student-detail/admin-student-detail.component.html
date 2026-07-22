@@ -848,41 +848,30 @@
               <!-- Per-item history table -->
               @if (pp.itemHistory.length > 0) {
                 <div class="sp-admin-section-title sp-admin-mt-4">Item history</div>
-                <sp-admin-table variant="data" density="compact" layout="first-column-fluid">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Skill</th>
-                        <th>CEFR</th>
-                        <th>Type</th>
-                        <th>Result</th>
-                        <th>Score</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (item of pp.itemHistory; track item.itemId) {
-                        <tr>
-                          <td>{{ item.itemOrder + 1 }}</td>
-                          <td>{{ item.skill }}</td>
-                          <td><sp-admin-badge tone="neutral">{{ item.targetCefrLevel }}</sp-admin-badge></td>
-                          <td class="sp-admin-text-muted">{{ item.itemType }}</td>
-                          <td>
-                            @if (item.isCorrect === null || item.isCorrect === undefined) {
-                              <sp-admin-badge tone="neutral">Pending</sp-admin-badge>
-                            } @else if (item.isCorrect) {
-                              <sp-admin-badge tone="success">Correct</sp-admin-badge>
-                            } @else {
-                              <sp-admin-badge tone="danger">Incorrect</sp-admin-badge>
-                            }
-                          </td>
-                          <td class="sp-admin-text-muted">
-                            {{ item.score !== null && item.score !== undefined ? (item.score * 100 | number:'1.0-0') + '%' : '—' }}
-                          </td>
-                        </tr>
+                <sp-admin-table variant="data" density="compact" layout="first-column-fluid" [columns]="itemHistoryColumns" [rows]="pp.itemHistory">
+                  <ng-template #cell let-row let-col="col">
+                    @switch (col.key) {
+                      @case ('order') { {{ $any(row).itemOrder + 1 }} }
+                      @case ('skill') { {{ $any(row).skill }} }
+                      @case ('cefr') { <sp-admin-badge tone="neutral">{{ $any(row).targetCefrLevel }}</sp-admin-badge> }
+                      @case ('itemType') { <span class="sp-admin-text-muted">{{ $any(row).itemType }}</span> }
+                      @case ('result') {
+                        @if ($any(row).isCorrect === null || $any(row).isCorrect === undefined) {
+                          <sp-admin-badge tone="neutral">Pending</sp-admin-badge>
+                        } @else if ($any(row).isCorrect) {
+                          <sp-admin-badge tone="success">Correct</sp-admin-badge>
+                        } @else {
+                          <sp-admin-badge tone="danger">Incorrect</sp-admin-badge>
+                        }
                       }
-                    </tbody>
-                  </table>
+                      @case ('score') {
+                        <span class="sp-admin-text-muted">
+                          {{ $any(row).score !== null && $any(row).score !== undefined ? ($any(row).score * 100 | number:'1.0-0') + '%' : '—' }}
+                        </span>
+                      }
+                      @default { {{ $any(row)[col.key] }} }
+                    }
+                  </ng-template>
                 </sp-admin-table>
               }
             }
@@ -891,22 +880,15 @@
           <!-- Skill results (Completed) -->
           @if (pl.status === 'Completed' && pl.skillResults && pl.skillResults.length > 0) {
             <div class="sp-admin-section-title sp-admin-mt-4">Per-skill results</div>
-            <sp-admin-table variant="data" density="compact" layout="first-column-fluid">
-              <table>
-                <thead>
-                  <tr><th>Skill</th><th>CEFR</th><th>Confidence</th><th>Evidence</th></tr>
-                </thead>
-                <tbody>
-                  @for (sr of pl.skillResults; track sr.skill) {
-                    <tr>
-                      <td>{{ sr.skill }}</td>
-                      <td><sp-admin-badge tone="success">{{ sr.estimatedCefrLevel }}</sp-admin-badge></td>
-                      <td class="sp-admin-text-muted">{{ (sr.confidence * 100 | number:'1.0-0') + '%' }}</td>
-                      <td class="sp-admin-text-muted">{{ sr.evidenceCount }}</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
+            <sp-admin-table variant="data" density="compact" layout="first-column-fluid" [columns]="skillResultsColumns" [rows]="pl.skillResults">
+              <ng-template #cell let-row let-col="col">
+                @switch (col.key) {
+                  @case ('cefr') { <sp-admin-badge tone="success">{{ $any(row).estimatedCefrLevel }}</sp-admin-badge> }
+                  @case ('confidence') { <span class="sp-admin-text-muted">{{ ($any(row).confidence * 100 | number:'1.0-0') + '%' }}</span> }
+                  @case ('evidenceCount') { <span class="sp-admin-text-muted">{{ $any(row).evidenceCount }}</span> }
+                  @default { {{ $any(row)[col.key] }} }
+                }
+              </ng-template>
             </sp-admin-table>
           }
 
@@ -948,29 +930,16 @@
         } @else if (history().length === 0) {
           <sp-admin-empty-state message="No activity attempts yet." />
         } @else {
-          <sp-admin-table variant="data" density="compact" layout="first-column-fluid">
-            <table>
-              <thead>
-                <tr>
-                  <th>Activity</th>
-                  <th>Skill</th>
-                  <th class="sp-admin-th-right">Score</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (item of history(); track item.attemptId) {
-                  <tr>
-                    <td class="sp-admin-link">{{ item.activityTitle }}</td>
-                    <td class="sp-admin-nowrap sp-admin-text-muted">{{ item.activityType }}</td>
-                    <td class="sp-admin-nowrap sp-admin-td-right">
-                      <span [class]="scoreToneClass(item)">{{ scoreLabel(item) }}</span>
-                    </td>
-                    <td class="sp-admin-nowrap sp-admin-text-muted">{{ item.createdAt | date:'mediumDate' }}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+          <sp-admin-table variant="data" density="compact" layout="first-column-fluid" [columns]="activityHistoryColumns" [rows]="history()">
+            <ng-template #cell let-row let-col="col">
+              @switch (col.key) {
+                @case ('activityTitle') { <span class="sp-admin-link">{{ $any(row).activityTitle }}</span> }
+                @case ('activityType') { <span class="sp-admin-nowrap sp-admin-text-muted">{{ $any(row).activityType }}</span> }
+                @case ('score') { <span [class]="scoreToneClass($any(row))">{{ scoreLabel($any(row)) }}</span> }
+                @case ('createdAt') { <span class="sp-admin-nowrap sp-admin-text-muted">{{ $any(row).createdAt | date:'mediumDate' }}</span> }
+                @default { {{ $any(row)[col.key] }} }
+              }
+            </ng-template>
           </sp-admin-table>
         }
       </sp-admin-card>
@@ -983,37 +952,29 @@
         } @else if (auditHistory().length === 0) {
           <sp-admin-empty-state message="No admin actions recorded for this student." />
         } @else {
-          <sp-admin-table variant="data" density="compact" layout="first-column-fluid">
-            <table>
-              <thead>
-                <tr>
-                  <th>Action</th>
-                  <th>Actor</th>
-                  <th>Reason</th>
-                  <th>Value change</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (item of auditHistory(); track item.id) {
-                  <tr class="sp-admin-row-click" (click)="openAuditDetails(item)">
-                    <td><sp-admin-badge [tone]="item.source === 'AdminAuditLog' ? 'primary' : 'warning'">{{ item.action }}</sp-admin-badge></td>
-                    <td class="sp-admin-text-muted sp-admin-nowrap">{{ item.actorEmail || '—' }}</td>
-                    <td class="sp-admin-text-muted">{{ item.reason || '—' }}</td>
-                    <td>
-                      @if (item.oldValue || item.newValue) {
-                        <span class="sp-admin-value-change">
-                          <span class="sp-admin-text-muted">{{ item.oldValue || '—' }}</span>
-                          <span>&rarr;</span>
-                          <span>{{ item.newValue || '—' }}</span>
-                        </span>
-                      } @else { — }
-                    </td>
-                    <td class="sp-admin-text-muted sp-admin-nowrap">{{ item.timestamp | date:'mediumDate' }}</td>
-                  </tr>
+          <sp-admin-table
+            variant="data" density="compact" layout="first-column-fluid"
+            [columns]="auditHistoryColumns" [rows]="auditHistory()"
+            [rowClickable]="true" (rowClick)="openAuditDetails($any($event))"
+          >
+            <ng-template #cell let-row let-col="col">
+              @switch (col.key) {
+                @case ('action') { <sp-admin-badge [tone]="$any(row).source === 'AdminAuditLog' ? 'primary' : 'warning'">{{ $any(row).action }}</sp-admin-badge> }
+                @case ('actorEmail') { <span class="sp-admin-text-muted sp-admin-nowrap">{{ $any(row).actorEmail || '—' }}</span> }
+                @case ('reason') { <span class="sp-admin-text-muted">{{ $any(row).reason || '—' }}</span> }
+                @case ('valueChange') {
+                  @if ($any(row).oldValue || $any(row).newValue) {
+                    <span class="sp-admin-value-change">
+                      <span class="sp-admin-text-muted">{{ $any(row).oldValue || '—' }}</span>
+                      <span>&rarr;</span>
+                      <span>{{ $any(row).newValue || '—' }}</span>
+                    </span>
+                  } @else { — }
                 }
-              </tbody>
-            </table>
+                @case ('timestamp') { <span class="sp-admin-text-muted sp-admin-nowrap">{{ $any(row).timestamp | date:'mediumDate' }}</span> }
+                @default { {{ $any(row)[col.key] }} }
+              }
+            </ng-template>
           </sp-admin-table>
         }
       </sp-admin-card>

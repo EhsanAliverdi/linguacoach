@@ -41,6 +41,7 @@ import {
   SpAdminTabsComponent,
   SpAdminTextareaComponent,
 } from '../../../design-system/admin';
+import type { SpAdminTableColumn } from '../../../design-system/admin';
 import { lifecycleLabel, lifecycleTone, onboardingLabel, onboardingTone } from '../../../design-system/admin/utils/admin-badge.utils';
 import { SpAdminBadgeTone } from '../../../design-system/admin/components/badge/sp-admin-badge.component';
 
@@ -95,6 +96,37 @@ export class AdminStudentDetailComponent implements OnInit {
     { value: 'overview', label: 'Overview' },
     { value: 'activity', label: 'Activity' },
     { value: 'settings', label: 'Settings' },
+  ];
+
+  readonly itemHistoryColumns: SpAdminTableColumn[] = [
+    { key: 'order', label: '#' },
+    { key: 'skill', label: 'Skill' },
+    { key: 'cefr', label: 'CEFR' },
+    { key: 'itemType', label: 'Type' },
+    { key: 'result', label: 'Result' },
+    { key: 'score', label: 'Score' },
+  ];
+
+  readonly skillResultsColumns: SpAdminTableColumn[] = [
+    { key: 'skill', label: 'Skill' },
+    { key: 'cefr', label: 'CEFR' },
+    { key: 'confidence', label: 'Confidence' },
+    { key: 'evidenceCount', label: 'Evidence' },
+  ];
+
+  readonly activityHistoryColumns: SpAdminTableColumn[] = [
+    { key: 'activityTitle', label: 'Activity' },
+    { key: 'activityType', label: 'Skill' },
+    { key: 'score', label: 'Score', align: 'right' },
+    { key: 'createdAt', label: 'Date' },
+  ];
+
+  readonly auditHistoryColumns: SpAdminTableColumn[] = [
+    { key: 'action', label: 'Action' },
+    { key: 'actorEmail', label: 'Actor' },
+    { key: 'reason', label: 'Reason' },
+    { key: 'valueChange', label: 'Value change' },
+    { key: 'timestamp', label: 'Date' },
   ];
 
   memory = signal<AdminStudentLearningMemory | null>(null);
