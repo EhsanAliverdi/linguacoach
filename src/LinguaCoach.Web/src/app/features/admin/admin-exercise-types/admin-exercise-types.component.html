@@ -42,124 +42,96 @@
         [value]="searchQuery()"
         (input)="onSearch($event)"
         aria-label="Search exercise types" />
-      <sp-admin-select
-        size="sm"
-        placeholder="All skills"
-        [options]="skillOptions()"
-        [(ngModel)]="skillFilterValue"
-        (ngModelChange)="onSkillFilterChange($event)"
-        aria-label="Filter by skill" />
-      <sp-admin-select
-        size="sm"
-        placeholder="All statuses"
-        [options]="statusOptions"
-        [(ngModel)]="statusFilterValue"
-        (ngModelChange)="onStatusFilterChange($event)"
-        aria-label="Filter by status" />
       <span class="sp-admin-filter-count">{{ filteredExerciseTypes().length }} type{{ filteredExerciseTypes().length !== 1 ? 's' : '' }}</span>
     </sp-admin-filter-bar>
 
-    @if (filteredExerciseTypes().length === 0) {
-      <sp-admin-empty-state message="No exercise types match your filters." />
-    } @else {
-      <sp-admin-table layout="first-column-fluid">
-        <table>
-          <thead>
-            <tr>
-              <th>Exercise</th>
-              <th>Skill</th>
-              <th>Status</th>
-              <th>Generation</th>
-              <th>Items M/D/M</th>
-              <th>Options M/D/M</th>
-              <th class="sp-admin-th-actions"></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (type of pagedExerciseTypes(); track type.key) {
-              <tr>
-                <!-- Exercise -->
-                <td>
-                  <div class="sp-admin-flex-row sp-admin-flex-row--start">
-                    <div class="sp-admin-skill-avatar"
-                         [style.background]="skillBg(type.primarySkill)"
-                         [style.color]="skillColor(type.primarySkill)">
-                      {{ skillShort(type.primarySkill) }}
-                    </div>
-                    <div>
-                      <div class="sp-admin-cell-title">{{ type.displayName }}</div>
-                      <sp-admin-code-pill [value]="type.key" tone="neutral" />
-                      @if (type.description) {
-                        <sp-admin-truncated-text [value]="type.description" [maxLength]="72" class="sp-admin-cell-desc" />
-                      }
-                      @if (type.implementationStatus !== 'ready') {
-                        <div class="sp-admin-not-runnable-tag">Not runnable yet — foundation only</div>
-                      }
-                    </div>
-                  </div>
-                </td>
-                <!-- Skill -->
-                <td>
-                  <div class="sp-admin-text-strong">{{ skillLabel(type.primarySkill) }}</div>
-                  @if (type.secondarySkills?.length) {
-                    <div class="sp-admin-text-muted sp-admin-text-xs">+{{ type.secondarySkills.join(', ') }}</div>
-                  }
-                </td>
-                <!-- Status -->
-                <td>
-                  <div class="sp-admin-flex-col sp-admin-flex-col--gap4">
-                    <div class="sp-admin-flex-row">
-                      <span class="sp-admin-status-dot"
-                            [class.sp-admin-status-dot--active]="type.implementationStatus === 'ready'"></span>
-                      <span class="sp-admin-status-label"
-                            [class.sp-admin-status-label--active]="type.implementationStatus === 'ready'">
-                        {{ type.implementationStatus === 'ready' ? 'Ready' : 'Not impl.' }}
-                      </span>
-                    </div>
-                    <div class="sp-admin-flex-row">
-                      <span class="sp-admin-status-dot"
-                            [class.sp-admin-status-dot--active]="type.isEnabled"></span>
-                      <span class="sp-admin-status-label"
-                            [class.sp-admin-status-label--active]="type.isEnabled">
-                        {{ type.isEnabled ? 'Enabled' : 'Disabled' }}
-                      </span>
-                    </div>
-                  </div>
-                </td>
-                <!-- Generation -->
-                <td>
-                  <sp-admin-badge [tone]="type.isAvailableForGeneration ? 'success' : 'danger'">
-                    {{ type.isAvailableForGeneration ? 'Available' : 'Blocked' }}
-                  </sp-admin-badge>
-                </td>
-                <!-- Items M/D/M -->
-                <td class="sp-admin-text-mono sp-admin-text-center sp-admin-nowrap">
-                  {{ type.minItemsPerPractice }} / {{ type.defaultItemsPerPractice }} / {{ type.maxItemsPerPractice }}
-                </td>
-                <!-- Options M/D/M -->
-                <td class="sp-admin-text-mono sp-admin-text-center sp-admin-nowrap">
-                  {{ type.minOptionsPerItem }} / {{ type.defaultOptionsPerItem }} / {{ type.maxOptionsPerItem }}
-                </td>
-                <!-- Actions -->
-                <td>
-                  <sp-admin-table-actions
-                    mode="dropdown"
-                    [richActions]="rowActions(type)"
-                    (actionSelected)="onRowAction($event, type)" />
-                </td>
-              </tr>
+    <sp-admin-table
+      layout="first-column-fluid"
+      [columns]="exerciseTypeColumns" [rows]="pagedExerciseTypes()"
+      [filters]="exerciseTypesFilters()" (filterChange)="onExerciseTypesFilterChange($event)"
+      emptyMessage="No exercise types match your filters."
+    >
+      <ng-template #cell let-row let-col="col">
+        @switch (col.key) {
+          @case ('exercise') {
+            <div class="sp-admin-flex-row sp-admin-flex-row--start">
+              <div class="sp-admin-skill-avatar"
+                   [style.background]="skillBg($any(row).primarySkill)"
+                   [style.color]="skillColor($any(row).primarySkill)">
+                {{ skillShort($any(row).primarySkill) }}
+              </div>
+              <div>
+                <div class="sp-admin-cell-title">{{ $any(row).displayName }}</div>
+                <sp-admin-code-pill [value]="$any(row).key" tone="neutral" />
+                @if ($any(row).description) {
+                  <sp-admin-truncated-text [value]="$any(row).description" [maxLength]="72" class="sp-admin-cell-desc" />
+                }
+                @if ($any(row).implementationStatus !== 'ready') {
+                  <div class="sp-admin-not-runnable-tag">Not runnable yet — foundation only</div>
+                }
+              </div>
+            </div>
+          }
+          @case ('skill') {
+            <div class="sp-admin-text-strong">{{ skillLabel($any(row).primarySkill) }}</div>
+            @if ($any(row).secondarySkills?.length) {
+              <div class="sp-admin-text-muted sp-admin-text-xs">+{{ $any(row).secondarySkills.join(', ') }}</div>
             }
-          </tbody>
-        </table>
-        <sp-admin-table-footer>
-          Page {{ page() }} of {{ totalPages() }} · {{ filteredExerciseTypes().length }} types
-          <sp-admin-pagination
-            slot="actions"
-            [page]="page()"
-            [totalPages]="totalPages()"
-            (pageChange)="page.set($event)" />
-        </sp-admin-table-footer>
-      </sp-admin-table>
+          }
+          @case ('status') {
+            <div class="sp-admin-flex-col sp-admin-flex-col--gap4">
+              <div class="sp-admin-flex-row">
+                <span class="sp-admin-status-dot"
+                      [class.sp-admin-status-dot--active]="$any(row).implementationStatus === 'ready'"></span>
+                <span class="sp-admin-status-label"
+                      [class.sp-admin-status-label--active]="$any(row).implementationStatus === 'ready'">
+                  {{ $any(row).implementationStatus === 'ready' ? 'Ready' : 'Not impl.' }}
+                </span>
+              </div>
+              <div class="sp-admin-flex-row">
+                <span class="sp-admin-status-dot"
+                      [class.sp-admin-status-dot--active]="$any(row).isEnabled"></span>
+                <span class="sp-admin-status-label"
+                      [class.sp-admin-status-label--active]="$any(row).isEnabled">
+                  {{ $any(row).isEnabled ? 'Enabled' : 'Disabled' }}
+                </span>
+              </div>
+            </div>
+          }
+          @case ('generation') {
+            <sp-admin-badge [tone]="$any(row).isAvailableForGeneration ? 'success' : 'danger'">
+              {{ $any(row).isAvailableForGeneration ? 'Available' : 'Blocked' }}
+            </sp-admin-badge>
+          }
+          @case ('itemsMDM') {
+            <span class="sp-admin-text-mono sp-admin-text-center sp-admin-nowrap">
+              {{ $any(row).minItemsPerPractice }} / {{ $any(row).defaultItemsPerPractice }} / {{ $any(row).maxItemsPerPractice }}
+            </span>
+          }
+          @case ('optionsMDM') {
+            <span class="sp-admin-text-mono sp-admin-text-center sp-admin-nowrap">
+              {{ $any(row).minOptionsPerItem }} / {{ $any(row).defaultOptionsPerItem }} / {{ $any(row).maxOptionsPerItem }}
+            </span>
+          }
+          @case ('actions') {
+            <sp-admin-table-actions
+              mode="dropdown"
+              [richActions]="rowActions($any(row))"
+              (actionSelected)="onRowAction($event, $any(row))" />
+          }
+          @default { {{ $any(row)[col.key] }} }
+        }
+      </ng-template>
+    </sp-admin-table>
+    @if (filteredExerciseTypes().length > 0) {
+    <sp-admin-table-footer>
+      Page {{ page() }} of {{ totalPages() }} · {{ filteredExerciseTypes().length }} types
+      <sp-admin-pagination
+        slot="actions"
+        [page]="page()"
+        [totalPages]="totalPages()"
+        (pageChange)="page.set($event)" />
+    </sp-admin-table-footer>
     }
   }
 

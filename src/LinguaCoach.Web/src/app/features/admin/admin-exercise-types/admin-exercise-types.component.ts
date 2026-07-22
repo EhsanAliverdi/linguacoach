@@ -20,14 +20,13 @@ import {
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminPaginationComponent,
-  SpAdminSelectComponent,
   SpAdminSlideOverComponent,
   SpAdminTableActionsComponent,
   SpAdminTableComponent,
   SpAdminTableFooterComponent,
   SpAdminTruncatedTextComponent,
 } from '../../../design-system/admin';
-import type { SpAdminRowAction, SpAdminSelectOption, SpAdminButtonGroupAction } from '../../../design-system/admin';
+import type { SpAdminRowAction, SpAdminSelectOption, SpAdminButtonGroupAction, SpAdminTableColumn, SpAdminTableFilter } from '../../../design-system/admin';
 import {
   SpAdminDistributionBreakdownComponent,
   SpAdminDistributionItem,
@@ -77,7 +76,6 @@ function skillMeta(skill: string): { bg: string; color: string; short: string; t
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
     SpAdminPaginationComponent,
-    SpAdminSelectComponent,
     SpAdminSlideOverComponent,
     SpAdminTableActionsComponent,
     SpAdminTableComponent,
@@ -86,6 +84,16 @@ function skillMeta(skill: string): { bg: string; color: string; short: string; t
   ],
 })
 export class AdminExerciseTypesComponent implements OnInit {
+  readonly exerciseTypeColumns: SpAdminTableColumn[] = [
+    { key: 'exercise', label: 'Exercise' },
+    { key: 'skill', label: 'Skill' },
+    { key: 'status', label: 'Status' },
+    { key: 'generation', label: 'Generation' },
+    { key: 'itemsMDM', label: 'Items M/D/M' },
+    { key: 'optionsMDM', label: 'Options M/D/M' },
+    { key: 'actions', label: '', align: 'right' },
+  ];
+
   exerciseTypes     = signal<ExerciseTypeDefinition[]>([]);
   savingKey         = signal<string | null>(null);
   error             = signal<string | null>(null);
@@ -94,8 +102,6 @@ export class AdminExerciseTypesComponent implements OnInit {
   searchQuery       = signal('');
   skillFilter       = signal('');
   statusFilter      = signal('');
-  skillFilterValue  = '';
-  statusFilterValue = '';
 
   configOpen  = signal(false);
   configType  = signal<ExerciseTypeDefinition | null>(null);
@@ -212,6 +218,16 @@ export class AdminExerciseTypesComponent implements OnInit {
 
   onSkillFilterChange(value: string): void  { this.skillFilter.set(value);  this.page.set(1); }
   onStatusFilterChange(value: string): void { this.statusFilter.set(value); this.page.set(1); }
+
+  exerciseTypesFilters = computed<SpAdminTableFilter[]>(() => [
+    { key: 'skill', label: 'Skill', options: this.skillOptions(), value: this.skillFilter(), placeholder: 'All skills' },
+    { key: 'status', label: 'Status', options: this.statusOptions, value: this.statusFilter(), placeholder: 'All statuses' },
+  ]);
+
+  onExerciseTypesFilterChange(event: { key: string; value: string }): void {
+    if (event.key === 'skill') this.onSkillFilterChange(event.value);
+    else if (event.key === 'status') this.onStatusFilterChange(event.value);
+  }
 
   rowActions(_type: ExerciseTypeDefinition): SpAdminRowAction[] {
     return [{ id: 'configure', label: 'Configure', icon: 'edit', tone: 'default' }];
