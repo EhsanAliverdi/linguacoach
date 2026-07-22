@@ -55,7 +55,7 @@
 
       @if (s.providerUsage.byProvider.length > 0) {
         <sp-admin-table
-          variant="data" density="compact" layout="first-column-fluid" minWidth="600px" style="margin-top: 1rem" data-testid="ai-ops-provider-table"
+          [flush]="true" variant="data" density="compact" layout="first-column-fluid" minWidth="600px" style="margin-top: 1rem" data-testid="ai-ops-provider-table"
           [columns]="providerUsageColumns" [rows]="s.providerUsage.byProvider"
         >
           <ng-template #cell let-row let-col="col">
@@ -128,7 +128,7 @@
 
       @if (s.generationQualitySummary.latestFailures.length > 0) {
         <sp-admin-table
-          variant="data" density="compact" layout="first-column-fluid" minWidth="800px" style="margin-top: 1rem" data-testid="ai-ops-generation-failures-table"
+          [flush]="true" variant="data" density="compact" layout="first-column-fluid" minWidth="800px" style="margin-top: 1rem" data-testid="ai-ops-generation-failures-table"
           [columns]="generationFailuresColumns" [rows]="s.generationQualitySummary.latestFailures"
         >
           <ng-template #cell let-row let-col="col">
@@ -187,7 +187,7 @@
     <sp-admin-card title="Recent failures" variant="section" padding="md" data-testid="ai-ops-recent-failures">
       @if (s.recentFailures.length > 0) {
         <sp-admin-table
-          variant="data" density="compact" layout="first-column-fluid" minWidth="900px"
+          [flush]="true" variant="data" density="compact" layout="first-column-fluid" minWidth="900px"
           [columns]="recentFailuresColumns" [rows]="s.recentFailures"
         >
           <ng-template #cell let-row let-col="col">

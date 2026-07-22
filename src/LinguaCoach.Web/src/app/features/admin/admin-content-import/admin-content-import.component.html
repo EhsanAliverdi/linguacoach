@@ -116,7 +116,7 @@
         <sp-admin-empty-state title="No import runs yet" message="Runs created from an approved plan will show up here." />
       } @else {
         <sp-admin-table
-          layout="first-column-fluid"
+          [flush]="true" variant="data" density="compact" layout="first-column-fluid"
           [columns]="recentRunsColumns" [rows]="recentRuns()"
           [rowClickable]="true" (rowClick)="selectRun($any($event).runId)"
         >

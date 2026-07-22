@@ -124,7 +124,7 @@
         @if (p.ceilingAmendments.length > 0) {
           <div style="margin-top:1rem;">
             <strong>Amendment history</strong>
-            <sp-admin-table [columns]="amendmentColumns" [rows]="p.ceilingAmendments">
+            <sp-admin-table [flush]="true" variant="data" density="compact" layout="first-column-fluid" style="margin-top:0.5rem;" [columns]="amendmentColumns" [rows]="p.ceilingAmendments">
               <ng-template #cell let-row let-col="col">
                 @switch (col.key) {
                   @case ('when') { {{ $any(row).createdAtUtc | date:'short' }} }
@@ -152,7 +152,7 @@
         } @else if (!sttOperations() || sttOperations()!.length === 0) {
           <p class="sp-admin-hint">No STT operations have run yet for this plan.</p>
         } @else {
-          <sp-admin-table [columns]="sttOperationColumns" [rows]="sttOperations() ?? []" [isRowExpanded]="isSttOperationExpanded">
+          <sp-admin-table [flush]="true" variant="data" density="compact" layout="first-column-fluid" [columns]="sttOperationColumns" [rows]="sttOperations() ?? []" [isRowExpanded]="isSttOperationExpanded">
             <ng-template #cell let-row let-col="col">
               @switch (col.key) {
                 @case ('assetFileName') { {{ $any(row).assetFileName }} }
@@ -200,7 +200,7 @@
         } @else if (!aiOperations() || aiOperations()!.length === 0) {
           <p class="sp-admin-hint">No AI operations have run yet for this plan.</p>
         } @else {
-          <sp-admin-table [columns]="aiOperationColumns" [rows]="aiOperations() ?? []" [isRowExpanded]="isAiOperationExpanded">
+          <sp-admin-table [flush]="true" variant="data" density="compact" layout="first-column-fluid" [columns]="aiOperationColumns" [rows]="aiOperations() ?? []" [isRowExpanded]="isAiOperationExpanded">
             <ng-template #cell let-row let-col="col">
               @switch (col.key) {
                 @case ('sourceLabel') { {{ $any(row).sourceLabel }} }
@@ -268,7 +268,7 @@
                 </div>
 
                 @if (row.mappings.length > 0) {
-                  <sp-admin-table [columns]="fieldMappingColumns" [rows]="row.mappings" style="margin-top:0.75rem;">
+                  <sp-admin-table [flush]="true" variant="data" density="compact" layout="first-column-fluid" style="margin-top:0.75rem;" [columns]="fieldMappingColumns" [rows]="row.mappings">
                     <ng-template #cell let-mapRow let-col="col">
                       @switch (col.key) {
                         @case ('source') { <code>{{ $any(mapRow).source }}</code> }
@@ -403,7 +403,7 @@
           @for (preview of p.estimate.structuredMappingPreviews; track preview.assetRelativePath) {
             <div style="padding:0.5rem 0;border-bottom:1px solid var(--sp-admin-border-subtle, #eee);">
               <strong>{{ preview.assetRelativePath }}</strong> — {{ preview.expectedRecordCount }} row(s)
-              <sp-admin-table [columns]="structuredMappingColumns" [rows]="structuredMappingRows(preview)" style="margin-top:0.5rem;">
+              <sp-admin-table [flush]="true" variant="data" density="compact" layout="first-column-fluid" style="margin-top:0.5rem;" [columns]="structuredMappingColumns" [rows]="structuredMappingRows(preview)">
                 <ng-template #cell let-row let-col="col">
                   @switch (col.key) {
                     @case ('column') { <code>{{ $any(row).column }}</code> }

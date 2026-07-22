@@ -75,7 +75,7 @@
     } @else {
       <sp-admin-table
         #candidatesTableRef
-        layout="first-column-fluid"
+        [flush]="true" variant="data" density="compact" layout="first-column-fluid"
         [columns]="candidateColumns" [rows]="candidates()" (selectionChange)="onCandidatesSelectionChange($event)"
         [bulkEditable]="true" [bulkEditMode]="candidatesBulkEditMode()" (bulkEditModeChange)="onCandidatesBulkEditModeChange($event)"
       >

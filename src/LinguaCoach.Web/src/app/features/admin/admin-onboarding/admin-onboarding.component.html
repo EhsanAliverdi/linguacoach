@@ -62,7 +62,7 @@
         <sp-admin-empty-state message="No templates match your search." />
       }
     } @else {
-      <sp-admin-table layout="first-column-fluid" [columns]="templateColumns" [rows]="filteredTemplates()">
+      <sp-admin-table variant="data" density="compact" layout="first-column-fluid" [columns]="templateColumns" [rows]="filteredTemplates()">
         <ng-template #cell let-row let-col="col">
           @switch (col.key) {
             @case ('name') { <span class="sp-admin-cell-title">{{ $any(row).name }}</span> }

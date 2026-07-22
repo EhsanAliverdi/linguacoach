@@ -26,7 +26,7 @@
         </sp-admin-badge>
         <span class="sp-admin-text-xs sp-admin-text-muted">Last run: {{ formatDateTime(sweep.ranAtUtc) }}</span>
       </div>
-      <sp-admin-table [columns]="dataIntegrityColumns" [rows]="sweep.categories">
+      <sp-admin-table [flush]="true" variant="data" density="compact" layout="first-column-fluid" [columns]="dataIntegrityColumns" [rows]="sweep.categories">
         <ng-template #cell let-row let-col="col">
           @switch (col.key) {
             @case ('status') { <sp-admin-badge [tone]="$any(row).healthy ? 'success' : 'danger'">{{ $any(row).healthy ? 'Healthy' : 'Issues' }}</sp-admin-badge> }
@@ -231,7 +231,7 @@
       @if (qLatestFailures().length > 0) {
         <div style="margin-bottom: 1.25rem;">
           <h3 class="sp-admin-section-subheading" style="margin-bottom: 0.5rem;">Latest validation failures (up to 20)</h3>
-          <sp-admin-table [columns]="validationFailureColumns" [rows]="qLatestFailures()">
+          <sp-admin-table [flush]="true" variant="data" density="compact" layout="first-column-fluid" [columns]="validationFailureColumns" [rows]="qLatestFailures()">
             <ng-template #cell let-row let-col="col">
               @switch (col.key) {
                 @case ('timestampUtc') { <span class="sp-admin-nowrap">{{ formatDateTime($any(row).timestampUtc) }}</span> }
@@ -278,7 +278,7 @@
       @if (qProviderBreakdown().length > 0) {
         <div style="margin-bottom: 1.25rem;">
           <h3 class="sp-admin-section-subheading" style="margin-bottom: 0.5rem;">Provider / model failure breakdown</h3>
-          <sp-admin-table [columns]="providerBreakdownColumns" [rows]="qProviderBreakdown()">
+          <sp-admin-table [flush]="true" variant="data" density="compact" layout="first-column-fluid" [columns]="providerBreakdownColumns" [rows]="qProviderBreakdown()">
             <ng-template #cell let-row let-col="col">
               @switch (col.key) {
                 @case ('modelName') { <sp-admin-code-pill [value]="$any(row).modelName" /> }
@@ -301,7 +301,7 @@
         <div class="sp-admin-card-grid-2" style="margin-top: 1.25rem;">
           @if (qPatternBreakdown().length > 0) {
             <sp-admin-card title="Pattern failure breakdown" variant="section" padding="md">
-              <sp-admin-table [columns]="patternBreakdownColumns" [rows]="qPatternBreakdown()">
+              <sp-admin-table [flush]="true" variant="data" density="compact" layout="first-column-fluid" [columns]="patternBreakdownColumns" [rows]="qPatternBreakdown()">
                 <ng-template #cell let-row let-col="col">
                   @switch (col.key) {
                     @case ('patternKey') { <sp-admin-code-pill [value]="$any(row).patternKey" /> }
@@ -320,7 +320,7 @@
           }
           @if (qCefrBreakdown().length > 0) {
             <sp-admin-card title="CEFR failure breakdown" variant="section" padding="md">
-              <sp-admin-table [columns]="cefrBreakdownColumns" [rows]="qCefrBreakdown()">
+              <sp-admin-table [flush]="true" variant="data" density="compact" layout="first-column-fluid" [columns]="cefrBreakdownColumns" [rows]="qCefrBreakdown()">
                 <ng-template #cell let-row let-col="col">
                   @switch (col.key) {
                     @case ('cefrLevel') { <sp-admin-badge tone="info">{{ $any(row).cefrLevel }}</sp-admin-badge> }
@@ -337,7 +337,7 @@
       @if (qPromptSummary().length > 0) {
         <div style="margin-top: 1.25rem;">
           <h3 class="sp-admin-section-subheading" style="margin-bottom: 0.5rem;">Active prompt version summary (retention: {{ qRetentionDays() }}d)</h3>
-          <sp-admin-table [columns]="promptSummaryColumns" [rows]="qPromptSummary()">
+          <sp-admin-table [flush]="true" variant="data" density="compact" layout="first-column-fluid" [columns]="promptSummaryColumns" [rows]="qPromptSummary()">
             <ng-template #cell let-row let-col="col">
               @switch (col.key) {
                 @case ('key') { <sp-admin-code-pill [value]="$any(row).key" /> }

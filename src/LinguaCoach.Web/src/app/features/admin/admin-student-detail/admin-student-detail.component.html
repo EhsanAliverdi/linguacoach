@@ -464,7 +464,7 @@
           <p class="sp-admin-text-muted" data-testid="speaking-submissions-empty">No speaking recordings submitted yet.</p>
         } @else {
           <sp-admin-table
-            variant="data" density="compact" layout="first-column-fluid"
+            [flush]="true" variant="data" density="compact" layout="first-column-fluid"
             data-testid="speaking-submissions-table"
             [columns]="speakingAttemptsColumns" [rows]="speakingAttempts()!.attempts"
           >
@@ -561,7 +561,7 @@
             <span data-testid="writing-no-lp-regen">Learning Plan regeneration disabled</span>
           </div>
           <sp-admin-table
-            variant="data" density="compact" layout="first-column-fluid"
+            [flush]="true" variant="data" density="compact" layout="first-column-fluid"
             data-testid="writing-evaluations-table"
             [columns]="writingEvaluationsColumns" [rows]="writingEvaluations()"
           >
@@ -842,7 +842,7 @@
               <!-- Per-item history table -->
               @if (pp.itemHistory.length > 0) {
                 <div class="sp-admin-section-title sp-admin-mt-4">Item history</div>
-                <sp-admin-table variant="data" density="compact" layout="first-column-fluid" [columns]="itemHistoryColumns" [rows]="pp.itemHistory">
+                <sp-admin-table [flush]="true" variant="data" density="compact" layout="first-column-fluid" [columns]="itemHistoryColumns" [rows]="pp.itemHistory">
                   <ng-template #cell let-row let-col="col">
                     @switch (col.key) {
                       @case ('order') { {{ $any(row).itemOrder + 1 }} }
@@ -874,7 +874,7 @@
           <!-- Skill results (Completed) -->
           @if (pl.status === 'Completed' && pl.skillResults && pl.skillResults.length > 0) {
             <div class="sp-admin-section-title sp-admin-mt-4">Per-skill results</div>
-            <sp-admin-table variant="data" density="compact" layout="first-column-fluid" [columns]="skillResultsColumns" [rows]="pl.skillResults">
+            <sp-admin-table [flush]="true" variant="data" density="compact" layout="first-column-fluid" [columns]="skillResultsColumns" [rows]="pl.skillResults">
               <ng-template #cell let-row let-col="col">
                 @switch (col.key) {
                   @case ('cefr') { <sp-admin-badge tone="success">{{ $any(row).estimatedCefrLevel }}</sp-admin-badge> }
@@ -924,7 +924,7 @@
         } @else if (history().length === 0) {
           <sp-admin-empty-state message="No activity attempts yet." />
         } @else {
-          <sp-admin-table variant="data" density="compact" layout="first-column-fluid" [columns]="activityHistoryColumns" [rows]="history()">
+          <sp-admin-table [flush]="true" variant="data" density="compact" layout="first-column-fluid" [columns]="activityHistoryColumns" [rows]="history()">
             <ng-template #cell let-row let-col="col">
               @switch (col.key) {
                 @case ('activityTitle') { <span class="sp-admin-link">{{ $any(row).activityTitle }}</span> }
@@ -947,7 +947,7 @@
           <sp-admin-empty-state message="No admin actions recorded for this student." />
         } @else {
           <sp-admin-table
-            variant="data" density="compact" layout="first-column-fluid"
+            [flush]="true" variant="data" density="compact" layout="first-column-fluid"
             [columns]="auditHistoryColumns" [rows]="auditHistory()"
             [rowClickable]="true" (rowClick)="openAuditDetails($any($event))"
           >
