@@ -91,23 +91,24 @@ public sealed class SkillGraphSeedDataTests
 
     [Theory]
     [MemberData(nameof(SeedFiles))]
-    public void SeedFile_EveryPrerequisiteKeyResolvesWithinTheFile(string fileName)
+    public void SeedFile_EveryPrerequisiteKeyResolvesInTheMergedGraph(string fileName)
     {
         // Real reseed execution (Phase 4) resolves a prerequisiteKey against every already-imported
-        // node across all files loaded so far, not just this one file — but each file is also
-        // expected to be self-contained for keys it introduces at its own CEFR level, since later
-        // levels are authored and imported after earlier ones. A1 (the first level) must be fully
-        // self-contained since nothing precedes it.
+        // node across all files loaded so far, not just this one file — a later level's node is
+        // legitimately allowed to reference an earlier level's real key (e.g. an A2 node
+        // referencing a real a1.json key). Checked against the full merged keyspace so a typo'd
+        // cross-level reference is still caught, rather than silently skipped.
+        var allFiles = Directory.GetFiles(SeedDirectory(), "*.json").OrderBy(f => f).ToList();
+        var allKeys = allFiles
+            .SelectMany(f => JsonSerializer.Deserialize<SeedFile>(File.ReadAllText(f), JsonOptions)!.Nodes)
+            .Select(n => n.Key).ToHashSet();
+
         var json = File.ReadAllText(Path.Combine(SeedDirectory(), fileName));
         var parsed = JsonSerializer.Deserialize<SeedFile>(json, JsonOptions)!;
-        var keys = parsed.Nodes.Select(n => n.Key).ToHashSet();
 
-        if (fileName == "a1.json")
-        {
-            var dangling = parsed.Nodes.SelectMany(n => n.PrerequisiteKeys, (n, p) => (n.Key, p))
-                .Where(x => !keys.Contains(x.p)).ToList();
-            Assert.Empty(dangling);
-        }
+        var dangling = parsed.Nodes.SelectMany(n => n.PrerequisiteKeys, (n, p) => (n.Key, p))
+            .Where(x => !allKeys.Contains(x.p)).ToList();
+        Assert.Empty(dangling);
     }
 
     [Theory]
@@ -129,26 +130,55 @@ public sealed class SkillGraphSeedDataTests
         Assert.True(result.IsValid, string.Join("; ", result.Errors.Select(e => e.Message)));
     }
 
+    [Fact]
+    public void AllSeedFilesMerged_HasNoCircularPrerequisiteChains()
+    {
+        // The per-file check above can't see a cross-level cycle (e.g. an A1 node somehow
+        // depending on an A2 node, which would be a real authoring bug since A1 must be
+        // self-contained and later levels should only ever point backward). This runs the same
+        // real DFS checker across every seed file's nodes/edges combined.
+        var allFiles = Directory.GetFiles(SeedDirectory(), "*.json").OrderBy(f => f).ToList();
+        var allNodes = allFiles
+            .SelectMany(f => JsonSerializer.Deserialize<SeedFile>(File.ReadAllText(f), JsonOptions)!.Nodes)
+            .ToList();
+
+        var idByKey = allNodes.ToDictionary(n => n.Key, _ => Guid.NewGuid());
+        var nodeSummaries = allNodes.Select(n => new SkillGraphNodeSummary(idByKey[n.Key], n.Key)).ToList();
+        var edges = allNodes
+            .SelectMany(n => n.PrerequisiteKeys.Where(idByKey.ContainsKey), (n, p) => new SkillGraphEdgeSummary(idByKey[n.Key], idByKey[p]))
+            .ToList();
+
+        var result = new SkillGraphValidationService().Validate(nodeSummaries, edges);
+        Assert.True(result.IsValid, string.Join("; ", result.Errors.Select(e => e.Message)));
+    }
+
     [Theory]
     [MemberData(nameof(SeedFiles))]
     public void SeedFile_NoFullyIsolatedNodes(string fileName)
     {
         // Rebuild Phase 3's actual goal — every node should have at least one edge (as a
-        // prerequisite or a dependent) within the level being authored. A node with zero edges on
-        // both sides here is the exact defect the 2026-07-23 audit's screenshot surfaced.
-        var json = File.ReadAllText(Path.Combine(SeedDirectory(), fileName));
-        var parsed = JsonSerializer.Deserialize<SeedFile>(json, JsonOptions)!;
-        var keys = parsed.Nodes.Select(n => n.Key).ToHashSet();
+        // prerequisite or a dependent) anywhere in the graph. A node with zero edges on both sides
+        // is the exact defect the 2026-07-23 audit's screenshot surfaced. Checked against the FULL
+        // merged keyspace across every seed file, not just this one — a later level's node is
+        // legitimately allowed to have its only edge be a cross-level link back to an earlier
+        // level (e.g. an A2 node whose sole prerequisite is a real A1 key), which a per-file-only
+        // check would wrongly flag as isolated.
+        var allFiles = Directory.GetFiles(SeedDirectory(), "*.json").OrderBy(f => f).ToList();
+        var allNodes = allFiles
+            .SelectMany(f => JsonSerializer.Deserialize<SeedFile>(File.ReadAllText(f), JsonOptions)!.Nodes)
+            .ToList();
+        var allKeys = allNodes.Select(n => n.Key).ToHashSet();
 
         var hasEdge = new HashSet<string>();
-        foreach (var n in parsed.Nodes)
-        foreach (var p in n.PrerequisiteKeys.Where(keys.Contains))
+        foreach (var n in allNodes)
+        foreach (var p in n.PrerequisiteKeys.Where(allKeys.Contains))
         {
             hasEdge.Add(n.Key);
             hasEdge.Add(p);
         }
 
-        var isolated = parsed.Nodes.Select(n => n.Key).Where(k => !hasEdge.Contains(k)).ToList();
+        var thisFileNodes = JsonSerializer.Deserialize<SeedFile>(File.ReadAllText(Path.Combine(SeedDirectory(), fileName)), JsonOptions)!.Nodes;
+        var isolated = thisFileNodes.Select(n => n.Key).Where(k => !hasEdge.Contains(k)).ToList();
         Assert.Empty(isolated);
     }
 }
