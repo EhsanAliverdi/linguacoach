@@ -215,39 +215,22 @@
           [title]="group.provider | uppercase"
           [count]="group.rows.length"
           [countLabel]="group.rows.length === 1 ? 'model' : 'models'" />
-        <sp-admin-table [columns]="[]" variant="simple" [flush]="true" minWidth="400px">
-          <table class="sp-aic-pricing-table">
-            <colgroup>
-              <col class="sp-aic-model-col" />
-              <col class="sp-aic-price-col" />
-              <col class="sp-aic-price-col" />
-              <col class="sp-aic-status-col" />
-            </colgroup>
-            <thead>
-              <tr>
-                <th>Model</th>
-                <th class="sp-admin-th-right">Input /K</th>
-                <th class="sp-admin-th-right">Output /K</th>
-                <th class="sp-admin-th-center">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (prow of group.rows; track prow.modelName) {
-              <tr>
-                <td class="sp-admin-mono">{{ prow.modelName }}</td>
-                <td class="sp-admin-num sp-admin-mono">${{ prow.inputPer1KTokens.toFixed(5) }}</td>
-                <td class="sp-admin-num sp-admin-mono">${{ prow.outputPer1KTokens.toFixed(5) }}</td>
-                <td class="sp-admin-td-center">
-                  @if (prow.isConfigured) {
+        <sp-admin-table variant="simple" [flush]="true" minWidth="400px" [columns]="pricingColumns" [rows]="group.rows">
+          <ng-template #cell let-row let-col="col">
+            @switch (col.key) {
+              @case ('modelName') { <span class="sp-admin-mono">{{ $any(row).modelName }}</span> }
+              @case ('inputPer1KTokens') { <span class="sp-admin-num sp-admin-mono">${{ $any(row).inputPer1KTokens.toFixed(5) }}</span> }
+              @case ('outputPer1KTokens') { <span class="sp-admin-num sp-admin-mono">${{ $any(row).outputPer1KTokens.toFixed(5) }}</span> }
+              @case ('status') {
+                @if ($any(row).isConfigured) {
                   <sp-admin-badge tone="success">Configured</sp-admin-badge>
-                  } @else {
+                } @else {
                   <sp-admin-badge tone="warning">Missing</sp-admin-badge>
-                  }
-                </td>
-              </tr>
+                }
               }
-            </tbody>
-          </table>
+              @default { {{ $any(row)[col.key] }} }
+            }
+          </ng-template>
         </sp-admin-table>
       </sp-admin-card>
       }
@@ -264,44 +247,26 @@
       @if (overrides().length === 0) {
       <sp-admin-empty-state title="No overrides" message="Config pricing is used. Add an override to change runtime pricing." />
       } @else {
-      <sp-admin-table [columns]="[]" variant="simple" [flush]="true" minWidth="600px">
-        <table class="sp-aic-pricing-table">
-          <colgroup>
-            <col class="sp-aic-model-col" />
-            <col />
-            <col class="sp-aic-price-col" />
-            <col class="sp-aic-price-col" />
-            <col class="sp-aic-price-col" />
-            <col class="sp-aic-note-col" />
-            <col class="sp-aic-actions-col" />
-          </colgroup>
-          <thead>
-            <tr>
-              @for (h of overrideTableHeaders; track h) { <th>{{ h }}</th> }
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (ovr of overrides(); track ovr.id) {
-            <tr [class.sp-admin-table-row-inactive]="!ovr.isActive">
-              <td class="sp-admin-mono">{{ ovr.modelName }}</td>
-              <td><sp-admin-badge tone="neutral">{{ ovr.providerName }}</sp-admin-badge></td>
-              <td class="sp-admin-num sp-admin-mono sp-admin-text-warning">${{ ovr.inputPricePer1KTokens.toFixed(5) }}</td>
-              <td class="sp-admin-num sp-admin-mono sp-admin-text-warning">${{ ovr.outputPricePer1KTokens.toFixed(5) }}</td>
-              <td class="sp-admin-table-cell-compact">{{ ovr.effectiveFromUtc ? (ovr.effectiveFromUtc | date:'yyyy-MM-dd':'UTC') : 'Always' }}</td>
-              <td class="sp-admin-table-cell-note sp-admin-truncate">{{ ovr.notes || '—' }}</td>
-              <td class="">
-                @if (ovr.isActive) {
+      <sp-admin-table variant="simple" [flush]="true" minWidth="600px" [columns]="overrideColumns" [rows]="overrides()">
+        <ng-template #cell let-row let-col="col">
+          @switch (col.key) {
+            @case ('modelName') { <span class="sp-admin-mono">{{ $any(row).modelName }}</span> }
+            @case ('providerName') { <sp-admin-badge tone="neutral">{{ $any(row).providerName }}</sp-admin-badge> }
+            @case ('inputPricePer1KTokens') { <span class="sp-admin-num sp-admin-mono sp-admin-text-warning">${{ $any(row).inputPricePer1KTokens.toFixed(5) }}</span> }
+            @case ('outputPricePer1KTokens') { <span class="sp-admin-num sp-admin-mono sp-admin-text-warning">${{ $any(row).outputPricePer1KTokens.toFixed(5) }}</span> }
+            @case ('effectiveFromUtc') { <span class="sp-admin-table-cell-compact">{{ $any(row).effectiveFromUtc ? ($any(row).effectiveFromUtc | date:'yyyy-MM-dd':'UTC') : 'Always' }}</span> }
+            @case ('notes') { <span class="sp-admin-table-cell-note sp-admin-truncate">{{ $any(row).notes || '—' }}</span> }
+            @case ('actions') {
+              @if ($any(row).isActive) {
                 <sp-admin-table-actions mode="buttons" [richActions]="[
                     { id: 'edit', label: 'Edit', icon: 'edit' },
-                    { id: 'deactivate', label: 'Deactivate', icon: 'deactivate', tone: 'danger', disabled: deactivateBusy() === ovr.id }
-                  ]" (actionSelected)="$event === 'edit' ? openEditOverride(ovr) : deactivateOverride(ovr.id)" />
-                }
-              </td>
-            </tr>
+                    { id: 'deactivate', label: 'Deactivate', icon: 'deactivate', tone: 'danger', disabled: deactivateBusy() === $any(row).id }
+                  ]" (actionSelected)="$event === 'edit' ? openEditOverride($any(row)) : deactivateOverride($any(row).id)" />
+              }
             }
-          </tbody>
-        </table>
+            @default { {{ $any(row)[col.key] }} }
+          }
+        </ng-template>
       </sp-admin-table>
       }
     </sp-admin-card>

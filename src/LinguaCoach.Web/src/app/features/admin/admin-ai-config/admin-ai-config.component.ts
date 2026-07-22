@@ -34,6 +34,7 @@ import {
   SpAdminTabItem,
   SpAdminTabsComponent,
 } from '../../../design-system/admin';
+import type { SpAdminTableColumn } from '../../../design-system/admin';
 
 type AiConfigTab = 'llm' | 'tts' | 'credentials' | 'pricing' | 'rate-limits';
 
@@ -110,6 +111,23 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   styleUrl: './admin-ai-config.component.css',
 })
 export class AdminAiConfigComponent implements OnInit {
+  readonly pricingColumns: SpAdminTableColumn[] = [
+    { key: 'modelName', label: 'Model' },
+    { key: 'inputPer1KTokens', label: 'Input /K', align: 'right' },
+    { key: 'outputPer1KTokens', label: 'Output /K', align: 'right' },
+    { key: 'status', label: 'Status', align: 'center' },
+  ];
+
+  readonly overrideColumns: SpAdminTableColumn[] = [
+    { key: 'modelName', label: 'Model' },
+    { key: 'providerName', label: 'Group' },
+    { key: 'inputPricePer1KTokens', label: 'Input /K', align: 'right' },
+    { key: 'outputPricePer1KTokens', label: 'Output /K', align: 'right' },
+    { key: 'effectiveFromUtc', label: 'Effective' },
+    { key: 'notes', label: 'Note' },
+    { key: 'actions', label: '' },
+  ];
+
   categories = signal<CategoryState[]>([]);
   providers = signal<ProviderState[]>([]);
   pricing = signal<AiModelPricingItem[]>([]);
