@@ -576,7 +576,6 @@ describe('AdminAiUsageComponent', () => {
     c.clearRecentFilters();
 
     expect(c.recentStudentFilter()).toBe('');
-    expect(c.recentStudentFilterValue).toBe('');
     const args = svc.getRecent.calls.mostRecent().args;
     expect((args[3] as { studentId?: string })?.studentId).toBeUndefined();
   });

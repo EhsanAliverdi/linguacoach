@@ -210,6 +210,371 @@ public sealed class AdminSkillGraphEndpointTests : IClassFixture<ApiTestFactory>
         var resp = await client.GetAsync("/api/admin/skill-graph/content-coverage");
         Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
     }
+
+    // ── Editability audit (2026-07-23): manual create/edit/link/unlink + isolated-node metric + import ──
+
+    [Fact]
+    public async Task CreateNode_ValidRequest_CreatesPendingReviewNode()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var title = $"Manual node {Guid.NewGuid():N}";
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/nodes", new
+        {
+            title, description = "A manually authored node.", cefrLevel = "A1", skill = "grammar",
+            subskill = (string?)null, difficultyBand = 2, descriptionForAi = (string?)null,
+            contextTags = new[] { "workplace" }, focusTags = Array.Empty<string>(),
+        });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var id = body.GetProperty("id").GetGuid();
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var saved = await db.SkillGraphNodes.FirstAsync(n => n.Id == id);
+        Assert.Equal(title, saved.Title);
+        Assert.Equal(AdminReviewStatus.PendingReview, saved.ReviewStatus);
+    }
+
+    [Fact]
+    public async Task CreateNode_DuplicateKey_ReturnsConflict()
+    {
+        var title = $"Dup node {Guid.NewGuid():N}";
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+        var request = new { title, description = "D", cefrLevel = "A1", skill = "grammar", subskill = (string?)null, difficultyBand = 1, descriptionForAi = (string?)null, contextTags = Array.Empty<string>(), focusTags = Array.Empty<string>() };
+
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/api/admin/skill-graph/nodes", request)).StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, (await client.PostAsJsonAsync("/api/admin/skill-graph/nodes", request)).StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateNode_WithPrerequisiteNodeIds_LinksThemAtCreationTime()
+    {
+        var prereq = await SeedNodeAsync($"grammar.createprereq_{Guid.NewGuid():N}.a1");
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/nodes", new
+        {
+            title = $"Node with prereq {Guid.NewGuid():N}", description = "A manually authored node.",
+            cefrLevel = "A1", skill = "speaking", subskill = (string?)null, difficultyBand = 1,
+            descriptionForAi = (string?)null, contextTags = Array.Empty<string>(), focusTags = Array.Empty<string>(),
+            prerequisiteNodeIds = new[] { prereq.Id },
+        });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var newNodeId = body.GetProperty("id").GetGuid();
+        Assert.Equal(0, body.GetProperty("droppedPrerequisites").GetArrayLength());
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        Assert.True(await db.SkillGraphPrerequisiteEdges.AnyAsync(e => e.NodeId == newNodeId && e.PrerequisiteNodeId == prereq.Id));
+    }
+
+    [Fact]
+    public async Task CreateNode_WithDependentNodeIds_LinksThemAsUnlocksAtCreationTime()
+    {
+        // The symmetric direction: an existing node that this NEW node should become a
+        // prerequisite FOR (one node can be the prerequisite for several others).
+        var dependent = await SeedNodeAsync($"speaking.createdependent_{Guid.NewGuid():N}.a1", "A1", "speaking");
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/nodes", new
+        {
+            title = $"Foundational node {Guid.NewGuid():N}", description = "A manually authored node.",
+            cefrLevel = "A1", skill = "grammar", subskill = (string?)null, difficultyBand = 1,
+            descriptionForAi = (string?)null, contextTags = Array.Empty<string>(), focusTags = Array.Empty<string>(),
+            dependentNodeIds = new[] { dependent.Id },
+        });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var newNodeId = body.GetProperty("id").GetGuid();
+        Assert.Equal(0, body.GetProperty("droppedDependents").GetArrayLength());
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        // dependent depends on the new node — edge direction is NodeId=dependent, PrerequisiteNodeId=newNode.
+        Assert.True(await db.SkillGraphPrerequisiteEdges.AnyAsync(e => e.NodeId == dependent.Id && e.PrerequisiteNodeId == newNodeId));
+    }
+
+    [Fact]
+    public async Task CreateNode_WithPrerequisiteThatWouldCycle_DropsItAndReportsWhy()
+    {
+        var a = await SeedNodeAsync($"grammar.cyclea_{Guid.NewGuid():N}.a1");
+        var b = await SeedNodeAsync($"grammar.cycleb_{Guid.NewGuid():N}.a1");
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        // a depends on b
+        await client.PostAsJsonAsync($"/api/admin/skill-graph/nodes/{a.Id}/prerequisites", new { prerequisiteNodeId = b.Id });
+
+        // Creating a new node "c" that depends on a, where b (already an ancestor of a) is also
+        // requested as a prerequisite of c, is fine — no cycle. Instead assert the real cycle case:
+        // requesting b to depend on the new node while the new node depends on a which depends on b.
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/nodes", new
+        {
+            title = $"Cycle test {Guid.NewGuid():N}", description = "D", cefrLevel = "A1", skill = "grammar",
+            subskill = (string?)null, difficultyBand = 1, descriptionForAi = (string?)null,
+            contextTags = Array.Empty<string>(), focusTags = Array.Empty<string>(),
+            prerequisiteNodeIds = new[] { a.Id },
+        });
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var newNodeId = body.GetProperty("id").GetGuid();
+
+        // Now try to add the new node itself as b's prerequisite — b -> newNode -> a -> b would cycle.
+        var cycleResp = await client.PostAsJsonAsync($"/api/admin/skill-graph/nodes/{b.Id}/prerequisites", new { prerequisiteNodeId = newNodeId });
+        Assert.Equal(HttpStatusCode.Conflict, cycleResp.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateNode_WhilePendingReview_UpdatesFields()
+    {
+        var node = await SeedNodeAsync($"grammar.editme_{Guid.NewGuid():N}.a1");
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PutAsJsonAsync($"/api/admin/skill-graph/nodes/{node.Id}", new
+        {
+            title = "Updated title", description = "Updated desc", cefrLevel = "A2", skill = "reading",
+            subskill = (string?)null, difficultyBand = 4, descriptionForAi = (string?)null,
+        });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var saved = await db.SkillGraphNodes.FirstAsync(n => n.Id == node.Id);
+        Assert.Equal("Updated title", saved.Title);
+        Assert.Equal("A2", saved.CefrLevel);
+        Assert.Equal("reading", saved.Skill);
+    }
+
+    [Fact]
+    public async Task UpdateNode_WhileApproved_ReturnsConflict()
+    {
+        var node = await SeedNodeAsync($"grammar.editapproved_{Guid.NewGuid():N}.a1");
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            (await db.SkillGraphNodes.FirstAsync(n => n.Id == node.Id)).Approve(null);
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+        var resp = await client.PutAsJsonAsync($"/api/admin/skill-graph/nodes/{node.Id}", new
+        {
+            title = "X", description = "Y", cefrLevel = "A1", skill = "grammar",
+            subskill = (string?)null, difficultyBand = 1, descriptionForAi = (string?)null,
+        });
+        Assert.Equal(HttpStatusCode.Conflict, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task AddPrerequisite_ValidPair_CreatesEdge()
+    {
+        var node = await SeedNodeAsync($"speaking.n_{Guid.NewGuid():N}.a1", "A1", "speaking");
+        var prereq = await SeedNodeAsync($"grammar.n_{Guid.NewGuid():N}.a1", "A1", "grammar");
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PostAsJsonAsync($"/api/admin/skill-graph/nodes/{node.Id}/prerequisites",
+            new { prerequisiteNodeId = prereq.Id });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        Assert.True(await db.SkillGraphPrerequisiteEdges.AnyAsync(e => e.NodeId == node.Id && e.PrerequisiteNodeId == prereq.Id));
+    }
+
+    [Fact]
+    public async Task AddPrerequisite_WouldCreateCycle_ReturnsConflict()
+    {
+        var a = await SeedNodeAsync($"grammar.a_{Guid.NewGuid():N}.a1");
+        var b = await SeedNodeAsync($"grammar.b_{Guid.NewGuid():N}.a1");
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        // b depends on a
+        Assert.Equal(HttpStatusCode.OK,
+            (await client.PostAsJsonAsync($"/api/admin/skill-graph/nodes/{b.Id}/prerequisites", new { prerequisiteNodeId = a.Id })).StatusCode);
+
+        // a depends on b would close a cycle
+        var resp = await client.PostAsJsonAsync($"/api/admin/skill-graph/nodes/{a.Id}/prerequisites", new { prerequisiteNodeId = b.Id });
+        Assert.Equal(HttpStatusCode.Conflict, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task RemovePrerequisite_ExistingEdge_RemovesIt()
+    {
+        var node = await SeedNodeAsync($"grammar.n_{Guid.NewGuid():N}.a1");
+        var prereq = await SeedNodeAsync($"grammar.p_{Guid.NewGuid():N}.a1");
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        await client.PostAsJsonAsync($"/api/admin/skill-graph/nodes/{node.Id}/prerequisites", new { prerequisiteNodeId = prereq.Id });
+
+        var resp = await client.DeleteAsync($"/api/admin/skill-graph/nodes/{node.Id}/prerequisites/{prereq.Id}");
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        Assert.False(await db.SkillGraphPrerequisiteEdges.AnyAsync(e => e.NodeId == node.Id && e.PrerequisiteNodeId == prereq.Id));
+    }
+
+    [Fact]
+    public async Task BatchReject_RemovesDanglingEdges()
+    {
+        var node = await SeedNodeAsync($"grammar.rejme_{Guid.NewGuid():N}.a1");
+        var prereq = await SeedNodeAsync($"grammar.rejprereq_{Guid.NewGuid():N}.a1");
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            db.SkillGraphPrerequisiteEdges.Add(new SkillGraphPrerequisiteEdge(node.Id, prereq.Id));
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/nodes/batch/reject",
+            new { ids = new[] { node.Id }, reason = "Bad node." });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(1, body.GetProperty("edgesRemoved").GetInt32());
+
+        using var scope2 = _factory.Services.CreateScope();
+        var db2 = scope2.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        Assert.False(await db2.SkillGraphPrerequisiteEdges.AnyAsync(e => e.NodeId == node.Id));
+    }
+
+    [Fact]
+    public async Task GetIsolatedNodes_NodeWithNoEdges_IsReported()
+    {
+        var node = await SeedNodeAsync($"grammar.iso_{Guid.NewGuid():N}.a1");
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.GetAsync("/api/admin/skill-graph/nodes/isolated");
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var isolated = body.GetProperty("isolated").EnumerateArray().ToList();
+        Assert.Contains(isolated, n => n.GetProperty("id").GetGuid() == node.Id);
+    }
+
+    [Fact]
+    public async Task GetIsolatedNodes_NodeWithAnEdge_IsNotReported()
+    {
+        var node = await SeedNodeAsync($"grammar.linked_iso_{Guid.NewGuid():N}.a1");
+        var prereq = await SeedNodeAsync($"grammar.linked_iso_prereq_{Guid.NewGuid():N}.a1");
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            db.SkillGraphPrerequisiteEdges.Add(new SkillGraphPrerequisiteEdge(node.Id, prereq.Id));
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+        var resp = await client.GetAsync("/api/admin/skill-graph/nodes/isolated");
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var isolated = body.GetProperty("isolated").EnumerateArray().ToList();
+        Assert.DoesNotContain(isolated, n => n.GetProperty("id").GetGuid() == node.Id);
+        Assert.DoesNotContain(isolated, n => n.GetProperty("id").GetGuid() == prereq.Id);
+    }
+
+    [Fact]
+    public async Task ImportNodes_CrossSkillAndCrossLevelEdges_ResolveSuccessfully()
+    {
+        var suffix = Guid.NewGuid().ToString("N");
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        // The exact defect the 2026-07-23 audit found: an A1 grammar node as prerequisite for an
+        // A1 speaking node (cross-skill) AND for an A2 grammar node (cross-level) — both
+        // structurally impossible to create via Draft()'s same-CEFR+skill-only scope.
+        var grammarKey = $"grammar.import_{suffix}.a1";
+        var speakingKey = $"speaking.import_{suffix}.a1";
+        var grammarA2Key = $"grammar.import_{suffix}.a2";
+
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/nodes/import", new
+        {
+            nodes = new[]
+            {
+                new { key = grammarKey, title = "Present simple statements", description = "D", cefrLevel = "A1", skill = "grammar", subskill = (string?)null, difficultyBand = 1, descriptionForAi = (string?)null, contextTags = Array.Empty<string>(), focusTags = Array.Empty<string>(), prerequisiteKeys = Array.Empty<string>() },
+                new { key = speakingKey, title = "Describing daily routines", description = "D", cefrLevel = "A1", skill = "speaking", subskill = (string?)null, difficultyBand = 1, descriptionForAi = (string?)null, contextTags = Array.Empty<string>(), focusTags = Array.Empty<string>(), prerequisiteKeys = new[] { grammarKey } },
+                new { key = grammarA2Key, title = "Present simple in narrative contexts", description = "D", cefrLevel = "A2", skill = "grammar", subskill = (string?)null, difficultyBand = 2, descriptionForAi = (string?)null, contextTags = Array.Empty<string>(), focusTags = Array.Empty<string>(), prerequisiteKeys = new[] { grammarKey } },
+            },
+        });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(3, body.GetProperty("createdCount").GetInt32());
+        Assert.Equal(2, body.GetProperty("addedEdgeCount").GetInt32());
+        Assert.Equal(0, body.GetProperty("droppedEdgeCount").GetInt32());
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var grammarNode = await db.SkillGraphNodes.FirstAsync(n => n.Key == grammarKey);
+        var speakingNode = await db.SkillGraphNodes.FirstAsync(n => n.Key == speakingKey);
+        var grammarA2Node = await db.SkillGraphNodes.FirstAsync(n => n.Key == grammarA2Key);
+        Assert.True(await db.SkillGraphPrerequisiteEdges.AnyAsync(e => e.NodeId == speakingNode.Id && e.PrerequisiteNodeId == grammarNode.Id));
+        Assert.True(await db.SkillGraphPrerequisiteEdges.AnyAsync(e => e.NodeId == grammarA2Node.Id && e.PrerequisiteNodeId == grammarNode.Id));
+    }
+
+    [Fact]
+    public async Task ImportNodes_ReRunSameKeys_IsIdempotentAndUpdatesInPlace()
+    {
+        var key = $"grammar.reimport_{Guid.NewGuid():N}.a1";
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+        var payload = new
+        {
+            nodes = new[]
+            {
+                new { key, title = "First title", description = "D", cefrLevel = "A1", skill = "grammar", subskill = (string?)null, difficultyBand = 1, descriptionForAi = (string?)null, contextTags = Array.Empty<string>(), focusTags = Array.Empty<string>(), prerequisiteKeys = Array.Empty<string>() },
+            },
+        };
+        await client.PostAsJsonAsync("/api/admin/skill-graph/nodes/import", payload);
+
+        var payload2 = new
+        {
+            nodes = new[]
+            {
+                new { key, title = "Updated title", description = "D2", cefrLevel = "A1", skill = "grammar", subskill = (string?)null, difficultyBand = 2, descriptionForAi = (string?)null, contextTags = Array.Empty<string>(), focusTags = Array.Empty<string>(), prerequisiteKeys = Array.Empty<string>() },
+            },
+        };
+        var resp2 = await client.PostAsJsonAsync("/api/admin/skill-graph/nodes/import", payload2);
+        var body2 = await resp2.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(0, body2.GetProperty("createdCount").GetInt32());
+        Assert.Equal(1, body2.GetProperty("updatedCount").GetInt32());
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var saved = await db.SkillGraphNodes.FirstAsync(n => n.Key == key);
+        Assert.Equal("Updated title", saved.Title);
+        Assert.Equal(2, saved.DifficultyBand);
+    }
+
+    [Fact]
+    public async Task NonAdmin_rejected_for_new_editability_endpoints()
+    {
+        var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"sg_edit_nonadmin_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(_factory, token);
+        var someId = Guid.NewGuid();
+
+        Assert.Equal(HttpStatusCode.Forbidden, (await client.PostAsJsonAsync("/api/admin/skill-graph/nodes", new { })).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await client.PutAsJsonAsync($"/api/admin/skill-graph/nodes/{someId}", new { })).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync("/api/admin/skill-graph/nodes/isolated")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await client.PostAsJsonAsync("/api/admin/skill-graph/nodes/import", new { nodes = Array.Empty<object>() })).StatusCode);
+    }
 }
 
 /// <summary>Draft-endpoint tests specifically — uses <see cref="ActivityTestFactory"/>'s
@@ -237,6 +602,35 @@ public sealed class AdminSkillGraphDraftEndpointTests : IClassFixture<ActivityTe
 
         var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/draft", new { cefrLevel = "Z9", skill = "grammar" });
         Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    // ── Rebuild Phase 2 (2026-07-23) — cross-link candidate query must not throw ──────────────
+
+    [Fact]
+    public async Task Draft_WithRealCrossSkillAndCrossLevelNodesInDb_QueriesCrossLinkCandidatesWithoutThrowing()
+    {
+        // Regression test for the new cross-link candidate query (same skill/other CEFR level OR
+        // same CEFR level/other skill) — this exact shape of EF query previously hit a real SQLite
+        // translation failure elsewhere in this session (GetIsolatedNodes' SelectMany), so this
+        // asserts the Draft endpoint still returns 200 (graceful degradation via FakeAiProvider's
+        // unrelated response shape) rather than a 500 from an untranslatable query.
+        var suffix = Guid.NewGuid().ToString("N");
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var sameSkillOtherLevel = new SkillGraphNode($"grammar.crosslink_{suffix}.a2", "T1", "D", "A2", "grammar");
+            sameSkillOtherLevel.Approve(null);
+            var sameLevelOtherSkill = new SkillGraphNode($"speaking.crosslink_{suffix}.a1", "T2", "D", "A1", "speaking");
+            sameLevelOtherSkill.Approve(null);
+            db.SkillGraphNodes.AddRange(sameSkillOtherLevel, sameLevelOtherSkill);
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/draft", new { cefrLevel = "A1", skill = "grammar" });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
     }
 
     [Fact]

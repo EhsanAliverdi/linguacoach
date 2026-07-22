@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, computed, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
@@ -16,7 +16,9 @@ import {
   SpAdminHeatmapColumn,
   SpAdminHeatmapRow,
   SpAdminHelpIconComponent,
+  SpAdminInputComponent,
   SpAdminLoadingStateComponent,
+  SpAdminNumberInputComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminSectionHeaderComponent,
@@ -25,6 +27,7 @@ import {
   SpAdminTableColumn,
   SpAdminTableComponent,
   SpAdminTableFilter,
+  SpAdminTextareaComponent,
 } from '../../../design-system/admin';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import {
@@ -34,6 +37,8 @@ import {
   SkillGraphCoverageNode,
   SkillGraphNode,
   SkillGraphEdge,
+  SkillGraphNodeDetail,
+  SkillGraphIsolatedNode,
 } from '../../../core/models/admin.models';
 import { SpAdminGraphCardComponent } from '../../../design-system/admin/components/graph-card/sp-admin-graph-card.component';
 import { SpAdminSkillGraphVizComponent } from './skill-graph-viz/sp-admin-skill-graph-viz.component';
@@ -58,19 +63,22 @@ import { AdminBulkRepairService } from '../../../core/services/admin-bulk-repair
     SpAdminErrorStateComponent,
     SpAdminFormFieldComponent,
     SpAdminHelpIconComponent,
+    SpAdminInputComponent,
     SpAdminLoadingStateComponent,
+    SpAdminNumberInputComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
     SpAdminSectionHeaderComponent,
     SpAdminSelectComponent,
     SpAdminSlideOverComponent,
     SpAdminTableComponent,
+    SpAdminTextareaComponent,
     SpAdminGraphCardComponent,
     SpAdminSkillGraphVizComponent,
   ],
 })
 export class AdminSkillGraphComponent implements OnInit {
-  constructor(private api: AdminApiService, public bulkRepair: AdminBulkRepairService) {}
+  constructor(private api: AdminApiService, public bulkRepair: AdminBulkRepairService, private router: Router) {}
 
   @ViewChild('nodesTableRef') nodesTableRef?: SpAdminTableComponent;
 
@@ -287,6 +295,248 @@ export class AdminSkillGraphComponent implements OnInit {
     this.loadNodes();
     this.loadContentCoverage();
     this.loadNodeIssuesSummary();
+    this.loadIsolatedNodes();
+  }
+
+  // ── Editability audit (2026-07-23) — isolated-node connectivity metric ───────────────────
+  isolatedNodes = signal<SkillGraphIsolatedNode[]>([]);
+
+  loadIsolatedNodes(): void {
+    this.api.getIsolatedSkillGraphNodes().subscribe({
+      next: r => this.isolatedNodes.set(r.isolated),
+      error: () => this.isolatedNodes.set([]),
+    });
+  }
+
+  // ── Editability audit (2026-07-23) — a shared "search all nodes" backs both the Create
+  // panel's and the node detail panel's prerequisite pickers. Loaded once per panel open — cheap
+  // at the current graph size (a few hundred nodes); Phase 6 replaces this with a real
+  // server-side search endpoint. ──────────────────────────────────────────────────────────────
+  private allNodesForPicker: SkillGraphNodeListItem[] = [];
+
+  private loadNodesForPicker(): void {
+    this.api.getSkillGraphNodes({ pageSize: 500 }).subscribe({
+      next: r => this.allNodesForPicker = r.items,
+      error: () => this.allNodesForPicker = [],
+    });
+  }
+
+  // ── Create node UX audit (2026-07-23) — Create is a slide-over (matches the node detail
+  // panel), not a modal, and lets an admin place the new node in the graph — pick its
+  // prerequisites — in the same step as authoring it, instead of create-then-separately-link. ──
+  createPanelOpen = signal(false);
+  creating = signal(false);
+  createError = signal('');
+  createTitle = '';
+  createDescription = '';
+  createCefrLevel = '';
+  createSkill = '';
+  createSubskill = '';
+  createDifficultyBand: number | null = 1;
+  createContextTagsDraft = '';
+  createFocusTagsDraft = '';
+  createPrereqQuery = '';
+  createSelectedPrereqs = signal<SkillGraphNodeListItem[]>([]);
+  // Editability follow-up (2026-07-23) — symmetric direction: existing nodes that this NEW node
+  // should become a prerequisite FOR ("what does this unlock?"). A node can have several
+  // prerequisites and be the prerequisite for several others — genuine many-to-many both ways.
+  createDependentQuery = '';
+  createSelectedDependents = signal<SkillGraphNodeListItem[]>([]);
+
+  createSubskillOptions = computed(() =>
+    (this.taxonomy()?.subskillsBySkill?.[this.createSkill] ?? []).map(s => ({ value: s, label: s })));
+
+  createPrereqResults = computed(() => {
+    const q = this.createPrereqQuery.trim().toLowerCase();
+    if (!q) return [];
+    const selectedIds = new Set(this.createSelectedPrereqs().map(n => n.id));
+    return this.allNodesForPicker
+      .filter(n => !selectedIds.has(n.id) && (n.title.toLowerCase().includes(q) || n.key.toLowerCase().includes(q)))
+      .slice(0, 15);
+  });
+
+  createDependentResults = computed(() => {
+    const q = this.createDependentQuery.trim().toLowerCase();
+    if (!q) return [];
+    const selectedIds = new Set(this.createSelectedDependents().map(n => n.id));
+    return this.allNodesForPicker
+      .filter(n => !selectedIds.has(n.id) && (n.title.toLowerCase().includes(q) || n.key.toLowerCase().includes(q)))
+      .slice(0, 15);
+  });
+
+  openCreateModal(): void {
+    this.createTitle = '';
+    this.createDescription = '';
+    this.createCefrLevel = '';
+    this.createSkill = '';
+    this.createSubskill = '';
+    this.createDifficultyBand = 1;
+    this.createContextTagsDraft = '';
+    this.createFocusTagsDraft = '';
+    this.createPrereqQuery = '';
+    this.createSelectedPrereqs.set([]);
+    this.createDependentQuery = '';
+    this.createSelectedDependents.set([]);
+    this.createError.set('');
+    this.createPanelOpen.set(true);
+    this.loadNodesForPicker();
+  }
+
+  closeCreateModal(): void {
+    this.createPanelOpen.set(false);
+  }
+
+  addCreatePrereq(n: SkillGraphNodeListItem): void {
+    this.createSelectedPrereqs.update(list => [...list, n]);
+    this.createPrereqQuery = '';
+  }
+
+  removeCreatePrereq(id: string): void {
+    this.createSelectedPrereqs.update(list => list.filter(n => n.id !== id));
+  }
+
+  addCreateDependent(n: SkillGraphNodeListItem): void {
+    this.createSelectedDependents.update(list => [...list, n]);
+    this.createDependentQuery = '';
+  }
+
+  removeCreateDependent(id: string): void {
+    this.createSelectedDependents.update(list => list.filter(n => n.id !== id));
+  }
+
+  private parseTagsDraft(raw: string): string[] {
+    return raw.split(',').map(t => t.trim()).filter(t => t.length > 0);
+  }
+
+  submitCreateNode(): void {
+    if (!this.createTitle.trim() || !this.createDescription.trim() || !this.createCefrLevel || !this.createSkill) {
+      this.createError.set('Title, description, CEFR level, and skill are all required.');
+      return;
+    }
+    this.creating.set(true);
+    this.createError.set('');
+    this.api.createSkillGraphNode({
+      title: this.createTitle.trim(),
+      description: this.createDescription.trim(),
+      cefrLevel: this.createCefrLevel,
+      skill: this.createSkill,
+      subskill: this.createSubskill.trim() || null,
+      difficultyBand: this.createDifficultyBand ?? 1,
+      descriptionForAi: null,
+      contextTags: this.parseTagsDraft(this.createContextTagsDraft),
+      focusTags: this.parseTagsDraft(this.createFocusTagsDraft),
+      prerequisiteNodeIds: this.createSelectedPrereqs().map(n => n.id),
+      dependentNodeIds: this.createSelectedDependents().map(n => n.id),
+    }).subscribe({
+      next: r => {
+        this.creating.set(false);
+        this.createPanelOpen.set(false);
+        const droppedCount = r.droppedPrerequisites.length + r.droppedDependents.length;
+        if (droppedCount > 0) {
+          this.batchStatus.set(`Node created, but ${droppedCount} link(s) could not be made (e.g. would create a cycle).`);
+        }
+        this.loadNodes();
+        this.loadCoverage();
+        this.loadIsolatedNodes();
+      },
+      error: err => { this.creating.set(false); this.createError.set(err.error?.error ?? 'Could not create node.'); },
+    });
+  }
+
+  // ── Editability audit (2026-07-23) — node detail slide-over: view + manual prerequisite/
+  // dependent (edge) management, both directions. ──────────────────────────────────────────────
+  selectedNode = signal<SkillGraphNodeDetail | null>(null);
+  nodeDetailLoading = signal(false);
+  nodeDetailError = signal('');
+  addPrereqError = signal('');
+  addPrereqQuery = '';
+  addUnlockError = signal('');
+  addUnlockQuery = '';
+
+  addPrereqResults = computed(() => {
+    const q = this.addPrereqQuery.trim().toLowerCase();
+    if (!q) return [];
+    const currentId = this.selectedNode()?.id;
+    const existingPrereqIds = new Set((this.selectedNode()?.prerequisites ?? []).map(p => p.id));
+    return this.allNodesForPicker
+      .filter(n => n.id !== currentId && !existingPrereqIds.has(n.id)
+        && (n.title.toLowerCase().includes(q) || n.key.toLowerCase().includes(q)))
+      .slice(0, 15);
+  });
+
+  addUnlockResults = computed(() => {
+    const q = this.addUnlockQuery.trim().toLowerCase();
+    if (!q) return [];
+    const currentId = this.selectedNode()?.id;
+    const existingDependentIds = new Set((this.selectedNode()?.dependents ?? []).map(d => d.id));
+    return this.allNodesForPicker
+      .filter(n => n.id !== currentId && !existingDependentIds.has(n.id)
+        && (n.title.toLowerCase().includes(q) || n.key.toLowerCase().includes(q)))
+      .slice(0, 15);
+  });
+
+  openNodeDetail(row: SkillGraphNodeListItem): void {
+    this.nodeDetailLoading.set(true);
+    this.nodeDetailError.set('');
+    this.addPrereqError.set('');
+    this.addPrereqQuery = '';
+    this.addUnlockError.set('');
+    this.addUnlockQuery = '';
+    this.api.getSkillGraphNode(row.id).subscribe({
+      next: n => { this.selectedNode.set(n); this.nodeDetailLoading.set(false); },
+      error: err => { this.nodeDetailError.set(err.error?.error ?? 'Could not load node detail.'); this.nodeDetailLoading.set(false); },
+    });
+    this.loadNodesForPicker();
+  }
+
+  closeNodeDetail(): void {
+    this.selectedNode.set(null);
+  }
+
+  editSelectedNode(): void {
+    const n = this.selectedNode();
+    if (!n) return;
+    this.router.navigateByUrl(`/admin/skill-graph/nodes/${n.id}/edit`);
+  }
+
+  addPrerequisite(prereq: SkillGraphNodeListItem): void {
+    const node = this.selectedNode();
+    if (!node) return;
+    this.addPrereqError.set('');
+    this.api.addSkillGraphPrerequisite(node.id, prereq.id).subscribe({
+      next: () => { this.addPrereqQuery = ''; this.openNodeDetail(node); this.loadIsolatedNodes(); },
+      error: err => this.addPrereqError.set(err.error?.error ?? 'Could not add this prerequisite.'),
+    });
+  }
+
+  // Adding "X unlocks this node" is the same edge as "X is a prerequisite of the target" — just
+  // called with the arguments swapped, reusing the exact same cycle-validated endpoint.
+  addUnlock(dependent: SkillGraphNodeListItem): void {
+    const node = this.selectedNode();
+    if (!node) return;
+    this.addUnlockError.set('');
+    this.api.addSkillGraphPrerequisite(dependent.id, node.id).subscribe({
+      next: () => { this.addUnlockQuery = ''; this.openNodeDetail(node); this.loadIsolatedNodes(); },
+      error: err => this.addUnlockError.set(err.error?.error ?? 'Could not add this unlock.'),
+    });
+  }
+
+  removeUnlock(dependentId: string): void {
+    const node = this.selectedNode();
+    if (!node) return;
+    this.api.removeSkillGraphPrerequisite(dependentId, node.id).subscribe({
+      next: () => { this.openNodeDetail(node); this.loadIsolatedNodes(); },
+      error: err => this.addUnlockError.set(err.error?.error ?? 'Could not remove this unlock.'),
+    });
+  }
+
+  removePrerequisite(prereqId: string): void {
+    const node = this.selectedNode();
+    if (!node) return;
+    this.api.removeSkillGraphPrerequisite(node.id, prereqId).subscribe({
+      next: () => { this.openNodeDetail(node); this.loadIsolatedNodes(); },
+      error: err => this.addPrereqError.set(err.error?.error ?? 'Could not remove this prerequisite.'),
+    });
   }
 
   loadContentCoverage(): void {

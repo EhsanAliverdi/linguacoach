@@ -18,6 +18,7 @@ import {
   SkillGraphTaxonomy, SkillGraphNodeListResponse, SkillGraphNodeDetail,
   SkillGraphDraftResponse, SkillGraphBatchActionResponse, SkillGraphCoverageResponse,
   SkillGraphRetagResponse, SkillGraphContentCoverageResponse, SkillGraphResponse,
+  CreateSkillGraphNodeRequest, CreateSkillGraphNodeResponse, UpdateSkillGraphNodeRequest, SkillGraphIsolatedNodesResponse,
   StudentListQuery, PagedResponse, AiModelPricingItem,
   AiModelPricingOverrideItem, CreatePricingOverrideRequest, UpdatePricingOverrideRequest,
   AdminNotificationItem, AdminOutboxItem,
@@ -244,6 +245,24 @@ export class AdminApiService {
   }
   repairSkillGraphNode(id: string): Observable<unknown> {
     return this.http.post(`${this.api}/skill-graph/nodes/${id}/repair`, {});
+  }
+
+  // Editability audit (2026-07-23) — manual node create/edit + manual prerequisite-edge management,
+  // replacing the AI-drafting-only path that could never create a cross-Skill/cross-CEFR edge.
+  createSkillGraphNode(body: CreateSkillGraphNodeRequest): Observable<CreateSkillGraphNodeResponse> {
+    return this.http.post<CreateSkillGraphNodeResponse>(`${this.api}/skill-graph/nodes`, body);
+  }
+  updateSkillGraphNode(id: string, body: UpdateSkillGraphNodeRequest): Observable<{ id: string; key: string }> {
+    return this.http.put<{ id: string; key: string }>(`${this.api}/skill-graph/nodes/${id}`, body);
+  }
+  addSkillGraphPrerequisite(nodeId: string, prerequisiteNodeId: string): Observable<{ added: boolean }> {
+    return this.http.post<{ added: boolean }>(`${this.api}/skill-graph/nodes/${nodeId}/prerequisites`, { prerequisiteNodeId });
+  }
+  removeSkillGraphPrerequisite(nodeId: string, prerequisiteNodeId: string): Observable<{ removed: boolean }> {
+    return this.http.delete<{ removed: boolean }>(`${this.api}/skill-graph/nodes/${nodeId}/prerequisites/${prerequisiteNodeId}`);
+  }
+  getIsolatedSkillGraphNodes(): Observable<SkillGraphIsolatedNodesResponse> {
+    return this.http.get<SkillGraphIsolatedNodesResponse>(`${this.api}/skill-graph/nodes/isolated`);
   }
 
   // Prompts

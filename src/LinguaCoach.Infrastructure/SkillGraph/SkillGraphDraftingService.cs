@@ -21,6 +21,7 @@ public sealed class SkillGraphDraftingService : ISkillGraphDraftingService
     public const string ProposeNodesPromptKey = "skill_graph_propose_nodes";
 
     private const int MaxExistingTitles = 40;
+    private const int MaxCrossLinkCandidates = 40;
     private const int MaxTitleLength = 150;
 
     private readonly IAiContextBuilder _contextBuilder;
@@ -44,6 +45,8 @@ public sealed class SkillGraphDraftingService : ISkillGraphDraftingService
 
         var subskills = CurriculumSubskillConstants.ForSkill(request.Skill);
         var existingTitles = request.ExistingNodeTitles.Take(MaxExistingTitles).ToList();
+        // Phase 2 of the 2026-07-23 rebuild plan — bounded the same way as existingTitles.
+        var crossLinkCandidates = request.CrossLinkCandidateTitles.Take(MaxCrossLinkCandidates).ToList();
 
         var variables = new Dictionary<string, string>
         {
@@ -52,6 +55,7 @@ public sealed class SkillGraphDraftingService : ISkillGraphDraftingService
             ["subskills"] = string.Join(", ", subskills),
             ["existingTitles"] = existingTitles.Count > 0 ? string.Join(" | ", existingTitles) : "(none yet)",
             ["contextTags"] = string.Join(", ", CurriculumContextTagConstants.All),
+            ["crossLinkCandidates"] = crossLinkCandidates.Count > 0 ? string.Join(" | ", crossLinkCandidates) : "(none yet)",
         };
 
         var correlationId = Guid.NewGuid().ToString("N")[..16];

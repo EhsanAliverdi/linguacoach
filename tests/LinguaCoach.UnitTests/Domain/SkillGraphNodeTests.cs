@@ -92,4 +92,51 @@ public sealed class SkillGraphNodeTests
         node.Activate();
         Assert.True(node.IsActive);
     }
+
+    [Fact]
+    public void UpdateCore_WhilePendingReview_UpdatesFields()
+    {
+        var node = new SkillGraphNode("k", "Old title", "Old desc", "A1", "grammar");
+
+        node.UpdateCore("New title", "New desc", "A2", "reading", "reading.gist", 3, "AI context");
+
+        Assert.Equal("New title", node.Title);
+        Assert.Equal("New desc", node.Description);
+        Assert.Equal("A2", node.CefrLevel);
+        Assert.Equal("reading", node.Skill);
+        Assert.Equal("reading.gist", node.Subskill);
+        Assert.Equal(3, node.DifficultyBand);
+        Assert.Equal("AI context", node.DescriptionForAi);
+        Assert.Equal("k", node.Key); // Key is stable, never edited
+    }
+
+    [Fact]
+    public void UpdateCore_WhileApproved_Throws()
+    {
+        var node = new SkillGraphNode("k", "T", "D", "A1", "grammar");
+        node.Approve(Guid.NewGuid());
+
+        Assert.Throws<InvalidOperationException>(() =>
+            node.UpdateCore("New", "New desc", "A1", "grammar", null, 1, null));
+    }
+
+    [Fact]
+    public void UpdateCore_AfterReject_ResubmitsToPendingReview()
+    {
+        var node = new SkillGraphNode("k", "T", "D", "A1", "grammar");
+        node.Reject("Needs work.", Guid.NewGuid());
+
+        node.UpdateCore("Fixed title", "Fixed desc", "A1", "grammar", null, 1, null);
+
+        Assert.Equal(AdminReviewStatus.PendingReview, node.ReviewStatus);
+        Assert.Null(node.RejectionReason);
+    }
+
+    [Fact]
+    public void UpdateCore_InvalidCefrLevel_Throws()
+    {
+        var node = new SkillGraphNode("k", "T", "D", "A1", "grammar");
+        Assert.Throws<ArgumentException>(() =>
+            node.UpdateCore("T", "D", "Z9", "grammar", null, 1, null));
+    }
 }

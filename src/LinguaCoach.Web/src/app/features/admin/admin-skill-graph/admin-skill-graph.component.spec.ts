@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { AdminSkillGraphComponent } from './admin-skill-graph.component';
@@ -54,6 +55,19 @@ function makeApi(overrides: Partial<Record<string, unknown>> = {}) {
       of({ totalApprovedNodes: 0, nodesWithContent: 0, nodesWithoutContentCount: 0, nodes: [] })),
     getSkillGraphNodeIssuesSummary: jasmine.createSpy('getSkillGraphNodeIssuesSummary').and.returnValue(
       of({ totalItems: 0, itemsWithIssues: 0 })),
+    // Editability audit (2026-07-23) — isolated-node connectivity metric, loaded on init.
+    getIsolatedSkillGraphNodes: jasmine.createSpy('getIsolatedSkillGraphNodes').and.returnValue(
+      of({ isolatedCount: 0, isolated: [] })),
+    createSkillGraphNode: jasmine.createSpy('createSkillGraphNode').and.returnValue(of({ id: 'new-id', key: 'grammar.new.a1', droppedPrerequisites: [], droppedDependents: [] })),
+    getSkillGraphNode: jasmine.createSpy('getSkillGraphNode').and.returnValue(of({
+      id: 'n1', key: 'grammar.present_simple.a1', title: 'Present simple', description: 'D',
+      cefrLevel: 'A1', skill: 'grammar', subskill: null, difficultyBand: 1,
+      reviewStatus: 'PendingReview', isActive: true, rejectionReason: null, createdAt: '2026-07-17T00:00:00Z',
+      contextTags: [], focusTags: [], descriptionForAi: null, reviewedByUserId: null,
+      approvedAtUtc: null, rejectedAtUtc: null, prerequisites: [], dependents: [],
+    })),
+    addSkillGraphPrerequisite: jasmine.createSpy('addSkillGraphPrerequisite').and.returnValue(of({ added: true })),
+    removeSkillGraphPrerequisite: jasmine.createSpy('removeSkillGraphPrerequisite').and.returnValue(of({ removed: true })),
     ...overrides,
   };
 }
@@ -67,7 +81,7 @@ describe('AdminSkillGraphComponent', () => {
     api = makeApi(overrides);
     await TestBed.configureTestingModule({
       imports: [AdminSkillGraphComponent],
-      providers: [provideRouter([]), { provide: AdminApiService, useValue: api }],
+      providers: [provideRouter([]), provideHttpClient(), { provide: AdminApiService, useValue: api }],
     }).compileComponents();
     fixture = TestBed.createComponent(AdminSkillGraphComponent);
     component = fixture.componentInstance;
@@ -128,19 +142,19 @@ describe('AdminSkillGraphComponent', () => {
     expect(component.draftError()).toBe('AI provider unavailable');
   });
 
-  it('toggleSelected tracks selected node ids', async () => {
+  it('selectedIds tracks selected node ids', async () => {
     await setup();
     expect(component.hasSelection()).toBeFalse();
-    component.toggleSelected('n1', true);
+    component.selectedIds.set(new Set(['n1']));
     expect(component.hasSelection()).toBeTrue();
-    expect(component.isSelected('n1')).toBeTrue();
-    component.toggleSelected('n1', false);
+    expect(component.selectedIds().has('n1')).toBeTrue();
+    component.selectedIds.set(new Set());
     expect(component.hasSelection()).toBeFalse();
   });
 
   it('batchApprove calls the API with selected ids and clears selection', async () => {
     await setup();
-    component.toggleSelected('n1', true);
+    component.selectedIds.set(new Set(['n1']));
     component.batchApprove();
     expect(api.batchApproveSkillGraphNodes).toHaveBeenCalledWith(['n1']);
     expect(component.hasSelection()).toBeFalse();
@@ -149,7 +163,7 @@ describe('AdminSkillGraphComponent', () => {
 
   it('batchReject requires a reason', async () => {
     await setup();
-    component.toggleSelected('n1', true);
+    component.selectedIds.set(new Set(['n1']));
     component.rejectReason = '';
     component.batchReject();
     expect(component.batchError()).toBeTruthy();
@@ -158,11 +172,50 @@ describe('AdminSkillGraphComponent', () => {
 
   it('batchReject calls the API when a reason is set', async () => {
     await setup();
-    component.toggleSelected('n1', true);
+    component.selectedIds.set(new Set(['n1']));
     component.rejectReason = 'Too broad.';
     component.batchReject();
     expect(api.batchRejectSkillGraphNodes).toHaveBeenCalledWith(['n1'], 'Too broad.');
     expect(component.batchStatus()).toContain('Rejected 1 of 1');
+  });
+
+  // ── Editability audit (2026-07-23) — create modal, isolated-node metric, node detail ─────
+
+  it('shows an isolated-node warning banner when nodes lack edges', async () => {
+    await setup({
+      getIsolatedSkillGraphNodes: jasmine.createSpy('getIsolatedSkillGraphNodes').and.returnValue(
+        of({ isolatedCount: 1, isolated: [{ id: 'n1', key: 'grammar.present_simple.a1', title: 'Present simple', cefrLevel: 'A1', skill: 'grammar', reviewStatus: 'PendingReview' }] })),
+    });
+    expect(fixture.nativeElement.textContent).toContain('no prerequisite edges at all');
+  });
+
+  it('submitCreateNode requires title, description, cefrLevel, and skill', async () => {
+    await setup();
+    component.createTitle = '';
+    component.submitCreateNode();
+    expect(component.createError()).toBeTruthy();
+    expect(api.createSkillGraphNode).not.toHaveBeenCalled();
+  });
+
+  it('submitCreateNode calls the API and closes the panel on success', async () => {
+    await setup();
+    component.createTitle = 'New node';
+    component.createDescription = 'A description.';
+    component.createCefrLevel = 'A1';
+    component.createSkill = 'grammar';
+    component.createPanelOpen.set(true);
+    component.submitCreateNode();
+    expect(api.createSkillGraphNode).toHaveBeenCalled();
+    expect(component.createPanelOpen()).toBeFalse();
+  });
+
+  it('openNodeDetail loads the node and closeNodeDetail clears it', async () => {
+    await setup();
+    component.openNodeDetail(NODES.items[0]);
+    expect(api.getSkillGraphNode).toHaveBeenCalledWith('n1');
+    expect(component.selectedNode()).toBeTruthy();
+    component.closeNodeDetail();
+    expect(component.selectedNode()).toBeNull();
   });
 
   it('shows an error state when coverage fails to load', async () => {

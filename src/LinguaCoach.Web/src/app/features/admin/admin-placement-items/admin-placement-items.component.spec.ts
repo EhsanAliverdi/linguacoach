@@ -160,10 +160,10 @@ describe('AdminPlacementItemsComponent', () => {
 
   // ── Search (server-side, debounced) ───────────────────────────────────────
 
-  it('onSearch resets to page 1 immediately but debounces the re-fetch', fakeAsync(async () => {
+  it('onSearchChange resets to page 1 immediately but debounces the re-fetch', fakeAsync(async () => {
     await setup();
     component.page.set(3);
-    component.onSearch({ target: { value: 'turn left' } } as unknown as Event);
+    component.onSearchChange('turn left');
     expect(component.page()).toBe(1);
     expect(svc.list).toHaveBeenCalledTimes(1); // only the initial load so far
     tick(300);

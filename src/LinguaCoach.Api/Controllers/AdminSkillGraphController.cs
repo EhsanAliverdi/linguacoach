@@ -175,6 +175,13 @@ public sealed class AdminSkillGraphController : ControllerBase
             .Join(_db.SkillGraphNodes.AsNoTracking(), e => e.PrerequisiteNodeId, n => n.Id, (e, n) => new { n.Id, n.Key, n.Title })
             .ToListAsync(ct);
 
+        // Editability audit (2026-07-23) — "Unlocks": nodes that list this one as a prerequisite,
+        // needed by the admin UI's Prerequisites/Unlocks pair (Phase 1).
+        var dependents = await _db.SkillGraphPrerequisiteEdges.AsNoTracking()
+            .Where(e => e.PrerequisiteNodeId == id)
+            .Join(_db.SkillGraphNodes.AsNoTracking(), e => e.NodeId, n => n.Id, (e, n) => new { n.Id, n.Key, n.Title })
+            .ToListAsync(ct);
+
         return Ok(new
         {
             node.Id, node.Key, node.Title, node.Description, node.CefrLevel, node.Skill, node.Subskill,
@@ -182,14 +189,277 @@ public sealed class AdminSkillGraphController : ControllerBase
             node.RejectionReason, node.ReviewedByUserId, node.ApprovedAtUtc, node.RejectedAtUtc,
             ContextTags = ParseTags(node.ContextTagsJson), FocusTags = ParseTags(node.FocusTagsJson),
             prerequisites,
+            dependents,
         });
     }
 
+    // ── Editability audit (2026-07-23) — manual node CRUD + manual edge management. Prior to this,
+    // AdminSkillGraphController.Draft() was the only way to create a node or a prerequisite edge,
+    // and nothing could ever edit a node's core fields or manually link/unlink two existing nodes. ──
+
+    /// <summary>Create node UX audit (2026-07-23) — a node's "place in the graph" is exactly as
+    /// important as its content, so creation accepts an optional set of prerequisite node ids up
+    /// front rather than forcing a create-then-separately-link two-step. Each requested prerequisite
+    /// is added through the same cycle-validated <see cref="TryAddPrerequisiteEdgeAsync"/> path
+    /// manual edge management already uses — a bad request here can never corrupt the graph, it
+    /// just reports which prerequisites were dropped and why.</summary>
+    [HttpPost("nodes")]
+    public async Task<IActionResult> CreateNode([FromBody] CreateSkillGraphNodeRequest request, CancellationToken ct)
+    {
+        if (!CefrLevelConstants.IsValid(request.CefrLevel))
+            return BadRequest(new { error = $"Invalid CEFR level '{request.CefrLevel}'." });
+        if (!CurriculumSkillConstants.IsValid(request.Skill))
+            return BadRequest(new { error = $"Invalid skill '{request.Skill}'." });
+
+        var key = BuildKey(request.CefrLevel, request.Skill, request.Title);
+        if (await _db.SkillGraphNodes.AnyAsync(n => n.Key == key, ct))
+            return Conflict(new { error = $"A node with key '{key}' already exists (same CEFR level, skill, and a matching title slug)." });
+
+        SkillGraphNode node;
+        try
+        {
+            node = new SkillGraphNode(
+                key, request.Title, request.Description, request.CefrLevel, request.Skill,
+                request.Subskill, request.DifficultyBand, request.DescriptionForAi,
+                contextTagsJson: request.ContextTags?.Count > 0 ? JsonSerializer.Serialize(request.ContextTags) : null,
+                focusTagsJson: request.FocusTags?.Count > 0 ? JsonSerializer.Serialize(request.FocusTags) : null);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+
+        _db.SkillGraphNodes.Add(node);
+        await _db.SaveChangesAsync(ct); // assigns node.Id before any edge can reference it
+
+        var droppedPrerequisites = new List<object>();
+        foreach (var prereqId in (request.PrerequisiteNodeIds ?? []).Distinct())
+        {
+            var (added, error) = await TryAddPrerequisiteEdgeAsync(node.Id, prereqId, ct);
+            if (!added) droppedPrerequisites.Add(new { prerequisiteNodeId = prereqId, error });
+        }
+
+        // Editability follow-up (2026-07-23) — the graph is genuinely many-to-many in both
+        // directions (one node can have several prerequisites, and be the prerequisite for
+        // several nodes), so creation accepts "what this node unlocks" symmetrically to "what
+        // this node depends on" — same helper, arguments swapped (the dependent becomes NodeId,
+        // this new node becomes PrerequisiteNodeId).
+        var droppedDependents = new List<object>();
+        foreach (var dependentId in (request.DependentNodeIds ?? []).Distinct())
+        {
+            var (added, error) = await TryAddPrerequisiteEdgeAsync(dependentId, node.Id, ct);
+            if (!added) droppedDependents.Add(new { dependentNodeId = dependentId, error });
+        }
+
+        return Ok(new { node.Id, node.Key, droppedPrerequisites, droppedDependents });
+    }
+
+    [HttpPut("nodes/{id:guid}")]
+    public async Task<IActionResult> UpdateNode(Guid id, [FromBody] UpdateSkillGraphNodeRequest request, CancellationToken ct)
+    {
+        var node = await _db.SkillGraphNodes.FirstOrDefaultAsync(n => n.Id == id, ct);
+        if (node is null) return NotFound();
+
+        try
+        {
+            node.UpdateCore(
+                request.Title, request.Description, request.CefrLevel, request.Skill,
+                request.Subskill, request.DifficultyBand, request.DescriptionForAi);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { error = ex.Message });
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+
+        await _db.SaveChangesAsync(ct);
+        return Ok(new { node.Id, node.Key });
+    }
+
+    /// <summary>Manually links two existing nodes as prerequisite→node. Validated for cycles
+    /// against the FULL active node/edge set (not a batch subset) before committing — unlike
+    /// <see cref="Draft"/>'s validation, which only ever saw its own drafted batch.</summary>
+    [HttpPost("nodes/{id:guid}/prerequisites")]
+    public async Task<IActionResult> AddPrerequisite(Guid id, [FromBody] AddSkillGraphPrerequisiteRequest request, CancellationToken ct)
+    {
+        var nodeExists = await _db.SkillGraphNodes.AnyAsync(n => n.Id == id, ct);
+        if (!nodeExists) return NotFound(new { error = "Node not found." });
+
+        var (added, error) = await TryAddPrerequisiteEdgeAsync(id, request.PrerequisiteNodeId, ct);
+        if (!added)
+            return error == "This prerequisite edge already exists."
+                ? Conflict(new { error })
+                : error == "Prerequisite node not found."
+                    ? NotFound(new { error })
+                    : Conflict(new { error });
+
+        return Ok(new { added = true });
+    }
+
+    /// <summary>Shared cycle-validated edge-creation path, used by both <see cref="AddPrerequisite"/>
+    /// and <see cref="CreateNode"/>'s optional up-front prerequisites. Always validates against the
+    /// FULL active node/edge set before committing — never trusts a caller-supplied id blindly.
+    /// An already-existing identical edge is treated as a successful no-op (idempotent).</summary>
+    private async Task<(bool Added, string? Error)> TryAddPrerequisiteEdgeAsync(Guid nodeId, Guid prerequisiteNodeId, CancellationToken ct)
+    {
+        if (nodeId == prerequisiteNodeId)
+            return (false, "A node cannot be its own prerequisite.");
+
+        var prereqExists = await _db.SkillGraphNodes.AnyAsync(n => n.Id == prerequisiteNodeId, ct);
+        if (!prereqExists)
+            return (false, "Prerequisite node not found.");
+
+        var alreadyExists = await _db.SkillGraphPrerequisiteEdges
+            .AnyAsync(e => e.NodeId == nodeId && e.PrerequisiteNodeId == prerequisiteNodeId, ct);
+        if (alreadyExists)
+            return (false, "This prerequisite edge already exists.");
+
+        var allNodes = await _db.SkillGraphNodes.AsNoTracking()
+            .Select(n => new SkillGraphNodeSummary(n.Id, n.Key)).ToListAsync(ct);
+        var allEdges = await _db.SkillGraphPrerequisiteEdges.AsNoTracking()
+            .Select(e => new SkillGraphEdgeSummary(e.NodeId, e.PrerequisiteNodeId)).ToListAsync(ct);
+        var trialEdges = allEdges.Append(new SkillGraphEdgeSummary(nodeId, prerequisiteNodeId)).ToList();
+
+        var validation = _validation.Validate(allNodes, trialEdges);
+        if (!validation.IsValid)
+            return (false, "Adding this edge would create a circular prerequisite chain.");
+
+        _db.SkillGraphPrerequisiteEdges.Add(new SkillGraphPrerequisiteEdge(nodeId, prerequisiteNodeId));
+        await _db.SaveChangesAsync(ct);
+        return (true, null);
+    }
+
+    [HttpDelete("nodes/{id:guid}/prerequisites/{prerequisiteId:guid}")]
+    public async Task<IActionResult> RemovePrerequisite(Guid id, Guid prerequisiteId, CancellationToken ct)
+    {
+        var edge = await _db.SkillGraphPrerequisiteEdges
+            .FirstOrDefaultAsync(e => e.NodeId == id && e.PrerequisiteNodeId == prerequisiteId, ct);
+        if (edge is null) return NotFound();
+
+        _db.SkillGraphPrerequisiteEdges.Remove(edge);
+        await _db.SaveChangesAsync(ct);
+        return Ok(new { removed = true });
+    }
+
+    /// <summary>Isolated-node connectivity metric: nodes with zero edges on BOTH sides (no
+    /// prerequisites AND no dependents) — the real defect signal the 2026-07-23 audit's screenshot
+    /// surfaced. A node with only one side populated (a foundational root, or a terminal leaf) is
+    /// not flagged — only full isolation is.</summary>
+    [HttpGet("nodes/isolated")]
+    public async Task<IActionResult> GetIsolatedNodes(CancellationToken ct)
+    {
+        var edgeEndpoints = await _db.SkillGraphPrerequisiteEdges.AsNoTracking()
+            .Select(e => new { e.NodeId, e.PrerequisiteNodeId })
+            .ToListAsync(ct);
+        var nodeIdsWithEdges = edgeEndpoints.SelectMany(e => new[] { e.NodeId, e.PrerequisiteNodeId }).Distinct().ToList();
+
+        var isolated = await _db.SkillGraphNodes.AsNoTracking()
+            .Where(n => n.IsActive && !nodeIdsWithEdges.Contains(n.Id))
+            .OrderBy(n => n.CefrLevel).ThenBy(n => n.Skill).ThenBy(n => n.Title)
+            .Select(n => new { n.Id, n.Key, n.Title, n.CefrLevel, n.Skill, n.ReviewStatus })
+            .ToListAsync(ct);
+
+        return Ok(new { isolatedCount = isolated.Count, isolated });
+    }
+
+    /// <summary>Bulk canonical-import endpoint (Phase 4 of the 2026-07-23 rebuild plan): upserts a
+    /// structured node+edge dataset by Key (idempotent — re-running the same file is safe). Every
+    /// node is validated against the real taxonomy exactly like manual/AI creation; prerequisite
+    /// keys are resolved against the FULL active graph (this import's own batch plus every
+    /// already-imported node), not scoped to one CEFR/skill combination like <see cref="Draft"/> —
+    /// this is what actually allows cross-skill/cross-level edges. Imported nodes always start
+    /// PendingReview, batch-approved afterward via the existing approve endpoint, same discipline
+    /// as Sprint 1's original 219-node sweep.</summary>
+    [HttpPost("nodes/import")]
+    public async Task<IActionResult> ImportNodes([FromBody] ImportSkillGraphRequest request, CancellationToken ct)
+    {
+        var existingByKey = await _db.SkillGraphNodes.ToDictionaryAsync(n => n.Key, ct);
+        var createdCount = 0;
+        var updatedCount = 0;
+        var errors = new List<string>();
+
+        foreach (var item in request.Nodes)
+        {
+            try
+            {
+                if (existingByKey.TryGetValue(item.Key, out var existing))
+                {
+                    existing.UpdateCore(
+                        item.Title, item.Description, item.CefrLevel, item.Skill,
+                        item.Subskill, item.DifficultyBand, item.DescriptionForAi);
+                    existing.UpdateTags(
+                        item.ContextTags.Count > 0 ? JsonSerializer.Serialize(item.ContextTags) : null,
+                        item.FocusTags.Count > 0 ? JsonSerializer.Serialize(item.FocusTags) : null);
+                    updatedCount++;
+                }
+                else
+                {
+                    var node = new SkillGraphNode(
+                        item.Key, item.Title, item.Description, item.CefrLevel, item.Skill,
+                        item.Subskill, item.DifficultyBand, item.DescriptionForAi,
+                        contextTagsJson: item.ContextTags.Count > 0 ? JsonSerializer.Serialize(item.ContextTags) : null,
+                        focusTagsJson: item.FocusTags.Count > 0 ? JsonSerializer.Serialize(item.FocusTags) : null);
+                    _db.SkillGraphNodes.Add(node);
+                    existingByKey[item.Key] = node;
+                    createdCount++;
+                }
+            }
+            catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+            {
+                errors.Add($"{item.Key}: {ex.Message}");
+            }
+        }
+
+        await _db.SaveChangesAsync(ct); // assigns Ids to newly-created nodes before edge resolution
+
+        var existingEdges = await _db.SkillGraphPrerequisiteEdges.AsNoTracking()
+            .Select(e => new SkillGraphEdgeSummary(e.NodeId, e.PrerequisiteNodeId))
+            .ToListAsync(ct);
+        var allNodeSummaries = existingByKey.Values.Select(n => new SkillGraphNodeSummary(n.Id, n.Key)).ToList();
+
+        var addedEdgeCount = 0;
+        var droppedEdgeCount = 0;
+        foreach (var item in request.Nodes)
+        {
+            if (!existingByKey.TryGetValue(item.Key, out var node)) continue;
+            foreach (var prereqKey in item.PrerequisiteKeys)
+            {
+                if (!existingByKey.TryGetValue(prereqKey, out var prereqNode) || prereqNode.Id == node.Id) continue;
+                if (existingEdges.Any(e => e.NodeId == node.Id && e.PrerequisiteNodeId == prereqNode.Id)) continue; // already linked
+
+                var trialEdges = existingEdges.Append(new SkillGraphEdgeSummary(node.Id, prereqNode.Id)).ToList();
+                var validation = _validation.Validate(allNodeSummaries, trialEdges);
+                if (!validation.IsValid) { droppedEdgeCount++; continue; }
+
+                _db.SkillGraphPrerequisiteEdges.Add(new SkillGraphPrerequisiteEdge(node.Id, prereqNode.Id));
+                existingEdges.Add(new SkillGraphEdgeSummary(node.Id, prereqNode.Id));
+                addedEdgeCount++;
+            }
+        }
+
+        await _db.SaveChangesAsync(ct);
+
+        return Ok(new { createdCount, updatedCount, addedEdgeCount, droppedEdgeCount, errors });
+    }
+
+    // Rebuild Phase 2 (2026-07-23) — bounds how many other-combination titles are offered to the AI
+    // as cross-link prerequisite candidates, mirroring MaxExistingTitles' bounded-call discipline.
+    private const int MaxCrossLinkCandidates = 40;
+
     /// <summary>Triggers one bounded AI-drafting call for a single CEFR level x skill combination,
     /// persists every proposal as a PendingReview node, then resolves PrerequisiteTitles into real
-    /// edges — an edge is only created when both ends resolve to a real node (within this batch or
-    /// an existing one for the same CEFR/skill) and the resulting edge set has no cycle; edges that
-    /// would introduce a cycle are dropped and reported, never silently applied.</summary>
+    /// edges. Rebuild Phase 2 (2026-07-23) — an edge can now resolve against three sources: (a)
+    /// another node in this same batch, (b) an existing node for the same CEFR/skill, or (c) an
+    /// approved node from a DIFFERENT CEFR level (same skill) or a DIFFERENT skill (same CEFR
+    /// level) — the "cross-link candidates" the AI was given. Previously only (a)/(b) were possible,
+    /// which is the confirmed root cause of the 2026-07-23 audit's isolated-category-islands
+    /// finding: no code path could ever create a cross-Skill or cross-CEFR-level edge. Every
+    /// resulting edge set — regardless of source — is still validated against the FULL active graph
+    /// (not just this batch) before being applied; edges that would introduce a cycle are dropped
+    /// and reported, never silently applied.</summary>
     [HttpPost("draft")]
     public async Task<IActionResult> Draft([FromBody] DraftSkillGraphRequest request, CancellationToken ct)
     {
@@ -198,13 +468,29 @@ public sealed class AdminSkillGraphController : ControllerBase
         if (!CurriculumSkillConstants.IsValid(request.Skill))
             return BadRequest(new { error = $"Invalid skill '{request.Skill}'." });
 
+        var cefrLevel = request.CefrLevel.ToUpperInvariant();
+        var skill = request.Skill.ToLowerInvariant();
+
         var existingTitles = await _db.SkillGraphNodes.AsNoTracking()
-            .Where(n => n.CefrLevel == request.CefrLevel.ToUpperInvariant() && n.Skill == request.Skill.ToLowerInvariant())
+            .Where(n => n.CefrLevel == cefrLevel && n.Skill == skill)
             .Select(n => n.Title)
             .ToListAsync(ct);
 
+        // Rebuild Phase 2 — real, already-approved nodes from other CEFR levels of this same skill,
+        // or other skills at this same CEFR level: exactly the two cross-link shapes the audit's
+        // examples named (grammar A1 → speaking A1; grammar A1 → grammar A2).
+        var crossLinkNodes = await _db.SkillGraphNodes.AsNoTracking()
+            .Where(n => n.ReviewStatus == AdminReviewStatus.Approved && n.IsActive
+                && ((n.Skill == skill && n.CefrLevel != cefrLevel) || (n.CefrLevel == cefrLevel && n.Skill != skill)))
+            .OrderBy(n => n.CefrLevel).ThenBy(n => n.Skill)
+            .Take(MaxCrossLinkCandidates)
+            .Select(n => new { n.Id, n.Title })
+            .ToListAsync(ct);
+
         var draft = await _drafting.ProposeBatchAsync(
-            new SkillGraphDraftRequest(request.CefrLevel, request.Skill, existingTitles), ct);
+            new SkillGraphDraftRequest(request.CefrLevel, request.Skill, existingTitles,
+                crossLinkNodes.Select(n => n.Title).ToList()),
+            ct);
 
         if (!draft.Success)
             return Ok(new { queued = false, createdCount = 0, error = draft.ErrorMessage });
@@ -215,7 +501,7 @@ public sealed class AdminSkillGraphController : ControllerBase
         // Persist nodes first (title → entity), so PrerequisiteTitles can resolve against both the
         // fresh batch and pre-existing nodes for this CEFR/skill in one lookup.
         var existingByTitle = await _db.SkillGraphNodes
-            .Where(n => n.CefrLevel == request.CefrLevel.ToUpperInvariant() && n.Skill == request.Skill.ToLowerInvariant())
+            .Where(n => n.CefrLevel == cefrLevel && n.Skill == skill)
             .ToDictionaryAsync(n => n.Title, StringComparer.OrdinalIgnoreCase, ct);
 
         var created = new List<SkillGraphNode>();
@@ -239,8 +525,21 @@ public sealed class AdminSkillGraphController : ControllerBase
 
         await _db.SaveChangesAsync(ct); // assigns Ids before edge resolution
 
-        // Resolve prerequisite titles → edges, validate for cycles against the full candidate set
-        // (existing + newly created), drop any edge that would introduce a cycle.
+        // Rebuild Phase 2 — only titles actually offered to the AI as cross-link candidates may
+        // resolve into a cross-combination edge (never an arbitrary title match elsewhere in the
+        // graph) — same "only from the given candidate list" discipline ModuleSkillGraphTaggingService
+        // already uses for Module-to-node matches.
+        var crossLinkById = await _db.SkillGraphNodes.AsNoTracking()
+            .Where(n => crossLinkNodes.Select(c => c.Id).Contains(n.Id))
+            .ToDictionaryAsync(n => n.Id, ct);
+        foreach (var candidate in crossLinkNodes)
+        {
+            if (byTitle.ContainsKey(candidate.Title)) continue; // same-combo title takes priority on collision
+            if (crossLinkById.TryGetValue(candidate.Id, out var crossLinkNode))
+                byTitle[candidate.Title] = crossLinkNode;
+        }
+
+        // Resolve prerequisite titles → edges, validate for cycles.
         var candidateEdges = new List<(SkillGraphNode Node, SkillGraphNode Prerequisite)>();
         foreach (var proposal in draft.Nodes)
         {
@@ -252,18 +551,22 @@ public sealed class AdminSkillGraphController : ControllerBase
             }
         }
 
-        var allNodesInScope = byTitle.Values.DistinctBy(n => n.Id).ToList();
+        // Rebuild Phase 2 — validate against the FULL active graph (every node/edge), not just this
+        // batch's own candidate set: a cross-combination edge could close a cycle through a node
+        // this batch never touched directly, which a batch-scoped validation could miss.
+        var allNodeSummaries = await _db.SkillGraphNodes.AsNoTracking()
+            .Select(n => new SkillGraphNodeSummary(n.Id, n.Key)).ToListAsync(ct);
         var existingEdges = await _db.SkillGraphPrerequisiteEdges.AsNoTracking()
-            .Where(e => allNodesInScope.Select(n => n.Id).Contains(e.NodeId))
             .Select(e => new SkillGraphEdgeSummary(e.NodeId, e.PrerequisiteNodeId))
             .ToListAsync(ct);
 
         var droppedEdgeCount = 0;
         foreach (var (node, prereq) in candidateEdges)
         {
+            if (existingEdges.Any(e => e.NodeId == node.Id && e.PrerequisiteNodeId == prereq.Id)) continue; // already linked
+
             var trialEdges = existingEdges.Append(new SkillGraphEdgeSummary(node.Id, prereq.Id)).ToList();
-            var validation = _validation.Validate(
-                allNodesInScope.Select(n => new SkillGraphNodeSummary(n.Id, n.Key)).ToList(), trialEdges);
+            var validation = _validation.Validate(allNodeSummaries, trialEdges);
 
             if (!validation.IsValid)
             {
@@ -312,9 +615,19 @@ public sealed class AdminSkillGraphController : ControllerBase
             node.Reject(request.Reason, GetCurrentUserId());
             succeeded++;
         }
+
+        // Editability audit (2026-07-23) — a rejected node is no longer a valid prerequisite/
+        // dependent; cascade-remove any edge touching it rather than leaving a dangling reference
+        // the graph would otherwise treat as still-live.
+        var rejectedIds = nodes.Select(n => n.Id).ToList();
+        var danglingEdges = await _db.SkillGraphPrerequisiteEdges
+            .Where(e => rejectedIds.Contains(e.NodeId) || rejectedIds.Contains(e.PrerequisiteNodeId))
+            .ToListAsync(ct);
+        _db.SkillGraphPrerequisiteEdges.RemoveRange(danglingEdges);
+
         await _db.SaveChangesAsync(ct);
 
-        return Ok(new { requestedCount = ids.Count, succeeded, failed = ids.Count - succeeded, limitReached });
+        return Ok(new { requestedCount = ids.Count, succeeded, failed = ids.Count - succeeded, limitReached, edgesRemoved = danglingEdges.Count });
     }
 
     /// <summary>Coverage matrix: approved+active node count per CEFR level x skill, following the
@@ -490,3 +803,29 @@ public sealed class AdminSkillGraphController : ControllerBase
 public sealed record DraftSkillGraphRequest(string CefrLevel, string Skill);
 public sealed record BatchSkillGraphIdsRequest(List<Guid> Ids);
 public sealed record BatchSkillGraphRejectRequest(List<Guid> Ids, string Reason);
+
+public sealed record CreateSkillGraphNodeRequest(
+    string Title, string Description, string CefrLevel, string Skill, string? Subskill,
+    int DifficultyBand, string? DescriptionForAi, List<string>? ContextTags, List<string>? FocusTags,
+    /// <summary>Create node UX audit (2026-07-23) — optional prerequisites chosen at creation time,
+    /// so an admin places a new node in the graph in the same step as authoring it, instead of a
+    /// create-then-separately-link two-step. Each id is cycle-validated against the full active
+    /// graph the same way <see cref="AddSkillGraphPrerequisiteRequest"/> already is.</summary>
+    List<Guid>? PrerequisiteNodeIds = null,
+    /// <summary>Editability follow-up (2026-07-23) — the symmetric direction: existing nodes that
+    /// this new node should become a prerequisite FOR (a node can be the prerequisite for several
+    /// others, and can itself have several prerequisites — a genuine many-to-many both ways).</summary>
+    List<Guid>? DependentNodeIds = null);
+
+public sealed record UpdateSkillGraphNodeRequest(
+    string Title, string Description, string CefrLevel, string Skill, string? Subskill,
+    int DifficultyBand, string? DescriptionForAi);
+
+public sealed record AddSkillGraphPrerequisiteRequest(Guid PrerequisiteNodeId);
+
+public sealed record ImportSkillGraphNodeItem(
+    string Key, string Title, string Description, string CefrLevel, string Skill, string? Subskill,
+    int DifficultyBand, string? DescriptionForAi,
+    List<string> ContextTags, List<string> FocusTags, List<string> PrerequisiteKeys);
+
+public sealed record ImportSkillGraphRequest(List<ImportSkillGraphNodeItem> Nodes);

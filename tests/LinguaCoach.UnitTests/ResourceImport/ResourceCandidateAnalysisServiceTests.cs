@@ -306,12 +306,17 @@ internal sealed class SwappableFakeAiProvider : IAiProvider
     public Queue<string> NextResponses { get; } = new();
     public bool ThrowUnavailable { get; set; }
     public int CallCount { get; private set; }
+    /// <summary>Rebuild Phase 2 (2026-07-23) — lets a test assert on the actual rendered prompt
+    /// text sent to the provider (e.g. that a new template variable was threaded through), without
+    /// needing a real AI call.</summary>
+    public AiRequest? LastRequest { get; private set; }
 
     public string ProviderName => "fake-provider";
 
     public Task<AiResponse> CompleteAsync(AiRequest request, CancellationToken ct = default)
     {
         CallCount++;
+        LastRequest = request;
         if (ThrowUnavailable)
             throw new AiUnavailableException("Simulated AI provider unavailable.");
 

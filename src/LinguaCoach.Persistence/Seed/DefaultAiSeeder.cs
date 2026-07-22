@@ -4862,11 +4862,12 @@ CEFR level: {{cefrLevel}}
 Skill: {{skill}}
 Recognized subskills for this skill (use one of these exactly, or omit if none fits): {{subskills}}
 Node titles that already exist for this CEFR level and skill (avoid near-duplicates): {{existingTitles}}
+Existing, already-approved node titles from OTHER CEFR levels of this same skill, and OTHER skills at this same CEFR level (candidates for cross-level/cross-skill prerequisites — see below): {{crossLinkCandidates}}
 Recognized context/focus tags (use ONLY values from this exact list, or omit): {{contextTags}}
 
 Propose 2-5 discrete competency nodes for this exact CEFR level and skill. Each node should be narrow enough to be teachable in one focused lesson (e.g. "Present simple for daily routines" not "All present tenses"), not already covered by an existing title, and appropriate for the given CEFR level's difficulty.
 
-For nodes that have a natural prerequisite among your OTHER proposed nodes in this same response (e.g. a more complex node builds on a simpler one you're also proposing), list that prerequisite's exact title in "prerequisiteTitles". Do not invent a prerequisite title that isn't either one of your own other proposed nodes or one of the existing titles given above. Leave "prerequisiteTitles" as an empty array when there's no clear prerequisite within this small batch — most nodes will have none, since most curriculum-level prerequisite structure exists across CEFR levels, not within one batch.
+A prerequisite is real teaching-order structure ("must be learned before this"), which very often crosses CEFR levels or crosses skills — e.g. a Speaking node about describing routines genuinely depends on a Grammar node teaching present simple; a next-level Grammar node genuinely depends on this level's version of the same structure. In "prerequisiteTitles", list the exact title of: (a) another node YOU are also proposing in this same response, (b) one of the existing titles for this same CEFR level/skill given above, OR (c) one of the cross-level/cross-skill candidate titles given above. Do not invent a prerequisite title outside these three sources. Leave "prerequisiteTitles" as an empty array when there's genuinely no clear prerequisite — do not force one just to fill the field.
 
 For "contextTags", pick 1-3 real-world contexts this competency is most useful for (e.g. a node about ordering food fits "day_to_day" or "travel"; a node about formal requests fits "workplace" or "job_interviews") from the recognized list above ONLY. Leave empty if nothing genuinely fits — do not force a tag.
 
@@ -5041,9 +5042,12 @@ Rules:
         // Sprint 14.1 — added contextTags to the prompt/response shape; budgets raised with real
         // headroom (matching the Sprint 9/Sprint 14 token-budget-fix precedent — never just barely
         // above the observed content size).
+        // Rebuild Phase 2 (2026-07-23) — added crossLinkCandidates (up to 40 more titles) so
+        // drafting can propose cross-Skill/cross-CEFR-level prerequisites; raised maxInputTokens
+        // with real headroom above the added content, same precedent.
         await SeedOrUpgradePromptAsync(db, logger,
             SkillGraphProposeNodesKey, SkillGraphProposeNodesContent,
-            maxInputTokens: 1800, maxOutputTokens: 2000, ct);
+            maxInputTokens: 2600, maxOutputTokens: 2000, ct);
 
         // Adaptive Curriculum Sprint 2 — Module-to-skill-graph-node coverage tagging (advisory only)
         await SeedOrUpgradePromptAsync(db, logger,

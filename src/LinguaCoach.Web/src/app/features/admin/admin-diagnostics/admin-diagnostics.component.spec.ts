@@ -141,7 +141,7 @@ describe('AdminDiagnosticsComponent', () => {
     const c = fixture.componentInstance;
     fixture.detectChanges();
 
-    c.filterLevel = 'Error';
+    c.filterLevel.set('Error');
     c.filterQ = 'timeout';
     c.loadEvents();
 

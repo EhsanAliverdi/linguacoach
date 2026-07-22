@@ -125,6 +125,55 @@ public sealed class SkillGraphNode : BaseEntity
         UpdatedAtUtc = DateTime.UtcNow;
     }
 
+    /// <summary>Editability audit (2026-07-23) — edits core content/taxonomy fields. Blocked once
+    /// approved, same policy as <see cref="Module.UpdateDraft"/>/<c>Lesson.UpdateDraft</c>/
+    /// <c>Exercise.UpdateDraft</c>: reject first to reopen editing; editing a rejected node
+    /// resubmits it to PendingReview. Unlike <see cref="UpdateTags"/> (deliberately ungated
+    /// supplementary metadata), these are the node's actual teaching content/graph-placement
+    /// fields, so they follow the codebase's dominant approved-blocks-editing convention.</summary>
+    public void UpdateCore(
+        string title,
+        string description,
+        string cefrLevel,
+        string skill,
+        string? subskill,
+        int difficultyBand,
+        string? descriptionForAi)
+    {
+        if (ReviewStatus == AdminReviewStatus.Approved)
+            throw new InvalidOperationException(
+                $"Cannot edit skill-graph node '{Title}': it is already approved. Reject it first to reopen editing.");
+
+        if (string.IsNullOrWhiteSpace(title))
+            throw new ArgumentException("Title is required.", nameof(title));
+        if (string.IsNullOrWhiteSpace(description))
+            throw new ArgumentException("Description is required.", nameof(description));
+        if (!CefrLevelConstants.IsValid(cefrLevel))
+            throw new ArgumentException($"Invalid CEFR level '{cefrLevel}'. Must be one of: {string.Join(", ", CefrLevelConstants.All)}.", nameof(cefrLevel));
+        if (!CurriculumSkillConstants.IsValid(skill))
+            throw new ArgumentException($"Invalid skill '{skill}'. Must be one of: {string.Join(", ", CurriculumSkillConstants.All)}.", nameof(skill));
+        if (!CurriculumSubskillConstants.IsValidForSkill(skill, subskill))
+            throw new ArgumentException($"Subskill '{subskill}' does not belong to skill '{skill}'.", nameof(subskill));
+        if (difficultyBand is < 1 or > 5)
+            throw new ArgumentOutOfRangeException(nameof(difficultyBand), "DifficultyBand must be between 1 and 5.");
+
+        Title = title.Trim();
+        Description = description.Trim();
+        CefrLevel = cefrLevel.ToUpperInvariant();
+        Skill = skill.ToLowerInvariant();
+        Subskill = subskill?.Trim().ToLowerInvariant();
+        DifficultyBand = difficultyBand;
+        DescriptionForAi = descriptionForAi?.Trim();
+
+        if (ReviewStatus == AdminReviewStatus.Rejected)
+        {
+            ReviewStatus = AdminReviewStatus.PendingReview;
+            RejectionReason = null;
+        }
+
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
     public void Approve(Guid? reviewedByUserId)
     {
         ReviewStatus = AdminReviewStatus.Approved;

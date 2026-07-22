@@ -1591,6 +1591,58 @@ export interface SkillGraphNodeDetail extends SkillGraphNodeListItem {
   approvedAtUtc: string | null;
   rejectedAtUtc: string | null;
   prerequisites: SkillGraphNodePrerequisiteRef[];
+  // Editability audit (2026-07-23) — nodes that list this one as a prerequisite.
+  dependents: SkillGraphNodePrerequisiteRef[];
+}
+
+// Editability audit (2026-07-23) — manual node create/edit + manual edge management.
+
+export interface CreateSkillGraphNodeRequest {
+  title: string;
+  description: string;
+  cefrLevel: string;
+  skill: string;
+  subskill: string | null;
+  difficultyBand: number;
+  descriptionForAi: string | null;
+  contextTags: string[];
+  focusTags: string[];
+  // Create node UX audit (2026-07-23) — place the node in the graph at creation time, both
+  // directions: what it depends on, and what depends on it (a node can have several
+  // prerequisites and be the prerequisite for several other nodes — genuine many-to-many).
+  prerequisiteNodeIds?: string[];
+  dependentNodeIds?: string[];
+}
+
+export interface CreateSkillGraphNodeResponse {
+  id: string;
+  key: string;
+  droppedPrerequisites: { prerequisiteNodeId: string; error: string }[];
+  droppedDependents: { dependentNodeId: string; error: string }[];
+}
+
+export interface UpdateSkillGraphNodeRequest {
+  title: string;
+  description: string;
+  cefrLevel: string;
+  skill: string;
+  subskill: string | null;
+  difficultyBand: number;
+  descriptionForAi: string | null;
+}
+
+export interface SkillGraphIsolatedNode {
+  id: string;
+  key: string;
+  title: string;
+  cefrLevel: string;
+  skill: string;
+  reviewStatus: string;
+}
+
+export interface SkillGraphIsolatedNodesResponse {
+  isolatedCount: number;
+  isolated: SkillGraphIsolatedNode[];
 }
 
 export interface SkillGraphDraftResponse {

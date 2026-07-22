@@ -1,0 +1,123 @@
+<sp-admin-page-header title="Edit Skill Graph Node" [subtitle]="item()?.title ?? 'Loading…'">
+  <sp-admin-button variant="neutral" appearance="outline" (clicked)="cancel()">
+    ← Cancel
+  </sp-admin-button>
+</sp-admin-page-header>
+
+<sp-admin-page-body>
+
+  @if (error() && !item()) { <sp-admin-error-state title="Could not load this node" [message]="error()" /> }
+
+  @if (loading()) {
+    <sp-admin-loading-state message="Loading node for editing" />
+  } @else if (item()) {
+  @if (item(); as n) {
+
+    @if (n.reviewStatus === 'Approved') {
+      <sp-admin-alert variant="warning">
+        This node is already approved and cannot be edited directly — reject it first to reopen editing.
+      </sp-admin-alert>
+    }
+
+    <sp-admin-section-card title="Details">
+      <div class="sp-admin-form-stack">
+        <sp-admin-form-field label="Title" [required]="true">
+          <sp-admin-input [(ngModel)]="title" name="title" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Description" [required]="true">
+          <sp-admin-textarea [(ngModel)]="description" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="CEFR level" [required]="true">
+          <sp-admin-select [ngModel]="cefrLevel" (ngModelChange)="cefrLevel = $event" [options]="cefrLevelOptions()" placeholder="Select level" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Skill" [required]="true">
+          <sp-admin-select [ngModel]="skill" (ngModelChange)="skill = $event" [options]="skillOptions()" placeholder="Select skill" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Subskill">
+          <sp-admin-select [ngModel]="subskill" (ngModelChange)="subskill = $event" [options]="subskillOptions()" placeholder="No subskill" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Difficulty band" hint="1 (easiest) – 5 (hardest)">
+          <sp-admin-number-input [(ngModel)]="difficultyBand" [min]="1" [max]="5" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="AI reasoning context" hint="Internal — shown to the AI composer, never to students.">
+          <sp-admin-textarea [(ngModel)]="descriptionForAi" />
+        </sp-admin-form-field>
+      </div>
+    </sp-admin-section-card>
+
+    @if (error()) { <sp-admin-alert variant="error">{{ error() }}</sp-admin-alert> }
+
+    <div class="sp-admin-form-actions">
+      <sp-admin-button variant="neutral" appearance="outline" (clicked)="cancel()">Cancel</sp-admin-button>
+      <sp-admin-button variant="primary" [disabled]="saving()" (clicked)="save()">
+        {{ saving() ? 'Saving…' : 'Save' }}
+      </sp-admin-button>
+    </div>
+
+    <!-- ── User follow-up (2026-07-23) — Prerequisites/Unlocks, same as the View slide-over ── -->
+    <sp-admin-section-card title="Prerequisites (must be mastered first)">
+      @if (n.prerequisites.length > 0) {
+        <ul class="sp-admin-simple-list">
+          @for (p of n.prerequisites; track p.id) {
+            <li class="sp-admin-form-actions" style="justify-content:space-between;">
+              <span>{{ p.title }}</span>
+              <sp-admin-button size="sm" variant="danger" appearance="outline" (clicked)="removePrerequisite(p.id)">Remove</sp-admin-button>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="sp-admin-section-sub">No prerequisites — this may be a foundational root node, or truly isolated.</p>
+      }
+
+      <sp-admin-form-field label="Add prerequisite" hint="Search by title or key.">
+        <sp-admin-input [(ngModel)]="addPrereqQuery" placeholder="Search nodes…" />
+      </sp-admin-form-field>
+      @if (addPrereqResults().length > 0) {
+        <ul class="sp-admin-simple-list">
+          @for (r of addPrereqResults(); track r.id) {
+            <li>
+              <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="addPrerequisite(r)">
+                {{ r.title }} <span class="sp-admin-text-muted">· {{ r.cefrLevel }} / {{ r.skill }}</span>
+              </sp-admin-button>
+            </li>
+          }
+        </ul>
+      }
+      @if (addPrereqError()) { <sp-admin-alert variant="error">{{ addPrereqError() }}</sp-admin-alert> }
+    </sp-admin-section-card>
+
+    <sp-admin-section-card title="Unlocks (nodes that depend on this one)">
+      @if (n.dependents.length > 0) {
+        <ul class="sp-admin-simple-list">
+          @for (d of n.dependents; track d.id) {
+            <li class="sp-admin-form-actions" style="justify-content:space-between;">
+              <span>{{ d.title }}</span>
+              <sp-admin-button size="sm" variant="danger" appearance="outline" (clicked)="removeUnlock(d.id)">Remove</sp-admin-button>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="sp-admin-section-sub">Nothing depends on this node yet.</p>
+      }
+
+      <sp-admin-form-field label="Add unlock" hint="Search by title or key — this node will become a prerequisite of the one you pick.">
+        <sp-admin-input [(ngModel)]="addUnlockQuery" placeholder="Search nodes…" />
+      </sp-admin-form-field>
+      @if (addUnlockResults().length > 0) {
+        <ul class="sp-admin-simple-list">
+          @for (r of addUnlockResults(); track r.id) {
+            <li>
+              <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="addUnlock(r)">
+                {{ r.title }} <span class="sp-admin-text-muted">· {{ r.cefrLevel }} / {{ r.skill }}</span>
+              </sp-admin-button>
+            </li>
+          }
+        </ul>
+      }
+      @if (addUnlockError()) { <sp-admin-alert variant="error">{{ addUnlockError() }}</sp-admin-alert> }
+    </sp-admin-section-card>
+
+  }
+  }
+
+</sp-admin-page-body>

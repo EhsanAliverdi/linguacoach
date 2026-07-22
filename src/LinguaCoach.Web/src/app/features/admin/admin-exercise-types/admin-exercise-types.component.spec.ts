@@ -154,8 +154,7 @@ describe('AdminExerciseTypesComponent', () => {
     fixture.detectChanges();
 
     c.page.set(2);
-    const fakeEvent = { target: { value: 'Type 1' } } as unknown as Event;
-    c.onSearch(fakeEvent);
+    c.onSearchChange('Type 1');
     expect(c.page()).toBe(1);
   });
 

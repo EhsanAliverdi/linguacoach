@@ -56,7 +56,19 @@ public sealed record SkillGraphDraftRequest(
     string Skill,
     /// <summary>Existing node titles/keys already approved or pending for this CEFR/skill
     /// combination, so the AI doesn't propose near-duplicates.</summary>
-    IReadOnlyList<string> ExistingNodeTitles);
+    IReadOnlyList<string> ExistingNodeTitles,
+    /// <summary>Phase 2 of the 2026-07-23 rebuild plan — real, already-approved node titles from
+    /// OTHER CEFR levels (same skill) and OTHER skills (same CEFR level), so a proposed node can
+    /// name one as a prerequisite via <see cref="SkillGraphNodeDraftProposal.PrerequisiteTitles"/>.
+    /// Without this, drafting could structurally never produce a cross-Skill or cross-CEFR-level
+    /// edge — the confirmed root cause of the 2026-07-23 audit's "isolated category islands"
+    /// finding. Only titles given here (or in <see cref="ExistingNodeTitles"/>, or another node in
+    /// the same proposed batch) are ever resolved into a real edge by the caller — an AI-invented
+    /// title outside these three sources is dropped, never applied.</summary>
+    IReadOnlyList<string> CrossLinkCandidateTitles = null!)
+{
+    public IReadOnlyList<string> CrossLinkCandidateTitles { get; init; } = CrossLinkCandidateTitles ?? [];
+}
 
 public sealed record SkillGraphDraftResult(
     bool Success,

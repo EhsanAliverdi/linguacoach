@@ -31,7 +31,7 @@ public sealed class SkillGraphDraftingServiceTests : IDisposable
 
         _db.AiPrompts.Add(new AiPrompt(
             SkillGraphDraftingService.ProposeNodesPromptKey,
-            "Draft: {{cefrLevel}} {{skill}} {{subskills}} {{existingTitles}}"));
+            "Draft: {{cefrLevel}} {{skill}} {{subskills}} {{existingTitles}} {{crossLinkCandidates}}"));
         _db.SaveChanges();
 
         var aiExecution = new AiExecutionService(
@@ -166,5 +166,31 @@ public sealed class SkillGraphDraftingServiceTests : IDisposable
 
         Assert.False(result.Success);
         Assert.Equal(0, _provider.CallCount);
+    }
+
+    // ── Rebuild Phase 2 (2026-07-23) — cross-link candidate titles reach the AI prompt ──────────
+
+    [Fact]
+    public async Task CrossLinkCandidateTitles_are_rendered_into_the_prompt()
+    {
+        _provider.NextResponses.Enqueue("""{"nodes": [ {"title": "T", "description": "D"} ]}""");
+
+        await _sut.ProposeBatchAsync(new SkillGraphDraftRequest(
+            "A2", "grammar", [], ["Present simple for daily routines", "Describing daily routines"]));
+
+        Assert.NotNull(_provider.LastRequest);
+        Assert.Contains("Present simple for daily routines", _provider.LastRequest!.RenderedPrompt);
+        Assert.Contains("Describing daily routines", _provider.LastRequest.RenderedPrompt);
+    }
+
+    [Fact]
+    public async Task CrossLinkCandidateTitles_defaults_to_empty_when_omitted()
+    {
+        _provider.NextResponses.Enqueue("""{"nodes": [ {"title": "T", "description": "D"} ]}""");
+
+        var result = await _sut.ProposeBatchAsync(new SkillGraphDraftRequest("A1", "grammar", []));
+
+        Assert.True(result.Success);
+        Assert.Contains("(none yet)", _provider.LastRequest!.RenderedPrompt);
     }
 }
