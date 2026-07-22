@@ -17,12 +17,11 @@ import {
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminPaginationComponent,
-  SpAdminSelectComponent,
   SpAdminTableActionsComponent,
   SpAdminTableComponent,
   SpAdminTableFooterComponent,
 } from '../../../design-system/admin';
-import type { SpAdminRowAction } from '../../../design-system/admin';
+import type { SpAdminRowAction, SpAdminTableColumn, SpAdminTableFilter } from '../../../design-system/admin';
 
 const PAGE_SIZE = 20;
 
@@ -45,7 +44,6 @@ const PAGE_SIZE = 20;
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
     SpAdminPaginationComponent,
-    SpAdminSelectComponent,
     SpAdminTableActionsComponent,
     SpAdminTableComponent,
     SpAdminTableFooterComponent,
@@ -73,13 +71,21 @@ export class AdminPlacementItemsComponent implements OnInit {
 
   readonly skillOptions = [{ value: 'all', label: 'All skills' }, ...PLACEMENT_SKILLS.map(s => ({ value: s, label: s }))];
 
-  readonly itemColumns = [
+  readonly itemColumns: SpAdminTableColumn[] = [
+    { key: 'questionPreview', label: 'Question', titleColumn: true },
     { key: 'skill', label: 'Skill' },
     { key: 'cefrLevel', label: 'Level' },
-    { key: 'questionPreview', label: 'Question' },
     { key: 'isEnabled', label: 'Enabled' },
-    { key: '_actions', label: '' },
+    { key: 'actions', label: '', align: 'right' },
   ];
+
+  itemsFilters = computed<SpAdminTableFilter[]>(() => [
+    { key: 'skill', label: 'Skill', options: this.skillOptions, value: this.skillFilter() },
+  ]);
+
+  onItemsFilterChange(event: { key: string; value: string }): void {
+    if (event.key === 'skill') this.onSkillFilterChange(event.value);
+  }
 
   constructor(private svc: AdminPlacementItemService, private router: Router) {}
 

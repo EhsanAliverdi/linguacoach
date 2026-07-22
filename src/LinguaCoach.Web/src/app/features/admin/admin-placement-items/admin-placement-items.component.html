@@ -53,13 +53,6 @@
         [value]="searchQuery()"
         (input)="onSearch($event)"
         aria-label="Search placement items" />
-      <sp-admin-select
-        size="sm"
-        placeholder="All skills"
-        [ngModel]="skillFilter()"
-        (ngModelChange)="onSkillFilterChange($event)"
-        [options]="skillOptions"
-        aria-label="Filter by skill" />
       <span class="sp-admin-filter-count">{{ totalCount() }} item{{ totalCount() !== 1 ? 's' : '' }}</span>
       <a actions routerLink="/admin/placement-items/new">
         <sp-admin-button variant="primary" size="sm">
@@ -68,48 +61,37 @@
       </a>
     </sp-admin-filter-bar>
 
-    @if (items().length === 0) {
-      <sp-admin-empty-state
-        title="No items"
-        message="Add items to the placement bank for this skill." />
-    } @else {
-      <sp-admin-table layout="first-column-fluid">
-        <table>
-          <thead>
-            <tr>
-              <th>Question</th>
-              <th>Skill</th>
-              <th>Level</th>
-              <th>Enabled</th>
-              <th class="sp-admin-th-actions"></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (item of items(); track item.itemId) {
-              <tr>
-                <td>{{ item.questionPreview }}</td>
-                <td><sp-admin-badge tone="neutral">{{ item.skill }}</sp-admin-badge></td>
-                <td>{{ item.cefrLevel }}</td>
-                <td><sp-admin-badge [tone]="itemTone(item)">{{ item.isEnabled ? 'Yes' : 'No' }}</sp-admin-badge></td>
-                <td>
-                  <sp-admin-table-actions
-                    mode="dropdown"
-                    [richActions]="rowActions(item)"
-                    (actionSelected)="onRowAction($event, item)" />
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-        <sp-admin-table-footer>
-          Page {{ page() }} of {{ totalPages() }} · {{ totalCount() }} items
-          <sp-admin-pagination
-            slot="actions"
-            [page]="page()"
-            [totalPages]="totalPages()"
-            (pageChange)="onPageChange($event)" />
-        </sp-admin-table-footer>
-      </sp-admin-table>
+    <sp-admin-table
+      layout="first-column-fluid"
+      [columns]="itemColumns" [rows]="items()"
+      [filters]="itemsFilters()" (filterChange)="onItemsFilterChange($event)"
+      emptyMessage="No items. Add items to the placement bank for this skill."
+    >
+      <ng-template #cell let-row let-col="col">
+        @switch (col.key) {
+          @case ('skill') { <sp-admin-badge tone="neutral">{{ $any(row).skill }}</sp-admin-badge> }
+          @case ('isEnabled') {
+            <sp-admin-badge [tone]="itemTone($any(row))">{{ $any(row).isEnabled ? 'Yes' : 'No' }}</sp-admin-badge>
+          }
+          @case ('actions') {
+            <sp-admin-table-actions
+              mode="dropdown"
+              [richActions]="rowActions($any(row))"
+              (actionSelected)="onRowAction($event, $any(row))" />
+          }
+          @default { {{ $any(row)[col.key] }} }
+        }
+      </ng-template>
+    </sp-admin-table>
+    @if (items().length > 0) {
+    <sp-admin-table-footer>
+      Page {{ page() }} of {{ totalPages() }} · {{ totalCount() }} items
+      <sp-admin-pagination
+        slot="actions"
+        [page]="page()"
+        [totalPages]="totalPages()"
+        (pageChange)="onPageChange($event)" />
+    </sp-admin-table-footer>
     }
   }
 
