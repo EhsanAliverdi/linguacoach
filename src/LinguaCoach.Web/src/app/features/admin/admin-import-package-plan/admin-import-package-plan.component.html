@@ -124,24 +124,16 @@
         @if (p.ceilingAmendments.length > 0) {
           <div style="margin-top:1rem;">
             <strong>Amendment history</strong>
-            <table style="width:100%;margin-top:0.5rem;">
-              <thead>
-                <tr>
-                  <th style="text-align:left;">When</th>
-                  <th style="text-align:left;">Previous → new ceiling</th>
-                  <th style="text-align:left;">Reason</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (a of p.ceilingAmendments; track a.amendmentId) {
-                  <tr>
-                    <td>{{ a.createdAtUtc | date:'short' }}</td>
-                    <td>{{ a.currency }} {{ a.previousCeiling | number:'1.2-2' }} → {{ a.currency }} {{ a.newCeiling | number:'1.2-2' }}</td>
-                    <td>{{ a.reason }}</td>
-                  </tr>
+            <sp-admin-table [columns]="amendmentColumns" [rows]="p.ceilingAmendments">
+              <ng-template #cell let-row let-col="col">
+                @switch (col.key) {
+                  @case ('when') { {{ $any(row).createdAtUtc | date:'short' }} }
+                  @case ('ceilingChange') { {{ $any(row).currency }} {{ $any(row).previousCeiling | number:'1.2-2' }} → {{ $any(row).currency }} {{ $any(row).newCeiling | number:'1.2-2' }} }
+                  @case ('reason') { {{ $any(row).reason }} }
+                  @default { {{ $any(row)[col.key] }} }
                 }
-              </tbody>
-            </table>
+              </ng-template>
+            </sp-admin-table>
           </div>
         }
       </sp-admin-section-card>
@@ -160,52 +152,38 @@
         } @else if (!sttOperations() || sttOperations()!.length === 0) {
           <p class="sp-admin-hint">No STT operations have run yet for this plan.</p>
         } @else {
-          <table style="width:100%;">
-            <thead>
-              <tr>
-                <th style="text-align:left;">File</th>
-                <th style="text-align:left;">Status</th>
-                <th style="text-align:left;">Provider / model</th>
-                <th style="text-align:left;">Attempts</th>
-                <th style="text-align:left;">Measured duration</th>
-                <th style="text-align:left;">Cost</th>
-                <th style="text-align:left;">Completed</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (op of sttOperations(); track op.operationId) {
-                <tr>
-                  <td>{{ op.assetFileName }}</td>
-                  <td>
-                    <sp-admin-badge [tone]="op.status === 'Succeeded' ? 'success' : (op.status === 'Failed' ? 'danger' : 'neutral')">
-                      {{ op.status }}
-                    </sp-admin-badge>
-                    @if (op.resultReusable) {
-                      <sp-admin-badge tone="neutral">Reused on retry — no extra charge</sp-admin-badge>
-                    }
-                  </td>
-                  <td>{{ op.providerName }}{{ op.modelName ? ' / ' + op.modelName : '' }}</td>
-                  <td>{{ op.attemptNumber }}</td>
-                  <td>
-                    @if (op.audioDurationMeasurementStatus === 'Measured' && op.measuredAudioDurationSeconds !== null) {
-                      {{ op.measuredAudioDurationSeconds | number:'1.0-1' }}s
-                    } @else if (op.audioDurationMeasurementStatus === 'Failed') {
-                      <sp-admin-badge tone="danger">Not measured</sp-admin-badge>
-                    } @else {
-                      —
-                    }
-                  </td>
-                  <td>{{ op.calculatedCost !== null ? (op.currency + ' ' + (op.calculatedCost | number:'1.2-4')) : '—' }}</td>
-                  <td>{{ op.completedAtUtc ? (op.completedAtUtc | date:'short') : '—' }}</td>
-                </tr>
-                @if (op.status === 'Failed' && op.safeErrorMessage) {
-                  <tr>
-                    <td colspan="7"><p class="sp-admin-hint" style="margin:0;">{{ op.safeErrorMessage }}</p></td>
-                  </tr>
+          <sp-admin-table [columns]="sttOperationColumns" [rows]="sttOperations() ?? []" [isRowExpanded]="isSttOperationExpanded">
+            <ng-template #cell let-row let-col="col">
+              @switch (col.key) {
+                @case ('assetFileName') { {{ $any(row).assetFileName }} }
+                @case ('status') {
+                  <sp-admin-badge [tone]="$any(row).status === 'Succeeded' ? 'success' : ($any(row).status === 'Failed' ? 'danger' : 'neutral')">
+                    {{ $any(row).status }}
+                  </sp-admin-badge>
+                  @if ($any(row).resultReusable) {
+                    <sp-admin-badge tone="neutral">Reused on retry — no extra charge</sp-admin-badge>
+                  }
                 }
+                @case ('providerModel') { {{ $any(row).providerName }}{{ $any(row).modelName ? ' / ' + $any(row).modelName : '' }} }
+                @case ('attemptNumber') { {{ $any(row).attemptNumber }} }
+                @case ('duration') {
+                  @if ($any(row).audioDurationMeasurementStatus === 'Measured' && $any(row).measuredAudioDurationSeconds !== null) {
+                    {{ $any(row).measuredAudioDurationSeconds | number:'1.0-1' }}s
+                  } @else if ($any(row).audioDurationMeasurementStatus === 'Failed') {
+                    <sp-admin-badge tone="danger">Not measured</sp-admin-badge>
+                  } @else {
+                    —
+                  }
+                }
+                @case ('cost') { {{ $any(row).calculatedCost !== null ? ($any(row).currency + ' ' + ($any(row).calculatedCost | number:'1.2-4')) : '—' }} }
+                @case ('completedAtUtc') { {{ $any(row).completedAtUtc ? ($any(row).completedAtUtc | date:'short') : '—' }} }
+                @default { {{ $any(row)[col.key] }} }
               }
-            </tbody>
-          </table>
+            </ng-template>
+            <ng-template #rowDetail let-op>
+              <p class="sp-admin-hint" style="margin:0;padding:8px 12px;">{{ op.safeErrorMessage }}</p>
+            </ng-template>
+          </sp-admin-table>
         }
       </sp-admin-section-card>
 
@@ -222,44 +200,30 @@
         } @else if (!aiOperations() || aiOperations()!.length === 0) {
           <p class="sp-admin-hint">No AI operations have run yet for this plan.</p>
         } @else {
-          <table style="width:100%;">
-            <thead>
-              <tr>
-                <th style="text-align:left;">Source</th>
-                <th style="text-align:left;">Status</th>
-                <th style="text-align:left;">Provider / model</th>
-                <th style="text-align:left;">Attempts</th>
-                <th style="text-align:left;">Tokens</th>
-                <th style="text-align:left;">Cost</th>
-                <th style="text-align:left;">Completed</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (op of aiOperations(); track op.operationId) {
-                <tr>
-                  <td>{{ op.sourceLabel }}</td>
-                  <td>
-                    <sp-admin-badge [tone]="op.status === 'Succeeded' ? 'success' : (op.status === 'Failed' ? 'danger' : 'neutral')">
-                      {{ op.status }}
-                    </sp-admin-badge>
-                    @if (op.resultReusable) {
-                      <sp-admin-badge tone="neutral">Reused on retry — no extra charge</sp-admin-badge>
-                    }
-                  </td>
-                  <td>{{ op.providerName }}{{ op.modelName ? ' / ' + op.modelName : '' }}</td>
-                  <td>{{ op.attemptNumber }}</td>
-                  <td>{{ op.inputTokens !== null ? (op.inputTokens + ' in / ' + op.outputTokens + ' out') : '—' }}</td>
-                  <td>{{ op.calculatedCost !== null ? (op.currency + ' ' + (op.calculatedCost | number:'1.2-4')) : '—' }}</td>
-                  <td>{{ op.completedAtUtc ? (op.completedAtUtc | date:'short') : '—' }}</td>
-                </tr>
-                @if (op.status === 'Failed' && op.safeErrorMessage) {
-                  <tr>
-                    <td colspan="7"><p class="sp-admin-hint" style="margin:0;">{{ op.safeErrorMessage }}</p></td>
-                  </tr>
+          <sp-admin-table [columns]="aiOperationColumns" [rows]="aiOperations() ?? []" [isRowExpanded]="isAiOperationExpanded">
+            <ng-template #cell let-row let-col="col">
+              @switch (col.key) {
+                @case ('sourceLabel') { {{ $any(row).sourceLabel }} }
+                @case ('status') {
+                  <sp-admin-badge [tone]="$any(row).status === 'Succeeded' ? 'success' : ($any(row).status === 'Failed' ? 'danger' : 'neutral')">
+                    {{ $any(row).status }}
+                  </sp-admin-badge>
+                  @if ($any(row).resultReusable) {
+                    <sp-admin-badge tone="neutral">Reused on retry — no extra charge</sp-admin-badge>
+                  }
                 }
+                @case ('providerModel') { {{ $any(row).providerName }}{{ $any(row).modelName ? ' / ' + $any(row).modelName : '' }} }
+                @case ('attemptNumber') { {{ $any(row).attemptNumber }} }
+                @case ('tokens') { {{ $any(row).inputTokens !== null ? ($any(row).inputTokens + ' in / ' + $any(row).outputTokens + ' out') : '—' }} }
+                @case ('cost') { {{ $any(row).calculatedCost !== null ? ($any(row).currency + ' ' + ($any(row).calculatedCost | number:'1.2-4')) : '—' }} }
+                @case ('completedAtUtc') { {{ $any(row).completedAtUtc ? ($any(row).completedAtUtc | date:'short') : '—' }} }
+                @default { {{ $any(row)[col.key] }} }
               }
-            </tbody>
-          </table>
+            </ng-template>
+            <ng-template #rowDetail let-op>
+              <p class="sp-admin-hint" style="margin:0;padding:8px 12px;">{{ op.safeErrorMessage }}</p>
+            </ng-template>
+          </sp-admin-table>
         }
       </sp-admin-section-card>
 
@@ -304,23 +268,21 @@
                 </div>
 
                 @if (row.mappings.length > 0) {
-                  <table style="width:100%;margin-top:0.75rem;">
-                    <thead><tr><th style="text-align:left;">Detected column</th><th style="text-align:left;">Maps to</th></tr></thead>
-                    <tbody>
-                      @for (m of row.mappings; track m.source) {
-                        <tr>
-                          <td><code>{{ m.source }}</code></td>
-                          <td>
-                            <sp-admin-native-select
-                              [options]="fieldMappingTargetOptions"
-                              placeholder="(ignore this column)"
-                              [(ngModel)]="m.target"
-                              (ngModelChange)="markDirty()" />
-                          </td>
-                        </tr>
+                  <sp-admin-table [columns]="fieldMappingColumns" [rows]="row.mappings" style="margin-top:0.75rem;">
+                    <ng-template #cell let-mapRow let-col="col">
+                      @switch (col.key) {
+                        @case ('source') { <code>{{ $any(mapRow).source }}</code> }
+                        @case ('target') {
+                          <sp-admin-native-select
+                            [options]="fieldMappingTargetOptions"
+                            placeholder="(ignore this column)"
+                            [(ngModel)]="$any(mapRow).target"
+                            (ngModelChange)="markDirty()" />
+                        }
+                        @default { {{ $any(mapRow)[col.key] }} }
                       }
-                    </tbody>
-                  </table>
+                    </ng-template>
+                  </sp-admin-table>
                 } @else if (row.hasStructuredHeaders === false && row.isAudioGroup === false) {
                   <p class="sp-admin-hint" style="margin-top:0.5rem;">
                     No detected CSV columns for this group (non-CSV content, or column detection is only available
@@ -441,17 +403,15 @@
           @for (preview of p.estimate.structuredMappingPreviews; track preview.assetRelativePath) {
             <div style="padding:0.5rem 0;border-bottom:1px solid var(--sp-admin-border-subtle, #eee);">
               <strong>{{ preview.assetRelativePath }}</strong> — {{ preview.expectedRecordCount }} row(s)
-              <table style="width:100%;margin-top:0.5rem;">
-                <thead><tr><th style="text-align:left;">Detected column</th><th style="text-align:left;">Maps to</th></tr></thead>
-                <tbody>
-                  @for (col of preview.detectedColumns; track col) {
-                    <tr>
-                      <td><code>{{ col }}</code></td>
-                      <td>{{ preview.proposedMapping[col] ?? '(unchanged)' }}</td>
-                    </tr>
+              <sp-admin-table [columns]="structuredMappingColumns" [rows]="structuredMappingRows(preview)" style="margin-top:0.5rem;">
+                <ng-template #cell let-row let-col="col">
+                  @switch (col.key) {
+                    @case ('column') { <code>{{ $any(row).column }}</code> }
+                    @case ('mapping') { {{ $any(row).mapping }} }
+                    @default { {{ $any(row)[col.key] }} }
                   }
-                </tbody>
-              </table>
+                </ng-template>
+              </sp-admin-table>
               @if (preview.ignoredColumns.length > 0) {
                 <p class="sp-admin-hint">Ignored: {{ preview.ignoredColumns.join(', ') }}</p>
               }

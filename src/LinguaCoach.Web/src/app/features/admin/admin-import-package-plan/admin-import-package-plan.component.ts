@@ -28,9 +28,11 @@ import {
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminSectionCardComponent,
+  SpAdminTableComponent,
   SpAdminTextareaComponent,
   SpAdminToggleComponent,
 } from '../../../design-system/admin';
+import type { SpAdminTableColumn } from '../../../design-system/admin';
 
 const AUDIO_EXTENSIONS = ['.mp3', '.wav', '.m4a', '.ogg'];
 const ROOT_GROUP_KEY = '(root)';
@@ -87,12 +89,59 @@ function groupKeyForRelativePath(relativePath: string): string {
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
     SpAdminSectionCardComponent,
+    SpAdminTableComponent,
     SpAdminTextareaComponent,
     SpAdminToggleComponent,
   ],
   templateUrl: './admin-import-package-plan.component.html',
 })
 export class AdminImportPackagePlanComponent implements OnInit {
+  readonly amendmentColumns: SpAdminTableColumn[] = [
+    { key: 'when', label: 'When' },
+    { key: 'ceilingChange', label: 'Previous → new ceiling' },
+    { key: 'reason', label: 'Reason' },
+  ];
+
+  readonly sttOperationColumns: SpAdminTableColumn[] = [
+    { key: 'assetFileName', label: 'File' },
+    { key: 'status', label: 'Status' },
+    { key: 'providerModel', label: 'Provider / model' },
+    { key: 'attemptNumber', label: 'Attempts' },
+    { key: 'duration', label: 'Measured duration' },
+    { key: 'cost', label: 'Cost' },
+    { key: 'completedAtUtc', label: 'Completed' },
+  ];
+
+  isSttOperationExpanded = (row: unknown): boolean => {
+    const op = row as ImportSttOperationSummaryDto;
+    return op.status === 'Failed' && !!op.safeErrorMessage;
+  };
+
+  readonly aiOperationColumns: SpAdminTableColumn[] = [
+    { key: 'sourceLabel', label: 'Source' },
+    { key: 'status', label: 'Status' },
+    { key: 'providerModel', label: 'Provider / model' },
+    { key: 'attemptNumber', label: 'Attempts' },
+    { key: 'tokens', label: 'Tokens' },
+    { key: 'cost', label: 'Cost' },
+    { key: 'completedAtUtc', label: 'Completed' },
+  ];
+
+  isAiOperationExpanded = (row: unknown): boolean => {
+    const op = row as ImportAiEnrichmentOperationSummaryDto;
+    return op.status === 'Failed' && !!op.safeErrorMessage;
+  };
+
+  readonly fieldMappingColumns: SpAdminTableColumn[] = [
+    { key: 'source', label: 'Detected column' },
+    { key: 'target', label: 'Maps to' },
+  ];
+
+  readonly structuredMappingColumns: SpAdminTableColumn[] = [
+    { key: 'column', label: 'Detected column' },
+    { key: 'mapping', label: 'Maps to' },
+  ];
+
   packageId = '';
 
   loading = signal(true);
@@ -281,6 +330,10 @@ export class AdminImportPackagePlanComponent implements OnInit {
 
   errorsForGroup(groupKey: string): ImportPlanValidationError[] {
     return this.validationErrors().filter(e => e.groupKey === groupKey);
+  }
+
+  structuredMappingRows(preview: { detectedColumns: string[]; proposedMapping: Record<string, string> }): { column: string; mapping: string }[] {
+    return preview.detectedColumns.map(col => ({ column: col, mapping: preview.proposedMapping[col] ?? '(unchanged)' }));
   }
 
   structuralErrors(): ImportPlanValidationError[] {
