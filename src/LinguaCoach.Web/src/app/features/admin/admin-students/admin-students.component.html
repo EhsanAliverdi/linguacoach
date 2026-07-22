@@ -11,31 +11,6 @@
       placeholder="Search by email or name"
       [ngModel]="searchTerm()"
       (ngModelChange)="onSearchChange($event)" />
-    <sp-admin-select
-      filters
-      [options]="lifecycleStageOptions"
-      placeholder="All lifecycle stages"
-      size="sm"
-      [fullWidth]="true"
-      [ngModel]="filterLifecycleStage()"
-      (ngModelChange)="onLifecycleStageChange($event)" />
-    <sp-admin-checkbox
-      filters
-      label="Show archived"
-      [ngModel]="includeArchived"
-      (ngModelChange)="onArchivedChange($event)" />
-    @if (hasActiveFilters()) {
-      <sp-admin-button filters variant="neutral" appearance="ghost" size="sm" type="button" (click)="clearFilters()">Clear filters</sp-admin-button>
-    }
-    <div actions class="flex items-center gap-2">
-      <span class="sp-admin-text-muted sp-admin-text-xs sp-admin-nowrap">Rows per page</span>
-      <sp-admin-native-select
-        size="sm"
-        [ngModel]="pageSize"
-        (ngModelChange)="onPageSizeSelectChange($event)"
-        [options]="pageSizeSelectOptions"
-        class="w-16" />
-    </div>
   </sp-admin-filter-bar>
 
   @if (loading()) {
@@ -43,66 +18,71 @@
   } @else if (error()) {
     <sp-admin-error-state title="Could not load students" [message]="error()" />
   } @else {
-    @if (students().length === 0) {
-      <sp-admin-empty-state message="No students found." />
-    } @else {
-      <sp-admin-table variant="data" density="compact" layout="first-column-fluid" minWidth="900px">
-        <table>
-          <thead>
-            <tr>
-              <th class="sp-admin-sortable-th" (click)="setSort('name')">Student{{ sortIndicator('name') }}</th>
-              <th>Lifecycle</th>
-              <th class="sp-admin-sortable-th" (click)="setSort('onboarding')">Onboarding{{ sortIndicator('onboarding') }}</th>
-              <th>CEFR</th>
-              <th>Streak</th>
-              <th>Mins / WK</th>
-              <th class="sp-admin-sortable-th" (click)="setSort('joined')">Joined{{ sortIndicator('joined') }}</th>
-              <th class="sp-admin-th-actions">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (s of students(); track s.studentProfileId) {
-              <tr [class.sp-admin-archived-row]="s.lifecycleStage === 'Archived'">
-                <td>
-                  <sp-admin-identity-cell>
-                    <sp-admin-avatar slot="avatar" size="md" [initials]="avatarInitial(s)" [seed]="s.email || s.studentProfileId" [ariaLabel]="displayName(s)" />
-                    <span class="sp-admin-identity-name">{{ displayName(s) }}</span>
-                    <sp-admin-copyable-text [value]="s.email" [maxLength]="40" class="sp-admin-table-muted" />
-                  </sp-admin-identity-cell>
-                </td>
-                <td>
-                  <sp-admin-badge [tone]="lifecycleTone(s.lifecycleStage)">{{ lifecycleLabel(s.lifecycleStage) }}</sp-admin-badge>
-                </td>
-                <td>
-                  <sp-admin-badge [tone]="onboardingTone(s.onboardingStatus)">{{ onboardingLabel(s.onboardingStatus) }}</sp-admin-badge>
-                </td>
-                <td>
-                  @if (s.cefrLevel) {
-                    <sp-admin-badge tone="primary">{{ s.cefrLevel }}</sp-admin-badge>
-                  } @else {
-                    <span class="sp-admin-table-empty">-</span>
-                  }
-                </td>
-                <td class="sp-admin-table-muted">{{ s.onboardingStatus === 'Completed' ? '🔥 0' : '0' }}</td>
-                <td class="sp-admin-table-muted">–</td>
-                <td class="sp-admin-table-muted sp-admin-nowrap">{{ s.createdAt | date:'MMM d, y' }}</td>
-                <td>
-                  <sp-admin-table-actions
-                    [richActions]="rowActions(s)"
-                    (actionSelected)="onRowAction($event, s)" />
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </sp-admin-table>
-
-      <sp-admin-table-footer>
-        Showing {{ showingFrom() }}–{{ showingTo() }} of {{ totalCount() }} students
-        @if (totalPages() > 1) {
-          <sp-admin-pagination slot="actions" [page]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
+    <sp-admin-table
+      variant="data" density="compact" layout="first-column-fluid" minWidth="900px"
+      [columns]="studentColumns" [rows]="students()"
+      [filters]="studentsFilters()" (filterChange)="onStudentsFilterChange($event)"
+      [sortColumn]="sortColumn()" [sortDirection]="sortDirection()" (sortChange)="onSortChange($event)"
+      emptyMessage="No students found."
+    >
+      <ng-container tableActions>
+        <sp-admin-checkbox
+          label="Show archived"
+          [ngModel]="includeArchived"
+          (ngModelChange)="onArchivedChange($event)" />
+        @if (hasActiveFilters()) {
+          <sp-admin-button variant="neutral" appearance="ghost" size="sm" type="button" (click)="clearFilters()">Clear filters</sp-admin-button>
         }
-      </sp-admin-table-footer>
+        <span class="sp-admin-text-muted sp-admin-text-xs sp-admin-nowrap">Rows per page</span>
+        <sp-admin-native-select
+          size="sm"
+          [ngModel]="pageSize"
+          (ngModelChange)="onPageSizeSelectChange($event)"
+          [options]="pageSizeSelectOptions"
+          class="w-16" />
+      </ng-container>
+      <ng-template #cell let-row let-col="col">
+        @switch (col.key) {
+          @case ('name') {
+            <sp-admin-identity-cell>
+              <sp-admin-avatar slot="avatar" size="md" [initials]="avatarInitial($any(row))" [seed]="$any(row).email || $any(row).studentProfileId" [ariaLabel]="displayName($any(row))" />
+              <span class="sp-admin-identity-name">{{ displayName($any(row)) }}</span>
+              <sp-admin-copyable-text [value]="$any(row).email" [maxLength]="40" class="sp-admin-table-muted" />
+            </sp-admin-identity-cell>
+          }
+          @case ('lifecycle') {
+            <sp-admin-badge [tone]="lifecycleTone($any(row).lifecycleStage)">{{ lifecycleLabel($any(row).lifecycleStage) }}</sp-admin-badge>
+          }
+          @case ('onboarding') {
+            <sp-admin-badge [tone]="onboardingTone($any(row).onboardingStatus)">{{ onboardingLabel($any(row).onboardingStatus) }}</sp-admin-badge>
+          }
+          @case ('cefrLevel') {
+            @if ($any(row).cefrLevel) {
+              <sp-admin-badge tone="primary">{{ $any(row).cefrLevel }}</sp-admin-badge>
+            } @else {
+              <span class="sp-admin-table-empty">-</span>
+            }
+          }
+          @case ('streak') { <span class="sp-admin-table-muted">{{ $any(row).onboardingStatus === 'Completed' ? '🔥 0' : '0' }}</span> }
+          @case ('minsPerWeek') { <span class="sp-admin-table-muted">–</span> }
+          @case ('joined') { <span class="sp-admin-table-muted sp-admin-nowrap">{{ $any(row).createdAt | date:'MMM d, y' }}</span> }
+          @case ('actions') {
+            <sp-admin-table-actions
+              [richActions]="rowActions($any(row))"
+              (actionSelected)="onRowAction($event, $any(row))" />
+          }
+          @default { {{ $any(row)[col.key] }} }
+        }
+      </ng-template>
+    </sp-admin-table>
+
+    @if (students().length > 0) {
+    <sp-admin-table-footer>
+      Showing {{ showingFrom() }}–{{ showingTo() }} of {{ totalCount() }} students
+      @if (totalPages() > 1) {
+        <sp-admin-pagination slot="actions" [page]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
+      }
+    </sp-admin-table-footer>
     }
   }
 

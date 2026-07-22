@@ -13,7 +13,6 @@ import {
   SpAdminButtonGroupComponent,
   SpAdminCheckboxComponent,
   SpAdminCopyableTextComponent,
-  SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
   SpAdminFilterBarComponent,
   SpAdminFormFieldComponent,
@@ -24,7 +23,6 @@ import {
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminPaginationComponent,
-  SpAdminSelectComponent,
   SpAdminSlideOverComponent,
   SpAdminTableActionsComponent,
   SpAdminTableComponent,
@@ -32,7 +30,7 @@ import {
   SpAdminTextareaComponent,
 } from '../../../design-system/admin';
 import { SpAdminNativeSelectComponent, SpAdminNativeSelectOption } from '../../../design-system/admin/components/native-select/sp-admin-native-select.component';
-import type { SpAdminSelectOption, SpAdminRowAction, SpAdminButtonGroupAction } from '../../../design-system/admin';
+import type { SpAdminSelectOption, SpAdminRowAction, SpAdminButtonGroupAction, SpAdminTableColumn, SpAdminTableFilter, SpAdminSortChange } from '../../../design-system/admin';
 import { lifecycleLabel, lifecycleTone, onboardingLabel, onboardingTone } from '../../../design-system/admin/utils/admin-badge.utils';
 
 interface StudentEditForm {
@@ -63,7 +61,6 @@ interface StudentEditForm {
     SpAdminButtonGroupComponent,
     SpAdminCheckboxComponent,
     SpAdminCopyableTextComponent,
-    SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
     SpAdminFilterBarComponent,
     SpAdminFormFieldComponent,
@@ -75,7 +72,6 @@ interface StudentEditForm {
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
     SpAdminPaginationComponent,
-    SpAdminSelectComponent,
     SpAdminSlideOverComponent,
     SpAdminTableActionsComponent,
     SpAdminTableComponent,
@@ -84,6 +80,21 @@ interface StudentEditForm {
   ],
 })
 export class AdminStudentsComponent implements OnInit {
+  readonly studentColumns: SpAdminTableColumn[] = [
+    { key: 'name', label: 'Student', sortable: true },
+    { key: 'lifecycle', label: 'Lifecycle' },
+    { key: 'onboarding', label: 'Onboarding', sortable: true },
+    { key: 'cefrLevel', label: 'CEFR' },
+    { key: 'streak', label: 'Streak' },
+    { key: 'minsPerWeek', label: 'Mins / WK' },
+    { key: 'joined', label: 'Joined', sortable: true },
+    { key: 'actions', label: 'Actions', align: 'right' },
+  ];
+
+  onSortChange(e: SpAdminSortChange): void {
+    this.setSort(e.column as 'name' | 'onboarding' | 'joined');
+  }
+
   students = signal<StudentListItem[]>([]);
   totalCount = signal(0);
   page = signal(1);
@@ -154,6 +165,14 @@ export class AdminStudentsComponent implements OnInit {
     this.filterLifecycleStage.set(value);
     this.page.set(1);
     this.load();
+  }
+
+  studentsFilters = computed<SpAdminTableFilter[]>(() => [
+    { key: 'lifecycleStage', label: 'Lifecycle stage', options: this.lifecycleStageOptions, value: this.filterLifecycleStage(), placeholder: 'All lifecycle stages' },
+  ]);
+
+  onStudentsFilterChange(event: { key: string; value: string }): void {
+    if (event.key === 'lifecycleStage') this.onLifecycleStageChange(event.value);
   }
 
   clearFilters(): void {
