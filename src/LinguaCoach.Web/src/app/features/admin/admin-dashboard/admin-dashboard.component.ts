@@ -1,6 +1,6 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import {
   StudentListItem, AdminStats, AiConfigCategoryItem,
@@ -20,6 +20,7 @@ import {
   SpAdminNotImplementedStateComponent,
   SpAdminTableComponent,
 } from '../../../design-system/admin';
+import type { SpAdminTableColumn } from '../../../design-system/admin';
 import { SpAdminBreakdownBarsComponent, BreakdownBarItem } from '../../../design-system/admin/components/breakdown-bars/sp-admin-breakdown-bars.component';
 import { SpAdminProgressListComponent, ProgressListItem } from '../../../design-system/admin/components/progress-list/sp-admin-progress-list.component';
 import { SpAdminDashboardListComponent, DashboardListItem } from '../../../design-system/admin/components/dashboard-list/sp-admin-dashboard-list.component';
@@ -49,6 +50,19 @@ import { onboardingLabel, onboardingTone } from '../../../design-system/admin/ut
   templateUrl: './admin-dashboard.component.html',
 })
 export class AdminDashboardComponent implements OnInit {
+  readonly studentPreviewColumns: SpAdminTableColumn[] = [
+    { key: 'student', label: 'Student' },
+    { key: 'cefr', label: 'CEFR' },
+    { key: 'joined', label: 'Joined' },
+    { key: 'status', label: 'Status' },
+  ];
+
+  readonly studentPreviewRows = computed(() => this.students().slice(0, 8));
+
+  onStudentRowClick(): void {
+    this.router.navigate(['/admin/students']);
+  }
+
   // ── signals ─────────────────────────────────────────────────────
   students = signal<StudentListItem[]>([]);
   loadingStudents = signal(true);
@@ -334,7 +348,7 @@ export class AdminDashboardComponent implements OnInit {
   readonly onboardingLabel = onboardingLabel;
   readonly onboardingTone  = onboardingTone;
 
-  constructor(private adminApi: AdminApiService) {}
+  constructor(private adminApi: AdminApiService, private router: Router) {}
 
   ngOnInit(): void {
     this.adminApi.listStudents({ pageSize: 100 }).subscribe({

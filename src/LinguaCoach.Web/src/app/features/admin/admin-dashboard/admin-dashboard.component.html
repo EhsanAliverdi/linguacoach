@@ -194,49 +194,42 @@
           <sp-admin-empty-state message="No students yet." />
         </div>
       } @else {
-        <sp-admin-table [flush]="true" variant="data" density="compact">
-          <table>
-            <thead>
-              <tr>
-                <th>Student</th>
-                <th class="sp-admin-nowrap">CEFR</th>
-                <th class="sp-admin-nowrap">Joined</th>
-                <th class="sp-admin-nowrap">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (s of students().slice(0, 8); track s.userId) {
-                <tr [routerLink]="['/admin/students']" class="sp-admin-row-click">
-                  <td>
-                    <div class="sp-admin-key-cell">
-                      <div class="sp-admin-dash-avatar">{{ avatarInitial(s.email) }}</div>
-                      <div>
-                        <div class="sp-admin-cell-title">{{ s.displayName || s.email.split('@')[0] }}</div>
-                        <div class="sp-admin-cell-code">{{ s.email }}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td class="sp-admin-nowrap">
-                    @if (s.cefrLevel) {
-                      <sp-admin-badge tone="info">{{ s.cefrLevel }}</sp-admin-badge>
-                    } @else {
-                      <span class="sp-admin-text-muted">—</span>
-                    }
-                  </td>
-                  <td class="sp-admin-nowrap sp-admin-table-cell-compact">{{ s.createdAt | date:'MMM d' }}</td>
-                  <td class="sp-admin-nowrap">
-                    <div class="sp-admin-flex-row">
-                      <span class="sp-admin-status-dot sp-admin-status-dot--active"
-                        [class.sp-admin-status-dot--active]="studentStatusLabel(s) === 'Active'"
-                        [class.sp-admin-status-dot--inactive]="studentStatusLabel(s) !== 'Active'"></span>
-                      <span class="sp-admin-text-xs sp-admin-status-label"
-                        [class.sp-admin-status-label--active]="studentStatusLabel(s) === 'Active'">{{ studentStatusLabel(s) }}</span>
-                    </div>
-                  </td>
-                </tr>
+        <sp-admin-table
+          [flush]="true" variant="data" density="compact"
+          [columns]="studentPreviewColumns" [rows]="studentPreviewRows()"
+          [rowClickable]="true" (rowClick)="onStudentRowClick()"
+        >
+          <ng-template #cell let-row let-col="col">
+            @switch (col.key) {
+              @case ('student') {
+                <div class="sp-admin-key-cell">
+                  <div class="sp-admin-dash-avatar">{{ avatarInitial($any(row).email) }}</div>
+                  <div>
+                    <div class="sp-admin-cell-title">{{ $any(row).displayName || $any(row).email.split('@')[0] }}</div>
+                    <div class="sp-admin-cell-code">{{ $any(row).email }}</div>
+                  </div>
+                </div>
               }
-            </tbody>
-          </table>
+              @case ('cefr') {
+                @if ($any(row).cefrLevel) {
+                  <sp-admin-badge tone="info">{{ $any(row).cefrLevel }}</sp-admin-badge>
+                } @else {
+                  <span class="sp-admin-text-muted">—</span>
+                }
+              }
+              @case ('joined') { <span class="sp-admin-table-cell-compact">{{ $any(row).createdAt | date:'MMM d' }}</span> }
+              @case ('status') {
+                <div class="sp-admin-flex-row">
+                  <span class="sp-admin-status-dot"
+                    [class.sp-admin-status-dot--active]="studentStatusLabel($any(row)) === 'Active'"
+                    [class.sp-admin-status-dot--inactive]="studentStatusLabel($any(row)) !== 'Active'"></span>
+                  <span class="sp-admin-text-xs sp-admin-status-label"
+                    [class.sp-admin-status-label--active]="studentStatusLabel($any(row)) === 'Active'">{{ studentStatusLabel($any(row)) }}</span>
+                </div>
+              }
+              @default { {{ $any(row)[col.key] }} }
+            }
+          </ng-template>
         </sp-admin-table>
       }
     </div>
