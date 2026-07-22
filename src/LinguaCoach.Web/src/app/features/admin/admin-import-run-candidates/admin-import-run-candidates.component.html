@@ -42,16 +42,18 @@
     </sp-admin-section-card>
   }
 
-  <sp-admin-section-card title="Candidates">
-    <sp-admin-button slot="header-action" variant="neutral" appearance="outline" size="sm" (clicked)="loadCandidates()">
-      Refresh
-    </sp-admin-button>
+  <sp-admin-card padding="none" [hasHeader]="true" [headerDivider]="true">
+    <sp-admin-section-header slot="header" title="Candidates" [count]="totalCount()" countLabel="candidates">
+      <sp-admin-button slot="actions" variant="neutral" appearance="outline" size="sm" (clicked)="loadCandidates()">
+        Refresh
+      </sp-admin-button>
+    </sp-admin-section-header>
 
+    <div style="padding: 12px 18px 0;">
     @if (actionSuccess()) { <sp-admin-alert variant="success">{{ actionSuccess() }}</sp-admin-alert> }
     @if (actionError()) { <sp-admin-alert variant="error">{{ actionError() }}</sp-admin-alert> }
-    @if (candidatesError()) { <sp-admin-error-state title="Could not load candidates" [message]="candidatesError()" /> }
 
-    @if (!candidatesLoading() && candidates().length > 0) {
+    @if (!candidatesLoading() && !candidatesError() && candidates().length > 0) {
       @if (lastBatchResult(); as br) {
         <sp-admin-alert [variant]="br.failedCount > 0 ? 'warning' : 'success'">
           {{ br.succeededCount + br.alreadyPublishedCount }} of {{ br.requestedCount }} succeeded
@@ -67,17 +69,16 @@
         </sp-admin-alert>
       }
     }
+    </div>
 
-    @if (candidatesLoading()) {
-      <sp-admin-loading-state message="Loading staged candidates" />
-    } @else if (candidates().length === 0) {
-      <sp-admin-empty-state title="No candidates" message="This import run has no staged candidates." />
-    } @else {
-      <sp-admin-table
+    <sp-admin-table
         #candidatesTableRef
         [flush]="true" variant="data" density="compact" layout="first-column-fluid"
+        [loading]="candidatesLoading()" [error]="candidatesError()" errorTitle="Could not load candidates"
+        emptyMessage="No candidates — this import run has no staged candidates."
         [columns]="candidateColumns" [rows]="candidates()" (selectionChange)="onCandidatesSelectionChange($event)"
         [bulkEditable]="true" [bulkEditMode]="candidatesBulkEditMode()" (bulkEditModeChange)="onCandidatesBulkEditModeChange($event)"
+        [filters]="candidatesFilters()" (filterChange)="onCandidatesFilterChange($event)"
       >
         <!-- Phase K2 — "Select all publishable (this page)" makes clear the scope is this page,
              not the whole run. Actions apply only to the checked rows. -->
@@ -159,6 +160,7 @@
           }
         </ng-template>
       </sp-admin-table>
+    @if (!candidatesLoading() && !candidatesError() && candidates().length > 0) {
       <sp-admin-table-footer>
         Page {{ page() }} of {{ totalPages() }} · {{ totalCount() }} candidate{{ totalCount() !== 1 ? 's' : '' }}
         <sp-admin-pagination slot="actions" [page]="page()" [totalPages]="totalPages()" (pageChange)="onPageChange($event)" />
@@ -167,15 +169,17 @@
 
     @if (lastPublishResult(); as publishResult) {
       @if (!publishResult.success) {
-        <sp-admin-alert variant="error">
-          Publish failed:
-          <ul>
-            @for (e of publishResult.errors; track e) { <li>{{ e }}</li> }
-          </ul>
-        </sp-admin-alert>
+        <div style="padding: 0 18px 12px;">
+          <sp-admin-alert variant="error">
+            Publish failed:
+            <ul>
+              @for (e of publishResult.errors; track e) { <li>{{ e }}</li> }
+            </ul>
+          </sp-admin-alert>
+        </div>
       }
     }
-  </sp-admin-section-card>
+  </sp-admin-card>
 
 </sp-admin-page-body>
 

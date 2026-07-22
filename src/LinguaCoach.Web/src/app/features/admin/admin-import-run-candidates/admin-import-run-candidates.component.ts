@@ -57,6 +57,7 @@ import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
   SpAdminButtonComponent,
+  SpAdminCardComponent,
   SpAdminDrawerComponent,
   SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
@@ -67,13 +68,14 @@ import {
   SpAdminPageHeaderComponent,
   SpAdminPaginationComponent,
   SpAdminSectionCardComponent,
+  SpAdminSectionHeaderComponent,
   SpAdminTableActionsComponent,
   SpAdminTableColumn,
   SpAdminTableComponent,
   SpAdminTableFooterComponent,
   SpAdminTextareaComponent,
 } from '../../../design-system/admin';
-import type { SpAdminRowAction } from '../../../design-system/admin';
+import type { SpAdminRowAction, SpAdminTableFilter } from '../../../design-system/admin';
 import { FormsModule } from '@angular/forms';
 
 const CANDIDATES_PAGE_SIZE = 50;
@@ -93,6 +95,7 @@ const CANDIDATES_PAGE_SIZE = 50;
     SpAdminAlertComponent,
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
+    SpAdminCardComponent,
     SpAdminDrawerComponent,
     SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
@@ -103,6 +106,7 @@ const CANDIDATES_PAGE_SIZE = 50;
     SpAdminPageHeaderComponent,
     SpAdminPaginationComponent,
     SpAdminSectionCardComponent,
+    SpAdminSectionHeaderComponent,
     SpAdminTableActionsComponent,
     SpAdminTableComponent,
     SpAdminTableFooterComponent,
@@ -123,6 +127,49 @@ export class AdminImportRunCandidatesComponent implements OnInit {
     { key: 'published', label: 'Published' },
     { key: 'actions', label: '', align: 'right' },
   ];
+
+  readonly candidateTypeOptions = [
+    { value: '', label: 'All types' },
+    { value: 'VocabularyEntry', label: 'Vocabulary Entry' },
+    { value: 'GrammarProfileEntry', label: 'Grammar Profile Entry' },
+    { value: 'ReadingPassage', label: 'Reading Passage' },
+    { value: 'ListeningPassage', label: 'Listening Passage' },
+    { value: 'SpeakingPrompt', label: 'Speaking Prompt' },
+    { value: 'WritingPrompt', label: 'Writing Prompt' },
+    { value: 'ActivityTemplateCandidate', label: 'Activity Template' },
+  ];
+  readonly validationStatusOptions = [
+    { value: '', label: 'All validation' },
+    { value: 'Passed', label: 'Passed' },
+    { value: 'NeedsReview', label: 'Needs review' },
+    { value: 'Failed', label: 'Failed' },
+  ];
+  readonly reviewStatusOptions = [
+    { value: '', label: 'All review states' },
+    { value: 'Pending', label: 'Pending' },
+    { value: 'Approved', label: 'Approved' },
+    { value: 'Rejected', label: 'Rejected' },
+    { value: 'Skipped', label: 'Skipped' },
+    { value: 'Published', label: 'Published' },
+  ];
+
+  filterCandidateType = signal('');
+  filterValidationStatus = signal('');
+  filterReviewStatus = signal('');
+
+  readonly candidatesFilters = computed<SpAdminTableFilter[]>(() => [
+    { key: 'candidateType', label: 'Type', options: this.candidateTypeOptions, value: this.filterCandidateType() },
+    { key: 'validationStatus', label: 'Validation', options: this.validationStatusOptions, value: this.filterValidationStatus() },
+    { key: 'reviewStatus', label: 'Review', options: this.reviewStatusOptions, value: this.filterReviewStatus() },
+  ]);
+
+  onCandidatesFilterChange(event: { key: string; value: string }): void {
+    if (event.key === 'candidateType') this.filterCandidateType.set(event.value);
+    else if (event.key === 'validationStatus') this.filterValidationStatus.set(event.value);
+    else if (event.key === 'reviewStatus') this.filterReviewStatus.set(event.value);
+    this.page.set(1);
+    this.loadCandidates();
+  }
 
   candidatesBulkEditMode = signal(false);
   onCandidatesBulkEditModeChange(enabled: boolean): void {
@@ -264,7 +311,10 @@ export class AdminImportRunCandidatesComponent implements OnInit {
   loadCandidates(): void {
     this.candidatesLoading.set(true);
     this.candidatesError.set('');
-    this.candidateSvc.list(this.page(), this.pageSize, undefined, this.runId).subscribe({
+    this.candidateSvc.list(
+      this.page(), this.pageSize, undefined, this.runId,
+      this.filterCandidateType() || undefined, this.filterValidationStatus() || undefined, this.filterReviewStatus() || undefined,
+    ).subscribe({
       next: result => {
         this.candidates.set(result.items);
         this.totalCount.set(result.totalCount);
