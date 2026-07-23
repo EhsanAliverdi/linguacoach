@@ -1667,6 +1667,26 @@ export interface SkillGraphPlacementSuggestionResponse {
   error: string | null;
 }
 
+// Phase 6.3a — deterministic (no AI) redundant-edge detection. Advisory only, never auto-applied.
+export interface GraphChangeEdgeRef {
+  nodeId: string;
+  nodeTitle: string;
+  prerequisiteNodeId: string;
+  prerequisiteNodeTitle: string;
+}
+
+export interface GraphChangeSuggestion {
+  type: string;
+  description: string;
+  proposedEdgesToAdd: GraphChangeEdgeRef[];
+  proposedEdgesToRemove: GraphChangeEdgeRef[];
+}
+
+export interface GraphChangeSuggestionsResponse {
+  count: number;
+  suggestions: GraphChangeSuggestion[];
+}
+
 export interface SkillGraphDraftResponse {
   queued: boolean;
   createdCount: number;

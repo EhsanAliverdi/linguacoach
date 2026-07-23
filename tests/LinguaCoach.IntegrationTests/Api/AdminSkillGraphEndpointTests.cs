@@ -789,6 +789,106 @@ public sealed class AdminSkillGraphEndpointTests : IClassFixture<ApiTestFactory>
         var resp = await client.PostAsync($"/api/admin/skill-graph/nodes/{node.Id}/suggest-placement", null);
         Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
     }
+
+    // ── Skill Graph rebuild Phase 6.3a — deterministic redundant-edge detection ──────────────
+
+    [Fact]
+    public async Task GetRedundantEdgeSuggestions_FindsAnEdgeSpannedByALongerPath()
+    {
+        var suffix = Guid.NewGuid().ToString("N");
+        var a = await SeedNodeAsync($"grammar.redundant_a_{suffix}.a1");
+        var x = await SeedNodeAsync($"grammar.redundant_x_{suffix}.a1");
+        var b = await SeedNodeAsync($"grammar.redundant_b_{suffix}.a1");
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            db.SkillGraphPrerequisiteEdges.Add(new SkillGraphPrerequisiteEdge(x.Id, a.Id)); // A -> X
+            db.SkillGraphPrerequisiteEdges.Add(new SkillGraphPrerequisiteEdge(b.Id, x.Id)); // X -> B
+            db.SkillGraphPrerequisiteEdges.Add(new SkillGraphPrerequisiteEdge(b.Id, a.Id)); // A -> B (now redundant)
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.GetAsync("/api/admin/skill-graph/suggestions/redundant-edges");
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var suggestions = body.GetProperty("suggestions").EnumerateArray().ToList();
+        var match = suggestions.SingleOrDefault(s =>
+            s.GetProperty("proposedEdgesToRemove").EnumerateArray().Any(e =>
+                e.GetProperty("prerequisiteNodeId").GetGuid() == a.Id && e.GetProperty("nodeId").GetGuid() == b.Id));
+        Assert.True(match.ValueKind != JsonValueKind.Undefined, "Expected the A->B edge to be flagged redundant.");
+        Assert.Equal("RedundantEdge", match.GetProperty("type").GetString());
+    }
+
+    [Fact]
+    public async Task AddPrerequisite_ReturnsRedundancySuggestionWhenTheNewEdgeMakesAnotherOneRedundant()
+    {
+        // Scenario 1/3: A already has a direct prerequisite edge to B; now insert X between them
+        // (A->X, X->B) — the second edge (X->B) should trigger a suggestion flagging the now-
+        // redundant direct A->B edge, returned inline on the AddPrerequisite response.
+        var suffix = Guid.NewGuid().ToString("N");
+        var a = await SeedNodeAsync($"grammar.addredundant_a_{suffix}.a1");
+        var x = await SeedNodeAsync($"grammar.addredundant_x_{suffix}.a1");
+        var b = await SeedNodeAsync($"grammar.addredundant_b_{suffix}.a1");
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            db.SkillGraphPrerequisiteEdges.Add(new SkillGraphPrerequisiteEdge(x.Id, a.Id)); // A -> X already exists
+            db.SkillGraphPrerequisiteEdges.Add(new SkillGraphPrerequisiteEdge(b.Id, a.Id)); // A -> B already exists (direct)
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        // Add X -> B, completing the A->X->B path that makes A->B redundant.
+        var resp = await client.PostAsJsonAsync($"/api/admin/skill-graph/nodes/{b.Id}/prerequisites", new { prerequisiteNodeId = x.Id });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var suggestions = body.GetProperty("suggestions").EnumerateArray().ToList();
+        var match = suggestions.SingleOrDefault(s =>
+            s.GetProperty("proposedEdgesToRemove").EnumerateArray().Any(e =>
+                e.GetProperty("prerequisiteNodeId").GetGuid() == a.Id && e.GetProperty("nodeId").GetGuid() == b.Id));
+        Assert.True(match.ValueKind != JsonValueKind.Undefined, "Expected AddPrerequisite to flag the now-redundant A->B edge.");
+    }
+
+    [Fact]
+    public async Task GetRedundantEdgeSuggestions_EmptyWhenNoRedundancyExists()
+    {
+        var suffix = Guid.NewGuid().ToString("N");
+        var a = await SeedNodeAsync($"grammar.noredundancy_a_{suffix}.a1");
+        var b = await SeedNodeAsync($"grammar.noredundancy_b_{suffix}.a1");
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            db.SkillGraphPrerequisiteEdges.Add(new SkillGraphPrerequisiteEdge(b.Id, a.Id));
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.GetAsync("/api/admin/skill-graph/suggestions/redundant-edges");
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var suggestions = body.GetProperty("suggestions").EnumerateArray().ToList();
+        Assert.DoesNotContain(suggestions, s =>
+            s.GetProperty("proposedEdgesToRemove").EnumerateArray().Any(e =>
+                e.GetProperty("prerequisiteNodeId").GetGuid() == a.Id && e.GetProperty("nodeId").GetGuid() == b.Id));
+    }
+
+    [Fact]
+    public async Task NonAdmin_rejected_for_redundant_edges_endpoint()
+    {
+        var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"sg_redundant_nonadmin_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(_factory, token);
+
+        var resp = await client.GetAsync("/api/admin/skill-graph/suggestions/redundant-edges");
+        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
+    }
 }
 
 /// <summary>Draft-endpoint tests specifically — uses <see cref="ActivityTestFactory"/>'s

@@ -138,7 +138,33 @@ real data).
       Describing people and things aloud), and accepting one correctly staged it (dashed amber in
       the graph + list, removed from the suggestion list, unsaved-changes banner appeared) exactly
       like a manually-picked node.
-- [ ] 6.3a — Redundant-edge detection
+- [x] 6.3a — Redundant-edge detection — done 2026-07-23. New `IGraphChangeSuggestionService`
+      (Infrastructure: `GraphChangeSuggestionService`), pure/deterministic (no AI, no DB access):
+      `DetectRedundantEdges(edges, restrictToNodeIds?)` runs a BFS per edge, excluding that one
+      direct edge, to check whether the dependent node is still reachable from the prerequisite
+      via some other path — if so, the direct edge is redundant (a classic transitive-reduction
+      check) and gets flagged as a `GraphChangeSuggestion` with `Type: RedundantEdge`. Two ways to
+      trigger it: (a) `GET /skill-graph/suggestions/redundant-edges` — the on-demand whole-graph
+      audit (scenario 4), and (b) a cheap targeted check wired into `AddPrerequisite` itself
+      (scenarios 1/3) — right after a new edge lands, only the two endpoint nodes' edges are
+      re-checked (not the whole graph), and any resulting suggestions come back inline on the
+      same response. **Never auto-applied** — both paths only return suggestions for the admin to
+      review; removing one is a real, separate `DELETE .../prerequisites/{id}` call the admin
+      explicitly triggers. Frontend: new "Graph audit" card on the main Skill Graph page — "Run
+      graph audit" button, results list with per-suggestion Dismiss/Remove edge actions (Dismiss
+      just drops it from the local list; Remove edge calls the existing
+      `removeSkillGraphPrerequisite` endpoint, same one Edit's staged-removal flow uses). +7 unit
+      tests (`GraphChangeSuggestionServiceTests` — exhaustive since the logic is pure: spanned-edge
+      detection, no-alternate-path negative case, 3-hop alternate paths, `restrictToNodeIds`
+      scoping, empty/disconnected-graph edge cases), +4 integration tests (whole-graph audit finds
+      a seeded redundant edge, `AddPrerequisite` surfaces a suggestion inline when the new edge
+      makes an existing one redundant, no-false-positives case, non-admin rejected). Verified:
+      full backend suite (30 architecture + 2,491 unit + 1,345 integration) green, frontend `tsc
+      --noEmit` clean, 24/24 Skill Graph Karma specs green, and a live check against the real
+      600-node reseeded dev DB found **10 genuinely redundant edges already present in the real
+      curriculum** (e.g. "Present simple: affirmative for daily routines → First conditional" is
+      already implied by a longer real chain) — confirming the detection works correctly against
+      real, not just synthetic, data.
 - [ ] 6.3b — Reject-triggered reconnect suggestions
 - [ ] 6.3c — Near-duplicate node detection
 - [ ] 6.3d — Reparenting-on-edit suggestions

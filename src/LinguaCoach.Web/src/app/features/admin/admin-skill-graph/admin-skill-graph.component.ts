@@ -32,6 +32,7 @@ import {
   SkillGraphNode,
   SkillGraphEdge,
   SkillGraphIsolatedNode,
+  GraphChangeSuggestion,
 } from '../../../core/models/admin.models';
 import { SpAdminGraphCardComponent } from '../../../design-system/admin/components/graph-card/sp-admin-graph-card.component';
 import { SpAdminSkillGraphVizComponent } from './skill-graph-viz/sp-admin-skill-graph-viz.component';
@@ -265,6 +266,48 @@ export class AdminSkillGraphComponent implements OnInit {
     this.api.getIsolatedSkillGraphNodes().subscribe({
       next: r => this.isolatedNodes.set(r.isolated),
       error: () => this.isolatedNodes.set([]),
+    });
+  }
+
+  // ── Skill Graph rebuild Phase 6.3a (2026-07-23) — on-demand redundant-edge audit. Deterministic
+  // (no AI), advisory only: every suggestion is either applied via "Remove edge" (a real API call,
+  // same removeSkillGraphPrerequisite endpoint the Edit page uses) or "Dismiss" (just hides it
+  // from this list — nothing to persist for a dismissal since nothing was ever staged). ──────────
+  auditingGraph = signal(false);
+  auditError = signal('');
+  auditRun = signal(false);
+  redundantEdgeSuggestions = signal<GraphChangeSuggestion[]>([]);
+
+  runGraphAudit(): void {
+    this.auditingGraph.set(true);
+    this.auditError.set('');
+    this.api.getRedundantEdgeSuggestions().subscribe({
+      next: r => {
+        this.auditingGraph.set(false);
+        this.auditRun.set(true);
+        this.redundantEdgeSuggestions.set(r.suggestions);
+      },
+      error: err => {
+        this.auditingGraph.set(false);
+        this.auditError.set(err?.error?.error ?? 'Could not run the graph audit.');
+      },
+    });
+  }
+
+  dismissRedundantEdgeSuggestion(index: number): void {
+    this.redundantEdgeSuggestions.update(list => list.filter((_, i) => i !== index));
+  }
+
+  removeRedundantEdge(suggestion: GraphChangeSuggestion, index: number): void {
+    const edge = suggestion.proposedEdgesToRemove[0];
+    if (!edge) return;
+    this.api.removeSkillGraphPrerequisite(edge.nodeId, edge.prerequisiteNodeId).subscribe({
+      next: () => {
+        this.dismissRedundantEdgeSuggestion(index);
+        this.loadNodes();
+        this.loadIsolatedNodes();
+      },
+      error: err => this.auditError.set(err?.error?.error ?? 'Could not remove this edge.'),
     });
   }
 

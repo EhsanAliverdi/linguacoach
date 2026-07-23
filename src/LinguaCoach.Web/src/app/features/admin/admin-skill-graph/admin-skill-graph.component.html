@@ -73,6 +73,37 @@
     }
   </sp-admin-card>
 
+  <!-- Skill Graph rebuild Phase 6.3a (2026-07-23) — deterministic (no AI) redundant-edge audit.
+       Advisory only: every suggestion is reviewed here, never auto-applied. -->
+  <sp-admin-card title="Graph audit">
+    <p class="sp-admin-section-sub">Checks every prerequisite edge for redundancy — an edge already implied by a longer existing path (e.g. A→B when A→X→B also exists) is safe to remove without changing what the graph actually requires.</p>
+    <sp-admin-button variant="primary" size="sm" appearance="outline" [disabled]="auditingGraph()" (clicked)="runGraphAudit()">
+      {{ auditingGraph() ? 'Auditing…' : 'Run graph audit' }}
+    </sp-admin-button>
+    @if (auditError()) {
+      <sp-admin-alert variant="error">{{ auditError() }}</sp-admin-alert>
+    }
+    @if (auditRun()) {
+      @if (redundantEdgeSuggestions().length === 0) {
+        <sp-admin-alert variant="success">No redundant edges found.</sp-admin-alert>
+      } @else {
+        <ul class="sp-admin-simple-list">
+          @for (s of redundantEdgeSuggestions(); track $index) {
+            @if (s.proposedEdgesToRemove[0]; as edge) {
+              <li class="sp-admin-form-actions" style="justify-content:space-between;">
+                <span>{{ edge.prerequisiteNodeTitle }} → {{ edge.nodeTitle }} <span class="sp-admin-text-muted">— {{ s.description }}</span></span>
+                <span class="sp-admin-form-actions" style="padding:0; background:none; border:none;">
+                  <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="dismissRedundantEdgeSuggestion($index)">Dismiss</sp-admin-button>
+                  <sp-admin-button size="sm" variant="danger" appearance="outline" (clicked)="removeRedundantEdge(s, $index)">Remove edge</sp-admin-button>
+                </span>
+              </li>
+            }
+          }
+        </ul>
+      }
+    }
+  </sp-admin-card>
+
   <!-- Nodes table / graph (Content coverage merged in here 2026-07-23 — see Linked Modules column
        and node detail panel below; the two tables were showing near-duplicate data.) -->
   <sp-admin-card padding="none" variant="bordered" [hasHeader]="true" [headerDivider]="true">

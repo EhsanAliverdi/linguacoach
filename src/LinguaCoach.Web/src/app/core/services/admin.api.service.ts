@@ -20,6 +20,7 @@ import {
   SkillGraphRetagResponse, SkillGraphContentCoverageResponse, SkillGraphResponse,
   CreateSkillGraphNodeRequest, CreateSkillGraphNodeResponse, UpdateSkillGraphNodeRequest, SkillGraphIsolatedNodesResponse,
   SkillGraphPlacementSuggestionResponse,
+  GraphChangeSuggestionsResponse,
   StudentListQuery, PagedResponse, AiModelPricingItem,
   AiModelPricingOverrideItem, CreatePricingOverrideRequest, UpdatePricingOverrideRequest,
   AdminNotificationItem, AdminOutboxItem,
@@ -268,6 +269,10 @@ export class AdminApiService {
   // Phase 6.2 — advisory only; nothing here is ever auto-applied.
   suggestSkillGraphNodePlacement(nodeId: string): Observable<SkillGraphPlacementSuggestionResponse> {
     return this.http.post<SkillGraphPlacementSuggestionResponse>(`${this.api}/skill-graph/nodes/${nodeId}/suggest-placement`, {});
+  }
+  // Phase 6.3a — deterministic, no AI; advisory only, nothing is ever auto-applied.
+  getRedundantEdgeSuggestions(): Observable<GraphChangeSuggestionsResponse> {
+    return this.http.get<GraphChangeSuggestionsResponse>(`${this.api}/skill-graph/suggestions/redundant-edges`);
   }
 
   // Prompts

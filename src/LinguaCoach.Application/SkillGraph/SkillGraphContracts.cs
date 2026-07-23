@@ -183,3 +183,42 @@ public interface ISkillGraphNodeRepairService
     Task<BulkRepairResult> RepairAllAsync(CancellationToken ct = default);
     Task<IReadOnlyList<RepairableItemSummary>> ListWithIssuesAsync(CancellationToken ct = default);
 }
+
+// ── Skill Graph rebuild Phase 6.3 ("Graph Change Suggestions") — deterministic, no AI. Every
+// suggestion is advisory: never auto-applied, always accept/dismiss per suggestion, same
+// discipline as archive-not-delete and batch-approve-not-auto-approve elsewhere in this codebase.
+// Phase 6.3a covers redundant-edge detection (scenarios 1/3/4 in the approved plan); later
+// sub-phases (6.3b reject-triggered reconnects, 6.3c near-duplicate nodes, 6.3d reparenting
+// review) add more `GraphSuggestionType` values onto the same shared shape. ──────────────────────
+
+public enum GraphSuggestionType
+{
+    /// <summary>A direct prerequisite edge that's already implied by a longer existing path
+    /// (e.g. A→B when A→X→B also exists) — safe to remove without changing what the graph
+    /// actually requires, since the longer path already enforces the same ordering.</summary>
+    RedundantEdge,
+}
+
+/// <summary>One deterministic suggestion — never auto-applied. <c>ProposedEdgesToAdd</c>/
+/// <c>ProposedEdgesToRemove</c> are both always present (one or both may be empty depending on
+/// <see cref="Type"/>) so every suggestion type can be rendered/accepted through the same shape.</summary>
+public sealed record GraphChangeSuggestion(
+    GraphSuggestionType Type,
+    string Description,
+    IReadOnlyList<SkillGraphEdgeSummary> ProposedEdgesToAdd,
+    IReadOnlyList<SkillGraphEdgeSummary> ProposedEdgesToRemove);
+
+/// <summary>Phase 6.3a — pure/deterministic redundant-edge detection via DFS/BFS reachability.
+/// No AI, no database access; the caller supplies the edge set (either the full active graph for
+/// an on-demand audit, or just the edges touching a couple of recently-mutated nodes for a
+/// cheap targeted check right after an edge is added).</summary>
+public interface IGraphChangeSuggestionService
+{
+    /// <summary>Checks every edge in <paramref name="edges"/> for redundancy (removable without
+    /// changing reachability) — or, if <paramref name="restrictToNodeIds"/> is given, only edges
+    /// touching one of those node ids (the two endpoints of an edge just added/removed), which is
+    /// far cheaper than re-auditing the whole graph after every single mutation.</summary>
+    IReadOnlyList<GraphChangeSuggestion> DetectRedundantEdges(
+        IReadOnlyList<SkillGraphEdgeSummary> edges,
+        IReadOnlyList<Guid>? restrictToNodeIds = null);
+}

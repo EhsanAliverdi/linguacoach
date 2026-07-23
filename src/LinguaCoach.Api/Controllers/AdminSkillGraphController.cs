@@ -39,11 +39,12 @@ public sealed class AdminSkillGraphController : ControllerBase
     private readonly IModuleSkillGraphTaggingService _tagging;
     private readonly ISkillGraphNodeRepairService _repair;
     private readonly INodeGraphPlacementSuggestionService _placementSuggestions;
+    private readonly IGraphChangeSuggestionService _changeSuggestions;
 
     public AdminSkillGraphController(
         LinguaCoachDbContext db, ISkillGraphDraftingService drafting, ISkillGraphValidationService validation,
         IModuleSkillGraphTaggingService tagging, ISkillGraphNodeRepairService repair,
-        INodeGraphPlacementSuggestionService placementSuggestions)
+        INodeGraphPlacementSuggestionService placementSuggestions, IGraphChangeSuggestionService changeSuggestions)
     {
         _db = db;
         _drafting = drafting;
@@ -51,6 +52,7 @@ public sealed class AdminSkillGraphController : ControllerBase
         _tagging = tagging;
         _repair = repair;
         _placementSuggestions = placementSuggestions;
+        _changeSuggestions = changeSuggestions;
     }
 
     // ── Sprint 14.1 — node tag diagnose+AI-repair, mirrors Resource Bank's
@@ -400,7 +402,13 @@ public sealed class AdminSkillGraphController : ControllerBase
                     ? NotFound(new { error })
                     : Conflict(new { error });
 
-        return Ok(new { added = true });
+        // Skill Graph rebuild Phase 6.3a — scenarios 1/3: a freshly-added edge can make some OTHER
+        // existing direct edge redundant (e.g. inserting X between A and B leaves A→B implied by
+        // A→X→B). Cheap targeted check (only edges touching the two nodes just linked), never the
+        // full graph — advisory only, returned for the admin to review, never auto-applied.
+        var suggestions = await DetectRedundantEdgesNearAsync([id, request.PrerequisiteNodeId], ct);
+        var dtos = await ToSuggestionDtosAsync(suggestions, ct);
+        return Ok(new { added = true, suggestions = dtos });
     }
 
     /// <summary>Shared cycle-validated edge-creation path, used by both <see cref="AddPrerequisite"/>
@@ -446,6 +454,57 @@ public sealed class AdminSkillGraphController : ControllerBase
         _db.SkillGraphPrerequisiteEdges.Remove(edge);
         await _db.SaveChangesAsync(ct);
         return Ok(new { removed = true });
+    }
+
+    /// <summary>Skill Graph rebuild Phase 6.3a — on-demand whole-graph redundant-edge audit
+    /// (scenario 4 in the approved plan): checks every active edge for redundancy, not just ones
+    /// touching recently-mutated nodes. Advisory only — returns the list for the admin to review;
+    /// nothing here is ever removed automatically.</summary>
+    [HttpGet("suggestions/redundant-edges")]
+    public async Task<IActionResult> GetRedundantEdgeSuggestions(CancellationToken ct)
+    {
+        var suggestions = await DetectRedundantEdgesNearAsync(restrictToNodeIds: null, ct);
+        var dtos = await ToSuggestionDtosAsync(suggestions, ct);
+        return Ok(new { count = suggestions.Count, suggestions = dtos });
+    }
+
+    /// <summary>Shared helper backing both the post-add-prerequisite targeted check and the
+    /// on-demand whole-graph audit — loads the full active edge set once, then delegates to the
+    /// pure <see cref="IGraphChangeSuggestionService"/>.</summary>
+    private async Task<IReadOnlyList<GraphChangeSuggestion>> DetectRedundantEdgesNearAsync(
+        IReadOnlyList<Guid>? restrictToNodeIds, CancellationToken ct)
+    {
+        var allEdges = await _db.SkillGraphPrerequisiteEdges.AsNoTracking()
+            .Select(e => new SkillGraphEdgeSummary(e.NodeId, e.PrerequisiteNodeId)).ToListAsync(ct);
+        return _changeSuggestions.DetectRedundantEdges(allEdges, restrictToNodeIds);
+    }
+
+    /// <summary>Resolves every suggestion's edge endpoints to id+title in one query, so the admin
+    /// UI can render something meaningful without a second round-trip — and so a whole-graph audit
+    /// with many suggestions doesn't run one title query per suggestion (N+1).</summary>
+    private async Task<List<object>> ToSuggestionDtosAsync(IReadOnlyList<GraphChangeSuggestion> suggestions, CancellationToken ct)
+    {
+        var allIds = suggestions
+            .SelectMany(s => s.ProposedEdgesToAdd.Concat(s.ProposedEdgesToRemove))
+            .SelectMany(e => new[] { e.NodeId, e.PrerequisiteNodeId })
+            .Distinct().ToList();
+        var titlesById = await _db.SkillGraphNodes.AsNoTracking()
+            .Where(n => allIds.Contains(n.Id))
+            .ToDictionaryAsync(n => n.Id, n => n.Title, ct);
+
+        object ResolveEdge(SkillGraphEdgeSummary e) => new
+        {
+            nodeId = e.NodeId, nodeTitle = titlesById.GetValueOrDefault(e.NodeId, "(unknown)"),
+            prerequisiteNodeId = e.PrerequisiteNodeId, prerequisiteNodeTitle = titlesById.GetValueOrDefault(e.PrerequisiteNodeId, "(unknown)"),
+        };
+
+        return suggestions.Select(s => (object)new
+        {
+            type = s.Type.ToString(),
+            description = s.Description,
+            proposedEdgesToAdd = s.ProposedEdgesToAdd.Select(ResolveEdge),
+            proposedEdgesToRemove = s.ProposedEdgesToRemove.Select(ResolveEdge),
+        }).ToList();
     }
 
     /// <summary>Isolated-node connectivity metric: nodes with zero edges on BOTH sides (no

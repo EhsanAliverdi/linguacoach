@@ -691,6 +691,9 @@ public static class DependencyInjection
         // never auto-applied — see NodeGraphPlacementSuggestionService's own doc comment).
         services.AddScoped<LinguaCoach.Application.SkillGraph.INodeGraphPlacementSuggestionService,
             LinguaCoach.Infrastructure.SkillGraph.NodeGraphPlacementSuggestionService>();
+        // Skill Graph rebuild Phase 6.3a — deterministic (no AI) redundant-edge detection.
+        services.AddScoped<LinguaCoach.Application.SkillGraph.IGraphChangeSuggestionService,
+            LinguaCoach.Infrastructure.SkillGraph.GraphChangeSuggestionService>();
         // Sprint 14.1 — SkillGraphNode context/focus tag diagnose+AI-repair.
         services.AddScoped<LinguaCoach.Application.SkillGraph.ISkillGraphNodeRepairService,
             LinguaCoach.Infrastructure.SkillGraph.SkillGraphNodeRepairService>();
