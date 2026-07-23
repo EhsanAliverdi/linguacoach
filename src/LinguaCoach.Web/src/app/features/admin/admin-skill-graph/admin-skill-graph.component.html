@@ -4,32 +4,14 @@
 
 <sp-admin-page-body>
 
-  <!-- User correction (2026-07-24) — "Fix All with AI" now lives inside the banner it fixes,
-       instead of sitting separately in the page header. -->
-  @if (nodeIssuesSummary() && nodeIssuesSummary()!.itemsWithIssues > 0) {
-    <sp-admin-alert variant="warning">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-        <span>{{ nodeIssuesSummary()!.itemsWithIssues }} of {{ nodeIssuesSummary()!.totalItems }} node(s) are missing context/focus tags.</span>
-        <sp-admin-button variant="primary" appearance="outline" size="sm" [disabled]="bulkRepair.running()" (clicked)="fixAllNodesWithAi()">
-          {{ bulkRepair.running() ? 'Fixing…' : 'Fix All with AI (' + nodeIssuesSummary()!.itemsWithIssues + ')' }}
-        </sp-admin-button>
-      </div>
-    </sp-admin-alert>
-  }
-
-  <!-- User correction (2026-07-24) — this banner used to have no clickable affordance at all
-       despite telling the admin to "click a node below"; each isolated node is now a real link
-       to its View page. -->
-  @if (isolatedNodes().length > 0) {
-    <sp-admin-alert variant="warning">
-      <div>{{ isolatedNodes().length }} node(s) have no prerequisite edges at all (no prerequisites AND no dependents) — click one below, then use "Add prerequisite" on its Edit page to connect it.</div>
-      <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;">
-        @for (n of isolatedNodes(); track n.id) {
-          <sp-admin-button size="xs" variant="neutral" appearance="outline" (clicked)="viewIsolatedNode(n)">{{ n.title }}</sp-admin-button>
-        }
-      </div>
-    </sp-admin-alert>
-  }
+  <!-- User correction (2026-07-24) — the tag-issues banner, the isolated-nodes banner, and the
+       full "Graph audit" (redundant edges + near-duplicate nodes) card used to live directly on
+       this page; all moved to a dedicated audit page so this list stays focused on browsing/
+       approving/rejecting nodes. This is just the entry point. -->
+  <sp-admin-card title="Graph Audit">
+    <p class="sp-admin-section-sub">Missing tags, isolated nodes, redundant edges, and near-duplicate content — reviewed and fixed on a dedicated page.</p>
+    <sp-admin-button variant="primary" size="sm" appearance="outline" (clicked)="goToAuditPage()">Go to Graph Audit</sp-admin-button>
+  </sp-admin-card>
 
   <!-- Coverage matrix -->
   <sp-admin-card title="Node Coverages">
@@ -83,25 +65,16 @@
     }
   </sp-admin-card>
 
-  <!-- Skill Graph rebuild Phase 6.3a/6.3c, merged into one section (2026-07-24 user correction:
-       "Graph audit and Near-duplicate nodes are literally the same thing... Graph audit should
-       return both"). Deterministic (no AI) — advisory only, every suggestion is reviewed here,
-       never auto-applied. -->
-  <sp-admin-card title="Graph audit">
-    <p class="sp-admin-section-sub">Checks every prerequisite edge for redundancy (an edge already implied by a longer existing path, e.g. A→B when A→X→B also exists) and every node pair at the same CEFR level/Skill for near-duplicate content.</p>
-    <sp-admin-button variant="primary" size="sm" appearance="outline" [disabled]="auditingGraph()" (clicked)="runGraphAudit()">
-      {{ auditingGraph() ? 'Auditing…' : 'Run graph audit' }}
-    </sp-admin-button>
-    @if (auditError()) {
-      <sp-admin-alert variant="error">{{ auditError() }}</sp-admin-alert>
-    }
-
-    <!-- Redundant edges. Phase 6.3e — suggestions can also arrive from a post-mutation inline
-         trigger (accepting a reconnect can itself make some OTHER edge redundant), not just this
-         card's own "Run graph audit" button — so the list renders whenever there's something in
-         it, independent of whether an explicit audit was ever run this session. -->
-    @if (redundantEdgeSuggestions().length > 0) {
-      <div class="sp-admin-section-h"><h3>Redundant edges</h3></div>
+  <!-- Phase 6.3e — a reconnect accepted below can itself trigger 6.3a's inline redundant-edge
+       check; the full "Graph audit" (on-demand run + near-duplicate detection) moved to the
+       dedicated audit page above, but this stays here since it's tied directly to the Reconnect
+       action on this page. -->
+  @if (redundantEdgeSuggestions().length > 0) {
+    <sp-admin-card title="New redundant-edge suggestion(s)">
+      <p class="sp-admin-section-sub">Accepting a reconnect just now made an existing edge redundant — already implied by a longer path, safe to remove.</p>
+      @if (redundantEdgeSuggestionError()) {
+        <sp-admin-alert variant="error">{{ redundantEdgeSuggestionError() }}</sp-admin-alert>
+      }
       <ul class="sp-admin-simple-list">
         @for (s of redundantEdgeSuggestions(); track $index) {
           @if (s.proposedEdgesToRemove[0]; as edge) {
@@ -115,67 +88,8 @@
           }
         }
       </ul>
-    } @else if (auditRun()) {
-      <sp-admin-alert variant="success">No redundant edges found.</sp-admin-alert>
-    }
-
-    <!-- Near-duplicate nodes. Merging is a real, explicit API call that repoints edges and
-         deactivates the merged-away node — but only after an explicit confirm step (2026-07-24
-         user correction: a single click used to merge immediately with no way to review or undo
-         it). Descriptions are shown and both titles link to their View page so the admin can judge
-         without leaving this list; "Confirm with AI" is an on-demand per-pair second opinion. -->
-    @if (nearDuplicateSuggestions().length > 0) {
-      <div class="sp-admin-section-h"><h3>Near-duplicate nodes</h3></div>
-      @if (mergeError()) { <sp-admin-alert variant="error">{{ mergeError() }}</sp-admin-alert> }
-      <ul class="sp-admin-simple-list">
-        @for (s of nearDuplicateSuggestions(); track (s.nodeAId + s.nodeBId)) {
-          <li style="display:flex; flex-direction:column; gap:6px; padding:10px 12px; border:1px solid var(--sp-admin-border, #e5e7eb); border-radius:8px; margin-bottom:8px;">
-            <div class="sp-admin-form-actions" style="justify-content:space-between; padding:0; background:none; border:none;">
-              <span>
-                <a href="javascript:void(0)" (click)="goToNodeView(s.nodeAId)">{{ s.nodeATitle }}</a>
-                ↔
-                <a href="javascript:void(0)" (click)="goToNodeView(s.nodeBId)">{{ s.nodeBTitle }}</a>
-                <span class="sp-admin-text-muted">— {{ s.cefrLevel }} / {{ s.skill }}, {{ (s.similarity * 100) | number: '1.0-0' }}% similar</span>
-              </span>
-              <span class="sp-admin-form-actions" style="padding:0; background:none; border:none;">
-                <sp-admin-button size="sm" variant="neutral" appearance="outline" [disabled]="isDuplicateConfirming(s)" (clicked)="confirmDuplicateWithAi(s)">
-                  {{ isDuplicateConfirming(s) ? 'Asking AI…' : 'Confirm with AI' }}
-                </sp-admin-button>
-                <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="dismissNearDuplicateSuggestion(s)">Dismiss</sp-admin-button>
-                <sp-admin-button size="sm" variant="primary" appearance="outline" (clicked)="stageMerge(s, 'A')">Keep "{{ s.nodeATitle }}"</sp-admin-button>
-                <sp-admin-button size="sm" variant="primary" appearance="outline" (clicked)="stageMerge(s, 'B')">Keep "{{ s.nodeBTitle }}"</sp-admin-button>
-              </span>
-            </div>
-            <div style="display:flex; gap:16px; font-size:12.5px; color:var(--sp-admin-text-muted, #6b7280);">
-              <span style="flex:1;"><strong>{{ s.nodeATitle }}:</strong> {{ s.nodeADescription }}</span>
-              <span style="flex:1;"><strong>{{ s.nodeBTitle }}:</strong> {{ s.nodeBDescription }}</span>
-            </div>
-            @if (duplicateAiResult(s); as aiResult) {
-              @if (aiResult.success) {
-                <sp-admin-alert [variant]="aiResult.isLikelyDuplicate ? 'warning' : 'success'">
-                  AI: {{ aiResult.isLikelyDuplicate ? 'likely a duplicate' : 'not a duplicate' }} — {{ aiResult.reasoning }}
-                </sp-admin-alert>
-              } @else {
-                <sp-admin-alert variant="error">AI confirmation failed: {{ aiResult.error }}</sp-admin-alert>
-              }
-            }
-            @if (isPendingMergeFor(s)) {
-              <sp-admin-alert variant="warning">
-                Merge "{{ pendingMerge()!.keep === 'A' ? s.nodeBTitle : s.nodeATitle }}" into "{{ pendingMerge()!.keep === 'A' ? s.nodeATitle : s.nodeBTitle }}"?
-                The former will be deactivated (not deleted) and its prerequisite edges re-pointed onto the latter.
-                <div class="sp-admin-form-actions" style="padding:8px 0 0; background:none; border:none;">
-                  <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="cancelMerge()">Cancel</sp-admin-button>
-                  <sp-admin-button size="sm" variant="danger" appearance="outline" (clicked)="confirmMerge()">Confirm merge</sp-admin-button>
-                </div>
-              </sp-admin-alert>
-            }
-          </li>
-        }
-      </ul>
-    } @else if (auditRun()) {
-      <sp-admin-alert variant="success">No near-duplicate nodes found.</sp-admin-alert>
-    }
-  </sp-admin-card>
+    </sp-admin-card>
+  }
 
   <!-- Skill Graph rebuild Phase 6.3b (2026-07-23) — reject-triggered reconnect suggestions.
        Advisory only: shows up after rejecting a node with both a real prerequisite and a real

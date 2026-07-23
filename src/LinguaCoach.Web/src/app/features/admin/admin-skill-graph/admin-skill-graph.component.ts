@@ -2,7 +2,6 @@ import { Component, OnInit, signal, computed, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
 import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
@@ -32,16 +31,11 @@ import {
   SkillGraphCoverageEntry,
   SkillGraphNode,
   SkillGraphEdge,
-  SkillGraphIsolatedNode,
   GraphChangeSuggestion,
   RejectReconnectGroup,
-  NearDuplicateNodeSuggestion,
-  ConfirmNearDuplicateResponse,
 } from '../../../core/models/admin.models';
 import { SpAdminGraphCardComponent } from '../../../design-system/admin/components/graph-card/sp-admin-graph-card.component';
 import { SpAdminSkillGraphVizComponent } from './skill-graph-viz/sp-admin-skill-graph-viz.component';
-import { IssuesSummary } from '../../../core/models/admin-repair.models';
-import { AdminBulkRepairService } from '../../../core/services/admin-bulk-repair.service';
 
 @Component({
   selector: 'app-admin-skill-graph',
@@ -70,32 +64,16 @@ import { AdminBulkRepairService } from '../../../core/services/admin-bulk-repair
   ],
 })
 export class AdminSkillGraphComponent implements OnInit {
-  constructor(private api: AdminApiService, public bulkRepair: AdminBulkRepairService, private router: Router) {}
+  constructor(private api: AdminApiService, private router: Router) {}
 
   @ViewChild('nodesTableRef') nodesTableRef?: SpAdminTableComponent;
 
-  // ── Sprint 14.1 — node tag issue count + bulk "Fix All with AI" ──────────────────────────
-  nodeIssuesSummary = signal<IssuesSummary | null>(null);
-
-  loadNodeIssuesSummary(): void {
-    this.api.getSkillGraphNodeIssuesSummary().subscribe({
-      next: summary => this.nodeIssuesSummary.set(summary),
-      error: () => this.nodeIssuesSummary.set(null),
-    });
-  }
-
-  fixAllNodesWithAi(): void {
-    this.bulkRepair.run({
-      entityLabel: 'Skill Graph Node',
-      listWithIssues: () => this.api.listSkillGraphNodesWithIssues(),
-      repairOne: id => this.api.repairSkillGraphNode(id),
-      onDone: () => {
-        this.loadNodeIssuesSummary();
-        this.loadNodes();
-        this.graphLoaded = false;
-        if (this.viewMode() === 'graph') this.loadGraph();
-      },
-    });
+  // User correction (2026-07-24) — the tag-issues banner, the isolated-nodes banner, and the
+  // merged "Graph audit" (redundant edges + near-duplicate nodes) card used to live directly on
+  // this page; all moved to a dedicated /admin/skill-graph/audit page so this list page stays
+  // focused on browsing/approving/rejecting nodes. This is just the entry point.
+  goToAuditPage(): void {
+    this.router.navigateByUrl('/admin/skill-graph/audit');
   }
 
   // ── Sprint 13 — Table/Graph view toggle + bulk nodes+edges for the visual view ────────────
@@ -259,49 +237,14 @@ export class AdminSkillGraphComponent implements OnInit {
     this.loadCoverage();
     this.loadNodes();
     this.loadContentCoverage();
-    this.loadNodeIssuesSummary();
-    this.loadIsolatedNodes();
   }
 
-  // ── Editability audit (2026-07-23) — isolated-node connectivity metric ───────────────────
-  isolatedNodes = signal<SkillGraphIsolatedNode[]>([]);
-
-  loadIsolatedNodes(): void {
-    this.api.getIsolatedSkillGraphNodes().subscribe({
-      next: r => this.isolatedNodes.set(r.isolated),
-      error: () => this.isolatedNodes.set([]),
-    });
-  }
-
-  // ── Skill Graph rebuild Phase 6.3a/6.3c, merged into one "Graph audit" section (2026-07-24 user
-  // correction: "Graph audit and Near-duplicate nodes are literally the same thing... Graph audit
-  // should return both"). One button runs both deterministic (no-AI) checks together: redundant-
-  // edge detection and near-duplicate node detection. Advisory only throughout. ──────────────────
-  auditingGraph = signal(false);
-  auditError = signal('');
-  auditRun = signal(false);
+  // Phase 6.3e — inline redundant-edge suggestions surfaced from accepting a reconnect below
+  // (reconnecting A->C after B is rejected can itself make some OTHER edge redundant). The full
+  // "Graph audit" (on-demand run + near-duplicate detection) moved to /admin/skill-graph/audit;
+  // this stays here since it's tied directly to the Reconnect action on this page.
   redundantEdgeSuggestions = signal<GraphChangeSuggestion[]>([]);
-  nearDuplicateSuggestions = signal<NearDuplicateNodeSuggestion[]>([]);
-
-  runGraphAudit(): void {
-    this.auditingGraph.set(true);
-    this.auditError.set('');
-    forkJoin({
-      redundantEdges: this.api.getRedundantEdgeSuggestions(),
-      nearDuplicates: this.api.getNearDuplicateSuggestions(),
-    }).subscribe({
-      next: r => {
-        this.auditingGraph.set(false);
-        this.auditRun.set(true);
-        this.redundantEdgeSuggestions.set(r.redundantEdges.suggestions);
-        this.nearDuplicateSuggestions.set(r.nearDuplicates.suggestions);
-      },
-      error: err => {
-        this.auditingGraph.set(false);
-        this.auditError.set(err?.error?.error ?? 'Could not run the graph audit.');
-      },
-    });
-  }
+  redundantEdgeSuggestionError = signal('');
 
   dismissRedundantEdgeSuggestion(index: number): void {
     this.redundantEdgeSuggestions.update(list => list.filter((_, i) => i !== index));
@@ -314,97 +257,9 @@ export class AdminSkillGraphComponent implements OnInit {
       next: () => {
         this.dismissRedundantEdgeSuggestion(index);
         this.loadNodes();
-        this.loadIsolatedNodes();
       },
-      error: err => this.auditError.set(err?.error?.error ?? 'Could not remove this edge.'),
+      error: err => this.redundantEdgeSuggestionError.set(err?.error?.error ?? 'Could not remove this edge.'),
     });
-  }
-
-  // ── Near-duplicate suggestions are keyed by node-id pair (not array index) — the AI-confirm
-  // result and the pending-merge-confirmation state both need to survive the list re-rendering
-  // around them without going stale. ─────────────────────────────────────────────────────────────
-  private static duplicateKey(s: NearDuplicateNodeSuggestion): string { return `${s.nodeAId}_${s.nodeBId}`; }
-
-  dismissNearDuplicateSuggestion(suggestion: NearDuplicateNodeSuggestion): void {
-    const key = AdminSkillGraphComponent.duplicateKey(suggestion);
-    this.nearDuplicateSuggestions.update(list => list.filter(s => AdminSkillGraphComponent.duplicateKey(s) !== key));
-    this.aiConfirmResults.update(map => { const next = new Map(map); next.delete(key); return next; });
-    if (this.pendingMerge()?.key === key) this.pendingMerge.set(null);
-  }
-
-  // User correction (2026-07-24) — merging used to happen on a single click with no way to see
-  // what you were about to do or undo it. "Keep A/B" now only stages a confirmation; nothing is
-  // called until the admin explicitly confirms.
-  pendingMerge = signal<{ key: string; suggestion: NearDuplicateNodeSuggestion; keep: 'A' | 'B' } | null>(null);
-  mergeError = signal('');
-
-  stageMerge(suggestion: NearDuplicateNodeSuggestion, keep: 'A' | 'B'): void {
-    this.mergeError.set('');
-    this.pendingMerge.set({ key: AdminSkillGraphComponent.duplicateKey(suggestion), suggestion, keep });
-  }
-
-  cancelMerge(): void {
-    this.pendingMerge.set(null);
-  }
-
-  confirmMerge(): void {
-    const pending = this.pendingMerge();
-    if (!pending) return;
-    const { suggestion, keep } = pending;
-    const keepNodeId = keep === 'A' ? suggestion.nodeAId : suggestion.nodeBId;
-    const mergeAwayNodeId = keep === 'A' ? suggestion.nodeBId : suggestion.nodeAId;
-    this.api.mergeSkillGraphNodes(keepNodeId, mergeAwayNodeId).subscribe({
-      next: () => {
-        this.pendingMerge.set(null);
-        this.dismissNearDuplicateSuggestion(suggestion);
-        this.loadNodes();
-        this.loadIsolatedNodes();
-      },
-      error: err => this.mergeError.set(err?.error?.error ?? 'Could not merge these nodes.'),
-    });
-  }
-
-  // ── Phase 6.3f — on-demand per-pair AI second opinion. Never called automatically; only when
-  // the admin explicitly clicks "Confirm with AI" for one specific pair. Advisory only — the
-  // admin still decides whether to merge, same as every other suggestion in this codebase. ───────
-  confirmingDuplicateKeys = signal<Set<string>>(new Set());
-  aiConfirmResults = signal<Map<string, ConfirmNearDuplicateResponse>>(new Map());
-
-  confirmDuplicateWithAi(suggestion: NearDuplicateNodeSuggestion): void {
-    const key = AdminSkillGraphComponent.duplicateKey(suggestion);
-    this.confirmingDuplicateKeys.update(set => new Set(set).add(key));
-    this.api.confirmNearDuplicate(suggestion.nodeAId, suggestion.nodeBId).subscribe({
-      next: r => {
-        this.confirmingDuplicateKeys.update(set => { const next = new Set(set); next.delete(key); return next; });
-        this.aiConfirmResults.update(map => new Map(map).set(key, r));
-      },
-      error: err => {
-        this.confirmingDuplicateKeys.update(set => { const next = new Set(set); next.delete(key); return next; });
-        this.aiConfirmResults.update(map => new Map(map).set(key, {
-          success: false, isLikelyDuplicate: null, reasoning: null,
-          error: err?.error?.error ?? 'Could not get an AI confirmation.',
-        }));
-      },
-    });
-  }
-
-  isDuplicateConfirming(suggestion: NearDuplicateNodeSuggestion): boolean {
-    return this.confirmingDuplicateKeys().has(AdminSkillGraphComponent.duplicateKey(suggestion));
-  }
-
-  duplicateAiResult(suggestion: NearDuplicateNodeSuggestion): ConfirmNearDuplicateResponse | undefined {
-    return this.aiConfirmResults().get(AdminSkillGraphComponent.duplicateKey(suggestion));
-  }
-
-  isPendingMergeFor(suggestion: NearDuplicateNodeSuggestion): boolean {
-    return this.pendingMerge()?.key === AdminSkillGraphComponent.duplicateKey(suggestion);
-  }
-
-  // User correction (2026-07-24) — "there is no way to see the details of those nodes"; both
-  // titles in a near-duplicate suggestion now link to their real View page. Safe to navigate away
-  // from the audit list now that Back correctly returns to whatever page the admin came from.
-  goToNodeView(id: string): void {
-    this.router.navigateByUrl(`/admin/skill-graph/nodes/${id}`);
   }
 
   // User correction (2026-07-23): Create moved from a slide-over to its own routed page,
@@ -419,13 +274,6 @@ export class AdminSkillGraphComponent implements OnInit {
   // route). Clicking a Nodes table row now navigates instead of opening a panel in place. ──────
   viewNode(row: SkillGraphNodeListItem): void {
     this.router.navigateByUrl(`/admin/skill-graph/nodes/${row.id}`);
-  }
-
-  // User correction (2026-07-24) — the isolated-nodes banner used to tell the admin to "click a
-  // node below" with no actual clickable affordance anywhere; each isolated node is now a real
-  // link into its View page.
-  viewIsolatedNode(node: SkillGraphIsolatedNode): void {
-    this.router.navigateByUrl(`/admin/skill-graph/nodes/${node.id}`);
   }
 
   // Content-coverage merge (2026-07-23) — only the 3 aggregate numbers are used now (for the
@@ -669,10 +517,9 @@ export class AdminSkillGraphComponent implements OnInit {
         this.dismissReconnectSuggestion(groupIndex, edgeIndex);
         // Phase 6.3e — this add-prerequisite call can itself trigger 6.3a's inline redundant-edge
         // check (reconnecting A->C after B is rejected can make some OTHER edge redundant); surface
-        // it in the same "Graph audit" list rather than silently discarding it.
+        // it here rather than silently discarding it.
         if (r.suggestions.length > 0) this.redundantEdgeSuggestions.update(list => [...list, ...r.suggestions]);
         this.loadNodes();
-        this.loadIsolatedNodes();
       },
       error: err => this.reconnectError.set(err?.error?.error ?? 'Could not add this reconnect.'),
     });

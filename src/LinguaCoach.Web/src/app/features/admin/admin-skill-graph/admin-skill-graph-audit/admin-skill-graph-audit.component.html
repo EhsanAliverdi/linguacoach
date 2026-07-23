@@ -1,0 +1,203 @@
+<sp-admin-page-header title="Skill Graph Audit">
+  <sp-admin-button variant="neutral" appearance="outline" (clicked)="back()">← Back</sp-admin-button>
+</sp-admin-page-header>
+
+<sp-admin-page-body>
+
+  @if (nodeIssuesSummary() && nodeIssuesSummary()!.itemsWithIssues === 0 && isolatedNodes().length === 0) {
+    <sp-admin-alert variant="success">No missing tags and no isolated nodes right now.</sp-admin-alert>
+  }
+
+  <!-- Missing tags — every row is a real node, filterable by title, with a per-row "Fix with AI"
+       action alongside the existing bulk "Fix All with AI". -->
+  <sp-admin-card padding="none" variant="bordered" [hasHeader]="true" [headerDivider]="true">
+    <div slot="header" style="display:flex; align-items:center; justify-content:space-between; width:100%; flex-wrap:wrap; gap:8px;">
+      <span class="sp-admin-section-title">Missing context/focus tags ({{ nodeIssuesSummary()?.itemsWithIssues ?? 0 }} of {{ nodeIssuesSummary()?.totalItems ?? 0 }})</span>
+      @if (nodeIssuesSummary() && nodeIssuesSummary()!.itemsWithIssues > 0) {
+        <sp-admin-button variant="primary" appearance="outline" size="sm" [disabled]="bulkRepair.running()" (clicked)="fixAllNodesWithAi()">
+          {{ bulkRepair.running() ? 'Fixing…' : 'Fix All with AI (' + nodeIssuesSummary()!.itemsWithIssues + ')' }}
+        </sp-admin-button>
+      }
+    </div>
+    @if (nodesWithIssues().length === 0) {
+      <div style="padding: 16px 18px;">
+        <sp-admin-alert variant="success">No nodes with missing tags.</sp-admin-alert>
+      </div>
+    } @else {
+      <sp-admin-table
+        [flush]="true" variant="data" density="compact" layout="first-column-fluid"
+        [searchable]="true" searchPlaceholder="Search title…"
+        [searchValue]="missingTagsSearch()" (searchChange)="missingTagsSearch.set($event)"
+        [columns]="missingTagsColumns" [rows]="filteredNodesWithIssues()"
+        emptyMessage="No nodes match this search."
+      >
+        <ng-template #cell let-row let-col="col">
+          @switch (col.key) {
+            @case ('actions') {
+              <sp-admin-button size="sm" variant="primary" appearance="outline" [disabled]="isFixingNode($any(row))" (clicked)="fixOneNodeWithAi($any(row))">
+                {{ isFixingNode($any(row)) ? 'Fixing…' : 'Fix with AI' }}
+              </sp-admin-button>
+            }
+            @default { {{ $any(row)[col.key] }} }
+          }
+        </ng-template>
+      </sp-admin-table>
+    }
+  </sp-admin-card>
+
+  <!-- Isolated nodes — no prerequisite edges at all (no prerequisites AND no dependents). -->
+  <sp-admin-card padding="none" variant="bordered" [hasHeader]="true" [headerDivider]="true">
+    <span slot="header" class="sp-admin-section-title">Isolated nodes ({{ isolatedNodes().length }})</span>
+    @if (isolatedNodes().length === 0) {
+      <div style="padding: 16px 18px;">
+        <sp-admin-alert variant="success">No isolated nodes.</sp-admin-alert>
+      </div>
+    } @else {
+      <div style="padding: 12px 18px 0;">
+        <p class="sp-admin-section-sub">These nodes have no prerequisites AND no dependents — use "Add prerequisite" on the Edit page to connect them.</p>
+      </div>
+      <sp-admin-table
+        [flush]="true" variant="data" density="compact" layout="first-column-fluid"
+        [searchable]="true" searchPlaceholder="Search title or key…"
+        [searchValue]="isolatedSearch()" (searchChange)="isolatedSearch.set($event)"
+        [columns]="isolatedColumns" [rows]="filteredIsolatedNodes()"
+        emptyMessage="No nodes match this search."
+      >
+        <ng-template #cell let-row let-col="col">
+          @switch (col.key) {
+            @case ('actions') {
+              <sp-admin-button size="sm" variant="primary" appearance="outline" (clicked)="editIsolatedNode($any(row))">Add prerequisite →</sp-admin-button>
+            }
+            @default { {{ $any(row)[col.key] }} }
+          }
+        </ng-template>
+      </sp-admin-table>
+    }
+  </sp-admin-card>
+
+  <!-- Skill Graph rebuild Phase 6.3a/6.3c, merged into one section. Deterministic (no AI) —
+       advisory only, every suggestion is reviewed here, never auto-applied. -->
+  <sp-admin-card title="Graph audit">
+    <p class="sp-admin-section-sub">Checks every prerequisite edge for redundancy (an edge already implied by a longer existing path, e.g. A→B when A→X→B also exists) and every node pair at the same CEFR level/Skill for near-duplicate content.</p>
+    <sp-admin-button variant="primary" size="sm" appearance="outline" [disabled]="auditingGraph()" (clicked)="runGraphAudit()">
+      {{ auditingGraph() ? 'Auditing…' : 'Run graph audit' }}
+    </sp-admin-button>
+    @if (auditError()) {
+      <sp-admin-alert variant="error">{{ auditError() }}</sp-admin-alert>
+    }
+  </sp-admin-card>
+
+  <!-- Redundant edges table -->
+  @if (redundantEdgeSuggestions().length > 0 || auditRun()) {
+    <sp-admin-card padding="none" variant="bordered" [hasHeader]="true" [headerDivider]="true">
+      <span slot="header" class="sp-admin-section-title">Redundant edges ({{ redundantEdgeSuggestions().length }})</span>
+      @if (redundantEdgeSuggestions().length === 0) {
+        <div style="padding: 16px 18px;">
+          <sp-admin-alert variant="success">No redundant edges found.</sp-admin-alert>
+        </div>
+      } @else {
+        <sp-admin-table
+          [flush]="true" variant="data" density="compact" layout="first-column-fluid"
+          [searchable]="true" searchPlaceholder="Search node title…"
+          [searchValue]="redundantEdgesSearch()" (searchChange)="redundantEdgesSearch.set($event)"
+          [columns]="redundantEdgesColumns" [rows]="filteredRedundantEdgeRows()"
+          emptyMessage="No edges match this search."
+        >
+          <ng-template #cell let-row let-col="col">
+            @switch (col.key) {
+              @case ('from') { {{ $any(row).edge.prerequisiteNodeTitle }} }
+              @case ('to') { {{ $any(row).edge.nodeTitle }} }
+              @case ('reason') { {{ $any(row).suggestion.description }} }
+              @case ('actions') {
+                <span class="sp-admin-form-actions" style="padding:0; background:none; border:none;">
+                  <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="dismissRedundantEdgeSuggestion($any(row).index)">Dismiss</sp-admin-button>
+                  <sp-admin-button size="sm" variant="danger" appearance="outline" (clicked)="removeRedundantEdge($any(row).suggestion, $any(row).index)">Remove edge</sp-admin-button>
+                </span>
+              }
+            }
+          </ng-template>
+        </sp-admin-table>
+      }
+    </sp-admin-card>
+  }
+
+  <!-- Near-duplicate nodes table — click "Review" to expand descriptions, an on-demand AI second
+       opinion, and the merge confirmation step. -->
+  @if (nearDuplicateSuggestions().length > 0 || auditRun()) {
+    <sp-admin-card padding="none" variant="bordered" [hasHeader]="true" [headerDivider]="true">
+      <span slot="header" class="sp-admin-section-title">Near-duplicate nodes ({{ nearDuplicateSuggestions().length }})</span>
+      @if (nearDuplicateSuggestions().length === 0) {
+        <div style="padding: 16px 18px;">
+          <sp-admin-alert variant="success">No near-duplicate nodes found.</sp-admin-alert>
+        </div>
+      } @else {
+        <div style="padding: 12px 18px 0;">
+          @if (mergeError()) { <sp-admin-alert variant="error">{{ mergeError() }}</sp-admin-alert> }
+        </div>
+        <sp-admin-table
+          [flush]="true" variant="data" density="compact" layout="first-column-fluid"
+          [searchable]="true" searchPlaceholder="Search node title…"
+          [searchValue]="nearDuplicatesSearch()" (searchChange)="nearDuplicatesSearch.set($event)"
+          [columns]="nearDuplicatesColumns" [rows]="filteredNearDuplicates()"
+          [isRowExpanded]="isDuplicateRowExpanded"
+          emptyMessage="No pairs match this search."
+        >
+          <ng-template #cell let-row let-col="col">
+            @switch (col.key) {
+              @case ('nodeA') {
+                <a href="javascript:void(0)" (click)="goToNodeView($any(row).nodeAId)">{{ $any(row).nodeATitle }}</a>
+              }
+              @case ('nodeB') {
+                <a href="javascript:void(0)" (click)="goToNodeView($any(row).nodeBId)">{{ $any(row).nodeBTitle }}</a>
+              }
+              @case ('context') { {{ $any(row).cefrLevel }} / {{ $any(row).skill }} }
+              @case ('similarity') { {{ ($any(row).similarity * 100) | number: '1.0-0' }}% }
+              @case ('actions') {
+                <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="toggleDuplicateExpanded($any(row))">
+                  {{ isDuplicateRowExpanded($any(row)) ? 'Hide' : 'Review' }}
+                </sp-admin-button>
+              }
+            }
+          </ng-template>
+
+          <ng-template #rowDetail let-row>
+            <div style="display:flex; flex-direction:column; gap:10px; padding: 4px 0;">
+              <div style="display:flex; gap:16px; font-size:12.5px; color:var(--sp-admin-text-muted, #6b7280);">
+                <span style="flex:1;"><strong>{{ row.nodeATitle }}:</strong> {{ row.nodeADescription }}</span>
+                <span style="flex:1;"><strong>{{ row.nodeBTitle }}:</strong> {{ row.nodeBDescription }}</span>
+              </div>
+              <div class="sp-admin-form-actions" style="padding:0; background:none; border:none;">
+                <sp-admin-button size="sm" variant="neutral" appearance="outline" [disabled]="isDuplicateConfirming(row)" (clicked)="confirmDuplicateWithAi(row)">
+                  {{ isDuplicateConfirming(row) ? 'Asking AI…' : 'Confirm with AI' }}
+                </sp-admin-button>
+                <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="dismissNearDuplicateSuggestion(row)">Dismiss</sp-admin-button>
+                <sp-admin-button size="sm" variant="primary" appearance="outline" (clicked)="stageMerge(row, 'A')">Keep "{{ row.nodeATitle }}"</sp-admin-button>
+                <sp-admin-button size="sm" variant="primary" appearance="outline" (clicked)="stageMerge(row, 'B')">Keep "{{ row.nodeBTitle }}"</sp-admin-button>
+              </div>
+              @if (duplicateAiResult(row); as aiResult) {
+                @if (aiResult.success) {
+                  <sp-admin-alert [variant]="aiResult.isLikelyDuplicate ? 'warning' : 'success'">
+                    AI: {{ aiResult.isLikelyDuplicate ? 'likely a duplicate' : 'not a duplicate' }} — {{ aiResult.reasoning }}
+                  </sp-admin-alert>
+                } @else {
+                  <sp-admin-alert variant="error">AI confirmation failed: {{ aiResult.error }}</sp-admin-alert>
+                }
+              }
+              @if (isPendingMergeFor(row)) {
+                <sp-admin-alert variant="warning">
+                  Merge "{{ pendingMerge()!.keep === 'A' ? row.nodeBTitle : row.nodeATitle }}" into "{{ pendingMerge()!.keep === 'A' ? row.nodeATitle : row.nodeBTitle }}"?
+                  The former will be deactivated (not deleted) and its prerequisite edges re-pointed onto the latter.
+                  <div class="sp-admin-form-actions" style="padding:8px 0 0; background:none; border:none;">
+                    <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="cancelMerge()">Cancel</sp-admin-button>
+                    <sp-admin-button size="sm" variant="danger" appearance="outline" (clicked)="confirmMerge()">Confirm merge</sp-admin-button>
+                  </div>
+                </sp-admin-alert>
+              }
+            </div>
+          </ng-template>
+        </sp-admin-table>
+      }
+    </sp-admin-card>
+  }
+
+</sp-admin-page-body>
