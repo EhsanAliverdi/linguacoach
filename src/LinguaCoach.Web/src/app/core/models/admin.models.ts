@@ -1569,6 +1569,8 @@ export interface SkillGraphNodeListItem {
   createdAt: string;
   contextTags: string[];
   focusTags: string[];
+  // Content-coverage merge (2026-07-23) — replaces the deleted separate "Content coverage" table.
+  linkedModuleCount: number;
 }
 
 export interface SkillGraphNodeListResponse {
@@ -1593,6 +1595,8 @@ export interface SkillGraphNodeDetail extends SkillGraphNodeListItem {
   prerequisites: SkillGraphNodePrerequisiteRef[];
   // Editability audit (2026-07-23) — nodes that list this one as a prerequisite.
   dependents: SkillGraphNodePrerequisiteRef[];
+  // Content-coverage merge (2026-07-23) — real Modules linked to this node.
+  linkedModules: SkillGraphLinkedModuleRef[];
 }
 
 // Editability audit (2026-07-23) — manual node create/edit + manual edge management.

@@ -112,11 +112,24 @@ public sealed class AdminSkillGraphController : ControllerBase
                 n.ContextTagsJson, n.FocusTagsJson,
             })
             .ToListAsync(ct);
+
+        // Content-coverage merge (2026-07-23) — the Nodes table and the old separate "Content
+        // coverage" table showed near-identical data; folding LinkedModuleCount in here (bounded to
+        // this page's ids only) is what let the Content coverage card be deleted outright instead
+        // of duplicating the same node list in two places.
+        var pageIds = rawItems.Select(n => n.Id).ToList();
+        var linkCounts = await _db.ModuleSkillGraphNodeLinks.AsNoTracking()
+            .Where(l => pageIds.Contains(l.SkillGraphNodeId))
+            .GroupBy(l => l.SkillGraphNodeId)
+            .Select(g => new { NodeId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(g => g.NodeId, g => g.Count, ct);
+
         var items = rawItems.Select(n => new
         {
             n.Id, n.Key, n.Title, n.Description, n.CefrLevel, n.Skill, n.Subskill,
             n.DifficultyBand, n.ReviewStatus, n.IsActive, n.RejectionReason, n.CreatedAt,
             ContextTags = ParseTags(n.ContextTagsJson), FocusTags = ParseTags(n.FocusTagsJson),
+            LinkedModuleCount = linkCounts.GetValueOrDefault(n.Id, 0),
         });
 
         return Ok(new
@@ -182,6 +195,13 @@ public sealed class AdminSkillGraphController : ControllerBase
             .Join(_db.SkillGraphNodes.AsNoTracking(), e => e.NodeId, n => n.Id, (e, n) => new { n.Id, n.Key, n.Title })
             .ToListAsync(ct);
 
+        // Content-coverage merge (2026-07-23) — real Modules linked to this node, previously only
+        // visible via the separate "Content coverage" table's own slide-over.
+        var linkedModules = await _db.ModuleSkillGraphNodeLinks.AsNoTracking()
+            .Where(l => l.SkillGraphNodeId == id)
+            .Join(_db.Modules.AsNoTracking(), l => l.ModuleId, m => m.Id, (l, m) => new { m.Id, m.Title })
+            .ToListAsync(ct);
+
         return Ok(new
         {
             node.Id, node.Key, node.Title, node.Description, node.CefrLevel, node.Skill, node.Subskill,
@@ -190,6 +210,7 @@ public sealed class AdminSkillGraphController : ControllerBase
             ContextTags = ParseTags(node.ContextTagsJson), FocusTags = ParseTags(node.FocusTagsJson),
             prerequisites,
             dependents,
+            linkedModules,
         });
     }
 

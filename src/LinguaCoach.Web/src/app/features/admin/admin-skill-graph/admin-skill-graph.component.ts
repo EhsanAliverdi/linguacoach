@@ -9,7 +9,6 @@ import {
   SpAdminCardComponent,
   SpAdminCheckboxComponent,
   SpAdminCoverageHeatmapComponent,
-  SpAdminEmptyStateComponent,
   SpAdminErrorStateComponent,
   SpAdminFormFieldComponent,
   SpAdminHeatmapCell,
@@ -34,7 +33,6 @@ import {
   SkillGraphTaxonomy,
   SkillGraphNodeListItem,
   SkillGraphCoverageEntry,
-  SkillGraphCoverageNode,
   SkillGraphNode,
   SkillGraphEdge,
   SkillGraphNodeDetail,
@@ -59,7 +57,6 @@ import { AdminBulkRepairService } from '../../../core/services/admin-bulk-repair
     SpAdminCardComponent,
     SpAdminCheckboxComponent,
     SpAdminCoverageHeatmapComponent,
-    SpAdminEmptyStateComponent,
     SpAdminErrorStateComponent,
     SpAdminFormFieldComponent,
     SpAdminHelpIconComponent,
@@ -184,53 +181,16 @@ export class AdminSkillGraphComponent implements OnInit {
   draftStatus = signal('');
   draftError = signal('');
 
-  // ── Content coverage (Sprint 2, expanded Sprint 14.2) ─────────────────────
+  // ── Content coverage (Sprint 2, expanded Sprint 14.2, merged into Nodes 2026-07-23) ───────
+  // The separate "Content coverage" table/slide-over was deleted — it showed almost the same
+  // node list as the Nodes table below, just with a Linked Modules column. That column now
+  // lives directly on the Nodes table (nodesColumns 'linkedModules') and the full linked-Module
+  // list is shown in the node detail slide-over. Only the aggregate stat and the sweep action
+  // survive here, folded into the Nodes card's own header.
   contentCoverageLoading = signal(true);
   contentCoverageError = signal('');
   totalApprovedNodes = signal(0);
   nodesWithContent = signal(0);
-  coverageNodes = signal<SkillGraphCoverageNode[]>([]);
-
-  coveragePage = signal(1);
-  readonly coveragePageSize = 20;
-
-  // Sprint 14.7 — filtering as a table feature (sp-admin-table's [filters]/(filterChange)).
-  // All nodes are already loaded client-side, so filtering narrows coverageNodes() in memory
-  // rather than round-tripping to the API.
-  coverageFilterCefrLevel = signal('');
-  coverageFilterSkill = signal('');
-  contentCoverageFilters = computed<SpAdminTableFilter[]>(() => [
-    { key: 'cefrLevel', label: 'CEFR level', options: this.cefrLevelOptions(), value: this.coverageFilterCefrLevel(), placeholder: 'All' },
-    { key: 'skill', label: 'Skill', options: this.skillOptions(), value: this.coverageFilterSkill(), placeholder: 'All' },
-  ]);
-  onContentCoverageFilterChange(event: { key: string; value: string }): void {
-    if (event.key === 'cefrLevel') this.coverageFilterCefrLevel.set(event.value);
-    else if (event.key === 'skill') this.coverageFilterSkill.set(event.value);
-    this.coveragePage.set(1);
-  }
-  filteredCoverageNodes = computed(() => {
-    const cefr = this.coverageFilterCefrLevel();
-    const skill = this.coverageFilterSkill();
-    return this.coverageNodes().filter(n =>
-      (!cefr || n.cefrLevel === cefr) && (!skill || n.skill === skill));
-  });
-
-  coverageTotalPages = computed(() => Math.max(1, Math.ceil(this.filteredCoverageNodes().length / this.coveragePageSize)));
-  pagedCoverageNodes = computed(() => {
-    const start = (this.coveragePage() - 1) * this.coveragePageSize;
-    return this.filteredCoverageNodes().slice(start, start + this.coveragePageSize);
-  });
-  onCoveragePageChange(page: number): void {
-    this.coveragePage.set(page);
-  }
-
-  selectedCoverageNode = signal<SkillGraphCoverageNode | null>(null);
-  openCoverageNode(node: SkillGraphCoverageNode): void {
-    this.selectedCoverageNode.set(node);
-  }
-  closeCoverageNode(): void {
-    this.selectedCoverageNode.set(null);
-  }
 
   retagPending = signal(false);
   retagStatus = signal('');
@@ -275,6 +235,7 @@ export class AdminSkillGraphComponent implements OnInit {
     { key: 'subskill', label: 'Subskill' },
     { key: 'difficultyBand', label: 'Difficulty' },
     { key: 'tags', label: 'Tags' },
+    { key: 'linkedModuleCount', label: 'Linked Modules' },
     { key: 'reviewStatus', label: 'Status' },
   ];
 
@@ -539,6 +500,9 @@ export class AdminSkillGraphComponent implements OnInit {
     });
   }
 
+  // Content-coverage merge (2026-07-23) — only the 3 aggregate numbers are used now (for the
+  // Nodes card header badge); the per-node list this endpoint also returns is no longer consumed
+  // client-side since the Nodes table itself now carries linkedModuleCount per row.
   loadContentCoverage(): void {
     this.contentCoverageLoading.set(true);
     this.contentCoverageError.set('');
@@ -546,8 +510,6 @@ export class AdminSkillGraphComponent implements OnInit {
       next: r => {
         this.totalApprovedNodes.set(r.totalApprovedNodes);
         this.nodesWithContent.set(r.nodesWithContent);
-        this.coverageNodes.set(r.nodes);
-        this.coveragePage.set(1);
         this.contentCoverageLoading.set(false);
       },
       error: err => {
@@ -571,6 +533,7 @@ export class AdminSkillGraphComponent implements OnInit {
             ? `No untagged approved Modules found. ${remaining}`
             : `Swept ${r.sweptCount} Module(s), applied ${totalMatched} node link(s). ${remaining}`);
         this.loadContentCoverage();
+        this.loadNodes();
       },
       error: err => {
         this.retagPending.set(false);

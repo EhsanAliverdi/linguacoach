@@ -73,6 +73,59 @@ public sealed class AdminSkillGraphEndpointTests : IClassFixture<ApiTestFactory>
     }
 
     [Fact]
+    public async Task GetNodes_ReportsLinkedModuleCount()
+    {
+        // Content-coverage merge (2026-07-23) — GetNodes now carries LinkedModuleCount so the
+        // Nodes table can show it directly, replacing the deleted separate "Content coverage" table.
+        var node = await SeedNodeAsync($"grammar.linkcount_{Guid.NewGuid():N}.a1");
+        Guid moduleId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var module = new Module($"Module {Guid.NewGuid():N}", ModuleSourceMode.Manual, cefrLevel: "A1", skill: "grammar");
+            db.Modules.Add(module);
+            await db.SaveChangesAsync();
+            moduleId = module.Id;
+            db.ModuleSkillGraphNodeLinks.Add(new ModuleSkillGraphNodeLink(moduleId, node.Id, 0.9));
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.GetAsync($"/api/admin/skill-graph/nodes?cefrLevel=A1&skill=grammar&pageSize=200");
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var items = body.GetProperty("items").EnumerateArray().ToList();
+        var thisNode = items.Single(i => i.GetProperty("id").GetGuid() == node.Id);
+        Assert.Equal(1, thisNode.GetProperty("linkedModuleCount").GetInt32());
+    }
+
+    [Fact]
+    public async Task GetNode_ReturnsLinkedModulesList()
+    {
+        var node = await SeedNodeAsync($"grammar.linklist_{Guid.NewGuid():N}.a1");
+        Guid moduleId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var module = new Module($"Linked module {Guid.NewGuid():N}", ModuleSourceMode.Manual, cefrLevel: "A1", skill: "grammar");
+            db.Modules.Add(module);
+            await db.SaveChangesAsync();
+            moduleId = module.Id;
+            db.ModuleSkillGraphNodeLinks.Add(new ModuleSkillGraphNodeLink(moduleId, node.Id, 0.9));
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.GetAsync($"/api/admin/skill-graph/nodes/{node.Id}");
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var linkedModules = body.GetProperty("linkedModules").EnumerateArray().ToList();
+        Assert.Contains(linkedModules, m => m.GetProperty("id").GetGuid() == moduleId);
+    }
+
+    [Fact]
     public async Task BatchApprove_MarksNodesApproved()
     {
         var node = await SeedNodeAsync($"grammar.approve_{Guid.NewGuid():N}.a1");

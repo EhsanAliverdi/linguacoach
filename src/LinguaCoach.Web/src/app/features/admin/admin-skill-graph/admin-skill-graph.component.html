@@ -73,121 +73,17 @@
     }
   </sp-admin-card>
 
-  <!-- Content coverage (Sprint 2, expanded Sprint 14.2) -->
+  <!-- Nodes table / graph (Content coverage merged in here 2026-07-23 — see Linked Modules column
+       and node detail panel below; the two tables were showing near-duplicate data.) -->
   <sp-admin-card padding="none" variant="bordered" [hasHeader]="true" [headerDivider]="true">
     <sp-admin-section-header
-      slot="header"
-      title="Content coverage"
-      description="Every approved node and the real Modules linked to it. A node with zero linked Modules has no real content teaching it yet."
-      [count]="nodesWithContent()"
-      countLabel="/ {{ totalApprovedNodes() }} covered"
-      [countTone]="nodesWithContent() === totalApprovedNodes() && totalApprovedNodes() > 0 ? 'success' : 'warning'">
-      <div slot="actions" style="display:inline-flex;">
-        <sp-admin-button variant="neutral" appearance="outline" size="sm" groupPosition="start" [disabled]="retagPending()" (clicked)="retagModules()">
+      slot="header" title="Nodes" [count]="nodesTotalCount()" countLabel="nodes"
+      [description]="'Content coverage: ' + nodesWithContent() + ' / ' + totalApprovedNodes() + ' approved nodes have real linked Modules.'">
+      <div slot="actions" style="display:flex; gap:8px; align-items:center;">
+        <sp-admin-button size="sm" variant="neutral" appearance="outline" [disabled]="retagPending()" (clicked)="retagModules()">
           {{ retagPending() ? 'Sweeping…' : 'Sweep untagged Module' }}
         </sp-admin-button>
-        <sp-admin-help-icon attached variant="neutral" appearance="outline" size="sm" key="admin.skillGraph.sweepUntaggedModules" title="Sweep untagged Modules" />
-      </div>
-    </sp-admin-section-header>
-    <div style="padding: 16px 18px;">
-      @if (retagStatus()) {
-        <sp-admin-alert variant="success">{{ retagStatus() }}</sp-admin-alert>
-      }
-      @if (retagError()) {
-        <sp-admin-alert variant="error">{{ retagError() }}</sp-admin-alert>
-      }
-    </div>
-
-    @if (contentCoverageLoading()) {
-      <div style="padding: 16px 18px;"><sp-admin-loading-state message="Loading content coverage" /></div>
-    } @else if (contentCoverageError()) {
-      <div style="padding: 16px 18px;"><sp-admin-error-state title="Content coverage unavailable" [message]="contentCoverageError()" /></div>
-    } @else if (coverageNodes().length === 0) {
-      <div style="padding: 16px 18px;"><sp-admin-empty-state message="No approved nodes yet." /></div>
-    } @else {
-      <sp-admin-table
-        [flush]="true" variant="data" density="compact" layout="first-column-fluid" minWidth="700px"
-        [filters]="contentCoverageFilters()" (filterChange)="onContentCoverageFilterChange($event)"
-        [paginationPage]="coveragePage()" [paginationTotalPages]="filteredCoverageNodes().length > 0 ? coverageTotalPages() : undefined"
-        [paginationLabel]="filteredCoverageNodes().length + ' node(s) — click a row for detail.'"
-        (paginationPageChange)="onCoveragePageChange($event)"
-      >
-        @if (filteredCoverageNodes().length === 0) {
-          <p class="sp-admin-section-sub" style="padding:16px 18px;">No nodes match the current filters.</p>
-        } @else {
-          <table>
-            <thead>
-              <tr>
-                <th class="sp-admin-fluid-col">Title</th>
-                <th>CEFR</th>
-                <th>Skill</th>
-                <th>Tags</th>
-                <th>Linked Modules</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (n of pagedCoverageNodes(); track n.id) {
-                <tr (click)="openCoverageNode(n)" style="cursor:pointer">
-                  <td class="sp-admin-fluid-col sp-admin-td-title">{{ n.title }}</td>
-                  <td><sp-admin-badge tone="neutral">{{ n.cefrLevel }}</sp-admin-badge></td>
-                  <td>{{ n.skill }}</td>
-                  <td>
-                    @if (n.contextTags.length || n.focusTags.length) {
-                      @for (tag of n.contextTags; track tag) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
-                    } @else {
-                      <span class="sp-admin-text-muted">—</span>
-                    }
-                  </td>
-                  <td>
-                    @if (n.linkedModuleCount > 0) {
-                      <sp-admin-badge tone="success" appearance="soft">{{ n.linkedModuleCount }}</sp-admin-badge>
-                    } @else {
-                      <sp-admin-badge tone="warning" appearance="soft">0</sp-admin-badge>
-                    }
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        }
-      </sp-admin-table>
-    }
-  </sp-admin-card>
-
-  <!-- Content coverage — node detail slide-over -->
-  <sp-admin-slide-over
-    [open]="!!selectedCoverageNode()"
-    [title]="selectedCoverageNode()?.title ?? ''"
-    [subtitle]="(selectedCoverageNode()?.cefrLevel ?? '') + ' · ' + (selectedCoverageNode()?.skill ?? '')"
-    (closed)="closeCoverageNode()">
-    @if (selectedCoverageNode(); as n) {
-      <div class="sp-admin-section-h"><h3>Tags</h3></div>
-      @if (n.contextTags.length || n.focusTags.length) {
-        <div class="sp-admin-mb-3">
-          @for (tag of n.contextTags; track tag) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
-          @for (tag of n.focusTags; track tag) { <sp-admin-badge tone="purple" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
-        </div>
-      } @else {
-        <p class="sp-admin-section-sub">No tags yet — use "Fix All with AI" on the Nodes table below.</p>
-      }
-
-      <div class="sp-admin-section-h"><h3>Linked Modules ({{ n.linkedModuleCount }})</h3></div>
-      @if (n.linkedModules.length > 0) {
-        <ul class="sp-admin-simple-list">
-          @for (m of n.linkedModules; track m.id) {
-            <li><a [routerLink]="['/admin/modules', m.id]">{{ m.title }}</a></li>
-          }
-        </ul>
-      } @else {
-        <p class="sp-admin-section-sub">No Module is linked to this node yet — either no Module for this CEFR level/skill has been re-tagged, or none matched.</p>
-      }
-    }
-  </sp-admin-slide-over>
-
-  <!-- Nodes table / graph -->
-  <sp-admin-card padding="none" variant="bordered" [hasHeader]="true" [headerDivider]="true">
-    <sp-admin-section-header slot="header" title="Nodes" [count]="nodesTotalCount()" countLabel="nodes">
-      <div slot="actions" style="display:flex; gap:8px;">
+        <sp-admin-help-icon variant="neutral" appearance="outline" size="sm" key="admin.skillGraph.sweepUntaggedModules" title="Sweep untagged Modules" />
         <sp-admin-button size="sm" variant="primary" appearance="outline" (clicked)="openCreateModal()">
           + Create node
         </sp-admin-button>
@@ -199,6 +95,15 @@
         </sp-admin-button>
       </div>
     </sp-admin-section-header>
+
+    <div style="padding: 12px 18px 0;">
+      @if (retagStatus()) {
+        <sp-admin-alert variant="success">{{ retagStatus() }}</sp-admin-alert>
+      }
+      @if (retagError()) {
+        <sp-admin-alert variant="error">{{ retagError() }}</sp-admin-alert>
+      }
+    </div>
 
     @if (viewMode() === 'graph') {
     <div style="padding: 16px 18px;">
@@ -279,6 +184,13 @@
             <sp-admin-badge [tone]="reviewStatusTone($any(row).reviewStatus)" appearance="soft" size="sm">
               {{ $any(row).reviewStatus }}
             </sp-admin-badge>
+          }
+          @case ('linkedModuleCount') {
+            @if ($any(row).linkedModuleCount > 0) {
+              <sp-admin-badge tone="success" appearance="soft">{{ $any(row).linkedModuleCount }}</sp-admin-badge>
+            } @else {
+              <sp-admin-badge tone="warning" appearance="soft">0</sp-admin-badge>
+            }
           }
           @default { {{ $any(row)[col.key] }} }
         }
@@ -370,6 +282,18 @@
       </ul>
     }
     @if (addUnlockError()) { <sp-admin-alert variant="error">{{ addUnlockError() }}</sp-admin-alert> }
+
+    <!-- Content-coverage merge (2026-07-23) — replaces the deleted separate "Content coverage" slide-over. -->
+    <div class="sp-admin-section-h"><h3>Linked Modules ({{ n.linkedModules.length }})</h3></div>
+    @if (n.linkedModules.length > 0) {
+      <ul class="sp-admin-simple-list">
+        @for (m of n.linkedModules; track m.id) {
+          <li><a [routerLink]="['/admin/modules', m.id]">{{ m.title }}</a></li>
+        }
+      </ul>
+    } @else {
+      <p class="sp-admin-section-sub">No Module is linked to this node yet — either no Module for this CEFR level/skill has been re-tagged, or none matched. Try "Sweep untagged Module" on the Nodes table.</p>
+    }
   }
   }
 </sp-admin-slide-over>
