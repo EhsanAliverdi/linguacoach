@@ -46,7 +46,7 @@
 
     @if (error()) { <sp-admin-alert variant="error">{{ error() }}</sp-admin-alert> }
 
-    <div class="sp-admin-form-actions">
+    <div class="sp-admin-form-actions sp-admin-form-actions--end">
       <sp-admin-button variant="neutral" appearance="outline" (clicked)="cancel()">Cancel</sp-admin-button>
       <sp-admin-button variant="primary" [disabled]="saving()" (clicked)="save()">
         {{ saving() ? 'Saving…' : 'Save' }}

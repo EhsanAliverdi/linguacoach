@@ -2,8 +2,10 @@ import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { forkJoin, of, Observable } from 'rxjs';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import { AdminApiService } from '../../../../core/services/admin.api.service';
-import { SkillGraphNodeDetail, SkillGraphNodeListItem, SkillGraphTaxonomy } from '../../../../core/models/admin.models';
+import { SkillGraphEdge, SkillGraphNode, SkillGraphNodeDetail, SkillGraphNodeListItem, SkillGraphTaxonomy } from '../../../../core/models/admin.models';
 import {
   SpAdminAlertComponent,
   SpAdminButtonComponent,
@@ -11,6 +13,8 @@ import {
   SpAdminFormFieldComponent,
   SpAdminInputComponent,
   SpAdminLoadingStateComponent,
+  SpAdminMultiSelectComponent,
+  SpAdminMultiSelectOption,
   SpAdminNumberInputComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
@@ -18,6 +22,12 @@ import {
   SpAdminSelectComponent,
   SpAdminTextareaComponent,
 } from '../../../../design-system/admin';
+import { computeGraphNeighborhood, NodeGraphPreviewEdge, NodeGraphPreviewNode, SpAdminNodeGraphPreviewComponent } from '../node-graph-preview/sp-admin-node-graph-preview.component';
+
+interface StagedNodeRef {
+  id: string;
+  title: string;
+}
 
 /**
  * Editability audit (2026-07-23) — Skill Graph node edit as its own routed page
@@ -27,10 +37,14 @@ import {
  * (SkillGraphNode.UpdateCore) — reject the node first to reopen editing, same as Module/Lesson/
  * Exercise.
  *
- * User follow-up (2026-07-23): both Edit and View must show/manage prerequisites and unlocks —
- * this page previously only edited core fields with no edge visibility at all. `item` is now a
- * signal so the Prerequisites/Unlocks lists re-render after an add/remove without a full
- * `load()` round-trip forcing the whole form to reset.
+ * User correction (2026-07-23): prerequisite/unlock changes used to call the API immediately on
+ * every click — the user pointed out this bypasses the page's own Save/Cancel and can't be
+ * undone by hitting Cancel. Adding/removing an edge is now purely local state
+ * (`pendingAddPrereqs`/`pendingRemovePrereqIds`/`pendingAddUnlocks`/`pendingRemoveUnlockIds`) —
+ * nothing is written to the graph until `save()` commits the core fields AND every staged edge
+ * change together. `Cancel` just navigates away, discarding all of it. Staged additions/removals
+ * render with a distinct "pending" style (dashed, different color) in both the list and the graph
+ * preview, so it's visually obvious what will actually change on Save.
  */
 @Component({
   selector: 'app-admin-skill-graph-node-edit',
@@ -44,12 +58,14 @@ import {
     SpAdminFormFieldComponent,
     SpAdminInputComponent,
     SpAdminLoadingStateComponent,
+    SpAdminMultiSelectComponent,
     SpAdminNumberInputComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
     SpAdminSectionCardComponent,
     SpAdminSelectComponent,
     SpAdminTextareaComponent,
+    SpAdminNodeGraphPreviewComponent,
   ],
   templateUrl: './admin-skill-graph-node-edit.component.html',
 })
@@ -59,6 +75,113 @@ export class AdminSkillGraphNodeEditComponent implements OnInit {
   saving = signal(false);
   error = signal('');
   item = signal<SkillGraphNodeDetail | null>(null);
+
+  // ── Staged edge changes (2026-07-23) — nothing here calls the API; all of it is applied
+  // together in save(). ─────────────────────────────────────────────────────────────────────────
+  pendingAddPrereqs = signal<StagedNodeRef[]>([]);
+  pendingRemovePrereqIds = signal<Set<string>>(new Set());
+  pendingAddUnlocks = signal<StagedNodeRef[]>([]);
+  pendingRemoveUnlockIds = signal<Set<string>>(new Set());
+
+  hasPendingEdgeChanges = computed(() =>
+    this.pendingAddPrereqs().length > 0 || this.pendingRemovePrereqIds().size > 0 ||
+    this.pendingAddUnlocks().length > 0 || this.pendingRemoveUnlockIds().size > 0);
+
+  // What actually renders in the Prerequisites/Unlocks lists and in the graph preview: real
+  // edges (minus any staged for removal) plus staged additions, each tagged with its pending state.
+  displayPrereqs = computed(() => {
+    const current = this.item();
+    if (!current) return [];
+    const removing = this.pendingRemovePrereqIds();
+    const kept = current.prerequisites.map(p => ({ ...p, pending: removing.has(p.id) ? ('remove' as const) : undefined }));
+    const added = this.pendingAddPrereqs().map(p => ({ ...p, pending: 'add' as const }));
+    return [...kept, ...added];
+  });
+
+  displayUnlocks = computed(() => {
+    const current = this.item();
+    if (!current) return [];
+    const removing = this.pendingRemoveUnlockIds();
+    const kept = current.dependents.map(d => ({ ...d, pending: removing.has(d.id) ? ('remove' as const) : undefined }));
+    const added = this.pendingAddUnlocks().map(d => ({ ...d, pending: 'add' as const }));
+    return [...kept, ...added];
+  });
+
+  // ── Multi-layer graph expansion (2026-07-23) — "+ layer"/"- layer" widens/narrows how many
+  // hops out from this node the preview shows, via BFS over the whole graph's real edges (loaded
+  // once here); staged (unsaved) additions/removals are then overlaid on top, but only ever at
+  // the direct (1-hop) layer, since staging never touches anything but this node's own edges. ──
+  readonly maxGraphLevel = 6;
+  graphLevel = signal(1);
+
+  private fullGraphEdges = signal<SkillGraphEdge[]>([]);
+  private fullGraphNodesById = signal<Map<string, SkillGraphNode>>(new Map());
+
+  private graphNeighborhood = computed(() => {
+    const n = this.item();
+    if (!n) return null;
+    return computeGraphNeighborhood(n.id, this.fullGraphEdges(), this.graphLevel());
+  });
+
+  graphCenterId = computed(() => this.item()?.id ?? null);
+
+  graphPreviewNodes = computed<NodeGraphPreviewNode[]>(() => {
+    const n = this.item();
+    const neigh = this.graphNeighborhood();
+    if (!n || !neigh) return [];
+    const byId = this.fullGraphNodesById();
+    const removingPrereq = this.pendingRemovePrereqIds();
+    const removingUnlock = this.pendingRemoveUnlockIds();
+
+    const nodes: NodeGraphPreviewNode[] = Array.from(neigh.nodeIds).map(id => ({
+      id,
+      title: id === n.id ? n.title : (byId.get(id)?.title ?? '(unknown)'),
+      pending: (removingPrereq.has(id) || removingUnlock.has(id)) ? 'remove' as const : undefined,
+    }));
+
+    // Staged additions aren't in the real graph yet — inject them so they're visible pre-Save.
+    for (const p of this.pendingAddPrereqs()) if (!neigh.nodeIds.has(p.id)) nodes.push({ id: p.id, title: p.title, pending: 'add' });
+    for (const d of this.pendingAddUnlocks()) if (!neigh.nodeIds.has(d.id)) nodes.push({ id: d.id, title: d.title, pending: 'add' });
+
+    return nodes;
+  });
+
+  graphPreviewEdges = computed<NodeGraphPreviewEdge[]>(() => {
+    const n = this.item();
+    const neigh = this.graphNeighborhood();
+    if (!n || !neigh) return [];
+    const removingPrereq = this.pendingRemovePrereqIds();
+    const removingUnlock = this.pendingRemoveUnlockIds();
+
+    const edges: NodeGraphPreviewEdge[] = neigh.edges.map(e => ({
+      ...e,
+      pending: (e.target === n.id && removingPrereq.has(e.source)) || (e.source === n.id && removingUnlock.has(e.target))
+        ? 'remove' as const
+        : undefined,
+    }));
+
+    for (const p of this.pendingAddPrereqs()) edges.push({ source: p.id, target: n.id, pending: 'add' });
+    for (const d of this.pendingAddUnlocks()) edges.push({ source: n.id, target: d.id, pending: 'add' });
+
+    return edges;
+  });
+
+  increaseGraphLevel(): void { this.graphLevel.update(l => Math.min(l + 1, this.maxGraphLevel)); }
+  decreaseGraphLevel(): void { this.graphLevel.update(l => Math.max(l - 1, 1)); }
+
+  private loadFullGraph(): void {
+    this.api.getSkillGraph().subscribe({
+      next: r => {
+        this.fullGraphEdges.set(r.edges);
+        this.fullGraphNodesById.set(new Map(r.nodes.map(n => [n.id, n])));
+      },
+      error: () => { /* the graph preview just stays at direct-neighbor-only if this fails */ },
+    });
+  }
+
+  goToNode(id: string): void {
+    this.router.navigateByUrl(`/admin/skill-graph/nodes/${id}`);
+  }
 
   taxonomy = signal<SkillGraphTaxonomy | null>(null);
   cefrLevelOptions = computed(() => (this.taxonomy()?.cefrLevels ?? []).map(l => ({ value: l, label: l })));
@@ -86,11 +209,14 @@ export class AdminSkillGraphNodeEditComponent implements OnInit {
     if (!this.nodeId) return;
     this.load();
     this.loadNodesForPicker();
+    this.loadFullGraph();
   }
 
   load(): void {
     this.loading.set(true);
     this.error.set('');
+    this.graphLevel.set(1);
+    this.clearPendingEdgeState();
     this.api.getSkillGraphNode(this.nodeId).subscribe({
       next: item => {
         this.loading.set(false);
@@ -105,6 +231,13 @@ export class AdminSkillGraphNodeEditComponent implements OnInit {
       },
       error: err => { this.loading.set(false); this.error.set(err.error?.error ?? 'Could not load this node for editing.'); },
     });
+  }
+
+  private clearPendingEdgeState(): void {
+    this.pendingAddPrereqs.set([]);
+    this.pendingRemovePrereqIds.set(new Set());
+    this.pendingAddUnlocks.set([]);
+    this.pendingRemoveUnlockIds.set(new Set());
   }
 
   cancel(): void {
@@ -128,88 +261,104 @@ export class AdminSkillGraphNodeEditComponent implements OnInit {
       subskill: this.subskill.trim() || null,
       difficultyBand: this.difficultyBand ?? 1,
       descriptionForAi: this.descriptionForAi.trim() || null,
-    }).subscribe({
-      next: () => { this.saving.set(false); this.router.navigateByUrl('/admin/skill-graph'); },
+    }).pipe(
+      switchMap(() => this.commitEdgeChanges(current.id)),
+    ).subscribe({
+      next: ({ failedCount }) => {
+        this.saving.set(false);
+        if (failedCount > 0) {
+          this.error.set(`Core fields saved, but ${failedCount} graph change(s) could not be applied (e.g. would create a cycle). Reopen this node to review.`);
+          this.load();
+          this.loadFullGraph();
+          return;
+        }
+        this.router.navigateByUrl('/admin/skill-graph');
+      },
       error: err => { this.saving.set(false); this.error.set(err.error?.error ?? 'Could not save changes — approved nodes must be rejected first to reopen editing.'); },
     });
+  }
+
+  // Applies every staged edge change together; a failed individual call (e.g. would create a
+  // cycle) doesn't block the others — failures are counted and reported back to save().
+  private commitEdgeChanges(nodeId: string): Observable<{ failedCount: number }> {
+    const settle = (obs$: Observable<unknown>): Observable<boolean> =>
+      obs$.pipe(map(() => true), catchError(() => of(false)));
+
+    const calls: Observable<boolean>[] = [
+      ...this.pendingAddPrereqs().map(p => settle(this.api.addSkillGraphPrerequisite(nodeId, p.id))),
+      ...Array.from(this.pendingRemovePrereqIds()).map(id => settle(this.api.removeSkillGraphPrerequisite(nodeId, id))),
+      ...this.pendingAddUnlocks().map(d => settle(this.api.addSkillGraphPrerequisite(d.id, nodeId))),
+      ...Array.from(this.pendingRemoveUnlockIds()).map(id => settle(this.api.removeSkillGraphPrerequisite(id, nodeId))),
+    ];
+
+    if (calls.length === 0) return of({ failedCount: 0 });
+    return forkJoin(calls).pipe(map(results => ({ failedCount: results.filter(ok => !ok).length })));
   }
 
   // ── User follow-up (2026-07-23) — Prerequisites/Unlocks management, same shape as the node
   // detail slide-over on the main Skill Graph page (a graph node's place in the graph matters as
   // much here as its content fields do). ──────────────────────────────────────────────────────
-  private allNodesForPicker: SkillGraphNodeListItem[] = [];
+  private allNodesForPicker = signal<SkillGraphNodeListItem[]>([]);
+
+  pickerOptions = computed<SpAdminMultiSelectOption[]>(() =>
+    this.allNodesForPicker().map(n => ({ value: n.id, label: n.title, sublabel: `${n.cefrLevel} · ${n.skill}` })));
 
   private loadNodesForPicker(): void {
     this.api.getSkillGraphNodes({ pageSize: 500 }).subscribe({
-      next: r => this.allNodesForPicker = r.items,
-      error: () => this.allNodesForPicker = [],
+      next: r => this.allNodesForPicker.set(r.items),
+      error: () => this.allNodesForPicker.set([]),
     });
   }
 
-  addPrereqError = signal('');
-  addPrereqQuery = '';
-  addUnlockError = signal('');
-  addUnlockQuery = '';
-
-  addPrereqResults = computed(() => {
-    const q = this.addPrereqQuery.trim().toLowerCase();
-    if (!q) return [];
+  prereqExcludeIds(): string[] {
     const current = this.item();
-    const existingPrereqIds = new Set((current?.prerequisites ?? []).map(p => p.id));
-    return this.allNodesForPicker
-      .filter(n => n.id !== current?.id && !existingPrereqIds.has(n.id)
-        && (n.title.toLowerCase().includes(q) || n.key.toLowerCase().includes(q)))
-      .slice(0, 15);
-  });
-
-  addUnlockResults = computed(() => {
-    const q = this.addUnlockQuery.trim().toLowerCase();
-    if (!q) return [];
-    const current = this.item();
-    const existingDependentIds = new Set((current?.dependents ?? []).map(d => d.id));
-    return this.allNodesForPicker
-      .filter(n => n.id !== current?.id && !existingDependentIds.has(n.id)
-        && (n.title.toLowerCase().includes(q) || n.key.toLowerCase().includes(q)))
-      .slice(0, 15);
-  });
-
-  addPrerequisite(prereq: SkillGraphNodeListItem): void {
-    const current = this.item();
-    if (!current) return;
-    this.addPrereqError.set('');
-    this.api.addSkillGraphPrerequisite(current.id, prereq.id).subscribe({
-      next: () => { this.addPrereqQuery = ''; this.load(); },
-      error: err => this.addPrereqError.set(err.error?.error ?? 'Could not add this prerequisite.'),
-    });
+    if (!current) return [];
+    return [
+      current.id,
+      ...current.prerequisites.map(p => p.id),
+      ...this.pendingAddPrereqs().map(p => p.id),
+    ];
   }
 
-  removePrerequisite(prereqId: string): void {
+  unlockExcludeIds(): string[] {
     const current = this.item();
-    if (!current) return;
-    this.api.removeSkillGraphPrerequisite(current.id, prereqId).subscribe({
-      next: () => this.load(),
-      error: err => this.addPrereqError.set(err.error?.error ?? 'Could not remove this prerequisite.'),
-    });
+    if (!current) return [];
+    return [
+      current.id,
+      ...current.dependents.map(d => d.id),
+      ...this.pendingAddUnlocks().map(d => d.id),
+    ];
   }
 
-  // "X unlocks this node" is the same edge as "X depends on this node" — added/removed via the
-  // same cycle-validated endpoint with the arguments swapped.
-  addUnlock(dependent: SkillGraphNodeListItem): void {
-    const current = this.item();
-    if (!current) return;
-    this.addUnlockError.set('');
-    this.api.addSkillGraphPrerequisite(dependent.id, current.id).subscribe({
-      next: () => { this.addUnlockQuery = ''; this.load(); },
-      error: err => this.addUnlockError.set(err.error?.error ?? 'Could not add this unlock.'),
-    });
+  addPrerequisite(option: SpAdminMultiSelectOption): void {
+    this.pendingAddPrereqs.update(list => [...list, { id: option.value, title: option.label }]);
   }
 
-  removeUnlock(dependentId: string): void {
-    const current = this.item();
-    if (!current) return;
-    this.api.removeSkillGraphPrerequisite(dependentId, current.id).subscribe({
-      next: () => this.load(),
-      error: err => this.addUnlockError.set(err.error?.error ?? 'Could not remove this unlock.'),
-    });
+  cancelAddPrerequisite(id: string): void {
+    this.pendingAddPrereqs.update(list => list.filter(p => p.id !== id));
+  }
+
+  removePrerequisite(id: string): void {
+    this.pendingRemovePrereqIds.update(set => new Set(set).add(id));
+  }
+
+  undoRemovePrerequisite(id: string): void {
+    this.pendingRemovePrereqIds.update(set => { const next = new Set(set); next.delete(id); return next; });
+  }
+
+  addUnlock(option: SpAdminMultiSelectOption): void {
+    this.pendingAddUnlocks.update(list => [...list, { id: option.value, title: option.label }]);
+  }
+
+  cancelAddUnlock(id: string): void {
+    this.pendingAddUnlocks.update(list => list.filter(d => d.id !== id));
+  }
+
+  removeUnlock(id: string): void {
+    this.pendingRemoveUnlockIds.update(set => new Set(set).add(id));
+  }
+
+  undoRemoveUnlock(id: string): void {
+    this.pendingRemoveUnlockIds.update(set => { const next = new Set(set); next.delete(id); return next; });
   }
 }

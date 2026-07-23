@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, computed, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
@@ -17,6 +17,8 @@ import {
   SpAdminHelpIconComponent,
   SpAdminInputComponent,
   SpAdminLoadingStateComponent,
+  SpAdminMultiSelectComponent,
+  SpAdminMultiSelectOption,
   SpAdminNumberInputComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
@@ -35,7 +37,6 @@ import {
   SkillGraphCoverageEntry,
   SkillGraphNode,
   SkillGraphEdge,
-  SkillGraphNodeDetail,
   SkillGraphIsolatedNode,
 } from '../../../core/models/admin.models';
 import { SpAdminGraphCardComponent } from '../../../design-system/admin/components/graph-card/sp-admin-graph-card.component';
@@ -50,7 +51,6 @@ import { AdminBulkRepairService } from '../../../core/services/admin-bulk-repair
   imports: [
     CommonModule,
     FormsModule,
-    RouterLink,
     SpAdminAlertComponent,
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
@@ -62,6 +62,7 @@ import { AdminBulkRepairService } from '../../../core/services/admin-bulk-repair
     SpAdminHelpIconComponent,
     SpAdminInputComponent,
     SpAdminLoadingStateComponent,
+    SpAdminMultiSelectComponent,
     SpAdminNumberInputComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
@@ -273,12 +274,18 @@ export class AdminSkillGraphComponent implements OnInit {
   // panel's and the node detail panel's prerequisite pickers. Loaded once per panel open — cheap
   // at the current graph size (a few hundred nodes); Phase 6 replaces this with a real
   // server-side search endpoint. ──────────────────────────────────────────────────────────────
-  private allNodesForPicker: SkillGraphNodeListItem[] = [];
+  private allNodesForPicker = signal<SkillGraphNodeListItem[]>([]);
+
+  // Reusable design-system multi-select (2026-07-23) — feeds the same picker options to the
+  // Create panel's prerequisite/unlock pickers and the node detail/Edit page's add-prerequisite/
+  // add-unlock pickers, replacing 3 duplicated "search input + button list" implementations.
+  pickerOptions = computed<SpAdminMultiSelectOption[]>(() =>
+    this.allNodesForPicker().map(n => ({ value: n.id, label: n.title, sublabel: `${n.cefrLevel} · ${n.skill}` })));
 
   private loadNodesForPicker(): void {
     this.api.getSkillGraphNodes({ pageSize: 500 }).subscribe({
-      next: r => this.allNodesForPicker = r.items,
-      error: () => this.allNodesForPicker = [],
+      next: r => this.allNodesForPicker.set(r.items),
+      error: () => this.allNodesForPicker.set([]),
     });
   }
 
@@ -296,34 +303,14 @@ export class AdminSkillGraphComponent implements OnInit {
   createDifficultyBand: number | null = 1;
   createContextTagsDraft = '';
   createFocusTagsDraft = '';
-  createPrereqQuery = '';
-  createSelectedPrereqs = signal<SkillGraphNodeListItem[]>([]);
+  createPrereqIds: string[] = [];
   // Editability follow-up (2026-07-23) — symmetric direction: existing nodes that this NEW node
   // should become a prerequisite FOR ("what does this unlock?"). A node can have several
   // prerequisites and be the prerequisite for several others — genuine many-to-many both ways.
-  createDependentQuery = '';
-  createSelectedDependents = signal<SkillGraphNodeListItem[]>([]);
+  createDependentIds: string[] = [];
 
   createSubskillOptions = computed(() =>
     (this.taxonomy()?.subskillsBySkill?.[this.createSkill] ?? []).map(s => ({ value: s, label: s })));
-
-  createPrereqResults = computed(() => {
-    const q = this.createPrereqQuery.trim().toLowerCase();
-    if (!q) return [];
-    const selectedIds = new Set(this.createSelectedPrereqs().map(n => n.id));
-    return this.allNodesForPicker
-      .filter(n => !selectedIds.has(n.id) && (n.title.toLowerCase().includes(q) || n.key.toLowerCase().includes(q)))
-      .slice(0, 15);
-  });
-
-  createDependentResults = computed(() => {
-    const q = this.createDependentQuery.trim().toLowerCase();
-    if (!q) return [];
-    const selectedIds = new Set(this.createSelectedDependents().map(n => n.id));
-    return this.allNodesForPicker
-      .filter(n => !selectedIds.has(n.id) && (n.title.toLowerCase().includes(q) || n.key.toLowerCase().includes(q)))
-      .slice(0, 15);
-  });
 
   openCreateModal(): void {
     this.createTitle = '';
@@ -334,10 +321,8 @@ export class AdminSkillGraphComponent implements OnInit {
     this.createDifficultyBand = 1;
     this.createContextTagsDraft = '';
     this.createFocusTagsDraft = '';
-    this.createPrereqQuery = '';
-    this.createSelectedPrereqs.set([]);
-    this.createDependentQuery = '';
-    this.createSelectedDependents.set([]);
+    this.createPrereqIds = [];
+    this.createDependentIds = [];
     this.createError.set('');
     this.createPanelOpen.set(true);
     this.loadNodesForPicker();
@@ -345,24 +330,6 @@ export class AdminSkillGraphComponent implements OnInit {
 
   closeCreateModal(): void {
     this.createPanelOpen.set(false);
-  }
-
-  addCreatePrereq(n: SkillGraphNodeListItem): void {
-    this.createSelectedPrereqs.update(list => [...list, n]);
-    this.createPrereqQuery = '';
-  }
-
-  removeCreatePrereq(id: string): void {
-    this.createSelectedPrereqs.update(list => list.filter(n => n.id !== id));
-  }
-
-  addCreateDependent(n: SkillGraphNodeListItem): void {
-    this.createSelectedDependents.update(list => [...list, n]);
-    this.createDependentQuery = '';
-  }
-
-  removeCreateDependent(id: string): void {
-    this.createSelectedDependents.update(list => list.filter(n => n.id !== id));
   }
 
   private parseTagsDraft(raw: string): string[] {
@@ -386,8 +353,8 @@ export class AdminSkillGraphComponent implements OnInit {
       descriptionForAi: null,
       contextTags: this.parseTagsDraft(this.createContextTagsDraft),
       focusTags: this.parseTagsDraft(this.createFocusTagsDraft),
-      prerequisiteNodeIds: this.createSelectedPrereqs().map(n => n.id),
-      dependentNodeIds: this.createSelectedDependents().map(n => n.id),
+      prerequisiteNodeIds: this.createPrereqIds,
+      dependentNodeIds: this.createDependentIds,
     }).subscribe({
       next: r => {
         this.creating.set(false);
@@ -404,100 +371,11 @@ export class AdminSkillGraphComponent implements OnInit {
     });
   }
 
-  // ── Editability audit (2026-07-23) — node detail slide-over: view + manual prerequisite/
-  // dependent (edge) management, both directions. ──────────────────────────────────────────────
-  selectedNode = signal<SkillGraphNodeDetail | null>(null);
-  nodeDetailLoading = signal(false);
-  nodeDetailError = signal('');
-  addPrereqError = signal('');
-  addPrereqQuery = '';
-  addUnlockError = signal('');
-  addUnlockQuery = '';
-
-  addPrereqResults = computed(() => {
-    const q = this.addPrereqQuery.trim().toLowerCase();
-    if (!q) return [];
-    const currentId = this.selectedNode()?.id;
-    const existingPrereqIds = new Set((this.selectedNode()?.prerequisites ?? []).map(p => p.id));
-    return this.allNodesForPicker
-      .filter(n => n.id !== currentId && !existingPrereqIds.has(n.id)
-        && (n.title.toLowerCase().includes(q) || n.key.toLowerCase().includes(q)))
-      .slice(0, 15);
-  });
-
-  addUnlockResults = computed(() => {
-    const q = this.addUnlockQuery.trim().toLowerCase();
-    if (!q) return [];
-    const currentId = this.selectedNode()?.id;
-    const existingDependentIds = new Set((this.selectedNode()?.dependents ?? []).map(d => d.id));
-    return this.allNodesForPicker
-      .filter(n => n.id !== currentId && !existingDependentIds.has(n.id)
-        && (n.title.toLowerCase().includes(q) || n.key.toLowerCase().includes(q)))
-      .slice(0, 15);
-  });
-
-  openNodeDetail(row: SkillGraphNodeListItem): void {
-    this.nodeDetailLoading.set(true);
-    this.nodeDetailError.set('');
-    this.addPrereqError.set('');
-    this.addPrereqQuery = '';
-    this.addUnlockError.set('');
-    this.addUnlockQuery = '';
-    this.api.getSkillGraphNode(row.id).subscribe({
-      next: n => { this.selectedNode.set(n); this.nodeDetailLoading.set(false); },
-      error: err => { this.nodeDetailError.set(err.error?.error ?? 'Could not load node detail.'); this.nodeDetailLoading.set(false); },
-    });
-    this.loadNodesForPicker();
-  }
-
-  closeNodeDetail(): void {
-    this.selectedNode.set(null);
-  }
-
-  editSelectedNode(): void {
-    const n = this.selectedNode();
-    if (!n) return;
-    this.router.navigateByUrl(`/admin/skill-graph/nodes/${n.id}/edit`);
-  }
-
-  addPrerequisite(prereq: SkillGraphNodeListItem): void {
-    const node = this.selectedNode();
-    if (!node) return;
-    this.addPrereqError.set('');
-    this.api.addSkillGraphPrerequisite(node.id, prereq.id).subscribe({
-      next: () => { this.addPrereqQuery = ''; this.openNodeDetail(node); this.loadIsolatedNodes(); },
-      error: err => this.addPrereqError.set(err.error?.error ?? 'Could not add this prerequisite.'),
-    });
-  }
-
-  // Adding "X unlocks this node" is the same edge as "X is a prerequisite of the target" — just
-  // called with the arguments swapped, reusing the exact same cycle-validated endpoint.
-  addUnlock(dependent: SkillGraphNodeListItem): void {
-    const node = this.selectedNode();
-    if (!node) return;
-    this.addUnlockError.set('');
-    this.api.addSkillGraphPrerequisite(dependent.id, node.id).subscribe({
-      next: () => { this.addUnlockQuery = ''; this.openNodeDetail(node); this.loadIsolatedNodes(); },
-      error: err => this.addUnlockError.set(err.error?.error ?? 'Could not add this unlock.'),
-    });
-  }
-
-  removeUnlock(dependentId: string): void {
-    const node = this.selectedNode();
-    if (!node) return;
-    this.api.removeSkillGraphPrerequisite(dependentId, node.id).subscribe({
-      next: () => { this.openNodeDetail(node); this.loadIsolatedNodes(); },
-      error: err => this.addUnlockError.set(err.error?.error ?? 'Could not remove this unlock.'),
-    });
-  }
-
-  removePrerequisite(prereqId: string): void {
-    const node = this.selectedNode();
-    if (!node) return;
-    this.api.removeSkillGraphPrerequisite(node.id, prereqId).subscribe({
-      next: () => { this.openNodeDetail(node); this.loadIsolatedNodes(); },
-      error: err => this.addPrereqError.set(err.error?.error ?? 'Could not remove this prerequisite.'),
-    });
+  // ── User correction (2026-07-23) — View moved from a slide-over to its own routed page
+  // (read-only: no add/edit affordances there at all — those live exclusively on the Edit
+  // route). Clicking a Nodes table row now navigates instead of opening a panel in place. ──────
+  viewNode(row: SkillGraphNodeListItem): void {
+    this.router.navigateByUrl(`/admin/skill-graph/nodes/${row.id}`);
   }
 
   // Content-coverage merge (2026-07-23) — only the 3 aggregate numbers are used now (for the

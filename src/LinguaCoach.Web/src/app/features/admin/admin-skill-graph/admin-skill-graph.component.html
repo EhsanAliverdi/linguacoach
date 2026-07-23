@@ -150,7 +150,7 @@
       [filters]="nodesFilters()" (filterChange)="onNodesFilterChange($event)"
       [bulkEditable]="true" [bulkEditMode]="nodesBulkEditMode()" (bulkEditModeChange)="onNodesBulkEditModeChange($event)"
       [columns]="nodesColumns" [rows]="nodes()" (selectionChange)="onNodesSelectionChange($event)"
-      [rowClickable]="!nodesBulkEditMode()" (rowClick)="openNodeDetail($any($event))"
+      [rowClickable]="!nodesBulkEditMode()" (rowClick)="viewNode($any($event))"
       emptyMessage="No nodes match the current filters. Draft some above."
       [paginationPage]="nodesPage()" [paginationTotalPages]="nodesTotalPages()"
       [paginationLabel]="nodesTotalCount() + ' node(s).'"
@@ -202,102 +202,6 @@
 
 </sp-admin-page-body>
 
-<!-- ── Editability audit (2026-07-23) — node detail slide-over: view + manual edge management ── -->
-<sp-admin-slide-over
-  [open]="!!selectedNode() || nodeDetailLoading()"
-  [title]="selectedNode()?.title ?? 'Loading…'"
-  [subtitle]="(selectedNode()?.cefrLevel ?? '') + ' · ' + (selectedNode()?.skill ?? '')"
-  (closed)="closeNodeDetail()">
-
-  @if (nodeDetailLoading()) {
-    <sp-admin-loading-state message="Loading node" />
-  } @else if (nodeDetailError()) {
-    <sp-admin-error-state title="Could not load node" [message]="nodeDetailError()" />
-  } @else if (selectedNode()) {
-  @if (selectedNode(); as n) {
-
-    <div class="sp-admin-form-actions" style="margin-bottom:14px;">
-      <sp-admin-badge [tone]="reviewStatusTone(n.reviewStatus)" appearance="soft" size="sm">{{ n.reviewStatus }}</sp-admin-badge>
-      <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="editSelectedNode()">Edit</sp-admin-button>
-    </div>
-
-    <p class="sp-admin-section-sub">{{ n.description }}</p>
-
-    <div class="sp-admin-section-h"><h3>Prerequisites (must be mastered first)</h3></div>
-    @if (n.prerequisites.length > 0) {
-      <ul class="sp-admin-simple-list">
-        @for (p of n.prerequisites; track p.id) {
-          <li class="sp-admin-form-actions" style="justify-content:space-between;">
-            <span>{{ p.title }}</span>
-            <sp-admin-button size="sm" variant="danger" appearance="outline" (clicked)="removePrerequisite(p.id)">Remove</sp-admin-button>
-          </li>
-        }
-      </ul>
-    } @else {
-      <p class="sp-admin-section-sub">No prerequisites — this may be a foundational root node, or truly isolated.</p>
-    }
-
-    <sp-admin-form-field label="Add prerequisite" hint="Search by title or key.">
-      <sp-admin-input [(ngModel)]="addPrereqQuery" placeholder="Search nodes…" />
-    </sp-admin-form-field>
-    @if (addPrereqResults().length > 0) {
-      <ul class="sp-admin-simple-list">
-        @for (r of addPrereqResults(); track r.id) {
-          <li>
-            <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="addPrerequisite(r)">
-              {{ r.title }} <span class="sp-admin-text-muted">· {{ r.cefrLevel }} / {{ r.skill }}</span>
-            </sp-admin-button>
-          </li>
-        }
-      </ul>
-    }
-    @if (addPrereqError()) { <sp-admin-alert variant="error">{{ addPrereqError() }}</sp-admin-alert> }
-
-    <div class="sp-admin-section-h"><h3>Unlocks (nodes that depend on this one)</h3></div>
-    @if (n.dependents.length > 0) {
-      <ul class="sp-admin-simple-list">
-        @for (d of n.dependents; track d.id) {
-          <li class="sp-admin-form-actions" style="justify-content:space-between;">
-            <span>{{ d.title }}</span>
-            <sp-admin-button size="sm" variant="danger" appearance="outline" (clicked)="removeUnlock(d.id)">Remove</sp-admin-button>
-          </li>
-        }
-      </ul>
-    } @else {
-      <p class="sp-admin-section-sub">Nothing depends on this node yet.</p>
-    }
-
-    <sp-admin-form-field label="Add unlock" hint="Search by title or key — this node will become a prerequisite of the one you pick.">
-      <sp-admin-input [(ngModel)]="addUnlockQuery" placeholder="Search nodes…" />
-    </sp-admin-form-field>
-    @if (addUnlockResults().length > 0) {
-      <ul class="sp-admin-simple-list">
-        @for (r of addUnlockResults(); track r.id) {
-          <li>
-            <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="addUnlock(r)">
-              {{ r.title }} <span class="sp-admin-text-muted">· {{ r.cefrLevel }} / {{ r.skill }}</span>
-            </sp-admin-button>
-          </li>
-        }
-      </ul>
-    }
-    @if (addUnlockError()) { <sp-admin-alert variant="error">{{ addUnlockError() }}</sp-admin-alert> }
-
-    <!-- Content-coverage merge (2026-07-23) — replaces the deleted separate "Content coverage" slide-over. -->
-    <div class="sp-admin-section-h"><h3>Linked Modules ({{ n.linkedModules.length }})</h3></div>
-    @if (n.linkedModules.length > 0) {
-      <ul class="sp-admin-simple-list">
-        @for (m of n.linkedModules; track m.id) {
-          <li><a [routerLink]="['/admin/modules', m.id]">{{ m.title }}</a></li>
-        }
-      </ul>
-    } @else {
-      <p class="sp-admin-section-sub">No Module is linked to this node yet — either no Module for this CEFR level/skill has been re-tagged, or none matched. Try "Sweep untagged Module" on the Nodes table.</p>
-    }
-  }
-  }
-</sp-admin-slide-over>
-
 <!-- ── Create node UX audit (2026-07-23) — slide-over (not modal), with a prerequisite picker so
      an admin places the node in the graph in the same step as authoring it. ───────────────────── -->
 <sp-admin-slide-over
@@ -334,57 +238,15 @@
 
   <div class="sp-admin-section-h"><h3>Where does this node go? (prerequisites)</h3></div>
   <p class="sp-admin-section-sub">Optional — pick the node(s) that must be mastered before this one. Can also be added later from the node's detail view.</p>
-  @if (createSelectedPrereqs().length > 0) {
-    <ul class="sp-admin-simple-list">
-      @for (p of createSelectedPrereqs(); track p.id) {
-        <li class="sp-admin-form-actions" style="justify-content:space-between;">
-          <span>{{ p.title }} <span class="sp-admin-text-muted">· {{ p.cefrLevel }} / {{ p.skill }}</span></span>
-          <sp-admin-button size="sm" variant="danger" appearance="outline" (clicked)="removeCreatePrereq(p.id)">Remove</sp-admin-button>
-        </li>
-      }
-    </ul>
-  }
   <sp-admin-form-field label="Add prerequisite" hint="Search by title or key.">
-    <sp-admin-input [(ngModel)]="createPrereqQuery" placeholder="Search nodes…" />
+    <sp-admin-multi-select [options]="pickerOptions()" [(ngModel)]="createPrereqIds" placeholder="Search nodes…" />
   </sp-admin-form-field>
-  @if (createPrereqResults().length > 0) {
-    <ul class="sp-admin-simple-list">
-      @for (r of createPrereqResults(); track r.id) {
-        <li>
-          <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="addCreatePrereq(r)">
-            {{ r.title }} <span class="sp-admin-text-muted">· {{ r.cefrLevel }} / {{ r.skill }}</span>
-          </sp-admin-button>
-        </li>
-      }
-    </ul>
-  }
 
   <div class="sp-admin-section-h"><h3>What does this node unlock?</h3></div>
   <p class="sp-admin-section-sub">Optional — pick node(s) that this one is a prerequisite for. A node can unlock several others.</p>
-  @if (createSelectedDependents().length > 0) {
-    <ul class="sp-admin-simple-list">
-      @for (d of createSelectedDependents(); track d.id) {
-        <li class="sp-admin-form-actions" style="justify-content:space-between;">
-          <span>{{ d.title }} <span class="sp-admin-text-muted">· {{ d.cefrLevel }} / {{ d.skill }}</span></span>
-          <sp-admin-button size="sm" variant="danger" appearance="outline" (clicked)="removeCreateDependent(d.id)">Remove</sp-admin-button>
-        </li>
-      }
-    </ul>
-  }
   <sp-admin-form-field label="Add unlock" hint="Search by title or key.">
-    <sp-admin-input [(ngModel)]="createDependentQuery" placeholder="Search nodes…" />
+    <sp-admin-multi-select [options]="pickerOptions()" [(ngModel)]="createDependentIds" placeholder="Search nodes…" />
   </sp-admin-form-field>
-  @if (createDependentResults().length > 0) {
-    <ul class="sp-admin-simple-list">
-      @for (r of createDependentResults(); track r.id) {
-        <li>
-          <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="addCreateDependent(r)">
-            {{ r.title }} <span class="sp-admin-text-muted">· {{ r.cefrLevel }} / {{ r.skill }}</span>
-          </sp-admin-button>
-        </li>
-      }
-    </ul>
-  }
 
   @if (createError()) { <sp-admin-alert variant="error">{{ createError() }}</sp-admin-alert> }
 

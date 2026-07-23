@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { provideRouter } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { AdminSkillGraphComponent } from './admin-skill-graph.component';
 import { AdminApiService } from '../../../core/services/admin.api.service';
@@ -209,13 +209,14 @@ describe('AdminSkillGraphComponent', () => {
     expect(component.createPanelOpen()).toBeFalse();
   });
 
-  it('openNodeDetail loads the node and closeNodeDetail clears it', async () => {
+  // User correction (2026-07-23) — View moved from a slide-over to its own routed page;
+  // clicking a Nodes row now navigates instead of loading node detail in place.
+  it('viewNode navigates to the node view route', async () => {
     await setup();
-    component.openNodeDetail(NODES.items[0]);
-    expect(api.getSkillGraphNode).toHaveBeenCalledWith('n1');
-    expect(component.selectedNode()).toBeTruthy();
-    component.closeNodeDetail();
-    expect(component.selectedNode()).toBeNull();
+    const router = TestBed.inject(Router);
+    const navSpy = spyOn(router, 'navigateByUrl');
+    component.viewNode(NODES.items[0]);
+    expect(navSpy).toHaveBeenCalledWith('/admin/skill-graph/nodes/n1');
   });
 
   it('shows an error state when coverage fails to load', async () => {

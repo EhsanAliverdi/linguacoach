@@ -1439,6 +1439,16 @@
   border: 1px solid var(--sp-admin-border, #ECE9F5);
   border-radius: 10px;
 }
+/* Save/Cancel-style form-submit row — right-aligned, no context-bar chrome. The base class above
+   is also used for highlighted context bars (bulk-selection toolbars, "N selected"), which keep
+   their background/border; this modifier is for the plain button row at the end of a form. */
+.sp-admin-form-actions--end {
+  justify-content: flex-end;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+}
 .sp-admin-hint {
   font-size: 13px;
   font-weight: 700;

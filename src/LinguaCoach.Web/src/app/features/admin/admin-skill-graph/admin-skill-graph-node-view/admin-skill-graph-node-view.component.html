@@ -1,0 +1,84 @@
+<sp-admin-page-header title="Skill Graph Node" [subtitle]="item()?.title ?? 'Loading…'">
+  <sp-admin-button variant="neutral" appearance="outline" (clicked)="back()">← Back</sp-admin-button>
+  @if (item()) {
+    <sp-admin-button variant="primary" appearance="outline" (clicked)="editNode()">Edit</sp-admin-button>
+  }
+</sp-admin-page-header>
+
+<sp-admin-page-body>
+
+  @if (error() && !item()) { <sp-admin-error-state title="Could not load this node" [message]="error()" /> }
+
+  @if (loading()) {
+    <sp-admin-loading-state message="Loading node" />
+  } @else if (item()) {
+  @if (item(); as n) {
+
+    <sp-admin-section-card title="Details">
+      <div class="sp-admin-form-actions" style="margin-bottom:14px;">
+        <sp-admin-badge [tone]="reviewStatusTone(n.reviewStatus)" appearance="soft" size="sm">{{ n.reviewStatus }}</sp-admin-badge>
+        <span class="sp-admin-text-muted">{{ n.cefrLevel }} · {{ n.skill }}{{ n.subskill ? ' / ' + n.subskill : '' }}</span>
+      </div>
+      <p class="sp-admin-section-sub">{{ n.description }}</p>
+      @if (n.contextTags.length || n.focusTags.length) {
+        <div class="sp-admin-mt-1">
+          @for (tag of n.contextTags; track tag) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
+          @for (tag of n.focusTags; track tag) { <sp-admin-badge tone="purple" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
+        </div>
+      }
+    </sp-admin-section-card>
+
+    <sp-admin-section-card title="Graph — where this node sits">
+      <div slot="header-action" class="sp-admin-form-actions" style="padding:0; background:none; border:none;">
+        <span class="sp-admin-text-muted" style="font-size:12px;">{{ graphLevel() }} layer{{ graphLevel() > 1 ? 's' : '' }} out</span>
+        <sp-admin-button size="sm" variant="neutral" appearance="outline" [disabled]="graphLevel() <= 1" (clicked)="decreaseGraphLevel()">− layer</sp-admin-button>
+        <sp-admin-button size="sm" variant="neutral" appearance="outline" [disabled]="graphLevel() >= maxGraphLevel" (clicked)="increaseGraphLevel()">+ more layer</sp-admin-button>
+      </div>
+      <sp-admin-node-graph-preview
+        [centerId]="graphCenterId()"
+        [nodes]="graphPreviewNodes()"
+        [edges]="graphPreviewEdges()"
+        (nodeClick)="goToNode($event)"
+      />
+    </sp-admin-section-card>
+
+    <sp-admin-section-card title="Prerequisites (must be mastered first)">
+      @if (n.prerequisites.length > 0) {
+        <ul class="sp-admin-simple-list">
+          @for (p of n.prerequisites; track p.id) {
+            <li><a [routerLink]="['/admin/skill-graph/nodes', p.id]">{{ p.title }}</a></li>
+          }
+        </ul>
+      } @else {
+        <p class="sp-admin-section-sub">No prerequisites — this may be a foundational root node, or truly isolated.</p>
+      }
+    </sp-admin-section-card>
+
+    <sp-admin-section-card title="Unlocks (nodes that depend on this one)">
+      @if (n.dependents.length > 0) {
+        <ul class="sp-admin-simple-list">
+          @for (d of n.dependents; track d.id) {
+            <li><a [routerLink]="['/admin/skill-graph/nodes', d.id]">{{ d.title }}</a></li>
+          }
+        </ul>
+      } @else {
+        <p class="sp-admin-section-sub">Nothing depends on this node yet.</p>
+      }
+    </sp-admin-section-card>
+
+    <sp-admin-section-card title="Linked Modules ({{ n.linkedModules.length }})">
+      @if (n.linkedModules.length > 0) {
+        <ul class="sp-admin-simple-list">
+          @for (m of n.linkedModules; track m.id) {
+            <li><a [routerLink]="['/admin/modules', m.id]">{{ m.title }}</a></li>
+          }
+        </ul>
+      } @else {
+        <p class="sp-admin-section-sub">No Module is linked to this node yet.</p>
+      }
+    </sp-admin-section-card>
+
+  }
+  }
+
+</sp-admin-page-body>

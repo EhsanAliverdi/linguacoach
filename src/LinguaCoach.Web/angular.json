@@ -29,7 +29,8 @@
             "styles": [
               "src/styles.css",
               "node_modules/choices.js/public/assets/styles/choices.min.css",
-              "node_modules/bootstrap-icons/font/bootstrap-icons.min.css"
+              "node_modules/bootstrap-icons/font/bootstrap-icons.min.css",
+              "node_modules/@fortawesome/fontawesome-free/css/all.min.css"
             ],
             "scripts": []
           },
@@ -98,7 +99,8 @@
             "styles": [
               "src/styles.css",
               "node_modules/choices.js/public/assets/styles/choices.min.css",
-              "node_modules/bootstrap-icons/font/bootstrap-icons.min.css"
+              "node_modules/bootstrap-icons/font/bootstrap-icons.min.css",
+              "node_modules/@fortawesome/fontawesome-free/css/all.min.css"
             ],
             "scripts": []
           }

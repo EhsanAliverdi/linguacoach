@@ -45,23 +45,42 @@
       </div>
     </sp-admin-section-card>
 
-    @if (error()) { <sp-admin-alert variant="error">{{ error() }}</sp-admin-alert> }
+    <!-- ── Graph view (2026-07-23) — reflects staged (unsaved) prerequisite/unlock changes too:
+         dashed amber = staged to add, dashed grey = staged to remove, both live only until Save. ── -->
+    <sp-admin-section-card title="Graph — where this node sits">
+      <div slot="header-action" class="sp-admin-form-actions" style="padding:0; background:none; border:none;">
+        <span class="sp-admin-text-muted" style="font-size:12px;">{{ graphLevel() }} layer{{ graphLevel() > 1 ? 's' : '' }} out</span>
+        <sp-admin-button size="sm" variant="neutral" appearance="outline" [disabled]="graphLevel() <= 1" (clicked)="decreaseGraphLevel()">− layer</sp-admin-button>
+        <sp-admin-button size="sm" variant="neutral" appearance="outline" [disabled]="graphLevel() >= maxGraphLevel" (clicked)="increaseGraphLevel()">+ more layer</sp-admin-button>
+      </div>
+      <sp-admin-node-graph-preview
+        [centerId]="graphCenterId()"
+        [nodes]="graphPreviewNodes()"
+        [edges]="graphPreviewEdges()"
+        (nodeClick)="goToNode($event)"
+      />
+    </sp-admin-section-card>
 
-    <div class="sp-admin-form-actions">
-      <sp-admin-button variant="neutral" appearance="outline" (clicked)="cancel()">Cancel</sp-admin-button>
-      <sp-admin-button variant="primary" [disabled]="saving()" (clicked)="save()">
-        {{ saving() ? 'Saving…' : 'Save' }}
-      </sp-admin-button>
-    </div>
-
-    <!-- ── User follow-up (2026-07-23) — Prerequisites/Unlocks, same as the View slide-over ── -->
+    <!-- ── User correction (2026-07-23) — adding/removing an edge no longer calls the API right
+         away; it's staged here and only committed together with the core fields on Save. ── -->
     <sp-admin-section-card title="Prerequisites (must be mastered first)">
-      @if (n.prerequisites.length > 0) {
+      @if (displayPrereqs().length > 0) {
         <ul class="sp-admin-simple-list">
-          @for (p of n.prerequisites; track p.id) {
+          @for (p of displayPrereqs(); track p.id) {
             <li class="sp-admin-form-actions" style="justify-content:space-between;">
-              <span>{{ p.title }}</span>
-              <sp-admin-button size="sm" variant="danger" appearance="outline" (clicked)="removePrerequisite(p.id)">Remove</sp-admin-button>
+              @if (p.pending === 'add') {
+                <span style="color:#8A5A00;">{{ p.title }} <em>(new — not saved yet)</em></span>
+                <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="cancelAddPrerequisite(p.id)">Undo</sp-admin-button>
+              } @else if (p.pending === 'remove') {
+                <span style="color:#8B85A0; text-decoration:line-through;">{{ p.title }}</span>
+                <span class="sp-admin-form-actions">
+                  <span class="sp-admin-text-muted" style="font-style:italic;">(will be removed on Save)</span>
+                  <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="undoRemovePrerequisite(p.id)">Undo</sp-admin-button>
+                </span>
+              } @else {
+                <span>{{ p.title }}</span>
+                <sp-admin-button size="sm" variant="danger" appearance="outline" (clicked)="removePrerequisite(p.id)">Remove</sp-admin-button>
+              }
             </li>
           }
         </ul>
@@ -69,30 +88,30 @@
         <p class="sp-admin-section-sub">No prerequisites — this may be a foundational root node, or truly isolated.</p>
       }
 
-      <sp-admin-form-field label="Add prerequisite" hint="Search by title or key.">
-        <sp-admin-input [(ngModel)]="addPrereqQuery" placeholder="Search nodes…" />
+      <sp-admin-form-field label="Add prerequisite" hint="Search by title or key — staged until you click Save.">
+        <sp-admin-multi-select [options]="pickerOptions()" [excludeValues]="prereqExcludeIds()" [accumulate]="false"
+          (optionPicked)="addPrerequisite($event)" placeholder="Search nodes…" />
       </sp-admin-form-field>
-      @if (addPrereqResults().length > 0) {
-        <ul class="sp-admin-simple-list">
-          @for (r of addPrereqResults(); track r.id) {
-            <li>
-              <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="addPrerequisite(r)">
-                {{ r.title }} <span class="sp-admin-text-muted">· {{ r.cefrLevel }} / {{ r.skill }}</span>
-              </sp-admin-button>
-            </li>
-          }
-        </ul>
-      }
-      @if (addPrereqError()) { <sp-admin-alert variant="error">{{ addPrereqError() }}</sp-admin-alert> }
     </sp-admin-section-card>
 
     <sp-admin-section-card title="Unlocks (nodes that depend on this one)">
-      @if (n.dependents.length > 0) {
+      @if (displayUnlocks().length > 0) {
         <ul class="sp-admin-simple-list">
-          @for (d of n.dependents; track d.id) {
+          @for (d of displayUnlocks(); track d.id) {
             <li class="sp-admin-form-actions" style="justify-content:space-between;">
-              <span>{{ d.title }}</span>
-              <sp-admin-button size="sm" variant="danger" appearance="outline" (clicked)="removeUnlock(d.id)">Remove</sp-admin-button>
+              @if (d.pending === 'add') {
+                <span style="color:#8A5A00;">{{ d.title }} <em>(new — not saved yet)</em></span>
+                <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="cancelAddUnlock(d.id)">Undo</sp-admin-button>
+              } @else if (d.pending === 'remove') {
+                <span style="color:#8B85A0; text-decoration:line-through;">{{ d.title }}</span>
+                <span class="sp-admin-form-actions">
+                  <span class="sp-admin-text-muted" style="font-style:italic;">(will be removed on Save)</span>
+                  <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="undoRemoveUnlock(d.id)">Undo</sp-admin-button>
+                </span>
+              } @else {
+                <span>{{ d.title }}</span>
+                <sp-admin-button size="sm" variant="danger" appearance="outline" (clicked)="removeUnlock(d.id)">Remove</sp-admin-button>
+              }
             </li>
           }
         </ul>
@@ -100,22 +119,28 @@
         <p class="sp-admin-section-sub">Nothing depends on this node yet.</p>
       }
 
-      <sp-admin-form-field label="Add unlock" hint="Search by title or key — this node will become a prerequisite of the one you pick.">
-        <sp-admin-input [(ngModel)]="addUnlockQuery" placeholder="Search nodes…" />
+      <sp-admin-form-field label="Add unlock" hint="Search by title or key — this node will become a prerequisite of the one you pick, staged until you click Save.">
+        <sp-admin-multi-select [options]="pickerOptions()" [excludeValues]="unlockExcludeIds()" [accumulate]="false"
+          (optionPicked)="addUnlock($event)" placeholder="Search nodes…" />
       </sp-admin-form-field>
-      @if (addUnlockResults().length > 0) {
-        <ul class="sp-admin-simple-list">
-          @for (r of addUnlockResults(); track r.id) {
-            <li>
-              <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="addUnlock(r)">
-                {{ r.title }} <span class="sp-admin-text-muted">· {{ r.cefrLevel }} / {{ r.skill }}</span>
-              </sp-admin-button>
-            </li>
-          }
-        </ul>
-      }
-      @if (addUnlockError()) { <sp-admin-alert variant="error">{{ addUnlockError() }}</sp-admin-alert> }
     </sp-admin-section-card>
+
+    @if (error()) { <sp-admin-alert variant="error">{{ error() }}</sp-admin-alert> }
+
+    @if (hasPendingEdgeChanges()) {
+      <sp-admin-alert variant="warning">
+        You have unsaved graph changes — click Save to apply them, or Cancel to discard.
+      </sp-admin-alert>
+    }
+
+    <!-- ── User correction (2026-07-23) — moved to the bottom of the page: it now applies the core
+         fields AND every staged graph change together, so it belongs after everything it saves. ── -->
+    <div class="sp-admin-form-actions sp-admin-form-actions--end">
+      <sp-admin-button variant="neutral" appearance="outline" (clicked)="cancel()">Cancel</sp-admin-button>
+      <sp-admin-button variant="primary" [disabled]="saving()" (clicked)="save()">
+        {{ saving() ? 'Saving…' : 'Save' }}
+      </sp-admin-button>
+    </div>
 
   }
   }

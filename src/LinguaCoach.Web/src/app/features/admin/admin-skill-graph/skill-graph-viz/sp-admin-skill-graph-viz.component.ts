@@ -77,11 +77,13 @@ const SKILL_BOX_COLORS: Record<string, string> = {
       <span class="sp-sgv-legend-count">{{ visibleCount }} of {{ nodes.length }} nodes shown</span>
     </div>
     <div class="sp-sgv-canvas-wrap">
-      <div #cyContainer class="sp-sgv-canvas"></div>
+      <div #cyContainer class="sp-sgv-canvas" [class.sp-sgv-canvas--area-zoom]="areaZoomActive" (mousedown)="onAreaZoomMouseDown($event)"></div>
       <div class="sp-sgv-zoom-controls">
         <button type="button" class="sp-sgv-icon-btn" (click)="zoomBy(1.3)" title="Zoom in">+</button>
         <button type="button" class="sp-sgv-icon-btn" (click)="zoomBy(1 / 1.3)" title="Zoom out">−</button>
         <button type="button" class="sp-sgv-icon-btn" (click)="fitToView()" title="Fit to view">⤢</button>
+        <button type="button" class="sp-sgv-icon-btn" [class.sp-sgv-icon-btn--active]="areaZoomActive" (click)="toggleAreaZoom()" title="Area zoom in — drag to select a region"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+        <button type="button" class="sp-sgv-icon-btn" (click)="areaZoomOut()" title="Area zoom out — back to the whole graph"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
       </div>
     </div>
   `,
@@ -103,7 +105,8 @@ const SKILL_BOX_COLORS: Record<string, string> = {
     .sp-sgv-search-nav--empty { color: var(--sp-admin-danger, #DC2626); }
     .sp-sgv-legend-count { font-size: 11px; color: var(--sp-admin-text-dim, #BDB8CC); margin-left: auto; }
     .sp-sgv-canvas-wrap { position: relative; }
-    .sp-sgv-canvas { width: 100%; height: 620px; border: 1px solid var(--sp-admin-border, #ECE9F5); border-radius: 10px; background: var(--sp-admin-surface, #fff); }
+    .sp-sgv-canvas { position: relative; width: 100%; height: 620px; border: 1px solid var(--sp-admin-border, #ECE9F5); border-radius: 10px; background: var(--sp-admin-surface, #fff); }
+    .sp-sgv-canvas--area-zoom { cursor: crosshair; }
     .sp-sgv-zoom-controls {
       position: absolute; bottom: 12px; right: 12px; display: flex; flex-direction: column; gap: 4px;
       background: var(--sp-admin-surface, #fff); border: 1px solid var(--sp-admin-border, #ECE9F5);
@@ -115,6 +118,8 @@ const SKILL_BOX_COLORS: Record<string, string> = {
       display: flex; align-items: center; justify-content: center; line-height: 1;
     }
     .sp-sgv-icon-btn:hover { background: var(--sp-admin-border, #ECE9F5); }
+    .sp-sgv-icon-btn--active { background: #5B4BE8; color: #fff; }
+    .sp-sgv-icon-btn--active:hover { background: #4A3BC7; }
   `],
 })
 export class SpAdminSkillGraphVizComponent implements OnChanges, OnDestroy {
@@ -135,6 +140,14 @@ export class SpAdminSkillGraphVizComponent implements OnChanges, OnDestroy {
   searchMatches: string[] = [];
   searchMatchIndex = -1;
 
+  // Area (marquee) zoom (2026-07-23) — user follow-up: "I don't see area select zoom icon, area
+  // select zoom out icon". Same drag-a-rectangle-to-zoom pattern as sp-admin-node-graph-preview.
+  areaZoomActive = false;
+  private areaZoomStart: { x: number; y: number } | null = null;
+  private areaZoomBox: HTMLDivElement | null = null;
+  private areaZoomMoveHandler = (e: MouseEvent) => this.onAreaZoomMouseMove(e);
+  private areaZoomUpHandler = (e: MouseEvent) => this.onAreaZoomMouseUp(e);
+
   private cy: Core | null = null;
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -144,6 +157,9 @@ export class SpAdminSkillGraphVizComponent implements OnChanges, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    document.removeEventListener('mousemove', this.areaZoomMoveHandler);
+    document.removeEventListener('mouseup', this.areaZoomUpHandler);
+    this.areaZoomBox?.remove();
     this.cy?.destroy();
   }
 
@@ -167,6 +183,10 @@ export class SpAdminSkillGraphVizComponent implements OnChanges, OnDestroy {
     this.cy?.destroy();
     this.searchMatches = [];
     this.searchMatchIndex = -1;
+    this.areaZoomActive = false;
+    this.areaZoomBox?.remove();
+    this.areaZoomBox = null;
+    this.areaZoomStart = null;
 
     const visibleNodes = this.nodes.filter(n => this.activeLevels.has(n.cefrLevel));
     this.visibleCount = visibleNodes.length;
@@ -289,6 +309,75 @@ export class SpAdminSkillGraphVizComponent implements OnChanges, OnDestroy {
 
   fitToView(): void {
     this.cy?.animate({ fit: { eles: this.cy.elements(), padding: 30 }, duration: 200 });
+  }
+
+  // ── Area (marquee) zoom (2026-07-23) ──────────────────────────────────────
+  toggleAreaZoom(): void {
+    this.areaZoomActive = !this.areaZoomActive;
+    this.cy?.userPanningEnabled(!this.areaZoomActive);
+  }
+
+  areaZoomOut(): void {
+    this.areaZoomActive = false;
+    this.cy?.userPanningEnabled(true);
+    this.fitToView();
+  }
+
+  onAreaZoomMouseDown(evt: MouseEvent): void {
+    if (!this.areaZoomActive || !this.container) return;
+    evt.preventDefault();
+    const rect = this.container.nativeElement.getBoundingClientRect();
+    this.areaZoomStart = { x: evt.clientX - rect.left, y: evt.clientY - rect.top };
+
+    const box = document.createElement('div');
+    Object.assign(box.style, {
+      position: 'absolute', border: '1.5px dashed #5B4BE8', background: 'rgba(91,75,232,0.08)',
+      pointerEvents: 'none', zIndex: '20',
+      left: `${this.areaZoomStart.x}px`, top: `${this.areaZoomStart.y}px`, width: '0px', height: '0px',
+    });
+    this.container.nativeElement.appendChild(box);
+    this.areaZoomBox = box;
+
+    document.addEventListener('mousemove', this.areaZoomMoveHandler);
+    document.addEventListener('mouseup', this.areaZoomUpHandler);
+  }
+
+  private onAreaZoomMouseMove(evt: MouseEvent): void {
+    if (!this.areaZoomStart || !this.areaZoomBox || !this.container) return;
+    const rect = this.container.nativeElement.getBoundingClientRect();
+    const cur = { x: evt.clientX - rect.left, y: evt.clientY - rect.top };
+    const x = Math.min(this.areaZoomStart.x, cur.x);
+    const y = Math.min(this.areaZoomStart.y, cur.y);
+    const w = Math.abs(cur.x - this.areaZoomStart.x);
+    const h = Math.abs(cur.y - this.areaZoomStart.y);
+    Object.assign(this.areaZoomBox.style, { left: `${x}px`, top: `${y}px`, width: `${w}px`, height: `${h}px` });
+  }
+
+  private onAreaZoomMouseUp(evt: MouseEvent): void {
+    document.removeEventListener('mousemove', this.areaZoomMoveHandler);
+    document.removeEventListener('mouseup', this.areaZoomUpHandler);
+    this.areaZoomBox?.remove();
+    this.areaZoomBox = null;
+
+    const start = this.areaZoomStart;
+    this.areaZoomStart = null;
+    if (!start || !this.cy || !this.container) return;
+
+    const rect = this.container.nativeElement.getBoundingClientRect();
+    const end = { x: evt.clientX - rect.left, y: evt.clientY - rect.top };
+    const w = Math.abs(end.x - start.x);
+    const h = Math.abs(end.y - start.y);
+    if (w < 8 || h < 8) return; // treat as a click, not a real drag — ignore
+
+    const pan = this.cy.pan();
+    const zoom = this.cy.zoom();
+    const x1 = (Math.min(start.x, end.x) - pan.x) / zoom;
+    const y1 = (Math.min(start.y, end.y) - pan.y) / zoom;
+    const x2 = (Math.max(start.x, end.x) - pan.x) / zoom;
+    const y2 = (Math.max(start.y, end.y) - pan.y) / zoom;
+    // `boundingBox` is a real runtime option for `animate({ fit })` (cytoscape reads
+    // `fit.eles || fit.boundingBox`) — just missing from @types/cytoscape's AnimationFitOptions.
+    this.cy.animate({ fit: { boundingBox: { x1, y1, x2, y2 }, padding: 10 } as unknown as cytoscape.AnimationFitOptions, duration: 200 });
   }
 
   onSearchInput(): void {

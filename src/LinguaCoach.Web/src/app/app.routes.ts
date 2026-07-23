@@ -100,6 +100,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/admin-skill-graph/admin-skill-graph-node-edit/admin-skill-graph-node-edit.component').then(m => m.AdminSkillGraphNodeEditComponent),
       },
       {
+        path: 'skill-graph/nodes/:id',
+        loadComponent: () => import('./features/admin/admin-skill-graph/admin-skill-graph-node-view/admin-skill-graph-node-view.component').then(m => m.AdminSkillGraphNodeViewComponent),
+      },
+      {
         path: 'usage-policies',
         loadComponent: () => import('./features/admin/admin-usage-policies/admin-usage-policies.component').then(m => m.AdminUsagePoliciesComponent),
       },

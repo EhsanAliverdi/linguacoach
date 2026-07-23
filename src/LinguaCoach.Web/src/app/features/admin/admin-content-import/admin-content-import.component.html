@@ -82,7 +82,7 @@
         </div>
       }
 
-      <div class="sp-admin-form-actions" style="margin-top:1rem;">
+      <div class="sp-admin-form-actions sp-admin-form-actions--end" style="margin-top:1rem;">
         <sp-admin-button variant="primary" [disabled]="submitting() || !canSubmit()" (clicked)="submit()">
           {{ submitting() ? submitStage() : 'Submit for review' }}
         </sp-admin-button>

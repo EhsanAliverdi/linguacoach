@@ -39,6 +39,7 @@ export * from './components/page-header/sp-admin-page-header.component';
 export * from './components/pagination/sp-admin-pagination.component';
 export * from './components/section-card/sp-admin-section-card.component';
 export * from './components/select/sp-admin-select.component';
+export * from './components/multi-select/sp-admin-multi-select.component';
 export * from './components/sidebar/sp-admin-sidebar.component';
 export * from './components/sidebar-nav-item/sp-admin-sidebar-nav-item.component';
 export * from './components/sidebar-section/sp-admin-sidebar-section.component';
