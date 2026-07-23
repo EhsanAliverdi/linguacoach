@@ -31,6 +31,10 @@ public static class DefaultAiSeeder
     // is reviewed by the admin and goes through the existing staged add-prerequisite/add-unlock
     // flow on Edit, only committed on an explicit Save.
     public const string SkillGraphSuggestPlacementKey = "skill_graph_suggest_placement";
+    // Skill Graph rebuild Phase 6.3f (2026-07-24) — on-demand per-pair AI second opinion for a
+    // candidate near-duplicate node pair the deterministic audit already flagged. Advisory only,
+    // requested explicitly by the admin per pair — never run automatically during the audit.
+    public const string SkillGraphConfirmNearDuplicateKey = "skill_graph_confirm_near_duplicate";
     // Adaptive Curriculum Sprint 5 (2026-07-20) — AI-ranks an already-eligible, CEFR-filtered
     // candidate pool for Today/Practice Gym delivery, reasoning over goal-vector relevance and
     // skill-graph mastery-gap flags the caller already computed. Advisory only; every ranked id is
@@ -4967,6 +4971,31 @@ Rules:
 - Do not include any text outside the JSON object. No markdown fences.
 """;
 
+    // Skill Graph rebuild Phase 6.3f — on-demand per-pair AI second opinion for a candidate
+    // near-duplicate node pair. Advisory only: the admin still decides whether to merge.
+    private const string SkillGraphConfirmNearDuplicateContent = """
+You are reviewing two competency nodes from an adaptive English-language tutoring app's Skill Graph that a deterministic title/description similarity check flagged as POSSIBLY duplicate or near-duplicate content. You do NOT decide anything final — an admin reviews your answer before merging or dismissing anything.
+
+Node A title: {{nodeATitle}}
+Node A description: {{nodeADescription}}
+
+Node B title: {{nodeBTitle}}
+Node B description: {{nodeBDescription}}
+
+Judge whether these two nodes genuinely teach/practice the SAME underlying competency (so a student who completes one gets essentially no additional value from the other), as opposed to merely sharing similar wording or topic area while covering different specific content (e.g. "Reading a short biography" and "Reading a holiday blog post" both practice reading comprehension but are NOT duplicates — different texts, different vocabulary focus).
+
+Return ONLY valid JSON (no markdown, no text outside the JSON object) matching this exact shape:
+
+{
+  "isDuplicate": <true or false>,
+  "reasoning": "<one short sentence explaining your verdict, for the admin>"
+}
+
+Rules:
+- Only mark isDuplicate true when a student would gain essentially nothing from completing both — the same skill, the same specific content focus, not just the same topic or phrasing.
+- Do not include any text outside the JSON object. No markdown fences.
+""";
+
     // Adaptive Curriculum Sprint 5 — ranks an already-eligible, already CEFR-filtered content
     // candidate pool for Today/Practice Gym delivery. Advisory only: the caller validates every
     // ranked id against the real candidate list before applying anything.
@@ -5106,6 +5135,12 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             SkillGraphSuggestPlacementKey, SkillGraphSuggestPlacementContent,
             maxInputTokens: 2400, maxOutputTokens: 1000, ct);
+
+        // Skill Graph rebuild Phase 6.3f — on-demand per-pair near-duplicate confirmation. Small,
+        // bounded input (two titles + two truncated descriptions), generous headroom regardless.
+        await SeedOrUpgradePromptAsync(db, logger,
+            SkillGraphConfirmNearDuplicateKey, SkillGraphConfirmNearDuplicateContent,
+            maxInputTokens: 2200, maxOutputTokens: 400, ct);
 
         // Sprint 14 — 3200 was undersized for A1's candidate pool (observed ~3260 tokens live,
         // blocking Today/Practice Gym entirely for every A1 student); raised with real headroom

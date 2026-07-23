@@ -268,18 +268,44 @@ public sealed record RejectReconnectGroup(
     IReadOnlyList<Guid> OrphanedDependentIds,
     IReadOnlyList<SkillGraphEdgeSummary> SuggestedReconnects);
 
-/// <summary>Input row for <see cref="IGraphChangeSuggestionService.DetectNearDuplicateNodes"/>.</summary>
-public sealed record NearDuplicateNodeCandidate(Guid Id, string Title, string CefrLevel, string Skill);
+/// <summary>Input row for <see cref="IGraphChangeSuggestionService.DetectNearDuplicateNodes"/>.
+/// <c>Description</c> is factored into the similarity score (title-only comparison flagged nodes
+/// that merely share common phrasing, e.g. "Reading a short biography" vs "Reading a holiday blog
+/// post", as near-duplicates despite covering unrelated content) and is also returned on the
+/// suggestion so the admin can judge without navigating away.</summary>
+public sealed record NearDuplicateNodeCandidate(Guid Id, string Title, string Description, string CefrLevel, string Skill);
 
 /// <summary>One candidate duplicate pair. Advisory only — the admin picks which node to keep and
 /// which to merge away via a separate merge endpoint; this record makes no claim about which one
-/// is "canonical."</summary>
+/// is "canonical." Titles+descriptions for both nodes are carried on the suggestion itself so the
+/// review UI can show enough context to judge without a second round-trip.</summary>
 public sealed record NearDuplicateNodeSuggestion(
     Guid NodeAId,
     Guid NodeBId,
     string CefrLevel,
     string Skill,
     double Similarity);
+
+/// <summary>Phase 6.3f — on-demand AI second opinion for one candidate near-duplicate pair,
+/// requested explicitly per-pair by the admin (never run automatically during the deterministic
+/// audit, to keep that cheap and keep AI cost opt-in). Mirrors <see cref="INodeGraphPlacementSuggestionService"/>'s
+/// bounded-call/retry-once/never-throws shape. Purely advisory — the admin still decides whether
+/// to merge; this never triggers a merge itself.</summary>
+public interface INearDuplicateConfirmationService
+{
+    Task<NearDuplicateConfirmationResult> ConfirmAsync(
+        NearDuplicateConfirmationRequest request, CancellationToken ct = default);
+}
+
+public sealed record NearDuplicateConfirmationRequest(
+    string NodeATitle, string NodeADescription,
+    string NodeBTitle, string NodeBDescription);
+
+public sealed record NearDuplicateConfirmationResult(
+    bool Success,
+    bool? IsLikelyDuplicate,
+    string? Reasoning,
+    string? ErrorMessage);
 
 /// <summary>Input row for <see cref="IGraphChangeSuggestionService.DetectReparentingReview"/> — one
 /// existing edge touching the node being edited, with the OTHER endpoint's current CEFR level so

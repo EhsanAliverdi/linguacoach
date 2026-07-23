@@ -1086,6 +1086,9 @@ public sealed class AdminSkillGraphEndpointTests : IClassFixture<ApiTestFactory>
                 .SequenceEqual(new[] { a.Id, b.Id }.OrderBy(x => x)));
         Assert.True(match.ValueKind != JsonValueKind.Undefined, "Expected the near-duplicate pair to be flagged.");
         Assert.True(match.GetProperty("similarity").GetDouble() >= 0.85);
+        // Phase 6.3f — descriptions are carried on the suggestion so the admin can judge without navigating away.
+        Assert.Equal("Description.", match.GetProperty("nodeADescription").GetString());
+        Assert.Equal("Description.", match.GetProperty("nodeBDescription").GetString());
     }
 
     [Fact]
@@ -1113,6 +1116,87 @@ public sealed class AdminSkillGraphEndpointTests : IClassFixture<ApiTestFactory>
         var client = ClientWithToken(_factory, token);
 
         var resp = await client.GetAsync("/api/admin/skill-graph/suggestions/near-duplicates");
+        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetNearDuplicateSuggestions_RealReportedFalsePositiveIsNotFlagged()
+    {
+        // Phase 6.3f — the exact pair a user reported as a false positive under the old
+        // title-only Jaro-Winkler metric (89% similarity): same opening two words, unrelated content.
+        var suffix = Guid.NewGuid().ToString("N");
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            db.SkillGraphNodes.Add(new SkillGraphNode(
+                $"reading.falsepos_a_{suffix}.a2", "Reading a short biography",
+                "Read a short biography of a historical figure and answer comprehension questions.", "A2", "reading"));
+            db.SkillGraphNodes.Add(new SkillGraphNode(
+                $"reading.falsepos_b_{suffix}.a2", "Reading a holiday blog post",
+                "Read a travel blogger's post about a recent holiday and identify key details.", "A2", "reading"));
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.GetAsync("/api/admin/skill-graph/suggestions/near-duplicates");
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var suggestions = body.GetProperty("suggestions").EnumerateArray().ToList();
+        Assert.DoesNotContain(suggestions, s =>
+            s.GetProperty("nodeATitle").GetString() == "Reading a short biography" ||
+            s.GetProperty("nodeBTitle").GetString() == "Reading a short biography");
+    }
+
+    // ── Skill Graph rebuild Phase 6.3f — on-demand per-pair AI confirmation. Deterministic logic
+    // itself is exhaustively covered by NearDuplicateConfirmationServiceTests (unit,
+    // SwappableFakeAiProvider); these confirm the HTTP wiring only. ─────────────────────────────
+
+    [Fact]
+    public async Task ConfirmNearDuplicate_NodeNotFound_Returns404()
+    {
+        var node = await SeedNodeAsync($"grammar.confirm_missing_{Guid.NewGuid():N}.a1");
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/suggestions/near-duplicates/confirm",
+            new { nodeAId = node.Id, nodeBId = Guid.NewGuid() });
+        Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task ConfirmNearDuplicate_WithRealNodes_NeverThrowsEvenWithoutARealAiProvider()
+    {
+        // This class's plain ApiTestFactory has no AI provider configured, so the service must
+        // degrade gracefully (200 OK, success=false, error message set) rather than a 500 — the
+        // AI-draft-then-validate "never throws" guarantee applies here too.
+        var suffix = Guid.NewGuid().ToString("N");
+        var a = await SeedNodeWithTitleAsync($"grammar.confirm_a_{suffix}.a1", "Present simple affirmative");
+        var b = await SeedNodeWithTitleAsync($"grammar.confirm_b_{suffix}.a1", "Present simple affirmatve");
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/suggestions/near-duplicates/confirm",
+            new { nodeAId = a.Id, nodeBId = b.Id });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.False(body.GetProperty("success").GetBoolean());
+        Assert.False(string.IsNullOrWhiteSpace(body.GetProperty("error").GetString()));
+    }
+
+    [Fact]
+    public async Task NonAdmin_rejected_for_confirm_near_duplicate_endpoint()
+    {
+        var suffix = Guid.NewGuid().ToString("N");
+        var a = await SeedNodeAsync($"grammar.confirm_nonadmin_a_{suffix}.a1");
+        var b = await SeedNodeAsync($"grammar.confirm_nonadmin_b_{suffix}.a1");
+        var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"sg_confirm_nonadmin_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(_factory, token);
+
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/suggestions/near-duplicates/confirm",
+            new { nodeAId = a.Id, nodeBId = b.Id });
         Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
     }
 

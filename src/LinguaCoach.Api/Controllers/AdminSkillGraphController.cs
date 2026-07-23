@@ -40,11 +40,13 @@ public sealed class AdminSkillGraphController : ControllerBase
     private readonly ISkillGraphNodeRepairService _repair;
     private readonly INodeGraphPlacementSuggestionService _placementSuggestions;
     private readonly IGraphChangeSuggestionService _changeSuggestions;
+    private readonly INearDuplicateConfirmationService _nearDuplicateConfirmation;
 
     public AdminSkillGraphController(
         LinguaCoachDbContext db, ISkillGraphDraftingService drafting, ISkillGraphValidationService validation,
         IModuleSkillGraphTaggingService tagging, ISkillGraphNodeRepairService repair,
-        INodeGraphPlacementSuggestionService placementSuggestions, IGraphChangeSuggestionService changeSuggestions)
+        INodeGraphPlacementSuggestionService placementSuggestions, IGraphChangeSuggestionService changeSuggestions,
+        INearDuplicateConfirmationService nearDuplicateConfirmation)
     {
         _db = db;
         _drafting = drafting;
@@ -53,6 +55,7 @@ public sealed class AdminSkillGraphController : ControllerBase
         _repair = repair;
         _placementSuggestions = placementSuggestions;
         _changeSuggestions = changeSuggestions;
+        _nearDuplicateConfirmation = nearDuplicateConfirmation;
     }
 
     // ── Sprint 14.1 — node tag diagnose+AI-repair, mirrors Resource Bank's
@@ -899,33 +902,62 @@ public sealed class AdminSkillGraphController : ControllerBase
     }
 
     /// <summary>Skill Graph rebuild Phase 6.3c — on-demand near-duplicate node audit: scans every
-    /// active node for title-similar siblings sharing the same CEFR level + Skill. Advisory only —
-    /// nothing is merged automatically; the admin reviews each pair and either dismisses it or
-    /// calls <see cref="MergeNodes"/> to merge one into the other.</summary>
+    /// active node for title/description-similar siblings sharing the same CEFR level + Skill.
+    /// Advisory only — nothing is merged automatically; the admin reviews each pair (descriptions
+    /// are included so they can judge without navigating away — Phase 6.3f) and either dismisses
+    /// it, requests an on-demand AI second opinion via <see cref="ConfirmNearDuplicate"/>, or calls
+    /// <see cref="MergeNodes"/> to merge one into the other.</summary>
     [HttpGet("suggestions/near-duplicates")]
     public async Task<IActionResult> GetNearDuplicateSuggestions(CancellationToken ct)
     {
         var candidates = await _db.SkillGraphNodes.AsNoTracking()
             .Where(n => n.IsActive)
-            .Select(n => new NearDuplicateNodeCandidate(n.Id, n.Title, n.CefrLevel, n.Skill))
+            .Select(n => new NearDuplicateNodeCandidate(n.Id, n.Title, n.Description, n.CefrLevel, n.Skill))
             .ToListAsync(ct);
 
         var suggestions = _changeSuggestions.DetectNearDuplicateNodes(candidates);
 
         var allIds = suggestions.SelectMany(s => new[] { s.NodeAId, s.NodeBId }).Distinct().ToList();
-        var titlesById = await _db.SkillGraphNodes.AsNoTracking()
+        var nodesById = await _db.SkillGraphNodes.AsNoTracking()
             .Where(n => allIds.Contains(n.Id))
-            .ToDictionaryAsync(n => n.Id, n => n.Title, ct);
+            .Select(n => new { n.Id, n.Title, n.Description })
+            .ToDictionaryAsync(n => n.Id, ct);
 
         var dtos = suggestions.Select(s => (object)new
         {
-            nodeAId = s.NodeAId, nodeATitle = titlesById.GetValueOrDefault(s.NodeAId, "(unknown)"),
-            nodeBId = s.NodeBId, nodeBTitle = titlesById.GetValueOrDefault(s.NodeBId, "(unknown)"),
+            nodeAId = s.NodeAId, nodeATitle = nodesById.GetValueOrDefault(s.NodeAId)?.Title ?? "(unknown)",
+            nodeADescription = nodesById.GetValueOrDefault(s.NodeAId)?.Description ?? "",
+            nodeBId = s.NodeBId, nodeBTitle = nodesById.GetValueOrDefault(s.NodeBId)?.Title ?? "(unknown)",
+            nodeBDescription = nodesById.GetValueOrDefault(s.NodeBId)?.Description ?? "",
             cefrLevel = s.CefrLevel, skill = s.Skill,
             similarity = s.Similarity,
         }).ToList();
 
         return Ok(new { count = suggestions.Count, suggestions = dtos });
+    }
+
+    /// <summary>Phase 6.3f — on-demand AI second opinion for one near-duplicate candidate pair,
+    /// requested explicitly per-pair by the admin (never run automatically during the audit above,
+    /// to keep that cheap and keep AI cost strictly opt-in). Purely advisory, like every other
+    /// suggestion here — the AI's verdict is shown to the admin, who still decides whether to
+    /// merge; this endpoint never merges or dismisses anything itself.</summary>
+    [HttpPost("suggestions/near-duplicates/confirm")]
+    public async Task<IActionResult> ConfirmNearDuplicate([FromBody] ConfirmNearDuplicateRequest request, CancellationToken ct)
+    {
+        var nodeA = await _db.SkillGraphNodes.AsNoTracking().FirstOrDefaultAsync(n => n.Id == request.NodeAId, ct);
+        var nodeB = await _db.SkillGraphNodes.AsNoTracking().FirstOrDefaultAsync(n => n.Id == request.NodeBId, ct);
+        if (nodeA is null || nodeB is null) return NotFound(new { error = "One or both nodes not found." });
+
+        var result = await _nearDuplicateConfirmation.ConfirmAsync(
+            new NearDuplicateConfirmationRequest(nodeA.Title, nodeA.Description, nodeB.Title, nodeB.Description), ct);
+
+        return Ok(new
+        {
+            success = result.Success,
+            isLikelyDuplicate = result.IsLikelyDuplicate,
+            reasoning = result.Reasoning,
+            error = result.ErrorMessage,
+        });
     }
 
     /// <summary>Merges <paramref name="mergeAwayNodeId"/> into <paramref name="keepNodeId"/>: every
@@ -1187,6 +1219,8 @@ public sealed record UpdateSkillGraphNodeRequest(
     int DifficultyBand, string? DescriptionForAi);
 
 public sealed record AddSkillGraphPrerequisiteRequest(Guid PrerequisiteNodeId);
+
+public sealed record ConfirmNearDuplicateRequest(Guid NodeAId, Guid NodeBId);
 
 public sealed record ImportSkillGraphNodeItem(
     string Key, string Title, string Description, string CefrLevel, string Skill, string? Subskill,

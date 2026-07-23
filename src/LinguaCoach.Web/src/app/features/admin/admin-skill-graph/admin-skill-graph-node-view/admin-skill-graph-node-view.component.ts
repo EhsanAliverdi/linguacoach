@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AdminApiService } from '../../../../core/services/admin.api.service';
 import { SkillGraphEdge, SkillGraphNode, SkillGraphNodeDetail } from '../../../../core/models/admin.models';
@@ -84,6 +84,7 @@ export class AdminSkillGraphNodeViewComponent implements OnInit {
     private api: AdminApiService,
     private route: ActivatedRoute,
     private router: Router,
+    private location: Location,
   ) {}
 
   ngOnInit(): void {
@@ -121,8 +122,11 @@ export class AdminSkillGraphNodeViewComponent implements OnInit {
     this.router.navigateByUrl(`/admin/skill-graph/nodes/${id}`);
   }
 
+  // User correction (2026-07-24) — this used to hardcode a return to the main list page, so
+  // clicking a neighbor node in the graph preview (goToNode, above) and then hitting "Back" would
+  // skip past whichever node the admin actually came from. Real browser-history back instead.
   back(): void {
-    this.router.navigateByUrl('/admin/skill-graph');
+    this.location.back();
   }
 
   editNode(): void {

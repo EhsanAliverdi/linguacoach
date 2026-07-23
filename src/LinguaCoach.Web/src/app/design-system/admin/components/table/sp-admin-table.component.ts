@@ -167,11 +167,11 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
                 </thead>
               }
               <tbody>
-                @for (row of rows; track $index) {
-                  <tr [class]="trClass($index)" [class.sp-adm-tr-clickable]="rowClickable" (click)="rowClickable && rowClick.emit(row)">
+                @for (row of rows; track $index; let rowIndex = $index) {
+                  <tr [class]="trClass(rowIndex)" [class.sp-adm-tr-clickable]="rowClickable" (click)="rowClickable && rowClick.emit(row)">
                     @if (selectable) {
                       <td class="sp-adm-td sp-adm-td-check">
-                        <input type="checkbox" [checked]="isSelected($index)" (change)="onSelectRow($index, $event)" (click)="$event.stopPropagation()" [attr.aria-label]="'Select row ' + ($index + 1)" />
+                        <input type="checkbox" [checked]="isSelected(rowIndex)" (change)="onSelectRow(rowIndex, $event)" (click)="$event.stopPropagation()" [attr.aria-label]="'Select row ' + (rowIndex + 1)" />
                       </td>
                     }
                     @for (column of columns; track column.key) {
@@ -182,7 +182,7 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
                       >
                       <span class="inline-flex items-center gap-2">
                         @if (bulkEditMode && column.titleColumn) {
-                          <input type="checkbox" class="sp-adm-bulk-checkbox" [checked]="isSelected($index)" (change)="onSelectRow($index, $event)" (click)="$event.stopPropagation()" [attr.aria-label]="'Select row ' + ($index + 1)" />
+                          <input type="checkbox" class="sp-adm-bulk-checkbox" [checked]="isSelected(rowIndex)" (change)="onSelectRow(rowIndex, $event)" (click)="$event.stopPropagation()" [attr.aria-label]="'Select row ' + (rowIndex + 1)" />
                         }
                         @if (cellTemplate) {
                           <ng-container *ngTemplateOutlet="cellTemplate; context: { $implicit: row, col: column }" />
@@ -198,10 +198,10 @@ export type SpAdminTableDensity = 'compact' | 'comfortable' | 'spacious';
                       </td>
                     }
                   </tr>
-                  @if (rowDetailTemplate && isRowExpanded && isRowExpanded(row, $index)) {
+                  @if (rowDetailTemplate && isRowExpanded && isRowExpanded(row, rowIndex)) {
                     <tr class="sp-adm-row-detail">
                       <td [attr.colspan]="detailColspan">
-                        <ng-container *ngTemplateOutlet="rowDetailTemplate; context: { $implicit: row, index: $index }" />
+                        <ng-container *ngTemplateOutlet="rowDetailTemplate; context: { $implicit: row, index: rowIndex }" />
                       </td>
                     </tr>
                   }

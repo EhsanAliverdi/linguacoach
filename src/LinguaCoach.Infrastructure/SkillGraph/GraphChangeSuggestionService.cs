@@ -140,6 +140,17 @@ public sealed class GraphChangeSuggestionService : IGraphChangeSuggestionService
         return groups;
     }
 
+    /// <summary>User-reported false positive (2026-07-24): title-only Jaro-Winkler flagged
+    /// "Reading a short biography" vs "Reading a holiday blog post" as 89% similar — JW is a
+    /// character-positional metric built for short strings like names, and rewards the two titles'
+    /// shared common English letters/shared "Reading a " prefix even though the actual topics are
+    /// unrelated. Bigram (character 2-gram) Dice coefficient is far more discriminative for
+    /// sentence-length text, and factoring in description similarity (title carries most of the
+    /// weight; description catches cases where near-identical titles cover genuinely different
+    /// content) further reduces false positives.</summary>
+    private const double TitleWeight = 0.7;
+    private const double DescriptionWeight = 0.3;
+
     public IReadOnlyList<NearDuplicateNodeSuggestion> DetectNearDuplicateNodes(
         IReadOnlyList<NearDuplicateNodeCandidate> nodes)
     {
@@ -157,7 +168,9 @@ public sealed class GraphChangeSuggestionService : IGraphChangeSuggestionService
             {
                 for (var j = i + 1; j < members.Count; j++)
                 {
-                    var similarity = JaroWinklerSimilarity(members[i].Title, members[j].Title);
+                    var titleSimilarity = BigramDiceSimilarity(members[i].Title, members[j].Title);
+                    var descriptionSimilarity = BigramDiceSimilarity(members[i].Description, members[j].Description);
+                    var similarity = TitleWeight * titleSimilarity + DescriptionWeight * descriptionSimilarity;
                     if (similarity < NearDuplicateSimilarityThreshold) continue;
 
                     suggestions.Add(new NearDuplicateNodeSuggestion(
@@ -173,63 +186,41 @@ public sealed class GraphChangeSuggestionService : IGraphChangeSuggestionService
         return suggestions;
     }
 
-    /// <summary>Standard Jaro-Winkler string similarity, case-insensitive. Returns 1.0 for
-    /// identical strings, 0.0 for completely dissimilar/empty strings.</summary>
-    private static double JaroWinklerSimilarity(string s1, string s2)
+    /// <summary>Sorensen-Dice coefficient over character bigrams, case-insensitive, counting
+    /// repeated bigrams (a multiset intersection, not a plain set intersection — "aabb" vs "aabb"
+    /// must score 1.0). Returns 1.0 for identical strings, 0.0 when either string is too short to
+    /// form a bigram (or empty) and the strings aren't identical.</summary>
+    private static double BigramDiceSimilarity(string s1, string s2)
     {
         s1 = s1.Trim().ToLowerInvariant();
         s2 = s2.Trim().ToLowerInvariant();
         if (s1 == s2) return 1.0;
+        if (s1.Length < 2 || s2.Length < 2) return 0.0;
 
-        var len1 = s1.Length;
-        var len2 = s2.Length;
-        if (len1 == 0 || len2 == 0) return 0.0;
+        var counts1 = BigramCounts(s1);
+        var counts2 = BigramCounts(s2);
 
-        var matchDistance = Math.Max(0, Math.Max(len1, len2) / 2 - 1);
-
-        var s1Matches = new bool[len1];
-        var s2Matches = new bool[len2];
-        var matches = 0;
-
-        for (var i = 0; i < len1; i++)
+        var intersection = 0;
+        foreach (var (bigram, count1) in counts1)
         {
-            var start = Math.Max(0, i - matchDistance);
-            var end = Math.Min(i + matchDistance + 1, len2);
-            for (var j = start; j < end; j++)
-            {
-                if (s2Matches[j] || s1[i] != s2[j]) continue;
-                s1Matches[i] = true;
-                s2Matches[j] = true;
-                matches++;
-                break;
-            }
+            if (counts2.TryGetValue(bigram, out var count2))
+                intersection += Math.Min(count1, count2);
         }
 
-        if (matches == 0) return 0.0;
+        var total1 = s1.Length - 1;
+        var total2 = s2.Length - 1;
+        return 2.0 * intersection / (total1 + total2);
+    }
 
-        double transpositions = 0;
-        var k = 0;
-        for (var i = 0; i < len1; i++)
+    private static Dictionary<string, int> BigramCounts(string s)
+    {
+        var counts = new Dictionary<string, int>();
+        for (var i = 0; i < s.Length - 1; i++)
         {
-            if (!s1Matches[i]) continue;
-            while (!s2Matches[k]) k++;
-            if (s1[i] != s2[k]) transpositions++;
-            k++;
+            var bigram = s.Substring(i, 2);
+            counts[bigram] = counts.GetValueOrDefault(bigram) + 1;
         }
-        transpositions /= 2;
-
-        var jaro = ((double)matches / len1 + (double)matches / len2 + (matches - transpositions) / matches) / 3.0;
-
-        var prefixLength = 0;
-        var maxPrefix = Math.Min(4, Math.Min(len1, len2));
-        for (var i = 0; i < maxPrefix; i++)
-        {
-            if (s1[i] != s2[i]) break;
-            prefixLength++;
-        }
-
-        const double scalingFactor = 0.1;
-        return jaro + prefixLength * scalingFactor * (1 - jaro);
+        return counts;
     }
 
     public ReparentReviewResult? DetectReparentingReview(

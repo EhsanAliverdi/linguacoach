@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin, of, Observable } from 'rxjs';
@@ -203,6 +203,7 @@ export class AdminSkillGraphNodeEditComponent implements OnInit {
     private api: AdminApiService,
     private route: ActivatedRoute,
     private router: Router,
+    private location: Location,
   ) {}
 
   ngOnInit(): void {
@@ -245,8 +246,11 @@ export class AdminSkillGraphNodeEditComponent implements OnInit {
     this.pendingRemoveUnlockIds.set(new Set());
   }
 
+  // User correction (2026-07-24) — these three used to hardcode a return to the main list page,
+  // so an admin who navigated here from another node's graph preview (goToNode, above) would skip
+  // past the node they actually came from. Real browser-history back instead.
   cancel(): void {
-    this.router.navigateByUrl('/admin/skill-graph');
+    this.location.back();
   }
 
   save(): void {
@@ -293,7 +297,7 @@ export class AdminSkillGraphNodeEditComponent implements OnInit {
           this.loadFullGraph();
           return;
         }
-        this.router.navigateByUrl('/admin/skill-graph');
+        this.location.back();
       },
       error: err => { this.saving.set(false); this.error.set(err.error?.error ?? 'Could not save changes — approved nodes must be rejected first to reopen editing.'); },
     });
@@ -344,7 +348,7 @@ export class AdminSkillGraphNodeEditComponent implements OnInit {
 
   // Shared exit point for both the reparent-review and redundant-edge-from-save cards.
   finishReparentReview(): void {
-    this.router.navigateByUrl('/admin/skill-graph');
+    this.location.back();
   }
 
   // Applies every staged edge change together; a failed individual call (e.g. would create a

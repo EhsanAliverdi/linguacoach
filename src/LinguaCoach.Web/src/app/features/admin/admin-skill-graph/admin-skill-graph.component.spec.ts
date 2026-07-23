@@ -13,6 +13,11 @@ import {
   SkillGraphBatchRejectResponse,
   RejectReconnectGroup,
   AddSkillGraphPrerequisiteResponse,
+  GraphChangeSuggestionsResponse,
+  NearDuplicateSuggestionsResponse,
+  NearDuplicateNodeSuggestion,
+  ConfirmNearDuplicateResponse,
+  MergeNodesResponse,
 } from '../../../core/models/admin.models';
 
 // Adaptive Curriculum Sprint 1 — admin skill-graph review page.
@@ -66,6 +71,15 @@ function makeApi(overrides: Partial<Record<string, unknown>> = {}) {
     // Phase 6.3e — acceptReconnectSuggestion's own addSkillGraphPrerequisite call.
     addSkillGraphPrerequisite: jasmine.createSpy('addSkillGraphPrerequisite').and.returnValue(
       of<AddSkillGraphPrerequisiteResponse>({ added: true, suggestions: [] })),
+    // Phase 6.3a/6.3c/6.3f — merged "Graph audit" (runGraphAudit calls both in parallel).
+    getRedundantEdgeSuggestions: jasmine.createSpy('getRedundantEdgeSuggestions').and.returnValue(
+      of<GraphChangeSuggestionsResponse>({ count: 0, suggestions: [] })),
+    getNearDuplicateSuggestions: jasmine.createSpy('getNearDuplicateSuggestions').and.returnValue(
+      of<NearDuplicateSuggestionsResponse>({ count: 0, suggestions: [] })),
+    mergeSkillGraphNodes: jasmine.createSpy('mergeSkillGraphNodes').and.returnValue(
+      of<MergeNodesResponse>({ keepNodeId: 'n1', mergeAwayNodeId: 'n2', repointedCount: 0, droppedCount: 0 })),
+    confirmNearDuplicate: jasmine.createSpy('confirmNearDuplicate').and.returnValue(
+      of<ConfirmNearDuplicateResponse>({ success: true, isLikelyDuplicate: false, reasoning: 'Different content.', error: null })),
     ...overrides,
   };
 }
@@ -261,5 +275,108 @@ describe('AdminSkillGraphComponent', () => {
     component.acceptReconnectSuggestion(0, 0);
 
     expect(component.redundantEdgeSuggestions()).toEqual([]);
+  });
+
+  // Phase 6.3a/6.3c merged into one "Graph audit" (2026-07-24 user correction: "Graph audit and
+  // Near-duplicate nodes are literally the same thing... Graph audit should return both").
+
+  it('runGraphAudit populates both redundant-edge and near-duplicate suggestions from one click', async () => {
+    const dup: NearDuplicateNodeSuggestion = {
+      nodeAId: 'n1', nodeATitle: 'A', nodeADescription: 'Desc A',
+      nodeBId: 'n2', nodeBTitle: 'B', nodeBDescription: 'Desc B',
+      cefrLevel: 'A1', skill: 'grammar', similarity: 0.9,
+    };
+    await setup({
+      getNearDuplicateSuggestions: jasmine.createSpy('getNearDuplicateSuggestions').and.returnValue(
+        of<NearDuplicateSuggestionsResponse>({ count: 1, suggestions: [dup] })),
+    });
+
+    component.runGraphAudit();
+
+    expect(api.getRedundantEdgeSuggestions).toHaveBeenCalledTimes(1);
+    expect(api.getNearDuplicateSuggestions).toHaveBeenCalledTimes(1);
+    expect(component.auditRun()).toBeTrue();
+    expect(component.nearDuplicateSuggestions()).toEqual([dup]);
+  });
+
+  it('runGraphAudit reports an error when either call fails', async () => {
+    await setup({
+      getNearDuplicateSuggestions: jasmine.createSpy('getNearDuplicateSuggestions').and.returnValue(
+        throwError(() => ({ error: { error: 'boom' } }))),
+    });
+
+    component.runGraphAudit();
+
+    expect(component.auditError()).toBe('boom');
+  });
+
+  // Phase 6.3f — merge requires an explicit confirm step; nothing is called on "Keep A/B" alone.
+
+  it('stageMerge does not call the API until confirmMerge is invoked', async () => {
+    const dup: NearDuplicateNodeSuggestion = {
+      nodeAId: 'n1', nodeATitle: 'A', nodeADescription: 'Desc A',
+      nodeBId: 'n2', nodeBTitle: 'B', nodeBDescription: 'Desc B',
+      cefrLevel: 'A1', skill: 'grammar', similarity: 0.9,
+    };
+    await setup();
+    component.nearDuplicateSuggestions.set([dup]);
+
+    component.stageMerge(dup, 'A');
+    expect(api.mergeSkillGraphNodes).not.toHaveBeenCalled();
+    expect(component.isPendingMergeFor(dup)).toBeTrue();
+
+    component.confirmMerge();
+    expect(api.mergeSkillGraphNodes).toHaveBeenCalledWith('n1', 'n2');
+    expect(component.nearDuplicateSuggestions()).toEqual([]);
+  });
+
+  it('cancelMerge clears the pending confirmation without calling the API', async () => {
+    const dup: NearDuplicateNodeSuggestion = {
+      nodeAId: 'n1', nodeATitle: 'A', nodeADescription: 'Desc A',
+      nodeBId: 'n2', nodeBTitle: 'B', nodeBDescription: 'Desc B',
+      cefrLevel: 'A1', skill: 'grammar', similarity: 0.9,
+    };
+    await setup();
+    component.nearDuplicateSuggestions.set([dup]);
+    component.stageMerge(dup, 'B');
+
+    component.cancelMerge();
+
+    expect(api.mergeSkillGraphNodes).not.toHaveBeenCalled();
+    expect(component.isPendingMergeFor(dup)).toBeFalse();
+    expect(component.nearDuplicateSuggestions()).toEqual([dup]);
+  });
+
+  it('confirmDuplicateWithAi stores the AI verdict keyed to the pair, not array index', async () => {
+    const dup: NearDuplicateNodeSuggestion = {
+      nodeAId: 'n1', nodeATitle: 'A', nodeADescription: 'Desc A',
+      nodeBId: 'n2', nodeBTitle: 'B', nodeBDescription: 'Desc B',
+      cefrLevel: 'A1', skill: 'grammar', similarity: 0.9,
+    };
+    await setup();
+    component.nearDuplicateSuggestions.set([dup]);
+
+    component.confirmDuplicateWithAi(dup);
+
+    expect(api.confirmNearDuplicate).toHaveBeenCalledWith('n1', 'n2');
+    expect(component.duplicateAiResult(dup)?.isLikelyDuplicate).toBeFalse();
+  });
+
+  it('dismissNearDuplicateSuggestion clears AI results and any pending merge for that pair', async () => {
+    const dup: NearDuplicateNodeSuggestion = {
+      nodeAId: 'n1', nodeATitle: 'A', nodeADescription: 'Desc A',
+      nodeBId: 'n2', nodeBTitle: 'B', nodeBDescription: 'Desc B',
+      cefrLevel: 'A1', skill: 'grammar', similarity: 0.9,
+    };
+    await setup();
+    component.nearDuplicateSuggestions.set([dup]);
+    component.confirmDuplicateWithAi(dup);
+    component.stageMerge(dup, 'A');
+
+    component.dismissNearDuplicateSuggestion(dup);
+
+    expect(component.nearDuplicateSuggestions()).toEqual([]);
+    expect(component.duplicateAiResult(dup)).toBeUndefined();
+    expect(component.isPendingMergeFor(dup)).toBeFalse();
   });
 });

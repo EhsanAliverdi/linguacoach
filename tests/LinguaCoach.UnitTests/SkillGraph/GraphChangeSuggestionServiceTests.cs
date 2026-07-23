@@ -256,6 +256,10 @@ public sealed class GraphChangeSuggestionServiceTests
     }
 
     // ── Phase 6.3c — near-duplicate node detection ──────────────────────────────────────────
+    // Phase 6.3f (2026-07-24) — switched from title-only Jaro-Winkler to a bigram-Dice metric
+    // weighted across title (70%) + description (30%), after a real false positive was reported:
+    // JW flagged "Reading a short biography" vs "Reading a holiday blog post" as 89% similar
+    // purely from shared common English letters, despite unrelated content.
 
     [Fact]
     public void Nearly_identical_titles_in_the_same_cefr_and_skill_are_flagged()
@@ -264,8 +268,8 @@ public sealed class GraphChangeSuggestionServiceTests
         var idB = Guid.NewGuid();
         NearDuplicateNodeCandidate[] nodes =
         [
-            new(idA, "Present simple affirmative", "A1", "grammar"),
-            new(idB, "Present simple affirmatve", "A1", "grammar"), // typo'd near-duplicate
+            new(idA, "Present simple affirmative", "Practice forming affirmative sentences in the present simple tense.", "A1", "grammar"),
+            new(idB, "Present simple affirmatve", "Practice forming affirmative sentences in the present simple tense.", "A1", "grammar"), // typo'd near-duplicate
         ];
 
         var suggestions = _sut.DetectNearDuplicateNodes(nodes);
@@ -278,12 +282,12 @@ public sealed class GraphChangeSuggestionServiceTests
     }
 
     [Fact]
-    public void Identical_titles_are_flagged_with_similarity_one()
+    public void Identical_titles_and_descriptions_are_flagged_with_similarity_one()
     {
         NearDuplicateNodeCandidate[] nodes =
         [
-            new(Guid.NewGuid(), "Past continuous", "B1", "grammar"),
-            new(Guid.NewGuid(), "Past continuous", "B1", "grammar"),
+            new(Guid.NewGuid(), "Past continuous", "Forming and using the past continuous tense.", "B1", "grammar"),
+            new(Guid.NewGuid(), "Past continuous", "Forming and using the past continuous tense.", "B1", "grammar"),
         ];
 
         var suggestion = Assert.Single(_sut.DetectNearDuplicateNodes(nodes));
@@ -295,8 +299,8 @@ public sealed class GraphChangeSuggestionServiceTests
     {
         NearDuplicateNodeCandidate[] nodes =
         [
-            new(Guid.NewGuid(), "Present simple affirmative", "A1", "grammar"),
-            new(Guid.NewGuid(), "Present simple affirmative", "B1", "grammar"),
+            new(Guid.NewGuid(), "Present simple affirmative", "D1", "A1", "grammar"),
+            new(Guid.NewGuid(), "Present simple affirmative", "D2", "B1", "grammar"),
         ];
 
         Assert.Empty(_sut.DetectNearDuplicateNodes(nodes));
@@ -307,8 +311,8 @@ public sealed class GraphChangeSuggestionServiceTests
     {
         NearDuplicateNodeCandidate[] nodes =
         [
-            new(Guid.NewGuid(), "Weather vocabulary", "A1", "vocabulary"),
-            new(Guid.NewGuid(), "Weather vocabulary", "A1", "grammar"),
+            new(Guid.NewGuid(), "Weather vocabulary", "D1", "A1", "vocabulary"),
+            new(Guid.NewGuid(), "Weather vocabulary", "D2", "A1", "grammar"),
         ];
 
         Assert.Empty(_sut.DetectNearDuplicateNodes(nodes));
@@ -319,8 +323,22 @@ public sealed class GraphChangeSuggestionServiceTests
     {
         NearDuplicateNodeCandidate[] nodes =
         [
-            new(Guid.NewGuid(), "Present simple affirmative", "A1", "grammar"),
-            new(Guid.NewGuid(), "Past continuous negative", "A1", "grammar"),
+            new(Guid.NewGuid(), "Present simple affirmative", "D1", "A1", "grammar"),
+            new(Guid.NewGuid(), "Past continuous negative", "D2", "A1", "grammar"),
+        ];
+
+        Assert.Empty(_sut.DetectNearDuplicateNodes(nodes));
+    }
+
+    [Fact]
+    public void Real_reported_false_positive_shared_phrasing_but_unrelated_content_is_not_flagged()
+    {
+        // The exact pair a user reported as a false positive under the old title-only Jaro-Winkler
+        // metric (89% similarity) — same opening two words, completely different topics.
+        NearDuplicateNodeCandidate[] nodes =
+        [
+            new(Guid.NewGuid(), "Reading a short biography", "Read a short biography of a historical figure and answer comprehension questions.", "A2", "reading"),
+            new(Guid.NewGuid(), "Reading a holiday blog post", "Read a travel blogger's post about a recent holiday and identify key details.", "A2", "reading"),
         ];
 
         Assert.Empty(_sut.DetectNearDuplicateNodes(nodes));
@@ -334,9 +352,9 @@ public sealed class GraphChangeSuggestionServiceTests
         var idC = Guid.NewGuid();
         NearDuplicateNodeCandidate[] nodes =
         [
-            new(idA, "Present simple affirmative", "A1", "grammar"),
-            new(idB, "Present simple affirmativ", "A1", "grammar"), // near-duplicate of A
-            new(idC, "Past continuous negative", "A1", "grammar"), // unrelated
+            new(idA, "Present simple affirmative", "Practice forming affirmative sentences in the present simple tense.", "A1", "grammar"),
+            new(idB, "Present simple affirmativ", "Practice forming affirmative sentences in the present simple tense.", "A1", "grammar"), // near-duplicate of A
+            new(idC, "Past continuous negative", "Forming negative sentences in the past continuous tense.", "A1", "grammar"), // unrelated
         ];
 
         var suggestions = _sut.DetectNearDuplicateNodes(nodes);
@@ -349,7 +367,7 @@ public sealed class GraphChangeSuggestionServiceTests
     public void Fewer_than_two_nodes_returns_no_suggestions()
     {
         Assert.Empty(_sut.DetectNearDuplicateNodes([]));
-        Assert.Empty(_sut.DetectNearDuplicateNodes([new(Guid.NewGuid(), "Present simple", "A1", "grammar")]));
+        Assert.Empty(_sut.DetectNearDuplicateNodes([new(Guid.NewGuid(), "Present simple", "D1", "A1", "grammar")]));
     }
 
     [Fact]
@@ -357,8 +375,8 @@ public sealed class GraphChangeSuggestionServiceTests
     {
         NearDuplicateNodeCandidate[] nodes =
         [
-            new(Guid.NewGuid(), "  Present Simple Affirmative  ", "A1", "grammar"),
-            new(Guid.NewGuid(), "present simple affirmative", "A1", "grammar"),
+            new(Guid.NewGuid(), "  Present Simple Affirmative  ", "Same description.", "A1", "grammar"),
+            new(Guid.NewGuid(), "present simple affirmative", "Same description.", "A1", "grammar"),
         ];
 
         var suggestion = Assert.Single(_sut.DetectNearDuplicateNodes(nodes));

@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AdminApiService } from '../../../../core/services/admin.api.service';
@@ -143,6 +143,7 @@ export class AdminSkillGraphNodeCreateComponent implements OnInit {
   constructor(
     private api: AdminApiService,
     private router: Router,
+    private location: Location,
   ) {}
 
   ngOnInit(): void {
@@ -154,8 +155,10 @@ export class AdminSkillGraphNodeCreateComponent implements OnInit {
     return raw.split(',').map(t => t.trim()).filter(t => t.length > 0);
   }
 
+  // User correction (2026-07-24) — used to hardcode a return to the main list page; real
+  // browser-history back instead, consistent with View/Edit's Back/Cancel fix.
   cancel(): void {
-    this.router.navigateByUrl('/admin/skill-graph');
+    this.location.back();
   }
 
   viewCreatedNode(): void {

@@ -1730,11 +1730,16 @@ export interface SkillGraphBatchRejectResponse extends SkillGraphBatchActionResp
 }
 
 // Phase 6.3c — near-duplicate node detection (advisory only) + explicit merge action.
+// Phase 6.3f — descriptions carried on the suggestion (so the admin can judge without navigating
+// away) + a smarter bigram-Dice/title+description-weighted similarity metric (replaced title-only
+// Jaro-Winkler after a real false-positive report).
 export interface NearDuplicateNodeSuggestion {
   nodeAId: string;
   nodeATitle: string;
+  nodeADescription: string;
   nodeBId: string;
   nodeBTitle: string;
+  nodeBDescription: string;
   cefrLevel: string;
   skill: string;
   similarity: number;
@@ -1750,6 +1755,15 @@ export interface MergeNodesResponse {
   mergeAwayNodeId: string;
   repointedCount: number;
   droppedCount: number;
+}
+
+// Phase 6.3f — on-demand per-pair AI second opinion, requested explicitly by the admin (never run
+// automatically during the audit). Purely advisory.
+export interface ConfirmNearDuplicateResponse {
+  success: boolean;
+  isLikelyDuplicate: boolean | null;
+  reasoning: string | null;
+  error: string | null;
 }
 
 // Phase 6.3d — reparenting-on-edit review (advisory only, never auto-removes anything).

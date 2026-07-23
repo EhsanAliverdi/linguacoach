@@ -21,7 +21,7 @@ import {
   CreateSkillGraphNodeRequest, CreateSkillGraphNodeResponse, UpdateSkillGraphNodeRequest, SkillGraphIsolatedNodesResponse,
   SkillGraphPlacementSuggestionResponse,
   GraphChangeSuggestionsResponse,
-  NearDuplicateSuggestionsResponse, MergeNodesResponse,
+  NearDuplicateSuggestionsResponse, MergeNodesResponse, ConfirmNearDuplicateResponse,
   UpdateSkillGraphNodeResponse,
   AddSkillGraphPrerequisiteResponse,
   StudentListQuery, PagedResponse, AiModelPricingItem,
@@ -283,6 +283,11 @@ export class AdminApiService {
   }
   mergeSkillGraphNodes(keepNodeId: string, mergeAwayNodeId: string): Observable<MergeNodesResponse> {
     return this.http.post<MergeNodesResponse>(`${this.api}/skill-graph/nodes/${keepNodeId}/merge/${mergeAwayNodeId}`, {});
+  }
+  // Phase 6.3f — on-demand per-pair AI second opinion; only called when the admin explicitly clicks
+  // "Confirm with AI", never automatically during the audit above.
+  confirmNearDuplicate(nodeAId: string, nodeBId: string): Observable<ConfirmNearDuplicateResponse> {
+    return this.http.post<ConfirmNearDuplicateResponse>(`${this.api}/skill-graph/suggestions/near-duplicates/confirm`, { nodeAId, nodeBId });
   }
 
   // Prompts

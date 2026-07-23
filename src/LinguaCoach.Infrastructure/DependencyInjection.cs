@@ -694,6 +694,10 @@ public static class DependencyInjection
         // Skill Graph rebuild Phase 6.3a — deterministic (no AI) redundant-edge detection.
         services.AddScoped<LinguaCoach.Application.SkillGraph.IGraphChangeSuggestionService,
             LinguaCoach.Infrastructure.SkillGraph.GraphChangeSuggestionService>();
+        // Skill Graph rebuild Phase 6.3f — on-demand per-pair AI second opinion for near-duplicate
+        // node suggestions (advisory only, never auto-applied, never run automatically).
+        services.AddScoped<LinguaCoach.Application.SkillGraph.INearDuplicateConfirmationService,
+            LinguaCoach.Infrastructure.SkillGraph.NearDuplicateConfirmationService>();
         // Sprint 14.1 — SkillGraphNode context/focus tag diagnose+AI-repair.
         services.AddScoped<LinguaCoach.Application.SkillGraph.ISkillGraphNodeRepairService,
             LinguaCoach.Infrastructure.SkillGraph.SkillGraphNodeRepairService>();
