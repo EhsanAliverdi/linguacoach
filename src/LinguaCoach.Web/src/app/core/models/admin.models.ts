@@ -1552,6 +1552,9 @@ export interface SkillGraphTaxonomy {
   cefrLevels: string[];
   skills: string[];
   subskillsBySkill: Record<string, string[]>;
+  // Phase 6.1 — shared 13-value ContextTag/FocusTag vocabulary, for the Nodes table's tag filters.
+  contextTags: string[];
+  focusTags: string[];
 }
 
 export interface SkillGraphNodeListItem {

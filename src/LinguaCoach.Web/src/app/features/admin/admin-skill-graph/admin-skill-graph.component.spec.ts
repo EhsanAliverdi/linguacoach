@@ -19,6 +19,8 @@ const TAXONOMY: SkillGraphTaxonomy = {
   cefrLevels: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'],
   skills: ['grammar', 'vocabulary'],
   subskillsBySkill: { grammar: ['grammar.tense_aspect'], vocabulary: ['vocabulary.receptive'] },
+  contextTags: ['general_english', 'workplace'],
+  focusTags: ['general_english', 'workplace'],
 };
 
 const NODES: SkillGraphNodeListResponse = {

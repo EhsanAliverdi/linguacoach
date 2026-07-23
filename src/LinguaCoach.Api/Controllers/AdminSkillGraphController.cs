@@ -84,12 +84,18 @@ public sealed class AdminSkillGraphController : ControllerBase
             skills = CurriculumSkillConstants.All,
             subskillsBySkill = CurriculumSkillConstants.All.ToDictionary(
                 s => s, s => CurriculumSubskillConstants.ForSkill(s)),
+            // Phase 6.1 — ContextTag/FocusTag draw from the same shared 13-value vocabulary
+            // (see SkillGraphNode.ContextTagsJson/FocusTagsJson), needed so the Nodes table's new
+            // tag filters can offer a real dropdown instead of a free-text field.
+            contextTags = CurriculumContextTagConstants.All,
+            focusTags = CurriculumContextTagConstants.All,
         });
     }
 
     [HttpGet("nodes")]
     public async Task<IActionResult> GetNodes(
         [FromQuery] string? cefrLevel, [FromQuery] string? skill, [FromQuery] string? reviewStatus,
+        [FromQuery] string? search, [FromQuery] string? contextTag, [FromQuery] string? focusTag,
         [FromQuery] int page = 1, [FromQuery] int pageSize = 25, CancellationToken ct = default)
     {
         page = Math.Max(1, page);
@@ -100,6 +106,26 @@ public sealed class AdminSkillGraphController : ControllerBase
         if (!string.IsNullOrWhiteSpace(skill)) query = query.Where(n => n.Skill == skill.ToLowerInvariant());
         if (!string.IsNullOrWhiteSpace(reviewStatus) && Enum.TryParse<AdminReviewStatus>(reviewStatus, true, out var status))
             query = query.Where(n => n.ReviewStatus == status);
+        // Phase 6.1 — free-text title/description search + ContextTag/FocusTag filters (the Nodes
+        // list previously only filtered on CEFR/skill/status). Tags are stored as a JSON string
+        // array (ContextTagsJson/FocusTagsJson, not a jsonb column), so a tag filter is a plain
+        // substring match against the quoted tag value — safe since tags come from the fixed
+        // 13-value shared ContextTag/FocusTag vocabulary, no free-form user text ever lands here.
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim().ToLowerInvariant();
+            query = query.Where(n => n.Title.ToLower().Contains(term) || n.Description.ToLower().Contains(term));
+        }
+        if (!string.IsNullOrWhiteSpace(contextTag))
+        {
+            var needle = $"\"{contextTag.Trim()}\"";
+            query = query.Where(n => n.ContextTagsJson.Contains(needle));
+        }
+        if (!string.IsNullOrWhiteSpace(focusTag))
+        {
+            var needle = $"\"{focusTag.Trim()}\"";
+            query = query.Where(n => n.FocusTagsJson.Contains(needle));
+        }
 
         var totalCount = await query.CountAsync(ct);
         var rawItems = await query

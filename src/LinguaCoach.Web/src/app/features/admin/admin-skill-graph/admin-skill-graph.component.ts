@@ -143,6 +143,11 @@ export class AdminSkillGraphComponent implements OnInit {
     (this.taxonomy()?.cefrLevels ?? []).map(l => ({ value: l, label: l })));
   skillOptions = computed(() =>
     (this.taxonomy()?.skills ?? []).map(s => ({ value: s, label: s })));
+  // Phase 6.1 — Nodes table gained free-text search + ContextTag/FocusTag filters.
+  contextTagOptions = computed(() =>
+    (this.taxonomy()?.contextTags ?? []).map(t => ({ value: t, label: t })));
+  focusTagOptions = computed(() =>
+    (this.taxonomy()?.focusTags ?? []).map(t => ({ value: t, label: t })));
 
   // ── Coverage matrix ──────────────────────────────────────────────────────
   coverageLoading = signal(true);
@@ -209,6 +214,10 @@ export class AdminSkillGraphComponent implements OnInit {
   filterCefrLevel = signal('');
   filterSkill = signal('');
   filterReviewStatus = signal('');
+  // Phase 6.1 — free-text search + ContextTag/FocusTag filters.
+  filterSearch = signal('');
+  filterContextTag = signal('');
+  filterFocusTag = signal('');
   readonly reviewStatusOptions = [
     { value: 'PendingReview', label: 'Pending review' },
     { value: 'Approved', label: 'Approved' },
@@ -446,6 +455,9 @@ export class AdminSkillGraphComponent implements OnInit {
       cefrLevel: this.filterCefrLevel() || undefined,
       skill: this.filterSkill() || undefined,
       reviewStatus: this.filterReviewStatus() || undefined,
+      search: this.filterSearch() || undefined,
+      contextTag: this.filterContextTag() || undefined,
+      focusTag: this.filterFocusTag() || undefined,
       page: this.nodesPage(),
       pageSize: this.nodesPageSize,
     }).subscribe({
@@ -474,12 +486,21 @@ export class AdminSkillGraphComponent implements OnInit {
     { key: 'cefrLevel', label: 'CEFR level', options: this.cefrLevelOptions(), value: this.filterCefrLevel(), placeholder: 'All' },
     { key: 'skill', label: 'Skill', options: this.skillOptions(), value: this.filterSkill(), placeholder: 'All' },
     { key: 'reviewStatus', label: 'Review status', options: this.reviewStatusOptions, value: this.filterReviewStatus(), placeholder: 'All' },
+    { key: 'contextTag', label: 'Context tag', options: this.contextTagOptions(), value: this.filterContextTag(), placeholder: 'All' },
+    { key: 'focusTag', label: 'Focus tag', options: this.focusTagOptions(), value: this.filterFocusTag(), placeholder: 'All' },
   ]);
 
   onNodesFilterChange(event: { key: string; value: string }): void {
     if (event.key === 'cefrLevel') this.filterCefrLevel.set(event.value);
     else if (event.key === 'skill') this.filterSkill.set(event.value);
     else if (event.key === 'reviewStatus') this.filterReviewStatus.set(event.value);
+    else if (event.key === 'contextTag') this.filterContextTag.set(event.value);
+    else if (event.key === 'focusTag') this.filterFocusTag.set(event.value);
+    this.onFilterChange();
+  }
+
+  onNodesSearchChange(value: string): void {
+    this.filterSearch.set(value);
     this.onFilterChange();
   }
 

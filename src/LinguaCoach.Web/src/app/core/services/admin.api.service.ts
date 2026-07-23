@@ -203,7 +203,7 @@ export class AdminApiService {
   getSkillGraphTaxonomy(): Observable<SkillGraphTaxonomy> {
     return this.http.get<SkillGraphTaxonomy>(`${this.api}/skill-graph/taxonomy`);
   }
-  getSkillGraphNodes(params: { cefrLevel?: string; skill?: string; reviewStatus?: string; page?: number; pageSize?: number }): Observable<SkillGraphNodeListResponse> {
+  getSkillGraphNodes(params: { cefrLevel?: string; skill?: string; reviewStatus?: string; search?: string; contextTag?: string; focusTag?: string; page?: number; pageSize?: number }): Observable<SkillGraphNodeListResponse> {
     const qs = Object.entries(params)
       .filter(([, v]) => v !== undefined && v !== '')
       .map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`)

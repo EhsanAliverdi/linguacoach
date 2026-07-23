@@ -147,6 +147,8 @@
       #nodesTableRef
       [flush]="true" variant="data" density="compact" layout="first-column-fluid" minWidth="800px"
       [loading]="nodesLoading()" [error]="nodesError()" errorTitle="Nodes unavailable"
+      [searchable]="true" searchPlaceholder="Search title or description…"
+      [searchValue]="filterSearch()" (searchChange)="onNodesSearchChange($event)"
       [filters]="nodesFilters()" (filterChange)="onNodesFilterChange($event)"
       [bulkEditable]="true" [bulkEditMode]="nodesBulkEditMode()" (bulkEditModeChange)="onNodesBulkEditModeChange($event)"
       [columns]="nodesColumns" [rows]="nodes()" (selectionChange)="onNodesSelectionChange($event)"

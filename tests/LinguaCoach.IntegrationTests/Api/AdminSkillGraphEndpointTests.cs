@@ -53,6 +53,9 @@ public sealed class AdminSkillGraphEndpointTests : IClassFixture<ApiTestFactory>
         Assert.True(body.GetProperty("cefrLevels").GetArrayLength() >= 6);
         Assert.True(body.GetProperty("skills").GetArrayLength() >= 9);
         Assert.True(body.GetProperty("subskillsBySkill").TryGetProperty("grammar", out _));
+        // Phase 6.1 — tag vocabulary for the Nodes table's new ContextTag/FocusTag filters.
+        Assert.True(body.GetProperty("contextTags").GetArrayLength() >= 13);
+        Assert.True(body.GetProperty("focusTags").GetArrayLength() >= 13);
     }
 
     [Fact]
@@ -98,6 +101,89 @@ public sealed class AdminSkillGraphEndpointTests : IClassFixture<ApiTestFactory>
         var items = body.GetProperty("items").EnumerateArray().ToList();
         var thisNode = items.Single(i => i.GetProperty("id").GetGuid() == node.Id);
         Assert.Equal(1, thisNode.GetProperty("linkedModuleCount").GetInt32());
+    }
+
+    // ── Phase 6.1 (2026-07-23) — free-text search + ContextTag/FocusTag filters ────────────────
+
+    [Fact]
+    public async Task GetNodes_SearchMatchesTitleAndDescription()
+    {
+        var uniqueWord = $"zzq{Guid.NewGuid():N}";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var titleMatch = new SkillGraphNode($"grammar.search_title_{Guid.NewGuid():N}.a1", $"Title with {uniqueWord} inside", "Description.", "A1", "grammar");
+            var descMatch = new SkillGraphNode($"grammar.search_desc_{Guid.NewGuid():N}.a1", "Ordinary title", $"Description mentioning {uniqueWord} here.", "A1", "grammar");
+            var noMatch = new SkillGraphNode($"grammar.search_none_{Guid.NewGuid():N}.a1", "Unrelated title", "Unrelated description.", "A1", "grammar");
+            db.SkillGraphNodes.AddRange(titleMatch, descMatch, noMatch);
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.GetAsync($"/api/admin/skill-graph/nodes?search={uniqueWord}&pageSize=200");
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var items = body.GetProperty("items").EnumerateArray().ToList();
+        Assert.Equal(2, items.Count);
+        Assert.All(items, i =>
+        {
+            var title = i.GetProperty("title").GetString() ?? "";
+            var description = i.GetProperty("description").GetString() ?? "";
+            Assert.True(title.Contains(uniqueWord) || description.Contains(uniqueWord));
+        });
+    }
+
+    [Fact]
+    public async Task GetNodes_SearchIsCaseInsensitive()
+    {
+        var uniqueWord = $"CaseTest{Guid.NewGuid():N}";
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            db.SkillGraphNodes.Add(new SkillGraphNode($"grammar.case_{Guid.NewGuid():N}.a1", $"Title with {uniqueWord}", "Description.", "A1", "grammar"));
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.GetAsync($"/api/admin/skill-graph/nodes?search={uniqueWord.ToLowerInvariant()}&pageSize=200");
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var items = body.GetProperty("items").EnumerateArray().ToList();
+        Assert.Single(items);
+    }
+
+    [Fact]
+    public async Task GetNodes_FiltersByContextTagAndFocusTag()
+    {
+        var contextTag = "workplace";
+        var focusTag = "general_english";
+        Guid taggedNodeId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var tagged = new SkillGraphNode($"grammar.tagged_{Guid.NewGuid():N}.a1", "Tagged node", "Description.", "A1", "grammar");
+            tagged.UpdateTags($"[\"{contextTag}\"]", $"[\"{focusTag}\"]");
+            var untagged = new SkillGraphNode($"grammar.untagged_{Guid.NewGuid():N}.a1", "Untagged node", "Description.", "A1", "grammar");
+            db.SkillGraphNodes.AddRange(tagged, untagged);
+            await db.SaveChangesAsync();
+            taggedNodeId = tagged.Id;
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var byContextTag = await client.GetAsync($"/api/admin/skill-graph/nodes?contextTag={contextTag}&pageSize=200");
+        var contextBody = await byContextTag.Content.ReadFromJsonAsync<JsonElement>();
+        var contextItems = contextBody.GetProperty("items").EnumerateArray().ToList();
+        Assert.Contains(contextItems, i => i.GetProperty("id").GetGuid() == taggedNodeId);
+
+        var byFocusTag = await client.GetAsync($"/api/admin/skill-graph/nodes?focusTag={focusTag}&pageSize=200");
+        var focusBody = await byFocusTag.Content.ReadFromJsonAsync<JsonElement>();
+        var focusItems = focusBody.GetProperty("items").EnumerateArray().ToList();
+        Assert.Contains(focusItems, i => i.GetProperty("id").GetGuid() == taggedNodeId);
     }
 
     [Fact]
