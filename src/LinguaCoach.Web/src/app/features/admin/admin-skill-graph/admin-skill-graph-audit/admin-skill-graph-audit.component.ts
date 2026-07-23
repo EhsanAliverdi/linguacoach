@@ -8,6 +8,7 @@ import {
   SpAdminCardComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
+  SpAdminSectionHeaderComponent,
   SpAdminTableComponent,
   SpAdminTableColumn,
 } from '../../../../design-system/admin';
@@ -21,25 +22,36 @@ import {
 import { IssuesSummary, RepairableItemSummary } from '../../../../core/models/admin-repair.models';
 import { AdminBulkRepairService } from '../../../../core/services/admin-bulk-repair.service';
 
-/** One row in the "Redundant edges" table — carries the original array index alongside the
- *  suggestion/edge so Dismiss/Remove still target the right entry in `redundantEdgeSuggestions`
- *  after client-side search filtering. */
+const PAGE_SIZE = 20;
+
+/** One row in the "Redundant edges" table — keyed by the edge's own endpoints (not array index),
+ *  same discipline as near-duplicate rows, so Dismiss/stage-for-removal/Save survive client-side
+ *  search filtering and pagination without going stale. */
 interface RedundantEdgeRow {
-  index: number;
+  key: string;
   suggestion: GraphChangeSuggestion;
   edge: { nodeId: string; nodeTitle: string; prerequisiteNodeId: string; prerequisiteNodeTitle: string };
+}
+
+function paginate<T>(items: T[], page: number): T[] {
+  const start = (page - 1) * PAGE_SIZE;
+  return items.slice(start, start + PAGE_SIZE);
+}
+
+function totalPagesFor(count: number): number {
+  return Math.max(1, Math.ceil(count / PAGE_SIZE));
 }
 
 /**
  * User correction (2026-07-24): the tag-issues banner, the isolated-nodes banner, and the merged
  * "Graph audit" (redundant edges + near-duplicate nodes) card used to live directly on the main
- * Skill Graph list page — the user asked for all of it to move to its own dedicated page instead,
- * reached via a link/summary on the main page, so the main list isn't cluttered with audit
- * findings and actions.
+ * Skill Graph list page — moved to a dedicated page instead, reached via a link/summary on the
+ * main page, so the main list isn't cluttered with audit findings and actions.
  *
- * Further user correction: every finding should render as a table row (same convention as the
- * main Nodes table) with real action buttons and a search filter, not a plain bulleted list — so
- * an admin can find and fix a specific issue the same way they'd work the Nodes table.
+ * Further user corrections: every finding renders as a table row (same convention as the main
+ * Nodes table) with a search filter and pagination; redundant-edge removal is staged and requires
+ * an explicit "Save changes" the same way Edit's edge changes are staged until Save — a single
+ * "Remove edge" click no longer mutates the graph immediately.
  */
 @Component({
   selector: 'app-admin-skill-graph-audit',
@@ -51,6 +63,7 @@ interface RedundantEdgeRow {
     SpAdminCardComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
+    SpAdminSectionHeaderComponent,
     SpAdminTableComponent,
   ],
   templateUrl: './admin-skill-graph-audit.component.html',
@@ -77,9 +90,10 @@ export class AdminSkillGraphAuditComponent implements OnInit {
   nodeIssuesSummary = signal<IssuesSummary | null>(null);
   nodesWithIssues = signal<RepairableItemSummary[]>([]);
   missingTagsSearch = signal('');
+  missingTagsPage = signal(1);
   missingTagsColumns: SpAdminTableColumn[] = [
     { key: 'title', label: 'Title', titleColumn: true },
-    { key: 'actions', label: 'Actions', width: '160px' },
+    { key: 'actions', label: 'Actions', width: '140px', align: 'right' },
   ];
 
   filteredNodesWithIssues = computed(() => {
@@ -87,6 +101,14 @@ export class AdminSkillGraphAuditComponent implements OnInit {
     const rows = this.nodesWithIssues();
     return q ? rows.filter(r => r.title.toLowerCase().includes(q)) : rows;
   });
+
+  missingTagsTotalPages = computed(() => totalPagesFor(this.filteredNodesWithIssues().length));
+  pagedNodesWithIssues = computed(() => paginate(this.filteredNodesWithIssues(), this.missingTagsPage()));
+
+  setMissingTagsSearch(value: string): void {
+    this.missingTagsSearch.set(value);
+    this.missingTagsPage.set(1);
+  }
 
   loadNodeIssuesSummary(): void {
     this.api.getSkillGraphNodeIssuesSummary().subscribe({
@@ -137,13 +159,14 @@ export class AdminSkillGraphAuditComponent implements OnInit {
   // ── Isolated nodes — Editability audit (2026-07-23) connectivity metric ──────────────────────
   isolatedNodes = signal<SkillGraphIsolatedNode[]>([]);
   isolatedSearch = signal('');
+  isolatedPage = signal(1);
   isolatedColumns: SpAdminTableColumn[] = [
     { key: 'title', label: 'Title', titleColumn: true },
     { key: 'key', label: 'Key', muted: true },
     { key: 'cefrLevel', label: 'CEFR' },
     { key: 'skill', label: 'Skill' },
     { key: 'reviewStatus', label: 'Status' },
-    { key: 'actions', label: 'Actions', width: '160px' },
+    { key: 'actions', label: 'Actions', width: '160px', align: 'right' },
   ];
 
   filteredIsolatedNodes = computed(() => {
@@ -151,6 +174,14 @@ export class AdminSkillGraphAuditComponent implements OnInit {
     const rows = this.isolatedNodes();
     return q ? rows.filter(r => r.title.toLowerCase().includes(q) || r.key.toLowerCase().includes(q)) : rows;
   });
+
+  isolatedTotalPages = computed(() => totalPagesFor(this.filteredIsolatedNodes().length));
+  pagedIsolatedNodes = computed(() => paginate(this.filteredIsolatedNodes(), this.isolatedPage()));
+
+  setIsolatedSearch(value: string): void {
+    this.isolatedSearch.set(value);
+    this.isolatedPage.set(1);
+  }
 
   loadIsolatedNodes(): void {
     this.api.getIsolatedSkillGraphNodes().subscribe({
@@ -194,19 +225,29 @@ export class AdminSkillGraphAuditComponent implements OnInit {
     });
   }
 
-  // ── Redundant edges table ─────────────────────────────────────────────────────────────────
+  // ── Redundant edges table — User correction (2026-07-24): "Remove edge" used to call the API
+  // immediately per click; it now only stages the row for removal (same discipline as Edit's
+  // staged edge changes), committed together via an explicit "Save changes" action. ─────────────
   redundantEdgesColumns: SpAdminTableColumn[] = [
     { key: 'from', label: 'From', titleColumn: true },
     { key: 'to', label: 'To' },
     { key: 'reason', label: 'Reason', muted: true },
-    { key: 'actions', label: 'Actions', width: '200px' },
+    { key: 'actions', label: 'Actions', width: '220px', align: 'right' },
   ];
   redundantEdgesSearch = signal('');
+  redundantEdgesPage = signal(1);
+
+  private static redundantEdgeKey(edge: { nodeId: string; prerequisiteNodeId: string }): string {
+    return `${edge.prerequisiteNodeId}_${edge.nodeId}`;
+  }
 
   private redundantEdgeRows = computed<RedundantEdgeRow[]>(() =>
     this.redundantEdgeSuggestions()
-      .map((suggestion, index) => ({ index, suggestion, edge: suggestion.proposedEdgesToRemove[0] }))
-      .filter((r): r is RedundantEdgeRow => !!r.edge));
+      .map(suggestion => {
+        const edge = suggestion.proposedEdgesToRemove[0];
+        return edge ? { key: AdminSkillGraphAuditComponent.redundantEdgeKey(edge), suggestion, edge } : null;
+      })
+      .filter((r): r is RedundantEdgeRow => !!r));
 
   filteredRedundantEdgeRows = computed(() => {
     const q = this.redundantEdgesSearch().trim().toLowerCase();
@@ -216,19 +257,56 @@ export class AdminSkillGraphAuditComponent implements OnInit {
       r.edge.nodeTitle.toLowerCase().includes(q) || r.edge.prerequisiteNodeTitle.toLowerCase().includes(q));
   });
 
-  dismissRedundantEdgeSuggestion(index: number): void {
-    this.redundantEdgeSuggestions.update(list => list.filter((_, i) => i !== index));
+  redundantEdgesTotalPages = computed(() => totalPagesFor(this.filteredRedundantEdgeRows().length));
+  pagedRedundantEdgeRows = computed(() => paginate(this.filteredRedundantEdgeRows(), this.redundantEdgesPage()));
+
+  setRedundantEdgesSearch(value: string): void {
+    this.redundantEdgesSearch.set(value);
+    this.redundantEdgesPage.set(1);
   }
 
-  removeRedundantEdge(suggestion: GraphChangeSuggestion, index: number): void {
-    const edge = suggestion.proposedEdgesToRemove[0];
-    if (!edge) return;
-    this.api.removeSkillGraphPrerequisite(edge.nodeId, edge.prerequisiteNodeId).subscribe({
+  dismissRedundantEdgeSuggestion(row: RedundantEdgeRow): void {
+    this.redundantEdgeSuggestions.update(list =>
+      list.filter(s => AdminSkillGraphAuditComponent.redundantEdgeKey(s.proposedEdgesToRemove[0] ?? row.edge) !== row.key));
+    this.stagedRemovalKeys.update(set => { const next = new Set(set); next.delete(row.key); return next; });
+  }
+
+  stagedRemovalKeys = signal<Set<string>>(new Set());
+  savingRedundantEdges = signal(false);
+
+  isStagedForRemoval(row: RedundantEdgeRow): boolean {
+    return this.stagedRemovalKeys().has(row.key);
+  }
+
+  toggleStageRemoval(row: RedundantEdgeRow): void {
+    this.stagedRemovalKeys.update(set => {
+      const next = new Set(set);
+      if (next.has(row.key)) next.delete(row.key); else next.add(row.key);
+      return next;
+    });
+  }
+
+  saveRedundantEdgeRemovals(): void {
+    const staged = this.redundantEdgeRows().filter(r => this.stagedRemovalKeys().has(r.key));
+    if (staged.length === 0) return;
+    this.savingRedundantEdges.set(true);
+    this.auditError.set('');
+    forkJoin(staged.map(r => this.api.removeSkillGraphPrerequisite(r.edge.nodeId, r.edge.prerequisiteNodeId))).subscribe({
       next: () => {
-        this.dismissRedundantEdgeSuggestion(index);
+        this.savingRedundantEdges.set(false);
+        const removedKeys = new Set(staged.map(r => r.key));
+        this.redundantEdgeSuggestions.update(list =>
+          list.filter(s => {
+            const edge = s.proposedEdgesToRemove[0];
+            return !edge || !removedKeys.has(AdminSkillGraphAuditComponent.redundantEdgeKey(edge));
+          }));
+        this.stagedRemovalKeys.set(new Set());
         this.loadIsolatedNodes();
       },
-      error: err => this.auditError.set(err?.error?.error ?? 'Could not remove this edge.'),
+      error: err => {
+        this.savingRedundantEdges.set(false);
+        this.auditError.set(err?.error?.error ?? 'Could not save the staged edge removals.');
+      },
     });
   }
 
@@ -238,15 +316,24 @@ export class AdminSkillGraphAuditComponent implements OnInit {
     { key: 'nodeB', label: 'Node B' },
     { key: 'context', label: 'CEFR / Skill' },
     { key: 'similarity', label: 'Similarity' },
-    { key: 'actions', label: 'Actions', width: '110px' },
+    { key: 'actions', label: 'Actions', width: '100px', align: 'right' },
   ];
   nearDuplicatesSearch = signal('');
+  nearDuplicatesPage = signal(1);
 
   filteredNearDuplicates = computed(() => {
     const q = this.nearDuplicatesSearch().trim().toLowerCase();
     const rows = this.nearDuplicateSuggestions();
     return q ? rows.filter(s => s.nodeATitle.toLowerCase().includes(q) || s.nodeBTitle.toLowerCase().includes(q)) : rows;
   });
+
+  nearDuplicatesTotalPages = computed(() => totalPagesFor(this.filteredNearDuplicates().length));
+  pagedNearDuplicates = computed(() => paginate(this.filteredNearDuplicates(), this.nearDuplicatesPage()));
+
+  setNearDuplicatesSearch(value: string): void {
+    this.nearDuplicatesSearch.set(value);
+    this.nearDuplicatesPage.set(1);
+  }
 
   // Suggestions are keyed by node-id pair (not array index) — the AI-confirm result, the pending-
   // merge-confirmation state, and the expanded-row state all need to survive list re-rendering
@@ -282,7 +369,9 @@ export class AdminSkillGraphAuditComponent implements OnInit {
     if (this.pendingMerge()?.key === key) this.pendingMerge.set(null);
   }
 
-  // "Keep A/B" only stages a confirmation; nothing is called until the admin explicitly confirms.
+  // "Keep A/B" only stages a confirmation; nothing is called until the admin explicitly clicks
+  // "Confirm merge" — that click IS the save action for this table (merges are one-at-a-time
+  // decisions, unlike redundant edges' batchable removals).
   pendingMerge = signal<{ key: string; suggestion: NearDuplicateNodeSuggestion; keep: 'A' | 'B' } | null>(null);
   mergeError = signal('');
 

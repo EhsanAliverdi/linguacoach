@@ -1,4 +1,4 @@
-<sp-admin-page-header title="Skill Graph Audit">
+<sp-admin-page-header title="Skill Graph Audit" subtitle="Missing tags, isolated nodes, redundant edges, and near-duplicate content — reviewed and fixed here.">
   <sp-admin-button variant="neutral" appearance="outline" (clicked)="back()">← Back</sp-admin-button>
 </sp-admin-page-header>
 
@@ -11,25 +11,30 @@
   <!-- Missing tags — every row is a real node, filterable by title, with a per-row "Fix with AI"
        action alongside the existing bulk "Fix All with AI". -->
   <sp-admin-card padding="none" variant="bordered" [hasHeader]="true" [headerDivider]="true">
-    <div slot="header" style="display:flex; align-items:center; justify-content:space-between; width:100%; flex-wrap:wrap; gap:8px;">
-      <span class="sp-admin-section-title">Missing context/focus tags ({{ nodeIssuesSummary()?.itemsWithIssues ?? 0 }} of {{ nodeIssuesSummary()?.totalItems ?? 0 }})</span>
+    <sp-admin-section-header
+      slot="header" title="Missing context/focus tags"
+      [count]="nodeIssuesSummary()?.itemsWithIssues ?? 0" [countLabel]="'of ' + (nodeIssuesSummary()?.totalItems ?? 0)"
+      countTone="warning">
       @if (nodeIssuesSummary() && nodeIssuesSummary()!.itemsWithIssues > 0) {
-        <sp-admin-button variant="primary" appearance="outline" size="sm" [disabled]="bulkRepair.running()" (clicked)="fixAllNodesWithAi()">
+        <sp-admin-button slot="actions" variant="primary" appearance="outline" size="sm" [disabled]="bulkRepair.running()" (clicked)="fixAllNodesWithAi()">
           {{ bulkRepair.running() ? 'Fixing…' : 'Fix All with AI (' + nodeIssuesSummary()!.itemsWithIssues + ')' }}
         </sp-admin-button>
       }
-    </div>
+    </sp-admin-section-header>
     @if (nodesWithIssues().length === 0) {
       <div style="padding: 16px 18px;">
         <sp-admin-alert variant="success">No nodes with missing tags.</sp-admin-alert>
       </div>
     } @else {
       <sp-admin-table
-        [flush]="true" variant="data" density="compact" layout="first-column-fluid"
+        [flush]="true" variant="data" density="compact" minWidth="500px"
         [searchable]="true" searchPlaceholder="Search title…"
-        [searchValue]="missingTagsSearch()" (searchChange)="missingTagsSearch.set($event)"
-        [columns]="missingTagsColumns" [rows]="filteredNodesWithIssues()"
+        [searchValue]="missingTagsSearch()" (searchChange)="setMissingTagsSearch($event)"
+        [columns]="missingTagsColumns" [rows]="pagedNodesWithIssues()"
         emptyMessage="No nodes match this search."
+        [paginationPage]="missingTagsPage()" [paginationTotalPages]="missingTagsTotalPages()"
+        [paginationLabel]="filteredNodesWithIssues().length + ' node(s).'"
+        (paginationPageChange)="missingTagsPage.set($event)"
       >
         <ng-template #cell let-row let-col="col">
           @switch (col.key) {
@@ -47,7 +52,7 @@
 
   <!-- Isolated nodes — no prerequisite edges at all (no prerequisites AND no dependents). -->
   <sp-admin-card padding="none" variant="bordered" [hasHeader]="true" [headerDivider]="true">
-    <span slot="header" class="sp-admin-section-title">Isolated nodes ({{ isolatedNodes().length }})</span>
+    <sp-admin-section-header slot="header" title="Isolated nodes" [count]="isolatedNodes().length" countTone="warning" />
     @if (isolatedNodes().length === 0) {
       <div style="padding: 16px 18px;">
         <sp-admin-alert variant="success">No isolated nodes.</sp-admin-alert>
@@ -57,11 +62,14 @@
         <p class="sp-admin-section-sub">These nodes have no prerequisites AND no dependents — use "Add prerequisite" on the Edit page to connect them.</p>
       </div>
       <sp-admin-table
-        [flush]="true" variant="data" density="compact" layout="first-column-fluid"
+        [flush]="true" variant="data" density="compact" minWidth="700px"
         [searchable]="true" searchPlaceholder="Search title or key…"
-        [searchValue]="isolatedSearch()" (searchChange)="isolatedSearch.set($event)"
-        [columns]="isolatedColumns" [rows]="filteredIsolatedNodes()"
+        [searchValue]="isolatedSearch()" (searchChange)="setIsolatedSearch($event)"
+        [columns]="isolatedColumns" [rows]="pagedIsolatedNodes()"
         emptyMessage="No nodes match this search."
+        [paginationPage]="isolatedPage()" [paginationTotalPages]="isolatedTotalPages()"
+        [paginationLabel]="filteredIsolatedNodes().length + ' node(s).'"
+        (paginationPageChange)="isolatedPage.set($event)"
       >
         <ng-template #cell let-row let-col="col">
           @switch (col.key) {
@@ -87,31 +95,47 @@
     }
   </sp-admin-card>
 
-  <!-- Redundant edges table -->
+  <!-- Redundant edges table — "Remove edge" stages the row (visually marked); nothing is written
+       to the graph until "Save changes" is clicked, same staging discipline as Edit's edge
+       changes. -->
   @if (redundantEdgeSuggestions().length > 0 || auditRun()) {
     <sp-admin-card padding="none" variant="bordered" [hasHeader]="true" [headerDivider]="true">
-      <span slot="header" class="sp-admin-section-title">Redundant edges ({{ redundantEdgeSuggestions().length }})</span>
+      <sp-admin-section-header slot="header" title="Redundant edges" [count]="redundantEdgeSuggestions().length" countTone="warning">
+        @if (stagedRemovalKeys().size > 0) {
+          <sp-admin-button slot="actions" variant="danger" appearance="outline" size="sm" [disabled]="savingRedundantEdges()" (clicked)="saveRedundantEdgeRemovals()">
+            {{ savingRedundantEdges() ? 'Saving…' : 'Save changes (' + stagedRemovalKeys().size + ')' }}
+          </sp-admin-button>
+        }
+      </sp-admin-section-header>
       @if (redundantEdgeSuggestions().length === 0) {
         <div style="padding: 16px 18px;">
           <sp-admin-alert variant="success">No redundant edges found.</sp-admin-alert>
         </div>
       } @else {
         <sp-admin-table
-          [flush]="true" variant="data" density="compact" layout="first-column-fluid"
+          [flush]="true" variant="data" density="compact" minWidth="700px"
           [searchable]="true" searchPlaceholder="Search node title…"
-          [searchValue]="redundantEdgesSearch()" (searchChange)="redundantEdgesSearch.set($event)"
-          [columns]="redundantEdgesColumns" [rows]="filteredRedundantEdgeRows()"
+          [searchValue]="redundantEdgesSearch()" (searchChange)="setRedundantEdgesSearch($event)"
+          [columns]="redundantEdgesColumns" [rows]="pagedRedundantEdgeRows()"
           emptyMessage="No edges match this search."
+          [paginationPage]="redundantEdgesPage()" [paginationTotalPages]="redundantEdgesTotalPages()"
+          [paginationLabel]="filteredRedundantEdgeRows().length + ' edge(s).'"
+          (paginationPageChange)="redundantEdgesPage.set($event)"
         >
           <ng-template #cell let-row let-col="col">
             @switch (col.key) {
               @case ('from') { {{ $any(row).edge.prerequisiteNodeTitle }} }
-              @case ('to') { {{ $any(row).edge.nodeTitle }} }
+              @case ('to') {
+                {{ $any(row).edge.nodeTitle }}
+                @if (isStagedForRemoval($any(row))) { <span class="sp-admin-text-muted"> (staged for removal)</span> }
+              }
               @case ('reason') { {{ $any(row).suggestion.description }} }
               @case ('actions') {
-                <span class="sp-admin-form-actions" style="padding:0; background:none; border:none;">
-                  <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="dismissRedundantEdgeSuggestion($any(row).index)">Dismiss</sp-admin-button>
-                  <sp-admin-button size="sm" variant="danger" appearance="outline" (clicked)="removeRedundantEdge($any(row).suggestion, $any(row).index)">Remove edge</sp-admin-button>
+                <span class="sp-admin-form-actions" style="padding:0; background:none; border:none; justify-content:flex-end;">
+                  <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="dismissRedundantEdgeSuggestion($any(row))">Dismiss</sp-admin-button>
+                  <sp-admin-button size="sm" [variant]="isStagedForRemoval($any(row)) ? 'neutral' : 'danger'" appearance="outline" (clicked)="toggleStageRemoval($any(row))">
+                    {{ isStagedForRemoval($any(row)) ? 'Undo' : 'Remove edge' }}
+                  </sp-admin-button>
                 </span>
               }
             }
@@ -122,10 +146,10 @@
   }
 
   <!-- Near-duplicate nodes table — click "Review" to expand descriptions, an on-demand AI second
-       opinion, and the merge confirmation step. -->
+       opinion, and the merge confirmation step ("Confirm merge" is that table's save action). -->
   @if (nearDuplicateSuggestions().length > 0 || auditRun()) {
     <sp-admin-card padding="none" variant="bordered" [hasHeader]="true" [headerDivider]="true">
-      <span slot="header" class="sp-admin-section-title">Near-duplicate nodes ({{ nearDuplicateSuggestions().length }})</span>
+      <sp-admin-section-header slot="header" title="Near-duplicate nodes" [count]="nearDuplicateSuggestions().length" countTone="warning" />
       @if (nearDuplicateSuggestions().length === 0) {
         <div style="padding: 16px 18px;">
           <sp-admin-alert variant="success">No near-duplicate nodes found.</sp-admin-alert>
@@ -135,12 +159,15 @@
           @if (mergeError()) { <sp-admin-alert variant="error">{{ mergeError() }}</sp-admin-alert> }
         </div>
         <sp-admin-table
-          [flush]="true" variant="data" density="compact" layout="first-column-fluid"
+          [flush]="true" variant="data" density="compact" minWidth="700px"
           [searchable]="true" searchPlaceholder="Search node title…"
-          [searchValue]="nearDuplicatesSearch()" (searchChange)="nearDuplicatesSearch.set($event)"
-          [columns]="nearDuplicatesColumns" [rows]="filteredNearDuplicates()"
+          [searchValue]="nearDuplicatesSearch()" (searchChange)="setNearDuplicatesSearch($event)"
+          [columns]="nearDuplicatesColumns" [rows]="pagedNearDuplicates()"
           [isRowExpanded]="isDuplicateRowExpanded"
           emptyMessage="No pairs match this search."
+          [paginationPage]="nearDuplicatesPage()" [paginationTotalPages]="nearDuplicatesTotalPages()"
+          [paginationLabel]="filteredNearDuplicates().length + ' pair(s).'"
+          (paginationPageChange)="nearDuplicatesPage.set($event)"
         >
           <ng-template #cell let-row let-col="col">
             @switch (col.key) {
@@ -153,9 +180,11 @@
               @case ('context') { {{ $any(row).cefrLevel }} / {{ $any(row).skill }} }
               @case ('similarity') { {{ ($any(row).similarity * 100) | number: '1.0-0' }}% }
               @case ('actions') {
-                <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="toggleDuplicateExpanded($any(row))">
-                  {{ isDuplicateRowExpanded($any(row)) ? 'Hide' : 'Review' }}
-                </sp-admin-button>
+                <span style="display:flex; justify-content:flex-end;">
+                  <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="toggleDuplicateExpanded($any(row))">
+                    {{ isDuplicateRowExpanded($any(row)) ? 'Hide' : 'Review' }}
+                  </sp-admin-button>
+                </span>
               }
             }
           </ng-template>

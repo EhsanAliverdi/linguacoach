@@ -222,4 +222,71 @@ describe('AdminSkillGraphAuditComponent', () => {
     component.confirmDuplicateWithAi(dup);
     expect(component.isDuplicateRowExpanded(dup)).toBeTrue();
   });
+
+  // User correction (2026-07-24) — pagination + a staged Remove-edge/Save flow (instead of an
+  // immediate API call per click), matching the styling/interaction conventions on other pages.
+
+  it('missingTagsPage paginates the filtered with-issues list', async () => {
+    const items = Array.from({ length: 25 }, (_, i) => ({ id: `n${i}`, title: `Node ${i}` }));
+    await setup({ listSkillGraphNodesWithIssues: jasmine.createSpy('x').and.returnValue(of(items)) });
+
+    expect(component.missingTagsTotalPages()).toBe(2);
+    expect(component.pagedNodesWithIssues().length).toBe(20);
+
+    component.missingTagsPage.set(2);
+    expect(component.pagedNodesWithIssues().length).toBe(5);
+  });
+
+  it('setMissingTagsSearch resets to page 1', async () => {
+    await setup();
+    component.missingTagsPage.set(3);
+    component.setMissingTagsSearch('present');
+    expect(component.missingTagsPage()).toBe(1);
+    expect(component.missingTagsSearch()).toBe('present');
+  });
+
+  it('toggleStageRemoval marks a redundant-edge row as staged without calling the API', async () => {
+    const suggestion = {
+      type: 'RedundantEdge', description: 'redundant',
+      proposedEdgesToAdd: [],
+      proposedEdgesToRemove: [{ nodeId: 'b', nodeTitle: 'B', prerequisiteNodeId: 'a', prerequisiteNodeTitle: 'A' }],
+    };
+    await setup();
+    component.redundantEdgeSuggestions.set([suggestion]);
+    const row = { key: 'a_b', suggestion, edge: suggestion.proposedEdgesToRemove[0] };
+
+    component.toggleStageRemoval(row);
+
+    expect(component.isStagedForRemoval(row)).toBeTrue();
+    expect(api.removeSkillGraphPrerequisite).not.toHaveBeenCalled();
+  });
+
+  it('saveRedundantEdgeRemovals calls the API only for staged rows, then clears them', async () => {
+    const suggestionA = {
+      type: 'RedundantEdge', description: 'redundant A',
+      proposedEdgesToAdd: [],
+      proposedEdgesToRemove: [{ nodeId: 'b', nodeTitle: 'B', prerequisiteNodeId: 'a', prerequisiteNodeTitle: 'A' }],
+    };
+    const suggestionC = {
+      type: 'RedundantEdge', description: 'redundant C',
+      proposedEdgesToAdd: [],
+      proposedEdgesToRemove: [{ nodeId: 'd', nodeTitle: 'D', prerequisiteNodeId: 'c', prerequisiteNodeTitle: 'C' }],
+    };
+    await setup();
+    component.redundantEdgeSuggestions.set([suggestionA, suggestionC]);
+    const rowA = { key: 'a_b', suggestion: suggestionA, edge: suggestionA.proposedEdgesToRemove[0] };
+    component.toggleStageRemoval(rowA);
+
+    component.saveRedundantEdgeRemovals();
+
+    expect(api.removeSkillGraphPrerequisite).toHaveBeenCalledOnceWith('b', 'a');
+    expect(component.redundantEdgeSuggestions()).toEqual([suggestionC]);
+    expect(component.stagedRemovalKeys().size).toBe(0);
+  });
+
+  it('saveRedundantEdgeRemovals does nothing when nothing is staged', async () => {
+    await setup();
+    component.saveRedundantEdgeRemovals();
+    expect(api.removeSkillGraphPrerequisite).not.toHaveBeenCalled();
+  });
 });

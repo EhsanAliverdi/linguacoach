@@ -127,10 +127,62 @@ rather than plain bulleted lists.
   the near-duplicate row's "Review" toggle correctly expands to show descriptions and all four
   action buttons.
 
+## Follow-up 2: styling, pagination, first-column layout, staged Save (same session)
+
+Immediately after the table-based audit page shipped, the user flagged four more issues by
+comparing it against other admin pages: the title/header styling didn't match, tables had no
+pagination, the first ("title") column was stretching and pushing other columns to the right, and
+padding/margins looked inconsistent — plus a design gap: "Remove edge" (redundant edges) mutated
+the graph on a single click with no "Save" step, unlike every staged-edit flow elsewhere in this
+codebase (Edit page's prerequisite/unlock changes, the near-duplicate merge's own confirm step).
+
+### Root causes found
+
+- Every table card's header was a plain `<span slot="header" class="sp-admin-section-title">` —
+  the wrong component. The Nodes table (and every other titled table card in this codebase) uses
+  `<sp-admin-section-header slot="header" title="…" [count]="…" countLabel="…">`, which renders the
+  tinted bar + bold title + count badge that reads as "the same as other pages." Swapped all four
+  table cards to use it, with a real count badge per table.
+- `layout="first-column-fluid"` (copied from the Nodes table, which has 8 columns filling the
+  width) stretches the title column to fill remaining space — fine with many columns, but with
+  these tables' 2-5 real columns it pushed the Actions column far to the right with a large empty
+  gap in between. Removed the `layout` input entirely (falls back to natural per-column widths)
+  from all four tables.
+- No pagination was wired up at all — client-side filtered arrays were passed straight to
+  `[rows]` in full. Added a `PAGE_SIZE = 20` constant, a `page` signal + `computed` paged slice per
+  table, and wired `[paginationPage]`/`[paginationTotalPages]`/`[paginationLabel]`/
+  `(paginationPageChange)` — same props the Nodes table already uses. Every search-setter resets
+  its table back to page 1.
+- "Remove edge" called `removeSkillGraphPrerequisite` immediately per click. Redesigned as a
+  staged action: clicking "Remove edge" marks the row "(staged for removal)" and flips the button
+  to "Undo" — nothing is called yet. A "Save changes (N)" button appears in the table's own
+  section-header actions slot only while something is staged; clicking it batches every staged
+  removal into one `forkJoin` of API calls, then clears staged state and updates the list from the
+  real result. Near-duplicate merging already had an equivalent explicit "Confirm merge" step from
+  the first pass, so it needed no change — that click already is this table's save action.
+- Redundant-edge rows were re-keyed from array index to `${prerequisiteNodeId}_${nodeId}` (mirrors
+  the near-duplicate rows' node-id-pair key) so staged/dismissed state survives search filtering
+  and pagination without going stale.
+
+### Verification
+
+- `tsc --noEmit` clean. New tests: pagination slicing + page-reset-on-search, stage/save calls the
+  API only for staged rows and only on Save, staging alone never calls the API, saving with
+  nothing staged is a no-op — 5 new specs, all of `admin-skill-graph-audit.component.spec.ts` at 39
+  passing.
+- Full Karma suite: 1508 passed / 237 failed — same pre-existing failure count as the established
+  baseline, more tests passing than the prior run (no regressions).
+- Live-verified via Playwright against the real dev DB: header styling now matches the Nodes
+  table's tinted-bar convention with count badges; the Missing-tags table correctly paginates 535
+  rows across 27 pages; clicking "Remove edge" staged the row and showed "Save changes (1)" without
+  calling the API; clicking "Save changes" then correctly called the real API (redundant-edge count
+  went from 10 to 9 both in the UI and confirmed via a direct `GET .../suggestions/redundant-edges`
+  call afterward).
+
 ## Final verdict
 
-Both the original 7-issue round and this table-based-audit-page follow-up are complete and
-live-verified. Ready to commit.
+The original 7-issue round, the audit-page extraction, and this styling/pagination/staged-save
+follow-up are all complete and live-verified. Ready to commit.
 
 ## Next recommended action
 
