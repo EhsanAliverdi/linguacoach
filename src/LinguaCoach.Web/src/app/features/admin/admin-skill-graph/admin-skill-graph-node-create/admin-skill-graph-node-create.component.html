@@ -1,0 +1,106 @@
+<sp-admin-page-header title="Create Skill Graph Node" subtitle="Where does it go? — pick prerequisites/unlocks below, staged until you Save.">
+  <sp-admin-button variant="neutral" appearance="outline" (clicked)="cancel()">
+    ← Cancel
+  </sp-admin-button>
+</sp-admin-page-header>
+
+<sp-admin-page-body>
+
+  <sp-admin-section-card title="Details">
+    <div class="sp-admin-form-stack">
+      <sp-admin-form-field label="Title" [required]="true">
+        <sp-admin-input [ngModel]="title()" (ngModelChange)="title.set($event)" name="title" placeholder="e.g. Present simple for daily routines" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Description" [required]="true">
+        <sp-admin-textarea [(ngModel)]="description" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="CEFR level" [required]="true">
+        <sp-admin-select [ngModel]="cefrLevel" (ngModelChange)="cefrLevel = $event" [options]="cefrLevelOptions()" placeholder="Select level" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Skill" [required]="true">
+        <sp-admin-select [ngModel]="skill" (ngModelChange)="skill = $event" [options]="skillOptions()" placeholder="Select skill" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Subskill">
+        <sp-admin-select [ngModel]="subskill" (ngModelChange)="subskill = $event" [options]="subskillOptions()" placeholder="No subskill" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Difficulty band" hint="1 (easiest) – 5 (hardest)">
+        <sp-admin-number-input [(ngModel)]="difficultyBand" [min]="1" [max]="5" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Context tags" hint="Comma-separated">
+        <sp-admin-input [(ngModel)]="contextTagsDraft" />
+      </sp-admin-form-field>
+      <sp-admin-form-field label="Focus tags" hint="Comma-separated">
+        <sp-admin-input [(ngModel)]="focusTagsDraft" />
+      </sp-admin-form-field>
+    </div>
+  </sp-admin-section-card>
+
+  <!-- ── Graph view — synthetic center node (this node has no real id until Save), staged
+       prerequisites/unlocks render dashed-amber, same convention as Edit. ── -->
+  <sp-admin-section-card title="Graph — where this node sits">
+    <sp-admin-node-graph-preview
+      [centerId]="graphCenterId"
+      [nodes]="graphPreviewNodes()"
+      [edges]="graphPreviewEdges()"
+    />
+  </sp-admin-section-card>
+
+  <sp-admin-section-card title="Prerequisites (must be mastered first)">
+    <p class="sp-admin-section-sub">Optional — pick the node(s) that must be mastered before this one. Can also be added later from the node's Edit page.</p>
+    @if (stagedPrereqs().length > 0) {
+      <ul class="sp-admin-simple-list">
+        @for (p of stagedPrereqs(); track p.id) {
+          <li class="sp-admin-form-actions" style="justify-content:space-between;">
+            <span style="color:#8A5A00;">{{ p.title }} <em>(new — not saved yet)</em></span>
+            <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="removePrereq(p.id)">Undo</sp-admin-button>
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="sp-admin-section-sub">No prerequisites picked yet.</p>
+    }
+
+    <sp-admin-form-field label="Add prerequisite" hint="Search by title or key — staged until you click Save.">
+      <sp-admin-multi-select [options]="pickerOptions()" [excludeValues]="prereqExcludeIds()" [accumulate]="false"
+        (optionPicked)="addPrereq($event)" placeholder="Search nodes…" />
+    </sp-admin-form-field>
+  </sp-admin-section-card>
+
+  <sp-admin-section-card title="Unlocks (nodes that depend on this one)">
+    <p class="sp-admin-section-sub">Optional — pick node(s) that this one is a prerequisite for. A node can unlock several others.</p>
+    @if (stagedDependents().length > 0) {
+      <ul class="sp-admin-simple-list">
+        @for (d of stagedDependents(); track d.id) {
+          <li class="sp-admin-form-actions" style="justify-content:space-between;">
+            <span style="color:#8A5A00;">{{ d.title }} <em>(new — not saved yet)</em></span>
+            <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="removeUnlock(d.id)">Undo</sp-admin-button>
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="sp-admin-section-sub">Nothing picked yet.</p>
+    }
+
+    <sp-admin-form-field label="Add unlock" hint="Search by title or key — this node will become a prerequisite of the one you pick, staged until you click Save.">
+      <sp-admin-multi-select [options]="pickerOptions()" [excludeValues]="unlockExcludeIds()" [accumulate]="false"
+        (optionPicked)="addUnlock($event)" placeholder="Search nodes…" />
+    </sp-admin-form-field>
+  </sp-admin-section-card>
+
+  @if (error()) { <sp-admin-alert variant="error">{{ error() }}</sp-admin-alert> }
+
+  @if (createdNodeId()) {
+    <div class="sp-admin-form-actions sp-admin-form-actions--end">
+      <sp-admin-button variant="neutral" appearance="outline" (clicked)="cancel()">Back to list</sp-admin-button>
+      <sp-admin-button variant="primary" (clicked)="viewCreatedNode()">View created node</sp-admin-button>
+    </div>
+  } @else {
+    <div class="sp-admin-form-actions sp-admin-form-actions--end">
+      <sp-admin-button variant="neutral" appearance="outline" (clicked)="cancel()">Cancel</sp-admin-button>
+      <sp-admin-button variant="primary" [disabled]="creating()" (clicked)="save()">
+        {{ creating() ? 'Creating…' : 'Create' }}
+      </sp-admin-button>
+    </div>
+  }
+
+</sp-admin-page-body>

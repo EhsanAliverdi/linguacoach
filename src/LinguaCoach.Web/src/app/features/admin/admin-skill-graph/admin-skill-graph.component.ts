@@ -15,20 +15,14 @@ import {
   SpAdminHeatmapColumn,
   SpAdminHeatmapRow,
   SpAdminHelpIconComponent,
-  SpAdminInputComponent,
   SpAdminLoadingStateComponent,
-  SpAdminMultiSelectComponent,
-  SpAdminMultiSelectOption,
-  SpAdminNumberInputComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminSectionHeaderComponent,
   SpAdminSelectComponent,
-  SpAdminSlideOverComponent,
   SpAdminTableColumn,
   SpAdminTableComponent,
   SpAdminTableFilter,
-  SpAdminTextareaComponent,
 } from '../../../design-system/admin';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import {
@@ -60,17 +54,12 @@ import { AdminBulkRepairService } from '../../../core/services/admin-bulk-repair
     SpAdminErrorStateComponent,
     SpAdminFormFieldComponent,
     SpAdminHelpIconComponent,
-    SpAdminInputComponent,
     SpAdminLoadingStateComponent,
-    SpAdminMultiSelectComponent,
-    SpAdminNumberInputComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
     SpAdminSectionHeaderComponent,
     SpAdminSelectComponent,
-    SpAdminSlideOverComponent,
     SpAdminTableComponent,
-    SpAdminTextareaComponent,
     SpAdminGraphCardComponent,
     SpAdminSkillGraphVizComponent,
   ],
@@ -279,105 +268,11 @@ export class AdminSkillGraphComponent implements OnInit {
     });
   }
 
-  // ── Editability audit (2026-07-23) — a shared "search all nodes" backs both the Create
-  // panel's and the node detail panel's prerequisite pickers. Loaded once per panel open — cheap
-  // at the current graph size (a few hundred nodes); Phase 6 replaces this with a real
-  // server-side search endpoint. ──────────────────────────────────────────────────────────────
-  private allNodesForPicker = signal<SkillGraphNodeListItem[]>([]);
-
-  // Reusable design-system multi-select (2026-07-23) — feeds the same picker options to the
-  // Create panel's prerequisite/unlock pickers and the node detail/Edit page's add-prerequisite/
-  // add-unlock pickers, replacing 3 duplicated "search input + button list" implementations.
-  pickerOptions = computed<SpAdminMultiSelectOption[]>(() =>
-    this.allNodesForPicker().map(n => ({ value: n.id, label: n.title, sublabel: `${n.cefrLevel} · ${n.skill}` })));
-
-  private loadNodesForPicker(): void {
-    this.api.getSkillGraphNodes({ pageSize: 500 }).subscribe({
-      next: r => this.allNodesForPicker.set(r.items),
-      error: () => this.allNodesForPicker.set([]),
-    });
-  }
-
-  // ── Create node UX audit (2026-07-23) — Create is a slide-over (matches the node detail
-  // panel), not a modal, and lets an admin place the new node in the graph — pick its
-  // prerequisites — in the same step as authoring it, instead of create-then-separately-link. ──
-  createPanelOpen = signal(false);
-  creating = signal(false);
-  createError = signal('');
-  createTitle = '';
-  createDescription = '';
-  createCefrLevel = '';
-  createSkill = '';
-  createSubskill = '';
-  createDifficultyBand: number | null = 1;
-  createContextTagsDraft = '';
-  createFocusTagsDraft = '';
-  createPrereqIds: string[] = [];
-  // Editability follow-up (2026-07-23) — symmetric direction: existing nodes that this NEW node
-  // should become a prerequisite FOR ("what does this unlock?"). A node can have several
-  // prerequisites and be the prerequisite for several others — genuine many-to-many both ways.
-  createDependentIds: string[] = [];
-
-  createSubskillOptions = computed(() =>
-    (this.taxonomy()?.subskillsBySkill?.[this.createSkill] ?? []).map(s => ({ value: s, label: s })));
-
-  openCreateModal(): void {
-    this.createTitle = '';
-    this.createDescription = '';
-    this.createCefrLevel = '';
-    this.createSkill = '';
-    this.createSubskill = '';
-    this.createDifficultyBand = 1;
-    this.createContextTagsDraft = '';
-    this.createFocusTagsDraft = '';
-    this.createPrereqIds = [];
-    this.createDependentIds = [];
-    this.createError.set('');
-    this.createPanelOpen.set(true);
-    this.loadNodesForPicker();
-  }
-
-  closeCreateModal(): void {
-    this.createPanelOpen.set(false);
-  }
-
-  private parseTagsDraft(raw: string): string[] {
-    return raw.split(',').map(t => t.trim()).filter(t => t.length > 0);
-  }
-
-  submitCreateNode(): void {
-    if (!this.createTitle.trim() || !this.createDescription.trim() || !this.createCefrLevel || !this.createSkill) {
-      this.createError.set('Title, description, CEFR level, and skill are all required.');
-      return;
-    }
-    this.creating.set(true);
-    this.createError.set('');
-    this.api.createSkillGraphNode({
-      title: this.createTitle.trim(),
-      description: this.createDescription.trim(),
-      cefrLevel: this.createCefrLevel,
-      skill: this.createSkill,
-      subskill: this.createSubskill.trim() || null,
-      difficultyBand: this.createDifficultyBand ?? 1,
-      descriptionForAi: null,
-      contextTags: this.parseTagsDraft(this.createContextTagsDraft),
-      focusTags: this.parseTagsDraft(this.createFocusTagsDraft),
-      prerequisiteNodeIds: this.createPrereqIds,
-      dependentNodeIds: this.createDependentIds,
-    }).subscribe({
-      next: r => {
-        this.creating.set(false);
-        this.createPanelOpen.set(false);
-        const droppedCount = r.droppedPrerequisites.length + r.droppedDependents.length;
-        if (droppedCount > 0) {
-          this.batchStatus.set(`Node created, but ${droppedCount} link(s) could not be made (e.g. would create a cycle).`);
-        }
-        this.loadNodes();
-        this.loadCoverage();
-        this.loadIsolatedNodes();
-      },
-      error: err => { this.creating.set(false); this.createError.set(err.error?.error ?? 'Could not create node.'); },
-    });
+  // User correction (2026-07-23): Create moved from a slide-over to its own routed page,
+  // matching View/Edit's structure exactly (page-header + page-body + section-cards,
+  // Save/Cancel bottom-right) — see admin-skill-graph-node-create.component.ts.
+  createNode(): void {
+    this.router.navigateByUrl('/admin/skill-graph/nodes/create');
   }
 
   // ── User correction (2026-07-23) — View moved from a slide-over to its own routed page

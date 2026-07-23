@@ -60,16 +60,6 @@ function makeApi(overrides: Partial<Record<string, unknown>> = {}) {
     // Editability audit (2026-07-23) — isolated-node connectivity metric, loaded on init.
     getIsolatedSkillGraphNodes: jasmine.createSpy('getIsolatedSkillGraphNodes').and.returnValue(
       of({ isolatedCount: 0, isolated: [] })),
-    createSkillGraphNode: jasmine.createSpy('createSkillGraphNode').and.returnValue(of({ id: 'new-id', key: 'grammar.new.a1', droppedPrerequisites: [], droppedDependents: [] })),
-    getSkillGraphNode: jasmine.createSpy('getSkillGraphNode').and.returnValue(of({
-      id: 'n1', key: 'grammar.present_simple.a1', title: 'Present simple', description: 'D',
-      cefrLevel: 'A1', skill: 'grammar', subskill: null, difficultyBand: 1,
-      reviewStatus: 'PendingReview', isActive: true, rejectionReason: null, createdAt: '2026-07-17T00:00:00Z',
-      contextTags: [], focusTags: [], linkedModuleCount: 0, descriptionForAi: null, reviewedByUserId: null,
-      approvedAtUtc: null, rejectedAtUtc: null, prerequisites: [], dependents: [], linkedModules: [],
-    })),
-    addSkillGraphPrerequisite: jasmine.createSpy('addSkillGraphPrerequisite').and.returnValue(of({ added: true })),
-    removeSkillGraphPrerequisite: jasmine.createSpy('removeSkillGraphPrerequisite').and.returnValue(of({ removed: true })),
     ...overrides,
   };
 }
@@ -191,24 +181,15 @@ describe('AdminSkillGraphComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('no prerequisite edges at all');
   });
 
-  it('submitCreateNode requires title, description, cefrLevel, and skill', async () => {
+  // User correction (2026-07-23) — Create moved from a slide-over to its own routed page
+  // (admin-skill-graph-node-create.component.ts covers the create form itself); this page's own
+  // responsibility is just navigating there.
+  it('createNode navigates to the node create route', async () => {
     await setup();
-    component.createTitle = '';
-    component.submitCreateNode();
-    expect(component.createError()).toBeTruthy();
-    expect(api.createSkillGraphNode).not.toHaveBeenCalled();
-  });
-
-  it('submitCreateNode calls the API and closes the panel on success', async () => {
-    await setup();
-    component.createTitle = 'New node';
-    component.createDescription = 'A description.';
-    component.createCefrLevel = 'A1';
-    component.createSkill = 'grammar';
-    component.createPanelOpen.set(true);
-    component.submitCreateNode();
-    expect(api.createSkillGraphNode).toHaveBeenCalled();
-    expect(component.createPanelOpen()).toBeFalse();
+    const router = TestBed.inject(Router);
+    const navSpy = spyOn(router, 'navigateByUrl');
+    component.createNode();
+    expect(navSpy).toHaveBeenCalledWith('/admin/skill-graph/nodes/create');
   });
 
   // User correction (2026-07-23) — View moved from a slide-over to its own routed page;

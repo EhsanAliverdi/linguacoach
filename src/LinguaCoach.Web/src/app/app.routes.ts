@@ -96,6 +96,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/admin-skill-graph/admin-skill-graph.component').then(m => m.AdminSkillGraphComponent),
       },
       {
+        path: 'skill-graph/nodes/create',
+        loadComponent: () => import('./features/admin/admin-skill-graph/admin-skill-graph-node-create/admin-skill-graph-node-create.component').then(m => m.AdminSkillGraphNodeCreateComponent),
+      },
+      {
         path: 'skill-graph/nodes/:id/edit',
         loadComponent: () => import('./features/admin/admin-skill-graph/admin-skill-graph-node-edit/admin-skill-graph-node-edit.component').then(m => m.AdminSkillGraphNodeEditComponent),
       },
