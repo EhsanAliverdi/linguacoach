@@ -304,6 +304,12 @@ export class SpAdminNodeGraphPreviewComponent implements OnChanges, OnDestroy {
     this.areaZoomBox?.remove();
     this.areaZoomBox = null;
 
+    // User-reported bug (2026-07-23): area zoom mode previously stayed on until the toggle button
+    // was clicked again, so panning stayed disabled and the admin got stuck. Single-shot instead —
+    // every drag (or even a stray click) exits the mode and restores normal panning immediately.
+    this.areaZoomActive = false;
+    this.cy?.userPanningEnabled(true);
+
     const start = this.areaZoomStart;
     this.areaZoomStart = null;
     if (!start || !this.cy || !this.container) return;

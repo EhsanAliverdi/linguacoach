@@ -3,9 +3,29 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import cytoscape, { Core, ElementDefinition } from 'cytoscape';
 import coseBilkent from 'cytoscape-cose-bilkent';
+import elk from 'cytoscape-elk';
 import { SkillGraphEdge, SkillGraphNode } from '../../../../core/models/admin.models';
 
 cytoscape.use(coseBilkent);
+cytoscape.use(elk);
+
+// User request (2026-07-23) — expose the same layout algorithm choices as the
+// cytoscape.js-elk demo site (https://cytoscape.org/cytoscape.js-elk), so an admin isn't stuck
+// with only one drawing style. 'cose-bilkent' (the original default) keeps the compound "boxes
+// around nodes with the same Skill" grouping; every ELK algorithm renders the same filtered node
+// set flat (no compound boxes — ELK's compound support doesn't map cleanly onto this component's
+// bespoke skill-box grouping, so ELK algorithms trade that visual for their own layout shape).
+type LayoutAlgorithm = 'cose-bilkent' | 'layered' | 'force' | 'disco' | 'stress' | 'random' | 'box' | 'mrtree';
+const LAYOUT_OPTIONS: { value: LayoutAlgorithm; label: string }[] = [
+  { value: 'cose-bilkent', label: 'Compound (skill groups)' },
+  { value: 'layered', label: 'Layered' },
+  { value: 'force', label: 'Force' },
+  { value: 'stress', label: 'Stress' },
+  { value: 'disco', label: 'Disco' },
+  { value: 'mrtree', label: 'Tree' },
+  { value: 'box', label: 'Box' },
+  { value: 'random', label: 'Random' },
+];
 
 // Sprint 13 — CEFR-level color coding, lightest (A1) to darkest (C2), matching the design
 // system's existing indigo/purple palette used elsewhere in admin (see badge tones).
@@ -74,6 +94,11 @@ const SKILL_BOX_COLORS: Record<string, string> = {
       } @else if (searchTerm) {
         <span class="sp-sgv-search-nav sp-sgv-search-nav--empty">No match</span>
       }
+      <select class="sp-sgv-layout-select" [(ngModel)]="layoutAlgorithm" (ngModelChange)="onLayoutChange()" title="Graph drawing algorithm">
+        @for (opt of layoutOptions; track opt.value) {
+          <option [value]="opt.value">{{ opt.label }}</option>
+        }
+      </select>
       <span class="sp-sgv-legend-count">{{ visibleCount }} of {{ nodes.length }} nodes shown</span>
     </div>
     <div class="sp-sgv-canvas-wrap">
@@ -100,6 +125,10 @@ const SKILL_BOX_COLORS: Record<string, string> = {
     .sp-sgv-search {
       font-size: 11px; padding: 4px 8px; border: 1px solid var(--sp-admin-border, #ECE9F5);
       border-radius: 6px; width: 160px; color: var(--sp-admin-text, #211B36);
+    }
+    .sp-sgv-layout-select {
+      font-size: 11px; padding: 4px 8px; border: 1px solid var(--sp-admin-border, #ECE9F5);
+      border-radius: 6px; color: var(--sp-admin-text, #211B36); background: #fff;
     }
     .sp-sgv-search-nav { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--sp-admin-text-muted, #8B85A0); }
     .sp-sgv-search-nav--empty { color: var(--sp-admin-danger, #DC2626); }
@@ -132,6 +161,15 @@ export class SpAdminSkillGraphVizComponent implements OnChanges, OnDestroy {
   readonly cefrLevels = CEFR_LEVELS;
   activeLevels = new Set<string>(CEFR_LEVELS);
   visibleCount = 0;
+
+  // Layout algorithm picker (2026-07-23) — applies to whatever's currently visible, i.e. the
+  // CEFR-level-filtered set (see `visibleNodes` in render()), not the whole 600-node graph.
+  readonly layoutOptions = LAYOUT_OPTIONS;
+  layoutAlgorithm: LayoutAlgorithm = 'cose-bilkent';
+
+  onLayoutChange(): void {
+    this.render();
+  }
 
   // Sprint 14.4 — Google-Maps-style navigation: explicit zoom in/out/fit controls (mouse wheel
   // alone was the only way to zoom before, and with 219 nodes finding a specific one by panning
@@ -193,26 +231,31 @@ export class SpAdminSkillGraphVizComponent implements OnChanges, OnDestroy {
     if (visibleNodes.length === 0) return;
 
     const nodeIds = new Set(visibleNodes.map(n => n.id));
-    const skillsPresent = new Set(visibleNodes.map(n => n.skill || 'other'));
+    const filteredEdges = this.edges.filter(e => nodeIds.has(e.nodeId) && nodeIds.has(e.prerequisiteNodeId));
+    const isCompound = this.layoutAlgorithm === 'cose-bilkent';
 
+    // Compound path (cose-bilkent, the original default) groups nodes into per-Skill parent
+    // boxes; every ELK algorithm instead renders the same filtered nodes/edges flat — ELK's own
+    // compound-layout support doesn't map cleanly onto this bespoke skill-box grouping, so
+    // switching to an ELK algorithm trades the boxes for that algorithm's own layout shape.
+    const skillsPresent = new Set(visibleNodes.map(n => n.skill || 'other'));
     const elements: ElementDefinition[] = [
-      // Compound parent boxes, one per Skill actually present in the current filtered view.
-      ...Array.from(skillsPresent).map(skill => ({
-        data: { id: `skill:${skill}`, label: this.skillLabel(skill), isParent: true },
-      })),
+      ...(isCompound
+        ? Array.from(skillsPresent).map(skill => ({
+            data: { id: `skill:${skill}`, label: this.skillLabel(skill), isParent: true },
+          }))
+        : []),
       ...visibleNodes.map(n => ({
         data: {
           id: n.id,
           label: n.title,
           cefrLevel: n.cefrLevel,
-          parent: `skill:${n.skill || 'other'}`,
+          ...(isCompound ? { parent: `skill:${n.skill || 'other'}` } : {}),
         },
       })),
-      ...this.edges
-        .filter(e => nodeIds.has(e.nodeId) && nodeIds.has(e.prerequisiteNodeId))
-        .map(e => ({
-          data: { id: `${e.prerequisiteNodeId}->${e.nodeId}`, source: e.prerequisiteNodeId, target: e.nodeId },
-        })),
+      ...filteredEdges.map(e => ({
+        data: { id: `${e.prerequisiteNodeId}->${e.nodeId}`, source: e.prerequisiteNodeId, target: e.nodeId },
+      })),
     ];
 
     this.cy = cytoscape({
@@ -273,11 +316,19 @@ export class SpAdminSkillGraphVizComponent implements OnChanges, OnDestroy {
           },
         },
       ],
-      layout: {
-        name: 'cose-bilkent',
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ...({ nodeDimensionsIncludeLabels: true, animate: false, padding: 30, idealEdgeLength: 80 } as any),
-      } as cytoscape.LayoutOptions,
+      layout: isCompound
+        ? ({
+            name: 'cose-bilkent',
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            ...({ nodeDimensionsIncludeLabels: true, animate: false, padding: 30, idealEdgeLength: 80 } as any),
+          } as cytoscape.LayoutOptions)
+        : ({
+            name: 'elk',
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            elk: { algorithm: this.layoutAlgorithm },
+            fit: true,
+            padding: 30,
+          } as unknown as cytoscape.LayoutOptions),
       wheelSensitivity: 0.2,
       minZoom: 0.1,
       maxZoom: 4,
@@ -358,6 +409,12 @@ export class SpAdminSkillGraphVizComponent implements OnChanges, OnDestroy {
     document.removeEventListener('mouseup', this.areaZoomUpHandler);
     this.areaZoomBox?.remove();
     this.areaZoomBox = null;
+
+    // User-reported bug (2026-07-23): area zoom mode previously stayed on until the toggle button
+    // was clicked again, so panning stayed disabled and the admin got stuck. Single-shot instead —
+    // every drag (or even a stray click) exits the mode and restores normal panning immediately.
+    this.areaZoomActive = false;
+    this.cy?.userPanningEnabled(true);
 
     const start = this.areaZoomStart;
     this.areaZoomStart = null;
