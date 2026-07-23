@@ -23,6 +23,7 @@ import {
   GraphChangeSuggestionsResponse,
   NearDuplicateSuggestionsResponse, MergeNodesResponse,
   UpdateSkillGraphNodeResponse,
+  AddSkillGraphPrerequisiteResponse,
   StudentListQuery, PagedResponse, AiModelPricingItem,
   AiModelPricingOverrideItem, CreatePricingOverrideRequest, UpdatePricingOverrideRequest,
   AdminNotificationItem, AdminOutboxItem,
@@ -259,8 +260,8 @@ export class AdminApiService {
   updateSkillGraphNode(id: string, body: UpdateSkillGraphNodeRequest): Observable<UpdateSkillGraphNodeResponse> {
     return this.http.put<UpdateSkillGraphNodeResponse>(`${this.api}/skill-graph/nodes/${id}`, body);
   }
-  addSkillGraphPrerequisite(nodeId: string, prerequisiteNodeId: string): Observable<{ added: boolean }> {
-    return this.http.post<{ added: boolean }>(`${this.api}/skill-graph/nodes/${nodeId}/prerequisites`, { prerequisiteNodeId });
+  addSkillGraphPrerequisite(nodeId: string, prerequisiteNodeId: string): Observable<AddSkillGraphPrerequisiteResponse> {
+    return this.http.post<AddSkillGraphPrerequisiteResponse>(`${this.api}/skill-graph/nodes/${nodeId}/prerequisites`, { prerequisiteNodeId });
   }
   removeSkillGraphPrerequisite(nodeId: string, prerequisiteNodeId: string): Observable<{ removed: boolean }> {
     return this.http.delete<{ removed: boolean }>(`${this.api}/skill-graph/nodes/${nodeId}/prerequisites/${prerequisiteNodeId}`);

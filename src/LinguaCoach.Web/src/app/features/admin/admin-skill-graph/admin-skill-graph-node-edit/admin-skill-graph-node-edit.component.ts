@@ -5,7 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin, of, Observable } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { AdminApiService } from '../../../../core/services/admin.api.service';
-import { SkillGraphEdge, SkillGraphNode, SkillGraphNodeDetail, SkillGraphNodeListItem, SkillGraphPlacementSuggestion, SkillGraphTaxonomy, ReparentReviewResult } from '../../../../core/models/admin.models';
+import { SkillGraphEdge, SkillGraphNode, SkillGraphNodeDetail, SkillGraphNodeListItem, SkillGraphPlacementSuggestion, SkillGraphTaxonomy, ReparentReviewResult, GraphChangeSuggestion, AddSkillGraphPrerequisiteResponse } from '../../../../core/models/admin.models';
 import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
@@ -269,7 +269,7 @@ export class AdminSkillGraphNodeEditComponent implements OnInit {
     }).pipe(
       switchMap(updateResult => this.commitEdgeChanges(current.id).pipe(map(edgeResult => ({ ...edgeResult, updateResult })))),
     ).subscribe({
-      next: ({ failedCount, updateResult }) => {
+      next: ({ failedCount, suggestions, updateResult }) => {
         this.saving.set(false);
         if (failedCount > 0) {
           this.error.set(`Core fields saved, but ${failedCount} graph change(s) could not be applied (e.g. would create a cycle). Reopen this node to review.`);
@@ -280,8 +280,17 @@ export class AdminSkillGraphNodeEditComponent implements OnInit {
         // Skill Graph rebuild Phase 6.3d — if the edit moved this node to a different CEFR
         // level/Skill and it has existing edges, stay on the page and surface them for review
         // instead of navigating away immediately; nothing here is ever removed automatically.
-        if (updateResult.reparentReview && updateResult.reparentReview.edgesToReview.length > 0) {
-          this.reparentReview.set(updateResult.reparentReview);
+        const hasReparentReview = !!updateResult.reparentReview && updateResult.reparentReview.edgesToReview.length > 0;
+        if (hasReparentReview) this.reparentReview.set(updateResult.reparentReview);
+        // Phase 6.3e — a staged prerequisite/unlock add can itself trigger 6.3a's inline
+        // redundant-edge check; surface it the same way instead of silently discarding it.
+        if (suggestions.length > 0) this.redundantEdgeSuggestionsFromSave.set(suggestions);
+        if (hasReparentReview || suggestions.length > 0) {
+          // Everything staged was actually committed by this point — reload (which also clears
+          // the local "pending" state) so the page doesn't confusingly keep showing already-saved
+          // changes as "not saved yet" while the admin reviews the suggestion(s) above.
+          this.load();
+          this.loadFullGraph();
           return;
         }
         this.router.navigateByUrl('/admin/skill-graph');
@@ -310,25 +319,66 @@ export class AdminSkillGraphNodeEditComponent implements OnInit {
     });
   }
 
+  // ── Skill Graph rebuild Phase 6.3e — redundant-edge suggestions surfaced from THIS save's own
+  // staged prerequisite/unlock additions (as opposed to the main list page's separate "Run graph
+  // audit" on-demand check). Same shape/actions as that card, just a different trigger. ─────────
+  redundantEdgeSuggestionsFromSave = signal<GraphChangeSuggestion[]>([]);
+  redundantEdgeSaveError = signal('');
+
+  dismissRedundantEdgeSuggestionFromSave(index: number): void {
+    this.redundantEdgeSuggestionsFromSave.update(list => list.filter((_, i) => i !== index));
+  }
+
+  removeRedundantEdgeFromSave(suggestion: GraphChangeSuggestion, index: number): void {
+    const edge = suggestion.proposedEdgesToRemove[0];
+    if (!edge) return;
+    this.api.removeSkillGraphPrerequisite(edge.nodeId, edge.prerequisiteNodeId).subscribe({
+      next: () => {
+        this.dismissRedundantEdgeSuggestionFromSave(index);
+        this.load();
+        this.loadFullGraph();
+      },
+      error: err => this.redundantEdgeSaveError.set(err?.error?.error ?? 'Could not remove this edge.'),
+    });
+  }
+
+  // Shared exit point for both the reparent-review and redundant-edge-from-save cards.
   finishReparentReview(): void {
     this.router.navigateByUrl('/admin/skill-graph');
   }
 
   // Applies every staged edge change together; a failed individual call (e.g. would create a
-  // cycle) doesn't block the others — failures are counted and reported back to save().
-  private commitEdgeChanges(nodeId: string): Observable<{ failedCount: number }> {
-    const settle = (obs$: Observable<unknown>): Observable<boolean> =>
+  // cycle) doesn't block the others — failures are counted and reported back to save(). Add-calls
+  // also carry through any inline redundant-edge suggestions (6.3e) rather than discarding them.
+  private commitEdgeChanges(nodeId: string): Observable<{ failedCount: number; suggestions: GraphChangeSuggestion[] }> {
+    const settleBool = (obs$: Observable<unknown>): Observable<boolean> =>
       obs$.pipe(map(() => true), catchError(() => of(false)));
+    const settleAdd = (obs$: Observable<AddSkillGraphPrerequisiteResponse>): Observable<{ ok: boolean; suggestions: GraphChangeSuggestion[] }> =>
+      obs$.pipe(
+        map(r => ({ ok: true, suggestions: r.suggestions })),
+        catchError(() => of({ ok: false, suggestions: [] as GraphChangeSuggestion[] })),
+      );
 
-    const calls: Observable<boolean>[] = [
-      ...this.pendingAddPrereqs().map(p => settle(this.api.addSkillGraphPrerequisite(nodeId, p.id))),
-      ...Array.from(this.pendingRemovePrereqIds()).map(id => settle(this.api.removeSkillGraphPrerequisite(nodeId, id))),
-      ...this.pendingAddUnlocks().map(d => settle(this.api.addSkillGraphPrerequisite(d.id, nodeId))),
-      ...Array.from(this.pendingRemoveUnlockIds()).map(id => settle(this.api.removeSkillGraphPrerequisite(id, nodeId))),
+    const addCalls: Observable<{ ok: boolean; suggestions: GraphChangeSuggestion[] }>[] = [
+      ...this.pendingAddPrereqs().map(p => settleAdd(this.api.addSkillGraphPrerequisite(nodeId, p.id))),
+      ...this.pendingAddUnlocks().map(d => settleAdd(this.api.addSkillGraphPrerequisite(d.id, nodeId))),
+    ];
+    const removeCalls: Observable<boolean>[] = [
+      ...Array.from(this.pendingRemovePrereqIds()).map(id => settleBool(this.api.removeSkillGraphPrerequisite(nodeId, id))),
+      ...Array.from(this.pendingRemoveUnlockIds()).map(id => settleBool(this.api.removeSkillGraphPrerequisite(id, nodeId))),
     ];
 
-    if (calls.length === 0) return of({ failedCount: 0 });
-    return forkJoin(calls).pipe(map(results => ({ failedCount: results.filter(ok => !ok).length })));
+    if (addCalls.length === 0 && removeCalls.length === 0) return of({ failedCount: 0, suggestions: [] });
+
+    const addResults$ = addCalls.length > 0 ? forkJoin(addCalls) : of([] as { ok: boolean; suggestions: GraphChangeSuggestion[] }[]);
+    const removeResults$ = removeCalls.length > 0 ? forkJoin(removeCalls) : of([] as boolean[]);
+
+    return forkJoin([addResults$, removeResults$]).pipe(
+      map(([addResults, removeResults]) => ({
+        failedCount: addResults.filter(r => !r.ok).length + removeResults.filter(ok => !ok).length,
+        suggestions: addResults.flatMap(r => r.suggestions),
+      })),
+    );
   }
 
   // ── User follow-up (2026-07-23) — Prerequisites/Unlocks management, same shape as the node

@@ -606,8 +606,12 @@ export class AdminSkillGraphComponent implements OnInit {
     if (!edge) return;
     this.reconnectError.set('');
     this.api.addSkillGraphPrerequisite(edge.nodeId, edge.prerequisiteNodeId).subscribe({
-      next: () => {
+      next: r => {
         this.dismissReconnectSuggestion(groupIndex, edgeIndex);
+        // Phase 6.3e — this add-prerequisite call can itself trigger 6.3a's inline redundant-edge
+        // check (reconnecting A->C after B is rejected can make some OTHER edge redundant); surface
+        // it in the same "Graph audit" list rather than silently discarding it.
+        if (r.suggestions.length > 0) this.redundantEdgeSuggestions.update(list => [...list, ...r.suggestions]);
         this.loadNodes();
         this.loadIsolatedNodes();
       },

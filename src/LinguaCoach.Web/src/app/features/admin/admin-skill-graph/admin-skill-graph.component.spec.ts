@@ -11,6 +11,8 @@ import {
   SkillGraphDraftResponse,
   SkillGraphBatchActionResponse,
   SkillGraphBatchRejectResponse,
+  RejectReconnectGroup,
+  AddSkillGraphPrerequisiteResponse,
 } from '../../../core/models/admin.models';
 
 // Adaptive Curriculum Sprint 1 — admin skill-graph review page.
@@ -61,6 +63,9 @@ function makeApi(overrides: Partial<Record<string, unknown>> = {}) {
     // Editability audit (2026-07-23) — isolated-node connectivity metric, loaded on init.
     getIsolatedSkillGraphNodes: jasmine.createSpy('getIsolatedSkillGraphNodes').and.returnValue(
       of({ isolatedCount: 0, isolated: [] })),
+    // Phase 6.3e — acceptReconnectSuggestion's own addSkillGraphPrerequisite call.
+    addSkillGraphPrerequisite: jasmine.createSpy('addSkillGraphPrerequisite').and.returnValue(
+      of<AddSkillGraphPrerequisiteResponse>({ added: true, suggestions: [] })),
     ...overrides,
   };
 }
@@ -215,5 +220,46 @@ describe('AdminSkillGraphComponent', () => {
       getSkillGraphNodes: jasmine.createSpy('getSkillGraphNodes').and.returnValue(throwError(() => new Error('fail'))),
     });
     expect(component.nodesError()).toBeTruthy();
+  });
+
+  // Phase 6.3e — AddPrerequisite's inline redundant-edge check (6.3a scenario 1/3) was previously
+  // discarded by acceptReconnectSuggestion; it's now appended to the same "Graph audit" list.
+  it('acceptReconnectSuggestion surfaces an inline redundant-edge suggestion into the Graph audit list', async () => {
+    const group: RejectReconnectGroup = {
+      rejectedNodeId: 'b1', rejectedNodeTitle: 'B',
+      orphanedPredecessors: [{ id: 'a1', title: 'A' }],
+      orphanedDependents: [{ id: 'c1', title: 'C' }],
+      suggestedReconnects: [{ nodeId: 'c1', nodeTitle: 'C', prerequisiteNodeId: 'a1', prerequisiteNodeTitle: 'A' }],
+    };
+    const inlineSuggestion = {
+      type: 'RedundantEdge', description: 'now redundant',
+      proposedEdgesToAdd: [],
+      proposedEdgesToRemove: [{ nodeId: 'x1', nodeTitle: 'X', prerequisiteNodeId: 'y1', prerequisiteNodeTitle: 'Y' }],
+    };
+    await setup({
+      addSkillGraphPrerequisite: jasmine.createSpy('addSkillGraphPrerequisite').and.returnValue(
+        of<AddSkillGraphPrerequisiteResponse>({ added: true, suggestions: [inlineSuggestion] })),
+    });
+    component.reconnectSuggestionGroups.set([group]);
+
+    component.acceptReconnectSuggestion(0, 0);
+
+    expect(api.addSkillGraphPrerequisite).toHaveBeenCalledWith('c1', 'a1');
+    expect(component.redundantEdgeSuggestions()).toEqual([inlineSuggestion]);
+  });
+
+  it('acceptReconnectSuggestion does not touch the Graph audit list when there are no inline suggestions', async () => {
+    const group: RejectReconnectGroup = {
+      rejectedNodeId: 'b1', rejectedNodeTitle: 'B',
+      orphanedPredecessors: [{ id: 'a1', title: 'A' }],
+      orphanedDependents: [{ id: 'c1', title: 'C' }],
+      suggestedReconnects: [{ nodeId: 'c1', nodeTitle: 'C', prerequisiteNodeId: 'a1', prerequisiteNodeTitle: 'A' }],
+    };
+    await setup();
+    component.reconnectSuggestionGroups.set([group]);
+
+    component.acceptReconnectSuggestion(0, 0);
+
+    expect(component.redundantEdgeSuggestions()).toEqual([]);
   });
 });

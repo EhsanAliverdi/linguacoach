@@ -199,10 +199,38 @@
             </li>
           }
         </ul>
-        <div class="sp-admin-form-actions sp-admin-form-actions--end">
-          <sp-admin-button variant="primary" (clicked)="finishReparentReview()">Done reviewing</sp-admin-button>
-        </div>
       </sp-admin-section-card>
+    }
+
+    <!-- Skill Graph rebuild Phase 6.3e — a staged prerequisite/unlock this save just added can
+         itself make some OTHER existing edge redundant (6.3a's inline check); surfaced here rather
+         than discarded, same Dismiss/Remove-edge actions as the main list's "Graph audit" card. -->
+    @if (redundantEdgeSuggestionsFromSave().length > 0) {
+      <sp-admin-section-card title="New redundant-edge suggestion(s)">
+        <p class="sp-admin-section-sub">Adding a prerequisite/unlock just now made an existing edge redundant — already implied by a longer path, safe to remove.</p>
+        @if (redundantEdgeSaveError()) { <sp-admin-alert variant="error">{{ redundantEdgeSaveError() }}</sp-admin-alert> }
+        <ul class="sp-admin-simple-list">
+          @for (s of redundantEdgeSuggestionsFromSave(); track $index) {
+            @if (s.proposedEdgesToRemove[0]; as edge) {
+              <li class="sp-admin-form-actions" style="justify-content:space-between;">
+                <span>{{ edge.prerequisiteNodeTitle }} → {{ edge.nodeTitle }}</span>
+                <span class="sp-admin-form-actions" style="padding:0; background:none; border:none;">
+                  <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="dismissRedundantEdgeSuggestionFromSave($index)">Dismiss</sp-admin-button>
+                  <sp-admin-button size="sm" variant="danger" appearance="outline" (clicked)="removeRedundantEdgeFromSave(s, $index)">Remove edge</sp-admin-button>
+                </span>
+              </li>
+            }
+          }
+        </ul>
+      </sp-admin-section-card>
+    }
+
+    @if (reparentReview() || redundantEdgeSuggestionsFromSave().length > 0) {
+
+    <div class="sp-admin-form-actions sp-admin-form-actions--end">
+      <sp-admin-button variant="primary" (clicked)="finishReparentReview()">Done reviewing</sp-admin-button>
+    </div>
+
     } @else {
 
     <!-- ── User correction (2026-07-23) — moved to the bottom of the page: it now applies the core

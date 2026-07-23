@@ -253,4 +253,50 @@ real data).
       appeared with the B2 prerequisite marked "Suspicious," clicked "Remove edge" and confirmed the
       edge disappeared from both the list and the live graph preview, then rejected the disposable
       nodes to clean up.
-- [ ] 6.3e — Admin UI surface for suggestions review
+- [x] 6.3e — Admin UI surface for suggestions review — done 2026-07-24.
+      By the time 6.3a-6.3d shipped, each suggestion type already had its own dedicated review UI
+      (Graph audit card, Reconnect suggestions card, Near-duplicate nodes card, Reparenting review
+      card) — built incrementally as each sub-phase landed, rather than deferred to a single unified
+      list at the end. Auditing what remained of the original "wherever they're triggered from"
+      scope found one real, concrete gap: `AddPrerequisite`'s inline redundant-edge check (6.3a
+      scenario 1/3) returns `suggestions` in its response, but every frontend caller discarded it —
+      the Edit page's staged-commit flow (`commitEdgeChanges`) reduced the response to a bare
+      boolean via `settle()`, and the main list page's `acceptReconnectSuggestion` (6.3b's "Reconnect"
+      action, itself an `AddPrerequisite` call) did the same. A newly-added prerequisite/unlock, or
+      a reconnect accepted after a rejection, could itself make some OTHER edge redundant — and the
+      admin never saw it. Fixed by threading the suggestions through instead of discarding them:
+      - `addSkillGraphPrerequisite`'s frontend model/service typing changed from an untyped
+        `{added: boolean}` to the real `AddSkillGraphPrerequisiteResponse` shape (`added`,
+        `suggestions: GraphChangeSuggestion[]`) the backend always returned.
+      - Main list page: `acceptReconnectSuggestion` now appends any inline suggestions into the
+        existing `redundantEdgeSuggestions` signal (the "Graph audit" card's own list) — no new UI,
+        just reusing the existing Dismiss/Remove-edge actions. The card's template gating changed
+        from "show the list only after clicking Run graph audit" to "show the list whenever it has
+        anything in it," so a suggestion arriving from this different trigger renders immediately.
+      - Edit page: `commitEdgeChanges` now carries suggestions through its add-calls (`settleAdd`,
+        alongside the existing boolean `settleBool` for remove-calls) instead of discarding them.
+        `save()` surfaces any into a new "New redundant-edge suggestion(s)" section (mirrors the
+        Reparenting review card's shape/actions) and stays on the page instead of navigating away
+        when either that or a reparent review has something to show, with a shared bottom "Done
+        reviewing" bar.
+      - **Found and fixed a real bug live while verifying this**: staying on the Edit page post-save
+        (to show a review card) left the local "pending edit" signals uncleared, so the page kept
+        showing the just-committed edge as "X (new — not saved yet)" with an "Undo" button and a
+        stale "You have unsaved graph changes" banner — misleading, since the change was already
+        saved. Fixed by calling the existing `load()`/`loadFullGraph()` (which already clear pending
+        state as a side effect) on the stay-and-review path, not just the failure path.
+      Advisory only throughout — nothing is ever removed automatically, same discipline as 6.3a-d.
+      +2 Karma tests (inline suggestion appended, no-op when there are none). Verified: `tsc
+      --noEmit` clean, 18/18 Skill Graph Karma specs green, full backend suite (30 architecture +
+      2,513 unit + 1,359 integration, unchanged — no backend code changed this sub-phase) green, and
+      two full live end-to-end passes against the real reseeded dev DB: (1) staged a prerequisite
+      add on the Edit page that closed an A→X→B path, confirmed the "New redundant-edge
+      suggestion(s)" card appeared, removed it, and confirmed the page came back clean with no
+      stale pending-state artifacts; (2) built an A→B→C chain plus an alternate A→D→C path, rejected
+      B through the main list's bulk-edit UI, clicked "Reconnect" on the resulting A→C suggestion,
+      and confirmed the "Graph audit" card immediately showed "6.3e recon A → 6.3e recon C ... safe
+      to remove" without ever clicking "Run graph audit" — proving the inline trigger genuinely
+      reaches the UI now.
+      **This closes Phase 6.3 (Graph Change Suggestions Service) end to end** — all five scenarios
+      from the approved plan (redundant edges, reject-reconnects, near-duplicates, reparenting,
+      unified UI surfacing) are implemented, tested, and live-verified.

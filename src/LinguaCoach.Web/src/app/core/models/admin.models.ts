@@ -1687,6 +1687,14 @@ export interface GraphChangeSuggestionsResponse {
   suggestions: GraphChangeSuggestion[];
 }
 
+// Phase 6.3e — AddPrerequisite's inline redundant-edge check (6.3a scenario 1/3) was previously
+// untyped/discarded by every caller; this is the actual response shape the backend always
+// returned. Advisory only, same as every other suggestion type.
+export interface AddSkillGraphPrerequisiteResponse {
+  added: boolean;
+  suggestions: GraphChangeSuggestion[];
+}
+
 export interface SkillGraphDraftResponse {
   queued: boolean;
   createdCount: number;

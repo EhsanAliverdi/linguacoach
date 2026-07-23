@@ -83,24 +83,26 @@
     @if (auditError()) {
       <sp-admin-alert variant="error">{{ auditError() }}</sp-admin-alert>
     }
-    @if (auditRun()) {
-      @if (redundantEdgeSuggestions().length === 0) {
-        <sp-admin-alert variant="success">No redundant edges found.</sp-admin-alert>
-      } @else {
-        <ul class="sp-admin-simple-list">
-          @for (s of redundantEdgeSuggestions(); track $index) {
-            @if (s.proposedEdgesToRemove[0]; as edge) {
-              <li class="sp-admin-form-actions" style="justify-content:space-between;">
-                <span>{{ edge.prerequisiteNodeTitle }} → {{ edge.nodeTitle }} <span class="sp-admin-text-muted">— {{ s.description }}</span></span>
-                <span class="sp-admin-form-actions" style="padding:0; background:none; border:none;">
-                  <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="dismissRedundantEdgeSuggestion($index)">Dismiss</sp-admin-button>
-                  <sp-admin-button size="sm" variant="danger" appearance="outline" (clicked)="removeRedundantEdge(s, $index)">Remove edge</sp-admin-button>
-                </span>
-              </li>
-            }
+    <!-- Phase 6.3e — suggestions can also arrive from a post-mutation inline trigger (accepting a
+         reconnect can itself make some OTHER edge redundant), not just this card's own "Run graph
+         audit" button — so the list renders whenever there's something in it, independent of
+         whether an explicit audit was ever run this session. -->
+    @if (redundantEdgeSuggestions().length > 0) {
+      <ul class="sp-admin-simple-list">
+        @for (s of redundantEdgeSuggestions(); track $index) {
+          @if (s.proposedEdgesToRemove[0]; as edge) {
+            <li class="sp-admin-form-actions" style="justify-content:space-between;">
+              <span>{{ edge.prerequisiteNodeTitle }} → {{ edge.nodeTitle }} <span class="sp-admin-text-muted">— {{ s.description }}</span></span>
+              <span class="sp-admin-form-actions" style="padding:0; background:none; border:none;">
+                <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="dismissRedundantEdgeSuggestion($index)">Dismiss</sp-admin-button>
+                <sp-admin-button size="sm" variant="danger" appearance="outline" (clicked)="removeRedundantEdge(s, $index)">Remove edge</sp-admin-button>
+              </span>
+            </li>
           }
-        </ul>
-      }
+        }
+      </ul>
+    } @else if (auditRun()) {
+      <sp-admin-alert variant="success">No redundant edges found.</sp-admin-alert>
     }
   </sp-admin-card>
 
