@@ -1,4 +1,5 @@
 using LinguaCoach.Application.SkillGraph;
+using LinguaCoach.Domain.Constants;
 
 namespace LinguaCoach.Infrastructure.SkillGraph;
 
@@ -22,6 +23,12 @@ namespace LinguaCoach.Infrastructure.SkillGraph;
 /// titles are highly similar (Jaro-Winkler ≥ <see cref="NearDuplicateSimilarityThreshold"/>), a
 /// likely sign of accidental duplicate content — advisory only, merging is a separate explicit
 /// admin action.
+///
+/// Phase 6.3d — reparenting-on-edit review: when an edit moves a node to a different CEFR level
+/// and/or Skill, its existing edges were chosen under the old placement and may no longer make
+/// sense — flags genuine CEFR-ordering violations (a prerequisite at a later stage than the node,
+/// or a dependent at an earlier one) for the admin to review, without ever removing anything
+/// automatically.
 /// </summary>
 public sealed class GraphChangeSuggestionService : IGraphChangeSuggestionService
 {
@@ -223,5 +230,39 @@ public sealed class GraphChangeSuggestionService : IGraphChangeSuggestionService
 
         const double scalingFactor = 0.1;
         return jaro + prefixLength * scalingFactor * (1 - jaro);
+    }
+
+    public ReparentReviewResult? DetectReparentingReview(
+        Guid nodeId, string oldCefrLevel, string oldSkill, string newCefrLevel, string newSkill,
+        IReadOnlyList<ReparentEdgeNeighbor> neighbors)
+    {
+        var levelChanged = !string.Equals(oldCefrLevel, newCefrLevel, StringComparison.OrdinalIgnoreCase);
+        var skillChanged = !string.Equals(oldSkill, newSkill, StringComparison.OrdinalIgnoreCase);
+        if (!levelChanged && !skillChanged) return null; // nothing moved — no review needed
+        if (neighbors.Count == 0) return null; // moved, but no edges exist to review
+
+        var newLevelOrdinal = CefrOrdinal(newCefrLevel);
+
+        var edges = neighbors.Select(n =>
+        {
+            var otherOrdinal = CefrOrdinal(n.OtherNodeCefrLevel);
+            // A prerequisite should sit at the same or an earlier CEFR stage than the node it
+            // unlocks; a dependent should sit at the same or a later one. Same-level is never
+            // suspicious — a single CEFR band legitimately orders ~100 nodes internally.
+            var suspicious = otherOrdinal >= 0 && newLevelOrdinal >= 0 &&
+                (n.OtherNodeIsPrerequisite ? otherOrdinal > newLevelOrdinal : otherOrdinal < newLevelOrdinal);
+            return new ReparentReviewEdge(n.OtherNodeId, n.OtherNodeIsPrerequisite, n.OtherNodeCefrLevel, suspicious);
+        }).ToList();
+
+        return new ReparentReviewResult(nodeId, oldCefrLevel, newCefrLevel, oldSkill, newSkill, edges);
+    }
+
+    private static int CefrOrdinal(string level)
+    {
+        for (var i = 0; i < CefrLevelConstants.All.Count; i++)
+        {
+            if (string.Equals(CefrLevelConstants.All[i], level, StringComparison.OrdinalIgnoreCase)) return i;
+        }
+        return -1;
     }
 }

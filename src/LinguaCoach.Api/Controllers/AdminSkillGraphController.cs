@@ -366,6 +366,11 @@ public sealed class AdminSkillGraphController : ControllerBase
         var node = await _db.SkillGraphNodes.FirstOrDefaultAsync(n => n.Id == id, ct);
         if (node is null) return NotFound();
 
+        // Skill Graph rebuild Phase 6.3d — captured BEFORE UpdateCore mutates the node in place,
+        // so the reparenting check below can tell what actually changed.
+        var oldCefrLevel = node.CefrLevel;
+        var oldSkill = node.Skill;
+
         try
         {
             node.UpdateCore(
@@ -382,7 +387,58 @@ public sealed class AdminSkillGraphController : ControllerBase
         }
 
         await _db.SaveChangesAsync(ct);
-        return Ok(new { node.Id, node.Key });
+
+        var reparentReview = await DetectReparentingReviewAsync(id, oldCefrLevel, oldSkill, node.CefrLevel, node.Skill, ct);
+        return Ok(new { node.Id, node.Key, reparentReview });
+    }
+
+    /// <summary>Skill Graph rebuild Phase 6.3d — if the edit above actually moved the node to a
+    /// different CEFR level and/or Skill, its existing edges were chosen under the old placement
+    /// and may no longer make sense; loads every edge touching the node (one query) plus the CEFR
+    /// level of each edge's OTHER endpoint (one more query), then delegates to the pure detection
+    /// service. Returns <c>null</c> when nothing changed or the node has no edges — the common
+    /// case, so this stays a cheap no-op on most saves.</summary>
+    private async Task<object?> DetectReparentingReviewAsync(
+        Guid nodeId, string oldCefrLevel, string oldSkill, string newCefrLevel, string newSkill, CancellationToken ct)
+    {
+        var touchingEdges = await _db.SkillGraphPrerequisiteEdges.AsNoTracking()
+            .Where(e => e.NodeId == nodeId || e.PrerequisiteNodeId == nodeId)
+            .Select(e => new { e.NodeId, e.PrerequisiteNodeId })
+            .ToListAsync(ct);
+        if (touchingEdges.Count == 0) return null;
+
+        var otherIds = touchingEdges
+            .Select(e => e.NodeId == nodeId ? e.PrerequisiteNodeId : e.NodeId)
+            .Distinct().ToList();
+        var otherNodes = await _db.SkillGraphNodes.AsNoTracking()
+            .Where(n => otherIds.Contains(n.Id))
+            .Select(n => new { n.Id, n.Title, n.CefrLevel })
+            .ToDictionaryAsync(n => n.Id, ct);
+
+        var neighbors = touchingEdges.Select(e =>
+        {
+            var isPrerequisite = e.NodeId == nodeId; // e.PrerequisiteNodeId is a prerequisite OF nodeId
+            var otherId = isPrerequisite ? e.PrerequisiteNodeId : e.NodeId;
+            return new ReparentEdgeNeighbor(otherId, otherNodes[otherId].CefrLevel, isPrerequisite);
+        }).ToList();
+
+        var result = _changeSuggestions.DetectReparentingReview(nodeId, oldCefrLevel, oldSkill, newCefrLevel, newSkill, neighbors);
+        if (result is null) return null;
+
+        return new
+        {
+            nodeId = result.NodeId,
+            oldCefrLevel = result.OldCefrLevel, newCefrLevel = result.NewCefrLevel,
+            oldSkill = result.OldSkill, newSkill = result.NewSkill,
+            edgesToReview = result.EdgesToReview.Select(edge => new
+            {
+                otherNodeId = edge.OtherNodeId,
+                otherNodeTitle = otherNodes[edge.OtherNodeId].Title,
+                otherNodeCefrLevel = edge.OtherNodeCefrLevel,
+                isPrerequisite = edge.OtherNodeIsPrerequisite,
+                looksSuspicious = edge.LooksSuspicious,
+            }),
+        };
     }
 
     /// <summary>Manually links two existing nodes as prerequisite→node. Validated for cycles

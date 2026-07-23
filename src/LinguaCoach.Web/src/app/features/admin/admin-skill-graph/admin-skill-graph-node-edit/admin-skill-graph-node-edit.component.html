@@ -176,6 +176,35 @@
       </sp-admin-alert>
     }
 
+    <!-- Skill Graph rebuild Phase 6.3d — this node's CEFR level and/or Skill just changed; its
+         existing edges were chosen under the old placement and may no longer make sense. Advisory
+         only: "Remove edge" is a real API call, "Dismiss" just hides it from this list. -->
+    @if (reparentReview(); as review) {
+      <sp-admin-section-card title="Reparenting review">
+        <p class="sp-admin-section-sub">
+          This node moved from {{ review.oldCefrLevel }} / {{ review.oldSkill }} to {{ review.newCefrLevel }} / {{ review.newSkill }} — its existing edges were chosen under the old placement and may no longer make sense.
+        </p>
+        @if (reparentReviewError()) { <sp-admin-alert variant="error">{{ reparentReviewError() }}</sp-admin-alert> }
+        <ul class="sp-admin-simple-list">
+          @for (edge of review.edgesToReview; track edge.otherNodeId) {
+            <li class="sp-admin-form-actions" style="justify-content:space-between;">
+              <span>
+                {{ edge.isPrerequisite ? 'Prerequisite' : 'Dependent' }}: {{ edge.otherNodeTitle }} ({{ edge.otherNodeCefrLevel }})
+                @if (edge.looksSuspicious) { <sp-admin-badge tone="warning">Suspicious</sp-admin-badge> }
+              </span>
+              <span class="sp-admin-form-actions" style="padding:0; background:none; border:none;">
+                <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="dismissReparentReviewEdge(edge.otherNodeId)">Dismiss</sp-admin-button>
+                <sp-admin-button size="sm" variant="danger" appearance="outline" (clicked)="removeReparentReviewEdge(edge)">Remove edge</sp-admin-button>
+              </span>
+            </li>
+          }
+        </ul>
+        <div class="sp-admin-form-actions sp-admin-form-actions--end">
+          <sp-admin-button variant="primary" (clicked)="finishReparentReview()">Done reviewing</sp-admin-button>
+        </div>
+      </sp-admin-section-card>
+    } @else {
+
     <!-- ── User correction (2026-07-23) — moved to the bottom of the page: it now applies the core
          fields AND every staged graph change together, so it belongs after everything it saves. ── -->
     <div class="sp-admin-form-actions sp-admin-form-actions--end">
@@ -184,6 +213,8 @@
         {{ saving() ? 'Saving…' : 'Save' }}
       </sp-admin-button>
     </div>
+
+    }
 
   }
   }

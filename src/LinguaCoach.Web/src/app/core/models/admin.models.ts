@@ -1744,6 +1744,30 @@ export interface MergeNodesResponse {
   droppedCount: number;
 }
 
+// Phase 6.3d — reparenting-on-edit review (advisory only, never auto-removes anything).
+export interface ReparentReviewEdge {
+  otherNodeId: string;
+  otherNodeTitle: string;
+  otherNodeCefrLevel: string;
+  isPrerequisite: boolean;
+  looksSuspicious: boolean;
+}
+
+export interface ReparentReviewResult {
+  nodeId: string;
+  oldCefrLevel: string;
+  newCefrLevel: string;
+  oldSkill: string;
+  newSkill: string;
+  edgesToReview: ReparentReviewEdge[];
+}
+
+export interface UpdateSkillGraphNodeResponse {
+  id: string;
+  key: string;
+  reparentReview: ReparentReviewResult | null;
+}
+
 export interface SkillGraphCoverageEntry {
   cefrLevel: string;
   skill: string;

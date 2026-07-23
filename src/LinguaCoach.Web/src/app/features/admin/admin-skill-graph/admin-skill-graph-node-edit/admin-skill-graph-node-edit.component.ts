@@ -5,9 +5,10 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin, of, Observable } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { AdminApiService } from '../../../../core/services/admin.api.service';
-import { SkillGraphEdge, SkillGraphNode, SkillGraphNodeDetail, SkillGraphNodeListItem, SkillGraphPlacementSuggestion, SkillGraphTaxonomy } from '../../../../core/models/admin.models';
+import { SkillGraphEdge, SkillGraphNode, SkillGraphNodeDetail, SkillGraphNodeListItem, SkillGraphPlacementSuggestion, SkillGraphTaxonomy, ReparentReviewResult } from '../../../../core/models/admin.models';
 import {
   SpAdminAlertComponent,
+  SpAdminBadgeComponent,
   SpAdminButtonComponent,
   SpAdminErrorStateComponent,
   SpAdminFormFieldComponent,
@@ -53,6 +54,7 @@ interface StagedNodeRef {
     CommonModule,
     FormsModule,
     SpAdminAlertComponent,
+    SpAdminBadgeComponent,
     SpAdminButtonComponent,
     SpAdminErrorStateComponent,
     SpAdminFormFieldComponent,
@@ -265,9 +267,9 @@ export class AdminSkillGraphNodeEditComponent implements OnInit {
       difficultyBand: this.difficultyBand ?? 1,
       descriptionForAi: this.descriptionForAi.trim() || null,
     }).pipe(
-      switchMap(() => this.commitEdgeChanges(current.id)),
+      switchMap(updateResult => this.commitEdgeChanges(current.id).pipe(map(edgeResult => ({ ...edgeResult, updateResult })))),
     ).subscribe({
-      next: ({ failedCount }) => {
+      next: ({ failedCount, updateResult }) => {
         this.saving.set(false);
         if (failedCount > 0) {
           this.error.set(`Core fields saved, but ${failedCount} graph change(s) could not be applied (e.g. would create a cycle). Reopen this node to review.`);
@@ -275,10 +277,41 @@ export class AdminSkillGraphNodeEditComponent implements OnInit {
           this.loadFullGraph();
           return;
         }
+        // Skill Graph rebuild Phase 6.3d — if the edit moved this node to a different CEFR
+        // level/Skill and it has existing edges, stay on the page and surface them for review
+        // instead of navigating away immediately; nothing here is ever removed automatically.
+        if (updateResult.reparentReview && updateResult.reparentReview.edgesToReview.length > 0) {
+          this.reparentReview.set(updateResult.reparentReview);
+          return;
+        }
         this.router.navigateByUrl('/admin/skill-graph');
       },
       error: err => { this.saving.set(false); this.error.set(err.error?.error ?? 'Could not save changes — approved nodes must be rejected first to reopen editing.'); },
     });
+  }
+
+  // ── Skill Graph rebuild Phase 6.3d — reparenting-on-edit review. Advisory only: "Remove edge"
+  // is a real removeSkillGraphPrerequisite call; "Dismiss" just hides it from this list. ────────
+  reparentReview = signal<ReparentReviewResult | null>(null);
+  reparentReviewError = signal('');
+
+  dismissReparentReviewEdge(otherNodeId: string): void {
+    this.reparentReview.update(r => r && { ...r, edgesToReview: r.edgesToReview.filter(e => e.otherNodeId !== otherNodeId) });
+  }
+
+  removeReparentReviewEdge(edge: { otherNodeId: string; isPrerequisite: boolean }): void {
+    const nodeId = this.nodeId;
+    const call = edge.isPrerequisite
+      ? this.api.removeSkillGraphPrerequisite(nodeId, edge.otherNodeId)
+      : this.api.removeSkillGraphPrerequisite(edge.otherNodeId, nodeId);
+    call.subscribe({
+      next: () => this.dismissReparentReviewEdge(edge.otherNodeId),
+      error: err => this.reparentReviewError.set(err?.error?.error ?? 'Could not remove this edge.'),
+    });
+  }
+
+  finishReparentReview(): void {
+    this.router.navigateByUrl('/admin/skill-graph');
   }
 
   // Applies every staged edge change together; a failed individual call (e.g. would create a

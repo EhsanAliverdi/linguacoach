@@ -22,6 +22,7 @@ import {
   SkillGraphPlacementSuggestionResponse,
   GraphChangeSuggestionsResponse,
   NearDuplicateSuggestionsResponse, MergeNodesResponse,
+  UpdateSkillGraphNodeResponse,
   StudentListQuery, PagedResponse, AiModelPricingItem,
   AiModelPricingOverrideItem, CreatePricingOverrideRequest, UpdatePricingOverrideRequest,
   AdminNotificationItem, AdminOutboxItem,
@@ -255,8 +256,8 @@ export class AdminApiService {
   createSkillGraphNode(body: CreateSkillGraphNodeRequest): Observable<CreateSkillGraphNodeResponse> {
     return this.http.post<CreateSkillGraphNodeResponse>(`${this.api}/skill-graph/nodes`, body);
   }
-  updateSkillGraphNode(id: string, body: UpdateSkillGraphNodeRequest): Observable<{ id: string; key: string }> {
-    return this.http.put<{ id: string; key: string }>(`${this.api}/skill-graph/nodes/${id}`, body);
+  updateSkillGraphNode(id: string, body: UpdateSkillGraphNodeRequest): Observable<UpdateSkillGraphNodeResponse> {
+    return this.http.put<UpdateSkillGraphNodeResponse>(`${this.api}/skill-graph/nodes/${id}`, body);
   }
   addSkillGraphPrerequisite(nodeId: string, prerequisiteNodeId: string): Observable<{ added: boolean }> {
     return this.http.post<{ added: boolean }>(`${this.api}/skill-graph/nodes/${nodeId}/prerequisites`, { prerequisiteNodeId });

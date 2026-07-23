@@ -242,6 +242,21 @@ public interface IGraphChangeSuggestionService
     /// Advisory only: the caller decides which node to keep via a separate merge action.</summary>
     IReadOnlyList<NearDuplicateNodeSuggestion> DetectNearDuplicateNodes(
         IReadOnlyList<NearDuplicateNodeCandidate> nodes);
+
+    /// <summary>Phase 6.3d — when editing a node moves it to a different CEFR level and/or Skill,
+    /// its existing prerequisite/dependent edges were chosen under the OLD placement and may no
+    /// longer make sense — returns <c>null</c> when neither actually changed, or when the node has
+    /// no edges at all (nothing to review either way). Otherwise returns every edge touching the
+    /// node for the admin to review, each flagged <c>LooksSuspicious</c> when it's a genuine CEFR-
+    /// ordering violation under the NEW level (a prerequisite at a later CEFR stage than the node,
+    /// or a dependent at an earlier one) — same-level edges are never flagged, since a CEFR band
+    /// legitimately orders ~100 nodes internally. Advisory only: nothing is ever removed
+    /// automatically, the caller decides per edge via the normal remove-prerequisite endpoint.</summary>
+    ReparentReviewResult? DetectReparentingReview(
+        Guid nodeId,
+        string oldCefrLevel, string oldSkill,
+        string newCefrLevel, string newSkill,
+        IReadOnlyList<ReparentEdgeNeighbor> neighbors);
 }
 
 /// <summary>One rejected node's reconnect review group. <c>SuggestedReconnects</c> is every
@@ -265,3 +280,28 @@ public sealed record NearDuplicateNodeSuggestion(
     string CefrLevel,
     string Skill,
     double Similarity);
+
+/// <summary>Input row for <see cref="IGraphChangeSuggestionService.DetectReparentingReview"/> — one
+/// existing edge touching the node being edited, with the OTHER endpoint's current CEFR level so
+/// the pure ordering check doesn't need any database access.</summary>
+public sealed record ReparentEdgeNeighbor(Guid OtherNodeId, string OtherNodeCefrLevel, bool OtherNodeIsPrerequisite);
+
+/// <summary>One edge flagged for the admin's post-reparent review. <c>OtherNodeIsPrerequisite</c>
+/// true means the other node is a prerequisite OF the moved node; false means the other node is a
+/// dependent (the moved node is ITS prerequisite).</summary>
+public sealed record ReparentReviewEdge(
+    Guid OtherNodeId,
+    bool OtherNodeIsPrerequisite,
+    string OtherNodeCefrLevel,
+    bool LooksSuspicious);
+
+/// <summary>The full reparent-review result for one edited node — <c>null</c> from the detection
+/// method means nothing to review; when non-null, <c>EdgesToReview</c> is every edge touching the
+/// node (not just the suspicious ones), so the admin reviews the whole set the move affected.</summary>
+public sealed record ReparentReviewResult(
+    Guid NodeId,
+    string OldCefrLevel,
+    string NewCefrLevel,
+    string OldSkill,
+    string NewSkill,
+    IReadOnlyList<ReparentReviewEdge> EdgesToReview);

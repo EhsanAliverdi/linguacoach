@@ -514,6 +514,119 @@ public sealed class AdminSkillGraphEndpointTests : IClassFixture<ApiTestFactory>
         Assert.Equal(HttpStatusCode.Conflict, resp.StatusCode);
     }
 
+    // ── Skill Graph rebuild Phase 6.3d — reparenting-on-edit review ──────────────────────────
+
+    [Fact]
+    public async Task UpdateNode_NoReparentReview_WhenCefrLevelAndSkillAreUnchanged()
+    {
+        var suffix = Guid.NewGuid().ToString("N");
+        var node = await SeedNodeAsync($"grammar.reparent_none_{suffix}.a1");
+        var prereq = await SeedNodeAsync($"grammar.reparent_none_prereq_{suffix}.a1");
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            db.SkillGraphPrerequisiteEdges.Add(new SkillGraphPrerequisiteEdge(node.Id, prereq.Id));
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PutAsJsonAsync($"/api/admin/skill-graph/nodes/{node.Id}", new
+        {
+            title = "Same level same skill", description = "Y", cefrLevel = "A1", skill = "grammar",
+            subskill = (string?)null, difficultyBand = 1, descriptionForAi = (string?)null,
+        });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(JsonValueKind.Null, body.GetProperty("reparentReview").ValueKind);
+    }
+
+    [Fact]
+    public async Task UpdateNode_NoReparentReview_WhenMovedButNoEdgesExist()
+    {
+        var node = await SeedNodeAsync($"grammar.reparent_noedges_{Guid.NewGuid():N}.a1");
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PutAsJsonAsync($"/api/admin/skill-graph/nodes/{node.Id}", new
+        {
+            title = "Moved but no edges", description = "Y", cefrLevel = "C1", skill = "grammar",
+            subskill = (string?)null, difficultyBand = 1, descriptionForAi = (string?)null,
+        });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(JsonValueKind.Null, body.GetProperty("reparentReview").ValueKind);
+    }
+
+    [Fact]
+    public async Task UpdateNode_FlagsASuspiciousPrerequisiteAfterMovingToAnEarlierCefrLevel()
+    {
+        var suffix = Guid.NewGuid().ToString("N");
+        var node = await SeedNodeAsync($"grammar.reparent_susp_{suffix}.c1", "C1", "grammar");
+        var laterPrereq = await SeedNodeAsync($"grammar.reparent_susp_prereq_{suffix}.b2", "B2", "grammar");
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            db.SkillGraphPrerequisiteEdges.Add(new SkillGraphPrerequisiteEdge(node.Id, laterPrereq.Id)); // laterPrereq -> node
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        // Move the node down to A1 — its B2 prerequisite is now at a LATER stage than the node
+        // itself, a genuine ordering violation.
+        var resp = await client.PutAsJsonAsync($"/api/admin/skill-graph/nodes/{node.Id}", new
+        {
+            title = "Moved down to A1", description = "Y", cefrLevel = "A1", skill = "grammar",
+            subskill = (string?)null, difficultyBand = 1, descriptionForAi = (string?)null,
+        });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var review = body.GetProperty("reparentReview");
+        Assert.Equal("C1", review.GetProperty("oldCefrLevel").GetString());
+        Assert.Equal("A1", review.GetProperty("newCefrLevel").GetString());
+        var edge = Assert.Single(review.GetProperty("edgesToReview").EnumerateArray());
+        Assert.Equal(laterPrereq.Id, edge.GetProperty("otherNodeId").GetGuid());
+        Assert.True(edge.GetProperty("isPrerequisite").GetBoolean());
+        Assert.True(edge.GetProperty("looksSuspicious").GetBoolean());
+    }
+
+    [Fact]
+    public async Task UpdateNode_ReparentReviewTriggeredBySkillChangeAloneListsEdgesWithoutFlaggingSameLevelOnes()
+    {
+        var suffix = Guid.NewGuid().ToString("N");
+        var node = await SeedNodeAsync($"grammar.reparent_skill_{suffix}.a1", "A1", "grammar");
+        var samePrereq = await SeedNodeAsync($"grammar.reparent_skill_prereq_{suffix}.a1", "A1", "grammar");
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            db.SkillGraphPrerequisiteEdges.Add(new SkillGraphPrerequisiteEdge(node.Id, samePrereq.Id));
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PutAsJsonAsync($"/api/admin/skill-graph/nodes/{node.Id}", new
+        {
+            title = "Same level, different skill", description = "Y", cefrLevel = "A1", skill = "vocabulary",
+            subskill = (string?)null, difficultyBand = 1, descriptionForAi = (string?)null,
+        });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var review = body.GetProperty("reparentReview");
+        Assert.Equal("grammar", review.GetProperty("oldSkill").GetString());
+        Assert.Equal("vocabulary", review.GetProperty("newSkill").GetString());
+        var edge = Assert.Single(review.GetProperty("edgesToReview").EnumerateArray());
+        Assert.False(edge.GetProperty("looksSuspicious").GetBoolean());
+    }
+
     [Fact]
     public async Task AddPrerequisite_ValidPair_CreatesEdge()
     {

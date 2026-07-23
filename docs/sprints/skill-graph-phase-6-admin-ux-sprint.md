@@ -226,5 +226,31 @@ real data).
       data** — a genuine, expected finding (not a bug): a curriculum this size accumulates enough
       title collisions across CEFR×Skill groups that this is a real backlog for admins to review,
       not synthetic noise.
-- [ ] 6.3d — Reparenting-on-edit suggestions
+- [x] 6.3d — Reparenting-on-edit suggestions — done 2026-07-24.
+      `IGraphChangeSuggestionService.DetectReparentingReview(nodeId, oldCefrLevel, oldSkill,
+      newCefrLevel, newSkill, neighbors)` — pure, deterministic: returns `null` when neither the
+      CEFR level nor the Skill actually changed, or when the node has no edges at all (the common
+      case on most saves, so this stays a cheap no-op). Otherwise returns every edge touching the
+      node for review, with each one flagged `LooksSuspicious` only when it's a genuine CEFR-
+      ordering violation under the NEW level — a prerequisite now at a LATER CEFR stage than the
+      node, or a dependent now at an EARLIER one. Same-level edges are never flagged, since a
+      single CEFR band legitimately orders ~100 nodes internally (this was a deliberate design
+      choice over "flag everything," to keep the signal real rather than blanket noise). Wired into
+      `UpdateNode`: captures the node's CEFR level/Skill BEFORE `UpdateCore` mutates it, and after
+      saving, the response now carries `reparentReview` (null on the common no-change path).
+      Frontend: the Edit page's `save()` now stays on the page instead of navigating away when
+      `reparentReview` has edges to review, showing a new "Reparenting review" card (`Suspicious`
+      badge on flagged edges, `Remove edge` — a real `removeSkillGraphPrerequisite` call — or
+      `Dismiss` per edge, `Done reviewing` to finish and navigate on). Advisory only, same
+      discipline as 6.3a-c — nothing is ever removed automatically. +7 unit tests (no-change no-op,
+      moved-but-no-edges no-op, skill-only change still triggers, prerequisite-at-later-stage
+      flagged, dependent-at-earlier-stage flagged, same-level never flagged, all edges returned not
+      just suspicious ones), +4 integration tests. Verified: full backend suite (30 architecture +
+      2,513 unit + 1,359 integration) green, frontend `tsc --noEmit` clean, 16/16 Skill Graph Karma
+      specs green, and a full live end-to-end pass against the real reseeded dev DB — created a
+      disposable C1 node with a real B2 prerequisite via the real API, moved it down through the
+      actual Edit UI form (CEFR select + Save), confirmed the "Reparenting review" card correctly
+      appeared with the B2 prerequisite marked "Suspicious," clicked "Remove edge" and confirmed the
+      edge disappeared from both the list and the live graph preview, then rejected the disposable
+      nodes to clean up.
 - [ ] 6.3e — Admin UI surface for suggestions review

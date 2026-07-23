@@ -364,4 +364,92 @@ public sealed class GraphChangeSuggestionServiceTests
         var suggestion = Assert.Single(_sut.DetectNearDuplicateNodes(nodes));
         Assert.Equal(1.0, suggestion.Similarity, precision: 5);
     }
+
+    // ── Phase 6.3d — reparenting-on-edit review ─────────────────────────────────────────────
+
+    [Fact]
+    public void No_review_when_neither_cefr_level_nor_skill_changed()
+    {
+        var neighbors = new[] { new ReparentEdgeNeighbor(Guid.NewGuid(), "A1", OtherNodeIsPrerequisite: true) };
+        Assert.Null(_sut.DetectReparentingReview(A, "A1", "grammar", "A1", "grammar", neighbors));
+    }
+
+    [Fact]
+    public void No_review_when_moved_but_the_node_has_no_edges()
+    {
+        Assert.Null(_sut.DetectReparentingReview(A, "A1", "grammar", "B2", "grammar", []));
+    }
+
+    [Fact]
+    public void Skill_only_change_still_triggers_a_review()
+    {
+        var neighbors = new[] { new ReparentEdgeNeighbor(Guid.NewGuid(), "A1", OtherNodeIsPrerequisite: true) };
+        var result = _sut.DetectReparentingReview(A, "A1", "grammar", "A1", "vocabulary", neighbors);
+        Assert.NotNull(result);
+        Assert.Equal("grammar", result!.OldSkill);
+        Assert.Equal("vocabulary", result.NewSkill);
+    }
+
+    [Fact]
+    public void Prerequisite_at_a_later_cefr_stage_than_the_new_level_is_flagged_suspicious()
+    {
+        // Node moved to A1; one of its prerequisites is at B2 — backwards (a prerequisite should
+        // come at the same or an earlier stage).
+        var prereqId = Guid.NewGuid();
+        var neighbors = new[] { new ReparentEdgeNeighbor(prereqId, "B2", OtherNodeIsPrerequisite: true) };
+
+        var result = _sut.DetectReparentingReview(A, "C1", "grammar", "A1", "grammar", neighbors);
+
+        Assert.NotNull(result);
+        var edge = Assert.Single(result!.EdgesToReview);
+        Assert.True(edge.LooksSuspicious);
+        Assert.True(edge.OtherNodeIsPrerequisite);
+    }
+
+    [Fact]
+    public void Dependent_at_an_earlier_cefr_stage_than_the_new_level_is_flagged_suspicious()
+    {
+        // Node moved to C1; one of its dependents is still at A1 — backwards (a dependent should
+        // come at the same or a later stage, since it requires this node as a prerequisite).
+        var dependentId = Guid.NewGuid();
+        var neighbors = new[] { new ReparentEdgeNeighbor(dependentId, "A1", OtherNodeIsPrerequisite: false) };
+
+        var result = _sut.DetectReparentingReview(A, "A1", "grammar", "C1", "grammar", neighbors);
+
+        Assert.NotNull(result);
+        var edge = Assert.Single(result!.EdgesToReview);
+        Assert.True(edge.LooksSuspicious);
+        Assert.False(edge.OtherNodeIsPrerequisite);
+    }
+
+    [Fact]
+    public void Same_level_edges_are_never_flagged_suspicious()
+    {
+        var neighbors = new[]
+        {
+            new ReparentEdgeNeighbor(Guid.NewGuid(), "B1", OtherNodeIsPrerequisite: true),
+            new ReparentEdgeNeighbor(Guid.NewGuid(), "B1", OtherNodeIsPrerequisite: false),
+        };
+
+        var result = _sut.DetectReparentingReview(A, "A1", "grammar", "B1", "grammar", neighbors);
+
+        Assert.NotNull(result);
+        Assert.All(result!.EdgesToReview, e => Assert.False(e.LooksSuspicious));
+    }
+
+    [Fact]
+    public void All_edges_are_returned_for_review_not_just_the_suspicious_ones()
+    {
+        var neighbors = new[]
+        {
+            new ReparentEdgeNeighbor(Guid.NewGuid(), "C2", OtherNodeIsPrerequisite: true), // suspicious
+            new ReparentEdgeNeighbor(Guid.NewGuid(), "A1", OtherNodeIsPrerequisite: true), // fine
+        };
+
+        var result = _sut.DetectReparentingReview(A, "B1", "grammar", "A2", "grammar", neighbors);
+
+        Assert.NotNull(result);
+        Assert.Equal(2, result!.EdgesToReview.Count);
+        Assert.Equal(1, result.EdgesToReview.Count(e => e.LooksSuspicious));
+    }
 }
