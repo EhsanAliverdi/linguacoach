@@ -1721,6 +1721,29 @@ export interface SkillGraphBatchRejectResponse extends SkillGraphBatchActionResp
   reconnectSuggestions: RejectReconnectGroup[];
 }
 
+// Phase 6.3c — near-duplicate node detection (advisory only) + explicit merge action.
+export interface NearDuplicateNodeSuggestion {
+  nodeAId: string;
+  nodeATitle: string;
+  nodeBId: string;
+  nodeBTitle: string;
+  cefrLevel: string;
+  skill: string;
+  similarity: number;
+}
+
+export interface NearDuplicateSuggestionsResponse {
+  count: number;
+  suggestions: NearDuplicateNodeSuggestion[];
+}
+
+export interface MergeNodesResponse {
+  keepNodeId: string;
+  mergeAwayNodeId: string;
+  repointedCount: number;
+  droppedCount: number;
+}
+
 export interface SkillGraphCoverageEntry {
   cefrLevel: string;
   skill: string;

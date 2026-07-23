@@ -34,6 +34,7 @@ import {
   SkillGraphIsolatedNode,
   GraphChangeSuggestion,
   RejectReconnectGroup,
+  NearDuplicateNodeSuggestion,
 } from '../../../core/models/admin.models';
 import { SpAdminGraphCardComponent } from '../../../design-system/admin/components/graph-card/sp-admin-graph-card.component';
 import { SpAdminSkillGraphVizComponent } from './skill-graph-viz/sp-admin-skill-graph-viz.component';
@@ -309,6 +310,48 @@ export class AdminSkillGraphComponent implements OnInit {
         this.loadIsolatedNodes();
       },
       error: err => this.auditError.set(err?.error?.error ?? 'Could not remove this edge.'),
+    });
+  }
+
+  // ── Skill Graph rebuild Phase 6.3c (2026-07-24) — on-demand near-duplicate node audit.
+  // Deterministic (no AI), advisory only: every suggestion is either "Merge" (an explicit,
+  // separate API call that the admin picks a direction for — keep A/merge away B, or vice versa)
+  // or "Dismiss" (just hides it from this list). ──────────────────────────────────────────────
+  auditingDuplicates = signal(false);
+  duplicateAuditError = signal('');
+  duplicateAuditRun = signal(false);
+  nearDuplicateSuggestions = signal<NearDuplicateNodeSuggestion[]>([]);
+
+  runNearDuplicateAudit(): void {
+    this.auditingDuplicates.set(true);
+    this.duplicateAuditError.set('');
+    this.api.getNearDuplicateSuggestions().subscribe({
+      next: r => {
+        this.auditingDuplicates.set(false);
+        this.duplicateAuditRun.set(true);
+        this.nearDuplicateSuggestions.set(r.suggestions);
+      },
+      error: err => {
+        this.auditingDuplicates.set(false);
+        this.duplicateAuditError.set(err?.error?.error ?? 'Could not run the near-duplicate audit.');
+      },
+    });
+  }
+
+  dismissNearDuplicateSuggestion(index: number): void {
+    this.nearDuplicateSuggestions.update(list => list.filter((_, i) => i !== index));
+  }
+
+  mergeNearDuplicateSuggestion(suggestion: NearDuplicateNodeSuggestion, index: number, keep: 'A' | 'B'): void {
+    const keepNodeId = keep === 'A' ? suggestion.nodeAId : suggestion.nodeBId;
+    const mergeAwayNodeId = keep === 'A' ? suggestion.nodeBId : suggestion.nodeAId;
+    this.api.mergeSkillGraphNodes(keepNodeId, mergeAwayNodeId).subscribe({
+      next: () => {
+        this.dismissNearDuplicateSuggestion(index);
+        this.loadNodes();
+        this.loadIsolatedNodes();
+      },
+      error: err => this.duplicateAuditError.set(err?.error?.error ?? 'Could not merge these nodes.'),
     });
   }
 

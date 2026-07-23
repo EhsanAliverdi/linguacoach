@@ -254,4 +254,114 @@ public sealed class GraphChangeSuggestionServiceTests
         Assert.Empty(_sut.DetectReconnectsAfterReject([], [new(NodeId: B, PrerequisiteNodeId: A)]));
         Assert.Empty(_sut.DetectReconnectsAfterReject([B], []));
     }
+
+    // ── Phase 6.3c — near-duplicate node detection ──────────────────────────────────────────
+
+    [Fact]
+    public void Nearly_identical_titles_in_the_same_cefr_and_skill_are_flagged()
+    {
+        var idA = Guid.NewGuid();
+        var idB = Guid.NewGuid();
+        NearDuplicateNodeCandidate[] nodes =
+        [
+            new(idA, "Present simple affirmative", "A1", "grammar"),
+            new(idB, "Present simple affirmatve", "A1", "grammar"), // typo'd near-duplicate
+        ];
+
+        var suggestions = _sut.DetectNearDuplicateNodes(nodes);
+
+        var suggestion = Assert.Single(suggestions);
+        Assert.Equal("A1", suggestion.CefrLevel);
+        Assert.Equal("grammar", suggestion.Skill);
+        Assert.True(suggestion.Similarity >= GraphChangeSuggestionService.NearDuplicateSimilarityThreshold);
+        Assert.Equal(new HashSet<Guid> { idA, idB }, new HashSet<Guid> { suggestion.NodeAId, suggestion.NodeBId });
+    }
+
+    [Fact]
+    public void Identical_titles_are_flagged_with_similarity_one()
+    {
+        NearDuplicateNodeCandidate[] nodes =
+        [
+            new(Guid.NewGuid(), "Past continuous", "B1", "grammar"),
+            new(Guid.NewGuid(), "Past continuous", "B1", "grammar"),
+        ];
+
+        var suggestion = Assert.Single(_sut.DetectNearDuplicateNodes(nodes));
+        Assert.Equal(1.0, suggestion.Similarity, precision: 5);
+    }
+
+    [Fact]
+    public void Similar_titles_in_different_cefr_levels_are_not_compared()
+    {
+        NearDuplicateNodeCandidate[] nodes =
+        [
+            new(Guid.NewGuid(), "Present simple affirmative", "A1", "grammar"),
+            new(Guid.NewGuid(), "Present simple affirmative", "B1", "grammar"),
+        ];
+
+        Assert.Empty(_sut.DetectNearDuplicateNodes(nodes));
+    }
+
+    [Fact]
+    public void Similar_titles_in_different_skills_are_not_compared()
+    {
+        NearDuplicateNodeCandidate[] nodes =
+        [
+            new(Guid.NewGuid(), "Weather vocabulary", "A1", "vocabulary"),
+            new(Guid.NewGuid(), "Weather vocabulary", "A1", "grammar"),
+        ];
+
+        Assert.Empty(_sut.DetectNearDuplicateNodes(nodes));
+    }
+
+    [Fact]
+    public void Genuinely_different_titles_in_the_same_group_are_not_flagged()
+    {
+        NearDuplicateNodeCandidate[] nodes =
+        [
+            new(Guid.NewGuid(), "Present simple affirmative", "A1", "grammar"),
+            new(Guid.NewGuid(), "Past continuous negative", "A1", "grammar"),
+        ];
+
+        Assert.Empty(_sut.DetectNearDuplicateNodes(nodes));
+    }
+
+    [Fact]
+    public void Three_node_group_flags_only_the_similar_pair()
+    {
+        var idA = Guid.NewGuid();
+        var idB = Guid.NewGuid();
+        var idC = Guid.NewGuid();
+        NearDuplicateNodeCandidate[] nodes =
+        [
+            new(idA, "Present simple affirmative", "A1", "grammar"),
+            new(idB, "Present simple affirmativ", "A1", "grammar"), // near-duplicate of A
+            new(idC, "Past continuous negative", "A1", "grammar"), // unrelated
+        ];
+
+        var suggestions = _sut.DetectNearDuplicateNodes(nodes);
+
+        var suggestion = Assert.Single(suggestions);
+        Assert.Equal(new HashSet<Guid> { idA, idB }, new HashSet<Guid> { suggestion.NodeAId, suggestion.NodeBId });
+    }
+
+    [Fact]
+    public void Fewer_than_two_nodes_returns_no_suggestions()
+    {
+        Assert.Empty(_sut.DetectNearDuplicateNodes([]));
+        Assert.Empty(_sut.DetectNearDuplicateNodes([new(Guid.NewGuid(), "Present simple", "A1", "grammar")]));
+    }
+
+    [Fact]
+    public void Case_and_whitespace_differences_alone_do_not_prevent_a_match()
+    {
+        NearDuplicateNodeCandidate[] nodes =
+        [
+            new(Guid.NewGuid(), "  Present Simple Affirmative  ", "A1", "grammar"),
+            new(Guid.NewGuid(), "present simple affirmative", "A1", "grammar"),
+        ];
+
+        var suggestion = Assert.Single(_sut.DetectNearDuplicateNodes(nodes));
+        Assert.Equal(1.0, suggestion.Similarity, precision: 5);
+    }
 }

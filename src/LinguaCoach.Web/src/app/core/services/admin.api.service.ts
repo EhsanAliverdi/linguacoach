@@ -21,6 +21,7 @@ import {
   CreateSkillGraphNodeRequest, CreateSkillGraphNodeResponse, UpdateSkillGraphNodeRequest, SkillGraphIsolatedNodesResponse,
   SkillGraphPlacementSuggestionResponse,
   GraphChangeSuggestionsResponse,
+  NearDuplicateSuggestionsResponse, MergeNodesResponse,
   StudentListQuery, PagedResponse, AiModelPricingItem,
   AiModelPricingOverrideItem, CreatePricingOverrideRequest, UpdatePricingOverrideRequest,
   AdminNotificationItem, AdminOutboxItem,
@@ -273,6 +274,13 @@ export class AdminApiService {
   // Phase 6.3a — deterministic, no AI; advisory only, nothing is ever auto-applied.
   getRedundantEdgeSuggestions(): Observable<GraphChangeSuggestionsResponse> {
     return this.http.get<GraphChangeSuggestionsResponse>(`${this.api}/skill-graph/suggestions/redundant-edges`);
+  }
+  // Phase 6.3c — deterministic, no AI; advisory only. Merge is a separate explicit admin action.
+  getNearDuplicateSuggestions(): Observable<NearDuplicateSuggestionsResponse> {
+    return this.http.get<NearDuplicateSuggestionsResponse>(`${this.api}/skill-graph/suggestions/near-duplicates`);
+  }
+  mergeSkillGraphNodes(keepNodeId: string, mergeAwayNodeId: string): Observable<MergeNodesResponse> {
+    return this.http.post<MergeNodesResponse>(`${this.api}/skill-graph/nodes/${keepNodeId}/merge/${mergeAwayNodeId}`, {});
   }
 
   // Prompts

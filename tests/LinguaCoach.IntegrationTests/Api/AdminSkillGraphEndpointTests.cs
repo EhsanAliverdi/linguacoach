@@ -940,6 +940,180 @@ public sealed class AdminSkillGraphEndpointTests : IClassFixture<ApiTestFactory>
         var resp = await client.GetAsync("/api/admin/skill-graph/suggestions/redundant-edges");
         Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
     }
+
+    // ── Skill Graph rebuild Phase 6.3c — near-duplicate node detection & merge ───────────────
+
+    private async Task<SkillGraphNode> SeedNodeWithTitleAsync(string key, string title, string cefrLevel = "A1", string skill = "grammar")
+    {
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var node = new SkillGraphNode(key, title, "Description.", cefrLevel, skill);
+        db.SkillGraphNodes.Add(node);
+        await db.SaveChangesAsync();
+        return node;
+    }
+
+    [Fact]
+    public async Task GetNearDuplicateSuggestions_FlagsHighlySimilarTitlesInTheSameCefrAndSkill()
+    {
+        var suffix = Guid.NewGuid().ToString("N");
+        var a = await SeedNodeWithTitleAsync($"grammar.dup_a_{suffix}.a1", "Present simple affirmative");
+        var b = await SeedNodeWithTitleAsync($"grammar.dup_b_{suffix}.a1", "Present simple affirmatve"); // typo'd near-duplicate
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.GetAsync("/api/admin/skill-graph/suggestions/near-duplicates");
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var suggestions = body.GetProperty("suggestions").EnumerateArray().ToList();
+        var match = suggestions.SingleOrDefault(s =>
+            new[] { s.GetProperty("nodeAId").GetGuid(), s.GetProperty("nodeBId").GetGuid() }.OrderBy(x => x)
+                .SequenceEqual(new[] { a.Id, b.Id }.OrderBy(x => x)));
+        Assert.True(match.ValueKind != JsonValueKind.Undefined, "Expected the near-duplicate pair to be flagged.");
+        Assert.True(match.GetProperty("similarity").GetDouble() >= 0.85);
+    }
+
+    [Fact]
+    public async Task GetNearDuplicateSuggestions_EmptyWhenTitlesAreGenuinelyDifferent()
+    {
+        var suffix = Guid.NewGuid().ToString("N");
+        var a = await SeedNodeWithTitleAsync($"grammar.nodup_a_{suffix}.a1", "Present simple affirmative");
+        var b = await SeedNodeWithTitleAsync($"grammar.nodup_b_{suffix}.a1", "Past continuous negative");
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.GetAsync("/api/admin/skill-graph/suggestions/near-duplicates");
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var suggestions = body.GetProperty("suggestions").EnumerateArray().ToList();
+        Assert.DoesNotContain(suggestions, s =>
+            new[] { s.GetProperty("nodeAId").GetGuid(), s.GetProperty("nodeBId").GetGuid() }.OrderBy(x => x)
+                .SequenceEqual(new[] { a.Id, b.Id }.OrderBy(x => x)));
+    }
+
+    [Fact]
+    public async Task NonAdmin_rejected_for_near_duplicates_endpoint()
+    {
+        var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"sg_nearDup_nonadmin_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(_factory, token);
+
+        var resp = await client.GetAsync("/api/admin/skill-graph/suggestions/near-duplicates");
+        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task MergeNodes_RepointsEdgesAndDeactivatesTheMergedAwayNode()
+    {
+        var suffix = Guid.NewGuid().ToString("N");
+        var keep = await SeedNodeAsync($"grammar.merge_keep_{suffix}.a1");
+        var mergeAway = await SeedNodeAsync($"grammar.merge_away_{suffix}.a1");
+        var predecessor = await SeedNodeAsync($"grammar.merge_pred_{suffix}.a1");
+        var dependent = await SeedNodeAsync($"grammar.merge_dep_{suffix}.a1");
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            db.SkillGraphPrerequisiteEdges.Add(new SkillGraphPrerequisiteEdge(mergeAway.Id, predecessor.Id)); // predecessor -> mergeAway
+            db.SkillGraphPrerequisiteEdges.Add(new SkillGraphPrerequisiteEdge(dependent.Id, mergeAway.Id)); // mergeAway -> dependent
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PostAsync($"/api/admin/skill-graph/nodes/{keep.Id}/merge/{mergeAway.Id}", null);
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(2, body.GetProperty("repointedCount").GetInt32());
+        Assert.Equal(0, body.GetProperty("droppedCount").GetInt32());
+
+        using var verifyScope = _factory.Services.CreateScope();
+        var verifyDb = verifyScope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var mergedAwayNode = await verifyDb.SkillGraphNodes.FirstAsync(n => n.Id == mergeAway.Id);
+        Assert.False(mergedAwayNode.IsActive);
+
+        var remainingEdges = await verifyDb.SkillGraphPrerequisiteEdges
+            .Where(e => e.NodeId == keep.Id || e.PrerequisiteNodeId == keep.Id)
+            .ToListAsync();
+        Assert.Contains(remainingEdges, e => e.NodeId == keep.Id && e.PrerequisiteNodeId == predecessor.Id);
+        Assert.Contains(remainingEdges, e => e.NodeId == dependent.Id && e.PrerequisiteNodeId == keep.Id);
+        Assert.DoesNotContain(remainingEdges, e => e.NodeId == mergeAway.Id || e.PrerequisiteNodeId == mergeAway.Id);
+    }
+
+    [Fact]
+    public async Task MergeNodes_DropsAnEdgeThatWouldBecomeASelfLoop()
+    {
+        var suffix = Guid.NewGuid().ToString("N");
+        var keep = await SeedNodeAsync($"grammar.mergeself_keep_{suffix}.a1");
+        var mergeAway = await SeedNodeAsync($"grammar.mergeself_away_{suffix}.a1");
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            db.SkillGraphPrerequisiteEdges.Add(new SkillGraphPrerequisiteEdge(mergeAway.Id, keep.Id)); // keep -> mergeAway (would self-loop after repoint)
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PostAsync($"/api/admin/skill-graph/nodes/{keep.Id}/merge/{mergeAway.Id}", null);
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(0, body.GetProperty("repointedCount").GetInt32());
+        Assert.Equal(1, body.GetProperty("droppedCount").GetInt32());
+    }
+
+    [Fact]
+    public async Task MergeNodes_RejectsMergingANodeIntoItself()
+    {
+        var node = await SeedNodeAsync($"grammar.mergeselfsame_{Guid.NewGuid():N}.a1");
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PostAsync($"/api/admin/skill-graph/nodes/{node.Id}/merge/{node.Id}", null);
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task MergeNodes_RejectsWhenTheResultWouldCreateACycle()
+    {
+        // X requires mergeAway (mergeAway -> X), and keep requires X (X -> keep) already exists.
+        // Repointing mergeAway -> X onto keep -> X gives "X requires keep", which combined with
+        // the existing "keep requires X" is a direct 2-node cycle.
+        var suffix = Guid.NewGuid().ToString("N");
+        var keep = await SeedNodeAsync($"grammar.mergecycle_keep_{suffix}.a1");
+        var mergeAway = await SeedNodeAsync($"grammar.mergecycle_away_{suffix}.a1");
+        var x = await SeedNodeAsync($"grammar.mergecycle_x_{suffix}.a1");
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            db.SkillGraphPrerequisiteEdges.Add(new SkillGraphPrerequisiteEdge(x.Id, mergeAway.Id)); // mergeAway -> X
+            db.SkillGraphPrerequisiteEdges.Add(new SkillGraphPrerequisiteEdge(keep.Id, x.Id)); // X -> keep
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PostAsync($"/api/admin/skill-graph/nodes/{keep.Id}/merge/{mergeAway.Id}", null);
+        Assert.Equal(HttpStatusCode.Conflict, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task NonAdmin_rejected_for_merge_endpoint()
+    {
+        var suffix = Guid.NewGuid().ToString("N");
+        var keep = await SeedNodeAsync($"grammar.mergenonadmin_keep_{suffix}.a1");
+        var mergeAway = await SeedNodeAsync($"grammar.mergenonadmin_away_{suffix}.a1");
+        var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"sg_merge_nonadmin_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(_factory, token);
+
+        var resp = await client.PostAsync($"/api/admin/skill-graph/nodes/{keep.Id}/merge/{mergeAway.Id}", null);
+        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
+    }
 }
 
 /// <summary>Draft-endpoint tests specifically — uses <see cref="ActivityTestFactory"/>'s

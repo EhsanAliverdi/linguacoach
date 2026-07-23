@@ -842,6 +842,96 @@ public sealed class AdminSkillGraphController : ControllerBase
         }).ToList();
     }
 
+    /// <summary>Skill Graph rebuild Phase 6.3c — on-demand near-duplicate node audit: scans every
+    /// active node for title-similar siblings sharing the same CEFR level + Skill. Advisory only —
+    /// nothing is merged automatically; the admin reviews each pair and either dismisses it or
+    /// calls <see cref="MergeNodes"/> to merge one into the other.</summary>
+    [HttpGet("suggestions/near-duplicates")]
+    public async Task<IActionResult> GetNearDuplicateSuggestions(CancellationToken ct)
+    {
+        var candidates = await _db.SkillGraphNodes.AsNoTracking()
+            .Where(n => n.IsActive)
+            .Select(n => new NearDuplicateNodeCandidate(n.Id, n.Title, n.CefrLevel, n.Skill))
+            .ToListAsync(ct);
+
+        var suggestions = _changeSuggestions.DetectNearDuplicateNodes(candidates);
+
+        var allIds = suggestions.SelectMany(s => new[] { s.NodeAId, s.NodeBId }).Distinct().ToList();
+        var titlesById = await _db.SkillGraphNodes.AsNoTracking()
+            .Where(n => allIds.Contains(n.Id))
+            .ToDictionaryAsync(n => n.Id, n => n.Title, ct);
+
+        var dtos = suggestions.Select(s => (object)new
+        {
+            nodeAId = s.NodeAId, nodeATitle = titlesById.GetValueOrDefault(s.NodeAId, "(unknown)"),
+            nodeBId = s.NodeBId, nodeBTitle = titlesById.GetValueOrDefault(s.NodeBId, "(unknown)"),
+            cefrLevel = s.CefrLevel, skill = s.Skill,
+            similarity = s.Similarity,
+        }).ToList();
+
+        return Ok(new { count = suggestions.Count, suggestions = dtos });
+    }
+
+    /// <summary>Merges <paramref name="mergeAwayNodeId"/> into <paramref name="keepNodeId"/>: every
+    /// edge touching the merge-away node is re-pointed onto the keep node (dropping any edge that
+    /// would become a self-loop or duplicate an edge that already exists), the merge-away node is
+    /// then deactivated (never hard-deleted, per this codebase's archive-not-delete convention) —
+    /// same primitive <see cref="SkillGraphNode.Deactivate"/> used by node rejection. The resulting
+    /// edge set is validated against the full active graph before anything is written, exactly like
+    /// <see cref="TryAddPrerequisiteEdgeAsync"/>, so a merge can never silently introduce a cycle.
+    /// An explicit admin action — Phase 6.3c's detection above never calls this automatically.</summary>
+    [HttpPost("nodes/{keepNodeId:guid}/merge/{mergeAwayNodeId:guid}")]
+    public async Task<IActionResult> MergeNodes(Guid keepNodeId, Guid mergeAwayNodeId, CancellationToken ct)
+    {
+        if (keepNodeId == mergeAwayNodeId)
+            return BadRequest(new { error = "Cannot merge a node into itself." });
+
+        var keepNode = await _db.SkillGraphNodes.FirstOrDefaultAsync(n => n.Id == keepNodeId, ct);
+        var mergeAwayNode = await _db.SkillGraphNodes.FirstOrDefaultAsync(n => n.Id == mergeAwayNodeId, ct);
+        if (keepNode is null || mergeAwayNode is null)
+            return NotFound(new { error = "One or both nodes not found." });
+
+        var allEdges = await _db.SkillGraphPrerequisiteEdges.AsNoTracking()
+            .Select(e => new SkillGraphEdgeSummary(e.NodeId, e.PrerequisiteNodeId)).ToListAsync(ct);
+        var edgesTouchingMergeAway = allEdges
+            .Where(e => e.NodeId == mergeAwayNodeId || e.PrerequisiteNodeId == mergeAwayNodeId).ToList();
+        var untouchedEdges = allEdges.Except(edgesTouchingMergeAway).ToList();
+
+        var seen = new HashSet<(Guid Node, Guid Prerequisite)>(
+            untouchedEdges.Select(e => (e.NodeId, e.PrerequisiteNodeId)));
+        var repointed = new List<SkillGraphEdgeSummary>();
+        var droppedCount = 0;
+        foreach (var edge in edgesTouchingMergeAway)
+        {
+            var newNodeId = edge.NodeId == mergeAwayNodeId ? keepNodeId : edge.NodeId;
+            var newPrereqId = edge.PrerequisiteNodeId == mergeAwayNodeId ? keepNodeId : edge.PrerequisiteNodeId;
+
+            if (newNodeId == newPrereqId) { droppedCount++; continue; } // would become a self-loop
+            if (!seen.Add((newNodeId, newPrereqId))) { droppedCount++; continue; } // already exists post-repoint
+
+            repointed.Add(new SkillGraphEdgeSummary(newNodeId, newPrereqId));
+        }
+
+        var allNodes = await _db.SkillGraphNodes.AsNoTracking()
+            .Select(n => new SkillGraphNodeSummary(n.Id, n.Key)).ToListAsync(ct);
+        var trialEdges = untouchedEdges.Concat(repointed).ToList();
+        var validation = _validation.Validate(allNodes, trialEdges);
+        if (!validation.IsValid)
+            return Conflict(new { error = "Merging these nodes would create a circular prerequisite chain." });
+
+        var trackedEdgesTouchingMergeAway = await _db.SkillGraphPrerequisiteEdges
+            .Where(e => e.NodeId == mergeAwayNodeId || e.PrerequisiteNodeId == mergeAwayNodeId)
+            .ToListAsync(ct);
+        _db.SkillGraphPrerequisiteEdges.RemoveRange(trackedEdgesTouchingMergeAway);
+        foreach (var e in repointed)
+            _db.SkillGraphPrerequisiteEdges.Add(new SkillGraphPrerequisiteEdge(e.NodeId, e.PrerequisiteNodeId));
+
+        mergeAwayNode.Deactivate();
+        await _db.SaveChangesAsync(ct);
+
+        return Ok(new { keepNodeId, mergeAwayNodeId, repointedCount = repointed.Count, droppedCount });
+    }
+
     /// <summary>Coverage matrix: approved+active node count per CEFR level x skill, following the
     /// same pattern as the Delivery Health coverage-gap dashboard (bank-first-admin-backend-surface-
     /// audit.md's established convention) — flags combinations with zero coverage.</summary>

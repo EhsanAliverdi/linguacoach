@@ -189,6 +189,42 @@ real data).
       curated 600-node curriculum), rejected B through the actual admin UI (bulk-edit checkbox +
       reject reason + "Reject selected"), and confirmed the "Reconnect suggestions" card correctly
       appeared showing "6.3b verify A2 → 6.3b verify C2" with working Dismiss/Reconnect buttons.
-- [ ] 6.3c — Near-duplicate node detection
+- [x] 6.3c — Near-duplicate node detection — done 2026-07-24.
+      `IGraphChangeSuggestionService.DetectNearDuplicateNodes(candidates)` groups active nodes by
+      (CefrLevel, Skill) — comparing across levels/skills is meaningless, since the same title at
+      different CEFR levels can be a legitimately different node — and flags pairs whose titles
+      score ≥ a fixed `NearDuplicateSimilarityThreshold = 0.85` on a from-scratch Jaro-Winkler
+      similarity implementation (case-insensitive, trimmed). Threshold is hardcoded per the
+      approved plan's explicit "not admin-tunable" decision, matching this codebase's other
+      advisory constants (`MaxBatchSize`, `MaxModulesPerRetagSweep`) — revisit only if real usage
+      shows it misfires. New `GET /admin/skill-graph/suggestions/near-duplicates` (on-demand
+      whole-graph audit, same N+1-avoidance title-resolution pattern as 6.3a/6.3b) plus a new
+      explicit action endpoint `POST /admin/skill-graph/nodes/{keepNodeId}/merge/{mergeAwayNodeId}`
+      — re-points every edge touching the merge-away node onto the keep node (dropping any edge
+      that would become a self-loop or duplicate one that already exists post-repoint), validates
+      the resulting edge set against the full active graph via the same `ISkillGraphValidationService`
+      cycle check `AddPrerequisite` uses (rejects with 409 if a merge would introduce a cycle), then
+      calls `SkillGraphNode.Deactivate()` on the merge-away node — never a hard delete, per this
+      codebase's archive-not-delete convention. Detection is advisory-only; merging is a distinct,
+      explicit admin action, never triggered automatically by the audit. New "Near-duplicate nodes"
+      card on the main Skill Graph page (Run audit / Dismiss / "Keep A" / "Keep B" per pair,
+      mirroring the Graph audit / Reconnect suggestions cards' UX). +8 unit tests (near-identical
+      titles flagged, identical titles score 1.0, different CEFR levels not compared, different
+      skills not compared, genuinely different titles not flagged, 3-node group flags only the
+      similar pair, fewer-than-2-nodes edge cases, case/whitespace-only differences still match),
+      +8 integration tests (audit finds/excludes pairs correctly, non-admin rejected, merge
+      re-points and deactivates, merge drops a would-be self-loop edge, merge rejects
+      merging-into-self, merge rejects a would-be cycle, non-admin rejected for merge). Verified:
+      full backend suite (30 architecture + 2,506 unit + 1,355 integration) green, frontend `tsc
+      --noEmit` clean, 16/16 Skill Graph Karma specs green, and a full live end-to-end pass against
+      the real reseeded dev DB — created two disposable near-duplicate nodes ("6.3c verify Present
+      simple affirmative" / "...affirmatve") via the real API, confirmed the audit endpoint flagged
+      them (similarity ≈0.885), merged one into the other via the real merge endpoint, confirmed the
+      merged-away node came back `isActive: false`, then rejected both disposable nodes to clean up
+      rather than leaving them in the curated curriculum. The live audit against the real 600-node
+      curriculum also surfaced **170 pre-existing near-duplicate pairs already present in the real
+      data** — a genuine, expected finding (not a bug): a curriculum this size accumulates enough
+      title collisions across CEFR×Skill groups that this is a real backlog for admins to review,
+      not synthetic noise.
 - [ ] 6.3d — Reparenting-on-edit suggestions
 - [ ] 6.3e — Admin UI surface for suggestions review

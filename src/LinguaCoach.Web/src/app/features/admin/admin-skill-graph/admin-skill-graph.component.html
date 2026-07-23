@@ -104,6 +104,37 @@
     }
   </sp-admin-card>
 
+  <!-- Skill Graph rebuild Phase 6.3c (2026-07-24) — deterministic (no AI) near-duplicate node
+       audit. Advisory only: "Merge" is a real, explicit API call that repoints edges and
+       deactivates the merged-away node; "Dismiss" just hides the suggestion. -->
+  <sp-admin-card title="Near-duplicate nodes">
+    <p class="sp-admin-section-sub">Checks nodes at the same CEFR level and Skill for highly similar titles — a likely sign of accidental duplicate content. Merging keeps one node, re-points the other's prerequisite edges onto it, and deactivates the duplicate.</p>
+    <sp-admin-button variant="primary" size="sm" appearance="outline" [disabled]="auditingDuplicates()" (clicked)="runNearDuplicateAudit()">
+      {{ auditingDuplicates() ? 'Auditing…' : 'Run near-duplicate audit' }}
+    </sp-admin-button>
+    @if (duplicateAuditError()) {
+      <sp-admin-alert variant="error">{{ duplicateAuditError() }}</sp-admin-alert>
+    }
+    @if (duplicateAuditRun()) {
+      @if (nearDuplicateSuggestions().length === 0) {
+        <sp-admin-alert variant="success">No near-duplicate nodes found.</sp-admin-alert>
+      } @else {
+        <ul class="sp-admin-simple-list">
+          @for (s of nearDuplicateSuggestions(); track $index) {
+            <li class="sp-admin-form-actions" style="justify-content:space-between;">
+              <span>{{ s.nodeATitle }} ↔ {{ s.nodeBTitle }} <span class="sp-admin-text-muted">— {{ s.cefrLevel }} / {{ s.skill }}, {{ (s.similarity * 100) | number: '1.0-0' }}% similar</span></span>
+              <span class="sp-admin-form-actions" style="padding:0; background:none; border:none;">
+                <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="dismissNearDuplicateSuggestion($index)">Dismiss</sp-admin-button>
+                <sp-admin-button size="sm" variant="primary" appearance="outline" (clicked)="mergeNearDuplicateSuggestion(s, $index, 'A')">Keep "{{ s.nodeATitle }}"</sp-admin-button>
+                <sp-admin-button size="sm" variant="primary" appearance="outline" (clicked)="mergeNearDuplicateSuggestion(s, $index, 'B')">Keep "{{ s.nodeBTitle }}"</sp-admin-button>
+              </span>
+            </li>
+          }
+        </ul>
+      }
+    }
+  </sp-admin-card>
+
   <!-- Skill Graph rebuild Phase 6.3b (2026-07-23) — reject-triggered reconnect suggestions.
        Advisory only: shows up after rejecting a node with both a real prerequisite and a real
        dependent — "Reconnect" makes a real add-prerequisite call; "Dismiss" just hides it. -->

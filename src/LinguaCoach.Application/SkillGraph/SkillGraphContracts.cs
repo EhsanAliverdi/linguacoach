@@ -232,6 +232,16 @@ public interface IGraphChangeSuggestionService
     IReadOnlyList<RejectReconnectGroup> DetectReconnectsAfterReject(
         IReadOnlyList<Guid> rejectedNodeIds,
         IReadOnlyList<SkillGraphEdgeSummary> edgesBeforeRemoval);
+
+    /// <summary>Phase 6.3c — pure title-similarity scan for likely-duplicate nodes. Only pairs
+    /// sharing the same <c>CefrLevel</c> and <c>Skill</c> are compared (comparing across levels/
+    /// skills is meaningless — "Present simple" at A1 and "Present simple" at B1 are legitimately
+    /// different nodes); a pair is flagged when Jaro-Winkler title similarity is at or above the
+    /// fixed <see cref="GraphChangeSuggestionService.NearDuplicateSimilarityThreshold"/> constant
+    /// (not admin-tunable per the approved plan — revisit only if real usage shows misfires).
+    /// Advisory only: the caller decides which node to keep via a separate merge action.</summary>
+    IReadOnlyList<NearDuplicateNodeSuggestion> DetectNearDuplicateNodes(
+        IReadOnlyList<NearDuplicateNodeCandidate> nodes);
 }
 
 /// <summary>One rejected node's reconnect review group. <c>SuggestedReconnects</c> is every
@@ -242,3 +252,16 @@ public sealed record RejectReconnectGroup(
     IReadOnlyList<Guid> OrphanedPredecessorIds,
     IReadOnlyList<Guid> OrphanedDependentIds,
     IReadOnlyList<SkillGraphEdgeSummary> SuggestedReconnects);
+
+/// <summary>Input row for <see cref="IGraphChangeSuggestionService.DetectNearDuplicateNodes"/>.</summary>
+public sealed record NearDuplicateNodeCandidate(Guid Id, string Title, string CefrLevel, string Skill);
+
+/// <summary>One candidate duplicate pair. Advisory only — the admin picks which node to keep and
+/// which to merge away via a separate merge endpoint; this record makes no claim about which one
+/// is "canonical."</summary>
+public sealed record NearDuplicateNodeSuggestion(
+    Guid NodeAId,
+    Guid NodeBId,
+    string CefrLevel,
+    string Skill,
+    double Similarity);
