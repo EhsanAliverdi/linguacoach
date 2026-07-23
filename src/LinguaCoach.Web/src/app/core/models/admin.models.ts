@@ -1652,6 +1652,21 @@ export interface SkillGraphIsolatedNodesResponse {
   isolated: SkillGraphIsolatedNode[];
 }
 
+// Phase 6.2 — Node-to-Node AI placement suggestions (advisory only, never auto-applied).
+export interface SkillGraphPlacementSuggestion {
+  id: string;
+  key: string;
+  title: string;
+  confidence: number;
+}
+
+export interface SkillGraphPlacementSuggestionResponse {
+  success: boolean;
+  prerequisites: SkillGraphPlacementSuggestion[];
+  dependents: SkillGraphPlacementSuggestion[];
+  error: string | null;
+}
+
 export interface SkillGraphDraftResponse {
   queued: boolean;
   createdCount: number;

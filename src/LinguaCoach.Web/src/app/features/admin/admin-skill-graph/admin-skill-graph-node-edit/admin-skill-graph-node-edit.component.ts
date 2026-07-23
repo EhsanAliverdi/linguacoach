@@ -5,7 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin, of, Observable } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { AdminApiService } from '../../../../core/services/admin.api.service';
-import { SkillGraphEdge, SkillGraphNode, SkillGraphNodeDetail, SkillGraphNodeListItem, SkillGraphTaxonomy } from '../../../../core/models/admin.models';
+import { SkillGraphEdge, SkillGraphNode, SkillGraphNodeDetail, SkillGraphNodeListItem, SkillGraphPlacementSuggestion, SkillGraphTaxonomy } from '../../../../core/models/admin.models';
 import {
   SpAdminAlertComponent,
   SpAdminButtonComponent,
@@ -217,6 +217,9 @@ export class AdminSkillGraphNodeEditComponent implements OnInit {
     this.error.set('');
     this.graphLevel.set(1);
     this.clearPendingEdgeState();
+    this.placementSuggestionError.set('');
+    this.placementPrereqSuggestions.set([]);
+    this.placementDependentSuggestions.set([]);
     this.api.getSkillGraphNode(this.nodeId).subscribe({
       next: item => {
         this.loading.set(false);
@@ -360,5 +363,59 @@ export class AdminSkillGraphNodeEditComponent implements OnInit {
 
   undoRemoveUnlock(id: string): void {
     this.pendingRemoveUnlockIds.update(set => { const next = new Set(set); next.delete(id); return next; });
+  }
+
+  // ── Skill Graph rebuild Phase 6.2 (2026-07-23) — AI-proposed placement suggestions. Advisory
+  // only: accepting one just stages it through the exact same addPrerequisite/addUnlock path as
+  // a manually-picked node — nothing here ever calls the graph-mutating API directly, so a
+  // suggestion is not written to the graph until the admin hits Save, same as any other edit. ──
+  suggestingPlacement = signal(false);
+  placementSuggestionError = signal('');
+  placementPrereqSuggestions = signal<SkillGraphPlacementSuggestion[]>([]);
+  placementDependentSuggestions = signal<SkillGraphPlacementSuggestion[]>([]);
+
+  suggestPlacement(): void {
+    const current = this.item();
+    if (!current) return;
+    this.suggestingPlacement.set(true);
+    this.placementSuggestionError.set('');
+    this.placementPrereqSuggestions.set([]);
+    this.placementDependentSuggestions.set([]);
+    this.api.suggestSkillGraphNodePlacement(current.id).subscribe({
+      next: r => {
+        this.suggestingPlacement.set(false);
+        if (!r.success) {
+          this.placementSuggestionError.set(r.error ?? 'Could not generate placement suggestions.');
+          return;
+        }
+        this.placementPrereqSuggestions.set(r.prerequisites);
+        this.placementDependentSuggestions.set(r.dependents);
+        if (r.prerequisites.length === 0 && r.dependents.length === 0) {
+          this.placementSuggestionError.set('No suggestions found — this node may already be well-connected, or too few related nodes exist yet.');
+        }
+      },
+      error: err => {
+        this.suggestingPlacement.set(false);
+        this.placementSuggestionError.set(err.error?.error ?? 'Could not generate placement suggestions.');
+      },
+    });
+  }
+
+  acceptPlacementPrereqSuggestion(s: SkillGraphPlacementSuggestion): void {
+    this.addPrerequisite({ value: s.id, label: s.title, sublabel: `confidence ${Math.round(s.confidence * 100)}%` });
+    this.placementPrereqSuggestions.update(list => list.filter(x => x.id !== s.id));
+  }
+
+  dismissPlacementPrereqSuggestion(s: SkillGraphPlacementSuggestion): void {
+    this.placementPrereqSuggestions.update(list => list.filter(x => x.id !== s.id));
+  }
+
+  acceptPlacementDependentSuggestion(s: SkillGraphPlacementSuggestion): void {
+    this.addUnlock({ value: s.id, label: s.title, sublabel: `confidence ${Math.round(s.confidence * 100)}%` });
+    this.placementDependentSuggestions.update(list => list.filter(x => x.id !== s.id));
+  }
+
+  dismissPlacementDependentSuggestion(s: SkillGraphPlacementSuggestion): void {
+    this.placementDependentSuggestions.update(list => list.filter(x => x.id !== s.id));
   }
 }

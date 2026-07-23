@@ -26,6 +26,11 @@ public static class DefaultAiSeeder
     // existing Module covers. Advisory only; every proposed node key is validated against the real
     // candidate list by ModuleSkillGraphTaggingService before being trusted.
     public const string ModuleSkillGraphProposeCoverageKey = "module_skill_graph_propose_coverage";
+    // Skill Graph rebuild Phase 6.2 (2026-07-23) — AI-proposes candidate prerequisite/dependent
+    // edges for one existing SkillGraphNode. Advisory only, NEVER auto-applied — every suggestion
+    // is reviewed by the admin and goes through the existing staged add-prerequisite/add-unlock
+    // flow on Edit, only committed on an explicit Save.
+    public const string SkillGraphSuggestPlacementKey = "skill_graph_suggest_placement";
     // Adaptive Curriculum Sprint 5 (2026-07-20) — AI-ranks an already-eligible, CEFR-filtered
     // candidate pool for Today/Practice Gym delivery, reasoning over goal-vector relevance and
     // skill-graph mastery-gap flags the caller already computed. Advisory only; every ranked id is
@@ -4924,6 +4929,44 @@ Rules:
 - Do not include any text outside the JSON object. No markdown fences.
 """;
 
+    // Skill Graph rebuild Phase 6.2 — proposes candidate prerequisite/dependent edges for an
+    // existing SkillGraphNode. Advisory only: the caller validates every proposed key against the
+    // real candidate list before applying anything, and never auto-applies a result — the admin
+    // reviews and stages each accepted suggestion before it is saved.
+    private const string SkillGraphSuggestPlacementContent = """
+You are suggesting where a Skill Graph competency node belongs relative to other nodes, for an adaptive English-language tutoring app's prerequisite graph. You do NOT decide anything final — every edge you propose is checked against a fixed candidate list and reviewed by a human admin before it is ever applied.
+
+Node title: {{nodeTitle}}
+Node description: {{nodeDescription}}
+Node CEFR level: {{cefrLevel}}
+Node skill: {{skill}}
+
+Candidate nodes this one might connect to (JSON array of {key, title}) — these are real, already-approved nodes, excluding this node itself and anything already linked to it:
+{{candidateNodesJson}}
+
+From the candidate list above ONLY, identify:
+1. "prerequisites" — node(s) a learner should master BEFORE this one (this node depends on them).
+2. "dependents" — node(s) that should come AFTER this one (they depend on this node).
+
+Most nodes have 0-3 genuine prerequisites and 0-3 genuine dependents, not the whole candidate list. Only suggest an edge if the teaching order genuinely makes sense — do not force a connection just to include something. A node can appear in at most one of the two lists, never both.
+
+Return ONLY valid JSON (no markdown, no text outside the JSON object) matching this exact shape:
+
+{
+  "prerequisites": [
+    { "key": "<exact key from the candidate list>", "confidence": <number 0-1> }
+  ],
+  "dependents": [
+    { "key": "<exact key from the candidate list>", "confidence": <number 0-1> }
+  ]
+}
+
+Rules:
+- Only use a "key" value that appears exactly in the candidate list given above. Never invent a key.
+- If nothing in the candidate list genuinely belongs in a list, return an empty array for it.
+- Do not include any text outside the JSON object. No markdown fences.
+""";
+
     // Adaptive Curriculum Sprint 5 — ranks an already-eligible, already CEFR-filtered content
     // candidate pool for Today/Practice Gym delivery. Advisory only: the caller validates every
     // ranked id against the real candidate list before applying anything.
@@ -5053,6 +5096,16 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             ModuleSkillGraphProposeCoverageKey, ModuleSkillGraphProposeCoverageContent,
             maxInputTokens: 1600, maxOutputTokens: 900, ct);
+
+        // Skill Graph rebuild Phase 6.2 — Node-to-Node placement suggestions (advisory only, never
+        // auto-applied — see NodeGraphPlacementSuggestionService's own doc comment). 1700 was
+        // undersized against a real MaxPlacementCandidates=60 candidate list (observed ~1888
+        // tokens live against the real reseeded dev DB); raised with real headroom above the
+        // observed ceiling, matching the Sprint 9/14/Rebuild-Phase-2 token-budget-fix precedent
+        // (never just barely above observed).
+        await SeedOrUpgradePromptAsync(db, logger,
+            SkillGraphSuggestPlacementKey, SkillGraphSuggestPlacementContent,
+            maxInputTokens: 2400, maxOutputTokens: 1000, ct);
 
         // Sprint 14 — 3200 was undersized for A1's candidate pool (observed ~3260 tokens live,
         // blocking Today/Practice Gym entirely for every A1 student); raised with real headroom

@@ -687,6 +687,10 @@ public static class DependencyInjection
         // Adaptive Curriculum Sprint 2 — Module-to-skill-graph-node AI re-tagging.
         services.AddScoped<LinguaCoach.Application.SkillGraph.IModuleSkillGraphTaggingService,
             LinguaCoach.Infrastructure.SkillGraph.ModuleSkillGraphTaggingService>();
+        // Skill Graph rebuild Phase 6.2 — Node-to-Node AI placement suggestions (advisory only,
+        // never auto-applied — see NodeGraphPlacementSuggestionService's own doc comment).
+        services.AddScoped<LinguaCoach.Application.SkillGraph.INodeGraphPlacementSuggestionService,
+            LinguaCoach.Infrastructure.SkillGraph.NodeGraphPlacementSuggestionService>();
         // Sprint 14.1 — SkillGraphNode context/focus tag diagnose+AI-repair.
         services.AddScoped<LinguaCoach.Application.SkillGraph.ISkillGraphNodeRepairService,
             LinguaCoach.Infrastructure.SkillGraph.SkillGraphNodeRepairService>();

@@ -19,6 +19,7 @@ import {
   SkillGraphDraftResponse, SkillGraphBatchActionResponse, SkillGraphCoverageResponse,
   SkillGraphRetagResponse, SkillGraphContentCoverageResponse, SkillGraphResponse,
   CreateSkillGraphNodeRequest, CreateSkillGraphNodeResponse, UpdateSkillGraphNodeRequest, SkillGraphIsolatedNodesResponse,
+  SkillGraphPlacementSuggestionResponse,
   StudentListQuery, PagedResponse, AiModelPricingItem,
   AiModelPricingOverrideItem, CreatePricingOverrideRequest, UpdatePricingOverrideRequest,
   AdminNotificationItem, AdminOutboxItem,
@@ -263,6 +264,10 @@ export class AdminApiService {
   }
   getIsolatedSkillGraphNodes(): Observable<SkillGraphIsolatedNodesResponse> {
     return this.http.get<SkillGraphIsolatedNodesResponse>(`${this.api}/skill-graph/nodes/isolated`);
+  }
+  // Phase 6.2 — advisory only; nothing here is ever auto-applied.
+  suggestSkillGraphNodePlacement(nodeId: string): Observable<SkillGraphPlacementSuggestionResponse> {
+    return this.http.post<SkillGraphPlacementSuggestionResponse>(`${this.api}/skill-graph/nodes/${nodeId}/suggest-placement`, {});
   }
 
   // Prompts

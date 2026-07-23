@@ -127,6 +127,36 @@ public sealed record ModuleSkillGraphTaggingResult(
 
 public sealed record ModuleSkillGraphNodeMatch(Guid NodeId, double Confidence);
 
+/// <summary>Phase 6.2 (2026-07-23) — AI-proposes candidate prerequisite/dependent edges for one
+/// existing <c>SkillGraphNode</c> (Node→Node, unlike <see cref="IModuleSkillGraphTaggingService"/>'s
+/// Module→Node). Structurally identical bounded-call/retry-once/never-throws shape. Deliberately
+/// advisory only, NEVER auto-applied — an edge is structural, unlike Module tagging's routing
+/// metadata, so every suggestion here goes through the admin's existing staged add-prerequisite/
+/// add-unlock review on the Edit page, only committed on an explicit Save.</summary>
+public interface INodeGraphPlacementSuggestionService
+{
+    Task<NodePlacementSuggestionResult> SuggestPlacementAsync(
+        NodePlacementSuggestionRequest request, CancellationToken ct = default);
+}
+
+/// <summary><c>CandidateNodes</c> is the real, already-bounded set of other approved/active nodes
+/// the AI may choose from (excludes the node itself and anything already linked in either
+/// direction) — same "hallucinated key must be structurally impossible to apply" discipline as
+/// <see cref="ModuleSkillGraphTaggingRequest"/>.</summary>
+public sealed record NodePlacementSuggestionRequest(
+    Guid NodeId,
+    string NodeTitle,
+    string NodeDescription,
+    string CefrLevel,
+    string Skill,
+    IReadOnlyList<SkillGraphNodeCandidate> CandidateNodes);
+
+public sealed record NodePlacementSuggestionResult(
+    bool Success,
+    IReadOnlyList<ModuleSkillGraphNodeMatch> PrerequisiteSuggestions,
+    IReadOnlyList<ModuleSkillGraphNodeMatch> DependentSuggestions,
+    string? ErrorMessage);
+
 // ── Sprint 14.1 — "diagnose then AI-repair" for SkillGraphNode, mirroring the same
 // IModuleRepairService/ILessonRepairService/IExerciseRepairService/IResourceBankRepairService
 // shape (see AdminRepairContracts). Diagnoses missing

@@ -714,6 +714,81 @@ public sealed class AdminSkillGraphEndpointTests : IClassFixture<ApiTestFactory>
         Assert.Equal(HttpStatusCode.Forbidden, (await client.GetAsync("/api/admin/skill-graph/nodes/isolated")).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await client.PostAsJsonAsync("/api/admin/skill-graph/nodes/import", new { nodes = Array.Empty<object>() })).StatusCode);
     }
+
+    // ── Skill Graph rebuild Phase 6.2 — Node-to-Node AI placement suggestions (advisory only).
+    // This class's plain ApiTestFactory has no AI provider configured, so these tests only cover
+    // the no-AI-call and graceful-degradation paths — the response-parsing/candidate-matching
+    // logic itself is exhaustively covered by NodeGraphPlacementSuggestionServiceTests (unit,
+    // SwappableFakeAiProvider). ─────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task SuggestPlacement_NodeNotFound_Returns404()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PostAsync($"/api/admin/skill-graph/nodes/{Guid.NewGuid()}/suggest-placement", null);
+        Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task SuggestPlacement_NoCandidateNodes_ReturnsSuccessWithEmptyLists()
+    {
+        // A node whose skill/CEFR level has no other approved nodes yet — matches
+        // NodeGraphPlacementSuggestionServiceTests' "no candidates" case at the HTTP layer.
+        var suffix = Guid.NewGuid().ToString("N");
+        var node = await SeedNodeAsync($"pronunciation.suggest_none_{suffix}.c2", "C2", "pronunciation");
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PostAsync($"/api/admin/skill-graph/nodes/{node.Id}/suggest-placement", null);
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(body.GetProperty("success").GetBoolean());
+        Assert.Empty(body.GetProperty("prerequisites").EnumerateArray());
+        Assert.Empty(body.GetProperty("dependents").EnumerateArray());
+    }
+
+    [Fact]
+    public async Task SuggestPlacement_WithRealCandidates_NeverThrowsEvenWithoutARealAiProvider()
+    {
+        // This class's plain ApiTestFactory has no AI provider configured, so the service must
+        // degrade gracefully (200 OK, success=false, error message set) rather than a 500 — the
+        // AI-draft-then-validate "never throws" guarantee applies here too.
+        var suffix = Guid.NewGuid().ToString("N");
+        var node = await SeedNodeAsync($"grammar.suggest_target_{suffix}.a1", "A1", "grammar");
+        var candidate = await SeedNodeAsync($"grammar.suggest_candidate_{suffix}.a1", "A1", "grammar");
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var trackedCandidate = await db.SkillGraphNodes.FirstAsync(n => n.Id == candidate.Id);
+            trackedCandidate.Approve(null);
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PostAsync($"/api/admin/skill-graph/nodes/{node.Id}/suggest-placement", null);
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.False(body.GetProperty("success").GetBoolean());
+        Assert.False(string.IsNullOrWhiteSpace(body.GetProperty("error").GetString()));
+    }
+
+    [Fact]
+    public async Task NonAdmin_rejected_for_suggest_placement_endpoint()
+    {
+        var node = await SeedNodeAsync($"grammar.suggest_nonadmin_{Guid.NewGuid():N}.a1");
+        var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"sg_suggest_nonadmin_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(_factory, token);
+
+        var resp = await client.PostAsync($"/api/admin/skill-graph/nodes/{node.Id}/suggest-placement", null);
+        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
+    }
 }
 
 /// <summary>Draft-endpoint tests specifically — uses <see cref="ActivityTestFactory"/>'s

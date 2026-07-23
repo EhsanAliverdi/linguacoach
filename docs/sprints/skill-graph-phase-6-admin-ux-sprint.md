@@ -109,7 +109,35 @@ real data).
       search is the direct prerequisite Phase 6.2 needs to replace the current client-side
       `allNodesForPicker` (500-row load-and-filter) multi-select pickers with real search — not
       yet done, tracked as follow-up work when 6.2 starts.
-- [ ] 6.2 — Suggest placement (AI)
+- [x] 6.2 — Suggest placement (AI) — done 2026-07-23. New `INodeGraphPlacementSuggestionService`
+      (Infrastructure: `NodeGraphPlacementSuggestionService`), structurally identical to
+      `ModuleSkillGraphTaggingService` (bounded AI call, retried once on bad JSON, never throws,
+      every proposed key validated against the real candidate list) but Node→Node and returning
+      TWO directions in one call (`{"prerequisites": [...], "dependents": [...]}` instead of a
+      single `matches` array). New prompt `skill_graph_suggest_placement`. New endpoint
+      `POST /admin/skill-graph/nodes/{id}/suggest-placement` — builds candidates from the same
+      cross-link shape `Draft()` already uses (same skill any level, OR same CEFR level any
+      skill), bounded to 60, excluding the node itself and anything already linked in either
+      direction. **Never auto-applied** (unlike Module tagging) — the endpoint only returns a
+      reviewable list; accepting a suggestion on the frontend routes through the exact same
+      staged add-prerequisite/add-unlock mechanism the Edit page already has (built earlier this
+      session), so a suggestion is not written to the graph until an explicit Save, same as any
+      manual edit. Frontend: new "Suggest placement (AI)" card on the Edit page with per-suggestion
+      confidence % and Accept/Dismiss actions. +9 unit tests (`NodeGraphPlacementSuggestionServiceTests`,
+      fake-AI-provider pattern mirroring `ModuleSkillGraphTaggingServiceTests`), +4 integration
+      tests (404, no-candidates, graceful-degradation-without-a-real-AI-provider, non-admin
+      rejected). **Found and fixed live**: the initial `maxInputTokens: 1700` budget was undersized
+      against a real 60-candidate list (observed ~1888 tokens live against the real reseeded dev
+      DB) — raised to 2400 with real headroom, matching the Sprint 9/14/Rebuild-Phase-2
+      token-budget-fix precedent (never just barely above observed). Verified: full backend suite
+      (30 architecture + 2,484 unit + 1,341 integration) green, frontend `tsc --noEmit` clean,
+      25/25 Skill Graph Karma specs green, and — after the token-budget fix — a live end-to-end
+      check against the real dev DB and its configured AI provider returned genuinely sensible
+      suggestions for "Present continuous for actions happening now" (prerequisites: Subject
+      pronouns, Verb 'to be' negatives/questions; unlocks: Present simple negatives/questions,
+      Describing people and things aloud), and accepting one correctly staged it (dashed amber in
+      the graph + list, removed from the suggestion list, unsaved-changes banner appeared) exactly
+      like a manually-picked node.
 - [ ] 6.3a — Redundant-edge detection
 - [ ] 6.3b — Reject-triggered reconnect suggestions
 - [ ] 6.3c — Near-duplicate node detection

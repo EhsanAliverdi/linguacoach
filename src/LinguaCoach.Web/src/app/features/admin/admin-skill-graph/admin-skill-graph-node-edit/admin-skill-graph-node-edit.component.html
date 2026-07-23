@@ -61,6 +61,49 @@
       />
     </sp-admin-section-card>
 
+    <!-- ── Skill Graph rebuild Phase 6.2 (2026-07-23) — AI suggest placement. Advisory only:
+         accepting a suggestion stages it through the exact same path as a manual pick below —
+         nothing here is ever written to the graph until Save. ── -->
+    <sp-admin-section-card title="Suggest placement (AI)">
+      <p class="sp-admin-section-sub">Proposes candidate prerequisites/unlocks from other approved nodes in this Skill or CEFR level. Nothing is applied until you accept a suggestion (which stages it below) and click Save.</p>
+      <div class="sp-admin-form-actions" style="padding:0; background:none; border:none; margin-bottom:12px;">
+        <sp-admin-button size="sm" variant="primary" appearance="outline" [disabled]="suggestingPlacement()" (clicked)="suggestPlacement()">
+          {{ suggestingPlacement() ? 'Thinking…' : 'Suggest placement' }}
+        </sp-admin-button>
+      </div>
+      @if (placementSuggestionError()) { <sp-admin-alert variant="warning">{{ placementSuggestionError() }}</sp-admin-alert> }
+
+      @if (placementPrereqSuggestions().length > 0) {
+        <div class="sp-admin-section-h"><h3>Suggested prerequisites</h3></div>
+        <ul class="sp-admin-simple-list">
+          @for (s of placementPrereqSuggestions(); track s.id) {
+            <li class="sp-admin-form-actions" style="justify-content:space-between;">
+              <span>{{ s.title }} <span class="sp-admin-text-muted">· confidence {{ (s.confidence * 100) | number:'1.0-0' }}%</span></span>
+              <span class="sp-admin-form-actions" style="padding:0; background:none; border:none;">
+                <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="dismissPlacementPrereqSuggestion(s)">Dismiss</sp-admin-button>
+                <sp-admin-button size="sm" variant="primary" appearance="outline" (clicked)="acceptPlacementPrereqSuggestion(s)">Accept</sp-admin-button>
+              </span>
+            </li>
+          }
+        </ul>
+      }
+
+      @if (placementDependentSuggestions().length > 0) {
+        <div class="sp-admin-section-h"><h3>Suggested unlocks</h3></div>
+        <ul class="sp-admin-simple-list">
+          @for (s of placementDependentSuggestions(); track s.id) {
+            <li class="sp-admin-form-actions" style="justify-content:space-between;">
+              <span>{{ s.title }} <span class="sp-admin-text-muted">· confidence {{ (s.confidence * 100) | number:'1.0-0' }}%</span></span>
+              <span class="sp-admin-form-actions" style="padding:0; background:none; border:none;">
+                <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="dismissPlacementDependentSuggestion(s)">Dismiss</sp-admin-button>
+                <sp-admin-button size="sm" variant="primary" appearance="outline" (clicked)="acceptPlacementDependentSuggestion(s)">Accept</sp-admin-button>
+              </span>
+            </li>
+          }
+        </ul>
+      }
+    </sp-admin-section-card>
+
     <!-- ── User correction (2026-07-23) — adding/removing an edge no longer calls the API right
          away; it's staged here and only committed together with the core fields on Save. ── -->
     <sp-admin-section-card title="Prerequisites (must be mastered first)">

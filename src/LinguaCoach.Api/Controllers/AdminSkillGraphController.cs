@@ -29,21 +29,28 @@ public sealed class AdminSkillGraphController : ControllerBase
     // uses. An admin can call the endpoint again to sweep the next batch.
     private const int MaxModulesPerRetagSweep = 20;
 
+    // Skill Graph rebuild Phase 6.2 — bounds how many other nodes are offered to the AI as
+    // prerequisite/dependent placement candidates, mirroring MaxCrossLinkCandidates' discipline.
+    private const int MaxPlacementCandidates = 60;
+
     private readonly LinguaCoachDbContext _db;
     private readonly ISkillGraphDraftingService _drafting;
     private readonly ISkillGraphValidationService _validation;
     private readonly IModuleSkillGraphTaggingService _tagging;
     private readonly ISkillGraphNodeRepairService _repair;
+    private readonly INodeGraphPlacementSuggestionService _placementSuggestions;
 
     public AdminSkillGraphController(
         LinguaCoachDbContext db, ISkillGraphDraftingService drafting, ISkillGraphValidationService validation,
-        IModuleSkillGraphTaggingService tagging, ISkillGraphNodeRepairService repair)
+        IModuleSkillGraphTaggingService tagging, ISkillGraphNodeRepairService repair,
+        INodeGraphPlacementSuggestionService placementSuggestions)
     {
         _db = db;
         _drafting = drafting;
         _validation = validation;
         _tagging = tagging;
         _repair = repair;
+        _placementSuggestions = placementSuggestions;
     }
 
     // ── Sprint 14.1 — node tag diagnose+AI-repair, mirrors Resource Bank's
@@ -237,6 +244,56 @@ public sealed class AdminSkillGraphController : ControllerBase
             prerequisites,
             dependents,
             linkedModules,
+        });
+    }
+
+    /// <summary>Skill Graph rebuild Phase 6.2 — AI-proposes candidate prerequisite/dependent edges
+    /// for this node. Advisory only, NEVER auto-applied: the response is just a reviewable list —
+    /// accepting a suggestion still goes through the existing staged add-prerequisite/add-unlock
+    /// flow on the Edit page, only committed to the real graph on an explicit Save.</summary>
+    [HttpPost("nodes/{id:guid}/suggest-placement")]
+    public async Task<IActionResult> SuggestPlacement(Guid id, CancellationToken ct)
+    {
+        var node = await _db.SkillGraphNodes.AsNoTracking().FirstOrDefaultAsync(n => n.Id == id, ct);
+        if (node is null) return NotFound();
+
+        var existingPrereqIds = await _db.SkillGraphPrerequisiteEdges.AsNoTracking()
+            .Where(e => e.NodeId == id).Select(e => e.PrerequisiteNodeId).ToListAsync(ct);
+        var existingDependentIds = await _db.SkillGraphPrerequisiteEdges.AsNoTracking()
+            .Where(e => e.PrerequisiteNodeId == id).Select(e => e.NodeId).ToListAsync(ct);
+        var excludeIds = new HashSet<Guid>(existingPrereqIds.Concat(existingDependentIds)) { id };
+
+        // Same cross-link candidate shape as Draft()'s crossLinkNodes query — same skill (any
+        // level) or same CEFR level (any skill), bounded, excluding the node itself and anything
+        // already linked in either direction.
+        var candidateNodes = await _db.SkillGraphNodes.AsNoTracking()
+            .Where(n => n.ReviewStatus == AdminReviewStatus.Approved && n.IsActive
+                && !excludeIds.Contains(n.Id)
+                && (n.Skill == node.Skill || n.CefrLevel == node.CefrLevel))
+            .OrderBy(n => n.CefrLevel).ThenBy(n => n.Skill)
+            .Take(MaxPlacementCandidates)
+            .Select(n => new { n.Id, n.Key, n.Title })
+            .ToListAsync(ct);
+
+        var result = await _placementSuggestions.SuggestPlacementAsync(
+            new NodePlacementSuggestionRequest(
+                node.Id, node.Title, node.Description, node.CefrLevel, node.Skill,
+                candidateNodes.Select(n => new SkillGraphNodeCandidate(n.Id, n.Key, n.Title)).ToList()),
+            ct);
+
+        if (!result.Success)
+            return Ok(new { success = false, prerequisites = Array.Empty<object>(), dependents = Array.Empty<object>(), error = result.ErrorMessage });
+
+        var candidatesById = candidateNodes.ToDictionary(n => n.Id);
+        object Resolve(ModuleSkillGraphNodeMatch m) =>
+            new { id = m.NodeId, key = candidatesById[m.NodeId].Key, title = candidatesById[m.NodeId].Title, confidence = m.Confidence };
+
+        return Ok(new
+        {
+            success = true,
+            prerequisites = result.PrerequisiteSuggestions.Select(Resolve),
+            dependents = result.DependentSuggestions.Select(Resolve),
+            error = (string?)null,
         });
     }
 
