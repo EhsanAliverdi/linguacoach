@@ -683,9 +683,16 @@ public sealed class AdminSkillGraphController : ControllerBase
         var results = new List<object>();
         foreach (var module in candidateModules)
         {
+            // Reseed verification (2026-07-23) — found a real, pre-existing bug live: SkillGraphNode.Skill
+            // is always stored lower-invariant (see the constructor), but Module.Skill preserves the
+            // caller's casing ("Vocabulary"), so this comparison silently matched 0 candidates for
+            // every Module whose Skill wasn't already lowercase — confirmed live against real seeded
+            // Modules (title "zoo", CefrLevel A1, Skill "Vocabulary") before this fix.
+            var moduleSkillLower = module.Skill!.ToLowerInvariant();
+            var moduleCefrUpper = module.CefrLevel!.ToUpperInvariant();
             var candidateNodes = await _db.SkillGraphNodes.AsNoTracking()
                 .Where(n => n.ReviewStatus == AdminReviewStatus.Approved && n.IsActive
-                    && n.CefrLevel == module.CefrLevel && n.Skill == module.Skill)
+                    && n.CefrLevel == moduleCefrUpper && n.Skill == moduleSkillLower)
                 .Select(n => new SkillGraphNodeCandidate(n.Id, n.Key, n.Title))
                 .ToListAsync(ct);
 
