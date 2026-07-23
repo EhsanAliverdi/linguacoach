@@ -593,6 +593,57 @@ public sealed class AdminSkillGraphEndpointTests : IClassFixture<ApiTestFactory>
         Assert.False(await db2.SkillGraphPrerequisiteEdges.AnyAsync(e => e.NodeId == node.Id));
     }
 
+    // ── Skill Graph rebuild Phase 6.3b — reject-triggered reconnect suggestions (advisory only) ──
+
+    [Fact]
+    public async Task BatchReject_SuggestsReconnectingOrphanedPredecessorAndDependent()
+    {
+        // A -> B -> C; rejecting B should surface a suggestion to reconnect A -> C.
+        var suffix = Guid.NewGuid().ToString("N");
+        var a = await SeedNodeAsync($"grammar.reconnect_a_{suffix}.a1");
+        var b = await SeedNodeAsync($"grammar.reconnect_b_{suffix}.a1");
+        var c = await SeedNodeAsync($"grammar.reconnect_c_{suffix}.a1");
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            db.SkillGraphPrerequisiteEdges.Add(new SkillGraphPrerequisiteEdge(b.Id, a.Id)); // A -> B
+            db.SkillGraphPrerequisiteEdges.Add(new SkillGraphPrerequisiteEdge(c.Id, b.Id)); // B -> C
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/nodes/batch/reject",
+            new { ids = new[] { b.Id }, reason = "Bad node." });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var groups = body.GetProperty("reconnectSuggestions").EnumerateArray().ToList();
+        var group = Assert.Single(groups);
+        Assert.Equal(b.Id, group.GetProperty("rejectedNodeId").GetGuid());
+        var predecessor = Assert.Single(group.GetProperty("orphanedPredecessors").EnumerateArray());
+        Assert.Equal(a.Id, predecessor.GetProperty("id").GetGuid());
+        var dependent = Assert.Single(group.GetProperty("orphanedDependents").EnumerateArray());
+        Assert.Equal(c.Id, dependent.GetProperty("id").GetGuid());
+        var reconnect = Assert.Single(group.GetProperty("suggestedReconnects").EnumerateArray());
+        Assert.Equal(a.Id, reconnect.GetProperty("prerequisiteNodeId").GetGuid());
+        Assert.Equal(c.Id, reconnect.GetProperty("nodeId").GetGuid());
+    }
+
+    [Fact]
+    public async Task BatchReject_NoReconnectSuggestionWhenNothingToBridge()
+    {
+        // Node with no predecessors (a root) — rejecting it has nothing to reconnect.
+        var node = await SeedNodeAsync($"grammar.noreconnect_{Guid.NewGuid():N}.a1");
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/nodes/batch/reject",
+            new { ids = new[] { node.Id }, reason = "Bad node." });
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Empty(body.GetProperty("reconnectSuggestions").EnumerateArray());
+    }
+
     [Fact]
     public async Task GetIsolatedNodes_NodeWithNoEdges_IsReported()
     {

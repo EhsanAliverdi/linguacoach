@@ -165,7 +165,30 @@ real data).
       curriculum** (e.g. "Present simple: affirmative for daily routines → First conditional" is
       already implied by a longer real chain) — confirming the detection works correctly against
       real, not just synthetic, data.
-- [ ] 6.3b — Reject-triggered reconnect suggestions
+- [x] 6.3b — Reject-triggered reconnect suggestions — done 2026-07-24.
+      `IGraphChangeSuggestionService.DetectReconnectsAfterReject(rejectedNodeIds, edgesBeforeRemoval)`
+      — for each rejected node, finds its former predecessors and former dependents in the edge
+      set captured just before `BatchReject`'s existing cascade-delete runs, and proposes
+      reconnecting every predecessor×dependent pair not already directly connected (A→B→C, B
+      rejected, suggest A→C). Skips: pairs where either endpoint is also being rejected in the
+      same batch, and pairs already directly connected. **Batch-presented per the plan's decision**
+      — `BatchReject`'s response now includes `reconnectSuggestions: RejectReconnectGroup[]`, one
+      group per rejected node in that same call (not a separate per-node interruption), each with
+      `orphanedPredecessors`/`orphanedDependents`/`suggestedReconnects` (id+title resolved
+      server-side, same N+1-avoidance discipline as 6.3a's `ToSuggestionDtosAsync`). Never
+      auto-applied — the frontend's new "Reconnect suggestions" card (appears only when there's
+      something to show, appends across multiple reject calls rather than replacing) lets the
+      admin Dismiss (drop from the list) or Reconnect (a real `addSkillGraphPrerequisite` call) each
+      suggestion individually. +7 unit tests (`DetectReconnectsAfterReject` — spanned-chain
+      reconnect, already-connected no-op, no-predecessor/no-dependent root case, cross-product with
+      multiple predecessors/dependents, same-batch-rejected-endpoint exclusion, multi-node batch
+      producing one group per node, empty-input edge cases), +2 integration tests. Verified: full
+      backend suite (30 architecture + 2,498 unit + 1,347 integration) green, frontend `tsc
+      --noEmit` clean, 24/24 Skill Graph Karma specs green, and a full live end-to-end pass against
+      the real dev DB — created a disposable A→B→C node chain via the real API (never touching the
+      curated 600-node curriculum), rejected B through the actual admin UI (bulk-edit checkbox +
+      reject reason + "Reject selected"), and confirmed the "Reconnect suggestions" card correctly
+      appeared showing "6.3b verify A2 → 6.3b verify C2" with working Dismiss/Reconnect buttons.
 - [ ] 6.3c — Near-duplicate node detection
 - [ ] 6.3d — Reparenting-on-edit suggestions
 - [ ] 6.3e — Admin UI surface for suggestions review

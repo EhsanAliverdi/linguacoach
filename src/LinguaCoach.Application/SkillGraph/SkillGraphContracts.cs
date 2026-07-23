@@ -221,4 +221,24 @@ public interface IGraphChangeSuggestionService
     IReadOnlyList<GraphChangeSuggestion> DetectRedundantEdges(
         IReadOnlyList<SkillGraphEdgeSummary> edges,
         IReadOnlyList<Guid>? restrictToNodeIds = null);
+
+    /// <summary>Phase 6.3b — for each rejected node in <paramref name="rejectedNodeIds"/>, finds
+    /// its former prerequisites ("predecessors") and former dependents in
+    /// <paramref name="edgesBeforeRemoval"/> (the full active edge set captured BEFORE the
+    /// caller's cascade-delete runs) and proposes reconnecting every predecessor directly to every
+    /// dependent (A→B→C, B rejected, suggest A→C) — skipping any pair that's a rejected node
+    /// itself or already directly connected. Batch-presented per the approved plan's decision: one
+    /// group per rejected node in the same <c>BatchReject</c> call, not per-node.</summary>
+    IReadOnlyList<RejectReconnectGroup> DetectReconnectsAfterReject(
+        IReadOnlyList<Guid> rejectedNodeIds,
+        IReadOnlyList<SkillGraphEdgeSummary> edgesBeforeRemoval);
 }
+
+/// <summary>One rejected node's reconnect review group. <c>SuggestedReconnects</c> is every
+/// predecessor×dependent pair not already directly connected — advisory only, the admin accepts
+/// each one individually via the normal add-prerequisite endpoint.</summary>
+public sealed record RejectReconnectGroup(
+    Guid RejectedNodeId,
+    IReadOnlyList<Guid> OrphanedPredecessorIds,
+    IReadOnlyList<Guid> OrphanedDependentIds,
+    IReadOnlyList<SkillGraphEdgeSummary> SuggestedReconnects);

@@ -135,4 +135,123 @@ public sealed class GraphChangeSuggestionServiceTests
 
         Assert.Empty(suggestions);
     }
+
+    // ── Phase 6.3b — reject-triggered reconnect suggestions ──────────────────────────────────
+
+    [Fact]
+    public void Rejecting_the_middle_node_of_a_chain_suggests_reconnecting_predecessor_to_dependent()
+    {
+        // A -> B -> C, B is rejected — suggest A -> C.
+        SkillGraphEdgeSummary[] edgesBeforeRemoval =
+        [
+            new(NodeId: B, PrerequisiteNodeId: A),
+            new(NodeId: C, PrerequisiteNodeId: B),
+        ];
+
+        var groups = _sut.DetectReconnectsAfterReject([B], edgesBeforeRemoval);
+
+        var group = Assert.Single(groups);
+        Assert.Equal(B, group.RejectedNodeId);
+        Assert.Equal([A], group.OrphanedPredecessorIds);
+        Assert.Equal([C], group.OrphanedDependentIds);
+        var reconnect = Assert.Single(group.SuggestedReconnects);
+        Assert.Equal(A, reconnect.PrerequisiteNodeId);
+        Assert.Equal(C, reconnect.NodeId);
+    }
+
+    [Fact]
+    public void Reconnect_is_not_suggested_when_the_direct_edge_already_exists()
+    {
+        // A -> B -> C, plus A -> C already exists directly — nothing new to suggest.
+        SkillGraphEdgeSummary[] edgesBeforeRemoval =
+        [
+            new(NodeId: B, PrerequisiteNodeId: A),
+            new(NodeId: C, PrerequisiteNodeId: B),
+            new(NodeId: C, PrerequisiteNodeId: A),
+        ];
+
+        var groups = _sut.DetectReconnectsAfterReject([B], edgesBeforeRemoval);
+
+        Assert.Empty(groups);
+    }
+
+    [Fact]
+    public void Rejected_node_with_no_predecessors_or_no_dependents_has_nothing_to_reconnect()
+    {
+        // B has only a dependent (C), no predecessor — a root node, nothing to bridge.
+        SkillGraphEdgeSummary[] edgesBeforeRemoval =
+        [
+            new(NodeId: C, PrerequisiteNodeId: B),
+        ];
+
+        var groups = _sut.DetectReconnectsAfterReject([B], edgesBeforeRemoval);
+
+        Assert.Empty(groups);
+    }
+
+    [Fact]
+    public void Multiple_predecessors_and_dependents_produce_the_full_cross_product()
+    {
+        // A1, A2 -> B -> C1, C2 — 4 candidate reconnects.
+        var a1 = Guid.NewGuid();
+        var a2 = Guid.NewGuid();
+        var c1 = Guid.NewGuid();
+        var c2 = Guid.NewGuid();
+        SkillGraphEdgeSummary[] edgesBeforeRemoval =
+        [
+            new(NodeId: B, PrerequisiteNodeId: a1),
+            new(NodeId: B, PrerequisiteNodeId: a2),
+            new(NodeId: c1, PrerequisiteNodeId: B),
+            new(NodeId: c2, PrerequisiteNodeId: B),
+        ];
+
+        var groups = _sut.DetectReconnectsAfterReject([B], edgesBeforeRemoval);
+
+        var group = Assert.Single(groups);
+        Assert.Equal(4, group.SuggestedReconnects.Count);
+    }
+
+    [Fact]
+    public void A_predecessor_or_dependent_that_is_also_rejected_in_the_same_batch_is_excluded()
+    {
+        // A -> B -> C, and A is ALSO being rejected in this same batch — no reconnect makes sense
+        // through a node that's disappearing too.
+        SkillGraphEdgeSummary[] edgesBeforeRemoval =
+        [
+            new(NodeId: B, PrerequisiteNodeId: A),
+            new(NodeId: C, PrerequisiteNodeId: B),
+        ];
+
+        var groups = _sut.DetectReconnectsAfterReject([A, B], edgesBeforeRemoval);
+
+        Assert.Empty(groups);
+    }
+
+    [Fact]
+    public void Batch_rejecting_multiple_unrelated_nodes_returns_one_group_per_node()
+    {
+        var d = Guid.NewGuid();
+        var e = Guid.NewGuid();
+        var f = Guid.NewGuid();
+        SkillGraphEdgeSummary[] edgesBeforeRemoval =
+        [
+            new(NodeId: B, PrerequisiteNodeId: A),
+            new(NodeId: C, PrerequisiteNodeId: B),
+            new(NodeId: e, PrerequisiteNodeId: d),
+            new(NodeId: f, PrerequisiteNodeId: e),
+        ];
+
+        var groups = _sut.DetectReconnectsAfterReject([B, e], edgesBeforeRemoval);
+
+        Assert.Equal(2, groups.Count);
+        Assert.Contains(groups, g => g.RejectedNodeId == B);
+        Assert.Contains(groups, g => g.RejectedNodeId == e);
+    }
+
+    [Fact]
+    public void No_rejected_ids_or_no_edges_returns_no_groups()
+    {
+        Assert.Empty(_sut.DetectReconnectsAfterReject([], [new(NodeId: B, PrerequisiteNodeId: A)]));
+        Assert.Empty(_sut.DetectReconnectsAfterReject([B], []));
+    }
 }

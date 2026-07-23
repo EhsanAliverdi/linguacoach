@@ -33,6 +33,7 @@ import {
   SkillGraphEdge,
   SkillGraphIsolatedNode,
   GraphChangeSuggestion,
+  RejectReconnectGroup,
 } from '../../../core/models/admin.models';
 import { SpAdminGraphCardComponent } from '../../../design-system/admin/components/graph-card/sp-admin-graph-card.component';
 import { SpAdminSkillGraphVizComponent } from './skill-graph-viz/sp-admin-skill-graph-viz.component';
@@ -524,11 +525,50 @@ export class AdminSkillGraphComponent implements OnInit {
         this.rejectReason = '';
         this.clearSelection();
         this.loadNodes();
+        // Skill Graph rebuild Phase 6.3b — batch-presented, advisory only: append this call's
+        // reconnect groups to whatever's already showing rather than replacing it, since an admin
+        // might reject in more than one batch before reviewing suggestions.
+        if (r.reconnectSuggestions.length > 0) {
+          this.reconnectSuggestionGroups.update(list => [...list, ...r.reconnectSuggestions]);
+        }
       },
       error: err => {
         this.batchPending.set(false);
         this.batchError.set(err?.error?.error ?? 'Reject failed.');
       },
+    });
+  }
+
+  // ── Skill Graph rebuild Phase 6.3b (2026-07-23) — reject-triggered reconnect suggestions.
+  // Advisory only: "Reconnect" is a real addSkillGraphPrerequisite call the admin explicitly
+  // triggers per suggestion; "Dismiss" just drops it from this list. ────────────────────────────
+  reconnectSuggestionGroups = signal<RejectReconnectGroup[]>([]);
+  reconnectError = signal('');
+
+  dismissReconnectGroup(groupIndex: number): void {
+    this.reconnectSuggestionGroups.update(list => list.filter((_, i) => i !== groupIndex));
+  }
+
+  dismissReconnectSuggestion(groupIndex: number, edgeIndex: number): void {
+    this.reconnectSuggestionGroups.update(list => list.map((g, i) => {
+      if (i !== groupIndex) return g;
+      const remaining = g.suggestedReconnects.filter((_, ei) => ei !== edgeIndex);
+      return { ...g, suggestedReconnects: remaining };
+    }).filter(g => g.suggestedReconnects.length > 0));
+  }
+
+  acceptReconnectSuggestion(groupIndex: number, edgeIndex: number): void {
+    const group = this.reconnectSuggestionGroups()[groupIndex];
+    const edge = group?.suggestedReconnects[edgeIndex];
+    if (!edge) return;
+    this.reconnectError.set('');
+    this.api.addSkillGraphPrerequisite(edge.nodeId, edge.prerequisiteNodeId).subscribe({
+      next: () => {
+        this.dismissReconnectSuggestion(groupIndex, edgeIndex);
+        this.loadNodes();
+        this.loadIsolatedNodes();
+      },
+      error: err => this.reconnectError.set(err?.error?.error ?? 'Could not add this reconnect.'),
     });
   }
 

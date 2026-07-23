@@ -783,6 +783,13 @@ public sealed class AdminSkillGraphController : ControllerBase
         // dependent; cascade-remove any edge touching it rather than leaving a dangling reference
         // the graph would otherwise treat as still-live.
         var rejectedIds = nodes.Select(n => n.Id).ToList();
+
+        // Skill Graph rebuild Phase 6.3b — snapshot the full active edge set BEFORE the
+        // cascade-delete below, so reconnect suggestions can see exactly what each rejected node
+        // used to connect (its edges are gone by the time we'd otherwise look).
+        var allEdgesBeforeRemoval = await _db.SkillGraphPrerequisiteEdges.AsNoTracking()
+            .Select(e => new SkillGraphEdgeSummary(e.NodeId, e.PrerequisiteNodeId)).ToListAsync(ct);
+
         var danglingEdges = await _db.SkillGraphPrerequisiteEdges
             .Where(e => rejectedIds.Contains(e.NodeId) || rejectedIds.Contains(e.PrerequisiteNodeId))
             .ToListAsync(ct);
@@ -790,7 +797,49 @@ public sealed class AdminSkillGraphController : ControllerBase
 
         await _db.SaveChangesAsync(ct);
 
-        return Ok(new { requestedCount = ids.Count, succeeded, failed = ids.Count - succeeded, limitReached, edgesRemoved = danglingEdges.Count });
+        // Advisory only — batch-presented (one group per rejected node in this same call, per the
+        // approved plan's decision), never auto-applied. The admin accepts each reconnect
+        // individually through the normal add-prerequisite endpoint.
+        var reconnectGroups = _changeSuggestions.DetectReconnectsAfterReject(rejectedIds, allEdgesBeforeRemoval);
+        var reconnectDtos = await ToReconnectGroupDtosAsync(reconnectGroups, ct);
+
+        return Ok(new
+        {
+            requestedCount = ids.Count, succeeded, failed = ids.Count - succeeded, limitReached,
+            edgesRemoved = danglingEdges.Count, reconnectSuggestions = reconnectDtos,
+        });
+    }
+
+    /// <summary>Resolves every reconnect group's node ids to id+title in one query — mirrors
+    /// <see cref="ToSuggestionDtosAsync"/>'s N+1-avoidance discipline.</summary>
+    private async Task<List<object>> ToReconnectGroupDtosAsync(IReadOnlyList<RejectReconnectGroup> groups, CancellationToken ct)
+    {
+        if (groups.Count == 0) return [];
+
+        var allIds = groups
+            .SelectMany(g => new[] { g.RejectedNodeId }
+                .Concat(g.OrphanedPredecessorIds).Concat(g.OrphanedDependentIds)
+                .Concat(g.SuggestedReconnects.SelectMany(e => new[] { e.NodeId, e.PrerequisiteNodeId })))
+            .Distinct().ToList();
+        var titlesById = await _db.SkillGraphNodes.AsNoTracking()
+            .Where(n => allIds.Contains(n.Id))
+            .ToDictionaryAsync(n => n.Id, n => n.Title, ct);
+
+        object ResolveNode(Guid id) => new { id, title = titlesById.GetValueOrDefault(id, "(unknown)") };
+        object ResolveEdge(SkillGraphEdgeSummary e) => new
+        {
+            nodeId = e.NodeId, nodeTitle = titlesById.GetValueOrDefault(e.NodeId, "(unknown)"),
+            prerequisiteNodeId = e.PrerequisiteNodeId, prerequisiteNodeTitle = titlesById.GetValueOrDefault(e.PrerequisiteNodeId, "(unknown)"),
+        };
+
+        return groups.Select(g => (object)new
+        {
+            rejectedNodeId = g.RejectedNodeId,
+            rejectedNodeTitle = titlesById.GetValueOrDefault(g.RejectedNodeId, "(unknown)"),
+            orphanedPredecessors = g.OrphanedPredecessorIds.Select(ResolveNode),
+            orphanedDependents = g.OrphanedDependentIds.Select(ResolveNode),
+            suggestedReconnects = g.SuggestedReconnects.Select(ResolveEdge),
+        }).ToList();
     }
 
     /// <summary>Coverage matrix: approved+active node count per CEFR level x skill, following the

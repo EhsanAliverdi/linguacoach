@@ -104,6 +104,32 @@
     }
   </sp-admin-card>
 
+  <!-- Skill Graph rebuild Phase 6.3b (2026-07-23) — reject-triggered reconnect suggestions.
+       Advisory only: shows up after rejecting a node with both a real prerequisite and a real
+       dependent — "Reconnect" makes a real add-prerequisite call; "Dismiss" just hides it. -->
+  @if (reconnectSuggestionGroups().length > 0) {
+    <sp-admin-card title="Reconnect suggestions">
+      <p class="sp-admin-section-sub">A rejected node's former prerequisite(s) and former dependent(s) lost their only connection through it — these are candidates to bridge directly.</p>
+      @if (reconnectError()) {
+        <sp-admin-alert variant="error">{{ reconnectError() }}</sp-admin-alert>
+      }
+      @for (group of reconnectSuggestionGroups(); track group.rejectedNodeId; let gi = $index) {
+        <div class="sp-admin-section-h"><h3>After rejecting "{{ group.rejectedNodeTitle }}"</h3></div>
+        <ul class="sp-admin-simple-list">
+          @for (edge of group.suggestedReconnects; track edge.prerequisiteNodeId + edge.nodeId; let ei = $index) {
+            <li class="sp-admin-form-actions" style="justify-content:space-between;">
+              <span>{{ edge.prerequisiteNodeTitle }} → {{ edge.nodeTitle }}</span>
+              <span class="sp-admin-form-actions" style="padding:0; background:none; border:none;">
+                <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="dismissReconnectSuggestion(gi, ei)">Dismiss</sp-admin-button>
+                <sp-admin-button size="sm" variant="primary" appearance="outline" (clicked)="acceptReconnectSuggestion(gi, ei)">Reconnect</sp-admin-button>
+              </span>
+            </li>
+          }
+        </ul>
+      }
+    </sp-admin-card>
+  }
+
   <!-- Nodes table / graph (Content coverage merged in here 2026-07-23 — see Linked Modules column
        and node detail panel below; the two tables were showing near-duplicate data.) -->
   <sp-admin-card padding="none" variant="bordered" [hasHeader]="true" [headerDivider]="true">

@@ -10,6 +10,7 @@ import {
   SkillGraphCoverageResponse,
   SkillGraphDraftResponse,
   SkillGraphBatchActionResponse,
+  SkillGraphBatchRejectResponse,
 } from '../../../core/models/admin.models';
 
 // Adaptive Curriculum Sprint 1 — admin skill-graph review page.
@@ -52,7 +53,7 @@ function makeApi(overrides: Partial<Record<string, unknown>> = {}) {
     batchApproveSkillGraphNodes: jasmine.createSpy('batchApproveSkillGraphNodes').and.returnValue(
       of<SkillGraphBatchActionResponse>({ requestedCount: 1, succeeded: 1, failed: 0, limitReached: false })),
     batchRejectSkillGraphNodes: jasmine.createSpy('batchRejectSkillGraphNodes').and.returnValue(
-      of<SkillGraphBatchActionResponse>({ requestedCount: 1, succeeded: 1, failed: 0, limitReached: false })),
+      of<SkillGraphBatchRejectResponse>({ requestedCount: 1, succeeded: 1, failed: 0, limitReached: false, edgesRemoved: 0, reconnectSuggestions: [] })),
     getSkillGraphContentCoverage: jasmine.createSpy('getSkillGraphContentCoverage').and.returnValue(
       of({ totalApprovedNodes: 0, nodesWithContent: 0, nodesWithoutContentCount: 0, nodes: [] })),
     getSkillGraphNodeIssuesSummary: jasmine.createSpy('getSkillGraphNodeIssuesSummary').and.returnValue(

@@ -1701,6 +1701,26 @@ export interface SkillGraphBatchActionResponse {
   limitReached: boolean;
 }
 
+// Phase 6.3b — reject-triggered reconnect suggestions (advisory only, never auto-applied).
+// Batch-presented: one group per rejected node in the same BatchReject call.
+export interface RejectReconnectNodeRef {
+  id: string;
+  title: string;
+}
+
+export interface RejectReconnectGroup {
+  rejectedNodeId: string;
+  rejectedNodeTitle: string;
+  orphanedPredecessors: RejectReconnectNodeRef[];
+  orphanedDependents: RejectReconnectNodeRef[];
+  suggestedReconnects: GraphChangeEdgeRef[];
+}
+
+export interface SkillGraphBatchRejectResponse extends SkillGraphBatchActionResponse {
+  edgesRemoved: number;
+  reconnectSuggestions: RejectReconnectGroup[];
+}
+
 export interface SkillGraphCoverageEntry {
   cefrLevel: string;
   skill: string;
