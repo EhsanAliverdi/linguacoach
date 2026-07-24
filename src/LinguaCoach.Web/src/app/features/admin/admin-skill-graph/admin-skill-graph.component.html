@@ -4,15 +4,6 @@
 
 <sp-admin-page-body>
 
-  <!-- User correction (2026-07-24) — the tag-issues banner, the isolated-nodes banner, and the
-       full "Graph audit" (redundant edges + near-duplicate nodes) card used to live directly on
-       this page; all moved to a dedicated audit page so this list stays focused on browsing/
-       approving/rejecting nodes. This is just the entry point. -->
-  <sp-admin-card title="Graph Audit">
-    <p class="sp-admin-section-sub">Missing tags, isolated nodes, redundant edges, and near-duplicate content — reviewed and fixed on a dedicated page.</p>
-    <sp-admin-button variant="primary" size="sm" appearance="outline" (clicked)="goToAuditPage()">Go to Graph Audit</sp-admin-button>
-  </sp-admin-card>
-
   <!-- Coverage matrix -->
   <sp-admin-card title="Node Coverages">
     <sp-admin-help-icon slot="actions" key="admin.skillGraph.nodeCoverage" title="Node Coverage" />
@@ -136,6 +127,12 @@
         </sp-admin-button>
         <sp-admin-button size="sm" [variant]="viewMode() === 'graph' ? 'primary' : 'neutral'" appearance="outline" (clicked)="setViewMode('graph')">
           Graph
+        </sp-admin-button>
+        <!-- User correction (2026-07-24) — the standalone "Graph Audit" card was removed; this is
+             now the only audit entry point. Every audit runs automatically as soon as the audit
+             page loads, so clicking here and landing there is "run everything, then show it." -->
+        <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="goToAuditPage()">
+          Audit
         </sp-admin-button>
       </div>
     </sp-admin-section-header>

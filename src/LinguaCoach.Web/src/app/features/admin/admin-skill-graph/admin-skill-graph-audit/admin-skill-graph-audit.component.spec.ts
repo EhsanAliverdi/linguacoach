@@ -56,12 +56,26 @@ describe('AdminSkillGraphAuditComponent', () => {
     fixture.detectChanges();
   }
 
-  it('renders the audit page and loads tag-issue summary + isolated nodes on init', async () => {
+  // User correction (2026-07-24): "the process was wrong" — every audit now runs automatically as
+  // soon as this page loads (no separate "Run graph audit" click required once landed here).
+  it('renders the audit page and runs every audit automatically on init', async () => {
     await setup();
     expect(fixture.nativeElement.textContent).toContain('Skill Graph Audit');
     expect(api.getSkillGraphNodeIssuesSummary).toHaveBeenCalledTimes(1);
     expect(api.listSkillGraphNodesWithIssues).toHaveBeenCalledTimes(1);
     expect(api.getIsolatedSkillGraphNodes).toHaveBeenCalledTimes(1);
+    expect(api.getRedundantEdgeSuggestions).toHaveBeenCalledTimes(1);
+    expect(api.getNearDuplicateSuggestions).toHaveBeenCalledTimes(1);
+  });
+
+  it('refreshAll re-runs every audit again', async () => {
+    await setup();
+    component.refreshAll();
+    expect(api.getSkillGraphNodeIssuesSummary).toHaveBeenCalledTimes(2);
+    expect(api.listSkillGraphNodesWithIssues).toHaveBeenCalledTimes(2);
+    expect(api.getIsolatedSkillGraphNodes).toHaveBeenCalledTimes(2);
+    expect(api.getRedundantEdgeSuggestions).toHaveBeenCalledTimes(2);
+    expect(api.getNearDuplicateSuggestions).toHaveBeenCalledTimes(2);
   });
 
   it('back() navigates via Location.back()', async () => {
@@ -97,34 +111,48 @@ describe('AdminSkillGraphAuditComponent', () => {
     expect(component.filteredNodesWithIssues()[0].title).toBe('Present simple');
   });
 
-  it('runGraphAudit populates both redundant-edge and near-duplicate suggestions from one click', async () => {
+  // Each card refreshes independently now (2026-07-24 user correction).
+
+  it('loadNearDuplicates refreshes just the near-duplicate suggestions', async () => {
     const dup: NearDuplicateNodeSuggestion = {
       nodeAId: 'n1', nodeATitle: 'A', nodeADescription: 'Desc A',
       nodeBId: 'n2', nodeBTitle: 'B', nodeBDescription: 'Desc B',
       cefrLevel: 'A1', skill: 'grammar', similarity: 0.9,
     };
-    await setup({
-      getNearDuplicateSuggestions: jasmine.createSpy('getNearDuplicateSuggestions').and.returnValue(
-        of<NearDuplicateSuggestionsResponse>({ count: 1, suggestions: [dup] })),
-    });
+    await setup();
+    (api.getNearDuplicateSuggestions as jasmine.Spy).and.returnValue(
+      of<NearDuplicateSuggestionsResponse>({ count: 1, suggestions: [dup] }));
 
-    component.runGraphAudit();
+    component.loadNearDuplicates();
 
-    expect(api.getRedundantEdgeSuggestions).toHaveBeenCalledTimes(1);
-    expect(api.getNearDuplicateSuggestions).toHaveBeenCalledTimes(1);
-    expect(component.auditRun()).toBeTrue();
+    expect(api.getNearDuplicateSuggestions).toHaveBeenCalledTimes(2);
+    expect(api.getRedundantEdgeSuggestions).toHaveBeenCalledTimes(1); // untouched by this refresh
     expect(component.nearDuplicateSuggestions()).toEqual([dup]);
   });
 
-  it('runGraphAudit reports an error when either call fails', async () => {
-    await setup({
-      getNearDuplicateSuggestions: jasmine.createSpy('getNearDuplicateSuggestions').and.returnValue(
-        throwError(() => ({ error: { error: 'boom' } }))),
-    });
+  it('loadNearDuplicates reports its own error without affecting the redundant-edges card', async () => {
+    await setup();
+    (api.getNearDuplicateSuggestions as jasmine.Spy).and.returnValue(throwError(() => ({ error: { error: 'boom' } })));
 
-    component.runGraphAudit();
+    component.loadNearDuplicates();
 
-    expect(component.auditError()).toBe('boom');
+    expect(component.nearDuplicatesLoadError()).toBe('boom');
+  });
+
+  it('loadRedundantEdges refreshes just the redundant-edge suggestions', async () => {
+    const suggestion = {
+      type: 'RedundantEdge', description: 'redundant',
+      proposedEdgesToAdd: [],
+      proposedEdgesToRemove: [{ nodeId: 'b', nodeTitle: 'B', prerequisiteNodeId: 'a', prerequisiteNodeTitle: 'A' }],
+    };
+    await setup();
+    (api.getRedundantEdgeSuggestions as jasmine.Spy).and.returnValue(
+      of<GraphChangeSuggestionsResponse>({ count: 1, suggestions: [suggestion] }));
+
+    component.loadRedundantEdges();
+
+    expect(api.getRedundantEdgeSuggestions).toHaveBeenCalledTimes(2);
+    expect(component.redundantEdgeSuggestions()).toEqual([suggestion]);
   });
 
   it('stageMerge does not call the API until confirmMerge is invoked', async () => {

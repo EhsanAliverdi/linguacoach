@@ -76,10 +76,23 @@ export class AdminSkillGraphAuditComponent implements OnInit {
     private location: Location,
   ) {}
 
+  // User correction (2026-07-24): the process was wrong — the main list page's "Audit" entry
+  // point should just navigate here, with every audit running automatically as soon as this page
+  // loads (rather than requiring a separate "Run graph audit" click once landed). This page's own
+  // top-level control is "Refresh" (re-runs everything again), and each card additionally gets its
+  // own per-card refresh for re-running just that one check.
   ngOnInit(): void {
+    this.refreshAll();
+  }
+
+  // Fires all five independent requests together; each card shows its own loading/error state
+  // (there's no single combined completion event to drive one shared spinner).
+  refreshAll(): void {
     this.loadNodeIssuesSummary();
     this.loadNodesWithIssues();
     this.loadIsolatedNodes();
+    this.loadRedundantEdges();
+    this.loadNearDuplicates();
   }
 
   back(): void {
@@ -110,6 +123,14 @@ export class AdminSkillGraphAuditComponent implements OnInit {
     this.missingTagsPage.set(1);
   }
 
+  loadingMissingTags = signal(false);
+
+  // Refreshing this card re-runs both its summary count and its full with-issues list.
+  refreshMissingTags(): void {
+    this.loadNodeIssuesSummary();
+    this.loadNodesWithIssues();
+  }
+
   loadNodeIssuesSummary(): void {
     this.api.getSkillGraphNodeIssuesSummary().subscribe({
       next: summary => this.nodeIssuesSummary.set(summary),
@@ -118,9 +139,10 @@ export class AdminSkillGraphAuditComponent implements OnInit {
   }
 
   loadNodesWithIssues(): void {
+    this.loadingMissingTags.set(true);
     this.api.listSkillGraphNodesWithIssues().subscribe({
-      next: items => this.nodesWithIssues.set(items),
-      error: () => this.nodesWithIssues.set([]),
+      next: items => { this.nodesWithIssues.set(items); this.loadingMissingTags.set(false); },
+      error: () => { this.nodesWithIssues.set([]); this.loadingMissingTags.set(false); },
     });
   }
 
@@ -183,10 +205,13 @@ export class AdminSkillGraphAuditComponent implements OnInit {
     this.isolatedPage.set(1);
   }
 
+  loadingIsolated = signal(false);
+
   loadIsolatedNodes(): void {
+    this.loadingIsolated.set(true);
     this.api.getIsolatedSkillGraphNodes().subscribe({
-      next: r => this.isolatedNodes.set(r.isolated),
-      error: () => this.isolatedNodes.set([]),
+      next: r => { this.isolatedNodes.set(r.isolated); this.loadingIsolated.set(false); },
+      error: () => { this.isolatedNodes.set([]); this.loadingIsolated.set(false); },
     });
   }
 
@@ -196,31 +221,37 @@ export class AdminSkillGraphAuditComponent implements OnInit {
     this.router.navigateByUrl(`/admin/skill-graph/nodes/${node.id}/edit`);
   }
 
-  // ── Skill Graph rebuild Phase 6.3a/6.3c, merged into one "Graph audit" section — one button
-  // runs both deterministic (no-AI) checks together: redundant-edge detection and near-duplicate
-  // node detection. Advisory only throughout. ─────────────────────────────────────────────────
-  auditingGraph = signal(false);
-  auditError = signal('');
-  auditRun = signal(false);
+  // ── Skill Graph rebuild Phase 6.3a/6.3c — deterministic (no AI) redundant-edge detection and
+  // near-duplicate node detection. Advisory only throughout. User correction (2026-07-24): these
+  // used to share one combined "Run graph audit" button; each now runs (and refreshes) on its own,
+  // matching every other card's per-card refresh, and both fire automatically on page load. ───────
   redundantEdgeSuggestions = signal<GraphChangeSuggestion[]>([]);
   nearDuplicateSuggestions = signal<NearDuplicateNodeSuggestion[]>([]);
+  loadingRedundantEdges = signal(false);
+  loadingNearDuplicates = signal(false);
+  redundantEdgesLoadError = signal('');
+  nearDuplicatesLoadError = signal('');
 
-  runGraphAudit(): void {
-    this.auditingGraph.set(true);
-    this.auditError.set('');
-    forkJoin({
-      redundantEdges: this.api.getRedundantEdgeSuggestions(),
-      nearDuplicates: this.api.getNearDuplicateSuggestions(),
-    }).subscribe({
-      next: r => {
-        this.auditingGraph.set(false);
-        this.auditRun.set(true);
-        this.redundantEdgeSuggestions.set(r.redundantEdges.suggestions);
-        this.nearDuplicateSuggestions.set(r.nearDuplicates.suggestions);
-      },
+  loadRedundantEdges(): void {
+    this.loadingRedundantEdges.set(true);
+    this.redundantEdgesLoadError.set('');
+    this.api.getRedundantEdgeSuggestions().subscribe({
+      next: r => { this.redundantEdgeSuggestions.set(r.suggestions); this.loadingRedundantEdges.set(false); },
       error: err => {
-        this.auditingGraph.set(false);
-        this.auditError.set(err?.error?.error ?? 'Could not run the graph audit.');
+        this.loadingRedundantEdges.set(false);
+        this.redundantEdgesLoadError.set(err?.error?.error ?? 'Could not check for redundant edges.');
+      },
+    });
+  }
+
+  loadNearDuplicates(): void {
+    this.loadingNearDuplicates.set(true);
+    this.nearDuplicatesLoadError.set('');
+    this.api.getNearDuplicateSuggestions().subscribe({
+      next: r => { this.nearDuplicateSuggestions.set(r.suggestions); this.loadingNearDuplicates.set(false); },
+      error: err => {
+        this.loadingNearDuplicates.set(false);
+        this.nearDuplicatesLoadError.set(err?.error?.error ?? 'Could not check for near-duplicate nodes.');
       },
     });
   }
@@ -290,7 +321,7 @@ export class AdminSkillGraphAuditComponent implements OnInit {
     const staged = this.redundantEdgeRows().filter(r => this.stagedRemovalKeys().has(r.key));
     if (staged.length === 0) return;
     this.savingRedundantEdges.set(true);
-    this.auditError.set('');
+    this.redundantEdgesLoadError.set('');
     forkJoin(staged.map(r => this.api.removeSkillGraphPrerequisite(r.edge.nodeId, r.edge.prerequisiteNodeId))).subscribe({
       next: () => {
         this.savingRedundantEdges.set(false);
@@ -305,7 +336,7 @@ export class AdminSkillGraphAuditComponent implements OnInit {
       },
       error: err => {
         this.savingRedundantEdges.set(false);
-        this.auditError.set(err?.error?.error ?? 'Could not save the staged edge removals.');
+        this.redundantEdgesLoadError.set(err?.error?.error ?? 'Could not save the staged edge removals.');
       },
     });
   }

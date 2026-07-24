@@ -179,10 +179,58 @@ codebase (Edit page's prerequisite/unlock changes, the near-duplicate merge's ow
   went from 10 to 9 both in the UI and confirmed via a direct `GET .../suggestions/redundant-edges`
   call afterward).
 
+## Follow-up 3: fixed the audit "process" — auto-run on load, per-card refresh, no dedicated card
+
+The user flagged the process itself as wrong: the main list page's "Audit" click should run every
+audit and land on the audit page with results already there — not require a separate "Run graph
+audit" click once on the page. The page-level control should just be "Refresh" (re-run everything
+again); each individual card should additionally get its own "Refresh" for re-running just that
+one check; and the main list page shouldn't have a dedicated "Graph Audit" card at all — just an
+"Audit" button inside the existing Nodes card, alongside Sweep/+ Create node/Table/Graph.
+
+### What changed
+
+- `AdminSkillGraphAuditComponent.ngOnInit()` now calls a new `refreshAll()` that fires all five
+  loads together (tag-issues summary, with-issues list, isolated nodes, redundant edges,
+  near-duplicates) — every card has real data by the time the page renders, no button needed.
+  `refreshAll()` is also the page header's "Refresh" button.
+- Split the old combined `runGraphAudit()` (one `forkJoin` for both redundant edges and
+  near-duplicates) into two independent methods, `loadRedundantEdges()` and `loadNearDuplicates()`
+  — each has its own loading flag and its own error signal, and each is wired to its own card's
+  "Refresh" button in the section-header's actions slot. Same treatment for the Missing-tags card
+  (`refreshMissingTags()`, re-runs its summary + list) and the Isolated-nodes card (its existing
+  `loadIsolatedNodes()` now also has a per-card Refresh button).
+- Removed the standalone "Graph Audit" info card from the main Skill Graph list page entirely.
+  Added a single "Audit" button into the Nodes card's own header-actions row instead (next to
+  Sweep untagged Module / + Create node / Table / Graph) — `goToAuditPage()` is unchanged, just
+  navigates; the "run everything" now happens automatically on the destination page's `ngOnInit`,
+  which is functionally equivalent to running it before navigating but far simpler (no state to
+  pass across the route boundary, no risk of double-fetching).
+- Fixed the near-duplicate row's expanded-detail padding: `sp-admin-table`'s `rowDetail` `<td>` has
+  `padding:0` by design (confirmed in the component's own CSS) — the wrapping div supplied its own
+  padding, but `padding: 4px 0` had no horizontal inset at all, so content sat flush against the
+  table's edges instead of aligning with the rest of the table's cell gutters. Changed to
+  `padding: 12px 12px 16px`.
+
+### Verification
+
+- `tsc --noEmit` clean. Rewrote the two "runGraphAudit" specs into four (init runs everything
+  automatically, `refreshAll()` re-runs everything, `loadRedundantEdges()`/`loadNearDuplicates()`
+  each refresh independently without touching the other) — audit page spec now 20 tests, all
+  passing.
+- Full Karma suite: 1510 passed / 237 failed — same pre-existing baseline, more tests passing than
+  the prior run (no regressions).
+- Live-verified via Playwright against the real dev DB: the main page now shows only a single
+  "Audit" button inside the Nodes card (no separate card); clicking it landed on the audit page
+  with every table already populated with real data (535 missing-tag rows, 1 isolated node, 9
+  redundant edges, 1 near-duplicate pair) with zero additional clicks; every card's own "Refresh"
+  button is present and distinct from the page-level one; the near-duplicate row's expanded detail
+  now shows properly inset padding matching the rest of the table.
+
 ## Final verdict
 
-The original 7-issue round, the audit-page extraction, and this styling/pagination/staged-save
-follow-up are all complete and live-verified. Ready to commit.
+The original 7-issue round, the audit-page extraction, the styling/pagination/staged-save
+follow-up, and this process fix are all complete and live-verified. Ready to commit.
 
 ## Next recommended action
 
