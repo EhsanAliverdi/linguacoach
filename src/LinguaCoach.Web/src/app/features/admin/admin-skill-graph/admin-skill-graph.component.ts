@@ -16,6 +16,7 @@ import {
   SpAdminHeatmapRow,
   SpAdminHelpIconComponent,
   SpAdminLoadingStateComponent,
+  SpAdminModalComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
   SpAdminSectionHeaderComponent,
@@ -33,6 +34,7 @@ import {
   SkillGraphEdge,
   GraphChangeSuggestion,
   RejectReconnectGroup,
+  SkillGraphBatchRejectConfirmationRequired,
 } from '../../../core/models/admin.models';
 import { SpAdminGraphCardComponent } from '../../../design-system/admin/components/graph-card/sp-admin-graph-card.component';
 import { SpAdminSkillGraphVizComponent } from './skill-graph-viz/sp-admin-skill-graph-viz.component';
@@ -54,6 +56,7 @@ import { SpAdminSkillGraphVizComponent } from './skill-graph-viz/sp-admin-skill-
     SpAdminFormFieldComponent,
     SpAdminHelpIconComponent,
     SpAdminLoadingStateComponent,
+    SpAdminModalComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
     SpAdminSectionHeaderComponent,
@@ -227,10 +230,27 @@ export class AdminSkillGraphComponent implements OnInit {
     this.selectedIds.set(new Set(ids));
   }
 
+  // Skill Graph pipeline audit (2026-07-24, Bug #1) — fast, client-side-only heads-up computed
+  // from the already-loaded rows; purely informational. The real confirmation gate is server-side
+  // (see batchReject()/pendingRejectConfirmation below) since another admin tab or a direct API
+  // call could change a node's status between page-load and this click.
+  selectedApprovedCount = computed(() => {
+    const ids = this.selectedIds();
+    if (ids.size === 0) return 0;
+    return this.nodes().filter(n => ids.has(n.id) && n.reviewStatus === 'Approved').length;
+  });
+
   batchPending = signal(false);
   batchStatus = signal('');
   batchError = signal('');
   rejectReason = '';
+
+  // Skill Graph pipeline audit (2026-07-24, Bug #1) — set when the backend reports
+  // requiresConfirmation (the batch includes a currently-Approved node); opens the confirm modal.
+  // Holds the ids/reason the confirm click will resubmit with confirm:true.
+  pendingRejectConfirmation = signal<SkillGraphBatchRejectConfirmationRequired | null>(null);
+  private pendingRejectIds: string[] = [];
+  private pendingRejectReason = '';
 
   ngOnInit(): void {
     this.loadTaxonomy();
@@ -465,12 +485,42 @@ export class AdminSkillGraphComponent implements OnInit {
       this.batchError.set('A rejection reason is required.');
       return;
     }
+    this.runBatchReject(ids, this.rejectReason.trim(), false);
+  }
+
+  // Skill Graph pipeline audit (2026-07-24, Bug #1) — re-submits the same ids/reason held from the
+  // gated call, this time with confirm:true, so the reject actually applies.
+  confirmBatchReject(): void {
+    this.runBatchReject(this.pendingRejectIds, this.pendingRejectReason, true);
+  }
+
+  cancelBatchReject(): void {
+    // Also fires from the modal's backdrop-click/Escape/X-close, not just the footer Cancel
+    // button — ignore all of those while a confirm request is in flight so the modal can't be
+    // dismissed out from under a pending mutation.
+    if (this.batchPending()) return;
+    this.pendingRejectConfirmation.set(null);
+    this.pendingRejectIds = [];
+    this.pendingRejectReason = '';
+  }
+
+  private runBatchReject(ids: string[], reason: string, confirm: boolean): void {
     this.batchPending.set(true);
     this.batchStatus.set('');
     this.batchError.set('');
-    this.api.batchRejectSkillGraphNodes(ids, this.rejectReason.trim()).subscribe({
+    this.api.batchRejectSkillGraphNodes(ids, reason, confirm).subscribe({
       next: r => {
         this.batchPending.set(false);
+        if (r.requiresConfirmation) {
+          // Nothing was mutated server-side — hold the ids/reason and let the admin decide.
+          this.pendingRejectIds = ids;
+          this.pendingRejectReason = reason;
+          this.pendingRejectConfirmation.set(r);
+          return;
+        }
+        this.pendingRejectConfirmation.set(null);
+        this.pendingRejectIds = [];
+        this.pendingRejectReason = '';
         this.batchStatus.set(`Rejected ${r.succeeded} of ${r.requestedCount}.`);
         this.rejectReason = '';
         this.clearSelection();

@@ -11,6 +11,7 @@ import {
   SkillGraphDraftResponse,
   SkillGraphBatchActionResponse,
   SkillGraphBatchRejectResponse,
+  SkillGraphBatchRejectConfirmationRequired,
   RejectReconnectGroup,
   AddSkillGraphPrerequisiteResponse,
 } from '../../../core/models/admin.models';
@@ -168,8 +169,75 @@ describe('AdminSkillGraphComponent', () => {
     component.selectedIds.set(new Set(['n1']));
     component.rejectReason = 'Too broad.';
     component.batchReject();
-    expect(api.batchRejectSkillGraphNodes).toHaveBeenCalledWith(['n1'], 'Too broad.');
+    expect(api.batchRejectSkillGraphNodes).toHaveBeenCalledWith(['n1'], 'Too broad.', false);
     expect(component.batchStatus()).toContain('Rejected 1 of 1');
+  });
+
+  // Skill Graph pipeline audit (2026-07-24, Bug #1) — bulk-reject confirmation gate.
+  describe('batchReject confirmation gate', () => {
+    const IMPACT: SkillGraphBatchRejectConfirmationRequired = {
+      requiresConfirmation: true,
+      impactedApprovedCount: 1,
+      impactedTotalLinkedModules: 2,
+      impactedNodes: [{ id: 'n1', title: 'Present simple', linkedModuleCount: 2 }],
+    };
+
+    it('opens the confirmation modal instead of mutating when the API reports requiresConfirmation', async () => {
+      await setup({ batchRejectSkillGraphNodes: jasmine.createSpy().and.returnValue(of(IMPACT)) });
+      component.selectedIds.set(new Set(['n1']));
+      component.rejectReason = 'Too broad.';
+      component.batchReject();
+
+      expect(component.pendingRejectConfirmation()).toEqual(IMPACT);
+      expect(component.batchStatus()).toBe('');
+      // Selection/reason are preserved so the admin can adjust and retry.
+      expect(component.hasSelection()).toBeTrue();
+    });
+
+    it('confirmBatchReject resubmits with confirm:true and completes the reject', async () => {
+      const spy = jasmine.createSpy().and.returnValues(
+        of(IMPACT),
+        of<SkillGraphBatchRejectResponse>({ requestedCount: 1, succeeded: 1, failed: 0, limitReached: false, edgesRemoved: 0, reconnectSuggestions: [] }),
+      );
+      await setup({ batchRejectSkillGraphNodes: spy });
+      component.selectedIds.set(new Set(['n1']));
+      component.rejectReason = 'Too broad.';
+      component.batchReject();
+      expect(component.pendingRejectConfirmation()).toBeTruthy();
+
+      component.confirmBatchReject();
+      expect(spy).toHaveBeenCalledWith(['n1'], 'Too broad.', true);
+      expect(component.pendingRejectConfirmation()).toBeNull();
+      expect(component.batchStatus()).toContain('Rejected 1 of 1');
+      expect(component.hasSelection()).toBeFalse();
+    });
+
+    it('cancelBatchReject closes the modal without calling the API again and keeps the selection', async () => {
+      await setup({ batchRejectSkillGraphNodes: jasmine.createSpy().and.returnValue(of(IMPACT)) });
+      component.selectedIds.set(new Set(['n1']));
+      component.rejectReason = 'Too broad.';
+      component.batchReject();
+      expect(component.pendingRejectConfirmation()).toBeTruthy();
+
+      component.cancelBatchReject();
+      expect(component.pendingRejectConfirmation()).toBeNull();
+      expect(api.batchRejectSkillGraphNodes).toHaveBeenCalledTimes(1);
+      expect(component.hasSelection()).toBeTrue();
+    });
+  });
+
+  it('selectedApprovedCount reflects Approved nodes among the current selection', async () => {
+    await setup({
+      getSkillGraphNodes: jasmine.createSpy().and.returnValue(of<SkillGraphNodeListResponse>({
+        items: [
+          { ...NODES.items[0], id: 'n1', reviewStatus: 'PendingReview' },
+          { ...NODES.items[0], id: 'n2', reviewStatus: 'Approved' },
+        ],
+        totalCount: 2, totalPages: 1, page: 1, pageSize: 25,
+      })),
+    });
+    component.selectedIds.set(new Set(['n1', 'n2']));
+    expect(component.selectedApprovedCount()).toBe(1);
   });
 
   // User correction (2026-07-24) — the tag-issues banner, isolated-nodes banner, and the merged

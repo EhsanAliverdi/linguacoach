@@ -259,6 +259,118 @@ public sealed class AdminSkillGraphEndpointTests : IClassFixture<ApiTestFactory>
         Assert.Equal("Too broad.", saved.RejectionReason);
     }
 
+    // ── Skill Graph pipeline audit (2026-07-24, Bug #1) — bulk-reject safety gate ───────────────
+
+    [Fact]
+    public async Task BatchReject_OnApprovedNodeWithLinkedContent_RequiresConfirmationAndDoesNotMutate()
+    {
+        var node = await SeedNodeAsync($"grammar.reject_gate_{Guid.NewGuid():N}.a1");
+        Guid moduleId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var tracked = await db.SkillGraphNodes.FirstAsync(n => n.Id == node.Id);
+            tracked.Approve(Guid.NewGuid());
+            var module = new Module($"Module {Guid.NewGuid():N}", ModuleSourceMode.Manual, cefrLevel: "A1", skill: "grammar");
+            db.Modules.Add(module);
+            await db.SaveChangesAsync();
+            moduleId = module.Id;
+            db.ModuleSkillGraphNodeLinks.Add(new ModuleSkillGraphNodeLink(moduleId, node.Id, 0.9));
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/nodes/batch/reject",
+            new { ids = new[] { node.Id }, reason = "Too broad." });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.True(body.GetProperty("requiresConfirmation").GetBoolean());
+        Assert.Equal(1, body.GetProperty("impactedApprovedCount").GetInt32());
+        Assert.Equal(1, body.GetProperty("impactedTotalLinkedModules").GetInt32());
+        var impactedNode = body.GetProperty("impactedNodes").EnumerateArray().Single();
+        Assert.Equal(node.Id, impactedNode.GetProperty("id").GetGuid());
+        Assert.Equal(1, impactedNode.GetProperty("linkedModuleCount").GetInt32());
+
+        using var scope2 = _factory.Services.CreateScope();
+        var db2 = scope2.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var unchanged = await db2.SkillGraphNodes.FirstAsync(n => n.Id == node.Id);
+        Assert.Equal(AdminReviewStatus.Approved, unchanged.ReviewStatus);
+    }
+
+    [Fact]
+    public async Task BatchReject_OnApprovedNode_WithConfirmTrue_RejectsAndWritesAuditLog()
+    {
+        var node = await SeedNodeAsync($"grammar.reject_confirm_{Guid.NewGuid():N}.a1");
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var tracked = await db.SkillGraphNodes.FirstAsync(n => n.Id == node.Id);
+            tracked.Approve(Guid.NewGuid());
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/nodes/batch/reject",
+            new { ids = new[] { node.Id }, reason = "Too broad.", confirm = true });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(1, body.GetProperty("succeeded").GetInt32());
+
+        using var scope2 = _factory.Services.CreateScope();
+        var db2 = scope2.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var saved = await db2.SkillGraphNodes.FirstAsync(n => n.Id == node.Id);
+        Assert.Equal(AdminReviewStatus.Rejected, saved.ReviewStatus);
+
+        var auditLog = await db2.AdminAuditLogs.SingleAsync(a =>
+            a.EntityType == "SkillGraphNode" && a.EntityId == node.Id.ToString() && a.Action == "BatchReject");
+        Assert.Equal("\"Approved\"", auditLog.OldValueJson);
+        Assert.Equal("\"Rejected\"", auditLog.NewValueJson);
+        Assert.Equal("Too broad.", auditLog.Reason);
+    }
+
+    [Fact]
+    public async Task BatchReject_OnPendingReviewNode_DoesNotRequireConfirmation()
+    {
+        // The common case (today's default) — confirming the gate only ever engages for the
+        // Approved -> Rejected transition, never for a plain draft rejection.
+        var node = await SeedNodeAsync($"grammar.reject_pending_{Guid.NewGuid():N}.a1");
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/nodes/batch/reject",
+            new { ids = new[] { node.Id }, reason = "Too broad." });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(1, body.GetProperty("succeeded").GetInt32());
+        Assert.False(body.TryGetProperty("requiresConfirmation", out _));
+    }
+
+    [Fact]
+    public async Task BatchApprove_WritesAuditLog()
+    {
+        var node = await SeedNodeAsync($"grammar.approve_audit_{Guid.NewGuid():N}.a1");
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/nodes/batch/approve", new { ids = new[] { node.Id } });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var auditLog = await db.AdminAuditLogs.SingleAsync(a =>
+            a.EntityType == "SkillGraphNode" && a.EntityId == node.Id.ToString() && a.Action == "BatchApprove");
+        Assert.Equal("\"PendingReview\"", auditLog.OldValueJson);
+        Assert.Equal("\"Approved\"", auditLog.NewValueJson);
+    }
+
     [Fact]
     public async Task GetCoverage_ReturnsFullCefrBySkillMatrix()
     {
@@ -1297,6 +1409,104 @@ public sealed class AdminSkillGraphEndpointTests : IClassFixture<ApiTestFactory>
 
         var resp = await client.PostAsync($"/api/admin/skill-graph/nodes/{keep.Id}/merge/{mergeAway.Id}", null);
         Assert.Equal(HttpStatusCode.Conflict, resp.StatusCode);
+    }
+
+    // ── Skill Graph pipeline audit (2026-07-24, Bug #2) — merge must repoint content links ────────
+
+    [Fact]
+    public async Task MergeNodes_RepointsModuleLinkOntoKeepNode()
+    {
+        var suffix = Guid.NewGuid().ToString("N");
+        var keep = await SeedNodeAsync($"grammar.mergelink_keep_{suffix}.a1");
+        var mergeAway = await SeedNodeAsync($"grammar.mergelink_away_{suffix}.a1");
+        Guid moduleId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var module = new Module($"Module {Guid.NewGuid():N}", ModuleSourceMode.Manual, cefrLevel: "A1", skill: "grammar");
+            db.Modules.Add(module);
+            await db.SaveChangesAsync();
+            moduleId = module.Id;
+            db.ModuleSkillGraphNodeLinks.Add(new ModuleSkillGraphNodeLink(moduleId, mergeAway.Id, 0.75));
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PostAsync($"/api/admin/skill-graph/nodes/{keep.Id}/merge/{mergeAway.Id}", null);
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(1, body.GetProperty("relinkedModuleCount").GetInt32());
+        Assert.Equal(0, body.GetProperty("droppedDuplicateModuleLinkCount").GetInt32());
+
+        using var scope2 = _factory.Services.CreateScope();
+        var db2 = scope2.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var links = await db2.ModuleSkillGraphNodeLinks.Where(l => l.ModuleId == moduleId).ToListAsync();
+        var remaining = Assert.Single(links);
+        Assert.Equal(keep.Id, remaining.SkillGraphNodeId);
+        Assert.Equal(0.75, remaining.Confidence);
+
+        var auditLog = await db2.AdminAuditLogs.SingleAsync(a =>
+            a.EntityType == "SkillGraphNode" && a.Action == "MergeNodes" && a.EntityId == keep.Id.ToString());
+        Assert.Contains(mergeAway.Id.ToString(), auditLog.OldValueJson);
+    }
+
+    [Fact]
+    public async Task MergeNodes_DropsDuplicateModuleLinkWhenModuleAlreadyLinkedToKeepNode()
+    {
+        var suffix = Guid.NewGuid().ToString("N");
+        var keep = await SeedNodeAsync($"grammar.mergelinkdup_keep_{suffix}.a1");
+        var mergeAway = await SeedNodeAsync($"grammar.mergelinkdup_away_{suffix}.a1");
+        Guid moduleId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var module = new Module($"Module {Guid.NewGuid():N}", ModuleSourceMode.Manual, cefrLevel: "A1", skill: "grammar");
+            db.Modules.Add(module);
+            await db.SaveChangesAsync();
+            moduleId = module.Id;
+            // Already linked to both — the merge must not try to create a second (moduleId, keepId) row.
+            db.ModuleSkillGraphNodeLinks.Add(new ModuleSkillGraphNodeLink(moduleId, keep.Id, 0.5));
+            db.ModuleSkillGraphNodeLinks.Add(new ModuleSkillGraphNodeLink(moduleId, mergeAway.Id, 0.9));
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PostAsync($"/api/admin/skill-graph/nodes/{keep.Id}/merge/{mergeAway.Id}", null);
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(0, body.GetProperty("relinkedModuleCount").GetInt32());
+        Assert.Equal(1, body.GetProperty("droppedDuplicateModuleLinkCount").GetInt32());
+
+        using var scope2 = _factory.Services.CreateScope();
+        var db2 = scope2.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var links = await db2.ModuleSkillGraphNodeLinks.Where(l => l.ModuleId == moduleId).ToListAsync();
+        var remaining = Assert.Single(links);
+        Assert.Equal(keep.Id, remaining.SkillGraphNodeId);
+        Assert.Equal(0.5, remaining.Confidence); // the pre-existing keep-node link survives untouched
+    }
+
+    [Fact]
+    public async Task MergeNodes_WithNoLinkedContent_ReportsZeroRelinked()
+    {
+        var suffix = Guid.NewGuid().ToString("N");
+        var keep = await SeedNodeAsync($"grammar.mergenolinks_keep_{suffix}.a1");
+        var mergeAway = await SeedNodeAsync($"grammar.mergenolinks_away_{suffix}.a1");
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PostAsync($"/api/admin/skill-graph/nodes/{keep.Id}/merge/{mergeAway.Id}", null);
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(0, body.GetProperty("relinkedModuleCount").GetInt32());
+        Assert.Equal(0, body.GetProperty("droppedDuplicateModuleLinkCount").GetInt32());
     }
 
     [Fact]

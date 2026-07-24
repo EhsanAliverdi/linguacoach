@@ -1727,7 +1727,26 @@ export interface RejectReconnectGroup {
 export interface SkillGraphBatchRejectResponse extends SkillGraphBatchActionResponse {
   edgesRemoved: number;
   reconnectSuggestions: RejectReconnectGroup[];
+  requiresConfirmation?: false;
 }
+
+// Skill Graph pipeline audit (2026-07-24, Bug #1) — returned instead of the response above when a
+// bulk reject includes a currently-Approved node and the caller hasn't confirmed yet; nothing is
+// mutated when this shape comes back. See admin-skill-graph.component.ts's batchReject().
+export interface SkillGraphBatchRejectImpactedNode {
+  id: string;
+  title: string;
+  linkedModuleCount: number;
+}
+
+export interface SkillGraphBatchRejectConfirmationRequired {
+  requiresConfirmation: true;
+  impactedApprovedCount: number;
+  impactedTotalLinkedModules: number;
+  impactedNodes: SkillGraphBatchRejectImpactedNode[];
+}
+
+export type SkillGraphBatchRejectResult = SkillGraphBatchRejectResponse | SkillGraphBatchRejectConfirmationRequired;
 
 // Phase 6.3c — near-duplicate node detection (advisory only) + explicit merge action.
 // Phase 6.3f — descriptions carried on the suggestion (so the admin can judge without navigating
@@ -1755,6 +1774,11 @@ export interface MergeNodesResponse {
   mergeAwayNodeId: string;
   repointedCount: number;
   droppedCount: number;
+  // Skill Graph pipeline audit (2026-07-24, Bug #2) — content links (ModuleSkillGraphNodeLink)
+  // moved from the merge-away node onto the keep node, and duplicates dropped where a Module was
+  // already linked to both. See admin-skill-graph-audit.component.ts's confirmMerge().
+  relinkedModuleCount: number;
+  droppedDuplicateModuleLinkCount: number;
 }
 
 // Phase 6.3f — on-demand per-pair AI second opinion, requested explicitly by the admin (never run

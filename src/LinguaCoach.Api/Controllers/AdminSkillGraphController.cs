@@ -814,7 +814,11 @@ public sealed class AdminSkillGraphController : ControllerBase
         var succeeded = 0;
         foreach (var node in nodes)
         {
-            node.Approve(GetCurrentUserId());
+            var oldStatus = node.ReviewStatus;
+            node.Approve(AdminUserId);
+            _db.AdminAuditLogs.Add(new AdminAuditLog(
+                AdminUserId, "BatchApprove", "SkillGraphNode", entityId: node.Id.ToString(),
+                oldValueJson: $"\"{oldStatus}\"", newValueJson: "\"Approved\""));
             succeeded++;
         }
         await _db.SaveChangesAsync(ct);
@@ -831,10 +835,49 @@ public sealed class AdminSkillGraphController : ControllerBase
         var (ids, limitReached) = Bound(request.Ids);
         var nodes = await _db.SkillGraphNodes.Where(n => ids.Contains(n.Id)).ToListAsync(ct);
 
+        // Skill Graph pipeline audit (2026-07-24, Bug #1) — rejecting a currently-Approved node
+        // silently drops it out of routing/mastery resolution (both filter on Approved && IsActive)
+        // with no cascade to its ModuleSkillGraphNodeLinks. That's the correct destination for a
+        // deliberate "this node was a mistake" rejection, but bulk-selecting across a mixed-status
+        // page (the table shows all statuses together by default) makes it easy to catch an already-
+        // Approved, content-linked node by accident. Gate that specific transition behind an explicit
+        // Confirm round-trip; a plain PendingReview -> Rejected batch (the common case) is unaffected.
+        if (!request.Confirm)
+        {
+            var approvedIds = nodes.Where(n => n.ReviewStatus == AdminReviewStatus.Approved).Select(n => n.Id).ToList();
+            if (approvedIds.Count > 0)
+            {
+                var linkedCounts = await _db.ModuleSkillGraphNodeLinks.AsNoTracking()
+                    .Where(l => approvedIds.Contains(l.SkillGraphNodeId))
+                    .GroupBy(l => l.SkillGraphNodeId)
+                    .Select(g => new { NodeId = g.Key, Count = g.Count() })
+                    .ToListAsync(ct);
+                var linkedCountByNode = linkedCounts.ToDictionary(x => x.NodeId, x => x.Count);
+
+                var impactedNodes = nodes
+                    .Where(n => approvedIds.Contains(n.Id))
+                    .Take(10)
+                    .Select(n => new BatchRejectImpactedNode(n.Id, n.Title, linkedCountByNode.GetValueOrDefault(n.Id)))
+                    .ToList();
+
+                return Ok(new
+                {
+                    requiresConfirmation = true,
+                    impactedApprovedCount = approvedIds.Count,
+                    impactedTotalLinkedModules = linkedCounts.Sum(x => x.Count),
+                    impactedNodes,
+                });
+            }
+        }
+
         var succeeded = 0;
         foreach (var node in nodes)
         {
-            node.Reject(request.Reason, GetCurrentUserId());
+            var oldStatus = node.ReviewStatus;
+            node.Reject(request.Reason, AdminUserId);
+            _db.AdminAuditLogs.Add(new AdminAuditLog(
+                AdminUserId, "BatchReject", "SkillGraphNode", entityId: node.Id.ToString(),
+                oldValueJson: $"\"{oldStatus}\"", newValueJson: "\"Rejected\"", reason: request.Reason));
             succeeded++;
         }
 
@@ -1014,10 +1057,46 @@ public sealed class AdminSkillGraphController : ControllerBase
         foreach (var e in repointed)
             _db.SkillGraphPrerequisiteEdges.Add(new SkillGraphPrerequisiteEdge(e.NodeId, e.PrerequisiteNodeId));
 
+        // Skill Graph pipeline audit (2026-07-24, Bug #2) — content tagged to the merge-away node
+        // must survive the merge exactly like edges do just above, or a "consolidate duplicates"
+        // action silently loses real content-coverage signal instead (mastery/routing both filter
+        // on Approved && IsActive, so a link left pointing at the now-deactivated merge-away node
+        // goes dead). Same delete+recreate shape as the edge repoint above, deduped against any
+        // link the Module might already have on the keep node (unique index on (ModuleId,
+        // SkillGraphNodeId) would otherwise be violated).
+        var linksTouchingMergeAway = await _db.ModuleSkillGraphNodeLinks
+            .Where(l => l.SkillGraphNodeId == mergeAwayNodeId)
+            .ToListAsync(ct);
+        var keepNodeModuleIds = await _db.ModuleSkillGraphNodeLinks.AsNoTracking()
+            .Where(l => l.SkillGraphNodeId == keepNodeId)
+            .Select(l => l.ModuleId)
+            .ToListAsync(ct);
+        var keepNodeModuleIdSet = new HashSet<Guid>(keepNodeModuleIds);
+
+        var relinkedCount = 0;
+        var droppedDuplicateLinkCount = 0;
+        foreach (var link in linksTouchingMergeAway)
+        {
+            _db.ModuleSkillGraphNodeLinks.Remove(link);
+            if (!keepNodeModuleIdSet.Add(link.ModuleId)) { droppedDuplicateLinkCount++; continue; }
+            _db.ModuleSkillGraphNodeLinks.Add(new ModuleSkillGraphNodeLink(link.ModuleId, keepNodeId, link.Confidence));
+            relinkedCount++;
+        }
+
         mergeAwayNode.Deactivate();
+
+        _db.AdminAuditLogs.Add(new AdminAuditLog(
+            AdminUserId, "MergeNodes", "SkillGraphNode", entityId: keepNodeId.ToString(),
+            oldValueJson: $"{{\"mergeAwayNodeId\":\"{mergeAwayNodeId}\"}}",
+            newValueJson: $"{{\"repointedEdges\":{repointed.Count},\"relinkedModules\":{relinkedCount},\"droppedDuplicateModuleLinks\":{droppedDuplicateLinkCount}}}"));
+
         await _db.SaveChangesAsync(ct);
 
-        return Ok(new { keepNodeId, mergeAwayNodeId, repointedCount = repointed.Count, droppedCount });
+        return Ok(new
+        {
+            keepNodeId, mergeAwayNodeId, repointedCount = repointed.Count, droppedCount,
+            relinkedModuleCount = relinkedCount, droppedDuplicateModuleLinkCount = droppedDuplicateLinkCount,
+        });
     }
 
     /// <summary>Coverage matrix: approved+active node count per CEFR level x skill, following the
@@ -1190,6 +1269,15 @@ public sealed class AdminSkillGraphController : ControllerBase
         return $"{skill}.{slug}.{cefrLevel.ToLowerInvariant()}";
     }
 
+    // Skill Graph pipeline audit (2026-07-24, Bug #1) — audit-log rows need a real actor id, never
+    // a silent Guid.Empty fallback (that would misattribute the row). Matches the fail-fast
+    // AdminUserId convention already used by every other controller that writes AdminAuditLog
+    // (AdminStudentReadinessController, AdminUsageGovernanceController, AdminRuntimeSettingsController).
+    private Guid AdminUserId => Guid.Parse(
+        User.FindFirstValue(ClaimTypes.NameIdentifier)
+        ?? User.FindFirstValue("sub")
+        ?? throw new UnauthorizedAccessException("No admin user id in token."));
+
     private Guid? GetCurrentUserId()
     {
         var raw = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
@@ -1199,7 +1287,12 @@ public sealed class AdminSkillGraphController : ControllerBase
 
 public sealed record DraftSkillGraphRequest(string CefrLevel, string Skill);
 public sealed record BatchSkillGraphIdsRequest(List<Guid> Ids);
-public sealed record BatchSkillGraphRejectRequest(List<Guid> Ids, string Reason);
+public sealed record BatchSkillGraphRejectRequest(List<Guid> Ids, string Reason, bool Confirm = false);
+
+/// <summary>Returned by BatchReject instead of applying anything when the batch includes a
+/// currently-Approved (and possibly content-linked) node and the caller hasn't set Confirm — see
+/// docs/reviews/2026-07-24-skill-graph-full-pipeline-senior-audit.md, Bug #1.</summary>
+public sealed record BatchRejectImpactedNode(Guid Id, string Title, int LinkedModuleCount);
 
 public sealed record CreateSkillGraphNodeRequest(
     string Title, string Description, string CefrLevel, string Skill, string? Subskill,

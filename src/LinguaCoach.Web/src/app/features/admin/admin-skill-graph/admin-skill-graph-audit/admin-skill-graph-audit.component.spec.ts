@@ -30,7 +30,10 @@ function makeApi(overrides: Partial<Record<string, unknown>> = {}) {
     getNearDuplicateSuggestions: jasmine.createSpy('getNearDuplicateSuggestions').and.returnValue(
       of<NearDuplicateSuggestionsResponse>({ count: 0, suggestions: [] })),
     mergeSkillGraphNodes: jasmine.createSpy('mergeSkillGraphNodes').and.returnValue(
-      of<MergeNodesResponse>({ keepNodeId: 'n1', mergeAwayNodeId: 'n2', repointedCount: 0, droppedCount: 0 })),
+      of<MergeNodesResponse>({
+        keepNodeId: 'n1', mergeAwayNodeId: 'n2', repointedCount: 0, droppedCount: 0,
+        relinkedModuleCount: 0, droppedDuplicateModuleLinkCount: 0,
+      })),
     confirmNearDuplicate: jasmine.createSpy('confirmNearDuplicate').and.returnValue(
       of<ConfirmNearDuplicateResponse>({ success: true, isLikelyDuplicate: false, reasoning: 'Different content.', error: null })),
     removeSkillGraphPrerequisite: jasmine.createSpy('removeSkillGraphPrerequisite').and.returnValue(of({ removed: true })),
@@ -171,6 +174,29 @@ describe('AdminSkillGraphAuditComponent', () => {
     component.confirmMerge();
     expect(api.mergeSkillGraphNodes).toHaveBeenCalledWith('n1', 'n2');
     expect(component.nearDuplicateSuggestions()).toEqual([]);
+  });
+
+  // Skill Graph pipeline audit (2026-07-24, Bug #2) — merge's content-link repoint counts must be
+  // visible to the admin, not just applied silently.
+  it('confirmMerge surfaces relinked/dropped module-link counts in mergeStatus', async () => {
+    const dup: NearDuplicateNodeSuggestion = {
+      nodeAId: 'n1', nodeATitle: 'A', nodeADescription: 'Desc A',
+      nodeBId: 'n2', nodeBTitle: 'B', nodeBDescription: 'Desc B',
+      cefrLevel: 'A1', skill: 'grammar', similarity: 0.9,
+    };
+    await setup({
+      mergeSkillGraphNodes: jasmine.createSpy().and.returnValue(of<MergeNodesResponse>({
+        keepNodeId: 'n1', mergeAwayNodeId: 'n2', repointedCount: 0, droppedCount: 0,
+        relinkedModuleCount: 2, droppedDuplicateModuleLinkCount: 1,
+      })),
+    });
+    component.nearDuplicateSuggestions.set([dup]);
+    component.stageMerge(dup, 'A');
+
+    component.confirmMerge();
+
+    expect(component.mergeStatus()).toContain('2 module link(s) moved');
+    expect(component.mergeStatus()).toContain('1 duplicate link(s) dropped');
   });
 
   it('cancelMerge clears the pending confirmation without calling the API', async () => {

@@ -266,6 +266,149 @@ public sealed class TodayPlanModuleSelectionServiceTests : IDisposable
         candidate.IsWeaknessMatch.Should().BeTrue();
     }
 
+    // ── Skill Graph pipeline audit (2026-07-24, Bug #4) — prerequisite-gap signal ────────────────
+
+    [Fact]
+    public async Task Candidate_with_atrisk_prerequisite_is_flagged_as_unmet_prerequisite()
+    {
+        var studentId = Guid.NewGuid();
+        var module = SeedModule(cefrLevel: "B1", skill: "Grammar");
+
+        var prerequisite = new SkillGraphNode("b1.grammar.prereq", "Prereq", "desc", "B1", "Grammar");
+        prerequisite.Approve(null);
+        var node = new SkillGraphNode("b1.grammar.dependent", "Dependent", "desc", "B1", "Grammar");
+        node.Approve(null);
+        _db.SkillGraphNodes.AddRange(prerequisite, node);
+        _db.SaveChanges();
+        _db.SkillGraphPrerequisiteEdges.Add(new SkillGraphPrerequisiteEdge(node.Id, prerequisite.Id));
+        _db.ModuleSkillGraphNodeLinks.Add(new ModuleSkillGraphNodeLink(module.Id, node.Id));
+        _db.SaveChanges();
+
+        _mastery.AtRiskObjectiveKeys = ["b1.grammar.prereq"];
+
+        await _sut.SelectAsync(Request(studentId));
+
+        var candidate = _composer.LastRequest!.Candidates.Single(c => c.ModuleId == module.Id);
+        candidate.HasUnmetPrerequisite.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Candidate_with_never_attempted_prerequisite_is_not_flagged()
+    {
+        // Bootstrap safety: a prerequisite with zero evidence must never block content, or nothing
+        // could ever be shown to a brand-new student (every prerequisite starts unattempted).
+        var studentId = Guid.NewGuid();
+        var module = SeedModule(cefrLevel: "B1", skill: "Grammar");
+
+        var prerequisite = new SkillGraphNode("b1.grammar.prereq_fresh", "Prereq", "desc", "B1", "Grammar");
+        prerequisite.Approve(null);
+        var node = new SkillGraphNode("b1.grammar.dependent_fresh", "Dependent", "desc", "B1", "Grammar");
+        node.Approve(null);
+        _db.SkillGraphNodes.AddRange(prerequisite, node);
+        _db.SaveChanges();
+        _db.SkillGraphPrerequisiteEdges.Add(new SkillGraphPrerequisiteEdge(node.Id, prerequisite.Id));
+        _db.ModuleSkillGraphNodeLinks.Add(new ModuleSkillGraphNodeLink(module.Id, node.Id));
+        _db.SaveChanges();
+
+        // No AtRisk/Weak keys set at all — the prerequisite has never been attempted.
+
+        await _sut.SelectAsync(Request(studentId));
+
+        var candidate = _composer.LastRequest!.Candidates.Single(c => c.ModuleId == module.Id);
+        candidate.HasUnmetPrerequisite.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Candidate_with_merely_weak_not_atrisk_prerequisite_is_not_flagged()
+    {
+        // Threshold check: "Weak" (NeedsPractice/NeedsReview) is real signal for IsWeaknessMatch,
+        // but must NOT count as an unmet prerequisite — only AtRisk (clear struggle) does.
+        var studentId = Guid.NewGuid();
+        var module = SeedModule(cefrLevel: "B1", skill: "Grammar");
+
+        var prerequisite = new SkillGraphNode("b1.grammar.prereq_weak", "Prereq", "desc", "B1", "Grammar");
+        prerequisite.Approve(null);
+        var node = new SkillGraphNode("b1.grammar.dependent_weak", "Dependent", "desc", "B1", "Grammar");
+        node.Approve(null);
+        _db.SkillGraphNodes.AddRange(prerequisite, node);
+        _db.SaveChanges();
+        _db.SkillGraphPrerequisiteEdges.Add(new SkillGraphPrerequisiteEdge(node.Id, prerequisite.Id));
+        _db.ModuleSkillGraphNodeLinks.Add(new ModuleSkillGraphNodeLink(module.Id, node.Id));
+        _db.SaveChanges();
+
+        _mastery.WeakObjectiveKeys = ["b1.grammar.prereq_weak"];
+
+        await _sut.SelectAsync(Request(studentId));
+
+        var candidate = _composer.LastRequest!.Candidates.Single(c => c.ModuleId == module.Id);
+        candidate.HasUnmetPrerequisite.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Candidate_with_no_prerequisite_edges_is_not_flagged()
+    {
+        var studentId = Guid.NewGuid();
+        var module = SeedModule(cefrLevel: "B1", skill: "Grammar");
+
+        var node = new SkillGraphNode("b1.grammar.no_prereq", "No Prereq", "desc", "B1", "Grammar");
+        node.Approve(null);
+        _db.SkillGraphNodes.Add(node);
+        _db.SaveChanges();
+        _db.ModuleSkillGraphNodeLinks.Add(new ModuleSkillGraphNodeLink(module.Id, node.Id));
+        _db.SaveChanges();
+
+        // Something else is AtRisk, but nothing this module's node depends on.
+        _mastery.AtRiskObjectiveKeys = ["some.unrelated.node"];
+
+        await _sut.SelectAsync(Request(studentId));
+
+        var candidate = _composer.LastRequest!.Candidates.Single(c => c.ModuleId == module.Id);
+        candidate.HasUnmetPrerequisite.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Candidate_two_hops_from_the_atrisk_node_is_not_flagged()
+    {
+        // Only DIRECT prerequisites are checked (documented, deliberate one-hop scope) — C requires
+        // B, B requires A, student is AtRisk on A only. C's candidate must NOT be flagged, since
+        // C's own direct prerequisite (B) isn't itself AtRisk.
+        var studentId = Guid.NewGuid();
+        var module = SeedModule(cefrLevel: "B1", skill: "Grammar");
+
+        var nodeA = new SkillGraphNode("b1.grammar.chain_a", "A", "desc", "B1", "Grammar");
+        nodeA.Approve(null);
+        var nodeB = new SkillGraphNode("b1.grammar.chain_b", "B", "desc", "B1", "Grammar");
+        nodeB.Approve(null);
+        var nodeC = new SkillGraphNode("b1.grammar.chain_c", "C", "desc", "B1", "Grammar");
+        nodeC.Approve(null);
+        _db.SkillGraphNodes.AddRange(nodeA, nodeB, nodeC);
+        _db.SaveChanges();
+        _db.SkillGraphPrerequisiteEdges.Add(new SkillGraphPrerequisiteEdge(nodeB.Id, nodeA.Id)); // B requires A
+        _db.SkillGraphPrerequisiteEdges.Add(new SkillGraphPrerequisiteEdge(nodeC.Id, nodeB.Id)); // C requires B
+        _db.ModuleSkillGraphNodeLinks.Add(new ModuleSkillGraphNodeLink(module.Id, nodeC.Id));
+        _db.SaveChanges();
+
+        _mastery.AtRiskObjectiveKeys = ["b1.grammar.chain_a"];
+
+        await _sut.SelectAsync(Request(studentId));
+
+        var candidate = _composer.LastRequest!.Candidates.Single(c => c.ModuleId == module.Id);
+        candidate.HasUnmetPrerequisite.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Candidate_with_no_linked_node_is_not_flagged()
+    {
+        var studentId = Guid.NewGuid();
+        var module = SeedModule(cefrLevel: "B1", skill: "Grammar");
+        _mastery.AtRiskObjectiveKeys = ["some.unrelated.node"];
+
+        await _sut.SelectAsync(Request(studentId));
+
+        var candidate = _composer.LastRequest!.Candidates.Single(c => c.ModuleId == module.Id);
+        candidate.HasUnmetPrerequisite.Should().BeFalse();
+    }
+
     [Fact]
     public async Task Composer_failure_returns_fallback_not_exception()
     {

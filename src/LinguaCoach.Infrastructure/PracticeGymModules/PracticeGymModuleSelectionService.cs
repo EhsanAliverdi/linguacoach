@@ -222,7 +222,7 @@ public sealed class PracticeGymModuleSelectionService : IPracticeGymModuleSelect
 
             var maxSuggestions = Math.Max(1, request.MaxSuggestions);
 
-            var nodeMasteryWeaknessModuleIds = await ResolveNodeMasteryWeaknessMatchModuleIdsAsync(request.StudentId, pool, ct);
+            var (nodeMasteryWeaknessModuleIds, unmetPrerequisiteModuleIds) = await ResolveNodeMasteryWeaknessMatchModuleIdsAsync(request.StudentId, pool, ct);
             var topGoalTags = await ResolveTopGoalTagsAsync(request.StudentId, ct);
             var primaryNodeKeyByModuleId = await ResolvePrimaryNodeKeysAsync(pool, ct);
 
@@ -244,7 +244,8 @@ public sealed class PracticeGymModuleSelectionService : IPracticeGymModuleSelect
                 IsWeaknessMatch: nodeMasteryWeaknessModuleIds.Contains(e.Module.Id) || IsRemediation(e.Module),
                 IsGoalMatch: topGoalTags.Count > 0
                     && SafeParseStringArray(e.Module.ContextTagsJson).Any(t => topGoalTags.Contains(t)),
-                RecentlyPractisedSameSkill: e.Module.Skill is not null && recentlyPractisedSkills.Contains(e.Module.Skill)))
+                RecentlyPractisedSameSkill: e.Module.Skill is not null && recentlyPractisedSkills.Contains(e.Module.Skill),
+                HasUnmetPrerequisite: unmetPrerequisiteModuleIds.Contains(e.Module.Id)))
                 .ToList();
 
             var composerResult = await _composer.RankCandidatesAsync(new ComposerRankingRequest(
@@ -354,24 +355,65 @@ public sealed class PracticeGymModuleSelectionService : IPracticeGymModuleSelect
     /// <see cref="IStudentMasteryEvaluationService.EvaluateStudentAsync"/> (Sprint 4's node-based
     /// grouping) joined through <c>ModuleSkillGraphNodeLink</c>. Distinct from (and combined with,
     /// by the caller) <c>request.WeaknessSignals</c>' ledger-derived weak-skill signal — both are
-    /// real, deterministic facts handed to the composer, never inferred by the AI itself.</summary>
-    private async Task<HashSet<Guid>> ResolveNodeMasteryWeaknessMatchModuleIdsAsync(
+    /// real, deterministic facts handed to the composer, never inferred by the AI itself.
+    ///
+    /// Skill Graph pipeline audit (2026-07-24, Bug #4) — also resolves which pool Modules have an
+    /// unmet prerequisite: a linked node whose <c>SkillGraphPrerequisiteEdge</c> prerequisite is
+    /// AtRisk for this student. Deliberately AtRisk-only, not "Weak" and not "no evidence yet" —
+    /// a never-attempted prerequisite must never count as unmet, or nothing could ever be shown to
+    /// a brand-new student (every prerequisite starts unattempted). Computed here (not a separate
+    /// service call) to reuse the same <see cref="StudentMasteryReport"/>/pool-link query this
+    /// method already needs, rather than paying for a second 200-event mastery evaluation. Mirrors
+    /// <see cref="LinguaCoach.Infrastructure.TodayPlanModules.TodayPlanModuleSelectionService"/>'s
+    /// identically-named-in-spirit method — two near-duplicate implementations across Today/Gym is
+    /// this codebase's own established precedent for this exact pair of services.</summary>
+    private async Task<(HashSet<Guid> WeaknessMatchModuleIds, HashSet<Guid> UnmetPrerequisiteModuleIds)> ResolveNodeMasteryWeaknessMatchModuleIdsAsync(
         Guid studentId, List<(Module Module, List<Lesson> Learns, List<Exercise> Activities)> pool, CancellationToken ct)
     {
         var report = await _mastery.EvaluateStudentAsync(studentId, MasteryEvaluationReason.ContentDelivery, ct);
         var gapNodeKeys = new HashSet<string>(
             report.WeakObjectiveKeys.Concat(report.AtRiskObjectiveKeys), StringComparer.OrdinalIgnoreCase);
-        if (gapNodeKeys.Count == 0)
-            return [];
+        var atRiskNodeKeys = new HashSet<string>(report.AtRiskObjectiveKeys, StringComparer.OrdinalIgnoreCase);
+        if (gapNodeKeys.Count == 0 && atRiskNodeKeys.Count == 0)
+            return ([], []);
 
         var poolModuleIds = pool.Select(e => e.Module.Id).ToList();
         var links = await _db.ModuleSkillGraphNodeLinks.AsNoTracking()
             .Where(l => poolModuleIds.Contains(l.ModuleId))
             .Join(_db.SkillGraphNodes.AsNoTracking(), l => l.SkillGraphNodeId, n => n.Id,
-                (l, n) => new { l.ModuleId, n.Key })
+                (l, n) => new { l.ModuleId, NodeId = n.Id, n.Key })
             .ToListAsync(ct);
 
-        return links.Where(x => gapNodeKeys.Contains(x.Key)).Select(x => x.ModuleId).ToHashSet();
+        var weaknessMatchModuleIds = links.Where(x => gapNodeKeys.Contains(x.Key)).Select(x => x.ModuleId).ToHashSet();
+
+        var unmetPrerequisiteModuleIds = new HashSet<Guid>();
+        if (atRiskNodeKeys.Count > 0 && links.Count > 0)
+        {
+            var linkedNodeIds = links.Select(x => x.NodeId).Distinct().ToList();
+            var edges = await _db.SkillGraphPrerequisiteEdges.AsNoTracking()
+                .Where(e => linkedNodeIds.Contains(e.NodeId))
+                .Select(e => new { e.NodeId, e.PrerequisiteNodeId })
+                .ToListAsync(ct);
+            if (edges.Count > 0)
+            {
+                var prerequisiteNodeIds = edges.Select(e => e.PrerequisiteNodeId).Distinct().ToList();
+                var prerequisiteKeysById = await _db.SkillGraphNodes.AsNoTracking()
+                    .Where(n => prerequisiteNodeIds.Contains(n.Id))
+                    .ToDictionaryAsync(n => n.Id, n => n.Key, ct);
+
+                var nodesWithUnmetPrerequisite = edges
+                    .Where(e => prerequisiteKeysById.TryGetValue(e.PrerequisiteNodeId, out var key) && atRiskNodeKeys.Contains(key))
+                    .Select(e => e.NodeId)
+                    .ToHashSet();
+
+                unmetPrerequisiteModuleIds = links
+                    .Where(x => nodesWithUnmetPrerequisite.Contains(x.NodeId))
+                    .Select(x => x.ModuleId)
+                    .ToHashSet();
+            }
+        }
+
+        return (weaknessMatchModuleIds, unmetPrerequisiteModuleIds);
     }
 
     /// <summary>Adaptive Curriculum Sprint 7 — one representative skill-graph node key per pool

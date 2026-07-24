@@ -202,6 +202,12 @@
       @if (hasSelection()) {
         <div selectionBar class="sp-admin-form-actions">
           <span class="sp-admin-hint">{{ selectedIds().size }} selected</span>
+          @if (selectedApprovedCount() > 0) {
+            <!-- Skill Graph pipeline audit (2026-07-24, Bug #1) — fast, non-authoritative heads-up
+                 computed purely from the already-loaded rows; the real gate is server-side (see
+                 batchReject()/pendingRejectConfirmation below), this is just an earlier warning. -->
+            <sp-admin-badge tone="warning" appearance="soft" size="sm">{{ selectedApprovedCount() }} already Approved</sp-admin-badge>
+          }
           <input type="text" placeholder="Rejection reason" [(ngModel)]="rejectReason"
             class="sp-admin-native-input" style="max-width:220px; width:auto; flex:1 1 220px;" />
           <sp-admin-button size="sm" variant="danger" appearance="outline" [disabled]="batchPending()" (clicked)="batchReject()">
@@ -242,5 +248,35 @@
 
     }
   </sp-admin-card>
+
+<!-- ── Bulk reject confirmation (Skill Graph pipeline audit, 2026-07-24, Bug #1) ────────────────
+     Only opens when the batch/reject call reports requiresConfirmation — i.e. the selection
+     includes at least one currently-Approved node. Nothing is rejected until "Confirm reject". -->
+<sp-admin-modal
+  [open]="!!pendingRejectConfirmation()"
+  title="Reject approved node(s)?"
+  variant="danger"
+  (closed)="cancelBatchReject()">
+
+  @if (pendingRejectConfirmation(); as impact) {
+    <p class="sp-admin-hint">
+      {{ impact.impactedApprovedCount }} of the selected node(s) are currently <strong>Approved</strong>
+      and linked to {{ impact.impactedTotalLinkedModules }} module(s) of real content.
+      Rejecting them removes them from student delivery immediately.
+    </p>
+    <ul class="sp-admin-form-stack">
+      @for (node of impact.impactedNodes; track node.id) {
+        <li>{{ node.title }} — {{ node.linkedModuleCount }} linked module(s)</li>
+      }
+    </ul>
+  }
+
+  @if (batchError()) { <sp-admin-alert variant="error">{{ batchError() }}</sp-admin-alert> }
+
+  <div slot="footer">
+    <sp-admin-button variant="neutral" appearance="outline" [disabled]="batchPending()" (clicked)="cancelBatchReject()">Cancel</sp-admin-button>
+    <sp-admin-button variant="danger" [disabled]="batchPending()" (clicked)="confirmBatchReject()">Confirm reject</sp-admin-button>
+  </div>
+</sp-admin-modal>
 
 </sp-admin-page-body>

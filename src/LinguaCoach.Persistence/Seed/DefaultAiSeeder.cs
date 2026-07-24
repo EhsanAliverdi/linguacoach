@@ -5012,12 +5012,13 @@ Maximum items to select: {{maxResults}}
 Candidate content (JSON array; each item is already confirmed eligible — approved, CEFR-appropriate, and not recently repeated for this student):
 {{candidatesJson}}
 
-Each candidate carries two real signals already computed for this student — trust them as given, do not re-derive them:
+Each candidate carries real signals already computed for this student — trust them as given, do not re-derive them:
 - "isWeaknessMatch": true means this candidate covers a skill-graph node the student is currently weak on or at risk of losing — a real gap-closing opportunity.
 - "isGoalMatch": true means this candidate's content tags match one of the student's stated top learning goals (e.g. workplace English, travel).
 - "recentlyPractisedSameSkill": true means the student worked on this exact skill within the last few days — prefer variety unless a requested skill/subskill overrides it.
+- "hasUnmetPrerequisite": true means this candidate's skill-graph node has a prerequisite skill the student is currently struggling with (at risk of losing, not just "not yet tried") — like a good teacher, avoid handing the student something that builds on a foundation that's currently shaky, and prefer a candidate without this flag when one is otherwise a reasonable fit. This is a preference, not a hard rule — if every reasonable candidate has this flag, still pick the best one rather than returning nothing.
 
-Like a good teacher planning a lesson, prioritize in this order: (1) an explicit requested skill/subskill/objective if one is given, (2) isWeaknessMatch candidates — closing a real gap beats novelty, (3) isGoalMatch candidates — relevance to what the student actually wants English for, (4) skill diversity across the selected set when nothing above forces a choice — avoid recentlyPractisedSameSkill candidates unless nothing else is available. When a preferred session length is given, prefer candidates whose estimatedMinutes is close to it, as a tie-breaker below the priorities above.
+Like a good teacher planning a lesson, prioritize in this order: (1) an explicit requested skill/subskill/objective if one is given, (2) isWeaknessMatch candidates — closing a real gap beats novelty, (3) isGoalMatch candidates — relevance to what the student actually wants English for, (4) skill diversity across the selected set when nothing above forces a choice — avoid recentlyPractisedSameSkill candidates unless nothing else is available. Within any of these tiers, prefer a candidate without hasUnmetPrerequisite over one with it, all else being equal. When a preferred session length is given, prefer candidates whose estimatedMinutes is close to it, as a tie-breaker below the priorities above.
 
 Return ONLY valid JSON (no markdown, no text outside the JSON object) matching this exact shape:
 

@@ -18,6 +18,7 @@ import {
   GraphChangeSuggestion,
   NearDuplicateNodeSuggestion,
   ConfirmNearDuplicateResponse,
+  MergeNodesResponse,
 } from '../../../../core/models/admin.models';
 import { IssuesSummary, RepairableItemSummary } from '../../../../core/models/admin-repair.models';
 import { AdminBulkRepairService } from '../../../../core/services/admin-bulk-repair.service';
@@ -405,9 +406,13 @@ export class AdminSkillGraphAuditComponent implements OnInit {
   // decisions, unlike redundant edges' batchable removals).
   pendingMerge = signal<{ key: string; suggestion: NearDuplicateNodeSuggestion; keep: 'A' | 'B' } | null>(null);
   mergeError = signal('');
+  // Skill Graph pipeline audit (2026-07-24, Bug #2) — surfaces the content-link repoint counts the
+  // backend now reports, so a merge that moved/dropped Module tagging isn't invisible to the admin.
+  mergeStatus = signal('');
 
   stageMerge(suggestion: NearDuplicateNodeSuggestion, keep: 'A' | 'B'): void {
     this.mergeError.set('');
+    this.mergeStatus.set('');
     this.pendingMerge.set({ key: AdminSkillGraphAuditComponent.duplicateKey(suggestion), suggestion, keep });
   }
 
@@ -422,13 +427,21 @@ export class AdminSkillGraphAuditComponent implements OnInit {
     const keepNodeId = keep === 'A' ? suggestion.nodeAId : suggestion.nodeBId;
     const mergeAwayNodeId = keep === 'A' ? suggestion.nodeBId : suggestion.nodeAId;
     this.api.mergeSkillGraphNodes(keepNodeId, mergeAwayNodeId).subscribe({
-      next: () => {
+      next: r => {
         this.pendingMerge.set(null);
+        this.mergeStatus.set(this.describeMergeResult(r));
         this.dismissNearDuplicateSuggestion(suggestion);
         this.loadIsolatedNodes();
       },
       error: err => this.mergeError.set(err?.error?.error ?? 'Could not merge these nodes.'),
     });
+  }
+
+  private describeMergeResult(r: MergeNodesResponse): string {
+    const parts: string[] = [];
+    if (r.relinkedModuleCount > 0) parts.push(`${r.relinkedModuleCount} module link(s) moved`);
+    if (r.droppedDuplicateModuleLinkCount > 0) parts.push(`${r.droppedDuplicateModuleLinkCount} duplicate link(s) dropped`);
+    return parts.length > 0 ? `Merged. ${parts.join(', ')}.` : 'Merged.';
   }
 
   // ── Phase 6.3f — on-demand per-pair AI second opinion. Never called automatically; only when

@@ -43,7 +43,14 @@ public sealed record ComposerCandidate(
     /// <summary>True when this candidate's skill was assigned to this student within the last 3
     /// days (a tighter novelty band than the hard 14-day reuse-cooldown the caller already
     /// enforced) — a soft "you just did this skill" signal, not a hard exclusion.</summary>
-    bool RecentlyPractisedSameSkill);
+    bool RecentlyPractisedSameSkill,
+    /// <summary>Skill Graph pipeline audit (2026-07-24, Bug #4) — true when this candidate's
+    /// skill-graph node has a prerequisite node (<c>SkillGraphPrerequisiteEdge</c>) the student is
+    /// currently AtRisk on (per <c>StudentMasteryEvaluationService.EvaluateStudentAsync</c>) —
+    /// a real struggle signal, not merely "not yet mastered" (a never-attempted prerequisite does
+    /// NOT set this, or nothing could ever be shown to a brand-new student). A soft deprioritization
+    /// signal for the composer, never a hard pool filter — see the fix's review doc for why.</summary>
+    bool HasUnmetPrerequisite = false);
 
 public sealed record ComposerRankingRequest(
     Guid StudentId,

@@ -105,13 +105,14 @@ public sealed class LearningPlanService : ILearningPlanService
 
         var masteredKeys = masteryReport?.MasteredObjectiveKeys ?? [];
         var weakKeys = masteryReport?.WeakObjectiveKeys ?? [];
+        var atRiskKeys = masteryReport?.AtRiskObjectiveKeys ?? [];
 
         // Resolve learner goal context for routing.
         var goalContext = _goalContextResolver.Resolve(profile);
 
         // Build the objective sequence for the plan.
         var objectives = await BuildObjectiveSequenceAsync(
-            profile, cefrLevel, goalContext, masteredKeys, weakKeys, ct);
+            profile, cefrLevel, goalContext, masteredKeys, weakKeys, atRiskKeys, ct);
 
         // Persist the new plan.
         var plan = new StudentLearningPlan(
@@ -722,6 +723,7 @@ public sealed class LearningPlanService : ILearningPlanService
         ResolvedLearningGoalContext goalContext,
         IReadOnlyList<string> masteredKeys,
         IReadOnlyList<string> weakKeys,
+        IReadOnlyList<string> atRiskKeys,
         CancellationToken ct)
     {
         var results = new List<ObjectiveCandidate>();
@@ -823,7 +825,67 @@ public sealed class LearningPlanService : ILearningPlanService
                 BlockedByObjectiveKey: null));
         }
 
-        return results;
+        return await ApplyPrerequisiteBlockingAsync(results, atRiskKeys, ct);
+    }
+
+    /// <summary>Skill Graph pipeline audit (2026-07-24, Bug #5) — <see cref="StudentLearningPlanObjective.IsBlocked"/>/
+    /// <c>BlockedByObjectiveKey</c> was permanently inert: every construction site above passes
+    /// hardcoded false/null, so the (already-correct, already-consumed) "!IsBlocked" filters in
+    /// <see cref="GetProgressAsync"/>/<see cref="GetNextPlannedObjectiveAsync"/>/
+    /// <see cref="GetPracticeGymObjectivesAsync"/> have simply been no-ops. This supplies the real
+    /// value: an objective is blocked when its skill-graph node has a direct
+    /// <see cref="SkillGraphPrerequisiteEdge"/> prerequisite the student is currently AtRisk on —
+    /// same threshold as the Today/Gym composer's <c>HasUnmetPrerequisite</c> signal (deliberately
+    /// AtRisk-only, not Weak, not a never-attempted prerequisite, or nothing could ever be unblocked
+    /// for a brand-new student whose every prerequisite starts unattempted). One hop only — a
+    /// transitive C-requires-B-requires-A chain where only A is AtRisk does not block C.</summary>
+    private async Task<List<ObjectiveCandidate>> ApplyPrerequisiteBlockingAsync(
+        List<ObjectiveCandidate> results, IReadOnlyList<string> atRiskKeys, CancellationToken ct)
+    {
+        if (atRiskKeys.Count == 0 || results.Count == 0)
+            return results;
+
+        var atRiskKeySet = new HashSet<string>(atRiskKeys, StringComparer.OrdinalIgnoreCase);
+        var objectiveKeys = results.Select(r => r.ObjectiveKey).Distinct().ToList();
+
+        var nodesByKey = await _db.SkillGraphNodes.AsNoTracking()
+            .Where(n => objectiveKeys.Contains(n.Key))
+            .ToDictionaryAsync(n => n.Key, n => n.Id, ct);
+        if (nodesByKey.Count == 0)
+            return results;
+
+        var nodeIds = nodesByKey.Values.ToList();
+        var edges = await _db.SkillGraphPrerequisiteEdges.AsNoTracking()
+            .Where(e => nodeIds.Contains(e.NodeId))
+            .Select(e => new { e.NodeId, e.PrerequisiteNodeId })
+            .ToListAsync(ct);
+        if (edges.Count == 0)
+            return results;
+
+        var prerequisiteNodeIds = edges.Select(e => e.PrerequisiteNodeId).Distinct().ToList();
+        var prerequisiteKeysById = await _db.SkillGraphNodes.AsNoTracking()
+            .Where(n => prerequisiteNodeIds.Contains(n.Id))
+            .ToDictionaryAsync(n => n.Id, n => n.Key, ct);
+
+        // Adversarial review (2026-07-24) — if a node has 2+ AtRisk direct prerequisites, order
+        // deterministically by key before picking one, so BlockedByObjectiveKey doesn't depend on
+        // unspecified DB enumeration order across runs. IsBlocked itself was already correct either
+        // way; this only fixes which key gets attributed in the "locked until X" UI.
+        var blockingKeyByNodeId = edges
+            .Where(e => prerequisiteKeysById.TryGetValue(e.PrerequisiteNodeId, out var key) && atRiskKeySet.Contains(key))
+            .Select(e => new { e.NodeId, PrerequisiteKey = prerequisiteKeysById[e.PrerequisiteNodeId] })
+            .GroupBy(x => x.NodeId)
+            .ToDictionary(g => g.Key, g => g.Select(x => x.PrerequisiteKey).OrderBy(k => k, StringComparer.OrdinalIgnoreCase).First());
+        if (blockingKeyByNodeId.Count == 0)
+            return results;
+
+        return results.Select(r =>
+        {
+            if (!nodesByKey.TryGetValue(r.ObjectiveKey, out var nodeId)
+                || !blockingKeyByNodeId.TryGetValue(nodeId, out var blockingKey))
+                return r;
+            return r with { IsBlocked = true, BlockedByObjectiveKey = blockingKey };
+        }).ToList();
     }
 
     /// <summary>

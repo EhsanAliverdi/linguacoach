@@ -63,7 +63,8 @@ public sealed class CurriculumComposerService : ICurriculumComposerService
                 objectiveKey = c.ObjectiveKey,
                 isWeaknessMatch = c.IsWeaknessMatch,
                 isGoalMatch = c.IsGoalMatch,
-                recentlyPractisedSameSkill = c.RecentlyPractisedSameSkill
+                recentlyPractisedSameSkill = c.RecentlyPractisedSameSkill,
+                hasUnmetPrerequisite = c.HasUnmetPrerequisite
             }))
         };
 
