@@ -62,6 +62,9 @@ app-data/certs/
 ## OS
 .DS_Store
 Thumbs.db
+
+## ContentSeeder resumability state (machine-generated, not seed content)
+data/seed-json/*.checkpoint.json
 node_modules/
 src/LinguaCoach.Web/dist/
 .gstack/
