@@ -12,4 +12,7 @@
     <Project Path="tests/LinguaCoach.IntegrationTests/LinguaCoach.IntegrationTests.csproj" />
     <Project Path="tests/LinguaCoach.UnitTests/LinguaCoach.UnitTests.csproj" />
   </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/LinguaCoach.ContentSeeder/LinguaCoach.ContentSeeder.csproj" />
+  </Folder>
 </Solution>
