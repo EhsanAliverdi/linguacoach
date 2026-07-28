@@ -27101,6 +27101,2697 @@
       "definition": "Relating to literature.",
       "parentKey": "vocabulary.topic_descriptive_adjectives",
       "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_litter_noun.b2",
+      "headword": "litter",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Rubbish left carelessly in a public place.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_little_adjective.a1",
+      "headword": "little",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A1",
+      "definition": "Small in size or amount.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_little_adverb.a1",
+      "headword": "little",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "A1",
+      "definition": "Not much; to a small degree.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_little_determiner.b1",
+      "headword": "little",
+      "partOfSpeech": "determiner",
+      "cefrLevel": "B1",
+      "definition": "Not much.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_little_pronoun.b1",
+      "headword": "little",
+      "partOfSpeech": "pronoun",
+      "cefrLevel": "B1",
+      "definition": "A small amount.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_live_adjective.b1",
+      "headword": "live",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Broadcast or performed in real time, or alive.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_live_verb.a1",
+      "headword": "live",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A1",
+      "definition": "To be alive, or to have your home somewhere.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_lively_adjective.a2",
+      "headword": "lively",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Full of energy and enthusiasm.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_liver_noun.b1",
+      "headword": "liver",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "An organ that cleans the blood and produces bile.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_living_adjective.a1",
+      "headword": "living",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A1",
+      "definition": "Currently alive.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_living_noun.b2",
+      "headword": "living",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The money someone earns to support themselves.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_load_noun.a2",
+      "headword": "load",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "Something carried or transported, or an amount of work.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_load_verb.b2",
+      "headword": "load",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To put things into or onto something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_loaf_noun.b1",
+      "headword": "loaf",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A shaped mass of baked bread.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_lobby_noun.b2",
+      "headword": "lobby",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "An entrance hall in a building.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_local_adjective.a2",
+      "headword": "local",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Relating to a particular area or neighbourhood.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_locate_verb.b1",
+      "headword": "locate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To find the exact position of something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_location_noun.b1",
+      "headword": "location",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The place where something is.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_lock_verb.b1",
+      "headword": "lock",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To fasten something with a key.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_log_noun.b1",
+      "headword": "log",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A piece of a tree trunk, or a written record.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_logical_adjective.a2",
+      "headword": "logical",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Following clear reasoning; sensible.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_logo_noun.b1",
+      "headword": "logo",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A symbol used to represent a company or brand.",
+      "parentKey": "vocabulary.topic_media",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_loneliness_noun.b2",
+      "headword": "loneliness",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The state of feeling alone and unhappy.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_lonely_adjective.a1",
+      "headword": "lonely",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A1",
+      "definition": "Feeling sad because of being alone.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_long_adjective.a1",
+      "headword": "long",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A1",
+      "definition": "Great in length or duration.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_long_adverb.a2",
+      "headword": "long",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "A2",
+      "definition": "For a great amount of time.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_long_distance_adjective.b2",
+      "headword": "long-distance",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Covering a great distance.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_long_term_adjective.b2",
+      "headword": "long-term",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Happening or continuing over a long period.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_look_noun.a1",
+      "headword": "look",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "An act of looking, or a person's appearance.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_look_verb.a1",
+      "headword": "look",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A1",
+      "definition": "To direct your eyes toward something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_loose_adjective.a2",
+      "headword": "loose",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Not tightly fixed or fitted.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_loosely_adverb.b2",
+      "headword": "loosely",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "In a loose, not tight, way.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_lorry_noun.b1",
+      "headword": "lorry",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A large vehicle used for transporting goods.",
+      "parentKey": "vocabulary.topic_ways_of_travelling",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_lose_verb.a2",
+      "headword": "lose",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To no longer have something, or to fail to win.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_loss_noun.b1",
+      "headword": "loss",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The state of losing something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_lost_adjective.a2",
+      "headword": "lost",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Unable to find your way, or no longer possessed.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_lot_adverb.a1",
+      "headword": "lot",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "A1",
+      "definition": "To a great extent.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_lot_noun.a2",
+      "headword": "lot",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A large amount, or a piece of land.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_lot_pronoun.a1",
+      "headword": "lot",
+      "partOfSpeech": "pronoun",
+      "cefrLevel": "A1",
+      "definition": "A large amount.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_lottery_noun.b1",
+      "headword": "lottery",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A game in which numbers are drawn for prizes.",
+      "parentKey": "vocabulary.topic_hobbies_and_pastimes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_loud_adjective.b1",
+      "headword": "loud",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Producing a lot of noise.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_loud_adverb.b1",
+      "headword": "loud",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B1",
+      "definition": "In a way that produces a lot of noise.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_loudly_adverb.a2",
+      "headword": "loudly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "A2",
+      "definition": "In a noisy way.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_lousy_adjective.b2",
+      "headword": "lousy",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Very bad or poor in quality, informally.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_love_noun.a1",
+      "headword": "love",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A strong feeling of affection.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_love_verb.a1",
+      "headword": "love",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A1",
+      "definition": "To feel deep affection for someone or something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_lovely_adjective.a1",
+      "headword": "lovely",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A1",
+      "definition": "Very attractive or pleasant.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_lovingly_adverb.b1",
+      "headword": "lovingly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B1",
+      "definition": "In an affectionate way.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_low_adjective.a2",
+      "headword": "low",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Not high; small in amount or level.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_low_adverb.a2",
+      "headword": "low",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "A2",
+      "definition": "In or to a low position.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_lower_verb.b2",
+      "headword": "lower",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To move something to a lower position, or reduce it.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_lowland_noun.b2",
+      "headword": "lowland",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "An area of flat, low-lying land.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_loyal_adjective.b1",
+      "headword": "loyal",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Faithful and supportive.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_loyalty_noun.b1",
+      "headword": "loyalty",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Faithfulness and support.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_luck_noun.a1",
+      "headword": "luck",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "Success or failure caused by chance.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_luckily_adverb.a2",
+      "headword": "luckily",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "A2",
+      "definition": "Fortunately.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_lucky_adjective.a1",
+      "headword": "lucky",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A1",
+      "definition": "Having good things happen by chance.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_lucrative_adjective.b2",
+      "headword": "lucrative",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Producing a lot of money.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_lunchtime_noun.a2",
+      "headword": "lunchtime",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "The time of day for eating lunch.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_lung_noun.b1",
+      "headword": "lung",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "One of the two organs used for breathing.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_lush_adjective.b2",
+      "headword": "lush",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Growing thickly and healthily, especially plants.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_luxurious_adjective.b2",
+      "headword": "luxurious",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Extremely comfortable and expensive.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_luxury_adjective.b2",
+      "headword": "luxury",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Very expensive and comfortable.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_luxury_noun.b1",
+      "headword": "luxury",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Great comfort provided by expensive things.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_lyric_adjective.a2",
+      "headword": "lyric",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Relating to song lyrics or expressing personal emotion.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_lyrics_noun.b2",
+      "headword": "lyrics",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The words of a song.",
+      "parentKey": "vocabulary.topic_media",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_m_be_verb.a1",
+      "headword": "'m",
+      "partOfSpeech": "be-verb",
+      "cefrLevel": "A1",
+      "definition": "A contracted form of 'am', used after 'I'.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mad_adjective.a2",
+      "headword": "mad",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Mentally ill, or very angry, informally.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_madam_noun.b2",
+      "headword": "madam",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A polite form of address for a woman.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_madame_noun.b2",
+      "headword": "madame",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A French title of address for a married woman.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_madness_noun.b2",
+      "headword": "madness",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Mental illness, or extremely foolish behaviour.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_magic_adjective.a2",
+      "headword": "magic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Having or seeming to have supernatural powers.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_magic_noun.a2",
+      "headword": "magic",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "The power to make impossible things happen.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_magical_adjective.b1",
+      "headword": "magical",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Relating to magic; wonderful.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_magnificent_adjective.b1",
+      "headword": "magnificent",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Extremely beautiful or impressive.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_magnify_verb.b2",
+      "headword": "magnify",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To make something appear larger.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mail_verb.b1",
+      "headword": "mail",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To send something by post.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_main_adjective.b1",
+      "headword": "main",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Most important.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_main_course_noun.a2",
+      "headword": "main course",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "The largest dish of a meal.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mainly_adverb.a2",
+      "headword": "mainly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "A2",
+      "definition": "Mostly; for the most part.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_maintain_verb.b1",
+      "headword": "maintain",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To keep something in good condition, or to continue an activity.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_maintenance_noun.b1",
+      "headword": "maintenance",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The process of keeping something in good condition.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_major_adjective.a2",
+      "headword": "major",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Very important or serious.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_major_noun.b2",
+      "headword": "major",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A student's main subject of study.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_majority_noun.b1",
+      "headword": "majority",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "More than half of a group.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_make_noun.b2",
+      "headword": "make",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The brand or manufacturer of a product.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_make_verb.a1",
+      "headword": "make",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A1",
+      "definition": "To produce or create something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_make_up_noun.a2",
+      "headword": "make-up",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "Cosmetics applied to the face.",
+      "parentKey": "vocabulary.topic_clothes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_malady_noun.b2",
+      "headword": "malady",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "An illness or disease.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_male_adjective.b1",
+      "headword": "male",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Relating to men or boys, or the sex that fathers young.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_manage_verb.a2",
+      "headword": "manage",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To be in charge of something, or to succeed in doing something difficult.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_manipulate_verb.b2",
+      "headword": "manipulate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To control or influence someone or something cleverly.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mankind_noun.b1",
+      "headword": "mankind",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "All human beings.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_manner_noun.a2",
+      "headword": "manner",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "The way something is done.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_manual_adjective.b2",
+      "headword": "manual",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Operated by hand; involving physical work.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_manufacture_verb.b2",
+      "headword": "manufacture",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To make goods on a large scale using machines.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_manufacturing_noun.b2",
+      "headword": "manufacturing",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The business of making goods using machines.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_many_determiner.a1",
+      "headword": "many",
+      "partOfSpeech": "determiner",
+      "cefrLevel": "A1",
+      "definition": "A large number of.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_many_pronoun.a1",
+      "headword": "many",
+      "partOfSpeech": "pronoun",
+      "cefrLevel": "A1",
+      "definition": "A large number.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_maple_noun.b1",
+      "headword": "maple",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A tree known for its distinctive leaves and syrup.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_marathon_noun.b2",
+      "headword": "marathon",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A long-distance running race of 26.2 miles.",
+      "parentKey": "vocabulary.topic_hobbies_and_pastimes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_marble_noun.b1",
+      "headword": "marble",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A hard stone used in building and sculpture.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_march_noun.b1",
+      "headword": "march",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "An organised walk, often as a protest.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_march_verb.b1",
+      "headword": "march",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To walk with regular steps, often in a group.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_margin_noun.b2",
+      "headword": "margin",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The blank space at the edge of a page, or a small amount.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_marine_adjective.b1",
+      "headword": "marine",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Relating to the sea.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mark_noun.a2",
+      "headword": "mark",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A grade or score, or a visible sign.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mark_verb.a2",
+      "headword": "mark",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To make a visible sign on something, or to grade work.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_marked_adjective.b1",
+      "headword": "marked",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Clearly noticeable.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_market_noun.a2",
+      "headword": "market",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A place where goods are bought and sold.",
+      "parentKey": "vocabulary.topic_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_market_verb.b1",
+      "headword": "market",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To promote and sell a product.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_marketing_noun.b2",
+      "headword": "marketing",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The activity of promoting and selling products.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_married_adjective.a2",
+      "headword": "married",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Having a husband or wife.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_marry_verb.a2",
+      "headword": "marry",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To become someone's husband or wife.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_martial_art_noun.b2",
+      "headword": "martial art",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A sport or skill of combat, e.g. karate.",
+      "parentKey": "vocabulary.topic_hobbies_and_pastimes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_marvelous_marvellous_adjective.a2",
+      "headword": "marvelous/marvellous",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Extremely good; wonderful.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mash_verb.b1",
+      "headword": "mash",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To crush food into a soft mass.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mask_noun.b2",
+      "headword": "mask",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A covering worn over the face.",
+      "parentKey": "vocabulary.topic_clothes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mass_adjective.b1",
+      "headword": "mass",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Involving a large number of people.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mass_noun.b2",
+      "headword": "mass",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A large quantity, or a measure of matter.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_massage_noun.b2",
+      "headword": "massage",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The act of rubbing the body to relax muscles.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_massive_adjective.b1",
+      "headword": "massive",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Very large.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_master_noun.b2",
+      "headword": "master",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A person with great skill, or a person in control.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mastery_noun.b2",
+      "headword": "mastery",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Complete skill or control over something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_match_verb.b1",
+      "headword": "match",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To be the same as, or go well with, something else.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_material_noun.a2",
+      "headword": "material",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "The substance something is made from, or fabric.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mathematical_adjective.b2",
+      "headword": "mathematical",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Relating to mathematics.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_matter_noun.a1",
+      "headword": "matter",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A subject or situation, or physical substance.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_matter_verb.a2",
+      "headword": "matter",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To be important.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mature_adjective.b2",
+      "headword": "mature",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Fully grown or developed; sensible for one's age.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_max_noun.a2",
+      "headword": "max",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A short form of maximum.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_maximum_adjective.b1",
+      "headword": "maximum",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "The greatest possible.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_maximum_noun.b1",
+      "headword": "maximum",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The greatest possible amount.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_may_modal_auxiliary.a1",
+      "headword": "may",
+      "partOfSpeech": "modal auxiliary",
+      "cefrLevel": "A1",
+      "definition": "Used to express possibility or permission.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_may_noun.a1",
+      "headword": "May",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "The fifth month of the year.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_maybe_adverb.a1",
+      "headword": "maybe",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "A1",
+      "definition": "Perhaps; possibly.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_me_pronoun.a1",
+      "headword": "me",
+      "partOfSpeech": "pronoun",
+      "cefrLevel": "A1",
+      "definition": "Used to refer to the speaker as the object of a verb.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mean_adjective.a2",
+      "headword": "mean",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Unkind, or of poor quality.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mean_noun.b2",
+      "headword": "mean",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The average of a set of numbers.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mean_verb.a1",
+      "headword": "mean",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A1",
+      "definition": "To intend to express or convey something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_meaning_noun.a2",
+      "headword": "meaning",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "What something represents or signifies.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_meaningful_adjective.b1",
+      "headword": "meaningful",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Having a purpose or significance.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_means_noun.b2",
+      "headword": "means",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A method used to achieve something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_meanwhile_adverb.b1",
+      "headword": "meanwhile",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B1",
+      "definition": "At the same time; in the time between.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_measure_noun.b1",
+      "headword": "measure",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "An action taken to achieve something, or a unit of size.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_measure_verb.b1",
+      "headword": "measure",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To find the size or amount of something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_measurement_noun.b1",
+      "headword": "measurement",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The size or amount found by measuring.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mechanical_adjective.b1",
+      "headword": "mechanical",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Relating to machines.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mechanize_mechanise_verb.b2",
+      "headword": "mechanize/mechanise",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To equip a process with machines.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_medal_noun.a2",
+      "headword": "medal",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A metal disc given as an award.",
+      "parentKey": "vocabulary.topic_hobbies_and_pastimes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_media_noun.b2",
+      "headword": "media",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Television, radio, newspapers, and the internet collectively.",
+      "parentKey": "vocabulary.topic_media",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_medical_adjective.a2",
+      "headword": "medical",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Relating to the treatment of illness.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_medication_noun.b2",
+      "headword": "medication",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Medicine used to treat illness.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_medieval_mediaeval_adjective.b2",
+      "headword": "medieval/mediaeval",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Relating to the Middle Ages.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mediocre_adjective.b2",
+      "headword": "mediocre",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Not very good; average.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_meditate_verb.b1",
+      "headword": "meditate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To focus the mind quietly for relaxation or spiritual purposes.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_meditation_noun.b1",
+      "headword": "meditation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The practice of focusing the mind quietly.",
+      "parentKey": "vocabulary.topic_hobbies_and_pastimes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mediterranean_noun.b1",
+      "headword": "Mediterranean",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The sea between southern Europe and northern Africa.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_medium_adjective.b1",
+      "headword": "medium",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Neither large nor small; average.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_meet_verb.a1",
+      "headword": "meet",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A1",
+      "definition": "To come together with someone by chance or arrangement.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_meeting_noun.a1",
+      "headword": "meeting",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "An event where people come together to discuss something.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_melon_noun.a2",
+      "headword": "melon",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A large, sweet, round fruit.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_melt_verb.b1",
+      "headword": "melt",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To change from solid to liquid because of heat.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_member_noun.a2",
+      "headword": "member",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A person who belongs to a group.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_membership_noun.b1",
+      "headword": "membership",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The state of belonging to a group.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_memorable_adjective.b1",
+      "headword": "memorable",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Worth remembering; easy to remember.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_memorial_noun.b2",
+      "headword": "memorial",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Something built to remember a person or event.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_memorize_memorise_verb.b1",
+      "headword": "memorize/memorise",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To learn something so it can be recalled exactly.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_memory_noun.a1",
+      "headword": "memory",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "The ability to remember, or something remembered.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mend_verb.b1",
+      "headword": "mend",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To repair something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mental_adjective.b1",
+      "headword": "mental",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Relating to the mind.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mentally_adverb.b1",
+      "headword": "mentally",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B1",
+      "definition": "In a way relating to the mind.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mention_noun.a2",
+      "headword": "mention",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A brief reference to something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mention_verb.b1",
+      "headword": "mention",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To refer to something briefly.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mentor_noun.b2",
+      "headword": "mentor",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "An experienced person who advises someone less experienced.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mercy_noun.b2",
+      "headword": "mercy",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Kindness shown toward someone who could be treated harshly.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mere_adjective.c2",
+      "headword": "mere",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "definition": "Nothing more than; only.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_merely_adverb.b1",
+      "headword": "merely",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B1",
+      "definition": "Only; simply.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_merge_verb.b2",
+      "headword": "merge",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To combine or join together.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_merger_noun.c2",
+      "headword": "merger",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "definition": "The joining of two organisations into one.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_merry_adjective.a1",
+      "headword": "merry",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A1",
+      "definition": "Cheerful and lively.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mess_noun.b1",
+      "headword": "mess",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A state of untidiness or confusion.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mess_verb.b2",
+      "headword": "mess",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To make something untidy, or to interfere with it.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_message_board_noun.b1",
+      "headword": "message board",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "An online forum for posting messages.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_messy_adjective.b1",
+      "headword": "messy",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Untidy; disorganised.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_metal_noun.a2",
+      "headword": "metal",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A hard, shiny material like iron or gold.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_meter_metre_noun.a2",
+      "headword": "meter/metre",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A unit of length, or a measuring device.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_method_noun.a2",
+      "headword": "method",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A particular way of doing something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_metric_adjective.b2",
+      "headword": "metric",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Relating to the decimal system of measurement.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_microbe_noun.b2",
+      "headword": "microbe",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A very small living organism, like bacteria.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_micrometer_micrometre_noun.b2",
+      "headword": "micrometer/micrometre",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A unit equal to one millionth of a metre.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_microorganism_noun.b2",
+      "headword": "microorganism",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A tiny living thing seen only with a microscope.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_microphone_noun.b2",
+      "headword": "microphone",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A device used to record or amplify sound.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_microscopic_adjective.b2",
+      "headword": "microscopic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Too small to be seen without a microscope.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_microscopy_noun.b2",
+      "headword": "microscopy",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The use of microscopes to examine small objects.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_microwave_noun.b2",
+      "headword": "microwave",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "An appliance used to cook or heat food quickly.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_midday_noun.a2",
+      "headword": "midday",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "Twelve o'clock in the middle of the day.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_middle_adjective.a1",
+      "headword": "middle",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A1",
+      "definition": "In the centre; equally distant from extremes.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_middle_noun.a2",
+      "headword": "middle",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "The centre point of something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_middle_aged_adjective.b1",
+      "headword": "middle-aged",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Between young and old, roughly 45-65.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_midnight_noun.a2",
+      "headword": "midnight",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "Twelve o'clock at night.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_midst_noun.b2",
+      "headword": "midst",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The middle part of a period or event.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_might_modal_auxiliary.a2",
+      "headword": "might",
+      "partOfSpeech": "modal auxiliary",
+      "cefrLevel": "A2",
+      "definition": "Used to express possibility.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mighty_adjective.b2",
+      "headword": "mighty",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Very powerful or strong.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_migration_noun.b2",
+      "headword": "migration",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The movement of people or animals from one place to another.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mild_adjective.b1",
+      "headword": "mild",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Not severe or extreme; gentle.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mile_noun.b1",
+      "headword": "mile",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A unit of distance equal to 1,609 metres.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_military_adjective.a2",
+      "headword": "military",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Relating to soldiers and armed forces.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mill_noun.b2",
+      "headword": "mill",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A building where grain is ground into flour, or a factory.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_millimeter_millimetre_noun.b2",
+      "headword": "millimeter/millimetre",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A unit of length equal to one thousandth of a metre.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_million_number.a2",
+      "headword": "million",
+      "partOfSpeech": "number",
+      "cefrLevel": "A2",
+      "definition": "The number 1,000,000.",
+      "parentKey": "vocabulary.topic_numbers_and_quantities",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mimic_noun.b2",
+      "headword": "mimic",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A person who imitates others.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mind_noun.a1",
+      "headword": "mind",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "The part of a person that thinks and feels.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mind_verb.a2",
+      "headword": "mind",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To object to something, or to take care of someone.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mine_pronoun.a1",
+      "headword": "mine",
+      "partOfSpeech": "pronoun",
+      "cefrLevel": "A1",
+      "definition": "The thing or things belonging to the speaker.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mineral_noun.b1",
+      "headword": "mineral",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A natural substance found in the earth.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mineral_water_noun.a2",
+      "headword": "mineral water",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "Water containing natural minerals, often bottled.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_miniature_adjective.b2",
+      "headword": "miniature",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Very small; a tiny version of something.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_minimize_minimise_verb.b1",
+      "headword": "minimize/minimise",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To reduce something to the smallest possible amount.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_minimum_adjective.b1",
+      "headword": "minimum",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "The smallest possible.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_minimum_noun.b1",
+      "headword": "minimum",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The smallest possible amount.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_minor_adjective.b1",
+      "headword": "minor",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Not very important or serious.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_minority_noun.b1",
+      "headword": "minority",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A smaller part of a group; a group that differs from the majority.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mint_noun.b2",
+      "headword": "mint",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A herb with a fresh flavour, or a sweet.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_minus_preposition.b1",
+      "headword": "minus",
+      "partOfSpeech": "preposition",
+      "cefrLevel": "B1",
+      "definition": "Reduced by; subtracting.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_minute_noun.a1",
+      "headword": "minute",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A unit of time equal to 60 seconds.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_miracle_noun.b1",
+      "headword": "miracle",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "An extraordinary, seemingly impossible event.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mirror_noun.a2",
+      "headword": "mirror",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A surface that reflects an image.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mischief_noun.b1",
+      "headword": "mischief",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Playful troublemaking.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_misconception_noun.b2",
+      "headword": "misconception",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A belief that is incorrect.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_miserable_adjective.b1",
+      "headword": "miserable",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Very unhappy.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_misery_noun.b1",
+      "headword": "misery",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Great unhappiness or suffering.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_misfortune_noun.b2",
+      "headword": "misfortune",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Bad luck.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mislead_verb.b1",
+      "headword": "mislead",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To give someone a false impression.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_misleading_adjective.b2",
+      "headword": "misleading",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Giving a false impression.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_miss_noun.a1",
+      "headword": "Miss",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A title used before the name of an unmarried woman.",
+      "parentKey": "vocabulary.topic_personal_information",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_miss_verb.a1",
+      "headword": "miss",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A1",
+      "definition": "To fail to hit, catch, or attend something; to feel the absence of someone.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_missing_adjective.a2",
+      "headword": "missing",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Not present; lost.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mission_noun.b1",
+      "headword": "mission",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "An important task or purpose.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mist_noun.b2",
+      "headword": "mist",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A thin fog.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mistake_noun.a2",
+      "headword": "mistake",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "An action or decision that is wrong.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mistreat_verb.b2",
+      "headword": "mistreat",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To treat someone badly or cruelly.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mistrustful_adjective.b2",
+      "headword": "mistrustful",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Not trusting; suspicious.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_misty_adjective.b1",
+      "headword": "misty",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Covered with mist.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_misunderstand_verb.b2",
+      "headword": "misunderstand",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To fail to understand something correctly.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_misunderstanding_noun.b1",
+      "headword": "misunderstanding",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A failure to understand something correctly.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mix_noun.b2",
+      "headword": "mix",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A combination of different things, or a ready-made mixture for cooking.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mix_verb.a2",
+      "headword": "mix",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To combine different things together.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mixing_bowl_noun.b1",
+      "headword": "mixing bowl",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A bowl used for mixing ingredients.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mixture_noun.b2",
+      "headword": "mixture",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A combination of different things.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mobile_adjective.a2",
+      "headword": "mobile",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Able to move or be moved easily.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mobility_noun.b2",
+      "headword": "mobility",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The ability to move freely.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mock_adjective.b2",
+      "headword": "mock",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Not real; fake.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_modal_verb_modal_noun.b1",
+      "headword": "modal verb/modal",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A verb like 'can/must/should' used to express possibility, ability, or obligation.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_model_adjective.b1",
+      "headword": "model",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Serving as an excellent example.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_model_noun.a2",
+      "headword": "model",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A representation of something, or a person who displays clothes.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_model_verb.b1",
+      "headword": "model",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To create a representation, or to display clothes professionally.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_moderate_adjective.b1",
+      "headword": "moderate",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Neither too much nor too little; reasonable.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_modern_adjective.a2",
+      "headword": "modern",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Relating to the present time; up to date.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_modernization_modernisation_noun.b2",
+      "headword": "modernization/modernisation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The process of making something more modern.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_modernize_modernise_verb.b2",
+      "headword": "modernize/modernise",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To make something more modern.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_modest_adjective.b2",
+      "headword": "modest",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Not boastful; not excessive.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_modification_noun.b2",
+      "headword": "modification",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A small change made to something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_modify_verb.b1",
+      "headword": "modify",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To make small changes to something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mogul_noun.b2",
+      "headword": "mogul",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A rich and powerful person, especially in business.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_moisture_noun.b1",
+      "headword": "moisture",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A small amount of liquid present in the air or on a surface.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mold_mould_noun.b2",
+      "headword": "mold/mould",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A fungus that grows in damp conditions, or a shaped container for making objects.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_moment_noun.a1",
+      "headword": "moment",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A very short period of time.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_momentarily_adverb.b2",
+      "headword": "momentarily",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "For a very short time.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_momentary_adjective.b2",
+      "headword": "momentary",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Lasting only a moment.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mommy_mommie_noun.a1",
+      "headword": "mommy/mommie",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "An informal, affectionate word for mother.",
+      "parentKey": "vocabulary.topic_family_life",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_monday_noun.a1",
+      "headword": "Monday",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "The day of the week between Sunday and Tuesday.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_monitor_noun.b1",
+      "headword": "monitor",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A screen used to display computer output.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_monitor_verb.b1",
+      "headword": "monitor",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To watch and check something over time.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_monkey_noun.a1",
+      "headword": "monkey",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A small animal that climbs trees, related to apes.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_monster_noun.b1",
+      "headword": "monster",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "An imaginary frightening creature.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_month_noun.a1",
+      "headword": "month",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "One of the twelve divisions of a year.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_monthly_adjective.b1",
+      "headword": "monthly",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Happening once a month.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_monthly_adverb.b1",
+      "headword": "monthly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B1",
+      "definition": "Once a month.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mood_noun.a2",
+      "headword": "mood",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A temporary state of mind or feeling.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_moody_adjective.b2",
+      "headword": "moody",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Having unpredictable changes of mood.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_moon_noun.a1",
+      "headword": "moon",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "The natural satellite that orbits the Earth.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_moonlight_noun.b2",
+      "headword": "moonlight",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Light from the moon.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_moonscape_noun.b2",
+      "headword": "moonscape",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A landscape resembling the surface of the moon.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_moral_adjective.b2",
+      "headword": "moral",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Relating to right and wrong behaviour.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_morality_noun.b2",
+      "headword": "morality",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Principles of right and wrong behaviour.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_morally_adverb.b2",
+      "headword": "morally",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "In a way relating to right and wrong.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_more_adverb.b1",
+      "headword": "more",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B1",
+      "definition": "To a greater extent.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_more_determiner.a1",
+      "headword": "more",
+      "partOfSpeech": "determiner",
+      "cefrLevel": "A1",
+      "definition": "A greater amount of.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_more_pronoun.a1",
+      "headword": "more",
+      "partOfSpeech": "pronoun",
+      "cefrLevel": "A1",
+      "definition": "A greater amount.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_moreover_adverb.b1",
+      "headword": "moreover",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B1",
+      "definition": "In addition; besides.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_morning_noun.a1",
+      "headword": "morning",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "The early part of the day.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mortal_adjective.b2",
+      "headword": "mortal",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Unable to live forever; causing death.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mortar_noun.b2",
+      "headword": "mortar",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A mixture used to hold bricks together, or a weapon that fires shells.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mortgage_noun.b2",
+      "headword": "mortgage",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A loan used to buy property.",
+      "parentKey": "vocabulary.topic_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mortify_verb.b2",
+      "headword": "mortify",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To cause someone to feel deeply embarrassed.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mosque_noun.a2",
+      "headword": "mosque",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A building used for Muslim worship.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_mosquito_noun.b1",
+      "headword": "mosquito",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A small flying insect that bites and can spread disease.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_moss_noun.b1",
+      "headword": "moss",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A small green plant that grows on damp surfaces.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
     }
   ]
 }
