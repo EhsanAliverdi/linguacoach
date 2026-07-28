@@ -96,7 +96,15 @@ Each phase should get its own scoping/plan pass before implementation, per this 
 
 ## Risks / unresolved questions
 
-- Skill-graph size/granularity is undetermined — too coarse loses the sequencing value, too fine becomes an unmaintainable graph even with AI-assisted authoring. Needs a concrete node-count target before Phase 1 starts.
+- ~~Skill-graph size/granularity is undetermined...~~ **Resolved 2026-07-24/27**: granularity
+  decision made and implemented. See `docs/reviews/2026-07-24-skill-graph-full-pipeline-senior-audit.md`
+  (schema recommendation + user sign-off) and `docs/reviews/2026-07-27-skill-graph-container-leaf-hierarchy-cefrj-import-implementation.md`
+  (implementation record). Summary: a self-referencing `ParentNodeId` container/leaf hierarchy on
+  `SkillGraphNode`; edges/mastery/content-links live on leaves only; the real CEFR-J Grammar Profile
+  CSV is imported as structured leaf data for Grammar (the one skill with a free, structured, real
+  coursebook-equivalent source). Non-grammar granularity (vocabulary, functional-language, subskills)
+  remains unresolved — no CEFR-J-equivalent source exists for those; flagged as a separate future
+  sourcing decision.
 - The AI composer (Phase 5) is a genuinely novel component with no direct precedent in this codebase — it deserves its own dedicated design pass, not a quick extension of the existing selectors.
 - Backfilling mastery data from the old per-objective-key model onto graph nodes may be lossy or ambiguous for existing students; needs an explicit migration decision when Phase 3 is scoped.
 - No student-facing UX for the goal vector has been designed yet (how goals are presented, edited, and explained to the student).

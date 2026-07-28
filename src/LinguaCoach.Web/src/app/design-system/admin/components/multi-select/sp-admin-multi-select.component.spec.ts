@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { SpAdminMultiSelectComponent, SpAdminMultiSelectOption } from './sp-admin-multi-select.component';
 
@@ -35,6 +35,16 @@ class ImmediateHostComponent {
   options = OPTIONS;
   excludeValues: string[] = [];
   picked: SpAdminMultiSelectOption | null = null;
+}
+
+@Component({
+  standalone: true,
+  imports: [SpAdminMultiSelectComponent, FormsModule],
+  template: `<sp-admin-multi-select [options]="options" (searchTermChange)="terms.push($event)" />`,
+})
+class SearchTrackingHostComponent {
+  options = OPTIONS;
+  terms: string[] = [];
 }
 
 describe('SpAdminMultiSelectComponent', () => {
@@ -148,4 +158,38 @@ describe('SpAdminMultiSelectComponent', () => {
 
     expect(fixture.componentInstance.selected).toEqual(['a']);
   });
+
+  // ── Skill Graph rebuild Phase 4 (2026-07-27) — debounced searchTermChange, for callers that
+  // fetch options from a server-side search endpoint instead of holding every candidate. ────────
+
+  it('searchTermChange fires the trimmed search text after the debounce window', fakeAsync(() => {
+    const fixture = TestBed.createComponent(SearchTrackingHostComponent);
+    fixture.detectChanges();
+    const input: HTMLInputElement = fixture.nativeElement.querySelector('.sp-adm-ms-input');
+
+    input.value = ' present ';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.terms).toEqual([]); // not yet — still debouncing
+    tick(250);
+
+    expect(fixture.componentInstance.terms).toEqual(['present']);
+  }));
+
+  it('searchTermChange debounces rapid keystrokes into a single emission', fakeAsync(() => {
+    const fixture = TestBed.createComponent(SearchTrackingHostComponent);
+    fixture.detectChanges();
+    const input: HTMLInputElement = fixture.nativeElement.querySelector('.sp-adm-ms-input');
+
+    for (const partial of ['p', 'pr', 'pre', 'pres']) {
+      input.value = partial;
+      input.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+      tick(100); // less than the 250ms debounce window
+    }
+    tick(250);
+
+    expect(fixture.componentInstance.terms).toEqual(['pres']);
+  }));
 });

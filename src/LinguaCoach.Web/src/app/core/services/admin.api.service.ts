@@ -19,6 +19,7 @@ import {
   SkillGraphDraftResponse, SkillGraphBatchActionResponse, SkillGraphBatchRejectResponse, SkillGraphBatchRejectResult, SkillGraphCoverageResponse,
   SkillGraphRetagResponse, SkillGraphContentCoverageResponse, SkillGraphResponse,
   CreateSkillGraphNodeRequest, CreateSkillGraphNodeResponse, UpdateSkillGraphNodeRequest, SkillGraphIsolatedNodesResponse,
+  AssignSkillGraphParentRequest, AssignSkillGraphParentResponse,
   SkillGraphPlacementSuggestionResponse,
   GraphChangeSuggestionsResponse,
   NearDuplicateSuggestionsResponse, MergeNodesResponse, ConfirmNearDuplicateResponse,
@@ -208,7 +209,15 @@ export class AdminApiService {
   getSkillGraphTaxonomy(): Observable<SkillGraphTaxonomy> {
     return this.http.get<SkillGraphTaxonomy>(`${this.api}/skill-graph/taxonomy`);
   }
-  getSkillGraphNodes(params: { cefrLevel?: string; skill?: string; reviewStatus?: string; search?: string; contextTag?: string; focusTag?: string; page?: number; pageSize?: number }): Observable<SkillGraphNodeListResponse> {
+  getSkillGraphNodes(params: {
+    cefrLevel?: string; skill?: string; reviewStatus?: string; search?: string; contextTag?: string; focusTag?: string;
+    // Skill Graph rebuild Phase 4 (2026-07-27) — PrimeNG TreeTable lazy-load: topLevelOnly for the
+    // tree's root rows, parentNodeId for one container's children on expand.
+    topLevelOnly?: boolean; parentNodeId?: string;
+    // Skill Graph rebuild Phase 4 (2026-07-27, user follow-up) — "Has children" filter.
+    hasChildren?: boolean;
+    page?: number; pageSize?: number;
+  }): Observable<SkillGraphNodeListResponse> {
     const qs = Object.entries(params)
       .filter(([, v]) => v !== undefined && v !== '')
       .map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`)
@@ -265,6 +274,10 @@ export class AdminApiService {
   }
   removeSkillGraphPrerequisite(nodeId: string, prerequisiteNodeId: string): Observable<{ removed: boolean }> {
     return this.http.delete<{ removed: boolean }>(`${this.api}/skill-graph/nodes/${nodeId}/prerequisites/${prerequisiteNodeId}`);
+  }
+  // Container/leaf hierarchy (2026-07-27) — null clears the node's parent.
+  assignSkillGraphParent(nodeId: string, body: AssignSkillGraphParentRequest): Observable<AssignSkillGraphParentResponse> {
+    return this.http.put<AssignSkillGraphParentResponse>(`${this.api}/skill-graph/nodes/${nodeId}/parent`, body);
   }
   getIsolatedSkillGraphNodes(): Observable<SkillGraphIsolatedNodesResponse> {
     return this.http.get<SkillGraphIsolatedNodesResponse>(`${this.api}/skill-graph/nodes/isolated`);

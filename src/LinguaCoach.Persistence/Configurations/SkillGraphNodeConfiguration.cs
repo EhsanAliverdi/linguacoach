@@ -32,9 +32,19 @@ internal sealed class SkillGraphNodeConfiguration : IEntityTypeConfiguration<Ski
         builder.Property(e => e.UpdatedAtUtc).HasColumnName("updated_at_utc").IsRequired();
         builder.Property(e => e.ContextTagsJson).HasColumnName("context_tags_json").HasDefaultValue("[]").IsRequired();
         builder.Property(e => e.FocusTagsJson).HasColumnName("focus_tags_json").HasDefaultValue("[]").IsRequired();
+        builder.Property(e => e.ParentNodeId).HasColumnName("parent_node_id");
 
         builder.HasIndex(e => e.Key).IsUnique().HasDatabaseName("ix_skill_graph_nodes_key");
         builder.HasIndex(e => new { e.CefrLevel, e.Skill, e.IsActive }).HasDatabaseName("ix_skill_graph_nodes_cefr_skill_active");
         builder.HasIndex(e => e.ReviewStatus).HasDatabaseName("ix_skill_graph_nodes_review_status");
+        builder.HasIndex(e => e.ParentNodeId).HasDatabaseName("ix_skill_graph_nodes_parent_node_id");
+
+        // Self-referencing, same no-cascade convention SkillGraphPrerequisiteEdge already uses —
+        // deleting/deactivating a container while it still has children must be an explicit,
+        // reviewed action (reparent or deactivate the children first), never a silent cascade.
+        builder.HasOne<SkillGraphNode>()
+            .WithMany()
+            .HasForeignKey(e => e.ParentNodeId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

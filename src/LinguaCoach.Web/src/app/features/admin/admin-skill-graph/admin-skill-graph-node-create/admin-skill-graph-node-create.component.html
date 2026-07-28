@@ -45,6 +45,21 @@
     />
   </sp-admin-section-card>
 
+  <sp-admin-section-card title="Parent (container)">
+    <p class="sp-admin-section-sub">Optional — place this node as a leaf under an existing container. Leave empty for a standalone/container node.</p>
+    @if (stagedParent(); as parent) {
+      <div class="sp-admin-form-actions" style="justify-content:space-between;">
+        <span style="color:#8A5A00;">{{ parent.title }} <em>(new — not saved yet)</em></span>
+        <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="clearParent()">Undo</sp-admin-button>
+      </div>
+    } @else {
+      <sp-admin-form-field label="Add parent" hint="Search by title or key — staged until you click Save.">
+        <sp-admin-multi-select [options]="pickerOptions()" [accumulate]="false"
+          (optionPicked)="setParent($event)" (searchTermChange)="onPickerSearchChange($event)" placeholder="Search nodes…" />
+      </sp-admin-form-field>
+    }
+  </sp-admin-section-card>
+
   <sp-admin-section-card title="Prerequisites (must be mastered first)">
     <p class="sp-admin-section-sub">Optional — pick the node(s) that must be mastered before this one. Can also be added later from the node's Edit page.</p>
     @if (stagedPrereqs().length > 0) {
@@ -62,7 +77,7 @@
 
     <sp-admin-form-field label="Add prerequisite" hint="Search by title or key — staged until you click Save.">
       <sp-admin-multi-select [options]="pickerOptions()" [excludeValues]="prereqExcludeIds()" [accumulate]="false"
-        (optionPicked)="addPrereq($event)" placeholder="Search nodes…" />
+        (optionPicked)="addPrereq($event)" (searchTermChange)="onPickerSearchChange($event)" placeholder="Search nodes…" />
     </sp-admin-form-field>
   </sp-admin-section-card>
 
@@ -83,7 +98,7 @@
 
     <sp-admin-form-field label="Add unlock" hint="Search by title or key — this node will become a prerequisite of the one you pick, staged until you click Save.">
       <sp-admin-multi-select [options]="pickerOptions()" [excludeValues]="unlockExcludeIds()" [accumulate]="false"
-        (optionPicked)="addUnlock($event)" placeholder="Search nodes…" />
+        (optionPicked)="addUnlock($event)" (searchTermChange)="onPickerSearchChange($event)" placeholder="Search nodes…" />
     </sp-admin-form-field>
   </sp-admin-section-card>
 

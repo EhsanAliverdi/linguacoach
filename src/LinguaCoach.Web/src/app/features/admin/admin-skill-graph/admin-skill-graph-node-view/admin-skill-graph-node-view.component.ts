@@ -14,6 +14,7 @@ import {
   SpAdminSectionCardComponent,
 } from '../../../../design-system/admin';
 import { computeGraphNeighborhood, NodeGraphPreviewEdge, NodeGraphPreviewNode, SpAdminNodeGraphPreviewComponent } from '../node-graph-preview/sp-admin-node-graph-preview.component';
+import { SpAdminNodeHierarchyModalComponent } from '../node-hierarchy-modal/sp-admin-node-hierarchy-modal.component';
 
 /**
  * User correction (2026-07-23): View must be a dedicated page, not a slide-over, and must be
@@ -41,6 +42,7 @@ import { computeGraphNeighborhood, NodeGraphPreviewEdge, NodeGraphPreviewNode, S
     SpAdminPageHeaderComponent,
     SpAdminSectionCardComponent,
     SpAdminNodeGraphPreviewComponent,
+    SpAdminNodeHierarchyModalComponent,
   ],
   templateUrl: './admin-skill-graph-node-view.component.html',
 })
@@ -120,6 +122,20 @@ export class AdminSkillGraphNodeViewComponent implements OnInit {
 
   goToNode(id: string): void {
     this.router.navigateByUrl(`/admin/skill-graph/nodes/${id}`);
+  }
+
+  // Container/leaf hierarchy (2026-07-27) — clicking a node in the local graph preview now opens
+  // a "peek" modal showing that node's own parent/children instead of navigating straight away,
+  // so an admin can check a neighbor's place in the hierarchy without losing this page. The modal
+  // itself still offers "View full page" (goToNode) for when they actually want to navigate.
+  hierarchyModalNodeId = signal<string | null>(null);
+
+  openNodeHierarchyModal(id: string): void {
+    this.hierarchyModalNodeId.set(id);
+  }
+
+  closeNodeHierarchyModal(): void {
+    this.hierarchyModalNodeId.set(null);
   }
 
   // User correction (2026-07-24) — this used to hardcode a return to the main list page, so

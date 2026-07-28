@@ -1574,6 +1574,10 @@ export interface SkillGraphNodeListItem {
   focusTags: string[];
   // Content-coverage merge (2026-07-23) — replaces the deleted separate "Content coverage" table.
   linkedModuleCount: number;
+  // Container/leaf hierarchy (2026-07-27) — parentNodeId null means this node is either a
+  // container itself or a standalone (non-hierarchical) node; childCount > 0 means it's a container.
+  parentNodeId: string | null;
+  childCount: number;
 }
 
 export interface SkillGraphNodeListResponse {
@@ -1600,6 +1604,9 @@ export interface SkillGraphNodeDetail extends SkillGraphNodeListItem {
   dependents: SkillGraphNodePrerequisiteRef[];
   // Content-coverage merge (2026-07-23) — real Modules linked to this node.
   linkedModules: SkillGraphLinkedModuleRef[];
+  // Container/leaf hierarchy (2026-07-27).
+  parent: SkillGraphNodePrerequisiteRef | null;
+  children: (SkillGraphNodePrerequisiteRef & { reviewStatus: string })[];
 }
 
 // Editability audit (2026-07-23) — manual node create/edit + manual edge management.
@@ -1619,6 +1626,8 @@ export interface CreateSkillGraphNodeRequest {
   // prerequisites and be the prerequisite for several other nodes — genuine many-to-many).
   prerequisiteNodeIds?: string[];
   dependentNodeIds?: string[];
+  // Container/leaf hierarchy (2026-07-27) — place the node under a container at creation time.
+  parentNodeId?: string | null;
 }
 
 export interface CreateSkillGraphNodeResponse {
@@ -1626,6 +1635,16 @@ export interface CreateSkillGraphNodeResponse {
   key: string;
   droppedPrerequisites: { prerequisiteNodeId: string; error: string }[];
   droppedDependents: { dependentNodeId: string; error: string }[];
+}
+
+// Container/leaf hierarchy (2026-07-27).
+export interface AssignSkillGraphParentRequest {
+  parentNodeId: string | null;
+}
+
+export interface AssignSkillGraphParentResponse {
+  id: string;
+  parentNodeId: string | null;
 }
 
 export interface UpdateSkillGraphNodeRequest {

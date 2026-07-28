@@ -30,7 +30,8 @@
               "src/styles.css",
               "node_modules/choices.js/public/assets/styles/choices.min.css",
               "node_modules/bootstrap-icons/font/bootstrap-icons.min.css",
-              "node_modules/@fortawesome/fontawesome-free/css/all.min.css"
+              "node_modules/@fortawesome/fontawesome-free/css/all.min.css",
+              "node_modules/primeicons/primeicons.css"
             ],
             "scripts": []
           },
@@ -45,8 +46,8 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "2MB",
-                  "maximumError": "3MB"
+                  "maximumWarning": "2.5MB",
+                  "maximumError": "3.5MB"
                 },
                 {
                   "type": "anyComponentStyle",
@@ -100,7 +101,8 @@
               "src/styles.css",
               "node_modules/choices.js/public/assets/styles/choices.min.css",
               "node_modules/bootstrap-icons/font/bootstrap-icons.min.css",
-              "node_modules/@fortawesome/fontawesome-free/css/all.min.css"
+              "node_modules/@fortawesome/fontawesome-free/css/all.min.css",
+              "node_modules/primeicons/primeicons.css"
             ],
             "scripts": []
           }

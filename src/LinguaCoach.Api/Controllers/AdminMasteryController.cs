@@ -110,4 +110,17 @@ public sealed class AdminMasteryController : ControllerBase
 
         return Ok(summary);
     }
+
+    /// <summary>Skill Graph container/leaf Phase 3 (2026-07-27) — a container node's rolled-up
+    /// mastery display for one student: percent of its Approved+Active leaf children currently
+    /// Mastered. Pure read-time aggregation, no persisted state. 404 if the node doesn't exist.</summary>
+    [HttpGet("api/admin/mastery/students/{studentId:guid}/container-rollup/{containerNodeId:guid}")]
+    public async Task<IActionResult> GetContainerRollup(Guid studentId, Guid containerNodeId, CancellationToken ct)
+    {
+        var nodeExists = await _db.SkillGraphNodes.AsNoTracking().AnyAsync(n => n.Id == containerNodeId, ct);
+        if (!nodeExists) return NotFound();
+
+        var rollup = await _mastery.EvaluateContainerRollupAsync(studentId, containerNodeId, ct);
+        return Ok(rollup);
+    }
 }

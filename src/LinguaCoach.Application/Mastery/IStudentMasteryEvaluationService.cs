@@ -26,4 +26,16 @@ public interface IStudentMasteryEvaluationService
         Guid studentId,
         string objectiveKey,
         CancellationToken ct = default);
+
+    /// <summary>Skill Graph container/leaf Phase 3 (2026-07-27) — rolls up a container node's
+    /// display status from its Approved+Active leaf children's real per-node mastery (percent of
+    /// leaves currently <see cref="Domain.Enums.MasteryStatus.Mastered"/>, banded ≥80% → Mastered,
+    /// same threshold convention <see cref="EvaluateObjectiveMasteryAsync"/>'s own scoring already
+    /// uses elsewhere). A container is a display/admin-review concept, never a delivery target
+    /// itself — this never feeds routing/selection, only dashboards. A container with zero eligible
+    /// leaf children returns <see cref="Domain.Enums.MasteryStatus.InsufficientEvidence"/>.</summary>
+    Task<ContainerMasteryRollup> EvaluateContainerRollupAsync(
+        Guid studentId,
+        Guid containerNodeId,
+        CancellationToken ct = default);
 }

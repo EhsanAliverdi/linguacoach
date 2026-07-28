@@ -701,6 +701,17 @@ public static class DependencyInjection
         // Sprint 14.1 — SkillGraphNode context/focus tag diagnose+AI-repair.
         services.AddScoped<LinguaCoach.Application.SkillGraph.ISkillGraphNodeRepairService,
             LinguaCoach.Infrastructure.SkillGraph.SkillGraphNodeRepairService>();
+        // Skill Graph container/leaf Phase 2 (2026-07-27) — deterministic CEFR-J Grammar Profile
+        // CSV import (no AI).
+        services.AddScoped<LinguaCoach.Application.SkillGraph.ICefrJGrammarImportService,
+            LinguaCoach.Infrastructure.SkillGraph.CefrJGrammarImportService>();
+        // Full content reseed (2026-07-28) — deterministic CEFR-J/Octanove vocabulary import (no AI).
+        services.AddScoped<LinguaCoach.Application.SkillGraph.IVocabularyImportService,
+            LinguaCoach.Infrastructure.SkillGraph.VocabularyImportService>();
+        // Full content reseed (2026-07-28) — AI categorization for vocabulary words with no real
+        // topic category (CEFR-J leaves most rows uncategorized; Octanove has no category column).
+        services.AddScoped<LinguaCoach.Application.SkillGraph.IVocabularyCategorizationService,
+            LinguaCoach.Infrastructure.SkillGraph.VocabularyCategorizationService>();
         // Adaptive Curriculum Sprint 3 — per-student weighted goal vector.
         services.AddScoped<LinguaCoach.Application.GoalVector.IStudentGoalVectorService,
             LinguaCoach.Infrastructure.GoalVector.StudentGoalVectorService>();

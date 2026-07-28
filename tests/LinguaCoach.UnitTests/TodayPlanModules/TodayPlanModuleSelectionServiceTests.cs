@@ -612,4 +612,8 @@ internal sealed class FakeStudentMasteryEvaluationService : IStudentMasteryEvalu
             RecentAverageScore = 0,
             LastSeenUtc = null
         });
+
+    public Task<ContainerMasteryRollup> EvaluateContainerRollupAsync(
+        Guid studentId, Guid containerNodeId, CancellationToken ct = default) =>
+        Task.FromResult(new ContainerMasteryRollup(containerNodeId, 0, 0, 0, MasteryStatus.InsufficientEvidence));
 }

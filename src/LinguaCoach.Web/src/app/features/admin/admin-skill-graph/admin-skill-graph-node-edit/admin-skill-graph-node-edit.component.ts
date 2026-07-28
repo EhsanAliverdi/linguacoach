@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { forkJoin, of, Observable } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { AdminApiService } from '../../../../core/services/admin.api.service';
@@ -24,6 +24,7 @@ import {
   SpAdminTextareaComponent,
 } from '../../../../design-system/admin';
 import { computeGraphNeighborhood, NodeGraphPreviewEdge, NodeGraphPreviewNode, SpAdminNodeGraphPreviewComponent } from '../node-graph-preview/sp-admin-node-graph-preview.component';
+import { SpAdminNodeHierarchyModalComponent } from '../node-hierarchy-modal/sp-admin-node-hierarchy-modal.component';
 
 interface StagedNodeRef {
   id: string;
@@ -53,6 +54,7 @@ interface StagedNodeRef {
   imports: [
     CommonModule,
     FormsModule,
+    RouterLink,
     SpAdminAlertComponent,
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
@@ -68,6 +70,7 @@ interface StagedNodeRef {
     SpAdminSelectComponent,
     SpAdminTextareaComponent,
     SpAdminNodeGraphPreviewComponent,
+    SpAdminNodeHierarchyModalComponent,
   ],
   templateUrl: './admin-skill-graph-node-edit.component.html',
 })
@@ -85,9 +88,16 @@ export class AdminSkillGraphNodeEditComponent implements OnInit {
   pendingAddUnlocks = signal<StagedNodeRef[]>([]);
   pendingRemoveUnlockIds = signal<Set<string>>(new Set());
 
+  // Container/leaf hierarchy (2026-07-27) — reparent UX, staged like everything else on this page
+  // (same "nothing calls the API until Save" convention the 2026-07-23 user correction established
+  // for prerequisites/unlocks). `undefined` = no staged change; `null` = staged "clear parent";
+  // a ref = staged "move to this parent".
+  pendingParent = signal<StagedNodeRef | null | undefined>(undefined);
+
   hasPendingEdgeChanges = computed(() =>
     this.pendingAddPrereqs().length > 0 || this.pendingRemovePrereqIds().size > 0 ||
-    this.pendingAddUnlocks().length > 0 || this.pendingRemoveUnlockIds().size > 0);
+    this.pendingAddUnlocks().length > 0 || this.pendingRemoveUnlockIds().size > 0 ||
+    this.pendingParent() !== undefined);
 
   // What actually renders in the Prerequisites/Unlocks lists and in the graph preview: real
   // edges (minus any staged for removal) plus staged additions, each tagged with its pending state.
@@ -185,6 +195,20 @@ export class AdminSkillGraphNodeEditComponent implements OnInit {
     this.router.navigateByUrl(`/admin/skill-graph/nodes/${id}`);
   }
 
+  // Container/leaf hierarchy (2026-07-27) — clicking a node in the local graph preview now opens
+  // a "peek" modal showing that node's own parent/children instead of navigating straight away.
+  // Especially valuable on Edit (unlike View): navigating away mid-edit would abandon every staged,
+  // not-yet-saved prerequisite/unlock/parent change on this page.
+  hierarchyModalNodeId = signal<string | null>(null);
+
+  openNodeHierarchyModal(id: string): void {
+    this.hierarchyModalNodeId.set(id);
+  }
+
+  closeNodeHierarchyModal(): void {
+    this.hierarchyModalNodeId.set(null);
+  }
+
   taxonomy = signal<SkillGraphTaxonomy | null>(null);
   cefrLevelOptions = computed(() => (this.taxonomy()?.cefrLevels ?? []).map(l => ({ value: l, label: l })));
   skillOptions = computed(() => (this.taxonomy()?.skills ?? []).map(s => ({ value: s, label: s })));
@@ -244,6 +268,7 @@ export class AdminSkillGraphNodeEditComponent implements OnInit {
     this.pendingRemovePrereqIds.set(new Set());
     this.pendingAddUnlocks.set([]);
     this.pendingRemoveUnlockIds.set(new Set());
+    this.pendingParent.set(undefined);
   }
 
   // User correction (2026-07-24) — these three used to hardcode a return to the main list page,
@@ -271,7 +296,14 @@ export class AdminSkillGraphNodeEditComponent implements OnInit {
       difficultyBand: this.difficultyBand ?? 1,
       descriptionForAi: this.descriptionForAi.trim() || null,
     }).pipe(
-      switchMap(updateResult => this.commitEdgeChanges(current.id).pipe(map(edgeResult => ({ ...edgeResult, updateResult })))),
+      switchMap(updateResult => forkJoin([
+        this.commitEdgeChanges(current.id),
+        this.commitParentChange(current.id),
+      ]).pipe(map(([edgeResult, parentOk]) => ({
+        failedCount: edgeResult.failedCount + (parentOk ? 0 : 1),
+        suggestions: edgeResult.suggestions,
+        updateResult,
+      })))),
     ).subscribe({
       next: ({ failedCount, suggestions, updateResult }) => {
         this.saving.set(false);
@@ -388,16 +420,59 @@ export class AdminSkillGraphNodeEditComponent implements OnInit {
   // ── User follow-up (2026-07-23) — Prerequisites/Unlocks management, same shape as the node
   // detail slide-over on the main Skill Graph page (a graph node's place in the graph matters as
   // much here as its content fields do). ──────────────────────────────────────────────────────
+  //
+  // Skill Graph rebuild Phase 4 (2026-07-27) — was a one-time fetch of up to 500 nodes, silently
+  // clamped to 200 server-side. Now server-side search-as-you-type, same fix as Create's picker.
+  private static readonly PickerPageSize = 30;
   private allNodesForPicker = signal<SkillGraphNodeListItem[]>([]);
 
   pickerOptions = computed<SpAdminMultiSelectOption[]>(() =>
     this.allNodesForPicker().map(n => ({ value: n.id, label: n.title, sublabel: `${n.cefrLevel} · ${n.skill}` })));
 
-  private loadNodesForPicker(): void {
-    this.api.getSkillGraphNodes({ pageSize: 500 }).subscribe({
+  private loadNodesForPicker(search?: string): void {
+    this.api.getSkillGraphNodes({ pageSize: AdminSkillGraphNodeEditComponent.PickerPageSize, search: search || undefined }).subscribe({
       next: r => this.allNodesForPicker.set(r.items),
       error: () => this.allNodesForPicker.set([]),
     });
+  }
+
+  onPickerSearchChange(term: string): void {
+    this.loadNodesForPicker(term);
+  }
+
+  // Container/leaf hierarchy (2026-07-27) — reparent UX.
+  parentExcludeIds(): string[] {
+    const current = this.item();
+    return current ? [current.id] : [];
+  }
+
+  displayParent = computed<StagedNodeRef | null>(() => {
+    const pending = this.pendingParent();
+    if (pending !== undefined) return pending;
+    const current = this.item()?.parent;
+    return current ? { id: current.id, title: current.title } : null;
+  });
+
+  isParentPendingChange = computed(() => this.pendingParent() !== undefined);
+
+  setParent(option: SpAdminMultiSelectOption): void {
+    this.pendingParent.set({ id: option.value, title: option.label });
+  }
+
+  clearParentStaged(): void {
+    this.pendingParent.set(null);
+  }
+
+  undoParentChange(): void {
+    this.pendingParent.set(undefined);
+  }
+
+  private commitParentChange(nodeId: string): Observable<boolean> {
+    const pending = this.pendingParent();
+    if (pending === undefined) return of(true);
+    return this.api.assignSkillGraphParent(nodeId, { parentNodeId: pending?.id ?? null }).pipe(
+      map(() => true), catchError(() => of(false)),
+    );
   }
 
   prereqExcludeIds(): string[] {
@@ -504,5 +579,14 @@ export class AdminSkillGraphNodeEditComponent implements OnInit {
 
   dismissPlacementDependentSuggestion(s: SkillGraphPlacementSuggestion): void {
     this.placementDependentSuggestions.update(list => list.filter(x => x.id !== s.id));
+  }
+
+  reviewStatusTone(status: string): 'success' | 'warning' | 'danger' | 'neutral' {
+    switch (status) {
+      case 'Approved': return 'success';
+      case 'PendingReview': return 'warning';
+      case 'Rejected': return 'danger';
+      default: return 'neutral';
+    }
   }
 }

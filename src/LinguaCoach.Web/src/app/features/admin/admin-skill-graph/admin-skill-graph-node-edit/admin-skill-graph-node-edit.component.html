@@ -57,8 +57,59 @@
         [centerId]="graphCenterId()"
         [nodes]="graphPreviewNodes()"
         [edges]="graphPreviewEdges()"
-        (nodeClick)="goToNode($event)"
+        (nodeClick)="openNodeHierarchyModal($event)"
       />
+    </sp-admin-section-card>
+
+    <sp-admin-node-hierarchy-modal
+      [nodeId]="hierarchyModalNodeId()"
+      (closed)="closeNodeHierarchyModal()"
+      (viewFullPage)="closeNodeHierarchyModal(); goToNode($event)"
+    />
+
+    <!-- ── Container/leaf hierarchy (2026-07-27) — reparent UX. A container (has children of its
+         own) can't also be nested under a parent — the picker is hidden for those nodes; the
+         backend enforces the same rule server-side (409) as a defense in depth. ── -->
+    <sp-admin-section-card title="Parent (container)">
+      @if (n.children.length > 0) {
+        <p class="sp-admin-section-sub">This node is a container ({{ n.children.length }} child node(s)) and can't itself have a parent.</p>
+        <ul class="sp-admin-simple-list">
+          @for (c of n.children; track c.id) {
+            <li>
+              <a [routerLink]="['/admin/skill-graph/nodes', c.id]">{{ c.title }}</a>
+              <sp-admin-badge [tone]="reviewStatusTone(c.reviewStatus)" appearance="soft" size="sm">{{ c.reviewStatus }}</sp-admin-badge>
+            </li>
+          }
+        </ul>
+      } @else {
+        @if (displayParent(); as parent) {
+          <div class="sp-admin-form-actions" style="justify-content:space-between;">
+            @if (isParentPendingChange()) {
+              <span style="color:#8A5A00;">{{ parent.title }} <em>(staged — not saved yet)</em></span>
+              <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="undoParentChange()">Undo</sp-admin-button>
+            } @else {
+              <span>{{ parent.title }}</span>
+              <sp-admin-button size="sm" variant="danger" appearance="outline" (clicked)="clearParentStaged()">Remove parent</sp-admin-button>
+            }
+          </div>
+        } @else {
+          @if (isParentPendingChange()) {
+            <div class="sp-admin-form-actions" style="justify-content:space-between;">
+              <span style="color:#8B85A0; text-decoration:line-through;">(no parent)</span>
+              <span class="sp-admin-form-actions">
+                <span class="sp-admin-text-muted" style="font-style:italic;">(will be cleared on Save)</span>
+                <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="undoParentChange()">Undo</sp-admin-button>
+              </span>
+            </div>
+          } @else {
+            <p class="sp-admin-section-sub">No parent — standalone or container node.</p>
+          }
+          <sp-admin-form-field label="Move under" hint="Search by title or key — staged until you click Save.">
+            <sp-admin-multi-select [options]="pickerOptions()" [excludeValues]="parentExcludeIds()" [accumulate]="false"
+              (optionPicked)="setParent($event)" (searchTermChange)="onPickerSearchChange($event)" placeholder="Search nodes…" />
+          </sp-admin-form-field>
+        }
+      }
     </sp-admin-section-card>
 
     <!-- ── Skill Graph rebuild Phase 6.2 (2026-07-23) — AI suggest placement. Advisory only:
@@ -133,7 +184,7 @@
 
       <sp-admin-form-field label="Add prerequisite" hint="Search by title or key — staged until you click Save.">
         <sp-admin-multi-select [options]="pickerOptions()" [excludeValues]="prereqExcludeIds()" [accumulate]="false"
-          (optionPicked)="addPrerequisite($event)" placeholder="Search nodes…" />
+          (optionPicked)="addPrerequisite($event)" (searchTermChange)="onPickerSearchChange($event)" placeholder="Search nodes…" />
       </sp-admin-form-field>
     </sp-admin-section-card>
 
@@ -164,7 +215,7 @@
 
       <sp-admin-form-field label="Add unlock" hint="Search by title or key — this node will become a prerequisite of the one you pick, staged until you click Save.">
         <sp-admin-multi-select [options]="pickerOptions()" [excludeValues]="unlockExcludeIds()" [accumulate]="false"
-          (optionPicked)="addUnlock($event)" placeholder="Search nodes…" />
+          (optionPicked)="addUnlock($event)" (searchTermChange)="onPickerSearchChange($event)" placeholder="Search nodes…" />
       </sp-admin-form-field>
     </sp-admin-section-card>
 

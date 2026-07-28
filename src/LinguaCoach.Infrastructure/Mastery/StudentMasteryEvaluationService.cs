@@ -174,6 +174,38 @@ public sealed class StudentMasteryEvaluationService : IStudentMasteryEvaluationS
         return ComputeSignal(objectiveKey, relevant);
     }
 
+    /// <summary>Skill Graph container/leaf Phase 3 (2026-07-27) — see
+    /// <see cref="IStudentMasteryEvaluationService.EvaluateContainerRollupAsync"/>.</summary>
+    public async Task<ContainerMasteryRollup> EvaluateContainerRollupAsync(
+        Guid studentId, Guid containerNodeId, CancellationToken ct = default)
+    {
+        var leafKeys = await _db.SkillGraphNodes.AsNoTracking()
+            .Where(n => n.ParentNodeId == containerNodeId && n.ReviewStatus == AdminReviewStatus.Approved && n.IsActive)
+            .Select(n => n.Key)
+            .ToListAsync(ct);
+
+        if (leafKeys.Count == 0)
+            return new ContainerMasteryRollup(containerNodeId, 0, 0, 0, MasteryStatus.InsufficientEvidence);
+
+        var report = await EvaluateStudentAsync(studentId, MasteryEvaluationReason.ContentDelivery, ct);
+        var masteredSet = new HashSet<string>(report.MasteredObjectiveKeys, StringComparer.OrdinalIgnoreCase);
+        var touchedSet = new HashSet<string>(
+            report.MasteredObjectiveKeys.Concat(report.CompletedObjectiveKeys)
+                .Concat(report.WeakObjectiveKeys).Concat(report.AtRiskObjectiveKeys),
+            StringComparer.OrdinalIgnoreCase);
+
+        var masteredCount = leafKeys.Count(masteredSet.Contains);
+        var percentMastered = (double)masteredCount / leafKeys.Count;
+
+        var status = percentMastered >= 0.8
+            ? MasteryStatus.Mastered
+            : leafKeys.Any(touchedSet.Contains)
+                ? MasteryStatus.NeedsPractice
+                : MasteryStatus.InsufficientEvidence;
+
+        return new ContainerMasteryRollup(containerNodeId, leafKeys.Count, masteredCount, percentMastered, status);
+    }
+
     // -------------------------------------------------------------------------
     // Internal helpers
     // -------------------------------------------------------------------------

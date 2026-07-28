@@ -32,6 +32,14 @@ export type SpAdminMultiSelectSize = 'sm' | 'md';
  * `excludeValues` additionally hides options from the dropdown regardless of mode (e.g. the node's
  * own id, or ids already linked as real prerequisites) — kept separate from `value` so
  * `accumulate=false` callers still get correct filtering without needing to fake a `value`.
+ *
+ * Skill Graph rebuild Phase 4 (2026-07-27) — `(searchTermChange)` fires (debounced 250ms) whenever
+ * the search box changes, so a caller with a large/paginated candidate set (e.g. the Skill Graph
+ * node picker, previously a static one-time fetch of up to 500 nodes silently clamped to 200 server-
+ * side) can re-fetch a small server-filtered `options` list per keystroke instead of ever holding
+ * every candidate client-side. Purely additive: callers that don't listen to it are unaffected —
+ * `filteredOptions()` still does its own client-side substring filter on top of whatever `options`
+ * currently holds, which is a no-op when the parent already server-filtered.
  */
 @Component({
   selector: 'sp-admin-multi-select',
@@ -162,9 +170,14 @@ export class SpAdminMultiSelectComponent implements ControlValueAccessor {
   /** Fires on every option pick, in both modes — the one signal `accumulate=false` callers need. */
   @Output() optionPicked = new EventEmitter<SpAdminMultiSelectOption>();
 
+  /** Skill Graph rebuild Phase 4 (2026-07-27) — debounced (250ms) search-box text, for callers
+   * that fetch `options` from a server-side search endpoint instead of holding every candidate. */
+  @Output() searchTermChange = new EventEmitter<string>();
+
   searchTerm = '';
   open = false;
   highlightedIndex = 0;
+  private searchDebounceHandle: ReturnType<typeof setTimeout> | undefined;
 
   private value: string[] = [];
   private onChange: (value: string[]) => void = () => {};
@@ -206,6 +219,8 @@ export class SpAdminMultiSelectComponent implements ControlValueAccessor {
   onSearchChange(): void {
     this.highlightedIndex = 0;
     if (!this.open) this.openPanel();
+    clearTimeout(this.searchDebounceHandle);
+    this.searchDebounceHandle = setTimeout(() => this.searchTermChange.emit(this.searchTerm.trim()), 250);
   }
 
   pick(option: SpAdminMultiSelectOption): void {

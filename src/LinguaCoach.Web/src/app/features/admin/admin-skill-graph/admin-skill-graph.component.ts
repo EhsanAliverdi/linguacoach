@@ -1,13 +1,13 @@
-import { Component, OnInit, signal, computed, ViewChild } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { TreeNode } from 'primeng/api';
 import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
   SpAdminButtonComponent,
   SpAdminCardComponent,
-  SpAdminCheckboxComponent,
   SpAdminCoverageHeatmapComponent,
   SpAdminErrorStateComponent,
   SpAdminFormFieldComponent,
@@ -15,6 +15,7 @@ import {
   SpAdminHeatmapColumn,
   SpAdminHeatmapRow,
   SpAdminHelpIconComponent,
+  SpAdminInputComponent,
   SpAdminLoadingStateComponent,
   SpAdminModalComponent,
   SpAdminPageBodyComponent,
@@ -22,8 +23,8 @@ import {
   SpAdminSectionHeaderComponent,
   SpAdminSelectComponent,
   SpAdminTableColumn,
-  SpAdminTableComponent,
   SpAdminTableFilter,
+  SpAdminTreeTableComponent,
 } from '../../../design-system/admin';
 import { AdminApiService } from '../../../core/services/admin.api.service';
 import {
@@ -46,30 +47,29 @@ import { SpAdminSkillGraphVizComponent } from './skill-graph-viz/sp-admin-skill-
   imports: [
     CommonModule,
     FormsModule,
+    RouterLink,
     SpAdminAlertComponent,
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
     SpAdminCardComponent,
-    SpAdminCheckboxComponent,
     SpAdminCoverageHeatmapComponent,
     SpAdminErrorStateComponent,
     SpAdminFormFieldComponent,
     SpAdminHelpIconComponent,
+    SpAdminInputComponent,
     SpAdminLoadingStateComponent,
     SpAdminModalComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
     SpAdminSectionHeaderComponent,
     SpAdminSelectComponent,
-    SpAdminTableComponent,
     SpAdminGraphCardComponent,
     SpAdminSkillGraphVizComponent,
+    SpAdminTreeTableComponent,
   ],
 })
 export class AdminSkillGraphComponent implements OnInit {
   constructor(private api: AdminApiService, private router: Router) {}
-
-  @ViewChild('nodesTableRef') nodesTableRef?: SpAdminTableComponent;
 
   // User correction (2026-07-24) — the tag-issues banner, the isolated-nodes banner, and the
   // merged "Graph audit" (redundant edges + near-duplicate nodes) card used to live directly on
@@ -79,8 +79,12 @@ export class AdminSkillGraphComponent implements OnInit {
     this.router.navigateByUrl('/admin/skill-graph/audit');
   }
 
-  // ── Sprint 13 — Table/Graph view toggle + bulk nodes+edges for the visual view ────────────
-  viewMode = signal<'table' | 'graph'>('table');
+  // ── Sprint 13 — Nodes/Graph view toggle. Skill Graph rebuild Phase 4 (2026-07-27) — the
+  // flat paginated Table and the hand-rolled Tree (added earlier this same phase) were confusing
+  // as two separate views of the same data (user feedback); replaced with a single PrimeNG
+  // TreeTable ("Nodes") that IS the hierarchy — a container row expands in place to show its leaf
+  // children, everything else (search/filter/pagination/bulk actions) unchanged. ─────────────────
+  viewMode = signal<'nodes' | 'graph'>('nodes');
   graphLoading = signal(false);
   graphError = signal('');
   graphNodes = signal<SkillGraphNode[]>([]);
@@ -88,7 +92,7 @@ export class AdminSkillGraphComponent implements OnInit {
   graphLoaded = false;
   selectedGraphNode = signal<SkillGraphNode | null>(null);
 
-  setViewMode(mode: 'table' | 'graph'): void {
+  setViewMode(mode: 'nodes' | 'graph'): void {
     this.viewMode.set(mode);
     if (mode === 'graph' && !this.graphLoaded) {
       this.loadGraph();
@@ -177,14 +181,20 @@ export class AdminSkillGraphComponent implements OnInit {
   retagStatus = signal('');
   retagError = signal('');
 
-  // ── Nodes table ──────────────────────────────────────────────────────────
+  // ── Nodes tree table (Skill Graph rebuild Phase 4, 2026-07-27) ────────────────────────────
+  // A single PrimeNG TreeTable IS the hierarchy: root rows are server-paginated (lazy-loaded on
+  // page/filter change), a container row's children are fetched only when it's expanded — no
+  // separate flat/tree views, no full-hierarchy fetch. While a search term is active, results are
+  // shown flat (every row `leaf:true`, no expand arrows) rather than grouped — a matched leaf
+  // buried inside an unexpanded container would otherwise be invisible; this is the same "search
+  // flattens hierarchy" convention many tree UIs use, simpler than reconstructing partial trees.
   nodesLoading = signal(true);
   nodesError = signal('');
-  nodes = signal<SkillGraphNodeListItem[]>([]);
-  nodesPage = signal(1);
-  readonly nodesPageSize = 25;
-  nodesTotalPages = signal(1);
-  nodesTotalCount = signal(0);
+  ttNodes = signal<TreeNode<SkillGraphNodeListItem>[]>([]);
+  ttFirst = signal(0);
+  readonly ttRows = 25;
+  ttTotalRecords = signal(0);
+  ttSelection = signal<TreeNode<SkillGraphNodeListItem>[]>([]);
 
   filterCefrLevel = signal('');
   filterSkill = signal('');
@@ -193,26 +203,29 @@ export class AdminSkillGraphComponent implements OnInit {
   filterSearch = signal('');
   filterContextTag = signal('');
   filterFocusTag = signal('');
+  // Skill Graph rebuild Phase 4 (2026-07-27, user follow-up) — "Has children" filter, '' = All.
+  filterHasChildren = signal('');
   readonly reviewStatusOptions = [
     { value: 'PendingReview', label: 'Pending review' },
     { value: 'Approved', label: 'Approved' },
     { value: 'Rejected', label: 'Rejected' },
   ];
+  readonly hasChildrenOptions = [
+    { value: 'true', label: 'Containers only' },
+    { value: 'false', label: 'Leaves/standalone only' },
+  ];
 
-  selectedIds = signal<Set<string>>(new Set());
-  hasSelection = computed(() => this.selectedIds().size > 0);
+  // Same shape/convention as the Table view used before Phase 4 — sp-admin-tree-table renders
+  // these in the exact same toolbar row sp-admin-table does, for visual parity across the admin.
+  nodesFilters = computed<SpAdminTableFilter[]>(() => [
+    { key: 'cefrLevel', label: 'CEFR level', options: this.cefrLevelOptions(), value: this.filterCefrLevel(), placeholder: 'All' },
+    { key: 'skill', label: 'Skill', options: this.skillOptions(), value: this.filterSkill(), placeholder: 'All' },
+    { key: 'reviewStatus', label: 'Review status', options: this.reviewStatusOptions, value: this.filterReviewStatus(), placeholder: 'All' },
+    { key: 'contextTag', label: 'Context tag', options: this.contextTagOptions(), value: this.filterContextTag(), placeholder: 'All' },
+    { key: 'focusTag', label: 'Focus tag', options: this.focusTagOptions(), value: this.filterFocusTag(), placeholder: 'All' },
+    { key: 'hasChildren', label: 'Has children', options: this.hasChildrenOptions, value: this.filterHasChildren(), placeholder: 'All' },
+  ]);
 
-  // Sprint 14.5 — Bulk edit toggle (sp-admin-table's new bulkEditable pattern): checkbox lives
-  // merged into the Title cell instead of an always-visible leading column.
-  nodesBulkEditMode = signal(false);
-  onNodesBulkEditModeChange(enabled: boolean): void {
-    this.nodesBulkEditMode.set(enabled);
-    if (!enabled) this.clearSelection();
-  }
-
-  // Sprint 14.8 — Nodes table fully data-driven (columns/rows/cellTemplate): the table owns
-  // thead/tbody, bold title, and the titleColumn checkbox. (selectionChange) emits row INDICES
-  // into the currently-bound `nodes()` page, mapped here to real node ids for the batch API.
   readonly nodesColumns: SpAdminTableColumn[] = [
     { key: 'title', label: 'Title', titleColumn: true },
     { key: 'cefrLevel', label: 'CEFR' },
@@ -224,21 +237,33 @@ export class AdminSkillGraphComponent implements OnInit {
     { key: 'reviewStatus', label: 'Status' },
   ];
 
-  onNodesSelectionChange(indices: number[]): void {
-    const rows = this.nodes();
-    const ids = indices.map(i => rows[i]?.id).filter((id): id is string => !!id);
-    this.selectedIds.set(new Set(ids));
+  selectedIds = signal<Set<string>>(new Set());
+  hasSelection = computed(() => this.selectedIds().size > 0);
+
+  private toTreeNode(item: SkillGraphNodeListItem, flat: boolean): TreeNode<SkillGraphNodeListItem> {
+    return { key: item.id, data: item, leaf: flat || item.childCount === 0 };
+  }
+
+  onTtSelectionChange(selection: TreeNode<SkillGraphNodeListItem> | TreeNode<SkillGraphNodeListItem>[] | null): void {
+    const nodes = Array.isArray(selection) ? selection : selection ? [selection] : [];
+    this.ttSelection.set(nodes);
+    this.selectedIds.set(new Set(nodes.map(n => n.data!.id)));
   }
 
   // Skill Graph pipeline audit (2026-07-24, Bug #1) — fast, client-side-only heads-up computed
   // from the already-loaded rows; purely informational. The real confirmation gate is server-side
   // (see batchReject()/pendingRejectConfirmation below) since another admin tab or a direct API
   // call could change a node's status between page-load and this click.
-  selectedApprovedCount = computed(() => {
-    const ids = this.selectedIds();
-    if (ids.size === 0) return 0;
-    return this.nodes().filter(n => ids.has(n.id) && n.reviewStatus === 'Approved').length;
-  });
+  selectedApprovedCount = computed(() =>
+    this.ttSelection().filter(n => n.data?.reviewStatus === 'Approved').length);
+
+  // Container/leaf hierarchy (2026-07-27) — "Select subtree" on an expanded container row seeds
+  // the same selectedIds/ttSelection the toolbar's Approve/Reject-selected buttons already read,
+  // so those existing (already confirmation-gated) actions apply to the whole subtree at once.
+  selectSubtree(container: TreeNode<SkillGraphNodeListItem>): void {
+    const nodes = [container, ...(container.children ?? [])];
+    this.onTtSelectionChange(nodes);
+  }
 
   batchPending = signal(false);
   batchStatus = signal('');
@@ -255,7 +280,10 @@ export class AdminSkillGraphComponent implements OnInit {
   ngOnInit(): void {
     this.loadTaxonomy();
     this.loadCoverage();
-    this.loadNodes();
+    // Skill Graph rebuild Phase 4 (2026-07-27) — driven explicitly here rather than relying on
+    // the TreeTable's own lazyLoadOnInit, so the initial fetch is deterministic/testable the same
+    // way every other section on this page already is; `[lazyLoadOnInit]="false"` in the template.
+    this.loadNodes(1);
     this.loadContentCoverage();
   }
 
@@ -276,7 +304,7 @@ export class AdminSkillGraphComponent implements OnInit {
     this.api.removeSkillGraphPrerequisite(edge.nodeId, edge.prerequisiteNodeId).subscribe({
       next: () => {
         this.dismissRedundantEdgeSuggestion(index);
-        this.loadNodes();
+        this.loadNodes(this.currentPage());
       },
       error: err => this.redundantEdgeSuggestionError.set(err?.error?.error ?? 'Could not remove this edge.'),
     });
@@ -329,7 +357,7 @@ export class AdminSkillGraphComponent implements OnInit {
             ? `No untagged approved Modules found. ${remaining}`
             : `Swept ${r.sweptCount} Module(s), applied ${totalMatched} node link(s). ${remaining}`);
         this.loadContentCoverage();
-        this.loadNodes();
+        this.loadNodes(this.currentPage());
       },
       error: err => {
         this.retagPending.set(false);
@@ -357,9 +385,13 @@ export class AdminSkillGraphComponent implements OnInit {
     });
   }
 
-  loadNodes(): void {
+  // Root-level rows: server-paginated, lazy-loaded by the TreeTable itself (page/init/filter
+  // changes all route through here). `page` is 1-based to match every other admin endpoint's
+  // convention; PrimeNG's own `first`/`rows` (0-based offset) is converted at the call site.
+  loadNodes(page: number): void {
     this.nodesLoading.set(true);
     this.nodesError.set('');
+    const searching = !!this.filterSearch().trim();
     this.api.getSkillGraphNodes({
       cefrLevel: this.filterCefrLevel() || undefined,
       skill: this.filterSkill() || undefined,
@@ -367,13 +399,14 @@ export class AdminSkillGraphComponent implements OnInit {
       search: this.filterSearch() || undefined,
       contextTag: this.filterContextTag() || undefined,
       focusTag: this.filterFocusTag() || undefined,
-      page: this.nodesPage(),
-      pageSize: this.nodesPageSize,
+      hasChildren: this.filterHasChildren() === '' ? undefined : this.filterHasChildren() === 'true',
+      topLevelOnly: !searching,
+      page,
+      pageSize: this.ttRows,
     }).subscribe({
       next: r => {
-        this.nodes.set(r.items);
-        this.nodesTotalPages.set(r.totalPages);
-        this.nodesTotalCount.set(r.totalCount);
+        this.ttNodes.set(r.items.map(item => this.toTreeNode(item, searching)));
+        this.ttTotalRecords.set(r.totalCount);
         this.nodesLoading.set(false);
       },
       error: err => {
@@ -383,21 +416,58 @@ export class AdminSkillGraphComponent implements OnInit {
     });
   }
 
-  onFilterChange(): void {
-    this.nodesPage.set(1);
-    this.selectedIds.set(new Set());
-    this.loadNodes();
+  // Pagination is driven by sp-admin-tree-table's own footer (sp-admin-pagination), matching
+  // every sp-admin-table-based page's convention, not PrimeNG's built-in paginator — so this reads
+  // a page number directly rather than the offset-based onLazyLoad event p-treeTable would emit.
+  ttTotalPages = computed(() => Math.max(1, Math.ceil(this.ttTotalRecords() / this.ttRows)));
+
+  onNodesPageChange(page: number): void {
+    this.ttFirst.set((page - 1) * this.ttRows);
+    this.loadNodes(page);
   }
 
-  // Sprint 14.6 — filters are now a table feature (sp-admin-table's [filters]/(filterChange)),
-  // rendered in the same toolbar row as the Bulk edit toggle, instead of a hand-authored filter bar.
-  nodesFilters = computed<SpAdminTableFilter[]>(() => [
-    { key: 'cefrLevel', label: 'CEFR level', options: this.cefrLevelOptions(), value: this.filterCefrLevel(), placeholder: 'All' },
-    { key: 'skill', label: 'Skill', options: this.skillOptions(), value: this.filterSkill(), placeholder: 'All' },
-    { key: 'reviewStatus', label: 'Review status', options: this.reviewStatusOptions, value: this.filterReviewStatus(), placeholder: 'All' },
-    { key: 'contextTag', label: 'Context tag', options: this.contextTagOptions(), value: this.filterContextTag(), placeholder: 'All' },
-    { key: 'focusTag', label: 'Focus tag', options: this.focusTagOptions(), value: this.filterFocusTag(), placeholder: 'All' },
-  ]);
+  // Container/leaf hierarchy (2026-07-27) — fetches one container's leaf children only when it's
+  // expanded, never as part of the root-level fetch. Cached on the node itself (PrimeNG TreeTable
+  // convention — re-expanding doesn't re-fetch) until the next full reload (a real filter change
+  // always calls loadNodes(), which rebuilds ttNodes with brand-new TreeNode wrappers that have no
+  // cached children, so a re-expand after a filter change always re-fetches under the new filters).
+  //
+  // User correction (2026-07-27): the children fetch originally only sent `parentNodeId` — a
+  // container's children ignored every other active filter (CEFR/skill/status/tags/search), so
+  // e.g. filtering to Approved-only still showed PendingReview children on expand. Now sends the
+  // same filter set the root-level fetch uses.
+  onTtNodeExpand(node: TreeNode<SkillGraphNodeListItem>): void {
+    if (node.children || !node.data) return;
+    node.loading = true;
+    this.ttNodes.set([...this.ttNodes()]);
+    this.api.getSkillGraphNodes({
+      cefrLevel: this.filterCefrLevel() || undefined,
+      skill: this.filterSkill() || undefined,
+      reviewStatus: this.filterReviewStatus() || undefined,
+      contextTag: this.filterContextTag() || undefined,
+      focusTag: this.filterFocusTag() || undefined,
+      parentNodeId: node.data.id,
+      pageSize: 200,
+    }).subscribe({
+      next: r => {
+        node.children = r.items.map(item => this.toTreeNode(item, false));
+        node.loading = false;
+        this.ttNodes.set([...this.ttNodes()]);
+      },
+      error: err => {
+        node.loading = false;
+        this.nodesError.set(err?.error?.error ?? 'Could not load this container\'s children.');
+        this.ttNodes.set([...this.ttNodes()]);
+      },
+    });
+  }
+
+  onFilterChange(): void {
+    this.ttFirst.set(0);
+    this.selectedIds.set(new Set());
+    this.ttSelection.set([]);
+    this.loadNodes(1);
+  }
 
   onNodesFilterChange(event: { key: string; value: string }): void {
     if (event.key === 'cefrLevel') this.filterCefrLevel.set(event.value);
@@ -405,17 +475,13 @@ export class AdminSkillGraphComponent implements OnInit {
     else if (event.key === 'reviewStatus') this.filterReviewStatus.set(event.value);
     else if (event.key === 'contextTag') this.filterContextTag.set(event.value);
     else if (event.key === 'focusTag') this.filterFocusTag.set(event.value);
+    else if (event.key === 'hasChildren') this.filterHasChildren.set(event.value);
     this.onFilterChange();
   }
 
   onNodesSearchChange(value: string): void {
     this.filterSearch.set(value);
     this.onFilterChange();
-  }
-
-  onNodesPageChange(page: number): void {
-    this.nodesPage.set(page);
-    this.loadNodes();
   }
 
   runDraft(): void {
@@ -436,7 +502,7 @@ export class AdminSkillGraphComponent implements OnInit {
         this.draftStatus.set(
           `Drafted ${r.createdCount} node(s)` +
           (r.droppedEdgeCount ? `, dropped ${r.droppedEdgeCount} edge(s) that would cycle` : '') + '.');
-        this.loadNodes();
+        this.loadNodes(this.currentPage());
         this.loadCoverage();
       },
       error: err => {
@@ -454,7 +520,15 @@ export class AdminSkillGraphComponent implements OnInit {
 
   clearSelection(): void {
     this.selectedIds.set(new Set());
-    this.nodesTableRef?.clearSelection();
+    this.ttSelection.set([]);
+  }
+
+  currentPageForFooter(): number {
+    return Math.floor(this.ttFirst() / this.ttRows) + 1;
+  }
+
+  private currentPage(): number {
+    return this.currentPageForFooter();
   }
 
   batchApprove(): void {
@@ -468,7 +542,7 @@ export class AdminSkillGraphComponent implements OnInit {
         this.batchPending.set(false);
         this.batchStatus.set(`Approved ${r.succeeded} of ${r.requestedCount}.`);
         this.clearSelection();
-        this.loadNodes();
+        this.loadNodes(this.currentPage());
         this.loadCoverage();
       },
       error: err => {
@@ -524,7 +598,7 @@ export class AdminSkillGraphComponent implements OnInit {
         this.batchStatus.set(`Rejected ${r.succeeded} of ${r.requestedCount}.`);
         this.rejectReason = '';
         this.clearSelection();
-        this.loadNodes();
+        this.loadNodes(this.currentPage());
         // Skill Graph rebuild Phase 6.3b — batch-presented, advisory only: append this call's
         // reconnect groups to whatever's already showing rather than replacing it, since an admin
         // might reject in more than one batch before reviewing suggestions.
@@ -569,7 +643,7 @@ export class AdminSkillGraphComponent implements OnInit {
         // check (reconnecting A->C after B is rejected can make some OTHER edge redundant); surface
         // it here rather than silently discarding it.
         if (r.suggestions.length > 0) this.redundantEdgeSuggestions.update(list => [...list, ...r.suggestions]);
-        this.loadNodes();
+        this.loadNodes(this.currentPage());
       },
       error: err => this.reconnectError.set(err?.error?.error ?? 'Could not add this reconnect.'),
     });

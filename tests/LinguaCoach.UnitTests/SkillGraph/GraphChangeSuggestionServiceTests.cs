@@ -344,6 +344,64 @@ public sealed class GraphChangeSuggestionServiceTests
         Assert.Empty(_sut.DetectNearDuplicateNodes(nodes));
     }
 
+    // ── Container/leaf hierarchy prep (2026-07-24) — CEFR-J-style minimal-pair guard ──────────
+    // Without the DiffersInSentenceType guard, these pairs score well above the 0.85 threshold on
+    // bigram-Dice alone (verified manually before this fix landed: "I am" vs "I am not" against
+    // near-identical descriptions scores ~0.9+) — real, distinct, independently CEFR-sub-leveled
+    // grammar forms (CEFR-J tracks "do"-negation at A1.2 vs "does"-negation at B1.1) that a
+    // text-similarity metric alone cannot tell apart from an accidental duplicate.
+
+    [Fact]
+    public void Affirmative_and_negative_minimal_pair_is_not_flagged_a_duplicate()
+    {
+        NearDuplicateNodeCandidate[] nodes =
+        [
+            new(Guid.NewGuid(), "I am (affirmative statement)", "States identity or characteristics using 'to be' with the first-person singular subject 'I', in the affirmative.", "A1", "grammar"),
+            new(Guid.NewGuid(), "I am not (negative statement)", "States identity or characteristics using 'to be' with the first-person singular subject 'I', in the negative.", "A1", "grammar"),
+        ];
+
+        Assert.Empty(_sut.DetectNearDuplicateNodes(nodes));
+    }
+
+    [Fact]
+    public void Statement_and_question_minimal_pair_is_not_flagged_a_duplicate()
+    {
+        NearDuplicateNodeCandidate[] nodes =
+        [
+            new(Guid.NewGuid(), "I am (affirmative statement)", "States identity or characteristics using 'to be' with the first-person singular subject 'I', in the affirmative.", "A1", "grammar"),
+            new(Guid.NewGuid(), "Am I ...? (affirmative question)", "Asks about identity or characteristics using 'to be' with the first-person singular subject 'I', in the affirmative.", "A1", "grammar"),
+        ];
+
+        Assert.Empty(_sut.DetectNearDuplicateNodes(nodes));
+    }
+
+    [Fact]
+    public void Contraction_negation_is_recognized_same_as_the_word_not()
+    {
+        NearDuplicateNodeCandidate[] nodes =
+        [
+            new(Guid.NewGuid(), "He is (affirmative statement)", "States identity or characteristics using 'to be' with the third-person singular subject 'he', in the affirmative.", "A1", "grammar"),
+            new(Guid.NewGuid(), "He isn't (negative statement)", "States identity or characteristics using 'to be' with the third-person singular subject 'he', in the negative.", "A1", "grammar"),
+        ];
+
+        Assert.Empty(_sut.DetectNearDuplicateNodes(nodes));
+    }
+
+    [Fact]
+    public void Two_negative_siblings_with_near_identical_wording_are_still_flagged()
+    {
+        // The guard only excludes cross-sentence-type pairs — an accidental duplicate WITHIN the
+        // same sentence type (e.g. two near-identical negative-statement nodes) must still be caught.
+        NearDuplicateNodeCandidate[] nodes =
+        [
+            new(Guid.NewGuid(), "I am not (negative statement)", "States identity or characteristics using 'to be' with the first-person singular subject 'I', in the negative.", "A1", "grammar"),
+            new(Guid.NewGuid(), "I am not (negative statemnt)", "States identity or characteristics using 'to be' with the first-person singular subject 'I', in the negative.", "A1", "grammar"), // typo'd duplicate
+        ];
+
+        var suggestion = Assert.Single(_sut.DetectNearDuplicateNodes(nodes));
+        Assert.True(suggestion.Similarity >= GraphChangeSuggestionService.NearDuplicateSimilarityThreshold);
+    }
+
     [Fact]
     public void Three_node_group_flags_only_the_similar_pair()
     {

@@ -41,12 +41,13 @@ public sealed class AdminSkillGraphController : ControllerBase
     private readonly INodeGraphPlacementSuggestionService _placementSuggestions;
     private readonly IGraphChangeSuggestionService _changeSuggestions;
     private readonly INearDuplicateConfirmationService _nearDuplicateConfirmation;
+    private readonly ICefrJGrammarImportService _cefrJImport;
 
     public AdminSkillGraphController(
         LinguaCoachDbContext db, ISkillGraphDraftingService drafting, ISkillGraphValidationService validation,
         IModuleSkillGraphTaggingService tagging, ISkillGraphNodeRepairService repair,
         INodeGraphPlacementSuggestionService placementSuggestions, IGraphChangeSuggestionService changeSuggestions,
-        INearDuplicateConfirmationService nearDuplicateConfirmation)
+        INearDuplicateConfirmationService nearDuplicateConfirmation, ICefrJGrammarImportService cefrJImport)
     {
         _db = db;
         _drafting = drafting;
@@ -56,6 +57,7 @@ public sealed class AdminSkillGraphController : ControllerBase
         _placementSuggestions = placementSuggestions;
         _changeSuggestions = changeSuggestions;
         _nearDuplicateConfirmation = nearDuplicateConfirmation;
+        _cefrJImport = cefrJImport;
     }
 
     // ── Sprint 14.1 — node tag diagnose+AI-repair, mirrors Resource Bank's
@@ -108,12 +110,29 @@ public sealed class AdminSkillGraphController : ControllerBase
     public async Task<IActionResult> GetNodes(
         [FromQuery] string? cefrLevel, [FromQuery] string? skill, [FromQuery] string? reviewStatus,
         [FromQuery] string? search, [FromQuery] string? contextTag, [FromQuery] string? focusTag,
+        // Skill Graph rebuild Phase 4 (2026-07-27) — the PrimeNG TreeTable's lazy-load-on-expand
+        // needs two shapes from the same list endpoint rather than a second one: `topLevelOnly`
+        // for the tree's root rows (ParentNodeId == null — containers and standalone nodes alike),
+        // and `parentNodeId` for one container's children when the admin expands it. Mutually
+        // exclusive by construction (a real ParentNodeId value already implies "not top-level");
+        // if both are somehow sent, parentNodeId wins.
+        [FromQuery] bool topLevelOnly = false, [FromQuery] Guid? parentNodeId = null,
+        // Skill Graph rebuild Phase 4 (2026-07-27, user follow-up) — "Has children" filter for the
+        // Nodes tree table's toolbar: true = containers only, false = leaves/standalone only.
+        [FromQuery] bool? hasChildren = null,
         [FromQuery] int page = 1, [FromQuery] int pageSize = 25, CancellationToken ct = default)
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 200);
 
         var query = _db.SkillGraphNodes.AsNoTracking().AsQueryable();
+        if (parentNodeId is not null) query = query.Where(n => n.ParentNodeId == parentNodeId.Value);
+        else if (topLevelOnly) query = query.Where(n => n.ParentNodeId == null);
+        if (hasChildren is not null)
+        {
+            var containerIds = _db.SkillGraphNodes.Where(c => c.ParentNodeId != null).Select(c => c.ParentNodeId!.Value);
+            query = hasChildren.Value ? query.Where(n => containerIds.Contains(n.Id)) : query.Where(n => !containerIds.Contains(n.Id));
+        }
         if (!string.IsNullOrWhiteSpace(cefrLevel)) query = query.Where(n => n.CefrLevel == cefrLevel.ToUpperInvariant());
         if (!string.IsNullOrWhiteSpace(skill)) query = query.Where(n => n.Skill == skill.ToLowerInvariant());
         if (!string.IsNullOrWhiteSpace(reviewStatus) && Enum.TryParse<AdminReviewStatus>(reviewStatus, true, out var status))
@@ -147,7 +166,7 @@ public sealed class AdminSkillGraphController : ControllerBase
             {
                 n.Id, n.Key, n.Title, n.Description, n.CefrLevel, n.Skill, n.Subskill,
                 n.DifficultyBand, n.ReviewStatus, n.IsActive, n.RejectionReason, n.CreatedAt,
-                n.ContextTagsJson, n.FocusTagsJson,
+                n.ContextTagsJson, n.FocusTagsJson, n.ParentNodeId,
             })
             .ToListAsync(ct);
 
@@ -162,12 +181,22 @@ public sealed class AdminSkillGraphController : ControllerBase
             .Select(g => new { NodeId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(g => g.NodeId, g => g.Count, ct);
 
+        // Container/leaf hierarchy (2026-07-24) — child counts for this page's nodes, so the
+        // frontend can render an outline/tree view without an N+1 call per row.
+        var childCounts = await _db.SkillGraphNodes.AsNoTracking()
+            .Where(n => n.ParentNodeId != null && pageIds.Contains(n.ParentNodeId.Value))
+            .GroupBy(n => n.ParentNodeId!.Value)
+            .Select(g => new { ParentNodeId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(g => g.ParentNodeId, g => g.Count, ct);
+
         var items = rawItems.Select(n => new
         {
             n.Id, n.Key, n.Title, n.Description, n.CefrLevel, n.Skill, n.Subskill,
             n.DifficultyBand, n.ReviewStatus, n.IsActive, n.RejectionReason, n.CreatedAt,
             ContextTags = ParseTags(n.ContextTagsJson), FocusTags = ParseTags(n.FocusTagsJson),
             LinkedModuleCount = linkCounts.GetValueOrDefault(n.Id, 0),
+            n.ParentNodeId,
+            ChildCount = childCounts.GetValueOrDefault(n.Id, 0),
         });
 
         return Ok(new
@@ -191,7 +220,7 @@ public sealed class AdminSkillGraphController : ControllerBase
             .Select(n => new
             {
                 n.Id, n.Key, n.Title, n.CefrLevel, n.Skill, n.Subskill, n.DifficultyBand, n.ReviewStatus,
-                n.ContextTagsJson, n.FocusTagsJson,
+                n.ContextTagsJson, n.FocusTagsJson, n.ParentNodeId,
             })
             .ToListAsync(ct);
 
@@ -199,6 +228,7 @@ public sealed class AdminSkillGraphController : ControllerBase
         {
             n.Id, n.Key, n.Title, n.CefrLevel, n.Skill, n.Subskill, n.DifficultyBand, n.ReviewStatus,
             ContextTags = ParseTags(n.ContextTagsJson), FocusTags = ParseTags(n.FocusTagsJson),
+            n.ParentNodeId,
         });
 
         var edges = await _db.SkillGraphPrerequisiteEdges.AsNoTracking()
@@ -240,6 +270,21 @@ public sealed class AdminSkillGraphController : ControllerBase
             .Join(_db.Modules.AsNoTracking(), l => l.ModuleId, m => m.Id, (l, m) => new { m.Id, m.Title })
             .ToListAsync(ct);
 
+        // Container/leaf hierarchy (2026-07-24) — this node's own container (if it's a leaf) and
+        // its direct children (if it's a container), so the node detail view can render/navigate
+        // the hierarchy without a separate call.
+        var parent = node.ParentNodeId is null
+            ? null
+            : await _db.SkillGraphNodes.AsNoTracking()
+                .Where(n => n.Id == node.ParentNodeId)
+                .Select(n => new { n.Id, n.Key, n.Title })
+                .FirstOrDefaultAsync(ct);
+        var children = await _db.SkillGraphNodes.AsNoTracking()
+            .Where(n => n.ParentNodeId == id)
+            .OrderBy(n => n.Title)
+            .Select(n => new { n.Id, n.Key, n.Title, n.ReviewStatus })
+            .ToListAsync(ct);
+
         return Ok(new
         {
             node.Id, node.Key, node.Title, node.Description, node.CefrLevel, node.Skill, node.Subskill,
@@ -249,7 +294,65 @@ public sealed class AdminSkillGraphController : ControllerBase
             prerequisites,
             dependents,
             linkedModules,
+            node.ParentNodeId,
+            parent,
+            children,
         });
+    }
+
+    /// <summary>Container/leaf hierarchy (2026-07-24) — sets or clears this node's container. Own
+    /// endpoint, not folded into <see cref="UpdateNode"/>, mirroring <see cref="AssignParent"/>'s
+    /// own-mutator rationale. Validates the target parent exists and that the reassignment would
+    /// not create a cycle in the parent tree (the node becoming its own ancestor) by walking the
+    /// proposed parent's own ancestor chain — the same kind of graph-wide check prerequisite-edge
+    /// cycles already get via <see cref="ISkillGraphValidationService"/>, just over the much simpler
+    /// single-parent chain rather than an arbitrary edge set.</summary>
+    [HttpPut("nodes/{id:guid}/parent")]
+    public async Task<IActionResult> AssignParent(Guid id, [FromBody] AssignSkillGraphParentRequest request, CancellationToken ct)
+    {
+        var node = await _db.SkillGraphNodes.FirstOrDefaultAsync(n => n.Id == id, ct);
+        if (node is null) return NotFound();
+
+        if (request.ParentNodeId is { } parentId)
+        {
+            if (parentId == id)
+                return BadRequest(new { error = "A node cannot be its own parent." });
+
+            var parentExists = await _db.SkillGraphNodes.AnyAsync(n => n.Id == parentId, ct);
+            if (!parentExists) return NotFound(new { error = "Parent node not found." });
+
+            // A container can't itself become a leaf of one of its own descendants — walk up from
+            // the proposed parent; if we ever reach `id`, this reassignment would create a cycle.
+            var ancestry = await _db.SkillGraphNodes.AsNoTracking()
+                .Select(n => new { n.Id, n.ParentNodeId }).ToDictionaryAsync(n => n.Id, ct);
+            var cursor = (Guid?)parentId;
+            var hops = 0;
+            while (cursor is { } current && hops++ < ancestry.Count)
+            {
+                if (current == id)
+                    return Conflict(new { error = "Assigning this parent would create a circular container chain." });
+                cursor = ancestry.GetValueOrDefault(current)?.ParentNodeId;
+            }
+
+            // A node that is itself a container (has children) shouldn't also become a leaf —
+            // prerequisite edges/content links are meant to live on leaves only, and a two-level
+            // container chain isn't a shape any current design (CEFR-J import, admin UI) needs.
+            var nodeHasChildren = await _db.SkillGraphNodes.AnyAsync(n => n.ParentNodeId == id, ct);
+            if (nodeHasChildren)
+                return Conflict(new { error = "This node already has children of its own — a container cannot also become a leaf." });
+        }
+
+        try
+        {
+            node.AssignParent(request.ParentNodeId);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+
+        await _db.SaveChangesAsync(ct);
+        return Ok(new { node.Id, node.ParentNodeId });
     }
 
     /// <summary>Skill Graph rebuild Phase 6.2 — AI-proposes candidate prerequisite/dependent edges
@@ -270,11 +373,14 @@ public sealed class AdminSkillGraphController : ControllerBase
 
         // Same cross-link candidate shape as Draft()'s crossLinkNodes query — same skill (any
         // level) or same CEFR level (any skill), bounded, excluding the node itself and anything
-        // already linked in either direction.
+        // already linked in either direction. Container/leaf hierarchy (2026-07-24) — also excludes
+        // nodes with children, since a placement suggestion feeds a prerequisite edge, which
+        // belongs on leaves only.
         var candidateNodes = await _db.SkillGraphNodes.AsNoTracking()
             .Where(n => n.ReviewStatus == AdminReviewStatus.Approved && n.IsActive
                 && !excludeIds.Contains(n.Id)
-                && (n.Skill == node.Skill || n.CefrLevel == node.CefrLevel))
+                && (n.Skill == node.Skill || n.CefrLevel == node.CefrLevel)
+                && !_db.SkillGraphNodes.Any(c => c.ParentNodeId == n.Id))
             .OrderBy(n => n.CefrLevel).ThenBy(n => n.Skill)
             .Take(MaxPlacementCandidates)
             .Select(n => new { n.Id, n.Key, n.Title })
@@ -338,8 +444,22 @@ public sealed class AdminSkillGraphController : ControllerBase
             return BadRequest(new { error = ex.Message });
         }
 
+        // Container/leaf hierarchy (2026-07-24) — a brand-new node has no children of its own yet,
+        // so the only real guard is "does the requested parent exist", checked up front before the
+        // node is even created (unlike AssignParent's post-hoc cycle check, which a fresh node can
+        // never trigger — it has no existing edges/descendants to loop back through).
+        if (request.ParentNodeId is { } requestedParentId
+            && !await _db.SkillGraphNodes.AnyAsync(n => n.Id == requestedParentId, ct))
+            return BadRequest(new { error = "Parent node not found." });
+
         _db.SkillGraphNodes.Add(node);
         await _db.SaveChangesAsync(ct); // assigns node.Id before any edge can reference it
+
+        if (request.ParentNodeId is { } parentId)
+        {
+            node.AssignParent(parentId);
+            await _db.SaveChangesAsync(ct);
+        }
 
         var droppedPrerequisites = new List<object>();
         foreach (var prereqId in (request.PrerequisiteNodeIds ?? []).Distinct())
@@ -482,6 +602,16 @@ public sealed class AdminSkillGraphController : ControllerBase
         var prereqExists = await _db.SkillGraphNodes.AnyAsync(n => n.Id == prerequisiteNodeId, ct);
         if (!prereqExists)
             return (false, "Prerequisite node not found.");
+
+        // Container/leaf hierarchy (2026-07-24) — prerequisite edges live on leaves only; a
+        // container's "effective" prerequisite relationship is derived from its children's edges,
+        // never independently stored (see the audit's Part 1 design rule).
+        var nodeHasChildren = await _db.SkillGraphNodes.AnyAsync(n => n.ParentNodeId == nodeId, ct);
+        if (nodeHasChildren)
+            return (false, "This node has children — prerequisite edges belong on the leaf nodes, not the container.");
+        var prereqHasChildren = await _db.SkillGraphNodes.AnyAsync(n => n.ParentNodeId == prerequisiteNodeId, ct);
+        if (prereqHasChildren)
+            return (false, "The prerequisite node has children — prerequisite edges belong on the leaf nodes, not the container.");
 
         var alreadyExists = await _db.SkillGraphPrerequisiteEdges
             .AnyAsync(e => e.NodeId == nodeId && e.PrerequisiteNodeId == prerequisiteNodeId, ct);
@@ -662,9 +792,98 @@ public sealed class AdminSkillGraphController : ControllerBase
             }
         }
 
+        // Container/leaf hierarchy (2026-07-24) — resolve ParentKey against the same in-batch/
+        // existing-key universe PrerequisiteKeys already uses, applied after edges so an item can
+        // reference a parent created earlier in the same request. A missing/unresolvable ParentKey
+        // is reported, never silently ignored — a leaf that was supposed to land under a real
+        // container but didn't should be visible, not quietly orphaned as a standalone node.
+        foreach (var item in request.Nodes)
+        {
+            if (string.IsNullOrWhiteSpace(item.ParentKey)) continue;
+            if (!existingByKey.TryGetValue(item.Key, out var node)) continue;
+
+            if (!existingByKey.TryGetValue(item.ParentKey, out var parentNode) || parentNode.Id == node.Id)
+            {
+                errors.Add($"{item.Key}: parent key '{item.ParentKey}' does not resolve to a real node in this import.");
+                continue;
+            }
+
+            try
+            {
+                node.AssignParent(parentNode.Id);
+            }
+            catch (ArgumentException ex)
+            {
+                errors.Add($"{item.Key}: {ex.Message}");
+            }
+        }
+
         await _db.SaveChangesAsync(ct);
 
         return Ok(new { createdCount, updatedCount, addedEdgeCount, droppedEdgeCount, errors });
+    }
+
+    /// <summary>Skill Graph container/leaf Phase 2 (2026-07-27) — deterministic (no AI) preview of a
+    /// CEFR-J Grammar Profile CSV import. Never writes to the database: parses the CSV, proposes a
+    /// container/leaf mapping (matching CEFR-J grammar "families" onto existing Grammar-skill nodes
+    /// where a good title match exists, otherwise proposing a new container), and returns both the
+    /// human-reviewable preview AND a ready-to-use <c>importPayload</c> shaped exactly like
+    /// <see cref="ImportSkillGraphRequest"/> — so applying the import after review is just posting
+    /// <c>importPayload.nodes</c> straight to the existing <c>POST nodes/import</c> endpoint, no
+    /// second write mechanism.</summary>
+    [HttpPost("cefrj-import/preview")]
+    public async Task<IActionResult> PreviewCefrJImport([FromBody] CefrJImportPreviewRequest request, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(request.CsvContent))
+            return BadRequest("csvContent is required.");
+
+        var existingGrammarNodes = await _db.SkillGraphNodes.AsNoTracking()
+            .Where(n => n.Skill == "grammar" && n.IsActive)
+            .Select(n => new CefrJExistingGrammarNodeCandidate(n.Id, n.Key, n.Title, n.CefrLevel))
+            .ToListAsync(ct);
+
+        var preview = _cefrJImport.ParseAndProposeMapping(request.CsvContent, existingGrammarNodes);
+
+        var importItems = new List<ImportSkillGraphNodeItem>();
+        foreach (var container in preview.Containers)
+        {
+            var parentKey = container.MatchedExistingNodeKey ?? container.Key;
+            if (container.MatchedExistingNodeKey is null)
+            {
+                importItems.Add(new ImportSkillGraphNodeItem(
+                    container.Key, container.Title,
+                    $"CEFR-J grammar family: {container.Title}.",
+                    container.CefrLevel, "grammar", null, container.DifficultyBand, null,
+                    [], [], []));
+            }
+
+            foreach (var leaf in container.Leaves)
+            {
+                importItems.Add(new ImportSkillGraphNodeItem(
+                    leaf.Key, leaf.Title,
+                    $"CEFR-J Grammar Profile item {leaf.SourceRowId}: {leaf.Title}.",
+                    leaf.CefrLevel, "grammar", null, leaf.DifficultyBand, null,
+                    [], [], [], parentKey));
+            }
+        }
+
+        foreach (var leaf in preview.StandaloneLeaves)
+        {
+            importItems.Add(new ImportSkillGraphNodeItem(
+                leaf.Key, leaf.Title,
+                $"CEFR-J Grammar Profile item {leaf.SourceRowId}: {leaf.Title}.",
+                leaf.CefrLevel, "grammar", null, leaf.DifficultyBand, null,
+                [], [], []));
+        }
+
+        return Ok(new
+        {
+            preview.Containers,
+            preview.StandaloneLeaves,
+            preview.Warnings,
+            preview.TotalLeafCount,
+            importPayload = new ImportSkillGraphRequest(importItems),
+        });
     }
 
     // Rebuild Phase 2 (2026-07-23) — bounds how many other-combination titles are offered to the AI
@@ -700,10 +919,13 @@ public sealed class AdminSkillGraphController : ControllerBase
 
         // Rebuild Phase 2 — real, already-approved nodes from other CEFR levels of this same skill,
         // or other skills at this same CEFR level: exactly the two cross-link shapes the audit's
-        // examples named (grammar A1 → speaking A1; grammar A1 → grammar A2).
+        // examples named (grammar A1 → speaking A1; grammar A1 → grammar A2). Container/leaf
+        // hierarchy (2026-07-24) — excludes nodes with children, so AI drafting can never propose
+        // an edge onto/from a container.
         var crossLinkNodes = await _db.SkillGraphNodes.AsNoTracking()
             .Where(n => n.ReviewStatus == AdminReviewStatus.Approved && n.IsActive
-                && ((n.Skill == skill && n.CefrLevel != cefrLevel) || (n.CefrLevel == cefrLevel && n.Skill != skill)))
+                && ((n.Skill == skill && n.CefrLevel != cefrLevel) || (n.CefrLevel == cefrLevel && n.Skill != skill))
+                && !_db.SkillGraphNodes.Any(c => c.ParentNodeId == n.Id))
             .OrderBy(n => n.CefrLevel).ThenBy(n => n.Skill)
             .Take(MaxCrossLinkCandidates)
             .Select(n => new { n.Id, n.Title })
@@ -1159,9 +1381,13 @@ public sealed class AdminSkillGraphController : ControllerBase
             // Modules (title "zoo", CefrLevel A1, Skill "Vocabulary") before this fix.
             var moduleSkillLower = module.Skill!.ToLowerInvariant();
             var moduleCefrUpper = module.CefrLevel!.ToUpperInvariant();
+            // Container/leaf hierarchy (2026-07-24) — content links belong on leaves only; a
+            // container node (has children) is excluded from the candidate pool a Module can be
+            // tagged against, same rule as manual prerequisite edges above.
             var candidateNodes = await _db.SkillGraphNodes.AsNoTracking()
                 .Where(n => n.ReviewStatus == AdminReviewStatus.Approved && n.IsActive
-                    && n.CefrLevel == moduleCefrUpper && n.Skill == moduleSkillLower)
+                    && n.CefrLevel == moduleCefrUpper && n.Skill == moduleSkillLower
+                    && !_db.SkillGraphNodes.Any(c => c.ParentNodeId == n.Id))
                 .Select(n => new SkillGraphNodeCandidate(n.Id, n.Key, n.Title))
                 .ToListAsync(ct);
 
@@ -1305,11 +1531,18 @@ public sealed record CreateSkillGraphNodeRequest(
     /// <summary>Editability follow-up (2026-07-23) — the symmetric direction: existing nodes that
     /// this new node should become a prerequisite FOR (a node can be the prerequisite for several
     /// others, and can itself have several prerequisites — a genuine many-to-many both ways).</summary>
-    List<Guid>? DependentNodeIds = null);
+    List<Guid>? DependentNodeIds = null,
+    /// <summary>Container/leaf hierarchy (2026-07-24) — optional container this new node is a leaf
+    /// under, set at creation time same as prerequisites/dependents above.</summary>
+    Guid? ParentNodeId = null);
 
 public sealed record UpdateSkillGraphNodeRequest(
     string Title, string Description, string CefrLevel, string Skill, string? Subskill,
     int DifficultyBand, string? DescriptionForAi);
+
+/// <summary>Container/leaf hierarchy (2026-07-24) — null clears the node's parent (promotes it to
+/// a standalone/container node); a Guid sets/changes it.</summary>
+public sealed record AssignSkillGraphParentRequest(Guid? ParentNodeId);
 
 public sealed record AddSkillGraphPrerequisiteRequest(Guid PrerequisiteNodeId);
 
@@ -1318,6 +1551,16 @@ public sealed record ConfirmNearDuplicateRequest(Guid NodeAId, Guid NodeBId);
 public sealed record ImportSkillGraphNodeItem(
     string Key, string Title, string Description, string CefrLevel, string Skill, string? Subskill,
     int DifficultyBand, string? DescriptionForAi,
-    List<string> ContextTags, List<string> FocusTags, List<string> PrerequisiteKeys);
+    List<string> ContextTags, List<string> FocusTags, List<string> PrerequisiteKeys,
+    /// <summary>Container/leaf hierarchy (2026-07-24) — the Key of this item's container, resolved
+    /// against the same in-batch/existing-key universe as PrerequisiteKeys. Optional — omitted or
+    /// null means this item is itself a container (or a standalone node), the default for every
+    /// existing canonical A1-C2 node imported before this field existed.</summary>
+    string? ParentKey = null);
 
 public sealed record ImportSkillGraphRequest(List<ImportSkillGraphNodeItem> Nodes);
+
+/// <summary>Skill Graph container/leaf Phase 2 (2026-07-27) — raw CEFR-J Grammar Profile CSV text,
+/// pasted/uploaded by the admin (the file lives outside the repo, so this endpoint takes content
+/// directly rather than a server-side path).</summary>
+public sealed record CefrJImportPreviewRequest(string CsvContent);

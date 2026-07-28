@@ -139,4 +139,55 @@ public sealed class SkillGraphNodeTests
         Assert.Throws<ArgumentException>(() =>
             node.UpdateCore("T", "D", "Z9", "grammar", null, 1, null));
     }
+
+    // ── Container/leaf hierarchy (2026-07-24 senior audit) ──────────────────────────────────
+
+    [Fact]
+    public void ParentNodeId_DefaultsToNull()
+    {
+        var node = new SkillGraphNode("k", "T", "D", "A1", "grammar");
+        Assert.Null(node.ParentNodeId);
+    }
+
+    [Fact]
+    public void AssignParent_SetsParentNodeId()
+    {
+        var node = new SkillGraphNode("k", "T", "D", "A1", "grammar");
+        var parentId = Guid.NewGuid();
+
+        node.AssignParent(parentId);
+
+        Assert.Equal(parentId, node.ParentNodeId);
+    }
+
+    [Fact]
+    public void AssignParent_Null_ClearsParentNodeId()
+    {
+        var node = new SkillGraphNode("k", "T", "D", "A1", "grammar");
+        node.AssignParent(Guid.NewGuid());
+
+        node.AssignParent(null);
+
+        Assert.Null(node.ParentNodeId);
+    }
+
+    [Fact]
+    public void AssignParent_ToSelf_Throws()
+    {
+        var node = new SkillGraphNode("k", "T", "D", "A1", "grammar");
+
+        Assert.Throws<ArgumentException>(() => node.AssignParent(node.Id));
+    }
+
+    [Fact]
+    public void AssignParent_NotGatedByApprovedStatus()
+    {
+        // Unlike UpdateCore, placement is supplementary structure — same policy as UpdateTags.
+        var node = new SkillGraphNode("k", "T", "D", "A1", "grammar");
+        node.Approve(Guid.NewGuid());
+
+        node.AssignParent(Guid.NewGuid());
+
+        Assert.NotNull(node.ParentNodeId);
+    }
 }

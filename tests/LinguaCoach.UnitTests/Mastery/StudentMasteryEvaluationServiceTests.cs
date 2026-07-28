@@ -281,6 +281,130 @@ public sealed class StudentMasteryEvaluationServiceTests : IDisposable
         return (activityId, firstNode.Key, secondNode.Key);
     }
 
+    // -------------------------------------------------------------------------
+    // Skill Graph container/leaf Phase 3 (2026-07-27) — EvaluateContainerRollupAsync
+    // -------------------------------------------------------------------------
+
+    [Fact]
+    public async Task ContainerRollup_NoLeafChildren_ReturnsInsufficientEvidence()
+    {
+        var container = new SkillGraphNode("grammar.rollup_empty", "Empty container", "D.", "A1", "grammar");
+        _db.SkillGraphNodes.Add(container);
+        await _db.SaveChangesAsync();
+
+        var rollup = await _sut.EvaluateContainerRollupAsync(_studentId, container.Id);
+
+        rollup.RollupStatus.Should().Be(MasteryStatus.InsufficientEvidence);
+        rollup.TotalLeafCount.Should().Be(0);
+        rollup.MasteredLeafCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ContainerRollup_AllLeavesMastered_ReturnsMastered()
+    {
+        var container = new SkillGraphNode("grammar.rollup_full", "Full container", "D.", "A1", "grammar");
+        _db.SkillGraphNodes.Add(container);
+        await _db.SaveChangesAsync();
+
+        var (activity1, leaf1Key) = await SeedApprovedLeafAsync(container.Id, "grammar.rollup_full.leaf1");
+        var (activity2, leaf2Key) = await SeedApprovedLeafAsync(container.Id, "grammar.rollup_full.leaf2");
+        _ledger.SetEvents(_studentId,
+            MasteredEvents("grammar", activity1).Concat(MasteredEvents("grammar", activity2)).ToList());
+
+        var rollup = await _sut.EvaluateContainerRollupAsync(_studentId, container.Id);
+
+        rollup.TotalLeafCount.Should().Be(2);
+        rollup.MasteredLeafCount.Should().Be(2);
+        rollup.PercentMastered.Should().Be(1.0);
+        rollup.RollupStatus.Should().Be(MasteryStatus.Mastered);
+    }
+
+    [Fact]
+    public async Task ContainerRollup_HalfLeavesMastered_ReturnsNeedsPracticeBelow80Percent()
+    {
+        var container = new SkillGraphNode("grammar.rollup_half", "Half container", "D.", "A1", "grammar");
+        _db.SkillGraphNodes.Add(container);
+        await _db.SaveChangesAsync();
+
+        var (activity1, _) = await SeedApprovedLeafAsync(container.Id, "grammar.rollup_half.leaf1");
+        await SeedApprovedLeafAsync(container.Id, "grammar.rollup_half.leaf2"); // never attempted
+        _ledger.SetEvents(_studentId, MasteredEvents("grammar", activity1));
+
+        var rollup = await _sut.EvaluateContainerRollupAsync(_studentId, container.Id);
+
+        rollup.TotalLeafCount.Should().Be(2);
+        rollup.MasteredLeafCount.Should().Be(1);
+        rollup.PercentMastered.Should().Be(0.5);
+        rollup.RollupStatus.Should().Be(MasteryStatus.NeedsPractice);
+    }
+
+    [Fact]
+    public async Task ContainerRollup_LeavesNeverAttempted_ReturnsInsufficientEvidence()
+    {
+        var container = new SkillGraphNode("grammar.rollup_untouched", "Untouched container", "D.", "A1", "grammar");
+        _db.SkillGraphNodes.Add(container);
+        await _db.SaveChangesAsync();
+
+        await SeedApprovedLeafAsync(container.Id, "grammar.rollup_untouched.leaf1");
+        _ledger.SetEvents(_studentId, []);
+
+        var rollup = await _sut.EvaluateContainerRollupAsync(_studentId, container.Id);
+
+        rollup.RollupStatus.Should().Be(MasteryStatus.InsufficientEvidence);
+        rollup.MasteredLeafCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ContainerRollup_ExcludesPendingReviewAndInactiveLeaves()
+    {
+        var container = new SkillGraphNode("grammar.rollup_filtered", "Filtered container", "D.", "A1", "grammar");
+        _db.SkillGraphNodes.Add(container);
+        await _db.SaveChangesAsync();
+
+        var (activity1, _) = await SeedApprovedLeafAsync(container.Id, "grammar.rollup_filtered.approved");
+        _ledger.SetEvents(_studentId, MasteredEvents("grammar", activity1));
+
+        var pendingLeaf = new SkillGraphNode("grammar.rollup_filtered.pending", "Pending leaf", "D.", "A1", "grammar");
+        pendingLeaf.AssignParent(container.Id);
+        _db.SkillGraphNodes.Add(pendingLeaf);
+
+        var inactiveLeaf = new SkillGraphNode("grammar.rollup_filtered.inactive", "Inactive leaf", "D.", "A1", "grammar");
+        inactiveLeaf.Approve(null);
+        inactiveLeaf.AssignParent(container.Id);
+        inactiveLeaf.Deactivate();
+        _db.SkillGraphNodes.Add(inactiveLeaf);
+        await _db.SaveChangesAsync();
+
+        var rollup = await _sut.EvaluateContainerRollupAsync(_studentId, container.Id);
+
+        rollup.TotalLeafCount.Should().Be(1); // only the approved+active leaf counts
+        rollup.RollupStatus.Should().Be(MasteryStatus.Mastered);
+    }
+
+    /// <summary>Seeds one Approved+Active leaf under <paramref name="parentId"/>, linked to a Module
+    /// via the same StudentExerciseLaunch bridge <see cref="SeedModuleLinkedToNodeAsync"/> uses, so a
+    /// StudentLearningEvent carrying the returned ActivityId resolves to this leaf's node key.</summary>
+    private async Task<(Guid ActivityId, string NodeKey)> SeedApprovedLeafAsync(Guid parentId, string nodeKey)
+    {
+        var module = new Module($"Module for {nodeKey}", ModuleSourceMode.Manual, cefrLevel: "A1", skill: "grammar", difficultyBand: 1);
+        module.Approve(null);
+        _db.Modules.Add(module);
+
+        var leaf = new SkillGraphNode(nodeKey, $"Leaf {nodeKey}", "Test leaf.", "A1", "grammar");
+        leaf.Approve(null);
+        leaf.AssignParent(parentId);
+        _db.SkillGraphNodes.Add(leaf);
+
+        var (exerciseId, activityId) = await SeedExerciseAndActivityAsync();
+        await _db.SaveChangesAsync();
+
+        _db.ModuleSkillGraphNodeLinks.Add(new ModuleSkillGraphNodeLink(module.Id, leaf.Id, confidence: 1.0));
+        _db.StudentExerciseLaunches.Add(new StudentExerciseLaunch(
+            _studentId, module.Id, exerciseId, activityId, ExerciseLaunchSource.PracticeGym, DateTimeOffset.UtcNow));
+        await _db.SaveChangesAsync();
+
+        return (activityId, leaf.Key);
+    }
 }
 
 // ---------------------------------------------------------------------------

@@ -68,6 +68,17 @@ public sealed class SkillGraphNode : BaseEntity
     /// vocabulary as <see cref="ContextTagsJson"/>.</summary>
     public string FocusTagsJson { get; private set; } = "[]";
 
+    /// <summary>Container/leaf hierarchy (2026-07-24 senior audit) — when set, this node is a leaf
+    /// under the container node <see cref="ParentNodeId"/> references (e.g. a CEFR-J-granularity
+    /// "I am not" leaf under an "I am" container). Null means this node IS a container (or a
+    /// standalone node with no children) — the existing 600 canonical nodes all start this way.
+    /// A container conceptually is a node, not a separate entity type, matching CEFR-J's own ID
+    /// scheme (bare "8" vs. hyphenated "8-1"/"8-2"). Prerequisite edges and
+    /// <c>ModuleSkillGraphNodeLink</c> content tags are meant to live on leaves only — a
+    /// service-layer concern, not enforced here, matching this codebase's existing split (cycle
+    /// detection is a service-layer DFS, not a domain-layer check either).</summary>
+    public Guid? ParentNodeId { get; private set; }
+
     private SkillGraphNode() { }
 
     public SkillGraphNode(
@@ -171,6 +182,23 @@ public sealed class SkillGraphNode : BaseEntity
             RejectionReason = null;
         }
 
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
+    /// <summary>Sets or clears this node's container. Own mutator, deliberately not folded into
+    /// <see cref="UpdateCore"/> — reparenting is a graph-placement action reviewable independently
+    /// of core content edits (mirrors the existing prerequisite add/remove endpoints, which are also
+    /// their own thing, not part of <see cref="UpdateCore"/>). Not gated on <see cref="ReviewStatus"/>
+    /// for the same reason <see cref="UpdateTags"/> isn't: placement is supplementary structure, not
+    /// re-reviewable core content. Not self-referencing; deeper-cycle prevention (a node cannot
+    /// become its own ancestor) is a service-layer concern, since it requires walking the rest of
+    /// the graph, which this entity has no access to — mirrors prerequisite-edge cycle detection.</summary>
+    public void AssignParent(Guid? parentNodeId)
+    {
+        if (parentNodeId == Id)
+            throw new ArgumentException("A skill-graph node cannot be its own parent.", nameof(parentNodeId));
+
+        ParentNodeId = parentNodeId;
         UpdatedAtUtc = DateTime.UtcNow;
     }
 

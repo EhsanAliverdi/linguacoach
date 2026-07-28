@@ -5212,6 +5212,10 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("key");
 
+                    b.Property<Guid?>("ParentNodeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("parent_node_id");
+
                     b.Property<DateTimeOffset?>("RejectedAtUtc")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("rejected_at_utc");
@@ -5257,6 +5261,9 @@ namespace LinguaCoach.Persistence.Migrations
                     b.HasIndex("Key")
                         .IsUnique()
                         .HasDatabaseName("ix_skill_graph_nodes_key");
+
+                    b.HasIndex("ParentNodeId")
+                        .HasDatabaseName("ix_skill_graph_nodes_parent_node_id");
 
                     b.HasIndex("ReviewStatus")
                         .HasDatabaseName("ix_skill_graph_nodes_review_status");
@@ -8360,6 +8367,14 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasForeignKey("LearningSessionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("LinguaCoach.Domain.Entities.SkillGraphNode", b =>
+                {
+                    b.HasOne("LinguaCoach.Domain.Entities.SkillGraphNode", null)
+                        .WithMany()
+                        .HasForeignKey("ParentNodeId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("LinguaCoach.Domain.Entities.SkillGraphPrerequisiteEdge", b =>

@@ -22,6 +22,12 @@ public static class DefaultAiSeeder
     // approves before any node is trusted, and every proposed CEFR/skill/subskill value is
     // validated against the real taxonomy constants by SkillGraphDraftingService.
     public const string SkillGraphProposeNodesKey = "skill_graph_propose_nodes";
+    // Full content reseed (2026-07-28) — AI-categorizes vocabulary words the deterministic CEFR-J/
+    // Octanove import couldn't assign a real topic category to. Advisory only; every proposal
+    // lands PendingReview and is validated (word identity, context/focus tags) by
+    // VocabularyCategorizationService before being trusted — the AI is free to propose a new
+    // category (per the user's explicit decision), never a hallucinated word it wasn't asked about.
+    public const string VocabularyCategorizeWordsKey = "vocabulary_categorize_words";
     // Adaptive Curriculum Sprint 2 (2026-07-20) — AI-proposes which approved skill-graph nodes an
     // existing Module covers. Advisory only; every proposed node key is validated against the real
     // candidate list by ModuleSkillGraphTaggingService before being trusted.
@@ -4903,6 +4909,48 @@ Rules:
 - Do not include any text outside the JSON object. No markdown fences.
 """;
 
+    // Full content reseed (2026-07-28) — categorizes a batch of vocabulary words with no real
+    // topic category into the shared vocabulary-topic taxonomy, proposing a new topic only when
+    // nothing existing fits well. Also generates a short student-facing definition and shared
+    // context/focus tags per word. Advisory only: VocabularyCategorizationService drops any
+    // response entry for a word not actually sent in this batch, and any tag not in the recognized
+    // list — Category itself is trusted as free text (the taxonomy is allowed to grow).
+    private const string VocabularyCategorizeWordsContent = """
+You are grouping English vocabulary words into topic categories for a skill graph used by an adaptive AI tutoring app, and writing a short definition for each word. You do NOT decide anything final — an admin reviews and batch-approves your proposal before it is ever used.
+
+Existing topic categories already in use (strongly prefer reusing one of these when a word genuinely fits): {{existingCategories}}
+Recognized context/focus tags (use ONLY values from this exact list, or omit): {{contextTags}}
+
+Words to categorize, one per line as "headword (part of speech, CEFR level)":
+{{words}}
+
+For EACH word above, propose:
+- The single best-fit topic category. Reuse an existing category from the list above whenever a word genuinely belongs there. Only propose a new category name when the word doesn't fit any existing one well — keep new category names short and general (e.g. "Sports and fitness", not "Words related to competitive team sports").
+- A short (1 sentence, plain English) student-facing definition appropriate for the word's CEFR level.
+- 0-2 contextTags and 0-2 focusTags from the recognized list above, only when they genuinely fit — do not force one.
+
+Return ONLY valid JSON (no markdown, no text outside the JSON object) matching this exact shape:
+
+{
+  "words": [
+    {
+      "headword": "<exact headword as given above>",
+      "pos": "<exact part of speech as given above>",
+      "category": "<best-fit existing category, or a short new one>",
+      "description": "<1-sentence student-facing definition>",
+      "contextTags": ["<0-2 values from the recognized list above>"],
+      "focusTags": ["<0-2 values from the recognized list above>"]
+    }
+  ]
+}
+
+Rules:
+- Return one entry for every word given above, in any order — do not skip words, do not add words that weren't given.
+- "headword" and "pos" must exactly match one of the words given above (same spelling, same part of speech).
+- Only use contextTags/focusTags values from the recognized list given above. Never invent a tag.
+- Do not include any text outside the JSON object. No markdown fences.
+""";
+
     // Adaptive Curriculum Sprint 2 — proposes which approved skill-graph nodes an existing Module
     // covers. Advisory only: the caller validates every proposed key against the real candidate
     // list before applying anything.
@@ -5121,6 +5169,13 @@ Rules:
         await SeedOrUpgradePromptAsync(db, logger,
             SkillGraphProposeNodesKey, SkillGraphProposeNodesContent,
             maxInputTokens: 2600, maxOutputTokens: 2000, ct);
+
+        // Full content reseed (2026-07-28) — vocabulary word categorization (advisory only). A
+        // batch of ~50 words plus their headword/pos/definition/tags in one call — real headroom
+        // above the observed content size, same discipline as every other prompt in this file.
+        await SeedOrUpgradePromptAsync(db, logger,
+            VocabularyCategorizeWordsKey, VocabularyCategorizeWordsContent,
+            maxInputTokens: 2200, maxOutputTokens: 3000, ct);
 
         // Adaptive Curriculum Sprint 2 — Module-to-skill-graph-node coverage tagging (advisory only)
         await SeedOrUpgradePromptAsync(db, logger,

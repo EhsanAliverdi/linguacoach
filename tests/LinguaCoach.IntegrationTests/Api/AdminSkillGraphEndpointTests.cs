@@ -583,6 +583,488 @@ public sealed class AdminSkillGraphEndpointTests : IClassFixture<ApiTestFactory>
         Assert.Equal(HttpStatusCode.Conflict, cycleResp.StatusCode);
     }
 
+    // ── Container/leaf hierarchy (2026-07-24 senior audit) ──────────────────────────────────
+
+    [Fact]
+    public async Task CreateNode_WithParentNodeId_AssignsParentAtCreationTime()
+    {
+        var container = await SeedNodeAsync($"grammar.parentcontainer_{Guid.NewGuid():N}.a1");
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/nodes", new
+        {
+            title = $"Leaf node {Guid.NewGuid():N}", description = "A leaf under a container.",
+            cefrLevel = "A1", skill = "grammar", subskill = (string?)null, difficultyBand = 1,
+            descriptionForAi = (string?)null, contextTags = Array.Empty<string>(), focusTags = Array.Empty<string>(),
+            parentNodeId = container.Id,
+        });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var leafId = body.GetProperty("id").GetGuid();
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var saved = await db.SkillGraphNodes.FirstAsync(n => n.Id == leafId);
+        Assert.Equal(container.Id, saved.ParentNodeId);
+    }
+
+    [Fact]
+    public async Task CreateNode_WithNonExistentParentNodeId_ReturnsBadRequest()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/nodes", new
+        {
+            title = $"Orphan attempt {Guid.NewGuid():N}", description = "D", cefrLevel = "A1", skill = "grammar",
+            subskill = (string?)null, difficultyBand = 1, descriptionForAi = (string?)null,
+            contextTags = Array.Empty<string>(), focusTags = Array.Empty<string>(),
+            parentNodeId = Guid.NewGuid(),
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task AssignParent_ValidTarget_SetsParentNodeId()
+    {
+        var leaf = await SeedNodeAsync($"grammar.assignleaf_{Guid.NewGuid():N}.a1");
+        var container = await SeedNodeAsync($"grammar.assigncontainer_{Guid.NewGuid():N}.a1");
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PutAsJsonAsync($"/api/admin/skill-graph/nodes/{leaf.Id}/parent", new { parentNodeId = container.Id });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var saved = await db.SkillGraphNodes.FirstAsync(n => n.Id == leaf.Id);
+        Assert.Equal(container.Id, saved.ParentNodeId);
+    }
+
+    [Fact]
+    public async Task AssignParent_Null_ClearsParentNodeId()
+    {
+        var container = await SeedNodeAsync($"grammar.clearcontainer_{Guid.NewGuid():N}.a1");
+        var leaf = await SeedNodeAsync($"grammar.clearleaf_{Guid.NewGuid():N}.a1");
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            (await db.SkillGraphNodes.FirstAsync(n => n.Id == leaf.Id)).AssignParent(container.Id);
+            await db.SaveChangesAsync();
+        }
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PutAsJsonAsync($"/api/admin/skill-graph/nodes/{leaf.Id}/parent", new { parentNodeId = (Guid?)null });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+
+        using var verifyScope = _factory.Services.CreateScope();
+        var verifyDb = verifyScope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        Assert.Null((await verifyDb.SkillGraphNodes.FirstAsync(n => n.Id == leaf.Id)).ParentNodeId);
+    }
+
+    [Fact]
+    public async Task AssignParent_ToSelf_ReturnsBadRequest()
+    {
+        var node = await SeedNodeAsync($"grammar.selfparent_{Guid.NewGuid():N}.a1");
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PutAsJsonAsync($"/api/admin/skill-graph/nodes/{node.Id}/parent", new { parentNodeId = node.Id });
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task AssignParent_WouldCreateCycle_ReturnsConflict()
+    {
+        var a = await SeedNodeAsync($"grammar.parentcyclea_{Guid.NewGuid():N}.a1");
+        var b = await SeedNodeAsync($"grammar.parentcycleb_{Guid.NewGuid():N}.a1");
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        // b's parent is a.
+        Assert.Equal(HttpStatusCode.OK,
+            (await client.PutAsJsonAsync($"/api/admin/skill-graph/nodes/{b.Id}/parent", new { parentNodeId = a.Id })).StatusCode);
+
+        // Now try to make a's parent be b — a -> b -> a would cycle.
+        var resp = await client.PutAsJsonAsync($"/api/admin/skill-graph/nodes/{a.Id}/parent", new { parentNodeId = b.Id });
+        Assert.Equal(HttpStatusCode.Conflict, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task AssignParent_NodeThatAlreadyHasChildren_ReturnsConflict()
+    {
+        var container = await SeedNodeAsync($"grammar.hassomechild_{Guid.NewGuid():N}.a1");
+        var child = await SeedNodeAsync($"grammar.somechild_{Guid.NewGuid():N}.a1");
+        var otherContainer = await SeedNodeAsync($"grammar.othercontainer_{Guid.NewGuid():N}.a1");
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        Assert.Equal(HttpStatusCode.OK,
+            (await client.PutAsJsonAsync($"/api/admin/skill-graph/nodes/{child.Id}/parent", new { parentNodeId = container.Id })).StatusCode);
+
+        // container already has a child (child) — it can't also become a leaf of otherContainer.
+        var resp = await client.PutAsJsonAsync($"/api/admin/skill-graph/nodes/{container.Id}/parent", new { parentNodeId = otherContainer.Id });
+        Assert.Equal(HttpStatusCode.Conflict, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task AssignParent_NonExistentTarget_ReturnsNotFound()
+    {
+        var node = await SeedNodeAsync($"grammar.noparent_{Guid.NewGuid():N}.a1");
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PutAsJsonAsync($"/api/admin/skill-graph/nodes/{node.Id}/parent", new { parentNodeId = Guid.NewGuid() });
+        Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetNode_WithChildren_ReturnsChildrenList()
+    {
+        var container = await SeedNodeAsync($"grammar.getchildrencontainer_{Guid.NewGuid():N}.a1");
+        var child = await SeedNodeAsync($"grammar.getchildrenleaf_{Guid.NewGuid():N}.a1");
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            (await db.SkillGraphNodes.FirstAsync(n => n.Id == child.Id)).AssignParent(container.Id);
+            await db.SaveChangesAsync();
+        }
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.GetAsync($"/api/admin/skill-graph/nodes/{container.Id}");
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var children = body.GetProperty("children").EnumerateArray().ToList();
+        Assert.Contains(children, c => c.GetProperty("id").GetGuid() == child.Id);
+
+        var childResp = await client.GetAsync($"/api/admin/skill-graph/nodes/{child.Id}");
+        var childBody = await childResp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(container.Id, childBody.GetProperty("parent").GetProperty("id").GetGuid());
+    }
+
+    [Fact]
+    public async Task GetNodes_ReportsChildCount()
+    {
+        var container = await SeedNodeAsync($"grammar.listchildcount_{Guid.NewGuid():N}.a1");
+        var child = await SeedNodeAsync($"grammar.listchildcountleaf_{Guid.NewGuid():N}.a1");
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            (await db.SkillGraphNodes.FirstAsync(n => n.Id == child.Id)).AssignParent(container.Id);
+            await db.SaveChangesAsync();
+        }
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.GetAsync("/api/admin/skill-graph/nodes?cefrLevel=A1&skill=grammar&pageSize=200");
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var items = body.GetProperty("items").EnumerateArray().ToList();
+        var containerItem = items.First(i => i.GetProperty("id").GetGuid() == container.Id);
+        Assert.Equal(1, containerItem.GetProperty("childCount").GetInt32());
+    }
+
+    // ── Skill Graph rebuild Phase 4 (2026-07-27) — topLevelOnly/parentNodeId filters, added for
+    // the PrimeNG TreeTable's lazy-load-on-expand (root rows vs. one container's children). ──────
+
+    [Fact]
+    public async Task GetNodes_TopLevelOnly_ExcludesLeavesWithAParent()
+    {
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        var container = await SeedNodeAsync($"grammar.toplevel_container_{suffix}.a1");
+        var leaf = await SeedNodeAsync($"grammar.toplevel_leaf_{suffix}.a1");
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            (await db.SkillGraphNodes.FirstAsync(n => n.Id == leaf.Id)).AssignParent(container.Id);
+            await db.SaveChangesAsync();
+        }
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.GetAsync("/api/admin/skill-graph/nodes?topLevelOnly=true&pageSize=200");
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var ids = body.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("id").GetGuid()).ToList();
+
+        Assert.Contains(container.Id, ids);
+        Assert.DoesNotContain(leaf.Id, ids);
+    }
+
+    [Fact]
+    public async Task GetNodes_ParentNodeId_ReturnsOnlyThatContainersChildren()
+    {
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        var containerA = await SeedNodeAsync($"grammar.parentfilter_a_{suffix}.a1");
+        var containerB = await SeedNodeAsync($"grammar.parentfilter_b_{suffix}.a1");
+        var leafA = await SeedNodeAsync($"grammar.parentfilter_leafa_{suffix}.a1");
+        var leafB = await SeedNodeAsync($"grammar.parentfilter_leafb_{suffix}.a1");
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            (await db.SkillGraphNodes.FirstAsync(n => n.Id == leafA.Id)).AssignParent(containerA.Id);
+            (await db.SkillGraphNodes.FirstAsync(n => n.Id == leafB.Id)).AssignParent(containerB.Id);
+            await db.SaveChangesAsync();
+        }
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.GetAsync($"/api/admin/skill-graph/nodes?parentNodeId={containerA.Id}&pageSize=200");
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var ids = body.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("id").GetGuid()).ToList();
+
+        Assert.Equal([leafA.Id], ids);
+    }
+
+    [Fact]
+    public async Task GetNodes_HasChildrenTrue_ReturnsOnlyContainers()
+    {
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        var container = await SeedNodeAsync($"grammar.haschildren_container_{suffix}.a1");
+        var leaf = await SeedNodeAsync($"grammar.haschildren_leaf_{suffix}.a1");
+        var standalone = await SeedNodeAsync($"grammar.haschildren_standalone_{suffix}.a1");
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            (await db.SkillGraphNodes.FirstAsync(n => n.Id == leaf.Id)).AssignParent(container.Id);
+            await db.SaveChangesAsync();
+        }
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.GetAsync("/api/admin/skill-graph/nodes?hasChildren=true&pageSize=200");
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var ids = body.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("id").GetGuid()).ToList();
+
+        Assert.Contains(container.Id, ids);
+        Assert.DoesNotContain(leaf.Id, ids);
+        Assert.DoesNotContain(standalone.Id, ids);
+    }
+
+    [Fact]
+    public async Task GetNodes_HasChildrenFalse_ExcludesContainers()
+    {
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+        var container = await SeedNodeAsync($"grammar.nochildren_container_{suffix}.a1");
+        var leaf = await SeedNodeAsync($"grammar.nochildren_leaf_{suffix}.a1");
+        var standalone = await SeedNodeAsync($"grammar.nochildren_standalone_{suffix}.a1");
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            (await db.SkillGraphNodes.FirstAsync(n => n.Id == leaf.Id)).AssignParent(container.Id);
+            await db.SaveChangesAsync();
+        }
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.GetAsync("/api/admin/skill-graph/nodes?hasChildren=false&pageSize=200");
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var ids = body.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("id").GetGuid()).ToList();
+
+        Assert.DoesNotContain(container.Id, ids);
+        Assert.Contains(leaf.Id, ids);
+        Assert.Contains(standalone.Id, ids);
+    }
+
+    [Fact]
+    public async Task AddPrerequisite_OnNodeWithChildren_ReturnsConflict()
+    {
+        var container = await SeedNodeAsync($"grammar.edgecontainer_{Guid.NewGuid():N}.a1");
+        var child = await SeedNodeAsync($"grammar.edgecontainerleaf_{Guid.NewGuid():N}.a1");
+        var other = await SeedNodeAsync($"grammar.edgecontainerother_{Guid.NewGuid():N}.a1");
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            (await db.SkillGraphNodes.FirstAsync(n => n.Id == child.Id)).AssignParent(container.Id);
+            await db.SaveChangesAsync();
+        }
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        // container has a child — prerequisite edges belong on leaves only.
+        var resp = await client.PostAsJsonAsync($"/api/admin/skill-graph/nodes/{container.Id}/prerequisites", new { prerequisiteNodeId = other.Id });
+        Assert.Equal(HttpStatusCode.Conflict, resp.StatusCode);
+
+        var reverseResp = await client.PostAsJsonAsync($"/api/admin/skill-graph/nodes/{other.Id}/prerequisites", new { prerequisiteNodeId = container.Id });
+        Assert.Equal(HttpStatusCode.Conflict, reverseResp.StatusCode);
+    }
+
+    [Fact]
+    public async Task ImportNodes_WithParentKey_AssignsParent()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/nodes/import", new
+        {
+            nodes = new object[]
+            {
+                new
+                {
+                    key = $"grammar.import_container_{suffix}.a1", title = "I am", description = "D",
+                    cefrLevel = "A1", skill = "grammar", subskill = (string?)null, difficultyBand = 1,
+                    descriptionForAi = (string?)null, contextTags = Array.Empty<string>(), focusTags = Array.Empty<string>(),
+                    prerequisiteKeys = Array.Empty<string>(),
+                },
+                new
+                {
+                    key = $"grammar.import_leaf_{suffix}.a1", title = "I am not", description = "D",
+                    cefrLevel = "A1", skill = "grammar", subskill = (string?)null, difficultyBand = 2,
+                    descriptionForAi = (string?)null, contextTags = Array.Empty<string>(), focusTags = Array.Empty<string>(),
+                    prerequisiteKeys = Array.Empty<string>(), parentKey = $"grammar.import_container_{suffix}.a1",
+                },
+            },
+        });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(2, body.GetProperty("createdCount").GetInt32());
+        Assert.Empty(body.GetProperty("errors").EnumerateArray());
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var container = await db.SkillGraphNodes.FirstAsync(n => n.Key == $"grammar.import_container_{suffix}.a1");
+        var leaf = await db.SkillGraphNodes.FirstAsync(n => n.Key == $"grammar.import_leaf_{suffix}.a1");
+        Assert.Equal(container.Id, leaf.ParentNodeId);
+    }
+
+    [Fact]
+    public async Task ImportNodes_WithUnresolvableParentKey_ReportsError()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+        var suffix = Guid.NewGuid().ToString("N")[..8];
+
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/nodes/import", new
+        {
+            nodes = new object[]
+            {
+                new
+                {
+                    key = $"grammar.import_orphan_{suffix}.a1", title = "Orphan leaf", description = "D",
+                    cefrLevel = "A1", skill = "grammar", subskill = (string?)null, difficultyBand = 1,
+                    descriptionForAi = (string?)null, contextTags = Array.Empty<string>(), focusTags = Array.Empty<string>(),
+                    prerequisiteKeys = Array.Empty<string>(), parentKey = "grammar.does_not_exist.a1",
+                },
+            },
+        });
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Single(body.GetProperty("errors").EnumerateArray());
+    }
+
+    // ── CEFR-J grammar leaf importer (Skill Graph container/leaf Phase 2, 2026-07-27) ──────────────
+
+    private const string SampleCefrJCsv =
+        "ID,Shorthand Code,Grammatical Item,Sentence Type,CEFR-J Level,FREQ*DISP,Core Inventory,EGP,GSELO,Notes\n" +
+        "1,PP.I_am,I am,AFF. DEC.,A1.1,A1,A1,A1,A1,\n" +
+        "1-1,PP.I_am_not,I am not,NEG. DEC.,A1.1,A1,A1,\"A1-A2, C1\",A1,\n" +
+        "13,DT.a.an,INDEFINITE ARTICLES,,A1.1,A1,A1-B2,A1,A1,\n";
+
+    [Fact]
+    public async Task PreviewCefrJImport_ReturnsContainersStandaloneLeavesAndImportPayload()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/cefrj-import/preview",
+            new { csvContent = SampleCefrJCsv });
+
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(1, body.GetProperty("containers").GetArrayLength());
+        Assert.Equal(1, body.GetProperty("standaloneLeaves").GetArrayLength());
+        Assert.Equal(3, body.GetProperty("totalLeafCount").GetInt32()); // 2 family leaves + 1 standalone
+
+        var nodes = body.GetProperty("importPayload").GetProperty("nodes").EnumerateArray().ToList();
+        Assert.Equal(4, nodes.Count); // 1 new container + 2 family leaves + 1 standalone leaf
+    }
+
+    [Fact]
+    public async Task PreviewCefrJImport_ImportPayload_CanBeAppliedThroughTheRealImportEndpoint()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var previewResp = await client.PostAsJsonAsync("/api/admin/skill-graph/cefrj-import/preview",
+            new { csvContent = SampleCefrJCsv });
+        var previewBody = await previewResp.Content.ReadFromJsonAsync<JsonElement>();
+        var importPayload = previewBody.GetProperty("importPayload");
+
+        var applyResp = await client.PostAsync("/api/admin/skill-graph/nodes/import",
+            new StringContent(importPayload.GetRawText(), System.Text.Encoding.UTF8, "application/json"));
+
+        Assert.Equal(HttpStatusCode.OK, applyResp.StatusCode);
+        var applyBody = await applyResp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(4, applyBody.GetProperty("createdCount").GetInt32());
+        Assert.Empty(applyBody.GetProperty("errors").EnumerateArray());
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var leaf = await db.SkillGraphNodes.FirstAsync(n => n.Key == "grammar.cefrj_pp_i_am_not.a1");
+        Assert.NotNull(leaf.ParentNodeId);
+    }
+
+    [Fact]
+    public async Task PreviewCefrJImport_MissingCsvContent_ReturnsBadRequest()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/cefrj-import/preview",
+            new { csvContent = "" });
+
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task PreviewCefrJImport_WithoutAdminRole_ReturnsForbidden()
+    {
+        var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"sg_cefrj_nonadmin_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(_factory, token);
+
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/cefrj-import/preview",
+            new { csvContent = SampleCefrJCsv });
+
+        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task PreviewCefrJImport_StrongTitleMatch_ProposesExistingContainer()
+    {
+        // The real skill-graph test DB is shared across this whole fixture and accumulates
+        // hundreds of grammar-skill nodes from other tests, so a generic title like "I am (all
+        // forms)" isn't a safe fixture for asserting "the BEST match is exactly this node" — some
+        // other test's leftover title could coincidentally score higher. A unique token embedded
+        // in both the seeded node's title and the CSV row's Grammatical Item (which the importer
+        // turns into the container title by appending " (all forms)") makes the match
+        // deterministic regardless of DB pollution.
+        var token = $"zzcefrj{Guid.NewGuid():N}";
+        var csv =
+            "ID,Shorthand Code,Grammatical Item,Sentence Type,CEFR-J Level,FREQ*DISP,Core Inventory,EGP,GSELO,Notes\n" +
+            $"1,PP.I_am,{token} I am,AFF. DEC.,A1.1,A1,A1,A1,A1,\n" +
+            $"1-1,PP.I_am_not,{token} I am not,NEG. DEC.,A1.1,A1,A1,A1,A1,\n";
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+        var existing = await SeedNodeAsync($"grammar.matchtarget_{Guid.NewGuid():N}.a1");
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var tracked = await db.SkillGraphNodes.FirstAsync(n => n.Id == existing.Id);
+            tracked.UpdateCore($"{token} I am (all forms)", "D", "A1", "grammar", null, 1, null);
+            await db.SaveChangesAsync();
+        }
+
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/cefrj-import/preview",
+            new { csvContent = csv });
+
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var container = body.GetProperty("containers")[0];
+        Assert.Equal(existing.Id, container.GetProperty("matchedExistingNodeId").GetGuid());
+    }
+
     [Fact]
     public async Task UpdateNode_WhilePendingReview_UpdatesFields()
     {

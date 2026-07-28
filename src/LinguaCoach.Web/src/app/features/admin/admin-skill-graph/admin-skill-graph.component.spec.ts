@@ -34,6 +34,7 @@ const NODES: SkillGraphNodeListResponse = {
       cefrLevel: 'A1', skill: 'grammar', subskill: null, difficultyBand: 1,
       reviewStatus: 'PendingReview', isActive: true, rejectionReason: null, createdAt: '2026-07-17T00:00:00Z',
       contextTags: [], focusTags: [], linkedModuleCount: 0,
+      parentNodeId: null, childCount: 0,
     },
   ],
   totalCount: 1, totalPages: 1, page: 1, pageSize: 25,
@@ -227,16 +228,11 @@ describe('AdminSkillGraphComponent', () => {
   });
 
   it('selectedApprovedCount reflects Approved nodes among the current selection', async () => {
-    await setup({
-      getSkillGraphNodes: jasmine.createSpy().and.returnValue(of<SkillGraphNodeListResponse>({
-        items: [
-          { ...NODES.items[0], id: 'n1', reviewStatus: 'PendingReview' },
-          { ...NODES.items[0], id: 'n2', reviewStatus: 'Approved' },
-        ],
-        totalCount: 2, totalPages: 1, page: 1, pageSize: 25,
-      })),
-    });
-    component.selectedIds.set(new Set(['n1', 'n2']));
+    await setup();
+    component.ttSelection.set([
+      { key: 'n1', data: { ...NODES.items[0], id: 'n1', reviewStatus: 'PendingReview' } },
+      { key: 'n2', data: { ...NODES.items[0], id: 'n2', reviewStatus: 'Approved' } },
+    ]);
     expect(component.selectedApprovedCount()).toBe(1);
   });
 
@@ -324,6 +320,204 @@ describe('AdminSkillGraphComponent', () => {
     component.acceptReconnectSuggestion(0, 0);
 
     expect(component.redundantEdgeSuggestions()).toEqual([]);
+  });
+
+  // ── Container/leaf hierarchy (2026-07-27) — PrimeNG TreeTable ("Nodes" view) ───────────────
+  // User feedback replaced the separate Table+Tree views with a single TreeTable: root rows are
+  // server-paginated (lazy-loaded on page/filter change), a container's leaf children are only
+  // fetched when it's expanded. These tests exercise the component's own glue logic (event
+  // handlers, data transforms) directly rather than PrimeNG's internal rendering.
+
+  const CONTAINER_ITEM = {
+    ...NODES.items[0], id: 'container-1', key: 'grammar.to_be.a1', title: 'Verb to be (all forms)',
+    childCount: 2,
+  };
+  const LEAF1_ITEM = { ...NODES.items[0], id: 'leaf-1', key: 'grammar.cefrj_i_am.a1', title: 'I am', parentNodeId: 'container-1' };
+  const LEAF2_ITEM = { ...NODES.items[0], id: 'leaf-2', key: 'grammar.cefrj_i_am_not.a1', title: 'I am not', parentNodeId: 'container-1' };
+
+  it('onNodesPageChange converts a 1-based page into the 0-based ttFirst offset and loads that page', async () => {
+    await setup();
+    api.getSkillGraphNodes.calls.reset();
+
+    component.onNodesPageChange(3);
+
+    expect(api.getSkillGraphNodes).toHaveBeenCalledWith(jasmine.objectContaining({ page: 3, pageSize: 25, topLevelOnly: true }));
+    expect(component.ttFirst()).toBe(50);
+  });
+
+  it('loadNodes requests a flat (non-topLevelOnly) list while a search term is active', async () => {
+    await setup();
+    component.filterSearch.set('present');
+    api.getSkillGraphNodes.calls.reset();
+
+    component.loadNodes(1);
+
+    expect(api.getSkillGraphNodes).toHaveBeenCalledWith(jasmine.objectContaining({ topLevelOnly: false, search: 'present' }));
+  });
+
+  it('ttTotalPages computes the page count from ttTotalRecords', async () => {
+    await setup({
+      getSkillGraphNodes: jasmine.createSpy('getSkillGraphNodes').and.returnValue(
+        of<SkillGraphNodeListResponse>({ items: NODES.items, totalCount: 60, totalPages: 1, page: 1, pageSize: 25 })),
+    });
+    expect(component.ttTotalPages()).toBe(3); // ceil(60 / 25)
+  });
+
+  it('loadNodes maps container rows to non-leaf TreeNodes and standalone rows to leaf TreeNodes', async () => {
+    await setup({
+      getSkillGraphNodes: jasmine.createSpy('getSkillGraphNodes').and.returnValue(
+        of<SkillGraphNodeListResponse>({ items: [CONTAINER_ITEM, { ...NODES.items[0], id: 'standalone-1' }], totalCount: 2, totalPages: 1, page: 1, pageSize: 25 })),
+    });
+
+    component.loadNodes(1);
+    await fixture.whenStable();
+
+    const nodes = component.ttNodes();
+    expect(nodes.find(n => n.data!.id === 'container-1')!.leaf).toBeFalse();
+    expect(nodes.find(n => n.data!.id === 'standalone-1')!.leaf).toBeTrue();
+    expect(component.ttTotalRecords()).toBe(2);
+  });
+
+  it('onTtNodeExpand fetches a container\'s children via parentNodeId and caches them on the node', async () => {
+    // setup() itself triggers the initial root-level load (ngOnInit -> loadNodes(1)), which
+    // consumes this spy's first queued value — so only ONE more value is queued here, for the
+    // expand call this test actually exercises.
+    await setup({
+      getSkillGraphNodes: jasmine.createSpy('getSkillGraphNodes').and.returnValues(
+        of<SkillGraphNodeListResponse>({ items: [CONTAINER_ITEM], totalCount: 1, totalPages: 1, page: 1, pageSize: 25 }),
+        of<SkillGraphNodeListResponse>({ items: [LEAF1_ITEM, LEAF2_ITEM], totalCount: 2, totalPages: 1, page: 1, pageSize: 200 }),
+      ),
+    });
+    const node = component.ttNodes()[0];
+    api.getSkillGraphNodes.calls.reset();
+
+    component.onTtNodeExpand(node);
+    await fixture.whenStable();
+
+    expect(api.getSkillGraphNodes).toHaveBeenCalledWith(jasmine.objectContaining({ parentNodeId: 'container-1', pageSize: 200 }));
+    expect(node.children?.map(c => c.data!.id)).toEqual(['leaf-1', 'leaf-2']);
+    expect(node.loading).toBeFalse();
+  });
+
+  it('onTtNodeExpand includes the currently-active filters (user correction — children were previously unfiltered)', async () => {
+    await setup({
+      getSkillGraphNodes: jasmine.createSpy('getSkillGraphNodes').and.returnValues(
+        of<SkillGraphNodeListResponse>({ items: [CONTAINER_ITEM], totalCount: 1, totalPages: 1, page: 1, pageSize: 25 }),
+        of<SkillGraphNodeListResponse>({ items: [LEAF1_ITEM], totalCount: 1, totalPages: 1, page: 1, pageSize: 200 }),
+      ),
+    });
+    component.filterReviewStatus.set('Approved');
+    const node = component.ttNodes()[0];
+    api.getSkillGraphNodes.calls.reset();
+
+    component.onTtNodeExpand(node);
+
+    expect(api.getSkillGraphNodes).toHaveBeenCalledWith(jasmine.objectContaining({
+      parentNodeId: 'container-1', reviewStatus: 'Approved',
+    }));
+  });
+
+  it('onTtNodeExpand does not re-fetch when children are already loaded', async () => {
+    await setup();
+    const node = { key: 'container-1', data: CONTAINER_ITEM, leaf: false, children: [{ key: 'leaf-1', data: LEAF1_ITEM, leaf: true }] };
+    api.getSkillGraphNodes.calls.reset();
+
+    component.onTtNodeExpand(node);
+
+    expect(api.getSkillGraphNodes).not.toHaveBeenCalled();
+  });
+
+  it('onTtSelectionChange syncs ttSelection and selectedIds from an array of TreeNodes', async () => {
+    await setup();
+    const nodes = [{ key: 'n1', data: NODES.items[0] }];
+
+    component.onTtSelectionChange(nodes);
+
+    expect(component.ttSelection()).toEqual(nodes);
+    expect(Array.from(component.selectedIds())).toEqual(['n1']);
+  });
+
+  it('onTtSelectionChange handles a single TreeNode (non-array) selection', async () => {
+    await setup();
+    component.onTtSelectionChange({ key: 'n1', data: NODES.items[0] });
+    expect(Array.from(component.selectedIds())).toEqual(['n1']);
+  });
+
+  it('onTtSelectionChange handles null selection (cleared)', async () => {
+    await setup();
+    component.onTtSelectionChange([{ key: 'n1', data: NODES.items[0] }]);
+    component.onTtSelectionChange(null);
+    expect(component.selectedIds().size).toBe(0);
+  });
+
+  it('selectSubtree selects the container and all of its currently-loaded children', async () => {
+    await setup();
+    const container = { key: 'container-1', data: CONTAINER_ITEM, leaf: false, children: [
+      { key: 'leaf-1', data: LEAF1_ITEM, leaf: true },
+      { key: 'leaf-2', data: LEAF2_ITEM, leaf: true },
+    ] };
+
+    component.selectSubtree(container);
+
+    expect(Array.from(component.selectedIds()).sort()).toEqual(['container-1', 'leaf-1', 'leaf-2']);
+  });
+
+  it('clearSelection empties both selectedIds and ttSelection', async () => {
+    await setup();
+    component.onTtSelectionChange([{ key: 'n1', data: NODES.items[0] }]);
+
+    component.clearSelection();
+
+    expect(component.selectedIds().size).toBe(0);
+    expect(component.ttSelection().length).toBe(0);
+  });
+
+  it('onFilterChange resets pagination and selection before reloading root rows', async () => {
+    await setup();
+    component.ttFirst.set(50);
+    component.onTtSelectionChange([{ key: 'n1', data: NODES.items[0] }]);
+    api.getSkillGraphNodes.calls.reset();
+
+    component.onFilterChange();
+
+    expect(component.ttFirst()).toBe(0);
+    expect(component.hasSelection()).toBeFalse();
+    expect(api.getSkillGraphNodes).toHaveBeenCalledWith(jasmine.objectContaining({ page: 1 }));
+  });
+
+  // User follow-up (2026-07-27) — "Has children" filter added to the Nodes toolbar.
+
+  it('onNodesFilterChange("hasChildren", "true") sends hasChildren:true to the API', async () => {
+    await setup();
+    api.getSkillGraphNodes.calls.reset();
+
+    component.onNodesFilterChange({ key: 'hasChildren', value: 'true' });
+
+    expect(api.getSkillGraphNodes).toHaveBeenCalledWith(jasmine.objectContaining({ hasChildren: true }));
+  });
+
+  it('onNodesFilterChange("hasChildren", "false") sends hasChildren:false to the API', async () => {
+    await setup();
+    api.getSkillGraphNodes.calls.reset();
+
+    component.onNodesFilterChange({ key: 'hasChildren', value: 'false' });
+
+    expect(api.getSkillGraphNodes).toHaveBeenCalledWith(jasmine.objectContaining({ hasChildren: false }));
+  });
+
+  it('hasChildren filter defaults to undefined (All) when cleared back to an empty value', async () => {
+    await setup();
+    component.onNodesFilterChange({ key: 'hasChildren', value: 'true' });
+    api.getSkillGraphNodes.calls.reset();
+
+    component.onNodesFilterChange({ key: 'hasChildren', value: '' });
+
+    expect(api.getSkillGraphNodes).toHaveBeenCalledWith(jasmine.objectContaining({ hasChildren: undefined }));
+  });
+
+  it('nodesFilters() includes a "Has children" filter', async () => {
+    await setup();
+    expect(component.nodesFilters().some(f => f.key === 'hasChildren')).toBeTrue();
   });
 
 });

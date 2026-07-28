@@ -29,6 +29,14 @@ namespace LinguaCoach.Infrastructure.SkillGraph;
 /// sense — flags genuine CEFR-ordering violations (a prerequisite at a later stage than the node,
 /// or a dependent at an earlier one) for the admin to review, without ever removing anything
 /// automatically.
+///
+/// Container/leaf hierarchy prep (2026-07-24) — <see cref="DetectNearDuplicateNodes"/> hardened
+/// against grammatical minimal pairs (e.g. CEFR-J-style "I am" / "I am not" / "Am I ...?"): these
+/// are near-identical in text (that's exactly what makes them minimal pairs) but are genuinely
+/// distinct, independently CEFR-sub-leveled grammar forms, not duplicates. Text-similarity alone
+/// cannot tell them apart, so a title differs in sentence type (question vs. statement, or
+/// negated vs. not) is treated as a hard "not a duplicate" signal, checked before the bigram-Dice
+/// score — see <see cref="DiffersInSentenceType"/>.
 /// </summary>
 public sealed class GraphChangeSuggestionService : IGraphChangeSuggestionService
 {
@@ -168,6 +176,8 @@ public sealed class GraphChangeSuggestionService : IGraphChangeSuggestionService
             {
                 for (var j = i + 1; j < members.Count; j++)
                 {
+                    if (DiffersInSentenceType(members[i].Title, members[j].Title)) continue;
+
                     var titleSimilarity = BigramDiceSimilarity(members[i].Title, members[j].Title);
                     var descriptionSimilarity = BigramDiceSimilarity(members[i].Description, members[j].Description);
                     var similarity = TitleWeight * titleSimilarity + DescriptionWeight * descriptionSimilarity;
@@ -186,42 +196,23 @@ public sealed class GraphChangeSuggestionService : IGraphChangeSuggestionService
         return suggestions;
     }
 
-    /// <summary>Sorensen-Dice coefficient over character bigrams, case-insensitive, counting
-    /// repeated bigrams (a multiset intersection, not a plain set intersection — "aabb" vs "aabb"
-    /// must score 1.0). Returns 1.0 for identical strings, 0.0 when either string is too short to
-    /// form a bigram (or empty) and the strings aren't identical.</summary>
-    private static double BigramDiceSimilarity(string s1, string s2)
-    {
-        s1 = s1.Trim().ToLowerInvariant();
-        s2 = s2.Trim().ToLowerInvariant();
-        if (s1 == s2) return 1.0;
-        if (s1.Length < 2 || s2.Length < 2) return 0.0;
+    /// <summary>True when exactly one of the two titles is a question, or exactly one contains a
+    /// negation marker — i.e. they're the affirmative/negative or statement/question sibling of
+    /// the same grammatical form (CEFR-J's AFF/NEG/INT split). Text-similarity metrics score these
+    /// pairs very highly (they differ by one clause), but they are never duplicates — a hard guard
+    /// checked before the numeric similarity, not folded into the threshold.</summary>
+    private static bool DiffersInSentenceType(string title1, string title2) =>
+        EndsWithQuestionMark(title1) != EndsWithQuestionMark(title2)
+        || ContainsNegation(title1) != ContainsNegation(title2);
 
-        var counts1 = BigramCounts(s1);
-        var counts2 = BigramCounts(s2);
+    private static bool EndsWithQuestionMark(string title) => title.TrimEnd().EndsWith('?');
 
-        var intersection = 0;
-        foreach (var (bigram, count1) in counts1)
-        {
-            if (counts2.TryGetValue(bigram, out var count2))
-                intersection += Math.Min(count1, count2);
-        }
+    private static readonly System.Text.RegularExpressions.Regex NegationPattern =
+        new(@"\bnot\b|n't\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Compiled);
 
-        var total1 = s1.Length - 1;
-        var total2 = s2.Length - 1;
-        return 2.0 * intersection / (total1 + total2);
-    }
+    private static bool ContainsNegation(string title) => NegationPattern.IsMatch(title);
 
-    private static Dictionary<string, int> BigramCounts(string s)
-    {
-        var counts = new Dictionary<string, int>();
-        for (var i = 0; i < s.Length - 1; i++)
-        {
-            var bigram = s.Substring(i, 2);
-            counts[bigram] = counts.GetValueOrDefault(bigram) + 1;
-        }
-        return counts;
-    }
+    private static double BigramDiceSimilarity(string s1, string s2) => TextSimilarity.BigramDiceSimilarity(s1, s2);
 
     public ReparentReviewResult? DetectReparentingReview(
         Guid nodeId, string oldCefrLevel, string oldSkill, string newCefrLevel, string newSkill,

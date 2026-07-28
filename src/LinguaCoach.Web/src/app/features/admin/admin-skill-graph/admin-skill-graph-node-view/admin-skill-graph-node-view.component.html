@@ -28,6 +28,27 @@
       }
     </sp-admin-section-card>
 
+    @if (n.parent || n.children.length > 0) {
+      <sp-admin-section-card title="Container/leaf hierarchy">
+        @if (n.parent; as parent) {
+          <p class="sp-admin-section-sub">
+            Leaf under <a [routerLink]="['/admin/skill-graph/nodes', parent.id]">{{ parent.title }}</a>.
+          </p>
+        }
+        @if (n.children.length > 0) {
+          <p class="sp-admin-section-sub">Container with {{ n.children.length }} leaf child node(s):</p>
+          <ul class="sp-admin-simple-list">
+            @for (c of n.children; track c.id) {
+              <li>
+                <a [routerLink]="['/admin/skill-graph/nodes', c.id]">{{ c.title }}</a>
+                <sp-admin-badge [tone]="reviewStatusTone(c.reviewStatus)" appearance="soft" size="sm">{{ c.reviewStatus }}</sp-admin-badge>
+              </li>
+            }
+          </ul>
+        }
+      </sp-admin-section-card>
+    }
+
     <sp-admin-section-card title="Graph — where this node sits">
       <div slot="header-action" class="sp-admin-form-actions" style="padding:0; background:none; border:none;">
         <span class="sp-admin-text-muted" style="font-size:12px;">{{ graphLevel() }} layer{{ graphLevel() > 1 ? 's' : '' }} out</span>
@@ -38,9 +59,15 @@
         [centerId]="graphCenterId()"
         [nodes]="graphPreviewNodes()"
         [edges]="graphPreviewEdges()"
-        (nodeClick)="goToNode($event)"
+        (nodeClick)="openNodeHierarchyModal($event)"
       />
     </sp-admin-section-card>
+
+    <sp-admin-node-hierarchy-modal
+      [nodeId]="hierarchyModalNodeId()"
+      (closed)="closeNodeHierarchyModal()"
+      (viewFullPage)="closeNodeHierarchyModal(); goToNode($event)"
+    />
 
     <sp-admin-section-card title="Prerequisites (must be mastered first)">
       @if (n.prerequisites.length > 0) {

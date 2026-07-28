@@ -86,15 +86,28 @@ export class AdminSkillGraphNodeCreateComponent implements OnInit {
   stagedPrereqs = signal<StagedNodeRef[]>([]);
   stagedDependents = signal<StagedNodeRef[]>([]);
 
+  // Container/leaf hierarchy (2026-07-27) — the container this node is placed under, staged like
+  // everything else here and applied via CreateSkillGraphNodeRequest.parentNodeId on Save.
+  stagedParent = signal<StagedNodeRef | null>(null);
+
+  // Skill Graph rebuild Phase 4 (2026-07-27) — was a one-time fetch of up to 500 nodes, silently
+  // clamped to 200 server-side (real dataset already exceeds that). Now server-side search-as-you-
+  // type: an empty search still loads a first page so the dropdown isn't empty before typing, and
+  // every keystroke in any of the three pickers below re-fetches a small matching page.
+  private static readonly PickerPageSize = 30;
   private allNodesForPicker = signal<SkillGraphNodeListItem[]>([]);
   pickerOptions = computed<SpAdminMultiSelectOption[]>(() =>
     this.allNodesForPicker().map(n => ({ value: n.id, label: n.title, sublabel: `${n.cefrLevel} · ${n.skill}` })));
 
-  private loadNodesForPicker(): void {
-    this.api.getSkillGraphNodes({ pageSize: 500 }).subscribe({
+  private loadNodesForPicker(search?: string): void {
+    this.api.getSkillGraphNodes({ pageSize: AdminSkillGraphNodeCreateComponent.PickerPageSize, search: search || undefined }).subscribe({
       next: r => this.allNodesForPicker.set(r.items),
       error: () => this.allNodesForPicker.set([]),
     });
+  }
+
+  onPickerSearchChange(term: string): void {
+    this.loadNodesForPicker(term);
   }
 
   prereqExcludeIds(): string[] {
@@ -119,6 +132,14 @@ export class AdminSkillGraphNodeCreateComponent implements OnInit {
 
   removeUnlock(id: string): void {
     this.stagedDependents.update(list => list.filter(d => d.id !== id));
+  }
+
+  setParent(option: SpAdminMultiSelectOption): void {
+    this.stagedParent.set({ id: option.value, title: option.label });
+  }
+
+  clearParent(): void {
+    this.stagedParent.set(null);
   }
 
   // Graph preview (2026-07-23) — no real id exists yet, so a synthetic placeholder id stands in
@@ -185,6 +206,7 @@ export class AdminSkillGraphNodeCreateComponent implements OnInit {
       focusTags: this.parseTagsDraft(this.focusTagsDraft),
       prerequisiteNodeIds: this.stagedPrereqs().map(p => p.id),
       dependentNodeIds: this.stagedDependents().map(d => d.id),
+      parentNodeId: this.stagedParent()?.id ?? null,
     }).subscribe({
       next: r => {
         this.creating.set(false);

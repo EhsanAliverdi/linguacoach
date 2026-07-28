@@ -108,11 +108,14 @@
     </sp-admin-card>
   }
 
-  <!-- Nodes table / graph (Content coverage merged in here 2026-07-23 — see Linked Modules column
-       and node detail panel below; the two tables were showing near-duplicate data.) -->
+  <!-- Nodes tree table / graph (Content coverage merged in here 2026-07-23 — see Linked Modules
+       column and node detail panel below; the two tables were showing near-duplicate data.)
+       Skill Graph rebuild Phase 4 (2026-07-27) — the flat Table and hand-rolled Tree views were
+       replaced with a single PrimeNG TreeTable (user feedback: two separate views of the same
+       data was confusing) — a container row now expands in place to show its leaf children. -->
   <sp-admin-card padding="none" variant="bordered" [hasHeader]="true" [headerDivider]="true">
     <sp-admin-section-header
-      slot="header" title="Nodes" [count]="nodesTotalCount()" countLabel="nodes"
+      slot="header" title="Nodes" [count]="ttTotalRecords()" countLabel="nodes"
       [description]="'Content coverage: ' + nodesWithContent() + ' / ' + totalApprovedNodes() + ' approved nodes have real linked Modules.'">
       <div slot="actions" style="display:flex; gap:8px; align-items:center;">
         <sp-admin-button size="sm" variant="neutral" appearance="outline" [disabled]="retagPending()" (clicked)="retagModules()">
@@ -122,8 +125,8 @@
         <sp-admin-button size="sm" variant="primary" appearance="outline" (clicked)="createNode()">
           + Create node
         </sp-admin-button>
-        <sp-admin-button size="sm" [variant]="viewMode() === 'table' ? 'primary' : 'neutral'" appearance="outline" (clicked)="setViewMode('table')">
-          Table
+        <sp-admin-button size="sm" [variant]="viewMode() === 'nodes' ? 'primary' : 'neutral'" appearance="outline" (clicked)="setViewMode('nodes')">
+          Nodes
         </sp-admin-button>
         <sp-admin-button size="sm" [variant]="viewMode() === 'graph' ? 'primary' : 'neutral'" appearance="outline" (clicked)="setViewMode('graph')">
           Graph
@@ -177,26 +180,26 @@
     </div>
     } @else {
     <div style="padding: 12px 18px 0;">
-    @if (batchStatus()) {
-      <sp-admin-alert variant="success">{{ batchStatus() }}</sp-admin-alert>
-    }
-    @if (batchError()) {
-      <sp-admin-alert variant="error">{{ batchError() }}</sp-admin-alert>
-    }
+      @if (batchStatus()) { <sp-admin-alert variant="success">{{ batchStatus() }}</sp-admin-alert> }
+      @if (batchError()) { <sp-admin-alert variant="error">{{ batchError() }}</sp-admin-alert> }
     </div>
-    <sp-admin-table
-      #nodesTableRef
-      [flush]="true" variant="data" density="compact" layout="first-column-fluid" minWidth="800px"
+
+    <!-- ── Container/leaf hierarchy (2026-07-27) — sp-admin-tree-table (design-system, reusable),
+         same visual language/CSS classes as sp-admin-table everywhere else. Root rows are server-
+         paginated/lazy-loaded; a container's leaf children are fetched only on expand. ── -->
+    <sp-admin-tree-table
+      [flush]="true" variant="data" density="compact" minWidth="800px" layout="first-column-fluid"
       [loading]="nodesLoading()" [error]="nodesError()" errorTitle="Nodes unavailable"
       [searchable]="true" searchPlaceholder="Search title or description…"
       [searchValue]="filterSearch()" (searchChange)="onNodesSearchChange($event)"
       [filters]="nodesFilters()" (filterChange)="onNodesFilterChange($event)"
-      [bulkEditable]="true" [bulkEditMode]="nodesBulkEditMode()" (bulkEditModeChange)="onNodesBulkEditModeChange($event)"
-      [columns]="nodesColumns" [rows]="nodes()" (selectionChange)="onNodesSelectionChange($event)"
-      [rowClickable]="!nodesBulkEditMode()" (rowClick)="viewNode($any($event))"
+      [columns]="nodesColumns" [rows]="ttNodes()"
+      (nodeExpand)="onTtNodeExpand($event)"
+      [selectable]="true" [selection]="ttSelection()" (selectionChange)="onTtSelectionChange($event)"
+      [hasActions]="true"
       emptyMessage="No nodes match the current filters. Draft some above."
-      [paginationPage]="nodesPage()" [paginationTotalPages]="nodesTotalPages()"
-      [paginationLabel]="nodesTotalCount() + ' node(s).'"
+      [paginationPage]="currentPageForFooter()" [paginationTotalPages]="ttTotalPages()"
+      [paginationLabel]="ttTotalRecords() + ' node(s).'"
       (paginationPageChange)="onNodesPageChange($event)"
     >
       @if (hasSelection()) {
@@ -216,36 +219,45 @@
           <sp-admin-button size="sm" variant="primary" [disabled]="batchPending()" (clicked)="batchApprove()">
             Approve selected
           </sp-admin-button>
+          <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="clearSelection()">Clear</sp-admin-button>
         </div>
       }
-      <ng-template #cell let-row let-col="col">
+      <ng-template #cell let-row let-col="col" let-node="node">
         @switch (col.key) {
-          @case ('subskill') { {{ $any(row).subskill || '—' }} }
+          @case ('title') {
+            <a [routerLink]="['/admin/skill-graph/nodes', row.id]" (click)="$event.stopPropagation()">{{ row.title }}</a>
+          }
+          @case ('subskill') { {{ row.subskill || '—' }} }
           @case ('tags') {
-            @if ($any(row).contextTags.length || $any(row).focusTags.length) {
-              @for (tag of $any(row).contextTags; track tag) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
-              @for (tag of $any(row).focusTags; track tag) { <sp-admin-badge tone="purple" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
+            @if (row.contextTags.length || row.focusTags.length) {
+              @for (tag of row.contextTags; track tag) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
+              @for (tag of row.focusTags; track tag) { <sp-admin-badge tone="purple" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
             } @else {
               <span class="sp-admin-text-muted">—</span>
             }
           }
-          @case ('reviewStatus') {
-            <sp-admin-badge [tone]="reviewStatusTone($any(row).reviewStatus)" appearance="soft" size="sm">
-              {{ $any(row).reviewStatus }}
-            </sp-admin-badge>
-          }
           @case ('linkedModuleCount') {
-            @if ($any(row).linkedModuleCount > 0) {
-              <sp-admin-badge tone="success" appearance="soft">{{ $any(row).linkedModuleCount }}</sp-admin-badge>
+            @if (row.linkedModuleCount > 0) {
+              <sp-admin-badge tone="success" appearance="soft">{{ row.linkedModuleCount }}</sp-admin-badge>
             } @else {
               <sp-admin-badge tone="warning" appearance="soft">0</sp-admin-badge>
             }
           }
-          @default { {{ $any(row)[col.key] }} }
+          @case ('reviewStatus') {
+            <sp-admin-badge [tone]="reviewStatusTone(row.reviewStatus)" appearance="soft" size="sm">{{ row.reviewStatus }}</sp-admin-badge>
+            @if (row.childCount > 0) {
+              <sp-admin-badge tone="neutral" appearance="outline" size="sm">{{ row.childCount }} leaf{{ row.childCount === 1 ? '' : 'ves' }}</sp-admin-badge>
+            }
+          }
+          @default { {{ row[col.key] }} }
         }
       </ng-template>
-    </sp-admin-table>
-
+      <ng-template #rowActions let-row let-node="node">
+        @if (row.childCount > 0) {
+          <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="selectSubtree(node)">Select subtree</sp-admin-button>
+        }
+      </ng-template>
+    </sp-admin-tree-table>
     }
   </sp-admin-card>
 
