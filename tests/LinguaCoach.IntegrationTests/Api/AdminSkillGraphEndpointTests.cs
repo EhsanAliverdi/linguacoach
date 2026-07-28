@@ -1065,6 +1065,159 @@ public sealed class AdminSkillGraphEndpointTests : IClassFixture<ApiTestFactory>
         Assert.Equal(existing.Id, container.GetProperty("matchedExistingNodeId").GetGuid());
     }
 
+    // ── Vocabulary importer (Full content reseed, 2026-07-28) ───────────────────────────────────────
+
+    private static string SampleCefrJVocabCsv(string suffix) =>
+        "headword,pos,CEFR,CoreInventory 1,CoreInventory 2,Threshold\n" +
+        $"apple{suffix},noun,A1,Food and Drink,,Y\n" +
+        $"banana{suffix},noun,A1,Food and Drink,,Y\n" +
+        $"wander{suffix},verb,B1,,,N\n";
+
+    private static string SampleOctanoveVocabCsv(string suffix) =>
+        "headword,pos,CEFR,notes\n" +
+        $"ubiquitous{suffix},adjective,C1,\n";
+
+    [Fact]
+    public async Task PreviewVocabularyImport_ReturnsCategorizedContainersUncategorizedLeavesAndImportPayload()
+    {
+        var suffix = Guid.NewGuid().ToString("N");
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/vocabulary-import/preview", new
+        {
+            cefrJVocabularyCsvContent = SampleCefrJVocabCsv(suffix),
+            octanoveCsvContent = SampleOctanoveVocabCsv(suffix),
+        });
+
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(1, body.GetProperty("categorizedContainers").GetArrayLength()); // "Food and Drink"
+        Assert.Equal(2, body.GetProperty("uncategorizedLeaves").GetArrayLength()); // wander + ubiquitous
+        Assert.Equal(4, body.GetProperty("totalLeafCount").GetInt32());
+
+        var nodes = body.GetProperty("importPayload").GetProperty("nodes").EnumerateArray().ToList();
+        Assert.Equal(3, nodes.Count); // 1 container + 2 categorized leaves; uncategorized leaves are NOT in the payload
+    }
+
+    [Fact]
+    public async Task PreviewVocabularyImport_ImportPayload_CanBeAppliedThroughTheRealImportEndpoint()
+    {
+        var suffix = Guid.NewGuid().ToString("N");
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var previewResp = await client.PostAsJsonAsync("/api/admin/skill-graph/vocabulary-import/preview", new
+        {
+            cefrJVocabularyCsvContent = SampleCefrJVocabCsv(suffix),
+            octanoveCsvContent = SampleOctanoveVocabCsv(suffix),
+        });
+        var previewBody = await previewResp.Content.ReadFromJsonAsync<JsonElement>();
+        var importPayload = previewBody.GetProperty("importPayload");
+
+        var applyResp = await client.PostAsync("/api/admin/skill-graph/nodes/import",
+            new StringContent(importPayload.GetRawText(), System.Text.Encoding.UTF8, "application/json"));
+
+        Assert.Equal(HttpStatusCode.OK, applyResp.StatusCode);
+        var applyBody = await applyResp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(3, applyBody.GetProperty("createdCount").GetInt32());
+        Assert.Empty(applyBody.GetProperty("errors").EnumerateArray());
+
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        var leaf = await db.SkillGraphNodes.FirstAsync(n => n.Key == $"vocabulary.cefrj_apple{suffix}_noun.a1");
+        Assert.NotNull(leaf.ParentNodeId);
+    }
+
+    [Fact]
+    public async Task PreviewVocabularyImport_MissingCsvContent_ReturnsBadRequest()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/vocabulary-import/preview", new
+        {
+            cefrJVocabularyCsvContent = "",
+            octanoveCsvContent = "",
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task PreviewVocabularyImport_WithoutAdminRole_ReturnsForbidden()
+    {
+        var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"sg_vocab_nonadmin_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(_factory, token);
+
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/vocabulary-import/preview", new
+        {
+            cefrJVocabularyCsvContent = SampleCefrJVocabCsv("x"),
+            octanoveCsvContent = SampleOctanoveVocabCsv("x"),
+        });
+
+        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task CategorizeVocabularyBatch_EmptyWords_ReturnsBadRequest()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/vocabulary-import/categorize-batch",
+            new { words = Array.Empty<object>() });
+
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task CategorizeVocabularyBatch_TooManyWords_ReturnsBadRequest()
+    {
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var words = Enumerable.Range(0, 61)
+            .Select(i => new { headword = $"word{i}", partOfSpeech = "noun", cefrLevel = "A1", category = (string?)null })
+            .ToArray();
+
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/vocabulary-import/categorize-batch", new { words });
+
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task CategorizeVocabularyBatch_ValidRequest_DegradesGracefullyWhenAiResponseDoesNotMatchExpectedShape()
+    {
+        // Same "FakeAiProvider returns a fixed, unrelated JSON shape" fixture behavior as
+        // Draft_ValidRequest_NeverThrowsEvenWhenAiResponseDoesNotMatchExpectedShape — the
+        // categorization service must degrade to Success=false rather than the request throwing a
+        // 500, which this endpoint surfaces as 422 with an error message.
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var words = new[] { new { headword = "wander", partOfSpeech = "verb", cefrLevel = "B1", category = (string?)null } };
+
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/vocabulary-import/categorize-batch", new { words });
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, resp.StatusCode);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.False(string.IsNullOrWhiteSpace(body.GetProperty("error").GetString()));
+    }
+
+    [Fact]
+    public async Task CategorizeVocabularyBatch_WithoutAdminRole_ReturnsForbidden()
+    {
+        var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"sg_vocabcat_nonadmin_{Guid.NewGuid():N}@test.com");
+        var client = ClientWithToken(_factory, token);
+
+        var words = new[] { new { headword = "wander", partOfSpeech = "verb", cefrLevel = "B1", category = (string?)null } };
+
+        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/vocabulary-import/categorize-batch", new { words });
+
+        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
+    }
+
     [Fact]
     public async Task UpdateNode_WhilePendingReview_UpdatesFields()
     {

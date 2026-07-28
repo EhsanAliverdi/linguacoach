@@ -1,9 +1,11 @@
 using System.Security.Claims;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using LinguaCoach.Application.SkillGraph;
 using LinguaCoach.Domain.Constants;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
+using LinguaCoach.Infrastructure.SkillGraph;
 using LinguaCoach.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -33,6 +35,17 @@ public sealed class AdminSkillGraphController : ControllerBase
     // prerequisite/dependent placement candidates, mirroring MaxCrossLinkCandidates' discipline.
     private const int MaxPlacementCandidates = 60;
 
+    // Full content reseed (2026-07-28) — bounds one AI categorization call to a small, real batch
+    // of words per AGENTS.md's bounded-call discipline; the client pages through the full
+    // uncategorized-leaf list from the preview response, one batch per call.
+    private const int MaxVocabularyCategorizeBatchSize = 60;
+
+    // Below this BigramDiceSimilarity score, an AI-proposed vocabulary category is treated as
+    // genuinely new rather than a near-duplicate of an already-existing topic container — looser
+    // than the near-duplicate detector's 0.85 (that flags near-IDENTICAL nodes for merging; this is
+    // matching a short topic label like "Food" against "Food and Drink", a real but looser match).
+    private const double VocabularyCategoryMatchThreshold = 0.5;
+
     private readonly LinguaCoachDbContext _db;
     private readonly ISkillGraphDraftingService _drafting;
     private readonly ISkillGraphValidationService _validation;
@@ -42,12 +55,15 @@ public sealed class AdminSkillGraphController : ControllerBase
     private readonly IGraphChangeSuggestionService _changeSuggestions;
     private readonly INearDuplicateConfirmationService _nearDuplicateConfirmation;
     private readonly ICefrJGrammarImportService _cefrJImport;
+    private readonly IVocabularyImportService _vocabularyImport;
+    private readonly IVocabularyCategorizationService _vocabularyCategorization;
 
     public AdminSkillGraphController(
         LinguaCoachDbContext db, ISkillGraphDraftingService drafting, ISkillGraphValidationService validation,
         IModuleSkillGraphTaggingService tagging, ISkillGraphNodeRepairService repair,
         INodeGraphPlacementSuggestionService placementSuggestions, IGraphChangeSuggestionService changeSuggestions,
-        INearDuplicateConfirmationService nearDuplicateConfirmation, ICefrJGrammarImportService cefrJImport)
+        INearDuplicateConfirmationService nearDuplicateConfirmation, ICefrJGrammarImportService cefrJImport,
+        IVocabularyImportService vocabularyImport, IVocabularyCategorizationService vocabularyCategorization)
     {
         _db = db;
         _drafting = drafting;
@@ -58,6 +74,8 @@ public sealed class AdminSkillGraphController : ControllerBase
         _changeSuggestions = changeSuggestions;
         _nearDuplicateConfirmation = nearDuplicateConfirmation;
         _cefrJImport = cefrJImport;
+        _vocabularyImport = vocabularyImport;
+        _vocabularyCategorization = vocabularyCategorization;
     }
 
     // ── Sprint 14.1 — node tag diagnose+AI-repair, mirrors Resource Bank's
@@ -728,12 +746,23 @@ public sealed class AdminSkillGraphController : ControllerBase
     [HttpPost("nodes/import")]
     public async Task<IActionResult> ImportNodes([FromBody] ImportSkillGraphRequest request, CancellationToken ct)
     {
+        var result = await ApplyNodeImportAsync(request.Nodes, ct);
+        return Ok(result);
+    }
+
+    /// <summary>Full content reseed (2026-07-28) — the actual write logic behind <see cref="ImportNodes"/>,
+    /// factored out so the vocabulary AI-categorization batch endpoint (which needs to commit each
+    /// batch immediately so the NEXT batch sees real, already-approved-or-pending container nodes
+    /// when the AI decides whether to reuse a category or propose a new one) can call it in-process
+    /// without a second HTTP round-trip. Behavior is identical to the original inline body.</summary>
+    private async Task<object> ApplyNodeImportAsync(List<ImportSkillGraphNodeItem> nodes, CancellationToken ct)
+    {
         var existingByKey = await _db.SkillGraphNodes.ToDictionaryAsync(n => n.Key, ct);
         var createdCount = 0;
         var updatedCount = 0;
         var errors = new List<string>();
 
-        foreach (var item in request.Nodes)
+        foreach (var item in nodes)
         {
             try
             {
@@ -774,7 +803,7 @@ public sealed class AdminSkillGraphController : ControllerBase
 
         var addedEdgeCount = 0;
         var droppedEdgeCount = 0;
-        foreach (var item in request.Nodes)
+        foreach (var item in nodes)
         {
             if (!existingByKey.TryGetValue(item.Key, out var node)) continue;
             foreach (var prereqKey in item.PrerequisiteKeys)
@@ -797,7 +826,7 @@ public sealed class AdminSkillGraphController : ControllerBase
         // reference a parent created earlier in the same request. A missing/unresolvable ParentKey
         // is reported, never silently ignored — a leaf that was supposed to land under a real
         // container but didn't should be visible, not quietly orphaned as a standalone node.
-        foreach (var item in request.Nodes)
+        foreach (var item in nodes)
         {
             if (string.IsNullOrWhiteSpace(item.ParentKey)) continue;
             if (!existingByKey.TryGetValue(item.Key, out var node)) continue;
@@ -820,7 +849,7 @@ public sealed class AdminSkillGraphController : ControllerBase
 
         await _db.SaveChangesAsync(ct);
 
-        return Ok(new { createdCount, updatedCount, addedEdgeCount, droppedEdgeCount, errors });
+        return new { createdCount, updatedCount, addedEdgeCount, droppedEdgeCount, errors };
     }
 
     /// <summary>Skill Graph container/leaf Phase 2 (2026-07-27) — deterministic (no AI) preview of a
@@ -884,6 +913,142 @@ public sealed class AdminSkillGraphController : ControllerBase
             preview.TotalLeafCount,
             importPayload = new ImportSkillGraphRequest(importItems),
         });
+    }
+
+    /// <summary>Full content reseed (2026-07-28) — deterministic (no AI) preview of the CEFR-J
+    /// Vocabulary Profile + Octanove C1/C2 Vocabulary Profile CSVs. Words with a real
+    /// <c>CoreInventory 1</c> topic category (~22% of CEFR-J rows) become containerized leaves,
+    /// ready to import immediately via <c>importPayload</c> exactly like <see cref="PreviewCefrJImport"/>.
+    /// Every other word comes back as <c>uncategorizedLeaves</c> — the caller pages through that list
+    /// in small batches to <see cref="CategorizeVocabularyBatch"/>, which does the AI classification
+    /// and writes the result itself (no separate apply step for the AI half).</summary>
+    [HttpPost("vocabulary-import/preview")]
+    public IActionResult PreviewVocabularyImport([FromBody] VocabularyImportPreviewRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.CefrJVocabularyCsvContent) || string.IsNullOrWhiteSpace(request.OctanoveCsvContent))
+            return BadRequest("Both cefrJVocabularyCsvContent and octanoveCsvContent are required.");
+
+        var preview = _vocabularyImport.ParseCsvFiles(request.CefrJVocabularyCsvContent, request.OctanoveCsvContent);
+
+        var importItems = new List<ImportSkillGraphNodeItem>();
+        foreach (var container in preview.CategorizedContainers)
+        {
+            importItems.Add(new ImportSkillGraphNodeItem(
+                container.Key, container.Title, $"Vocabulary topic: {container.Title}.",
+                container.CefrLevel, "vocabulary", null, 1, null,
+                [], [], []));
+
+            foreach (var leaf in container.Leaves)
+            {
+                importItems.Add(new ImportSkillGraphNodeItem(
+                    leaf.Key, leaf.Title, leaf.Description,
+                    leaf.CefrLevel, "vocabulary", null, 1, null,
+                    [], [], [], container.Key));
+            }
+        }
+
+        return Ok(new
+        {
+            preview.CategorizedContainers,
+            preview.UncategorizedLeaves,
+            preview.Warnings,
+            preview.TotalLeafCount,
+            importPayload = new ImportSkillGraphRequest(importItems),
+        });
+    }
+
+    /// <summary>Full content reseed (2026-07-28) — AI classifies one bounded batch of vocabulary
+    /// words that had no real <c>CoreInventory 1</c> category (from <see cref="PreviewVocabularyImport"/>'s
+    /// <c>uncategorizedLeaves</c>), then writes the result immediately via the shared
+    /// <see cref="ApplyNodeImportAsync"/> path — unlike the grammar/deterministic-vocabulary preview
+    /// endpoints, this one writes directly rather than returning a payload for a second call, because
+    /// each subsequent batch's AI call needs to see the REAL, just-committed containers from prior
+    /// batches (queried fresh from the DB below) to decide whether to reuse a category or propose a
+    /// genuinely new one — deferring the write would let batches drift out of sync with each other.</summary>
+    [HttpPost("vocabulary-import/categorize-batch")]
+    public async Task<IActionResult> CategorizeVocabularyBatch([FromBody] VocabularyCategorizeBatchRequest request, CancellationToken ct)
+    {
+        if (request.Words.Count == 0)
+            return BadRequest("words is required and must be non-empty.");
+        if (request.Words.Count > MaxVocabularyCategorizeBatchSize)
+            return BadRequest($"Batch too large — max {MaxVocabularyCategorizeBatchSize} words per call.");
+
+        var existingContainers = await _db.SkillGraphNodes.AsNoTracking()
+            .Where(n => n.Skill == "vocabulary" && n.ParentNodeId == null && n.IsActive)
+            .Select(n => new { n.Key, n.Title })
+            .ToListAsync(ct);
+
+        var result = await _vocabularyCategorization.CategorizeBatchAsync(
+            new VocabularyCategorizationRequest(
+                request.Words, existingContainers.Select(c => c.Title).Distinct().ToList()),
+            ct);
+
+        if (!result.Success)
+            return UnprocessableEntity(new { error = result.ErrorMessage });
+
+        var existingContainerPairs = existingContainers.Select(c => (c.Key, c.Title)).ToList();
+        var newContainersByCategory = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var addedContainerKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var importItems = new List<ImportSkillGraphNodeItem>();
+
+        foreach (var word in result.Words)
+        {
+            var sourceRow = request.Words.FirstOrDefault(w =>
+                string.Equals(w.Headword, word.Headword, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(w.PartOfSpeech, word.PartOfSpeech, StringComparison.OrdinalIgnoreCase));
+            if (sourceRow is null) continue; // defensive — the categorization service already drops these
+
+            var (containerKey, containerIsNew) = ResolveVocabularyContainerKey(
+                word.Category, existingContainerPairs, newContainersByCategory);
+            if (containerIsNew)
+                newContainersByCategory[word.Category] = containerKey;
+
+            if (containerIsNew && addedContainerKeys.Add(containerKey))
+            {
+                importItems.Add(new ImportSkillGraphNodeItem(
+                    containerKey, word.Category, $"Vocabulary topic: {word.Category}.",
+                    sourceRow.CefrLevel, "vocabulary", null, 1, null,
+                    [], [], []));
+            }
+
+            var leafKey = $"vocabulary.cefrj_{VocabularySlug(word.Headword)}_{VocabularySlug(word.PartOfSpeech)}.{sourceRow.CefrLevel.ToLowerInvariant()}";
+            importItems.Add(new ImportSkillGraphNodeItem(
+                leafKey, $"{word.Headword} ({word.PartOfSpeech})", word.Description,
+                sourceRow.CefrLevel, "vocabulary", null, 1, null,
+                word.ContextTags.ToList(), word.FocusTags.ToList(), [], containerKey));
+        }
+
+        var applyResult = await ApplyNodeImportAsync(importItems, ct);
+        return Ok(new { categorizedCount = result.Words.Count, applyResult });
+    }
+
+    private static (string Key, bool IsNew) ResolveVocabularyContainerKey(
+        string category, List<(string Key, string Title)> existingContainers, Dictionary<string, string> newContainersThisRun)
+    {
+        string? bestKey = null;
+        var bestScore = 0.0;
+
+        foreach (var (key, title) in existingContainers)
+        {
+            var score = TextSimilarity.BigramDiceSimilarity(category, title);
+            if (score > bestScore) { bestScore = score; bestKey = key; }
+        }
+
+        foreach (var (proposedCategory, key) in newContainersThisRun)
+        {
+            var score = TextSimilarity.BigramDiceSimilarity(category, proposedCategory);
+            if (score > bestScore) { bestScore = score; bestKey = key; }
+        }
+
+        return bestScore >= VocabularyCategoryMatchThreshold && bestKey is not null
+            ? (bestKey, false)
+            : ($"vocabulary.topic_{VocabularySlug(category)}", true);
+    }
+
+    private static string VocabularySlug(string text)
+    {
+        var slug = Regex.Replace(text.Trim().ToLowerInvariant(), "[^a-z0-9]+", "_").Trim('_');
+        return string.IsNullOrEmpty(slug) ? "item" : slug;
     }
 
     // Rebuild Phase 2 (2026-07-23) — bounds how many other-combination titles are offered to the AI
@@ -1564,3 +1729,12 @@ public sealed record ImportSkillGraphRequest(List<ImportSkillGraphNodeItem> Node
 /// pasted/uploaded by the admin (the file lives outside the repo, so this endpoint takes content
 /// directly rather than a server-side path).</summary>
 public sealed record CefrJImportPreviewRequest(string CsvContent);
+
+/// <summary>Full content reseed (2026-07-28) — raw CEFR-J Vocabulary Profile and Octanove C1/C2
+/// Vocabulary Profile CSV text, same "content, not a server-side path" convention as
+/// <see cref="CefrJImportPreviewRequest"/>.</summary>
+public sealed record VocabularyImportPreviewRequest(string CefrJVocabularyCsvContent, string OctanoveCsvContent);
+
+/// <summary>Full content reseed (2026-07-28) — one bounded batch of uncategorized words, taken
+/// directly from <c>PreviewVocabularyImport</c>'s <c>uncategorizedLeaves</c> response.</summary>
+public sealed record VocabularyCategorizeBatchRequest(List<VocabularyWordRow> Words);
