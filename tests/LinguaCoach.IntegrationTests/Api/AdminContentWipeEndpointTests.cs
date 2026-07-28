@@ -53,6 +53,11 @@ public sealed class AdminContentWipeEndpointTests : IClassFixture<ApiTestFactory
         var item = new ResourceBankItem(PublishedResourceType.Vocabulary, source.Id, "A1",
             ResourceBankItemContent.Serialize(new VocabularyContent("wipe-test-word", null, null)));
         db.ResourceBankItems.Add(item);
+        // Restrict against CefrResourceSource, same as ResourceImportRun/ResourceBankItem — the
+        // real dev DB's own 4 rows here are what surfaced the missing deletion step this test class
+        // now guards against.
+        var importPackage = new ImportPackage(source.Id, $"wipe-test-{suffix}.zip", DateTimeOffset.UtcNow);
+        db.ImportPackages.Add(importPackage);
         await db.SaveChangesAsync();
     }
 
@@ -84,6 +89,7 @@ public sealed class AdminContentWipeEndpointTests : IClassFixture<ApiTestFactory
         var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
         Assert.True(body.GetProperty("requiresConfirmation").GetBoolean());
         Assert.True(body.GetProperty("counts").GetProperty("modules").GetInt32() > 0);
+        Assert.True(body.GetProperty("counts").GetProperty("importPackages").GetInt32() > 0);
 
         using var scope = _factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
@@ -108,6 +114,7 @@ public sealed class AdminContentWipeEndpointTests : IClassFixture<ApiTestFactory
         Assert.Equal(0, finalCounts.GetProperty("exercises").GetInt32());
         Assert.Equal(0, finalCounts.GetProperty("skillGraphNodes").GetInt32());
         Assert.Equal(0, finalCounts.GetProperty("resourceBankItems").GetInt32());
+        Assert.Equal(0, finalCounts.GetProperty("importPackages").GetInt32());
         Assert.Equal(0, finalCounts.GetProperty("cefrResourceSources").GetInt32());
 
         using var scope = _factory.Services.CreateScope();
@@ -117,6 +124,26 @@ public sealed class AdminContentWipeEndpointTests : IClassFixture<ApiTestFactory
         Assert.False(await db.Exercises.AnyAsync());
         Assert.False(await db.SkillGraphNodes.AnyAsync());
         Assert.False(await db.ResourceBankItems.AnyAsync());
+        Assert.False(await db.ImportPackages.AnyAsync());
+        Assert.False(await db.CefrResourceSources.AnyAsync());
+    }
+
+    [Fact]
+    public async Task Wipe_DeletesImportPackagesBeforeCefrResourceSources()
+    {
+        // Regression test — the real dev DB run against this endpoint failed with a Postgres FK
+        // violation ("import_packages" -> "cefr_resource_sources") because ImportPackage wasn't in
+        // the original deletion order at all. This seeds exactly that shape and proves the fix.
+        await SeedOneOfEverythingAsync();
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.PostAsJsonAsync("/api/admin/content-wipe", new { confirm = true });
+
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+        Assert.False(await db.ImportPackages.AnyAsync());
         Assert.False(await db.CefrResourceSources.AnyAsync());
     }
 

@@ -44,7 +44,13 @@ public sealed class AdminContentWipeController : ControllerBase
         // manual deletion needed for those. SkillGraphPrerequisiteEdge -> SkillGraphNode is
         // Restrict, so edges go before nodes. ResourceImportRun cascades ResourceRawRecord ->
         // ResourceCandidate; ResourceImportRun and ResourceBankItem are both Restrict against
-        // CefrResourceSource, so both must go before it.
+        // CefrResourceSource, so both must go before it. ImportPackage and ImportUploadSession are
+        // ALSO Restrict against CefrResourceSource (found the hard way — the real DB has 4
+        // ImportPackage rows this deletion set's own scope description didn't name, same "hidden
+        // structural blocker" pattern as the student assignment tables above); ImportPackage's own
+        // children (ImportAiEnrichmentOperation, ImportAsset, ImportCostCeilingAmendment,
+        // ImportProfile, ImportSttOperation) all cascade from it automatically, and
+        // ImportUploadSessionPart cascades from ImportUploadSession.
         await using var tx = await _db.Database.BeginTransactionAsync(ct);
 
         await _db.StudentExerciseLaunches.ExecuteDeleteAsync(ct);
@@ -60,6 +66,8 @@ public sealed class AdminContentWipeController : ControllerBase
 
         await _db.ResourceBankItems.ExecuteDeleteAsync(ct);
         await _db.ResourceImportRuns.ExecuteDeleteAsync(ct);
+        await _db.ImportPackages.ExecuteDeleteAsync(ct);
+        await _db.ImportUploadSessions.ExecuteDeleteAsync(ct);
         await _db.CefrResourceSources.ExecuteDeleteAsync(ct);
 
         await tx.CommitAsync(ct);
@@ -83,6 +91,8 @@ public sealed class AdminContentWipeController : ControllerBase
         SkillGraphNodes: await _db.SkillGraphNodes.CountAsync(ct),
         ResourceBankItems: await _db.ResourceBankItems.CountAsync(ct),
         ResourceImportRuns: await _db.ResourceImportRuns.CountAsync(ct),
+        ImportPackages: await _db.ImportPackages.CountAsync(ct),
+        ImportUploadSessions: await _db.ImportUploadSessions.CountAsync(ct),
         CefrResourceSources: await _db.CefrResourceSources.CountAsync(ct));
 }
 
@@ -101,4 +111,6 @@ public sealed record ContentWipeCounts(
     int SkillGraphNodes,
     int ResourceBankItems,
     int ResourceImportRuns,
+    int ImportPackages,
+    int ImportUploadSessions,
     int CefrResourceSources);
