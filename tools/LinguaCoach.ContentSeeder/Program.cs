@@ -246,6 +246,13 @@ public sealed class LeafContentSeeder(
     public async Task SeedOneAsync(
         Guid sourceId, string cefrLevel, string contentJson, string resourceTitle, Guid skillGraphNodeId, string activityType)
     {
+        // Idempotency guard against process interruption (e.g. a hard-killed run) leaving the local
+        // checkpoint file out of sync with the DB — if this leaf's node already has a Module linked,
+        // trust the DB over the checkpoint and skip, rather than creating a duplicate content chain.
+        var alreadyComplete = await db.ModuleSkillGraphNodeLinks
+            .AnyAsync(l => l.SkillGraphNodeId == skillGraphNodeId);
+        if (alreadyComplete) return;
+
         var resourceType = activityType == "reading_fill_in_blanks"
             ? PublishedResourceType.ReadingPassage
             : contentJson.Contains("\"grammarPoint\"", StringComparison.OrdinalIgnoreCase)
