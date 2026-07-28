@@ -1,0 +1,1820 @@
+{
+  "containers": [
+    {
+      "key": "listening.scale_overall_listening_comprehension",
+      "title": "Overall Listening Comprehension",
+      "cefrLevel": "A1",
+      "skill": "listening"
+    },
+    {
+      "key": "listening.scale_understanding_interaction_between_native_speakers",
+      "title": "Understanding Interaction Between Native Speakers",
+      "cefrLevel": "A2",
+      "skill": "listening"
+    },
+    {
+      "key": "listening.scale_listening_as_a_member_of_a_live_audience",
+      "title": "Listening As A Member of A Live Audience",
+      "cefrLevel": "B1",
+      "skill": "listening"
+    },
+    {
+      "key": "listening.scale_listening_to_announcements_instructions",
+      "title": "Listening To Announcements & Instructions",
+      "cefrLevel": "A1",
+      "skill": "listening"
+    },
+    {
+      "key": "listening.scale_listening_to_radio_audio_recordings",
+      "title": "Listening To Radio Audio & Recordings",
+      "cefrLevel": "A2",
+      "skill": "listening"
+    },
+    {
+      "key": "listening.scale_watching_tv_and_film",
+      "title": "Watching Tv and Film",
+      "cefrLevel": "A2",
+      "skill": "listening"
+    },
+    {
+      "key": "reading.scale_overall_reading_comprehension",
+      "title": "Overall Reading Comprehension",
+      "cefrLevel": "A1",
+      "skill": "reading"
+    },
+    {
+      "key": "reading.scale_reading_correspondence",
+      "title": "Reading Correspondence",
+      "cefrLevel": "A1",
+      "skill": "reading"
+    },
+    {
+      "key": "reading.scale_reading_for_orientation",
+      "title": "Reading for Orientation",
+      "cefrLevel": "A1",
+      "skill": "reading"
+    },
+    {
+      "key": "reading.scale_reading_for_information_argument",
+      "title": "Reading for Information & Argument",
+      "cefrLevel": "A1",
+      "skill": "reading"
+    },
+    {
+      "key": "reading.scale_reading_instructions",
+      "title": "Reading Instructions",
+      "cefrLevel": "A1",
+      "skill": "reading"
+    },
+    {
+      "key": "speaking.scale_overall_spoken_interaction",
+      "title": "Overall Spoken Interaction",
+      "cefrLevel": "A1",
+      "skill": "speaking"
+    },
+    {
+      "key": "speaking.scale_informal_discussion_with_friends",
+      "title": "Informal Discussion (With Friends)",
+      "cefrLevel": "A1",
+      "skill": "speaking"
+    },
+    {
+      "key": "speaking.scale_formal_discussion_meetings",
+      "title": "Formal Discussion (Meetings)",
+      "cefrLevel": "A1",
+      "skill": "speaking"
+    },
+    {
+      "key": "speaking.scale_transactions_to_obtain_goods_services",
+      "title": "Transactions To Obtain Goods & Services",
+      "cefrLevel": "A1",
+      "skill": "speaking"
+    },
+    {
+      "key": "speaking.scale_information_exchange",
+      "title": "Information Exchange",
+      "cefrLevel": "A1",
+      "skill": "speaking"
+    },
+    {
+      "key": "speaking.scale_interviewing_and_being_interviewed",
+      "title": "Interviewing and Being Interviewed",
+      "cefrLevel": "A1",
+      "skill": "speaking"
+    },
+    {
+      "key": "writing.scale_overall_written_interaction",
+      "title": "Overall Written Interaction",
+      "cefrLevel": "A1",
+      "skill": "writing"
+    },
+    {
+      "key": "writing.scale_correspondence",
+      "title": "Correspondence",
+      "cefrLevel": "A1",
+      "skill": "writing"
+    },
+    {
+      "key": "writing.scale_notes_messages_forms",
+      "title": "Notes, Messages & Forms",
+      "cefrLevel": "A1",
+      "skill": "writing"
+    },
+    {
+      "key": "speaking.scale_overall_spoken_production",
+      "title": "Overall Spoken Production",
+      "cefrLevel": "A1",
+      "skill": "speaking"
+    },
+    {
+      "key": "speaking.scale_public_announcements",
+      "title": "Public Announcements",
+      "cefrLevel": "A2",
+      "skill": "speaking"
+    },
+    {
+      "key": "speaking.scale_addressing_audiences",
+      "title": "Addressing Audiences",
+      "cefrLevel": "A1",
+      "skill": "speaking"
+    },
+    {
+      "key": "writing.scale_reports_essays",
+      "title": "Reports & Essays",
+      "cefrLevel": "A2",
+      "skill": "writing"
+    },
+    {
+      "key": "speaking.scale_taking_the_floor_turntaking",
+      "title": "Taking the Floor (Turntaking)",
+      "cefrLevel": "A2",
+      "skill": "speaking"
+    },
+    {
+      "key": "speaking.scale_cooperating",
+      "title": "Cooperating",
+      "cefrLevel": "A2",
+      "skill": "speaking"
+    },
+    {
+      "key": "speaking.scale_asking_for_clarification",
+      "title": "Asking for Clarification",
+      "cefrLevel": "A2",
+      "skill": "speaking"
+    },
+    {
+      "key": "speaking.scale_planning",
+      "title": "Planning",
+      "cefrLevel": "B1",
+      "skill": "speaking"
+    },
+    {
+      "key": "speaking.scale_compensating",
+      "title": "Compensating",
+      "cefrLevel": "A2",
+      "skill": "speaking"
+    },
+    {
+      "key": "speaking.scale_monitoring_repair",
+      "title": "Monitoring & Repair",
+      "cefrLevel": "B1",
+      "skill": "speaking"
+    },
+    {
+      "key": "listening.scale_note_taking_lectures_seminars_etc",
+      "title": "Note-Taking (Lectures, Seminars, Etc.)",
+      "cefrLevel": "B1",
+      "skill": "listening"
+    },
+    {
+      "key": "reading.scale_processing_text",
+      "title": "Processing Text",
+      "cefrLevel": "A1",
+      "skill": "reading"
+    },
+    {
+      "key": "speaking.scale_general_linguistic_range",
+      "title": "General Linguistic Range",
+      "cefrLevel": "A1",
+      "skill": "speaking"
+    },
+    {
+      "key": "vocabulary.scale_vocabulary_range",
+      "title": "Vocabulary Range",
+      "cefrLevel": "A1",
+      "skill": "vocabulary"
+    },
+    {
+      "key": "grammar.scale_grammatical_accuracy",
+      "title": "Grammatical Accuracy",
+      "cefrLevel": "A1",
+      "skill": "grammar"
+    },
+    {
+      "key": "pronunciation.scale_phonological_control",
+      "title": "Phonological Control",
+      "cefrLevel": "A1",
+      "skill": "pronunciation"
+    },
+    {
+      "key": "speaking.scale_flexibility",
+      "title": "Flexibility",
+      "cefrLevel": "A2",
+      "skill": "speaking"
+    },
+    {
+      "key": "speaking.scale_taking_the_floor_turntaking",
+      "title": "Taking the Floor (Turntaking)",
+      "cefrLevel": "A2",
+      "skill": "speaking"
+    },
+    {
+      "key": "speaking.scale_thematic_development",
+      "title": "Thematic Development",
+      "cefrLevel": "A2",
+      "skill": "speaking"
+    },
+    {
+      "key": "speaking.scale_coherence",
+      "title": "Coherence",
+      "cefrLevel": "A1",
+      "skill": "speaking"
+    },
+    {
+      "key": "fluency.scale_spoken_fluency",
+      "title": "Spoken Fluency",
+      "cefrLevel": "A1",
+      "skill": "fluency"
+    }
+  ],
+  "leaves": [
+    {
+      "key": "listening.scale_overall_listening_comprehension.a1",
+      "title": "Overall Listening Comprehension (A1)",
+      "cefrLevel": "A1",
+      "skill": "listening",
+      "parentKey": "listening.scale_overall_listening_comprehension",
+      "descriptor": "Can follow speech that is very slow and carefully articulated, with long pauses for him/her to assimilate meaning."
+    },
+    {
+      "key": "listening.scale_overall_listening_comprehension.a2",
+      "title": "Overall Listening Comprehension (A2)",
+      "cefrLevel": "A2",
+      "skill": "listening",
+      "parentKey": "listening.scale_overall_listening_comprehension",
+      "descriptor": "Can understand enough to be able to meet needs of a concrete type provided speech is clearly and slowly articulated. Can understand phrases and expressions related to areas of most immediate priority (e.g. very basic personal and family information, shopping, local geography, employment) provided speech is clearly and slowly articulated."
+    },
+    {
+      "key": "listening.scale_overall_listening_comprehension.b1",
+      "title": "Overall Listening Comprehension (B1)",
+      "cefrLevel": "B1",
+      "skill": "listening",
+      "parentKey": "listening.scale_overall_listening_comprehension",
+      "descriptor": "Can understand straightforward factual information about common everyday or job related topics, identifying both general messages and specific details, provided speech is clearly articulated in a generally familiar accent. Can understand the main points of clear standard speech on familiar matters regularly encountered in work, school, leisure etc., including short narratives."
+    },
+    {
+      "key": "listening.scale_overall_listening_comprehension.b2",
+      "title": "Overall Listening Comprehension (B2)",
+      "cefrLevel": "B2",
+      "skill": "listening",
+      "parentKey": "listening.scale_overall_listening_comprehension",
+      "descriptor": "Can understand standard spoken language, live or broadcast, on both familiar and unfamiliar topics normally encountered in personal, social, academic or vocational life. Only extreme background noise, inadequate discourse structure and/or idiomatic usage influence the ability to understand. Can understand the main ideas of propositionally and linguistically complex speech on both concrete and abstract topics delivered in a standard dialect, including technical discussions in his/her field of specialisation. Can follow extended speech and complex lines of argument provided the topic is reasonably familiar, and the direction of the talk is sign-posted by explicit markers."
+    },
+    {
+      "key": "listening.scale_overall_listening_comprehension.c1",
+      "title": "Overall Listening Comprehension (C1)",
+      "cefrLevel": "C1",
+      "skill": "listening",
+      "parentKey": "listening.scale_overall_listening_comprehension",
+      "descriptor": "Can understand enough to follow extended speech on abstract and complex topics beyond his/her own field, though he/she may need to confirm occasional details, especially if the accent is unfamiliar. Can recognise a wide range of idiomatic expressions and colloquialisms, appreciating register shifts. Can follow extended speech even when it is not clearly structured and when relationships are only implied and not signalled explicitly."
+    },
+    {
+      "key": "listening.scale_overall_listening_comprehension.c2",
+      "title": "Overall Listening Comprehension (C2)",
+      "cefrLevel": "C2",
+      "skill": "listening",
+      "parentKey": "listening.scale_overall_listening_comprehension",
+      "descriptor": "Has no difficulty in understanding any kind of spoken language, whether live or broadcast, delivered at fast native speed"
+    },
+    {
+      "key": "listening.scale_understanding_interaction_between_native_speakers.a2",
+      "title": "Understanding Interaction Between Native Speakers (A2)",
+      "cefrLevel": "A2",
+      "skill": "listening",
+      "parentKey": "listening.scale_understanding_interaction_between_native_speakers",
+      "descriptor": "Can generally identify the topic of discussion around her that is conducted slowly and clearly."
+    },
+    {
+      "key": "listening.scale_understanding_interaction_between_native_speakers.b1",
+      "title": "Understanding Interaction Between Native Speakers (B1)",
+      "cefrLevel": "B1",
+      "skill": "listening",
+      "parentKey": "listening.scale_understanding_interaction_between_native_speakers",
+      "descriptor": "Can generally follow the main points of extended discussion around him/her, provided speech is clearly articulated in standard dialect."
+    },
+    {
+      "key": "listening.scale_understanding_interaction_between_native_speakers.b2",
+      "title": "Understanding Interaction Between Native Speakers (B2)",
+      "cefrLevel": "B2",
+      "skill": "listening",
+      "parentKey": "listening.scale_understanding_interaction_between_native_speakers",
+      "descriptor": "Can keep up with an animated conversation between native speakers. Can with some effort catch much of what is said around him/her, but may find it difficult to participate effectively in discussion with several native speakers who do not modify their language in any way."
+    },
+    {
+      "key": "listening.scale_understanding_interaction_between_native_speakers.c1",
+      "title": "Understanding Interaction Between Native Speakers (C1)",
+      "cefrLevel": "C1",
+      "skill": "listening",
+      "parentKey": "listening.scale_understanding_interaction_between_native_speakers",
+      "descriptor": "Can easily follow complex interactions between third parties in group discussion and debate, even on abstract, complex unfamiliar topics"
+    },
+    {
+      "key": "listening.scale_listening_as_a_member_of_a_live_audience.b1",
+      "title": "Listening As A Member of A Live Audience (B1)",
+      "cefrLevel": "B1",
+      "skill": "listening",
+      "parentKey": "listening.scale_listening_as_a_member_of_a_live_audience",
+      "descriptor": "Can follow a lecture or talk within his/her own field, provided the subject matter is familiar and the presentation straightforward and clearly structured. Can follow in outline straightforward short talks on familiar topics provided these are delivered in clearly articulated standard speech."
+    },
+    {
+      "key": "listening.scale_listening_as_a_member_of_a_live_audience.b2",
+      "title": "Listening As A Member of A Live Audience (B2)",
+      "cefrLevel": "B2",
+      "skill": "listening",
+      "parentKey": "listening.scale_listening_as_a_member_of_a_live_audience",
+      "descriptor": "Can follow the essentials of lectures, talks and reports and other forms of academic/professional presentation which are propositionally and linguistically complex."
+    },
+    {
+      "key": "listening.scale_listening_as_a_member_of_a_live_audience.c1",
+      "title": "Listening As A Member of A Live Audience (C1)",
+      "cefrLevel": "C1",
+      "skill": "listening",
+      "parentKey": "listening.scale_listening_as_a_member_of_a_live_audience",
+      "descriptor": "Can follow most lectures, discussions and debates with relative ease."
+    },
+    {
+      "key": "listening.scale_listening_as_a_member_of_a_live_audience.c2",
+      "title": "Listening As A Member of A Live Audience (C2)",
+      "cefrLevel": "C2",
+      "skill": "listening",
+      "parentKey": "listening.scale_listening_as_a_member_of_a_live_audience",
+      "descriptor": "Can follow specialised lectures and presentations employing a high degree of colloquialism, regional usage or unfamiliar terminology."
+    },
+    {
+      "key": "listening.scale_listening_to_announcements_instructions.a1",
+      "title": "Listening To Announcements & Instructions (A1)",
+      "cefrLevel": "A1",
+      "skill": "listening",
+      "parentKey": "listening.scale_listening_to_announcements_instructions",
+      "descriptor": "Can understand instructions addressed carefully and slowly to him/her and follow short, simple directions."
+    },
+    {
+      "key": "listening.scale_listening_to_announcements_instructions.a2",
+      "title": "Listening To Announcements & Instructions (A2)",
+      "cefrLevel": "A2",
+      "skill": "listening",
+      "parentKey": "listening.scale_listening_to_announcements_instructions",
+      "descriptor": "Can catch the main point in short, clear, simple messages and announcement. Can understand simple directions relating to how to get from X to Y, by foot or public transport."
+    },
+    {
+      "key": "listening.scale_listening_to_announcements_instructions.b1",
+      "title": "Listening To Announcements & Instructions (B1)",
+      "cefrLevel": "B1",
+      "skill": "listening",
+      "parentKey": "listening.scale_listening_to_announcements_instructions",
+      "descriptor": "Can understand simple technical information, such as operating instructions for everyday equipment. Can follow detailed directions."
+    },
+    {
+      "key": "listening.scale_listening_to_announcements_instructions.b2",
+      "title": "Listening To Announcements & Instructions (B2)",
+      "cefrLevel": "B2",
+      "skill": "listening",
+      "parentKey": "listening.scale_listening_to_announcements_instructions",
+      "descriptor": "Can understand announcements and messages on concrete and abstract topics spoken in standard dialect at normal speed."
+    },
+    {
+      "key": "listening.scale_listening_to_announcements_instructions.c1",
+      "title": "Listening To Announcements & Instructions (C1)",
+      "cefrLevel": "C1",
+      "skill": "listening",
+      "parentKey": "listening.scale_listening_to_announcements_instructions",
+      "descriptor": "Can extract specific information from poor quality, audibly distorted public announcements e.g. in a station, sports stadium etc. Can understand complex technical information, such as operating instructions, specifications for familiar products and services."
+    },
+    {
+      "key": "listening.scale_listening_to_radio_audio_recordings.a2",
+      "title": "Listening To Radio Audio & Recordings (A2)",
+      "cefrLevel": "A2",
+      "skill": "listening",
+      "parentKey": "listening.scale_listening_to_radio_audio_recordings",
+      "descriptor": "Can understand and extract the essential information from short recorded passages dealing with predictable everyday matters that are delivered slowly and clearly."
+    },
+    {
+      "key": "listening.scale_listening_to_radio_audio_recordings.b1",
+      "title": "Listening To Radio Audio & Recordings (B1)",
+      "cefrLevel": "B1",
+      "skill": "listening",
+      "parentKey": "listening.scale_listening_to_radio_audio_recordings",
+      "descriptor": "Can understand the information content of the majority of recorded or broadcast audio material on topics of personal interest delivered in clear standard speech. Can understand the main points of radio news bulletins and simpler recorded material about familiar subjects delivered relatively slowly and clearly."
+    },
+    {
+      "key": "listening.scale_listening_to_radio_audio_recordings.b2",
+      "title": "Listening To Radio Audio & Recordings (B2)",
+      "cefrLevel": "B2",
+      "skill": "listening",
+      "parentKey": "listening.scale_listening_to_radio_audio_recordings",
+      "descriptor": "Can understand recordings in standard dialect likely to be encountered in social, professional or academic life and identify speaker viewpoints and attitudes as well as the information content. Can understand most radio documentaries and most other recorded or broadcast audio material delivered in standard dialect and can identify the speaker's mood, tone etc."
+    },
+    {
+      "key": "listening.scale_listening_to_radio_audio_recordings.c1",
+      "title": "Listening To Radio Audio & Recordings (C1)",
+      "cefrLevel": "C1",
+      "skill": "listening",
+      "parentKey": "listening.scale_listening_to_radio_audio_recordings",
+      "descriptor": "Can understand a wide range of recorded and broadcast audio material, including some non-standard usage, and identify finer points of detail including implicit attitudes and relationships between speakers."
+    },
+    {
+      "key": "listening.scale_watching_tv_and_film.a2",
+      "title": "Watching Tv and Film (A2)",
+      "cefrLevel": "A2",
+      "skill": "listening",
+      "parentKey": "listening.scale_watching_tv_and_film",
+      "descriptor": "Can identify the main point of TV news items reporting events, accidents etc. where the visual supports the commentary. Can follow changes of topic of factual TV news items, and form an idea of the main content."
+    },
+    {
+      "key": "listening.scale_watching_tv_and_film.b1",
+      "title": "Watching Tv and Film (B1)",
+      "cefrLevel": "B1",
+      "skill": "listening",
+      "parentKey": "listening.scale_watching_tv_and_film",
+      "descriptor": "Can understand a large part of many TV programmes on topics of personal interest such as interviews, short lectures, and news reports when the delivery is relatively slow and clear. Can follow many films in which visuals and action carry much of the storyline, and which are delivered clearly in straightforward language. Can catch the main points in TV programmes on familiar topics when the delivery is relatively slow and clear."
+    },
+    {
+      "key": "listening.scale_watching_tv_and_film.b2",
+      "title": "Watching Tv and Film (B2)",
+      "cefrLevel": "B2",
+      "skill": "listening",
+      "parentKey": "listening.scale_watching_tv_and_film",
+      "descriptor": "Can understand most TV news and current affairs programmes. Can understand documentaries, live interviews, talk shows, plays and the majority of films in standard dialect."
+    },
+    {
+      "key": "listening.scale_watching_tv_and_film.c1",
+      "title": "Watching Tv and Film (C1)",
+      "cefrLevel": "C1",
+      "skill": "listening",
+      "parentKey": "listening.scale_watching_tv_and_film",
+      "descriptor": "Can follow films employing a considerable degree of slang and idiomatic usage."
+    },
+    {
+      "key": "reading.scale_overall_reading_comprehension.a1",
+      "title": "Overall Reading Comprehension (A1)",
+      "cefrLevel": "A1",
+      "skill": "reading",
+      "parentKey": "reading.scale_overall_reading_comprehension",
+      "descriptor": "Can understand very short, simple texts a single phrase at a time, picking up familiar names, words and basic phrases and rereading as required."
+    },
+    {
+      "key": "reading.scale_overall_reading_comprehension.a2",
+      "title": "Overall Reading Comprehension (A2)",
+      "cefrLevel": "A2",
+      "skill": "reading",
+      "parentKey": "reading.scale_overall_reading_comprehension",
+      "descriptor": "Can understand short, simple texts on familiar matters of a concrete type which consist of high frequency everyday or job-related language Can understand short, simple texts containing the highest frequency vocabulary, including a proportion of shared international vocabulary items."
+    },
+    {
+      "key": "reading.scale_overall_reading_comprehension.b1",
+      "title": "Overall Reading Comprehension (B1)",
+      "cefrLevel": "B1",
+      "skill": "reading",
+      "parentKey": "reading.scale_overall_reading_comprehension",
+      "descriptor": "Can read straightforward factual texts on subjects related to his/her field and interest with a satisfactory level of comprehension."
+    },
+    {
+      "key": "reading.scale_overall_reading_comprehension.b2",
+      "title": "Overall Reading Comprehension (B2)",
+      "cefrLevel": "B2",
+      "skill": "reading",
+      "parentKey": "reading.scale_overall_reading_comprehension",
+      "descriptor": "Can read with a large degree of independence, adapting style and speed of reading to different texts and purposes, and using appropriate reference sources selectively. Has a broad active reading vocabulary, but may experience some difficulty with low-frequency idioms."
+    },
+    {
+      "key": "reading.scale_overall_reading_comprehension.c1",
+      "title": "Overall Reading Comprehension (C1)",
+      "cefrLevel": "C1",
+      "skill": "reading",
+      "parentKey": "reading.scale_overall_reading_comprehension",
+      "descriptor": "Can understand in detail lengthy, complex texts, whether or not they relate to his/her own area of speciality, provided he/she can reread difficult sections."
+    },
+    {
+      "key": "reading.scale_overall_reading_comprehension.c2",
+      "title": "Overall Reading Comprehension (C2)",
+      "cefrLevel": "C2",
+      "skill": "reading",
+      "parentKey": "reading.scale_overall_reading_comprehension",
+      "descriptor": "Can understand and interpret critically virtually all forms of the written language including abstract, structurally complex, or highly colloquial literary and non-literary writings. Can understand a wide range of long and complex texts, appreciating subtle distinctions of style and implicit as well as explicit meaning."
+    },
+    {
+      "key": "reading.scale_reading_correspondence.a1",
+      "title": "Reading Correspondence (A1)",
+      "cefrLevel": "A1",
+      "skill": "reading",
+      "parentKey": "reading.scale_reading_correspondence",
+      "descriptor": "Can understand short, simple messages on postcards."
+    },
+    {
+      "key": "reading.scale_reading_correspondence.a2",
+      "title": "Reading Correspondence (A2)",
+      "cefrLevel": "A2",
+      "skill": "reading",
+      "parentKey": "reading.scale_reading_correspondence",
+      "descriptor": "Can understand basic types of standard routine letters and faxes (enquiries, orders, letters of confirmation etc.) on familiar topics Can understand short simple personal letters."
+    },
+    {
+      "key": "reading.scale_reading_correspondence.b1",
+      "title": "Reading Correspondence (B1)",
+      "cefrLevel": "B1",
+      "skill": "reading",
+      "parentKey": "reading.scale_reading_correspondence",
+      "descriptor": "Can understand the description of events, feelings and wishes in personal letters well enough to correspond regularly with a pen friend."
+    },
+    {
+      "key": "reading.scale_reading_correspondence.b2",
+      "title": "Reading Correspondence (B2)",
+      "cefrLevel": "B2",
+      "skill": "reading",
+      "parentKey": "reading.scale_reading_correspondence",
+      "descriptor": "Can read correspondence relating to his/her field of interest and readily grasp the essential meaning."
+    },
+    {
+      "key": "reading.scale_reading_correspondence.c1",
+      "title": "Reading Correspondence (C1)",
+      "cefrLevel": "C1",
+      "skill": "reading",
+      "parentKey": "reading.scale_reading_correspondence",
+      "descriptor": "Can understand any correspondence given the occasional use of a dictionary."
+    },
+    {
+      "key": "reading.scale_reading_for_orientation.a1",
+      "title": "Reading for Orientation (A1)",
+      "cefrLevel": "A1",
+      "skill": "reading",
+      "parentKey": "reading.scale_reading_for_orientation",
+      "descriptor": "Can recognise familiar names, words and very basic phrases on simple notices in the most common everyday situations."
+    },
+    {
+      "key": "reading.scale_reading_for_orientation.a2",
+      "title": "Reading for Orientation (A2)",
+      "cefrLevel": "A2",
+      "skill": "reading",
+      "parentKey": "reading.scale_reading_for_orientation",
+      "descriptor": "Can find specific, predictable information in simple everyday material such as advertisements, prospectuses, menus, reference lists and timetables. Can locate specific information in lists and isolate the information required (e.g. use the \"Yellow Pages\" to find a service or tradesman). Can understand everyday signs and notices: in public places, such as streets, restaurants, railway stations; in workplaces, such as directions, instructions, hazard warnings."
+    },
+    {
+      "key": "reading.scale_reading_for_orientation.b1",
+      "title": "Reading for Orientation (B1)",
+      "cefrLevel": "B1",
+      "skill": "reading",
+      "parentKey": "reading.scale_reading_for_orientation",
+      "descriptor": "Can scan longer texts in order to locate desired information, and gather information from different parts of a text, or from different texts in order to fulfil a specific task. Can find and understand relevant information in everyday material, such as letters, brochures and short official documents."
+    },
+    {
+      "key": "reading.scale_reading_for_orientation.b2",
+      "title": "Reading for Orientation (B2)",
+      "cefrLevel": "B2",
+      "skill": "reading",
+      "parentKey": "reading.scale_reading_for_orientation",
+      "descriptor": "Can scan quickly through long and complex texts, locating relevant details. Can quickly identify the content and relevance of news items, articles and reports on a wide range of professional topics, deciding whether closer study is worthwhile."
+    },
+    {
+      "key": "reading.scale_reading_for_information_argument.a1",
+      "title": "Reading for Information & Argument (A1)",
+      "cefrLevel": "A1",
+      "skill": "reading",
+      "parentKey": "reading.scale_reading_for_information_argument",
+      "descriptor": "Can get an idea of the content of simpler informational material and short simple descriptions, especially if there is visual support."
+    },
+    {
+      "key": "reading.scale_reading_for_information_argument.a2",
+      "title": "Reading for Information & Argument (A2)",
+      "cefrLevel": "A2",
+      "skill": "reading",
+      "parentKey": "reading.scale_reading_for_information_argument",
+      "descriptor": "Can identify specific information in simpler written material he/she encounters such as letters, brochures and short newspaper articles describing events."
+    },
+    {
+      "key": "reading.scale_reading_for_information_argument.b1",
+      "title": "Reading for Information & Argument (B1)",
+      "cefrLevel": "B1",
+      "skill": "reading",
+      "parentKey": "reading.scale_reading_for_information_argument",
+      "descriptor": "Can identify the main conclusions in clearly signalled argumentative texts. Can recognise the line of argument in the treatment of the issue presented, though not necessarily in detail. Can recognise significant points in straightforward newspaper articles on familiar subjects."
+    },
+    {
+      "key": "reading.scale_reading_for_information_argument.b2",
+      "title": "Reading for Information & Argument (B2)",
+      "cefrLevel": "B2",
+      "skill": "reading",
+      "parentKey": "reading.scale_reading_for_information_argument",
+      "descriptor": "Can obtain information, ideas and opinions from highly specialised sources within his/her field. Can understand specialised articles outside his/her field, provided he/she can use a dictionary occasionally to confirm his/her interpretation of terminology. Can understand articles and reports concerned with contemporary problems in which the writers adopt particular stances or viewpoints."
+    },
+    {
+      "key": "reading.scale_reading_for_information_argument.c1",
+      "title": "Reading for Information & Argument (C1)",
+      "cefrLevel": "C1",
+      "skill": "reading",
+      "parentKey": "reading.scale_reading_for_information_argument",
+      "descriptor": "or academic life, identifying finer points of detail including attitudes and implied as well as stated opinions."
+    },
+    {
+      "key": "reading.scale_reading_instructions.a1",
+      "title": "Reading Instructions (A1)",
+      "cefrLevel": "A1",
+      "skill": "reading",
+      "parentKey": "reading.scale_reading_instructions",
+      "descriptor": "Can follow short, simple written directions (e.g., to go from X to Y)"
+    },
+    {
+      "key": "reading.scale_reading_instructions.a2",
+      "title": "Reading Instructions (A2)",
+      "cefrLevel": "A2",
+      "skill": "reading",
+      "parentKey": "reading.scale_reading_instructions",
+      "descriptor": "Can understand regulations, for example safety, when expressed in simple language. Can understand simple instructions on equipment encountered in everyday life - such as a public telephone."
+    },
+    {
+      "key": "reading.scale_reading_instructions.b1",
+      "title": "Reading Instructions (B1)",
+      "cefrLevel": "B1",
+      "skill": "reading",
+      "parentKey": "reading.scale_reading_instructions",
+      "descriptor": "Can understand clearly written, straightforward instructions for a piece of equipment"
+    },
+    {
+      "key": "reading.scale_reading_instructions.b2",
+      "title": "Reading Instructions (B2)",
+      "cefrLevel": "B2",
+      "skill": "reading",
+      "parentKey": "reading.scale_reading_instructions",
+      "descriptor": "Can understand lengthy, complex instructions in his field, including details on conditions and warnings, provided he/she can reread difficult sections."
+    },
+    {
+      "key": "reading.scale_reading_instructions.c1",
+      "title": "Reading Instructions (C1)",
+      "cefrLevel": "C1",
+      "skill": "reading",
+      "parentKey": "reading.scale_reading_instructions",
+      "descriptor": "instructions relate to his/her own area of speciality, provided he/she can reread difficult sections."
+    },
+    {
+      "key": "speaking.scale_overall_spoken_interaction.a1",
+      "title": "Overall Spoken Interaction (A1)",
+      "cefrLevel": "A1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_overall_spoken_interaction",
+      "descriptor": "Can interact in a simple way but communication is totally dependent on repetition at a slower rate of speech, rephrasing and repair. Can ask and answer simple questions, initiate and respond to simple statements in areas of immediate need or on very familiar topics. UNDERSTANDING A NATIVE SPEAKER INTERLOCUTOR Can understand everyday expressions aimed at the satisfaction of simple needs of a concrete type, delivered directly to him/her in clear, slow and repeated speech by a sympathetic speaker. Can understand questions and instructions addressed carefully and slowly to him/her and follow short, simple directions. CONVERSATION Can make an introduction and use basic greeting and leave-taking expressions. Can ask how people are and react to news. Can understand everyday expressions aimed at the satisfaction of simple needs of a concrete type, delivered directly to him/her in clear, slow and repeated speech by a sympathetic speaker."
+    },
+    {
+      "key": "speaking.scale_overall_spoken_interaction.a2",
+      "title": "Overall Spoken Interaction (A2)",
+      "cefrLevel": "A2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_overall_spoken_interaction",
+      "descriptor": "Can interact with reasonable ease in structured situations and short conversations, provided the other person helps if necessary. Can manage simple, routine exchanges without undue effort; can ask and answer questions and exchange ideas and information on familiar topics in predictable everyday situations. Can communicate in simple and routine tasks requiring a simple and direct exchange of information on familiar and routine matters to do with work and free time. Can handle very short social exchanges but is rarely able to understand enough to keep conversation going of his/her own accord. Can understand enough to manage simple, routine exchanges without undue effort. Can generally understand clear, standard speech on familiar matters directed at him/her, provided he/she can ask for repetition or reformulation from time to time. Can understand what is said clearly, slowly and directly to him/her in simple everyday conversation; can be made to understand, if the speaker can take the trouble. Can establish social contact: greetings and farewells; introductions; giving thanks. Can generally understand clear, standard speech on familiar matters directed at him/her, provided he/she can ask for repetition or reformulation from time to time. Can participate in short conversations in routine contexts on topics of interest. Can express how he/she feels in simple terms, and express thanks. Can handle very short social exchanges but is rarely able to understand enough to keep conversation going of his/her own accord, though he/she can be made to understand if the speaker will take the trouble. Can use simple everyday polite forms of greeting and address Can make and respond to invitations, invitations and apologies. Can say what he/she likes and dislikes."
+    },
+    {
+      "key": "speaking.scale_overall_spoken_interaction.b1",
+      "title": "Overall Spoken Interaction (B1)",
+      "cefrLevel": "B1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_overall_spoken_interaction",
+      "descriptor": "Can communicate with some confidence on familiar routine and non-routine matters related to his/her interests and professional field. Can exchange, check and confirm information, deal with less routine situations and explain why something is a problem. Can express thoughts on more abstract, cultural topics such as films, books, music etc. Can exploit a wide range of simple language to deal with most situations likely to arise whilst travelling. Can enter unprepared into conversation of familiar topics, express personal opinions and exchange information on topics that are familiar, of personal interest or pertinent to everyday life (e.g. family, hobbies, work, travel and current events). Can follow clearly articulated speech directed at him/her in everyday conversation, though will sometimes have to ask for repetition of particular words and phrases. Can enter unprepared into conversations on familiar topics. Can follow clearly articulated speech directed at him/her in everyday conversation, though will sometimes have to ask for repetition of particular words and phrases. Can maintain a conversation or discussion but may sometimes be difficult to follow when trying to say exactly what he/she would like to. Can express and respond to feelings such as surprise, happiness, sadness, interest and indifference."
+    },
+    {
+      "key": "speaking.scale_overall_spoken_interaction.b2",
+      "title": "Overall Spoken Interaction (B2)",
+      "cefrLevel": "B2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_overall_spoken_interaction",
+      "descriptor": "Can use the language fluently, accurately and effectively on a wide range of general, academic, vocational or leisure topics, marking clearly the relationships between ideas. Can communicate spontaneously with good grammatical control without much sign of having to restrict what he/she wants to say, adopting a level of formality appropriate to the circumstances. Can interact with a degree of fluency and spontaneity that makes regular interaction, and sustained relationships with native speakers quite possible without imposing strain on either party. Can highlight the personal significance of events and experiences, account for and sustain views clearly by providing relevant explanations and arguments. Can understand in detail what is said to him/her in the standard spoken language even in a noisy environment. Can engage in extended conversation on most general topics in a clearly participatory fashion, even in a noisy environment. Can sustain relationships with native speakers without unintentionally amusing or irritating them or requiring them to behave other than they would with a native speaker. Can convey degrees of emotion and highlight the personal significance of events and experiences."
+    },
+    {
+      "key": "speaking.scale_overall_spoken_interaction.c1",
+      "title": "Overall Spoken Interaction (C1)",
+      "cefrLevel": "C1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_overall_spoken_interaction",
+      "descriptor": "Can express him/herself fluently and spontaneously, almost effortlessly. Has a good command of a broad lexical repertoire allowing gaps to be readily overcome with circumlocutions. There is little obvious searching for expressions or avoidance strategies; only a conceptually difficult subject can hinder a natural, smooth flow of language. Can understand in detail speech on abstract and complex topics of a specialist nature beyond his/her own field, though he/she may need to confirm occasional details, especially if the accent is unfamiliar. Can use language flexibly and effectively for social purposes, including emotional, allusive and joking usage."
+    },
+    {
+      "key": "speaking.scale_overall_spoken_interaction.c2",
+      "title": "Overall Spoken Interaction (C2)",
+      "cefrLevel": "C2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_overall_spoken_interaction",
+      "descriptor": "Has a good command of idiomatic expressions and colloquialisms with awareness of connotative levels of meaning. Can convey finer shades of meaning precisely by using, with reasonable accuracy, a wide range of modification devices. Can backtrack and restructure around a difficulty so smoothly the interlocutor is hardly aware of it. Can understand any native speaker interlocutor, even on abstract and complex topics of a specialist nature beyond his/her own field, given an opportunity to adjust to a non-standard accent or dialect. Can converse comfortably and appropriately, unhampered by any linguistic limitations in conducting a full social and personal life."
+    },
+    {
+      "key": "speaking.scale_informal_discussion_with_friends.a1",
+      "title": "Informal Discussion (With Friends) (A1)",
+      "cefrLevel": "A1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_informal_discussion_with_friends",
+      "descriptor": "No descriptors available"
+    },
+    {
+      "key": "speaking.scale_informal_discussion_with_friends.a2",
+      "title": "Informal Discussion (With Friends) (A2)",
+      "cefrLevel": "A2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_informal_discussion_with_friends",
+      "descriptor": "Can generally identify the topic of discussion around her which is conducted slowly and clearly. Can discuss what to do in the evening, at the weekend. Can make and respond to suggestions. Can agree and disagree with others. Can discuss everyday practical issues in a simple way when addressed clearly, slowly and directly. Can discuss what to do, where to go and make arrangements to meet."
+    },
+    {
+      "key": "speaking.scale_informal_discussion_with_friends.b1",
+      "title": "Informal Discussion (With Friends) (B1)",
+      "cefrLevel": "B1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_informal_discussion_with_friends",
+      "descriptor": "Can follow much of what is said around him/her on general topics provided interlocutors avoid very idiomatic usage and articulate clearly. Can express his/her thoughts about abstract or cultural topics such as music, films. Can explain why something is a problem. Can give brief comments on the views of others. Can compare and contrast alternatives, discussing what to do, where to go, who or which to choose etc. Can generally follow the main points in an informal discussion with friends provided speech is clearly articulated in standard dialect. Can give or seek personal views and opinions in discussing topics of interest. Can make his/her opinions and reactions understood as regards solutions to problems or practical questions of where to go, what to do, how to organise an event (e.g. an outing). Can express belief, opinion, agreement and disagreement politely."
+    },
+    {
+      "key": "speaking.scale_informal_discussion_with_friends.b2",
+      "title": "Informal Discussion (With Friends) (B2)",
+      "cefrLevel": "B2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_informal_discussion_with_friends",
+      "descriptor": "Can keep up with an animated discussion between native speakers Can express his/her ideas and opinions with precision, present and respond to complex lines of argument convincingly. Can take an active part in informal discussion in familiar contexts, commenting, putting point of view clearly, evaluating alternative proposals and making and responding to hypotheses. Can with some effort catch much of what is said around him/her in discussion, but may find it difficult to participate effectively in discussion with several native speakers who do not modify their language in any way. Can account for and sustain his/her opinions in discussion by providing relevant explanations, arguments and comments."
+    },
+    {
+      "key": "speaking.scale_informal_discussion_with_friends.c1",
+      "title": "Informal Discussion (With Friends) (C1)",
+      "cefrLevel": "C1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_informal_discussion_with_friends",
+      "descriptor": "Can easily follow and contribute to complex interactions between third parties in group discussion even on abstract, complex unfamiliar topics."
+    },
+    {
+      "key": "speaking.scale_formal_discussion_meetings.a1",
+      "title": "Formal Discussion (Meetings) (A1)",
+      "cefrLevel": "A1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_formal_discussion_meetings",
+      "descriptor": "Can understand questions and instructions addressed carefully and slowly to him/her and follow short, simple directions. Can ask people for things, and give people things."
+    },
+    {
+      "key": "speaking.scale_formal_discussion_meetings.a2",
+      "title": "Formal Discussion (Meetings) (A2)",
+      "cefrLevel": "A2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_formal_discussion_meetings",
+      "descriptor": "Can generally follow changes of topic in formal discussion related to his/her field which is conducted slowly and clearly. Can exchange relevant information and give his/her opinion on practical problems when asked directly, provided he/she receives some help with formulation and can ask for repetition of key points if necessary. Can say what he/she thinks about things when addressed directly in a formal meeting, provided he/she can ask for repetition of key points if necessary. Can understand enough to manage simple, routine tasks without undue effort, asking very simply for repetition when he/she does not understand. Can discuss what to do next, making and responding to suggestions, asking for and giving directions. Can indicate when he/she is following and can be made to understand what is necessary, if the speaker takes the trouble. Can communicate in simple and routine tasks using simple phrases to ask for and provide things, to get simple information and to discuss what to do next."
+    },
+    {
+      "key": "speaking.scale_formal_discussion_meetings.b1",
+      "title": "Formal Discussion (Meetings) (B1)",
+      "cefrLevel": "B1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_formal_discussion_meetings",
+      "descriptor": "Can follow much of what is said that is related to his/her field, provided interlocutors avoid very idiomatic usage and articulate clearly. Can put over a point of view clearly, but has difficulty engaging in debate. Can take part in routine formal discussion of familiar subjects which is conducted in clearly articulated speech in the standard dialect and which involves the exchange of factual information, receiving instructions or the discussion of solutions to practical problems. Can follow what is said, though he/she may occasionally has to ask for repetition or clarification if the other people's talk is rapid or extended. Can explain why something is a problem, discuss what to do next, compare and contrast alternatives. Can give brief comments on the views of others. Can generally follow what is said and, when necessary, can repeat back part of what someone has said to confirm mutual understanding. Can make his/her opinions and reactions understood as regards possible solutions or the question of what to do next, giving brief reasons and explanations. Can invite others to give their views on how to proceed."
+    },
+    {
+      "key": "speaking.scale_formal_discussion_meetings.b2",
+      "title": "Formal Discussion (Meetings) (B2)",
+      "cefrLevel": "B2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_formal_discussion_meetings",
+      "descriptor": "Can keep up with an animated discussion, identifying accurately arguments supporting and opposing points of view. Can express his/her ideas and opinions with precision, present and respond to complex lines of argument convincingly. Can participate actively in routine and non routine formal discussion. Can follow the discussion on matters related to his/her field, understand in detail the points given prominence by the speaker. Can contribute, account for and sustain his/her opinion, evaluate alternative proposals and make and respond to hypotheses. Can understand detailed instructions reliably. Can help along the progress of the work by inviting others to join in, say what they think etc. Can outline an issue or a problem clearly, speculating about causes or consequences, and weighing advantages and disadvantages of different approaches."
+    },
+    {
+      "key": "speaking.scale_formal_discussion_meetings.c1",
+      "title": "Formal Discussion (Meetings) (C1)",
+      "cefrLevel": "C1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_formal_discussion_meetings",
+      "descriptor": "Can easily keep up with the debate, even on abstract, complex unfamiliar topics. Can argue a formal position convincingly, responding to questions and comments and answering complex lines of counter argument fluently, spontaneously and appropriately."
+    },
+    {
+      "key": "speaking.scale_formal_discussion_meetings.c2",
+      "title": "Formal Discussion (Meetings) (C2)",
+      "cefrLevel": "C2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_formal_discussion_meetings",
+      "descriptor": "Can hold his/her own in formal discussion of complex issues, putting an articulate and persuasive argument, at no disadvantage to native speakers."
+    },
+    {
+      "key": "speaking.scale_transactions_to_obtain_goods_services.a1",
+      "title": "Transactions To Obtain Goods & Services (A1)",
+      "cefrLevel": "A1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_transactions_to_obtain_goods_services",
+      "descriptor": "Can ask people for things and give people things. Can handle numbers, quantities, cost and time."
+    },
+    {
+      "key": "speaking.scale_transactions_to_obtain_goods_services.a2",
+      "title": "Transactions To Obtain Goods & Services (A2)",
+      "cefrLevel": "A2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_transactions_to_obtain_goods_services",
+      "descriptor": "Can deal with common aspects of everyday living such as travel, lodgings, eating and shopping. Can get all the information needed from a tourist office, as long as it is of a straightforward, non-specialised nature. Can ask for and provide everyday goods and services. Can get simple information about travel, use public transport: buses, trains, and taxis, ask and give directions, and buy tickets. Can ask about things and make simple transactions in shops, post offices or banks. Can give and receive information about quantities, numbers, prices etc. Can make simple purchases by stating what is wanted and asking the price. Can order a meal."
+    },
+    {
+      "key": "speaking.scale_transactions_to_obtain_goods_services.b1",
+      "title": "Transactions To Obtain Goods & Services (B1)",
+      "cefrLevel": "B1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_transactions_to_obtain_goods_services",
+      "descriptor": "Can deal with most transactions likely to arise whilst travelling, arranging travel or accommodation, or dealing with authorities during a foreign visit. Can cope with less routine situations in shops, post office, bank, e.g. returning an unsatisfactory purchase. Can make a complaint. Can deal with most situations likely to arise when making travel arrangements through an agent or when actually travelling, e.g., asking passenger where to get off for unfamiliar destination."
+    },
+    {
+      "key": "speaking.scale_transactions_to_obtain_goods_services.b2",
+      "title": "Transactions To Obtain Goods & Services (B2)",
+      "cefrLevel": "B2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_transactions_to_obtain_goods_services",
+      "descriptor": "Can cope linguistically to negotiate a solution to a dispute like an undeserved traffic ticket, financial responsibility for damage in a flat, for blame regarding an accident. Can outline a case for compensation, using persuasive language to demand satisfaction and state clearly the limits to any concession he/she is prepared to make. Can explain a problem which has arisen and make it clear that the provider of the service/customer must make a concession."
+    },
+    {
+      "key": "speaking.scale_information_exchange.a1",
+      "title": "Information Exchange (A1)",
+      "cefrLevel": "A1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_information_exchange",
+      "descriptor": "Can understand questions and instructions addressed carefully and slowly to him/her and follow short, simple directions. Can ask and answer simple questions, initiate and respond to simple statements in areas of immediate need or on very familiar topics. Can ask and answer questions about themselves and other people, where they live, people they know, things they have. Can indicate time by such phrases as next week, last Friday, in November, three o'clock."
+    },
+    {
+      "key": "speaking.scale_information_exchange.a2",
+      "title": "Information Exchange (A2)",
+      "cefrLevel": "A2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_information_exchange",
+      "descriptor": "Can understand enough to manage simple, routine exchanges without undue effort. Can deal with practical everyday demands: finding out and passing on straightforward factual information. Can ask and answer questions about habits and routines. Can ask and answer questions about pastimes and past activities. Can give and follow simple directions and instructions e.g. explain how to get somewhere. Can communicate in simple and routine tasks requiring a simple and direct exchange of information. Can exchange limited information on familiar and routine operational matters Can ask and answer questions about what they do at work and in free time Can ask for and give directions referring to a map or plan. Can ask for and provide personal information."
+    },
+    {
+      "key": "speaking.scale_information_exchange.b1",
+      "title": "Information Exchange (B1)",
+      "cefrLevel": "B1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_information_exchange",
+      "descriptor": "Can exchange, check and confirm accumulated factual information on familiar routine and non-routine matters within his field with some confidence. Can describe how to do something, giving detailed instructions. Can summarise and give his or her opinion about a short story, article, talk, discussion interview, or documentary and answer further questions of detail. Can find out and pass on straightforward factual information. Can ask for and follow detailed directions Can obtain more detailed information."
+    },
+    {
+      "key": "speaking.scale_information_exchange.b2",
+      "title": "Information Exchange (B2)",
+      "cefrLevel": "B2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_information_exchange",
+      "descriptor": "Can understand and exchange complex information and advice on the full range of matters related to his/her occupational role. Can pass on detailed information reliably. Can give a clear, detailed description of how to carry out a procedure. Can synthesise and report information and arguments from a number of sources."
+    },
+    {
+      "key": "speaking.scale_interviewing_and_being_interviewed.a1",
+      "title": "Interviewing and Being Interviewed (A1)",
+      "cefrLevel": "A1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_interviewing_and_being_interviewed",
+      "descriptor": "Can reply in an interview to simple direct questions spoken very slowly and clearly in direct non-idiomatic speech about personal details."
+    },
+    {
+      "key": "speaking.scale_interviewing_and_being_interviewed.a2",
+      "title": "Interviewing and Being Interviewed (A2)",
+      "cefrLevel": "A2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_interviewing_and_being_interviewed",
+      "descriptor": "Can make him/herself understood in an interview and communicating ideas and information on familiar topics, provided he/she can ask for clarification occasionally, and is given some help to express what he/she wants to. Can answer simple questions and respond to simple statements in an interview."
+    },
+    {
+      "key": "speaking.scale_interviewing_and_being_interviewed.b1",
+      "title": "Interviewing and Being Interviewed (B1)",
+      "cefrLevel": "B1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_interviewing_and_being_interviewed",
+      "descriptor": "Can provide concrete information required in an interview/consultation (e.g. describe symptoms to a doctor) but does so with limited precision. Can carry out a prepared interview, checking and confirming information, though he/she may occasionally have to ask for repetition if the other person's response is rapid or extended. Can take some initiatives in an interview/consultation (e.g. to bring up a new subject) but is very dependent on interviewer in the interaction. Can use a prepared questionnaire to carry out a structured interview, with some spontaneous follow up questions."
+    },
+    {
+      "key": "speaking.scale_interviewing_and_being_interviewed.b2",
+      "title": "Interviewing and Being Interviewed (B2)",
+      "cefrLevel": "B2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_interviewing_and_being_interviewed",
+      "descriptor": "Can carry out an effective, fluent interview, departing spontaneously from prepared questions, following up and probing interesting replies. Can take initiatives in an interview, expand and develop ideas with little help or prodding from an interviewer."
+    },
+    {
+      "key": "speaking.scale_interviewing_and_being_interviewed.c1",
+      "title": "Interviewing and Being Interviewed (C1)",
+      "cefrLevel": "C1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_interviewing_and_being_interviewed",
+      "descriptor": "Can participate fully in an interview, as either interviewer or interviewee, expanding and developing the point being discussed fluently without any support, and handling interjections well."
+    },
+    {
+      "key": "speaking.scale_interviewing_and_being_interviewed.c2",
+      "title": "Interviewing and Being Interviewed (C2)",
+      "cefrLevel": "C2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_interviewing_and_being_interviewed",
+      "descriptor": "Can keep up his/her side of the dialogue extremely well, structuring the talk and interacting authoritatively with complete fluency as interviewer or interviewee, at no disadvantage to a native speaker."
+    },
+    {
+      "key": "writing.scale_overall_written_interaction.a1",
+      "title": "Overall Written Interaction (A1)",
+      "cefrLevel": "A1",
+      "skill": "writing",
+      "parentKey": "writing.scale_overall_written_interaction",
+      "descriptor": "Can ask for or pass on personal details in written form"
+    },
+    {
+      "key": "writing.scale_overall_written_interaction.a2",
+      "title": "Overall Written Interaction (A2)",
+      "cefrLevel": "A2",
+      "skill": "writing",
+      "parentKey": "writing.scale_overall_written_interaction",
+      "descriptor": "Can write short, simple formulaic notes relating to matters in areas of immediate need."
+    },
+    {
+      "key": "writing.scale_overall_written_interaction.b1",
+      "title": "Overall Written Interaction (B1)",
+      "cefrLevel": "B1",
+      "skill": "writing",
+      "parentKey": "writing.scale_overall_written_interaction",
+      "descriptor": "Can convey information and ideas on abstract as well as concrete topics, check information and ask about or explain problems with reasonable precision. Can write personal letters and notes asking for or conveying simple information of immediate relevance, getting across the point he/she feels to be important"
+    },
+    {
+      "key": "writing.scale_overall_written_interaction.b2",
+      "title": "Overall Written Interaction (B2)",
+      "cefrLevel": "B2",
+      "skill": "writing",
+      "parentKey": "writing.scale_overall_written_interaction",
+      "descriptor": "Can express news and views effectively in writing, and relate to those of others."
+    },
+    {
+      "key": "writing.scale_overall_written_interaction.c1",
+      "title": "Overall Written Interaction (C1)",
+      "cefrLevel": "C1",
+      "skill": "writing",
+      "parentKey": "writing.scale_overall_written_interaction",
+      "descriptor": "Can express him/herself with clarity and precision, relating to the addressee flexibly and effectively."
+    },
+    {
+      "key": "writing.scale_correspondence.a1",
+      "title": "Correspondence (A1)",
+      "cefrLevel": "A1",
+      "skill": "writing",
+      "parentKey": "writing.scale_correspondence",
+      "descriptor": "Can write a short simple postcard"
+    },
+    {
+      "key": "writing.scale_correspondence.a2",
+      "title": "Correspondence (A2)",
+      "cefrLevel": "A2",
+      "skill": "writing",
+      "parentKey": "writing.scale_correspondence",
+      "descriptor": "Can write very simple personal letters expressing thanks and apology."
+    },
+    {
+      "key": "writing.scale_correspondence.b1",
+      "title": "Correspondence (B1)",
+      "cefrLevel": "B1",
+      "skill": "writing",
+      "parentKey": "writing.scale_correspondence",
+      "descriptor": "Can write personal letters giving news and expressing thoughts about abstract or cultural topics such as music, films. Can write personal letters describing experiences, feelings and events in some detail."
+    },
+    {
+      "key": "writing.scale_correspondence.b2",
+      "title": "Correspondence (B2)",
+      "cefrLevel": "B2",
+      "skill": "writing",
+      "parentKey": "writing.scale_correspondence",
+      "descriptor": "Can write letters conveying degrees of emotion and highlighting the personal significance of events and experiences and commenting on the correspondent's news and views."
+    },
+    {
+      "key": "writing.scale_correspondence.c1",
+      "title": "Correspondence (C1)",
+      "cefrLevel": "C1",
+      "skill": "writing",
+      "parentKey": "writing.scale_correspondence",
+      "descriptor": "Can express him/herself with clarity and precision in personal correspondence, using language flexibly and effectively, including emotional, allusive and joking usage."
+    },
+    {
+      "key": "writing.scale_notes_messages_forms.a1",
+      "title": "Notes, Messages & Forms (A1)",
+      "cefrLevel": "A1",
+      "skill": "writing",
+      "parentKey": "writing.scale_notes_messages_forms",
+      "descriptor": "Can write numbers and dates, own name, nationality, address, age, date of birth or arrival in the country etc. such as on a hotel registration form."
+    },
+    {
+      "key": "writing.scale_notes_messages_forms.a2",
+      "title": "Notes, Messages & Forms (A2)",
+      "cefrLevel": "A2",
+      "skill": "writing",
+      "parentKey": "writing.scale_notes_messages_forms",
+      "descriptor": "Can take a short, simple message provided he/she can ask for repetition and reformulation. Can write short, simple notes and messages relating to matters in areas of immediate need."
+    },
+    {
+      "key": "writing.scale_notes_messages_forms.b1",
+      "title": "Notes, Messages & Forms (B1)",
+      "cefrLevel": "B1",
+      "skill": "writing",
+      "parentKey": "writing.scale_notes_messages_forms",
+      "descriptor": "Can take messages communicating enquiries, explaining problems. Can write notes conveying simple information of immediate relevance to friends, service people, teachers and others who feature in his/her everyday life, getting across comprehensibly the points he/she feels are important."
+    },
+    {
+      "key": "speaking.scale_overall_spoken_production.a1",
+      "title": "Overall Spoken Production (A1)",
+      "cefrLevel": "A1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_overall_spoken_production",
+      "descriptor": "Can produce simple mainly isolated phrases about people and places. SUSTAINED MONOLOGUE: Describing Experience Can describe him/herself, what he/she does and where he/she lives. SUSTAINED MONOLOGUE: Putting a Case (e.g. in a Debate)"
+    },
+    {
+      "key": "speaking.scale_overall_spoken_production.a2",
+      "title": "Overall Spoken Production (A2)",
+      "cefrLevel": "A2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_overall_spoken_production",
+      "descriptor": "Can give a simple description or presentation of people, living or working conditions, daily routines. likes/dislikes etc. as a short series of simple phrases and sentences linked into a list. Can tell a story or describe something in a simple list of points. Can describe everyday aspects of his environment e.g. people, places, a job or study experience. Can give short, basic descriptions of events and activities. Can describe plans and arrangements, habits and routines, past activities and personal experiences. Can use simple descriptive language to make brief statements about and compare objects and possessions. Can explain what he/she likes or dislikes about something. Can describe his/her family, living conditions, educational background, present or most recent job. Can describe people, places and possessions in simple terms."
+    },
+    {
+      "key": "speaking.scale_overall_spoken_production.b1",
+      "title": "Overall Spoken Production (B1)",
+      "cefrLevel": "B1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_overall_spoken_production",
+      "descriptor": "Can reasonably fluently sustain a straightforward description of one of a variety of subjects within his/her field of interest, presenting it as a linear sequence of points. Can give straightforward descriptions on a variety of familiar subjects within his field of interest. Can reasonably fluently relate a straightforward narrative or description as a linear sequence of points. Can give detailed accounts of experiences, describing feelings and reactions. Can relate details of unpredictable occurrences, e.g., an accident. Can relate the plot of a book or film and describe his/her reactions. Can describe dreams, hopes and ambitions. Can describe events, real or imagined. Can narrate a story. Can briefly give reasons and explanations for opinions, plans and actions."
+    },
+    {
+      "key": "speaking.scale_overall_spoken_production.b2",
+      "title": "Overall Spoken Production (B2)",
+      "cefrLevel": "B2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_overall_spoken_production",
+      "descriptor": "Can give clear, detailed descriptions and presentations on a wide range of subjects related to his/her field of interest, expanding and supporting ideas with subsidiary points and relevant examples. Can give clear, detailed descriptions on a wide range of subjects related to his field of interest. points and relevant examples. Can construct a chain of reasoned argument: Can explain a viewpoint on a topical issue giving the advantages and disadvantages of various options. Can develop an argument well enough to be followed without difficulty most of the time."
+    },
+    {
+      "key": "speaking.scale_overall_spoken_production.c1",
+      "title": "Overall Spoken Production (C1)",
+      "cefrLevel": "C1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_overall_spoken_production",
+      "descriptor": "Can give clear, detailed descriptions and presentations on complex subjects, integrating sub themes, developing particular points and rounding off with an appropriate conclusion. Can give clear, systematically developed descriptions and presentations, with appropriate highlighting of significant points, and relevant supporting detail. Can give clear, detailed descriptions of complex subjects. Can give elaborate descriptions and narratives, integrating sub themes, developing particular points and rounding off with an appropriate conclusion."
+    },
+    {
+      "key": "speaking.scale_overall_spoken_production.c2",
+      "title": "Overall Spoken Production (C2)",
+      "cefrLevel": "C2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_overall_spoken_production",
+      "descriptor": "Can produce clear, smoothly flowing well-structured speech with an effective logical structure which helps the recipient to notice and remember significant points. Can give clear, smoothly flowing, elaborate and often memorable descriptions."
+    },
+    {
+      "key": "speaking.scale_public_announcements.a2",
+      "title": "Public Announcements (A2)",
+      "cefrLevel": "A2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_public_announcements",
+      "descriptor": "Can deliver very short, rehearsed announcements of predictable, learnt content which are intelligible to listeners who are prepared to concentrate."
+    },
+    {
+      "key": "speaking.scale_public_announcements.b1",
+      "title": "Public Announcements (B1)",
+      "cefrLevel": "B1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_public_announcements",
+      "descriptor": "Can deliver short, rehearsed announcements on a topic pertinent to everyday occurrences in his/her field which, despite possibly very foreign stress and intonation, are nevertheless clearly intelligible."
+    },
+    {
+      "key": "speaking.scale_public_announcements.b2",
+      "title": "Public Announcements (B2)",
+      "cefrLevel": "B2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_public_announcements",
+      "descriptor": "Can deliver announcements on most general topics with a degree of clarity, fluency and spontaneity which causes no strain or inconvenience to the listener."
+    },
+    {
+      "key": "speaking.scale_public_announcements.c1",
+      "title": "Public Announcements (C1)",
+      "cefrLevel": "C1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_public_announcements",
+      "descriptor": "Can deliver announcements fluently, almost effortlessly, using stress and intonation to convey finer shades of meaning precisely."
+    },
+    {
+      "key": "speaking.scale_addressing_audiences.a1",
+      "title": "Addressing Audiences (A1)",
+      "cefrLevel": "A1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_addressing_audiences",
+      "descriptor": "Can read a very short, rehearsed statement - e.g. to introduce a speaker, propose a toast. OVERALL WRITTEN PRODUCTION Can write simple isolated phrases and sentences. Note: The descriptors on this scale and on the two sub-scales which follow (Creative Writing; Reports & Essays) sub-scale have not been empirically calibrated with the measurement model. The descriptors for these three scales have therefore been created by recombining elements of descriptors from other scales CREATIVE WRITING Can write simple phrases and sentences about themselves and imaginary people, where they live and what they do."
+    },
+    {
+      "key": "speaking.scale_addressing_audiences.a2",
+      "title": "Addressing Audiences (A2)",
+      "cefrLevel": "A2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_addressing_audiences",
+      "descriptor": "Can give a short, rehearsed presentation on a topic pertinent to his everyday life, briefly give reasons and explanations for opinions, plans and actions. Can cope with a limited number of straightforward follow up questions. Can give a short, rehearsed, basic presentation on a familiar subject. Can answer straightforward follow up questions if he/she can as for repetition and if some help with the formulation of his reply is possible. Can write a series of simple phrases and sentences linked with simple connectors like \"and\", \"but\" and \"because\". Can write about everyday aspects of his environment e.g. people, places, a job or study experience in linked sentences. Can write very short, basic descriptions of events, past activities and personal experiences. Can write a series of simple phrases and sentences about their family, living conditions, educational background, present or most recent job. Can write short, simple imaginary biographies and simple poems about people."
+    },
+    {
+      "key": "speaking.scale_addressing_audiences.b1",
+      "title": "Addressing Audiences (B1)",
+      "cefrLevel": "B1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_addressing_audiences",
+      "descriptor": "Can give a prepared straightforward presentation on a familiar topic within his/her field which is clear enough to be followed without difficulty most of the time, and in which the main points are explained with reasonable precision. Can take follow up questions, but may have to ask for repetition if the speech was rapid. Can write straightforward connected texts on a range of familiar subjects within his field of interest, by linking a series of shorter discrete elements into a linear sequence. Can write straightforward, detailed descriptions on a range of familiar subjects within his field of interest. Can write accounts of experiences, describing feelings and reactions in simple connected text. Can write a description of an event, a recent trip - real or imagined. Can narrate a story."
+    },
+    {
+      "key": "speaking.scale_addressing_audiences.b2",
+      "title": "Addressing Audiences (B2)",
+      "cefrLevel": "B2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_addressing_audiences",
+      "descriptor": "Can give a clear, systematically developed presentation, with highlighting of significant points, and relevant supporting detail. Can depart spontaneously from a prepared text and follow up interesting points raised by members of the audience, often showing remarkable fluency and ease of expression. Can give a clear, prepared presentation, giving reasons in support of or against a particular point of view and giving the advantages and disadvantages of various options. Can take a series of follow up questions with a degree of fluency and spontaneity which poses no strain for either him/herself or the audience. Can write clear, detailed texts on a variety of subjects related to his field of interest, synthesising and evaluating information and arguments from a number of sources. Can write clear, detailed descriptions of real or imaginary events and experiences marking the relationship between ideas in clear connected text, and following established conventions of the genre concerned. Can write clear, detailed descriptions on a variety of subjects related to his/her field of interest. Can write a review of a film, book or play."
+    },
+    {
+      "key": "speaking.scale_addressing_audiences.c1",
+      "title": "Addressing Audiences (C1)",
+      "cefrLevel": "C1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_addressing_audiences",
+      "descriptor": "Can give a clear, well-structured presentation of a complex subject, expanding and supporting points of view at some length with subsidiary points, reasons and relevant examples. Can handle interjections well, responding spontaneously and almost effortlessly. Can write clear, well-structured texts of complex subjects, underlining the relevant salient issues, expanding and supporting points of view at some length with subsidiary points, reasons and relevant examples, and rounding off with an appropriate conclusion. Can write clear, detailed, well-structured and developed descriptions and imaginative texts in an assured, personal, natural style appropriate to the reader in mind."
+    },
+    {
+      "key": "speaking.scale_addressing_audiences.c2",
+      "title": "Addressing Audiences (C2)",
+      "cefrLevel": "C2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_addressing_audiences",
+      "descriptor": "Can present a complex topic confidently and articulately to an audience unfamiliar with it, structuring and adapting the talk flexibly to meet the audience's needs. Can handle difficult and even hostile questioning Can write clear, smoothly flowing, complex texts in an appropriate and effective style and a logical structure which helps the reader to find significant points. Can write clear, smoothly flowing, and fully engrossing stories and descriptions of experience in a style appropriate to the genre adopted."
+    },
+    {
+      "key": "writing.scale_reports_essays.a2",
+      "title": "Reports & Essays (A2)",
+      "cefrLevel": "A2",
+      "skill": "writing",
+      "parentKey": "writing.scale_reports_essays",
+      "descriptor": "Can use an idea of the overall meaning of short texts and utterances on everyday topics of a concrete type to derive the probable meaning of unknown words from the context."
+    },
+    {
+      "key": "writing.scale_reports_essays.b1",
+      "title": "Reports & Essays (B1)",
+      "cefrLevel": "B1",
+      "skill": "writing",
+      "parentKey": "writing.scale_reports_essays",
+      "descriptor": "Can write short, simple essays on topics of interest. Can summarise, report and give his/her opinion about accumulated factual information on familiar routine and non-routine matters within his field with some confidence. Can write very brief, reports to a standard conventionalised format, which pass on routine factual information and state reasons for actions. Can identify unfamiliar words from the context on topics related to his/her field and interests. Can extrapolate the meaning of occasional unknown words from the context and deduce sentence meaning provided the topic discussed is familiar."
+    },
+    {
+      "key": "writing.scale_reports_essays.b2",
+      "title": "Reports & Essays (B2)",
+      "cefrLevel": "B2",
+      "skill": "writing",
+      "parentKey": "writing.scale_reports_essays",
+      "descriptor": "Can write an essay or report that develops an argument systematically with appropriate highlighting of significant points and relevant supporting detail. Can evaluate different ideas or solutions to a problem. Can write an essay or report which develops an argument, giving reasons in support of or against a particular point of view and explaining the advantages and disadvantages of various options. Can synthesise information and arguments from a number of sources. Can use a variety of strategies to achieve comprehension, including listening for main points; checking comprehension by using contextual clues."
+    },
+    {
+      "key": "writing.scale_reports_essays.c1",
+      "title": "Reports & Essays (C1)",
+      "cefrLevel": "C1",
+      "skill": "writing",
+      "parentKey": "writing.scale_reports_essays",
+      "descriptor": "Can expand and support points of view at some length with subsidiary points, reasons and relevant examples. Is skilled at using contextual, grammatical and lexical cues to infer attitude, mood and intentions and anticipate what will come next."
+    },
+    {
+      "key": "writing.scale_reports_essays.c2",
+      "title": "Reports & Essays (C2)",
+      "cefrLevel": "C2",
+      "skill": "writing",
+      "parentKey": "writing.scale_reports_essays",
+      "descriptor": "appreciation of proposals or literary works. Can provide an appropriate and effective logical structure which helps the reader to find significant points. Can write clear, well-structured expositions of complex subjects, underlining the relevant salient issues."
+    },
+    {
+      "key": "speaking.scale_taking_the_floor_turntaking.a2",
+      "title": "Taking the Floor (Turntaking) (A2)",
+      "cefrLevel": "A2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_taking_the_floor_turntaking",
+      "descriptor": "Can use simple techniques to start, maintain, or end a short conversation. Can initiate, maintain and close simple, face-to-face conversation. Can ask for attention."
+    },
+    {
+      "key": "speaking.scale_taking_the_floor_turntaking.b1",
+      "title": "Taking the Floor (Turntaking) (B1)",
+      "cefrLevel": "B1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_taking_the_floor_turntaking",
+      "descriptor": "Can intervene in a discussion on a familiar topic, using a suitable phrase to get the floor. Can initiate, maintain and close simple face-to-face conversation on topics that are familiar or of personal interest."
+    },
+    {
+      "key": "speaking.scale_taking_the_floor_turntaking.b2",
+      "title": "Taking the Floor (Turntaking) (B2)",
+      "cefrLevel": "B2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_taking_the_floor_turntaking",
+      "descriptor": "Can intervene appropriately in discussion, exploiting appropriate language to do so. Can initiate, maintain and end discourse appropriately with effective turntaking. Can initiate discourse, take his turn when appropriate and end conversation when he/she needs to, though he/she may not always do this elegantly. Can use stock phrases (e.g. \"That's a difficult question to answer\") to gain time and keep the turn whilst formulating what to say."
+    },
+    {
+      "key": "speaking.scale_taking_the_floor_turntaking.c1",
+      "title": "Taking the Floor (Turntaking) (C1)",
+      "cefrLevel": "C1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_taking_the_floor_turntaking",
+      "descriptor": "Can select a suitable phrase from a readily available range of discourse functions to preface his remarks appropriately in order to get the floor, or to gain time and keep the floor whilst thinking."
+    },
+    {
+      "key": "speaking.scale_cooperating.a2",
+      "title": "Cooperating (A2)",
+      "cefrLevel": "A2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_cooperating",
+      "descriptor": "Can indicate when he/she is following."
+    },
+    {
+      "key": "speaking.scale_cooperating.b1",
+      "title": "Cooperating (B1)",
+      "cefrLevel": "B1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_cooperating",
+      "descriptor": "Can exploit a basic repertoire of language and strategies to help keep a conversation or discussion going. Can summarise the point reached in a discussion and so help focus the talk. Can repeat back part of what someone has said to confirm mutual understanding and help keep the development of ideas on course. Can invite others into the discussion."
+    },
+    {
+      "key": "speaking.scale_cooperating.b2",
+      "title": "Cooperating (B2)",
+      "cefrLevel": "B2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_cooperating",
+      "descriptor": "Can give feedback on and follow up statements and inferences and so help the development of the discussion. Can help the discussion along on familiar ground, confirming comprehension, inviting others in, etc."
+    },
+    {
+      "key": "speaking.scale_cooperating.c1",
+      "title": "Cooperating (C1)",
+      "cefrLevel": "C1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_cooperating",
+      "descriptor": "Can relate own contribution skillfully to those of other speakers."
+    },
+    {
+      "key": "speaking.scale_asking_for_clarification.a2",
+      "title": "Asking for Clarification (A2)",
+      "cefrLevel": "A2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_asking_for_clarification",
+      "descriptor": "Can ask for clarification about key words or phrases not understood using stock phrases. Can say he/she didn't follow."
+    },
+    {
+      "key": "speaking.scale_asking_for_clarification.b1",
+      "title": "Asking for Clarification (B1)",
+      "cefrLevel": "B1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_asking_for_clarification",
+      "descriptor": "Can ask someone to clarify or elaborate what he or she has just said. Can ask very simply for repetition when he/she does not understand."
+    },
+    {
+      "key": "speaking.scale_asking_for_clarification.b2",
+      "title": "Asking for Clarification (B2)",
+      "cefrLevel": "B2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_asking_for_clarification",
+      "descriptor": "Can ask follow up questions to check that he/she has understood what a speaker intended to say, and get clarification of ambiguous points."
+    },
+    {
+      "key": "speaking.scale_planning.b1",
+      "title": "Planning (B1)",
+      "cefrLevel": "B1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_planning",
+      "descriptor": "Can work out how to communicate the main point(s) he/she wants to get across, exploiting any resources available and limiting the message to what he/she can recall or find the means to express. Can recall and rehearse an appropriate set of phrases from his repertoire."
+    },
+    {
+      "key": "speaking.scale_planning.b2",
+      "title": "Planning (B2)",
+      "cefrLevel": "B2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_planning",
+      "descriptor": "Can plan what is to be said and the means to say it, considering the effect on the recipient/s. Can rehearse and try out new combinations and expressions, inviting feedback."
+    },
+    {
+      "key": "speaking.scale_compensating.a2",
+      "title": "Compensating (A2)",
+      "cefrLevel": "A2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_compensating",
+      "descriptor": "Can use an inadequate word from his repertoire and use gesture to clarify what he/she wants to say. Can identify what he/she means by pointing to it (e.g. \"I'd like this, please)."
+    },
+    {
+      "key": "speaking.scale_compensating.b1",
+      "title": "Compensating (B1)",
+      "cefrLevel": "B1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_compensating",
+      "descriptor": "Can define the features of something concrete for which he/she can't remember the word. Can convey meaning by qualifying a word meaning something similar (e.g. a truck for people = bus). Can use a simple word meaning something similar to the concept he/she wants to convey and invites \"correction\". Can foreignise a mother tongue word and ask for confirmation."
+    },
+    {
+      "key": "speaking.scale_compensating.b2",
+      "title": "Compensating (B2)",
+      "cefrLevel": "B2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_compensating",
+      "descriptor": "Can use circumlocution and paraphrase to cover gaps in vocabulary and structure."
+    },
+    {
+      "key": "speaking.scale_compensating.c2",
+      "title": "Compensating (C2)",
+      "cefrLevel": "C2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_compensating",
+      "descriptor": "Can substitute an equivalent term for a word he/she can't recall so smoothly that it is scarcely noticeable."
+    },
+    {
+      "key": "speaking.scale_monitoring_repair.b1",
+      "title": "Monitoring & Repair (B1)",
+      "cefrLevel": "B1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_monitoring_repair",
+      "descriptor": "Can correct mix-ups with tenses or expressions which lead to misunderstandings provided the interlocutor indicates there is a problem. Can ask for confirmation that a form used is correct. Can start again using a different tactic when communication breaks down."
+    },
+    {
+      "key": "speaking.scale_monitoring_repair.b2",
+      "title": "Monitoring & Repair (B2)",
+      "cefrLevel": "B2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_monitoring_repair",
+      "descriptor": "Can correct slips and errors if he/she becomes conscious of them or if they have led to misunderstandings. Can make a note of \"favourite mistakes\" and consciously monitor speech for it/them."
+    },
+    {
+      "key": "speaking.scale_monitoring_repair.c1",
+      "title": "Monitoring & Repair (C1)",
+      "cefrLevel": "C1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_monitoring_repair",
+      "descriptor": "Can backtrack when he/she encounters a difficulty and reformulate what he/she wants to say without fully interrupting the flow of speech."
+    },
+    {
+      "key": "speaking.scale_monitoring_repair.c2",
+      "title": "Monitoring & Repair (C2)",
+      "cefrLevel": "C2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_monitoring_repair",
+      "descriptor": "Can backtrack and restructure around a difficulty so smoothly the interlocutor is hardly aware of it."
+    },
+    {
+      "key": "listening.scale_note_taking_lectures_seminars_etc.b1",
+      "title": "Note-Taking (Lectures, Seminars, Etc.) (B1)",
+      "cefrLevel": "B1",
+      "skill": "listening",
+      "parentKey": "listening.scale_note_taking_lectures_seminars_etc",
+      "descriptor": "Can take notes during a lecture, which are precise enough for his/her own use at a later date, provided the topic is within his/her field of interest and the talk is clear and well structured. Can take notes as a list of key points during a straightforward lecture, provided the topic is familiar, and the talk is both formulated in simple language and delivered in clearly articulated standard speech."
+    },
+    {
+      "key": "listening.scale_note_taking_lectures_seminars_etc.b2",
+      "title": "Note-Taking (Lectures, Seminars, Etc.) (B2)",
+      "cefrLevel": "B2",
+      "skill": "listening",
+      "parentKey": "listening.scale_note_taking_lectures_seminars_etc",
+      "descriptor": "Can understand a clearly structured lecture on a familiar subject, and can take notes on points which strike him/her as important, even though he/she tends to concentrate on the words themselves and therefore to miss some information."
+    },
+    {
+      "key": "listening.scale_note_taking_lectures_seminars_etc.c1",
+      "title": "Note-Taking (Lectures, Seminars, Etc.) (C1)",
+      "cefrLevel": "C1",
+      "skill": "listening",
+      "parentKey": "listening.scale_note_taking_lectures_seminars_etc",
+      "descriptor": "Can take detailed notes during a lecture on topics in his/her field of interest, recording the information so accurately and so close to the original that the notes could also be useful to other people."
+    },
+    {
+      "key": "listening.scale_note_taking_lectures_seminars_etc.c2",
+      "title": "Note-Taking (Lectures, Seminars, Etc.) (C2)",
+      "cefrLevel": "C2",
+      "skill": "listening",
+      "parentKey": "listening.scale_note_taking_lectures_seminars_etc",
+      "descriptor": "Is aware of the implications and allusions of what is said and can make notes on them as well as on the actual words used by the speaker."
+    },
+    {
+      "key": "reading.scale_processing_text.a1",
+      "title": "Processing Text (A1)",
+      "cefrLevel": "A1",
+      "skill": "reading",
+      "parentKey": "reading.scale_processing_text",
+      "descriptor": "Can copy out single words and short texts presented in standard printed format Linguistic Range"
+    },
+    {
+      "key": "reading.scale_processing_text.a2",
+      "title": "Processing Text (A2)",
+      "cefrLevel": "A2",
+      "skill": "reading",
+      "parentKey": "reading.scale_processing_text",
+      "descriptor": "Can pick out and reproduce key words and phrases or short sentences from a short text within the learner's limited competence and experience Can copy out short texts in printed or clearly hand-written format."
+    },
+    {
+      "key": "reading.scale_processing_text.b1",
+      "title": "Processing Text (B1)",
+      "cefrLevel": "B1",
+      "skill": "reading",
+      "parentKey": "reading.scale_processing_text",
+      "descriptor": "Can collate short pieces of information from several sources and summarise them for somebody else. Can paraphrase short written passages in a simple fashion, using the original text wording and ordering."
+    },
+    {
+      "key": "reading.scale_processing_text.b2",
+      "title": "Processing Text (B2)",
+      "cefrLevel": "B2",
+      "skill": "reading",
+      "parentKey": "reading.scale_processing_text",
+      "descriptor": "Can summarise a wide range of factual and imaginative texts, commenting on and discussing contrasting points of view and the main themes. Can summarise extracts from news items, interviews or documentaries containing opinions, argument and discussion. Can summarise the plot and sequence of events in a film or play."
+    },
+    {
+      "key": "reading.scale_processing_text.c1",
+      "title": "Processing Text (C1)",
+      "cefrLevel": "C1",
+      "skill": "reading",
+      "parentKey": "reading.scale_processing_text",
+      "descriptor": "Can summarise long, demanding texts."
+    },
+    {
+      "key": "reading.scale_processing_text.c2",
+      "title": "Processing Text (C2)",
+      "cefrLevel": "C2",
+      "skill": "reading",
+      "parentKey": "reading.scale_processing_text",
+      "descriptor": "Can summarise information from different sources, reconstructing arguments and accounts in a coherent presentation of the overall result."
+    },
+    {
+      "key": "speaking.scale_general_linguistic_range.a1",
+      "title": "General Linguistic Range (A1)",
+      "cefrLevel": "A1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_general_linguistic_range",
+      "descriptor": "Has a very basic range of simple expressions about personal details and needs of a concrete type."
+    },
+    {
+      "key": "speaking.scale_general_linguistic_range.a2",
+      "title": "General Linguistic Range (A2)",
+      "cefrLevel": "A2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_general_linguistic_range",
+      "descriptor": "Has a repertoire of basic language, which enables him/her to deal with everyday situations with predictable content, though he/she will generally have to compromise the message and search for words. Can produce brief everyday expressions in order to satisfy simple needs of a concrete type: personal details, daily routines, wants and needs, requests for information. Can use basic sentence patterns and communicate with memorised phrases, groups of a few words and formulae about themselves and other people, what they do, places, possessions etc.. Has a limited repertoire of short memorised phrases covering predictable survival situations; frequent breakdowns and misunderstandings occur in non-routine situations."
+    },
+    {
+      "key": "speaking.scale_general_linguistic_range.b1",
+      "title": "General Linguistic Range (B1)",
+      "cefrLevel": "B1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_general_linguistic_range",
+      "descriptor": "Has enough language to get by, with sufficient vocabulary to express him/herself with some hesitation and circumlocutions on topics such as family, hobbies and interests, work, travel, and current events, but lexical limitations cause repetition and even difficulty with formulation at times."
+    },
+    {
+      "key": "speaking.scale_general_linguistic_range.b2",
+      "title": "General Linguistic Range (B2)",
+      "cefrLevel": "B2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_general_linguistic_range",
+      "descriptor": "Can express him/herself clearly and without much sign of having to restrict what he/she wants to say. Has a sufficient range of language to be able to give clear descriptions, express viewpoints and develop arguments without much conspicuous searching for words, using some complex sentence forms to do so. Has a sufficient range of language to describe unpredictable situations, explain the main points in an idea or problem with reasonable precision and express thoughts on abstract or cultural topics such as music and films."
+    },
+    {
+      "key": "speaking.scale_general_linguistic_range.c1",
+      "title": "General Linguistic Range (C1)",
+      "cefrLevel": "C1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_general_linguistic_range",
+      "descriptor": "Can select an appropriate formulation from a broad range of language to express him/herself clearly, without having to restrict what he/she wants to say."
+    },
+    {
+      "key": "speaking.scale_general_linguistic_range.c2",
+      "title": "General Linguistic Range (C2)",
+      "cefrLevel": "C2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_general_linguistic_range",
+      "descriptor": "give emphasis, differentiate and eliminate ambiguity. No signs of having to restrict what he/she wants to say."
+    },
+    {
+      "key": "vocabulary.scale_vocabulary_range.a1",
+      "title": "Vocabulary Range (A1)",
+      "cefrLevel": "A1",
+      "skill": "vocabulary",
+      "parentKey": "vocabulary.scale_vocabulary_range",
+      "descriptor": "Has a basic vocabulary repertoire of isolated words and phrases related to particular concrete situations. Control"
+    },
+    {
+      "key": "vocabulary.scale_vocabulary_range.a2",
+      "title": "Vocabulary Range (A2)",
+      "cefrLevel": "A2",
+      "skill": "vocabulary",
+      "parentKey": "vocabulary.scale_vocabulary_range",
+      "descriptor": "Has sufficient vocabulary to conduct routine, everyday transactions involving familiar situations and topics. Has a sufficient vocabulary for the expression of basic communicative needs. Has a sufficient vocabulary for coping with simple survival needs."
+    },
+    {
+      "key": "vocabulary.scale_vocabulary_range.b1",
+      "title": "Vocabulary Range (B1)",
+      "cefrLevel": "B1",
+      "skill": "vocabulary",
+      "parentKey": "vocabulary.scale_vocabulary_range",
+      "descriptor": "Has a sufficient vocabulary to express him/herself with some circumlocutions on most topics pertinent to his everyday life such as family, hobbies and interests, work, travel, and current events."
+    },
+    {
+      "key": "vocabulary.scale_vocabulary_range.b2",
+      "title": "Vocabulary Range (B2)",
+      "cefrLevel": "B2",
+      "skill": "vocabulary",
+      "parentKey": "vocabulary.scale_vocabulary_range",
+      "descriptor": "Has a good range of vocabulary for matters connected to his field and most general topics? Can vary formulation to avoid frequent repetition, but lexical gaps can still cause hesitation and circumlocution."
+    },
+    {
+      "key": "vocabulary.scale_vocabulary_range.c1",
+      "title": "Vocabulary Range (C1)",
+      "cefrLevel": "C1",
+      "skill": "vocabulary",
+      "parentKey": "vocabulary.scale_vocabulary_range",
+      "descriptor": "Has a good command of a broad lexical repertoire allowing gaps to be readily overcome with circumlocutions; little obvious searching for expressions or avoidance strategies. Good command of idiomatic expressions and colloquialisms."
+    },
+    {
+      "key": "vocabulary.scale_vocabulary_range.c2",
+      "title": "Vocabulary Range (C2)",
+      "cefrLevel": "C2",
+      "skill": "vocabulary",
+      "parentKey": "vocabulary.scale_vocabulary_range",
+      "descriptor": "Has a good command of a very broad lexical repertoire including idiomatic expressions and colloquialisms; shows awareness of connotative levels of meaning."
+    },
+    {
+      "key": "grammar.scale_grammatical_accuracy.a1",
+      "title": "Grammatical Accuracy (A1)",
+      "cefrLevel": "A1",
+      "skill": "grammar",
+      "parentKey": "grammar.scale_grammatical_accuracy",
+      "descriptor": "Shows only limited control of a few simple grammatical structures and sentence patterns in a learnt repertoire. VOCABULARY CONTROL"
+    },
+    {
+      "key": "grammar.scale_grammatical_accuracy.a2",
+      "title": "Grammatical Accuracy (A2)",
+      "cefrLevel": "A2",
+      "skill": "grammar",
+      "parentKey": "grammar.scale_grammatical_accuracy",
+      "descriptor": "Uses some simple structures correctly, but still systematically makes basic mistakes - for example tends to mix up tenses and forget to mark agreement; nevertheless, it is usually clear what he/she is trying to say. Can control a narrow repertoire dealing with concrete everyday needs."
+    },
+    {
+      "key": "grammar.scale_grammatical_accuracy.b1",
+      "title": "Grammatical Accuracy (B1)",
+      "cefrLevel": "B1",
+      "skill": "grammar",
+      "parentKey": "grammar.scale_grammatical_accuracy",
+      "descriptor": "Communicates with reasonable accuracy in familiar contexts; generally good control though with noticeable mother tongue influence. Errors occur, but it is clear what he/she is trying to express. Uses reasonably accurately a repertoire of frequently used \"routines\" and patterns associated with more predictable situations. Shows good control of elementary vocabulary but major errors still occur when expressing more complex thoughts or handling unfamiliar topics and situations."
+    },
+    {
+      "key": "grammar.scale_grammatical_accuracy.b2",
+      "title": "Grammatical Accuracy (B2)",
+      "cefrLevel": "B2",
+      "skill": "grammar",
+      "parentKey": "grammar.scale_grammatical_accuracy",
+      "descriptor": "Good grammatical control. Occasional \"slips\" or non-systematic errors and minor flaws in sentence structure may still occur, but they are rare and can often be corrected in retrospect. Shows a relatively high degree of grammatical control. Does not make mistakes which lead to misunderstanding. Lexical accuracy is generally high, though some confusion and incorrect word choice does occur without hindering communication."
+    },
+    {
+      "key": "grammar.scale_grammatical_accuracy.c1",
+      "title": "Grammatical Accuracy (C1)",
+      "cefrLevel": "C1",
+      "skill": "grammar",
+      "parentKey": "grammar.scale_grammatical_accuracy",
+      "descriptor": "Consistently maintains a high degree of grammatical accuracy; errors are rare and difficult to spot. Occasional minor slips, but no significant vocabulary errors."
+    },
+    {
+      "key": "grammar.scale_grammatical_accuracy.c2",
+      "title": "Grammatical Accuracy (C2)",
+      "cefrLevel": "C2",
+      "skill": "grammar",
+      "parentKey": "grammar.scale_grammatical_accuracy",
+      "descriptor": "Maintains consistent grammatical control of complex language, even while attention is otherwise engaged (e.g. in forward planning, in monitoring others' reactions). Consistently correct and appropriate use of vocabulary."
+    },
+    {
+      "key": "pronunciation.scale_phonological_control.a1",
+      "title": "Phonological Control (A1)",
+      "cefrLevel": "A1",
+      "skill": "pronunciation",
+      "parentKey": "pronunciation.scale_phonological_control",
+      "descriptor": "Pronunciation of a very limited repertoire of learnt words and phrases can be understood with some effort by native speakers used to dealing with speakers of his/her language group. ORTHOGRAPHIC CONTROL Can copy familiar words and short phrases e.g. simple signs or instructions, names of everyday objects, names of shops and set phrases used regularly. Can spell his/her address, nationality and other personal details. Note: Scaling of descriptors is the intention of the authors of the scales on which these descriptors are based. Sociolinguistic SOCIOLINGUISTIC APPROPRIATENESS Can establish basic social contact by using the simplest everyday polite forms of: greetings and farewells; introductions; saying please, thank you, sorry etc Pragmatic"
+    },
+    {
+      "key": "pronunciation.scale_phonological_control.a2",
+      "title": "Phonological Control (A2)",
+      "cefrLevel": "A2",
+      "skill": "pronunciation",
+      "parentKey": "pronunciation.scale_phonological_control",
+      "descriptor": "Pronunciation is generally clear enough to be understood despite a noticeable foreign accent, but conversational partners will need to ask for repetition from time to time. Can copy short sentences on everyday subjects - e.g. directions how to get somewhere Can write with reasonable phonetic accuracy (but not necessarily fully standard spelling) short words that are in his/her oral vocabulary. Can perform and respond to basic language functions, such as information exchange and requests and express opinions and attitudes in a simple way. Can socialise simply but effectively using the simplest common expressions and following basic routines Can handle very short social exchanges, using everyday polite forms of greeting and address. Can make and respond to invitations, invitations, apologies etc."
+    },
+    {
+      "key": "pronunciation.scale_phonological_control.b1",
+      "title": "Phonological Control (B1)",
+      "cefrLevel": "B1",
+      "skill": "pronunciation",
+      "parentKey": "pronunciation.scale_phonological_control",
+      "descriptor": "Pronunciation is clearly intelligible even if a foreign accent is sometimes evident and occasional mispronunciations occur. Can produce continuous writing, which is generally intelligible throughout. Spelling, punctuation and layout are accurate enough to be followed most of the time. Can perform and respond to a wide range of language functions, using their most common exponents in a neutral register Is aware of the salient politeness conventions and acts appropriately Is aware of, and looks out for signs of, the most significant differences between the customs, usages, attitudes, values and beliefs prevalent in the community concerned and those of his or her own."
+    },
+    {
+      "key": "pronunciation.scale_phonological_control.b2",
+      "title": "Phonological Control (B2)",
+      "cefrLevel": "B2",
+      "skill": "pronunciation",
+      "parentKey": "pronunciation.scale_phonological_control",
+      "descriptor": "Has a clear, natural, pronunciation and intonation. Can produce clearly intelligible continuous writing, which follows standard layout and paragraphing conventions. Spelling and punctuation are reasonably accurate but may show signs of mother tongue influence. Can express him- or herself confidently, clearly and politely in a formal or informal register, appropriate to the situation and person(s) concerned. Can with some effort keep up with and contribute to group discussions even when speech is fast and colloquial. Can sustain relationships with native speakers without unintentionally amusing or irritating them or requiring them to behave other than they would with a native speaker. Can express him or herself appropriately in situations and avoid crass errors of formulation."
+    },
+    {
+      "key": "pronunciation.scale_phonological_control.c1",
+      "title": "Phonological Control (C1)",
+      "cefrLevel": "C1",
+      "skill": "pronunciation",
+      "parentKey": "pronunciation.scale_phonological_control",
+      "descriptor": "Can vary intonation and place sentence stress correctly in order to express finer shades of meaning. Layout, paragraphing and punctuation are consistent and helpful. Spelling is accurate, apart from occasional slips of the pen. Can recognise a wide range of idiomatic expressions and colloquialisms, appreciating register shifts; may, however, need to confirm occasional details, especially if the accent is unfamiliar. Can follow films employing a considerable degree of slang and idiomatic usage. Can use language flexibly and effectively for social purposes, including emotional, allusive and joking usage."
+    },
+    {
+      "key": "pronunciation.scale_phonological_control.c2",
+      "title": "Phonological Control (C2)",
+      "cefrLevel": "C2",
+      "skill": "pronunciation",
+      "parentKey": "pronunciation.scale_phonological_control",
+      "descriptor": "Writing is orthographically free of error. Has a good command of idiomatic expressions and colloquialisms with awareness of connotative levels of meaning Appreciates fully the sociolinguistic and sociocultural implications of language used by native speakers and can react accordingly Can mediate effectively between speakers of the target language and that of his/her community of origin taking account of sociocultural and sociolinguistic differences."
+    },
+    {
+      "key": "speaking.scale_flexibility.a2",
+      "title": "Flexibility (A2)",
+      "cefrLevel": "A2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_flexibility",
+      "descriptor": "Can adapt well-rehearsed memorised simple phrases to particular circumstances through limited lexical substitution. Can expand learned phrases through simple recombinations of their elements."
+    },
+    {
+      "key": "speaking.scale_flexibility.b1",
+      "title": "Flexibility (B1)",
+      "cefrLevel": "B1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_flexibility",
+      "descriptor": "Can adapt his expression to deal with less routine, even difficult, situations. Can exploit a wide range of simple language flexibly to express much of what he/she wants."
+    },
+    {
+      "key": "speaking.scale_flexibility.b2",
+      "title": "Flexibility (B2)",
+      "cefrLevel": "B2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_flexibility",
+      "descriptor": "Can adjust what he/she says and the means of expressing it to the situation and the recipient and adopt a level of formality appropriate to the circumstances. Can adjust to the changes of direction, style and emphasis normally found in conversation. Can vary formulation of what he/she wants to say."
+    },
+    {
+      "key": "speaking.scale_flexibility.c2",
+      "title": "Flexibility (C2)",
+      "cefrLevel": "C2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_flexibility",
+      "descriptor": "Shows great flexibility reformulating ideas in differing linguistic forms to give emphasis, to differentiate according to the situation, interlocutor etc. and to eliminate ambiguity."
+    },
+    {
+      "key": "speaking.scale_taking_the_floor_turntaking.a2",
+      "title": "Taking the Floor (Turntaking) (A2)",
+      "cefrLevel": "A2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_taking_the_floor_turntaking",
+      "descriptor": "Can use simple techniques to start, maintain, or end a short conversation. Can initiate, maintain and close simple, face-to-face conversation. Can ask for attention."
+    },
+    {
+      "key": "speaking.scale_taking_the_floor_turntaking.b1",
+      "title": "Taking the Floor (Turntaking) (B1)",
+      "cefrLevel": "B1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_taking_the_floor_turntaking",
+      "descriptor": "Can intervene in a discussion on a familiar topic, using a suitable phrase to get the floor. Can initiate, maintain and close simple face-to-face conversation on topics that are familiar or of personal interest."
+    },
+    {
+      "key": "speaking.scale_taking_the_floor_turntaking.b2",
+      "title": "Taking the Floor (Turntaking) (B2)",
+      "cefrLevel": "B2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_taking_the_floor_turntaking",
+      "descriptor": "Can intervene appropriately in discussion, exploiting appropriate language to do so. Can initiate, maintain and end discourse appropriately with effective turntaking. Can initiate discourse, take his turn when appropriate and end conversation when he/she needs to, though he/she may not always do this elegantly. Can use stock phrases (e.g. \"That's a difficult question to answer\") to gain time and keep the turn whilst formulating what to say."
+    },
+    {
+      "key": "speaking.scale_taking_the_floor_turntaking.c1",
+      "title": "Taking the Floor (Turntaking) (C1)",
+      "cefrLevel": "C1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_taking_the_floor_turntaking",
+      "descriptor": "Can select a suitable phrase from a readily available range of discourse functions to preface his remarks appropriately in order to get the floor, or to gain time and keep the floor whilst thinking."
+    },
+    {
+      "key": "speaking.scale_thematic_development.a2",
+      "title": "Thematic Development (A2)",
+      "cefrLevel": "A2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_thematic_development",
+      "descriptor": "Can tell a story or describe something in a simple list of points."
+    },
+    {
+      "key": "speaking.scale_thematic_development.b1",
+      "title": "Thematic Development (B1)",
+      "cefrLevel": "B1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_thematic_development",
+      "descriptor": "Can reasonably fluently relate a straightforward narrative or description as a linear sequence of points."
+    },
+    {
+      "key": "speaking.scale_thematic_development.b2",
+      "title": "Thematic Development (B2)",
+      "cefrLevel": "B2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_thematic_development",
+      "descriptor": "Can develop a clear description or narrative, expanding and supporting his/her main points with relevant supporting detail and examples."
+    },
+    {
+      "key": "speaking.scale_thematic_development.c1",
+      "title": "Thematic Development (C1)",
+      "cefrLevel": "C1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_thematic_development",
+      "descriptor": "Can give elaborate descriptions and narratives, integrating sub themes, developing particular points and rounding off with an appropriate conclusion."
+    },
+    {
+      "key": "speaking.scale_coherence.a1",
+      "title": "Coherence (A1)",
+      "cefrLevel": "A1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_coherence",
+      "descriptor": "Can link words or groups of words with very basic linear connectors like 'and' or 'then'. PROPOSITIONAL PRECISION"
+    },
+    {
+      "key": "speaking.scale_coherence.a2",
+      "title": "Coherence (A2)",
+      "cefrLevel": "A2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_coherence",
+      "descriptor": "Can use the most frequently occurring connectors to link simple sentences in order to tell a story or describe something as a simple list of points. Can link groups of words with simple connectors like \"and, \"but\" and \"because\". Can communicate what he/she wants to say in a simple and direct exchange of limited information on familiar and routine matters, but in other situations he/she generally has to compromise the message."
+    },
+    {
+      "key": "speaking.scale_coherence.b1",
+      "title": "Coherence (B1)",
+      "cefrLevel": "B1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_coherence",
+      "descriptor": "Can link a series of shorter, discrete simple elements into a connected, linear sequence of points. Can explain the main points in an idea or problem with reasonable precision. Can convey simple, straightforward information of immediate relevance, getting across which point he/she feels is most important. Can express the main point he/she wants to make comprehensibly."
+    },
+    {
+      "key": "speaking.scale_coherence.b2",
+      "title": "Coherence (B2)",
+      "cefrLevel": "B2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_coherence",
+      "descriptor": "Can use a variety of linking words efficiently to mark clearly the relationships between ideas. Can use a limited number of cohesive devices to link his/her utterances into clear, coherent discourse, though there may be some \"jumpiness\" in a long contribution. Can pass on detailed information reliably"
+    },
+    {
+      "key": "speaking.scale_coherence.c1",
+      "title": "Coherence (C1)",
+      "cefrLevel": "C1",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_coherence",
+      "descriptor": "Can produce clear, smoothly flowing, well-structured speech, showing controlled use of organisational patterns, connectors and cohesive devices. Can qualify opinions and statements precisely in relation to degrees of, for example, certainty/ uncertainty, belief/doubt, likelihood etc."
+    },
+    {
+      "key": "speaking.scale_coherence.c2",
+      "title": "Coherence (C2)",
+      "cefrLevel": "C2",
+      "skill": "speaking",
+      "parentKey": "speaking.scale_coherence",
+      "descriptor": "Can create coherent and cohesive text making full and appropriate use of a variety of organisational patterns and a wide range of cohesive devices. Can convey finer shades of meaning precisely by using, with reasonable accuracy, a wide range of qualifying devices (e.g. adverbs expressing degree, clauses expressing limitations). Can give emphasis, differentiate and eliminate ambiguity."
+    },
+    {
+      "key": "fluency.scale_spoken_fluency.a1",
+      "title": "Spoken Fluency (A1)",
+      "cefrLevel": "A1",
+      "skill": "fluency",
+      "parentKey": "fluency.scale_spoken_fluency",
+      "descriptor": "Can manage very short, isolated, mainly pre-packaged utterances, with much pausing to search for expressions, to articulate less familiar words, and to repair communication."
+    },
+    {
+      "key": "fluency.scale_spoken_fluency.a2",
+      "title": "Spoken Fluency (A2)",
+      "cefrLevel": "A2",
+      "skill": "fluency",
+      "parentKey": "fluency.scale_spoken_fluency",
+      "descriptor": "Can make him/herself understood in short contributions, even though pauses, false starts and reformulation are very evident. Can construct phrases on familiar topics with sufficient ease to handle short exchanges, despite very noticeable hesitation and false starts."
+    },
+    {
+      "key": "fluency.scale_spoken_fluency.b1",
+      "title": "Spoken Fluency (B1)",
+      "cefrLevel": "B1",
+      "skill": "fluency",
+      "parentKey": "fluency.scale_spoken_fluency",
+      "descriptor": "Can express him/herself with relative ease. Despite some problems with formulation resulting in pauses and \"cul- de-sacs\", he/she is able to keep going effectively without help. Can keep going comprehensibly, even though pausing for grammatical and lexical planning and repair is very evident, especially in longer stretches of free production."
+    },
+    {
+      "key": "fluency.scale_spoken_fluency.b2",
+      "title": "Spoken Fluency (B2)",
+      "cefrLevel": "B2",
+      "skill": "fluency",
+      "parentKey": "fluency.scale_spoken_fluency",
+      "descriptor": "Can communicate spontaneously, often showing remarkable fluency and ease of expression in even longer complex stretches of speech. Can produce stretches of language with a fairly even tempo; although he/she can be hesitant as he/she searches for patterns and expressions, there are few noticeably long pauses. Can interact with a degree of fluency and spontaneity that makes regular interaction with native speakers quite possible without imposing strain on either party."
+    },
+    {
+      "key": "fluency.scale_spoken_fluency.c1",
+      "title": "Spoken Fluency (C1)",
+      "cefrLevel": "C1",
+      "skill": "fluency",
+      "parentKey": "fluency.scale_spoken_fluency",
+      "descriptor": "Can express him/herself fluently and spontaneously, almost effortlessly. Only a conceptually difficult subject can hinder a natural, smooth flow of language."
+    },
+    {
+      "key": "fluency.scale_spoken_fluency.c2",
+      "title": "Spoken Fluency (C2)",
+      "cefrLevel": "C2",
+      "skill": "fluency",
+      "parentKey": "fluency.scale_spoken_fluency",
+      "descriptor": "Can express him/herself at length with a natural, effortless, unhesitating flow. Pauses only to reflect on precisely the right words to express his/her thoughts or to find an appropriate example or explanation."
+    }
+  ]
+}

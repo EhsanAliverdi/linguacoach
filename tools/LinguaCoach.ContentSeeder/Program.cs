@@ -75,7 +75,8 @@ public static class Program
         {
             "grammar" => await SeedGrammarAsync(seeder, db, seedFilePath),
             "vocabulary" => await SeedVocabularyAsync(seeder, db, seedFilePath),
-            _ => Fail($"Unknown domain '{domain}' — expected 'grammar' or 'vocabulary'."),
+            "cefr-scales" => await SeedCefrScalesAsync(db, seedFilePath),
+            _ => Fail($"Unknown domain '{domain}' — expected 'grammar', 'vocabulary', or 'cefr-scales'."),
         };
     }
 
@@ -157,6 +158,32 @@ public static class Program
         return 0;
     }
 
+    /// <summary>Full content reseed Phase E (2026-07-29) — Reading/Listening/Speaking/Writing/
+    /// Vocabulary/Grammar/Pronunciation/Fluency taxonomy from the CEFR Companion Volume's real
+    /// descriptor scales. Pure taxonomy in this pass — no ResourceBankItem/Lesson/Exercise/Module
+    /// chain (see plan Decision 5): these nodes exist so content (starting with reading passages)
+    /// has something real to link to via ModuleSkillGraphNodeLink.</summary>
+    private static async Task<int> SeedCefrScalesAsync(LinguaCoachDbContext db, string path)
+    {
+        var file = JsonSerializer.Deserialize<CefrScalesSeedFile>(await File.ReadAllTextAsync(path), JsonOptions)
+            ?? throw new InvalidOperationException("Empty/invalid CEFR-scales seed file.");
+
+        var containerIds = await UpsertContainersAsync(db, file.Containers.Select(c =>
+            (c.Key, c.Title, c.CefrLevel, DifficultyBand: 1, c.Skill)));
+
+        var processed = 0;
+        foreach (var leaf in file.Leaves)
+        {
+            var parentId = containerIds.TryGetValue(leaf.ParentKey, out var pid) ? pid : (Guid?)null;
+            await UpsertLeafAsync(db, leaf.Key, leaf.Title, leaf.CefrLevel, difficultyBand: 1, leaf.Skill,
+                parentId, descriptionForAi: null, description: leaf.Descriptor);
+            processed++;
+        }
+
+        Console.WriteLine($"CEFR-scale taxonomy seeding complete. {containerIds.Count} containers, {processed} leaves.");
+        return 0;
+    }
+
     private static async Task<Dictionary<string, Guid>> UpsertContainersAsync(
         LinguaCoachDbContext db, IEnumerable<(string Key, string Title, string CefrLevel, int DifficultyBand, string Skill)> containers)
     {
@@ -172,7 +199,7 @@ public static class Program
 
     private static async Task<Guid> UpsertLeafAsync(
         LinguaCoachDbContext db, string key, string title, string cefrLevel, int difficultyBand,
-        string skill, Guid? parentId, string? descriptionForAi = null)
+        string skill, Guid? parentId, string? descriptionForAi = null, string? description = null)
     {
         var existing = await db.SkillGraphNodes.FirstOrDefaultAsync(n => n.Key == key);
         if (existing is not null)
@@ -185,7 +212,7 @@ public static class Program
             return existing.Id;
         }
 
-        var node = new SkillGraphNode(key, title, $"{title}.", cefrLevel, skill,
+        var node = new SkillGraphNode(key, title, description ?? $"{title}.", cefrLevel, skill,
             subskill: null, difficultyBand: difficultyBand, descriptionForAi: descriptionForAi);
         db.SkillGraphNodes.Add(node);
         await db.SaveChangesAsync(); // assign Id before AssignParent/Approve
@@ -273,6 +300,11 @@ public sealed record VocabularySeedContainer(string Key, string Title, string Ce
 public sealed record VocabularySeedLeaf(
     string Key, string Headword, string PartOfSpeech, string CefrLevel,
     string Definition, string ParentKey, List<string>? ExtraTags);
+
+public sealed record CefrScalesSeedFile(List<CefrScaleSeedContainer> Containers, List<CefrScaleSeedLeaf> Leaves);
+public sealed record CefrScaleSeedContainer(string Key, string Title, string CefrLevel, string Skill);
+public sealed record CefrScaleSeedLeaf(
+    string Key, string Title, string CefrLevel, string Skill, string ParentKey, string Descriptor);
 
 /// <summary>Resumability — a processed-keys file next to each input, so a crashed/interrupted run
 /// doesn't redo already-seeded items. Mirrors the pattern used earlier this session for the
