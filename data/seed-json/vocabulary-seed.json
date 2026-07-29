@@ -73,7 +73,7 @@
     {
       "key": "vocabulary.topic_books_and_literature",
       "title": "Books and literature",
-      "cefrLevel": "A2"
+      "cefrLevel": "A1"
     },
     {
       "key": "vocabulary.topic_colours",
@@ -128,7 +128,7 @@
     {
       "key": "vocabulary.topic_news_lifestyles_and_current_affairs",
       "title": "News, lifestyles and current affairs",
-      "cefrLevel": "A2"
+      "cefrLevel": "A1"
     },
     {
       "key": "vocabulary.topic_travel_and_services_vocab",
@@ -173,6 +173,11 @@
     {
       "key": "vocabulary.topic_dimensions",
       "title": "Dimensions",
+      "cefrLevel": "B1"
+    },
+    {
+      "key": "vocabulary.topic_film",
+      "title": "Film",
       "cefrLevel": "B1"
     }
   ],
@@ -78403,6 +78408,2706 @@
       "cefrLevel": "B2",
       "definition": "A person who writes essays.",
       "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_event_noun.a1",
+      "headword": "event",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A planned public or social occasion.",
+      "parentKey": "vocabulary.topic_hobbies_and_pastimes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_examination_noun.b1",
+      "headword": "examination",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A formal test of knowledge or skill.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_examinee_noun.b2",
+      "headword": "examinee",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A person who takes an examination.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_examiner_noun.b1",
+      "headword": "examiner",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A person who conducts an examination.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_excursion_noun.b2",
+      "headword": "excursion",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A short trip for pleasure.",
+      "parentKey": "vocabulary.topic_hobbies_and_pastimes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_executive_noun.b2",
+      "headword": "executive",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A senior manager in a business.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_exercise_noun.a2",
+      "headword": "exercise",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "Physical activity done to stay fit.",
+      "parentKey": "vocabulary.topic_leisure_activities",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_exhibition_noun.a2",
+      "headword": "exhibition",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A public display of art or objects.",
+      "parentKey": "vocabulary.topic_hobbies_and_pastimes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_exit_noun.b1",
+      "headword": "exit",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A way out of a place.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_expense_noun.b1",
+      "headword": "expense",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Money spent on something.",
+      "parentKey": "vocabulary.topic_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_expert_noun.a2",
+      "headword": "expert",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A person with great knowledge in a subject.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_explorer_noun.b2",
+      "headword": "explorer",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A person who travels to discover new places.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_explosion_noun.b1",
+      "headword": "explosion",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A violent bursting caused by a rapid release of energy.",
+      "parentKey": "vocabulary.topic_news_lifestyles_and_current_affairs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_explosive_noun.b2",
+      "headword": "explosive",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A substance that can explode.",
+      "parentKey": "vocabulary.topic_news_lifestyles_and_current_affairs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_export_noun.b2",
+      "headword": "export",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A product sent to another country for sale.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_eyesight_noun.b1",
+      "headword": "eyesight",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The ability to see.",
+      "parentKey": "vocabulary.topic_travel_and_services_vocab",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_fabric_noun.b2",
+      "headword": "fabric",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Cloth produced by weaving or knitting.",
+      "parentKey": "vocabulary.topic_clothes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_factory_noun.a1",
+      "headword": "factory",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A building where goods are manufactured.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_fairy_noun.a1",
+      "headword": "fairy",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A small mythical being with magical powers.",
+      "parentKey": "vocabulary.topic_books_and_literature",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_family_noun.a1",
+      "headword": "family",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A group of related people, especially parents and children.",
+      "parentKey": "vocabulary.topic_family_life",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_fan_noun.a1",
+      "headword": "fan",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A device for creating a current of air.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_fantasy_noun.b1",
+      "headword": "fantasy",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A genre of fiction featuring magical elements.",
+      "parentKey": "vocabulary.topic_books_and_literature",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_fare_noun.a2",
+      "headword": "fare",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "The price paid for a journey.",
+      "parentKey": "vocabulary.topic_travel_and_services_vocab",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_farm_noun.a1",
+      "headword": "farm",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "Land used for growing crops or raising animals.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_farmer_noun.a1",
+      "headword": "farmer",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A person who owns or manages a farm.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_farmland_noun.b1",
+      "headword": "farmland",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Land used for farming.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_fashion_noun.a2",
+      "headword": "fashion",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A popular style of clothing or behaviour.",
+      "parentKey": "vocabulary.topic_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_father_noun.a1",
+      "headword": "father",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A male parent.",
+      "parentKey": "vocabulary.topic_family_life",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_feast_noun.b1",
+      "headword": "feast",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A large, elaborate meal.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_fee_noun.a2",
+      "headword": "fee",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A payment for a service.",
+      "parentKey": "vocabulary.topic_travel_and_services_vocab",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_feed_noun.a1",
+      "headword": "feed",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "Food given to animals.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_fence_noun.a2",
+      "headword": "fence",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A barrier enclosing an area.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_ferry_noun.b1",
+      "headword": "ferry",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A boat that carries passengers and vehicles.",
+      "parentKey": "vocabulary.topic_ways_of_travelling",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_ferryboat_noun.b2",
+      "headword": "ferryboat",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A boat used as a ferry.",
+      "parentKey": "vocabulary.topic_ways_of_travelling",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_festival_noun.a1",
+      "headword": "festival",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A day or period of celebration.",
+      "parentKey": "vocabulary.topic_leisure_activities",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_fever_noun.a1",
+      "headword": "fever",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "An abnormally high body temperature.",
+      "parentKey": "vocabulary.topic_travel_and_services_vocab",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_fiction_noun.a2",
+      "headword": "fiction",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "Literature describing imaginary events.",
+      "parentKey": "vocabulary.topic_books_and_literature",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_field_noun.a1",
+      "headword": "field",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "An area of open land.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_fight_noun.a1",
+      "headword": "fight",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A violent confrontation between people.",
+      "parentKey": "vocabulary.topic_news_lifestyles_and_current_affairs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_fighter_noun.a2",
+      "headword": "fighter",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A person who fights, or a combat aircraft.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_file_noun.a1",
+      "headword": "file",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A folder for storing documents, or a computer record.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_filling_noun.b1",
+      "headword": "filling",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A substance used to fill something, such as a pie.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_film_noun.a2",
+      "headword": "film",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A recorded motion picture.",
+      "parentKey": "vocabulary.topic_hobbies_and_pastimes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_film_maker_noun.b1",
+      "headword": "film-maker",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A person who produces films.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_fire_station_noun.b1",
+      "headword": "fire station",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A building housing firefighting equipment and staff.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_firearm_noun.b2",
+      "headword": "firearm",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A portable gun.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_firefighter_noun.b1",
+      "headword": "firefighter",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A person who extinguishes fires.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_fireplace_noun.b2",
+      "headword": "fireplace",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A structure in a room for holding a fire.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_firework_noun.b1",
+      "headword": "firework",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A device that explodes to produce a display of light.",
+      "parentKey": "vocabulary.topic_hobbies_and_pastimes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_firm_noun.b1",
+      "headword": "firm",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A business organization.",
+      "parentKey": "vocabulary.topic_film",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_first_floor_noun.b1",
+      "headword": "first floor",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The floor above ground level in a building.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_fish_noun.a1",
+      "headword": "fish",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A cold-blooded animal living in water.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_fisherman_noun.a2",
+      "headword": "fisherman",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A person who catches fish for a living or sport.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_fishing_noun.a1",
+      "headword": "fishing",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "The activity of catching fish.",
+      "parentKey": "vocabulary.topic_leisure_activities",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_fitness_noun.b1",
+      "headword": "fitness",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The condition of being physically healthy.",
+      "parentKey": "vocabulary.topic_leisure_activities",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_flag_noun.a1",
+      "headword": "flag",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A piece of fabric with a design representing a country.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_flat_noun.a1",
+      "headword": "flat",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A self-contained set of rooms for living in.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_flavor_flavour_noun.b1",
+      "headword": "flavor/flavour",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The distinctive taste of a food.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_fleet_noun.b2",
+      "headword": "fleet",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A group of ships or vehicles.",
+      "parentKey": "vocabulary.topic_news_lifestyles_and_current_affairs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_flight_noun.a2",
+      "headword": "flight",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A journey made by air.",
+      "parentKey": "vocabulary.topic_ways_of_travelling",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_float_noun.a2",
+      "headword": "float",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A decorated platform used in a parade, or a buoyant object.",
+      "parentKey": "vocabulary.topic_ways_of_travelling",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_flock_noun.b1",
+      "headword": "flock",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A group of birds or sheep.",
+      "parentKey": "vocabulary.topic_collocation",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_flood_noun.a2",
+      "headword": "flood",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "An overflow of water onto land.",
+      "parentKey": "vocabulary.topic_news_lifestyles_and_current_affairs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_floor_noun.a1",
+      "headword": "floor",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "The lower surface of a room.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_flour_noun.a2",
+      "headword": "flour",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A powder made from ground grain.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_flu_noun.b1",
+      "headword": "flu",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A short form of influenza.",
+      "parentKey": "vocabulary.topic_travel_and_services_vocab",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_flunk_verb.b1",
+      "headword": "flunk",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To fail an examination or course.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_fly_noun.a1",
+      "headword": "fly",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A small flying insect.",
+      "parentKey": "vocabulary.topic_ways_of_travelling",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_folk_noun.b1",
+      "headword": "folk",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "People in general, or traditional culture.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_food_noun.a1",
+      "headword": "food",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "Any substance eaten to sustain life.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_football_noun.a1",
+      "headword": "football",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A team sport played by kicking a ball.",
+      "parentKey": "vocabulary.topic_hobbies_and_pastimes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_footnote_noun.b2",
+      "headword": "footnote",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A note at the bottom of a page.",
+      "parentKey": "vocabulary.topic_books_and_literature",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_foreman_noun.b2",
+      "headword": "foreman",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A worker who supervises others.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_formula_noun.b1",
+      "headword": "formula",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A mathematical rule expressed in symbols.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_fortune_noun.a2",
+      "headword": "fortune",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A large amount of money, or one's future.",
+      "parentKey": "vocabulary.topic_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_fountain_noun.b1",
+      "headword": "fountain",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A structure that shoots water into the air.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_freezer_noun.b1",
+      "headword": "freezer",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "An appliance for freezing food.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_freshman_noun.b1",
+      "headword": "freshman",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A first-year student.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_friend_noun.a1",
+      "headword": "friend",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A person one knows and likes.",
+      "parentKey": "vocabulary.topic_personal_information",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_friendliness_noun.b1",
+      "headword": "friendliness",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The quality of being kind and warm to others.",
+      "parentKey": "vocabulary.topic_personal_information",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_friendship_noun.a2",
+      "headword": "friendship",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A close relationship between friends.",
+      "parentKey": "vocabulary.topic_personal_information",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_frigate_noun.b2",
+      "headword": "frigate",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A fast naval warship.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_frontier_noun.b2",
+      "headword": "frontier",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A border between two countries.",
+      "parentKey": "vocabulary.topic_nationalities_and_countries",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_fruit_noun.a1",
+      "headword": "fruit",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "The sweet, edible part of a plant.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_frying_pan_noun.b1",
+      "headword": "frying pan",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A flat pan used for frying food.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_fuel_noun.b1",
+      "headword": "fuel",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A material burned to produce energy.",
+      "parentKey": "vocabulary.topic_news_lifestyles_and_current_affairs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_fun_noun.a1",
+      "headword": "fun",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "Enjoyment or amusement.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_fund_noun.b1",
+      "headword": "fund",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A sum of money set aside for a purpose.",
+      "parentKey": "vocabulary.topic_news_lifestyles_and_current_affairs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_fur_noun.b1",
+      "headword": "fur",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The soft hairy coat of an animal.",
+      "parentKey": "vocabulary.topic_clothes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_furniture_noun.a2",
+      "headword": "furniture",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "Movable items used to make a room usable.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_gall_noun.b1",
+      "headword": "gall",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A bitter fluid produced by the liver, or bold rudeness.",
+      "parentKey": "vocabulary.topic_travel_and_services_vocab",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_gallery_noun.a2",
+      "headword": "gallery",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A room or building displaying works of art.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_game_noun.a1",
+      "headword": "game",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "An activity played for entertainment.",
+      "parentKey": "vocabulary.topic_hobbies_and_pastimes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_gangster_noun.b2",
+      "headword": "gangster",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A member of an organized crime group.",
+      "parentKey": "vocabulary.topic_news_lifestyles_and_current_affairs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_garbage_noun.a1",
+      "headword": "garbage",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "Waste material to be discarded.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_garden_noun.a1",
+      "headword": "garden",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A piece of ground for growing plants.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_gardener_noun.b2",
+      "headword": "gardener",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A person who tends a garden.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_gardening_noun.b1",
+      "headword": "gardening",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The activity of tending a garden.",
+      "parentKey": "vocabulary.topic_hobbies_and_pastimes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_garment_noun.b1",
+      "headword": "garment",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "An item of clothing.",
+      "parentKey": "vocabulary.topic_clothes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_gas_noun.a2",
+      "headword": "gas",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A substance in a gaseous state, or fuel.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_gate_noun.a2",
+      "headword": "gate",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A hinged barrier in a wall or fence.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_gateway_noun.b2",
+      "headword": "gateway",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "An entrance that can be closed by a gate.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_gender_noun.a2",
+      "headword": "gender",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "The state of being male or female.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_gene_noun.b1",
+      "headword": "gene",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A unit of heredity in a living organism.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_general_noun.b1",
+      "headword": "general",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A senior military officer.",
+      "parentKey": "vocabulary.topic_news_lifestyles_and_current_affairs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_genetics_noun.b1",
+      "headword": "genetics",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The study of heredity and variation.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_genre_noun.b2",
+      "headword": "genre",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A category of artistic work.",
+      "parentKey": "vocabulary.topic_arts",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_geography_noun.b1",
+      "headword": "geography",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The study of the earth's physical features.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_geology_noun.b1",
+      "headword": "geology",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The study of the earth's structure.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_ghetto_noun.b2",
+      "headword": "ghetto",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A section of a city occupied by a minority group.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_gift_noun.a1",
+      "headword": "gift",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A present given to someone.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_ginger_noun.b1",
+      "headword": "ginger",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A spicy root used in cooking.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_girlfriend_noun.a1",
+      "headword": "girlfriend",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A female romantic partner.",
+      "parentKey": "vocabulary.topic_personal_information",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_glass_noun.a1",
+      "headword": "glass",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A hard transparent material, or a drinking vessel.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_glasses_noun.a1",
+      "headword": "glasses",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "Lenses worn to correct eyesight.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_glove_noun.a2",
+      "headword": "glove",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A garment covering the hand.",
+      "parentKey": "vocabulary.topic_clothes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_goalkeeper_noun.b1",
+      "headword": "goalkeeper",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A player who defends the goal in football.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_god_noun.b2",
+      "headword": "god",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A supernatural being worshipped as having power.",
+      "parentKey": "vocabulary.topic_books_and_literature",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_goddess_noun.b1",
+      "headword": "goddess",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A female god.",
+      "parentKey": "vocabulary.topic_books_and_literature",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_golfer_noun.b1",
+      "headword": "golfer",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A person who plays golf.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_goods_noun.b1",
+      "headword": "goods",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Items that are bought and sold.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_gook_noun.b2",
+      "headword": "gook",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A sticky or dirty substance, informally.",
+      "parentKey": "vocabulary.topic_idiomatic_expressions",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_gossip_noun.b1",
+      "headword": "gossip",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Casual talk about other people's private affairs.",
+      "parentKey": "vocabulary.topic_media",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_government_noun.a2",
+      "headword": "government",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "The group governing a country.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_governor_noun.b1",
+      "headword": "governor",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The elected leader of a state or region.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_gown_noun.b1",
+      "headword": "gown",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A long, formal dress.",
+      "parentKey": "vocabulary.topic_clothes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_graduate_noun.b1",
+      "headword": "graduate",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A person who has completed a degree.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_graduation_noun.b1",
+      "headword": "graduation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The completion of a course of study.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_grain_noun.b2",
+      "headword": "grain",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A small hard seed of a cereal plant.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_grammar_noun.a1",
+      "headword": "grammar",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "The rules governing the structure of a language.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_grandfather_noun.a1",
+      "headword": "grandfather",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "The father of one's parent.",
+      "parentKey": "vocabulary.topic_family_life",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_grandma_noun.a1",
+      "headword": "grandma",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "An informal word for grandmother.",
+      "parentKey": "vocabulary.topic_family_life",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_grandmother_noun.a1",
+      "headword": "grandmother",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "The mother of one's parent.",
+      "parentKey": "vocabulary.topic_family_life",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_grandpa_noun.a1",
+      "headword": "grandpa",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "An informal word for grandfather.",
+      "parentKey": "vocabulary.topic_family_life",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_grandparent_noun.a1",
+      "headword": "grandparent",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A parent of one's parent.",
+      "parentKey": "vocabulary.topic_family_life",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_grape_noun.a1",
+      "headword": "grape",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A small round fruit growing in clusters.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_graph_noun.b1",
+      "headword": "graph",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A diagram showing a relationship between numbers.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_grass_noun.a1",
+      "headword": "grass",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A common green plant covering the ground.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_grave_noun.b1",
+      "headword": "grave",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A place where a body is buried.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_gravestone_noun.b2",
+      "headword": "gravestone",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A stone marking a grave.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_gray_grey_adjective.a1",
+      "headword": "gray/grey",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A1",
+      "definition": "Of a colour between black and white.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_gray_grey_noun.a1",
+      "headword": "gray/grey",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A colour between black and white.",
+      "parentKey": "vocabulary.topic_colours",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_green_adjective.a1",
+      "headword": "green",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A1",
+      "definition": "Having the colour of grass.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_greenhouse_noun.b1",
+      "headword": "greenhouse",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A glass building used for growing plants.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_grill_noun.b1",
+      "headword": "grill",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A device for cooking food over direct heat.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_groom_noun.b1",
+      "headword": "groom",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A man about to be or just married.",
+      "parentKey": "vocabulary.topic_family_life",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_ground_noun.a1",
+      "headword": "ground",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "The surface of the earth.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_ground_floor_noun.b1",
+      "headword": "ground floor",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The floor of a building at street level.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_guard_noun.a2",
+      "headword": "guard",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A person who protects a place or person.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_guerrilla_noun.b2",
+      "headword": "guerrilla",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A member of an irregular armed force.",
+      "parentKey": "vocabulary.topic_news_lifestyles_and_current_affairs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_guidance_noun.b1",
+      "headword": "guidance",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Advice or direction given to someone.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_guide_noun.b1",
+      "headword": "guide",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A person who shows others the way.",
+      "parentKey": "vocabulary.topic_travel_and_services_vocab",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_guideline_noun.b2",
+      "headword": "guideline",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A general rule or piece of advice.",
+      "parentKey": "vocabulary.topic_news_lifestyles_and_current_affairs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_guilt_noun.b1",
+      "headword": "guilt",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The fact of having committed an offence.",
+      "parentKey": "vocabulary.topic_news_lifestyles_and_current_affairs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_guitar_noun.a1",
+      "headword": "guitar",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A stringed musical instrument.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_guitarist_noun.b1",
+      "headword": "guitarist",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A person who plays the guitar.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_gym_noun.b1",
+      "headword": "gym",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A place equipped for physical exercise.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_gymnastics_noun.b1",
+      "headword": "gymnastics",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Exercises requiring physical strength and flexibility.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_habit_noun.a1",
+      "headword": "habit",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A regular practice or tendency.",
+      "parentKey": "vocabulary.topic_personal_information",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_habitant_noun.b2",
+      "headword": "habitant",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "An inhabitant of a place.",
+      "parentKey": "vocabulary.topic_personal_information",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_habitat_noun.b1",
+      "headword": "habitat",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The natural home of an animal or plant.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_hair_noun.a1",
+      "headword": "hair",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "Fine strands growing on the human body.",
+      "parentKey": "vocabulary.topic_personal_information",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_hairdresser_noun.b1",
+      "headword": "hairdresser",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A person who cuts and styles hair.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_hairdryer_noun.b1",
+      "headword": "hairdryer",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A device that blows hot air to dry hair.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_hall_noun.a1",
+      "headword": "hall",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A large room used for meetings or events.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_hamburger_noun.a1",
+      "headword": "hamburger",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A patty of ground meat, usually in a bun.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_hammer_noun.b1",
+      "headword": "hammer",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A tool for driving nails.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_handbag_noun.a2",
+      "headword": "handbag",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A small bag carried by hand.",
+      "parentKey": "vocabulary.topic_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_handball_noun.b1",
+      "headword": "handball",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A team sport played by throwing a ball into a goal.",
+      "parentKey": "vocabulary.topic_leisure_activities",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_handkerchief_noun.b1",
+      "headword": "handkerchief",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A small cloth used for wiping the nose.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_handrail_noun.b2",
+      "headword": "handrail",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A rail providing support along stairs.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_handwriting_noun.b1",
+      "headword": "handwriting",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A person's distinctive style of writing by hand.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_harbor_harbour_noun.b1",
+      "headword": "harbor/harbour",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A sheltered area of water for ships.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_hat_noun.a1",
+      "headword": "hat",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A covering worn on the head.",
+      "parentKey": "vocabulary.topic_clothes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_hatching_noun.b2",
+      "headword": "hatching",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A technique of shading with fine lines.",
+      "parentKey": "vocabulary.topic_arts",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_haunt_noun.b1",
+      "headword": "haunt",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A place frequently visited.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_headache_noun.a1",
+      "headword": "headache",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A pain in the head.",
+      "parentKey": "vocabulary.topic_travel_and_services_vocab",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_headline_noun.b1",
+      "headword": "headline",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The title of a newspaper article.",
+      "parentKey": "vocabulary.topic_media",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_headphone_noun.a2",
+      "headword": "headphone",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A device worn on the ears to listen to audio.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_headquarters_noun.b2",
+      "headword": "headquarters",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The main office of an organization.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_health_noun.a1",
+      "headword": "health",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "The state of being free from illness.",
+      "parentKey": "vocabulary.topic_travel_and_services_vocab",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_heater_noun.b1",
+      "headword": "heater",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A device that produces heat.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_heating_noun.a2",
+      "headword": "heating",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A system for warming a building.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_heel_noun.b1",
+      "headword": "heel",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The back part of the foot, or the raised base of a shoe.",
+      "parentKey": "vocabulary.topic_clothes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_helicopter_noun.b2",
+      "headword": "helicopter",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "An aircraft with horizontal rotating blades.",
+      "parentKey": "vocabulary.topic_ways_of_travelling",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_helmet_noun.b1",
+      "headword": "helmet",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A hard hat worn for protection.",
+      "parentKey": "vocabulary.topic_clothes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_herb_noun.b2",
+      "headword": "herb",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A plant used for flavouring or medicine.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_highway_noun.a2",
+      "headword": "highway",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A main road connecting towns.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_hijack_noun.b2",
+      "headword": "hijack",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The illegal seizure of a vehicle in transit.",
+      "parentKey": "vocabulary.topic_news_lifestyles_and_current_affairs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_hike_noun.a2",
+      "headword": "hike",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A long walk, especially in the countryside.",
+      "parentKey": "vocabulary.topic_travel_and_services_vocab",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_hill_noun.a1",
+      "headword": "hill",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A raised area of land, smaller than a mountain.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_hip_hop_hip_hop_hiphop_noun.a2",
+      "headword": "hip hop/hip-hop/hiphop",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A style of popular music and culture.",
+      "parentKey": "vocabulary.topic_hobbies_and_pastimes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_historian_noun.b1",
+      "headword": "historian",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A person who studies history.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_history_noun.a1",
+      "headword": "history",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "The study of past events.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_hiv_noun.b1",
+      "headword": "HIV",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A virus that causes AIDS.",
+      "parentKey": "vocabulary.topic_travel_and_services_vocab",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_hobby_noun.a1",
+      "headword": "hobby",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "An activity done regularly for pleasure.",
+      "parentKey": "vocabulary.topic_hobbies_and_pastimes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_hole_noun.a1",
+      "headword": "hole",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "An opening or empty space in something.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_holiday_noun.a1",
+      "headword": "holiday",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A period of leisure or travel away from home.",
+      "parentKey": "vocabulary.topic_hobbies_and_pastimes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_holocaust_noun.b2",
+      "headword": "holocaust",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Widespread destruction, especially by fire or war.",
+      "parentKey": "vocabulary.topic_books_and_literature",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_home_noun.a1",
+      "headword": "home",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "The place where one lives.",
+      "parentKey": "vocabulary.topic_family_life",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_hometown_noun.a1",
+      "headword": "hometown",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "The town where one was born or grew up.",
+      "parentKey": "vocabulary.topic_nationalities_and_countries",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_homework_noun.a1",
+      "headword": "homework",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "Schoolwork done outside of class.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_honeymoon_noun.b1",
+      "headword": "honeymoon",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A holiday taken by a newly married couple.",
+      "parentKey": "vocabulary.topic_travel_and_services_vocab",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_hospice_noun.b2",
+      "headword": "hospice",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A facility for the terminally ill.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_hospital_noun.a1",
+      "headword": "hospital",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A place where sick people are treated.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_hostel_noun.b1",
+      "headword": "hostel",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Cheap lodging for travellers.",
+      "parentKey": "vocabulary.topic_travel_and_services_vocab",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_hotel_noun.a1",
+      "headword": "hotel",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "An establishment providing paid accommodation.",
+      "parentKey": "vocabulary.topic_travel_and_services_vocab",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_house_noun.a1",
+      "headword": "house",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A building for people to live in.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_household_noun.b1",
+      "headword": "household",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A group of people living together.",
+      "parentKey": "vocabulary.topic_family_life",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_housekeeper_noun.b2",
+      "headword": "housekeeper",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A person employed to manage a household.",
+      "parentKey": "vocabulary.topic_family_life",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_housemaster_noun.b2",
+      "headword": "housemaster",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A teacher in charge of a school boarding house.",
+      "parentKey": "vocabulary.topic_family_life",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_housewife_noun.b2",
+      "headword": "housewife",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A woman who manages her household.",
+      "parentKey": "vocabulary.topic_family_life",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_housework_noun.b1",
+      "headword": "housework",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Tasks involved in running a home.",
+      "parentKey": "vocabulary.topic_family_life",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_hunger_noun.b1",
+      "headword": "hunger",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A severe lack of food.",
+      "parentKey": "vocabulary.topic_news_lifestyles_and_current_affairs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_hunt_noun.b1",
+      "headword": "hunt",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The act of pursuing animals for food or sport.",
+      "parentKey": "vocabulary.topic_leisure_activities",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_hunter_noun.a2",
+      "headword": "hunter",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A person who hunts.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_husband_noun.a1",
+      "headword": "husband",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A married man in relation to his spouse.",
+      "parentKey": "vocabulary.topic_family_life",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_hut_noun.b1",
+      "headword": "hut",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A small, simple shelter.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_hygiene_noun.b2",
+      "headword": "hygiene",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Practices conducive to maintaining health.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_ice_noun.a1",
+      "headword": "ice",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "Frozen water.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_ice_cream_noun.a1",
+      "headword": "ice cream",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A frozen sweet dessert.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_ice_hockey_noun.b1",
+      "headword": "ice hockey",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A team sport played on ice with a puck.",
+      "parentKey": "vocabulary.topic_leisure_activities",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_ice_skating_noun.b1",
+      "headword": "ice skating",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The sport of gliding on ice with skates.",
+      "parentKey": "vocabulary.topic_leisure_activities",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_iceman_noun.b2",
+      "headword": "iceman",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A person who delivers or sells ice.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_identity_card_noun.b1",
+      "headword": "identity card",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A document proving a person's identity.",
+      "parentKey": "vocabulary.topic_travel_and_services_vocab",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_idiom_noun.b1",
+      "headword": "idiom",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A phrase whose meaning is not literal.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_illness_noun.b1",
+      "headword": "illness",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A disease or period of sickness.",
+      "parentKey": "vocabulary.topic_travel_and_services_vocab",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_immigration_noun.b1",
+      "headword": "immigration",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The act of coming to live permanently in another country.",
+      "parentKey": "vocabulary.topic_news_lifestyles_and_current_affairs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_implement_noun.b2",
+      "headword": "implement",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A tool or instrument.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_impressionism_noun.b2",
+      "headword": "impressionism",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "An art movement focused on capturing light and impression.",
+      "parentKey": "vocabulary.topic_arts",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_impressionist_noun.b2",
+      "headword": "impressionist",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "An artist working in the impressionist style.",
+      "parentKey": "vocabulary.topic_arts",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_income_noun.b1",
+      "headword": "income",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Money received regularly from work or investment.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_industry_noun.b1",
+      "headword": "industry",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Economic activity involving production of goods.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_infection_noun.b1",
+      "headword": "infection",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The invasion of the body by harmful microorganisms.",
+      "parentKey": "vocabulary.topic_news_lifestyles_and_current_affairs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_inflation_noun.b2",
+      "headword": "inflation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A general rise in prices over time.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_influenza_noun.b2",
+      "headword": "influenza",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A viral infection causing fever and aches.",
+      "parentKey": "vocabulary.topic_travel_and_services_vocab",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_information_noun.a1",
+      "headword": "information",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "Facts provided or learned about something.",
+      "parentKey": "vocabulary.topic_media",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_ingredient_noun.b1",
+      "headword": "ingredient",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A component part of a mixture or recipe.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_inhabitant_noun.b1",
+      "headword": "inhabitant",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A person who lives in a place.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_initial_noun.b1",
+      "headword": "initial",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The first letter of a name.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_injection_noun.b2",
+      "headword": "injection",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The act of introducing a substance into the body with a needle.",
+      "parentKey": "vocabulary.topic_travel_and_services_vocab",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_injury_noun.b1",
+      "headword": "injury",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Damage done to the body.",
+      "parentKey": "vocabulary.topic_travel_and_services_vocab",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_ink_noun.b1",
+      "headword": "ink",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A coloured liquid used for writing or printing.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_inquiry_enquiry_noun.b1",
+      "headword": "inquiry/enquiry",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A request for information.",
+      "parentKey": "vocabulary.topic_travel_and_services_vocab",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_inspector_noun.b2",
+      "headword": "inspector",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "An official who checks that regulations are followed.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_instance_noun.b1",
+      "headword": "instance",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "An example or single occurrence of something.",
+      "parentKey": "vocabulary.topic_collocation",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_institute_noun.b1",
+      "headword": "institute",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "An organization for a particular purpose, often education.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_instruction_noun.b1",
+      "headword": "instruction",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Detailed information on how to do something.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_instructor_noun.b1",
+      "headword": "instructor",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A person who teaches a skill.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_instrument_noun.a2",
+      "headword": "instrument",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A tool or device, especially for making music.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_insurance_noun.b1",
+      "headword": "insurance",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A payment arrangement protecting against loss.",
+      "parentKey": "vocabulary.topic_travel_and_services_vocab",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_intelligence_noun.a2",
+      "headword": "intelligence",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "The ability to learn and understand.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_interest_noun.a2",
+      "headword": "interest",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A feeling of wanting to know about something.",
+      "parentKey": "vocabulary.topic_personal_information",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_internet_internet_noun.a1",
+      "headword": "Internet/internet",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "The global network connecting computers.",
+      "parentKey": "vocabulary.topic_media",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_interpreter_noun.b2",
+      "headword": "interpreter",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A person who translates speech.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_invasion_noun.b1",
+      "headword": "invasion",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "An armed attack on a country.",
+      "parentKey": "vocabulary.topic_news_lifestyles_and_current_affairs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_invention_noun.a2",
+      "headword": "invention",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A newly created device or process.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_investment_noun.b2",
+      "headword": "investment",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Money committed to earn a return.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_iron_noun.b1",
+      "headword": "iron",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A device used to smooth clothes, or a metal.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_ironing_noun.b1",
+      "headword": "ironing",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The activity of smoothing clothes with an iron.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_island_noun.a1",
+      "headword": "island",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A piece of land surrounded by water.",
+      "parentKey": "vocabulary.topic_nationalities_and_countries",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_islander_noun.b2",
+      "headword": "islander",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A person who lives on an island.",
+      "parentKey": "vocabulary.topic_nationalities_and_countries",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_isle_noun.b1",
+      "headword": "isle",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A literary word for island.",
+      "parentKey": "vocabulary.topic_nationalities_and_countries",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_issue_noun.a2",
+      "headword": "issue",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A subject or problem for discussion.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_italicize_italicise_verb.b2",
+      "headword": "italicize/italicise",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To print text in italic type.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_item_noun.a1",
+      "headword": "item",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A single article or thing.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_jacket_noun.a1",
+      "headword": "jacket",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A short outer garment with sleeves.",
+      "parentKey": "vocabulary.topic_clothes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_jade_noun.b1",
+      "headword": "jade",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A hard green precious stone.",
+      "parentKey": "vocabulary.topic_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_jail_gaol_noun.b1",
+      "headword": "jail/gaol",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A place where criminals are confined.",
+      "parentKey": "vocabulary.topic_things_in_the_town_shops_and_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_jar_noun.b1",
+      "headword": "jar",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A glass container with a wide opening.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_jazz_noun.b1",
+      "headword": "jazz",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A style of music with improvisation and syncopation.",
+      "parentKey": "vocabulary.topic_arts",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_jeans_noun.a1",
+      "headword": "jeans",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "Trousers made of denim.",
+      "parentKey": "vocabulary.topic_clothes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_jet_noun.a1",
+      "headword": "jet",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "An aircraft powered by a jet engine.",
+      "parentKey": "vocabulary.topic_ways_of_travelling",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_jewel_noun.b1",
+      "headword": "jewel",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A precious stone.",
+      "parentKey": "vocabulary.topic_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_jeweler_jeweller_noun.b2",
+      "headword": "jeweler/jeweller",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A person who makes or sells jewellery.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_jewelry_jewellery_noun.a1",
+      "headword": "jewelry/jewellery",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "Ornaments worn for decoration, such as rings.",
+      "parentKey": "vocabulary.topic_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_job_noun.a1",
+      "headword": "job",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A paid position of regular employment.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_jog_noun.b2",
+      "headword": "jog",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A slow run.",
+      "parentKey": "vocabulary.topic_leisure_activities",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_jogging_noun.b1",
+      "headword": "jogging",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The activity of running at a steady pace.",
+      "parentKey": "vocabulary.topic_leisure_activities",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_journal_noun.b1",
+      "headword": "journal",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A publication issued regularly, or a personal diary.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_journalist_noun.b1",
+      "headword": "journalist",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A person who writes for newspapers or broadcasts.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_journey_noun.a2",
+      "headword": "journey",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "An act of travelling from one place to another.",
+      "parentKey": "vocabulary.topic_travel_and_services_vocab",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_judge_noun.b1",
+      "headword": "judge",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A person who presides over a court of law.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_judgment_judgement_noun.b1",
+      "headword": "judgment/judgement",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A decision made by a court, or an opinion.",
+      "parentKey": "vocabulary.topic_news_lifestyles_and_current_affairs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_judo_noun.b2",
+      "headword": "judo",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A Japanese martial art and sport.",
+      "parentKey": "vocabulary.topic_leisure_activities",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_jug_noun.b1",
+      "headword": "jug",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A container with a handle for holding liquids.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_juice_noun.a1",
+      "headword": "juice",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "The liquid extracted from fruit or vegetables.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_jump_noun.b2",
+      "headword": "jump",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "An act of jumping.",
+      "parentKey": "vocabulary.topic_leisure_activities",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_junk_noun.a2",
+      "headword": "junk",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "Discarded or useless items.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_karaoke_noun.b2",
+      "headword": "karaoke",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "An activity of singing along to recorded music.",
+      "parentKey": "vocabulary.topic_hobbies_and_pastimes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_keeper_noun.b2",
+      "headword": "keeper",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A person who guards or looks after something.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_kettle_noun.b1",
+      "headword": "kettle",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A container for boiling water.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_key_noun.a1",
+      "headword": "key",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A metal object used to open a lock.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_keyboard_noun.b1",
+      "headword": "keyboard",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A set of keys for typing or playing music.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_kid_noun.a1",
+      "headword": "kid",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "An informal word for a child.",
+      "parentKey": "vocabulary.topic_family_life",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_killer_noun.a2",
+      "headword": "killer",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A person or thing that kills.",
+      "parentKey": "vocabulary.topic_news_lifestyles_and_current_affairs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_killing_noun.b1",
+      "headword": "killing",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "An act of causing death.",
+      "parentKey": "vocabulary.topic_news_lifestyles_and_current_affairs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_king_noun.a1",
+      "headword": "king",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A male ruler of a country.",
+      "parentKey": "vocabulary.topic_nationalities_and_countries",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_kingdom_noun.a2",
+      "headword": "kingdom",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A country ruled by a king or queen.",
+      "parentKey": "vocabulary.topic_nationalities_and_countries",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_kitchen_noun.a1",
+      "headword": "kitchen",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A room used for cooking.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
       "extraTags": []
     }
   ]
