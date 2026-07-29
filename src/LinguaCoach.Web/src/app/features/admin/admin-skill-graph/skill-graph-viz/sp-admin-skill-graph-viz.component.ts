@@ -37,8 +37,6 @@ const CEFR_COLORS: Record<string, string> = {
   C1: '#3A2EA8',
   C2: '#211B36',
 };
-const CEFR_LEVELS = Object.keys(CEFR_COLORS);
-
 // Sprint 14.1 — light per-skill box tints for the compound "group by skill" parent nodes.
 const SKILL_BOX_COLORS: Record<string, string> = {
   grammar: '#F4F2FE',
@@ -68,16 +66,6 @@ const SKILL_BOX_COLORS: Record<string, string> = {
   imports: [CommonModule, FormsModule],
   template: `
     <div class="sp-sgv-legend">
-      @for (level of cefrLevels; track level) {
-        <button
-          type="button"
-          class="sp-sgv-legend-item"
-          [class.sp-sgv-legend-item--off]="!activeLevels.has(level)"
-          (click)="toggleLevel(level)"
-        >
-          <span class="sp-sgv-legend-dot" [style.background]="cefrColor(level)"></span>{{ level }}
-        </button>
-      }
       <input
         type="text"
         class="sp-sgv-search"
@@ -99,7 +87,7 @@ const SKILL_BOX_COLORS: Record<string, string> = {
           <option [value]="opt.value">{{ opt.label }}</option>
         }
       </select>
-      <span class="sp-sgv-legend-count">{{ visibleCount }} of {{ nodes.length }} nodes shown</span>
+      <span class="sp-sgv-legend-count">{{ nodes.length }} node(s) shown</span>
     </div>
     <div class="sp-sgv-canvas-wrap">
       <div #cyContainer class="sp-sgv-canvas" [class.sp-sgv-canvas--area-zoom]="areaZoomActive" (mousedown)="onAreaZoomMouseDown($event)"></div>
@@ -114,14 +102,6 @@ const SKILL_BOX_COLORS: Record<string, string> = {
   `,
   styles: [`
     .sp-sgv-legend { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
-    .sp-sgv-legend-item {
-      display: inline-flex; align-items: center; gap: 5px; font-size: 11px;
-      color: var(--sp-admin-text-muted, #8B85A0); background: none; border: none; cursor: pointer;
-      padding: 2px 6px; border-radius: 6px;
-    }
-    .sp-sgv-legend-item:hover { background: var(--sp-admin-border, #ECE9F5); }
-    .sp-sgv-legend-item--off { opacity: 0.35; }
-    .sp-sgv-legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
     .sp-sgv-search {
       font-size: 11px; padding: 4px 8px; border: 1px solid var(--sp-admin-border, #ECE9F5);
       border-radius: 6px; width: 160px; color: var(--sp-admin-text, #211B36);
@@ -157,10 +137,6 @@ export class SpAdminSkillGraphVizComponent implements OnChanges, OnDestroy {
   @Output() nodeSelected = new EventEmitter<SkillGraphNode>();
 
   @ViewChild('cyContainer', { static: true }) container!: ElementRef<HTMLDivElement>;
-
-  readonly cefrLevels = CEFR_LEVELS;
-  activeLevels = new Set<string>(CEFR_LEVELS);
-  visibleCount = 0;
 
   // Layout algorithm picker (2026-07-23) — applies to whatever's currently visible, i.e. the
   // CEFR-level-filtered set (see `visibleNodes` in render()), not the whole 600-node graph.
@@ -211,16 +187,6 @@ export class SpAdminSkillGraphVizComponent implements OnChanges, OnDestroy {
     return level === 'C1' || level === 'C2' ? '#fff' : '#211B36';
   }
 
-  toggleLevel(level: string): void {
-    if (this.activeLevels.has(level)) {
-      if (this.activeLevels.size === 1) return; // never allow zero levels selected
-      this.activeLevels.delete(level);
-    } else {
-      this.activeLevels.add(level);
-    }
-    this.render();
-  }
-
   private render(): void {
     if (!this.container || this.nodes.length === 0) return;
 
@@ -232,8 +198,10 @@ export class SpAdminSkillGraphVizComponent implements OnChanges, OnDestroy {
     this.areaZoomBox = null;
     this.areaZoomStart = null;
 
-    const visibleNodes = this.nodes.filter(n => this.activeLevels.has(n.cefrLevel));
-    this.visibleCount = visibleNodes.length;
+    // CEFR-level filtering now happens server-side (the admin page requires a level+skill
+    // selection before fetching at all — see AdminSkillGraphController.GetGraph), so `nodes` here
+    // is already the visible set; no client-side level filter needed anymore.
+    const visibleNodes = this.nodes;
     if (visibleNodes.length === 0) return;
 
     const nodeIds = new Set(visibleNodes.map(n => n.id));
