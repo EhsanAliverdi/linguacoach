@@ -1,0 +1,1676 @@
+{
+  "containers": [
+    {
+      "key": "listening.topic_airport_travel",
+      "title": "Airport and Travel Announcements",
+      "cefrLevel": "A1"
+    },
+    {
+      "key": "listening.topic_weather",
+      "title": "Weather Reports",
+      "cefrLevel": "A1"
+    },
+    {
+      "key": "listening.topic_phone_conversations",
+      "title": "Phone Conversations",
+      "cefrLevel": "A1"
+    },
+    {
+      "key": "listening.topic_radio_news",
+      "title": "Radio News Reports",
+      "cefrLevel": "A1"
+    },
+    {
+      "key": "listening.topic_shopping_dialogues",
+      "title": "Restaurant and Shopping Dialogues",
+      "cefrLevel": "A1"
+    },
+    {
+      "key": "listening.topic_tours_museums",
+      "title": "Guided Tours and Museum Announcements",
+      "cefrLevel": "A1"
+    },
+    {
+      "key": "listening.topic_workplace_meetings",
+      "title": "Workplace Meetings",
+      "cefrLevel": "A1"
+    },
+    {
+      "key": "listening.topic_lectures",
+      "title": "Lectures and Educational Talks",
+      "cefrLevel": "A1"
+    },
+    {
+      "key": "listening.topic_interviews",
+      "title": "Interviews",
+      "cefrLevel": "A1"
+    },
+    {
+      "key": "listening.topic_storytelling",
+      "title": "Storytelling and Anecdotes",
+      "cefrLevel": "A1"
+    }
+  ],
+  "leaves": [
+    {
+      "key": "listening.topic_airport_travel.a1.1",
+      "title": "Airport and Travel Announcements — A1 Passage 1",
+      "transcript": "Attention please. The train to London leaves from platform two.",
+      "cefrLevel": "A1",
+      "parentKey": "listening.topic_airport_travel",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a1"
+    },
+    {
+      "key": "listening.topic_airport_travel.a1.2",
+      "title": "Airport and Travel Announcements — A1 Passage 2",
+      "transcript": "Welcome aboard. Please sit down and put on your seatbelt.",
+      "cefrLevel": "A1",
+      "parentKey": "listening.topic_airport_travel",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a1"
+    },
+    {
+      "key": "listening.topic_airport_travel.a1.3",
+      "title": "Airport and Travel Announcements — A1 Passage 3",
+      "transcript": "The next stop is Central Station. Please leave the bus from the back door.",
+      "cefrLevel": "A1",
+      "parentKey": "listening.topic_airport_travel",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a1"
+    },
+    {
+      "key": "listening.topic_airport_travel.a2.1",
+      "title": "Airport and Travel Announcements — A2 Passage 1",
+      "transcript": "Good morning passengers. Flight 205 to Madrid is now boarding at gate twelve. Please have your boarding pass ready.",
+      "cefrLevel": "A2",
+      "parentKey": "listening.topic_airport_travel",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a2"
+    },
+    {
+      "key": "listening.topic_airport_travel.a2.2",
+      "title": "Airport and Travel Announcements — A2 Passage 2",
+      "transcript": "Ladies and gentlemen, our train will arrive in five minutes. Please stand behind the yellow line.",
+      "cefrLevel": "A2",
+      "parentKey": "listening.topic_airport_travel",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a2"
+    },
+    {
+      "key": "listening.topic_airport_travel.a2.3",
+      "title": "Airport and Travel Announcements — A2 Passage 3",
+      "transcript": "Welcome to the airport. Please remember to collect your luggage from carousel number three after landing.",
+      "cefrLevel": "A2",
+      "parentKey": "listening.topic_airport_travel",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a2"
+    },
+    {
+      "key": "listening.topic_airport_travel.b1.1",
+      "title": "Airport and Travel Announcements — B1 Passage 1",
+      "transcript": "We are sorry to announce that flight 118 to Paris has been delayed by forty minutes due to bad weather. We apologize for any inconvenience this may cause.",
+      "cefrLevel": "B1",
+      "parentKey": "listening.topic_airport_travel",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b1"
+    },
+    {
+      "key": "listening.topic_airport_travel.b1.2",
+      "title": "Airport and Travel Announcements — B1 Passage 2",
+      "transcript": "Passengers travelling to the city centre should take the shuttle bus outside exit four. Tickets can be bought from the machine near the entrance.",
+      "cefrLevel": "B1",
+      "parentKey": "listening.topic_airport_travel",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b1"
+    },
+    {
+      "key": "listening.topic_airport_travel.b1.3",
+      "title": "Airport and Travel Announcements — B1 Passage 3",
+      "transcript": "This is a reminder that all liquids in your hand luggage must be in containers of one hundred millilitres or less.",
+      "cefrLevel": "B1",
+      "parentKey": "listening.topic_airport_travel",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b1"
+    },
+    {
+      "key": "listening.topic_airport_travel.b2.1",
+      "title": "Airport and Travel Announcements — B2 Passage 1",
+      "transcript": "Due to a technical issue with the aircraft, flight 452 will now depart from gate nine instead of gate three. Passengers are advised to proceed to the new gate immediately, as boarding will begin shortly.",
+      "cefrLevel": "B2",
+      "parentKey": "listening.topic_airport_travel",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b2"
+    },
+    {
+      "key": "listening.topic_airport_travel.b2.2",
+      "title": "Airport and Travel Announcements — B2 Passage 2",
+      "transcript": "We would like to remind all passengers that security procedures have recently changed. Electronic devices larger than a mobile phone must now be placed in a separate tray during screening.",
+      "cefrLevel": "B2",
+      "parentKey": "listening.topic_airport_travel",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b2"
+    },
+    {
+      "key": "listening.topic_airport_travel.b2.3",
+      "title": "Airport and Travel Announcements — B2 Passage 3",
+      "transcript": "Due to unusually high passenger numbers today, waiting times at check-in may be longer than usual. We recommend arriving at least two hours before your scheduled departure.",
+      "cefrLevel": "B2",
+      "parentKey": "listening.topic_airport_travel",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b2"
+    },
+    {
+      "key": "listening.topic_airport_travel.c1.1",
+      "title": "Airport and Travel Announcements — C1 Passage 1",
+      "transcript": "We regret to inform passengers that, owing to an ongoing air traffic control dispute affecting several European hubs, a number of flights this afternoon are likely to experience significant delays. Updates will be posted on the departure boards as they become available.",
+      "cefrLevel": "C1",
+      "parentKey": "listening.topic_airport_travel",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c1"
+    },
+    {
+      "key": "listening.topic_airport_travel.c1.2",
+      "title": "Airport and Travel Announcements — C1 Passage 2",
+      "transcript": "In light of recent changes to international travel regulations, passengers transiting through this airport are now required to complete an additional customs declaration prior to boarding their connecting flight.",
+      "cefrLevel": "C1",
+      "parentKey": "listening.topic_airport_travel",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c1"
+    },
+    {
+      "key": "listening.topic_airport_travel.c1.3",
+      "title": "Airport and Travel Announcements — C1 Passage 3",
+      "transcript": "We would like to draw your attention to the fact that the airport's new terminal, opening next month, will consolidate several services currently spread across three separate buildings, reducing transfer times considerably.",
+      "cefrLevel": "C1",
+      "parentKey": "listening.topic_airport_travel",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c1"
+    },
+    {
+      "key": "listening.topic_airport_travel.c2.1",
+      "title": "Airport and Travel Announcements — C2 Passage 1",
+      "transcript": "Passengers are advised that, following an extensive review of security protocols prompted by recent incidents at comparable international hubs, the authorities have implemented a series of measures that, while intended to enhance overall safety, may nonetheless result in noticeably extended processing times during peak travel periods.",
+      "cefrLevel": "C2",
+      "parentKey": "listening.topic_airport_travel",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c2"
+    },
+    {
+      "key": "listening.topic_airport_travel.c2.2",
+      "title": "Airport and Travel Announcements — C2 Passage 2",
+      "transcript": "It has come to our attention that a subset of connecting passengers may be affected by the cascading delays originating from this morning's systems outage; we would therefore encourage anyone with a tight connection to consult a member of staff, who will be able to advise on alternative routing options.",
+      "cefrLevel": "C2",
+      "parentKey": "listening.topic_airport_travel",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c2"
+    },
+    {
+      "key": "listening.topic_airport_travel.c2.3",
+      "title": "Airport and Travel Announcements — C2 Passage 3",
+      "transcript": "The airport authority wishes to acknowledge the considerable disruption experienced by travellers over the past week, and to reassure the public that a comprehensive investigation into the underlying infrastructure failures is already underway, with a detailed report expected within the coming month.",
+      "cefrLevel": "C2",
+      "parentKey": "listening.topic_airport_travel",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c2"
+    },
+    {
+      "key": "listening.topic_weather.a1.1",
+      "title": "Weather Reports — A1 Passage 1",
+      "transcript": "Today is sunny. It is warm outside.",
+      "cefrLevel": "A1",
+      "parentKey": "listening.topic_weather",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a1"
+    },
+    {
+      "key": "listening.topic_weather.a1.2",
+      "title": "Weather Reports — A1 Passage 2",
+      "transcript": "It is raining today. Take an umbrella.",
+      "cefrLevel": "A1",
+      "parentKey": "listening.topic_weather",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a1"
+    },
+    {
+      "key": "listening.topic_weather.a1.3",
+      "title": "Weather Reports — A1 Passage 3",
+      "transcript": "Tomorrow will be cold and windy.",
+      "cefrLevel": "A1",
+      "parentKey": "listening.topic_weather",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a1"
+    },
+    {
+      "key": "listening.topic_weather.a2.1",
+      "title": "Weather Reports — A2 Passage 1",
+      "transcript": "Good morning. Today will be cloudy with some rain in the afternoon. The temperature will be around fifteen degrees.",
+      "cefrLevel": "A2",
+      "parentKey": "listening.topic_weather",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a2"
+    },
+    {
+      "key": "listening.topic_weather.a2.2",
+      "title": "Weather Reports — A2 Passage 2",
+      "transcript": "This weekend looks sunny and warm, perfect for a walk in the park or a day at the beach.",
+      "cefrLevel": "A2",
+      "parentKey": "listening.topic_weather",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a2"
+    },
+    {
+      "key": "listening.topic_weather.a2.3",
+      "title": "Weather Reports — A2 Passage 3",
+      "transcript": "Tonight will be cold with a chance of frost, so remember to wear a warm coat tomorrow morning.",
+      "cefrLevel": "A2",
+      "parentKey": "listening.topic_weather",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a2"
+    },
+    {
+      "key": "listening.topic_weather.b1.1",
+      "title": "Weather Reports — B1 Passage 1",
+      "transcript": "Here is the weather forecast for the week. Monday and Tuesday will be mostly sunny, but we expect heavy rain to arrive by Wednesday, along with much stronger winds.",
+      "cefrLevel": "B1",
+      "parentKey": "listening.topic_weather",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b1"
+    },
+    {
+      "key": "listening.topic_weather.b1.2",
+      "title": "Weather Reports — B1 Passage 2",
+      "transcript": "A cold front is moving in from the north tonight, which means temperatures will drop sharply after midnight. Drivers should be careful of icy roads in the morning.",
+      "cefrLevel": "B1",
+      "parentKey": "listening.topic_weather",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b1"
+    },
+    {
+      "key": "listening.topic_weather.b1.3",
+      "title": "Weather Reports — B1 Passage 3",
+      "transcript": "After several weeks of dry weather, forecasters are predicting the first significant rainfall of the season this weekend, which should bring some much-needed relief to local farmers.",
+      "cefrLevel": "B1",
+      "parentKey": "listening.topic_weather",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b1"
+    },
+    {
+      "key": "listening.topic_weather.b2.1",
+      "title": "Weather Reports — B2 Passage 1",
+      "transcript": "Meteorologists are warning residents along the coast to prepare for a powerful storm expected to make landfall late tonight, bringing strong winds, heavy rainfall, and the possibility of localized flooding in low-lying areas.",
+      "cefrLevel": "B2",
+      "parentKey": "listening.topic_weather",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b2"
+    },
+    {
+      "key": "listening.topic_weather.b2.2",
+      "title": "Weather Reports — B2 Passage 2",
+      "transcript": "Although temperatures have remained unusually mild for this time of year, forecasters caution that a sudden shift in the jet stream could bring a sharp drop in temperature by the end of the week.",
+      "cefrLevel": "B2",
+      "parentKey": "listening.topic_weather",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b2"
+    },
+    {
+      "key": "listening.topic_weather.b2.3",
+      "title": "Weather Reports — B2 Passage 3",
+      "transcript": "Despite yesterday's clear skies, atmospheric pressure readings suggest that conditions will deteriorate rapidly overnight, with thunderstorms likely to develop across most of the region by early tomorrow morning.",
+      "cefrLevel": "B2",
+      "parentKey": "listening.topic_weather",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b2"
+    },
+    {
+      "key": "listening.topic_weather.c1.1",
+      "title": "Weather Reports — C1 Passage 1",
+      "transcript": "Climatologists note that this year's prolonged heatwave, now entering its third consecutive week, is consistent with broader patterns of extreme weather that have become increasingly frequent over the past decade, raising fresh concerns among agricultural experts.",
+      "cefrLevel": "C1",
+      "parentKey": "listening.topic_weather",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c1"
+    },
+    {
+      "key": "listening.topic_weather.c1.2",
+      "title": "Weather Reports — C1 Passage 2",
+      "transcript": "While short-term forecasts remain relatively reliable, predicting the long-term trajectory of this particular weather system has proven challenging, given the unusual interaction between converging air masses over the Atlantic.",
+      "cefrLevel": "C1",
+      "parentKey": "listening.topic_weather",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c1"
+    },
+    {
+      "key": "listening.topic_weather.c1.3",
+      "title": "Weather Reports — C1 Passage 3",
+      "transcript": "Authorities have issued a series of advisories urging vulnerable residents to take precautions, as the combination of high humidity and elevated temperatures is expected to create conditions that pose a genuine risk to public health.",
+      "cefrLevel": "C1",
+      "parentKey": "listening.topic_weather",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c1"
+    },
+    {
+      "key": "listening.topic_weather.c2.1",
+      "title": "Weather Reports — C2 Passage 1",
+      "transcript": "Forecasters have expressed cautious concern that the atmospheric anomalies observed over the past fortnight, while not unprecedented, appear to be occurring with a frequency that some researchers argue may be symptomatic of longer-term shifts in regional climate patterns rather than a purely transient phenomenon.",
+      "cefrLevel": "C2",
+      "parentKey": "listening.topic_weather",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c2"
+    },
+    {
+      "key": "listening.topic_weather.c2.2",
+      "title": "Weather Reports — C2 Passage 2",
+      "transcript": "Despite considerable advances in predictive modelling, meteorological agencies continue to grapple with the inherent unpredictability of convective storm systems, whose rapid intensification can render even short-range forecasts unreliable within a matter of hours.",
+      "cefrLevel": "C2",
+      "parentKey": "listening.topic_weather",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c2"
+    },
+    {
+      "key": "listening.topic_weather.c2.3",
+      "title": "Weather Reports — C2 Passage 3",
+      "transcript": "The unusually erratic behaviour of this season's jet stream, oscillating between extremes with little apparent regularity, has left forecasters reluctant to issue anything beyond provisional guidance, a stance that reflects the broader scientific caution now common in long-range climate communication.",
+      "cefrLevel": "C2",
+      "parentKey": "listening.topic_weather",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c2"
+    },
+    {
+      "key": "listening.topic_phone_conversations.a1.1",
+      "title": "Phone Conversations — A1 Passage 1",
+      "transcript": "Hello. This is Anna. Can I speak to Tom, please?",
+      "cefrLevel": "A1",
+      "parentKey": "listening.topic_phone_conversations",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a1"
+    },
+    {
+      "key": "listening.topic_phone_conversations.a1.2",
+      "title": "Phone Conversations — A1 Passage 2",
+      "transcript": "Hi Mum. I am at school. I will come home before dinner at four o'clock.",
+      "cefrLevel": "A1",
+      "parentKey": "listening.topic_phone_conversations",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a1"
+    },
+    {
+      "key": "listening.topic_phone_conversations.a1.3",
+      "title": "Phone Conversations — A1 Passage 3",
+      "transcript": "Hello. Is this the pizza restaurant? I want to order a pizza.",
+      "cefrLevel": "A1",
+      "parentKey": "listening.topic_phone_conversations",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a1"
+    },
+    {
+      "key": "listening.topic_phone_conversations.a2.1",
+      "title": "Phone Conversations — A2 Passage 1",
+      "transcript": "Hi, it's me. I'm running a bit late, so I'll meet you at the cafe in about twenty minutes instead of six o'clock.",
+      "cefrLevel": "A2",
+      "parentKey": "listening.topic_phone_conversations",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a2"
+    },
+    {
+      "key": "listening.topic_phone_conversations.a2.2",
+      "title": "Phone Conversations — A2 Passage 2",
+      "transcript": "Good afternoon, I'm calling to book a table for four people this Saturday evening, if that's possible.",
+      "cefrLevel": "A2",
+      "parentKey": "listening.topic_phone_conversations",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a2"
+    },
+    {
+      "key": "listening.topic_phone_conversations.a2.3",
+      "title": "Phone Conversations — A2 Passage 3",
+      "transcript": "Hello, is this the doctor's office? I'd like to make an appointment for next Tuesday morning, please.",
+      "cefrLevel": "A2",
+      "parentKey": "listening.topic_phone_conversations",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a2"
+    },
+    {
+      "key": "listening.topic_phone_conversations.b1.1",
+      "title": "Phone Conversations — B1 Passage 1",
+      "transcript": "Hi Sarah, sorry to bother you, but I was wondering if you could send me those documents before the meeting tomorrow. I really need them by nine in the morning.",
+      "cefrLevel": "B1",
+      "parentKey": "listening.topic_phone_conversations",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b1"
+    },
+    {
+      "key": "listening.topic_phone_conversations.b1.2",
+      "title": "Phone Conversations — B1 Passage 2",
+      "transcript": "Hello, I'm calling about the flat I saw advertised online. Is it still available, and would it be possible to arrange a viewing this week?",
+      "cefrLevel": "B1",
+      "parentKey": "listening.topic_phone_conversations",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b1"
+    },
+    {
+      "key": "listening.topic_phone_conversations.b1.3",
+      "title": "Phone Conversations — B1 Passage 3",
+      "transcript": "Hi, this is James from the technical support team. I understand you've been having some trouble with your internet connection, so I'll try to help you sort it out now.",
+      "cefrLevel": "B1",
+      "parentKey": "listening.topic_phone_conversations",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b1"
+    },
+    {
+      "key": "listening.topic_phone_conversations.b2.1",
+      "title": "Phone Conversations — B2 Passage 1",
+      "transcript": "Hi Claire, I'm calling to let you know that the client has asked us to push the presentation back to Friday, so we'll need to rearrange the schedule for the rest of the team accordingly.",
+      "cefrLevel": "B2",
+      "parentKey": "listening.topic_phone_conversations",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b2"
+    },
+    {
+      "key": "listening.topic_phone_conversations.b2.2",
+      "title": "Phone Conversations — B2 Passage 2",
+      "transcript": "Good morning, I'm following up on the complaint I submitted last week regarding the delayed delivery. I still haven't received any update, and I was hoping you could look into it for me.",
+      "cefrLevel": "B2",
+      "parentKey": "listening.topic_phone_conversations",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b2"
+    },
+    {
+      "key": "listening.topic_phone_conversations.b2.3",
+      "title": "Phone Conversations — B2 Passage 3",
+      "transcript": "Hi, it's Mark from the accounts department. I noticed a discrepancy in last month's invoice, and I wanted to check with you before we process the payment, just to be on the safe side.",
+      "cefrLevel": "B2",
+      "parentKey": "listening.topic_phone_conversations",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b2"
+    },
+    {
+      "key": "listening.topic_phone_conversations.c1.1",
+      "title": "Phone Conversations — C1 Passage 1",
+      "transcript": "Hello, I'm calling regarding the contract renewal we discussed last month. Before we proceed any further, I think it would be worth clarifying a couple of the clauses relating to termination, as they seem slightly ambiguous.",
+      "cefrLevel": "C1",
+      "parentKey": "listening.topic_phone_conversations",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c1"
+    },
+    {
+      "key": "listening.topic_phone_conversations.c1.2",
+      "title": "Phone Conversations — C1 Passage 2",
+      "transcript": "Hi Professor Lee, I wanted to ask whether you'd be available to discuss my dissertation proposal at some point this week. I've made some revisions based on your earlier feedback and would appreciate your thoughts before I submit the final draft.",
+      "cefrLevel": "C1",
+      "parentKey": "listening.topic_phone_conversations",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c1"
+    },
+    {
+      "key": "listening.topic_phone_conversations.c1.3",
+      "title": "Phone Conversations — C1 Passage 3",
+      "transcript": "Good afternoon, I'm reaching out on behalf of the committee to confirm your participation in next month's panel discussion. We'd also like to know if you have any specific requirements regarding the format of the session.",
+      "cefrLevel": "C1",
+      "parentKey": "listening.topic_phone_conversations",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c1"
+    },
+    {
+      "key": "listening.topic_phone_conversations.c2.1",
+      "title": "Phone Conversations — C2 Passage 1",
+      "transcript": "I'm calling to raise a concern that has come up repeatedly during our internal reviews: while the proposed restructuring undoubtedly addresses several operational inefficiencies, it does so in a manner that risks undermining the very departmental autonomy the original policy was designed to protect.",
+      "cefrLevel": "C2",
+      "parentKey": "listening.topic_phone_conversations",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c2"
+    },
+    {
+      "key": "listening.topic_phone_conversations.c2.2",
+      "title": "Phone Conversations — C2 Passage 2",
+      "transcript": "Given the sensitivity of the negotiations currently underway, I'd strongly advise against circulating the draft agreement any further until legal counsel has had an opportunity to review the indemnity provisions, particularly in light of the precedent set by the earlier dispute.",
+      "cefrLevel": "C2",
+      "parentKey": "listening.topic_phone_conversations",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c2"
+    },
+    {
+      "key": "listening.topic_phone_conversations.c2.3",
+      "title": "Phone Conversations — C2 Passage 3",
+      "transcript": "I appreciate you taking the time to speak with me, especially given how contentious this issue has become within the department; my primary concern is that, without a more transparent consultation process, whatever decision is ultimately reached is likely to be met with considerable resistance.",
+      "cefrLevel": "C2",
+      "parentKey": "listening.topic_phone_conversations",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c2"
+    },
+    {
+      "key": "listening.topic_radio_news.a1.1",
+      "title": "Radio News Reports — A1 Passage 1",
+      "transcript": "Good morning. The news today. A new park opens in the city.",
+      "cefrLevel": "A1",
+      "parentKey": "listening.topic_radio_news",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a1"
+    },
+    {
+      "key": "listening.topic_radio_news.a1.2",
+      "title": "Radio News Reports — A1 Passage 2",
+      "transcript": "This is the news. It is a sunny day in the city today.",
+      "cefrLevel": "A1",
+      "parentKey": "listening.topic_radio_news",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a1"
+    },
+    {
+      "key": "listening.topic_radio_news.a1.3",
+      "title": "Radio News Reports — A1 Passage 3",
+      "transcript": "Now the news. A famous singer visits our town today.",
+      "cefrLevel": "A1",
+      "parentKey": "listening.topic_radio_news",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a1"
+    },
+    {
+      "key": "listening.topic_radio_news.a2.1",
+      "title": "Radio News Reports — A2 Passage 1",
+      "transcript": "Good evening and welcome to the news. Today, the city council announced plans to build a new library in the town centre.",
+      "cefrLevel": "A2",
+      "parentKey": "listening.topic_radio_news",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a2"
+    },
+    {
+      "key": "listening.topic_radio_news.a2.2",
+      "title": "Radio News Reports — A2 Passage 2",
+      "transcript": "In sports news, the local football team won their match yesterday, scoring three goals in the second half.",
+      "cefrLevel": "A2",
+      "parentKey": "listening.topic_radio_news",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a2"
+    },
+    {
+      "key": "listening.topic_radio_news.a2.3",
+      "title": "Radio News Reports — A2 Passage 3",
+      "transcript": "And finally tonight, a new bakery has opened on Main Street, offering fresh bread every morning.",
+      "cefrLevel": "A2",
+      "parentKey": "listening.topic_radio_news",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a2"
+    },
+    {
+      "key": "listening.topic_radio_news.b1.1",
+      "title": "Radio News Reports — B1 Passage 1",
+      "transcript": "Welcome to the six o'clock news. Local officials have confirmed that the new bridge project will begin next month, aiming to reduce traffic problems in the city centre.",
+      "cefrLevel": "B1",
+      "parentKey": "listening.topic_radio_news",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b1"
+    },
+    {
+      "key": "listening.topic_radio_news.b1.2",
+      "title": "Radio News Reports — B1 Passage 2",
+      "transcript": "In business news, a well-known technology company announced today that it plans to open a new office here, creating around two hundred new jobs over the next year.",
+      "cefrLevel": "B1",
+      "parentKey": "listening.topic_radio_news",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b1"
+    },
+    {
+      "key": "listening.topic_radio_news.b1.3",
+      "title": "Radio News Reports — B1 Passage 3",
+      "transcript": "Turning to sports, the national team has qualified for the championship after a hard-fought victory last night, delighting fans across the country.",
+      "cefrLevel": "B1",
+      "parentKey": "listening.topic_radio_news",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b1"
+    },
+    {
+      "key": "listening.topic_radio_news.b2.1",
+      "title": "Radio News Reports — B2 Passage 1",
+      "transcript": "Good evening. The government has unveiled a new plan aimed at reducing energy costs for households, though critics argue the measures do not go far enough to address rising prices.",
+      "cefrLevel": "B2",
+      "parentKey": "listening.topic_radio_news",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b2"
+    },
+    {
+      "key": "listening.topic_radio_news.b2.2",
+      "title": "Radio News Reports — B2 Passage 2",
+      "transcript": "In today's top story, researchers have published a study suggesting that regular exercise may have a greater impact on long-term health than previously believed, prompting renewed public interest in fitness programmes.",
+      "cefrLevel": "B2",
+      "parentKey": "listening.topic_radio_news",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b2"
+    },
+    {
+      "key": "listening.topic_radio_news.b2.3",
+      "title": "Radio News Reports — B2 Passage 3",
+      "transcript": "Elsewhere, city planners have approved a controversial proposal to redevelop the old industrial district, a decision that has divided residents between those welcoming new investment and those concerned about rising rents.",
+      "cefrLevel": "B2",
+      "parentKey": "listening.topic_radio_news",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b2"
+    },
+    {
+      "key": "listening.topic_radio_news.c1.1",
+      "title": "Radio News Reports — C1 Passage 1",
+      "transcript": "Good evening. Economists remain divided over the long-term implications of today's interest rate announcement, with some warning of a slowdown in consumer spending while others argue the move was necessary to curb persistent inflation.",
+      "cefrLevel": "C1",
+      "parentKey": "listening.topic_radio_news",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c1"
+    },
+    {
+      "key": "listening.topic_radio_news.c1.2",
+      "title": "Radio News Reports — C1 Passage 2",
+      "transcript": "In an exclusive interview tonight, the newly appointed minister outlined a series of reforms intended to modernize the healthcare system, though she acknowledged that implementation would likely face significant political and logistical hurdles.",
+      "cefrLevel": "C1",
+      "parentKey": "listening.topic_radio_news",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c1"
+    },
+    {
+      "key": "listening.topic_radio_news.c1.3",
+      "title": "Radio News Reports — C1 Passage 3",
+      "transcript": "A report released today has drawn attention to a growing disparity in educational outcomes between urban and rural areas, prompting calls from several advocacy groups for a comprehensive review of current funding formulas.",
+      "cefrLevel": "C1",
+      "parentKey": "listening.topic_radio_news",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c1"
+    },
+    {
+      "key": "listening.topic_radio_news.c2.1",
+      "title": "Radio News Reports — C2 Passage 1",
+      "transcript": "Analysts have described today's market volatility as symptomatic of a broader unease among investors, who remain wary of the potential ripple effects should ongoing trade negotiations fail to yield a resolution before the current deadline.",
+      "cefrLevel": "C2",
+      "parentKey": "listening.topic_radio_news",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c2"
+    },
+    {
+      "key": "listening.topic_radio_news.c2.2",
+      "title": "Radio News Reports — C2 Passage 2",
+      "transcript": "Critics of the newly proposed legislation argue that, while ostensibly designed to enhance regulatory oversight, its vaguely worded provisions could inadvertently grant disproportionate discretionary power to unelected officials, a concern several legal scholars have echoed in recent commentary.",
+      "cefrLevel": "C2",
+      "parentKey": "listening.topic_radio_news",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c2"
+    },
+    {
+      "key": "listening.topic_radio_news.c2.3",
+      "title": "Radio News Reports — C2 Passage 3",
+      "transcript": "The commission's long-awaited report, released after months of deliberation, concludes that systemic underinvestment, rather than any single policy failure, is primarily responsible for the infrastructure shortcomings that have plagued the region for the better part of a decade.",
+      "cefrLevel": "C2",
+      "parentKey": "listening.topic_radio_news",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c2"
+    },
+    {
+      "key": "listening.topic_shopping_dialogues.a1.1",
+      "title": "Restaurant and Shopping Dialogues — A1 Passage 1",
+      "transcript": "Hello. Can I have a coffee, please? Thank you.",
+      "cefrLevel": "A1",
+      "parentKey": "listening.topic_shopping_dialogues",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a1"
+    },
+    {
+      "key": "listening.topic_shopping_dialogues.a1.2",
+      "title": "Restaurant and Shopping Dialogues — A1 Passage 2",
+      "transcript": "Excuse me. How much is this shirt?",
+      "cefrLevel": "A1",
+      "parentKey": "listening.topic_shopping_dialogues",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a1"
+    },
+    {
+      "key": "listening.topic_shopping_dialogues.a1.3",
+      "title": "Restaurant and Shopping Dialogues — A1 Passage 3",
+      "transcript": "Good morning. I would like two apples, please.",
+      "cefrLevel": "A1",
+      "parentKey": "listening.topic_shopping_dialogues",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a1"
+    },
+    {
+      "key": "listening.topic_shopping_dialogues.a2.1",
+      "title": "Restaurant and Shopping Dialogues — A2 Passage 1",
+      "transcript": "Good afternoon. Table for two, please. Do you have a table near the window?",
+      "cefrLevel": "A2",
+      "parentKey": "listening.topic_shopping_dialogues",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a2"
+    },
+    {
+      "key": "listening.topic_shopping_dialogues.a2.2",
+      "title": "Restaurant and Shopping Dialogues — A2 Passage 2",
+      "transcript": "Excuse me, do you have this jacket in a smaller size? I think this one is too big for me.",
+      "cefrLevel": "A2",
+      "parentKey": "listening.topic_shopping_dialogues",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a2"
+    },
+    {
+      "key": "listening.topic_shopping_dialogues.a2.3",
+      "title": "Restaurant and Shopping Dialogues — A2 Passage 3",
+      "transcript": "Hi, I'd like to return this pair of shoes. They don't fit very well.",
+      "cefrLevel": "A2",
+      "parentKey": "listening.topic_shopping_dialogues",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a2"
+    },
+    {
+      "key": "listening.topic_shopping_dialogues.b1.1",
+      "title": "Restaurant and Shopping Dialogues — B1 Passage 1",
+      "transcript": "Good evening. We have a reservation under the name Wilson for eight o'clock. Could we also see the wine menu, please?",
+      "cefrLevel": "B1",
+      "parentKey": "listening.topic_shopping_dialogues",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b1"
+    },
+    {
+      "key": "listening.topic_shopping_dialogues.b1.2",
+      "title": "Restaurant and Shopping Dialogues — B1 Passage 2",
+      "transcript": "Excuse me, I bought this phone last week, but it stopped working this morning. Could I get a refund or an exchange?",
+      "cefrLevel": "B1",
+      "parentKey": "listening.topic_shopping_dialogues",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b1"
+    },
+    {
+      "key": "listening.topic_shopping_dialogues.b1.3",
+      "title": "Restaurant and Shopping Dialogues — B1 Passage 3",
+      "transcript": "Hi, I'm looking for a birthday present for my sister. Could you recommend something popular for someone in their twenties?",
+      "cefrLevel": "B1",
+      "parentKey": "listening.topic_shopping_dialogues",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b1"
+    },
+    {
+      "key": "listening.topic_shopping_dialogues.b2.1",
+      "title": "Restaurant and Shopping Dialogues — B2 Passage 1",
+      "transcript": "I understand there's a mistake on our bill. We were charged for two desserts, but we only ordered one, so could you please check that for us?",
+      "cefrLevel": "B2",
+      "parentKey": "listening.topic_shopping_dialogues",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b2"
+    },
+    {
+      "key": "listening.topic_shopping_dialogues.b2.2",
+      "title": "Restaurant and Shopping Dialogues — B2 Passage 2",
+      "transcript": "I'm a bit disappointed with the quality of this jacket, especially given the price. Is there a manager I could speak to about getting a partial refund?",
+      "cefrLevel": "B2",
+      "parentKey": "listening.topic_shopping_dialogues",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b2"
+    },
+    {
+      "key": "listening.topic_shopping_dialogues.b2.3",
+      "title": "Restaurant and Shopping Dialogues — B2 Passage 3",
+      "transcript": "I'd like to place a large order for a corporate event next week. Would it be possible to arrange a discount given the size of the order?",
+      "cefrLevel": "B2",
+      "parentKey": "listening.topic_shopping_dialogues",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b2"
+    },
+    {
+      "key": "listening.topic_shopping_dialogues.c1.1",
+      "title": "Restaurant and Shopping Dialogues — C1 Passage 1",
+      "transcript": "I appreciate the recommendation, but I'm specifically looking for something that pairs well with the main course we've already selected, ideally something a little lighter given how rich the sauce is.",
+      "cefrLevel": "C1",
+      "parentKey": "listening.topic_shopping_dialogues",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c1"
+    },
+    {
+      "key": "listening.topic_shopping_dialogues.c1.2",
+      "title": "Restaurant and Shopping Dialogues — C1 Passage 2",
+      "transcript": "While I understand the store's policy on final sale items, I wasn't made aware of this restriction at the time of purchase, and I believe that should be taken into account when resolving this issue.",
+      "cefrLevel": "C1",
+      "parentKey": "listening.topic_shopping_dialogues",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c1"
+    },
+    {
+      "key": "listening.topic_shopping_dialogues.c1.3",
+      "title": "Restaurant and Shopping Dialogues — C1 Passage 3",
+      "transcript": "Given the volume of business we're planning to bring you over the coming year, I was hoping we might be able to negotiate more favourable terms than what's currently on offer.",
+      "cefrLevel": "C1",
+      "parentKey": "listening.topic_shopping_dialogues",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c1"
+    },
+    {
+      "key": "listening.topic_shopping_dialogues.c2.1",
+      "title": "Restaurant and Shopping Dialogues — C2 Passage 1",
+      "transcript": "I have to say, the discrepancy between what was advertised online and what was actually delivered raises some fairly serious questions about the store's quality control processes, which I'd like addressed before I consider shopping here again.",
+      "cefrLevel": "C2",
+      "parentKey": "listening.topic_shopping_dialogues",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c2"
+    },
+    {
+      "key": "listening.topic_shopping_dialogues.c2.2",
+      "title": "Restaurant and Shopping Dialogues — C2 Passage 2",
+      "transcript": "Setting aside the pricing issue for a moment, what concerns me more is the inconsistency in how staff have handled similar complaints in the past, which suggests the problem may be more systemic than an isolated oversight.",
+      "cefrLevel": "C2",
+      "parentKey": "listening.topic_shopping_dialogues",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c2"
+    },
+    {
+      "key": "listening.topic_shopping_dialogues.c2.3",
+      "title": "Restaurant and Shopping Dialogues — C2 Passage 3",
+      "transcript": "I recognize that supply chain disruptions are largely beyond your control, but I would nonetheless appreciate a more transparent explanation of why this delay wasn't communicated to loyal customers before the order was placed.",
+      "cefrLevel": "C2",
+      "parentKey": "listening.topic_shopping_dialogues",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c2"
+    },
+    {
+      "key": "listening.topic_tours_museums.a1.1",
+      "title": "Guided Tours and Museum Announcements — A1 Passage 1",
+      "transcript": "Welcome to the museum. This is a very old painting.",
+      "cefrLevel": "A1",
+      "parentKey": "listening.topic_tours_museums",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a1"
+    },
+    {
+      "key": "listening.topic_tours_museums.a1.2",
+      "title": "Guided Tours and Museum Announcements — A1 Passage 2",
+      "transcript": "Look at this big statue. It is very old and beautiful.",
+      "cefrLevel": "A1",
+      "parentKey": "listening.topic_tours_museums",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a1"
+    },
+    {
+      "key": "listening.topic_tours_museums.a1.3",
+      "title": "Guided Tours and Museum Announcements — A1 Passage 3",
+      "transcript": "This room has many beautiful paintings.",
+      "cefrLevel": "A1",
+      "parentKey": "listening.topic_tours_museums",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a1"
+    },
+    {
+      "key": "listening.topic_tours_museums.a2.1",
+      "title": "Guided Tours and Museum Announcements — A2 Passage 1",
+      "transcript": "Welcome everyone. This painting was made over two hundred years ago by a famous local artist.",
+      "cefrLevel": "A2",
+      "parentKey": "listening.topic_tours_museums",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a2"
+    },
+    {
+      "key": "listening.topic_tours_museums.a2.2",
+      "title": "Guided Tours and Museum Announcements — A2 Passage 2",
+      "transcript": "Please follow me to the next room, where you will see some interesting objects from ancient history.",
+      "cefrLevel": "A2",
+      "parentKey": "listening.topic_tours_museums",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a2"
+    },
+    {
+      "key": "listening.topic_tours_museums.a2.3",
+      "title": "Guided Tours and Museum Announcements — A2 Passage 3",
+      "transcript": "This building was built many years ago and is now one of the oldest in the city.",
+      "cefrLevel": "A2",
+      "parentKey": "listening.topic_tours_museums",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a2"
+    },
+    {
+      "key": "listening.topic_tours_museums.b1.1",
+      "title": "Guided Tours and Museum Announcements — B1 Passage 1",
+      "transcript": "As we move into the next gallery, you'll notice a collection of artefacts discovered during excavations in the region about fifty years ago.",
+      "cefrLevel": "B1",
+      "parentKey": "listening.topic_tours_museums",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b1"
+    },
+    {
+      "key": "listening.topic_tours_museums.b1.2",
+      "title": "Guided Tours and Museum Announcements — B1 Passage 2",
+      "transcript": "This particular sculpture attracted a lot of attention when it was first displayed, mainly because of the unusual materials the artist chose to use.",
+      "cefrLevel": "B1",
+      "parentKey": "listening.topic_tours_museums",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b1"
+    },
+    {
+      "key": "listening.topic_tours_museums.b1.3",
+      "title": "Guided Tours and Museum Announcements — B1 Passage 3",
+      "transcript": "Before we continue, please remember that photography is allowed in most areas, but flash photography is not permitted near the older paintings.",
+      "cefrLevel": "B1",
+      "parentKey": "listening.topic_tours_museums",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b1"
+    },
+    {
+      "key": "listening.topic_tours_museums.b2.1",
+      "title": "Guided Tours and Museum Announcements — B2 Passage 1",
+      "transcript": "What makes this exhibition particularly significant is that many of these pieces have never been shown to the public before, having remained in private collections for several decades.",
+      "cefrLevel": "B2",
+      "parentKey": "listening.topic_tours_museums",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b2"
+    },
+    {
+      "key": "listening.topic_tours_museums.b2.2",
+      "title": "Guided Tours and Museum Announcements — B2 Passage 2",
+      "transcript": "The restoration work you can see being carried out today is part of a long-term project aimed at preserving these artefacts for future generations to appreciate.",
+      "cefrLevel": "B2",
+      "parentKey": "listening.topic_tours_museums",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b2"
+    },
+    {
+      "key": "listening.topic_tours_museums.b2.3",
+      "title": "Guided Tours and Museum Announcements — B2 Passage 3",
+      "transcript": "Historians still debate the exact origins of this artefact, though most agree it likely dates back to a period of significant cultural exchange between neighbouring regions.",
+      "cefrLevel": "B2",
+      "parentKey": "listening.topic_tours_museums",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b2"
+    },
+    {
+      "key": "listening.topic_tours_museums.c1.1",
+      "title": "Guided Tours and Museum Announcements — C1 Passage 1",
+      "transcript": "Although the artist is best remembered for this particular style, it's worth noting that his earlier, lesser-known work reveals a much more experimental approach that only later gave way to the technique we associate with him today.",
+      "cefrLevel": "C1",
+      "parentKey": "listening.topic_tours_museums",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c1"
+    },
+    {
+      "key": "listening.topic_tours_museums.c1.2",
+      "title": "Guided Tours and Museum Announcements — C1 Passage 2",
+      "transcript": "This gallery brings together pieces from several distinct periods, allowing visitors to trace the gradual evolution of artistic technique across nearly three centuries of regional history.",
+      "cefrLevel": "C1",
+      "parentKey": "listening.topic_tours_museums",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c1"
+    },
+    {
+      "key": "listening.topic_tours_museums.c1.3",
+      "title": "Guided Tours and Museum Announcements — C1 Passage 3",
+      "transcript": "The museum acquired this collection under somewhat controversial circumstances, a history that curators have chosen to address openly in the accompanying exhibition notes.",
+      "cefrLevel": "C1",
+      "parentKey": "listening.topic_tours_museums",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c1"
+    },
+    {
+      "key": "listening.topic_tours_museums.c2.1",
+      "title": "Guided Tours and Museum Announcements — C2 Passage 1",
+      "transcript": "What distinguishes this particular collection from comparable exhibitions elsewhere is the curators' deliberate decision to juxtapose contested and canonical works, thereby inviting visitors to reconsider assumptions that have long gone unexamined.",
+      "cefrLevel": "C2",
+      "parentKey": "listening.topic_tours_museums",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c2"
+    },
+    {
+      "key": "listening.topic_tours_museums.c2.2",
+      "title": "Guided Tours and Museum Announcements — C2 Passage 2",
+      "transcript": "The provenance of several items in this room remains a matter of ongoing scholarly dispute, a fact the museum has chosen to foreground rather than obscure, in keeping with a broader institutional commitment to transparency.",
+      "cefrLevel": "C2",
+      "parentKey": "listening.topic_tours_museums",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c2"
+    },
+    {
+      "key": "listening.topic_tours_museums.c2.3",
+      "title": "Guided Tours and Museum Announcements — C2 Passage 3",
+      "transcript": "Rather than presenting a single, authoritative narrative, this exhibition deliberately embraces the ambiguity surrounding these artefacts, encouraging visitors to engage critically with the competing interpretations offered by historians.",
+      "cefrLevel": "C2",
+      "parentKey": "listening.topic_tours_museums",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c2"
+    },
+    {
+      "key": "listening.topic_workplace_meetings.a1.1",
+      "title": "Workplace Meetings — A1 Passage 1",
+      "transcript": "Good morning everyone. The meeting starts now.",
+      "cefrLevel": "A1",
+      "parentKey": "listening.topic_workplace_meetings",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a1"
+    },
+    {
+      "key": "listening.topic_workplace_meetings.a1.2",
+      "title": "Workplace Meetings — A1 Passage 2",
+      "transcript": "Today we talk about the new project.",
+      "cefrLevel": "A1",
+      "parentKey": "listening.topic_workplace_meetings",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a1"
+    },
+    {
+      "key": "listening.topic_workplace_meetings.a1.3",
+      "title": "Workplace Meetings — A1 Passage 3",
+      "transcript": "Thank you all for coming. Let's begin.",
+      "cefrLevel": "A1",
+      "parentKey": "listening.topic_workplace_meetings",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a1"
+    },
+    {
+      "key": "listening.topic_workplace_meetings.a2.1",
+      "title": "Workplace Meetings — A2 Passage 1",
+      "transcript": "Good morning everyone. Let's start by looking at what we finished last week and what we still need to do.",
+      "cefrLevel": "A2",
+      "parentKey": "listening.topic_workplace_meetings",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a2"
+    },
+    {
+      "key": "listening.topic_workplace_meetings.a2.2",
+      "title": "Workplace Meetings — A2 Passage 2",
+      "transcript": "Thank you for joining the meeting today. First, I'd like to talk about our plans for next month.",
+      "cefrLevel": "A2",
+      "parentKey": "listening.topic_workplace_meetings",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a2"
+    },
+    {
+      "key": "listening.topic_workplace_meetings.a2.3",
+      "title": "Workplace Meetings — A2 Passage 3",
+      "transcript": "Before we start, does anyone have any questions about the schedule for this week?",
+      "cefrLevel": "A2",
+      "parentKey": "listening.topic_workplace_meetings",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a2"
+    },
+    {
+      "key": "listening.topic_workplace_meetings.b1.1",
+      "title": "Workplace Meetings — B1 Passage 1",
+      "transcript": "Let's begin by reviewing the results from last month. Overall, the numbers look positive, but there are a few areas we should discuss further.",
+      "cefrLevel": "B1",
+      "parentKey": "listening.topic_workplace_meetings",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b1"
+    },
+    {
+      "key": "listening.topic_workplace_meetings.b1.2",
+      "title": "Workplace Meetings — B1 Passage 2",
+      "transcript": "I'd like to introduce a new idea for the project. I think it could help us save some time, but I'd like to hear your thoughts first.",
+      "cefrLevel": "B1",
+      "parentKey": "listening.topic_workplace_meetings",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b1"
+    },
+    {
+      "key": "listening.topic_workplace_meetings.b1.3",
+      "title": "Workplace Meetings — B1 Passage 3",
+      "transcript": "Before we move on, could someone summarize the main points from yesterday's discussion for those who couldn't attend?",
+      "cefrLevel": "B1",
+      "parentKey": "listening.topic_workplace_meetings",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b1"
+    },
+    {
+      "key": "listening.topic_workplace_meetings.b2.1",
+      "title": "Workplace Meetings — B2 Passage 1",
+      "transcript": "As you'll see from the report, we've made good progress this quarter, although there are still a couple of challenges we need to address before the next deadline.",
+      "cefrLevel": "B2",
+      "parentKey": "listening.topic_workplace_meetings",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b2"
+    },
+    {
+      "key": "listening.topic_workplace_meetings.b2.2",
+      "title": "Workplace Meetings — B2 Passage 2",
+      "transcript": "I understand there's been some disagreement about the new approach, so I think it would be useful to hear both sides before we make a final decision.",
+      "cefrLevel": "B2",
+      "parentKey": "listening.topic_workplace_meetings",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b2"
+    },
+    {
+      "key": "listening.topic_workplace_meetings.b2.3",
+      "title": "Workplace Meetings — B2 Passage 3",
+      "transcript": "Given the feedback we received from the client, I think we should reconsider the timeline and possibly adjust our priorities for the coming weeks.",
+      "cefrLevel": "B2",
+      "parentKey": "listening.topic_workplace_meetings",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b2"
+    },
+    {
+      "key": "listening.topic_workplace_meetings.c1.1",
+      "title": "Workplace Meetings — C1 Passage 1",
+      "transcript": "Before we proceed, I'd like to acknowledge that this proposal has generated some understandable concern among the team, and I think it's worth taking the time to address those concerns directly.",
+      "cefrLevel": "C1",
+      "parentKey": "listening.topic_workplace_meetings",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c1"
+    },
+    {
+      "key": "listening.topic_workplace_meetings.c1.2",
+      "title": "Workplace Meetings — C1 Passage 2",
+      "transcript": "While the overall direction seems sound, I'd suggest we build in more flexibility at this stage, given how much uncertainty still surrounds the client's final requirements.",
+      "cefrLevel": "C1",
+      "parentKey": "listening.topic_workplace_meetings",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c1"
+    },
+    {
+      "key": "listening.topic_workplace_meetings.c1.3",
+      "title": "Workplace Meetings — C1 Passage 3",
+      "transcript": "I think it's important we don't lose sight of the bigger picture here; although the short-term numbers look promising, we should consider whether this approach is sustainable in the long run.",
+      "cefrLevel": "C1",
+      "parentKey": "listening.topic_workplace_meetings",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c1"
+    },
+    {
+      "key": "listening.topic_workplace_meetings.c2.1",
+      "title": "Workplace Meetings — C2 Passage 1",
+      "transcript": "I want to be candid with everyone here: while the proposal on the table addresses the immediate operational concerns, I remain unconvinced that it adequately accounts for the reputational risk should the project not proceed as planned.",
+      "cefrLevel": "C2",
+      "parentKey": "listening.topic_workplace_meetings",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c2"
+    },
+    {
+      "key": "listening.topic_workplace_meetings.c2.2",
+      "title": "Workplace Meetings — C2 Passage 2",
+      "transcript": "Rather than rushing to a decision under time pressure, I'd argue it's worth revisiting the underlying assumptions that shaped this strategy in the first place, particularly given how much the market has shifted since we first drafted it.",
+      "cefrLevel": "C2",
+      "parentKey": "listening.topic_workplace_meetings",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c2"
+    },
+    {
+      "key": "listening.topic_workplace_meetings.c2.3",
+      "title": "Workplace Meetings — C2 Passage 3",
+      "transcript": "What concerns me most isn't the proposal itself, but the apparent lack of consensus among senior stakeholders, which suggests we may be papering over disagreements that will resurface further down the line.",
+      "cefrLevel": "C2",
+      "parentKey": "listening.topic_workplace_meetings",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c2"
+    },
+    {
+      "key": "listening.topic_lectures.a1.1",
+      "title": "Lectures and Educational Talks — A1 Passage 1",
+      "transcript": "Today we learn about animals. Animals live in many places.",
+      "cefrLevel": "A1",
+      "parentKey": "listening.topic_lectures",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a1"
+    },
+    {
+      "key": "listening.topic_lectures.a1.2",
+      "title": "Lectures and Educational Talks — A1 Passage 2",
+      "transcript": "This is a lesson about the sun. The sun gives us light.",
+      "cefrLevel": "A1",
+      "parentKey": "listening.topic_lectures",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a1"
+    },
+    {
+      "key": "listening.topic_lectures.a1.3",
+      "title": "Lectures and Educational Talks — A1 Passage 3",
+      "transcript": "Today we talk about colours. There are many colours in nature.",
+      "cefrLevel": "A1",
+      "parentKey": "listening.topic_lectures",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a1"
+    },
+    {
+      "key": "listening.topic_lectures.a2.1",
+      "title": "Lectures and Educational Talks — A2 Passage 1",
+      "transcript": "Today's lesson is about the water cycle. Water moves from the sea to the sky and back again.",
+      "cefrLevel": "A2",
+      "parentKey": "listening.topic_lectures",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a2"
+    },
+    {
+      "key": "listening.topic_lectures.a2.2",
+      "title": "Lectures and Educational Talks — A2 Passage 2",
+      "transcript": "In this class, we will learn about different kinds of weather and how they change during the year.",
+      "cefrLevel": "A2",
+      "parentKey": "listening.topic_lectures",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a2"
+    },
+    {
+      "key": "listening.topic_lectures.a2.3",
+      "title": "Lectures and Educational Talks — A2 Passage 3",
+      "transcript": "Today we are going to talk about plants and how they grow using sunlight and water.",
+      "cefrLevel": "A2",
+      "parentKey": "listening.topic_lectures",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a2"
+    },
+    {
+      "key": "listening.topic_lectures.b1.1",
+      "title": "Lectures and Educational Talks — B1 Passage 1",
+      "transcript": "Today, we'll be looking at how early civilizations developed farming, which allowed people to settle in one place instead of moving around.",
+      "cefrLevel": "B1",
+      "parentKey": "listening.topic_lectures",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b1"
+    },
+    {
+      "key": "listening.topic_lectures.b1.2",
+      "title": "Lectures and Educational Talks — B1 Passage 2",
+      "transcript": "This lecture focuses on the human brain and how it processes information from our senses every single day.",
+      "cefrLevel": "B1",
+      "parentKey": "listening.topic_lectures",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b1"
+    },
+    {
+      "key": "listening.topic_lectures.b1.3",
+      "title": "Lectures and Educational Talks — B1 Passage 3",
+      "transcript": "In today's session, we'll explore how simple machines, like levers and pulleys, help us do work more easily.",
+      "cefrLevel": "B1",
+      "parentKey": "listening.topic_lectures",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b1"
+    },
+    {
+      "key": "listening.topic_lectures.b2.1",
+      "title": "Lectures and Educational Talks — B2 Passage 1",
+      "transcript": "Today's topic examines how economic decisions made at a national level can have unexpected consequences for individual households and small businesses.",
+      "cefrLevel": "B2",
+      "parentKey": "listening.topic_lectures",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b2"
+    },
+    {
+      "key": "listening.topic_lectures.b2.2",
+      "title": "Lectures and Educational Talks — B2 Passage 2",
+      "transcript": "This lecture will explore the psychological factors that influence decision-making, particularly under conditions of uncertainty or stress.",
+      "cefrLevel": "B2",
+      "parentKey": "listening.topic_lectures",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b2"
+    },
+    {
+      "key": "listening.topic_lectures.b2.3",
+      "title": "Lectures and Educational Talks — B2 Passage 3",
+      "transcript": "We'll be discussing how advances in renewable energy technology are gradually reshaping global patterns of energy production and consumption.",
+      "cefrLevel": "B2",
+      "parentKey": "listening.topic_lectures",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b2"
+    },
+    {
+      "key": "listening.topic_lectures.c1.1",
+      "title": "Lectures and Educational Talks — C1 Passage 1",
+      "transcript": "Today's discussion centres on the philosophical debate surrounding free will, and whether our choices can genuinely be considered independent of prior causes.",
+      "cefrLevel": "C1",
+      "parentKey": "listening.topic_lectures",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c1"
+    },
+    {
+      "key": "listening.topic_lectures.c1.2",
+      "title": "Lectures and Educational Talks — C1 Passage 2",
+      "transcript": "This lecture examines the interplay between language and cognition, exploring the extent to which the structure of a language might shape the way its speakers perceive the world.",
+      "cefrLevel": "C1",
+      "parentKey": "listening.topic_lectures",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c1"
+    },
+    {
+      "key": "listening.topic_lectures.c1.3",
+      "title": "Lectures and Educational Talks — C1 Passage 3",
+      "transcript": "We'll be analysing how historical narratives are constructed, and the ways in which selective emphasis can shape public understanding of past events.",
+      "cefrLevel": "C1",
+      "parentKey": "listening.topic_lectures",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c1"
+    },
+    {
+      "key": "listening.topic_lectures.c2.1",
+      "title": "Lectures and Educational Talks — C2 Passage 1",
+      "transcript": "Today's lecture interrogates the assumption, still prevalent in much economic theory, that individuals act as rational agents, drawing on recent behavioural research to argue for a far more nuanced account of human decision-making.",
+      "cefrLevel": "C2",
+      "parentKey": "listening.topic_lectures",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c2"
+    },
+    {
+      "key": "listening.topic_lectures.c2.2",
+      "title": "Lectures and Educational Talks — C2 Passage 2",
+      "transcript": "This session considers the epistemological challenges inherent in reconstructing historical causation, particularly when the available evidence is fragmentary, contested, or shaped by the biases of those who originally recorded it.",
+      "cefrLevel": "C2",
+      "parentKey": "listening.topic_lectures",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c2"
+    },
+    {
+      "key": "listening.topic_lectures.c2.3",
+      "title": "Lectures and Educational Talks — C2 Passage 3",
+      "transcript": "We will examine the extent to which emerging technologies are outpacing the ethical and regulatory frameworks designed to govern them, a tension that raises profound questions about accountability in an increasingly automated world.",
+      "cefrLevel": "C2",
+      "parentKey": "listening.topic_lectures",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c2"
+    },
+    {
+      "key": "listening.topic_interviews.a1.1",
+      "title": "Interviews — A1 Passage 1",
+      "transcript": "What is your name? My name is Maria. I am happy to meet you.",
+      "cefrLevel": "A1",
+      "parentKey": "listening.topic_interviews",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a1"
+    },
+    {
+      "key": "listening.topic_interviews.a1.2",
+      "title": "Interviews — A1 Passage 2",
+      "transcript": "Where do you live? I live in a small town.",
+      "cefrLevel": "A1",
+      "parentKey": "listening.topic_interviews",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a1"
+    },
+    {
+      "key": "listening.topic_interviews.a1.3",
+      "title": "Interviews — A1 Passage 3",
+      "transcript": "What is your job? I am a teacher. I like my students.",
+      "cefrLevel": "A1",
+      "parentKey": "listening.topic_interviews",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a1"
+    },
+    {
+      "key": "listening.topic_interviews.a2.1",
+      "title": "Interviews — A2 Passage 1",
+      "transcript": "So, tell me a little about yourself. Well, I work as a nurse, and I really enjoy helping people every day.",
+      "cefrLevel": "A2",
+      "parentKey": "listening.topic_interviews",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a2"
+    },
+    {
+      "key": "listening.topic_interviews.a2.2",
+      "title": "Interviews — A2 Passage 2",
+      "transcript": "How long have you lived in this city? I moved here about three years ago from a smaller town nearby.",
+      "cefrLevel": "A2",
+      "parentKey": "listening.topic_interviews",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a2"
+    },
+    {
+      "key": "listening.topic_interviews.a2.3",
+      "title": "Interviews — A2 Passage 3",
+      "transcript": "What do you like to do in your free time? I enjoy reading books and going for walks in the park.",
+      "cefrLevel": "A2",
+      "parentKey": "listening.topic_interviews",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a2"
+    },
+    {
+      "key": "listening.topic_interviews.b1.1",
+      "title": "Interviews — B1 Passage 1",
+      "transcript": "Could you tell us a bit about how you started your career? I began as a volunteer, and over time, that experience led me to a full-time position.",
+      "cefrLevel": "B1",
+      "parentKey": "listening.topic_interviews",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b1"
+    },
+    {
+      "key": "listening.topic_interviews.b1.2",
+      "title": "Interviews — B1 Passage 2",
+      "transcript": "What has been the most challenging part of your job so far? Definitely learning to manage my time when there are several urgent tasks at once.",
+      "cefrLevel": "B1",
+      "parentKey": "listening.topic_interviews",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b1"
+    },
+    {
+      "key": "listening.topic_interviews.b1.3",
+      "title": "Interviews — B1 Passage 3",
+      "transcript": "What advice would you give to someone just starting out in this field? I'd say be patient, and don't be afraid to ask questions when you're unsure.",
+      "cefrLevel": "B1",
+      "parentKey": "listening.topic_interviews",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b1"
+    },
+    {
+      "key": "listening.topic_interviews.b2.1",
+      "title": "Interviews — B2 Passage 1",
+      "transcript": "Looking back on your career, what decision are you most proud of? Probably taking the risk of switching industries, even though it meant starting from scratch in many ways.",
+      "cefrLevel": "B2",
+      "parentKey": "listening.topic_interviews",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b2"
+    },
+    {
+      "key": "listening.topic_interviews.b2.2",
+      "title": "Interviews — B2 Passage 2",
+      "transcript": "How do you think the industry has changed since you first started working in it? It's become far more competitive, but also more open to new ideas from younger professionals.",
+      "cefrLevel": "B2",
+      "parentKey": "listening.topic_interviews",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b2"
+    },
+    {
+      "key": "listening.topic_interviews.b2.3",
+      "title": "Interviews — B2 Passage 3",
+      "transcript": "What do you think sets successful teams apart from ones that struggle? I'd say clear communication, and a willingness to admit mistakes early rather than later.",
+      "cefrLevel": "B2",
+      "parentKey": "listening.topic_interviews",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b2"
+    },
+    {
+      "key": "listening.topic_interviews.c1.1",
+      "title": "Interviews — C1 Passage 1",
+      "transcript": "Given how rapidly your field has evolved, how do you stay current with new developments? I try to balance formal training with simply staying curious and asking colleagues about their own experiences.",
+      "cefrLevel": "C1",
+      "parentKey": "listening.topic_interviews",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c1"
+    },
+    {
+      "key": "listening.topic_interviews.c1.2",
+      "title": "Interviews — C1 Passage 2",
+      "transcript": "You've mentioned facing significant setbacks earlier in your career. How did those experiences shape your approach to leadership? They taught me that resilience matters far more than avoiding failure altogether.",
+      "cefrLevel": "C1",
+      "parentKey": "listening.topic_interviews",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c1"
+    },
+    {
+      "key": "listening.topic_interviews.c1.3",
+      "title": "Interviews — C1 Passage 3",
+      "transcript": "What do you believe is the biggest misconception people have about your profession? Probably that it's primarily about technical skill, when in reality, much of the work depends on judgment and interpersonal trust.",
+      "cefrLevel": "C1",
+      "parentKey": "listening.topic_interviews",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c1"
+    },
+    {
+      "key": "listening.topic_interviews.c2.1",
+      "title": "Interviews — C2 Passage 1",
+      "transcript": "Reflecting on the trajectory of your career, would you say the most valuable lessons came from your successes or from your failures? Honestly, the failures, though it took me a considerable amount of time to appreciate that at the time.",
+      "cefrLevel": "C2",
+      "parentKey": "listening.topic_interviews",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c2"
+    },
+    {
+      "key": "listening.topic_interviews.c2.2",
+      "title": "Interviews — C2 Passage 2",
+      "transcript": "How do you reconcile the pressure for short-term results with the kind of long-term thinking your role seems to demand? It requires constantly negotiating between competing priorities, and accepting that some tension is simply unavoidable.",
+      "cefrLevel": "C2",
+      "parentKey": "listening.topic_interviews",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c2"
+    },
+    {
+      "key": "listening.topic_interviews.c2.3",
+      "title": "Interviews — C2 Passage 3",
+      "transcript": "Given everything you've learned, what would you say to someone entering this field today with unrealistic expectations? I'd gently caution them that meaningful progress is almost always slower and more uneven than they anticipate.",
+      "cefrLevel": "C2",
+      "parentKey": "listening.topic_interviews",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c2"
+    },
+    {
+      "key": "listening.topic_storytelling.a1.1",
+      "title": "Storytelling and Anecdotes — A1 Passage 1",
+      "transcript": "Once there was a small cat. The cat liked to play.",
+      "cefrLevel": "A1",
+      "parentKey": "listening.topic_storytelling",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a1"
+    },
+    {
+      "key": "listening.topic_storytelling.a1.2",
+      "title": "Storytelling and Anecdotes — A1 Passage 2",
+      "transcript": "A boy walked to school. He saw a dog on the way.",
+      "cefrLevel": "A1",
+      "parentKey": "listening.topic_storytelling",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a1"
+    },
+    {
+      "key": "listening.topic_storytelling.a1.3",
+      "title": "Storytelling and Anecdotes — A1 Passage 3",
+      "transcript": "A girl found a red ball in the park. She was happy.",
+      "cefrLevel": "A1",
+      "parentKey": "listening.topic_storytelling",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a1"
+    },
+    {
+      "key": "listening.topic_storytelling.a2.1",
+      "title": "Storytelling and Anecdotes — A2 Passage 1",
+      "transcript": "Last summer, my family and I went camping near a lake. We swam every day and cooked food over a fire at night.",
+      "cefrLevel": "A2",
+      "parentKey": "listening.topic_storytelling",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a2"
+    },
+    {
+      "key": "listening.topic_storytelling.a2.2",
+      "title": "Storytelling and Anecdotes — A2 Passage 2",
+      "transcript": "One morning, I woke up late and missed my bus. I had to run all the way to work, but I still arrived late.",
+      "cefrLevel": "A2",
+      "parentKey": "listening.topic_storytelling",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a2"
+    },
+    {
+      "key": "listening.topic_storytelling.a2.3",
+      "title": "Storytelling and Anecdotes — A2 Passage 3",
+      "transcript": "When I was a child, my grandmother told me stories every night before bed. I still remember many of them today.",
+      "cefrLevel": "A2",
+      "parentKey": "listening.topic_storytelling",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.a2"
+    },
+    {
+      "key": "listening.topic_storytelling.b1.1",
+      "title": "Storytelling and Anecdotes — B1 Passage 1",
+      "transcript": "A few years ago, I decided to travel alone for the first time. I was nervous at first, but by the end of the trip, I felt much more confident.",
+      "cefrLevel": "B1",
+      "parentKey": "listening.topic_storytelling",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b1"
+    },
+    {
+      "key": "listening.topic_storytelling.b1.2",
+      "title": "Storytelling and Anecdotes — B1 Passage 2",
+      "transcript": "I remember the day I got my first job. I was so excited that I arrived an hour early and had to wait outside the office.",
+      "cefrLevel": "B1",
+      "parentKey": "listening.topic_storytelling",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b1"
+    },
+    {
+      "key": "listening.topic_storytelling.b1.3",
+      "title": "Storytelling and Anecdotes — B1 Passage 3",
+      "transcript": "One winter, our whole street lost electricity for two days. Neighbours who had never spoken before ended up sharing food and candles together.",
+      "cefrLevel": "B1",
+      "parentKey": "listening.topic_storytelling",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b1"
+    },
+    {
+      "key": "listening.topic_storytelling.b2.1",
+      "title": "Storytelling and Anecdotes — B2 Passage 1",
+      "transcript": "I'll never forget the time our flight was cancelled at the last minute, and a group of strangers ended up sharing a taxi and, eventually, becoming good friends.",
+      "cefrLevel": "B2",
+      "parentKey": "listening.topic_storytelling",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b2"
+    },
+    {
+      "key": "listening.topic_storytelling.b2.2",
+      "title": "Storytelling and Anecdotes — B2 Passage 2",
+      "transcript": "When I first moved to the city, I got lost almost every day, but looking back, those wrong turns actually helped me discover some of my favourite places.",
+      "cefrLevel": "B2",
+      "parentKey": "listening.topic_storytelling",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b2"
+    },
+    {
+      "key": "listening.topic_storytelling.b2.3",
+      "title": "Storytelling and Anecdotes — B2 Passage 3",
+      "transcript": "There was a period in my twenties when I changed jobs three times in one year, which felt chaotic then but taught me a great deal about what I actually wanted.",
+      "cefrLevel": "B2",
+      "parentKey": "listening.topic_storytelling",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.b2"
+    },
+    {
+      "key": "listening.topic_storytelling.c1.1",
+      "title": "Storytelling and Anecdotes — C1 Passage 1",
+      "transcript": "I still remember the peculiar mixture of relief and disappointment I felt after finally finishing a project I'd spent years working on, as though the achievement itself couldn't quite live up to the anticipation.",
+      "cefrLevel": "C1",
+      "parentKey": "listening.topic_storytelling",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c1"
+    },
+    {
+      "key": "listening.topic_storytelling.c1.2",
+      "title": "Storytelling and Anecdotes — C1 Passage 2",
+      "transcript": "Years later, I realized that the advice I'd dismissed as overly cautious at the time turned out to be exactly what I needed to hear, though I wasn't ready to accept it then.",
+      "cefrLevel": "C1",
+      "parentKey": "listening.topic_storytelling",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c1"
+    },
+    {
+      "key": "listening.topic_storytelling.c1.3",
+      "title": "Storytelling and Anecdotes — C1 Passage 3",
+      "transcript": "What struck me most about that difficult period wasn't the hardship itself, but how differently each member of my family chose to cope with it.",
+      "cefrLevel": "C1",
+      "parentKey": "listening.topic_storytelling",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c1"
+    },
+    {
+      "key": "listening.topic_storytelling.c2.1",
+      "title": "Storytelling and Anecdotes — C2 Passage 1",
+      "transcript": "Looking back, what strikes me most isn't the decision itself, which in hindsight seems almost inevitable, but the sheer number of seemingly insignificant moments that, taken together, quietly steered me toward it.",
+      "cefrLevel": "C2",
+      "parentKey": "listening.topic_storytelling",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c2"
+    },
+    {
+      "key": "listening.topic_storytelling.c2.2",
+      "title": "Storytelling and Anecdotes — C2 Passage 2",
+      "transcript": "It's strange how a single offhand remark, one I barely registered at the time, ended up shaping the course of the next decade in ways I couldn't possibly have anticipated.",
+      "cefrLevel": "C2",
+      "parentKey": "listening.topic_storytelling",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c2"
+    },
+    {
+      "key": "listening.topic_storytelling.c2.3",
+      "title": "Storytelling and Anecdotes — C2 Passage 3",
+      "transcript": "The irony, which only became apparent to me much later, was that the very failure I'd spent years trying to avoid turned out to be the experience that ultimately redefined my sense of what success actually meant.",
+      "cefrLevel": "C2",
+      "parentKey": "listening.topic_storytelling",
+      "activityType": "listening_fill_in_blanks",
+      "scaleLeafKey": "listening.scale_overall_listening_comprehension.c2"
+    }
+  ]
+}

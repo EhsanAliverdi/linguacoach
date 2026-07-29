@@ -65,6 +65,15 @@ Thumbs.db
 
 ## ContentSeeder resumability state (machine-generated, not seed content)
 data/seed-json/*.checkpoint.json
+
+## ContentSeeder synthesized-audio cache (Phase G) — local re-run cache so repeat seeding never
+## re-spends TTS quota on an already-synthesized passage; the real Gemini-TTS-derived binaries are
+## too large to commit (76MB+ for 180 short WAV clips and growing). The durable, committed source of
+## truth for this content is the transcript text in data/seed-json/listening-seed.json — the audio
+## itself lives in MinIO (or your configured file storage) once seeded, same as any other resource's
+## audio. Re-synthesizing from the committed transcripts reproduces this cache exactly if it's ever
+## lost locally.
+data/seed-audio/
 node_modules/
 src/LinguaCoach.Web/dist/
 .gstack/

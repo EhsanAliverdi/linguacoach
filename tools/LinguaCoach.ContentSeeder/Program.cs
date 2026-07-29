@@ -3,10 +3,13 @@ using System.Text.Json.Serialization;
 using LinguaCoach.Application.Exercises;
 using LinguaCoach.Application.Lessons;
 using LinguaCoach.Application.ResourceImport;
+using LinguaCoach.Application.Speaking;
+using LinguaCoach.Application.Storage;
 using LinguaCoach.Domain.Constants;
 using LinguaCoach.Domain.Entities;
 using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure;
+using LinguaCoach.Infrastructure.Speaking;
 using LinguaCoach.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -27,6 +30,7 @@ namespace LinguaCoach.ContentSeeder;
 ///        dotnet run --project tools/LinguaCoach.ContentSeeder -- vocabulary path/to/vocabulary-seed.json
 ///        dotnet run --project tools/LinguaCoach.ContentSeeder -- cefr-scales path/to/cefr-scales-seed.json
 ///        dotnet run --project tools/LinguaCoach.ContentSeeder -- speaking path/to/speaking-seed.json
+///        dotnet run --project tools/LinguaCoach.ContentSeeder -- listening path/to/listening-seed.json
 /// </summary>
 public static class Program
 {
@@ -79,7 +83,8 @@ public static class Program
             "vocabulary" => await SeedVocabularyAsync(seeder, db, seedFilePath),
             "cefr-scales" => await SeedCefrScalesAsync(db, seedFilePath),
             "speaking" => await SeedSpeakingAsync(seeder, db, seedFilePath),
-            _ => Fail($"Unknown domain '{domain}' — expected 'grammar', 'vocabulary', 'cefr-scales', or 'speaking'."),
+            "listening" => await SeedListeningAsync(seeder, sp, db, seedFilePath),
+            _ => Fail($"Unknown domain '{domain}' — expected 'grammar', 'vocabulary', 'cefr-scales', 'speaking', or 'listening'."),
         };
     }
 
@@ -233,6 +238,128 @@ public static class Program
         return 0;
     }
 
+    /// <summary>Full content reseed Phase G (2026-07-29) — listening passages. Unlike every other
+    /// domain seeded so far, this makes a REAL, PRE-AUTHORIZED live Gemini TTS call per transcript
+    /// (ListeningPassageContent.AudioStorageKey/AudioContentType are non-nullable — a transcript
+    /// alone is not valid). Synthesized audio is cached to <paramref name="path"/>'s sibling
+    /// `data/seed-audio/listening/` directory first (by leaf key) so re-running this tool never
+    /// re-spends TTS quota on an already-synthesized passage, then uploaded via IFileStorageService
+    /// (MinIO in dev — see FILE_STORAGE_PROVIDER) so the running app can actually stream it back.
+    /// Bypasses TtsProviderResolver deliberately: the `tts.listening` DB category defaults to the
+    /// fake provider for CI safety, so this calls GeminiTextToSpeechService directly with the real
+    /// key from AiProviderCredentials, mirroring the existing
+    /// InternalResourceSeedPackListeningSeeder precedent.</summary>
+    private static async Task<int> SeedListeningAsync(
+        LeafContentSeeder seeder, IServiceProvider sp, LinguaCoachDbContext db, string path)
+    {
+        var file = JsonSerializer.Deserialize<ListeningSeedFile>(await File.ReadAllTextAsync(path), JsonOptions)
+            ?? throw new InvalidOperationException("Empty/invalid listening seed file.");
+
+        var credential = await db.AiProviderCredentials.FirstOrDefaultAsync(c => c.ProviderName == "gemini");
+        if (string.IsNullOrWhiteSpace(credential?.ApiKey))
+            return Fail("No Gemini API key configured in AiProviderCredentials — cannot synthesize listening audio.");
+
+        var geminiTts = sp.GetRequiredService<GeminiTextToSpeechService>();
+        var storage = sp.GetRequiredService<IFileStorageService>();
+
+        // Confirmed by hand during Phase G validation: MinioFileStorageService.SaveAsync does NOT
+        // throw when the target bucket doesn't exist — PutObjectAsync returns successfully with no
+        // object actually persisted server-side, silently orphaning the DB's AudioStorageKey. Fail
+        // fast here instead of discovering that after seeding hundreds of leaves.
+        var storageHealth = await storage.HealthCheckAsync();
+        if (storageHealth is not null)
+            return Fail($"File storage health check failed — {storageHealth}");
+
+        var audioCacheDir = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(path))!, "..", "seed-audio", "listening");
+        Directory.CreateDirectory(audioCacheDir);
+
+        var source = await GetOrCreateSourceAsync(db, "LinguaCoach Listening Passages");
+        var checkpoint = Checkpoint.Load(path);
+        var containerIds = await UpsertContainersAsync(db, file.Containers.Select(c =>
+            (c.Key, c.Title, c.CefrLevel, DifficultyBand: 1, Skill: CurriculumSkillConstants.Listening)));
+
+        var processed = 0;
+        foreach (var leaf in file.Leaves)
+        {
+            if (checkpoint.Contains(leaf.Key)) continue;
+
+            var parentId = containerIds.TryGetValue(leaf.ParentKey, out var pid) ? pid : (Guid?)null;
+            var leafId = await UpsertLeafAsync(db, leaf.Key, leaf.Title, leaf.CefrLevel, difficultyBand: 1,
+                CurriculumSkillConstants.Listening, parentId);
+
+            var alreadySeeded = await db.ModuleSkillGraphNodeLinks.AnyAsync(l => l.SkillGraphNodeId == leafId);
+            if (alreadySeeded)
+            {
+                checkpoint.MarkProcessed(leaf.Key);
+                continue;
+            }
+
+            var cacheFile = Path.Combine(audioCacheDir, $"{Slug(leaf.Key)}.wav");
+            byte[] audioBytes;
+            if (File.Exists(cacheFile))
+            {
+                audioBytes = await File.ReadAllBytesAsync(cacheFile);
+            }
+            else
+            {
+                var ttsResult = await geminiTts.GenerateSpeechAsync(
+                    leaf.Transcript, new TextToSpeechOptions(TargetLanguageCode: "en", ApiKeyOverride: credential.ApiKey));
+                if (!ttsResult.Success || ttsResult.AudioBytes is null || ttsResult.AudioBytes.Length < 1000)
+                {
+                    Console.Error.WriteLine($"Listening: TTS failed for '{leaf.Key}' — {ttsResult.FailureReason ?? "empty/too-small audio"}. Skipping.");
+                    continue;
+                }
+                audioBytes = ttsResult.AudioBytes;
+                await File.WriteAllBytesAsync(cacheFile, audioBytes);
+            }
+
+            var storageKey = $"listening-seed-audio/{Slug(leaf.Key)}.wav";
+            using (var audioStream = new MemoryStream(audioBytes))
+                await storage.SaveAsync(storageKey, audioStream, "audio/wav", knownSizeBytes: audioBytes.LongLength);
+
+            // 16-bit mono PCM WAV at 24kHz (fixed format produced by GeminiTextToSpeechService), less the 44-byte header.
+            var audioDurationSeconds = Math.Round((audioBytes.Length - 44) / 48000m, 1);
+
+            var scaleLeafId = await db.SkillGraphNodes
+                .Where(n => n.Key == leaf.ScaleLeafKey)
+                .Select(n => (Guid?)n.Id)
+                .FirstOrDefaultAsync();
+
+            var content = ResourceBankItemContent.Serialize(new ListeningPassageContent(
+                leaf.Title, leaf.Transcript, storageKey, "audio/wav",
+                AttributionText: "Synthesized audio (Gemini TTS) — LinguaCoach Listening Passages seed.",
+                AudioDurationSeconds: audioDurationSeconds));
+            try
+            {
+                await seeder.SeedOneAsync(source.Id, leaf.CefrLevel, content, leaf.Title, leafId, leaf.ActivityType,
+                    PublishedResourceType.Listening, scaleLeafId.HasValue ? [scaleLeafId.Value] : null);
+            }
+            catch (ExerciseValidationException ex)
+            {
+                // Audio was already synthesized and uploaded (cached locally either way) — only the
+                // deterministic exercise composer rejected this transcript (e.g. too few distinct
+                // long content words for a cloze). Skip without marking processed so a fixed
+                // transcript gets retried on the next run, same discipline as elsewhere this session.
+                Console.Error.WriteLine($"Listening: exercise generation failed for '{leaf.Key}' — {ex.Message}. Skipping.");
+                continue;
+            }
+
+            checkpoint.MarkProcessed(leaf.Key);
+            if (++processed % 20 == 0)
+            {
+                checkpoint.Save(path);
+                Console.WriteLine($"Listening: {processed}/{file.Leaves.Count} processed.");
+            }
+        }
+
+        checkpoint.Save(path);
+        Console.WriteLine($"Listening seeding complete. {processed} leaves processed this run.");
+        return 0;
+    }
+
+    private static string Slug(string key) =>
+        key.ToLowerInvariant().Replace('.', '_').Replace(' ', '_');
+
     private static async Task<Dictionary<string, Guid>> UpsertContainersAsync(
         LinguaCoachDbContext db, IEnumerable<(string Key, string Title, string CefrLevel, int DifficultyBand, string Skill)> containers)
     {
@@ -372,6 +499,12 @@ public sealed record SpeakingSeedFile(List<SpeakingSeedContainer> Containers, Li
 public sealed record SpeakingSeedContainer(string Key, string Title, string CefrLevel);
 public sealed record SpeakingSeedLeaf(
     string Key, string Title, string PromptText, int SuggestedDurationSeconds, string CefrLevel,
+    string ParentKey, string ActivityType, string ScaleLeafKey);
+
+public sealed record ListeningSeedFile(List<ListeningSeedContainer> Containers, List<ListeningSeedLeaf> Leaves);
+public sealed record ListeningSeedContainer(string Key, string Title, string CefrLevel);
+public sealed record ListeningSeedLeaf(
+    string Key, string Title, string Transcript, string CefrLevel,
     string ParentKey, string ActivityType, string ScaleLeafKey);
 
 /// <summary>Resumability — a processed-keys file next to each input, so a crashed/interrupted run
