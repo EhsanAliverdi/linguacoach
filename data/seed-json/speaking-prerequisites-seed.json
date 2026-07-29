@@ -1,0 +1,2252 @@
+[
+  {
+    "node": "speaking.topic_daily_life.a2.1",
+    "prerequisite": "speaking.topic_daily_life.a1.1",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.a2.1",
+    "prerequisite": "speaking.topic_daily_life.a1.2",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.a2.1",
+    "prerequisite": "speaking.topic_daily_life.a1.3",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.a2.2",
+    "prerequisite": "speaking.topic_daily_life.a1.1",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.a2.2",
+    "prerequisite": "speaking.topic_daily_life.a1.2",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.a2.2",
+    "prerequisite": "speaking.topic_daily_life.a1.3",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.a2.3",
+    "prerequisite": "speaking.topic_daily_life.a1.1",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.a2.3",
+    "prerequisite": "speaking.topic_daily_life.a1.2",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.a2.3",
+    "prerequisite": "speaking.topic_daily_life.a1.3",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.b1.1",
+    "prerequisite": "speaking.topic_daily_life.a2.1",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.b1.1",
+    "prerequisite": "speaking.topic_daily_life.a2.2",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.b1.1",
+    "prerequisite": "speaking.topic_daily_life.a2.3",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.b1.2",
+    "prerequisite": "speaking.topic_daily_life.a2.1",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.b1.2",
+    "prerequisite": "speaking.topic_daily_life.a2.2",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.b1.2",
+    "prerequisite": "speaking.topic_daily_life.a2.3",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.b1.3",
+    "prerequisite": "speaking.topic_daily_life.a2.1",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.b1.3",
+    "prerequisite": "speaking.topic_daily_life.a2.2",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.b1.3",
+    "prerequisite": "speaking.topic_daily_life.a2.3",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.b2.1",
+    "prerequisite": "speaking.topic_daily_life.b1.1",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.b2.1",
+    "prerequisite": "speaking.topic_daily_life.b1.2",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.b2.1",
+    "prerequisite": "speaking.topic_daily_life.b1.3",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.b2.2",
+    "prerequisite": "speaking.topic_daily_life.b1.1",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.b2.2",
+    "prerequisite": "speaking.topic_daily_life.b1.2",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.b2.2",
+    "prerequisite": "speaking.topic_daily_life.b1.3",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.b2.3",
+    "prerequisite": "speaking.topic_daily_life.b1.1",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.b2.3",
+    "prerequisite": "speaking.topic_daily_life.b1.2",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.b2.3",
+    "prerequisite": "speaking.topic_daily_life.b1.3",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.c1.1",
+    "prerequisite": "speaking.topic_daily_life.b2.1",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.c1.1",
+    "prerequisite": "speaking.topic_daily_life.b2.2",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.c1.1",
+    "prerequisite": "speaking.topic_daily_life.b2.3",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.c1.2",
+    "prerequisite": "speaking.topic_daily_life.b2.1",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.c1.2",
+    "prerequisite": "speaking.topic_daily_life.b2.2",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.c1.2",
+    "prerequisite": "speaking.topic_daily_life.b2.3",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.c1.3",
+    "prerequisite": "speaking.topic_daily_life.b2.1",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.c1.3",
+    "prerequisite": "speaking.topic_daily_life.b2.2",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.c1.3",
+    "prerequisite": "speaking.topic_daily_life.b2.3",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.c2.1",
+    "prerequisite": "speaking.topic_daily_life.c1.1",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.c2.1",
+    "prerequisite": "speaking.topic_daily_life.c1.2",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.c2.1",
+    "prerequisite": "speaking.topic_daily_life.c1.3",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.c2.2",
+    "prerequisite": "speaking.topic_daily_life.c1.1",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.c2.2",
+    "prerequisite": "speaking.topic_daily_life.c1.2",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.c2.2",
+    "prerequisite": "speaking.topic_daily_life.c1.3",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.c2.3",
+    "prerequisite": "speaking.topic_daily_life.c1.1",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.c2.3",
+    "prerequisite": "speaking.topic_daily_life.c1.2",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_daily_life.c2.3",
+    "prerequisite": "speaking.topic_daily_life.c1.3",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.a2.1",
+    "prerequisite": "speaking.topic_travel.a1.1",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.a2.1",
+    "prerequisite": "speaking.topic_travel.a1.2",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.a2.1",
+    "prerequisite": "speaking.topic_travel.a1.3",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.a2.2",
+    "prerequisite": "speaking.topic_travel.a1.1",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.a2.2",
+    "prerequisite": "speaking.topic_travel.a1.2",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.a2.2",
+    "prerequisite": "speaking.topic_travel.a1.3",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.a2.3",
+    "prerequisite": "speaking.topic_travel.a1.1",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.a2.3",
+    "prerequisite": "speaking.topic_travel.a1.2",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.a2.3",
+    "prerequisite": "speaking.topic_travel.a1.3",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.b1.1",
+    "prerequisite": "speaking.topic_travel.a2.1",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.b1.1",
+    "prerequisite": "speaking.topic_travel.a2.2",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.b1.1",
+    "prerequisite": "speaking.topic_travel.a2.3",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.b1.2",
+    "prerequisite": "speaking.topic_travel.a2.1",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.b1.2",
+    "prerequisite": "speaking.topic_travel.a2.2",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.b1.2",
+    "prerequisite": "speaking.topic_travel.a2.3",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.b1.3",
+    "prerequisite": "speaking.topic_travel.a2.1",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.b1.3",
+    "prerequisite": "speaking.topic_travel.a2.2",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.b1.3",
+    "prerequisite": "speaking.topic_travel.a2.3",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.b2.1",
+    "prerequisite": "speaking.topic_travel.b1.1",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.b2.1",
+    "prerequisite": "speaking.topic_travel.b1.2",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.b2.1",
+    "prerequisite": "speaking.topic_travel.b1.3",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.b2.2",
+    "prerequisite": "speaking.topic_travel.b1.1",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.b2.2",
+    "prerequisite": "speaking.topic_travel.b1.2",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.b2.2",
+    "prerequisite": "speaking.topic_travel.b1.3",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.b2.3",
+    "prerequisite": "speaking.topic_travel.b1.1",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.b2.3",
+    "prerequisite": "speaking.topic_travel.b1.2",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.b2.3",
+    "prerequisite": "speaking.topic_travel.b1.3",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.c1.1",
+    "prerequisite": "speaking.topic_travel.b2.1",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.c1.1",
+    "prerequisite": "speaking.topic_travel.b2.2",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.c1.1",
+    "prerequisite": "speaking.topic_travel.b2.3",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.c1.2",
+    "prerequisite": "speaking.topic_travel.b2.1",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.c1.2",
+    "prerequisite": "speaking.topic_travel.b2.2",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.c1.2",
+    "prerequisite": "speaking.topic_travel.b2.3",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.c1.3",
+    "prerequisite": "speaking.topic_travel.b2.1",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.c1.3",
+    "prerequisite": "speaking.topic_travel.b2.2",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.c1.3",
+    "prerequisite": "speaking.topic_travel.b2.3",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.c2.1",
+    "prerequisite": "speaking.topic_travel.c1.1",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.c2.1",
+    "prerequisite": "speaking.topic_travel.c1.2",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.c2.1",
+    "prerequisite": "speaking.topic_travel.c1.3",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.c2.2",
+    "prerequisite": "speaking.topic_travel.c1.1",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.c2.2",
+    "prerequisite": "speaking.topic_travel.c1.2",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.c2.2",
+    "prerequisite": "speaking.topic_travel.c1.3",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.c2.3",
+    "prerequisite": "speaking.topic_travel.c1.1",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.c2.3",
+    "prerequisite": "speaking.topic_travel.c1.2",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_travel.c2.3",
+    "prerequisite": "speaking.topic_travel.c1.3",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.a2.1",
+    "prerequisite": "speaking.topic_food_health.a1.1",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.a2.1",
+    "prerequisite": "speaking.topic_food_health.a1.2",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.a2.1",
+    "prerequisite": "speaking.topic_food_health.a1.3",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.a2.2",
+    "prerequisite": "speaking.topic_food_health.a1.1",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.a2.2",
+    "prerequisite": "speaking.topic_food_health.a1.2",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.a2.2",
+    "prerequisite": "speaking.topic_food_health.a1.3",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.a2.3",
+    "prerequisite": "speaking.topic_food_health.a1.1",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.a2.3",
+    "prerequisite": "speaking.topic_food_health.a1.2",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.a2.3",
+    "prerequisite": "speaking.topic_food_health.a1.3",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.b1.1",
+    "prerequisite": "speaking.topic_food_health.a2.1",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.b1.1",
+    "prerequisite": "speaking.topic_food_health.a2.2",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.b1.1",
+    "prerequisite": "speaking.topic_food_health.a2.3",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.b1.2",
+    "prerequisite": "speaking.topic_food_health.a2.1",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.b1.2",
+    "prerequisite": "speaking.topic_food_health.a2.2",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.b1.2",
+    "prerequisite": "speaking.topic_food_health.a2.3",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.b1.3",
+    "prerequisite": "speaking.topic_food_health.a2.1",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.b1.3",
+    "prerequisite": "speaking.topic_food_health.a2.2",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.b1.3",
+    "prerequisite": "speaking.topic_food_health.a2.3",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.b2.1",
+    "prerequisite": "speaking.topic_food_health.b1.1",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.b2.1",
+    "prerequisite": "speaking.topic_food_health.b1.2",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.b2.1",
+    "prerequisite": "speaking.topic_food_health.b1.3",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.b2.2",
+    "prerequisite": "speaking.topic_food_health.b1.1",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.b2.2",
+    "prerequisite": "speaking.topic_food_health.b1.2",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.b2.2",
+    "prerequisite": "speaking.topic_food_health.b1.3",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.b2.3",
+    "prerequisite": "speaking.topic_food_health.b1.1",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.b2.3",
+    "prerequisite": "speaking.topic_food_health.b1.2",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.b2.3",
+    "prerequisite": "speaking.topic_food_health.b1.3",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.c1.1",
+    "prerequisite": "speaking.topic_food_health.b2.1",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.c1.1",
+    "prerequisite": "speaking.topic_food_health.b2.2",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.c1.1",
+    "prerequisite": "speaking.topic_food_health.b2.3",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.c1.2",
+    "prerequisite": "speaking.topic_food_health.b2.1",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.c1.2",
+    "prerequisite": "speaking.topic_food_health.b2.2",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.c1.2",
+    "prerequisite": "speaking.topic_food_health.b2.3",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.c1.3",
+    "prerequisite": "speaking.topic_food_health.b2.1",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.c1.3",
+    "prerequisite": "speaking.topic_food_health.b2.2",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.c1.3",
+    "prerequisite": "speaking.topic_food_health.b2.3",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.c2.1",
+    "prerequisite": "speaking.topic_food_health.c1.1",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.c2.1",
+    "prerequisite": "speaking.topic_food_health.c1.2",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.c2.1",
+    "prerequisite": "speaking.topic_food_health.c1.3",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.c2.2",
+    "prerequisite": "speaking.topic_food_health.c1.1",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.c2.2",
+    "prerequisite": "speaking.topic_food_health.c1.2",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.c2.2",
+    "prerequisite": "speaking.topic_food_health.c1.3",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.c2.3",
+    "prerequisite": "speaking.topic_food_health.c1.1",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.c2.3",
+    "prerequisite": "speaking.topic_food_health.c1.2",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_food_health.c2.3",
+    "prerequisite": "speaking.topic_food_health.c1.3",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.a2.1",
+    "prerequisite": "speaking.topic_hobbies.a1.1",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.a2.1",
+    "prerequisite": "speaking.topic_hobbies.a1.2",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.a2.1",
+    "prerequisite": "speaking.topic_hobbies.a1.3",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.a2.2",
+    "prerequisite": "speaking.topic_hobbies.a1.1",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.a2.2",
+    "prerequisite": "speaking.topic_hobbies.a1.2",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.a2.2",
+    "prerequisite": "speaking.topic_hobbies.a1.3",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.a2.3",
+    "prerequisite": "speaking.topic_hobbies.a1.1",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.a2.3",
+    "prerequisite": "speaking.topic_hobbies.a1.2",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.a2.3",
+    "prerequisite": "speaking.topic_hobbies.a1.3",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.b1.1",
+    "prerequisite": "speaking.topic_hobbies.a2.1",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.b1.1",
+    "prerequisite": "speaking.topic_hobbies.a2.2",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.b1.1",
+    "prerequisite": "speaking.topic_hobbies.a2.3",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.b1.2",
+    "prerequisite": "speaking.topic_hobbies.a2.1",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.b1.2",
+    "prerequisite": "speaking.topic_hobbies.a2.2",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.b1.2",
+    "prerequisite": "speaking.topic_hobbies.a2.3",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.b1.3",
+    "prerequisite": "speaking.topic_hobbies.a2.1",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.b1.3",
+    "prerequisite": "speaking.topic_hobbies.a2.2",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.b1.3",
+    "prerequisite": "speaking.topic_hobbies.a2.3",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.b2.1",
+    "prerequisite": "speaking.topic_hobbies.b1.1",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.b2.1",
+    "prerequisite": "speaking.topic_hobbies.b1.2",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.b2.1",
+    "prerequisite": "speaking.topic_hobbies.b1.3",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.b2.2",
+    "prerequisite": "speaking.topic_hobbies.b1.1",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.b2.2",
+    "prerequisite": "speaking.topic_hobbies.b1.2",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.b2.2",
+    "prerequisite": "speaking.topic_hobbies.b1.3",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.b2.3",
+    "prerequisite": "speaking.topic_hobbies.b1.1",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.b2.3",
+    "prerequisite": "speaking.topic_hobbies.b1.2",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.b2.3",
+    "prerequisite": "speaking.topic_hobbies.b1.3",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.c1.1",
+    "prerequisite": "speaking.topic_hobbies.b2.1",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.c1.1",
+    "prerequisite": "speaking.topic_hobbies.b2.2",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.c1.1",
+    "prerequisite": "speaking.topic_hobbies.b2.3",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.c1.2",
+    "prerequisite": "speaking.topic_hobbies.b2.1",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.c1.2",
+    "prerequisite": "speaking.topic_hobbies.b2.2",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.c1.2",
+    "prerequisite": "speaking.topic_hobbies.b2.3",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.c1.3",
+    "prerequisite": "speaking.topic_hobbies.b2.1",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.c1.3",
+    "prerequisite": "speaking.topic_hobbies.b2.2",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.c1.3",
+    "prerequisite": "speaking.topic_hobbies.b2.3",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.c2.1",
+    "prerequisite": "speaking.topic_hobbies.c1.1",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.c2.1",
+    "prerequisite": "speaking.topic_hobbies.c1.2",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.c2.1",
+    "prerequisite": "speaking.topic_hobbies.c1.3",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.c2.2",
+    "prerequisite": "speaking.topic_hobbies.c1.1",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.c2.2",
+    "prerequisite": "speaking.topic_hobbies.c1.2",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.c2.2",
+    "prerequisite": "speaking.topic_hobbies.c1.3",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.c2.3",
+    "prerequisite": "speaking.topic_hobbies.c1.1",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.c2.3",
+    "prerequisite": "speaking.topic_hobbies.c1.2",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_hobbies.c2.3",
+    "prerequisite": "speaking.topic_hobbies.c1.3",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.a2.1",
+    "prerequisite": "speaking.topic_environment.a1.1",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.a2.1",
+    "prerequisite": "speaking.topic_environment.a1.2",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.a2.1",
+    "prerequisite": "speaking.topic_environment.a1.3",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.a2.2",
+    "prerequisite": "speaking.topic_environment.a1.1",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.a2.2",
+    "prerequisite": "speaking.topic_environment.a1.2",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.a2.2",
+    "prerequisite": "speaking.topic_environment.a1.3",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.a2.3",
+    "prerequisite": "speaking.topic_environment.a1.1",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.a2.3",
+    "prerequisite": "speaking.topic_environment.a1.2",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.a2.3",
+    "prerequisite": "speaking.topic_environment.a1.3",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.b1.1",
+    "prerequisite": "speaking.topic_environment.a2.1",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.b1.1",
+    "prerequisite": "speaking.topic_environment.a2.2",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.b1.1",
+    "prerequisite": "speaking.topic_environment.a2.3",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.b1.2",
+    "prerequisite": "speaking.topic_environment.a2.1",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.b1.2",
+    "prerequisite": "speaking.topic_environment.a2.2",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.b1.2",
+    "prerequisite": "speaking.topic_environment.a2.3",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.b1.3",
+    "prerequisite": "speaking.topic_environment.a2.1",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.b1.3",
+    "prerequisite": "speaking.topic_environment.a2.2",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.b1.3",
+    "prerequisite": "speaking.topic_environment.a2.3",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.b2.1",
+    "prerequisite": "speaking.topic_environment.b1.1",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.b2.1",
+    "prerequisite": "speaking.topic_environment.b1.2",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.b2.1",
+    "prerequisite": "speaking.topic_environment.b1.3",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.b2.2",
+    "prerequisite": "speaking.topic_environment.b1.1",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.b2.2",
+    "prerequisite": "speaking.topic_environment.b1.2",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.b2.2",
+    "prerequisite": "speaking.topic_environment.b1.3",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.b2.3",
+    "prerequisite": "speaking.topic_environment.b1.1",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.b2.3",
+    "prerequisite": "speaking.topic_environment.b1.2",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.b2.3",
+    "prerequisite": "speaking.topic_environment.b1.3",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.c1.1",
+    "prerequisite": "speaking.topic_environment.b2.1",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.c1.1",
+    "prerequisite": "speaking.topic_environment.b2.2",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.c1.1",
+    "prerequisite": "speaking.topic_environment.b2.3",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.c1.2",
+    "prerequisite": "speaking.topic_environment.b2.1",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.c1.2",
+    "prerequisite": "speaking.topic_environment.b2.2",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.c1.2",
+    "prerequisite": "speaking.topic_environment.b2.3",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.c1.3",
+    "prerequisite": "speaking.topic_environment.b2.1",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.c1.3",
+    "prerequisite": "speaking.topic_environment.b2.2",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.c1.3",
+    "prerequisite": "speaking.topic_environment.b2.3",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.c2.1",
+    "prerequisite": "speaking.topic_environment.c1.1",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.c2.1",
+    "prerequisite": "speaking.topic_environment.c1.2",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.c2.1",
+    "prerequisite": "speaking.topic_environment.c1.3",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.c2.2",
+    "prerequisite": "speaking.topic_environment.c1.1",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.c2.2",
+    "prerequisite": "speaking.topic_environment.c1.2",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.c2.2",
+    "prerequisite": "speaking.topic_environment.c1.3",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.c2.3",
+    "prerequisite": "speaking.topic_environment.c1.1",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.c2.3",
+    "prerequisite": "speaking.topic_environment.c1.2",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_environment.c2.3",
+    "prerequisite": "speaking.topic_environment.c1.3",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.a2.1",
+    "prerequisite": "speaking.topic_family.a1.1",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.a2.1",
+    "prerequisite": "speaking.topic_family.a1.2",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.a2.1",
+    "prerequisite": "speaking.topic_family.a1.3",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.a2.2",
+    "prerequisite": "speaking.topic_family.a1.1",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.a2.2",
+    "prerequisite": "speaking.topic_family.a1.2",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.a2.2",
+    "prerequisite": "speaking.topic_family.a1.3",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.a2.3",
+    "prerequisite": "speaking.topic_family.a1.1",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.a2.3",
+    "prerequisite": "speaking.topic_family.a1.2",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.a2.3",
+    "prerequisite": "speaking.topic_family.a1.3",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.b1.1",
+    "prerequisite": "speaking.topic_family.a2.1",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.b1.1",
+    "prerequisite": "speaking.topic_family.a2.2",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.b1.1",
+    "prerequisite": "speaking.topic_family.a2.3",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.b1.2",
+    "prerequisite": "speaking.topic_family.a2.1",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.b1.2",
+    "prerequisite": "speaking.topic_family.a2.2",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.b1.2",
+    "prerequisite": "speaking.topic_family.a2.3",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.b1.3",
+    "prerequisite": "speaking.topic_family.a2.1",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.b1.3",
+    "prerequisite": "speaking.topic_family.a2.2",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.b1.3",
+    "prerequisite": "speaking.topic_family.a2.3",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.b2.1",
+    "prerequisite": "speaking.topic_family.b1.1",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.b2.1",
+    "prerequisite": "speaking.topic_family.b1.2",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.b2.1",
+    "prerequisite": "speaking.topic_family.b1.3",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.b2.2",
+    "prerequisite": "speaking.topic_family.b1.1",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.b2.2",
+    "prerequisite": "speaking.topic_family.b1.2",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.b2.2",
+    "prerequisite": "speaking.topic_family.b1.3",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.b2.3",
+    "prerequisite": "speaking.topic_family.b1.1",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.b2.3",
+    "prerequisite": "speaking.topic_family.b1.2",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.b2.3",
+    "prerequisite": "speaking.topic_family.b1.3",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.c1.1",
+    "prerequisite": "speaking.topic_family.b2.1",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.c1.1",
+    "prerequisite": "speaking.topic_family.b2.2",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.c1.1",
+    "prerequisite": "speaking.topic_family.b2.3",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.c1.2",
+    "prerequisite": "speaking.topic_family.b2.1",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.c1.2",
+    "prerequisite": "speaking.topic_family.b2.2",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.c1.2",
+    "prerequisite": "speaking.topic_family.b2.3",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.c1.3",
+    "prerequisite": "speaking.topic_family.b2.1",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.c1.3",
+    "prerequisite": "speaking.topic_family.b2.2",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.c1.3",
+    "prerequisite": "speaking.topic_family.b2.3",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.c2.1",
+    "prerequisite": "speaking.topic_family.c1.1",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.c2.1",
+    "prerequisite": "speaking.topic_family.c1.2",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.c2.1",
+    "prerequisite": "speaking.topic_family.c1.3",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.c2.2",
+    "prerequisite": "speaking.topic_family.c1.1",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.c2.2",
+    "prerequisite": "speaking.topic_family.c1.2",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.c2.2",
+    "prerequisite": "speaking.topic_family.c1.3",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.c2.3",
+    "prerequisite": "speaking.topic_family.c1.1",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.c2.3",
+    "prerequisite": "speaking.topic_family.c1.2",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_family.c2.3",
+    "prerequisite": "speaking.topic_family.c1.3",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.a2.1",
+    "prerequisite": "speaking.topic_work.a1.1",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.a2.1",
+    "prerequisite": "speaking.topic_work.a1.2",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.a2.1",
+    "prerequisite": "speaking.topic_work.a1.3",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.a2.2",
+    "prerequisite": "speaking.topic_work.a1.1",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.a2.2",
+    "prerequisite": "speaking.topic_work.a1.2",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.a2.2",
+    "prerequisite": "speaking.topic_work.a1.3",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.a2.3",
+    "prerequisite": "speaking.topic_work.a1.1",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.a2.3",
+    "prerequisite": "speaking.topic_work.a1.2",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.a2.3",
+    "prerequisite": "speaking.topic_work.a1.3",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.b1.1",
+    "prerequisite": "speaking.topic_work.a2.1",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.b1.1",
+    "prerequisite": "speaking.topic_work.a2.2",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.b1.1",
+    "prerequisite": "speaking.topic_work.a2.3",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.b1.2",
+    "prerequisite": "speaking.topic_work.a2.1",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.b1.2",
+    "prerequisite": "speaking.topic_work.a2.2",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.b1.2",
+    "prerequisite": "speaking.topic_work.a2.3",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.b1.3",
+    "prerequisite": "speaking.topic_work.a2.1",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.b1.3",
+    "prerequisite": "speaking.topic_work.a2.2",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.b1.3",
+    "prerequisite": "speaking.topic_work.a2.3",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.b2.1",
+    "prerequisite": "speaking.topic_work.b1.1",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.b2.1",
+    "prerequisite": "speaking.topic_work.b1.2",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.b2.1",
+    "prerequisite": "speaking.topic_work.b1.3",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.b2.2",
+    "prerequisite": "speaking.topic_work.b1.1",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.b2.2",
+    "prerequisite": "speaking.topic_work.b1.2",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.b2.2",
+    "prerequisite": "speaking.topic_work.b1.3",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.b2.3",
+    "prerequisite": "speaking.topic_work.b1.1",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.b2.3",
+    "prerequisite": "speaking.topic_work.b1.2",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.b2.3",
+    "prerequisite": "speaking.topic_work.b1.3",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.c1.1",
+    "prerequisite": "speaking.topic_work.b2.1",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.c1.1",
+    "prerequisite": "speaking.topic_work.b2.2",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.c1.1",
+    "prerequisite": "speaking.topic_work.b2.3",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.c1.2",
+    "prerequisite": "speaking.topic_work.b2.1",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.c1.2",
+    "prerequisite": "speaking.topic_work.b2.2",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.c1.2",
+    "prerequisite": "speaking.topic_work.b2.3",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.c1.3",
+    "prerequisite": "speaking.topic_work.b2.1",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.c1.3",
+    "prerequisite": "speaking.topic_work.b2.2",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.c1.3",
+    "prerequisite": "speaking.topic_work.b2.3",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.c2.1",
+    "prerequisite": "speaking.topic_work.c1.1",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.c2.1",
+    "prerequisite": "speaking.topic_work.c1.2",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.c2.1",
+    "prerequisite": "speaking.topic_work.c1.3",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.c2.2",
+    "prerequisite": "speaking.topic_work.c1.1",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.c2.2",
+    "prerequisite": "speaking.topic_work.c1.2",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.c2.2",
+    "prerequisite": "speaking.topic_work.c1.3",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.c2.3",
+    "prerequisite": "speaking.topic_work.c1.1",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.c2.3",
+    "prerequisite": "speaking.topic_work.c1.2",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_work.c2.3",
+    "prerequisite": "speaking.topic_work.c1.3",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.a2.1",
+    "prerequisite": "speaking.topic_technology.a1.1",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.a2.1",
+    "prerequisite": "speaking.topic_technology.a1.2",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.a2.1",
+    "prerequisite": "speaking.topic_technology.a1.3",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.a2.2",
+    "prerequisite": "speaking.topic_technology.a1.1",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.a2.2",
+    "prerequisite": "speaking.topic_technology.a1.2",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.a2.2",
+    "prerequisite": "speaking.topic_technology.a1.3",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.a2.3",
+    "prerequisite": "speaking.topic_technology.a1.1",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.a2.3",
+    "prerequisite": "speaking.topic_technology.a1.2",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.a2.3",
+    "prerequisite": "speaking.topic_technology.a1.3",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.b1.1",
+    "prerequisite": "speaking.topic_technology.a2.1",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.b1.1",
+    "prerequisite": "speaking.topic_technology.a2.2",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.b1.1",
+    "prerequisite": "speaking.topic_technology.a2.3",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.b1.2",
+    "prerequisite": "speaking.topic_technology.a2.1",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.b1.2",
+    "prerequisite": "speaking.topic_technology.a2.2",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.b1.2",
+    "prerequisite": "speaking.topic_technology.a2.3",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.b1.3",
+    "prerequisite": "speaking.topic_technology.a2.1",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.b1.3",
+    "prerequisite": "speaking.topic_technology.a2.2",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.b1.3",
+    "prerequisite": "speaking.topic_technology.a2.3",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.b2.1",
+    "prerequisite": "speaking.topic_technology.b1.1",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.b2.1",
+    "prerequisite": "speaking.topic_technology.b1.2",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.b2.1",
+    "prerequisite": "speaking.topic_technology.b1.3",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.b2.2",
+    "prerequisite": "speaking.topic_technology.b1.1",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.b2.2",
+    "prerequisite": "speaking.topic_technology.b1.2",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.b2.2",
+    "prerequisite": "speaking.topic_technology.b1.3",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.b2.3",
+    "prerequisite": "speaking.topic_technology.b1.1",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.b2.3",
+    "prerequisite": "speaking.topic_technology.b1.2",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.b2.3",
+    "prerequisite": "speaking.topic_technology.b1.3",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.c1.1",
+    "prerequisite": "speaking.topic_technology.b2.1",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.c1.1",
+    "prerequisite": "speaking.topic_technology.b2.2",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.c1.1",
+    "prerequisite": "speaking.topic_technology.b2.3",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.c1.2",
+    "prerequisite": "speaking.topic_technology.b2.1",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.c1.2",
+    "prerequisite": "speaking.topic_technology.b2.2",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.c1.2",
+    "prerequisite": "speaking.topic_technology.b2.3",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.c1.3",
+    "prerequisite": "speaking.topic_technology.b2.1",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.c1.3",
+    "prerequisite": "speaking.topic_technology.b2.2",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.c1.3",
+    "prerequisite": "speaking.topic_technology.b2.3",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.c2.1",
+    "prerequisite": "speaking.topic_technology.c1.1",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.c2.1",
+    "prerequisite": "speaking.topic_technology.c1.2",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.c2.1",
+    "prerequisite": "speaking.topic_technology.c1.3",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.c2.2",
+    "prerequisite": "speaking.topic_technology.c1.1",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.c2.2",
+    "prerequisite": "speaking.topic_technology.c1.2",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.c2.2",
+    "prerequisite": "speaking.topic_technology.c1.3",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.c2.3",
+    "prerequisite": "speaking.topic_technology.c1.1",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.c2.3",
+    "prerequisite": "speaking.topic_technology.c1.2",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_technology.c2.3",
+    "prerequisite": "speaking.topic_technology.c1.3",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.a2.1",
+    "prerequisite": "speaking.topic_education.a1.1",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.a2.1",
+    "prerequisite": "speaking.topic_education.a1.2",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.a2.1",
+    "prerequisite": "speaking.topic_education.a1.3",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.a2.2",
+    "prerequisite": "speaking.topic_education.a1.1",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.a2.2",
+    "prerequisite": "speaking.topic_education.a1.2",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.a2.2",
+    "prerequisite": "speaking.topic_education.a1.3",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.a2.3",
+    "prerequisite": "speaking.topic_education.a1.1",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.a2.3",
+    "prerequisite": "speaking.topic_education.a1.2",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.a2.3",
+    "prerequisite": "speaking.topic_education.a1.3",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.b1.1",
+    "prerequisite": "speaking.topic_education.a2.1",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.b1.1",
+    "prerequisite": "speaking.topic_education.a2.2",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.b1.1",
+    "prerequisite": "speaking.topic_education.a2.3",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.b1.2",
+    "prerequisite": "speaking.topic_education.a2.1",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.b1.2",
+    "prerequisite": "speaking.topic_education.a2.2",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.b1.2",
+    "prerequisite": "speaking.topic_education.a2.3",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.b1.3",
+    "prerequisite": "speaking.topic_education.a2.1",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.b1.3",
+    "prerequisite": "speaking.topic_education.a2.2",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.b1.3",
+    "prerequisite": "speaking.topic_education.a2.3",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.b2.1",
+    "prerequisite": "speaking.topic_education.b1.1",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.b2.1",
+    "prerequisite": "speaking.topic_education.b1.2",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.b2.1",
+    "prerequisite": "speaking.topic_education.b1.3",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.b2.2",
+    "prerequisite": "speaking.topic_education.b1.1",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.b2.2",
+    "prerequisite": "speaking.topic_education.b1.2",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.b2.2",
+    "prerequisite": "speaking.topic_education.b1.3",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.b2.3",
+    "prerequisite": "speaking.topic_education.b1.1",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.b2.3",
+    "prerequisite": "speaking.topic_education.b1.2",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.b2.3",
+    "prerequisite": "speaking.topic_education.b1.3",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.c1.1",
+    "prerequisite": "speaking.topic_education.b2.1",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.c1.1",
+    "prerequisite": "speaking.topic_education.b2.2",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.c1.1",
+    "prerequisite": "speaking.topic_education.b2.3",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.c1.2",
+    "prerequisite": "speaking.topic_education.b2.1",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.c1.2",
+    "prerequisite": "speaking.topic_education.b2.2",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.c1.2",
+    "prerequisite": "speaking.topic_education.b2.3",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.c1.3",
+    "prerequisite": "speaking.topic_education.b2.1",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.c1.3",
+    "prerequisite": "speaking.topic_education.b2.2",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.c1.3",
+    "prerequisite": "speaking.topic_education.b2.3",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.c2.1",
+    "prerequisite": "speaking.topic_education.c1.1",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.c2.1",
+    "prerequisite": "speaking.topic_education.c1.2",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.c2.1",
+    "prerequisite": "speaking.topic_education.c1.3",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.c2.2",
+    "prerequisite": "speaking.topic_education.c1.1",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.c2.2",
+    "prerequisite": "speaking.topic_education.c1.2",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.c2.2",
+    "prerequisite": "speaking.topic_education.c1.3",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.c2.3",
+    "prerequisite": "speaking.topic_education.c1.1",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.c2.3",
+    "prerequisite": "speaking.topic_education.c1.2",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_education.c2.3",
+    "prerequisite": "speaking.topic_education.c1.3",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.a2.1",
+    "prerequisite": "speaking.topic_opinions.a1.1",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.a2.1",
+    "prerequisite": "speaking.topic_opinions.a1.2",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.a2.1",
+    "prerequisite": "speaking.topic_opinions.a1.3",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.a2.2",
+    "prerequisite": "speaking.topic_opinions.a1.1",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.a2.2",
+    "prerequisite": "speaking.topic_opinions.a1.2",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.a2.2",
+    "prerequisite": "speaking.topic_opinions.a1.3",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.a2.3",
+    "prerequisite": "speaking.topic_opinions.a1.1",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.a2.3",
+    "prerequisite": "speaking.topic_opinions.a1.2",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.a2.3",
+    "prerequisite": "speaking.topic_opinions.a1.3",
+    "reason": "Speaking topic-level chaining: A2 builds on A1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.b1.1",
+    "prerequisite": "speaking.topic_opinions.a2.1",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.b1.1",
+    "prerequisite": "speaking.topic_opinions.a2.2",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.b1.1",
+    "prerequisite": "speaking.topic_opinions.a2.3",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.b1.2",
+    "prerequisite": "speaking.topic_opinions.a2.1",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.b1.2",
+    "prerequisite": "speaking.topic_opinions.a2.2",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.b1.2",
+    "prerequisite": "speaking.topic_opinions.a2.3",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.b1.3",
+    "prerequisite": "speaking.topic_opinions.a2.1",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.b1.3",
+    "prerequisite": "speaking.topic_opinions.a2.2",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.b1.3",
+    "prerequisite": "speaking.topic_opinions.a2.3",
+    "reason": "Speaking topic-level chaining: B1 builds on A2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.b2.1",
+    "prerequisite": "speaking.topic_opinions.b1.1",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.b2.1",
+    "prerequisite": "speaking.topic_opinions.b1.2",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.b2.1",
+    "prerequisite": "speaking.topic_opinions.b1.3",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.b2.2",
+    "prerequisite": "speaking.topic_opinions.b1.1",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.b2.2",
+    "prerequisite": "speaking.topic_opinions.b1.2",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.b2.2",
+    "prerequisite": "speaking.topic_opinions.b1.3",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.b2.3",
+    "prerequisite": "speaking.topic_opinions.b1.1",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.b2.3",
+    "prerequisite": "speaking.topic_opinions.b1.2",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.b2.3",
+    "prerequisite": "speaking.topic_opinions.b1.3",
+    "reason": "Speaking topic-level chaining: B2 builds on B1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.c1.1",
+    "prerequisite": "speaking.topic_opinions.b2.1",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.c1.1",
+    "prerequisite": "speaking.topic_opinions.b2.2",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.c1.1",
+    "prerequisite": "speaking.topic_opinions.b2.3",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.c1.2",
+    "prerequisite": "speaking.topic_opinions.b2.1",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.c1.2",
+    "prerequisite": "speaking.topic_opinions.b2.2",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.c1.2",
+    "prerequisite": "speaking.topic_opinions.b2.3",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.c1.3",
+    "prerequisite": "speaking.topic_opinions.b2.1",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.c1.3",
+    "prerequisite": "speaking.topic_opinions.b2.2",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.c1.3",
+    "prerequisite": "speaking.topic_opinions.b2.3",
+    "reason": "Speaking topic-level chaining: C1 builds on B2 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.c2.1",
+    "prerequisite": "speaking.topic_opinions.c1.1",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.c2.1",
+    "prerequisite": "speaking.topic_opinions.c1.2",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.c2.1",
+    "prerequisite": "speaking.topic_opinions.c1.3",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.c2.2",
+    "prerequisite": "speaking.topic_opinions.c1.1",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.c2.2",
+    "prerequisite": "speaking.topic_opinions.c1.2",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.c2.2",
+    "prerequisite": "speaking.topic_opinions.c1.3",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.c2.3",
+    "prerequisite": "speaking.topic_opinions.c1.1",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.c2.3",
+    "prerequisite": "speaking.topic_opinions.c1.2",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  },
+  {
+    "node": "speaking.topic_opinions.c2.3",
+    "prerequisite": "speaking.topic_opinions.c1.3",
+    "reason": "Speaking topic-level chaining: C2 builds on C1 within the same topic"
+  }
+]
