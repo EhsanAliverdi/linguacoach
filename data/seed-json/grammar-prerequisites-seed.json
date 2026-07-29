@@ -1,0 +1,3977 @@
+[
+  {
+    "node": "grammar.cefrj_ta_present_be_neg.a1",
+    "prerequisite": "grammar.cefrj_ta_present_be_aff.a1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ta_present_be_int_aff.a1",
+    "prerequisite": "grammar.cefrj_ta_present_be_aff.a1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ta_present_be_int_neg.a1",
+    "prerequisite": "grammar.cefrj_ta_present_be_int_aff.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_ta_present_do_neg.a1",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ta_present_do_int_aff.a1",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ta_present_do_int_neg.a1",
+    "prerequisite": "grammar.cefrj_ta_present_do_int_aff.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_ta_present_does_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_present_does_aff.a1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ta_present_does_int_aff.a1",
+    "prerequisite": "grammar.cefrj_ta_present_does_aff.a1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ta_present_does_int_neg.a1",
+    "prerequisite": "grammar.cefrj_ta_present_does_int_aff.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_ta_prprg_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_prprg_aff.a1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ta_prprg_int_aff.a1",
+    "prerequisite": "grammar.cefrj_ta_prprg_aff.a1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ta_prprg_int_neg.a1",
+    "prerequisite": "grammar.cefrj_ta_prprg_int_aff.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_ta_prpf_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_prpf_aff.a2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ta_prpf_int_aff.a2",
+    "prerequisite": "grammar.cefrj_ta_prpf_aff.a2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ta_prpf_int_neg.a2",
+    "prerequisite": "grammar.cefrj_ta_prpf_int_aff.a2",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_ta_prpfprg_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_prpfprg_aff.b2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ta_prpfprg_int_aff.b1",
+    "prerequisite": "grammar.cefrj_ta_prpfprg_aff.b2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ta_prpfprg_int_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_prpfprg_int_aff.b1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_ta_past_be_neg.a2",
+    "prerequisite": "grammar.cefrj_ta_past_be_aff.a1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ta_past_be_int_aff.a1",
+    "prerequisite": "grammar.cefrj_ta_past_be_aff.a1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ta_past_be_int_neg.a1",
+    "prerequisite": "grammar.cefrj_ta_past_be_int_aff.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_ta_past_do_neg.a2",
+    "prerequisite": "grammar.cefrj_ta_past_do_aff.a1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ta_past_do_int_aff.a2",
+    "prerequisite": "grammar.cefrj_ta_past_do_aff.a1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ta_past_do_int_neg.a1",
+    "prerequisite": "grammar.cefrj_ta_past_do_int_aff.a2",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastprg_neg.a2",
+    "prerequisite": "grammar.cefrj_ta_pastprg_aff.a2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastprg_int_aff.a2",
+    "prerequisite": "grammar.cefrj_ta_pastprg_aff.a2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastprg_int_neg.a2",
+    "prerequisite": "grammar.cefrj_ta_pastprg_int_aff.a2",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastpf_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_pastpf_aff.b1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastpf_int_aff.b1",
+    "prerequisite": "grammar.cefrj_ta_pastpf_aff.b1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastpf_int_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_pastpf_int_aff.b1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastpfprg_neg.b2",
+    "prerequisite": "grammar.cefrj_ta_pastpfprg_aff.b2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastpfprg_int_aff.b2",
+    "prerequisite": "grammar.cefrj_ta_pastpfprg_aff.b2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastpfprg_int_neg.b2",
+    "prerequisite": "grammar.cefrj_ta_pastpfprg_int_aff.b2",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_ta_fut_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_fut_aff.a2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ta_fut_int_aff.a1",
+    "prerequisite": "grammar.cefrj_ta_fut_aff.a2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ta_fut_int_neg.a1",
+    "prerequisite": "grammar.cefrj_ta_fut_int_aff.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_ta_futprg_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_futprg_aff.b2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ta_futprg_int_aff.b1",
+    "prerequisite": "grammar.cefrj_ta_futprg_aff.b2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ta_futprg_int_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_futprg_int_aff.b1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_ta_futpf_neg.b2",
+    "prerequisite": "grammar.cefrj_ta_futpf_aff.b2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ta_futpf_int_aff.b2",
+    "prerequisite": "grammar.cefrj_ta_futpf_aff.b2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ta_futpf_int_neg.b2",
+    "prerequisite": "grammar.cefrj_ta_futpf_int_aff.b2",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_ta_futpfprg_neg.b2",
+    "prerequisite": "grammar.cefrj_ta_futpfprg_aff.b2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ta_futpfprg_int_aff.b2",
+    "prerequisite": "grammar.cefrj_ta_futpfprg_aff.b2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ta_futpfprg_int_neg.b2",
+    "prerequisite": "grammar.cefrj_ta_futpfprg_int_aff.b2",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_pass_present_neg.b2",
+    "prerequisite": "grammar.cefrj_pass_present.a1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pass_present_int_aff.a2",
+    "prerequisite": "grammar.cefrj_pass_present.a1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pass_present_int_neg.a2",
+    "prerequisite": "grammar.cefrj_pass_present_int_aff.a2",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_pass_prsprg_neg.b2",
+    "prerequisite": "grammar.cefrj_pass_prsprg_aff.b2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pass_prsprg_int_aff.b2",
+    "prerequisite": "grammar.cefrj_pass_prsprg_aff.b2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pass_prsprg_int_neg.b2",
+    "prerequisite": "grammar.cefrj_pass_prsprg_int_aff.b2",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_pass_prspf_neg.b2",
+    "prerequisite": "grammar.cefrj_pass_prspf_aff.b2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pass_prspf_int_aff.b2",
+    "prerequisite": "grammar.cefrj_pass_prspf_aff.b2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pass_prspf_int_neg.b2",
+    "prerequisite": "grammar.cefrj_pass_prspf_int_aff.b2",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_pass_past_neg.b1",
+    "prerequisite": "grammar.cefrj_pass_past_aff.a2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pass_past_int_aff.b1",
+    "prerequisite": "grammar.cefrj_pass_past_aff.a2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pass_past_int_neg.b1",
+    "prerequisite": "grammar.cefrj_pass_past_int_aff.b1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_pass_pastprg_neg.b2",
+    "prerequisite": "grammar.cefrj_pass_pastprg_aff.b2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pass_pastprg_int_aff.b2",
+    "prerequisite": "grammar.cefrj_pass_pastprg_aff.b2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pass_pastprg_int_neg.b2",
+    "prerequisite": "grammar.cefrj_pass_pastprg_int_aff.b2",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_pass_pastpf_neg.b2",
+    "prerequisite": "grammar.cefrj_pass_pastpf_aff.b2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pass_pastpf_int_aff.b2",
+    "prerequisite": "grammar.cefrj_pass_pastpf_aff.b2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pass_pastpf_int_neg.b2",
+    "prerequisite": "grammar.cefrj_pass_pastpf_int_aff.b2",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_pass_fut_neg.c1",
+    "prerequisite": "grammar.cefrj_pass_fut_aff.b2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pass_fut_int_aff.c1",
+    "prerequisite": "grammar.cefrj_pass_fut_aff.b2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pass_fut_int_neg.c1",
+    "prerequisite": "grammar.cefrj_pass_fut_int_aff.c1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_pass_futprg_neg.c1",
+    "prerequisite": "grammar.cefrj_pass_futprg_aff.c1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pass_futprg_int_aff.c1",
+    "prerequisite": "grammar.cefrj_pass_futprg_aff.c1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pass_futprg_int_neg.c1",
+    "prerequisite": "grammar.cefrj_pass_futprg_int_aff.c1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_pass_futpf_neg.c1",
+    "prerequisite": "grammar.cefrj_pass_futpf_aff.c1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pass_futpf_int_aff.c1",
+    "prerequisite": "grammar.cefrj_pass_futpf_aff.c1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pass_futpf_int_neg.c1",
+    "prerequisite": "grammar.cefrj_pass_futpf_int_aff.c1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_pass_md_neg.c1",
+    "prerequisite": "grammar.cefrj_pass_md_aff.b1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pass_md_int_aff.c1",
+    "prerequisite": "grammar.cefrj_pass_md_aff.b1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pass_md_int_neg.c1",
+    "prerequisite": "grammar.cefrj_pass_md_int_aff.c1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_pass_mdprg_neg.a1",
+    "prerequisite": "grammar.cefrj_pass_mdprg_aff.a1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pass_mdprg_int_aff.a1",
+    "prerequisite": "grammar.cefrj_pass_mdprg_aff.a1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pass_mdprg_int_neg.a1",
+    "prerequisite": "grammar.cefrj_pass_mdprg_int_aff.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_pass_mdpf_neg.b2",
+    "prerequisite": "grammar.cefrj_pass_mdpf_aff.b2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pass_mdpf_int_aff.b2",
+    "prerequisite": "grammar.cefrj_pass_mdpf_aff.b2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pass_mdpf_int_neg.b2",
+    "prerequisite": "grammar.cefrj_pass_mdpf_int_aff.b2",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_pass_io_neg.b1",
+    "prerequisite": "grammar.cefrj_pass_io_aff.b2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pass_io_int_aff.b1",
+    "prerequisite": "grammar.cefrj_pass_io_aff.b2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pass_io_int_neg.b1",
+    "prerequisite": "grammar.cefrj_pass_io_int_aff.b1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_pass_do_neg.a1",
+    "prerequisite": "grammar.cefrj_pass_do_aff.b2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pass_do_int_aff.a1",
+    "prerequisite": "grammar.cefrj_pass_do_aff.b2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pass_do_int_neg.a1",
+    "prerequisite": "grammar.cefrj_pass_do_int_aff.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_imp_be_neg.a1",
+    "prerequisite": "grammar.cefrj_imp_be_aff.a1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_imp_v_neg.b1",
+    "prerequisite": "grammar.cefrj_imp_v_aff.a1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_imp_please_v_neg.a2",
+    "prerequisite": "grammar.cefrj_imp_please_v_aff.a2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_imp_let_s_v_neg.b2",
+    "prerequisite": "grammar.cefrj_imp_let_s_v_aff.a1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_be_able_to_neg.a1",
+    "prerequisite": "grammar.cefrj_md_be_able_to_aff.b1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_be_able_to_int_aff.a1",
+    "prerequisite": "grammar.cefrj_md_be_able_to_aff.b1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_be_able_to_int_neg.a1",
+    "prerequisite": "grammar.cefrj_md_be_able_to_int_aff.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_md_be_going_to_neg.a1",
+    "prerequisite": "grammar.cefrj_md_be_going_to_aff.a2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_be_going_to_int_aff.a1",
+    "prerequisite": "grammar.cefrj_md_be_going_to_aff.a2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_be_going_to_int_neg.a1",
+    "prerequisite": "grammar.cefrj_md_be_going_to_int_aff.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_md_can_neg.a1",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_can_int_aff.a1",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_can_int_neg.a1",
+    "prerequisite": "grammar.cefrj_md_can_int_aff.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_md_could_neg.b1",
+    "prerequisite": "grammar.cefrj_md_could_aff.b1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_could_int_aff.a2",
+    "prerequisite": "grammar.cefrj_md_could_aff.b1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_could_int_neg.a2",
+    "prerequisite": "grammar.cefrj_md_could_int_aff.a2",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_md_dare_neg.b2",
+    "prerequisite": "grammar.cefrj_md_dare_aff.b2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_dare_int_aff.c1",
+    "prerequisite": "grammar.cefrj_md_dare_aff.b2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_dare_int_neg.c1",
+    "prerequisite": "grammar.cefrj_md_dare_int_aff.c1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_md_had_better_neg.a1",
+    "prerequisite": "grammar.cefrj_md_had_better_aff.a1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_have_to_neg.b2",
+    "prerequisite": "grammar.cefrj_md_have_to_aff.a2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_have_to_int_aff.a2",
+    "prerequisite": "grammar.cefrj_md_have_to_aff.a2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_have_to_int_neg.a2",
+    "prerequisite": "grammar.cefrj_md_have_to_int_aff.a2",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_md_have_got_to_neg.a2",
+    "prerequisite": "grammar.cefrj_md_have_got_to_aff.a2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_have_got_to_int_aff.a2",
+    "prerequisite": "grammar.cefrj_md_have_got_to_aff.a2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_have_got_to_int_neg.a1",
+    "prerequisite": "grammar.cefrj_md_have_got_to_int_aff.a2",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_md_may_neg.a2",
+    "prerequisite": "grammar.cefrj_md_may_aff.b1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_may_int_aff.a2",
+    "prerequisite": "grammar.cefrj_md_may_aff.b1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_may_int_neg.a2",
+    "prerequisite": "grammar.cefrj_md_may_int_aff.a2",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_md_may_as_well_neg.a1",
+    "prerequisite": "grammar.cefrj_md_may_as_well_aff.c2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_may_as_well_int_aff.a1",
+    "prerequisite": "grammar.cefrj_md_may_as_well_aff.c2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_may_as_well_int_neg.a1",
+    "prerequisite": "grammar.cefrj_md_may_as_well_int_aff.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_md_may_well_neg.a1",
+    "prerequisite": "grammar.cefrj_md_may_well_aff.c1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_may_well_int_aff.a1",
+    "prerequisite": "grammar.cefrj_md_may_well_aff.c1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_may_well_int_neg.a1",
+    "prerequisite": "grammar.cefrj_md_may_well_int_aff.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_md_might_neg.b2",
+    "prerequisite": "grammar.cefrj_md_might_aff.b1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_might_int_aff.c1",
+    "prerequisite": "grammar.cefrj_md_might_aff.b1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_might_int_neg.a1",
+    "prerequisite": "grammar.cefrj_md_might_int_aff.c1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_md_might_as_well_neg.a1",
+    "prerequisite": "grammar.cefrj_md_might_as_well_aff.c2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_might_as_well_int_aff.a1",
+    "prerequisite": "grammar.cefrj_md_might_as_well_aff.c2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_might_as_well_int_neg.a1",
+    "prerequisite": "grammar.cefrj_md_might_as_well_int_aff.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_md_might_well_neg.a1",
+    "prerequisite": "grammar.cefrj_md_might_well_aff.a1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_might_well_int_aff.a1",
+    "prerequisite": "grammar.cefrj_md_might_well_aff.a1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_might_well_int_neg.a1",
+    "prerequisite": "grammar.cefrj_md_might_well_int_aff.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_md_must_neg.a2",
+    "prerequisite": "grammar.cefrj_md_must_aff.b1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_must_int_aff.b2",
+    "prerequisite": "grammar.cefrj_md_must_aff.b1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_must_int_neg.a1",
+    "prerequisite": "grammar.cefrj_md_must_int_aff.b2",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_md_need_neg.b1",
+    "prerequisite": "grammar.cefrj_md_need_aff.a2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_need_int_aff.c2",
+    "prerequisite": "grammar.cefrj_md_need_aff.a2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_need_int_neg.a1",
+    "prerequisite": "grammar.cefrj_md_need_int_aff.c2",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_md_ought_to_neg.b1",
+    "prerequisite": "grammar.cefrj_md_ought_to_aff.b1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_ought_to_int_aff.b1",
+    "prerequisite": "grammar.cefrj_md_ought_to_aff.b1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_ought_to_int_neg.b1",
+    "prerequisite": "grammar.cefrj_md_ought_to_int_aff.b1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_md_shall_neg.c1",
+    "prerequisite": "grammar.cefrj_md_shall_aff.a2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_shall_int.a2",
+    "prerequisite": "grammar.cefrj_md_shall_aff.a2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_shall_neg_int.a1",
+    "prerequisite": "grammar.cefrj_md_shall_int.a2",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_md_should_neg.b1",
+    "prerequisite": "grammar.cefrj_md_should_aff.a2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_should_int_aff.a2",
+    "prerequisite": "grammar.cefrj_md_should_aff.a2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_should_int_neg.a2",
+    "prerequisite": "grammar.cefrj_md_should_int_aff.a2",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_md_used_to_neg.a2",
+    "prerequisite": "grammar.cefrj_md_used_to_aff.b1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_used_to_int_aff.a2",
+    "prerequisite": "grammar.cefrj_md_used_to_aff.b1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_used_to_int_neg.a2",
+    "prerequisite": "grammar.cefrj_md_used_to_int_aff.a2",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_md_will_neg.b1",
+    "prerequisite": "grammar.cefrj_md_will_aff.a2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_will_int_aff.a2",
+    "prerequisite": "grammar.cefrj_md_will_aff.a2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_will_int_neg.a2",
+    "prerequisite": "grammar.cefrj_md_will_int_aff.a2",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_md_would_neg.b2",
+    "prerequisite": "grammar.cefrj_md_would_aff.a2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_would_int_aff.b1",
+    "prerequisite": "grammar.cefrj_md_would_aff.a2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_would_int_neg.b1",
+    "prerequisite": "grammar.cefrj_md_would_int_aff.b1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_md_would_rather_neg.a1",
+    "prerequisite": "grammar.cefrj_md_would_rather_aff.a2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_would_rather_int_aff.a1",
+    "prerequisite": "grammar.cefrj_md_would_rather_aff.a2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_would_rather_int_neg.a1",
+    "prerequisite": "grammar.cefrj_md_would_rather_int_aff.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_md_md_prg_neg.a1",
+    "prerequisite": "grammar.cefrj_md_md_prg_aff.b2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_md_prg_int_aff.a1",
+    "prerequisite": "grammar.cefrj_md_md_prg_aff.b2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_md_prg_int_neg.a1",
+    "prerequisite": "grammar.cefrj_md_md_prg_int_aff.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_md_md_pf_neg.b2",
+    "prerequisite": "grammar.cefrj_md_md_pf_aff.b2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_md_pf_int_aff.b1",
+    "prerequisite": "grammar.cefrj_md_md_pf_aff.b2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_md_md_pf_int_neg.b1",
+    "prerequisite": "grammar.cefrj_md_md_pf_int_aff.b1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_ex_there_neg.a1",
+    "prerequisite": "grammar.cefrj_ex_there_aff.a1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ex_there_int_aff.a1",
+    "prerequisite": "grammar.cefrj_ex_there_aff.a1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ex_there_int_neg.a1",
+    "prerequisite": "grammar.cefrj_ex_there_int_aff.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_ex_there_pf_neg.a1",
+    "prerequisite": "grammar.cefrj_ex_there_pf_aff.a1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ex_there_pf_int_aff.a1",
+    "prerequisite": "grammar.cefrj_ex_there_pf_aff.a1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ex_there_pf_int_neg.a1",
+    "prerequisite": "grammar.cefrj_ex_there_pf_int_aff.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_ex_there_md_neg.a1",
+    "prerequisite": "grammar.cefrj_ex_there_md_aff.b1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ex_there_md_int_aff.a1",
+    "prerequisite": "grammar.cefrj_ex_there_md_aff.b1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_ex_there_md_int_neg.a1",
+    "prerequisite": "grammar.cefrj_ex_there_md_int_aff.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_pp_it_to_do_neg.b1",
+    "prerequisite": "grammar.cefrj_pp_it_to_do_aff.b1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pp_it_to_do_int_aff.b1",
+    "prerequisite": "grammar.cefrj_pp_it_to_do_aff.b1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pp_it_to_do_int_neg.a1",
+    "prerequisite": "grammar.cefrj_pp_it_to_do_int_aff.b1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_pp_it_that_neg.a1",
+    "prerequisite": "grammar.cefrj_pp_it_that_aff.b2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pp_it_that_int_aff.a1",
+    "prerequisite": "grammar.cefrj_pp_it_that_aff.b2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pp_it_that_int_neg.a1",
+    "prerequisite": "grammar.cefrj_pp_it_that_int_aff.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_tag_neg.b1",
+    "prerequisite": "grammar.cefrj_tag_aff.b1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_vp_sv_neg.a1",
+    "prerequisite": "grammar.cefrj_vp_sv_aff.b1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_vp_sv_int_aff.a1",
+    "prerequisite": "grammar.cefrj_vp_sv_aff.b1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_vp_sv_int_neg.a1",
+    "prerequisite": "grammar.cefrj_vp_sv_int_aff.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_vp_svc_neg.a1",
+    "prerequisite": "grammar.cefrj_vp_svc_aff.a2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_vp_svc_int_aff.a1",
+    "prerequisite": "grammar.cefrj_vp_svc_aff.a2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_vp_svc_int_neg.a1",
+    "prerequisite": "grammar.cefrj_vp_svc_int_aff.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_vp_svo_neg.a2",
+    "prerequisite": "grammar.cefrj_vp_svo_aff.a1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_vp_svo_int_aff.a1",
+    "prerequisite": "grammar.cefrj_vp_svo_aff.a1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_vp_svo_int_neg.a1",
+    "prerequisite": "grammar.cefrj_vp_svo_int_aff.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_vp_svoo_neg.a2",
+    "prerequisite": "grammar.cefrj_vp_svoo_aff.a2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_vp_svoo_int_aff.a1",
+    "prerequisite": "grammar.cefrj_vp_svoo_aff.a2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_vp_svoo_int_neg.a1",
+    "prerequisite": "grammar.cefrj_vp_svoo_int_aff.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_vp_svotoo_neg.a1",
+    "prerequisite": "grammar.cefrj_vp_svotoo_aff.b1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_vp_svotoo_int_aff.a1",
+    "prerequisite": "grammar.cefrj_vp_svotoo_aff.b1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_vp_svotoo_int_neg.a1",
+    "prerequisite": "grammar.cefrj_vp_svotoo_int_aff.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_vp_svoc_neg.a2",
+    "prerequisite": "grammar.cefrj_vp_svoc_aff.a2",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_vp_svoc_int_aff.a2",
+    "prerequisite": "grammar.cefrj_vp_svoc_aff.a2",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_vp_svoc_int_neg.a2",
+    "prerequisite": "grammar.cefrj_vp_svoc_int_aff.a2",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_emp_pp_rb_neg.a1",
+    "prerequisite": "grammar.cefrj_emp_pp_rb_aff.a1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_emp_pp_rb_int_aff.a1",
+    "prerequisite": "grammar.cefrj_emp_pp_rb_aff.a1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_emp_pp_rb_int_neg.a1",
+    "prerequisite": "grammar.cefrj_emp_pp_rb_int_aff.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_emp_what_cleft_neg.a1",
+    "prerequisite": "grammar.cefrj_emp_what_cleft_aff.a1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_vg_p_neg.a1",
+    "prerequisite": "grammar.cefrj_vg_p_aff.b1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_vn_p_neg.a1",
+    "prerequisite": "grammar.cefrj_vn_p_aff.b1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_subj_past_neg.b1",
+    "prerequisite": "grammar.cefrj_subj_past_aff.b1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_subj_pastpf_neg.b1",
+    "prerequisite": "grammar.cefrj_subj_pastpf_aff.b1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_subj_prs_neg.a1",
+    "prerequisite": "grammar.cefrj_subj_prs_aff.a1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pp_i_am_not.a1",
+    "prerequisite": "grammar.cefrj_pp_i_am.a1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pp_am_i.a1",
+    "prerequisite": "grammar.cefrj_pp_i_am.a1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pp_am_i_not.a1",
+    "prerequisite": "grammar.cefrj_pp_am_i.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_pp_you_are_not.a1",
+    "prerequisite": "grammar.cefrj_pp_you_are.b1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pp_are_you.a1",
+    "prerequisite": "grammar.cefrj_pp_you_are.b1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pp_aren_t_you.a1",
+    "prerequisite": "grammar.cefrj_pp_are_you.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_pp_he_she_is_not.a1",
+    "prerequisite": "grammar.cefrj_pp_he_she_is.a1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pp_is_he_she.a1",
+    "prerequisite": "grammar.cefrj_pp_he_she_is.a1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pp_isn_t_he_she.a1",
+    "prerequisite": "grammar.cefrj_pp_is_he_she.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_pp_we_are_not.a1",
+    "prerequisite": "grammar.cefrj_pp_we_are.a1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pp_are_we.a1",
+    "prerequisite": "grammar.cefrj_pp_we_are.a1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pp_aren_t_we.a1",
+    "prerequisite": "grammar.cefrj_pp_are_we.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_pp_they_are_not.a1",
+    "prerequisite": "grammar.cefrj_pp_they_are.a1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pp_are_they.a1",
+    "prerequisite": "grammar.cefrj_pp_they_are.a1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pp_aren_t_they.a1",
+    "prerequisite": "grammar.cefrj_pp_are_they.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_dt_this_that_is_not.a1",
+    "prerequisite": "grammar.cefrj_dt_this_that_is.a1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_dt_is_this_that.a1",
+    "prerequisite": "grammar.cefrj_dt_this_that_is.a1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_dt_isn_t_this_that.a1",
+    "prerequisite": "grammar.cefrj_dt_is_this_that.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_dt_these_those_are_not.a1",
+    "prerequisite": "grammar.cefrj_dt_these_those_are.a1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_dt_are_these_those.a1",
+    "prerequisite": "grammar.cefrj_dt_these_those_are.a1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_dt_aren_t_these_those.a1",
+    "prerequisite": "grammar.cefrj_dt_are_these_those.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_pp_it_is_not.b2",
+    "prerequisite": "grammar.cefrj_pp_it_is.a1",
+    "reason": "within-family: negative form builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pp_is_it.a1",
+    "prerequisite": "grammar.cefrj_pp_it_is.a1",
+    "reason": "within-family: interrogative builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_pp_isn_t_it.a1",
+    "prerequisite": "grammar.cefrj_pp_is_it.a1",
+    "reason": "within-family: negative interrogative builds on the affirmative interrogative"
+  },
+  {
+    "node": "grammar.cefrj_dt_a_an.a1",
+    "prerequisite": "grammar.cefrj_pp_it_is.a1",
+    "reason": "basic noun-phrase reference before articles"
+  },
+  {
+    "node": "grammar.cefrj_dt_the.a1",
+    "prerequisite": "grammar.cefrj_dt_a_an.a1",
+    "reason": "definite article builds on indefinite article"
+  },
+  {
+    "node": "grammar.cefrj_dt_this_that_n.a2",
+    "prerequisite": "grammar.cefrj_dt_this_that_is.a1",
+    "reason": "demonstrative+noun builds on demonstrative pronoun"
+  },
+  {
+    "node": "grammar.cefrj_dt_these_those_n.b1",
+    "prerequisite": "grammar.cefrj_dt_these_those_are.a1",
+    "reason": "plural demonstrative+noun builds on plural demonstrative pronoun"
+  },
+  {
+    "node": "grammar.cefrj_dt_some_any.a1",
+    "prerequisite": "grammar.cefrj_dt_the.a1",
+    "reason": "quantifying determiners build on basic articles"
+  },
+  {
+    "node": "grammar.cefrj_dt_no.a1",
+    "prerequisite": "grammar.cefrj_dt_some_any.a1",
+    "reason": "\"no\" as determiner builds on some/any"
+  },
+  {
+    "node": "grammar.cefrj_dt_another.a2",
+    "prerequisite": "grammar.cefrj_dt_a_an.a1",
+    "reason": "\"another\" builds on the indefinite article concept"
+  },
+  {
+    "node": "grammar.cefrj_quant_much.a2",
+    "prerequisite": "grammar.cefrj_dt_some_any.a1",
+    "reason": "uncountable quantifier builds on some/any"
+  },
+  {
+    "node": "grammar.cefrj_quant_little.a2",
+    "prerequisite": "grammar.cefrj_quant_much.a2",
+    "reason": "little pairs with much for uncountables"
+  },
+  {
+    "node": "grammar.cefrj_quant_few.a2",
+    "prerequisite": "grammar.cefrj_quant_little.a2",
+    "reason": "few (countable) parallels little (uncountable)"
+  },
+  {
+    "node": "grammar.cefrj_pgen.a1",
+    "prerequisite": "grammar.cefrj_pp_i_am.a1",
+    "reason": "possessive determiners build on subject pronouns"
+  },
+  {
+    "node": "grammar.cefrj_ppo.a1",
+    "prerequisite": "grammar.cefrj_pgen.a1",
+    "reason": "object pronouns build on possessive determiners"
+  },
+  {
+    "node": "grammar.cefrj_ppos_mine_etc.b1",
+    "prerequisite": "grammar.cefrj_pgen.a1",
+    "reason": "possessive pronouns build on possessive determiners"
+  },
+  {
+    "node": "grammar.cefrj_prefl_oneself_etc.b1",
+    "prerequisite": "grammar.cefrj_ppo.a1",
+    "reason": "reflexive pronouns build on object pronouns"
+  },
+  {
+    "node": "grammar.cefrj_pind_nobody_anything_etc.a1",
+    "prerequisite": "grammar.cefrj_dt_some_any.a1",
+    "reason": "indefinite pronouns build on some/any"
+  },
+  {
+    "node": "grammar.cefrj_pind_ones.a2",
+    "prerequisite": "grammar.cefrj_pind_nobody_anything_etc.a1",
+    "reason": "\"ones\" builds on basic indefinite pronouns"
+  },
+  {
+    "node": "grammar.cefrj_pind_none.b2",
+    "prerequisite": "grammar.cefrj_pind_nobody_anything_etc.a1",
+    "reason": "\"none\" builds on basic indefinite pronouns"
+  },
+  {
+    "node": "grammar.cefrj_pref_each_other.b1",
+    "prerequisite": "grammar.cefrj_prefl_oneself_etc.b1",
+    "reason": "reciprocal pronouns build on reflexive pronouns"
+  },
+  {
+    "node": "grammar.cefrj_pref_one_another.b2",
+    "prerequisite": "grammar.cefrj_pref_each_other.b1",
+    "reason": "\"one another\" parallels \"each other\""
+  },
+  {
+    "node": "grammar.cefrj_p_others.b1",
+    "prerequisite": "grammar.cefrj_pind_nobody_anything_etc.a1",
+    "reason": "\"others\" builds on basic indefinite pronouns"
+  },
+  {
+    "node": "grammar.cefrj_p_the_other_others.c1",
+    "prerequisite": "grammar.cefrj_p_others.b1",
+    "reason": "definite \"the other(s)\" builds on plain \"others\""
+  },
+  {
+    "node": "grammar.cefrj_nn_thing_jj.b1",
+    "prerequisite": "grammar.cefrj_pind_nobody_anything_etc.a1",
+    "reason": "\"-thing ADJ\" builds on indefinite pronouns"
+  },
+  {
+    "node": "grammar.cefrj_in_prep_general.a1",
+    "prerequisite": "grammar.cefrj_pp_it_is.a1",
+    "reason": "prepositions are early foundational vocab / structure"
+  },
+  {
+    "node": "grammar.cefrj_rb_frq.a1",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "frequency adverbs are used with present simple, learned together"
+  },
+  {
+    "node": "grammar.cefrj_rb_int.a1",
+    "prerequisite": "grammar.cefrj_pp_it_is.a1",
+    "reason": "intensifiers modify basic adjectives, needs basic BE sentences first"
+  },
+  {
+    "node": "grammar.cefrj_rb_neg.a1",
+    "prerequisite": "grammar.cefrj_rb_frq.a1",
+    "reason": "negative adverb \"never\" builds on frequency adverbs"
+  },
+  {
+    "node": "grammar.cefrj_rb_att.b1",
+    "prerequisite": "grammar.cefrj_rb_int.a1",
+    "reason": "attitude adverbs are a more advanced adverb category than intensifiers"
+  },
+  {
+    "node": "grammar.cefrj_rb_neg_qu.b2",
+    "prerequisite": "grammar.cefrj_rb_neg.a1",
+    "reason": "quasi-negative adverbs build on plain negation adverbs"
+  },
+  {
+    "node": "grammar.cefrj_comp_jjr_rbr_er.a1",
+    "prerequisite": "grammar.cefrj_pp_it_is.a1",
+    "reason": "comparative -er needs basic adjective use first"
+  },
+  {
+    "node": "grammar.cefrj_comp_jjs_rbs_est.a1",
+    "prerequisite": "grammar.cefrj_comp_jjr_rbr_er.a1",
+    "reason": "superlative -est builds on comparative -er"
+  },
+  {
+    "node": "grammar.cefrj_comp_jjr_rbr_more.a2",
+    "prerequisite": "grammar.cefrj_comp_jjr_rbr_er.a1",
+    "reason": "\"more+ADJ\" parallels \"-er\" for longer adjectives"
+  },
+  {
+    "node": "grammar.cefrj_comp_jjs_rbs_most.a2",
+    "prerequisite": "grammar.cefrj_comp_jjr_rbr_more.a2",
+    "reason": "\"most+ADJ\" builds on \"more+ADJ\""
+  },
+  {
+    "node": "grammar.cefrj_comp_eq_not_as_so_as.b1",
+    "prerequisite": "grammar.cefrj_comp_jjr_rbr_er.a1",
+    "reason": "comparison of equality builds on basic comparatives"
+  },
+  {
+    "node": "grammar.cefrj_comp_eq_as_as.b2",
+    "prerequisite": "grammar.cefrj_comp_eq_not_as_so_as.b1",
+    "reason": "affirmative \"as...as\" builds on the negative form taught alongside it"
+  },
+  {
+    "node": "grammar.cefrj_comp_infer.b2",
+    "prerequisite": "grammar.cefrj_comp_jjs_rbs_most.a2",
+    "reason": "comparative/superlative of inferiority (\"less/least\") builds on superiority forms"
+  },
+  {
+    "node": "grammar.cefrj_comp_and.b1",
+    "prerequisite": "grammar.cefrj_comp_jjr_rbr_er.a1",
+    "reason": "repeated comparative (\"bigger and bigger\") builds on basic comparative"
+  },
+  {
+    "node": "grammar.cefrj_comp_the_the.b2",
+    "prerequisite": "grammar.cefrj_comp_and.b1",
+    "reason": "double comparative (\"the more..., the more...\") builds on repeated comparative"
+  },
+  {
+    "node": "grammar.cefrj_comp_even_jjr_rbr.b1",
+    "prerequisite": "grammar.cefrj_comp_jjr_rbr_er.a1",
+    "reason": "intensified comparatives build on basic comparatives"
+  },
+  {
+    "node": "grammar.cefrj_comp_by_far_jjs_rbs.b2",
+    "prerequisite": "grammar.cefrj_comp_jjs_rbs_est.a1",
+    "reason": "intensified superlatives build on basic superlatives"
+  },
+  {
+    "node": "grammar.cefrj_rbdeg_so_jj_a_an.a1",
+    "prerequisite": "grammar.cefrj_rb_int.a1",
+    "reason": "\"so ADJ a/an N\" builds on basic intensifiers"
+  },
+  {
+    "node": "grammar.cefrj_rbdeg_too_jj_a_an.a1",
+    "prerequisite": "grammar.cefrj_rbdeg_so_jj_a_an.a1",
+    "reason": "\"too ADJ a/an N\" parallels \"so ADJ a/an N\""
+  },
+  {
+    "node": "grammar.cefrj_rbdeg_too_to.b1",
+    "prerequisite": "grammar.cefrj_rbdeg_too_jj_a_an.a1",
+    "reason": "\"too ADJ to+INF\" builds on \"too ADJ a/an N\""
+  },
+  {
+    "node": "grammar.cefrj_rbdeg_so_jj_rb_that.b1",
+    "prerequisite": "grammar.cefrj_rbdeg_so_jj_a_an.a1",
+    "reason": "\"so ADJ (that)\" builds on \"so ADJ a/an N\""
+  },
+  {
+    "node": "grammar.cefrj_rbdeg_such_jj.b2",
+    "prerequisite": "grammar.cefrj_rbdeg_so_jj_a_an.a1",
+    "reason": "\"such (a/an) ADJ N\" parallels \"so ADJ a/an N\""
+  },
+  {
+    "node": "grammar.cefrj_rbdeg_enough.b2",
+    "prerequisite": "grammar.cefrj_rbdeg_too_to.b1",
+    "reason": "\"ADJ enough\" builds on \"too ADJ to+INF\""
+  },
+  {
+    "node": "grammar.cefrj_ta_present_be_aff.a1",
+    "prerequisite": "grammar.cefrj_pp_it_is.a1",
+    "reason": "formal present-BE tense/aspect builds on basic copula sentences"
+  },
+  {
+    "node": "grammar.cefrj_ta_present_be_neg.a1",
+    "prerequisite": "grammar.cefrj_pp_it_is.a1",
+    "reason": "formal present-BE tense/aspect builds on basic copula sentences"
+  },
+  {
+    "node": "grammar.cefrj_ta_present_be_int_aff.a1",
+    "prerequisite": "grammar.cefrj_pp_it_is.a1",
+    "reason": "formal present-BE tense/aspect builds on basic copula sentences"
+  },
+  {
+    "node": "grammar.cefrj_ta_present_be_int_neg.a1",
+    "prerequisite": "grammar.cefrj_pp_it_is.a1",
+    "reason": "formal present-BE tense/aspect builds on basic copula sentences"
+  },
+  {
+    "node": "grammar.cefrj_ta_present_do_aff.a1",
+    "prerequisite": "grammar.cefrj_ta_present_be_aff.a1",
+    "reason": "present simple with lexical verbs builds on present BE"
+  },
+  {
+    "node": "grammar.cefrj_ta_present_do_neg.a1",
+    "prerequisite": "grammar.cefrj_ta_present_be_aff.a1",
+    "reason": "present simple with lexical verbs builds on present BE"
+  },
+  {
+    "node": "grammar.cefrj_ta_present_do_int_aff.a1",
+    "prerequisite": "grammar.cefrj_ta_present_be_aff.a1",
+    "reason": "present simple with lexical verbs builds on present BE"
+  },
+  {
+    "node": "grammar.cefrj_ta_present_do_int_neg.a1",
+    "prerequisite": "grammar.cefrj_ta_present_be_aff.a1",
+    "reason": "present simple with lexical verbs builds on present BE"
+  },
+  {
+    "node": "grammar.cefrj_ta_present_does_aff.a1",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "third-person -s form builds on basic present simple"
+  },
+  {
+    "node": "grammar.cefrj_ta_present_does_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "third-person -s form builds on basic present simple"
+  },
+  {
+    "node": "grammar.cefrj_ta_present_does_int_aff.a1",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "third-person -s form builds on basic present simple"
+  },
+  {
+    "node": "grammar.cefrj_ta_present_does_int_neg.a1",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "third-person -s form builds on basic present simple"
+  },
+  {
+    "node": "grammar.cefrj_ta_prprg_aff.a1",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "present progressive builds on present simple"
+  },
+  {
+    "node": "grammar.cefrj_ta_prprg_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "present progressive builds on present simple"
+  },
+  {
+    "node": "grammar.cefrj_ta_prprg_int_aff.a1",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "present progressive builds on present simple"
+  },
+  {
+    "node": "grammar.cefrj_ta_prprg_int_neg.a1",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "present progressive builds on present simple"
+  },
+  {
+    "node": "grammar.cefrj_ta_prpf_aff.a2",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "present perfect builds on present simple"
+  },
+  {
+    "node": "grammar.cefrj_ta_prpf_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "present perfect builds on present simple"
+  },
+  {
+    "node": "grammar.cefrj_ta_prpf_int_aff.a2",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "present perfect builds on present simple"
+  },
+  {
+    "node": "grammar.cefrj_ta_prpf_int_neg.a2",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "present perfect builds on present simple"
+  },
+  {
+    "node": "grammar.cefrj_ta_prpfprg_aff.b2",
+    "prerequisite": "grammar.cefrj_ta_prpf_aff.a2",
+    "reason": "present perfect progressive builds on present perfect"
+  },
+  {
+    "node": "grammar.cefrj_ta_prpfprg_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_prpf_aff.a2",
+    "reason": "present perfect progressive builds on present perfect"
+  },
+  {
+    "node": "grammar.cefrj_ta_prpfprg_int_aff.b1",
+    "prerequisite": "grammar.cefrj_ta_prpf_aff.a2",
+    "reason": "present perfect progressive builds on present perfect"
+  },
+  {
+    "node": "grammar.cefrj_ta_prpfprg_int_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_prpf_aff.a2",
+    "reason": "present perfect progressive builds on present perfect"
+  },
+  {
+    "node": "grammar.cefrj_ta_prpfprg_aff.b2",
+    "prerequisite": "grammar.cefrj_ta_prprg_aff.a1",
+    "reason": "present perfect progressive also builds on present progressive"
+  },
+  {
+    "node": "grammar.cefrj_ta_prpfprg_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_prprg_aff.a1",
+    "reason": "present perfect progressive also builds on present progressive"
+  },
+  {
+    "node": "grammar.cefrj_ta_prpfprg_int_aff.b1",
+    "prerequisite": "grammar.cefrj_ta_prprg_aff.a1",
+    "reason": "present perfect progressive also builds on present progressive"
+  },
+  {
+    "node": "grammar.cefrj_ta_prpfprg_int_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_prprg_aff.a1",
+    "reason": "present perfect progressive also builds on present progressive"
+  },
+  {
+    "node": "grammar.cefrj_ta_past_be_aff.a1",
+    "prerequisite": "grammar.cefrj_ta_present_be_aff.a1",
+    "reason": "past BE builds on present BE"
+  },
+  {
+    "node": "grammar.cefrj_ta_past_be_neg.a2",
+    "prerequisite": "grammar.cefrj_ta_present_be_aff.a1",
+    "reason": "past BE builds on present BE"
+  },
+  {
+    "node": "grammar.cefrj_ta_past_be_int_aff.a1",
+    "prerequisite": "grammar.cefrj_ta_present_be_aff.a1",
+    "reason": "past BE builds on present BE"
+  },
+  {
+    "node": "grammar.cefrj_ta_past_be_int_neg.a1",
+    "prerequisite": "grammar.cefrj_ta_present_be_aff.a1",
+    "reason": "past BE builds on present BE"
+  },
+  {
+    "node": "grammar.cefrj_ta_past_do_aff.a1",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "past simple builds on present simple"
+  },
+  {
+    "node": "grammar.cefrj_ta_past_do_neg.a2",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "past simple builds on present simple"
+  },
+  {
+    "node": "grammar.cefrj_ta_past_do_int_aff.a2",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "past simple builds on present simple"
+  },
+  {
+    "node": "grammar.cefrj_ta_past_do_int_neg.a1",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "past simple builds on present simple"
+  },
+  {
+    "node": "grammar.cefrj_ta_past_do_aff.a1",
+    "prerequisite": "grammar.cefrj_ta_past_be_aff.a1",
+    "reason": "past simple also builds on past BE"
+  },
+  {
+    "node": "grammar.cefrj_ta_past_do_neg.a2",
+    "prerequisite": "grammar.cefrj_ta_past_be_aff.a1",
+    "reason": "past simple also builds on past BE"
+  },
+  {
+    "node": "grammar.cefrj_ta_past_do_int_aff.a2",
+    "prerequisite": "grammar.cefrj_ta_past_be_aff.a1",
+    "reason": "past simple also builds on past BE"
+  },
+  {
+    "node": "grammar.cefrj_ta_past_do_int_neg.a1",
+    "prerequisite": "grammar.cefrj_ta_past_be_aff.a1",
+    "reason": "past simple also builds on past BE"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastprg_aff.a2",
+    "prerequisite": "grammar.cefrj_ta_past_do_aff.a1",
+    "reason": "past progressive builds on past simple"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastprg_neg.a2",
+    "prerequisite": "grammar.cefrj_ta_past_do_aff.a1",
+    "reason": "past progressive builds on past simple"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastprg_int_aff.a2",
+    "prerequisite": "grammar.cefrj_ta_past_do_aff.a1",
+    "reason": "past progressive builds on past simple"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastprg_int_neg.a2",
+    "prerequisite": "grammar.cefrj_ta_past_do_aff.a1",
+    "reason": "past progressive builds on past simple"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastprg_aff.a2",
+    "prerequisite": "grammar.cefrj_ta_prprg_aff.a1",
+    "reason": "past progressive also builds on present progressive"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastprg_neg.a2",
+    "prerequisite": "grammar.cefrj_ta_prprg_aff.a1",
+    "reason": "past progressive also builds on present progressive"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastprg_int_aff.a2",
+    "prerequisite": "grammar.cefrj_ta_prprg_aff.a1",
+    "reason": "past progressive also builds on present progressive"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastprg_int_neg.a2",
+    "prerequisite": "grammar.cefrj_ta_prprg_aff.a1",
+    "reason": "past progressive also builds on present progressive"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastpf_aff.b1",
+    "prerequisite": "grammar.cefrj_ta_past_do_aff.a1",
+    "reason": "past perfect builds on past simple"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastpf_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_past_do_aff.a1",
+    "reason": "past perfect builds on past simple"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastpf_int_aff.b1",
+    "prerequisite": "grammar.cefrj_ta_past_do_aff.a1",
+    "reason": "past perfect builds on past simple"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastpf_int_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_past_do_aff.a1",
+    "reason": "past perfect builds on past simple"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastpf_aff.b1",
+    "prerequisite": "grammar.cefrj_ta_prpf_aff.a2",
+    "reason": "past perfect also builds on present perfect"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastpf_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_prpf_aff.a2",
+    "reason": "past perfect also builds on present perfect"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastpf_int_aff.b1",
+    "prerequisite": "grammar.cefrj_ta_prpf_aff.a2",
+    "reason": "past perfect also builds on present perfect"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastpf_int_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_prpf_aff.a2",
+    "reason": "past perfect also builds on present perfect"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastpfprg_aff.b2",
+    "prerequisite": "grammar.cefrj_ta_pastpf_aff.b1",
+    "reason": "past perfect progressive builds on past perfect"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastpfprg_neg.b2",
+    "prerequisite": "grammar.cefrj_ta_pastpf_aff.b1",
+    "reason": "past perfect progressive builds on past perfect"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastpfprg_int_aff.b2",
+    "prerequisite": "grammar.cefrj_ta_pastpf_aff.b1",
+    "reason": "past perfect progressive builds on past perfect"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastpfprg_int_neg.b2",
+    "prerequisite": "grammar.cefrj_ta_pastpf_aff.b1",
+    "reason": "past perfect progressive builds on past perfect"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastpfprg_aff.b2",
+    "prerequisite": "grammar.cefrj_ta_prpfprg_aff.b2",
+    "reason": "past perfect progressive also builds on present perfect progressive"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastpfprg_neg.b2",
+    "prerequisite": "grammar.cefrj_ta_prpfprg_aff.b2",
+    "reason": "past perfect progressive also builds on present perfect progressive"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastpfprg_int_aff.b2",
+    "prerequisite": "grammar.cefrj_ta_prpfprg_aff.b2",
+    "reason": "past perfect progressive also builds on present perfect progressive"
+  },
+  {
+    "node": "grammar.cefrj_ta_pastpfprg_int_neg.b2",
+    "prerequisite": "grammar.cefrj_ta_prpfprg_aff.b2",
+    "reason": "past perfect progressive also builds on present perfect progressive"
+  },
+  {
+    "node": "grammar.cefrj_ta_fut_aff.a2",
+    "prerequisite": "grammar.cefrj_ta_present_be_aff.a1",
+    "reason": "future (will/going to) builds on present BE"
+  },
+  {
+    "node": "grammar.cefrj_ta_fut_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_present_be_aff.a1",
+    "reason": "future (will/going to) builds on present BE"
+  },
+  {
+    "node": "grammar.cefrj_ta_fut_int_aff.a1",
+    "prerequisite": "grammar.cefrj_ta_present_be_aff.a1",
+    "reason": "future (will/going to) builds on present BE"
+  },
+  {
+    "node": "grammar.cefrj_ta_fut_int_neg.a1",
+    "prerequisite": "grammar.cefrj_ta_present_be_aff.a1",
+    "reason": "future (will/going to) builds on present BE"
+  },
+  {
+    "node": "grammar.cefrj_ta_fut_aff.a2",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "future also builds on present simple"
+  },
+  {
+    "node": "grammar.cefrj_ta_fut_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "future also builds on present simple"
+  },
+  {
+    "node": "grammar.cefrj_ta_fut_int_aff.a1",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "future also builds on present simple"
+  },
+  {
+    "node": "grammar.cefrj_ta_fut_int_neg.a1",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "future also builds on present simple"
+  },
+  {
+    "node": "grammar.cefrj_ta_futprg_aff.b2",
+    "prerequisite": "grammar.cefrj_ta_fut_aff.a2",
+    "reason": "future progressive builds on basic future"
+  },
+  {
+    "node": "grammar.cefrj_ta_futprg_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_fut_aff.a2",
+    "reason": "future progressive builds on basic future"
+  },
+  {
+    "node": "grammar.cefrj_ta_futprg_int_aff.b1",
+    "prerequisite": "grammar.cefrj_ta_fut_aff.a2",
+    "reason": "future progressive builds on basic future"
+  },
+  {
+    "node": "grammar.cefrj_ta_futprg_int_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_fut_aff.a2",
+    "reason": "future progressive builds on basic future"
+  },
+  {
+    "node": "grammar.cefrj_ta_futprg_aff.b2",
+    "prerequisite": "grammar.cefrj_ta_prprg_aff.a1",
+    "reason": "future progressive also builds on present progressive"
+  },
+  {
+    "node": "grammar.cefrj_ta_futprg_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_prprg_aff.a1",
+    "reason": "future progressive also builds on present progressive"
+  },
+  {
+    "node": "grammar.cefrj_ta_futprg_int_aff.b1",
+    "prerequisite": "grammar.cefrj_ta_prprg_aff.a1",
+    "reason": "future progressive also builds on present progressive"
+  },
+  {
+    "node": "grammar.cefrj_ta_futprg_int_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_prprg_aff.a1",
+    "reason": "future progressive also builds on present progressive"
+  },
+  {
+    "node": "grammar.cefrj_ta_futpf_aff.b2",
+    "prerequisite": "grammar.cefrj_ta_fut_aff.a2",
+    "reason": "future perfect builds on basic future"
+  },
+  {
+    "node": "grammar.cefrj_ta_futpf_neg.b2",
+    "prerequisite": "grammar.cefrj_ta_fut_aff.a2",
+    "reason": "future perfect builds on basic future"
+  },
+  {
+    "node": "grammar.cefrj_ta_futpf_int_aff.b2",
+    "prerequisite": "grammar.cefrj_ta_fut_aff.a2",
+    "reason": "future perfect builds on basic future"
+  },
+  {
+    "node": "grammar.cefrj_ta_futpf_int_neg.b2",
+    "prerequisite": "grammar.cefrj_ta_fut_aff.a2",
+    "reason": "future perfect builds on basic future"
+  },
+  {
+    "node": "grammar.cefrj_ta_futpf_aff.b2",
+    "prerequisite": "grammar.cefrj_ta_prpf_aff.a2",
+    "reason": "future perfect also builds on present perfect"
+  },
+  {
+    "node": "grammar.cefrj_ta_futpf_neg.b2",
+    "prerequisite": "grammar.cefrj_ta_prpf_aff.a2",
+    "reason": "future perfect also builds on present perfect"
+  },
+  {
+    "node": "grammar.cefrj_ta_futpf_int_aff.b2",
+    "prerequisite": "grammar.cefrj_ta_prpf_aff.a2",
+    "reason": "future perfect also builds on present perfect"
+  },
+  {
+    "node": "grammar.cefrj_ta_futpf_int_neg.b2",
+    "prerequisite": "grammar.cefrj_ta_prpf_aff.a2",
+    "reason": "future perfect also builds on present perfect"
+  },
+  {
+    "node": "grammar.cefrj_ta_futpfprg_aff.b2",
+    "prerequisite": "grammar.cefrj_ta_futpf_aff.b2",
+    "reason": "future perfect progressive builds on future perfect"
+  },
+  {
+    "node": "grammar.cefrj_ta_futpfprg_neg.b2",
+    "prerequisite": "grammar.cefrj_ta_futpf_aff.b2",
+    "reason": "future perfect progressive builds on future perfect"
+  },
+  {
+    "node": "grammar.cefrj_ta_futpfprg_int_aff.b2",
+    "prerequisite": "grammar.cefrj_ta_futpf_aff.b2",
+    "reason": "future perfect progressive builds on future perfect"
+  },
+  {
+    "node": "grammar.cefrj_ta_futpfprg_int_neg.b2",
+    "prerequisite": "grammar.cefrj_ta_futpf_aff.b2",
+    "reason": "future perfect progressive builds on future perfect"
+  },
+  {
+    "node": "grammar.cefrj_ta_futpfprg_aff.b2",
+    "prerequisite": "grammar.cefrj_ta_prpfprg_aff.b2",
+    "reason": "future perfect progressive also builds on present perfect progressive"
+  },
+  {
+    "node": "grammar.cefrj_ta_futpfprg_neg.b2",
+    "prerequisite": "grammar.cefrj_ta_prpfprg_aff.b2",
+    "reason": "future perfect progressive also builds on present perfect progressive"
+  },
+  {
+    "node": "grammar.cefrj_ta_futpfprg_int_aff.b2",
+    "prerequisite": "grammar.cefrj_ta_prpfprg_aff.b2",
+    "reason": "future perfect progressive also builds on present perfect progressive"
+  },
+  {
+    "node": "grammar.cefrj_ta_futpfprg_int_neg.b2",
+    "prerequisite": "grammar.cefrj_ta_prpfprg_aff.b2",
+    "reason": "future perfect progressive also builds on present perfect progressive"
+  },
+  {
+    "node": "grammar.cefrj_v_int_do_does.b2",
+    "prerequisite": "grammar.cefrj_ta_present_does_aff.a1",
+    "reason": "emphatic do/does builds on present simple 3rd-person forms"
+  },
+  {
+    "node": "grammar.cefrj_v_int_did.c1",
+    "prerequisite": "grammar.cefrj_ta_past_do_aff.a1",
+    "reason": "emphatic did builds on past simple"
+  },
+  {
+    "node": "grammar.cefrj_vn_vn_n.a1",
+    "prerequisite": "grammar.cefrj_ta_past_do_aff.a1",
+    "reason": "past participle as premodifier needs basic past-tense-verb-form familiarity"
+  },
+  {
+    "node": "grammar.cefrj_vn_n_vn.a1",
+    "prerequisite": "grammar.cefrj_vn_vn_n.a1",
+    "reason": "postmodifying past participle builds on premodifying past participle"
+  },
+  {
+    "node": "grammar.cefrj_pass_present_neg.b2",
+    "prerequisite": "grammar.cefrj_ta_present_be_aff.a1",
+    "reason": "passive present builds on active present BE"
+  },
+  {
+    "node": "grammar.cefrj_pass_present_int_aff.a2",
+    "prerequisite": "grammar.cefrj_ta_present_be_aff.a1",
+    "reason": "passive present builds on active present BE"
+  },
+  {
+    "node": "grammar.cefrj_pass_present_int_neg.a2",
+    "prerequisite": "grammar.cefrj_ta_present_be_aff.a1",
+    "reason": "passive present builds on active present BE"
+  },
+  {
+    "node": "grammar.cefrj_pass_present_neg.b2",
+    "prerequisite": "grammar.cefrj_vn_n_vn.a1",
+    "reason": "passive present builds on past-participle familiarity"
+  },
+  {
+    "node": "grammar.cefrj_pass_present_int_aff.a2",
+    "prerequisite": "grammar.cefrj_vn_n_vn.a1",
+    "reason": "passive present builds on past-participle familiarity"
+  },
+  {
+    "node": "grammar.cefrj_pass_present_int_neg.a2",
+    "prerequisite": "grammar.cefrj_vn_n_vn.a1",
+    "reason": "passive present builds on past-participle familiarity"
+  },
+  {
+    "node": "grammar.cefrj_pass_prsprg_aff.b2",
+    "prerequisite": "grammar.cefrj_pass_present.a1",
+    "reason": "passive present progressive builds on passive present"
+  },
+  {
+    "node": "grammar.cefrj_pass_prsprg_neg.b2",
+    "prerequisite": "grammar.cefrj_pass_present.a1",
+    "reason": "passive present progressive builds on passive present"
+  },
+  {
+    "node": "grammar.cefrj_pass_prsprg_int_aff.b2",
+    "prerequisite": "grammar.cefrj_pass_present.a1",
+    "reason": "passive present progressive builds on passive present"
+  },
+  {
+    "node": "grammar.cefrj_pass_prsprg_int_neg.b2",
+    "prerequisite": "grammar.cefrj_pass_present.a1",
+    "reason": "passive present progressive builds on passive present"
+  },
+  {
+    "node": "grammar.cefrj_pass_prsprg_aff.b2",
+    "prerequisite": "grammar.cefrj_ta_prprg_aff.a1",
+    "reason": "passive present progressive also builds on active present progressive"
+  },
+  {
+    "node": "grammar.cefrj_pass_prsprg_neg.b2",
+    "prerequisite": "grammar.cefrj_ta_prprg_aff.a1",
+    "reason": "passive present progressive also builds on active present progressive"
+  },
+  {
+    "node": "grammar.cefrj_pass_prsprg_int_aff.b2",
+    "prerequisite": "grammar.cefrj_ta_prprg_aff.a1",
+    "reason": "passive present progressive also builds on active present progressive"
+  },
+  {
+    "node": "grammar.cefrj_pass_prsprg_int_neg.b2",
+    "prerequisite": "grammar.cefrj_ta_prprg_aff.a1",
+    "reason": "passive present progressive also builds on active present progressive"
+  },
+  {
+    "node": "grammar.cefrj_pass_prspf_aff.b2",
+    "prerequisite": "grammar.cefrj_pass_present.a1",
+    "reason": "passive present perfect builds on passive present"
+  },
+  {
+    "node": "grammar.cefrj_pass_prspf_neg.b2",
+    "prerequisite": "grammar.cefrj_pass_present.a1",
+    "reason": "passive present perfect builds on passive present"
+  },
+  {
+    "node": "grammar.cefrj_pass_prspf_int_aff.b2",
+    "prerequisite": "grammar.cefrj_pass_present.a1",
+    "reason": "passive present perfect builds on passive present"
+  },
+  {
+    "node": "grammar.cefrj_pass_prspf_int_neg.b2",
+    "prerequisite": "grammar.cefrj_pass_present.a1",
+    "reason": "passive present perfect builds on passive present"
+  },
+  {
+    "node": "grammar.cefrj_pass_prspf_aff.b2",
+    "prerequisite": "grammar.cefrj_ta_prpf_aff.a2",
+    "reason": "passive present perfect also builds on active present perfect"
+  },
+  {
+    "node": "grammar.cefrj_pass_prspf_neg.b2",
+    "prerequisite": "grammar.cefrj_ta_prpf_aff.a2",
+    "reason": "passive present perfect also builds on active present perfect"
+  },
+  {
+    "node": "grammar.cefrj_pass_prspf_int_aff.b2",
+    "prerequisite": "grammar.cefrj_ta_prpf_aff.a2",
+    "reason": "passive present perfect also builds on active present perfect"
+  },
+  {
+    "node": "grammar.cefrj_pass_prspf_int_neg.b2",
+    "prerequisite": "grammar.cefrj_ta_prpf_aff.a2",
+    "reason": "passive present perfect also builds on active present perfect"
+  },
+  {
+    "node": "grammar.cefrj_pass_past_aff.a2",
+    "prerequisite": "grammar.cefrj_pass_present.a1",
+    "reason": "passive past builds on passive present"
+  },
+  {
+    "node": "grammar.cefrj_pass_past_neg.b1",
+    "prerequisite": "grammar.cefrj_pass_present.a1",
+    "reason": "passive past builds on passive present"
+  },
+  {
+    "node": "grammar.cefrj_pass_past_int_aff.b1",
+    "prerequisite": "grammar.cefrj_pass_present.a1",
+    "reason": "passive past builds on passive present"
+  },
+  {
+    "node": "grammar.cefrj_pass_past_int_neg.b1",
+    "prerequisite": "grammar.cefrj_pass_present.a1",
+    "reason": "passive past builds on passive present"
+  },
+  {
+    "node": "grammar.cefrj_pass_past_aff.a2",
+    "prerequisite": "grammar.cefrj_ta_past_do_aff.a1",
+    "reason": "passive past also builds on active past simple"
+  },
+  {
+    "node": "grammar.cefrj_pass_past_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_past_do_aff.a1",
+    "reason": "passive past also builds on active past simple"
+  },
+  {
+    "node": "grammar.cefrj_pass_past_int_aff.b1",
+    "prerequisite": "grammar.cefrj_ta_past_do_aff.a1",
+    "reason": "passive past also builds on active past simple"
+  },
+  {
+    "node": "grammar.cefrj_pass_past_int_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_past_do_aff.a1",
+    "reason": "passive past also builds on active past simple"
+  },
+  {
+    "node": "grammar.cefrj_pass_pastprg_aff.b2",
+    "prerequisite": "grammar.cefrj_pass_past_aff.a2",
+    "reason": "passive past progressive builds on passive past"
+  },
+  {
+    "node": "grammar.cefrj_pass_pastprg_neg.b2",
+    "prerequisite": "grammar.cefrj_pass_past_aff.a2",
+    "reason": "passive past progressive builds on passive past"
+  },
+  {
+    "node": "grammar.cefrj_pass_pastprg_int_aff.b2",
+    "prerequisite": "grammar.cefrj_pass_past_aff.a2",
+    "reason": "passive past progressive builds on passive past"
+  },
+  {
+    "node": "grammar.cefrj_pass_pastprg_int_neg.b2",
+    "prerequisite": "grammar.cefrj_pass_past_aff.a2",
+    "reason": "passive past progressive builds on passive past"
+  },
+  {
+    "node": "grammar.cefrj_pass_pastprg_aff.b2",
+    "prerequisite": "grammar.cefrj_pass_prsprg_aff.b2",
+    "reason": "passive past progressive also builds on passive present progressive"
+  },
+  {
+    "node": "grammar.cefrj_pass_pastprg_neg.b2",
+    "prerequisite": "grammar.cefrj_pass_prsprg_aff.b2",
+    "reason": "passive past progressive also builds on passive present progressive"
+  },
+  {
+    "node": "grammar.cefrj_pass_pastprg_int_aff.b2",
+    "prerequisite": "grammar.cefrj_pass_prsprg_aff.b2",
+    "reason": "passive past progressive also builds on passive present progressive"
+  },
+  {
+    "node": "grammar.cefrj_pass_pastprg_int_neg.b2",
+    "prerequisite": "grammar.cefrj_pass_prsprg_aff.b2",
+    "reason": "passive past progressive also builds on passive present progressive"
+  },
+  {
+    "node": "grammar.cefrj_pass_pastpf_aff.b2",
+    "prerequisite": "grammar.cefrj_pass_past_aff.a2",
+    "reason": "passive past perfect builds on passive past"
+  },
+  {
+    "node": "grammar.cefrj_pass_pastpf_neg.b2",
+    "prerequisite": "grammar.cefrj_pass_past_aff.a2",
+    "reason": "passive past perfect builds on passive past"
+  },
+  {
+    "node": "grammar.cefrj_pass_pastpf_int_aff.b2",
+    "prerequisite": "grammar.cefrj_pass_past_aff.a2",
+    "reason": "passive past perfect builds on passive past"
+  },
+  {
+    "node": "grammar.cefrj_pass_pastpf_int_neg.b2",
+    "prerequisite": "grammar.cefrj_pass_past_aff.a2",
+    "reason": "passive past perfect builds on passive past"
+  },
+  {
+    "node": "grammar.cefrj_pass_pastpf_aff.b2",
+    "prerequisite": "grammar.cefrj_ta_pastpf_aff.b1",
+    "reason": "passive past perfect also builds on active past perfect"
+  },
+  {
+    "node": "grammar.cefrj_pass_pastpf_neg.b2",
+    "prerequisite": "grammar.cefrj_ta_pastpf_aff.b1",
+    "reason": "passive past perfect also builds on active past perfect"
+  },
+  {
+    "node": "grammar.cefrj_pass_pastpf_int_aff.b2",
+    "prerequisite": "grammar.cefrj_ta_pastpf_aff.b1",
+    "reason": "passive past perfect also builds on active past perfect"
+  },
+  {
+    "node": "grammar.cefrj_pass_pastpf_int_neg.b2",
+    "prerequisite": "grammar.cefrj_ta_pastpf_aff.b1",
+    "reason": "passive past perfect also builds on active past perfect"
+  },
+  {
+    "node": "grammar.cefrj_pass_fut_aff.b2",
+    "prerequisite": "grammar.cefrj_pass_present.a1",
+    "reason": "passive future builds on passive present"
+  },
+  {
+    "node": "grammar.cefrj_pass_fut_neg.c1",
+    "prerequisite": "grammar.cefrj_pass_present.a1",
+    "reason": "passive future builds on passive present"
+  },
+  {
+    "node": "grammar.cefrj_pass_fut_int_aff.c1",
+    "prerequisite": "grammar.cefrj_pass_present.a1",
+    "reason": "passive future builds on passive present"
+  },
+  {
+    "node": "grammar.cefrj_pass_fut_int_neg.c1",
+    "prerequisite": "grammar.cefrj_pass_present.a1",
+    "reason": "passive future builds on passive present"
+  },
+  {
+    "node": "grammar.cefrj_pass_fut_aff.b2",
+    "prerequisite": "grammar.cefrj_ta_fut_aff.a2",
+    "reason": "passive future also builds on active future"
+  },
+  {
+    "node": "grammar.cefrj_pass_fut_neg.c1",
+    "prerequisite": "grammar.cefrj_ta_fut_aff.a2",
+    "reason": "passive future also builds on active future"
+  },
+  {
+    "node": "grammar.cefrj_pass_fut_int_aff.c1",
+    "prerequisite": "grammar.cefrj_ta_fut_aff.a2",
+    "reason": "passive future also builds on active future"
+  },
+  {
+    "node": "grammar.cefrj_pass_fut_int_neg.c1",
+    "prerequisite": "grammar.cefrj_ta_fut_aff.a2",
+    "reason": "passive future also builds on active future"
+  },
+  {
+    "node": "grammar.cefrj_pass_futprg_aff.c1",
+    "prerequisite": "grammar.cefrj_pass_fut_aff.b2",
+    "reason": "passive future progressive builds on passive future"
+  },
+  {
+    "node": "grammar.cefrj_pass_futprg_neg.c1",
+    "prerequisite": "grammar.cefrj_pass_fut_aff.b2",
+    "reason": "passive future progressive builds on passive future"
+  },
+  {
+    "node": "grammar.cefrj_pass_futprg_int_aff.c1",
+    "prerequisite": "grammar.cefrj_pass_fut_aff.b2",
+    "reason": "passive future progressive builds on passive future"
+  },
+  {
+    "node": "grammar.cefrj_pass_futprg_int_neg.c1",
+    "prerequisite": "grammar.cefrj_pass_fut_aff.b2",
+    "reason": "passive future progressive builds on passive future"
+  },
+  {
+    "node": "grammar.cefrj_pass_futpf_aff.c1",
+    "prerequisite": "grammar.cefrj_pass_fut_aff.b2",
+    "reason": "passive future perfect builds on passive future"
+  },
+  {
+    "node": "grammar.cefrj_pass_futpf_neg.c1",
+    "prerequisite": "grammar.cefrj_pass_fut_aff.b2",
+    "reason": "passive future perfect builds on passive future"
+  },
+  {
+    "node": "grammar.cefrj_pass_futpf_int_aff.c1",
+    "prerequisite": "grammar.cefrj_pass_fut_aff.b2",
+    "reason": "passive future perfect builds on passive future"
+  },
+  {
+    "node": "grammar.cefrj_pass_futpf_int_neg.c1",
+    "prerequisite": "grammar.cefrj_pass_fut_aff.b2",
+    "reason": "passive future perfect builds on passive future"
+  },
+  {
+    "node": "grammar.cefrj_pass_md_aff.b1",
+    "prerequisite": "grammar.cefrj_pass_present.a1",
+    "reason": "passive with modal auxiliaries builds on passive present"
+  },
+  {
+    "node": "grammar.cefrj_pass_md_neg.c1",
+    "prerequisite": "grammar.cefrj_pass_present.a1",
+    "reason": "passive with modal auxiliaries builds on passive present"
+  },
+  {
+    "node": "grammar.cefrj_pass_md_int_aff.c1",
+    "prerequisite": "grammar.cefrj_pass_present.a1",
+    "reason": "passive with modal auxiliaries builds on passive present"
+  },
+  {
+    "node": "grammar.cefrj_pass_md_int_neg.c1",
+    "prerequisite": "grammar.cefrj_pass_present.a1",
+    "reason": "passive with modal auxiliaries builds on passive present"
+  },
+  {
+    "node": "grammar.cefrj_pass_md_aff.b1",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "passive with modal auxiliaries also builds on basic modal \"can\""
+  },
+  {
+    "node": "grammar.cefrj_pass_md_neg.c1",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "passive with modal auxiliaries also builds on basic modal \"can\""
+  },
+  {
+    "node": "grammar.cefrj_pass_md_int_aff.c1",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "passive with modal auxiliaries also builds on basic modal \"can\""
+  },
+  {
+    "node": "grammar.cefrj_pass_md_int_neg.c1",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "passive with modal auxiliaries also builds on basic modal \"can\""
+  },
+  {
+    "node": "grammar.cefrj_pass_mdprg_aff.a1",
+    "prerequisite": "grammar.cefrj_pass_md_aff.b1",
+    "reason": "passive modal+progressive builds on passive modal"
+  },
+  {
+    "node": "grammar.cefrj_pass_mdprg_neg.a1",
+    "prerequisite": "grammar.cefrj_pass_md_aff.b1",
+    "reason": "passive modal+progressive builds on passive modal"
+  },
+  {
+    "node": "grammar.cefrj_pass_mdprg_int_aff.a1",
+    "prerequisite": "grammar.cefrj_pass_md_aff.b1",
+    "reason": "passive modal+progressive builds on passive modal"
+  },
+  {
+    "node": "grammar.cefrj_pass_mdprg_int_neg.a1",
+    "prerequisite": "grammar.cefrj_pass_md_aff.b1",
+    "reason": "passive modal+progressive builds on passive modal"
+  },
+  {
+    "node": "grammar.cefrj_pass_mdpf_aff.b2",
+    "prerequisite": "grammar.cefrj_pass_md_aff.b1",
+    "reason": "passive modal+perfect builds on passive modal"
+  },
+  {
+    "node": "grammar.cefrj_pass_mdpf_neg.b2",
+    "prerequisite": "grammar.cefrj_pass_md_aff.b1",
+    "reason": "passive modal+perfect builds on passive modal"
+  },
+  {
+    "node": "grammar.cefrj_pass_mdpf_int_aff.b2",
+    "prerequisite": "grammar.cefrj_pass_md_aff.b1",
+    "reason": "passive modal+perfect builds on passive modal"
+  },
+  {
+    "node": "grammar.cefrj_pass_mdpf_int_neg.b2",
+    "prerequisite": "grammar.cefrj_pass_md_aff.b1",
+    "reason": "passive modal+perfect builds on passive modal"
+  },
+  {
+    "node": "grammar.cefrj_pass_io_aff.b2",
+    "prerequisite": "grammar.cefrj_pass_present.a1",
+    "reason": "passive with indirect-object-as-subject builds on basic passive present"
+  },
+  {
+    "node": "grammar.cefrj_pass_io_neg.b1",
+    "prerequisite": "grammar.cefrj_pass_present.a1",
+    "reason": "passive with indirect-object-as-subject builds on basic passive present"
+  },
+  {
+    "node": "grammar.cefrj_pass_io_int_aff.b1",
+    "prerequisite": "grammar.cefrj_pass_present.a1",
+    "reason": "passive with indirect-object-as-subject builds on basic passive present"
+  },
+  {
+    "node": "grammar.cefrj_pass_io_int_neg.b1",
+    "prerequisite": "grammar.cefrj_pass_present.a1",
+    "reason": "passive with indirect-object-as-subject builds on basic passive present"
+  },
+  {
+    "node": "grammar.cefrj_pass_do_aff.b2",
+    "prerequisite": "grammar.cefrj_pass_io_aff.b2",
+    "reason": "passive with direct-object-as-subject builds on the indirect-object passive variant"
+  },
+  {
+    "node": "grammar.cefrj_pass_do_neg.a1",
+    "prerequisite": "grammar.cefrj_pass_io_aff.b2",
+    "reason": "passive with direct-object-as-subject builds on the indirect-object passive variant"
+  },
+  {
+    "node": "grammar.cefrj_pass_do_int_aff.a1",
+    "prerequisite": "grammar.cefrj_pass_io_aff.b2",
+    "reason": "passive with direct-object-as-subject builds on the indirect-object passive variant"
+  },
+  {
+    "node": "grammar.cefrj_pass_do_int_neg.a1",
+    "prerequisite": "grammar.cefrj_pass_io_aff.b2",
+    "reason": "passive with direct-object-as-subject builds on the indirect-object passive variant"
+  },
+  {
+    "node": "grammar.cefrj_pass_get_vn.b1",
+    "prerequisite": "grammar.cefrj_pass_present.a1",
+    "reason": "\"get+past participle\" passive builds on standard \"be\" passive present"
+  },
+  {
+    "node": "grammar.cefrj_md_can_aff.a1",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "basic modal \"can\" builds on present simple"
+  },
+  {
+    "node": "grammar.cefrj_md_can_neg.a1",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "basic modal \"can\" builds on present simple"
+  },
+  {
+    "node": "grammar.cefrj_md_can_int_aff.a1",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "basic modal \"can\" builds on present simple"
+  },
+  {
+    "node": "grammar.cefrj_md_can_int_neg.a1",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "basic modal \"can\" builds on present simple"
+  },
+  {
+    "node": "grammar.cefrj_md_could_aff.b1",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "\"could\" (past ability/politeness) builds on \"can\""
+  },
+  {
+    "node": "grammar.cefrj_md_could_neg.b1",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "\"could\" (past ability/politeness) builds on \"can\""
+  },
+  {
+    "node": "grammar.cefrj_md_could_int_aff.a2",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "\"could\" (past ability/politeness) builds on \"can\""
+  },
+  {
+    "node": "grammar.cefrj_md_could_int_neg.a2",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "\"could\" (past ability/politeness) builds on \"can\""
+  },
+  {
+    "node": "grammar.cefrj_md_be_able_to_aff.b1",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "\"be able to\" is a paraphrase of \"can\", learned right after it"
+  },
+  {
+    "node": "grammar.cefrj_md_be_able_to_neg.a1",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "\"be able to\" is a paraphrase of \"can\", learned right after it"
+  },
+  {
+    "node": "grammar.cefrj_md_be_able_to_int_aff.a1",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "\"be able to\" is a paraphrase of \"can\", learned right after it"
+  },
+  {
+    "node": "grammar.cefrj_md_be_able_to_int_neg.a1",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "\"be able to\" is a paraphrase of \"can\", learned right after it"
+  },
+  {
+    "node": "grammar.cefrj_md_will_aff.a2",
+    "prerequisite": "grammar.cefrj_ta_fut_aff.a2",
+    "reason": "\"will\" as a modal builds on the future tense/aspect family"
+  },
+  {
+    "node": "grammar.cefrj_md_will_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_fut_aff.a2",
+    "reason": "\"will\" as a modal builds on the future tense/aspect family"
+  },
+  {
+    "node": "grammar.cefrj_md_will_int_aff.a2",
+    "prerequisite": "grammar.cefrj_ta_fut_aff.a2",
+    "reason": "\"will\" as a modal builds on the future tense/aspect family"
+  },
+  {
+    "node": "grammar.cefrj_md_will_int_neg.a2",
+    "prerequisite": "grammar.cefrj_ta_fut_aff.a2",
+    "reason": "\"will\" as a modal builds on the future tense/aspect family"
+  },
+  {
+    "node": "grammar.cefrj_md_would_aff.a2",
+    "prerequisite": "grammar.cefrj_md_will_aff.a2",
+    "reason": "\"would\" builds on \"will\""
+  },
+  {
+    "node": "grammar.cefrj_md_would_neg.b2",
+    "prerequisite": "grammar.cefrj_md_will_aff.a2",
+    "reason": "\"would\" builds on \"will\""
+  },
+  {
+    "node": "grammar.cefrj_md_would_int_aff.b1",
+    "prerequisite": "grammar.cefrj_md_will_aff.a2",
+    "reason": "\"would\" builds on \"will\""
+  },
+  {
+    "node": "grammar.cefrj_md_would_int_neg.b1",
+    "prerequisite": "grammar.cefrj_md_will_aff.a2",
+    "reason": "\"would\" builds on \"will\""
+  },
+  {
+    "node": "grammar.cefrj_md_would_rather_aff.a2",
+    "prerequisite": "grammar.cefrj_md_would_aff.a2",
+    "reason": "\"would rather\" builds on basic \"would\""
+  },
+  {
+    "node": "grammar.cefrj_md_would_rather_neg.a1",
+    "prerequisite": "grammar.cefrj_md_would_aff.a2",
+    "reason": "\"would rather\" builds on basic \"would\""
+  },
+  {
+    "node": "grammar.cefrj_md_would_rather_int_aff.a1",
+    "prerequisite": "grammar.cefrj_md_would_aff.a2",
+    "reason": "\"would rather\" builds on basic \"would\""
+  },
+  {
+    "node": "grammar.cefrj_md_would_rather_int_neg.a1",
+    "prerequisite": "grammar.cefrj_md_would_aff.a2",
+    "reason": "\"would rather\" builds on basic \"would\""
+  },
+  {
+    "node": "grammar.cefrj_md_be_going_to_aff.a2",
+    "prerequisite": "grammar.cefrj_md_will_aff.a2",
+    "reason": "\"be going to\" future builds on \"will\" future"
+  },
+  {
+    "node": "grammar.cefrj_md_be_going_to_neg.a1",
+    "prerequisite": "grammar.cefrj_md_will_aff.a2",
+    "reason": "\"be going to\" future builds on \"will\" future"
+  },
+  {
+    "node": "grammar.cefrj_md_be_going_to_int_aff.a1",
+    "prerequisite": "grammar.cefrj_md_will_aff.a2",
+    "reason": "\"be going to\" future builds on \"will\" future"
+  },
+  {
+    "node": "grammar.cefrj_md_be_going_to_int_neg.a1",
+    "prerequisite": "grammar.cefrj_md_will_aff.a2",
+    "reason": "\"be going to\" future builds on \"will\" future"
+  },
+  {
+    "node": "grammar.cefrj_md_shall_aff.a2",
+    "prerequisite": "grammar.cefrj_md_will_aff.a2",
+    "reason": "\"shall\" parallels \"will\" for offers/suggestions"
+  },
+  {
+    "node": "grammar.cefrj_md_shall_neg.c1",
+    "prerequisite": "grammar.cefrj_md_will_aff.a2",
+    "reason": "\"shall\" parallels \"will\" for offers/suggestions"
+  },
+  {
+    "node": "grammar.cefrj_md_shall_int.a2",
+    "prerequisite": "grammar.cefrj_md_will_aff.a2",
+    "reason": "\"shall\" parallels \"will\" for offers/suggestions"
+  },
+  {
+    "node": "grammar.cefrj_md_shall_neg_int.a1",
+    "prerequisite": "grammar.cefrj_md_will_aff.a2",
+    "reason": "\"shall\" parallels \"will\" for offers/suggestions"
+  },
+  {
+    "node": "grammar.cefrj_md_should_aff.a2",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "\"should\" (advice) builds on basic modal familiarity via \"can\""
+  },
+  {
+    "node": "grammar.cefrj_md_should_neg.b1",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "\"should\" (advice) builds on basic modal familiarity via \"can\""
+  },
+  {
+    "node": "grammar.cefrj_md_should_int_aff.a2",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "\"should\" (advice) builds on basic modal familiarity via \"can\""
+  },
+  {
+    "node": "grammar.cefrj_md_should_int_neg.a2",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "\"should\" (advice) builds on basic modal familiarity via \"can\""
+  },
+  {
+    "node": "grammar.cefrj_md_ought_to_aff.b1",
+    "prerequisite": "grammar.cefrj_md_should_aff.a2",
+    "reason": "\"ought to\" is a near-synonym learned after \"should\""
+  },
+  {
+    "node": "grammar.cefrj_md_ought_to_neg.b1",
+    "prerequisite": "grammar.cefrj_md_should_aff.a2",
+    "reason": "\"ought to\" is a near-synonym learned after \"should\""
+  },
+  {
+    "node": "grammar.cefrj_md_ought_to_int_aff.b1",
+    "prerequisite": "grammar.cefrj_md_should_aff.a2",
+    "reason": "\"ought to\" is a near-synonym learned after \"should\""
+  },
+  {
+    "node": "grammar.cefrj_md_ought_to_int_neg.b1",
+    "prerequisite": "grammar.cefrj_md_should_aff.a2",
+    "reason": "\"ought to\" is a near-synonym learned after \"should\""
+  },
+  {
+    "node": "grammar.cefrj_md_must_aff.b1",
+    "prerequisite": "grammar.cefrj_md_should_aff.a2",
+    "reason": "\"must\" (obligation) builds on \"should\" (advice)"
+  },
+  {
+    "node": "grammar.cefrj_md_must_neg.a2",
+    "prerequisite": "grammar.cefrj_md_should_aff.a2",
+    "reason": "\"must\" (obligation) builds on \"should\" (advice)"
+  },
+  {
+    "node": "grammar.cefrj_md_must_int_aff.b2",
+    "prerequisite": "grammar.cefrj_md_should_aff.a2",
+    "reason": "\"must\" (obligation) builds on \"should\" (advice)"
+  },
+  {
+    "node": "grammar.cefrj_md_must_int_neg.a1",
+    "prerequisite": "grammar.cefrj_md_should_aff.a2",
+    "reason": "\"must\" (obligation) builds on \"should\" (advice)"
+  },
+  {
+    "node": "grammar.cefrj_md_have_to_aff.a2",
+    "prerequisite": "grammar.cefrj_md_must_aff.b1",
+    "reason": "\"have to\" builds on \"must\" as a paraphrase"
+  },
+  {
+    "node": "grammar.cefrj_md_have_to_neg.b2",
+    "prerequisite": "grammar.cefrj_md_must_aff.b1",
+    "reason": "\"have to\" builds on \"must\" as a paraphrase"
+  },
+  {
+    "node": "grammar.cefrj_md_have_to_int_aff.a2",
+    "prerequisite": "grammar.cefrj_md_must_aff.b1",
+    "reason": "\"have to\" builds on \"must\" as a paraphrase"
+  },
+  {
+    "node": "grammar.cefrj_md_have_to_int_neg.a2",
+    "prerequisite": "grammar.cefrj_md_must_aff.b1",
+    "reason": "\"have to\" builds on \"must\" as a paraphrase"
+  },
+  {
+    "node": "grammar.cefrj_md_have_got_to_aff.a2",
+    "prerequisite": "grammar.cefrj_md_have_to_aff.a2",
+    "reason": "\"have got to\" is an informal variant of \"have to\""
+  },
+  {
+    "node": "grammar.cefrj_md_have_got_to_neg.a2",
+    "prerequisite": "grammar.cefrj_md_have_to_aff.a2",
+    "reason": "\"have got to\" is an informal variant of \"have to\""
+  },
+  {
+    "node": "grammar.cefrj_md_have_got_to_int_aff.a2",
+    "prerequisite": "grammar.cefrj_md_have_to_aff.a2",
+    "reason": "\"have got to\" is an informal variant of \"have to\""
+  },
+  {
+    "node": "grammar.cefrj_md_have_got_to_int_neg.a1",
+    "prerequisite": "grammar.cefrj_md_have_to_aff.a2",
+    "reason": "\"have got to\" is an informal variant of \"have to\""
+  },
+  {
+    "node": "grammar.cefrj_md_need_aff.a2",
+    "prerequisite": "grammar.cefrj_md_have_to_aff.a2",
+    "reason": "\"need (to)\" parallels \"have to\""
+  },
+  {
+    "node": "grammar.cefrj_md_need_neg.b1",
+    "prerequisite": "grammar.cefrj_md_have_to_aff.a2",
+    "reason": "\"need (to)\" parallels \"have to\""
+  },
+  {
+    "node": "grammar.cefrj_md_need_int_aff.c2",
+    "prerequisite": "grammar.cefrj_md_have_to_aff.a2",
+    "reason": "\"need (to)\" parallels \"have to\""
+  },
+  {
+    "node": "grammar.cefrj_md_need_int_neg.a1",
+    "prerequisite": "grammar.cefrj_md_have_to_aff.a2",
+    "reason": "\"need (to)\" parallels \"have to\""
+  },
+  {
+    "node": "grammar.cefrj_md_had_better_aff.a1",
+    "prerequisite": "grammar.cefrj_md_should_aff.a2",
+    "reason": "\"had better\" (strong advice) builds on \"should\""
+  },
+  {
+    "node": "grammar.cefrj_md_had_better_neg.a1",
+    "prerequisite": "grammar.cefrj_md_should_aff.a2",
+    "reason": "\"had better\" (strong advice) builds on \"should\""
+  },
+  {
+    "node": "grammar.cefrj_md_may_aff.b1",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "\"may\" (permission/possibility) builds on \"can\""
+  },
+  {
+    "node": "grammar.cefrj_md_may_neg.a2",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "\"may\" (permission/possibility) builds on \"can\""
+  },
+  {
+    "node": "grammar.cefrj_md_may_int_aff.a2",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "\"may\" (permission/possibility) builds on \"can\""
+  },
+  {
+    "node": "grammar.cefrj_md_may_int_neg.a2",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "\"may\" (permission/possibility) builds on \"can\""
+  },
+  {
+    "node": "grammar.cefrj_md_might_aff.b1",
+    "prerequisite": "grammar.cefrj_md_may_aff.b1",
+    "reason": "\"might\" builds on \"may\""
+  },
+  {
+    "node": "grammar.cefrj_md_might_neg.b2",
+    "prerequisite": "grammar.cefrj_md_may_aff.b1",
+    "reason": "\"might\" builds on \"may\""
+  },
+  {
+    "node": "grammar.cefrj_md_might_int_aff.c1",
+    "prerequisite": "grammar.cefrj_md_may_aff.b1",
+    "reason": "\"might\" builds on \"may\""
+  },
+  {
+    "node": "grammar.cefrj_md_might_int_neg.a1",
+    "prerequisite": "grammar.cefrj_md_may_aff.b1",
+    "reason": "\"might\" builds on \"may\""
+  },
+  {
+    "node": "grammar.cefrj_md_may_well_aff.c1",
+    "prerequisite": "grammar.cefrj_md_may_aff.b1",
+    "reason": "\"may well\" builds on basic \"may\""
+  },
+  {
+    "node": "grammar.cefrj_md_may_well_neg.a1",
+    "prerequisite": "grammar.cefrj_md_may_aff.b1",
+    "reason": "\"may well\" builds on basic \"may\""
+  },
+  {
+    "node": "grammar.cefrj_md_may_well_int_aff.a1",
+    "prerequisite": "grammar.cefrj_md_may_aff.b1",
+    "reason": "\"may well\" builds on basic \"may\""
+  },
+  {
+    "node": "grammar.cefrj_md_may_well_int_neg.a1",
+    "prerequisite": "grammar.cefrj_md_may_aff.b1",
+    "reason": "\"may well\" builds on basic \"may\""
+  },
+  {
+    "node": "grammar.cefrj_md_might_well_aff.a1",
+    "prerequisite": "grammar.cefrj_md_might_aff.b1",
+    "reason": "\"might well\" builds on basic \"might\""
+  },
+  {
+    "node": "grammar.cefrj_md_might_well_neg.a1",
+    "prerequisite": "grammar.cefrj_md_might_aff.b1",
+    "reason": "\"might well\" builds on basic \"might\""
+  },
+  {
+    "node": "grammar.cefrj_md_might_well_int_aff.a1",
+    "prerequisite": "grammar.cefrj_md_might_aff.b1",
+    "reason": "\"might well\" builds on basic \"might\""
+  },
+  {
+    "node": "grammar.cefrj_md_might_well_int_neg.a1",
+    "prerequisite": "grammar.cefrj_md_might_aff.b1",
+    "reason": "\"might well\" builds on basic \"might\""
+  },
+  {
+    "node": "grammar.cefrj_md_may_as_well_aff.c2",
+    "prerequisite": "grammar.cefrj_md_may_well_aff.c1",
+    "reason": "\"may as well\" builds on \"may well\""
+  },
+  {
+    "node": "grammar.cefrj_md_may_as_well_neg.a1",
+    "prerequisite": "grammar.cefrj_md_may_well_aff.c1",
+    "reason": "\"may as well\" builds on \"may well\""
+  },
+  {
+    "node": "grammar.cefrj_md_may_as_well_int_aff.a1",
+    "prerequisite": "grammar.cefrj_md_may_well_aff.c1",
+    "reason": "\"may as well\" builds on \"may well\""
+  },
+  {
+    "node": "grammar.cefrj_md_may_as_well_int_neg.a1",
+    "prerequisite": "grammar.cefrj_md_may_well_aff.c1",
+    "reason": "\"may as well\" builds on \"may well\""
+  },
+  {
+    "node": "grammar.cefrj_md_might_as_well_aff.c2",
+    "prerequisite": "grammar.cefrj_md_might_well_aff.a1",
+    "reason": "\"might as well\" builds on \"might well\""
+  },
+  {
+    "node": "grammar.cefrj_md_might_as_well_neg.a1",
+    "prerequisite": "grammar.cefrj_md_might_well_aff.a1",
+    "reason": "\"might as well\" builds on \"might well\""
+  },
+  {
+    "node": "grammar.cefrj_md_might_as_well_int_aff.a1",
+    "prerequisite": "grammar.cefrj_md_might_well_aff.a1",
+    "reason": "\"might as well\" builds on \"might well\""
+  },
+  {
+    "node": "grammar.cefrj_md_might_as_well_int_neg.a1",
+    "prerequisite": "grammar.cefrj_md_might_well_aff.a1",
+    "reason": "\"might as well\" builds on \"might well\""
+  },
+  {
+    "node": "grammar.cefrj_md_dare_aff.b2",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "\"dare (to)\" as a semi-modal builds on basic modal familiarity"
+  },
+  {
+    "node": "grammar.cefrj_md_dare_neg.b2",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "\"dare (to)\" as a semi-modal builds on basic modal familiarity"
+  },
+  {
+    "node": "grammar.cefrj_md_dare_int_aff.c1",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "\"dare (to)\" as a semi-modal builds on basic modal familiarity"
+  },
+  {
+    "node": "grammar.cefrj_md_dare_int_neg.c1",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "\"dare (to)\" as a semi-modal builds on basic modal familiarity"
+  },
+  {
+    "node": "grammar.cefrj_md_used_to_aff.b1",
+    "prerequisite": "grammar.cefrj_ta_past_do_aff.a1",
+    "reason": "\"used to\" (past habit) builds on past simple"
+  },
+  {
+    "node": "grammar.cefrj_md_used_to_neg.a2",
+    "prerequisite": "grammar.cefrj_ta_past_do_aff.a1",
+    "reason": "\"used to\" (past habit) builds on past simple"
+  },
+  {
+    "node": "grammar.cefrj_md_used_to_int_aff.a2",
+    "prerequisite": "grammar.cefrj_ta_past_do_aff.a1",
+    "reason": "\"used to\" (past habit) builds on past simple"
+  },
+  {
+    "node": "grammar.cefrj_md_used_to_int_neg.a2",
+    "prerequisite": "grammar.cefrj_ta_past_do_aff.a1",
+    "reason": "\"used to\" (past habit) builds on past simple"
+  },
+  {
+    "node": "grammar.cefrj_md_md_prg_aff.b2",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "modal+progressive combination builds on basic modals"
+  },
+  {
+    "node": "grammar.cefrj_md_md_prg_neg.a1",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "modal+progressive combination builds on basic modals"
+  },
+  {
+    "node": "grammar.cefrj_md_md_prg_int_aff.a1",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "modal+progressive combination builds on basic modals"
+  },
+  {
+    "node": "grammar.cefrj_md_md_prg_int_neg.a1",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "modal+progressive combination builds on basic modals"
+  },
+  {
+    "node": "grammar.cefrj_md_md_prg_aff.b2",
+    "prerequisite": "grammar.cefrj_ta_prprg_aff.a1",
+    "reason": "modal+progressive also builds on present progressive"
+  },
+  {
+    "node": "grammar.cefrj_md_md_prg_neg.a1",
+    "prerequisite": "grammar.cefrj_ta_prprg_aff.a1",
+    "reason": "modal+progressive also builds on present progressive"
+  },
+  {
+    "node": "grammar.cefrj_md_md_prg_int_aff.a1",
+    "prerequisite": "grammar.cefrj_ta_prprg_aff.a1",
+    "reason": "modal+progressive also builds on present progressive"
+  },
+  {
+    "node": "grammar.cefrj_md_md_prg_int_neg.a1",
+    "prerequisite": "grammar.cefrj_ta_prprg_aff.a1",
+    "reason": "modal+progressive also builds on present progressive"
+  },
+  {
+    "node": "grammar.cefrj_md_md_pf_aff.b2",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "modal+perfect combination builds on basic modals"
+  },
+  {
+    "node": "grammar.cefrj_md_md_pf_neg.b2",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "modal+perfect combination builds on basic modals"
+  },
+  {
+    "node": "grammar.cefrj_md_md_pf_int_aff.b1",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "modal+perfect combination builds on basic modals"
+  },
+  {
+    "node": "grammar.cefrj_md_md_pf_int_neg.b1",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "modal+perfect combination builds on basic modals"
+  },
+  {
+    "node": "grammar.cefrj_md_md_pf_aff.b2",
+    "prerequisite": "grammar.cefrj_ta_prpf_aff.a2",
+    "reason": "modal+perfect also builds on present perfect"
+  },
+  {
+    "node": "grammar.cefrj_md_md_pf_neg.b2",
+    "prerequisite": "grammar.cefrj_ta_prpf_aff.a2",
+    "reason": "modal+perfect also builds on present perfect"
+  },
+  {
+    "node": "grammar.cefrj_md_md_pf_int_aff.b1",
+    "prerequisite": "grammar.cefrj_ta_prpf_aff.a2",
+    "reason": "modal+perfect also builds on present perfect"
+  },
+  {
+    "node": "grammar.cefrj_md_md_pf_int_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_prpf_aff.a2",
+    "reason": "modal+perfect also builds on present perfect"
+  },
+  {
+    "node": "grammar.cefrj_imp_v_aff.a1",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "imperative (lexical verbs) builds on present simple verb forms"
+  },
+  {
+    "node": "grammar.cefrj_imp_v_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "imperative (lexical verbs) builds on present simple verb forms"
+  },
+  {
+    "node": "grammar.cefrj_imp_be_aff.a1",
+    "prerequisite": "grammar.cefrj_ta_present_be_aff.a1",
+    "reason": "imperative (BE) builds on present BE"
+  },
+  {
+    "node": "grammar.cefrj_imp_be_neg.a1",
+    "prerequisite": "grammar.cefrj_ta_present_be_aff.a1",
+    "reason": "imperative (BE) builds on present BE"
+  },
+  {
+    "node": "grammar.cefrj_imp_do_v.b1",
+    "prerequisite": "grammar.cefrj_imp_v_aff.a1",
+    "reason": "emphatic \"Do+imperative\" builds on the plain imperative"
+  },
+  {
+    "node": "grammar.cefrj_imp_please_v_aff.a2",
+    "prerequisite": "grammar.cefrj_imp_v_aff.a1",
+    "reason": "polite \"Please+infinitive\" builds on the plain imperative"
+  },
+  {
+    "node": "grammar.cefrj_imp_please_v_neg.a2",
+    "prerequisite": "grammar.cefrj_imp_v_aff.a1",
+    "reason": "polite \"Please+infinitive\" builds on the plain imperative"
+  },
+  {
+    "node": "grammar.cefrj_imp_let_s_v_aff.a1",
+    "prerequisite": "grammar.cefrj_imp_v_aff.a1",
+    "reason": "\"let's\" builds on the plain imperative"
+  },
+  {
+    "node": "grammar.cefrj_imp_let_s_v_neg.b2",
+    "prerequisite": "grammar.cefrj_imp_v_aff.a1",
+    "reason": "\"let's\" builds on the plain imperative"
+  },
+  {
+    "node": "grammar.cefrj_ex_there_aff.a1",
+    "prerequisite": "grammar.cefrj_ta_present_be_aff.a1",
+    "reason": "existential \"there+be\" builds on present BE"
+  },
+  {
+    "node": "grammar.cefrj_ex_there_neg.a1",
+    "prerequisite": "grammar.cefrj_ta_present_be_aff.a1",
+    "reason": "existential \"there+be\" builds on present BE"
+  },
+  {
+    "node": "grammar.cefrj_ex_there_int_aff.a1",
+    "prerequisite": "grammar.cefrj_ta_present_be_aff.a1",
+    "reason": "existential \"there+be\" builds on present BE"
+  },
+  {
+    "node": "grammar.cefrj_ex_there_int_neg.a1",
+    "prerequisite": "grammar.cefrj_ta_present_be_aff.a1",
+    "reason": "existential \"there+be\" builds on present BE"
+  },
+  {
+    "node": "grammar.cefrj_ex_there_pf_aff.a1",
+    "prerequisite": "grammar.cefrj_ex_there_aff.a1",
+    "reason": "\"there+have/has+been\" builds on basic \"there+be\""
+  },
+  {
+    "node": "grammar.cefrj_ex_there_pf_neg.a1",
+    "prerequisite": "grammar.cefrj_ex_there_aff.a1",
+    "reason": "\"there+have/has+been\" builds on basic \"there+be\""
+  },
+  {
+    "node": "grammar.cefrj_ex_there_pf_int_aff.a1",
+    "prerequisite": "grammar.cefrj_ex_there_aff.a1",
+    "reason": "\"there+have/has+been\" builds on basic \"there+be\""
+  },
+  {
+    "node": "grammar.cefrj_ex_there_pf_int_neg.a1",
+    "prerequisite": "grammar.cefrj_ex_there_aff.a1",
+    "reason": "\"there+have/has+been\" builds on basic \"there+be\""
+  },
+  {
+    "node": "grammar.cefrj_ex_there_pf_aff.a1",
+    "prerequisite": "grammar.cefrj_ta_prpf_aff.a2",
+    "reason": "\"there+have/has+been\" also builds on present perfect"
+  },
+  {
+    "node": "grammar.cefrj_ex_there_pf_neg.a1",
+    "prerequisite": "grammar.cefrj_ta_prpf_aff.a2",
+    "reason": "\"there+have/has+been\" also builds on present perfect"
+  },
+  {
+    "node": "grammar.cefrj_ex_there_pf_int_aff.a1",
+    "prerequisite": "grammar.cefrj_ta_prpf_aff.a2",
+    "reason": "\"there+have/has+been\" also builds on present perfect"
+  },
+  {
+    "node": "grammar.cefrj_ex_there_pf_int_neg.a1",
+    "prerequisite": "grammar.cefrj_ta_prpf_aff.a2",
+    "reason": "\"there+have/has+been\" also builds on present perfect"
+  },
+  {
+    "node": "grammar.cefrj_ex_there_md_aff.b1",
+    "prerequisite": "grammar.cefrj_ex_there_aff.a1",
+    "reason": "\"there+AUX+be\" builds on basic \"there+be\""
+  },
+  {
+    "node": "grammar.cefrj_ex_there_md_neg.a1",
+    "prerequisite": "grammar.cefrj_ex_there_aff.a1",
+    "reason": "\"there+AUX+be\" builds on basic \"there+be\""
+  },
+  {
+    "node": "grammar.cefrj_ex_there_md_int_aff.a1",
+    "prerequisite": "grammar.cefrj_ex_there_aff.a1",
+    "reason": "\"there+AUX+be\" builds on basic \"there+be\""
+  },
+  {
+    "node": "grammar.cefrj_ex_there_md_int_neg.a1",
+    "prerequisite": "grammar.cefrj_ex_there_aff.a1",
+    "reason": "\"there+AUX+be\" builds on basic \"there+be\""
+  },
+  {
+    "node": "grammar.cefrj_ex_there_md_aff.b1",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "\"there+AUX+be\" also builds on basic modals"
+  },
+  {
+    "node": "grammar.cefrj_ex_there_md_neg.a1",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "\"there+AUX+be\" also builds on basic modals"
+  },
+  {
+    "node": "grammar.cefrj_ex_there_md_int_aff.a1",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "\"there+AUX+be\" also builds on basic modals"
+  },
+  {
+    "node": "grammar.cefrj_ex_there_md_int_neg.a1",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "\"there+AUX+be\" also builds on basic modals"
+  },
+  {
+    "node": "grammar.cefrj_ex_here_aff.b1",
+    "prerequisite": "grammar.cefrj_ex_there_aff.a1",
+    "reason": "\"here is/are\" parallels \"there is/are\""
+  },
+  {
+    "node": "grammar.cefrj_to_to_do.a1",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "basic to-infinitive builds on present simple verb forms"
+  },
+  {
+    "node": "grammar.cefrj_to_not_to_do.b1",
+    "prerequisite": "grammar.cefrj_to_to_do.a1",
+    "reason": "negative to-infinitive builds on the plain to-infinitive"
+  },
+  {
+    "node": "grammar.cefrj_to_vv_to_do.a1",
+    "prerequisite": "grammar.cefrj_to_to_do.a1",
+    "reason": "VERB+to-infinitive builds on the plain to-infinitive"
+  },
+  {
+    "node": "grammar.cefrj_to_vv_not_to_do.a1",
+    "prerequisite": "grammar.cefrj_to_vv_to_do.a1",
+    "reason": "negative VERB+to-infinitive builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_to_vv_np_to_do.a1",
+    "prerequisite": "grammar.cefrj_to_vv_to_do.a1",
+    "reason": "VERB+OBJECT+to-infinitive builds on VERB+to-infinitive"
+  },
+  {
+    "node": "grammar.cefrj_to_vv_np_not_to_do.a1",
+    "prerequisite": "grammar.cefrj_to_vv_np_to_do.a1",
+    "reason": "negative VERB+OBJECT+to-infinitive builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_to_thing_to_do.a1",
+    "prerequisite": "grammar.cefrj_to_to_do.a1",
+    "reason": "\"-thing to DO\" builds on the plain to-infinitive"
+  },
+  {
+    "node": "grammar.cefrj_to_be_to_do.b1",
+    "prerequisite": "grammar.cefrj_to_to_do.a1",
+    "reason": "\"BE to DO\" builds on the plain to-infinitive"
+  },
+  {
+    "node": "grammar.cefrj_to_be_not_to_do.a1",
+    "prerequisite": "grammar.cefrj_to_be_to_do.b1",
+    "reason": "negative \"BE to DO\" builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_to_be_about_to_do.b2",
+    "prerequisite": "grammar.cefrj_to_be_to_do.b1",
+    "reason": "\"BE about to DO\" builds on \"BE to DO\""
+  },
+  {
+    "node": "grammar.cefrj_to_be_not_about_to_do.a1",
+    "prerequisite": "grammar.cefrj_to_be_about_to_do.b2",
+    "reason": "negative \"BE about to DO\" builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_to_for_np_to_do.b1",
+    "prerequisite": "grammar.cefrj_to_to_do.a1",
+    "reason": "to-infinitive with notional subject builds on the plain to-infinitive"
+  },
+  {
+    "node": "grammar.cefrj_to_wh_to_do.b1",
+    "prerequisite": "grammar.cefrj_to_to_do.a1",
+    "reason": "WH-+to-infinitive builds on the plain to-infinitive"
+  },
+  {
+    "node": "grammar.cefrj_to_in_order_to_do.b2",
+    "prerequisite": "grammar.cefrj_to_to_do.a1",
+    "reason": "\"in order to DO\" builds on the plain to-infinitive"
+  },
+  {
+    "node": "grammar.cefrj_to_in_order_not_to_do.a1",
+    "prerequisite": "grammar.cefrj_to_in_order_to_do.b2",
+    "reason": "negative \"in order not to DO\" builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_to_so_as_to_do.c2",
+    "prerequisite": "grammar.cefrj_to_in_order_to_do.b2",
+    "reason": "\"so as to DO\" is a more advanced synonym of \"in order to DO\""
+  },
+  {
+    "node": "grammar.cefrj_to_so_as_not_to_do.a1",
+    "prerequisite": "grammar.cefrj_to_so_as_to_do.c2",
+    "reason": "negative \"so as not to DO\" builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_to_to_be_done.b2",
+    "prerequisite": "grammar.cefrj_to_to_do.a1",
+    "reason": "passive to-infinitive \"to be DONE\" builds on the plain to-infinitive"
+  },
+  {
+    "node": "grammar.cefrj_to_to_be_done.b2",
+    "prerequisite": "grammar.cefrj_pass_present.a1",
+    "reason": "passive to-infinitive also builds on passive present"
+  },
+  {
+    "node": "grammar.cefrj_to_to_have_done.c1",
+    "prerequisite": "grammar.cefrj_to_to_do.a1",
+    "reason": "perfect to-infinitive \"to have DONE\" builds on the plain to-infinitive"
+  },
+  {
+    "node": "grammar.cefrj_to_to_have_done.c1",
+    "prerequisite": "grammar.cefrj_ta_prpf_aff.a2",
+    "reason": "perfect to-infinitive also builds on present perfect"
+  },
+  {
+    "node": "grammar.cefrj_to_to_have_been_done.a1",
+    "prerequisite": "grammar.cefrj_to_to_have_done.c1",
+    "reason": "passive+perfect to-infinitive builds on the perfect to-infinitive"
+  },
+  {
+    "node": "grammar.cefrj_to_to_have_been_done.a1",
+    "prerequisite": "grammar.cefrj_to_to_be_done.b2",
+    "reason": "passive+perfect to-infinitive also builds on the passive to-infinitive"
+  },
+  {
+    "node": "grammar.cefrj_vg.a1",
+    "prerequisite": "grammar.cefrj_ta_prprg_aff.a1",
+    "reason": "plain V-ING (gerund) builds on the present progressive, where V-ING is first introduced"
+  },
+  {
+    "node": "grammar.cefrj_vg_not_vg.b2",
+    "prerequisite": "grammar.cefrj_vg.a1",
+    "reason": "negative V-ING builds on the plain V-ING"
+  },
+  {
+    "node": "grammar.cefrj_vg_vv_vg.a1",
+    "prerequisite": "grammar.cefrj_vg.a1",
+    "reason": "VERB+V-ING builds on the plain V-ING"
+  },
+  {
+    "node": "grammar.cefrj_vg_vv_not_vg.b2",
+    "prerequisite": "grammar.cefrj_vg_vv_vg.a1",
+    "reason": "negative VERB+V-ING builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_vg_vv_np_vg.a2",
+    "prerequisite": "grammar.cefrj_vg_vv_vg.a1",
+    "reason": "VERB+OBJECT+V-ING builds on VERB+V-ING"
+  },
+  {
+    "node": "grammar.cefrj_vg_vv_np_not_vg.b2",
+    "prerequisite": "grammar.cefrj_vg_vv_np_vg.a2",
+    "reason": "negative VERB+OBJECT+V-ING builds on the affirmative"
+  },
+  {
+    "node": "grammar.cefrj_vg_prep_vg.a1",
+    "prerequisite": "grammar.cefrj_vg.a1",
+    "reason": "PREP+V-ING builds on the plain V-ING"
+  },
+  {
+    "node": "grammar.cefrj_vg_pgen_vg.b2",
+    "prerequisite": "grammar.cefrj_vg.a1",
+    "reason": "V-ING with notional (possessive) subject builds on the plain V-ING"
+  },
+  {
+    "node": "grammar.cefrj_vg_having_vn.b2",
+    "prerequisite": "grammar.cefrj_vg.a1",
+    "reason": "perfect gerund \"having+PP\" builds on the plain V-ING"
+  },
+  {
+    "node": "grammar.cefrj_vg_having_vn.b2",
+    "prerequisite": "grammar.cefrj_ta_prpf_aff.a2",
+    "reason": "perfect gerund also builds on present perfect"
+  },
+  {
+    "node": "grammar.cefrj_vg_being_vn.b2",
+    "prerequisite": "grammar.cefrj_vg.a1",
+    "reason": "passive gerund \"being+PP\" builds on the plain V-ING"
+  },
+  {
+    "node": "grammar.cefrj_vg_being_vn.b2",
+    "prerequisite": "grammar.cefrj_pass_present.a1",
+    "reason": "passive gerund also builds on passive present"
+  },
+  {
+    "node": "grammar.cefrj_vg_having_been_vn.c2",
+    "prerequisite": "grammar.cefrj_vg_having_vn.b2",
+    "reason": "passive perfect gerund builds on the perfect gerund"
+  },
+  {
+    "node": "grammar.cefrj_vg_having_been_vn.c2",
+    "prerequisite": "grammar.cefrj_vg_being_vn.b2",
+    "reason": "passive perfect gerund also builds on the passive gerund"
+  },
+  {
+    "node": "grammar.cefrj_vg_vg_n.a2",
+    "prerequisite": "grammar.cefrj_vg.a1",
+    "reason": "premodifying present participle builds on the plain V-ING"
+  },
+  {
+    "node": "grammar.cefrj_vg_n_vg.a1",
+    "prerequisite": "grammar.cefrj_vg_vg_n.a2",
+    "reason": "postmodifying present participle builds on the premodifying form"
+  },
+  {
+    "node": "grammar.cefrj_perc_vi.a1",
+    "prerequisite": "grammar.cefrj_to_to_do.a1",
+    "reason": "perception verb+infinitive builds on the plain to-infinitive (bare infinitive variant)"
+  },
+  {
+    "node": "grammar.cefrj_perc_vg.a1",
+    "prerequisite": "grammar.cefrj_vg.a1",
+    "reason": "perception verb+V-ING builds on the plain V-ING"
+  },
+  {
+    "node": "grammar.cefrj_perc_vn.a1",
+    "prerequisite": "grammar.cefrj_vn_n_vn.a1",
+    "reason": "perception verb+past participle builds on postmodifying past participle"
+  },
+  {
+    "node": "grammar.cefrj_caus_have_let_make.a2",
+    "prerequisite": "grammar.cefrj_perc_vi.a1",
+    "reason": "causative HAVE/LET/MAKE+infinitive parallels perception verb+infinitive"
+  },
+  {
+    "node": "grammar.cefrj_caus_ask_tell_np_to_do.b1",
+    "prerequisite": "grammar.cefrj_to_vv_np_to_do.a1",
+    "reason": "causative ASK/TELL+object+to-infinitive builds on VERB+OBJECT+to-infinitive"
+  },
+  {
+    "node": "grammar.cefrj_caus_have_get_np_vn.b2",
+    "prerequisite": "grammar.cefrj_caus_have_let_make.a2",
+    "reason": "HAVE/GET+object+past-participle builds on basic causative constructions"
+  },
+  {
+    "node": "grammar.cefrj_caus_get_np_vvg.c1",
+    "prerequisite": "grammar.cefrj_caus_have_get_np_vn.b2",
+    "reason": "GET+object+present-participle builds on GET+object+past-participle"
+  },
+  {
+    "node": "grammar.cefrj_pass_get_vn.b1",
+    "prerequisite": "grammar.cefrj_caus_have_get_np_vn.b2",
+    "reason": "\"get+past participle\" (passive) parallels the causative GET+object+past-participle"
+  },
+  {
+    "node": "grammar.cefrj_vg_p_aff.b1",
+    "prerequisite": "grammar.cefrj_vg.a1",
+    "reason": "present-participle subordinate clause builds on the plain V-ING"
+  },
+  {
+    "node": "grammar.cefrj_vg_p_neg.a1",
+    "prerequisite": "grammar.cefrj_vg.a1",
+    "reason": "present-participle subordinate clause builds on the plain V-ING"
+  },
+  {
+    "node": "grammar.cefrj_vn_p_aff.b1",
+    "prerequisite": "grammar.cefrj_vn_n_vn.a1",
+    "reason": "past-participle subordinate clause builds on postmodifying past participle"
+  },
+  {
+    "node": "grammar.cefrj_vn_p_neg.a1",
+    "prerequisite": "grammar.cefrj_vn_n_vn.a1",
+    "reason": "past-participle subordinate clause builds on postmodifying past participle"
+  },
+  {
+    "node": "grammar.cefrj_vp_svo_aff.a1",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "basic SVO pattern builds on present-simple verb forms"
+  },
+  {
+    "node": "grammar.cefrj_vp_svo_neg.a2",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "basic SVO pattern builds on present-simple verb forms"
+  },
+  {
+    "node": "grammar.cefrj_vp_svo_int_aff.a1",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "basic SVO pattern builds on present-simple verb forms"
+  },
+  {
+    "node": "grammar.cefrj_vp_svo_int_neg.a1",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "basic SVO pattern builds on present-simple verb forms"
+  },
+  {
+    "node": "grammar.cefrj_vp_sv_aff.b1",
+    "prerequisite": "grammar.cefrj_vp_svo_aff.a1",
+    "reason": "intransitive SV pattern is taught alongside/after transitive SVO"
+  },
+  {
+    "node": "grammar.cefrj_vp_sv_neg.a1",
+    "prerequisite": "grammar.cefrj_vp_svo_aff.a1",
+    "reason": "intransitive SV pattern is taught alongside/after transitive SVO"
+  },
+  {
+    "node": "grammar.cefrj_vp_sv_int_aff.a1",
+    "prerequisite": "grammar.cefrj_vp_svo_aff.a1",
+    "reason": "intransitive SV pattern is taught alongside/after transitive SVO"
+  },
+  {
+    "node": "grammar.cefrj_vp_sv_int_neg.a1",
+    "prerequisite": "grammar.cefrj_vp_svo_aff.a1",
+    "reason": "intransitive SV pattern is taught alongside/after transitive SVO"
+  },
+  {
+    "node": "grammar.cefrj_vp_svc_aff.a2",
+    "prerequisite": "grammar.cefrj_vp_svo_aff.a1",
+    "reason": "SVC (linking verb+complement) builds on basic SVO"
+  },
+  {
+    "node": "grammar.cefrj_vp_svc_neg.a1",
+    "prerequisite": "grammar.cefrj_vp_svo_aff.a1",
+    "reason": "SVC (linking verb+complement) builds on basic SVO"
+  },
+  {
+    "node": "grammar.cefrj_vp_svc_int_aff.a1",
+    "prerequisite": "grammar.cefrj_vp_svo_aff.a1",
+    "reason": "SVC (linking verb+complement) builds on basic SVO"
+  },
+  {
+    "node": "grammar.cefrj_vp_svc_int_neg.a1",
+    "prerequisite": "grammar.cefrj_vp_svo_aff.a1",
+    "reason": "SVC (linking verb+complement) builds on basic SVO"
+  },
+  {
+    "node": "grammar.cefrj_vp_svoo_aff.a2",
+    "prerequisite": "grammar.cefrj_vp_svo_aff.a1",
+    "reason": "ditransitive SVOO builds on basic SVO"
+  },
+  {
+    "node": "grammar.cefrj_vp_svoo_neg.a2",
+    "prerequisite": "grammar.cefrj_vp_svo_aff.a1",
+    "reason": "ditransitive SVOO builds on basic SVO"
+  },
+  {
+    "node": "grammar.cefrj_vp_svoo_int_aff.a1",
+    "prerequisite": "grammar.cefrj_vp_svo_aff.a1",
+    "reason": "ditransitive SVOO builds on basic SVO"
+  },
+  {
+    "node": "grammar.cefrj_vp_svoo_int_neg.a1",
+    "prerequisite": "grammar.cefrj_vp_svo_aff.a1",
+    "reason": "ditransitive SVOO builds on basic SVO"
+  },
+  {
+    "node": "grammar.cefrj_vp_svotoo_aff.b1",
+    "prerequisite": "grammar.cefrj_vp_svoo_aff.a2",
+    "reason": "\"...to+indirect object\" order builds on the basic ditransitive pattern"
+  },
+  {
+    "node": "grammar.cefrj_vp_svotoo_neg.a1",
+    "prerequisite": "grammar.cefrj_vp_svoo_aff.a2",
+    "reason": "\"...to+indirect object\" order builds on the basic ditransitive pattern"
+  },
+  {
+    "node": "grammar.cefrj_vp_svotoo_int_aff.a1",
+    "prerequisite": "grammar.cefrj_vp_svoo_aff.a2",
+    "reason": "\"...to+indirect object\" order builds on the basic ditransitive pattern"
+  },
+  {
+    "node": "grammar.cefrj_vp_svotoo_int_neg.a1",
+    "prerequisite": "grammar.cefrj_vp_svoo_aff.a2",
+    "reason": "\"...to+indirect object\" order builds on the basic ditransitive pattern"
+  },
+  {
+    "node": "grammar.cefrj_vp_svoc_aff.a2",
+    "prerequisite": "grammar.cefrj_vp_svo_aff.a1",
+    "reason": "SVOC (object complement) builds on basic SVO"
+  },
+  {
+    "node": "grammar.cefrj_vp_svoc_neg.a2",
+    "prerequisite": "grammar.cefrj_vp_svo_aff.a1",
+    "reason": "SVOC (object complement) builds on basic SVO"
+  },
+  {
+    "node": "grammar.cefrj_vp_svoc_int_aff.a2",
+    "prerequisite": "grammar.cefrj_vp_svo_aff.a1",
+    "reason": "SVOC (object complement) builds on basic SVO"
+  },
+  {
+    "node": "grammar.cefrj_vp_svoc_int_neg.a2",
+    "prerequisite": "grammar.cefrj_vp_svo_aff.a1",
+    "reason": "SVOC (object complement) builds on basic SVO"
+  },
+  {
+    "node": "grammar.cefrj_emp_pp_rb_aff.a1",
+    "prerequisite": "grammar.cefrj_vp_sv_aff.b1",
+    "reason": "cleft sentence focusing on a prepositional phrase/adverb builds on basic sentence patterns"
+  },
+  {
+    "node": "grammar.cefrj_emp_pp_rb_neg.a1",
+    "prerequisite": "grammar.cefrj_vp_sv_aff.b1",
+    "reason": "cleft sentence focusing on a prepositional phrase/adverb builds on basic sentence patterns"
+  },
+  {
+    "node": "grammar.cefrj_emp_pp_rb_int_aff.a1",
+    "prerequisite": "grammar.cefrj_vp_sv_aff.b1",
+    "reason": "cleft sentence focusing on a prepositional phrase/adverb builds on basic sentence patterns"
+  },
+  {
+    "node": "grammar.cefrj_emp_pp_rb_int_neg.a1",
+    "prerequisite": "grammar.cefrj_vp_sv_aff.b1",
+    "reason": "cleft sentence focusing on a prepositional phrase/adverb builds on basic sentence patterns"
+  },
+  {
+    "node": "grammar.cefrj_emp_what_cleft_aff.a1",
+    "prerequisite": "grammar.cefrj_emp_pp_rb_aff.a1",
+    "reason": "pseudo-cleft \"what...\" builds on the basic cleft-sentence concept"
+  },
+  {
+    "node": "grammar.cefrj_emp_what_cleft_neg.a1",
+    "prerequisite": "grammar.cefrj_emp_pp_rb_aff.a1",
+    "reason": "pseudo-cleft \"what...\" builds on the basic cleft-sentence concept"
+  },
+  {
+    "node": "grammar.cefrj_inv_so_v_np.b2",
+    "prerequisite": "grammar.cefrj_ta_present_be_aff.a1",
+    "reason": "\"so+AUX+pronoun\" inversion builds on basic tense/aspect familiarity"
+  },
+  {
+    "node": "grammar.cefrj_inv_neither_v_np.b2",
+    "prerequisite": "grammar.cefrj_inv_so_v_np.b2",
+    "reason": "\"neither/nor\" inversion parallels \"so\" inversion"
+  },
+  {
+    "node": "grammar.cefrj_inv_never_etc.c1",
+    "prerequisite": "grammar.cefrj_inv_so_v_np.b2",
+    "reason": "negative-adverb-fronting inversion builds on the basic \"so\" inversion pattern"
+  },
+  {
+    "node": "grammar.cefrj_pp_it_to_do_aff.b1",
+    "prerequisite": "grammar.cefrj_pp_it_is.a1",
+    "reason": "\"it+BE+ADJ+to+INFINITIVE\" builds on basic \"it is\" sentences"
+  },
+  {
+    "node": "grammar.cefrj_pp_it_to_do_neg.b1",
+    "prerequisite": "grammar.cefrj_pp_it_is.a1",
+    "reason": "\"it+BE+ADJ+to+INFINITIVE\" builds on basic \"it is\" sentences"
+  },
+  {
+    "node": "grammar.cefrj_pp_it_to_do_int_aff.b1",
+    "prerequisite": "grammar.cefrj_pp_it_is.a1",
+    "reason": "\"it+BE+ADJ+to+INFINITIVE\" builds on basic \"it is\" sentences"
+  },
+  {
+    "node": "grammar.cefrj_pp_it_to_do_int_neg.a1",
+    "prerequisite": "grammar.cefrj_pp_it_is.a1",
+    "reason": "\"it+BE+ADJ+to+INFINITIVE\" builds on basic \"it is\" sentences"
+  },
+  {
+    "node": "grammar.cefrj_pp_it_to_do_aff.b1",
+    "prerequisite": "grammar.cefrj_to_to_do.a1",
+    "reason": "\"it+BE+ADJ+to+INFINITIVE\" also builds on the plain to-infinitive"
+  },
+  {
+    "node": "grammar.cefrj_pp_it_to_do_neg.b1",
+    "prerequisite": "grammar.cefrj_to_to_do.a1",
+    "reason": "\"it+BE+ADJ+to+INFINITIVE\" also builds on the plain to-infinitive"
+  },
+  {
+    "node": "grammar.cefrj_pp_it_to_do_int_aff.b1",
+    "prerequisite": "grammar.cefrj_to_to_do.a1",
+    "reason": "\"it+BE+ADJ+to+INFINITIVE\" also builds on the plain to-infinitive"
+  },
+  {
+    "node": "grammar.cefrj_pp_it_to_do_int_neg.a1",
+    "prerequisite": "grammar.cefrj_to_to_do.a1",
+    "reason": "\"it+BE+ADJ+to+INFINITIVE\" also builds on the plain to-infinitive"
+  },
+  {
+    "node": "grammar.cefrj_pp_it_to_do_obj.a1",
+    "prerequisite": "grammar.cefrj_pp_it_to_do_aff.b1",
+    "reason": "\"V+it+ADJ+to+INFINITIVE\" builds on \"it+BE+ADJ+to+INFINITIVE\""
+  },
+  {
+    "node": "grammar.cefrj_pp_it_that_aff.b2",
+    "prerequisite": "grammar.cefrj_pp_it_to_do_aff.b1",
+    "reason": "\"it+BE+ADJ+that+CLAUSE\" builds on the to-infinitive variant taught first"
+  },
+  {
+    "node": "grammar.cefrj_pp_it_that_neg.a1",
+    "prerequisite": "grammar.cefrj_pp_it_to_do_aff.b1",
+    "reason": "\"it+BE+ADJ+that+CLAUSE\" builds on the to-infinitive variant taught first"
+  },
+  {
+    "node": "grammar.cefrj_pp_it_that_int_aff.a1",
+    "prerequisite": "grammar.cefrj_pp_it_to_do_aff.b1",
+    "reason": "\"it+BE+ADJ+that+CLAUSE\" builds on the to-infinitive variant taught first"
+  },
+  {
+    "node": "grammar.cefrj_pp_it_that_int_neg.a1",
+    "prerequisite": "grammar.cefrj_pp_it_to_do_aff.b1",
+    "reason": "\"it+BE+ADJ+that+CLAUSE\" builds on the to-infinitive variant taught first"
+  },
+  {
+    "node": "grammar.cefrj_pp_v_it_that.a1",
+    "prerequisite": "grammar.cefrj_pp_it_that_aff.b2",
+    "reason": "\"V+it+ADJ+that+CLAUSE\" builds on \"it+BE+ADJ+that+CLAUSE\""
+  },
+  {
+    "node": "grammar.cefrj_cc.a1",
+    "prerequisite": "grammar.cefrj_vp_sv_aff.b1",
+    "reason": "coordinating conjunctions build on basic sentence patterns to join"
+  },
+  {
+    "node": "grammar.cefrj_cl_when.a1",
+    "prerequisite": "grammar.cefrj_cc.a1",
+    "reason": "adverbial clause \"when\" builds on basic clause-joining with coordinating conjunctions"
+  },
+  {
+    "node": "grammar.cefrj_cl_if.a2",
+    "prerequisite": "grammar.cefrj_cl_when.a1",
+    "reason": "adverbial clause \"if\" builds on \"when\""
+  },
+  {
+    "node": "grammar.cefrj_cl_as.a2",
+    "prerequisite": "grammar.cefrj_cl_when.a1",
+    "reason": "adverbial clause \"as\" builds on \"when\""
+  },
+  {
+    "node": "grammar.cefrj_cl_as_soon_as.b2",
+    "prerequisite": "grammar.cefrj_cl_when.a1",
+    "reason": "\"as soon as\" builds on the basic \"when\" clause"
+  },
+  {
+    "node": "grammar.cefrj_cl_by_the_time.c1",
+    "prerequisite": "grammar.cefrj_cl_as_soon_as.b2",
+    "reason": "\"by the time\" builds on \"as soon as\", both time clauses"
+  },
+  {
+    "node": "grammar.cefrj_cl_so_that.b2",
+    "prerequisite": "grammar.cefrj_cl_if.a2",
+    "reason": "\"so that\" (purpose) builds on basic conditional-style clauses"
+  },
+  {
+    "node": "grammar.cefrj_cl_after_etc.a1",
+    "prerequisite": "grammar.cefrj_cl_when.a1",
+    "reason": "the broader subordinate-conjunction set builds on the basic \"when\" clause"
+  },
+  {
+    "node": "grammar.cefrj_cl_that_omit.a1",
+    "prerequisite": "grammar.cefrj_vp_svo_aff.a1",
+    "reason": "\"hope/know/think+CLAUSE\" builds on basic SVO with a clause as object"
+  },
+  {
+    "node": "grammar.cefrj_cl_that_obj.a2",
+    "prerequisite": "grammar.cefrj_cl_that_omit.a1",
+    "reason": "explicit \"V+that+CLAUSE\" builds on the omitted-\"that\" form taught first"
+  },
+  {
+    "node": "grammar.cefrj_cl_that_app.b2",
+    "prerequisite": "grammar.cefrj_cl_that_obj.a2",
+    "reason": "\"the fact(s) that+CLAUSE\" builds on \"V+that+CLAUSE\""
+  },
+  {
+    "node": "grammar.cefrj_cl_wh_obj.b1",
+    "prerequisite": "grammar.cefrj_cl_that_obj.a2",
+    "reason": "\"know/wonder+WH-CLAUSE\" builds on \"V+that+CLAUSE\""
+  },
+  {
+    "node": "grammar.cefrj_cl_wh_whether.b2",
+    "prerequisite": "grammar.cefrj_cl_wh_obj.b1",
+    "reason": "\"whether\" clause builds on basic WH-clauses"
+  },
+  {
+    "node": "grammar.cefrj_indq_know_etc.a2",
+    "prerequisite": "grammar.cefrj_cl_wh_obj.b1",
+    "reason": "indirect questions build on WH-clauses as objects"
+  },
+  {
+    "node": "grammar.cefrj_indq_ask_etc.b1",
+    "prerequisite": "grammar.cefrj_indq_know_etc.a2",
+    "reason": "indirect questions with ASK/REMIND/etc. build on the basic indirect-question set"
+  },
+  {
+    "node": "grammar.cefrj_indsp_explain_report_say.a2",
+    "prerequisite": "grammar.cefrj_cl_that_obj.a2",
+    "reason": "indirect speech (say/explain/report) builds on \"V+that+CLAUSE\""
+  },
+  {
+    "node": "grammar.cefrj_indsp_tell.b1",
+    "prerequisite": "grammar.cefrj_indsp_explain_report_say.a2",
+    "reason": "indirect speech with \"tell\" builds on the basic reporting-verb set"
+  },
+  {
+    "node": "grammar.cefrj_prel_who.a1",
+    "prerequisite": "grammar.cefrj_vp_svo_aff.a1",
+    "reason": "nominative relative pronoun \"who\" builds on basic sentence patterns to combine"
+  },
+  {
+    "node": "grammar.cefrj_prel_that.a1",
+    "prerequisite": "grammar.cefrj_prel_who.a1",
+    "reason": "relative \"that\" parallels relative \"who\""
+  },
+  {
+    "node": "grammar.cefrj_prel_which.b2",
+    "prerequisite": "grammar.cefrj_prel_that.a1",
+    "reason": "relative \"which\" (for things) builds on relative \"that\""
+  },
+  {
+    "node": "grammar.cefrj_prel_as.a1",
+    "prerequisite": "grammar.cefrj_prel_which.b2",
+    "reason": "pseudo-relative \"as\" builds on standard relative pronouns"
+  },
+  {
+    "node": "grammar.cefrj_prel_what.a2",
+    "prerequisite": "grammar.cefrj_prel_which.b2",
+    "reason": "compound relative \"what\" builds on relative \"which\""
+  },
+  {
+    "node": "grammar.cefrj_prelo_who.b2",
+    "prerequisite": "grammar.cefrj_prel_who.a1",
+    "reason": "accusative relative \"who(m)\" builds on nominative relative \"who\""
+  },
+  {
+    "node": "grammar.cefrj_prelo_whom.b2",
+    "prerequisite": "grammar.cefrj_prelo_who.b2",
+    "reason": "formal \"whom\" builds on informal accusative \"who\""
+  },
+  {
+    "node": "grammar.cefrj_prelo_which.b2",
+    "prerequisite": "grammar.cefrj_prel_which.b2",
+    "reason": "accusative relative \"which\" builds on nominative relative \"which\""
+  },
+  {
+    "node": "grammar.cefrj_prelo_that.b2",
+    "prerequisite": "grammar.cefrj_prelo_which.b2",
+    "reason": "accusative relative \"that\" builds on accusative \"which\""
+  },
+  {
+    "node": "grammar.cefrj_prelo_omit.a1",
+    "prerequisite": "grammar.cefrj_prelo_that.b2",
+    "reason": "omitting the accusative relative pronoun builds on using it explicitly"
+  },
+  {
+    "node": "grammar.cefrj_prelgen.b2",
+    "prerequisite": "grammar.cefrj_prelo_whom.b2",
+    "reason": "genitive relative pronoun \"whose\" builds on accusative relative pronouns"
+  },
+  {
+    "node": "grammar.cefrj_prel_nr.b1",
+    "prerequisite": "grammar.cefrj_prelo_omit.a1",
+    "reason": "non-restrictive relative clauses build on restrictive ones"
+  },
+  {
+    "node": "grammar.cefrj_prel_prep_prel.b2",
+    "prerequisite": "grammar.cefrj_prelo_whom.b2",
+    "reason": "formal PREP+relative pronoun builds on accusative relative pronouns"
+  },
+  {
+    "node": "grammar.cefrj_prep_strand.a1",
+    "prerequisite": "grammar.cefrj_prel_prep_prel.b2",
+    "reason": "preposition stranding is the informal counterpart of formal PREP+relative"
+  },
+  {
+    "node": "grammar.cefrj_rbrel.a2",
+    "prerequisite": "grammar.cefrj_prel_which.b2",
+    "reason": "relative adverb (where/when/why) builds on relative pronouns"
+  },
+  {
+    "node": "grammar.cefrj_rbrel_noant.b1",
+    "prerequisite": "grammar.cefrj_rbrel.a2",
+    "reason": "relative adverb without antecedent builds on the basic relative adverb"
+  },
+  {
+    "node": "grammar.cefrj_rbrel_nr.b1",
+    "prerequisite": "grammar.cefrj_prel_nr.b1",
+    "reason": "non-restrictive relative adverb builds on non-restrictive relative pronoun clauses"
+  },
+  {
+    "node": "grammar.cefrj_wh_ever.b2",
+    "prerequisite": "grammar.cefrj_prel_what.a2",
+    "reason": "WH-EVER builds on compound relative \"what\""
+  },
+  {
+    "node": "grammar.cefrj_int_what.a1",
+    "prerequisite": "grammar.cefrj_ta_present_be_aff.a1",
+    "reason": "basic WH-question \"What...?\" builds on present BE (used to form questions)"
+  },
+  {
+    "node": "grammar.cefrj_int_where.a1",
+    "prerequisite": "grammar.cefrj_int_what.a1",
+    "reason": "\"Where...?\" parallels \"What...?\""
+  },
+  {
+    "node": "grammar.cefrj_int_when.a1",
+    "prerequisite": "grammar.cefrj_int_what.a1",
+    "reason": "\"When...?\" parallels \"What...?\""
+  },
+  {
+    "node": "grammar.cefrj_int_why.a1",
+    "prerequisite": "grammar.cefrj_int_what.a1",
+    "reason": "\"Why...?\" parallels \"What...?\""
+  },
+  {
+    "node": "grammar.cefrj_int_how.a1",
+    "prerequisite": "grammar.cefrj_int_what.a1",
+    "reason": "\"How...?\" parallels \"What...?\""
+  },
+  {
+    "node": "grammar.cefrj_int_how_jj_rb.a1",
+    "prerequisite": "grammar.cefrj_int_how.a1",
+    "reason": "\"How ADJ/ADV...?\" builds on basic \"How...?\""
+  },
+  {
+    "node": "grammar.cefrj_int_what_n.a1",
+    "prerequisite": "grammar.cefrj_int_what.a1",
+    "reason": "\"What N...?\" builds on basic \"What...?\""
+  },
+  {
+    "node": "grammar.cefrj_int_which.a2",
+    "prerequisite": "grammar.cefrj_int_what.a1",
+    "reason": "\"Which...?\" builds on \"What...?\""
+  },
+  {
+    "node": "grammar.cefrj_int_which_n.a2",
+    "prerequisite": "grammar.cefrj_int_which.a2",
+    "reason": "\"Which N...?\" builds on basic \"Which...?\""
+  },
+  {
+    "node": "grammar.cefrj_int_whose.a2",
+    "prerequisite": "grammar.cefrj_pgen.a1",
+    "reason": "\"Whose...?\" builds on possessive determiners"
+  },
+  {
+    "node": "grammar.cefrj_int_whose_n.a2",
+    "prerequisite": "grammar.cefrj_int_whose.a2",
+    "reason": "\"Whose N...?\" builds on basic \"Whose...?\""
+  },
+  {
+    "node": "grammar.cefrj_int_who.b2",
+    "prerequisite": "grammar.cefrj_int_what.a1",
+    "reason": "\"Who...?\" builds on \"What...?\""
+  },
+  {
+    "node": "grammar.cefrj_int_whom.a2",
+    "prerequisite": "grammar.cefrj_int_who.b2",
+    "reason": "\"Whom...?\" (formal object form) builds on \"Who...?\""
+  },
+  {
+    "node": "grammar.cefrj_int_prep_wh.a1",
+    "prerequisite": "grammar.cefrj_int_whom.a2",
+    "reason": "formal \"PREP+WH-word...?\" builds on \"Whom...?\""
+  },
+  {
+    "node": "grammar.cefrj_intf_can_i.a1",
+    "prerequisite": "grammar.cefrj_md_can_aff.a1",
+    "reason": "\"Can I...?\" (functional request) builds on the modal \"can\""
+  },
+  {
+    "node": "grammar.cefrj_intf_can_you.a2",
+    "prerequisite": "grammar.cefrj_intf_can_i.a1",
+    "reason": "\"Can you...?\" builds on \"Can I...?\""
+  },
+  {
+    "node": "grammar.cefrj_intf_can_t_you.b1",
+    "prerequisite": "grammar.cefrj_intf_can_you.a2",
+    "reason": "\"Can't you...?\" builds on \"Can you...?\""
+  },
+  {
+    "node": "grammar.cefrj_intf_could_i.a1",
+    "prerequisite": "grammar.cefrj_intf_can_i.a1",
+    "reason": "\"Could I...?\" (more polite) builds on \"Can I...?\""
+  },
+  {
+    "node": "grammar.cefrj_intf_could_you.b1",
+    "prerequisite": "grammar.cefrj_intf_could_i.a1",
+    "reason": "\"Could you...?\" builds on \"Could I...?\""
+  },
+  {
+    "node": "grammar.cefrj_intf_couldn_t_you.b1",
+    "prerequisite": "grammar.cefrj_intf_could_you.b1",
+    "reason": "\"Couldn't you...?\" builds on \"Could you...?\""
+  },
+  {
+    "node": "grammar.cefrj_intf_may_i.b1",
+    "prerequisite": "grammar.cefrj_intf_could_i.a1",
+    "reason": "\"May I...?\" (very polite) builds on \"Could I...?\""
+  },
+  {
+    "node": "grammar.cefrj_intf_will_you.a2",
+    "prerequisite": "grammar.cefrj_md_will_aff.a2",
+    "reason": "\"Will you...?\" (request) builds on the modal \"will\""
+  },
+  {
+    "node": "grammar.cefrj_intf_won_t_you.b1",
+    "prerequisite": "grammar.cefrj_intf_will_you.a2",
+    "reason": "\"Won't you...?\" builds on \"Will you...?\""
+  },
+  {
+    "node": "grammar.cefrj_intf_would_you.a2",
+    "prerequisite": "grammar.cefrj_intf_will_you.a2",
+    "reason": "\"Would you...?\" (more polite) builds on \"Will you...?\""
+  },
+  {
+    "node": "grammar.cefrj_intf_wouldn_t_you.b1",
+    "prerequisite": "grammar.cefrj_intf_would_you.a2",
+    "reason": "\"Wouldn't you...?\" builds on \"Would you...?\""
+  },
+  {
+    "node": "grammar.cefrj_intf_shall_i.a2",
+    "prerequisite": "grammar.cefrj_md_shall_aff.a2",
+    "reason": "\"Shall I...?\" (offer) builds on the modal \"shall\""
+  },
+  {
+    "node": "grammar.cefrj_intf_shall_we.a2",
+    "prerequisite": "grammar.cefrj_intf_shall_i.a2",
+    "reason": "\"Shall we...?\" builds on \"Shall I...?\""
+  },
+  {
+    "node": "grammar.cefrj_intf_should_i.a2",
+    "prerequisite": "grammar.cefrj_md_should_aff.a2",
+    "reason": "\"Should I...?\" (seeking advice) builds on the modal \"should\""
+  },
+  {
+    "node": "grammar.cefrj_intf_why_don_t_you.a2",
+    "prerequisite": "grammar.cefrj_intf_can_you.a2",
+    "reason": "\"Why don't you...?\" (suggestion) builds on functional \"Can you...?\""
+  },
+  {
+    "node": "grammar.cefrj_intf_why_don_t_we.a2",
+    "prerequisite": "grammar.cefrj_intf_why_don_t_you.a2",
+    "reason": "\"Why don't we...?\" builds on \"Why don't you...?\""
+  },
+  {
+    "node": "grammar.cefrj_intf_why_not.a2",
+    "prerequisite": "grammar.cefrj_intf_why_don_t_you.a2",
+    "reason": "\"Why not...?\" is a shortened form of \"Why don't you...?\""
+  },
+  {
+    "node": "grammar.cefrj_intf_how_about.b1",
+    "prerequisite": "grammar.cefrj_intf_why_don_t_you.a2",
+    "reason": "\"How about...?\" (suggestion) builds on \"Why don't you...?\""
+  },
+  {
+    "node": "grammar.cefrj_tag_aff.b1",
+    "prerequisite": "grammar.cefrj_ta_present_be_aff.a1",
+    "reason": "tag questions build on basic tense/aspect (BE/AUX must match the main clause)"
+  },
+  {
+    "node": "grammar.cefrj_tag_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_present_be_aff.a1",
+    "reason": "tag questions build on basic tense/aspect (BE/AUX must match the main clause)"
+  },
+  {
+    "node": "grammar.cefrj_excl_how.a1",
+    "prerequisite": "grammar.cefrj_int_how.a1",
+    "reason": "exclamation \"How...!\" builds on the question form \"How...?\""
+  },
+  {
+    "node": "grammar.cefrj_excl_how_jj_rb.b1",
+    "prerequisite": "grammar.cefrj_excl_how.a1",
+    "reason": "\"How ADJ/ADV...!\" builds on basic \"How...!\""
+  },
+  {
+    "node": "grammar.cefrj_excl_what.a2",
+    "prerequisite": "grammar.cefrj_int_what_n.a1",
+    "reason": "exclamation \"What...!\" builds on the question form \"What N...?\""
+  },
+  {
+    "node": "grammar.cefrj_subj_past_aff.b1",
+    "prerequisite": "grammar.cefrj_ta_past_do_aff.a1",
+    "reason": "second conditional (hypothetical present/future) builds on past simple"
+  },
+  {
+    "node": "grammar.cefrj_subj_past_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_past_do_aff.a1",
+    "reason": "second conditional (hypothetical present/future) builds on past simple"
+  },
+  {
+    "node": "grammar.cefrj_subj_pastpf_aff.b1",
+    "prerequisite": "grammar.cefrj_ta_pastpf_aff.b1",
+    "reason": "third conditional (hypothetical past) builds on past perfect"
+  },
+  {
+    "node": "grammar.cefrj_subj_pastpf_neg.b1",
+    "prerequisite": "grammar.cefrj_ta_pastpf_aff.b1",
+    "reason": "third conditional (hypothetical past) builds on past perfect"
+  },
+  {
+    "node": "grammar.cefrj_subj_pastpf_aff.b1",
+    "prerequisite": "grammar.cefrj_subj_past_aff.b1",
+    "reason": "third conditional builds on second conditional"
+  },
+  {
+    "node": "grammar.cefrj_subj_pastpf_neg.b1",
+    "prerequisite": "grammar.cefrj_subj_past_aff.b1",
+    "reason": "third conditional builds on second conditional"
+  },
+  {
+    "node": "grammar.cefrj_subj_wish_past.b2",
+    "prerequisite": "grammar.cefrj_subj_past_aff.b1",
+    "reason": "\"wish+2nd conditional\" builds on the second conditional"
+  },
+  {
+    "node": "grammar.cefrj_subj_wish_pastpf.b2",
+    "prerequisite": "grammar.cefrj_subj_pastpf_aff.b1",
+    "reason": "\"wish+3rd conditional\" builds on the third conditional"
+  },
+  {
+    "node": "grammar.cefrj_subj_wish_pastpf.b2",
+    "prerequisite": "grammar.cefrj_subj_wish_past.b2",
+    "reason": "\"wish+3rd conditional\" also builds on \"wish+2nd conditional\""
+  },
+  {
+    "node": "grammar.cefrj_subj_as_if_though_past.b1",
+    "prerequisite": "grammar.cefrj_subj_past_aff.b1",
+    "reason": "\"as if/though+2nd conditional\" builds on the second conditional"
+  },
+  {
+    "node": "grammar.cefrj_subj_as_if_though_pastpf.c1",
+    "prerequisite": "grammar.cefrj_subj_as_if_though_past.b1",
+    "reason": "\"as if/though+3rd conditional\" builds on the \"as if\" 2nd-conditional form"
+  },
+  {
+    "node": "grammar.cefrj_subj_if_only_past.c1",
+    "prerequisite": "grammar.cefrj_subj_wish_past.b2",
+    "reason": "\"if only+2nd conditional\" parallels \"wish+2nd conditional\""
+  },
+  {
+    "node": "grammar.cefrj_subj_if_only_pastpf.c1",
+    "prerequisite": "grammar.cefrj_subj_if_only_past.c1",
+    "reason": "\"if only+3rd conditional\" builds on \"if only+2nd conditional\""
+  },
+  {
+    "node": "grammar.cefrj_subj_if_should.c1",
+    "prerequisite": "grammar.cefrj_subj_past_aff.b1",
+    "reason": "\"if+should\" (unlikely future) builds on the second conditional"
+  },
+  {
+    "node": "grammar.cefrj_subj_inv_past.a1",
+    "prerequisite": "grammar.cefrj_subj_past_aff.b1",
+    "reason": "inversion of the second conditional builds on the standard second conditional"
+  },
+  {
+    "node": "grammar.cefrj_subj_inv_pastpf.a1",
+    "prerequisite": "grammar.cefrj_subj_pastpf_aff.b1",
+    "reason": "inversion of the third conditional builds on the standard third conditional"
+  },
+  {
+    "node": "grammar.cefrj_subj_inv_should.c1",
+    "prerequisite": "grammar.cefrj_subj_if_should.c1",
+    "reason": "inversion with \"should\" builds on \"if+should\""
+  },
+  {
+    "node": "grammar.cefrj_subj_if_it_were_not_for.c2",
+    "prerequisite": "grammar.cefrj_subj_past_aff.b1",
+    "reason": "\"if it were not for...\" builds on the second conditional"
+  },
+  {
+    "node": "grammar.cefrj_subj_were_it_not_for.c2",
+    "prerequisite": "grammar.cefrj_subj_if_it_were_not_for.c2",
+    "reason": "inverted \"were it not for...\" builds on \"if it were not for...\""
+  },
+  {
+    "node": "grammar.cefrj_subj_if_it_hadn_t_been_for.c2",
+    "prerequisite": "grammar.cefrj_subj_pastpf_aff.b1",
+    "reason": "\"if it hadn't been for...\" builds on the third conditional"
+  },
+  {
+    "node": "grammar.cefrj_subj_had_it_not_been_for.c2",
+    "prerequisite": "grammar.cefrj_subj_if_it_hadn_t_been_for.c2",
+    "reason": "inverted \"had it not been for...\" builds on \"if it hadn't been for...\""
+  },
+  {
+    "node": "grammar.cefrj_subj_prs_aff.a1",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "subjunctive after DEMAND/INSIST/etc. builds on present simple"
+  },
+  {
+    "node": "grammar.cefrj_subj_prs_neg.a1",
+    "prerequisite": "grammar.cefrj_ta_present_do_aff.a1",
+    "reason": "subjunctive after DEMAND/INSIST/etc. builds on present simple"
+  },
+  {
+    "node": "grammar.cefrj_phv_v_part.a1",
+    "prerequisite": "grammar.cefrj_vp_svo_aff.a1",
+    "reason": "basic phrasal verb (V+PARTICLE) builds on basic SVO sentence patterns"
+  },
+  {
+    "node": "grammar.cefrj_phv_v_np_part.a2",
+    "prerequisite": "grammar.cefrj_phv_v_part.a1",
+    "reason": "separable phrasal verb (V+NP+PARTICLE) builds on the basic phrasal verb"
+  },
+  {
+    "node": "grammar.cefrj_phv_v_part_prep.a1",
+    "prerequisite": "grammar.cefrj_phv_v_part.a1",
+    "reason": "phrasal-prepositional verb builds on the basic phrasal verb"
+  }
+]

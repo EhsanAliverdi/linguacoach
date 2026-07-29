@@ -32,6 +32,7 @@ namespace LinguaCoach.ContentSeeder;
 ///        dotnet run --project tools/LinguaCoach.ContentSeeder -- speaking path/to/speaking-seed.json
 ///        dotnet run --project tools/LinguaCoach.ContentSeeder -- listening path/to/listening-seed.json
 ///        dotnet run --project tools/LinguaCoach.ContentSeeder -- reading data/cerfj-reading.json
+///        dotnet run --project tools/LinguaCoach.ContentSeeder -- grammar-prerequisites path/to/grammar-prerequisites-seed.json
 /// </summary>
 public static class Program
 {
@@ -86,7 +87,8 @@ public static class Program
             "speaking" => await SeedSpeakingAsync(seeder, db, seedFilePath),
             "listening" => await SeedListeningAsync(seeder, sp, db, seedFilePath),
             "reading" => await SeedReadingAsync(seeder, db, seedFilePath),
-            _ => Fail($"Unknown domain '{domain}' — expected 'grammar', 'vocabulary', 'cefr-scales', 'speaking', 'listening', or 'reading'."),
+            "grammar-prerequisites" => await SeedGrammarPrerequisitesAsync(db, seedFilePath),
+            _ => Fail($"Unknown domain '{domain}' — expected 'grammar', 'vocabulary', 'cefr-scales', 'speaking', 'listening', 'reading', or 'grammar-prerequisites'."),
         };
     }
 
@@ -497,6 +499,58 @@ public static class Program
 
     private static string SlugHeadword(string word) => word.Trim().ToLowerInvariant();
 
+    /// <summary>Grammar curriculum-design pass (2026-07-30) — real, hand-authored prerequisite
+    /// edges between grammar SkillGraphNodes (requested after the reseed shipped with zero edges
+    /// in SkillGraphPrerequisiteEdge; see docs/reviews for the underlying gap analysis). Each entry
+    /// in the seed file is a {Node, Prerequisite, Reason} triple keyed by SkillGraphNode.Key. Offline
+    /// verification (dedup + cycle check) already ran when authoring the seed file — this pass adds
+    /// a defensive re-check against the live DB anyway, since edges accumulate across runs.</summary>
+    private static async Task<int> SeedGrammarPrerequisitesAsync(LinguaCoachDbContext db, string path)
+    {
+        var entries = JsonSerializer.Deserialize<List<PrerequisiteEdgeSeed>>(await File.ReadAllTextAsync(path), JsonOptions)
+            ?? throw new InvalidOperationException("Empty/invalid grammar-prerequisites seed file.");
+
+        var allKeys = entries.Select(e => e.Node).Concat(entries.Select(e => e.Prerequisite)).Distinct().ToList();
+        var idByKey = await db.SkillGraphNodes
+            .Where(n => allKeys.Contains(n.Key))
+            .ToDictionaryAsync(n => n.Key, n => n.Id);
+
+        var existingEdges = new HashSet<(Guid Node, Guid Prerequisite)>(
+            (await db.SkillGraphPrerequisiteEdges.Select(e => new { e.NodeId, e.PrerequisiteNodeId }).ToListAsync())
+                .Select(e => (e.NodeId, e.PrerequisiteNodeId)));
+
+        var created = 0;
+        var skippedMissingKey = 0;
+        var skippedExisting = 0;
+        foreach (var entry in entries)
+        {
+            if (!idByKey.TryGetValue(entry.Node, out var nodeId) || !idByKey.TryGetValue(entry.Prerequisite, out var prereqId))
+            {
+                Console.Error.WriteLine($"GrammarPrerequisites: missing SkillGraphNode for '{entry.Node}' or '{entry.Prerequisite}'. Skipping.");
+                skippedMissingKey++;
+                continue;
+            }
+
+            if (!existingEdges.Add((nodeId, prereqId)))
+            {
+                skippedExisting++;
+                continue;
+            }
+
+            db.SkillGraphPrerequisiteEdges.Add(new SkillGraphPrerequisiteEdge(nodeId, prereqId));
+            created++;
+            if (created % 200 == 0)
+            {
+                await db.SaveChangesAsync();
+                Console.WriteLine($"GrammarPrerequisites: {created} edges created so far.");
+            }
+        }
+
+        await db.SaveChangesAsync();
+        Console.WriteLine($"GrammarPrerequisites seeding complete. {created} edges created, {skippedExisting} already existed, {skippedMissingKey} skipped (missing node).");
+        return 0;
+    }
+
     private static string Slug(string key) =>
         key.ToLowerInvariant().Replace('.', '_').Replace(' ', '_');
 
@@ -646,6 +700,8 @@ public sealed record ListeningSeedContainer(string Key, string Title, string Cef
 public sealed record ListeningSeedLeaf(
     string Key, string Title, string Transcript, string CefrLevel,
     string ParentKey, string ActivityType, string ScaleLeafKey);
+
+public sealed record PrerequisiteEdgeSeed(string Node, string Prerequisite, string Reason);
 
 /// <summary>Resumability — a processed-keys file next to each input, so a crashed/interrupted run
 /// doesn't redo already-seeded items. Mirrors the pattern used earlier this session for the
