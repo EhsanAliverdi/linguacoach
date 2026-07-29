@@ -1,0 +1,1856 @@
+{
+  "containers": [
+    {
+      "key": "speaking.topic_daily_life",
+      "title": "Daily Life and Routines",
+      "cefrLevel": "A1"
+    },
+    {
+      "key": "speaking.topic_travel",
+      "title": "Travel and Places",
+      "cefrLevel": "A1"
+    },
+    {
+      "key": "speaking.topic_food_health",
+      "title": "Food and Health",
+      "cefrLevel": "A1"
+    },
+    {
+      "key": "speaking.topic_hobbies",
+      "title": "Hobbies and Free Time",
+      "cefrLevel": "A1"
+    },
+    {
+      "key": "speaking.topic_environment",
+      "title": "Environment and Society",
+      "cefrLevel": "A1"
+    },
+    {
+      "key": "speaking.topic_family",
+      "title": "Family and Relationships",
+      "cefrLevel": "A1"
+    },
+    {
+      "key": "speaking.topic_work",
+      "title": "Work and Career",
+      "cefrLevel": "A1"
+    },
+    {
+      "key": "speaking.topic_technology",
+      "title": "Technology and Media",
+      "cefrLevel": "A1"
+    },
+    {
+      "key": "speaking.topic_education",
+      "title": "Education and Learning",
+      "cefrLevel": "A1"
+    },
+    {
+      "key": "speaking.topic_opinions",
+      "title": "Opinions and Debates",
+      "cefrLevel": "A1"
+    }
+  ],
+  "leaves": [
+    {
+      "key": "speaking.topic_daily_life.a1.1",
+      "title": "Daily Life and Routines — A1 Prompt 1",
+      "promptText": "Talk about what you do every morning before you leave home.",
+      "suggestedDurationSeconds": 30,
+      "cefrLevel": "A1",
+      "parentKey": "speaking.topic_daily_life",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.a1"
+    },
+    {
+      "key": "speaking.topic_daily_life.a1.2",
+      "title": "Daily Life and Routines — A1 Prompt 2",
+      "promptText": "Describe your daily routine on a normal weekday.",
+      "suggestedDurationSeconds": 30,
+      "cefrLevel": "A1",
+      "parentKey": "speaking.topic_daily_life",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.a1"
+    },
+    {
+      "key": "speaking.topic_daily_life.a1.3",
+      "title": "Daily Life and Routines — A1 Prompt 3",
+      "promptText": "Talk about what you usually eat for breakfast and lunch.",
+      "suggestedDurationSeconds": 30,
+      "cefrLevel": "A1",
+      "parentKey": "speaking.topic_daily_life",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.a1"
+    },
+    {
+      "key": "speaking.topic_daily_life.a2.1",
+      "title": "Daily Life and Routines — A2 Prompt 1",
+      "promptText": "Describe your typical day from morning to night.",
+      "suggestedDurationSeconds": 40,
+      "cefrLevel": "A2",
+      "parentKey": "speaking.topic_daily_life",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.a2"
+    },
+    {
+      "key": "speaking.topic_daily_life.a2.2",
+      "title": "Daily Life and Routines — A2 Prompt 2",
+      "promptText": "Talk about the chores you do at home each week.",
+      "suggestedDurationSeconds": 40,
+      "cefrLevel": "A2",
+      "parentKey": "speaking.topic_daily_life",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.a2"
+    },
+    {
+      "key": "speaking.topic_daily_life.a2.3",
+      "title": "Daily Life and Routines — A2 Prompt 3",
+      "promptText": "Describe what you usually do on the weekend.",
+      "suggestedDurationSeconds": 40,
+      "cefrLevel": "A2",
+      "parentKey": "speaking.topic_daily_life",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.a2"
+    },
+    {
+      "key": "speaking.topic_daily_life.b1.1",
+      "title": "Daily Life and Routines — B1 Prompt 1",
+      "promptText": "Talk about how your daily routine has changed over the past few years.",
+      "suggestedDurationSeconds": 60,
+      "cefrLevel": "B1",
+      "parentKey": "speaking.topic_daily_life",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.b1"
+    },
+    {
+      "key": "speaking.topic_daily_life.b1.2",
+      "title": "Daily Life and Routines — B1 Prompt 2",
+      "promptText": "Describe a typical day in your life and explain which part you enjoy most.",
+      "suggestedDurationSeconds": 60,
+      "cefrLevel": "B1",
+      "parentKey": "speaking.topic_daily_life",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.b1"
+    },
+    {
+      "key": "speaking.topic_daily_life.b1.3",
+      "title": "Daily Life and Routines — B1 Prompt 3",
+      "promptText": "Talk about a habit you would like to change and why.",
+      "suggestedDurationSeconds": 60,
+      "cefrLevel": "B1",
+      "parentKey": "speaking.topic_daily_life",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.b1"
+    },
+    {
+      "key": "speaking.topic_daily_life.b2.1",
+      "title": "Daily Life and Routines — B2 Prompt 1",
+      "promptText": "Describe how technology has changed the way you organize your daily routine.",
+      "suggestedDurationSeconds": 90,
+      "cefrLevel": "B2",
+      "parentKey": "speaking.topic_daily_life",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.b2"
+    },
+    {
+      "key": "speaking.topic_daily_life.b2.2",
+      "title": "Daily Life and Routines — B2 Prompt 2",
+      "promptText": "Talk about the advantages and disadvantages of having a strict daily schedule.",
+      "suggestedDurationSeconds": 90,
+      "cefrLevel": "B2",
+      "parentKey": "speaking.topic_daily_life",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.b2"
+    },
+    {
+      "key": "speaking.topic_daily_life.b2.3",
+      "title": "Daily Life and Routines — B2 Prompt 3",
+      "promptText": "Explain how your routine differs on weekdays compared to weekends, and why.",
+      "suggestedDurationSeconds": 90,
+      "cefrLevel": "B2",
+      "parentKey": "speaking.topic_daily_life",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.b2"
+    },
+    {
+      "key": "speaking.topic_daily_life.c1.1",
+      "title": "Daily Life and Routines — C1 Prompt 1",
+      "promptText": "Discuss how cultural background influences the way people structure their daily routines.",
+      "suggestedDurationSeconds": 120,
+      "cefrLevel": "C1",
+      "parentKey": "speaking.topic_daily_life",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.c1"
+    },
+    {
+      "key": "speaking.topic_daily_life.c1.2",
+      "title": "Daily Life and Routines — C1 Prompt 2",
+      "promptText": "Talk about the balance between structure and spontaneity in everyday life, using examples from your own experience.",
+      "suggestedDurationSeconds": 120,
+      "cefrLevel": "C1",
+      "parentKey": "speaking.topic_daily_life",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.c1"
+    },
+    {
+      "key": "speaking.topic_daily_life.c1.3",
+      "title": "Daily Life and Routines — C1 Prompt 3",
+      "promptText": "Explain how daily habits shape long-term wellbeing, giving concrete examples.",
+      "suggestedDurationSeconds": 120,
+      "cefrLevel": "C1",
+      "parentKey": "speaking.topic_daily_life",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.c1"
+    },
+    {
+      "key": "speaking.topic_daily_life.c2.1",
+      "title": "Daily Life and Routines — C2 Prompt 1",
+      "promptText": "Critically discuss the claim that modern life leaves little room for genuine routine, drawing on personal and societal examples.",
+      "suggestedDurationSeconds": 150,
+      "cefrLevel": "C2",
+      "parentKey": "speaking.topic_daily_life",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.c2"
+    },
+    {
+      "key": "speaking.topic_daily_life.c2.2",
+      "title": "Daily Life and Routines — C2 Prompt 2",
+      "promptText": "Explore the tension between productivity culture and personal wellbeing in how people structure their days.",
+      "suggestedDurationSeconds": 150,
+      "cefrLevel": "C2",
+      "parentKey": "speaking.topic_daily_life",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.c2"
+    },
+    {
+      "key": "speaking.topic_daily_life.c2.3",
+      "title": "Daily Life and Routines — C2 Prompt 3",
+      "promptText": "Argue for or against the idea that rigid daily routines limit creativity and personal growth.",
+      "suggestedDurationSeconds": 150,
+      "cefrLevel": "C2",
+      "parentKey": "speaking.topic_daily_life",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.c2"
+    },
+    {
+      "key": "speaking.topic_travel.a1.1",
+      "title": "Travel and Places — A1 Prompt 1",
+      "promptText": "Talk about a place you like to visit.",
+      "suggestedDurationSeconds": 30,
+      "cefrLevel": "A1",
+      "parentKey": "speaking.topic_travel",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.a1"
+    },
+    {
+      "key": "speaking.topic_travel.a1.2",
+      "title": "Travel and Places — A1 Prompt 2",
+      "promptText": "Describe your favorite city or town.",
+      "suggestedDurationSeconds": 30,
+      "cefrLevel": "A1",
+      "parentKey": "speaking.topic_travel",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.a1"
+    },
+    {
+      "key": "speaking.topic_travel.a1.3",
+      "title": "Travel and Places — A1 Prompt 3",
+      "promptText": "Talk about how you travel to school or work.",
+      "suggestedDurationSeconds": 30,
+      "cefrLevel": "A1",
+      "parentKey": "speaking.topic_travel",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.a1"
+    },
+    {
+      "key": "speaking.topic_travel.a2.1",
+      "title": "Travel and Places — A2 Prompt 1",
+      "promptText": "Describe a trip you took that you enjoyed.",
+      "suggestedDurationSeconds": 40,
+      "cefrLevel": "A2",
+      "parentKey": "speaking.topic_travel",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.a2"
+    },
+    {
+      "key": "speaking.topic_travel.a2.2",
+      "title": "Travel and Places — A2 Prompt 2",
+      "promptText": "Talk about a place you would like to visit in the future.",
+      "suggestedDurationSeconds": 40,
+      "cefrLevel": "A2",
+      "parentKey": "speaking.topic_travel",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.a2"
+    },
+    {
+      "key": "speaking.topic_travel.a2.3",
+      "title": "Travel and Places — A2 Prompt 3",
+      "promptText": "Describe the differences between travelling by car and by train.",
+      "suggestedDurationSeconds": 40,
+      "cefrLevel": "A2",
+      "parentKey": "speaking.topic_travel",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.a2"
+    },
+    {
+      "key": "speaking.topic_travel.b1.1",
+      "title": "Travel and Places — B1 Prompt 1",
+      "promptText": "Talk about a memorable holiday and explain why it was special.",
+      "suggestedDurationSeconds": 60,
+      "cefrLevel": "B1",
+      "parentKey": "speaking.topic_travel",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.b1"
+    },
+    {
+      "key": "speaking.topic_travel.b1.2",
+      "title": "Travel and Places — B1 Prompt 2",
+      "promptText": "Describe your ideal holiday destination and what you would do there.",
+      "suggestedDurationSeconds": 60,
+      "cefrLevel": "B1",
+      "parentKey": "speaking.topic_travel",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.b1"
+    },
+    {
+      "key": "speaking.topic_travel.b1.3",
+      "title": "Travel and Places — B1 Prompt 3",
+      "promptText": "Talk about the challenges of travelling to a country where you do not speak the language.",
+      "suggestedDurationSeconds": 60,
+      "cefrLevel": "B1",
+      "parentKey": "speaking.topic_travel",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.b1"
+    },
+    {
+      "key": "speaking.topic_travel.b2.1",
+      "title": "Travel and Places — B2 Prompt 1",
+      "promptText": "Discuss the advantages and disadvantages of travelling alone compared to travelling in a group.",
+      "suggestedDurationSeconds": 90,
+      "cefrLevel": "B2",
+      "parentKey": "speaking.topic_travel",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.b2"
+    },
+    {
+      "key": "speaking.topic_travel.b2.2",
+      "title": "Travel and Places — B2 Prompt 2",
+      "promptText": "Talk about how tourism can both help and harm a local community.",
+      "suggestedDurationSeconds": 90,
+      "cefrLevel": "B2",
+      "parentKey": "speaking.topic_travel",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.b2"
+    },
+    {
+      "key": "speaking.topic_travel.b2.3",
+      "title": "Travel and Places — B2 Prompt 3",
+      "promptText": "Describe a journey that changed your perspective on something, and explain how.",
+      "suggestedDurationSeconds": 90,
+      "cefrLevel": "B2",
+      "parentKey": "speaking.topic_travel",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.b2"
+    },
+    {
+      "key": "speaking.topic_travel.c1.1",
+      "title": "Travel and Places — C1 Prompt 1",
+      "promptText": "Discuss how travel broadens a person's understanding of other cultures, using specific examples.",
+      "suggestedDurationSeconds": 120,
+      "cefrLevel": "C1",
+      "parentKey": "speaking.topic_travel",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.c1"
+    },
+    {
+      "key": "speaking.topic_travel.c1.2",
+      "title": "Travel and Places — C1 Prompt 2",
+      "promptText": "Talk about the environmental impact of modern tourism and what could be done to reduce it.",
+      "suggestedDurationSeconds": 120,
+      "cefrLevel": "C1",
+      "parentKey": "speaking.topic_travel",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.c1"
+    },
+    {
+      "key": "speaking.topic_travel.c1.3",
+      "title": "Travel and Places — C1 Prompt 3",
+      "promptText": "Explain how the rise of budget travel has changed people's attitudes toward exploring the world.",
+      "suggestedDurationSeconds": 120,
+      "cefrLevel": "C1",
+      "parentKey": "speaking.topic_travel",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.c1"
+    },
+    {
+      "key": "speaking.topic_travel.c2.1",
+      "title": "Travel and Places — C2 Prompt 1",
+      "promptText": "Critically evaluate the argument that mass tourism is eroding the authenticity of popular destinations.",
+      "suggestedDurationSeconds": 150,
+      "cefrLevel": "C2",
+      "parentKey": "speaking.topic_travel",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.c2"
+    },
+    {
+      "key": "speaking.topic_travel.c2.2",
+      "title": "Travel and Places — C2 Prompt 2",
+      "promptText": "Discuss the ethical responsibilities of travellers visiting culturally sensitive or fragile regions.",
+      "suggestedDurationSeconds": 150,
+      "cefrLevel": "C2",
+      "parentKey": "speaking.topic_travel",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.c2"
+    },
+    {
+      "key": "speaking.topic_travel.c2.3",
+      "title": "Travel and Places — C2 Prompt 3",
+      "promptText": "Argue whether travel genuinely fosters tolerance, or whether this is an overstated claim.",
+      "suggestedDurationSeconds": 150,
+      "cefrLevel": "C2",
+      "parentKey": "speaking.topic_travel",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.c2"
+    },
+    {
+      "key": "speaking.topic_food_health.a1.1",
+      "title": "Food and Health — A1 Prompt 1",
+      "promptText": "Talk about your favorite food.",
+      "suggestedDurationSeconds": 30,
+      "cefrLevel": "A1",
+      "parentKey": "speaking.topic_food_health",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.a1"
+    },
+    {
+      "key": "speaking.topic_food_health.a1.2",
+      "title": "Food and Health — A1 Prompt 2",
+      "promptText": "Describe a meal you like to cook or eat.",
+      "suggestedDurationSeconds": 30,
+      "cefrLevel": "A1",
+      "parentKey": "speaking.topic_food_health",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.a1"
+    },
+    {
+      "key": "speaking.topic_food_health.a1.3",
+      "title": "Food and Health — A1 Prompt 3",
+      "promptText": "Talk about food you do not like.",
+      "suggestedDurationSeconds": 30,
+      "cefrLevel": "A1",
+      "parentKey": "speaking.topic_food_health",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.a1"
+    },
+    {
+      "key": "speaking.topic_food_health.a2.1",
+      "title": "Food and Health — A2 Prompt 1",
+      "promptText": "Describe a typical meal in your country.",
+      "suggestedDurationSeconds": 40,
+      "cefrLevel": "A2",
+      "parentKey": "speaking.topic_food_health",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.a2"
+    },
+    {
+      "key": "speaking.topic_food_health.a2.2",
+      "title": "Food and Health — A2 Prompt 2",
+      "promptText": "Talk about how you try to stay healthy.",
+      "suggestedDurationSeconds": 40,
+      "cefrLevel": "A2",
+      "parentKey": "speaking.topic_food_health",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.a2"
+    },
+    {
+      "key": "speaking.topic_food_health.a2.3",
+      "title": "Food and Health — A2 Prompt 3",
+      "promptText": "Describe your favorite restaurant and why you like it.",
+      "suggestedDurationSeconds": 40,
+      "cefrLevel": "A2",
+      "parentKey": "speaking.topic_food_health",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.a2"
+    },
+    {
+      "key": "speaking.topic_food_health.b1.1",
+      "title": "Food and Health — B1 Prompt 1",
+      "promptText": "Talk about how your eating habits have changed over time.",
+      "suggestedDurationSeconds": 60,
+      "cefrLevel": "B1",
+      "parentKey": "speaking.topic_food_health",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.b1"
+    },
+    {
+      "key": "speaking.topic_food_health.b1.2",
+      "title": "Food and Health — B1 Prompt 2",
+      "promptText": "Describe the difference between eating at home and eating out.",
+      "suggestedDurationSeconds": 60,
+      "cefrLevel": "B1",
+      "parentKey": "speaking.topic_food_health",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.b1"
+    },
+    {
+      "key": "speaking.topic_food_health.b1.3",
+      "title": "Food and Health — B1 Prompt 3",
+      "promptText": "Talk about a healthy habit you try to follow and why it matters to you.",
+      "suggestedDurationSeconds": 60,
+      "cefrLevel": "B1",
+      "parentKey": "speaking.topic_food_health",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.b1"
+    },
+    {
+      "key": "speaking.topic_food_health.b2.1",
+      "title": "Food and Health — B2 Prompt 1",
+      "promptText": "Discuss the advantages and disadvantages of fast food becoming so widely available.",
+      "suggestedDurationSeconds": 90,
+      "cefrLevel": "B2",
+      "parentKey": "speaking.topic_food_health",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.b2"
+    },
+    {
+      "key": "speaking.topic_food_health.b2.2",
+      "title": "Food and Health — B2 Prompt 2",
+      "promptText": "Talk about how food culture varies between generations in your country.",
+      "suggestedDurationSeconds": 90,
+      "cefrLevel": "B2",
+      "parentKey": "speaking.topic_food_health",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.b2"
+    },
+    {
+      "key": "speaking.topic_food_health.b2.3",
+      "title": "Food and Health — B2 Prompt 3",
+      "promptText": "Describe the role that diet plays in overall physical and mental health.",
+      "suggestedDurationSeconds": 90,
+      "cefrLevel": "B2",
+      "parentKey": "speaking.topic_food_health",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.b2"
+    },
+    {
+      "key": "speaking.topic_food_health.c1.1",
+      "title": "Food and Health — C1 Prompt 1",
+      "promptText": "Discuss how food advertising influences the choices people make, particularly among young people.",
+      "suggestedDurationSeconds": 120,
+      "cefrLevel": "C1",
+      "parentKey": "speaking.topic_food_health",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.c1"
+    },
+    {
+      "key": "speaking.topic_food_health.c1.2",
+      "title": "Food and Health — C1 Prompt 2",
+      "promptText": "Talk about the growing popularity of plant-based diets and what is driving this trend.",
+      "suggestedDurationSeconds": 120,
+      "cefrLevel": "C1",
+      "parentKey": "speaking.topic_food_health",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.c1"
+    },
+    {
+      "key": "speaking.topic_food_health.c1.3",
+      "title": "Food and Health — C1 Prompt 3",
+      "promptText": "Explain how access to healthy food is connected to social and economic inequality.",
+      "suggestedDurationSeconds": 120,
+      "cefrLevel": "C1",
+      "parentKey": "speaking.topic_food_health",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.c1"
+    },
+    {
+      "key": "speaking.topic_food_health.c2.1",
+      "title": "Food and Health — C2 Prompt 1",
+      "promptText": "Critically discuss whether individual responsibility or government regulation is more effective in tackling poor public health outcomes linked to diet.",
+      "suggestedDurationSeconds": 150,
+      "cefrLevel": "C2",
+      "parentKey": "speaking.topic_food_health",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.c2"
+    },
+    {
+      "key": "speaking.topic_food_health.c2.2",
+      "title": "Food and Health — C2 Prompt 2",
+      "promptText": "Explore the cultural and economic forces shaping the global rise of ultra-processed food.",
+      "suggestedDurationSeconds": 150,
+      "cefrLevel": "C2",
+      "parentKey": "speaking.topic_food_health",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.c2"
+    },
+    {
+      "key": "speaking.topic_food_health.c2.3",
+      "title": "Food and Health — C2 Prompt 3",
+      "promptText": "Argue whether traditional diets are being unfairly displaced by globalized food industries.",
+      "suggestedDurationSeconds": 150,
+      "cefrLevel": "C2",
+      "parentKey": "speaking.topic_food_health",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.c2"
+    },
+    {
+      "key": "speaking.topic_hobbies.a1.1",
+      "title": "Hobbies and Free Time — A1 Prompt 1",
+      "promptText": "Talk about your favorite hobby.",
+      "suggestedDurationSeconds": 30,
+      "cefrLevel": "A1",
+      "parentKey": "speaking.topic_hobbies",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.a1"
+    },
+    {
+      "key": "speaking.topic_hobbies.a1.2",
+      "title": "Hobbies and Free Time — A1 Prompt 2",
+      "promptText": "Describe what you like to do in your free time.",
+      "suggestedDurationSeconds": 30,
+      "cefrLevel": "A1",
+      "parentKey": "speaking.topic_hobbies",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.a1"
+    },
+    {
+      "key": "speaking.topic_hobbies.a1.3",
+      "title": "Hobbies and Free Time — A1 Prompt 3",
+      "promptText": "Talk about a sport or game you enjoy.",
+      "suggestedDurationSeconds": 30,
+      "cefrLevel": "A1",
+      "parentKey": "speaking.topic_hobbies",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.a1"
+    },
+    {
+      "key": "speaking.topic_hobbies.a2.1",
+      "title": "Hobbies and Free Time — A2 Prompt 1",
+      "promptText": "Describe a hobby you would like to try.",
+      "suggestedDurationSeconds": 40,
+      "cefrLevel": "A2",
+      "parentKey": "speaking.topic_hobbies",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.a2"
+    },
+    {
+      "key": "speaking.topic_hobbies.a2.2",
+      "title": "Hobbies and Free Time — A2 Prompt 2",
+      "promptText": "Talk about how you spend your weekends.",
+      "suggestedDurationSeconds": 40,
+      "cefrLevel": "A2",
+      "parentKey": "speaking.topic_hobbies",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.a2"
+    },
+    {
+      "key": "speaking.topic_hobbies.a2.3",
+      "title": "Hobbies and Free Time — A2 Prompt 3",
+      "promptText": "Describe an activity you do with your friends or family.",
+      "suggestedDurationSeconds": 40,
+      "cefrLevel": "A2",
+      "parentKey": "speaking.topic_hobbies",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.a2"
+    },
+    {
+      "key": "speaking.topic_hobbies.b1.1",
+      "title": "Hobbies and Free Time — B1 Prompt 1",
+      "promptText": "Talk about a hobby that has taught you something valuable.",
+      "suggestedDurationSeconds": 60,
+      "cefrLevel": "B1",
+      "parentKey": "speaking.topic_hobbies",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.b1"
+    },
+    {
+      "key": "speaking.topic_hobbies.b1.2",
+      "title": "Hobbies and Free Time — B1 Prompt 2",
+      "promptText": "Describe how your interests have changed since you were a child.",
+      "suggestedDurationSeconds": 60,
+      "cefrLevel": "B1",
+      "parentKey": "speaking.topic_hobbies",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.b1"
+    },
+    {
+      "key": "speaking.topic_hobbies.b1.3",
+      "title": "Hobbies and Free Time — B1 Prompt 3",
+      "promptText": "Talk about the benefits of having a hobby outside of work or study.",
+      "suggestedDurationSeconds": 60,
+      "cefrLevel": "B1",
+      "parentKey": "speaking.topic_hobbies",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.b1"
+    },
+    {
+      "key": "speaking.topic_hobbies.b2.1",
+      "title": "Hobbies and Free Time — B2 Prompt 1",
+      "promptText": "Discuss how free time activities can affect a person's mental wellbeing.",
+      "suggestedDurationSeconds": 90,
+      "cefrLevel": "B2",
+      "parentKey": "speaking.topic_hobbies",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.b2"
+    },
+    {
+      "key": "speaking.topic_hobbies.b2.2",
+      "title": "Hobbies and Free Time — B2 Prompt 2",
+      "promptText": "Talk about the balance between spending free time alone and with others.",
+      "suggestedDurationSeconds": 90,
+      "cefrLevel": "B2",
+      "parentKey": "speaking.topic_hobbies",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.b2"
+    },
+    {
+      "key": "speaking.topic_hobbies.b2.3",
+      "title": "Hobbies and Free Time — B2 Prompt 3",
+      "promptText": "Describe how digital entertainment has changed the way people spend their free time.",
+      "suggestedDurationSeconds": 90,
+      "cefrLevel": "B2",
+      "parentKey": "speaking.topic_hobbies",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.b2"
+    },
+    {
+      "key": "speaking.topic_hobbies.c1.1",
+      "title": "Hobbies and Free Time — C1 Prompt 1",
+      "promptText": "Discuss the role that hobbies play in shaping personal identity and community belonging.",
+      "suggestedDurationSeconds": 120,
+      "cefrLevel": "C1",
+      "parentKey": "speaking.topic_hobbies",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.c1"
+    },
+    {
+      "key": "speaking.topic_hobbies.c1.2",
+      "title": "Hobbies and Free Time — C1 Prompt 2",
+      "promptText": "Talk about how the pursuit of mastery in a hobby can parallel professional discipline.",
+      "suggestedDurationSeconds": 120,
+      "cefrLevel": "C1",
+      "parentKey": "speaking.topic_hobbies",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.c1"
+    },
+    {
+      "key": "speaking.topic_hobbies.c1.3",
+      "title": "Hobbies and Free Time — C1 Prompt 3",
+      "promptText": "Explain how leisure activities reflect broader social and cultural trends.",
+      "suggestedDurationSeconds": 120,
+      "cefrLevel": "C1",
+      "parentKey": "speaking.topic_hobbies",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.c1"
+    },
+    {
+      "key": "speaking.topic_hobbies.c2.1",
+      "title": "Hobbies and Free Time — C2 Prompt 1",
+      "promptText": "Critically discuss whether the commercialization of hobbies undermines their original value as a source of relaxation.",
+      "suggestedDurationSeconds": 150,
+      "cefrLevel": "C2",
+      "parentKey": "speaking.topic_hobbies",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.c2"
+    },
+    {
+      "key": "speaking.topic_hobbies.c2.2",
+      "title": "Hobbies and Free Time — C2 Prompt 2",
+      "promptText": "Explore the relationship between leisure time and social class throughout history.",
+      "suggestedDurationSeconds": 150,
+      "cefrLevel": "C2",
+      "parentKey": "speaking.topic_hobbies",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.c2"
+    },
+    {
+      "key": "speaking.topic_hobbies.c2.3",
+      "title": "Hobbies and Free Time — C2 Prompt 3",
+      "promptText": "Argue whether the pressure to be \"productive\" even in leisure time is a harmful modern trend.",
+      "suggestedDurationSeconds": 150,
+      "cefrLevel": "C2",
+      "parentKey": "speaking.topic_hobbies",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.c2"
+    },
+    {
+      "key": "speaking.topic_environment.a1.1",
+      "title": "Environment and Society — A1 Prompt 1",
+      "promptText": "Talk about the weather where you live.",
+      "suggestedDurationSeconds": 30,
+      "cefrLevel": "A1",
+      "parentKey": "speaking.topic_environment",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.a1"
+    },
+    {
+      "key": "speaking.topic_environment.a1.2",
+      "title": "Environment and Society — A1 Prompt 2",
+      "promptText": "Describe what you do to keep your home clean and tidy.",
+      "suggestedDurationSeconds": 30,
+      "cefrLevel": "A1",
+      "parentKey": "speaking.topic_environment",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.a1"
+    },
+    {
+      "key": "speaking.topic_environment.a1.3",
+      "title": "Environment and Society — A1 Prompt 3",
+      "promptText": "Talk about a place with a lot of trees or nature near you.",
+      "suggestedDurationSeconds": 30,
+      "cefrLevel": "A1",
+      "parentKey": "speaking.topic_environment",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.a1"
+    },
+    {
+      "key": "speaking.topic_environment.a2.1",
+      "title": "Environment and Society — A2 Prompt 1",
+      "promptText": "Describe something you do to help protect the environment.",
+      "suggestedDurationSeconds": 40,
+      "cefrLevel": "A2",
+      "parentKey": "speaking.topic_environment",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.a2"
+    },
+    {
+      "key": "speaking.topic_environment.a2.2",
+      "title": "Environment and Society — A2 Prompt 2",
+      "promptText": "Talk about the weather in different seasons where you live.",
+      "suggestedDurationSeconds": 40,
+      "cefrLevel": "A2",
+      "parentKey": "speaking.topic_environment",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.a2"
+    },
+    {
+      "key": "speaking.topic_environment.a2.3",
+      "title": "Environment and Society — A2 Prompt 3",
+      "promptText": "Describe a natural place you find beautiful.",
+      "suggestedDurationSeconds": 40,
+      "cefrLevel": "A2",
+      "parentKey": "speaking.topic_environment",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.a2"
+    },
+    {
+      "key": "speaking.topic_environment.b1.1",
+      "title": "Environment and Society — B1 Prompt 1",
+      "promptText": "Talk about a change you have noticed in the environment where you live.",
+      "suggestedDurationSeconds": 60,
+      "cefrLevel": "B1",
+      "parentKey": "speaking.topic_environment",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.b1"
+    },
+    {
+      "key": "speaking.topic_environment.b1.2",
+      "title": "Environment and Society — B1 Prompt 2",
+      "promptText": "Describe what your city or town does to manage waste and recycling.",
+      "suggestedDurationSeconds": 60,
+      "cefrLevel": "B1",
+      "parentKey": "speaking.topic_environment",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.b1"
+    },
+    {
+      "key": "speaking.topic_environment.b1.3",
+      "title": "Environment and Society — B1 Prompt 3",
+      "promptText": "Talk about the importance of protecting nature for future generations.",
+      "suggestedDurationSeconds": 60,
+      "cefrLevel": "B1",
+      "parentKey": "speaking.topic_environment",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.b1"
+    },
+    {
+      "key": "speaking.topic_environment.b2.1",
+      "title": "Environment and Society — B2 Prompt 1",
+      "promptText": "Discuss the advantages and disadvantages of renewable energy compared to fossil fuels.",
+      "suggestedDurationSeconds": 90,
+      "cefrLevel": "B2",
+      "parentKey": "speaking.topic_environment",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.b2"
+    },
+    {
+      "key": "speaking.topic_environment.b2.2",
+      "title": "Environment and Society — B2 Prompt 2",
+      "promptText": "Talk about how individual choices can contribute to solving environmental problems.",
+      "suggestedDurationSeconds": 90,
+      "cefrLevel": "B2",
+      "parentKey": "speaking.topic_environment",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.b2"
+    },
+    {
+      "key": "speaking.topic_environment.b2.3",
+      "title": "Environment and Society — B2 Prompt 3",
+      "promptText": "Describe how climate change is affecting communities you know about.",
+      "suggestedDurationSeconds": 90,
+      "cefrLevel": "B2",
+      "parentKey": "speaking.topic_environment",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.b2"
+    },
+    {
+      "key": "speaking.topic_environment.c1.1",
+      "title": "Environment and Society — C1 Prompt 1",
+      "promptText": "Discuss the tension between economic development and environmental protection, using real examples.",
+      "suggestedDurationSeconds": 120,
+      "cefrLevel": "C1",
+      "parentKey": "speaking.topic_environment",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.c1"
+    },
+    {
+      "key": "speaking.topic_environment.c1.2",
+      "title": "Environment and Society — C1 Prompt 2",
+      "promptText": "Talk about the role governments should play in tackling climate change compared to individuals.",
+      "suggestedDurationSeconds": 120,
+      "cefrLevel": "C1",
+      "parentKey": "speaking.topic_environment",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.c1"
+    },
+    {
+      "key": "speaking.topic_environment.c1.3",
+      "title": "Environment and Society — C1 Prompt 3",
+      "promptText": "Explain how environmental awareness has changed across generations in your society.",
+      "suggestedDurationSeconds": 120,
+      "cefrLevel": "C1",
+      "parentKey": "speaking.topic_environment",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.c1"
+    },
+    {
+      "key": "speaking.topic_environment.c2.1",
+      "title": "Environment and Society — C2 Prompt 1",
+      "promptText": "Critically evaluate the effectiveness of international agreements in addressing global environmental crises.",
+      "suggestedDurationSeconds": 150,
+      "cefrLevel": "C2",
+      "parentKey": "speaking.topic_environment",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.c2"
+    },
+    {
+      "key": "speaking.topic_environment.c2.2",
+      "title": "Environment and Society — C2 Prompt 2",
+      "promptText": "Explore the ethical implications of consumer culture in the context of environmental degradation.",
+      "suggestedDurationSeconds": 150,
+      "cefrLevel": "C2",
+      "parentKey": "speaking.topic_environment",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.c2"
+    },
+    {
+      "key": "speaking.topic_environment.c2.3",
+      "title": "Environment and Society — C2 Prompt 3",
+      "promptText": "Argue whether technological innovation alone can solve the climate crisis, or whether systemic change is required.",
+      "suggestedDurationSeconds": 150,
+      "cefrLevel": "C2",
+      "parentKey": "speaking.topic_environment",
+      "activityType": "spoken_response_from_prompt",
+      "scaleLeafKey": "speaking.scale_overall_spoken_production.c2"
+    },
+    {
+      "key": "speaking.topic_family.a1.1",
+      "title": "Family and Relationships — A1 Prompt 1",
+      "promptText": "Your friend asks about your family. Tell them who is in your family.",
+      "suggestedDurationSeconds": 30,
+      "cefrLevel": "A1",
+      "parentKey": "speaking.topic_family",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.a1"
+    },
+    {
+      "key": "speaking.topic_family.a1.2",
+      "title": "Family and Relationships — A1 Prompt 2",
+      "promptText": "A new classmate asks if you have brothers or sisters. Answer them.",
+      "suggestedDurationSeconds": 30,
+      "cefrLevel": "A1",
+      "parentKey": "speaking.topic_family",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.a1"
+    },
+    {
+      "key": "speaking.topic_family.a1.3",
+      "title": "Family and Relationships — A1 Prompt 3",
+      "promptText": "Someone asks where your family lives. Answer them.",
+      "suggestedDurationSeconds": 30,
+      "cefrLevel": "A1",
+      "parentKey": "speaking.topic_family",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.a1"
+    },
+    {
+      "key": "speaking.topic_family.a2.1",
+      "title": "Family and Relationships — A2 Prompt 1",
+      "promptText": "A friend asks you to describe someone in your family. Answer them.",
+      "suggestedDurationSeconds": 40,
+      "cefrLevel": "A2",
+      "parentKey": "speaking.topic_family",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.a2"
+    },
+    {
+      "key": "speaking.topic_family.a2.2",
+      "title": "Family and Relationships — A2 Prompt 2",
+      "promptText": "Your classmate asks what your family likes to do together. Answer them.",
+      "suggestedDurationSeconds": 40,
+      "cefrLevel": "A2",
+      "parentKey": "speaking.topic_family",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.a2"
+    },
+    {
+      "key": "speaking.topic_family.a2.3",
+      "title": "Family and Relationships — A2 Prompt 3",
+      "promptText": "A friend asks about a family celebration you had. Tell them about it.",
+      "suggestedDurationSeconds": 40,
+      "cefrLevel": "A2",
+      "parentKey": "speaking.topic_family",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.a2"
+    },
+    {
+      "key": "speaking.topic_family.b1.1",
+      "title": "Family and Relationships — B1 Prompt 1",
+      "promptText": "A friend asks how your relationship with your family has changed as you got older. Answer them.",
+      "suggestedDurationSeconds": 60,
+      "cefrLevel": "B1",
+      "parentKey": "speaking.topic_family",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.b1"
+    },
+    {
+      "key": "speaking.topic_family.b1.2",
+      "title": "Family and Relationships — B1 Prompt 2",
+      "promptText": "Someone asks what makes a family close, in your opinion. Respond to them.",
+      "suggestedDurationSeconds": 60,
+      "cefrLevel": "B1",
+      "parentKey": "speaking.topic_family",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.b1"
+    },
+    {
+      "key": "speaking.topic_family.b1.3",
+      "title": "Family and Relationships — B1 Prompt 3",
+      "promptText": "A colleague asks how you balance family life with work or study. Answer them.",
+      "suggestedDurationSeconds": 60,
+      "cefrLevel": "B1",
+      "parentKey": "speaking.topic_family",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.b1"
+    },
+    {
+      "key": "speaking.topic_family.b2.1",
+      "title": "Family and Relationships — B2 Prompt 1",
+      "promptText": "A friend disagrees with you about how much time family members should spend together. Respond to their point of view.",
+      "suggestedDurationSeconds": 90,
+      "cefrLevel": "B2",
+      "parentKey": "speaking.topic_family",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.b2"
+    },
+    {
+      "key": "speaking.topic_family.b2.2",
+      "title": "Family and Relationships — B2 Prompt 2",
+      "promptText": "Someone asks whether you think family traditions are still important today. Give your opinion and respond to any disagreement.",
+      "suggestedDurationSeconds": 90,
+      "cefrLevel": "B2",
+      "parentKey": "speaking.topic_family",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.b2"
+    },
+    {
+      "key": "speaking.topic_family.b2.3",
+      "title": "Family and Relationships — B2 Prompt 3",
+      "promptText": "A colleague asks how family responsibilities differ between generations in your culture. Discuss this with them.",
+      "suggestedDurationSeconds": 90,
+      "cefrLevel": "B2",
+      "parentKey": "speaking.topic_family",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.b2"
+    },
+    {
+      "key": "speaking.topic_family.c1.1",
+      "title": "Family and Relationships — C1 Prompt 1",
+      "promptText": "In a discussion group, someone argues that modern life is weakening family bonds. Respond with your own view.",
+      "suggestedDurationSeconds": 120,
+      "cefrLevel": "C1",
+      "parentKey": "speaking.topic_family",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.c1"
+    },
+    {
+      "key": "speaking.topic_family.c1.2",
+      "title": "Family and Relationships — C1 Prompt 2",
+      "promptText": "A friend claims that friendships can be as important as family relationships. Discuss this with them.",
+      "suggestedDurationSeconds": 120,
+      "cefrLevel": "C1",
+      "parentKey": "speaking.topic_family",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.c1"
+    },
+    {
+      "key": "speaking.topic_family.c1.3",
+      "title": "Family and Relationships — C1 Prompt 3",
+      "promptText": "Someone asks how migration affects family relationships across generations. Discuss this with them.",
+      "suggestedDurationSeconds": 120,
+      "cefrLevel": "C1",
+      "parentKey": "speaking.topic_family",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.c1"
+    },
+    {
+      "key": "speaking.topic_family.c2.1",
+      "title": "Family and Relationships — C2 Prompt 1",
+      "promptText": "In a debate, someone argues that traditional family structures are becoming obsolete. Challenge or support this view with reasoning.",
+      "suggestedDurationSeconds": 150,
+      "cefrLevel": "C2",
+      "parentKey": "speaking.topic_family",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.c2"
+    },
+    {
+      "key": "speaking.topic_family.c2.2",
+      "title": "Family and Relationships — C2 Prompt 2",
+      "promptText": "A colleague claims that individualism has damaged family cohesion in modern societies. Respond with a nuanced counterargument.",
+      "suggestedDurationSeconds": 150,
+      "cefrLevel": "C2",
+      "parentKey": "speaking.topic_family",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.c2"
+    },
+    {
+      "key": "speaking.topic_family.c2.3",
+      "title": "Family and Relationships — C2 Prompt 3",
+      "promptText": "Someone asserts that state support can replace the role of family in a person's wellbeing. Discuss this critically with them.",
+      "suggestedDurationSeconds": 150,
+      "cefrLevel": "C2",
+      "parentKey": "speaking.topic_family",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.c2"
+    },
+    {
+      "key": "speaking.topic_work.a1.1",
+      "title": "Work and Career — A1 Prompt 1",
+      "promptText": "An interviewer asks what job you do or want to do. Answer them.",
+      "suggestedDurationSeconds": 30,
+      "cefrLevel": "A1",
+      "parentKey": "speaking.topic_work",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.a1"
+    },
+    {
+      "key": "speaking.topic_work.a1.2",
+      "title": "Work and Career — A1 Prompt 2",
+      "promptText": "A colleague asks what you do at work. Answer them.",
+      "suggestedDurationSeconds": 30,
+      "cefrLevel": "A1",
+      "parentKey": "speaking.topic_work",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.a1"
+    },
+    {
+      "key": "speaking.topic_work.a1.3",
+      "title": "Work and Career — A1 Prompt 3",
+      "promptText": "Someone asks what time you start work. Answer them.",
+      "suggestedDurationSeconds": 30,
+      "cefrLevel": "A1",
+      "parentKey": "speaking.topic_work",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.a1"
+    },
+    {
+      "key": "speaking.topic_work.a2.1",
+      "title": "Work and Career — A2 Prompt 1",
+      "promptText": "An interviewer asks why you want this job. Answer them.",
+      "suggestedDurationSeconds": 40,
+      "cefrLevel": "A2",
+      "parentKey": "speaking.topic_work",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.a2"
+    },
+    {
+      "key": "speaking.topic_work.a2.2",
+      "title": "Work and Career — A2 Prompt 2",
+      "promptText": "A colleague asks about your daily tasks at work. Answer them.",
+      "suggestedDurationSeconds": 40,
+      "cefrLevel": "A2",
+      "parentKey": "speaking.topic_work",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.a2"
+    },
+    {
+      "key": "speaking.topic_work.a2.3",
+      "title": "Work and Career — A2 Prompt 3",
+      "promptText": "A friend asks what kind of job you would like to have. Answer them.",
+      "suggestedDurationSeconds": 40,
+      "cefrLevel": "A2",
+      "parentKey": "speaking.topic_work",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.a2"
+    },
+    {
+      "key": "speaking.topic_work.b1.1",
+      "title": "Work and Career — B1 Prompt 1",
+      "promptText": "An interviewer asks about a challenge you faced at work and how you dealt with it. Answer them.",
+      "suggestedDurationSeconds": 60,
+      "cefrLevel": "B1",
+      "parentKey": "speaking.topic_work",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.b1"
+    },
+    {
+      "key": "speaking.topic_work.b1.2",
+      "title": "Work and Career — B1 Prompt 2",
+      "promptText": "A colleague asks what you think makes a good workplace. Discuss this with them.",
+      "suggestedDurationSeconds": 60,
+      "cefrLevel": "B1",
+      "parentKey": "speaking.topic_work",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.b1"
+    },
+    {
+      "key": "speaking.topic_work.b1.3",
+      "title": "Work and Career — B1 Prompt 3",
+      "promptText": "Someone asks how you decide what career path to follow. Answer them.",
+      "suggestedDurationSeconds": 60,
+      "cefrLevel": "B1",
+      "parentKey": "speaking.topic_work",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.b1"
+    },
+    {
+      "key": "speaking.topic_work.b2.1",
+      "title": "Work and Career — B2 Prompt 1",
+      "promptText": "An interviewer asks you to compare working in a team versus working independently. Answer them.",
+      "suggestedDurationSeconds": 90,
+      "cefrLevel": "B2",
+      "parentKey": "speaking.topic_work",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.b2"
+    },
+    {
+      "key": "speaking.topic_work.b2.2",
+      "title": "Work and Career — B2 Prompt 2",
+      "promptText": "A colleague disagrees that remote work is as productive as working in an office. Respond to their argument.",
+      "suggestedDurationSeconds": 90,
+      "cefrLevel": "B2",
+      "parentKey": "speaking.topic_work",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.b2"
+    },
+    {
+      "key": "speaking.topic_work.b2.3",
+      "title": "Work and Career — B2 Prompt 3",
+      "promptText": "Someone asks how automation is likely to affect jobs in your field. Discuss this with them.",
+      "suggestedDurationSeconds": 90,
+      "cefrLevel": "B2",
+      "parentKey": "speaking.topic_work",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.b2"
+    },
+    {
+      "key": "speaking.topic_work.c1.1",
+      "title": "Work and Career — C1 Prompt 1",
+      "promptText": "In a panel discussion, someone argues that career success should be measured by salary alone. Respond with your own view.",
+      "suggestedDurationSeconds": 120,
+      "cefrLevel": "C1",
+      "parentKey": "speaking.topic_work",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.c1"
+    },
+    {
+      "key": "speaking.topic_work.c1.2",
+      "title": "Work and Career — C1 Prompt 2",
+      "promptText": "A colleague claims that work-life balance is impossible to achieve in competitive industries. Discuss this with them.",
+      "suggestedDurationSeconds": 120,
+      "cefrLevel": "C1",
+      "parentKey": "speaking.topic_work",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.c1"
+    },
+    {
+      "key": "speaking.topic_work.c1.3",
+      "title": "Work and Career — C1 Prompt 3",
+      "promptText": "Someone asks how workplace culture differs between generations entering the job market today. Discuss this with them.",
+      "suggestedDurationSeconds": 120,
+      "cefrLevel": "C1",
+      "parentKey": "speaking.topic_work",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.c1"
+    },
+    {
+      "key": "speaking.topic_work.c2.1",
+      "title": "Work and Career — C2 Prompt 1",
+      "promptText": "In a debate, someone argues that the traditional nine-to-five job model is fundamentally outdated. Challenge or support this view.",
+      "suggestedDurationSeconds": 150,
+      "cefrLevel": "C2",
+      "parentKey": "speaking.topic_work",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.c2"
+    },
+    {
+      "key": "speaking.topic_work.c2.2",
+      "title": "Work and Career — C2 Prompt 2",
+      "promptText": "A colleague claims that meritocracy in the workplace is largely a myth. Respond with a nuanced counterargument.",
+      "suggestedDurationSeconds": 150,
+      "cefrLevel": "C2",
+      "parentKey": "speaking.topic_work",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.c2"
+    },
+    {
+      "key": "speaking.topic_work.c2.3",
+      "title": "Work and Career — C2 Prompt 3",
+      "promptText": "Someone asserts that job security matters more than job satisfaction. Discuss this critically with them.",
+      "suggestedDurationSeconds": 150,
+      "cefrLevel": "C2",
+      "parentKey": "speaking.topic_work",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.c2"
+    },
+    {
+      "key": "speaking.topic_technology.a1.1",
+      "title": "Technology and Media — A1 Prompt 1",
+      "promptText": "A friend asks what apps you use most on your phone. Answer them.",
+      "suggestedDurationSeconds": 30,
+      "cefrLevel": "A1",
+      "parentKey": "speaking.topic_technology",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.a1"
+    },
+    {
+      "key": "speaking.topic_technology.a1.2",
+      "title": "Technology and Media — A1 Prompt 2",
+      "promptText": "Someone asks how often you watch television. Answer them.",
+      "suggestedDurationSeconds": 30,
+      "cefrLevel": "A1",
+      "parentKey": "speaking.topic_technology",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.a1"
+    },
+    {
+      "key": "speaking.topic_technology.a1.3",
+      "title": "Technology and Media — A1 Prompt 3",
+      "promptText": "A classmate asks if you have a computer at home. Answer them.",
+      "suggestedDurationSeconds": 30,
+      "cefrLevel": "A1",
+      "parentKey": "speaking.topic_technology",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.a1"
+    },
+    {
+      "key": "speaking.topic_technology.a2.1",
+      "title": "Technology and Media — A2 Prompt 1",
+      "promptText": "A friend asks how you usually get your news. Answer them.",
+      "suggestedDurationSeconds": 40,
+      "cefrLevel": "A2",
+      "parentKey": "speaking.topic_technology",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.a2"
+    },
+    {
+      "key": "speaking.topic_technology.a2.2",
+      "title": "Technology and Media — A2 Prompt 2",
+      "promptText": "Someone asks what social media platforms you use. Answer them.",
+      "suggestedDurationSeconds": 40,
+      "cefrLevel": "A2",
+      "parentKey": "speaking.topic_technology",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.a2"
+    },
+    {
+      "key": "speaking.topic_technology.a2.3",
+      "title": "Technology and Media — A2 Prompt 3",
+      "promptText": "A colleague asks how technology helps you at work or school. Answer them.",
+      "suggestedDurationSeconds": 40,
+      "cefrLevel": "A2",
+      "parentKey": "speaking.topic_technology",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.a2"
+    },
+    {
+      "key": "speaking.topic_technology.b1.1",
+      "title": "Technology and Media — B1 Prompt 1",
+      "promptText": "A friend asks how much time you spend online each day and whether that worries you. Answer them.",
+      "suggestedDurationSeconds": 60,
+      "cefrLevel": "B1",
+      "parentKey": "speaking.topic_technology",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.b1"
+    },
+    {
+      "key": "speaking.topic_technology.b1.2",
+      "title": "Technology and Media — B1 Prompt 2",
+      "promptText": "Someone asks whether social media has made communication better or worse. Discuss this with them.",
+      "suggestedDurationSeconds": 60,
+      "cefrLevel": "B1",
+      "parentKey": "speaking.topic_technology",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.b1"
+    },
+    {
+      "key": "speaking.topic_technology.b1.3",
+      "title": "Technology and Media — B1 Prompt 3",
+      "promptText": "A colleague asks how you protect your privacy online. Answer them.",
+      "suggestedDurationSeconds": 60,
+      "cefrLevel": "B1",
+      "parentKey": "speaking.topic_technology",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.b1"
+    },
+    {
+      "key": "speaking.topic_technology.b2.1",
+      "title": "Technology and Media — B2 Prompt 1",
+      "promptText": "A friend disagrees that smartphones have improved people's quality of life. Respond to their argument.",
+      "suggestedDurationSeconds": 90,
+      "cefrLevel": "B2",
+      "parentKey": "speaking.topic_technology",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.b2"
+    },
+    {
+      "key": "speaking.topic_technology.b2.2",
+      "title": "Technology and Media — B2 Prompt 2",
+      "promptText": "Someone asks whether streaming services have changed the way people watch films and television. Discuss this with them.",
+      "suggestedDurationSeconds": 90,
+      "cefrLevel": "B2",
+      "parentKey": "speaking.topic_technology",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.b2"
+    },
+    {
+      "key": "speaking.topic_technology.b2.3",
+      "title": "Technology and Media — B2 Prompt 3",
+      "promptText": "A colleague claims artificial intelligence will replace most creative jobs. Respond with your own view.",
+      "suggestedDurationSeconds": 90,
+      "cefrLevel": "B2",
+      "parentKey": "speaking.topic_technology",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.b2"
+    },
+    {
+      "key": "speaking.topic_technology.c1.1",
+      "title": "Technology and Media — C1 Prompt 1",
+      "promptText": "In a discussion group, someone argues that social media is fundamentally harmful to mental health. Respond with your own view.",
+      "suggestedDurationSeconds": 120,
+      "cefrLevel": "C1",
+      "parentKey": "speaking.topic_technology",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.c1"
+    },
+    {
+      "key": "speaking.topic_technology.c1.2",
+      "title": "Technology and Media — C1 Prompt 2",
+      "promptText": "A colleague claims that algorithms shaping our news feeds are undermining informed public debate. Discuss this with them.",
+      "suggestedDurationSeconds": 120,
+      "cefrLevel": "C1",
+      "parentKey": "speaking.topic_technology",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.c1"
+    },
+    {
+      "key": "speaking.topic_technology.c1.3",
+      "title": "Technology and Media — C1 Prompt 3",
+      "promptText": "Someone asks how the rise of misinformation online is changing the way people trust media. Discuss this with them.",
+      "suggestedDurationSeconds": 120,
+      "cefrLevel": "C1",
+      "parentKey": "speaking.topic_technology",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.c1"
+    },
+    {
+      "key": "speaking.topic_technology.c2.1",
+      "title": "Technology and Media — C2 Prompt 1",
+      "promptText": "In a debate, someone argues that big technology companies have too much unchecked power over public discourse. Challenge or support this view.",
+      "suggestedDurationSeconds": 150,
+      "cefrLevel": "C2",
+      "parentKey": "speaking.topic_technology",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.c2"
+    },
+    {
+      "key": "speaking.topic_technology.c2.2",
+      "title": "Technology and Media — C2 Prompt 2",
+      "promptText": "A colleague claims that artificial intelligence poses an existential risk that outweighs its benefits. Respond with a nuanced counterargument.",
+      "suggestedDurationSeconds": 150,
+      "cefrLevel": "C2",
+      "parentKey": "speaking.topic_technology",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.c2"
+    },
+    {
+      "key": "speaking.topic_technology.c2.3",
+      "title": "Technology and Media — C2 Prompt 3",
+      "promptText": "Someone asserts that digital privacy is already effectively dead and further regulation is pointless. Discuss this critically with them.",
+      "suggestedDurationSeconds": 150,
+      "cefrLevel": "C2",
+      "parentKey": "speaking.topic_technology",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.c2"
+    },
+    {
+      "key": "speaking.topic_education.a1.1",
+      "title": "Education and Learning — A1 Prompt 1",
+      "promptText": "A classmate asks what subject you like best at school. Answer them.",
+      "suggestedDurationSeconds": 30,
+      "cefrLevel": "A1",
+      "parentKey": "speaking.topic_education",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.a1"
+    },
+    {
+      "key": "speaking.topic_education.a1.2",
+      "title": "Education and Learning — A1 Prompt 2",
+      "promptText": "Someone asks how you get to school. Answer them.",
+      "suggestedDurationSeconds": 30,
+      "cefrLevel": "A1",
+      "parentKey": "speaking.topic_education",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.a1"
+    },
+    {
+      "key": "speaking.topic_education.a1.3",
+      "title": "Education and Learning — A1 Prompt 3",
+      "promptText": "A friend asks what you are studying now. Answer them.",
+      "suggestedDurationSeconds": 30,
+      "cefrLevel": "A1",
+      "parentKey": "speaking.topic_education",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.a1"
+    },
+    {
+      "key": "speaking.topic_education.a2.1",
+      "title": "Education and Learning — A2 Prompt 1",
+      "promptText": "A classmate asks about your favorite teacher and why you like them. Answer them.",
+      "suggestedDurationSeconds": 40,
+      "cefrLevel": "A2",
+      "parentKey": "speaking.topic_education",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.a2"
+    },
+    {
+      "key": "speaking.topic_education.a2.2",
+      "title": "Education and Learning — A2 Prompt 2",
+      "promptText": "Someone asks how you prepare for a test or exam. Answer them.",
+      "suggestedDurationSeconds": 40,
+      "cefrLevel": "A2",
+      "parentKey": "speaking.topic_education",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.a2"
+    },
+    {
+      "key": "speaking.topic_education.a2.3",
+      "title": "Education and Learning — A2 Prompt 3",
+      "promptText": "A friend asks what you find difficult about learning English. Answer them.",
+      "suggestedDurationSeconds": 40,
+      "cefrLevel": "A2",
+      "parentKey": "speaking.topic_education",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.a2"
+    },
+    {
+      "key": "speaking.topic_education.b1.1",
+      "title": "Education and Learning — B1 Prompt 1",
+      "promptText": "A classmate asks whether you prefer studying alone or in a group, and why. Discuss this with them.",
+      "suggestedDurationSeconds": 60,
+      "cefrLevel": "B1",
+      "parentKey": "speaking.topic_education",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.b1"
+    },
+    {
+      "key": "speaking.topic_education.b1.2",
+      "title": "Education and Learning — B1 Prompt 2",
+      "promptText": "Someone asks how learning outside the classroom compares to formal lessons. Discuss this with them.",
+      "suggestedDurationSeconds": 60,
+      "cefrLevel": "B1",
+      "parentKey": "speaking.topic_education",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.b1"
+    },
+    {
+      "key": "speaking.topic_education.b1.3",
+      "title": "Education and Learning — B1 Prompt 3",
+      "promptText": "A friend asks how your motivation to study has changed over time. Answer them.",
+      "suggestedDurationSeconds": 60,
+      "cefrLevel": "B1",
+      "parentKey": "speaking.topic_education",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.b1"
+    },
+    {
+      "key": "speaking.topic_education.b2.1",
+      "title": "Education and Learning — B2 Prompt 1",
+      "promptText": "A classmate disagrees that exams are a fair way to measure learning. Respond to their argument.",
+      "suggestedDurationSeconds": 90,
+      "cefrLevel": "B2",
+      "parentKey": "speaking.topic_education",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.b2"
+    },
+    {
+      "key": "speaking.topic_education.b2.2",
+      "title": "Education and Learning — B2 Prompt 2",
+      "promptText": "Someone asks whether online learning is as effective as classroom learning. Discuss this with them.",
+      "suggestedDurationSeconds": 90,
+      "cefrLevel": "B2",
+      "parentKey": "speaking.topic_education",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.b2"
+    },
+    {
+      "key": "speaking.topic_education.b2.3",
+      "title": "Education and Learning — B2 Prompt 3",
+      "promptText": "A colleague claims that university education is becoming less relevant to the job market. Respond with your own view.",
+      "suggestedDurationSeconds": 90,
+      "cefrLevel": "B2",
+      "parentKey": "speaking.topic_education",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.b2"
+    },
+    {
+      "key": "speaking.topic_education.c1.1",
+      "title": "Education and Learning — C1 Prompt 1",
+      "promptText": "In a discussion group, someone argues that standardized testing narrows genuine learning. Respond with your own view.",
+      "suggestedDurationSeconds": 120,
+      "cefrLevel": "C1",
+      "parentKey": "speaking.topic_education",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.c1"
+    },
+    {
+      "key": "speaking.topic_education.c1.2",
+      "title": "Education and Learning — C1 Prompt 2",
+      "promptText": "A colleague claims that lifelong learning will become essential as careers change more frequently. Discuss this with them.",
+      "suggestedDurationSeconds": 120,
+      "cefrLevel": "C1",
+      "parentKey": "speaking.topic_education",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.c1"
+    },
+    {
+      "key": "speaking.topic_education.c1.3",
+      "title": "Education and Learning — C1 Prompt 3",
+      "promptText": "Someone asks how access to education affects social mobility in different societies. Discuss this with them.",
+      "suggestedDurationSeconds": 120,
+      "cefrLevel": "C1",
+      "parentKey": "speaking.topic_education",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.c1"
+    },
+    {
+      "key": "speaking.topic_education.c2.1",
+      "title": "Education and Learning — C2 Prompt 1",
+      "promptText": "In a debate, someone argues that traditional universities will become obsolete within a generation. Challenge or support this view.",
+      "suggestedDurationSeconds": 150,
+      "cefrLevel": "C2",
+      "parentKey": "speaking.topic_education",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.c2"
+    },
+    {
+      "key": "speaking.topic_education.c2.2",
+      "title": "Education and Learning — C2 Prompt 2",
+      "promptText": "A colleague claims that creativity cannot be effectively taught within a formal education system. Respond with a nuanced counterargument.",
+      "suggestedDurationSeconds": 150,
+      "cefrLevel": "C2",
+      "parentKey": "speaking.topic_education",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.c2"
+    },
+    {
+      "key": "speaking.topic_education.c2.3",
+      "title": "Education and Learning — C2 Prompt 3",
+      "promptText": "Someone asserts that education systems primarily serve economic interests rather than personal development. Discuss this critically with them.",
+      "suggestedDurationSeconds": 150,
+      "cefrLevel": "C2",
+      "parentKey": "speaking.topic_education",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.c2"
+    },
+    {
+      "key": "speaking.topic_opinions.a1.1",
+      "title": "Opinions and Debates — A1 Prompt 1",
+      "promptText": "A friend asks if you like your city or town. Answer them.",
+      "suggestedDurationSeconds": 30,
+      "cefrLevel": "A1",
+      "parentKey": "speaking.topic_opinions",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.a1"
+    },
+    {
+      "key": "speaking.topic_opinions.a1.2",
+      "title": "Opinions and Debates — A1 Prompt 2",
+      "promptText": "Someone asks if you prefer summer or winter. Answer them and say why.",
+      "suggestedDurationSeconds": 30,
+      "cefrLevel": "A1",
+      "parentKey": "speaking.topic_opinions",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.a1"
+    },
+    {
+      "key": "speaking.topic_opinions.a1.3",
+      "title": "Opinions and Debates — A1 Prompt 3",
+      "promptText": "A friend asks if you like reading books. Answer them.",
+      "suggestedDurationSeconds": 30,
+      "cefrLevel": "A1",
+      "parentKey": "speaking.topic_opinions",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.a1"
+    },
+    {
+      "key": "speaking.topic_opinions.a2.1",
+      "title": "Opinions and Debates — A2 Prompt 1",
+      "promptText": "A friend asks whether you prefer living in a city or in the countryside. Answer them and say why.",
+      "suggestedDurationSeconds": 40,
+      "cefrLevel": "A2",
+      "parentKey": "speaking.topic_opinions",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.a2"
+    },
+    {
+      "key": "speaking.topic_opinions.a2.2",
+      "title": "Opinions and Debates — A2 Prompt 2",
+      "promptText": "Someone asks if you think it is better to travel by plane or by train. Answer them.",
+      "suggestedDurationSeconds": 40,
+      "cefrLevel": "A2",
+      "parentKey": "speaking.topic_opinions",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.a2"
+    },
+    {
+      "key": "speaking.topic_opinions.a2.3",
+      "title": "Opinions and Debates — A2 Prompt 3",
+      "promptText": "A friend asks whether you prefer cats or dogs as pets. Answer them.",
+      "suggestedDurationSeconds": 40,
+      "cefrLevel": "A2",
+      "parentKey": "speaking.topic_opinions",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.a2"
+    },
+    {
+      "key": "speaking.topic_opinions.b1.1",
+      "title": "Opinions and Debates — B1 Prompt 1",
+      "promptText": "A friend disagrees with your opinion about the best way to spend a weekend. Respond to them.",
+      "suggestedDurationSeconds": 60,
+      "cefrLevel": "B1",
+      "parentKey": "speaking.topic_opinions",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.b1"
+    },
+    {
+      "key": "speaking.topic_opinions.b1.2",
+      "title": "Opinions and Debates — B1 Prompt 2",
+      "promptText": "Someone asks whether you think money can buy happiness. Discuss this with them.",
+      "suggestedDurationSeconds": 60,
+      "cefrLevel": "B1",
+      "parentKey": "speaking.topic_opinions",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.b1"
+    },
+    {
+      "key": "speaking.topic_opinions.b1.3",
+      "title": "Opinions and Debates — B1 Prompt 3",
+      "promptText": "A friend asks whether you think it is important to learn a second language. Discuss this with them.",
+      "suggestedDurationSeconds": 60,
+      "cefrLevel": "B1",
+      "parentKey": "speaking.topic_opinions",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.b1"
+    },
+    {
+      "key": "speaking.topic_opinions.b2.1",
+      "title": "Opinions and Debates — B2 Prompt 1",
+      "promptText": "A colleague disagrees that success is mostly determined by hard work rather than luck. Respond to their argument.",
+      "suggestedDurationSeconds": 90,
+      "cefrLevel": "B2",
+      "parentKey": "speaking.topic_opinions",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.b2"
+    },
+    {
+      "key": "speaking.topic_opinions.b2.2",
+      "title": "Opinions and Debates — B2 Prompt 2",
+      "promptText": "Someone asks whether you believe advertising has too much influence on people's choices. Discuss this with them.",
+      "suggestedDurationSeconds": 90,
+      "cefrLevel": "B2",
+      "parentKey": "speaking.topic_opinions",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.b2"
+    },
+    {
+      "key": "speaking.topic_opinions.b2.3",
+      "title": "Opinions and Debates — B2 Prompt 3",
+      "promptText": "A friend claims that competition brings out the best in people. Respond with your own view.",
+      "suggestedDurationSeconds": 90,
+      "cefrLevel": "B2",
+      "parentKey": "speaking.topic_opinions",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.b2"
+    },
+    {
+      "key": "speaking.topic_opinions.c1.1",
+      "title": "Opinions and Debates — C1 Prompt 1",
+      "promptText": "In a discussion group, someone argues that freedom of speech should have no legal limits. Respond with your own view.",
+      "suggestedDurationSeconds": 120,
+      "cefrLevel": "C1",
+      "parentKey": "speaking.topic_opinions",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.c1"
+    },
+    {
+      "key": "speaking.topic_opinions.c1.2",
+      "title": "Opinions and Debates — C1 Prompt 2",
+      "promptText": "A colleague claims that globalization has done more harm than good overall. Discuss this with them.",
+      "suggestedDurationSeconds": 120,
+      "cefrLevel": "C1",
+      "parentKey": "speaking.topic_opinions",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.c1"
+    },
+    {
+      "key": "speaking.topic_opinions.c1.3",
+      "title": "Opinions and Debates — C1 Prompt 3",
+      "promptText": "Someone asks whether you think progress always makes life better. Discuss this with them.",
+      "suggestedDurationSeconds": 120,
+      "cefrLevel": "C1",
+      "parentKey": "speaking.topic_opinions",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.c1"
+    },
+    {
+      "key": "speaking.topic_opinions.c2.1",
+      "title": "Opinions and Debates — C2 Prompt 1",
+      "promptText": "In a debate, someone argues that objective truth is losing ground to opinion in public discourse. Challenge or support this view.",
+      "suggestedDurationSeconds": 150,
+      "cefrLevel": "C2",
+      "parentKey": "speaking.topic_opinions",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.c2"
+    },
+    {
+      "key": "speaking.topic_opinions.c2.2",
+      "title": "Opinions and Debates — C2 Prompt 2",
+      "promptText": "A colleague claims that moral values are entirely relative to culture and cannot be judged across societies. Respond with a nuanced counterargument.",
+      "suggestedDurationSeconds": 150,
+      "cefrLevel": "C2",
+      "parentKey": "speaking.topic_opinions",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.c2"
+    },
+    {
+      "key": "speaking.topic_opinions.c2.3",
+      "title": "Opinions and Debates — C2 Prompt 3",
+      "promptText": "Someone asserts that democratic systems are inherently better equipped than any alternative to handle complex modern challenges. Discuss this critically with them.",
+      "suggestedDurationSeconds": 150,
+      "cefrLevel": "C2",
+      "parentKey": "speaking.topic_opinions",
+      "activityType": "respond_to_situation",
+      "scaleLeafKey": "speaking.scale_overall_spoken_interaction.c2"
+    }
+  ]
+}

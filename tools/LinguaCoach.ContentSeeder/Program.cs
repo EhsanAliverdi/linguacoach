@@ -25,6 +25,8 @@ namespace LinguaCoach.ContentSeeder;
 ///
 /// Usage: dotnet run --project tools/LinguaCoach.ContentSeeder -- grammar path/to/grammar-seed.json
 ///        dotnet run --project tools/LinguaCoach.ContentSeeder -- vocabulary path/to/vocabulary-seed.json
+///        dotnet run --project tools/LinguaCoach.ContentSeeder -- cefr-scales path/to/cefr-scales-seed.json
+///        dotnet run --project tools/LinguaCoach.ContentSeeder -- speaking path/to/speaking-seed.json
 /// </summary>
 public static class Program
 {
@@ -76,7 +78,8 @@ public static class Program
             "grammar" => await SeedGrammarAsync(seeder, db, seedFilePath),
             "vocabulary" => await SeedVocabularyAsync(seeder, db, seedFilePath),
             "cefr-scales" => await SeedCefrScalesAsync(db, seedFilePath),
-            _ => Fail($"Unknown domain '{domain}' — expected 'grammar', 'vocabulary', or 'cefr-scales'."),
+            "speaking" => await SeedSpeakingAsync(seeder, db, seedFilePath),
+            _ => Fail($"Unknown domain '{domain}' — expected 'grammar', 'vocabulary', 'cefr-scales', or 'speaking'."),
         };
     }
 
@@ -106,7 +109,7 @@ public static class Program
                 CurriculumSkillConstants.Grammar, parentId);
 
             var content = ResourceBankItemContent.Serialize(new GrammarContent(leaf.GrammarPoint, leaf.Explanation));
-            await seeder.SeedOneAsync(source.Id, leaf.CefrLevel, content, leaf.Title, leafId, "gap_fill");
+            await seeder.SeedOneAsync(source.Id, leaf.CefrLevel, content, leaf.Title, leafId, "gap_fill", PublishedResourceType.Grammar);
 
             checkpoint.MarkProcessed(leaf.Key);
             if (++processed % 100 == 0)
@@ -143,7 +146,7 @@ public static class Program
                 CurriculumSkillConstants.Vocabulary, parentId, descriptionForAi);
 
             var content = ResourceBankItemContent.Serialize(new VocabularyContent(leaf.Headword, leaf.PartOfSpeech, leaf.Definition));
-            await seeder.SeedOneAsync(source.Id, leaf.CefrLevel, content, title, leafId, "gap_fill");
+            await seeder.SeedOneAsync(source.Id, leaf.CefrLevel, content, title, leafId, "gap_fill", PublishedResourceType.Vocabulary);
 
             checkpoint.MarkProcessed(leaf.Key);
             if (++processed % 100 == 0)
@@ -181,6 +184,52 @@ public static class Program
         }
 
         Console.WriteLine($"CEFR-scale taxonomy seeding complete. {containerIds.Count} containers, {processed} leaves.");
+        return 0;
+    }
+
+    /// <summary>Full content reseed Phase F (2026-07-29) — hand-authored speaking prompts. Each prompt
+    /// gets its own leaf SkillGraphNode (so the idempotency check in SeedOneAsync is per-prompt, not
+    /// shared) plus a secondary link to the matching Phase E CEFR-scale leaf (ScaleLeafKey) so it's
+    /// also visible under the real Council-of-Europe speaking taxonomy.</summary>
+    private static async Task<int> SeedSpeakingAsync(LeafContentSeeder seeder, LinguaCoachDbContext db, string path)
+    {
+        var file = JsonSerializer.Deserialize<SpeakingSeedFile>(await File.ReadAllTextAsync(path), JsonOptions)
+            ?? throw new InvalidOperationException("Empty/invalid speaking seed file.");
+
+        var source = await GetOrCreateSourceAsync(db, "LinguaCoach Speaking Prompts");
+        var checkpoint = Checkpoint.Load(path);
+        var containerIds = await UpsertContainersAsync(db, file.Containers.Select(c =>
+            (c.Key, c.Title, c.CefrLevel, DifficultyBand: 1, Skill: CurriculumSkillConstants.Speaking)));
+
+        var processed = 0;
+        foreach (var leaf in file.Leaves)
+        {
+            if (checkpoint.Contains(leaf.Key)) continue;
+
+            var parentId = containerIds.TryGetValue(leaf.ParentKey, out var pid) ? pid : (Guid?)null;
+            var leafId = await UpsertLeafAsync(db, leaf.Key, leaf.Title, leaf.CefrLevel, difficultyBand: 1,
+                CurriculumSkillConstants.Speaking, parentId);
+
+            var scaleLeafId = await db.SkillGraphNodes
+                .Where(n => n.Key == leaf.ScaleLeafKey)
+                .Select(n => (Guid?)n.Id)
+                .FirstOrDefaultAsync();
+
+            var content = ResourceBankItemContent.Serialize(new SpeakingPromptContent(
+                leaf.Title, leaf.PromptText, leaf.SuggestedDurationSeconds, ImageUrl: null));
+            await seeder.SeedOneAsync(source.Id, leaf.CefrLevel, content, leaf.Title, leafId, leaf.ActivityType,
+                PublishedResourceType.Speaking, scaleLeafId.HasValue ? [scaleLeafId.Value] : null);
+
+            checkpoint.MarkProcessed(leaf.Key);
+            if (++processed % 50 == 0)
+            {
+                checkpoint.Save(path);
+                Console.WriteLine($"Speaking: {processed}/{file.Leaves.Count} processed.");
+            }
+        }
+
+        checkpoint.Save(path);
+        Console.WriteLine($"Speaking seeding complete. {processed} leaves processed this run.");
         return 0;
     }
 
@@ -244,7 +293,8 @@ public sealed class LeafContentSeeder(
     IGenerateActivitiesFromLessonHandler activitiesHandler)
 {
     public async Task SeedOneAsync(
-        Guid sourceId, string cefrLevel, string contentJson, string resourceTitle, Guid skillGraphNodeId, string activityType)
+        Guid sourceId, string cefrLevel, string contentJson, string resourceTitle, Guid skillGraphNodeId,
+        string activityType, PublishedResourceType resourceType, IReadOnlyList<Guid>? additionalSkillGraphNodeIds = null)
     {
         // Idempotency guard against process interruption (e.g. a hard-killed run) leaving the local
         // checkpoint file out of sync with the DB — if this leaf's node already has a Module linked,
@@ -252,12 +302,6 @@ public sealed class LeafContentSeeder(
         var alreadyComplete = await db.ModuleSkillGraphNodeLinks
             .AnyAsync(l => l.SkillGraphNodeId == skillGraphNodeId);
         if (alreadyComplete) return;
-
-        var resourceType = activityType == "reading_fill_in_blanks"
-            ? PublishedResourceType.ReadingPassage
-            : contentJson.Contains("\"grammarPoint\"", StringComparison.OrdinalIgnoreCase)
-                ? PublishedResourceType.Grammar
-                : PublishedResourceType.Vocabulary;
 
         var resource = new ResourceBankItem(resourceType, sourceId, cefrLevel, contentJson);
         db.ResourceBankItems.Add(resource);
@@ -291,6 +335,17 @@ public sealed class LeafContentSeeder(
             db.ModuleSkillGraphNodeLinks.Add(new ModuleSkillGraphNodeLink(module.Id, skillGraphNodeId, confidence: null));
             await db.SaveChangesAsync();
         }
+
+        foreach (var additionalId in additionalSkillGraphNodeIds ?? [])
+        {
+            var alreadyLinkedAdditional = await db.ModuleSkillGraphNodeLinks
+                .AnyAsync(l => l.ModuleId == module.Id && l.SkillGraphNodeId == additionalId);
+            if (!alreadyLinkedAdditional)
+            {
+                db.ModuleSkillGraphNodeLinks.Add(new ModuleSkillGraphNodeLink(module.Id, additionalId, confidence: null));
+                await db.SaveChangesAsync();
+            }
+        }
     }
 }
 
@@ -312,6 +367,12 @@ public sealed record CefrScalesSeedFile(List<CefrScaleSeedContainer> Containers,
 public sealed record CefrScaleSeedContainer(string Key, string Title, string CefrLevel, string Skill);
 public sealed record CefrScaleSeedLeaf(
     string Key, string Title, string CefrLevel, string Skill, string ParentKey, string Descriptor);
+
+public sealed record SpeakingSeedFile(List<SpeakingSeedContainer> Containers, List<SpeakingSeedLeaf> Leaves);
+public sealed record SpeakingSeedContainer(string Key, string Title, string CefrLevel);
+public sealed record SpeakingSeedLeaf(
+    string Key, string Title, string PromptText, int SuggestedDurationSeconds, string CefrLevel,
+    string ParentKey, string ActivityType, string ScaleLeafKey);
 
 /// <summary>Resumability — a processed-keys file next to each input, so a crashed/interrupted run
 /// doesn't redo already-seeded items. Mirrors the pattern used earlier this session for the
