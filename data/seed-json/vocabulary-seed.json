@@ -37892,6 +37892,2706 @@
       "definition": "A male sheep.",
       "parentKey": "vocabulary.topic_function_words_and_connectors",
       "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_ramp_noun.b2",
+      "headword": "ramp",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A sloped surface connecting two levels.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_range_noun.a2",
+      "headword": "range",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "The limits within which things vary, or a line of mountains.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_range_verb.b2",
+      "headword": "range",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To vary between limits.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rank_noun.b1",
+      "headword": "rank",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A position in a hierarchy, especially military.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rap_noun.a2",
+      "headword": "rap",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A style of music with rhythmic spoken lyrics.",
+      "parentKey": "vocabulary.topic_media",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rap_verb.b1",
+      "headword": "rap",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To perform rhythmic spoken music.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rape_noun.b2",
+      "headword": "rape",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A serious crime of forced sexual intercourse.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rape_verb.b2",
+      "headword": "rape",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To force someone to have sexual intercourse.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rapid_adjective.b1",
+      "headword": "rapid",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Happening very quickly.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rapidly_adverb.b1",
+      "headword": "rapidly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B1",
+      "definition": "Very quickly.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rare_adjective.b1",
+      "headword": "rare",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Not common; unusual.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rarely_adverb.b1",
+      "headword": "rarely",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B1",
+      "definition": "Not often.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rash_adjective.b2",
+      "headword": "rash",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Acting without careful thought.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_raspberry_noun.b1",
+      "headword": "raspberry",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A small soft red fruit.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rat_noun.a1",
+      "headword": "rat",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A long-tailed rodent, larger than a mouse.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rate_noun.a2",
+      "headword": "rate",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A measure of speed or frequency, or a charge.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rate_verb.b2",
+      "headword": "rate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To give a rank or score to something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rather_adverb.a2",
+      "headword": "rather",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "A2",
+      "definition": "To some extent; preferably.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rating_noun.a2",
+      "headword": "rating",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A classification or score given to something.",
+      "parentKey": "vocabulary.topic_media",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_ration_noun.b1",
+      "headword": "ration",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A fixed amount of something allowed.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rational_adjective.b1",
+      "headword": "rational",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Based on reason; sensible.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rattle_noun.b2",
+      "headword": "rattle",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A series of short, sharp sounds.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_ravage_noun.b2",
+      "headword": "ravage",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Severe damage caused by something destructive.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_raw_adjective.a2",
+      "headword": "raw",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Not cooked, or in a natural state.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_re_be_verb.a1",
+      "headword": "'re",
+      "partOfSpeech": "be-verb",
+      "cefrLevel": "A1",
+      "definition": "A contracted form of 'are'.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reach_noun.b1",
+      "headword": "reach",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The distance someone can extend their arm or influence.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reach_verb.a2",
+      "headword": "reach",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To arrive at a place, or to stretch to touch something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_react_verb.b1",
+      "headword": "react",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To respond to something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reaction_noun.b2",
+      "headword": "reaction",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A response to something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_read_verb.a1",
+      "headword": "read",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A1",
+      "definition": "To look at and understand written words.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_readily_adverb.b2",
+      "headword": "readily",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "Without hesitation; easily.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_ready_adjective.a1",
+      "headword": "ready",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A1",
+      "definition": "Prepared for something.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_real_adjective.a1",
+      "headword": "real",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A1",
+      "definition": "Actually existing; genuine.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_real_adverb.a1",
+      "headword": "real",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "A1",
+      "definition": "Very, used informally.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_real_estate_noun.b2",
+      "headword": "real estate",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Property consisting of land and buildings.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_realistic_adjective.b1",
+      "headword": "realistic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Having a sensible view of what is possible.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reality_noun.b1",
+      "headword": "reality",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The state of things as they actually exist.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_realization_realisation_noun.b2",
+      "headword": "realization/realisation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The moment of becoming fully aware of something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_realize_realise_verb.a2",
+      "headword": "realize/realise",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To become fully aware of something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_really_adverb.a1",
+      "headword": "really",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "A1",
+      "definition": "In fact; used to emphasise a statement.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rear_adjective.b2",
+      "headword": "rear",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Located at the back.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rearrange_verb.b1",
+      "headword": "rearrange",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To organise things in a different way.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reason_noun.a1",
+      "headword": "reason",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A cause or explanation for something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reasonable_adjective.b1",
+      "headword": "reasonable",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Fair and sensible.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reasonably_adverb.b2",
+      "headword": "reasonably",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "In a fair, sensible way.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rebel_noun.b2",
+      "headword": "rebel",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A person who resists authority or control.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rebel_verb.b2",
+      "headword": "rebel",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To resist or fight against authority.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rebellious_adjective.b2",
+      "headword": "rebellious",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Resisting authority or control.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rebuild_verb.b1",
+      "headword": "rebuild",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To build something again after it was damaged.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_recall_verb.b1",
+      "headword": "recall",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To remember something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_receipt_noun.a2",
+      "headword": "receipt",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A written record proving a payment was made.",
+      "parentKey": "vocabulary.topic_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_receive_verb.a2",
+      "headword": "receive",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To get or be given something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_recent_adjective.a2",
+      "headword": "recent",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Happening a short time ago.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_recently_adverb.a2",
+      "headword": "recently",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "A2",
+      "definition": "A short time ago.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reception_noun.b1",
+      "headword": "reception",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The area where visitors are greeted, or the welcome given.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_receptionist_noun.a2",
+      "headword": "receptionist",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A person who greets visitors and answers calls.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_recession_noun.b2",
+      "headword": "recession",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A period of reduced economic activity.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_recite_verb.c1",
+      "headword": "recite",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C1",
+      "definition": "To say a piece of writing aloud from memory.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reckon_verb.b2",
+      "headword": "reckon",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To think or believe something, informally.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reclaim_verb.b1",
+      "headword": "reclaim",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To get something back.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_recognition_noun.b2",
+      "headword": "recognition",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The act of identifying someone or something, or acknowledgement.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_recognize_recognise_verb.b1",
+      "headword": "recognize/recognise",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To identify someone or something already known.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_recollect_verb.b2",
+      "headword": "recollect",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To remember something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_recollection_noun.c1",
+      "headword": "recollection",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C1",
+      "definition": "The ability to remember, or a memory.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_recommend_verb.b1",
+      "headword": "recommend",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To suggest something as good or suitable.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_recommendable_adjective.b2",
+      "headword": "recommendable",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Worth recommending.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_recommendation_noun.b2",
+      "headword": "recommendation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A suggestion that something is good or suitable.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reconsider_verb.b2",
+      "headword": "reconsider",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To think again about a decision.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_record_noun.b1",
+      "headword": "record",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Information kept for future reference, or the best achievement so far.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_record_verb.a2",
+      "headword": "record",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To store information, sound, or images for future use.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_recording_noun.b1",
+      "headword": "recording",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A copy of sound or video that has been recorded.",
+      "parentKey": "vocabulary.topic_media",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_recover_verb.b1",
+      "headword": "recover",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To return to a normal state after illness or damage.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_recovery_noun.b1",
+      "headword": "recovery",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The process of returning to a normal state.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_recreation_noun.b2",
+      "headword": "recreation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Activities done for enjoyment.",
+      "parentKey": "vocabulary.topic_hobbies_and_pastimes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_recruit_verb.b2",
+      "headword": "recruit",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To find new people for an organisation.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rectangular_adjective.b2",
+      "headword": "rectangular",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Shaped like a rectangle.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_recycle_verb.a2",
+      "headword": "recycle",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To process used materials for reuse.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_recycled_adjective.b1",
+      "headword": "recycled",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Made from materials that have been reused.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_recycling_noun.b1",
+      "headword": "recycling",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The process of converting waste into reusable material.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_red_adjective.a1",
+      "headword": "red",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A1",
+      "definition": "Of the colour of blood.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_red_noun.a2",
+      "headword": "red",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "The colour of blood.",
+      "parentKey": "vocabulary.topic_colours",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_redo_verb.b2",
+      "headword": "redo",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To do something again.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reduce_verb.b1",
+      "headword": "reduce",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To make something smaller in size or amount.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reduction_noun.b1",
+      "headword": "reduction",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A decrease in size or amount.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_redundant_adjective.c2",
+      "headword": "redundant",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "definition": "No longer needed; dismissed from a job because it's no longer required.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reed_noun.b2",
+      "headword": "reed",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A tall grass-like plant that grows near water.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reef_noun.b1",
+      "headword": "reef",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A ridge of rock or coral near the sea surface.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_refer_verb.a2",
+      "headword": "refer",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To mention or direct attention to something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reference_noun.b2",
+      "headword": "reference",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A mention of something, or a source consulted for information.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_referent_adjective.b2",
+      "headword": "referent",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Relating to the thing a word refers to.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reflect_verb.a2",
+      "headword": "reflect",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To think carefully, or to send back light/image.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reflection_noun.b1",
+      "headword": "reflection",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "An image reflected in a surface, or careful thought.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reflective_adjective.b2",
+      "headword": "reflective",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Thinking deeply, or capable of reflecting light.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_refrain_noun.b2",
+      "headword": "refrain",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A phrase repeated in a poem or song.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_refresh_noun.b2",
+      "headword": "refresh",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "An act of making something new or up to date again.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_refund_noun.b1",
+      "headword": "refund",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Money given back for returned goods.",
+      "parentKey": "vocabulary.topic_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_refusal_noun.b1",
+      "headword": "refusal",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The act of saying no to something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_refuse_noun.b1",
+      "headword": "refuse",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Waste material; rubbish.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_refuse_verb.b1",
+      "headword": "refuse",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To say no to something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_refute_verb.b2",
+      "headword": "refute",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To prove that something is wrong.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_regain_verb.b1",
+      "headword": "regain",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To get something back after losing it.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_regard_noun.b2",
+      "headword": "regard",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Respect or consideration for someone.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_regard_verb.b1",
+      "headword": "regard",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To consider or think of someone or something in a certain way.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_regarding_preposition.b1",
+      "headword": "regarding",
+      "partOfSpeech": "preposition",
+      "cefrLevel": "B1",
+      "definition": "Concerning; about.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_regardless_adverb.b2",
+      "headword": "regardless",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "Without being affected by something.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_regime_noun.b2",
+      "headword": "regime",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A government, especially one considered strict.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_regional_adjective.b1",
+      "headword": "regional",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Relating to a particular area.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_register_noun.b1",
+      "headword": "register",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "An official list or record.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_register_verb.b1",
+      "headword": "register",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To record something officially.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_registration_noun.b1",
+      "headword": "registration",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The act of recording something officially.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_regret_noun.b2",
+      "headword": "regret",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A feeling of sadness about something that happened.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_regret_verb.a2",
+      "headword": "regret",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To feel sorry about something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_regrettably_adverb.b2",
+      "headword": "regrettably",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "Unfortunately.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_regular_adjective.a2",
+      "headword": "regular",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Happening at consistent intervals; usual.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_regularly_adverb.a2",
+      "headword": "regularly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "A2",
+      "definition": "At consistent intervals; often.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_regulate_verb.b2",
+      "headword": "regulate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To control something using rules.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_regulation_noun.b1",
+      "headword": "regulation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "An official rule.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rehearsal_noun.b2",
+      "headword": "rehearsal",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A practice session before a performance.",
+      "parentKey": "vocabulary.topic_media",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reinforce_verb.b2",
+      "headword": "reinforce",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To strengthen something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reinforcement_noun.b2",
+      "headword": "reinforcement",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Something added to strengthen or support.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reject_verb.b1",
+      "headword": "reject",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To refuse to accept something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rejection_noun.b2",
+      "headword": "rejection",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The act of refusing to accept something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rejoin_verb.b2",
+      "headword": "rejoin",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To join something again.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_relate_verb.b1",
+      "headword": "relate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To connect two things, or to feel sympathy or understanding.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_related_adjective.b2",
+      "headword": "related",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Connected to something else.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_relation_noun.b1",
+      "headword": "relation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A connection between things, or a family member.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_relationship_noun.b1",
+      "headword": "relationship",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The way two people or things are connected.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_relative_adjective.b1",
+      "headword": "relative",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Considered in relation to something else.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_relatively_adverb.b1",
+      "headword": "relatively",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B1",
+      "definition": "In comparison to something else; fairly.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_relativity_noun.b2",
+      "headword": "relativity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A scientific theory about space, time, and motion.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_relax_verb.a2",
+      "headword": "relax",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To rest and become less tense.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_relaxed_adjective.a2",
+      "headword": "relaxed",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Calm and free from tension.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_relaxing_adjective.b1",
+      "headword": "relaxing",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Causing a feeling of calm.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_relay_noun.b2",
+      "headword": "relay",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A race where team members take turns, or a device that passes on a signal.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_release_noun.a2",
+      "headword": "release",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "The act of setting something free, or making something available.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_release_verb.b1",
+      "headword": "release",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To set something free, or make it available.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_relevant_adjective.b2",
+      "headword": "relevant",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Closely connected to the matter at hand.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reliable_adjective.b1",
+      "headword": "reliable",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Able to be trusted.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_relic_noun.b2",
+      "headword": "relic",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "An object from the past that has survived.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_relief_noun.b2",
+      "headword": "relief",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A feeling of reassurance after worry ends.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_relieve_verb.b2",
+      "headword": "relieve",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To reduce pain or worry.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_relieved_adjective.b2",
+      "headword": "relieved",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Feeling reassurance after worry ends.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_religious_adjective.b1",
+      "headword": "religious",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Relating to religion; devout.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reluctant_adjective.b2",
+      "headword": "reluctant",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Unwilling to do something.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rely_verb.b1",
+      "headword": "rely",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To depend on someone or something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_remain_verb.a2",
+      "headword": "remain",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To continue to exist or stay in a place.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_remainder_noun.b1",
+      "headword": "remainder",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The part that is left over.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_remaining_adjective.b2",
+      "headword": "remaining",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Still left; not yet used.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_remains_noun.b2",
+      "headword": "remains",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "What is left of something, or a dead body.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_remark_noun.b2",
+      "headword": "remark",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A brief spoken comment.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_remark_verb.b1",
+      "headword": "remark",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To make a brief comment.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_remarkable_adjective.b1",
+      "headword": "remarkable",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Worthy of attention; extraordinary.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_remarkably_adverb.b2",
+      "headword": "remarkably",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "In an extraordinary way.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_remember_verb.a1",
+      "headword": "remember",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A1",
+      "definition": "To keep something in your mind.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_remembrance_noun.b1",
+      "headword": "remembrance",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The act of remembering, especially someone who has died.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_remind_verb.a2",
+      "headword": "remind",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To make someone remember something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reminder_noun.b2",
+      "headword": "reminder",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Something that makes you remember.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_remote_adjective.a2",
+      "headword": "remote",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Far away; distant.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_remote_control_noun.b1",
+      "headword": "remote control",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A device used to operate machines from a distance.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_remove_verb.b1",
+      "headword": "remove",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To take something away.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_renew_verb.b1",
+      "headword": "renew",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To make something valid again, or start it again.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rent_verb.a2",
+      "headword": "rent",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To pay to use something belonging to someone else.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reorganize_reorganise_verb.b2",
+      "headword": "reorganize/reorganise",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To organise something in a new way.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_repaint_noun.b2",
+      "headword": "repaint",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A fresh coat of paint applied to something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_repair_verb.a2",
+      "headword": "repair",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To fix something broken or damaged.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_repay_verb.b1",
+      "headword": "repay",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To pay back money owed.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_repeat_verb.a1",
+      "headword": "repeat",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A1",
+      "definition": "To say or do something again.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_repeatedly_adverb.b1",
+      "headword": "repeatedly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B1",
+      "definition": "Again and again.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_repertoire_noun.b2",
+      "headword": "repertoire",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The range of works a performer knows or can perform.",
+      "parentKey": "vocabulary.topic_media",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_repetition_noun.b2",
+      "headword": "repetition",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The act of repeating something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_replace_verb.a2",
+      "headword": "replace",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To put something new in place of something else.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_replacement_noun.b2",
+      "headword": "replacement",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A person or thing that replaces another.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reply_noun.a2",
+      "headword": "reply",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "An answer to something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reply_verb.b1",
+      "headword": "reply",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To answer something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_report_noun.a2",
+      "headword": "report",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A written or spoken account of something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_report_verb.b1",
+      "headword": "report",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To give an account of something, or to tell someone in authority.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_represent_verb.a2",
+      "headword": "represent",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To act on behalf of someone, or to be a symbol of something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_representative_noun.b1",
+      "headword": "representative",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A person who acts on behalf of others.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_repress_verb.b2",
+      "headword": "repress",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To control or restrain a feeling; to suppress a group forcefully.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_repression_noun.b2",
+      "headword": "repression",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The act of controlling or suppressing something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reproduce_verb.b1",
+      "headword": "reproduce",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To make a copy of something, or to produce offspring.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reprove_verb.b2",
+      "headword": "reprove",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To criticise someone for a fault.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reputation_noun.b1",
+      "headword": "reputation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The opinion people generally have about someone.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_request_noun.a2",
+      "headword": "request",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A polite or formal act of asking for something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_request_verb.b1",
+      "headword": "request",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To politely or formally ask for something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_require_verb.b1",
+      "headword": "require",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To need something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_requirement_noun.b1",
+      "headword": "requirement",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Something that is needed.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rescue_verb.b1",
+      "headword": "rescue",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To save someone from danger.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_research_verb.b2",
+      "headword": "research",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To study a subject in detail.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_resemble_verb.b1",
+      "headword": "resemble",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To look like or be similar to someone or something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reservation_noun.b1",
+      "headword": "reservation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "An arrangement to have something kept for you, or a doubt.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reserve_noun.b1",
+      "headword": "reserve",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A supply kept for future use, or a protected area of land.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reserve_verb.b1",
+      "headword": "reserve",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To arrange to have something kept for you.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_resident_adjective.b1",
+      "headword": "resident",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Living in a particular place.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_resident_noun.b2",
+      "headword": "resident",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A person who lives in a particular place.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_residential_adjective.b1",
+      "headword": "residential",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Relating to housing rather than business.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_resign_verb.b2",
+      "headword": "resign",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To formally give up a job or position.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_resist_verb.b1",
+      "headword": "resist",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To refuse to accept or comply with something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_resistance_noun.b2",
+      "headword": "resistance",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The act of opposing something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_resolution_noun.b2",
+      "headword": "resolution",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A firm decision, or the solving of a problem.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_resolve_verb.b1",
+      "headword": "resolve",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To find a solution to a problem.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_resonant_adjective.b2",
+      "headword": "resonant",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Deep and rich in sound; having a lasting effect.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_resource_noun.b1",
+      "headword": "resource",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A supply of something useful, like money or materials.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_respect_noun.b1",
+      "headword": "respect",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Admiration for someone's qualities or achievements.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_respect_verb.b1",
+      "headword": "respect",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To admire someone for their qualities.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_respectable_adjective.b1",
+      "headword": "respectable",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Regarded well by society; decent.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_respectably_adverb.b2",
+      "headword": "respectably",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "In a way considered proper by society.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_respected_adjective.b2",
+      "headword": "respected",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Admired by others.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_respiration_noun.b2",
+      "headword": "respiration",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The process of breathing.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_respiratory_adjective.b2",
+      "headword": "respiratory",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Relating to breathing.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_respond_verb.b1",
+      "headword": "respond",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To reply or react to something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_response_noun.a2",
+      "headword": "response",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A reply or reaction.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_responsibility_noun.b1",
+      "headword": "responsibility",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A duty to deal with something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_responsible_adjective.b1",
+      "headword": "responsible",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Having a duty to deal with something; reliable.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rest_verb.b1",
+      "headword": "rest",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To relax or stop working for a period.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_restore_verb.b1",
+      "headword": "restore",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To return something to its former condition.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_restrict_verb.b1",
+      "headword": "restrict",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To limit something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_restriction_noun.b2",
+      "headword": "restriction",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A rule that limits something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_result_noun.a1",
+      "headword": "result",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "Something that happens because of something else.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_result_verb.b1",
+      "headword": "result",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To happen as an effect of something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_resume_verb.b2",
+      "headword": "resume",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To start something again after a pause.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_retail_noun.b1",
+      "headword": "retail",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The sale of goods to the public.",
+      "parentKey": "vocabulary.topic_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_retailer_noun.b2",
+      "headword": "retailer",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A person or business that sells goods to the public.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_retain_verb.b1",
+      "headword": "retain",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To continue to have or hold something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_retard_verb.b2",
+      "headword": "retard",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To delay the progress of something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_retell_verb.b1",
+      "headword": "retell",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To tell a story again.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_retina_noun.b2",
+      "headword": "retina",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The light-sensitive layer at the back of the eye.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_retire_verb.a2",
+      "headword": "retire",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To stop working, usually because of age.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_retired_adjective.a2",
+      "headword": "retired",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "No longer working, usually because of age.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_retreat_noun.b2",
+      "headword": "retreat",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "An act of withdrawing, or a peaceful place.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_retreat_verb.b2",
+      "headword": "retreat",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To move back or withdraw from a difficult situation.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_retrieve_verb.b2",
+      "headword": "retrieve",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To get something back.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_retrospect_noun.c2",
+      "headword": "retrospect",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "definition": "A review of past events.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_return_noun.a2",
+      "headword": "return",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "The act of coming back, or a profit.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_return_verb.a2",
+      "headword": "return",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To come or go back to a place.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reunification_noun.b1",
+      "headword": "reunification",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The process of bringing separated parts back together.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reunify_verb.b1",
+      "headword": "reunify",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To bring separated parts back together.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reunion_noun.a2",
+      "headword": "reunion",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A gathering of people who have not met for a while.",
+      "parentKey": "vocabulary.topic_family_life",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reveal_verb.a2",
+      "headword": "reveal",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To make something known that was previously secret.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_revelation_noun.b2",
+      "headword": "revelation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A surprising fact made known.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_revenge_noun.b2",
+      "headword": "revenge",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Harm done to someone in return for harm they did.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_revenue_noun.b2",
+      "headword": "revenue",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Money earned by a business or government.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reverence_noun.b2",
+      "headword": "reverence",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Deep respect.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reverse_verb.b2",
+      "headword": "reverse",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To move backward, or to change something to its opposite.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_review_verb.b2",
+      "headword": "review",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To examine something again, or to give an opinion on it.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_revise_verb.b1",
+      "headword": "revise",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To change something to improve it, or to study again for an exam.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_revision_noun.b1",
+      "headword": "revision",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The process of reviewing and correcting something, or studying for exams.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_revival_noun.b2",
+      "headword": "revival",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A return to popularity or activity.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_revive_verb.b2",
+      "headword": "revive",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To bring something back to life or activity.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_revolution_noun.b2",
+      "headword": "revolution",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A forceful overthrow of a government, or a great change.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_revolutionary_adjective.b2",
+      "headword": "revolutionary",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Involving a great change; relating to a revolution.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_revolutionize_revolutionise_verb.b2",
+      "headword": "revolutionize/revolutionise",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To change something completely and dramatically.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_revolve_verb.b2",
+      "headword": "revolve",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To move in a circle around a central point.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_reward_verb.b2",
+      "headword": "reward",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To give something in recognition of good behaviour or achievement.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rewrite_verb.b1",
+      "headword": "rewrite",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To write something again in a different way.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rhinoceros_noun.b2",
+      "headword": "rhinoceros",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A large animal with thick skin and one or two horns.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rhyme_verb.b2",
+      "headword": "rhyme",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "For words to have the same ending sound.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rhythmic_adjective.b2",
+      "headword": "rhythmic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Having a regular repeated pattern of sound.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rib_noun.b2",
+      "headword": "rib",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "One of the curved bones surrounding the chest.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_ribbon_noun.a1",
+      "headword": "ribbon",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A narrow strip of material used for decoration or tying.",
+      "parentKey": "vocabulary.topic_clothes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rich_adjective.c1",
+      "headword": "rich",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C1",
+      "definition": "Having a lot of money; abundant.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rid_verb.b1",
+      "headword": "rid",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To free someone or something of an unwanted thing.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_riddle_noun.b2",
+      "headword": "riddle",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A puzzling question with a clever answer.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_riddle_verb.b1",
+      "headword": "riddle",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To fill something with holes or marks.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_ride_verb.a1",
+      "headword": "ride",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A1",
+      "definition": "To sit on and control a bicycle, horse, or vehicle.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_ridge_noun.b2",
+      "headword": "ridge",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A long, narrow raised area of land.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_ridiculous_adjective.b1",
+      "headword": "ridiculous",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Deserving to be laughed at; absurd.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_right_adjective.a1",
+      "headword": "right",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A1",
+      "definition": "Correct; on the side opposite to left.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_right_adverb.a1",
+      "headword": "right",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "A1",
+      "definition": "Exactly; correctly.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_right_noun.a2",
+      "headword": "right",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "Something a person is entitled to, or the right-hand side.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_righteousness_noun.b2",
+      "headword": "righteousness",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The quality of being morally right.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_right_hand_adjective.a2",
+      "headword": "right-hand",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "On or toward the right side.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rightly_adverb.b2",
+      "headword": "rightly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "Correctly; justifiably.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rim_noun.b2",
+      "headword": "rim",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The outer edge of something round.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_ring_verb.a1",
+      "headword": "ring",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A1",
+      "definition": "To make a clear ringing sound, or to phone someone.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rip_verb.b2",
+      "headword": "rip",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To tear something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_ripe_adjective.b1",
+      "headword": "ripe",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Fully developed and ready to eat, of fruit.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rise_noun.b1",
+      "headword": "rise",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "An increase, or an upward movement.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rise_verb.b1",
+      "headword": "rise",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To move upward, or to increase.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_risk_noun.b1",
+      "headword": "risk",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The possibility of something bad happening.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_risk_verb.b2",
+      "headword": "risk",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To take a chance that something bad might happen.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_risky_adjective.b2",
+      "headword": "risky",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Involving the possibility of danger or loss.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rival_noun.b2",
+      "headword": "rival",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A person competing with another for the same goal.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_roam_noun.b2",
+      "headword": "roam",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A wandering walk without a fixed destination.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_roar_verb.b2",
+      "headword": "roar",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To make a loud, deep sound.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_roast_adjective.b2",
+      "headword": "roast",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Cooked using dry heat in an oven.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_roast_verb.a2",
+      "headword": "roast",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To cook food using dry heat in an oven.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rob_verb.a2",
+      "headword": "rob",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To steal from a person or place.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_robin_noun.a2",
+      "headword": "robin",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A small bird with a red breast.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rock_noun.a2",
+      "headword": "rock",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A hard mineral material, or a large stone.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rock_verb.b2",
+      "headword": "rock",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To move gently back and forth.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rocket_noun.b2",
+      "headword": "rocket",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A vehicle propelled into space, or a firework.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rocky_adjective.b2",
+      "headword": "rocky",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Covered with or consisting of rocks.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_role_noun.a1",
+      "headword": "role",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A person's function or position, or a part in a play.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_roll_noun.a2",
+      "headword": "roll",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A small round piece of bread, or an act of rolling.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_roll_verb.b2",
+      "headword": "roll",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To move by turning over and over.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rolling_adjective.b1",
+      "headword": "rolling",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Moving smoothly, or having gentle hills.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_romance_noun.a2",
+      "headword": "romance",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A relationship between people in love, or a genre of fiction.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_romantic_adjective.a2",
+      "headword": "romantic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Relating to love; idealistic.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_room_verb.b1",
+      "headword": "room",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To live in a rented room.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
     }
   ]
 }
