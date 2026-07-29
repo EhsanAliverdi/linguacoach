@@ -35192,6 +35192,2706 @@
       "definition": "A feeling of happiness or satisfaction.",
       "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
       "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_plenty_pronoun.b1",
+      "headword": "plenty",
+      "partOfSpeech": "pronoun",
+      "cefrLevel": "B1",
+      "definition": "A large amount; enough or more than enough.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_pluck_verb.b2",
+      "headword": "pluck",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To pull something quickly, especially feathers or a string.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_plug_noun.b1",
+      "headword": "plug",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A device connecting an appliance to a power source.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_plug_verb.b2",
+      "headword": "plug",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To connect an electrical appliance, or to block a hole.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_plum_noun.b2",
+      "headword": "plum",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A small round juicy fruit with a stone.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_plumber_noun.b2",
+      "headword": "plumber",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A person who installs and repairs water pipes.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_plural_noun.a2",
+      "headword": "plural",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "The grammatical form for more than one.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_plus_conjunction.b1",
+      "headword": "plus",
+      "partOfSpeech": "conjunction",
+      "cefrLevel": "B1",
+      "definition": "In addition to; and also.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_plus_noun.b2",
+      "headword": "plus",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "An advantage; a positive feature.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_plus_preposition.a2",
+      "headword": "plus",
+      "partOfSpeech": "preposition",
+      "cefrLevel": "A2",
+      "definition": "Added to.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_pocket_money_noun.b1",
+      "headword": "pocket money",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A small amount of money given regularly to a child.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_point_noun.a1",
+      "headword": "point",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A particular fact, idea, or place; a unit of scoring.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_point_verb.a2",
+      "headword": "point",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To indicate direction with a finger.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_point_of_view_noun.b2",
+      "headword": "point of view",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A particular attitude or way of thinking about something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_pointless_adjective.b2",
+      "headword": "pointless",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Having no purpose.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_poison_noun.b1",
+      "headword": "poison",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A substance that can cause illness or death if consumed.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_poison_verb.b2",
+      "headword": "poison",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To harm or kill using poison.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_poisonous_adjective.b1",
+      "headword": "poisonous",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Containing poison; harmful if consumed.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_polar_bear_noun.b2",
+      "headword": "polar bear",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A large white bear that lives in the Arctic.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_pole_noun.b1",
+      "headword": "pole",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A long, thin rod, or one of the Earth's extreme points.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_police_noun.a2",
+      "headword": "police",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "The organisation responsible for enforcing the law.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_police_officer_noun.a2",
+      "headword": "police officer",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A member of the police force.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_police_station_noun.a2",
+      "headword": "police station",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A building where police officers are based.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_policeman_noun.a2",
+      "headword": "policeman",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A male police officer.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_policewoman_noun.a2",
+      "headword": "policewoman",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A female police officer.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_polish_noun.b2",
+      "headword": "polish",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A substance used to make a surface shine.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_polite_adjective.a2",
+      "headword": "polite",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Having or showing good manners.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_politely_adverb.b1",
+      "headword": "politely",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B1",
+      "definition": "In a way that shows good manners.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_politeness_noun.b2",
+      "headword": "politeness",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The quality of having good manners.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_political_adjective.a2",
+      "headword": "political",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Relating to government and public affairs.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_politically_adverb.b2",
+      "headword": "politically",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "In a way relating to government and public affairs.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_pollute_verb.a2",
+      "headword": "pollute",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To make air, water, or land dirty or harmful.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_ponder_verb.b2",
+      "headword": "ponder",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To think carefully about something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_poor_adjective.a1",
+      "headword": "poor",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A1",
+      "definition": "Having little money; of low quality.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_pop_noun.a1",
+      "headword": "pop",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A style of modern popular music.",
+      "parentKey": "vocabulary.topic_media",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_pop_verb.b2",
+      "headword": "pop",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To make a short, sharp sound, or to appear suddenly.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_popcorn_noun.b1",
+      "headword": "popcorn",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A snack made from heated corn kernels that puff up.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_popular_adjective.a2",
+      "headword": "popular",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Liked by many people.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_popularity_noun.b2",
+      "headword": "popularity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The quality of being liked by many people.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_popularize_popularise_verb.b2",
+      "headword": "popularize/popularise",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To make something widely known or liked.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_porch_noun.b2",
+      "headword": "porch",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A covered area at the entrance of a house.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_portion_noun.b2",
+      "headword": "portion",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A part or share of something, especially food.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_pose_noun.b2",
+      "headword": "pose",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A particular position of the body, especially for a photo.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_posh_adjective.b2",
+      "headword": "posh",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Elegant and fashionable, associated with high social class.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_position_noun.a2",
+      "headword": "position",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A place, or a job/rank.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_positive_adjective.b1",
+      "headword": "positive",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Expressing agreement or approval; hopeful.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_positively_adverb.b1",
+      "headword": "positively",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B1",
+      "definition": "In a hopeful, approving way.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_possess_verb.b1",
+      "headword": "possess",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To own or have something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_possessed_adjective.b2",
+      "headword": "possessed",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Owned, or controlled by a strong feeling.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_possession_noun.b1",
+      "headword": "possession",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Something owned.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_possessive_adjective.b1",
+      "headword": "possessive",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Showing ownership, or unwilling to share.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_possibility_noun.b1",
+      "headword": "possibility",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A chance that something may happen.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_possible_adjective.a2",
+      "headword": "possible",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Able to happen or be done.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_possibly_adverb.a2",
+      "headword": "possibly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "A2",
+      "definition": "Perhaps; used to express possibility.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_post_verb.a2",
+      "headword": "post",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To send a letter, or to put something online.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_post_office_noun.a2",
+      "headword": "post office",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A place where mail is sent and stamps are sold.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_postal_adjective.b2",
+      "headword": "postal",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Relating to the mail delivery system.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_postpone_verb.b2",
+      "headword": "postpone",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To delay something to a later time.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_potent_adjective.b2",
+      "headword": "potent",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Very powerful or effective.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_potential_adjective.b2",
+      "headword": "potential",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Possible but not yet actual.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_potential_noun.b1",
+      "headword": "potential",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The capacity for future development or success.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_potentially_adverb.b2",
+      "headword": "potentially",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "Possibly; with the capacity to become something.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_pound_noun.b1",
+      "headword": "pound",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A unit of British currency, or a unit of weight.",
+      "parentKey": "vocabulary.topic_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_pound_verb.b2",
+      "headword": "pound",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To hit something repeatedly and heavily.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_pour_verb.a2",
+      "headword": "pour",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To make a liquid flow from a container.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_powder_verb.b2",
+      "headword": "powder",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To cover something with powder.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_power_noun.a2",
+      "headword": "power",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "The ability to control or influence, or electrical energy.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_powerful_adjective.a2",
+      "headword": "powerful",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Having great strength or influence.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_powerfully_adverb.b2",
+      "headword": "powerfully",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "With great strength.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_practical_adjective.b1",
+      "headword": "practical",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Suited to real situations; sensible.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_practicality_noun.b2",
+      "headword": "practicality",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The quality of being useful or sensible.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_practically_adverb.b2",
+      "headword": "practically",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "In a sensible, realistic way; almost.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_practice_practise_verb.a1",
+      "headword": "practice/practise",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A1",
+      "definition": "To do something repeatedly to improve a skill.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_praise_noun.b1",
+      "headword": "praise",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Words expressing approval.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_praise_verb.b2",
+      "headword": "praise",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To express approval of someone or something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prance_noun.b2",
+      "headword": "prance",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A lively, jumping walk or movement.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prawn_noun.b2",
+      "headword": "prawn",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A small edible shellfish.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_pray_verb.a1",
+      "headword": "pray",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A1",
+      "definition": "To speak to God or a deity.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prayer_noun.b1",
+      "headword": "prayer",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Words spoken to God or a deity.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_precede_verb.b2",
+      "headword": "precede",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To come before something in time or order.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_precious_adjective.b1",
+      "headword": "precious",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Of great value; treasured.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_precise_adjective.a2",
+      "headword": "precise",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Exact and accurate.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_precisely_adverb.b2",
+      "headword": "precisely",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "Exactly.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_predicament_noun.b2",
+      "headword": "predicament",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A difficult or unpleasant situation.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_predicate_verb.b2",
+      "headword": "predicate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To base something on a condition.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_predicative_adjective.b2",
+      "headword": "predicative",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Describing an adjective placed after a linking verb.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_predict_verb.a2",
+      "headword": "predict",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To say what will happen in the future.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_predictable_adjective.b2",
+      "headword": "predictable",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Able to be predicted; expected.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prediction_noun.a2",
+      "headword": "prediction",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A statement about what will happen.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_predictive_adjective.b2",
+      "headword": "predictive",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Able to predict what will happen.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prefer_verb.a2",
+      "headword": "prefer",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To like one thing more than another.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_preferable_adjective.b2",
+      "headword": "preferable",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Better or more desirable.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_preferably_adverb.b2",
+      "headword": "preferably",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "More desirably; ideally.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_pregnant_adjective.b1",
+      "headword": "pregnant",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Carrying an unborn baby.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prehistoric_adjective.b2",
+      "headword": "prehistoric",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Relating to the time before written history.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prehuman_noun.b2",
+      "headword": "prehuman",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "An early ancestor of modern humans.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_preindustrial_adjective.b2",
+      "headword": "preindustrial",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Relating to the time before industrialisation.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prejudge_verb.b2",
+      "headword": "prejudge",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To form an opinion before knowing all the facts.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prejudice_noun.b1",
+      "headword": "prejudice",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "An unfair opinion formed without enough knowledge.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_preliminary_adjective.b2",
+      "headword": "preliminary",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Coming before the main part; introductory.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_preoccupy_verb.c2",
+      "headword": "preoccupy",
+      "partOfSpeech": "verb",
+      "cefrLevel": "C2",
+      "definition": "To fill someone's thoughts constantly.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_preparation_noun.b1",
+      "headword": "preparation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The act of getting ready for something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prepare_verb.a2",
+      "headword": "prepare",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To get ready for something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prepared_adjective.b1",
+      "headword": "prepared",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Ready for something.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_preposition_noun.b1",
+      "headword": "preposition",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A word like 'in/on/at' showing a relationship between words.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_preschool_adjective.b1",
+      "headword": "preschool",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Relating to the years before starting school.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prescribe_verb.b2",
+      "headword": "prescribe",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To officially recommend a medicine or treatment.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prescription_noun.b1",
+      "headword": "prescription",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A written instruction for medicine from a doctor.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_presence_noun.b1",
+      "headword": "presence",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The state of being in a particular place.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_present_adjective.b1",
+      "headword": "present",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Existing or happening now; being in a place.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_present_noun.a1",
+      "headword": "present",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A gift, or the current time.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_present_verb.b2",
+      "headword": "present",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To give or show something formally.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_presentation_noun.b1",
+      "headword": "presentation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A talk giving information, often with visuals.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_presenter_noun.b2",
+      "headword": "presenter",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A person who introduces or hosts a programme.",
+      "parentKey": "vocabulary.topic_media",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_preservation_noun.b1",
+      "headword": "preservation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The act of keeping something in its original state.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_preserve_verb.b1",
+      "headword": "preserve",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To keep something in its original or good condition.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_presidency_noun.b2",
+      "headword": "presidency",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The position or term of a president.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_presidential_adjective.b2",
+      "headword": "presidential",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Relating to a president.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_press_noun.b1",
+      "headword": "press",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Newspapers and journalists collectively.",
+      "parentKey": "vocabulary.topic_media",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_press_verb.b1",
+      "headword": "press",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To push something firmly.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_pressure_noun.a2",
+      "headword": "pressure",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A feeling of stress, or physical force applied to a surface.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prestige_noun.b2",
+      "headword": "prestige",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Respect and admiration based on reputation.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prestigious_adjective.b2",
+      "headword": "prestigious",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Respected and admired.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_presumably_adverb.b2",
+      "headword": "presumably",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "As one might reasonably assume.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_pretend_adjective.b2",
+      "headword": "pretend",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Not real; imaginary.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_pretend_verb.a2",
+      "headword": "pretend",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To behave as if something is true when it is not.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_pretty_adjective.a1",
+      "headword": "pretty",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A1",
+      "definition": "Attractive in a delicate way.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_pretty_adverb.a2",
+      "headword": "pretty",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "A2",
+      "definition": "Fairly; quite.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prevail_verb.b2",
+      "headword": "prevail",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To win or be dominant, especially after a struggle.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prevent_verb.a2",
+      "headword": "prevent",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To stop something from happening.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prevention_noun.b2",
+      "headword": "prevention",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The act of stopping something from happening.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_preventive_adjective.b2",
+      "headword": "preventive",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Designed to stop something happening.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_previous_adjective.b1",
+      "headword": "previous",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Coming before; earlier.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_previously_adverb.b2",
+      "headword": "previously",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "At an earlier time.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_price_verb.b2",
+      "headword": "price",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To decide the cost of something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_priceless_adjective.b2",
+      "headword": "priceless",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Extremely valuable.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prick_noun.b2",
+      "headword": "prick",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A small puncture made by a sharp point.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_pride_noun.a2",
+      "headword": "pride",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A feeling of satisfaction from achievement.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_primarily_adverb.b1",
+      "headword": "primarily",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B1",
+      "definition": "Mainly; mostly.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_primary_adjective.b2",
+      "headword": "primary",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Most important; first in order.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prime_adjective.b2",
+      "headword": "prime",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Main; of the best quality.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prime_minister_noun.b2",
+      "headword": "prime minister",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The head of government in some countries.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_primitive_adjective.b1",
+      "headword": "primitive",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Very basic or simple; from an early stage of development.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_principal_adjective.a2",
+      "headword": "principal",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Most important; main.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_principal_noun.b2",
+      "headword": "principal",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The head of a school.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_principle_noun.b1",
+      "headword": "principle",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A basic rule or belief guiding behaviour.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_print_verb.a2",
+      "headword": "print",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To produce text or images on paper using a machine.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_printer_noun.a2",
+      "headword": "printer",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A machine that produces printed text or images.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prior_adjective.b2",
+      "headword": "prior",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Existing or happening before.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_priority_noun.b2",
+      "headword": "priority",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Something considered more important than other things.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_privacy_noun.b1",
+      "headword": "privacy",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The state of being free from public attention.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_private_adjective.a2",
+      "headword": "private",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Belonging to a particular person; not public.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_privately_adverb.b2",
+      "headword": "privately",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "Not in public; personally.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_privilege_noun.b2",
+      "headword": "privilege",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A special right or advantage.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_pro_noun.a2",
+      "headword": "pro",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "An advantage, or a professional, informally.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_probability_noun.b1",
+      "headword": "probability",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The likelihood of something happening.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_probable_adjective.b2",
+      "headword": "probable",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Likely to happen or be true.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_probably_adverb.a2",
+      "headword": "probably",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "A2",
+      "definition": "Likely; most probably.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_probe_noun.b2",
+      "headword": "probe",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A thorough investigation, or a device used to examine something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_problem_noun.a1",
+      "headword": "problem",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A difficulty needing to be dealt with.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_procedure_noun.b2",
+      "headword": "procedure",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "An official or established way of doing something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_proceed_verb.b1",
+      "headword": "proceed",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To continue with an action.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_process_noun.b1",
+      "headword": "process",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A series of steps taken to achieve something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_process_verb.b2",
+      "headword": "process",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To perform a series of operations on something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_proclaim_verb.b1",
+      "headword": "proclaim",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To announce something officially and publicly.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_procrastination_noun.b1",
+      "headword": "procrastination",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Delaying tasks that need to be done.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_produce_verb.a2",
+      "headword": "produce",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To make or create something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_productive_adjective.b1",
+      "headword": "productive",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Producing a lot; effective.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_professional_adjective.a2",
+      "headword": "professional",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Relating to a paid occupation; competent and skilled.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_professional_noun.b2",
+      "headword": "professional",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A person qualified in a particular occupation.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_profile_noun.b2",
+      "headword": "profile",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A description of someone, or the outline of a face.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_profitable_adjective.b2",
+      "headword": "profitable",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Producing a profit.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_program_programme_verb.b1",
+      "headword": "program/programme",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To write instructions for a computer.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_progress_noun.b1",
+      "headword": "progress",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Forward movement toward a goal.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_progress_verb.b2",
+      "headword": "progress",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To develop or improve over time.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_progressive_adjective.a2",
+      "headword": "progressive",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Favouring new ideas; happening gradually.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prohibit_verb.b2",
+      "headword": "prohibit",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To formally forbid something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_project_verb.b2",
+      "headword": "project",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To estimate or forecast, or to display an image.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_projection_noun.b2",
+      "headword": "projection",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "An estimate of future events, or a displayed image.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prom_noun.b2",
+      "headword": "prom",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A formal school dance, especially in the US.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prominence_noun.b2",
+      "headword": "prominence",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The state of being important or well known.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prominent_adjective.b1",
+      "headword": "prominent",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Important and well known.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_promise_noun.a2",
+      "headword": "promise",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A firm commitment to do something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_promise_verb.b1",
+      "headword": "promise",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To make a firm commitment to do something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_promote_verb.b1",
+      "headword": "promote",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To raise someone to a higher position, or to publicise something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prompt_adjective.b2",
+      "headword": "prompt",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Done quickly, without delay.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prompt_noun.b2",
+      "headword": "prompt",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Something that encourages a response or action.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prompt_verb.b2",
+      "headword": "prompt",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To cause someone to do or say something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_promptly_adverb.b2",
+      "headword": "promptly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "Quickly; without delay.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_pronoun_noun.b1",
+      "headword": "pronoun",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A word like 'he/she/it' used instead of a noun.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_pronounce_verb.a2",
+      "headword": "pronounce",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To say a word in a particular way.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_proof_noun.b1",
+      "headword": "proof",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Evidence that shows something is true.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_proper_adjective.a2",
+      "headword": "proper",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Correct or appropriate.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_properly_adverb.b1",
+      "headword": "properly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B1",
+      "definition": "In a correct or satisfactory way.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_proponent_noun.b2",
+      "headword": "proponent",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A person who supports an idea or plan.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_proportion_noun.b1",
+      "headword": "proportion",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A part of a whole, especially in relation to the whole.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_proposal_noun.b1",
+      "headword": "proposal",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A plan or suggestion put forward for consideration.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_propose_verb.b1",
+      "headword": "propose",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To suggest a plan, or to ask someone to marry you.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_proposed_adjective.b2",
+      "headword": "proposed",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Suggested for consideration.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prosecute_verb.b2",
+      "headword": "prosecute",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To take legal action against someone.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prospect_noun.b2",
+      "headword": "prospect",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The possibility of something happening in the future.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prosper_verb.b2",
+      "headword": "prosper",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To succeed and thrive, especially financially.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prosperity_noun.b1",
+      "headword": "prosperity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The state of being successful and thriving.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prosperous_adjective.b1",
+      "headword": "prosperous",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Successful and thriving.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_protect_verb.b1",
+      "headword": "protect",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To keep someone or something safe from harm.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_protection_noun.b1",
+      "headword": "protection",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The act of keeping something safe.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_protective_adjective.b1",
+      "headword": "protective",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Providing protection; wanting to protect.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_protest_noun.b1",
+      "headword": "protest",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A public expression of disapproval.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_protest_verb.b2",
+      "headword": "protest",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To express strong disapproval publicly.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_proud_adjective.b1",
+      "headword": "proud",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Feeling satisfaction from an achievement.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_proudly_adverb.b2",
+      "headword": "proudly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "In a way that shows pride.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_prove_verb.b1",
+      "headword": "prove",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To show that something is true.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_proven_adjective.b2",
+      "headword": "proven",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Shown to be true or effective.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_provide_verb.a2",
+      "headword": "provide",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To supply something needed.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_provided_conjunction.b1",
+      "headword": "provided",
+      "partOfSpeech": "conjunction",
+      "cefrLevel": "B1",
+      "definition": "On condition that.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_provision_noun.b2",
+      "headword": "provision",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The act of supplying something needed.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_proximity_noun.b2",
+      "headword": "proximity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Closeness in distance.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_psychological_adjective.b1",
+      "headword": "psychological",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Relating to the mind.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_psychologically_adverb.b2",
+      "headword": "psychologically",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "In a way relating to the mind.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_psychology_noun.b2",
+      "headword": "psychology",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The scientific study of the mind and behaviour.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_public_adjective.b1",
+      "headword": "public",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Relating to or open to people in general.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_publication_noun.b2",
+      "headword": "publication",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A book, magazine, or the act of publishing.",
+      "parentKey": "vocabulary.topic_media",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_publicity_noun.b2",
+      "headword": "publicity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Public attention given to something.",
+      "parentKey": "vocabulary.topic_media",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_publicize_publicise_verb.b2",
+      "headword": "publicize/publicise",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To make something widely known.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_publicly_adverb.b1",
+      "headword": "publicly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B1",
+      "definition": "In public; openly.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_publish_verb.a2",
+      "headword": "publish",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To prepare and issue a book or other material for sale.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_pudding_noun.b2",
+      "headword": "pudding",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A sweet dish served after the main meal.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_pull_verb.a2",
+      "headword": "pull",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To move something toward yourself using force.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_pullover_noun.b1",
+      "headword": "pullover",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A knitted garment worn over the upper body.",
+      "parentKey": "vocabulary.topic_clothes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_pump_noun.b1",
+      "headword": "pump",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A device used to move liquid or gas.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_punch_noun.b2",
+      "headword": "punch",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A hit with a closed fist.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_punch_verb.b2",
+      "headword": "punch",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To hit someone with a closed fist.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_punctual_adjective.c2",
+      "headword": "punctual",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "C2",
+      "definition": "Arriving or happening at the arranged time.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_punctuality_noun.c2",
+      "headword": "punctuality",
+      "partOfSpeech": "noun",
+      "cefrLevel": "C2",
+      "definition": "The quality of being on time.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_punish_verb.b1",
+      "headword": "punish",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To make someone suffer for wrongdoing.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_punishment_noun.b1",
+      "headword": "punishment",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A penalty given for wrongdoing.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_puppy_noun.b1",
+      "headword": "puppy",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A young dog.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_purchase_noun.b2",
+      "headword": "purchase",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Something bought.",
+      "parentKey": "vocabulary.topic_shopping",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_purchase_verb.b2",
+      "headword": "purchase",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To buy something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_pure_adjective.b1",
+      "headword": "pure",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Not mixed with anything else; clean.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_purify_verb.b1",
+      "headword": "purify",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To make something pure by removing impurities.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_purple_adjective.a2",
+      "headword": "purple",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Of a colour between red and blue.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_purpose_noun.a2",
+      "headword": "purpose",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "The reason something is done.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_purposeful_adjective.b2",
+      "headword": "purposeful",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Having a clear aim or intention.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_pursue_verb.a2",
+      "headword": "pursue",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To follow or chase something to achieve a goal.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_pursuit_noun.b2",
+      "headword": "pursuit",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "An activity done regularly, or the act of chasing something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_push_noun.b1",
+      "headword": "push",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "An act of pushing.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_push_verb.a1",
+      "headword": "push",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A1",
+      "definition": "To press something to move it away from you.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_put_verb.a1",
+      "headword": "put",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A1",
+      "definition": "To move something into a particular position.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_puzzle_noun.b1",
+      "headword": "puzzle",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A game or problem designed to test knowledge or skill.",
+      "parentKey": "vocabulary.topic_hobbies_and_pastimes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_puzzled_adjective.b2",
+      "headword": "puzzled",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Confused; unable to understand.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_quake_noun.b1",
+      "headword": "quake",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A sudden shaking of the ground; an earthquake.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_qualified_adjective.b1",
+      "headword": "qualified",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Having the necessary skills or knowledge.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_qualify_verb.b1",
+      "headword": "qualify",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To gain the right skills or meet the requirements.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_quality_adjective.b1",
+      "headword": "quality",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Of high standard.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_quality_noun.a2",
+      "headword": "quality",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "The standard of something, or a characteristic.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_quantify_verb.b2",
+      "headword": "quantify",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To express something as a number or amount.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_quantity_noun.b1",
+      "headword": "quantity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "An amount of something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_quarrel_noun.b2",
+      "headword": "quarrel",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "An angry argument.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_quarrel_verb.b2",
+      "headword": "quarrel",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To argue angrily.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_quarrelsome_adjective.b2",
+      "headword": "quarrelsome",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Tending to argue frequently.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_quarter_noun.a1",
+      "headword": "quarter",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "One of four equal parts.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_queen_noun.a2",
+      "headword": "queen",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A female monarch, or the wife of a king.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_queer_adjective.b2",
+      "headword": "queer",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Strange or odd.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_query_noun.b2",
+      "headword": "query",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A question, especially one expressing doubt.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_question_noun.a1",
+      "headword": "question",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A sentence asking for information.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_question_verb.b2",
+      "headword": "question",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To ask someone something, or to express doubt about it.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_question_mark_noun.b1",
+      "headword": "question mark",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The punctuation mark (?) used at the end of a question.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_questionnaire_noun.b1",
+      "headword": "questionnaire",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A set of written questions used to gather information.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_queue_noun.b1",
+      "headword": "queue",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A line of people waiting for something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_queue_verb.b2",
+      "headword": "queue",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To stand in a line waiting.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_quick_adjective.a2",
+      "headword": "quick",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Moving or happening fast.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_quickly_adverb.a1",
+      "headword": "quickly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "A1",
+      "definition": "Fast; without delay.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_quiet_adjective.a1",
+      "headword": "quiet",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A1",
+      "definition": "Making little or no noise.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_quiet_noun.b2",
+      "headword": "quiet",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The state of being silent or calm.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_quietly_adverb.a2",
+      "headword": "quietly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "A2",
+      "definition": "In a quiet way.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_quit_adjective.b2",
+      "headword": "quit",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Free from an obligation, used in fixed phrases.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_quit_verb.a2",
+      "headword": "quit",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To stop doing something, or to resign.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_quite_adverb.a2",
+      "headword": "quite",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "A2",
+      "definition": "To a certain extent; fairly.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_quotable_adjective.b2",
+      "headword": "quotable",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Worth quoting.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_quote_verb.b2",
+      "headword": "quote",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To repeat words said or written by someone else.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rabbit_noun.a1",
+      "headword": "rabbit",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A small furry animal with long ears.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_race_verb.b1",
+      "headword": "race",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To compete to see who is fastest.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_racial_adjective.b1",
+      "headword": "racial",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Relating to race or ethnicity.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_racism_noun.b2",
+      "headword": "racism",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Unfair treatment based on race.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rack_noun.b2",
+      "headword": "rack",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A frame or shelf for holding things.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_racket_noun.a2",
+      "headword": "racket",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A bat used in tennis or badminton, or loud noise.",
+      "parentKey": "vocabulary.topic_hobbies_and_pastimes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_radar_noun.b2",
+      "headword": "radar",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A system using radio waves to detect objects.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_radiate_verb.b2",
+      "headword": "radiate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To send out light or heat, or to spread outward.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_radically_adverb.b2",
+      "headword": "radically",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "In a fundamental, far-reaching way.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_radium_noun.b2",
+      "headword": "radium",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A radioactive chemical element.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rafter_noun.b2",
+      "headword": "rafter",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A beam supporting a roof.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rage_noun.b1",
+      "headword": "rage",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Violent, uncontrollable anger.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rain_verb.a1",
+      "headword": "rain",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A1",
+      "definition": "For water to fall from the sky.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rainbow_noun.b2",
+      "headword": "rainbow",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "An arc of colours in the sky, caused by sunlight and rain.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_raincoat_noun.a2",
+      "headword": "raincoat",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A waterproof coat worn in rain.",
+      "parentKey": "vocabulary.topic_clothes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rainy_adjective.a1",
+      "headword": "rainy",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A1",
+      "definition": "Having a lot of rain.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_raise_verb.a2",
+      "headword": "raise",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To lift something, or to increase an amount.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rally_noun.b2",
+      "headword": "rally",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A large public meeting, especially political.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_ram_noun.b2",
+      "headword": "ram",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A male sheep.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
     }
   ]
 }
