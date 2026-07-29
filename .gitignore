@@ -65,6 +65,7 @@ Thumbs.db
 
 ## ContentSeeder resumability state (machine-generated, not seed content)
 data/seed-json/*.checkpoint.json
+data/cerfj-reading.json.checkpoint.json
 
 ## ContentSeeder synthesized-audio cache (Phase G) — local re-run cache so repeat seeding never
 ## re-spends TTS quota on an already-synthesized passage; the real Gemini-TTS-derived binaries are

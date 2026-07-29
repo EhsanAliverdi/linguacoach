@@ -31,6 +31,7 @@ namespace LinguaCoach.ContentSeeder;
 ///        dotnet run --project tools/LinguaCoach.ContentSeeder -- cefr-scales path/to/cefr-scales-seed.json
 ///        dotnet run --project tools/LinguaCoach.ContentSeeder -- speaking path/to/speaking-seed.json
 ///        dotnet run --project tools/LinguaCoach.ContentSeeder -- listening path/to/listening-seed.json
+///        dotnet run --project tools/LinguaCoach.ContentSeeder -- reading data/cerfj-reading.json
 /// </summary>
 public static class Program
 {
@@ -84,7 +85,8 @@ public static class Program
             "cefr-scales" => await SeedCefrScalesAsync(db, seedFilePath),
             "speaking" => await SeedSpeakingAsync(seeder, db, seedFilePath),
             "listening" => await SeedListeningAsync(seeder, sp, db, seedFilePath),
-            _ => Fail($"Unknown domain '{domain}' — expected 'grammar', 'vocabulary', 'cefr-scales', 'speaking', or 'listening'."),
+            "reading" => await SeedReadingAsync(seeder, db, seedFilePath),
+            _ => Fail($"Unknown domain '{domain}' — expected 'grammar', 'vocabulary', 'cefr-scales', 'speaking', 'listening', or 'reading'."),
         };
     }
 
@@ -356,6 +358,144 @@ public static class Program
         Console.WriteLine($"Listening seeding complete. {processed} leaves processed this run.");
         return 0;
     }
+
+    /// <summary>Full content reseed Phase (reading) — parses the already-complete, pre-written
+    /// `data/cerfj-reading.json` JSONL dataset directly (no separate authored seed-json file needed,
+    /// per plan Decision 7 — all 3,053 passages have essentially unique topics, so there is no
+    /// container-grouping value to add). Each passage gets its own leaf SkillGraphNode (so
+    /// SeedOneAsync's idempotency check is per-passage) plus secondary links to (a) every
+    /// already-seeded vocabulary leaf whose headword appears in the passage's own
+    /// scientific_metadata.constraints.target_vocabulary list, and (b) the matching Phase E
+    /// "Overall Reading Comprehension" CEFR-scale leaf.</summary>
+    private static async Task<int> SeedReadingAsync(LeafContentSeeder seeder, LinguaCoachDbContext db, string path)
+    {
+        var lines = (await File.ReadAllLinesAsync(path)).Where(l => !string.IsNullOrWhiteSpace(l)).ToList();
+
+        var source = await GetOrCreateSourceAsync(db, "CEFR-J Synthetic Reading Passage Dataset");
+        var checkpoint = Checkpoint.Load(path);
+        var containerIds = await UpsertContainersAsync(db, new[]
+        {
+            ("reading.topic_passages", "Reading Passages", "A1", 1, CurriculumSkillConstants.Reading),
+        });
+        var containerId = containerIds["reading.topic_passages"];
+
+        var vocabByHeadword = await BuildVocabularyHeadwordLookupAsync(db);
+
+        var processed = 0;
+        for (var i = 0; i < lines.Count; i++)
+        {
+            var passageNumber = i + 1;
+            var key = $"reading.passage_{passageNumber:0000}";
+            if (checkpoint.Contains(key)) continue;
+
+            using var doc = JsonDocument.Parse(lines[i]);
+            var root = doc.RootElement;
+            var metadata = root.GetProperty("scientific_metadata");
+            var topic = metadata.GetProperty("topic").GetString()!;
+            var cefrLevel = metadata.GetProperty("target_level").GetString()!;
+            var targetVocabulary = metadata.TryGetProperty("constraints", out var constraints)
+                && constraints.TryGetProperty("target_vocabulary", out var vocabArray)
+                    ? vocabArray.EnumerateArray().Select(v => v.GetString()!).ToList()
+                    : [];
+
+            var assistantContent = root.GetProperty("messages")
+                .EnumerateArray()
+                .First(m => m.GetProperty("role").GetString() == "assistant")
+                .GetProperty("content").GetString()!;
+            var passageText = CleanReadingPassageText(assistantContent);
+
+            var leafId = await UpsertLeafAsync(db, key, topic, cefrLevel, difficultyBand: 1,
+                CurriculumSkillConstants.Reading, containerId);
+
+            var alreadySeeded = await db.ModuleSkillGraphNodeLinks.AnyAsync(l => l.SkillGraphNodeId == leafId);
+            if (alreadySeeded)
+            {
+                checkpoint.MarkProcessed(key);
+                continue;
+            }
+
+            var wordCount = passageText.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length;
+            var estimatedReadingMinutes = Math.Max(1, (int)Math.Round(wordCount / 200.0, MidpointRounding.AwayFromZero));
+
+            var matchedVocabIds = targetVocabulary
+                .SelectMany(w => vocabByHeadword.TryGetValue(SlugHeadword(w), out var ids) ? ids : [])
+                .Distinct()
+                .ToList();
+            var scaleLeafId = await db.SkillGraphNodes
+                .Where(n => n.Key == $"reading.scale_overall_reading_comprehension.{cefrLevel.ToLowerInvariant()}")
+                .Select(n => (Guid?)n.Id)
+                .FirstOrDefaultAsync();
+            var additionalIds = matchedVocabIds.ToList();
+            if (scaleLeafId.HasValue) additionalIds.Add(scaleLeafId.Value);
+
+            var content = ResourceBankItemContent.Serialize(new ReadingPassageContent(
+                topic, passageText, Summary: null, PrimarySkill: "Reading", TopicTagsJson: null,
+                wordCount, estimatedReadingMinutes,
+                AttributionText: "CEFR-J synthetic reading passage dataset (data/cerfj-reading.json).",
+                QualityScore: null));
+
+            try
+            {
+                await seeder.SeedOneAsync(source.Id, cefrLevel, content, topic, leafId, "reading_fill_in_blanks",
+                    PublishedResourceType.ReadingPassage, additionalIds.Count > 0 ? additionalIds : null);
+            }
+            catch (ExerciseValidationException ex)
+            {
+                Console.Error.WriteLine($"Reading: exercise generation failed for '{key}' ('{topic}') — {ex.Message}. Skipping.");
+                continue;
+            }
+
+            checkpoint.MarkProcessed(key);
+            if (++processed % 100 == 0)
+            {
+                checkpoint.Save(path);
+                Console.WriteLine($"Reading: {processed}/{lines.Count} processed.");
+            }
+        }
+
+        checkpoint.Save(path);
+        Console.WriteLine($"Reading seeding complete. {processed} leaves processed this run.");
+        return 0;
+    }
+
+    /// <summary>Strips the occasional "Here is a reading passage about X:" preamble line (present on
+    /// 3 of 3,053 passages) and the **bold** target-vocabulary markers — this pipeline's deterministic
+    /// cloze composer HTML-encodes passage text verbatim with no markdown rendering, so literal
+    /// asterisks would otherwise show up in the student-facing exercise.</summary>
+    private static string CleanReadingPassageText(string raw)
+    {
+        var text = System.Text.RegularExpressions.Regex.Replace(
+            raw, @"^Here is a reading passage about[^\n]*:\s*\n+", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        return text.Replace("**", "").Trim();
+    }
+
+    /// <summary>Loads every vocabulary leaf's headword (splitting "color/colour"-style slash variants
+    /// into separate lookup keys) into an in-memory dictionary once, so matching each reading
+    /// passage's target_vocabulary list doesn't need a DB round-trip per word. ~9,775 leaves — cheap
+    /// to hold in memory for the duration of this one seeding run.</summary>
+    private static async Task<Dictionary<string, List<Guid>>> BuildVocabularyHeadwordLookupAsync(LinguaCoachDbContext db)
+    {
+        var vocabLeaves = await db.SkillGraphNodes
+            .Where(n => n.Skill == CurriculumSkillConstants.Vocabulary && n.ParentNodeId != null)
+            .Select(n => new { n.Id, n.Title })
+            .ToListAsync();
+
+        var lookup = new Dictionary<string, List<Guid>>();
+        foreach (var leaf in vocabLeaves)
+        {
+            var headwordPart = leaf.Title.Contains(" (") ? leaf.Title[..leaf.Title.IndexOf(" (")] : leaf.Title;
+            foreach (var variant in headwordPart.Split('/'))
+            {
+                var slug = SlugHeadword(variant);
+                if (slug.Length == 0) continue;
+                if (!lookup.TryGetValue(slug, out var ids)) lookup[slug] = ids = [];
+                ids.Add(leaf.Id);
+            }
+        }
+        return lookup;
+    }
+
+    private static string SlugHeadword(string word) => word.Trim().ToLowerInvariant();
 
     private static string Slug(string key) =>
         key.ToLowerInvariant().Replace('.', '_').Replace(' ', '_');
