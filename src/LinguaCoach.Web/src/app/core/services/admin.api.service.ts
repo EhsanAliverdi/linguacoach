@@ -245,9 +245,16 @@ export class AdminApiService {
   getSkillGraphContentCoverage(): Observable<SkillGraphContentCoverageResponse> {
     return this.http.get<SkillGraphContentCoverageResponse>(`${this.api}/skill-graph/content-coverage`);
   }
-  // Sprint 13 — bulk nodes+edges payload backing the Cytoscape/Dagre graph view.
-  getSkillGraph(): Observable<SkillGraphResponse> {
-    return this.http.get<SkillGraphResponse>(`${this.api}/skill-graph/graph`);
+  // Sprint 13 — bulk nodes+edges payload backing the Cytoscape graph view. Optional filters
+  // (2026-07-30) — the main admin Graph tab always passes both (see its filter gate) since an
+  // unfiltered dump is no longer a viable payload at 14,070+ nodes; the node-detail page's BFS
+  // neighborhood preview still calls this with no args, getting the full unfiltered graph.
+  getSkillGraph(cefrLevel?: string, skill?: string): Observable<SkillGraphResponse> {
+    const params: Record<string, string> = {};
+    if (cefrLevel) params['cefrLevel'] = cefrLevel;
+    if (skill) params['skill'] = skill;
+    const qs = new URLSearchParams(params).toString();
+    return this.http.get<SkillGraphResponse>(`${this.api}/skill-graph/graph${qs ? '?' + qs : ''}`);
   }
   // Sprint 14.1 — node context/focus tag diagnose+AI-repair (same shape as Resource Bank's, reused
   // by AdminBulkRepairService for the "Fix All with AI" toast-progress flow).

@@ -205,6 +205,12 @@ export class SpAdminSkillGraphVizComponent implements OnChanges, OnDestroy {
     return CEFR_COLORS[level] ?? '#8B85A0';
   }
 
+  // Labels now render inside the node (centered), not below it — C1/C2's dark background colors
+  // need light text for contrast; the lighter A1-B2 backgrounds keep the existing dark text.
+  labelColorFor(level: string): string {
+    return level === 'C1' || level === 'C2' ? '#fff' : '#211B36';
+  }
+
   toggleLevel(level: string): void {
     if (this.activeLevels.has(level)) {
       if (this.activeLevels.size === 1) return; // never allow zero levels selected
@@ -281,19 +287,25 @@ export class SpAdminSkillGraphVizComponent implements OnChanges, OnDestroy {
           },
         },
         {
+          // User feedback (2026-07-30): circular nodes left label text overlapping/illegible —
+          // squares/rectangles (matching sp-admin-node-graph-preview's convention) give the label
+          // room to actually sit inside the shape instead of spilling below it.
           selector: 'node[!isParent]',
           style: {
+            shape: 'round-rectangle',
             'background-color': (ele: cytoscape.NodeSingular) => this.cefrColor(ele.data('cefrLevel')),
+            'border-width': 1,
+            'border-color': 'rgba(33,27,54,0.15)',
             label: 'data(label)',
             'font-size': '9px',
-            color: '#211B36',
-            'text-valign': 'bottom',
+            color: (ele: cytoscape.NodeSingular) => this.labelColorFor(ele.data('cefrLevel')),
+            'text-valign': 'center',
             'text-halign': 'center',
-            'text-margin-y': 4,
-            width: 22,
-            height: 22,
             'text-wrap': 'wrap',
             'text-max-width': '90px',
+            width: 'label',
+            height: 'label',
+            padding: '8px',
           },
         },
         {

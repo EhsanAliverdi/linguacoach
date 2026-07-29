@@ -151,7 +151,20 @@
 
     @if (viewMode() === 'graph') {
     <div style="padding: 16px 18px;">
-      @if (graphLoading()) {
+      <!-- Filter gate (2026-07-30) — with 14,070+ nodes, nothing is fetched or drawn until both a
+           CEFR level and a skill are chosen (e.g. "A1" + "Grammar"), keeping every rendered graph
+           to a manageable, legible node count. -->
+      <div class="sp-admin-form-grid" style="display:flex; gap:12px; align-items:flex-end; margin-bottom:16px;">
+        <sp-admin-form-field label="CEFR level">
+          <sp-admin-select [options]="cefrLevelOptions()" [(ngModel)]="graphFilterCefrLevel" placeholder="Select level" (ngModelChange)="onGraphFilterChange()" />
+        </sp-admin-form-field>
+        <sp-admin-form-field label="Skill">
+          <sp-admin-select [options]="skillOptions()" [(ngModel)]="graphFilterSkill" placeholder="Select skill" (ngModelChange)="onGraphFilterChange()" />
+        </sp-admin-form-field>
+      </div>
+      @if (!graphFilterReady()) {
+        <sp-admin-alert variant="info">Select a CEFR level and a skill above to load the graph.</sp-admin-alert>
+      } @else if (graphLoading()) {
         <sp-admin-loading-state message="Loading skill graph" />
       } @else if (graphError()) {
         <sp-admin-error-state title="Skill graph unavailable" [message]="graphError()" />

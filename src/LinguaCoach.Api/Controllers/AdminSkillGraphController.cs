@@ -226,15 +226,22 @@ public sealed class AdminSkillGraphController : ControllerBase
         });
     }
 
-    /// <summary>Sprint 13 — bulk payload for the Cytoscape/Dagre graph view: every active node
-    /// (219/219 at last count, cheap regardless of ReviewStatus so a PendingReview node is visible
-    /// pre-approval too) plus every prerequisite edge in one call — the paginated <see cref="GetNodes"/>
-    /// never includes edges, and <see cref="GetNode"/> only resolves one node's own prerequisites.</summary>
+    /// <summary>Bulk payload for the Cytoscape graph view. Optionally filtered by CEFR level and/or
+    /// skill (2026-07-30) — with 14,070+ nodes and growing, the main admin Graph tab now requires
+    /// picking both before it calls this at all (see the Angular component's filter gate), keeping
+    /// every rendered graph to a manageable node count. Left unfiltered when both are omitted so the
+    /// node-detail page's "where this node sits" BFS preview (which legitimately needs the whole
+    /// graph, since a prerequisite can cross CEFR level/skill boundaries) keeps working unchanged.
+    /// The paginated <see cref="GetNodes"/> never includes edges, and <see cref="GetNode"/> only
+    /// resolves one node's own direct prerequisites/dependents.</summary>
     [HttpGet("graph")]
-    public async Task<IActionResult> GetGraph(CancellationToken ct)
+    public async Task<IActionResult> GetGraph([FromQuery] string? cefrLevel, [FromQuery] string? skill, CancellationToken ct)
     {
-        var rawNodes = await _db.SkillGraphNodes.AsNoTracking()
-            .Where(n => n.IsActive)
+        var query = _db.SkillGraphNodes.AsNoTracking().Where(n => n.IsActive);
+        if (!string.IsNullOrWhiteSpace(cefrLevel)) query = query.Where(n => n.CefrLevel == cefrLevel.ToUpperInvariant());
+        if (!string.IsNullOrWhiteSpace(skill)) query = query.Where(n => n.Skill == skill.ToLowerInvariant());
+
+        var rawNodes = await query
             .Select(n => new
             {
                 n.Id, n.Key, n.Title, n.CefrLevel, n.Skill, n.Subskill, n.DifficultyBand, n.ReviewStatus,
@@ -249,9 +256,16 @@ public sealed class AdminSkillGraphController : ControllerBase
             n.ParentNodeId,
         });
 
-        var edges = await _db.SkillGraphPrerequisiteEdges.AsNoTracking()
-            .Select(e => new { e.NodeId, e.PrerequisiteNodeId })
-            .ToListAsync(ct);
+        // When filtered, only render edges fully inside the filtered set (a cross-level/cross-skill
+        // prerequisite pointing outside it would otherwise dangle to a node Cytoscape never
+        // receives). Unfiltered, every edge is returned as before.
+        var edgesQuery = _db.SkillGraphPrerequisiteEdges.AsNoTracking().AsQueryable();
+        if (!string.IsNullOrWhiteSpace(cefrLevel) || !string.IsNullOrWhiteSpace(skill))
+        {
+            var nodeIds = rawNodes.Select(n => n.Id).ToList();
+            edgesQuery = edgesQuery.Where(e => nodeIds.Contains(e.NodeId) && nodeIds.Contains(e.PrerequisiteNodeId));
+        }
+        var edges = await edgesQuery.Select(e => new { e.NodeId, e.PrerequisiteNodeId }).ToListAsync(ct);
 
         return Ok(new { nodes, edges });
     }

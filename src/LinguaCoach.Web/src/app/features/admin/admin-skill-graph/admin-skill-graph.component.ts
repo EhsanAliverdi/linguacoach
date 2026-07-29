@@ -92,17 +92,27 @@ export class AdminSkillGraphComponent implements OnInit {
   graphLoaded = false;
   selectedGraphNode = signal<SkillGraphNode | null>(null);
 
+  // Filter gate (2026-07-30) — with 14,070+ nodes, drawing everything at once is neither useful
+  // nor scalable, so the Graph tab now requires picking a CEFR level AND a skill first (e.g. "A1"
+  // + "Grammar") before it fetches or renders anything. Selecting either dropdown re-fetches.
+  graphFilterCefrLevel = signal('');
+  graphFilterSkill = signal('');
+  graphFilterReady = computed(() => !!this.graphFilterCefrLevel() && !!this.graphFilterSkill());
+
   setViewMode(mode: 'nodes' | 'graph'): void {
     this.viewMode.set(mode);
-    if (mode === 'graph' && !this.graphLoaded) {
-      this.loadGraph();
-    }
+  }
+
+  onGraphFilterChange(): void {
+    this.selectedGraphNode.set(null);
+    if (this.graphFilterReady()) this.loadGraph();
   }
 
   loadGraph(): void {
+    if (!this.graphFilterReady()) return;
     this.graphLoading.set(true);
     this.graphError.set('');
-    this.api.getSkillGraph().subscribe({
+    this.api.getSkillGraph(this.graphFilterCefrLevel(), this.graphFilterSkill()).subscribe({
       next: r => {
         this.graphNodes.set(r.nodes);
         this.graphEdges.set(r.edges);
