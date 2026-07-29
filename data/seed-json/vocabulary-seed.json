@@ -23,7 +23,7 @@
     {
       "key": "vocabulary.topic_objects_and_rooms",
       "title": "Objects and rooms",
-      "cefrLevel": "A2"
+      "cefrLevel": "A1"
     },
     {
       "key": "vocabulary.topic_family_life",
@@ -40591,6 +40591,2706 @@
       "cefrLevel": "B1",
       "definition": "To live in a rented room.",
       "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_roommate_noun.b2",
+      "headword": "roommate",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A person you share a room or home with.",
+      "parentKey": "vocabulary.topic_family_life",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_root_noun.a2",
+      "headword": "root",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "The part of a plant below the ground, or the origin of something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rose_noun.a1",
+      "headword": "rose",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A flower with a sweet smell, often with thorns.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rosy_adjective.b2",
+      "headword": "rosy",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Pink in colour, or hopeful.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rotten_adjective.b1",
+      "headword": "rotten",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Decayed; gone bad.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rough_adjective.b1",
+      "headword": "rough",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Not smooth; harsh; approximate.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_roughly_adverb.a2",
+      "headword": "roughly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "A2",
+      "definition": "Approximately; in a harsh way.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_round_adjective.b1",
+      "headword": "round",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Shaped like a circle or sphere.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_round_adverb.a2",
+      "headword": "round",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "A2",
+      "definition": "In a circular direction; around.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_round_noun.b1",
+      "headword": "round",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "One stage in a competition or series of events.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_round_preposition.b2",
+      "headword": "round",
+      "partOfSpeech": "preposition",
+      "cefrLevel": "B2",
+      "definition": "Surrounding or encircling something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_round_verb.b2",
+      "headword": "round",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To make a number less exact but easier to use.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_roundabout_noun.a2",
+      "headword": "roundabout",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A circular junction where traffic moves one way.",
+      "parentKey": "vocabulary.topic_ways_of_travelling",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_routine_noun.b1",
+      "headword": "routine",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A regular sequence of actions.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_row_noun.a1",
+      "headword": "row",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A line of people or things, or a noisy argument.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_row_verb.b2",
+      "headword": "row",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To move a boat using oars.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_royal_adjective.a2",
+      "headword": "royal",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Relating to a king or queen.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_royalty_noun.b2",
+      "headword": "royalty",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Members of a royal family, or a payment to an author.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rub_verb.b2",
+      "headword": "rub",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To move something back and forth against a surface.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rubber_noun.b1",
+      "headword": "rubber",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A strong, elastic material.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rubbish_noun.b1",
+      "headword": "rubbish",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Waste material; nonsense.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rubble_noun.b2",
+      "headword": "rubble",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Broken pieces of stone or brick from a damaged building.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rude_adjective.a1",
+      "headword": "rude",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A1",
+      "definition": "Not polite; showing bad manners.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rudely_adverb.b1",
+      "headword": "rudely",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B1",
+      "definition": "In an impolite way.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rugby_noun.a2",
+      "headword": "rugby",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A team sport played with an oval ball.",
+      "parentKey": "vocabulary.topic_hobbies_and_pastimes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_ruin_noun.b1",
+      "headword": "ruin",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The remains of a destroyed building, or complete destruction.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_ruin_verb.a2",
+      "headword": "ruin",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To severely damage or destroy something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_ruinous_adjective.b2",
+      "headword": "ruinous",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Causing ruin; extremely harmful.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rule_noun.a1",
+      "headword": "rule",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "An official instruction about what to do.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rule_verb.b2",
+      "headword": "rule",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To govern or have power over a place.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_ruler_noun.a1",
+      "headword": "ruler",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A straight strip used for measuring, or a person who rules.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rumor_rumour_noun.a2",
+      "headword": "rumor/rumour",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A piece of unverified information passed from person to person.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_run_verb.a1",
+      "headword": "run",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A1",
+      "definition": "To move quickly on foot.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_runner_noun.a2",
+      "headword": "runner",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A person who runs, especially competitively.",
+      "parentKey": "vocabulary.topic_hobbies_and_pastimes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_running_noun.a2",
+      "headword": "running",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "The activity of moving quickly on foot.",
+      "parentKey": "vocabulary.topic_hobbies_and_pastimes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rural_adjective.b2",
+      "headword": "rural",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Relating to the countryside.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rush_noun.a2",
+      "headword": "rush",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A sudden quick movement, or a busy period.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rush_verb.b1",
+      "headword": "rush",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To move or act quickly.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rush_hour_noun.b2",
+      "headword": "rush hour",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The time of day when traffic is heaviest.",
+      "parentKey": "vocabulary.topic_ways_of_travelling",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_rusty_adjective.b2",
+      "headword": "rusty",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Covered with rust, or out of practice.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_s_be_verb.a1",
+      "headword": "'s",
+      "partOfSpeech": "be-verb",
+      "cefrLevel": "A1",
+      "definition": "A contracted form of 'is' or 'has'.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sack_verb.b2",
+      "headword": "sack",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To dismiss someone from a job, informally.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sacred_adjective.b1",
+      "headword": "sacred",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Considered holy; deserving great respect.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sad_adjective.a1",
+      "headword": "sad",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A1",
+      "definition": "Feeling unhappy or sorrow.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sadly_adverb.a2",
+      "headword": "sadly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "A2",
+      "definition": "In an unhappy way; unfortunately.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sadness_noun.b1",
+      "headword": "sadness",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The feeling of being unhappy.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_safe_adjective.a2",
+      "headword": "safe",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Free from danger or risk.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_safeguard_noun.b1",
+      "headword": "safeguard",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A measure taken to protect something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_safeguard_verb.b2",
+      "headword": "safeguard",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To protect something from harm.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_safely_adverb.b1",
+      "headword": "safely",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B1",
+      "definition": "Without danger or risk.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_safety_noun.b1",
+      "headword": "safety",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The state of being free from danger.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sag_noun.b2",
+      "headword": "sag",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A downward bend or droop caused by weight.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sage_noun.b2",
+      "headword": "sage",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A herb used in cooking, or a wise person.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sail_verb.b2",
+      "headword": "sail",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To travel on water using a boat.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sailing_noun.a2",
+      "headword": "sailing",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "The sport of travelling on water using a sailboat.",
+      "parentKey": "vocabulary.topic_hobbies_and_pastimes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sake_noun.a2",
+      "headword": "sake",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "Used in 'for the sake of' to mean 'for the benefit of'.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_salon_noun.b2",
+      "headword": "salon",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A shop offering beauty treatments, e.g. hairdressing.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_salty_adjective.b2",
+      "headword": "salty",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Tasting of or containing salt.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_same_adjective.a1",
+      "headword": "same",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A1",
+      "definition": "Identical; not different.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_same_adverb.a1",
+      "headword": "same",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "A1",
+      "definition": "In an identical way.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_same_pronoun.a1",
+      "headword": "same",
+      "partOfSpeech": "pronoun",
+      "cefrLevel": "A1",
+      "definition": "The identical thing.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sand_noun.b1",
+      "headword": "sand",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Fine grains of rock found on beaches and deserts.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sandstone_noun.b2",
+      "headword": "sandstone",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A type of rock made of compressed sand.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sandy_adjective.a2",
+      "headword": "sandy",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Covered with or containing sand.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sanitary_adjective.b2",
+      "headword": "sanitary",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Relating to cleanliness and health.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sanitation_noun.b2",
+      "headword": "sanitation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Systems for maintaining clean, healthy conditions.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_satisfaction_noun.b1",
+      "headword": "satisfaction",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A feeling of pleasure from achieving what you wanted.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_satisfactory_adjective.b2",
+      "headword": "satisfactory",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Good enough; acceptable.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_satisfied_adjective.b1",
+      "headword": "satisfied",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Pleased because expectations have been met.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_satisfy_verb.a2",
+      "headword": "satisfy",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To meet someone's expectations or needs.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_saturday_noun.a1",
+      "headword": "Saturday",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "The day of the week between Friday and Sunday.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sauce_noun.a2",
+      "headword": "sauce",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A liquid served with food to add flavour.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sausage_noun.a2",
+      "headword": "sausage",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "Minced meat in a tube-shaped casing.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_save_verb.a1",
+      "headword": "save",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A1",
+      "definition": "To keep something safe, or to rescue someone.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_saving_savings_noun.b2",
+      "headword": "saving/savings",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Money kept rather than spent.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_saw_verb.b2",
+      "headword": "saw",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To cut something using a saw.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_say_noun.b2",
+      "headword": "say",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The right or power to influence a decision.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_say_verb.a1",
+      "headword": "say",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A1",
+      "definition": "To speak words.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_scale_noun.a2",
+      "headword": "scale",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A range of levels, or a device for weighing.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_scan_noun.b1",
+      "headword": "scan",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A medical image, or a quick look through something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_scan_verb.b2",
+      "headword": "scan",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To look through something quickly, or to examine using a device.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_scar_noun.b2",
+      "headword": "scar",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A mark left on skin after a wound heals.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_scarcely_adverb.b2",
+      "headword": "scarcely",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "Only just; almost not.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_scare_verb.b1",
+      "headword": "scare",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To frighten someone.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_scared_adjective.b1",
+      "headword": "scared",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Feeling fear.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_scarf_noun.a2",
+      "headword": "scarf",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A piece of material worn around the neck.",
+      "parentKey": "vocabulary.topic_clothes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_scarlet_noun.b2",
+      "headword": "scarlet",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A bright red colour.",
+      "parentKey": "vocabulary.topic_colours",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_scary_adjective.b1",
+      "headword": "scary",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Causing fear.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_scatter_verb.b1",
+      "headword": "scatter",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To throw or spread things in different directions.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_scenery_noun.a2",
+      "headword": "scenery",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "The natural features of a landscape.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_scenic_adjective.b1",
+      "headword": "scenic",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Having beautiful natural scenery.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_scent_noun.b2",
+      "headword": "scent",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A pleasant smell.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_schedule_verb.b2",
+      "headword": "schedule",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To plan for something to happen at a particular time.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_scheduled_adjective.b2",
+      "headword": "scheduled",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Planned to happen at a particular time.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_scheme_noun.b2",
+      "headword": "scheme",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "An official plan, or a dishonest plan.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_schoolchild_noun.a2",
+      "headword": "schoolchild",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A child who attends school.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_schoolgirl_noun.b2",
+      "headword": "schoolgirl",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A girl who attends school.",
+      "parentKey": "vocabulary.topic_education",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_scientific_adjective.a2",
+      "headword": "scientific",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Relating to science.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_scientifically_adverb.b2",
+      "headword": "scientifically",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "In a way relating to science.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_scissors_noun.a2",
+      "headword": "scissors",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A tool with two blades used for cutting.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_scold_verb.b1",
+      "headword": "scold",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To speak angrily to someone for doing something wrong.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_scope_noun.b1",
+      "headword": "scope",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The range of a subject or activity.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_score_verb.b1",
+      "headword": "score",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To gain a point in a game or test.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_scramble_verb.b2",
+      "headword": "scramble",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To move quickly and awkwardly, or to mix eggs while cooking.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_scratch_noun.b1",
+      "headword": "scratch",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A mark or wound made by something sharp.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_scratch_verb.b2",
+      "headword": "scratch",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To rub or mark something with something sharp.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_scream_noun.a2",
+      "headword": "scream",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A loud, high-pitched cry.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_scream_verb.b1",
+      "headword": "scream",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To make a loud, high-pitched cry.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_screen_verb.b2",
+      "headword": "screen",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To show a film, or to test people for a condition.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_screw_noun.a2",
+      "headword": "screw",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A metal fastener with a spiral thread.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_screw_verb.b2",
+      "headword": "screw",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To fasten something using a screw.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_scribble_noun.b2",
+      "headword": "scribble",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Careless or hurried writing.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_script_noun.a2",
+      "headword": "script",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "The written words of a play, film, or speech.",
+      "parentKey": "vocabulary.topic_media",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_scrooge_noun.b2",
+      "headword": "scrooge",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A person who is unwilling to spend money.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_scythe_noun.b2",
+      "headword": "scythe",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A tool with a curved blade for cutting crops.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_seal_noun.b2",
+      "headword": "seal",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A sea mammal, or a device that closes something tightly.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_search_noun.a2",
+      "headword": "search",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "An attempt to find something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_search_verb.b1",
+      "headword": "search",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To try to find something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_season_noun.b1",
+      "headword": "season",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "One of the four divisions of the year.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_seasonal_adjective.b2",
+      "headword": "seasonal",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Relating to or varying with the seasons.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_seawater_noun.b1",
+      "headword": "seawater",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Salt water from the sea.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_second_adjective.a1",
+      "headword": "second",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A1",
+      "definition": "Coming after the first.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_second_adverb.b1",
+      "headword": "second",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B1",
+      "definition": "In the second position.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_second_noun.a2",
+      "headword": "second",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A unit of time, or the item in position two.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_second_pronoun.a2",
+      "headword": "second",
+      "partOfSpeech": "pronoun",
+      "cefrLevel": "A2",
+      "definition": "The one after the first.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_second_person_noun.b2",
+      "headword": "second person",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The grammatical form referring to the person addressed (you).",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_secondary_adjective.b2",
+      "headword": "secondary",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Less important than something else; coming after primary.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_second_hand_adjective.b1",
+      "headword": "second-hand",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Previously owned by someone else.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_second_hand_adverb.b1",
+      "headword": "second-hand",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B1",
+      "definition": "Not directly; from another source.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_secondly_adverb.b2",
+      "headword": "secondly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "Used to introduce the second point in a list.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_secret_adjective.b1",
+      "headword": "secret",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Kept hidden from others.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_secret_noun.a2",
+      "headword": "secret",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "Something kept hidden from others.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_secretary_noun.a2",
+      "headword": "secretary",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A person who helps organise work in an office.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_secretly_adverb.b1",
+      "headword": "secretly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B1",
+      "definition": "In a hidden way, without others knowing.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_section_noun.a1",
+      "headword": "section",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A distinct part of something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sector_noun.b2",
+      "headword": "sector",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A distinct part of an economy or activity.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_secure_adjective.b1",
+      "headword": "secure",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Safe and protected.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_security_noun.b1",
+      "headword": "security",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The state of being safe and protected.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_see_verb.a1",
+      "headword": "see",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A1",
+      "definition": "To notice something with the eyes.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_seed_noun.a2",
+      "headword": "seed",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "The small part of a plant from which a new plant grows.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_seek_verb.a2",
+      "headword": "seek",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To try to find or obtain something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_seem_verb.a2",
+      "headword": "seem",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To appear to be something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_segment_noun.b2",
+      "headword": "segment",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "One part of something divided into parts.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_seize_verb.b1",
+      "headword": "seize",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To take hold of something suddenly and forcefully.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_seldom_adverb.b2",
+      "headword": "seldom",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "Rarely; not often.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_select_adjective.b1",
+      "headword": "select",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Carefully chosen; exclusive.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_select_verb.b2",
+      "headword": "select",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To carefully choose something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_selection_noun.b1",
+      "headword": "selection",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A group of things chosen, or the act of choosing.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_self_noun.a1",
+      "headword": "self",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A person's own individual nature.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_self_confidence_noun.b2",
+      "headword": "self-confidence",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "Trust in one's own abilities.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_self_confident_adjective.b2",
+      "headword": "self-confident",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Trusting in one's own abilities.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_selfish_adjective.b1",
+      "headword": "selfish",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Caring only about oneself.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_selfless_adjective.b2",
+      "headword": "selfless",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Caring more about others than oneself.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_self_service_adjective.b1",
+      "headword": "self-service",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Where customers serve themselves.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sell_verb.a1",
+      "headword": "sell",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A1",
+      "definition": "To give something in exchange for money.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_semicolon_noun.b2",
+      "headword": "semicolon",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A punctuation mark (;) used to separate parts of a sentence.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_semi_final_noun.b2",
+      "headword": "semi-final",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A match before the final in a competition.",
+      "parentKey": "vocabulary.topic_hobbies_and_pastimes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_senator_noun.b2",
+      "headword": "senator",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A member of a senate.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_send_verb.a2",
+      "headword": "send",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To make something go to a destination.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_senior_adjective.a2",
+      "headword": "senior",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Higher in rank, or older.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_senior_noun.a2",
+      "headword": "senior",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "An older person, or someone of higher rank.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sensation_noun.b1",
+      "headword": "sensation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A physical feeling, or a state of excitement.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sense_noun.a2",
+      "headword": "sense",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "One of the five physical abilities (sight, hearing, etc.), or good judgement.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sense_verb.b2",
+      "headword": "sense",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To become aware of something without being told.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sensible_adjective.b2",
+      "headword": "sensible",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Having or showing good judgement.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sensitive_adjective.b2",
+      "headword": "sensitive",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Easily affected or hurt; showing understanding of others' feelings.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sentence_verb.b2",
+      "headword": "sentence",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To officially state someone's punishment.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_separate_adjective.a2",
+      "headword": "separate",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Not connected; apart.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_separate_verb.b2",
+      "headword": "separate",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To divide or move apart.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_separately_adverb.b2",
+      "headword": "separately",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "Apart from something else.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_separation_noun.b1",
+      "headword": "separation",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The act of dividing or moving apart.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_september_noun.a1",
+      "headword": "September",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "The ninth month of the year.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sequence_noun.b1",
+      "headword": "sequence",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A particular order in which things follow each other.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_serene_adjective.b2",
+      "headword": "serene",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Calm and peaceful.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_serial_adjective.b2",
+      "headword": "serial",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Happening in a series; consecutive.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_series_noun.b1",
+      "headword": "series",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A number of similar things or events, one after another.",
+      "parentKey": "vocabulary.topic_media",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_serious_adjective.b1",
+      "headword": "serious",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Important and needing careful thought; not joking.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_seriously_adverb.a2",
+      "headword": "seriously",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "A2",
+      "definition": "In a serious way.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_servant_noun.b2",
+      "headword": "servant",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A person employed to do household work for another.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_serve_verb.a2",
+      "headword": "serve",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To provide food or a service to someone.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_server_noun.b1",
+      "headword": "server",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A computer providing data to others, or a person who serves food.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_service_verb.b1",
+      "headword": "service",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To repair or maintain a machine.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_session_noun.b1",
+      "headword": "session",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A period devoted to a particular activity.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_set_noun.a2",
+      "headword": "set",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A group of similar things, or the scenery for a play or film.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_set_verb.a1",
+      "headword": "set",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A1",
+      "definition": "To put something in a particular place or state.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_setback_noun.b2",
+      "headword": "setback",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A problem that delays progress.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_setting_noun.b1",
+      "headword": "setting",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The place and circumstances of an event.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_settle_verb.b1",
+      "headword": "settle",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To resolve a disagreement, or to make a home somewhere.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_settler_noun.b1",
+      "headword": "settler",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A person who settles in a new area.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_seven_number.a1",
+      "headword": "seven",
+      "partOfSpeech": "number",
+      "cefrLevel": "A1",
+      "definition": "The number 7.",
+      "parentKey": "vocabulary.topic_numbers_and_quantities",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_seventeen_number.a1",
+      "headword": "seventeen",
+      "partOfSpeech": "number",
+      "cefrLevel": "A1",
+      "definition": "The number 17.",
+      "parentKey": "vocabulary.topic_numbers_and_quantities",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_seventy_number.a1",
+      "headword": "seventy",
+      "partOfSpeech": "number",
+      "cefrLevel": "A1",
+      "definition": "The number 70.",
+      "parentKey": "vocabulary.topic_numbers_and_quantities",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_several_determiner.a2",
+      "headword": "several",
+      "partOfSpeech": "determiner",
+      "cefrLevel": "A2",
+      "definition": "More than two but not very many.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_several_pronoun.a2",
+      "headword": "several",
+      "partOfSpeech": "pronoun",
+      "cefrLevel": "A2",
+      "definition": "More than two but not very many.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_severe_adjective.b1",
+      "headword": "severe",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Very serious or extreme.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_severely_adverb.b1",
+      "headword": "severely",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B1",
+      "definition": "In a very serious or extreme way.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sew_verb.a2",
+      "headword": "sew",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To join or repair fabric using a needle and thread.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sex_noun.b1",
+      "headword": "sex",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "Being male or female, or sexual activity.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sexual_adjective.b2",
+      "headword": "sexual",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Relating to sex.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sexy_adjective.b2",
+      "headword": "sexy",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Sexually attractive.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shabby_adjective.b2",
+      "headword": "shabby",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Worn out and untidy in appearance.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shade_noun.a2",
+      "headword": "shade",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "An area sheltered from light, or a variation of a colour.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shadow_noun.a2",
+      "headword": "shadow",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A dark shape cast by an object blocking light.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shadow_verb.b1",
+      "headword": "shadow",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To follow someone closely, often secretly.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shadowy_adjective.b1",
+      "headword": "shadowy",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Full of shadows; mysterious.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shake_noun.a1",
+      "headword": "shake",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "An act of shaking, or a drink made by shaking ingredients.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shake_verb.b1",
+      "headword": "shake",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To move quickly up and down or side to side.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shaken_adjective.b2",
+      "headword": "shaken",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Upset or disturbed.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shakespearean_adjective.b2",
+      "headword": "Shakespearean",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Relating to the works of William Shakespeare.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shaky_adjective.b2",
+      "headword": "shaky",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Trembling; unsteady.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shall_modal_auxiliary.a2",
+      "headword": "shall",
+      "partOfSpeech": "modal auxiliary",
+      "cefrLevel": "A2",
+      "definition": "Used to express future action or a formal offer.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shallow_adjective.b1",
+      "headword": "shallow",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Not deep.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shame_noun.b1",
+      "headword": "shame",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A feeling of embarrassment from doing something wrong.",
+      "parentKey": "vocabulary.topic_adjectives_personality_description_feelings",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shameful_adjective.b1",
+      "headword": "shameful",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Deserving shame.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shape_noun.a2",
+      "headword": "shape",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "The outward form of something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shape_verb.b1",
+      "headword": "shape",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To give a particular form to something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_share_noun.a2",
+      "headword": "share",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A part of something divided among people, or a unit of company ownership.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_share_verb.a1",
+      "headword": "share",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A1",
+      "definition": "To have or use something together with others.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sharp_adjective.b1",
+      "headword": "sharp",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Having a fine cutting edge; sudden and intense.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sharp_adverb.b2",
+      "headword": "sharp",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "Exactly, used with times.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sharply_adverb.b2",
+      "headword": "sharply",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "Suddenly and to a great degree.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shatter_verb.b2",
+      "headword": "shatter",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To break suddenly into many pieces.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shave_verb.b1",
+      "headword": "shave",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To remove hair using a razor.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_she_pronoun.a1",
+      "headword": "she",
+      "partOfSpeech": "pronoun",
+      "cefrLevel": "A1",
+      "definition": "Used to refer to a female already mentioned.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shed_noun.b2",
+      "headword": "shed",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A simple structure used for storage.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sheep_noun.a1",
+      "headword": "sheep",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A farm animal kept for wool and meat.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sheer_adjective.b1",
+      "headword": "sheer",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Complete; very steep.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shell_noun.a2",
+      "headword": "shell",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "The hard outer covering of an egg, nut, or sea creature.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shell_verb.b2",
+      "headword": "shell",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To remove the shell from something, or to fire artillery at.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shield_noun.b2",
+      "headword": "shield",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A protective piece of equipment held or worn.",
+      "parentKey": "vocabulary.topic_objects_and_rooms",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shift_noun.b2",
+      "headword": "shift",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A period of work, or a change.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shift_verb.b1",
+      "headword": "shift",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To move or change slightly.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shine_verb.a2",
+      "headword": "shine",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To give out bright light.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shiny_adjective.b1",
+      "headword": "shiny",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Reflecting light brightly.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_ship_verb.b1",
+      "headword": "ship",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To send goods by ship, or transport generally.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shiver_verb.b1",
+      "headword": "shiver",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To shake slightly from cold or fear.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shock_noun.a2",
+      "headword": "shock",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A sudden upsetting surprise.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shock_verb.b2",
+      "headword": "shock",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To surprise and upset someone.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shocked_adjective.b1",
+      "headword": "shocked",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Feeling sudden surprise and upset.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shocking_adjective.b1",
+      "headword": "shocking",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Causing sudden surprise and upset.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shoot_verb.a2",
+      "headword": "shoot",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To fire a weapon.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shooting_noun.b2",
+      "headword": "shooting",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "An incident involving a gun being fired.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shop_verb.b1",
+      "headword": "shop",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To go and buy things.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shop_assistant_noun.a2",
+      "headword": "shop assistant",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A person who works serving customers in a shop.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shopkeeper_noun.b2",
+      "headword": "shopkeeper",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A person who owns or manages a small shop.",
+      "parentKey": "vocabulary.topic_work_and_jobs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shoplift_verb.b2",
+      "headword": "shoplift",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To steal goods from a shop.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shore_noun.a2",
+      "headword": "shore",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "The land along the edge of the sea or a lake.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_short_adjective.a1",
+      "headword": "short",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A1",
+      "definition": "Not long or tall.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_short_adverb.a1",
+      "headword": "short",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "A1",
+      "definition": "Suddenly; abruptly.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_short_shorts_noun.a2",
+      "headword": "short/shorts",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "Trousers that end above the knee.",
+      "parentKey": "vocabulary.topic_clothes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shortly_adverb.b1",
+      "headword": "shortly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B1",
+      "definition": "Soon.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shortness_noun.b2",
+      "headword": "shortness",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The state of being short.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_short_term_adjective.b2",
+      "headword": "short-term",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Relating to a relatively brief period.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shot_noun.a2",
+      "headword": "shot",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "An act of firing a gun, or a photograph.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_should_modal_auxiliary.a1",
+      "headword": "should",
+      "partOfSpeech": "modal auxiliary",
+      "cefrLevel": "A1",
+      "definition": "Used to express advice or expectation.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shoulder_noun.a1",
+      "headword": "shoulder",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "The part of the body where the arm joins the trunk.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shout_noun.a2",
+      "headword": "shout",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A loud cry.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shout_verb.b1",
+      "headword": "shout",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To speak or cry out loudly.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_show_noun.a2",
+      "headword": "show",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A performance or programme for entertainment.",
+      "parentKey": "vocabulary.topic_media",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_show_verb.a1",
+      "headword": "show",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A1",
+      "definition": "To let something be seen.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shower_verb.b2",
+      "headword": "shower",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To wash under running water.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shrimp_noun.b1",
+      "headword": "shrimp",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A small edible shellfish.",
+      "parentKey": "vocabulary.topic_food_and_drink",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shrink_noun.b2",
+      "headword": "shrink",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "A psychiatrist, informally.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shrink_verb.b2",
+      "headword": "shrink",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To become smaller.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shrug_verb.b2",
+      "headword": "shrug",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To raise the shoulders to show doubt or indifference.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shut_adjective.b1",
+      "headword": "shut",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Closed.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shut_verb.a2",
+      "headword": "shut",
+      "partOfSpeech": "verb",
+      "cefrLevel": "A2",
+      "definition": "To close something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_shy_adjective.a1",
+      "headword": "shy",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A1",
+      "definition": "Nervous or timid around other people.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sick_adjective.a1",
+      "headword": "sick",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A1",
+      "definition": "Unwell; feeling nausea.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_side_noun.a1",
+      "headword": "side",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "A surface or edge of something, or one of two opposing groups.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sidewalk_noun.b1",
+      "headword": "sidewalk",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A paved path for pedestrians beside a road.",
+      "parentKey": "vocabulary.topic_ways_of_travelling",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sigh_noun.b1",
+      "headword": "sigh",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A long, deep breath expressing emotion.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sigh_verb.b2",
+      "headword": "sigh",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To let out a long, deep breath expressing emotion.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sight_noun.a1",
+      "headword": "sight",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A1",
+      "definition": "The ability to see, or something seen.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sightseeing_noun.a2",
+      "headword": "sightseeing",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "Visiting interesting places as a tourist.",
+      "parentKey": "vocabulary.topic_hobbies_and_pastimes",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_sign_verb.b1",
+      "headword": "sign",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To write your name on a document.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_signal_noun.b1",
+      "headword": "signal",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A sign or gesture giving information or instructions.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_signature_noun.b1",
+      "headword": "signature",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A person's name written in their own handwriting.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_significance_noun.b1",
+      "headword": "significance",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "The importance or meaning of something.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_significant_adjective.a2",
+      "headword": "significant",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Important; having a noticeable effect.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_significantly_adverb.b2",
+      "headword": "significantly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "In an important or noticeable way.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_signify_verb.b2",
+      "headword": "signify",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B2",
+      "definition": "To be a sign of something; to mean something.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_signpost_noun.b1",
+      "headword": "signpost",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A sign showing directions.",
+      "parentKey": "vocabulary.topic_ways_of_travelling",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_silence_noun.a2",
+      "headword": "silence",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "Complete absence of sound.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_silent_adjective.b1",
+      "headword": "silent",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B1",
+      "definition": "Completely quiet; not speaking.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_silently_adverb.a2",
+      "headword": "silently",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "A2",
+      "definition": "Without making any sound.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_silly_adjective.a2",
+      "headword": "silly",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Foolish; not serious.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_silver_adjective.a2",
+      "headword": "silver",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Of a grey-white shiny colour, like the metal.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_silver_noun.a2",
+      "headword": "silver",
+      "partOfSpeech": "noun",
+      "cefrLevel": "A2",
+      "definition": "A valuable grey-white precious metal.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_similar_adjective.a2",
+      "headword": "similar",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Alike but not identical.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_similarity_noun.b1",
+      "headword": "similarity",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B1",
+      "definition": "A way in which things are alike.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_similarly_adverb.b1",
+      "headword": "similarly",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B1",
+      "definition": "In a similar way.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_simple_adjective.a2",
+      "headword": "simple",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "A2",
+      "definition": "Easy to understand; not complicated.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_simplification_noun.b2",
+      "headword": "simplification",
+      "partOfSpeech": "noun",
+      "cefrLevel": "B2",
+      "definition": "The act of making something easier to understand.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_simplify_verb.b1",
+      "headword": "simplify",
+      "partOfSpeech": "verb",
+      "cefrLevel": "B1",
+      "definition": "To make something easier to understand.",
+      "parentKey": "vocabulary.topic_general_verbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_simply_adverb.a2",
+      "headword": "simply",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "A2",
+      "definition": "In a simple way; just.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_simultaneous_adjective.b2",
+      "headword": "simultaneous",
+      "partOfSpeech": "adjective",
+      "cefrLevel": "B2",
+      "definition": "Happening at the same time.",
+      "parentKey": "vocabulary.topic_descriptive_adjectives",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_simultaneously_adverb.b1",
+      "headword": "simultaneously",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B1",
+      "definition": "At the same time.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_since_adverb.b2",
+      "headword": "since",
+      "partOfSpeech": "adverb",
+      "cefrLevel": "B2",
+      "definition": "From a particular past time until now.",
+      "parentKey": "vocabulary.topic_adverbs",
+      "extraTags": []
+    },
+    {
+      "key": "vocabulary.cefrj_since_conjunction.b1",
+      "headword": "since",
+      "partOfSpeech": "conjunction",
+      "cefrLevel": "B1",
+      "definition": "From the time when, or because.",
+      "parentKey": "vocabulary.topic_function_words_and_connectors",
       "extraTags": []
     }
   ]
