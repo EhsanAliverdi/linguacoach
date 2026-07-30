@@ -169,10 +169,33 @@
       } @else if (graphError()) {
         <sp-admin-error-state title="Skill graph unavailable" [message]="graphError()" />
       } @else {
+        @if (graphBreadcrumb().length > 0) {
+          <div class="sp-admin-mb-2 sp-admin-text-xs" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <sp-admin-button size="sm" variant="neutral" appearance="outline" (clicked)="jumpToBreadcrumb(graphBreadcrumb().length - 2)">
+              ← Back
+            </sp-admin-button>
+            <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
+              <a href="javascript:void(0)" (click)="jumpToBreadcrumb(-1)">{{ graphFilterCefrLevel() }} / {{ graphFilterSkill() }}</a>
+              @for (crumb of graphBreadcrumb(); track crumb.id; let i = $index; let last = $last) {
+                <span>›</span>
+                @if (last) {
+                  <strong>{{ crumb.title }}</strong>
+                } @else {
+                  <a href="javascript:void(0)" (click)="jumpToBreadcrumb(i)">{{ crumb.title }}</a>
+                }
+              }
+            </div>
+          </div>
+        }
         <sp-admin-graph-card
-          title="Skill graph" [subtitle]="graphNodes().length + ' nodes, ' + graphEdges().length + ' prerequisite edges'"
+          [title]="graphBreadcrumb().length > 0 ? graphBreadcrumb()[graphBreadcrumb().length - 1].title : 'Skill graph'"
+          [subtitle]="graphNodes().length + ' nodes, ' + graphEdges().length + ' prerequisite edges'"
           status="live">
-          <sp-admin-skill-graph-viz [nodes]="graphNodes()" [edges]="graphEdges()" (nodeSelected)="selectedGraphNode.set($event)" />
+          <sp-admin-skill-graph-viz
+            [nodes]="graphNodes()" [edges]="graphEdges()"
+            [containerLabel]="graphBreadcrumb().length > 0 ? graphBreadcrumb()[graphBreadcrumb().length - 1].title : null"
+            (nodeSelected)="selectedGraphNode.set($event)" (drillInto)="onDrillInto($event)"
+            (viewNode)="onGraphViewNode($event)" (editNode)="onGraphEditNode($event)" (detailsNode)="onGraphDetailsNode($event)" />
         </sp-admin-graph-card>
         @if (selectedGraphNode(); as sel) {
           <div class="sp-admin-mt-2 sp-admin-text-xs">
@@ -303,5 +326,12 @@
     <sp-admin-button variant="danger" [disabled]="batchPending()" (clicked)="confirmBatchReject()">Confirm reject</sp-admin-button>
   </div>
 </sp-admin-modal>
+
+<sp-admin-skill-graph-node-details
+  [open]="detailsOpen()" [nodeId]="detailsNodeId()"
+  (closed)="closeDetails()"
+  (view)="viewNodeById($event)"
+  (edit)="editNodeById($event)"
+/>
 
 </sp-admin-page-body>

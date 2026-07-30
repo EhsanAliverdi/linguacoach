@@ -39,6 +39,7 @@ import {
 } from '../../../core/models/admin.models';
 import { SpAdminGraphCardComponent } from '../../../design-system/admin/components/graph-card/sp-admin-graph-card.component';
 import { SpAdminSkillGraphVizComponent } from './skill-graph-viz/sp-admin-skill-graph-viz.component';
+import { SpAdminSkillGraphNodeDetailsComponent } from './node-details-slide-over/sp-admin-skill-graph-node-details.component';
 
 @Component({
   selector: 'app-admin-skill-graph',
@@ -65,6 +66,7 @@ import { SpAdminSkillGraphVizComponent } from './skill-graph-viz/sp-admin-skill-
     SpAdminSelectComponent,
     SpAdminGraphCardComponent,
     SpAdminSkillGraphVizComponent,
+    SpAdminSkillGraphNodeDetailsComponent,
     SpAdminTreeTableComponent,
   ],
 })
@@ -99,12 +101,53 @@ export class AdminSkillGraphComponent implements OnInit {
   graphFilterSkill = signal('');
   graphFilterReady = computed(() => !!this.graphFilterCefrLevel() && !!this.graphFilterSkill());
 
+  // Topical-hierarchy drill-down (2026-07-30) — empty means the root CEFR+skill-scoped view;
+  // drilling into a container pushes it here and re-fetches by parentNodeId (which crosses CEFR
+  // boundaries — see AdminSkillGraphController.GetGraph — so it's a separate fetch, not a
+  // client-side filter of the root batch).
+  graphBreadcrumb = signal<SkillGraphNode[]>([]);
+
+  // Per-node context menu → Details slide-over (2026-07-31) — View/Edit navigate to the existing
+  // routed pages (/admin/skill-graph/nodes/:id[/edit]), matching this app's 2026-07-23 decision to
+  // keep those as full pages, not slide-overs. Details is the one genuinely new slide-over, scoped
+  // to "peek without leaving the graph."
+  detailsNodeId = signal<string | null>(null);
+  detailsOpen = signal(false);
+
+  onGraphViewNode(node: SkillGraphNode): void {
+    this.router.navigateByUrl(`/admin/skill-graph/nodes/${node.id}`);
+  }
+
+  onGraphEditNode(node: SkillGraphNode): void {
+    this.router.navigateByUrl(`/admin/skill-graph/nodes/${node.id}/edit`);
+  }
+
+  onGraphDetailsNode(node: SkillGraphNode): void {
+    this.detailsNodeId.set(node.id);
+    this.detailsOpen.set(true);
+  }
+
+  closeDetails(): void {
+    this.detailsOpen.set(false);
+  }
+
+  viewNodeById(id: string): void {
+    this.detailsOpen.set(false);
+    this.router.navigateByUrl(`/admin/skill-graph/nodes/${id}`);
+  }
+
+  editNodeById(id: string): void {
+    this.detailsOpen.set(false);
+    this.router.navigateByUrl(`/admin/skill-graph/nodes/${id}/edit`);
+  }
+
   setViewMode(mode: 'nodes' | 'graph'): void {
     this.viewMode.set(mode);
   }
 
   onGraphFilterChange(): void {
     this.selectedGraphNode.set(null);
+    this.graphBreadcrumb.set([]);
     if (this.graphFilterReady()) this.loadGraph();
   }
 
@@ -112,7 +155,7 @@ export class AdminSkillGraphComponent implements OnInit {
     if (!this.graphFilterReady()) return;
     this.graphLoading.set(true);
     this.graphError.set('');
-    this.api.getSkillGraph(this.graphFilterCefrLevel(), this.graphFilterSkill()).subscribe({
+    this.api.getSkillGraph(this.graphFilterCefrLevel(), this.graphFilterSkill(), undefined, true).subscribe({
       next: r => {
         this.graphNodes.set(r.nodes);
         this.graphEdges.set(r.edges);
@@ -121,6 +164,41 @@ export class AdminSkillGraphComponent implements OnInit {
       },
       error: err => {
         this.graphError.set(err?.error?.error ?? 'Could not load the skill graph.');
+        this.graphLoading.set(false);
+      },
+    });
+  }
+
+  onDrillInto(node: SkillGraphNode): void {
+    this.selectedGraphNode.set(null);
+    this.graphBreadcrumb.set([...this.graphBreadcrumb(), node]);
+    this.loadGraphChildren(node.id);
+  }
+
+  // Jump to a breadcrumb crumb (index -1 = back to the CEFR+skill root view).
+  jumpToBreadcrumb(index: number): void {
+    this.selectedGraphNode.set(null);
+    if (index < 0) {
+      this.graphBreadcrumb.set([]);
+      this.loadGraph();
+      return;
+    }
+    const trail = this.graphBreadcrumb().slice(0, index + 1);
+    this.graphBreadcrumb.set(trail);
+    this.loadGraphChildren(trail[trail.length - 1].id);
+  }
+
+  private loadGraphChildren(parentNodeId: string): void {
+    this.graphLoading.set(true);
+    this.graphError.set('');
+    this.api.getSkillGraph(undefined, this.graphFilterSkill(), parentNodeId).subscribe({
+      next: r => {
+        this.graphNodes.set(r.nodes);
+        this.graphEdges.set(r.edges);
+        this.graphLoading.set(false);
+      },
+      error: err => {
+        this.graphError.set(err?.error?.error ?? 'Could not load this node’s children.');
         this.graphLoading.set(false);
       },
     });

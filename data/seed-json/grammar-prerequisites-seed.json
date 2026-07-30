@@ -1,3 +1,9 @@
+// version: 2 (2026-07-30) — Adverbs topical hierarchy pilot: added within-topic teaching-order
+// edges for the new item leaves under Adverbs of frequency/quasi-negation/attitude/Intensifiers.
+// v1 (2026-07-29) was the original grammar prerequisite-edge backfill (795 edges). This file is a
+// flat JSON array (see PrerequisiteEdgeSeed/SeedPrerequisitesAsync, shared with speaking/listening/
+// reading), so version notes live in this leading comment rather than a schema field — the loader
+// already sets JsonCommentHandling.Skip, so this parses cleanly.
 [
   {
     "node": "grammar.cefrj_ta_present_be_neg.a1",
@@ -3973,5 +3979,89 @@
     "node": "grammar.cefrj_phv_v_part_prep.a1",
     "prerequisite": "grammar.cefrj_phv_v_part.a1",
     "reason": "phrasal-prepositional verb builds on the basic phrasal verb"
+  },
+
+  {
+    "node": "grammar.cefrj_rb_frq_usually.a1",
+    "prerequisite": "grammar.cefrj_rb_frq_always.a1",
+    "reason": "adverbs-of-frequency teaching order: learn the 100% endpoint before the near-100% case"
+  },
+  {
+    "node": "grammar.cefrj_rb_frq_often.a1",
+    "prerequisite": "grammar.cefrj_rb_frq_always.a1",
+    "reason": "adverbs-of-frequency teaching order: learn the 100% endpoint before the high-frequency case"
+  },
+  {
+    "node": "grammar.cefrj_rb_frq_sometimes.a1",
+    "prerequisite": "grammar.cefrj_rb_frq_usually.a1",
+    "reason": "adverbs-of-frequency teaching order: mid-frequency contrasts with 'usually'"
+  },
+  {
+    "node": "grammar.cefrj_rb_frq_rarely.a1",
+    "prerequisite": "grammar.cefrj_rb_frq_sometimes.a1",
+    "reason": "adverbs-of-frequency teaching order: low-frequency contrasts with 'sometimes'"
+  },
+  {
+    "node": "grammar.cefrj_rb_frq_frequently.a1",
+    "prerequisite": "grammar.cefrj_rb_frq_often.a1",
+    "reason": "formal synonym of 'often'"
+  },
+  {
+    "node": "grammar.cefrj_rb_frq_occasionally.a1",
+    "prerequisite": "grammar.cefrj_rb_frq_sometimes.a1",
+    "reason": "more formal, lower-frequency synonym of 'sometimes'"
+  },
+
+  {
+    "node": "grammar.cefrj_rb_negqu_scarcely.b2",
+    "prerequisite": "grammar.cefrj_rb_negqu_hardly.b2",
+    "reason": "formal synonym of 'hardly'"
+  },
+  {
+    "node": "grammar.cefrj_rb_negqu_little.b2",
+    "prerequisite": "grammar.cefrj_rb_negqu_hardly.b2",
+    "reason": "same near-negative family as 'hardly', less common usage"
+  },
+  {
+    "node": "grammar.cefrj_rb_negqu_seldom.b2",
+    "prerequisite": "grammar.cefrj_rb_frq_rarely.a1",
+    "reason": "formal synonym of 'rarely', cross-referenced from the frequency set"
+  },
+
+  {
+    "node": "grammar.cefrj_rb_att_apparently.b1",
+    "prerequisite": "grammar.cefrj_rb_att_clearly.b1",
+    "reason": "both mark the speaker's certainty about a claim; 'clearly' (high certainty) taught before 'apparently' (hearsay/uncertain)"
+  },
+  {
+    "node": "grammar.cefrj_rb_att_frankly.b1",
+    "prerequisite": "grammar.cefrj_rb_att_clearly.b1",
+    "reason": "both are direct stance adverbs; 'clearly' taught before the more socially marked 'frankly'"
+  },
+
+  {
+    "node": "grammar.cefrj_rb_int_so.a1",
+    "prerequisite": "grammar.cefrj_rb_int_very.a1",
+    "reason": "intensifier teaching order: 'very' is the base case before the clause-taking 'so'"
+  },
+  {
+    "node": "grammar.cefrj_rb_int_extremely.a1",
+    "prerequisite": "grammar.cefrj_rb_int_very.a1",
+    "reason": "intensifier teaching order: stronger, more formal alternative to 'very'"
+  },
+  {
+    "node": "grammar.cefrj_rb_int_greatly.a1",
+    "prerequisite": "grammar.cefrj_rb_int_extremely.a1",
+    "reason": "intensifier teaching order: formal, verb-focused intensifier taught after 'extremely'"
+  },
+  {
+    "node": "grammar.cefrj_rb_int_terribly.a1",
+    "prerequisite": "grammar.cefrj_rb_int_really.a1",
+    "reason": "informal synonym of 'really'"
+  },
+  {
+    "node": "grammar.cefrj_rb_int_unbelievably.a1",
+    "prerequisite": "grammar.cefrj_rb_int_extremely.a1",
+    "reason": "intensifier teaching order: dramatic-effect intensifier taught after 'extremely'"
   }
 ]

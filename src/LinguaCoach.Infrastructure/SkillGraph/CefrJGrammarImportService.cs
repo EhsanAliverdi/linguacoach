@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using LinguaCoach.Application.SkillGraph;
 using LinguaCoach.Domain.Constants;
+using LinguaCoach.Domain.Enums;
 
 namespace LinguaCoach.Infrastructure.SkillGraph;
 
@@ -42,14 +43,19 @@ public sealed partial class CefrJGrammarImportService : ICefrJGrammarImportServi
                 continue;
             }
 
-            var (level, levelWasDefaulted) = ResolveCefrLevel(baseRow);
-            if (levelWasDefaulted)
+            var (level, confidence, source) = ResolveCefrLevel(baseRow);
+            // Only the true last-resort case (zero usable columns anywhere) is a review-screen
+            // warning — resolving via a real fallback column (Core Inventory/EGP/GSELO) is still
+            // genuine evidence, just not CEFR-J's own. Both still get CefrConfidence.Fallback
+            // (persisted, queryable) — this warning list is specifically "needs a human's eyes
+            // before applying," matching the original behavior this preview screen always had.
+            if (source == "defaulted")
                 warnings.Add($"Row {baseRow.Id} ('{baseRow.GrammaticalItem}'): no usable CEFR level column, defaulted to {level} — review before applying.");
 
             if (members.Count == 1)
             {
                 // No AFF/NEG/INT siblings — this row is a standalone grammar point, not a family.
-                var leaf = BuildLeaf(baseRow, level);
+                var leaf = BuildLeaf(baseRow, level, confidence, source);
                 standaloneLeaves.Add(leaf);
                 continue;
             }
@@ -64,27 +70,27 @@ public sealed partial class CefrJGrammarImportService : ICefrJGrammarImportServi
                 .OrderBy(m => m.Id, StringComparer.OrdinalIgnoreCase)
                 .Select(m =>
                 {
-                    var (leafLevel, leafDefaulted) = ResolveCefrLevel(m);
-                    if (leafDefaulted && m.Id != baseRow.Id)
+                    var (leafLevel, leafConfidence, leafSource) = ResolveCefrLevel(m);
+                    if (leafSource == "defaulted" && m.Id != baseRow.Id)
                         warnings.Add($"Row {m.Id} ('{m.GrammaticalItem}'): no usable CEFR level column, defaulted to {leafLevel} — review before applying.");
-                    return BuildLeaf(m, leafLevel);
+                    return BuildLeaf(m, leafLevel, leafConfidence, leafSource);
                 })
                 .ToList();
 
             containers.Add(new CefrJProposedContainer(
                 containerKey, containerTitle, level, band,
-                matchedId, matchedKey, matchConfidence, leaves));
+                matchedId, matchedKey, matchConfidence, leaves, confidence, source));
         }
 
         return new CefrJGrammarImportPreview(containers, standaloneLeaves, warnings);
     }
 
-    private static CefrJProposedLeaf BuildLeaf(CefrJRow row, string level)
+    private static CefrJProposedLeaf BuildLeaf(CefrJRow row, string level, CefrConfidence confidence, string source)
     {
         var key = $"grammar.cefrj_{Slug(row.ShorthandCode)}.{level.ToLowerInvariant()}";
         var title = Clean(row.GrammaticalItem);
         var band = ResolveDifficultyBand(row);
-        return new CefrJProposedLeaf(key, title, level, band, row.Id);
+        return new CefrJProposedLeaf(key, title, level, band, row.Id, confidence, source);
     }
 
     private static (Guid? Id, string? Key, double? Confidence) FindBestContainerMatch(
@@ -108,23 +114,28 @@ public sealed partial class CefrJGrammarImportService : ICefrJGrammarImportServi
     }
 
     /// <summary>CEFR-J Level is blank on ~66% of real CSV rows — falls back to Core Inventory, then
-    /// the first recognizable CEFR token inside EGP, then GSELO, before defaulting to A1 (flagged as
-    /// a warning, never silently applied without a trace).</summary>
-    private static (string Level, bool WasDefaulted) ResolveCefrLevel(CefrJRow row)
+    /// the first recognizable CEFR token inside EGP, then GSELO, before defaulting to A1.
+    /// Phase GSG-1 (2026-07-31) — the 2026-07-30 seed audit found this fallback chain's outcome was
+    /// only ever surfaced as a warning string shown once on the review screen and then discarded;
+    /// 145 of 592 existing grammar nodes ended up with an unattested A1 as a result. Now returns a
+    /// <see cref="CefrConfidence"/>/source pair that flows all the way into the created
+    /// <see cref="Domain.Entities.SkillGraphNode"/>, so "unattested" is a queryable fact, not a lost
+    /// console message.</summary>
+    private static (string Level, CefrConfidence Confidence, string Source) ResolveCefrLevel(CefrJRow row)
     {
         var fromCefrJ = ExtractLevelToken(row.CefrJLevel);
-        if (fromCefrJ is not null) return (fromCefrJ, false);
+        if (fromCefrJ is not null) return (fromCefrJ, CefrConfidence.Attested, "cefrj");
 
         var fromCore = ExtractLevelToken(row.CoreInventory);
-        if (fromCore is not null) return (fromCore, false);
+        if (fromCore is not null) return (fromCore, CefrConfidence.Fallback, "coreInventory");
 
         var fromEgp = ExtractLevelToken(row.Egp);
-        if (fromEgp is not null) return (fromEgp, false);
+        if (fromEgp is not null) return (fromEgp, CefrConfidence.Fallback, "egp");
 
         var fromGselo = ExtractLevelToken(row.Gselo);
-        if (fromGselo is not null) return (fromGselo, false);
+        if (fromGselo is not null) return (fromGselo, CefrConfidence.Fallback, "gselo");
 
-        return (CefrLevelConstants.A1, true);
+        return (CefrLevelConstants.A1, CefrConfidence.Fallback, "defaulted");
     }
 
     private static readonly Regex LevelTokenPattern = LevelTokenRegex();

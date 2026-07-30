@@ -90,7 +90,7 @@ const SKILL_BOX_COLORS: Record<string, string> = {
       <span class="sp-sgv-legend-count">{{ nodes.length }} node(s) shown</span>
     </div>
     <div class="sp-sgv-canvas-wrap">
-      <div #cyContainer class="sp-sgv-canvas" [class.sp-sgv-canvas--area-zoom]="areaZoomActive" (mousedown)="onAreaZoomMouseDown($event)"></div>
+      <div #cyContainer class="sp-sgv-canvas" [class.sp-sgv-canvas--area-zoom]="areaZoomActive" (mousedown)="onAreaZoomMouseDown($event)" (contextmenu)="$event.preventDefault()"></div>
       <div class="sp-sgv-zoom-controls">
         <button type="button" class="sp-sgv-icon-btn" (click)="zoomBy(1.3)" title="Zoom in">+</button>
         <button type="button" class="sp-sgv-icon-btn" (click)="zoomBy(1 / 1.3)" title="Zoom out">−</button>
@@ -98,6 +98,28 @@ const SKILL_BOX_COLORS: Record<string, string> = {
         <button type="button" class="sp-sgv-icon-btn" [class.sp-sgv-icon-btn--active]="areaZoomActive" (click)="toggleAreaZoom()" title="Area zoom in — drag to select a region"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
         <button type="button" class="sp-sgv-icon-btn" (click)="areaZoomOut()" title="Area zoom out — back to the whole graph"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
       </div>
+      @if (tooltip) {
+        <div class="sp-sgv-tooltip" [style.left.px]="tooltip.x" [style.top.px]="tooltip.y">
+          <div class="sp-sgv-tooltip-title">{{ tooltip.title }}</div>
+          @if (tooltip.description) {
+            <div class="sp-sgv-tooltip-desc">{{ tooltip.description }}</div>
+          }
+          @if (tooltip.hasChildren) {
+            <div class="sp-sgv-tooltip-hint">Click to open · Right-click for actions</div>
+          } @else {
+            <div class="sp-sgv-tooltip-hint">Right-click for actions</div>
+          }
+        </div>
+      }
+      @if (contextMenu; as menu) {
+        <div class="sp-sgv-ctx-backdrop" (click)="closeContextMenu()" (contextmenu)="onContextMenuBackdropRightClick($event)"></div>
+        <div class="sp-sgv-ctx-menu" [style.left.px]="menu.x" [style.top.px]="menu.y">
+          <div class="sp-sgv-ctx-menu-title">{{ menu.title }}</div>
+          <button type="button" class="sp-sgv-ctx-menu-item" (click)="onMenuAction('view', menu.node)">View</button>
+          <button type="button" class="sp-sgv-ctx-menu-item" (click)="onMenuAction('edit', menu.node)">Edit</button>
+          <button type="button" class="sp-sgv-ctx-menu-item" (click)="onMenuAction('details', menu.node)">Details</button>
+        </div>
+      }
     </div>
   `,
   styles: [`
@@ -129,19 +151,63 @@ const SKILL_BOX_COLORS: Record<string, string> = {
     .sp-sgv-icon-btn:hover { background: var(--sp-admin-border, #ECE9F5); }
     .sp-sgv-icon-btn--active { background: #5B4BE8; color: #fff; }
     .sp-sgv-icon-btn--active:hover { background: #4A3BC7; }
+    .sp-sgv-tooltip {
+      position: absolute; transform: translate(-50%, -100%); margin-top: -10px;
+      max-width: 220px; padding: 6px 10px; border-radius: 6px; pointer-events: none; z-index: 30;
+      background: #211B36; color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,.2);
+    }
+    .sp-sgv-tooltip-title { font-size: 11px; font-weight: 700; }
+    .sp-sgv-tooltip-desc { font-size: 10px; color: #C0BAF9; margin-top: 2px; }
+    .sp-sgv-tooltip-hint { font-size: 9px; color: #8B85A0; margin-top: 4px; font-style: italic; }
+    .sp-sgv-ctx-backdrop { position: absolute; inset: 0; z-index: 39; }
+    .sp-sgv-ctx-menu {
+      position: absolute; transform: translate(-50%, 4px); min-width: 140px; z-index: 40;
+      background: #fff; border: 1px solid var(--sp-admin-border, #ECE9F5); border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.15); padding: 4px; display: flex; flex-direction: column;
+    }
+    .sp-sgv-ctx-menu-title {
+      font-size: 10px; font-weight: 700; color: var(--sp-admin-text-muted, #8B85A0);
+      padding: 6px 10px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px;
+    }
+    .sp-sgv-ctx-menu-item {
+      text-align: left; border: none; background: none; padding: 7px 10px; font-size: 12px;
+      color: var(--sp-admin-text, #211B36); border-radius: 5px; cursor: pointer;
+    }
+    .sp-sgv-ctx-menu-item:hover { background: var(--sp-admin-border, #ECE9F5); }
   `],
 })
 export class SpAdminSkillGraphVizComponent implements OnChanges, OnDestroy {
   @Input() nodes: SkillGraphNode[] = [];
   @Input() edges: SkillGraphEdge[] = [];
+  // Topical-hierarchy drill-down (2026-07-30, user follow-up) — the compound layout's grouping box
+  // used to always show the Skill name ("Grammar"), even after drilling into a container, since
+  // every visible node always shares one skill (the Graph tab requires a skill filter). That read
+  // as "the container's title never changes." When set, overrides the box label with the current
+  // container's actual title; the parent component passes the last breadcrumb crumb's title.
+  @Input() containerLabel: string | null = null;
   @Output() nodeSelected = new EventEmitter<SkillGraphNode>();
+  // Topical-hierarchy drill-down (2026-07-30) — fired instead of nodeSelected when the tapped node
+  // has children (i.e. some other node in the currently-visible set has parentNodeId === this
+  // node's id). Leaf taps keep firing nodeSelected as before.
+  @Output() drillInto = new EventEmitter<SkillGraphNode>();
+  // Per-node context menu (2026-07-31, user follow-up) — right-click any node (leaf or container)
+  // for View/Edit/Details, without disturbing the existing left-click select/drill-in behavior.
+  @Output() viewNode = new EventEmitter<SkillGraphNode>();
+  @Output() editNode = new EventEmitter<SkillGraphNode>();
+  @Output() detailsNode = new EventEmitter<SkillGraphNode>();
+
+  tooltip: { x: number; y: number; title: string; description: string; hasChildren: boolean } | null = null;
+  contextMenu: { x: number; y: number; title: string; node: SkillGraphNode } | null = null;
 
   @ViewChild('cyContainer', { static: true }) container!: ElementRef<HTMLDivElement>;
 
   // Layout algorithm picker (2026-07-23) — applies to whatever's currently visible, i.e. the
   // CEFR-level-filtered set (see `visibleNodes` in render()), not the whole 600-node graph.
   readonly layoutOptions = LAYOUT_OPTIONS;
-  layoutAlgorithm: LayoutAlgorithm = 'cose-bilkent';
+  // User preference (2026-07-30) — Layered reads better than the compound skill-box grouping now
+  // that the root graph view is topLevelOnly-filtered (no more flat leaf/container flood to
+  // organize into boxes) and containers are already visually distinct via their own border/icon.
+  layoutAlgorithm: LayoutAlgorithm = 'layered';
 
   onLayoutChange(): void {
     this.render();
@@ -216,14 +282,16 @@ export class SpAdminSkillGraphVizComponent implements OnChanges, OnDestroy {
     const elements: ElementDefinition[] = [
       ...(isCompound
         ? Array.from(skillsPresent).map(skill => ({
-            data: { id: `skill:${skill}`, label: this.skillLabel(skill), isParent: true },
+            data: { id: `skill:${skill}`, label: this.containerLabel ?? this.skillLabel(skill), isParent: true },
           }))
         : []),
       ...visibleNodes.map(n => ({
         data: {
           id: n.id,
-          label: n.title,
+          label: n.hasChildren ? `\u{1F4C1} ${n.title}` : n.title,
+          description: n.description,
           cefrLevel: n.cefrLevel,
+          hasChildren: n.hasChildren,
           ...(isCompound ? { parent: `skill:${n.skill || 'other'}` } : {}),
         },
       })),
@@ -277,6 +345,21 @@ export class SpAdminSkillGraphVizComponent implements OnChanges, OnDestroy {
           },
         },
         {
+          // User feedback (2026-07-30) — "different color for containers, clearly identifiable":
+          // a real node with children (topical containers like "Adverbs", subtopics like "Adverbs
+          // of frequency") looked identical to a leaf, distinguishable only by hovering to check the
+          // tooltip's "Click to open" hint. A thick, fixed-color double border (independent of CEFR
+          // tint, so it reads the same at every level) plus a small folder glyph in the label makes
+          // "this opens into more nodes" visible at a glance without hovering.
+          selector: 'node[!isParent][?hasChildren]',
+          style: {
+            'border-width': 3,
+            'border-color': '#5B4BE8',
+            'border-style': 'double',
+            'font-weight': 700,
+          },
+        },
+        {
           selector: 'edge',
           style: {
             width: 1.5,
@@ -318,8 +401,56 @@ export class SpAdminSkillGraphVizComponent implements OnChanges, OnDestroy {
       if (evt.target.data('isParent')) return;
       const id = evt.target.id();
       const node = this.nodes.find(n => n.id === id);
-      if (node) this.nodeSelected.emit(node);
+      if (!node) return;
+      if (node.hasChildren) this.drillInto.emit(node);
+      else this.nodeSelected.emit(node);
     });
+
+    // Hover tooltip (2026-07-30) — no tooltip library in this repo yet, so a plain positioned div
+    // driven off renderedPosition(), matching this component's existing hand-rolled controls.
+    this.cy.on('mouseover', 'node[!isParent]', evt => {
+      const pos = evt.target.renderedPosition();
+      this.tooltip = {
+        x: pos.x,
+        y: pos.y - evt.target.renderedOuterHeight() / 2,
+        title: evt.target.data('label'),
+        description: evt.target.data('description') || '',
+        hasChildren: !!evt.target.data('hasChildren'),
+      };
+    });
+    this.cy.on('mouseout', 'node[!isParent]', () => { this.tooltip = null; });
+    this.cy.on('pan zoom', () => { this.tooltip = null; });
+
+    // Context menu (2026-07-31) — right-click (Cytoscape's 'cxttap') opens View/Edit/Details,
+    // independent of left-click's select/drill-in behavior. 'cxttap' also fires on a
+    // touch-and-hold, so this works without a mouse too.
+    this.cy.on('cxttap', 'node[!isParent]', evt => {
+      const id = evt.target.id();
+      const node = this.nodes.find(n => n.id === id);
+      if (!node) return;
+      const pos = evt.target.renderedPosition();
+      this.tooltip = null;
+      this.contextMenu = { x: pos.x, y: pos.y + evt.target.renderedOuterHeight() / 2, title: node.title, node };
+    });
+    this.cy.on('pan zoom', () => { this.contextMenu = null; });
+  }
+
+  closeContextMenu(): void {
+    this.contextMenu = null;
+  }
+
+  // Right-clicking the backdrop (i.e. empty canvas, outside any node) should just close the menu,
+  // not also pop the browser's native context menu on top of it.
+  onContextMenuBackdropRightClick(event: MouseEvent): void {
+    event.preventDefault();
+    this.contextMenu = null;
+  }
+
+  onMenuAction(action: 'view' | 'edit' | 'details', node: SkillGraphNode): void {
+    this.contextMenu = null;
+    if (action === 'view') this.viewNode.emit(node);
+    else if (action === 'edit') this.editNode.emit(node);
+    else this.detailsNode.emit(node);
   }
 
   private skillLabel(skill: string): string {

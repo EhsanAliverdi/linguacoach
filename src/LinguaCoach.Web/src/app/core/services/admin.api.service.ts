@@ -249,10 +249,19 @@ export class AdminApiService {
   // (2026-07-30) — the main admin Graph tab always passes both (see its filter gate) since an
   // unfiltered dump is no longer a viable payload at 14,070+ nodes; the node-detail page's BFS
   // neighborhood preview still calls this with no args, getting the full unfiltered graph.
-  getSkillGraph(cefrLevel?: string, skill?: string): Observable<SkillGraphResponse> {
+  // parentNodeId (2026-07-30, topical-hierarchy drill-down) — mutually exclusive with cefrLevel
+  // server-side (a container's children can sit at a different CEFR level than the container), so
+  // pass it alone when drilling into a node.
+  // topLevelOnly (2026-07-30, user follow-up) — root view should only show parentless nodes;
+  // family-variant leaves ("Affirmative"/"Negative"/"Question") only make sense in the context of
+  // their own container and collide in label with every other family's identically-named leaves
+  // when shown flat alongside everything else at a CEFR level.
+  getSkillGraph(cefrLevel?: string, skill?: string, parentNodeId?: string, topLevelOnly?: boolean): Observable<SkillGraphResponse> {
     const params: Record<string, string> = {};
     if (cefrLevel) params['cefrLevel'] = cefrLevel;
     if (skill) params['skill'] = skill;
+    if (parentNodeId) params['parentNodeId'] = parentNodeId;
+    if (topLevelOnly) params['topLevelOnly'] = 'true';
     const qs = new URLSearchParams(params).toString();
     return this.http.get<SkillGraphResponse>(`${this.api}/skill-graph/graph${qs ? '?' + qs : ''}`);
   }

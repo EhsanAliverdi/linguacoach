@@ -34,10 +34,19 @@ internal sealed class SkillGraphNodeConfiguration : IEntityTypeConfiguration<Ski
         builder.Property(e => e.FocusTagsJson).HasColumnName("focus_tags_json").HasDefaultValue("[]").IsRequired();
         builder.Property(e => e.ParentNodeId).HasColumnName("parent_node_id");
 
+        // Phase GSG-1 (2026-07-31) — CEFR provenance/confidence, node type, routing eligibility.
+        builder.Property(e => e.CefrConfidence).HasColumnName("cefr_confidence").HasConversion<string>().HasMaxLength(32).IsRequired()
+            .HasDefaultValue(Domain.Enums.CefrConfidence.Unknown);
+        builder.Property(e => e.CefrSource).HasColumnName("cefr_source").HasMaxLength(50);
+        builder.Property(e => e.NodeType).HasColumnName("node_type").HasConversion<string>().HasMaxLength(32);
+        builder.Property(e => e.RoutingEligible).HasColumnName("routing_eligible").IsRequired().HasDefaultValue(false);
+
         builder.HasIndex(e => e.Key).IsUnique().HasDatabaseName("ix_skill_graph_nodes_key");
         builder.HasIndex(e => new { e.CefrLevel, e.Skill, e.IsActive }).HasDatabaseName("ix_skill_graph_nodes_cefr_skill_active");
         builder.HasIndex(e => e.ReviewStatus).HasDatabaseName("ix_skill_graph_nodes_review_status");
         builder.HasIndex(e => e.ParentNodeId).HasDatabaseName("ix_skill_graph_nodes_parent_node_id");
+        builder.HasIndex(e => e.RoutingEligible).HasDatabaseName("ix_skill_graph_nodes_routing_eligible");
+        builder.HasIndex(e => e.NodeType).HasDatabaseName("ix_skill_graph_nodes_node_type");
 
         // Self-referencing, same no-cascade convention SkillGraphPrerequisiteEdge already uses —
         // deleting/deactivating a container while it still has children must be an explicit,

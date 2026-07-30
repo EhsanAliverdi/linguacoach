@@ -1607,6 +1607,11 @@ export interface SkillGraphNodeDetail extends SkillGraphNodeListItem {
   // Container/leaf hierarchy (2026-07-27).
   parent: SkillGraphNodePrerequisiteRef | null;
   children: (SkillGraphNodePrerequisiteRef & { reviewStatus: string })[];
+  // Phase GSG-1 (2026-07-31) — CEFR provenance/confidence, node type, routing eligibility.
+  cefrConfidence: 'Unknown' | 'Fallback' | 'Inherited' | 'Attested' | 'Curated';
+  cefrSource: string | null;
+  nodeType: 'Topic' | 'Concept' | 'Skill' | 'Variant' | 'BroadReference' | null;
+  routingEligible: boolean;
 }
 
 // Editability audit (2026-07-23) — manual node create/edit + manual edge management.
@@ -1891,6 +1896,7 @@ export interface SkillGraphNode {
   id: string;
   key: string;
   title: string;
+  description: string;
   cefrLevel: string;
   skill: string;
   subskill: string | null;
@@ -1898,6 +1904,12 @@ export interface SkillGraphNode {
   reviewStatus: 'NotRequired' | 'PendingReview' | 'Approved' | 'Rejected';
   contextTags: string[];
   focusTags: string[];
+  // Container/leaf + topical hierarchy (2026-07-27, extended 2026-07-30 for drill-down nav).
+  parentNodeId: string | null;
+  // DB-wide check (not just within the current CEFR/skill-filtered batch) — a container's
+  // children can sit at a different CEFR level than the container, so this can be true even when
+  // none of this node's children are in the currently-fetched `nodes` array.
+  hasChildren: boolean;
 }
 
 export interface SkillGraphEdge {

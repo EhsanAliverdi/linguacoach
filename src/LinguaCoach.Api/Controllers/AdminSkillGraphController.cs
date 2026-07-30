@@ -235,32 +235,65 @@ public sealed class AdminSkillGraphController : ControllerBase
     /// The paginated <see cref="GetNodes"/> never includes edges, and <see cref="GetNode"/> only
     /// resolves one node's own direct prerequisites/dependents.</summary>
     [HttpGet("graph")]
-    public async Task<IActionResult> GetGraph([FromQuery] string? cefrLevel, [FromQuery] string? skill, CancellationToken ct)
+    public async Task<IActionResult> GetGraph(
+        [FromQuery] string? cefrLevel, [FromQuery] string? skill, [FromQuery] Guid? parentNodeId,
+        [FromQuery] bool topLevelOnly = false, CancellationToken ct = default)
     {
         var query = _db.SkillGraphNodes.AsNoTracking().Where(n => n.IsActive);
-        if (!string.IsNullOrWhiteSpace(cefrLevel)) query = query.Where(n => n.CefrLevel == cefrLevel.ToUpperInvariant());
+        // Topical-hierarchy drill-down (2026-07-30) — when the admin graph viz drills into a
+        // container, its children can sit at a different CEFR level than the container itself (e.g.
+        // topic "Adverbs" at A1 parenting "Adverbs of attitude" at B1), so scoping by ParentNodeId
+        // is mutually exclusive with the CefrLevel filter, not additive to it — matches GetNodes'
+        // existing parentNodeId lazy-expand semantics.
+        if (parentNodeId.HasValue)
+        {
+            query = query.Where(n => n.ParentNodeId == parentNodeId.Value);
+        }
+        else if (!string.IsNullOrWhiteSpace(cefrLevel))
+        {
+            query = query.Where(n => n.CefrLevel == cefrLevel.ToUpperInvariant());
+        }
         if (!string.IsNullOrWhiteSpace(skill)) query = query.Where(n => n.Skill == skill.ToLowerInvariant());
+        // Root-view flattening (2026-07-30, user follow-up) — leaves that only make sense in
+        // context of their family container ("Affirmative", "Negative", "Question") were rendering
+        // side by side with dozens of other families' identically-named leaves when the root graph
+        // showed every node at a CEFR/skill regardless of hierarchy. Same topLevelOnly semantics as
+        // GetNodes: only ParentNodeId == null nodes at the root; leaves only surface once the admin
+        // drills into their specific container (parentNodeId branch above, which already scopes to
+        // direct children only, so a drilled-in family's few siblings never flood the canvas).
+        if (topLevelOnly) query = query.Where(n => n.ParentNodeId == null);
 
         var rawNodes = await query
             .Select(n => new
             {
-                n.Id, n.Key, n.Title, n.CefrLevel, n.Skill, n.Subskill, n.DifficultyBand, n.ReviewStatus,
+                n.Id, n.Key, n.Title, n.Description, n.CefrLevel, n.Skill, n.Subskill, n.DifficultyBand, n.ReviewStatus,
                 n.ContextTagsJson, n.FocusTagsJson, n.ParentNodeId,
             })
             .ToListAsync(ct);
 
+        // "Has children" needs a DB-wide check, not just within `rawNodes` — a container's children
+        // can sit at a different CEFR level than the container itself (e.g. topic "Adverbs" at A1
+        // parenting "Adverbs of attitude" at B1), so they may not even be in this CEFR-filtered
+        // batch. Same containerIds pattern GetNodes' hasChildren filter already uses.
+        var allContainerIds = await _db.SkillGraphNodes.AsNoTracking()
+            .Where(n => n.ParentNodeId != null)
+            .Select(n => n.ParentNodeId!.Value)
+            .Distinct()
+            .ToListAsync(ct);
+        var containerIdSet = allContainerIds.ToHashSet();
+
         var nodes = rawNodes.Select(n => new
         {
-            n.Id, n.Key, n.Title, n.CefrLevel, n.Skill, n.Subskill, n.DifficultyBand, n.ReviewStatus,
+            n.Id, n.Key, n.Title, n.Description, n.CefrLevel, n.Skill, n.Subskill, n.DifficultyBand, n.ReviewStatus,
             ContextTags = ParseTags(n.ContextTagsJson), FocusTags = ParseTags(n.FocusTagsJson),
-            n.ParentNodeId,
+            n.ParentNodeId, HasChildren = containerIdSet.Contains(n.Id),
         });
 
         // When filtered, only render edges fully inside the filtered set (a cross-level/cross-skill
         // prerequisite pointing outside it would otherwise dangle to a node Cytoscape never
         // receives). Unfiltered, every edge is returned as before.
         var edgesQuery = _db.SkillGraphPrerequisiteEdges.AsNoTracking().AsQueryable();
-        if (!string.IsNullOrWhiteSpace(cefrLevel) || !string.IsNullOrWhiteSpace(skill))
+        if (parentNodeId.HasValue || !string.IsNullOrWhiteSpace(cefrLevel) || !string.IsNullOrWhiteSpace(skill) || topLevelOnly)
         {
             var nodeIds = rawNodes.Select(n => n.Id).ToList();
             edgesQuery = edgesQuery.Where(e => nodeIds.Contains(e.NodeId) && nodeIds.Contains(e.PrerequisiteNodeId));
@@ -329,6 +362,13 @@ public sealed class AdminSkillGraphController : ControllerBase
             node.ParentNodeId,
             parent,
             children,
+            // Phase GSG-1 (2026-07-31) — provenance/type/routing-eligibility, so the admin graph's
+            // new "Details" panel can actually show what backs this node's CEFR level instead of
+            // that being invisible outside a direct DB query.
+            node.CefrConfidence,
+            node.CefrSource,
+            node.NodeType,
+            node.RoutingEligible,
         });
     }
 

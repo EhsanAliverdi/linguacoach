@@ -1,3 +1,5 @@
+using LinguaCoach.Domain.Enums;
+
 namespace LinguaCoach.Application.SkillGraph;
 
 /// <summary>Skill Graph container/leaf Phase 2 (2026-07-27) — deterministic (no AI) import of the
@@ -45,14 +47,20 @@ public sealed record CefrJProposedContainer(
     Guid? MatchedExistingNodeId,
     string? MatchedExistingNodeKey,
     double? MatchConfidence,
-    IReadOnlyList<CefrJProposedLeaf> Leaves);
+    IReadOnlyList<CefrJProposedLeaf> Leaves,
+    CefrConfidence Confidence,
+    string Source);
 
 /// <summary>One CEFR-J CSV row → one leaf node proposal. <c>SourceRowId</c> is the CSV's own
 /// hierarchical ID (e.g. <c>"8-1"</c>) kept for traceability in the review screen, not used as the
-/// node Key.</summary>
+/// node Key. <c>Confidence</c>/<c>Source</c> (Phase GSG-1, 2026-07-31) carry the CEFR provenance
+/// forward instead of collapsing it into a discarded warning string — see
+/// <see cref="LinguaCoach.Domain.Entities.SkillGraphNode.CefrConfidence"/>.</summary>
 public sealed record CefrJProposedLeaf(
     string Key,
     string Title,
     string CefrLevel,
     int DifficultyBand,
-    string SourceRowId);
+    string SourceRowId,
+    CefrConfidence Confidence,
+    string Source);

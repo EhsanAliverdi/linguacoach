@@ -1,4 +1,5 @@
 using LinguaCoach.Application.SkillGraph;
+using LinguaCoach.Domain.Enums;
 using LinguaCoach.Infrastructure.SkillGraph;
 
 namespace LinguaCoach.UnitTests.SkillGraph;
@@ -59,6 +60,20 @@ public sealed class CefrJGrammarImportServiceTests
 
         Assert.Equal("A1", questionLeaf.CefrLevel);
         Assert.DoesNotContain(preview.Warnings, w => w.Contains("1-2"));
+        // Phase GSG-1 — still real evidence (a genuine fallback column), so it's not a review-screen
+        // warning, but it must be persisted as Fallback confidence, not silently treated as Attested.
+        Assert.Equal(CefrConfidence.Fallback, questionLeaf.Confidence);
+        Assert.Equal("coreInventory", questionLeaf.Source);
+    }
+
+    [Fact]
+    public void ParseAndProposeMapping_CefrJLevelPresent_IsAttestedConfidence()
+    {
+        var preview = _sut.ParseAndProposeMapping(SampleCsv, existingGrammarNodes: []);
+        var baseLeaf = preview.Containers[0].Leaves.Single(l => l.SourceRowId == "1");
+
+        Assert.Equal(CefrConfidence.Attested, baseLeaf.Confidence);
+        Assert.Equal("cefrj", baseLeaf.Source);
     }
 
     [Fact]
@@ -87,6 +102,8 @@ public sealed class CefrJGrammarImportServiceTests
         var leaf = Assert.Single(preview.StandaloneLeaves);
         Assert.Equal("A1", leaf.CefrLevel);
         Assert.Contains(preview.Warnings, w => w.Contains("99") && w.Contains("A1"));
+        Assert.Equal(CefrConfidence.Fallback, leaf.Confidence);
+        Assert.Equal("defaulted", leaf.Source);
     }
 
     [Fact]

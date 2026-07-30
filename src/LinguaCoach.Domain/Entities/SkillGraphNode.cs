@@ -79,6 +79,31 @@ public sealed class SkillGraphNode : BaseEntity
     /// detection is a service-layer DFS, not a domain-layer check either).</summary>
     public Guid? ParentNodeId { get; private set; }
 
+    /// <summary>Grammar Skill Graph Phase GSG-1 (2026-07-31) — how much evidence backs
+    /// <see cref="CefrLevel"/>. Defaults <see cref="Enums.CefrConfidence.Unknown"/> until a
+    /// provenance classification/backfill pass sets it; see
+    /// docs/reviews/2026-07-30-grammar-skill-graph-seed-audit.md.</summary>
+    public CefrConfidence CefrConfidence { get; private set; } = CefrConfidence.Unknown;
+
+    /// <summary>Which column/process actually produced <see cref="CefrLevel"/> — e.g.
+    /// "cefrj"/"coreInventory"/"egp"/"gselo"/"defaulted"/"inherited_from_category"/
+    /// "hand_authored". Free-text (not an enum) since new source frameworks/processes will keep
+    /// appearing; <see cref="CefrConfidence"/> is the field routing/mastery logic should actually
+    /// branch on.</summary>
+    public string? CefrSource { get; private set; }
+
+    /// <summary>What kind of thing this node is (Topic/Concept container vs. Skill/Variant leaf vs.
+    /// an over-broad reference leaf), distinct from the container/leaf shape <see cref="ParentNodeId"/>
+    /// already encodes. Null means not yet classified. See
+    /// docs/reviews/2026-07-30-grammar-skill-graph-seed-audit.md §9.</summary>
+    public SkillGraphNodeType? NodeType { get; private set; }
+
+    /// <summary>Whether learner mastery/CEFR-aware routing may use this node. Deliberately
+    /// conservative — defaults false, and the GSG-1 backfill only sets it true for
+    /// Skill/Variant nodes with Attested/Curated confidence, so an unknown or unreviewed node can
+    /// never silently participate in routing.</summary>
+    public bool RoutingEligible { get; private set; }
+
     private SkillGraphNode() { }
 
     public SkillGraphNode(
@@ -133,6 +158,21 @@ public sealed class SkillGraphNode : BaseEntity
     {
         ContextTagsJson = string.IsNullOrWhiteSpace(contextTagsJson) ? ContextTagsJson : contextTagsJson;
         FocusTagsJson = string.IsNullOrWhiteSpace(focusTagsJson) ? FocusTagsJson : focusTagsJson;
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
+
+    /// <summary>Grammar Skill Graph Phase GSG-1 (2026-07-31) — sets CEFR provenance/confidence,
+    /// node type, and routing eligibility, e.g. the seed backfill that classified all 617 existing
+    /// grammar nodes against the 2026-07-30 audit's findings. Deliberately NOT blocked by
+    /// ReviewStatus, same reasoning as <see cref="UpdateTags"/>: this is classification metadata
+    /// layered on top of already-approved content, not re-reviewable core content.</summary>
+    public void SetProvenanceAndType(
+        CefrConfidence cefrConfidence, string? cefrSource, SkillGraphNodeType nodeType, bool routingEligible)
+    {
+        CefrConfidence = cefrConfidence;
+        CefrSource = string.IsNullOrWhiteSpace(cefrSource) ? null : cefrSource.Trim();
+        NodeType = nodeType;
+        RoutingEligible = routingEligible;
         UpdatedAtUtc = DateTime.UtcNow;
     }
 

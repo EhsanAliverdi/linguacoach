@@ -94,6 +94,91 @@ Each phase should get its own scoping/plan pass before implementation, per this 
 
 ---
 
+## Addendum (2026-07-30) — Topical hierarchy tier + admin graph drill-down
+
+The container/leaf hierarchy from the 2026-07-24/27 work grouped grammatical *forms* of one point
+(affirmative/negative/question variants of "I am"). It did not group related *topics* — several
+Grammar nodes crammed 4-8 distinct teachable items into one title (e.g. "ADVERBS OF FREQUENCY:
+always/usually/often/frequently/occasionally/sometimes/rarely"), and topically related nodes (the
+four adverb categories) had no shared parent.
+
+`ParentNodeId` already supports arbitrary-depth chains, so no schema change was needed — a topic
+container (e.g. "Adverbs") can parent subtopic containers (e.g. "Adverbs of frequency"), which in
+turn parent item leaves ("always", "usually", ...). Two real gaps in `ContentSeeder` blocked this
+and were fixed (see `docs/reviews/2026-07-30-grammar-skill-graph-topical-hierarchy-plan.md` for
+full detail):
+
+1. Re-running the seeder with an edited title/description had no effect on already-approved nodes
+   (`UpsertLeafAsync` only reapproved/reparented existing nodes). Now reject→`UpdateCore`→approve
+   when seed content actually changed.
+2. Containers could not parent other containers (`UpsertContainersAsync` always used
+   `parentId: null`). Now supports one level of container-of-container nesting via each container's
+   optional `parentKey`.
+
+Piloted on Grammar's "Adverbs" topic (24 new item leaves under 4 promoted subtopic containers).
+Remaining grammar topics (Comparatives, Pronouns, the rest of the ~560 non-Adverbs nodes) are
+explicit follow-up, not done in this pass.
+
+**Admin graph viz** (`sp-admin-skill-graph-viz.component.ts`) gained hover tooltips (title +
+`Description`, custom positioned `<div>`, no new tooltip dependency) and click-to-drill-in
+navigation: tapping a node with children fires `drillInto` instead of `nodeSelected`; the parent
+component re-fetches via `GetGraph`'s new `parentNodeId` query param (mutually exclusive with the
+`cefrLevel` filter server-side, since a container's children can sit at a different CEFR level than
+the container) and tracks a breadcrumb trail. `hasChildren` is computed DB-wide server-side
+(reusing `GetNodes`' existing containerIds pattern), not from the currently-visible node batch,
+so cross-CEFR-level containers are still correctly marked drillable.
+
+Seed files gained a `version` field (`grammar-seed.json`: schema field; the flat-array
+`grammar-prerequisites-seed.json`: a leading `//` comment, since `JsonCommentHandling.Skip` was
+already enabled) — self-documenting for future taxonomy passes, no enforcement logic.
+
+## Addendum (2026-07-31) — Phase GSG-1: provenance/type metadata + routing eligibility
+
+A 2026-07-30 audit (`docs/reviews/2026-07-30-grammar-skill-graph-seed-audit.md`) found 145 of 592
+CEFR-J-derived grammar nodes (24.5%) carried an A1 label with no real evidence (89 CSV rows had no
+usable level in any framework column and were silently defaulted; 48 more fell back to a
+non-CEFR-J column), and that the graph mixes independently-assessable leaves ("always") with entire
+grammatical domains compressed into one leaf ("PREPOSITIONS") with no way to tell them apart. Phase
+GSG-1 (approved four-phase sequence: GSG-1 provenance/safety → GSG-2 typed relationships → GSG-3
+stable keys → GSG-4 curriculum curation) addressed the foundational, additive piece:
+
+- **`SkillGraphNode` gained four fields**: `CefrConfidence` (enum: Unknown/Fallback/Inherited/
+  Attested/Curated — how much evidence backs `CefrLevel`), `CefrSource` (free-text: which column/
+  process produced it — `"cefrj"`/`"coreInventory"`/`"egp"`/`"gselo"`/`"defaulted"`/
+  `"inherited_from_category"`/`"hand_authored"`), `NodeType` (enum: Topic/Concept/Skill/Variant/
+  BroadReference — what *kind* of thing a node is, distinct from the container/leaf shape
+  `ParentNodeId` already encodes), and `RoutingEligible` (bool). Set via a new ungated mutator,
+  `SetProvenanceAndType` (same non-approval-gated convention as `UpdateTags`).
+- **`RoutingEligible` is deliberately conservative**: `true` only for `Skill`/`Variant` nodes with
+  `Attested`/`Curated` confidence. Every `Topic`/`Concept`/`BroadReference` node, and every
+  `Fallback`/`Inherited`/`Unknown`-confidence node regardless of type, starts `false` — this is the
+  concrete implementation of "unknown/unreviewed nodes are not routing eligible." Even this
+  session's own hand-authored Adverbs-pilot content (real explanations, genuinely useful) stays
+  routing-ineligible under `Inherited` confidence until a future curation pass promotes it to
+  `Curated`.
+- **`CefrJGrammarImportService.ResolveCefrLevel`** now returns confidence/source alongside the
+  level, instead of only a discarded warning string — the interactive "Draft nodes" import preview
+  (`CefrJProposedContainer`/`CefrJProposedLeaf`) carries this forward for any future CSV import run,
+  not just the one-off backfill.
+- **Backfill**: all 617 existing grammar nodes (592 CEFR-J-derived + 25 Adverbs-pilot items)
+  classified via the audit's exact CSV-column-resolution algorithm, written into
+  `grammar-seed.json` (bumped to `version: 4`) and pushed through `ContentSeeder`. Result: 146 of
+  617 nodes (23.7%) are routing-eligible; everything else correctly reports "not yet trustworthy"
+  rather than silently participating in any future routing/mastery logic.
+- **New DB-free validators** (`tests/LinguaCoach.UnitTests/SkillGraph/GrammarSeedIntegrityTests.cs`)
+  permanently enforce the audit's structural hard-failures plus the new provenance-shape rule
+  (`routingEligible:true` must have `nodeType` in `{skill,variant}` and `cefrConfidence` in
+  `{attested,curated}`), plus ratchet-style regression guards on the audit's warning-level metrics
+  (mixed-level containers, backward-CEFR edges, transitively-redundant edges) so a future change
+  can't silently make them worse.
+- **Explicitly not done in GSG-1** (deferred to later phases per the approved sequence): no typed
+  prerequisite relationships or CEFR-monotonicity enforcement (GSG-2); no stable level-independent
+  keys (GSG-3); no correction of the 10 modal-family duplicate-sibling defects, the past/future
+  family mislabeling, or the broad-node splits (GSG-4); no `AdminSkillGraphController`/frontend
+  changes — this phase is backend/data only.
+
+Full implementation record: `docs/reviews/2026-07-31-gsg1-provenance-routing-safety.md`.
+
 ## Risks / unresolved questions
 
 - ~~Skill-graph size/granularity is undetermined...~~ **Resolved 2026-07-24/27**: granularity

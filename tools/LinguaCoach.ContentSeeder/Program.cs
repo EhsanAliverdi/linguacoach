@@ -103,19 +103,28 @@ public static class Program
         var file = JsonSerializer.Deserialize<GrammarSeedFile>(await File.ReadAllTextAsync(path), JsonOptions)
             ?? throw new InvalidOperationException("Empty/invalid grammar seed file.");
 
+        Console.WriteLine($"Grammar seed v{file.Version}" + (file.VersionNotes is { Count: > 0 } notes
+            ? $" — {string.Join(" | ", notes)}" : "."));
+
         var source = await GetOrCreateSourceAsync(db, "CEFR-J Grammar Profile");
         var checkpoint = Checkpoint.Load(path);
         var containerIds = await UpsertContainersAsync(db, file.Containers.Select(c =>
-            (c.Key, c.Title, c.CefrLevel, c.DifficultyBand, Skill: CurriculumSkillConstants.Grammar)));
+            (c.Key, c.Title, c.CefrLevel, c.DifficultyBand, Skill: CurriculumSkillConstants.Grammar, c.ParentKey, c.Description,
+             c.CefrConfidence, c.CefrSource, c.NodeType, c.RoutingEligible)));
 
         var processed = 0;
         foreach (var leaf in file.Leaves)
         {
-            if (checkpoint.Contains(leaf.Key)) continue;
-
+            // Node metadata (title/description/parent/provenance) is upserted every run, regardless
+            // of checkpoint — cheap, and needed so hand-edits (e.g. the 2026-07-30 Adverbs cleanup,
+            // the 2026-07-31 GSG-1 provenance backfill) actually take effect on re-run. Only the
+            // expensive content-generation chain below is checkpoint-gated.
             var parentId = leaf.ParentKey is not null && containerIds.TryGetValue(leaf.ParentKey, out var pid) ? pid : (Guid?)null;
             var leafId = await UpsertLeafAsync(db, leaf.Key, leaf.Title, leaf.CefrLevel, leaf.DifficultyBand,
-                CurriculumSkillConstants.Grammar, parentId);
+                CurriculumSkillConstants.Grammar, parentId, description: leaf.Description,
+                cefrConfidence: leaf.CefrConfidence, cefrSource: leaf.CefrSource, nodeType: leaf.NodeType, routingEligible: leaf.RoutingEligible);
+
+            if (checkpoint.Contains(leaf.Key)) continue;
 
             var content = ResourceBankItemContent.Serialize(new GrammarContent(leaf.GrammarPoint, leaf.Explanation));
             await seeder.SeedOneAsync(source.Id, leaf.CefrLevel, content, leaf.Title, leafId, "gap_fill", PublishedResourceType.Grammar);
@@ -557,12 +566,46 @@ public static class Program
 
     private static async Task<Dictionary<string, Guid>> UpsertContainersAsync(
         LinguaCoachDbContext db, IEnumerable<(string Key, string Title, string CefrLevel, int DifficultyBand, string Skill)> containers)
+        => await UpsertContainersAsync(db, containers.Select(c =>
+            (c.Key, c.Title, c.CefrLevel, c.DifficultyBand, c.Skill, ParentKey: (string?)null, Description: (string?)null,
+             CefrConfidence: (string?)null, CefrSource: (string?)null, NodeType: (string?)null, RoutingEligible: false)));
+
+    /// <summary>Container-of-container overload (2026-07-30, Adverbs topical hierarchy) — lets a
+    /// container declare its own <paramref name="containers"/>' ParentKey, e.g. a topic container
+    /// ("Adverbs") parenting subtopic containers ("Adverbs of frequency"). Two passes: first upsert
+    /// every container with no parent (so every Key resolves to an Id), then a second pass assigns
+    /// parents — only resolves one level of nesting, since that's all this codebase needs today;
+    /// deeper chains would need topological ordering instead of two fixed passes.</summary>
+    private static async Task<Dictionary<string, Guid>> UpsertContainersAsync(
+        LinguaCoachDbContext db,
+        IEnumerable<(string Key, string Title, string CefrLevel, int DifficultyBand, string Skill, string? ParentKey, string? Description)> containers)
+        => await UpsertContainersAsync(db, containers.Select(c =>
+            (c.Key, c.Title, c.CefrLevel, c.DifficultyBand, c.Skill, c.ParentKey, c.Description,
+             CefrConfidence: (string?)null, CefrSource: (string?)null, NodeType: (string?)null, RoutingEligible: false)));
+
+    /// <summary>Provenance overload (Phase GSG-1, 2026-07-31) — carries the audit-derived CEFR
+    /// confidence/source/node-type/routing-eligibility classification through to
+    /// <see cref="SkillGraphNode.SetProvenanceAndType"/> for every container. Grammar-only today
+    /// (the other domains' overloads above default these to null/false).</summary>
+    private static async Task<Dictionary<string, Guid>> UpsertContainersAsync(
+        LinguaCoachDbContext db,
+        IEnumerable<(string Key, string Title, string CefrLevel, int DifficultyBand, string Skill, string? ParentKey, string? Description,
+            string? CefrConfidence, string? CefrSource, string? NodeType, bool RoutingEligible)> containers)
     {
+        var list = containers.ToList();
         var result = new Dictionary<string, Guid>();
-        foreach (var c in containers)
+        foreach (var c in list)
         {
-            var id = await UpsertLeafAsync(db, c.Key, c.Title, c.CefrLevel, c.DifficultyBand, c.Skill, parentId: null);
+            var id = await UpsertLeafAsync(db, c.Key, c.Title, c.CefrLevel, c.DifficultyBand, c.Skill, parentId: null, description: c.Description,
+                cefrConfidence: c.CefrConfidence, cefrSource: c.CefrSource, nodeType: c.NodeType, routingEligible: c.RoutingEligible);
             result[c.Key] = id;
+        }
+
+        foreach (var c in list.Where(x => x.ParentKey is not null))
+        {
+            if (!result.TryGetValue(c.ParentKey!, out var parentId)) continue;
+            var node = await db.SkillGraphNodes.FirstAsync(n => n.Id == result[c.Key]);
+            if (node.ParentNodeId != parentId) node.AssignParent(parentId);
         }
         await db.SaveChangesAsync();
         return result;
@@ -570,30 +613,81 @@ public static class Program
 
     private static async Task<Guid> UpsertLeafAsync(
         LinguaCoachDbContext db, string key, string title, string cefrLevel, int difficultyBand,
-        string skill, Guid? parentId, string? descriptionForAi = null, string? description = null)
+        string skill, Guid? parentId, string? descriptionForAi = null, string? description = null,
+        string? cefrConfidence = null, string? cefrSource = null, string? nodeType = null, bool routingEligible = false)
     {
+        var resolvedDescription = description ?? $"{title}.";
         var existing = await db.SkillGraphNodes.FirstOrDefaultAsync(n => n.Key == key);
         if (existing is not null)
         {
+            // Content re-seed (2026-07-30) — UpdateCore refuses to run once a node is Approved (see
+            // its own doc comment: reject first to reopen editing), and every seeded node ends up
+            // Approved. Without this reject/edit/re-approve round trip, editing a title/description
+            // in the seed JSON and re-running the seeder silently had no effect on existing nodes.
+            if (existing.Title != title || existing.Description != resolvedDescription
+                || existing.CefrLevel != cefrLevel.ToUpperInvariant() || existing.DifficultyBand != difficultyBand)
+            {
+                if (existing.ReviewStatus == AdminReviewStatus.Approved)
+                    existing.Reject("Content re-seed", null);
+                existing.UpdateCore(title, resolvedDescription, cefrLevel, skill, existing.Subskill, difficultyBand, existing.DescriptionForAi);
+            }
             if (existing.ReviewStatus != AdminReviewStatus.Approved)
                 existing.Approve(null);
             if (parentId.HasValue && existing.ParentNodeId != parentId)
                 existing.AssignParent(parentId);
+            // Phase GSG-1 (2026-07-31) — provenance/type/routing-eligibility is ungated supplementary
+            // metadata (same reasoning as UpdateTags), applied whenever the seed JSON supplies a
+            // nodeType. Skipped when nodeType is null so non-grammar domains (which never pass these)
+            // and not-yet-backfilled entries don't get stamped with a meaningless default.
+            if (nodeType is not null)
+            {
+                existing.SetProvenanceAndType(
+                    ParseCefrConfidence(cefrConfidence), cefrSource, ParseNodeType(nodeType) ?? Domain.Enums.SkillGraphNodeType.Skill,
+                    routingEligible);
+            }
             await db.SaveChangesAsync();
             return existing.Id;
         }
 
-        var node = new SkillGraphNode(key, title, description ?? $"{title}.", cefrLevel, skill,
+        var node = new SkillGraphNode(key, title, resolvedDescription, cefrLevel, skill,
             subskill: null, difficultyBand: difficultyBand, descriptionForAi: descriptionForAi);
         db.SkillGraphNodes.Add(node);
         await db.SaveChangesAsync(); // assign Id before AssignParent/Approve
 
         if (parentId.HasValue)
             node.AssignParent(parentId);
+        if (nodeType is not null)
+        {
+            node.SetProvenanceAndType(
+                ParseCefrConfidence(cefrConfidence), cefrSource, ParseNodeType(nodeType) ?? Domain.Enums.SkillGraphNodeType.Skill,
+                routingEligible);
+        }
         node.Approve(null);
         await db.SaveChangesAsync();
         return node.Id;
     }
+
+    /// <summary>Phase GSG-1 (2026-07-31) — parses the seed JSON's plain-string provenance fields
+    /// into the domain enum. Defaults to Unknown on anything unrecognized rather than throwing, so a
+    /// typo in hand-edited JSON degrades to "not routing eligible" instead of crashing the seeder.</summary>
+    private static Domain.Enums.CefrConfidence ParseCefrConfidence(string? s) => s?.Trim().ToLowerInvariant() switch
+    {
+        "attested" => Domain.Enums.CefrConfidence.Attested,
+        "fallback" => Domain.Enums.CefrConfidence.Fallback,
+        "inherited" => Domain.Enums.CefrConfidence.Inherited,
+        "curated" => Domain.Enums.CefrConfidence.Curated,
+        _ => Domain.Enums.CefrConfidence.Unknown,
+    };
+
+    private static Domain.Enums.SkillGraphNodeType? ParseNodeType(string? s) => s?.Trim().ToLowerInvariant() switch
+    {
+        "topic" => Domain.Enums.SkillGraphNodeType.Topic,
+        "concept" => Domain.Enums.SkillGraphNodeType.Concept,
+        "skill" => Domain.Enums.SkillGraphNodeType.Skill,
+        "variant" => Domain.Enums.SkillGraphNodeType.Variant,
+        "broadreference" => Domain.Enums.SkillGraphNodeType.BroadReference,
+        _ => null,
+    };
 
     private static async Task<CefrResourceSource> GetOrCreateSourceAsync(LinguaCoachDbContext db, string name)
     {
@@ -673,11 +767,15 @@ public sealed class LeafContentSeeder(
 
 // ── Seed JSON shapes (Plan Phase C) ──────────────────────────────────────────────────────────────
 
-public sealed record GrammarSeedFile(List<GrammarSeedContainer> Containers, List<GrammarSeedLeaf> Leaves);
-public sealed record GrammarSeedContainer(string Key, string Title, string CefrLevel, int DifficultyBand);
+public sealed record GrammarSeedFile(
+    int Version, List<GrammarSeedContainer> Containers, List<GrammarSeedLeaf> Leaves, List<string>? VersionNotes = null);
+public sealed record GrammarSeedContainer(
+    string Key, string Title, string CefrLevel, int DifficultyBand, string? ParentKey = null, string? Description = null,
+    string? CefrConfidence = null, string? CefrSource = null, string? NodeType = null, bool RoutingEligible = false);
 public sealed record GrammarSeedLeaf(
     string Key, string Title, string CefrLevel, int DifficultyBand,
-    string? ParentKey, string GrammarPoint, string Explanation);
+    string? ParentKey, string GrammarPoint, string Explanation, string? Description = null,
+    string? CefrConfidence = null, string? CefrSource = null, string? NodeType = null, bool RoutingEligible = false);
 
 public sealed record VocabularySeedFile(List<VocabularySeedContainer> Containers, List<VocabularySeedLeaf> Leaves);
 public sealed record VocabularySeedContainer(string Key, string Title, string CefrLevel);
