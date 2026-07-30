@@ -191,7 +191,11 @@ export class AdminSkillGraphComponent implements OnInit {
   private loadGraphChildren(parentNodeId: string): void {
     this.graphLoading.set(true);
     this.graphError.set('');
-    this.api.getSkillGraph(undefined, this.graphFilterSkill(), parentNodeId).subscribe({
+    // User correction (2026-07-31) — the CEFR filter must stay active through drill-down too, not
+    // just at the root. A container can (and often does — e.g. every CEFR Companion Volume scale
+    // container) have children at other levels; those are now correctly hidden while a level filter
+    // is selected, exactly like the Nodes table already behaved.
+    this.api.getSkillGraph(this.graphFilterCefrLevel(), this.graphFilterSkill(), parentNodeId).subscribe({
       next: r => {
         this.graphNodes.set(r.nodes);
         this.graphEdges.set(r.edges);

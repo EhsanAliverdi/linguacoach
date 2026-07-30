@@ -148,6 +148,37 @@ not just backfilled and unused. One implementation bug caught and fixed during l
 `sp-admin-button-group` renders from an `actions` array input, not projected `<sp-admin-button>`
 children — the footer buttons silently didn't render until switched to the correct usage.
 
+## Update (same day) — CEFR filter must apply everywhere, no exceptions
+
+User report: filtering the admin Graph tab to A1/reading and drilling into "Reading Instructions"
+showed B1/B2/C1 children too. Investigated with real data before concluding anything — this
+container genuinely holds the real Council of Europe CEFR Companion Volume descriptors (A1: "Can
+follow short, simple written directions"; C1: "instructions relate to his/her own area of
+speciality..."), and **all 41 containers** in `cefr-scales-seed.json` (Reading/Listening/Speaking/
+Writing) are built this way by design — one named scale, one real descriptor per level. So the
+*data* was correct.
+
+The bug was in `GetGraph`: when drilling into a container (`parentNodeId` set), the CEFR filter was
+dropped entirely — a decision made this session specifically to let a container's children span
+levels (e.g. the Adverbs pilot). The user's explicit correction: **"the source should not dictate
+what is in each category — both graph and table, filtered by CEFR, should only show that category's
+content, for every node, everywhere."** This also surfaced that the decision was based on a wrong
+premise — `GetNodes` (the Nodes table) never had this carve-out; it always applied `CefrLevel` as an
+unconditional AND-filter alongside `ParentNodeId`. The Graph tab was the one inconsistent surface.
+
+Fixed: `GetGraph` now applies `cefrLevel`/`skill` as unconditional AND-filters regardless of
+`parentNodeId`/`topLevelOnly`, matching `GetNodes`. `admin-skill-graph.component.ts`'s
+`loadGraphChildren` now passes the active CEFR filter through on every drill-in call (previously
+`undefined`). `HasChildren` stays a DB-wide check (a container's folder icon still means "this is a
+container," not "this container has children at the currently filtered level") — a container can
+now honestly show zero children when drilled into under a level where none of its content exists,
+which is correct, not a bug.
+
+Verified live: A1/reading → "Reading Instructions" now returns exactly 1 node (was 5). A1/grammar →
+"Adverbs" now returns 3 nodes (Intensifiers, Adverbs of frequency, Adverbs of negation — all
+genuinely A1), correctly hiding "Adverbs of attitude" (B1) and "Adverbs of quasi-negation" (B2).
+Full suite still green (2594 unit + 1410 integration).
+
 ## Next recommended action
 
 Scope **GSG-2 (Typed Grammar Relationships)** as its own plan: add relationship types/strength to

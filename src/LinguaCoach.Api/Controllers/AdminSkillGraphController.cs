@@ -240,28 +240,30 @@ public sealed class AdminSkillGraphController : ControllerBase
         [FromQuery] bool topLevelOnly = false, CancellationToken ct = default)
     {
         var query = _db.SkillGraphNodes.AsNoTracking().Where(n => n.IsActive);
-        // Topical-hierarchy drill-down (2026-07-30) — when the admin graph viz drills into a
-        // container, its children can sit at a different CEFR level than the container itself (e.g.
-        // topic "Adverbs" at A1 parenting "Adverbs of attitude" at B1), so scoping by ParentNodeId
-        // is mutually exclusive with the CefrLevel filter, not additive to it — matches GetNodes'
-        // existing parentNodeId lazy-expand semantics.
+        // User correction (2026-07-31) — a CEFR filter must mean "only this level, everywhere,"
+        // full stop, regardless of whether the source data models a concept as one node per level
+        // (e.g. the CEFR Companion Volume's "Reading Instructions" scale — 41/41 of those
+        // containers span every level by design) or as a topical grouping that happens to have a
+        // wider-level child (e.g. "Adverbs" A1 parenting "Adverbs of attitude" B1). The source
+        // structure does not get to override what a level filter shows. This also fixes a real
+        // inconsistency: GetNodes (the Nodes table) already applied CefrLevel unconditionally
+        // alongside ParentNodeId — this endpoint's prior "mutually exclusive" comment describing
+        // that as matching GetNodes was simply wrong; it never did.
         if (parentNodeId.HasValue)
         {
             query = query.Where(n => n.ParentNodeId == parentNodeId.Value);
         }
-        else if (!string.IsNullOrWhiteSpace(cefrLevel))
-        {
-            query = query.Where(n => n.CefrLevel == cefrLevel.ToUpperInvariant());
-        }
-        if (!string.IsNullOrWhiteSpace(skill)) query = query.Where(n => n.Skill == skill.ToLowerInvariant());
         // Root-view flattening (2026-07-30, user follow-up) — leaves that only make sense in
         // context of their family container ("Affirmative", "Negative", "Question") were rendering
         // side by side with dozens of other families' identically-named leaves when the root graph
-        // showed every node at a CEFR/skill regardless of hierarchy. Same topLevelOnly semantics as
-        // GetNodes: only ParentNodeId == null nodes at the root; leaves only surface once the admin
-        // drills into their specific container (parentNodeId branch above, which already scopes to
-        // direct children only, so a drilled-in family's few siblings never flood the canvas).
-        if (topLevelOnly) query = query.Where(n => n.ParentNodeId == null);
+        // showed every node at a CEFR/skill regardless of hierarchy. Only ParentNodeId == null nodes
+        // at the root; leaves only surface once the admin drills into their specific container.
+        else if (topLevelOnly)
+        {
+            query = query.Where(n => n.ParentNodeId == null);
+        }
+        if (!string.IsNullOrWhiteSpace(cefrLevel)) query = query.Where(n => n.CefrLevel == cefrLevel.ToUpperInvariant());
+        if (!string.IsNullOrWhiteSpace(skill)) query = query.Where(n => n.Skill == skill.ToLowerInvariant());
 
         var rawNodes = await query
             .Select(n => new
@@ -271,10 +273,11 @@ public sealed class AdminSkillGraphController : ControllerBase
             })
             .ToListAsync(ct);
 
-        // "Has children" needs a DB-wide check, not just within `rawNodes` — a container's children
-        // can sit at a different CEFR level than the container itself (e.g. topic "Adverbs" at A1
-        // parenting "Adverbs of attitude" at B1), so they may not even be in this CEFR-filtered
-        // batch. Same containerIds pattern GetNodes' hasChildren filter already uses.
+        // "Has children" is deliberately a DB-wide check (is this node a container at all), not
+        // scoped to the current CEFR/skill filter — same containerIds pattern GetNodes' own
+        // hasChildren toolbar filter uses. A container can legitimately have zero children AT the
+        // currently filtered level (e.g. drilling into "Adverbs" under a C2 filter, when none of its
+        // items are C2) — that's an honest empty result, not a reason to hide the folder icon.
         var allContainerIds = await _db.SkillGraphNodes.AsNoTracking()
             .Where(n => n.ParentNodeId != null)
             .Select(n => n.ParentNodeId!.Value)
