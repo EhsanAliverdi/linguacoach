@@ -13,6 +13,7 @@ const NODE: SkillGraphNodeDetail = {
   parentNodeId: null, childCount: 2,
   descriptionForAi: null, reviewedByUserId: null, approvedAtUtc: null, rejectedAtUtc: null,
   prerequisites: [], dependents: [], linkedModules: [],
+  cefrConfidence: 'Unknown', cefrSource: null, nodeType: null, routingEligible: false,
   parent: null,
   children: [
     { id: 'c1', key: 'grammar.i_am.a1', title: 'I am', reviewStatus: 'PendingReview' },

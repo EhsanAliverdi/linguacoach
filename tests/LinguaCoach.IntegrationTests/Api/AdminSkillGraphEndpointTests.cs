@@ -452,6 +452,91 @@ public sealed class AdminSkillGraphEndpointTests : IClassFixture<ApiTestFactory>
         Assert.Equal(moduleId, thisNode.GetProperty("linkedModules")[0].GetProperty("id").GetGuid());
     }
 
+    /// <summary>2026-08-03 — a leaf must have exactly one canonical Lesson (Lesson.AssignToLeaf);
+    /// a linked Module alone (e.g. one created through some other path that never assigned a
+    /// Lesson) is not the same as having real teaching content.</summary>
+    [Fact]
+    public async Task GetContentCoverage_ApprovedLeafWithNoLesson_ReportsHasLessonFalse()
+    {
+        var node = await SeedNodeAsync($"grammar.no_lesson_{Guid.NewGuid():N}.a1");
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var saved = await db.SkillGraphNodes.FirstAsync(n => n.Id == node.Id);
+            saved.Approve(null);
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.GetAsync("/api/admin/skill-graph/content-coverage");
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var nodes = body.GetProperty("nodes").EnumerateArray().ToList();
+        var thisNode = nodes.Single(n => n.GetProperty("id").GetGuid() == node.Id);
+        Assert.False(thisNode.GetProperty("hasLesson").GetBoolean());
+        Assert.True(body.GetProperty("nodesWithoutLessonCount").GetInt32() >= 1);
+    }
+
+    [Fact]
+    public async Task GetContentCoverage_ApprovedLeafWithAssignedLesson_ReportsHasLessonTrue()
+    {
+        var node = await SeedNodeAsync($"grammar.with_lesson_{Guid.NewGuid():N}.a1");
+        Guid lessonId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var saved = await db.SkillGraphNodes.FirstAsync(n => n.Id == node.Id);
+            saved.Approve(null);
+
+            var lesson = new Lesson($"Lesson {Guid.NewGuid():N}", "Body.", LessonSourceMode.Manual, cefrLevel: "A1", skill: "grammar");
+            db.Lessons.Add(lesson);
+            await db.SaveChangesAsync();
+            lesson.AssignToLeaf(node.Id);
+            lesson.Approve(null);
+            await db.SaveChangesAsync();
+            lessonId = lesson.Id;
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.GetAsync("/api/admin/skill-graph/content-coverage");
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var nodes = body.GetProperty("nodes").EnumerateArray().ToList();
+        var thisNode = nodes.Single(n => n.GetProperty("id").GetGuid() == node.Id);
+        Assert.True(thisNode.GetProperty("hasLesson").GetBoolean());
+        Assert.Equal(lessonId, thisNode.GetProperty("lessonId").GetGuid());
+    }
+
+    /// <summary>2026-08-03 container/leaf redesign — a skill-less container never has a Lesson or a
+    /// direct Module link, so it must never appear in content-coverage at all (otherwise every
+    /// container would show as a false-positive gap).</summary>
+    [Fact]
+    public async Task GetContentCoverage_SkillLessContainer_IsExcludedEntirely()
+    {
+        Guid containerId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var container = new SkillGraphNode(
+                $"grammar.container_{Guid.NewGuid():N}", "A container", "Description.", "A1", skill: null);
+            db.SkillGraphNodes.Add(container);
+            await db.SaveChangesAsync();
+            container.Approve(null);
+            await db.SaveChangesAsync();
+            containerId = container.Id;
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.GetAsync("/api/admin/skill-graph/content-coverage");
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var nodes = body.GetProperty("nodes").EnumerateArray().ToList();
+        Assert.DoesNotContain(nodes, n => n.GetProperty("id").GetGuid() == containerId);
+    }
+
     [Fact]
     public async Task NonAdmin_rejected_for_content_coverage_endpoint()
     {

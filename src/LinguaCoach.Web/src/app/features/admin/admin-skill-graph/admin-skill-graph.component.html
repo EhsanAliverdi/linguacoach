@@ -116,7 +116,7 @@
   <sp-admin-card padding="none" variant="bordered" [hasHeader]="true" [headerDivider]="true">
     <sp-admin-section-header
       slot="header" title="Nodes" [count]="ttTotalRecords()" countLabel="nodes"
-      [description]="'Content coverage: ' + nodesWithContent() + ' / ' + totalApprovedNodes() + ' approved nodes have real linked Modules.'">
+      [description]="'Content coverage: ' + nodesWithContent() + ' / ' + totalApprovedNodes() + ' approved nodes have real linked Modules. ' + nodesWithoutLessonCount() + ' leaf/leaves missing a Lesson.'">
       <div slot="actions" style="display:flex; gap:8px; align-items:center;">
         <sp-admin-button size="sm" variant="neutral" appearance="outline" [disabled]="retagPending()" (clicked)="retagModules()">
           {{ retagPending() ? 'Sweeping…' : 'Sweep untagged Module' }}

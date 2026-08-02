@@ -1881,12 +1881,18 @@ export interface SkillGraphCoverageNode {
   focusTags: string[];
   linkedModuleCount: number;
   linkedModules: SkillGraphLinkedModuleRef[];
+  // 2026-08-03 — a leaf must have exactly one canonical Lesson (Lesson.AssignToLeaf); a linked
+  // Module alone doesn't guarantee real teaching content exists.
+  hasLesson: boolean;
+  lessonId: string | null;
+  lessonTitle: string | null;
 }
 
 export interface SkillGraphContentCoverageResponse {
   totalApprovedNodes: number;
   nodesWithContent: number;
   nodesWithoutContentCount: number;
+  nodesWithoutLessonCount: number;
   nodes: SkillGraphCoverageNode[];
 }
 

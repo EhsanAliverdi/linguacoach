@@ -59,7 +59,7 @@ function makeApi(overrides: Partial<Record<string, unknown>> = {}) {
     batchRejectSkillGraphNodes: jasmine.createSpy('batchRejectSkillGraphNodes').and.returnValue(
       of<SkillGraphBatchRejectResponse>({ requestedCount: 1, succeeded: 1, failed: 0, limitReached: false, edgesRemoved: 0, reconnectSuggestions: [] })),
     getSkillGraphContentCoverage: jasmine.createSpy('getSkillGraphContentCoverage').and.returnValue(
-      of({ totalApprovedNodes: 0, nodesWithContent: 0, nodesWithoutContentCount: 0, nodes: [] })),
+      of({ totalApprovedNodes: 0, nodesWithContent: 0, nodesWithoutContentCount: 0, nodesWithoutLessonCount: 0, nodes: [] })),
     // Phase 6.3e — acceptReconnectSuggestion's own addSkillGraphPrerequisite call.
     addSkillGraphPrerequisite: jasmine.createSpy('addSkillGraphPrerequisite').and.returnValue(
       of<AddSkillGraphPrerequisiteResponse>({ added: true, suggestions: [] })),

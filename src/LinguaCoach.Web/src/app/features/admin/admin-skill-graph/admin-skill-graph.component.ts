@@ -268,6 +268,9 @@ export class AdminSkillGraphComponent implements OnInit {
   contentCoverageError = signal('');
   totalApprovedNodes = signal(0);
   nodesWithContent = signal(0);
+  // 2026-08-03 — a leaf must have exactly one canonical Lesson; a linked Module alone doesn't
+  // guarantee real teaching content exists.
+  nodesWithoutLessonCount = signal(0);
 
   retagPending = signal(false);
   retagStatus = signal('');
@@ -426,6 +429,7 @@ export class AdminSkillGraphComponent implements OnInit {
       next: r => {
         this.totalApprovedNodes.set(r.totalApprovedNodes);
         this.nodesWithContent.set(r.nodesWithContent);
+        this.nodesWithoutLessonCount.set(r.nodesWithoutLessonCount);
         this.contentCoverageLoading.set(false);
       },
       error: err => {

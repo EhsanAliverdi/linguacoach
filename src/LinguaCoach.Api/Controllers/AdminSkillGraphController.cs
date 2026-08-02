@@ -1655,7 +1655,11 @@ public sealed class AdminSkillGraphController : ControllerBase
     /// <summary>Sprint 2 — per-node content coverage: how many approved Modules are actually linked
     /// to each approved node. Distinct from <see cref="GetCoverage"/> (which counts nodes
     /// themselves, not content linked to them) — this is the gap that matters once the graph is
-    /// approved: an approved node with zero linked Modules has no real content behind it yet.</summary>
+    /// approved: an approved node with zero linked Modules has no real content behind it yet.
+    /// Leaves only (<c>Skill != null</c>) — 2026-08-03 container/leaf redesign made containers
+    /// skill-less and structurally never the target of a <see cref="ModuleSkillGraphNodeLink"/> or
+    /// a directly-assigned <see cref="Lesson"/>, so including them here would report every
+    /// container as a false-positive gap.</summary>
     [HttpGet("content-coverage")]
     public async Task<IActionResult> GetContentCoverage(CancellationToken ct)
     {
@@ -1669,8 +1673,16 @@ public sealed class AdminSkillGraphController : ControllerBase
             .ToListAsync(ct);
         var linksByNode = links.GroupBy(l => l.SkillGraphNodeId).ToDictionary(g => g.Key, g => g.ToList());
 
+        // 2026-08-03 — every leaf must have exactly one canonical Lesson (Lesson.AssignToLeaf,
+        // enforced by a partial unique index); this is the audit surface for that rule. A leaf
+        // with a linked Module but no Lesson still has no real teaching content behind it.
+        var lessonsByNode = await _db.Lessons.AsNoTracking()
+            .Where(l => l.SkillGraphNodeId != null)
+            .Select(l => new { l.SkillGraphNodeId, l.Id, l.Title })
+            .ToDictionaryAsync(l => l.SkillGraphNodeId!.Value, ct);
+
         var rawNodes = await _db.SkillGraphNodes.AsNoTracking()
-            .Where(n => n.ReviewStatus == AdminReviewStatus.Approved && n.IsActive)
+            .Where(n => n.ReviewStatus == AdminReviewStatus.Approved && n.IsActive && n.Skill != null)
             .Select(n => new { n.Id, n.Key, n.Title, n.CefrLevel, n.Skill, n.ContextTagsJson, n.FocusTagsJson })
             .ToListAsync(ct);
 
@@ -1679,22 +1691,28 @@ public sealed class AdminSkillGraphController : ControllerBase
             var linkedModules = linksByNode.TryGetValue(n.Id, out var l)
                 ? l.Select(x => new { x.Id, x.Title }).ToList()
                 : [];
+            var lesson = lessonsByNode.TryGetValue(n.Id, out var les) ? les : null;
             return new
             {
                 n.Id, n.Key, n.Title, n.CefrLevel, n.Skill,
                 ContextTags = ParseTags(n.ContextTagsJson), FocusTags = ParseTags(n.FocusTagsJson),
                 LinkedModuleCount = linkedModules.Count,
                 LinkedModules = linkedModules,
+                HasLesson = lesson is not null,
+                LessonId = lesson?.Id,
+                LessonTitle = lesson?.Title,
             };
         }).ToList();
 
         var nodesWithoutContentCount = nodes.Count(n => n.LinkedModuleCount == 0);
+        var nodesWithoutLessonCount = nodes.Count(n => !n.HasLesson);
 
         return Ok(new
         {
             totalApprovedNodes = nodes.Count,
             nodesWithContent = nodes.Count - nodesWithoutContentCount,
             nodesWithoutContentCount,
+            nodesWithoutLessonCount,
             nodes,
         });
     }
