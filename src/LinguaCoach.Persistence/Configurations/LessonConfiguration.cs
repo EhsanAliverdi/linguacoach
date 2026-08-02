@@ -42,11 +42,25 @@ internal sealed class LessonConfiguration : IEntityTypeConfiguration<Lesson>
         builder.Property(e => e.RejectionReason).HasColumnName("rejection_reason");
         builder.Property(e => e.ReviewNotes).HasColumnName("review_notes");
         builder.Property(e => e.IsArchived).HasColumnName("is_archived").IsRequired().HasDefaultValue(false);
+        builder.Property(e => e.SkillGraphNodeId).HasColumnName("skill_graph_node_id");
 
         builder.HasIndex(e => e.ReviewStatus).HasDatabaseName("ix_lessons_review_status");
         builder.HasIndex(e => e.CefrLevel).HasDatabaseName("ix_lessons_cefr_level");
         builder.HasIndex(e => e.Skill).HasDatabaseName("ix_lessons_skill");
         builder.HasIndex(e => e.Subskill).HasDatabaseName("ix_lessons_subskill");
         builder.HasIndex(e => e.CreatedAt).HasDatabaseName("ix_lessons_created_at");
+
+        // 2026-08-03 — a leaf may have at most one Lesson. Filtered (not a plain unique index) so
+        // any Lesson still unassigned (SkillGraphNodeId null — legacy admin/AI authoring flows
+        // that haven't linked to a leaf yet) never collides with another unassigned row.
+        builder.HasIndex(e => e.SkillGraphNodeId)
+            .HasDatabaseName("ix_lessons_skill_graph_node_id_unique")
+            .IsUnique()
+            .HasFilter("skill_graph_node_id IS NOT NULL");
+
+        builder.HasOne<SkillGraphNode>()
+            .WithMany()
+            .HasForeignKey(e => e.SkillGraphNodeId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

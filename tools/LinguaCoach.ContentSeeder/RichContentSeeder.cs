@@ -34,6 +34,7 @@ public static class RichContentSeeder
             difficultyBand: difficultyBand);
         db.Lessons.Add(lesson);
         await db.SaveChangesAsync();
+        lesson.AssignToLeaf(leafId);
         lesson.Approve(null);
 
         var module = new Module(

@@ -58,7 +58,36 @@ public sealed class Lesson : BaseEntity
     /// breaks an Exercise/Module that already references this Lesson, it only hides the row.</summary>
     public bool IsArchived { get; private set; }
 
+    /// <summary>2026-08-03 leaf/lesson/module clarification — the <see cref="Entities.SkillGraphNode"/>
+    /// leaf this Lesson is the canonical explanation for. Nullable (not a constructor parameter)
+    /// deliberately: Lesson is also created by admin/AI authoring flows
+    /// (<c>LessonCommandHandlers</c>, <c>IGenerateLessonFromResourcesHandler</c>) that build content
+    /// from source material before any target leaf is decided — linking to a leaf has always been a
+    /// separate, later step there (historically only reachable indirectly via
+    /// <c>Module</c>/<see cref="ModuleSkillGraphNodeLink"/>). <see cref="AssignToLeaf"/> is the
+    /// direct link; a leaf may have at most one Lesson (enforced by a partial unique index on this
+    /// column, see <c>LessonConfiguration</c>), but is not required to have one at construction
+    /// time. The curated content pipeline (<c>RichContentSeeder</c>) always assigns this
+    /// immediately, so every leaf it creates has exactly one Lesson in practice.</summary>
+    public Guid? SkillGraphNodeId { get; private set; }
+
     private Lesson() { }
+
+    /// <summary>Links this Lesson to the leaf it explains. One-way and set-once by convention —
+    /// throws if already assigned to a *different* leaf (re-assigning to the same leaf is a
+    /// harmless no-op, so a re-run seeder doesn't need to check first). Mirrors
+    /// <see cref="Entities.SkillGraphNode.AssignParent"/>'s own single-purpose mutator shape.</summary>
+    public void AssignToLeaf(Guid skillGraphNodeId)
+    {
+        if (skillGraphNodeId == Guid.Empty)
+            throw new ArgumentException("SkillGraphNodeId must not be empty.", nameof(skillGraphNodeId));
+        if (SkillGraphNodeId.HasValue && SkillGraphNodeId.Value != skillGraphNodeId)
+            throw new InvalidOperationException(
+                $"Lesson '{Title}' is already assigned to a different leaf ({SkillGraphNodeId}); a Lesson may belong to only one leaf.");
+
+        SkillGraphNodeId = skillGraphNodeId;
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
 
     public Lesson(
         string title,

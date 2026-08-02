@@ -59,6 +59,26 @@ reflect the complete teaching point, not just the shorter in-lesson excerpt.
   depth (a section with several sub-exercises becomes a leaf with several `Exercise` rows, not
   one generic auto-composed exercise).
 
+## 5a. Leaf ↔ Lesson ↔ Module (2026-08-03)
+
+A leaf is what a student must master before moving to the next node — it is the mastery gate.
+Concretely:
+
+- **Every leaf gets exactly one `Lesson`** — the canonical explanation for that leaf, assigned
+  via `Lesson.AssignToLeaf(leafId)` immediately after the Lesson is created. Enforced by a
+  partial unique index (`ix_lessons_skill_graph_node_id_unique`) so a leaf can never end up with
+  two Lessons.
+- **A leaf may be referenced by many `Module`s.** `Module` is the delivery/bundling concept (what
+  gets packaged together for one learning session, e.g. Today Plan or a spaced-repetition
+  review) — not the thing that owns the leaf's content. Two different Modules can legitimately
+  both teach leaf X on two different days.
+- `Lesson.SkillGraphNodeId` is nullable at the type level (not a constructor argument) because
+  Lesson is also created by unrelated admin/AI authoring flows that build content from source
+  material before any target leaf is decided — forcing a leaf id at construction time there
+  would break real, already-working functionality unconnected to this seeding process. The
+  curated seeding pipeline (`RichContentSeeder`) is the one path that always assigns it
+  immediately, so every leaf produced by this process has exactly one Lesson in practice.
+
 ## 6. Prerequisites reflect real teaching order
 
 Prerequisite edges are authored explicitly based on genuine pedagogical sequencing (what must be
