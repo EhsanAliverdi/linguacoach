@@ -152,7 +152,11 @@ public sealed class AdminSkillGraphController : ControllerBase
             query = hasChildren.Value ? query.Where(n => containerIds.Contains(n.Id)) : query.Where(n => !containerIds.Contains(n.Id));
         }
         if (!string.IsNullOrWhiteSpace(cefrLevel)) query = query.Where(n => n.CefrLevel == cefrLevel.ToUpperInvariant());
-        if (!string.IsNullOrWhiteSpace(skill)) query = query.Where(n => n.Skill == skill.ToLowerInvariant());
+        if (!string.IsNullOrWhiteSpace(skill))
+        {
+            var skillRelevantIds = await GetSkillRelevantNodeIdsAsync(skill, ct);
+            query = query.Where(n => skillRelevantIds.Contains(n.Id));
+        }
         if (!string.IsNullOrWhiteSpace(reviewStatus) && Enum.TryParse<AdminReviewStatus>(reviewStatus, true, out var status))
             query = query.Where(n => n.ReviewStatus == status);
         // Phase 6.1 — free-text title/description search + ContextTag/FocusTag filters (the Nodes
@@ -263,7 +267,11 @@ public sealed class AdminSkillGraphController : ControllerBase
             query = query.Where(n => n.ParentNodeId == null);
         }
         if (!string.IsNullOrWhiteSpace(cefrLevel)) query = query.Where(n => n.CefrLevel == cefrLevel.ToUpperInvariant());
-        if (!string.IsNullOrWhiteSpace(skill)) query = query.Where(n => n.Skill == skill.ToLowerInvariant());
+        if (!string.IsNullOrWhiteSpace(skill))
+        {
+            var skillRelevantIds = await GetSkillRelevantNodeIdsAsync(skill, ct);
+            query = query.Where(n => skillRelevantIds.Contains(n.Id));
+        }
 
         var rawNodes = await query
             .Select(n => new
@@ -304,6 +312,32 @@ public sealed class AdminSkillGraphController : ControllerBase
         var edges = await edgesQuery.Select(e => new { e.NodeId, e.PrerequisiteNodeId }).ToListAsync(ct);
 
         return Ok(new { nodes, edges });
+    }
+
+    /// <summary>2026-08-04 fix — containers are skill-less (2026-08-03 container/leaf redesign),
+    /// so a naive `n.Skill == skill` filter excludes every container, including the root
+    /// container of the very skill being filtered for (e.g. filtering "grammar" hid its own
+    /// top-level "Verb be" container, making the Nodes table/Graph view render nothing). Returns
+    /// every leaf matching <paramref name="skill"/> plus every ancestor container up the chain,
+    /// so a skill filter still shows the containers a matching leaf lives inside.</summary>
+    private async Task<HashSet<Guid>> GetSkillRelevantNodeIdsAsync(string skill, CancellationToken ct)
+    {
+        var skillLower = skill.ToLowerInvariant();
+        var idAndParent = await _db.SkillGraphNodes.AsNoTracking()
+            .Where(n => n.IsActive)
+            .Select(n => new { n.Id, n.ParentNodeId, n.Skill })
+            .ToListAsync(ct);
+        var parentById = idAndParent.ToDictionary(n => n.Id, n => n.ParentNodeId);
+
+        var relevantIds = new HashSet<Guid>();
+        foreach (var n in idAndParent.Where(n => n.Skill == skillLower))
+        {
+            relevantIds.Add(n.Id);
+            var ancestorId = n.ParentNodeId;
+            while (ancestorId.HasValue && relevantIds.Add(ancestorId.Value))
+                ancestorId = parentById.GetValueOrDefault(ancestorId.Value);
+        }
+        return relevantIds;
     }
 
     private static List<string> ParseTags(string? json)

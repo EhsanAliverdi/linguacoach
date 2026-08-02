@@ -537,6 +537,82 @@ public sealed class AdminSkillGraphEndpointTests : IClassFixture<ApiTestFactory>
         Assert.DoesNotContain(nodes, n => n.GetProperty("id").GetGuid() == containerId);
     }
 
+    /// <summary>2026-08-04 regression — a skill-less container (2026-08-03 container/leaf
+    /// redesign) whose only children match a skill filter must still appear in that filtered
+    /// view; a naive `n.Skill == skill` filter previously excluded it, making the admin Graph
+    /// view/Nodes table render nothing at root for a skill whose only top-level node is a
+    /// container ("filtering grammar showed nothing" bug report).</summary>
+    [Fact]
+    public async Task GetNodes_SkillFilter_IncludesSkillLessAncestorContainer()
+    {
+        Guid containerId, leafId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var container = new SkillGraphNode(
+                $"grammar.regression_container_{Guid.NewGuid():N}", "A container", "Description.", "A1", skill: null);
+            db.SkillGraphNodes.Add(container);
+            await db.SaveChangesAsync();
+            container.Approve(null);
+            containerId = container.Id;
+
+            var leaf = new SkillGraphNode(
+                $"grammar.regression_leaf_{Guid.NewGuid():N}", "A leaf", "Description.", "A1", "grammar");
+            db.SkillGraphNodes.Add(leaf);
+            await db.SaveChangesAsync();
+            leaf.AssignParent(containerId);
+            leaf.Approve(null);
+            leafId = leaf.Id;
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var topLevelResp = await client.GetAsync("/api/admin/skill-graph/nodes?topLevelOnly=true&skill=grammar&pageSize=500");
+        var topLevelBody = await topLevelResp.Content.ReadFromJsonAsync<JsonElement>();
+        var topLevelItems = topLevelBody.GetProperty("items").EnumerateArray().ToList();
+        Assert.Contains(topLevelItems, n => n.GetProperty("id").GetGuid() == containerId);
+
+        var childrenResp = await client.GetAsync($"/api/admin/skill-graph/nodes?parentNodeId={containerId}&skill=grammar&pageSize=500");
+        var childrenBody = await childrenResp.Content.ReadFromJsonAsync<JsonElement>();
+        var childrenItems = childrenBody.GetProperty("items").EnumerateArray().ToList();
+        Assert.Contains(childrenItems, n => n.GetProperty("id").GetGuid() == leafId);
+    }
+
+    [Fact]
+    public async Task GetGraph_SkillFilter_IncludesSkillLessAncestorContainer()
+    {
+        Guid containerId, leafId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var container = new SkillGraphNode(
+                $"grammar.graph_regression_container_{Guid.NewGuid():N}", "A container", "Description.", "A1", skill: null);
+            db.SkillGraphNodes.Add(container);
+            await db.SaveChangesAsync();
+            container.Approve(null);
+            containerId = container.Id;
+
+            var leaf = new SkillGraphNode(
+                $"grammar.graph_regression_leaf_{Guid.NewGuid():N}", "A leaf", "Description.", "A1", "grammar");
+            db.SkillGraphNodes.Add(leaf);
+            await db.SaveChangesAsync();
+            leaf.AssignParent(containerId);
+            leaf.Approve(null);
+            leafId = leaf.Id;
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.GetAsync("/api/admin/skill-graph/graph?topLevelOnly=true&cefrLevel=A1&skill=grammar");
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var nodes = body.GetProperty("nodes").EnumerateArray().ToList();
+        Assert.Contains(nodes, n => n.GetProperty("id").GetGuid() == containerId);
+    }
+
     [Fact]
     public async Task NonAdmin_rejected_for_content_coverage_endpoint()
     {
