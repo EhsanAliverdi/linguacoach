@@ -19,7 +19,10 @@ internal sealed class SkillGraphNodeConfiguration : IEntityTypeConfiguration<Ski
         builder.Property(e => e.Title).HasColumnName("title").HasMaxLength(300).IsRequired();
         builder.Property(e => e.Description).HasColumnName("description").IsRequired();
         builder.Property(e => e.CefrLevel).HasColumnName("cefr_level").HasMaxLength(2).IsRequired();
-        builder.Property(e => e.Skill).HasColumnName("skill").HasMaxLength(50).IsRequired();
+        // Nullable (2026-07-31 container/leaf redesign) — required on leaves, null on purely
+        // structural/thematic containers. Not enforced at the DB layer (matches this codebase's
+        // existing split of domain-layer vs. DB-layer invariants); enforced in the constructor.
+        builder.Property(e => e.Skill).HasColumnName("skill").HasMaxLength(50);
         builder.Property(e => e.Subskill).HasColumnName("subskill").HasMaxLength(50);
         builder.Property(e => e.DifficultyBand).HasColumnName("difficulty_band").IsRequired();
         builder.Property(e => e.DescriptionForAi).HasColumnName("description_for_ai");

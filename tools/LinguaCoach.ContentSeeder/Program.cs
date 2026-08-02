@@ -81,14 +81,16 @@ public static class Program
 
         return domain switch
         {
-            "grammar" => await SeedGrammarAsync(seeder, db, seedFilePath),
-            "vocabulary" => await SeedVocabularyAsync(seeder, db, seedFilePath),
+            "grammar" => await SeedGrammarAsync(db, seedFilePath),
+            "vocabulary" => await SeedVocabularyAsync(db, seedFilePath),
+            "pronunciation" => await SeedPronunciationAsync(db, seedFilePath),
+            "functional-language" => await SeedFunctionalLanguageAsync(db, seedFilePath),
             "cefr-scales" => await SeedCefrScalesAsync(db, seedFilePath),
             "speaking" => await SeedSpeakingAsync(seeder, db, seedFilePath),
             "listening" => await SeedListeningAsync(seeder, sp, db, seedFilePath),
             "reading" => await SeedReadingAsync(seeder, db, seedFilePath),
             "prerequisites" => await SeedPrerequisitesAsync(db, seedFilePath),
-            _ => Fail($"Unknown domain '{domain}' — expected 'grammar', 'vocabulary', 'cefr-scales', 'speaking', 'listening', 'reading', or 'prerequisites'."),
+            _ => Fail($"Unknown domain '{domain}' — expected 'grammar', 'vocabulary', 'pronunciation', 'functional-language', 'cefr-scales', 'speaking', 'listening', 'reading', or 'prerequisites'."),
         };
     }
 
@@ -98,7 +100,7 @@ public static class Program
         return 1;
     }
 
-    private static async Task<int> SeedGrammarAsync(LeafContentSeeder seeder, LinguaCoachDbContext db, string path)
+    private static async Task<int> SeedGrammarAsync(LinguaCoachDbContext db, string path)
     {
         var file = JsonSerializer.Deserialize<GrammarSeedFile>(await File.ReadAllTextAsync(path), JsonOptions)
             ?? throw new InvalidOperationException("Empty/invalid grammar seed file.");
@@ -106,76 +108,100 @@ public static class Program
         Console.WriteLine($"Grammar seed v{file.Version}" + (file.VersionNotes is { Count: > 0 } notes
             ? $" — {string.Join(" | ", notes)}" : "."));
 
-        var source = await GetOrCreateSourceAsync(db, "CEFR-J Grammar Profile");
-        var checkpoint = Checkpoint.Load(path);
+        // Containers are skill-less (2026-07-31 container/leaf redesign) — Skill is a leaf-only
+        // measurable-skill attribute; a topical container like "Verb be" is purely structural.
         var containerIds = await UpsertContainersAsync(db, file.Containers.Select(c =>
-            (c.Key, c.Title, c.CefrLevel, c.DifficultyBand, Skill: CurriculumSkillConstants.Grammar, c.ParentKey, c.Description,
+            (c.Key, c.Title, c.CefrLevel, c.DifficultyBand, Skill: (string?)null, c.ParentKey, c.Description,
              c.CefrConfidence, c.CefrSource, c.NodeType, c.RoutingEligible)));
 
-        var processed = 0;
         foreach (var leaf in file.Leaves)
         {
-            // Node metadata (title/description/parent/provenance) is upserted every run, regardless
-            // of checkpoint — cheap, and needed so hand-edits (e.g. the 2026-07-30 Adverbs cleanup,
-            // the 2026-07-31 GSG-1 provenance backfill) actually take effect on re-run. Only the
-            // expensive content-generation chain below is checkpoint-gated.
             var parentId = leaf.ParentKey is not null && containerIds.TryGetValue(leaf.ParentKey, out var pid) ? pid : (Guid?)null;
             var leafId = await UpsertLeafAsync(db, leaf.Key, leaf.Title, leaf.CefrLevel, leaf.DifficultyBand,
-                CurriculumSkillConstants.Grammar, parentId, description: leaf.Description,
-                cefrConfidence: leaf.CefrConfidence, cefrSource: leaf.CefrSource, nodeType: leaf.NodeType, routingEligible: leaf.RoutingEligible);
+                CurriculumSkillConstants.Grammar, parentId, description: leaf.Description ?? leaf.LessonBody,
+                cefrConfidence: leaf.CefrConfidence, cefrSource: leaf.CefrSource, nodeType: leaf.NodeType, routingEligible: leaf.RoutingEligible,
+                subskill: leaf.Subskill);
 
-            if (checkpoint.Contains(leaf.Key)) continue;
-
-            var content = ResourceBankItemContent.Serialize(new GrammarContent(leaf.GrammarPoint, leaf.Explanation));
-            await seeder.SeedOneAsync(source.Id, leaf.CefrLevel, content, leaf.Title, leafId, "gap_fill", PublishedResourceType.Grammar);
-
-            checkpoint.MarkProcessed(leaf.Key);
-            if (++processed % 100 == 0)
-            {
-                checkpoint.Save(path);
-                Console.WriteLine($"Grammar: {processed}/{file.Leaves.Count} processed.");
-            }
+            await RichContentSeeder.SeedLeafAsync(db, leafId, leaf.Title, leaf.CefrLevel, CurriculumSkillConstants.Grammar,
+                leaf.Subskill, leaf.DifficultyBand, leaf.LessonBody, leaf.Examples, leaf.CommonMistakes, leaf.Exercises);
+            Console.WriteLine($"  Grammar leaf '{leaf.Key}': {leaf.Exercises.Count} exercise(s) seeded.");
         }
 
-        checkpoint.Save(path);
-        Console.WriteLine($"Grammar seeding complete. {processed} leaves processed this run.");
+        Console.WriteLine($"Grammar seeding complete. {file.Leaves.Count} leaves processed.");
         return 0;
     }
 
-    private static async Task<int> SeedVocabularyAsync(LeafContentSeeder seeder, LinguaCoachDbContext db, string path)
+    private static async Task<int> SeedVocabularyAsync(LinguaCoachDbContext db, string path)
     {
         var file = JsonSerializer.Deserialize<VocabularySeedFile>(await File.ReadAllTextAsync(path), JsonOptions)
             ?? throw new InvalidOperationException("Empty/invalid vocabulary seed file.");
 
-        var source = await GetOrCreateSourceAsync(db, "CEFR-J / Octanove Vocabulary Profiles");
-        var checkpoint = Checkpoint.Load(path);
+        // Containers are skill-less — see the grammar seeder's comment above.
         var containerIds = await UpsertContainersAsync(db, file.Containers.Select(c =>
-            (c.Key, c.Title, c.CefrLevel, DifficultyBand: 1, Skill: CurriculumSkillConstants.Vocabulary)));
+            (c.Key, c.Title, c.CefrLevel, DifficultyBand: 1, Skill: (string?)null, c.ParentKey, Description: (string?)null)));
 
-        var processed = 0;
         foreach (var leaf in file.Leaves)
         {
-            if (checkpoint.Contains(leaf.Key)) continue;
+            var parentId = leaf.ParentKey is not null && containerIds.TryGetValue(leaf.ParentKey, out var pid) ? pid : (Guid?)null;
+            var leafId = await UpsertLeafAsync(db, leaf.Key, leaf.Title, leaf.CefrLevel, leaf.DifficultyBand,
+                CurriculumSkillConstants.Vocabulary, parentId, description: leaf.LessonBody);
 
-            var parentId = containerIds.TryGetValue(leaf.ParentKey, out var pid) ? pid : (Guid?)null;
-            var title = $"{leaf.Headword} ({leaf.PartOfSpeech})";
-            var descriptionForAi = leaf.ExtraTags is { Count: > 0 } ? $"Also: {string.Join(", ", leaf.ExtraTags)}" : null;
-            var leafId = await UpsertLeafAsync(db, leaf.Key, title, leaf.CefrLevel, 1,
-                CurriculumSkillConstants.Vocabulary, parentId, descriptionForAi);
-
-            var content = ResourceBankItemContent.Serialize(new VocabularyContent(leaf.Headword, leaf.PartOfSpeech, leaf.Definition));
-            await seeder.SeedOneAsync(source.Id, leaf.CefrLevel, content, title, leafId, "gap_fill", PublishedResourceType.Vocabulary);
-
-            checkpoint.MarkProcessed(leaf.Key);
-            if (++processed % 100 == 0)
-            {
-                checkpoint.Save(path);
-                Console.WriteLine($"Vocabulary: {processed}/{file.Leaves.Count} processed.");
-            }
+            await RichContentSeeder.SeedLeafAsync(db, leafId, leaf.Title, leaf.CefrLevel, CurriculumSkillConstants.Vocabulary,
+                leaf.Subskill, leaf.DifficultyBand, leaf.LessonBody, leaf.Examples, leaf.CommonMistakes, leaf.Exercises);
+            Console.WriteLine($"  Vocabulary leaf '{leaf.Key}': {leaf.Exercises.Count} exercise(s) seeded.");
         }
 
-        checkpoint.Save(path);
-        Console.WriteLine($"Vocabulary seeding complete. {processed} leaves processed this run.");
+        Console.WriteLine($"Vocabulary seeding complete. {file.Leaves.Count} leaves processed.");
+        return 0;
+    }
+
+    private static async Task<int> SeedPronunciationAsync(LinguaCoachDbContext db, string path)
+    {
+        var file = JsonSerializer.Deserialize<PronunciationSeedFile>(await File.ReadAllTextAsync(path), JsonOptions)
+            ?? throw new InvalidOperationException("Empty/invalid pronunciation seed file.");
+
+        // Containers are skill-less — see the grammar seeder's comment above.
+        var containerIds = await UpsertContainersAsync(db, file.Containers.Select(c =>
+            (c.Key, c.Title, c.CefrLevel, DifficultyBand: 1, Skill: (string?)null, c.ParentKey, Description: (string?)null)));
+
+        foreach (var leaf in file.Leaves)
+        {
+            var parentId = leaf.ParentKey is not null && containerIds.TryGetValue(leaf.ParentKey, out var pid) ? pid : (Guid?)null;
+            var leafId = await UpsertLeafAsync(db, leaf.Key, leaf.Title, leaf.CefrLevel, leaf.DifficultyBand,
+                CurriculumSkillConstants.Pronunciation, parentId, description: leaf.LessonBody);
+
+            await RichContentSeeder.SeedLeafAsync(db, leafId, leaf.Title, leaf.CefrLevel, CurriculumSkillConstants.Pronunciation,
+                subskill: null, leaf.DifficultyBand, leaf.LessonBody, leaf.Examples, leaf.CommonMistakes, leaf.Exercises);
+            Console.WriteLine($"  Pronunciation leaf '{leaf.Key}': {leaf.Exercises.Count} exercise(s) seeded.");
+        }
+
+        Console.WriteLine($"Pronunciation seeding complete. {file.Leaves.Count} leaves processed.");
+        return 0;
+    }
+
+    private static async Task<int> SeedFunctionalLanguageAsync(LinguaCoachDbContext db, string path)
+    {
+        var file = JsonSerializer.Deserialize<FunctionalLanguageSeedFile>(await File.ReadAllTextAsync(path), JsonOptions)
+            ?? throw new InvalidOperationException("Empty/invalid functional-language seed file.");
+
+        // Containers are skill-less — see the grammar seeder's comment above.
+        var containerIds = await UpsertContainersAsync(db, file.Containers.Select(c =>
+            (c.Key, c.Title, c.CefrLevel, DifficultyBand: 1, Skill: (string?)null, c.ParentKey, Description: (string?)null)));
+
+        foreach (var leaf in file.Leaves)
+        {
+            var parentId = leaf.ParentKey is not null && containerIds.TryGetValue(leaf.ParentKey, out var pid) ? pid : (Guid?)null;
+            var resolvedSubskill = leaf.Subskill ?? CurriculumSubskillConstants.SpeakingFunctionalPhrases;
+            var leafId = await UpsertLeafAsync(db, leaf.Key, leaf.Title, leaf.CefrLevel, leaf.DifficultyBand,
+                CurriculumSkillConstants.Speaking, parentId, description: leaf.LessonBody, subskill: resolvedSubskill);
+
+            await RichContentSeeder.SeedLeafAsync(db, leafId, leaf.Title, leaf.CefrLevel, CurriculumSkillConstants.Speaking,
+                resolvedSubskill, leaf.DifficultyBand, leaf.LessonBody, leaf.Examples,
+                leaf.CommonMistakes, leaf.Exercises);
+            Console.WriteLine($"  Functional-language leaf '{leaf.Key}': {leaf.Exercises.Count} exercise(s) seeded.");
+        }
+
+        Console.WriteLine($"Functional-language seeding complete. {file.Leaves.Count} leaves processed.");
         return 0;
     }
 
@@ -565,7 +591,7 @@ public static class Program
         key.ToLowerInvariant().Replace('.', '_').Replace(' ', '_');
 
     private static async Task<Dictionary<string, Guid>> UpsertContainersAsync(
-        LinguaCoachDbContext db, IEnumerable<(string Key, string Title, string CefrLevel, int DifficultyBand, string Skill)> containers)
+        LinguaCoachDbContext db, IEnumerable<(string Key, string Title, string CefrLevel, int DifficultyBand, string? Skill)> containers)
         => await UpsertContainersAsync(db, containers.Select(c =>
             (c.Key, c.Title, c.CefrLevel, c.DifficultyBand, c.Skill, ParentKey: (string?)null, Description: (string?)null,
              CefrConfidence: (string?)null, CefrSource: (string?)null, NodeType: (string?)null, RoutingEligible: false)));
@@ -578,7 +604,7 @@ public static class Program
     /// deeper chains would need topological ordering instead of two fixed passes.</summary>
     private static async Task<Dictionary<string, Guid>> UpsertContainersAsync(
         LinguaCoachDbContext db,
-        IEnumerable<(string Key, string Title, string CefrLevel, int DifficultyBand, string Skill, string? ParentKey, string? Description)> containers)
+        IEnumerable<(string Key, string Title, string CefrLevel, int DifficultyBand, string? Skill, string? ParentKey, string? Description)> containers)
         => await UpsertContainersAsync(db, containers.Select(c =>
             (c.Key, c.Title, c.CefrLevel, c.DifficultyBand, c.Skill, c.ParentKey, c.Description,
              CefrConfidence: (string?)null, CefrSource: (string?)null, NodeType: (string?)null, RoutingEligible: false)));
@@ -589,7 +615,7 @@ public static class Program
     /// (the other domains' overloads above default these to null/false).</summary>
     private static async Task<Dictionary<string, Guid>> UpsertContainersAsync(
         LinguaCoachDbContext db,
-        IEnumerable<(string Key, string Title, string CefrLevel, int DifficultyBand, string Skill, string? ParentKey, string? Description,
+        IEnumerable<(string Key, string Title, string CefrLevel, int DifficultyBand, string? Skill, string? ParentKey, string? Description,
             string? CefrConfidence, string? CefrSource, string? NodeType, bool RoutingEligible)> containers)
     {
         var list = containers.ToList();
@@ -613,8 +639,9 @@ public static class Program
 
     private static async Task<Guid> UpsertLeafAsync(
         LinguaCoachDbContext db, string key, string title, string cefrLevel, int difficultyBand,
-        string skill, Guid? parentId, string? descriptionForAi = null, string? description = null,
-        string? cefrConfidence = null, string? cefrSource = null, string? nodeType = null, bool routingEligible = false)
+        string? skill, Guid? parentId, string? descriptionForAi = null, string? description = null,
+        string? cefrConfidence = null, string? cefrSource = null, string? nodeType = null, bool routingEligible = false,
+        string? subskill = null)
     {
         var resolvedDescription = description ?? $"{title}.";
         var existing = await db.SkillGraphNodes.FirstOrDefaultAsync(n => n.Key == key);
@@ -625,11 +652,12 @@ public static class Program
             // Approved. Without this reject/edit/re-approve round trip, editing a title/description
             // in the seed JSON and re-running the seeder silently had no effect on existing nodes.
             if (existing.Title != title || existing.Description != resolvedDescription
-                || existing.CefrLevel != cefrLevel.ToUpperInvariant() || existing.DifficultyBand != difficultyBand)
+                || existing.CefrLevel != cefrLevel.ToUpperInvariant() || existing.DifficultyBand != difficultyBand
+                || existing.Subskill != subskill)
             {
                 if (existing.ReviewStatus == AdminReviewStatus.Approved)
                     existing.Reject("Content re-seed", null);
-                existing.UpdateCore(title, resolvedDescription, cefrLevel, skill, existing.Subskill, difficultyBand, existing.DescriptionForAi);
+                existing.UpdateCore(title, resolvedDescription, cefrLevel, skill, subskill, difficultyBand, existing.DescriptionForAi);
             }
             if (existing.ReviewStatus != AdminReviewStatus.Approved)
                 existing.Approve(null);
@@ -650,7 +678,7 @@ public static class Program
         }
 
         var node = new SkillGraphNode(key, title, resolvedDescription, cefrLevel, skill,
-            subskill: null, difficultyBand: difficultyBand, descriptionForAi: descriptionForAi);
+            subskill: subskill, difficultyBand: difficultyBand, descriptionForAi: descriptionForAi);
         db.SkillGraphNodes.Add(node);
         await db.SaveChangesAsync(); // assign Id before AssignParent/Approve
 
@@ -770,18 +798,43 @@ public sealed class LeafContentSeeder(
 public sealed record GrammarSeedFile(
     int Version, List<GrammarSeedContainer> Containers, List<GrammarSeedLeaf> Leaves, List<string>? VersionNotes = null);
 public sealed record GrammarSeedContainer(
-    string Key, string Title, string CefrLevel, int DifficultyBand, string? ParentKey = null, string? Description = null,
+    string Key, string Title, string CefrLevel, int DifficultyBand = 1, string? ParentKey = null, string? Description = null,
     string? CefrConfidence = null, string? CefrSource = null, string? NodeType = null, bool RoutingEligible = false);
+/// <summary>Curated-content shape (2026-07-31 rebuild) — <see cref="LessonBody"/>/<see cref="Examples"/>/
+/// <see cref="CommonMistakes"/>/<see cref="Exercises"/> carry full original lesson + multi-question
+/// practice content, seeded via <see cref="RichContentSeeder"/> rather than the single-generic-exercise
+/// <see cref="LeafContentSeeder"/> path (retired for this domain — no CEFR-J CSV import runs today).</summary>
 public sealed record GrammarSeedLeaf(
-    string Key, string Title, string CefrLevel, int DifficultyBand,
-    string? ParentKey, string GrammarPoint, string Explanation, string? Description = null,
+    string Key, string Title, string CefrLevel, int DifficultyBand, string? ParentKey,
+    string LessonBody, List<string>? Examples, List<string>? CommonMistakes, List<SeedExercise> Exercises,
+    string? Description = null, string? Subskill = null,
     string? CefrConfidence = null, string? CefrSource = null, string? NodeType = null, bool RoutingEligible = false);
 
-public sealed record VocabularySeedFile(List<VocabularySeedContainer> Containers, List<VocabularySeedLeaf> Leaves);
-public sealed record VocabularySeedContainer(string Key, string Title, string CefrLevel);
+public sealed record VocabularySeedFile(int Version, List<VocabularySeedContainer> Containers, List<VocabularySeedLeaf> Leaves, List<string>? VersionNotes = null);
+public sealed record VocabularySeedContainer(string Key, string Title, string CefrLevel, string? ParentKey = null);
+/// <summary>Curated-content shape (2026-07-31 rebuild) — see <see cref="GrammarSeedLeaf"/>'s doc
+/// comment; same reasoning applies here (a leaf is a topic-scoped vocabulary set, e.g. "Numbers
+/// 0-10," not a single CEFR-J headword row).</summary>
 public sealed record VocabularySeedLeaf(
-    string Key, string Headword, string PartOfSpeech, string CefrLevel,
-    string Definition, string ParentKey, List<string>? ExtraTags);
+    string Key, string Title, string CefrLevel, int DifficultyBand, string? ParentKey,
+    string LessonBody, List<string>? Examples, List<string>? CommonMistakes, List<SeedExercise> Exercises,
+    string? Subskill = null);
+
+public sealed record PronunciationSeedFile(int Version, List<PronunciationSeedContainer> Containers, List<PronunciationSeedLeaf> Leaves, List<string>? VersionNotes = null);
+public sealed record PronunciationSeedContainer(string Key, string Title, string CefrLevel, string? ParentKey = null);
+public sealed record PronunciationSeedLeaf(
+    string Key, string Title, string CefrLevel, int DifficultyBand, string? ParentKey,
+    string LessonBody, List<string>? Examples, List<string>? CommonMistakes, List<SeedExercise> Exercises);
+
+/// <summary>Fixed/functional social-language items ("introducing yourself," "spelling and the
+/// alphabet") — classified under Speaking (2026-07-31 container/leaf redesign), not Vocabulary.
+/// A genuinely new domain (no prior seed file covered this content shape).</summary>
+public sealed record FunctionalLanguageSeedFile(int Version, List<FunctionalLanguageSeedContainer> Containers, List<FunctionalLanguageSeedLeaf> Leaves, List<string>? VersionNotes = null);
+public sealed record FunctionalLanguageSeedContainer(string Key, string Title, string CefrLevel, string? ParentKey = null);
+public sealed record FunctionalLanguageSeedLeaf(
+    string Key, string Title, string CefrLevel, int DifficultyBand, string? ParentKey,
+    string LessonBody, List<string>? Examples, List<string>? CommonMistakes, List<SeedExercise> Exercises,
+    string? Subskill = null);
 
 public sealed record CefrScalesSeedFile(List<CefrScaleSeedContainer> Containers, List<CefrScaleSeedLeaf> Leaves);
 public sealed record CefrScaleSeedContainer(string Key, string Title, string CefrLevel, string Skill);

@@ -28,8 +28,12 @@ public sealed class SkillGraphNode : BaseEntity
     /// <summary>CEFR level this node targets. Must be a value from CefrLevelConstants.</summary>
     public string CefrLevel { get; private set; }
 
-    /// <summary>Must be a value from CurriculumSkillConstants.</summary>
-    public string Skill { get; private set; }
+    /// <summary>Must be a value from CurriculumSkillConstants when set. Required on leaves (an
+    /// independently-measurable skill item); null on containers (2026-07-31 container/leaf
+    /// redesign — a container is purely structural/thematic and may group leaves of different
+    /// skills, e.g. a lesson container bundling a grammar leaf + a vocabulary leaf + a
+    /// pronunciation leaf, matching a real textbook unit rather than one skill-siloed tree).</summary>
+    public string? Skill { get; private set; }
 
     /// <summary>Optional finer-grained classification beneath Skill. Must be a value from
     /// CurriculumSubskillConstants belonging to Skill when set.</summary>
@@ -111,7 +115,7 @@ public sealed class SkillGraphNode : BaseEntity
         string title,
         string description,
         string cefrLevel,
-        string skill,
+        string? skill,
         string? subskill = null,
         int difficultyBand = 1,
         string? descriptionForAi = null,
@@ -126,9 +130,11 @@ public sealed class SkillGraphNode : BaseEntity
             throw new ArgumentException("Description is required.", nameof(description));
         if (!CefrLevelConstants.IsValid(cefrLevel))
             throw new ArgumentException($"Invalid CEFR level '{cefrLevel}'. Must be one of: {string.Join(", ", CefrLevelConstants.All)}.", nameof(cefrLevel));
-        if (!CurriculumSkillConstants.IsValid(skill))
+        if (skill is not null && !CurriculumSkillConstants.IsValid(skill))
             throw new ArgumentException($"Invalid skill '{skill}'. Must be one of: {string.Join(", ", CurriculumSkillConstants.All)}.", nameof(skill));
-        if (!CurriculumSubskillConstants.IsValidForSkill(skill, subskill))
+        if (skill is null && subskill is not null)
+            throw new ArgumentException("Subskill requires a Skill — a skill-less container cannot have a subskill.", nameof(subskill));
+        if (skill is not null && !CurriculumSubskillConstants.IsValidForSkill(skill, subskill))
             throw new ArgumentException($"Subskill '{subskill}' does not belong to skill '{skill}'.", nameof(subskill));
         if (difficultyBand is < 1 or > 5)
             throw new ArgumentOutOfRangeException(nameof(difficultyBand), "DifficultyBand must be between 1 and 5.");
@@ -137,7 +143,7 @@ public sealed class SkillGraphNode : BaseEntity
         Title = title.Trim();
         Description = description.Trim();
         CefrLevel = cefrLevel.ToUpperInvariant();
-        Skill = skill.ToLowerInvariant();
+        Skill = skill?.Trim().ToLowerInvariant();
         Subskill = subskill?.Trim().ToLowerInvariant();
         DifficultyBand = difficultyBand;
         DescriptionForAi = descriptionForAi?.Trim();
@@ -186,7 +192,7 @@ public sealed class SkillGraphNode : BaseEntity
         string title,
         string description,
         string cefrLevel,
-        string skill,
+        string? skill,
         string? subskill,
         int difficultyBand,
         string? descriptionForAi)
@@ -201,9 +207,11 @@ public sealed class SkillGraphNode : BaseEntity
             throw new ArgumentException("Description is required.", nameof(description));
         if (!CefrLevelConstants.IsValid(cefrLevel))
             throw new ArgumentException($"Invalid CEFR level '{cefrLevel}'. Must be one of: {string.Join(", ", CefrLevelConstants.All)}.", nameof(cefrLevel));
-        if (!CurriculumSkillConstants.IsValid(skill))
+        if (skill is not null && !CurriculumSkillConstants.IsValid(skill))
             throw new ArgumentException($"Invalid skill '{skill}'. Must be one of: {string.Join(", ", CurriculumSkillConstants.All)}.", nameof(skill));
-        if (!CurriculumSubskillConstants.IsValidForSkill(skill, subskill))
+        if (skill is null && subskill is not null)
+            throw new ArgumentException("Subskill requires a Skill — a skill-less container cannot have a subskill.", nameof(subskill));
+        if (skill is not null && !CurriculumSubskillConstants.IsValidForSkill(skill, subskill))
             throw new ArgumentException($"Subskill '{subskill}' does not belong to skill '{skill}'.", nameof(subskill));
         if (difficultyBand is < 1 or > 5)
             throw new ArgumentOutOfRangeException(nameof(difficultyBand), "DifficultyBand must be between 1 and 5.");
@@ -211,7 +219,7 @@ public sealed class SkillGraphNode : BaseEntity
         Title = title.Trim();
         Description = description.Trim();
         CefrLevel = cefrLevel.ToUpperInvariant();
-        Skill = skill.ToLowerInvariant();
+        Skill = skill?.Trim().ToLowerInvariant();
         Subskill = subskill?.Trim().ToLowerInvariant();
         DifficultyBand = difficultyBand;
         DescriptionForAi = descriptionForAi?.Trim();

@@ -16,10 +16,15 @@ public static class CurriculumSkillConstants
     public const string Fluency = "fluency";
     public const string Confidence = "confidence";
 
+    /// <summary>2026-07-31 container/leaf redesign — collocation promoted to its own top-level
+    /// measurable skill, a peer of Vocabulary/Grammar/Pronunciation (see
+    /// docs/reviews/2026-07-31-skill-graph-content-rebuild-implementation.md).</summary>
+    public const string Collocation = "collocation";
+
     public static readonly IReadOnlyList<string> All =
     [
         Writing, Reading, Listening, Speaking,
-        Vocabulary, Grammar, Pronunciation, Fluency, Confidence
+        Vocabulary, Grammar, Pronunciation, Fluency, Confidence, Collocation
     ];
 
     public static bool IsValid(string? skill) =>

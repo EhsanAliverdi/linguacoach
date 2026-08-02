@@ -49,7 +49,10 @@ public sealed class GrammarSeedIntegrityTests
 
     private static (List<SeedNode> Nodes, SeedFile Raw) LoadNodes()
     {
-        var path = Path.Combine(FindRepoRoot(), "data", "seed-json", "grammar-seed.json");
+        // Archived 2026-07-31 (content rebuild) — this file's own historical grammar seed is
+        // retired but still validated here against the same standing rules, since the content is
+        // preserved (not deleted) and may be re-integrated in a later pass.
+        var path = Path.Combine(FindRepoRoot(), "data", "seed-json", "archive", "2026-07-31-pre-rebuild", "grammar-seed.json");
         var raw = JsonSerializer.Deserialize<SeedFile>(File.ReadAllText(path), JsonOptions)!;
         var nodes = raw.Containers
             .Select(c => new SeedNode(c.Key, c.Title, c.CefrLevel, c.DifficultyBand, c.ParentKey, c.CefrConfidence, c.CefrSource, c.NodeType, c.RoutingEligible))
@@ -60,7 +63,8 @@ public sealed class GrammarSeedIntegrityTests
 
     private static List<EdgeJson> LoadEdges()
     {
-        var path = Path.Combine(FindRepoRoot(), "data", "seed-json", "grammar-prerequisites-seed.json");
+        // Archived 2026-07-31 (content rebuild) — see LoadNodes()'s comment above.
+        var path = Path.Combine(FindRepoRoot(), "data", "seed-json", "archive", "2026-07-31-pre-rebuild", "grammar-prerequisites-seed.json");
         // Leading `//` version-note comment (2026-07-30) — JsonCommentHandling.Skip (set in
         // JsonOptions above) parses `//` line comments natively, same as ContentSeeder's own
         // SeedPrerequisitesAsync reader.

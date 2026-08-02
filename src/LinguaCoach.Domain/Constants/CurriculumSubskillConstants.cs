@@ -37,6 +37,11 @@ public static class CurriculumSubskillConstants
     public const string SpeakingRoleplay = "speaking.roleplay";
     public const string SpeakingTaskAchievement = "speaking.task_achievement";
 
+    /// <summary>2026-07-31 container/leaf redesign — fixed functional/social-language items
+    /// ("Nice to meet you," "How do you spell it?") classified under Speaking rather than
+    /// treated as vocabulary.</summary>
+    public const string SpeakingFunctionalPhrases = "speaking.functional_phrases";
+
     // Vocabulary
     public const string VocabularyReceptive = "vocabulary.receptive";
     public const string VocabularyProductive = "vocabulary.productive";
@@ -88,7 +93,7 @@ public static class CurriculumSubskillConstants
             [CurriculumSkillConstants.Speaking] =
             [
                 SpeakingPronunciation, SpeakingFluency, SpeakingCoherence,
-                SpeakingRoleplay, SpeakingTaskAchievement
+                SpeakingRoleplay, SpeakingTaskAchievement, SpeakingFunctionalPhrases
             ],
             [CurriculumSkillConstants.Vocabulary] =
             [

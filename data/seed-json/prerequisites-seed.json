@@ -1,0 +1,8 @@
+[
+  { "node": "grammar.verb_be.singular_he_she_it", "prerequisite": "grammar.verb_be.singular_i_you", "reason": "Singular I/you forms of be are the simplest starting point before adding he/she/it agreement." },
+  { "node": "grammar.verb_be.plural_we_you_they", "prerequisite": "grammar.verb_be.singular_he_she_it", "reason": "All singular forms of be should be solid before introducing plural agreement." },
+  { "node": "grammar.verb_be.wh_how_questions", "prerequisite": "grammar.verb_be.plural_we_you_they", "reason": "Wh-/How question word order with be builds on already knowing every be form (singular and plural)." },
+  { "node": "vocabulary.numbers.eleven_to_hundred_and_phone_numbers", "prerequisite": "vocabulary.numbers.zero_to_ten", "reason": "Numbers 0-10 are the building blocks combined into 11-100 (e.g. twenty-one = twenty + one)." },
+  { "node": "vocabulary.countries_and_nationalities.nationalities", "prerequisite": "vocabulary.countries_and_nationalities.countries", "reason": "Nationality adjectives are derived from country names, so countries should be learned first." },
+  { "node": "functional_language.everyday_transactions.service_requests", "prerequisite": "functional_language.everyday_transactions.spelling_and_alphabet", "reason": "Service transactions (reservations, check-in) routinely require spelling a name, so spelling should come first." }
+]

@@ -91,7 +91,8 @@ public sealed class SkillGraphRoutingService : ISkillGraphRoutingService
     private async Task<List<NodeCandidate>> GetNodeCandidatesAsync(string cefrLevel, string? skill, CancellationToken ct)
     {
         var query = _db.SkillGraphNodes.AsNoTracking()
-            .Where(n => n.ReviewStatus == AdminReviewStatus.Approved && n.IsActive && n.CefrLevel == cefrLevel);
+            .Where(n => n.ReviewStatus == AdminReviewStatus.Approved && n.IsActive && n.CefrLevel == cefrLevel
+                && n.Skill != null);
 
         if (!string.IsNullOrWhiteSpace(skill))
         {
@@ -118,7 +119,7 @@ public sealed class SkillGraphRoutingService : ISkillGraphRoutingService
                 .SelectMany(x => SafeParseStringArray(x.ContextTagsJson))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
-            return new NodeCandidate(n.Key, n.Title, n.CefrLevel, n.Skill, n.DifficultyBand, nodeLinks.Count > 0, contextTags);
+            return new NodeCandidate(n.Key, n.Title, n.CefrLevel, n.Skill!, n.DifficultyBand, nodeLinks.Count > 0, contextTags);
         }).ToList();
     }
 

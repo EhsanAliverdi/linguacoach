@@ -201,3 +201,31 @@ Direction locked: skill graph + per-node mastery + weighted goal vector + AI com
 ## Next recommended action
 
 Scope Phase 1 (skill-graph foundation) as its own plan before writing any code — in particular, nail down node granularity/count target and the AI-draft-then-human-approve workflow shape.
+
+---
+
+## Addendum (2026-07-31) — container/leaf redesign
+
+Following the grammar/vocabulary seed audits (both found real container hierarchies but zero
+cross-skill bundling and zero collocation nodes), the container/leaf model above was sharpened:
+
+- A **container** (`ParentNodeId` target) is now purely structural/thematic and may be
+  **skill-less** — `SkillGraphNode.Skill` is `string?`, required on leaves, optional on
+  containers (migration `20260731021938_MakeSkillGraphNodeSkillNullable`). This lets one
+  container group leaves across different skills — a grammar leaf, a vocabulary leaf, and a
+  pronunciation leaf under one thematic lesson container — rather than every container being
+  locked to one skill's tree.
+- **Prerequisite edges were already cross-skill-capable** (`SkillGraphPrerequisiteEdge` is a bare
+  two-GUID join with no skill-matching constraint) — this required no change, just confirmation.
+- **Collocation** is now a top-level skill (`CurriculumSkillConstants.Collocation`), not a
+  vocabulary subskill — a leaf can be independently a collocation item, matching the "vocab,
+  grammar, collocation, pronunciation are all measurable skills a leaf can carry" framing that
+  drove this redesign.
+- **Functional/social-language items** ("Nice to meet you," "How do you spell it?") are
+  classified under **Speaking** (`speaking.functional_phrases`) rather than forced into
+  Vocabulary.
+
+Existing seed data was archived (not deleted) to `data/seed-json/archive/2026-07-31-pre-rebuild/`
+ahead of a full content rebuild using the per-skill seed file structure
+(`grammar-seed.json`/`vocabulary-seed.json`/`speaking-seed.json`/etc.), authored fresh with this
+container/leaf model. See `docs/reviews/` for the implementation record once that rebuild lands.

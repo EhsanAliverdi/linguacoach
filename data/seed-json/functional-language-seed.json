@@ -1,0 +1,181 @@
+{
+  "version": 1,
+  "versionNotes": [
+    "2026-07-31 — first functional-language seed file (fixed/social-purpose phrases, e.g. introductions, spelling requests, service transactions). Classified under Speaking (speaking.functional_phrases subskill), not Vocabulary, per the container/leaf redesign decision.",
+    "Every leaf's lessonBody/examples/exercises/questions are newly authored."
+  ],
+  "containers": [
+    { "key": "functional_language.meeting_people", "title": "Meeting people", "cefrLevel": "A1" },
+    { "key": "functional_language.everyday_transactions", "title": "Everyday transactions", "cefrLevel": "A1" },
+    { "key": "functional_language.classroom_management", "title": "Classroom management language", "cefrLevel": "A1" }
+  ],
+  "leaves": [
+    {
+      "key": "functional_language.meeting_people.short_social_exchanges",
+      "title": "Understanding and practicing short social exchanges",
+      "cefrLevel": "A1",
+      "difficultyBand": 1,
+      "parentKey": "functional_language.meeting_people",
+      "subskill": "speaking.roleplay",
+      "lessonBody": "Short, everyday spoken exchanges combine several functions at once — ordering something, introducing yourself, and clarifying a name that wasn't heard clearly. Listen for the key words (the item ordered, the name given) even when the exchange has several speakers. Common clarification phrases: 'Sorry, what was that?', 'Did you say...?', 'No, it's [name], not [name].'",
+      "examples": [
+        "A: A coffee, please. B: What's your name? A: Marco. B: Marco, coffee's ready!",
+        "A: Are you Elena? B: No, I'm not. I'm Farah. A: Oh sorry! B: No problem.",
+        "A: Hello! Are you Mr. Diallo? B: Yes, I am. Nice to meet you."
+      ],
+      "commonMistakes": ["Don't assume you heard a name correctly the first time — asking for clarification is normal and polite.", "'Sorry, what was that?' is more natural than 'Repeat, please' in casual conversation."],
+      "exercises": [
+        {
+          "title": "Complete the exchange",
+          "instructions": "Read each short exchange and complete the missing line.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "A: Are you Sofia? B: No, I'm ___. I'm Farah.", "answer": "not" },
+            { "prompt": "A: A tea, please. B: What's your ___? A: Leo.", "answer": "name" },
+            { "prompt": "A: Sorry, what was ___? B: I said Diallo.", "answer": "that" }
+          ]
+        },
+        {
+          "title": "Choose what happens next",
+          "instructions": "Choose the most natural next line in each exchange.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "A: Are you Karim? B: No, I'm not, I'm Amir. A: ___", "options": ["Oh, sorry!", "A coffee, please.", "See you tomorrow."], "correctIndex": 0 },
+            { "prompt": "A: A cappuccino, please. B: What's your name? A: ___", "options": ["Priya.", "Yes, I am.", "Nice to meet you, too."], "correctIndex": 0 },
+            { "prompt": "A: Hello, is your name Chen? B: ___", "options": ["Yes, it is.", "A table for two.", "Bye, see you soon."], "correctIndex": 0 }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "functional_language.classroom_management.instructions",
+      "title": "Understanding classroom instructions",
+      "cefrLevel": "A1",
+      "difficultyBand": 1,
+      "parentKey": "functional_language.classroom_management",
+      "lessonBody": "Common instructions a teacher gives in class: 'Open your books.', 'Close your books.', 'Stand up, please.', 'Sit down, please.', 'Look at the board, please.', 'Go to page...' Common phrases a student uses: 'How do you spell it?', 'Sorry, can you repeat that, please?', 'I don't understand.', 'I don't know.'",
+      "examples": ["Teacher: Open your books to page five, please.", "Student: Sorry, can you repeat that, please?", "Teacher: Stand up, please."],
+      "commonMistakes": ["'Sorry?' alone is a polite, common way to ask someone to repeat something — you don't always need a full sentence.", "'I don't know' answers a question you can't answer; 'I don't understand' means the instruction itself was unclear — they aren't interchangeable."],
+      "exercises": [
+        {
+          "title": "Match the instruction to its purpose",
+          "instructions": "Choose what the teacher wants the student to do.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "'Open your books, please.'", "options": ["Close the book", "Open the book", "Stand up"], "correctIndex": 1 },
+            { "prompt": "'Stand up, please.'", "options": ["Sit down", "Open a book", "Stand up"], "correctIndex": 2 },
+            { "prompt": "'Look at the board, please.'", "options": ["Look at the board", "Close your books", "Go to page ten"], "correctIndex": 0 }
+          ]
+        },
+        {
+          "title": "Choose the best student response",
+          "instructions": "Choose what a student would most naturally say in each situation.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "You didn't hear the instruction clearly. You say: ___", "options": ["I don't know.", "Sorry, can you repeat that, please?", "See you tomorrow."], "correctIndex": 1 },
+            { "prompt": "You don't understand a new word. You say: ___", "options": ["I don't understand.", "Nice to meet you.", "Stand up, please."], "correctIndex": 0 },
+            { "prompt": "The teacher asks a question you can't answer. You say: ___", "options": ["I don't know.", "Open your books.", "How do you spell it?"], "correctIndex": 0 }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "functional_language.meeting_people.introducing_yourself",
+      "title": "Introducing yourself",
+      "cefrLevel": "A1",
+      "difficultyBand": 1,
+      "parentKey": "functional_language.meeting_people",
+      "lessonBody": "Fixed phrases for introducing yourself and meeting someone new: 'Hi, I'm...', 'What's your name?', 'Nice to meet you.'",
+      "examples": ["A: Hi, I'm Priya. B: Hi, I'm Marco. Nice to meet you.", "A: What's your name? B: I'm Felix."],
+      "commonMistakes": ["Don't answer 'What's your name?' with just a name — a full response like 'I'm Felix' is more natural in this context."],
+      "exercises": [
+        {
+          "title": "Choose the best response",
+          "instructions": "Choose the most natural response to complete each exchange.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "A: Hi, I'm Sara. What's your name? B: ___", "options": ["I'm Diego.", "See you later.", "Thanks."], "correctIndex": 0 },
+            { "prompt": "A: Nice to meet you. B: ___", "options": ["Just a minute.", "Nice to meet you, too.", "Sorry."], "correctIndex": 1 },
+            { "prompt": "A: Hello, I'm Mr. Cho. B: ___", "options": ["Hi, I'm Elena.", "Bye.", "OK."], "correctIndex": 0 },
+            { "prompt": "A: What's your name? B: ___", "options": ["Goodbye.", "I'm Nadia.", "Thank you."], "correctIndex": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "functional_language.meeting_people.saying_goodbye",
+      "title": "Saying goodbye",
+      "cefrLevel": "A1",
+      "difficultyBand": 1,
+      "parentKey": "functional_language.meeting_people",
+      "lessonBody": "Fixed phrases for ending a conversation: 'Goodbye' / 'Bye', 'See you tomorrow.', 'See you on Monday.'",
+      "examples": ["A: Bye! See you tomorrow. B: Bye!", "A: See you on Friday. B: OK, see you then."],
+      "commonMistakes": ["'Goodbye' and 'Bye' both work, but don't mix them with 'Hello' at the end of a conversation."],
+      "exercises": [
+        {
+          "title": "Complete the goodbye",
+          "instructions": "Complete each goodbye exchange with the correct phrase.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "A: Bye! ___ tomorrow. B: Bye!", "answer": "See you" },
+            { "prompt": "A: See you on ___. (the day after Sunday)", "answer": "Monday" },
+            { "prompt": "A: ___! B: Goodbye, have a nice day.", "answer": "Bye" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "functional_language.everyday_transactions.spelling_and_alphabet",
+      "title": "Spelling and the alphabet",
+      "cefrLevel": "A1",
+      "difficultyBand": 1,
+      "parentKey": "functional_language.everyday_transactions",
+      "lessonBody": "Fixed phrases for asking about spelling: 'How do you spell that?', 'Can you spell your last name, please?' Answers are given letter by letter, e.g. 'W-A-L-K-E-R.'",
+      "examples": ["A: How do you spell your last name? B: It's W-A-L-K-E-R.", "A: Sorry, can you spell that, please? B: Sure, it's M-A-R-C-O."],
+      "commonMistakes": ["Say letters one at a time when spelling, not as a whole word.", "'How do you spell it?' is more natural than 'What is the spelling?' in everyday speech."],
+      "exercises": [
+        {
+          "title": "Choose the best response",
+          "instructions": "Choose the most natural response to complete each exchange.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "A: How do you spell your last name? B: ___", "options": ["It's F-E-R-N-A-N-D-E-Z.", "Yes, please.", "I don't know."], "correctIndex": 0 },
+            { "prompt": "A: Sorry, can you spell that, please? B: ___", "options": ["Sure, it's B-A-K-E-R.", "See you later.", "Nice to meet you."], "correctIndex": 0 },
+            { "prompt": "A: ___? B: It's spelled S-M-I-T-H.", "options": ["How do you spell that?", "Where are you from?", "How old are you?"], "correctIndex": 0 }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "functional_language.everyday_transactions.service_requests",
+      "title": "Service requests (hotels and restaurants)",
+      "cefrLevel": "A1",
+      "difficultyBand": 2,
+      "parentKey": "functional_language.everyday_transactions",
+      "lessonBody": "Fixed phrases for common service situations: 'I have a reservation.', 'A table for two, please.', 'Can I have the check, please?' Staff often reply with 'Sure,' 'Right this way,' or 'Just a moment.'",
+      "examples": ["A: I have a reservation. My name's Aliyah Reed. B: Let me check... Yes, you're in room 214.", "A: A table for two, please. B: Right this way."],
+      "commonMistakes": ["'I have a reservation' is more natural than 'I reserved' when checking in.", "'A table for two, please' doesn't need a full sentence like 'I want a table for two.'"],
+      "exercises": [
+        {
+          "title": "Complete the exchange",
+          "instructions": "Complete each short exchange with the correct phrase.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "A: Hello, how can I help you? B: Hi, I ___ a reservation. My name's Noah Kim.", "answer": "have" },
+            { "prompt": "A: A table for ___, please. B: Right this way.", "answer": "two" },
+            { "prompt": "A: Can I ___ the check, please? B: Of course.", "answer": "have" }
+          ]
+        },
+        {
+          "title": "Choose the best response",
+          "instructions": "Choose the most natural response to complete each exchange.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "A: Good evening, do you have a reservation? B: ___", "options": ["Yes, under the name Reed.", "See you tomorrow.", "How do you spell that?"], "correctIndex": 0 },
+            { "prompt": "A: How many people? B: ___", "options": ["A table for four, please.", "I'm from Canada.", "Nice to meet you."], "correctIndex": 0 }
+          ]
+        }
+      ]
+    }
+  ]
+}

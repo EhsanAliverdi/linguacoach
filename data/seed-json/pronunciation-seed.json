@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "versionNotes": [
+    "2026-07-31 — first pronunciation seed file for this codebase (no prior domain file covered this content shape; pronunciation nodes previously existed only as pure CEFR Companion Volume taxonomy in cefr-scales-seed.json, with no lesson/exercise content attached).",
+    "Every leaf's lessonBody/examples/exercises/questions are newly authored."
+  ],
+  "containers": [
+    { "key": "pronunciation.beginner_sounds", "title": "Beginner sounds", "cefrLevel": "A1" }
+  ],
+  "leaves": [
+    {
+      "key": "pronunciation.beginner_sounds.h_ai_i",
+      "title": "Sounds /h/, /aɪ/, and /i/",
+      "cefrLevel": "A1",
+      "difficultyBand": 1,
+      "parentKey": "pronunciation.beginner_sounds",
+      "lessonBody": "Three common beginner sounds: /h/ as in 'hat', /aɪ/ as in 'my', and /i/ as in 'we'. /h/ is a soft breath sound at the start of a word. /aɪ/ is a long 'eye' sound. /i/ is a short, high 'ee' sound.",
+      "examples": ["hat, happy, hand — /h/", "my, like, nice — /aɪ/", "we, three, please — /i/"],
+      "commonMistakes": ["Don't drop the /h/ sound at the start of words like 'hat' or 'happy'.", "Don't confuse the short /i/ in 'we' with the long /aɪ/ in 'my' — they are different sounds."],
+      "exercises": [
+        {
+          "title": "Choose the matching sound",
+          "instructions": "Choose the word with the same vowel or starting sound as the word shown.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which word starts with the same sound as 'hat'?", "options": ["happy", "eat", "at"], "correctIndex": 0 },
+            { "prompt": "Which word has the same vowel sound as 'my'?", "options": ["we", "like", "see"], "correctIndex": 1 },
+            { "prompt": "Which word has the same vowel sound as 'we'?", "options": ["three", "my", "hi"], "correctIndex": 0 },
+            { "prompt": "Which word starts with the same sound as 'hand'?", "options": ["and", "happy", "eight"], "correctIndex": 1 },
+            { "prompt": "Which word has the same vowel sound as 'nice'?", "options": ["please", "like", "we"], "correctIndex": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "pronunciation.beginner_sounds.i_ou_s_sh",
+      "title": "Sounds /ɪ/, /oʊ/, /s/, and /ʃ/",
+      "cefrLevel": "A1",
+      "difficultyBand": 1,
+      "parentKey": "pronunciation.beginner_sounds",
+      "lessonBody": "Four common beginner sounds: /ɪ/ as in 'sit' (short, relaxed), /oʊ/ as in 'go' (a diphthong gliding from 'oh' to 'oo'), /s/ as in 'say' (a hissing sound), and /ʃ/ as in 'she' (a softer 'sh' sound).",
+      "examples": ["sit, is, fish — /ɪ/", "go, no, home — /oʊ/", "say, city, nice — /s/", "she, English — /ʃ/"],
+      "commonMistakes": ["Don't confuse /s/ (say) and /ʃ/ (she) — /ʃ/ has rounder, more forward lips.", "Don't shorten /oʊ/ into a pure 'o' — it glides into a small 'oo' sound."],
+      "exercises": [
+        {
+          "title": "Choose the matching sound",
+          "instructions": "Choose the word with the same sound as the one shown.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which word has the same vowel sound as 'sit'?", "options": ["fish", "go", "say"], "correctIndex": 0 },
+            { "prompt": "Which word has the same vowel sound as 'go'?", "options": ["home", "sit", "she"], "correctIndex": 0 },
+            { "prompt": "Which word starts with the same sound as 'say'?", "options": ["she", "city", "go"], "correctIndex": 1 },
+            { "prompt": "Which word starts with the same sound as 'she'?", "options": ["say", "sit", "English"], "correctIndex": 2 }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "pronunciation.beginner_sounds.dz_tsh_sh",
+      "title": "Sounds /dʒ/, /tʃ/, and /ʃ/",
+      "cefrLevel": "A1",
+      "difficultyBand": 1,
+      "parentKey": "pronunciation.beginner_sounds",
+      "lessonBody": "Three related consonant sounds: /dʒ/ as in 'job' (a voiced 'j' sound), /tʃ/ as in 'chair' (an unvoiced 'ch' sound), and /ʃ/ as in 'shoe' (a soft 'sh' sound with no stop). The letter 'j' and soft 'g' are usually /dʒ/.",
+      "examples": ["job, giant, page — /dʒ/", "chair, watch, cheese — /tʃ/", "shoe, wish, English — /ʃ/"],
+      "commonMistakes": ["Don't confuse /dʒ/ (voiced, like 'job') with /tʃ/ (unvoiced, like 'chair') — feel your throat vibrate for /dʒ/ but not /tʃ/.", "/ʃ/ has no stop at the start, unlike /tʃ/ which starts with a small stop."],
+      "exercises": [
+        {
+          "title": "Choose the matching sound",
+          "instructions": "Choose the word that starts with the same sound as the one shown.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which word starts with the same sound as 'job'?", "options": ["chair", "giant", "shoe"], "correctIndex": 1 },
+            { "prompt": "Which word starts with the same sound as 'chair'?", "options": ["cheese", "job", "shoe"], "correctIndex": 0 },
+            { "prompt": "Which word starts with the same sound as 'shoe'?", "options": ["chair", "job", "wish"], "correctIndex": 2 }
+          ]
+        }
+      ]
+    }
+  ]
+}
