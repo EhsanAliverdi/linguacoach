@@ -284,3 +284,58 @@ confirmed healthy.
 
 **Next recommended action**: none pending; further lesson-blocks can be added the same way when
 requested.
+
+## 14. Addendum (2026-08-04) — Files 6-8 built
+
+Following the same compulsory process, three more source lesson-blocks were read and built out:
+a third-person/routines lesson-block, a weekend/opinions lesson-block (plus a date/phone
+practical-English episode), and a permission/preferences lesson-block. No book references, unit
+numbers, or scenario/character names were carried into any node key, title, or file name.
+
+**New containers (9)**: 5 grammar (`grammar.adverbs_of_frequency`, `grammar.question_word_order`,
+`grammar.imperatives_and_object_pronouns`, `grammar.modals`, `grammar.liking_verbs`), 4
+vocabulary (`vocabulary.work`, `vocabulary.daily_routine`, `vocabulary.entertainment`,
+`vocabulary.free_time`). No new pronunciation, functional-language, or reading containers were
+needed — new leaves in those domains fold into existing containers
+(`pronunciation.beginner_sounds`, `functional_language.time_and_arrangements`,
+`reading.everyday_situations`).
+
+**New leaves (22)**, each with a full lesson body, 2 original exercises, and examples/common
+mistakes:
+
+- Grammar (6): simple present third person (he/she/it), adverbs of frequency, question word
+  order (be + simple present), imperatives + object pronouns, can/can't, like/love/hate + -ing.
+- Vocabulary (7): jobs and places of work, a typical day, free-time verb phrases (common verb
+  phrases 2), kinds of movies, months and ordinal numbers, public-sign verb phrases (common verb
+  phrases 3), activities.
+- Pronunciation (6): /y/ and /yu/, /w//h//ɛr//aʊ/, sentence rhythm with opinions, /θ/ in ordinal
+  numbers, can/can't stress (/æ/ vs /ə/), /ʊ//u//ŋ/.
+- Functional language (2): saying the date, talking on the phone.
+- Reading (1): a short survey-style article with percentages.
+
+**Resolved without a new leaf** (rule 3's "same teaching point, not new content" exception): the
+third-person -s pronunciation pattern (/s//z//ɪz/) is the identical phonological rule already
+taught for plural nouns, just applied to verbs instead — rather than duplicating it, the existing
+`pronunciation.beginner_sounds.z_s_plural_endings` leaf was retitled to cover both and given a
+third exercise using verb examples (lives, watches, works). Movie/TV video-listening tasks and
+dating-profile/choir-video listening tasks were additional practice of already-taught
+grammar/vocabulary (simple present routines, activities + -ing) — not duplicated into new leaves,
+consistent with the video/audio exclusion rule and the "extra practice, not new content" pattern
+established in §11.
+
+**13 new prerequisite edges** (36 total now), all vocab-before-grammar or grammar-before-its-own-
+extension: e.g. jobs vocabulary before third-person simple present (the grammar is practiced
+through job Q&A); simple-present questions before the more complex be/simple-present word-order
+lesson; can/can't grammar before its own stress-pattern pronunciation leaf.
+
+**Re-seed**: full `TRUNCATE` + re-run of all domain seeders + prerequisites, in the established
+order. Final counts: 102 `SkillGraphNode` rows (32 skill-less containers, 70 leaves), 70 Lessons
+(every leaf has exactly one, verified via `lessons_without_leaf = 0`), 144 Exercises, 36
+prerequisite edges. All three backend test suites green (UnitTests 2594, IntegrationTests 1418,
+ArchitectureTests 30). API container restarted and confirmed healthy.
+
+**Final verdict**: content now covers the source material's first eight lesson-blocks in full, at
+the same quality bar established in §12.
+
+**Next recommended action**: none pending; further lesson-blocks can continue the same way when
+requested.

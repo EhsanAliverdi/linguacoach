@@ -304,6 +304,70 @@
           ]
         }
       ]
+    },
+    {
+      "key": "functional_language.time_and_arrangements.saying_the_date",
+      "title": "Saying the date",
+      "cefrLevel": "A1",
+      "difficultyBand": 4,
+      "parentKey": "functional_language.time_and_arrangements",
+      "lessonBody": "In this lesson, you'll learn how to ask for and say today's date — needed for appointments, forms, and everyday conversation.\n\nAsking the date:\n\n• What's the date today? — I think it's the second of June. / It's June second.\n• Are you sure? — No, definitely the third.\n\nWriting a date:\n\n• You say: April first → You write: April 1st / April 1 / 4/1\n\nNote: American English usually says 'June second' (month + ordinal); British English says 'the second of June' (the + ordinal + of + month).\n\nBy the end of this lesson, you'll be able to ask for, say, and write dates confidently, and double-check a date if you're unsure.",
+      "examples": ["What's the date today? It's May fourth.", "Are you sure? Yes, definitely the ninth.", "Her birthday is September twenty-second."],
+      "commonMistakes": ["Don't say a date as a plain number: 'It's two June' is not natural — say 'It's June second' or 'the second of June'.", "Don't forget dates use ordinal numbers (first, second, third), not cardinal numbers (one, two, three)."],
+      "exercises": [
+        {
+          "title": "Choose the correct way to say the date",
+          "instructions": "Choose the correct way to say each date.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "4/1", "options": ["April first", "one April", "April one"], "correctIndex": 0 },
+            { "prompt": "5/4", "options": ["May fourth", "four May", "May four"], "correctIndex": 0 },
+            { "prompt": "7/20", "options": ["July twenty", "July twentieth", "twenty July"], "correctIndex": 1 }
+          ]
+        },
+        {
+          "title": "Complete the exchange",
+          "instructions": "Complete each short exchange about dates.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "A: What's the ___ today? B: I think it's the second of June.", "answer": "date" },
+            { "prompt": "A: Are you ___? B: No, definitely the third.", "answer": "sure" },
+            { "prompt": "My birthday is the twenty-third ___ July. (British style)", "answer": "of" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "functional_language.time_and_arrangements.talking_on_the_phone",
+      "title": "Talking on the phone",
+      "cefrLevel": "A1",
+      "difficultyBand": 4,
+      "parentKey": "functional_language.time_and_arrangements",
+      "lessonBody": "In this lesson, you'll learn the fixed phrases for starting a phone call, confirming who you're speaking to, and arranging to talk again — useful for both personal and work calls.\n\nStarting a call:\n\n• Is this Jenny? (American English) / Is that Jenny? (British English)\n• Yes. Who's this? (American) / Yes. Who's that? (British)\n\nExplaining why you're calling and arranging a follow-up:\n\n• We need to talk about your trip to London.\n• Call me on Monday at work.\n• Talk to you on Tuesday.\n\nBy the end of this lesson, you'll be able to start a phone call naturally, confirm who you're speaking to, and arrange a time to talk again.",
+      "examples": ["Is this Jenny? Yes. Who's this?", "We need to talk about the schedule.", "Call me on Monday at work. Talk to you then."],
+      "commonMistakes": ["American English uses 'this' for phone calls ('Is this...?'); British English uses 'that' ('Is that...?') — both are correct in their own variety.", "Don't say 'Who are you?' on the phone — it sounds rude; 'Who's this?'/'Who's that?' is the polite phone-specific phrase."],
+      "exercises": [
+        {
+          "title": "Complete the phone call",
+          "instructions": "Complete each line of the phone call opening.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "A: Is ___ Jenny? (American English) B: Yes. Who's this?", "answer": "this" },
+            { "prompt": "A: We need to ___ about your trip. B: Of course.", "answer": "talk" },
+            { "prompt": "A: Call me on Monday. B: ___ to you on Tuesday.", "answer": "Talk" }
+          ]
+        },
+        {
+          "title": "Choose the best response",
+          "instructions": "Choose the most natural response to complete each exchange.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "A: Is this Jenny? B: ___", "options": ["Yes. Who's this?", "A table for two.", "See you tomorrow."], "correctIndex": 0 },
+            { "prompt": "A: We need to talk about your trip to London. B: ___", "options": ["Of course.", "It's blue.", "How much is it?"], "correctIndex": 0 },
+            { "prompt": "A: Call me on Monday at work. B: ___", "options": ["Talk to you then.", "I don't know.", "Nice to meet you."], "correctIndex": 0 }
+          ]
+        }
+      ]
     }
   ]
 }

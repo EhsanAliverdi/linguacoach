@@ -142,7 +142,7 @@
     },
     {
       "key": "pronunciation.beginner_sounds.z_s_plural_endings",
-      "title": "Plural endings: /z/, /s/, and /ɪz/",
+      "title": "Plural and third-person -s endings: /z/, /s/, and /ɪz/",
       "cefrLevel": "A1",
       "difficultyBand": 2,
       "parentKey": "pronunciation.beginner_sounds",
@@ -169,6 +169,16 @@
             { "prompt": "Which word's -s sounds different?", "options": ["books", "coats", "phones"], "correctIndex": 2 },
             { "prompt": "Which word's -s sounds different?", "options": ["glasses", "keys", "bags"], "correctIndex": 0 },
             { "prompt": "Which word's -s sounds different?", "options": ["tablets", "pieces", "books"], "correctIndex": 1 }
+          ]
+        },
+        {
+          "title": "Choose the ending sound for verbs",
+          "instructions": "This same pattern applies to the third-person -s on verbs. Choose the sound the -s makes in each verb.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "lives", "options": ["/s/", "/z/", "/ɪz/"], "correctIndex": 1 },
+            { "prompt": "watches", "options": ["/s/", "/z/", "/ɪz/"], "correctIndex": 2 },
+            { "prompt": "works", "options": ["/s/", "/z/", "/ɪz/"], "correctIndex": 0 }
           ]
         }
       ]
@@ -391,6 +401,197 @@
           "questions": [
             { "prompt": "Which word has /ɑ/?", "options": ["what", "write", "know"], "correctIndex": 0 },
             { "prompt": "Which word has /ɑ/?", "options": ["listen", "sorry", "half"], "correctIndex": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "pronunciation.beginner_sounds.y_yu",
+      "title": "Sounds /y/ and /yu/, and sentence rhythm",
+      "cefrLevel": "A1",
+      "difficultyBand": 4,
+      "parentKey": "pronunciation.beginner_sounds",
+      "lessonBody": "In this lesson, you'll practice the consonant /y/ and the combined sound /yu/, which appear in some very common everyday words.\n\n• /y/ as in 'yacht' — yes, you, young, yellow\n• /yu/ as in a longer glide — usually, university, uniform, beautiful\n\nNotice that /yu/ often appears at the start of words spelled with 'u', not 'y' — this is a spelling/sound mismatch worth noticing.\n\nBy the end of this lesson, you'll be able to produce /y/ and /yu/ correctly, and keep practicing natural sentence rhythm on longer sentences.",
+      "examples": ["Yes, you're young.", "I usually go to the university on Mondays.", "That's a beautiful yellow car."],
+      "commonMistakes": ["Don't confuse the letter 'u' at the start of a word with the vowel sound /ʌ/ — 'usually' and 'university' start with /yu/, not /ʌ/.", "/y/ is a consonant sound, even though it looks like a vowel letter — don't pronounce it like 'ee'."],
+      "exercises": [
+        {
+          "title": "Choose the word with the matching sound",
+          "instructions": "Choose the word with the same starting sound as the word shown.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which word starts with the same sound as 'yes'?", "options": ["young", "usually", "old"], "correctIndex": 0 },
+            { "prompt": "Which word starts with /yu/?", "options": ["yellow", "university", "you"], "correctIndex": 1 },
+            { "prompt": "Which word starts with the same sound as 'you'?", "options": ["yellow", "usually", "old"], "correctIndex": 0 }
+          ]
+        },
+        {
+          "title": "Complete the sentence",
+          "instructions": "Complete each sentence with a word from the lesson.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "I ___ get up at 7:00. (as a habit)", "answer": "usually" },
+            { "prompt": "She studies at the ___. (higher education place)", "answer": "university" },
+            { "prompt": "That's a ___ song. (very nice)", "answer": "beautiful" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "pronunciation.beginner_sounds.w_h_er_au",
+      "title": "Sounds /w/, /h/, /ɛr/, and /aʊ/",
+      "cefrLevel": "A1",
+      "difficultyBand": 4,
+      "parentKey": "pronunciation.beginner_sounds",
+      "lessonBody": "In this lesson, you'll practice four sounds that appear constantly in everyday question words and common vocabulary.\n\n• /w/ as in 'witch' — what, when, why, walk, watch, always\n• /h/ as in 'house' — how, home, husband, her, who\n• /ɛr/ as in 'chair' — hair, where, there, their\n• /aʊ/ as in 'owl' — how, town, out, mountains\n\nNotice that 'how' appears in both the /h/ and /aʊ/ rows — it combines both sounds.\n\nBy the end of this lesson, you'll be able to produce all four sounds clearly in common question words and everyday vocabulary.",
+      "examples": ["How do you relax on the weekend?", "Where do they live? Their house is over there.", "I go to the mountains near my town."],
+      "commonMistakes": ["Don't drop the /h/ sound in 'how', 'home', or 'husband' — it should be clearly audible.", "Don't confuse /ɛr/ (chair, where) with /aʊ/ (how, town) — they are very different sounds despite both containing letters that can look similar in some words."],
+      "exercises": [
+        {
+          "title": "Choose the matching sound",
+          "instructions": "Choose the word with the same sound as the word shown.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which word has the same sound as 'chair'?", "options": ["where", "how", "walk"], "correctIndex": 0 },
+            { "prompt": "Which word has the same sound as 'owl'?", "options": ["town", "who", "why"], "correctIndex": 0 },
+            { "prompt": "Which word starts with the same sound as 'house'?", "options": ["her", "what", "always"], "correctIndex": 0 }
+          ]
+        },
+        {
+          "title": "Complete the question",
+          "instructions": "Complete each question with a word from the lesson.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "___ do you relax on the weekend? (question word)", "answer": "How" },
+            { "prompt": "___ do they live? (question word for place)", "answer": "Where" },
+            { "prompt": "I go to the ___ every summer. (high, natural landforms)", "answer": "mountains" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "pronunciation.beginner_sounds.rhythm_with_opinions",
+      "title": "Sentence rhythm when giving opinions",
+      "cefrLevel": "A1",
+      "difficultyBand": 4,
+      "parentKey": "pronunciation.beginner_sounds",
+      "lessonBody": "In this lesson, you'll practice sentence rhythm in the specific context of giving opinions — saying what you like, prefer, and think.\n\nWhen you give an opinion, stress falls on the key content words: the topic and the opinion word itself.\n\n• Do you LIKE horror MOVIES? No, I PREFER DRAmas.\n• Do you like Sigourney WEAver? Yes, I do. She's very GOOD.\n\nSmall words (do, you, it, is) stay light and quick; the important words get the stress.\n\nBy the end of this lesson, you'll be able to give and ask about opinions with natural, confident rhythm instead of stressing every word equally.",
+      "examples": ["Do you like comedies? Yes, I love them.", "I prefer dramas to action movies.", "I think he's a great actor."],
+      "commonMistakes": ["Don't stress every word equally — this makes English sound robotic; only the key content words carry the stress.", "Small grammar words like 'do' and 'you' should be quick and light, not stressed."],
+      "exercises": [
+        {
+          "title": "Choose the stressed word",
+          "instructions": "Choose the word that should be stressed most strongly in each opinion sentence.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Do you like horror movies?", "options": ["Do", "horror movies", "you"], "correctIndex": 1 },
+            { "prompt": "I prefer comedies.", "options": ["I", "prefer", "comedies"], "correctIndex": 2 },
+            { "prompt": "I think she's great.", "options": ["I", "think", "great"], "correctIndex": 2 }
+          ]
+        },
+        {
+          "title": "Complete the opinion",
+          "instructions": "Complete each opinion sentence.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "I really ___ science fiction movies. (enjoy a lot)", "answer": "love" },
+            { "prompt": "I ___ comedies to horror movies. (like more)", "answer": "prefer" },
+            { "prompt": "I ___ he's a great actor. (my opinion is)", "answer": "think" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "pronunciation.beginner_sounds.theta_ordinal",
+      "title": "Sound /θ/ in ordinal numbers",
+      "cefrLevel": "A1",
+      "difficultyBand": 4,
+      "parentKey": "pronunciation.beginner_sounds",
+      "lessonBody": "In this lesson, you'll practice the unvoiced 'th' sound /θ/, which appears in several common ordinal numbers.\n\n/θ/ appears in: thumb, three, Thursday, third, seventh, ninth\n\nRemember: /θ/ (unvoiced, as in 'thumb') is different from /ð/ (voiced, as in 'this') that you practiced earlier — the tongue position is similar, but /θ/ has no vibration in your throat.\n\nBy the end of this lesson, you'll be able to pronounce ordinal numbers containing /θ/ clearly and confidently.",
+      "examples": ["It's the third of March.", "My meeting is on Thursday.", "This is her seventh trip to the US."],
+      "commonMistakes": ["Don't voice /θ/ like /ð/ — 'third' should have no throat vibration, unlike 'this'.", "Don't substitute /t/ or /s/ for /θ/ — 'tree' and 'three' are different words with different sounds."],
+      "exercises": [
+        {
+          "title": "Choose the word with /θ/",
+          "instructions": "Choose the word that contains the /θ/ sound.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which word has /θ/?", "options": ["this", "third", "day"], "correctIndex": 1 },
+            { "prompt": "Which word has /θ/?", "options": ["Thursday", "they", "the"], "correctIndex": 0 },
+            { "prompt": "Which word has /θ/?", "options": ["seventh", "seven", "even"], "correctIndex": 0 }
+          ]
+        },
+        {
+          "title": "Complete the ordinal number",
+          "instructions": "Complete each sentence with an ordinal number containing /θ/.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "March is the ___ month of the year. (3rd)", "answer": "third" },
+            { "prompt": "July is the ___ month of the year. (7th)", "answer": "seventh" },
+            { "prompt": "September is the ___ month of the year. (9th)", "answer": "ninth" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "pronunciation.beginner_sounds.can_cant_stress",
+      "title": "Can/can't: /æ/ and /ə/, sentence rhythm",
+      "cefrLevel": "A1",
+      "difficultyBand": 4,
+      "parentKey": "pronunciation.beginner_sounds",
+      "lessonBody": "In this lesson, you'll learn how 'can' and 'can't' are pronounced differently depending on whether they're stressed — a key listening skill, since the vowel sound is your main clue.\n\n• 'can' (unstressed, in a positive sentence) = /ə/ — a quick, light schwa sound: You can park here.\n• 'can't' (always stressed) = /æ/ — a clear, full vowel: You can't park here.\n\nIn fast speech, 'can' almost disappears; 'can't' is always clear and stressed, since it carries the important negative meaning.\n\nBy the end of this lesson, you'll be able to hear the difference between 'can' and 'can't' in natural spoken English, even when 'can' is very quiet.",
+      "examples": ["You can park here. (can = light, quick)", "You can't park here. (can't = clear, stressed)", "Yes, you can. No, you can't."],
+      "commonMistakes": ["Don't pronounce 'can' as fully and clearly as 'can't' in a positive sentence — it should sound light and quick.", "In short answers ('Yes, I can'), 'can' IS stressed and uses the full /æ/ sound — the rule about the light /ə/ only applies before a main verb."],
+      "exercises": [
+        {
+          "title": "Choose can or can't",
+          "instructions": "Listen for the stress pattern described and choose can or can't.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Light, quick vowel before the verb: You ___ park here.", "options": ["can", "can't"], "correctIndex": 0 },
+            { "prompt": "Clear, stressed vowel: You ___ park here.", "options": ["can", "can't"], "correctIndex": 1 },
+            { "prompt": "Short answer, stressed: Yes, I ___.", "options": ["can", "can't"], "correctIndex": 0 }
+          ]
+        },
+        {
+          "title": "Complete the sentence",
+          "instructions": "Complete each sentence with can or can't.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "You ___ use your phone in the theater. (not allowed)", "answer": "can't" },
+            { "prompt": "You ___ pay by credit card here. (allowed)", "answer": "can" },
+            { "prompt": "Sorry, I ___ help you today. (not able)", "answer": "can't" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "pronunciation.beginner_sounds.u_u_ng",
+      "title": "Sounds /ʊ/, /u/, and /ŋ/, sentence rhythm",
+      "cefrLevel": "A1",
+      "difficultyBand": 4,
+      "parentKey": "pronunciation.beginner_sounds",
+      "lessonBody": "In this lesson, you'll practice two similar-looking vowel sounds and the 'ng' consonant sound, all common in activity words.\n\n• /ʊ/ as in 'bull' — book, cook, look, good\n• /u/ as in 'boot' — too, food, soon, school\n• /ŋ/ as in 'singer' — doing, going, swimming, thing\n\n/ʊ/ is short and relaxed; /u/ is longer with rounder lips. /ŋ/ is the sound at the end of every -ing word — make sure you don't add a hard /g/ sound after it.\n\nBy the end of this lesson, you'll be able to tell /ʊ/ and /u/ apart and pronounce -ing activity words naturally.",
+      "examples": ["I love cooking and reading good books.", "We're going to school soon.", "Swimming and doing sports are great activities."],
+      "commonMistakes": ["Don't confuse /ʊ/ (book, cook) with /u/ (food, school) — they use different mouth shapes and lengths.", "Don't add a hard /g/ sound after /ŋ/: 'swimming' should end cleanly in /ŋ/, not /ŋg/."],
+      "exercises": [
+        {
+          "title": "Choose the matching sound",
+          "instructions": "Choose the word with the same vowel sound as the word shown.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which word has the same vowel sound as 'book'?", "options": ["good", "food", "school"], "correctIndex": 0 },
+            { "prompt": "Which word has the same vowel sound as 'food'?", "options": ["cook", "too", "look"], "correctIndex": 1 },
+            { "prompt": "Which word ends in the /ŋ/ sound?", "options": ["singer", "sing", "sit"], "correctIndex": 1 }
+          ]
+        },
+        {
+          "title": "Find the odd one out",
+          "instructions": "Choose the word with a different vowel sound from the other two.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which word sounds different?", "options": ["book", "cook", "school"], "correctIndex": 2 },
+            { "prompt": "Which word sounds different?", "options": ["soon", "too", "good"], "correctIndex": 2 }
           ]
         }
       ]

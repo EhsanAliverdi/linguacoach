@@ -9,7 +9,12 @@
     { "key": "grammar.nouns_and_determiners", "title": "Nouns and determiners", "cefrLevel": "A1", "difficultyBand": 2, "nodeType": "topic" },
     { "key": "grammar.possessives", "title": "Possessives", "cefrLevel": "A1", "difficultyBand": 3, "nodeType": "topic" },
     { "key": "grammar.adjectives", "title": "Adjectives", "cefrLevel": "A1", "difficultyBand": 3, "nodeType": "topic" },
-    { "key": "grammar.simple_present", "title": "Simple present", "cefrLevel": "A1", "difficultyBand": 3, "nodeType": "topic" }
+    { "key": "grammar.simple_present", "title": "Simple present", "cefrLevel": "A1", "difficultyBand": 3, "nodeType": "topic" },
+    { "key": "grammar.adverbs_of_frequency", "title": "Adverbs of frequency", "cefrLevel": "A1", "difficultyBand": 4, "nodeType": "topic" },
+    { "key": "grammar.question_word_order", "title": "Question word order", "cefrLevel": "A1", "difficultyBand": 4, "nodeType": "topic" },
+    { "key": "grammar.imperatives_and_object_pronouns", "title": "Imperatives and object pronouns", "cefrLevel": "A1", "difficultyBand": 4, "nodeType": "topic" },
+    { "key": "grammar.modals", "title": "Modal verbs", "cefrLevel": "A1", "difficultyBand": 4, "nodeType": "topic" },
+    { "key": "grammar.liking_verbs", "title": "Liking verbs", "cefrLevel": "A1", "difficultyBand": 4, "nodeType": "topic" }
   ],
   "leaves": [
     {
@@ -409,6 +414,225 @@
             { "prompt": "Do you live near here? Yes, I ___.", "answer": "do" },
             { "prompt": "Do they watch a lot of TV? No, they ___.", "answer": "don't" },
             { "prompt": "Do we need a taxi? No, we ___.", "answer": "don't" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "grammar.simple_present.third_person_he_she_it",
+      "title": "Simple present — third person: he, she, it",
+      "cefrLevel": "A1",
+      "difficultyBand": 4,
+      "parentKey": "grammar.simple_present",
+      "nodeType": "skill",
+      "cefrConfidence": "curated",
+      "cefrSource": "hand_authored",
+      "routingEligible": true,
+      "lessonBody": "In this lesson, you'll learn how the simple present changes when you talk about one other person or thing — he, she, or it — instead of yourself or a group.\n\nWith he, she, and it, add -s (or -es) to the verb:\n\n• I work → she works\n• I teach → he teaches\n• I have → she has (irregular)\n\nFor the negative and question, use doesn't/does instead of don't/do, and the main verb goes back to its base form:\n\n• She doesn't wear glasses. (NOT she doesn't wears)\n• What does he do? Where does she work?\n\nBy the end of this lesson, you'll be able to describe someone else's job, habits, and routine correctly in the third person.",
+      "examples": ["She works for a newspaper.", "He doesn't wear glasses now.", "What does she do? She's a teacher."],
+      "commonMistakes": ["Don't forget the -s on the verb with he/she/it: 'she work' is wrong — say 'she works'.", "Don't add -s twice: 'she doesn't works' is wrong — say 'she doesn't work'."],
+      "exercises": [
+        {
+          "title": "Complete with the third-person form",
+          "instructions": "Complete each sentence with the correct third-person simple present form.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "She ___ for a newspaper. (work)", "answer": "works" },
+            { "prompt": "He ___ Spanish at a school. (teach)", "answer": "teaches" },
+            { "prompt": "She ___ two brothers. (have)", "answer": "has" },
+            { "prompt": "It ___ every morning. (start)", "answer": "starts" }
+          ]
+        },
+        {
+          "title": "Make the negative and question",
+          "instructions": "Complete each negative sentence or question.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "She ___ wear glasses now. (negative, wear)", "answer": "doesn't" },
+            { "prompt": "___ he work at a school? (question)", "answer": "Does" },
+            { "prompt": "What ___ she do? (question)", "answer": "does" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "grammar.adverbs_of_frequency.always_usually_sometimes_never",
+      "title": "Adverbs of frequency",
+      "cefrLevel": "A1",
+      "difficultyBand": 4,
+      "parentKey": "grammar.adverbs_of_frequency",
+      "nodeType": "skill",
+      "cefrConfidence": "curated",
+      "cefrSource": "hand_authored",
+      "routingEligible": true,
+      "lessonBody": "In this lesson, you'll learn how to say how often you do something — not just what you do, but how regularly.\n\nCommon adverbs of frequency, from most to least often:\n\nalways, usually, sometimes, never\n\nThe adverb goes before the main verb, but after the verb 'be':\n\n• I always get up at 7:00.\n• I never drink coffee.\n• She is usually tired in the morning.\n\nBy the end of this lesson, you'll be able to describe your routines and habits with more precision — not just 'I do X' but 'I always/usually/sometimes/never do X.'",
+      "examples": ["I always get up early on weekdays.", "He never eats breakfast.", "We're usually busy on Mondays."],
+      "commonMistakes": ["Don't put the adverb before 'be': 'I always am tired' is wrong — say 'I am always tired.'", "Don't put the adverb after the main verb: 'I get up always at 7:00' is wrong — say 'I always get up at 7:00.'"],
+      "exercises": [
+        {
+          "title": "Put the adverb in the right place",
+          "instructions": "Rewrite each sentence with the adverb of frequency in the correct place.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "I drink coffee. (never)", "answer": "I never drink coffee" },
+            { "prompt": "She is tired on Mondays. (usually)", "answer": "She is usually tired on Mondays" },
+            { "prompt": "We watch TV in the evening. (sometimes)", "answer": "We sometimes watch TV in the evening" }
+          ]
+        },
+        {
+          "title": "Choose the correct sentence",
+          "instructions": "Choose the sentence with the adverb in the correct position.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which is correct?", "options": ["I always am busy on Fridays.", "I am always busy on Fridays."], "correctIndex": 1 },
+            { "prompt": "Which is correct?", "options": ["He usually finishes work at 6:00.", "He finishes usually work at 6:00."], "correctIndex": 0 },
+            { "prompt": "Which is correct?", "options": ["They never eat meat.", "They eat never meat."], "correctIndex": 0 }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "grammar.question_word_order.be_and_simple_present",
+      "title": "Word order in questions: be and simple present",
+      "cefrLevel": "A1",
+      "difficultyBand": 4,
+      "parentKey": "grammar.question_word_order",
+      "nodeType": "skill",
+      "cefrConfidence": "curated",
+      "cefrSource": "hand_authored",
+      "routingEligible": true,
+      "lessonBody": "In this lesson, you'll practice building correct questions from scratch, combining be-questions and do/does-questions — a skill for holding a real two-way conversation, not just answering.\n\nRemember the two patterns:\n\n• be-questions: (question word) + be + subject — Are you tired? What's your favorite day?\n• simple-present questions: (question word) + do/does + subject + base verb — What do you do on Saturday? Does she work on Sunday?\n\nMixing these up is the most common word-order mistake at this level — check whether the sentence needs 'be' or 'do/does' before you build it.\n\nBy the end of this lesson, you'll be able to build both types of questions correctly, even when a question word is involved.",
+      "examples": ["What do you usually do on Saturday?", "Are you tired on Sunday evening?", "What's your favorite part of the weekend?"],
+      "commonMistakes": ["Don't mix 'be' and 'do' in the same question: 'Do you are tired?' is wrong — say 'Are you tired?'", "Don't forget 'do/does' with a simple-present question: 'What you do on Saturday?' is wrong — say 'What do you do on Saturday?'"],
+      "exercises": [
+        {
+          "title": "Put the words in order",
+          "instructions": "Put the words in the correct order to make a question.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "usually / do / Saturday / what / you / on / do", "answer": "What do you usually do on Saturday" },
+            { "prompt": "Sunday / tired / are / on / you", "answer": "Are you tired on Sunday" },
+            { "prompt": "you / weekend / do / thing / same / the / every", "answer": "Do you do the same thing every weekend" }
+          ]
+        },
+        {
+          "title": "Choose the correct question",
+          "instructions": "Choose the question with the correct word order.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which is correct?", "options": ["What's your favorite part of the weekend?", "What your favorite part of the weekend is?"], "correctIndex": 0 },
+            { "prompt": "Which is correct?", "options": ["Where do you have lunch?", "Where you do have lunch?"], "correctIndex": 0 },
+            { "prompt": "Which is correct?", "options": ["Is she usually busy?", "Does she is usually busy?"], "correctIndex": 0 }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "grammar.imperatives_and_object_pronouns.forms",
+      "title": "Imperatives and object pronouns",
+      "cefrLevel": "A1",
+      "difficultyBand": 4,
+      "parentKey": "grammar.imperatives_and_object_pronouns",
+      "nodeType": "skill",
+      "cefrConfidence": "curated",
+      "cefrSource": "hand_authored",
+      "routingEligible": true,
+      "lessonBody": "In this lesson, you'll learn how to give instructions with the imperative form, and how to replace a noun with a short object pronoun once it's already clear who or what you mean.\n\nImperatives use the base verb, with no subject:\n\n• Be quiet, please. Sit down. Don't cry.\n\nObject pronouns replace a noun that's the object of a verb:\n\n• I → me, you → you, he → him, she → her, it → it, we → us, they → them\n\n• Talk to me. Listen to them. Don't look at him.\n\nBy the end of this lesson, you'll be able to give simple instructions and avoid repeating a name or noun once your listener already knows who you mean.",
+      "examples": ["Open your books, please. Don't talk.", "I love him, but he doesn't know it.", "Listen to her. She's right."],
+      "commonMistakes": ["Don't use a subject pronoun in an imperative: 'You sit down' is less natural than just 'Sit down.'", "Don't confuse subject and object pronouns: 'Talk to I' is wrong — say 'Talk to me.'"],
+      "exercises": [
+        {
+          "title": "Choose the correct object pronoun",
+          "instructions": "Choose the correct object pronoun to complete each sentence.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "I love Sara. I love ___.", "options": ["she", "her", "hers"], "correctIndex": 1 },
+            { "prompt": "Where are Tom and Ana? I can't see ___.", "options": ["they", "them", "their"], "correctIndex": 1 },
+            { "prompt": "This is my brother. Talk to ___.", "options": ["he", "him", "his"], "correctIndex": 1 },
+            { "prompt": "Can you help ___ and me? (we)", "options": ["we", "us", "our"], "correctIndex": 1 }
+          ]
+        },
+        {
+          "title": "Complete the imperative",
+          "instructions": "Complete each imperative sentence with the correct base verb form.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "___ quiet, please. (be)", "answer": "Be" },
+            { "prompt": "Please ___ down. (sit)", "answer": "sit" },
+            { "prompt": "Don't ___! It's OK. (worry)", "answer": "worry" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "grammar.modals.can_cant",
+      "title": "Can and can't",
+      "cefrLevel": "A1",
+      "difficultyBand": 4,
+      "parentKey": "grammar.modals",
+      "nodeType": "skill",
+      "cefrConfidence": "curated",
+      "cefrSource": "hand_authored",
+      "routingEligible": true,
+      "lessonBody": "In this lesson, you'll learn 'can' and 'can't' — used for both ability (what you're able to do) and permission (what's allowed) — two of the most useful words in everyday English.\n\ncan/can't + base verb, the same for every subject:\n\n• I can drive. You can't park here. She can speak French.\n\nQuestions and short answers:\n\n• Can you come on Monday? Yes, I can. / No, I can't.\n\nBy the end of this lesson, you'll be able to talk about what you're able to do, ask permission, and understand signs and rules that use can/can't.",
+      "examples": ["Can I park here? No, you can't.", "She can practice online.", "Can you come at 10:00? Yes, I can."],
+      "commonMistakes": ["Don't add -s for he/she/it: 'she cans drive' is wrong — say 'she can drive'.", "Don't use 'to' after can: 'I can to swim' is wrong — say 'I can swim'."],
+      "exercises": [
+        {
+          "title": "Complete with can or can't",
+          "instructions": "Complete each sentence with can or can't.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "You ___ park here. (not allowed)", "answer": "can't" },
+            { "prompt": "She ___ speak three languages. (ability)", "answer": "can" },
+            { "prompt": "___ you come on Monday at 8:30? (question)", "answer": "Can" },
+            { "prompt": "I'm sorry, I ___ help you right now. (not able)", "answer": "can't" }
+          ]
+        },
+        {
+          "title": "Choose the correct short answer",
+          "instructions": "Choose the correct short answer for each question.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Can you come at 10:00? Yes, ___.", "options": ["I can", "I do", "I am"], "correctIndex": 0 },
+            { "prompt": "Can she drive? No, ___.", "options": ["she isn't", "she can't", "she doesn't"], "correctIndex": 1 },
+            { "prompt": "Can I use your phone? Sorry, ___.", "options": ["you can't", "I can't", "you aren't"], "correctIndex": 0 }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "grammar.liking_verbs.like_love_hate_ing",
+      "title": "Like, love, and hate + verb + -ing",
+      "cefrLevel": "A1",
+      "difficultyBand": 4,
+      "parentKey": "grammar.liking_verbs",
+      "nodeType": "skill",
+      "cefrConfidence": "curated",
+      "cefrSource": "hand_authored",
+      "routingEligible": true,
+      "lessonBody": "In this lesson, you'll learn how to say how much you like or dislike an activity — not just a thing, but something you do.\n\nAfter like, love, and hate, use verb + -ing when talking about an activity:\n\n• I love cooking. I like reading. I hate cleaning.\n\nFrom most positive to most negative: love → like → don't like → hate.\n\nUse don't/doesn't with like: I don't like camping. She doesn't like sports.\n\nBy the end of this lesson, you'll be able to talk about activities you enjoy and don't enjoy, with the right level of feeling.",
+      "examples": ["I love playing the piano.", "He doesn't like traveling.", "We hate waiting in line."],
+      "commonMistakes": ["Use the base verb + -ing, not the infinitive, after these verbs in casual descriptions: 'I love to cook' is also correct, but 'I love cooking' is the more common everyday pattern taught here.", "Don't forget don't/doesn't with 'like': 'She not likes it' is wrong — say 'She doesn't like it'."],
+      "exercises": [
+        {
+          "title": "Complete with the -ing form",
+          "instructions": "Complete each sentence with the correct -ing form of the verb.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "I love ___ in the kitchen. (cook)", "answer": "cooking" },
+            { "prompt": "She likes ___ books. (read)", "answer": "reading" },
+            { "prompt": "They hate ___ in cold water. (swim)", "answer": "swimming" }
+          ]
+        },
+        {
+          "title": "Order from most positive to most negative",
+          "instructions": "Choose the word that best matches the described feeling.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Strongest positive feeling", "options": ["love", "like", "hate"], "correctIndex": 0 },
+            { "prompt": "Strongest negative feeling", "options": ["like", "don't like", "hate"], "correctIndex": 2 },
+            { "prompt": "Mild positive feeling", "options": ["love", "like", "hate"], "correctIndex": 1 }
           ]
         }
       ]

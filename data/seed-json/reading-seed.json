@@ -40,6 +40,38 @@
           ]
         }
       ]
+    },
+    {
+      "key": "reading.everyday_situations.reading_about_weekend_habits",
+      "title": "Reading a short article with percentages",
+      "cefrLevel": "A1",
+      "difficultyBand": 4,
+      "parentKey": "reading.everyday_situations",
+      "lessonBody": "In this lesson, you'll practice reading a short informational article that includes percentages — a common feature of everyday articles about surveys, studies, and habits.\n\nRead the article below once for the general idea, then read it again to fill in the missing percentages and answer the questions.\n\nMost People Have a Weekend Routine\n\nA new survey asked two thousand people about their weekends. The results show that 72% of people do very similar things every Saturday and Sunday. Of these people, 58% say they usually relax and watch a show at home. 35% say they usually do housework, and only 15% say they usually try something new every weekend.\n\nResearchers say a predictable weekend routine can help people feel less stressed after a busy work week. But a few people in the survey said they prefer a different plan every weekend, because routine feels boring to them.\n\nBy the end of this lesson, you'll be able to read a short survey-style article, understand percentages in context, and answer comprehension questions about it.",
+      "examples": ["'% = percent' — 72% means seventy-two out of every hundred people.", "'Of these people' refers back to a group already mentioned, not everyone in the survey."],
+      "commonMistakes": ["Don't confuse the percentage of all survey respondents with the percentage of a smaller group mentioned afterward ('of these people') — read carefully to see which group a percentage refers to.", "Don't skip the numbers when reading quickly — in a survey article, the percentages usually carry the most important information."],
+      "exercises": [
+        {
+          "title": "Answer the questions",
+          "instructions": "Read the article again and answer each question.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "How many people were in the survey?", "answer": "two thousand" },
+            { "prompt": "What percentage of people do similar things every weekend?", "answer": "72%" },
+            { "prompt": "What percentage usually relax and watch a show at home?", "answer": "58%" }
+          ]
+        },
+        {
+          "title": "Choose the correct answer",
+          "instructions": "Choose the answer that matches the article.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "According to the article, a predictable weekend routine can...", "options": ["help people feel less stressed", "make people feel more stressed", "make people feel bored"], "correctIndex": 0 },
+            { "prompt": "What percentage usually try something new every weekend?", "options": ["58%", "35%", "15%"], "correctIndex": 2 },
+            { "prompt": "Some people in the survey said routine feels...", "options": ["exciting", "boring", "relaxing"], "correctIndex": 1 }
+          ]
+        }
+      ]
     }
   ]
 }

@@ -14,7 +14,11 @@
     { "key": "vocabulary.descriptive", "title": "Descriptive words", "cefrLevel": "A1" },
     { "key": "vocabulary.food_and_drink", "title": "Food and drink", "cefrLevel": "A1" },
     { "key": "vocabulary.common_verb_phrases", "title": "Common verb phrases", "cefrLevel": "A1" },
-    { "key": "vocabulary.time_and_feelings", "title": "Time and feelings", "cefrLevel": "A1" }
+    { "key": "vocabulary.time_and_feelings", "title": "Time and feelings", "cefrLevel": "A1" },
+    { "key": "vocabulary.work", "title": "Work", "cefrLevel": "A1" },
+    { "key": "vocabulary.daily_routine", "title": "Daily routine", "cefrLevel": "A1" },
+    { "key": "vocabulary.entertainment", "title": "Entertainment", "cefrLevel": "A1" },
+    { "key": "vocabulary.free_time", "title": "Free time", "cefrLevel": "A1" }
   ],
   "leaves": [
     {
@@ -487,6 +491,234 @@
             { "prompt": "It's 95 degrees! I'm so ___.", "answer": "hot" },
             { "prompt": "I need a glass of water. I'm ___.", "answer": "thirsty" },
             { "prompt": "It's time for lunch. I'm ___.", "answer": "hungry" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "vocabulary.work.jobs_and_places_of_work",
+      "title": "Jobs and places of work",
+      "cefrLevel": "A1",
+      "difficultyBand": 4,
+      "parentKey": "vocabulary.work",
+      "lessonBody": "In this lesson, you'll learn common job titles and the places people work — useful for talking about your own job or asking someone about theirs.\n\nAsking about a job:\n\n• What do you do? Where do you work?\n\nCommon jobs and workplaces:\n\n• a taxi driver (drives a taxi)\n• a teacher (works at a school)\n• a receptionist (works at an office or hotel)\n• a journalist (works for a newspaper)\n• a nurse (works at a hospital)\n\nBy the end of this lesson, you'll be able to ask and answer questions about someone's job and where they work.",
+      "examples": ["What does she do? She's a journalist. She works for a newspaper.", "He's a nurse. He works at a hospital.", "I'm a teacher. I work at a school."],
+      "commonMistakes": ["'Work for' is used with a company or organization; 'work at' is used with a place: 'She works for a newspaper' but 'She works at an office'.", "Don't confuse the job (a teacher) with the workplace (a school) — they answer different questions: 'What do you do?' vs. 'Where do you work?'"],
+      "exercises": [
+        {
+          "title": "Match the job to the workplace",
+          "instructions": "Choose the most likely workplace for each job.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "a nurse", "options": ["a hospital", "a newspaper", "a taxi"], "correctIndex": 0 },
+            { "prompt": "a teacher", "options": ["a school", "a hospital", "a restaurant"], "correctIndex": 0 },
+            { "prompt": "a journalist", "options": ["a newspaper", "a taxi", "a school"], "correctIndex": 0 },
+            { "prompt": "a taxi driver", "options": ["a taxi", "an office", "a hospital"], "correctIndex": 0 }
+          ]
+        },
+        {
+          "title": "Complete the exchange",
+          "instructions": "Complete each exchange about jobs.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "A: What do you ___? B: I'm a nurse.", "answer": "do" },
+            { "prompt": "A: Where do you ___? B: I work at a hospital.", "answer": "work" },
+            { "prompt": "She's a journalist. She works ___ a newspaper.", "answer": "for" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "vocabulary.daily_routine.a_typical_day",
+      "title": "A typical day",
+      "cefrLevel": "A1",
+      "difficultyBand": 4,
+      "parentKey": "vocabulary.daily_routine",
+      "lessonBody": "In this lesson, you'll learn common verb phrases for describing your daily routine, from waking up to going to bed.\n\nA typical day:\n\nget up, take a shower/bath, have breakfast, go to work/school, finish work, have dinner, watch TV, go to bed\n\nBy the end of this lesson, you'll be able to describe your own typical day, step by step, from morning to night.",
+      "examples": ["I get up at 7:00 and take a shower.", "She finishes work at 6:00 and has dinner at 8:00.", "We watch TV before we go to bed."],
+      "commonMistakes": ["'Get up' means leaving your bed; 'wake up' means stopping sleeping — you can wake up and stay in bed a while before you get up.", "Use 'have' with breakfast/dinner: 'I eat breakfast' is understandable but 'I have breakfast' is the more natural everyday phrase taught here."],
+      "exercises": [
+        {
+          "title": "Put the day in order",
+          "instructions": "Choose which of the two activities usually happens first in a typical day.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which usually happens first?", "options": ["get up", "go to bed"], "correctIndex": 0 },
+            { "prompt": "Which usually happens first?", "options": ["have dinner", "have breakfast"], "correctIndex": 1 },
+            { "prompt": "Which usually happens first?", "options": ["finish work", "go to work"], "correctIndex": 1 }
+          ]
+        },
+        {
+          "title": "Complete the routine",
+          "instructions": "Complete each sentence about a typical day.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "I ___ up at 6:30 every morning. (leave bed)", "answer": "get" },
+            { "prompt": "She ___ a shower before breakfast. (washes)", "answer": "takes" },
+            { "prompt": "We ___ to bed at eleven. (end the day)", "answer": "go" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "vocabulary.common_verb_phrases.free_time_phrases",
+      "title": "Common verb phrases 2: free time",
+      "cefrLevel": "A1",
+      "difficultyBand": 4,
+      "parentKey": "vocabulary.common_verb_phrases",
+      "lessonBody": "In this lesson, you'll learn common verb phrases for talking about what you do with your free time, especially on weekends.\n\nFree-time verb phrases:\n\n• go out (for dinner or a movie)\n• meet friends\n• stay home\n• play sports / watch sports\n• do housework\n• relax\n\nBy the end of this lesson, you'll be able to describe your typical weekend and what you usually do with your free time.",
+      "examples": ["We usually go out for dinner on Saturday.", "I sometimes meet friends after work.", "On Sunday, I like to stay home and relax."],
+      "commonMistakes": ["'Go out' needs no object — don't say 'go out the restaurant'; say 'go out for dinner' or 'go out to a restaurant'.", "'Play sports' is for active participation; 'watch sports' is for watching — they're not interchangeable."],
+      "exercises": [
+        {
+          "title": "Choose the correct phrase",
+          "instructions": "Choose the phrase that best completes each sentence.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "On Saturday night, we usually ___ for dinner.", "options": ["go out", "stay home", "do housework"], "correctIndex": 0 },
+            { "prompt": "I don't like sports, but I ___ them on TV.", "options": ["play", "watch", "meet"], "correctIndex": 1 },
+            { "prompt": "On Sunday morning, I clean the house. I ___.", "options": ["relax", "do housework", "go out"], "correctIndex": 1 }
+          ]
+        },
+        {
+          "title": "Complete the sentence",
+          "instructions": "Complete each sentence with a free-time verb phrase.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "I usually ___ friends on Friday evening. (see socially)", "answer": "meet" },
+            { "prompt": "On a quiet Sunday, I like to ___ home and read.", "answer": "stay" },
+            { "prompt": "After a long week, I just want to ___.", "answer": "relax" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "vocabulary.entertainment.kinds_of_movies",
+      "title": "Kinds of movies",
+      "cefrLevel": "A1",
+      "difficultyBand": 4,
+      "parentKey": "vocabulary.entertainment",
+      "lessonBody": "In this lesson, you'll learn the words for common movie genres — useful for talking about what you like to watch.\n\nCommon kinds of movies:\n\naction movies, animated movies, comedies, dramas, horror movies, science fiction movies, westerns\n\nBy the end of this lesson, you'll be able to say what kinds of movies you like and dislike, and understand someone describing their taste in movies.",
+      "examples": ["I love science fiction movies, but I hate horror movies.", "She prefers comedies to dramas.", "Do you like animated movies?"],
+      "commonMistakes": ["'Comedy' becomes 'comedies' in the plural — don't say 'comedys'.", "'Science fiction' is often shortened to 'sci-fi' in casual speech, but both refer to the same genre."],
+      "exercises": [
+        {
+          "title": "Match the description to the genre",
+          "instructions": "Choose the genre that matches each description.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "A movie designed to make you laugh.", "options": ["a comedy", "a horror movie", "a drama"], "correctIndex": 0 },
+            { "prompt": "A movie designed to scare you.", "options": ["an action movie", "a horror movie", "a western"], "correctIndex": 1 },
+            { "prompt": "A movie set in space or the future.", "options": ["a science fiction movie", "a western", "a comedy"], "correctIndex": 0 },
+            { "prompt": "A movie made entirely with drawn or computer-generated characters.", "options": ["an animated movie", "a drama", "an action movie"], "correctIndex": 0 }
+          ]
+        },
+        {
+          "title": "Complete the opinion",
+          "instructions": "Complete each sentence about movie preferences.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "I don't like horror movies. I prefer ___. (funny movies)", "answer": "comedies" },
+            { "prompt": "She loves ___ movies about cowboys and the Old West.", "answer": "western" },
+            { "prompt": "This is a serious, emotional movie — it's a ___.", "answer": "drama" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "vocabulary.time_and_feelings.months_and_ordinal_numbers",
+      "title": "Months and ordinal numbers",
+      "cefrLevel": "A1",
+      "difficultyBand": 4,
+      "parentKey": "vocabulary.time_and_feelings",
+      "lessonBody": "In this lesson, you'll learn the months of the year and ordinal numbers — both essential for saying dates.\n\nMonths: January, February, March, April, May, June, July, August, September, October, November, December\n\nOrdinal numbers (used for dates): first, second, third, fourth, fifth, sixth, seventh, eighth, ninth, tenth... twentieth, twenty-first...\n\nBy the end of this lesson, you'll be able to say and write any month and ordinal number, ready to use them together to say a date.",
+      "examples": ["My birthday is in March.", "Today is the twenty-third of July.", "The third month of the year is March."],
+      "commonMistakes": ["Ordinal numbers have irregular spellings for 1st-3rd (first, second, third) — don't say 'oneth' or 'threeth'.", "Month names are always capitalized in English: 'march' is wrong — write 'March'."],
+      "exercises": [
+        {
+          "title": "Choose the correct ordinal number",
+          "instructions": "Choose the correct ordinal number.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "1", "options": ["first", "oneth", "one"], "correctIndex": 0 },
+            { "prompt": "3", "options": ["threeth", "third", "thirdy"], "correctIndex": 1 },
+            { "prompt": "8", "options": ["eightth", "eighth", "eightieth"], "correctIndex": 1 },
+            { "prompt": "9", "options": ["nineth", "ninth", "ninetieth"], "correctIndex": 1 }
+          ]
+        },
+        {
+          "title": "Complete the month",
+          "instructions": "Complete each sentence with a month.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "The first month of the year is ___.", "answer": "January" },
+            { "prompt": "The last month of the year is ___.", "answer": "December" },
+            { "prompt": "The month with only 28 or 29 days is ___.", "answer": "February" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "vocabulary.common_verb_phrases.public_sign_phrases",
+      "title": "Common verb phrases 3: public signs",
+      "cefrLevel": "A1",
+      "difficultyBand": 4,
+      "parentKey": "vocabulary.common_verb_phrases",
+      "lessonBody": "In this lesson, you'll learn the verb phrases used on common public signs — useful for understanding what's allowed and not allowed in a public place.\n\nCommon sign phrases:\n\n• park (here) / swim (here)\n• pay by credit card\n• use your cell phone / use the internet\n• take photos\n• play soccer\n• change money\n\nThese are often combined with 'can' and 'can't' to explain rules: You can't swim here. You can pay by credit card.\n\nBy the end of this lesson, you'll be able to read and understand common public signs and explain the rules they show.",
+      "examples": ["You can't take photos here.", "You can pay by credit card in this store.", "You can't park here."],
+      "commonMistakes": ["'Pay by credit card' uses 'by', not 'with' — 'pay with credit card' sounds unnatural.", "'Play' is for sports/games (play soccer); 'watch' is for observing — they're not interchangeable."],
+      "exercises": [
+        {
+          "title": "Match the sign to the meaning",
+          "instructions": "Choose the meaning that matches each public sign.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "A red circle with a camera crossed out", "options": ["You can't take photos here.", "You can pay by credit card.", "You can park here."], "correctIndex": 0 },
+            { "prompt": "A blue sign with a P and an arrow", "options": ["You can park here.", "You can't swim here.", "You can use the internet."], "correctIndex": 0 },
+            { "prompt": "A red circle with a phone crossed out", "options": ["You can't use your cell phone here.", "You can play soccer here.", "You can change money here."], "correctIndex": 0 }
+          ]
+        },
+        {
+          "title": "Complete the sign meaning",
+          "instructions": "Complete each sentence with a verb phrase.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "This sign means you can't ___ here. (swim)", "answer": "swim" },
+            { "prompt": "This sign means you can ___ by credit card.", "answer": "pay" },
+            { "prompt": "This sign means you can't ___ soccer here.", "answer": "play" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "vocabulary.free_time.activities",
+      "title": "Activities",
+      "cefrLevel": "A1",
+      "difficultyBand": 4,
+      "parentKey": "vocabulary.free_time",
+      "lessonBody": "In this lesson, you'll learn common activity words — used with like/love/hate to talk about what you enjoy doing in your free time.\n\nCommon activities:\n\nreading, swimming, cooking, playing the piano, bike riding, buying clothes, camping, walking in the mountains, watching movies, shopping\n\nBy the end of this lesson, you'll be able to name common leisure activities and talk about your own hobbies.",
+      "examples": ["I love reading and cooking.", "She likes bike riding and camping.", "He hates shopping."],
+      "commonMistakes": ["Activity words after like/love/hate use the -ing form: 'I love swim' is wrong — say 'I love swimming'.", "'Play the piano' needs 'the'; many sports (play soccer) do not — these patterns must be learned individually."],
+      "exercises": [
+        {
+          "title": "Choose the matching activity",
+          "instructions": "Choose the activity that matches each description.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Moving through water using your arms and legs", "options": ["swimming", "cooking", "shopping"], "correctIndex": 0 },
+            { "prompt": "Preparing food in the kitchen", "options": ["camping", "cooking", "reading"], "correctIndex": 1 },
+            { "prompt": "Sleeping outdoors in a tent", "options": ["camping", "bike riding", "shopping"], "correctIndex": 0 },
+            { "prompt": "Playing music with black and white keys", "options": ["playing the piano", "walking", "reading"], "correctIndex": 0 }
+          ]
+        },
+        {
+          "title": "Complete the sentence",
+          "instructions": "Complete each sentence with an activity word.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "I love ___ books in bed at night. (read)", "answer": "reading" },
+            { "prompt": "She likes ___ clothes at the mall. (buy)", "answer": "buying" },
+            { "prompt": "We go ___ in the mountains every summer. (camp)", "answer": "camping" }
           ]
         }
       ]
