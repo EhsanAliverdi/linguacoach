@@ -191,7 +191,7 @@
             @case ('nodeB') {
               <a href="javascript:void(0)" (click)="goToNodeView($any(row).nodeBId)">{{ $any(row).nodeBTitle }}</a>
             }
-            @case ('context') { {{ $any(row).cefrLevel }} / {{ $any(row).skill }} }
+            @case ('context') { {{ $any(row).cefrLevel }} / {{ $any(row).skill || '—' }} }
             @case ('similarity') { {{ ($any(row).similarity * 100) | number: '1.0-0' }}% }
             @case ('actions') {
               <span style="display:flex; justify-content:flex-end;">

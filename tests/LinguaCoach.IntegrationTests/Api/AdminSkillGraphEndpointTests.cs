@@ -2046,6 +2046,32 @@ public sealed class AdminSkillGraphEndpointTests : IClassFixture<ApiTestFactory>
         Assert.Equal("Description.", match.GetProperty("nodeBDescription").GetString());
     }
 
+    /// <summary>2026-08-04 regression — skill-less containers (2026-08-03 container/leaf
+    /// redesign) all shared one null-skill bucket in the old grouping, so any two similarly-named
+    /// containers anywhere in the graph got flagged as near-duplicates regardless of what part of
+    /// the tree they belonged to. Near-duplicate detection is scoped to leaves only now.</summary>
+    [Fact]
+    public async Task GetNearDuplicateSuggestions_SkillLessContainersAreNeverFlagged()
+    {
+        var suffix = Guid.NewGuid().ToString("N");
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            db.SkillGraphNodes.Add(new SkillGraphNode($"grammar.container_dup_a_{suffix}", "Verb be", "Description.", "A1", skill: null));
+            db.SkillGraphNodes.Add(new SkillGraphNode($"vocabulary.container_dup_b_{suffix}", "Verb be", "Description.", "A1", skill: null));
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.GetAsync("/api/admin/skill-graph/suggestions/near-duplicates");
+        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var suggestions = body.GetProperty("suggestions").EnumerateArray().ToList();
+        Assert.DoesNotContain(suggestions, s => s.GetProperty("nodeATitle").GetString() == "Verb be" && s.GetProperty("nodeBTitle").GetString() == "Verb be");
+    }
+
     [Fact]
     public async Task GetNearDuplicateSuggestions_EmptyWhenTitlesAreGenuinelyDifferent()
     {

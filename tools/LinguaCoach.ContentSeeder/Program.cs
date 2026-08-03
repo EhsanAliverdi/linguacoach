@@ -26,13 +26,31 @@ namespace LinguaCoach.ContentSeeder;
 /// it teaches — no AI auto-tagging. Resumable: writes a `.checkpoint.json` file of processed keys
 /// next to each input file.
 ///
-/// Usage: dotnet run --project tools/LinguaCoach.ContentSeeder -- grammar path/to/grammar-seed.json
-///        dotnet run --project tools/LinguaCoach.ContentSeeder -- vocabulary path/to/vocabulary-seed.json
+/// Usage — curated pipeline (2026-08-03+, see <see cref="RichContentSeeder"/> and
+/// docs/architecture/unit-content-seeding-rules.md), each domain producing full Lesson +
+/// multi-question Exercise content per leaf, currently pointed at the live `data/seed-json/*.json`
+/// files:
+///        dotnet run --project tools/LinguaCoach.ContentSeeder -- grammar data/seed-json/grammar-seed.json
+///        dotnet run --project tools/LinguaCoach.ContentSeeder -- vocabulary data/seed-json/vocabulary-seed.json
+///        dotnet run --project tools/LinguaCoach.ContentSeeder -- pronunciation data/seed-json/pronunciation-seed.json
+///        dotnet run --project tools/LinguaCoach.ContentSeeder -- functional-language data/seed-json/functional-language-seed.json
+///        dotnet run --project tools/LinguaCoach.ContentSeeder -- reading-comprehension data/seed-json/reading-seed.json
+///        dotnet run --project tools/LinguaCoach.ContentSeeder -- writing data/seed-json/writing-seed.json
+///        dotnet run --project tools/LinguaCoach.ContentSeeder -- listening-comprehension data/seed-json/listening-seed.json
+///        dotnet run --project tools/LinguaCoach.ContentSeeder -- prerequisites data/seed-json/prerequisites-seed.json
+///
+/// Usage — legacy CEFR-J-CSV-driven pipeline (2026-07-29, via <see cref="LeafContentSeeder"/>,
+/// one generic auto-composed exercise per leaf). Dormant as of 2026-08-04: its own seed files
+/// were archived to `data/seed-json/archive/2026-07-31-pre-rebuild/` (not deleted) when the
+/// curated pipeline replaced them, so these commands need an explicit path into that archive to
+/// run today — kept, not removed, in case a future domain still wants a CSV-bulk-import baseline
+/// before hand-curating (e.g. B2-C2 grammar from the CEFR-J CSV). Domain keywords deliberately
+/// differ from the curated pipeline's own reading-comprehension/listening-comprehension/writing
+/// above to avoid two incompatible JSON schemas answering to the same CLI keyword:
 ///        dotnet run --project tools/LinguaCoach.ContentSeeder -- cefr-scales path/to/cefr-scales-seed.json
-///        dotnet run --project tools/LinguaCoach.ContentSeeder -- speaking path/to/speaking-seed.json
-///        dotnet run --project tools/LinguaCoach.ContentSeeder -- listening path/to/listening-seed.json
+///        dotnet run --project tools/LinguaCoach.ContentSeeder -- speaking data/seed-json/archive/2026-07-31-pre-rebuild/speaking-seed.json
+///        dotnet run --project tools/LinguaCoach.ContentSeeder -- listening data/seed-json/archive/2026-07-31-pre-rebuild/listening-seed.json
 ///        dotnet run --project tools/LinguaCoach.ContentSeeder -- reading data/cerfj-reading.json
-///        dotnet run --project tools/LinguaCoach.ContentSeeder -- prerequisites path/to/prerequisites-seed.json
 /// </summary>
 public static class Program
 {

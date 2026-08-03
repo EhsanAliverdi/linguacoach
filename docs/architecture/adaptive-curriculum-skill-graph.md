@@ -228,4 +228,28 @@ cross-skill bundling and zero collocation nodes), the container/leaf model above
 Existing seed data was archived (not deleted) to `data/seed-json/archive/2026-07-31-pre-rebuild/`
 ahead of a full content rebuild using the per-skill seed file structure
 (`grammar-seed.json`/`vocabulary-seed.json`/`speaking-seed.json`/etc.), authored fresh with this
-container/leaf model. See `docs/reviews/` for the implementation record once that rebuild lands.
+container/leaf model. See `docs/reviews/2026-07-31-skill-graph-content-rebuild-implementation.md`
+for the implementation record (including its 2026-08-04 addendum covering the remaining
+lesson-blocks and the reading/writing/listening-comprehension domains).
+
+## Addendum (2026-08-03/04) — leaf owns exactly one Lesson; Lesson supports an image
+
+- A leaf is what a student must master before moving on — the mastery gate. Concretely, a leaf
+  now has exactly one canonical `Lesson` (`Lesson.SkillGraphNodeId`, set via `Lesson.
+  AssignToLeaf`, enforced by a partial unique index) — the leaf's real teaching content, not
+  reachable only indirectly through a `Module`. `Lesson.SkillGraphNodeId` is nullable at the type
+  level (not a constructor argument) so unrelated admin/AI Lesson-authoring flows that don't know
+  their target leaf up front are unaffected; the curated seeding pipeline (`RichContentSeeder`)
+  always assigns it immediately.
+- A leaf may still be referenced by **many** `Module`s — `Module` remains the delivery/bundling
+  concept (what gets packaged together for one learning session), unchanged.
+- `Lesson.ImageUrl` (nullable, own `SetImageUrl` mutator) supports an optional supporting image —
+  a real teaching unit is not text-only. Never fabricate a URL; leave it null until a real,
+  rights-cleared image is available.
+- The admin Skill Graph "content-coverage" audit (`GET /api/admin/skill-graph/content-coverage`)
+  reports `hasLesson`/`nodesWithoutLessonCount` per leaf, and is scoped to leaves only (`Skill !=
+  null`) — containers never have a direct Lesson or Module link, so including them would report
+  every container as a false-positive gap. The near-duplicate-node detector
+  (`GET /api/admin/skill-graph/suggestions/near-duplicates`) is scoped to leaves for the same
+  reason — grouping by `(CefrLevel, Skill)` would otherwise bucket every container at a level
+  together and compare unrelated containers to each other.

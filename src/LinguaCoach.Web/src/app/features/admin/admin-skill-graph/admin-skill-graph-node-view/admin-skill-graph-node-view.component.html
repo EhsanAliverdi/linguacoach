@@ -17,7 +17,7 @@
     <sp-admin-section-card title="Details">
       <div class="sp-admin-form-actions" style="margin-bottom:14px;">
         <sp-admin-badge [tone]="reviewStatusTone(n.reviewStatus)" appearance="soft" size="sm">{{ n.reviewStatus }}</sp-admin-badge>
-        <span class="sp-admin-text-muted">{{ n.cefrLevel }} · {{ n.skill }}{{ n.subskill ? ' / ' + n.subskill : '' }}</span>
+        <span class="sp-admin-text-muted">{{ n.cefrLevel }} · {{ n.skill || 'container (no single skill)' }}{{ n.subskill ? ' / ' + n.subskill : '' }}</span>
       </div>
       <p class="sp-admin-section-sub">{{ n.description }}</p>
       @if (n.contextTags.length || n.focusTags.length) {

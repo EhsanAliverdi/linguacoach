@@ -500,10 +500,13 @@ public sealed class AdminSkillGraphController : ControllerBase
         // already linked in either direction. Container/leaf hierarchy (2026-07-24) — also excludes
         // nodes with children, since a placement suggestion feeds a prerequisite edge, which
         // belongs on leaves only.
+        // 2026-08-04 — when placing a skill-less container, "same skill" can never match (every
+        // candidate below is already leaf-only, i.e. always has a real skill), so degrade cleanly
+        // to CEFR-only matching instead of silently making that half of the OR permanently dead.
         var candidateNodes = await _db.SkillGraphNodes.AsNoTracking()
             .Where(n => n.ReviewStatus == AdminReviewStatus.Approved && n.IsActive
                 && !excludeIds.Contains(n.Id)
-                && (n.Skill == node.Skill || n.CefrLevel == node.CefrLevel)
+                && (node.Skill == null ? n.CefrLevel == node.CefrLevel : (n.Skill == node.Skill || n.CefrLevel == node.CefrLevel))
                 && !_db.SkillGraphNodes.Any(c => c.ParentNodeId == n.Id))
             .OrderBy(n => n.CefrLevel).ThenBy(n => n.Skill)
             .Take(MaxPlacementCandidates)
@@ -512,7 +515,7 @@ public sealed class AdminSkillGraphController : ControllerBase
 
         var result = await _placementSuggestions.SuggestPlacementAsync(
             new NodePlacementSuggestionRequest(
-                node.Id, node.Title, node.Description, node.CefrLevel, node.Skill,
+                node.Id, node.Title, node.Description, node.CefrLevel, node.Skill ?? "(container — no single skill)",
                 candidateNodes.Select(n => new SkillGraphNodeCandidate(n.Id, n.Key, n.Title)).ToList()),
             ct);
 
@@ -1446,9 +1449,16 @@ public sealed class AdminSkillGraphController : ControllerBase
     [HttpGet("suggestions/near-duplicates")]
     public async Task<IActionResult> GetNearDuplicateSuggestions(CancellationToken ct)
     {
+        // 2026-08-04 fix — leaves only. Containers are skill-less (2026-08-03 container/leaf
+        // redesign) and DetectNearDuplicateNodes groups candidates by (CefrLevel, Skill); every
+        // container at a given level previously landed in the same null-skill bucket and got
+        // compared against every other unrelated container, producing nonsensical "near-duplicate"
+        // suggestions an admin could act on via MergeNodes. Near-duplicate detection is about
+        // measurable content items (leaves), not structural containers, so this is a scope fix,
+        // not just a null-safety one.
         var candidates = await _db.SkillGraphNodes.AsNoTracking()
-            .Where(n => n.IsActive)
-            .Select(n => new NearDuplicateNodeCandidate(n.Id, n.Title, n.Description, n.CefrLevel, n.Skill))
+            .Where(n => n.IsActive && n.Skill != null)
+            .Select(n => new NearDuplicateNodeCandidate(n.Id, n.Title, n.Description, n.CefrLevel, n.Skill!))
             .ToListAsync(ct);
 
         var suggestions = _changeSuggestions.DetectNearDuplicateNodes(candidates);

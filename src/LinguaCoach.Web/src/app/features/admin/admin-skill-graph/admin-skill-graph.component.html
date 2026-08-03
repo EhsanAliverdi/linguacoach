@@ -199,7 +199,7 @@
         </sp-admin-graph-card>
         @if (selectedGraphNode(); as sel) {
           <div class="sp-admin-mt-2 sp-admin-text-xs">
-            <strong>{{ sel.title }}</strong> — {{ sel.cefrLevel }} / {{ sel.skill }}
+            <strong>{{ sel.title }}</strong> — {{ sel.cefrLevel }} / {{ sel.skill || 'container (no single skill)' }}
             @if (sel.subskill) { / {{ sel.subskill }} }
             <sp-admin-badge [tone]="reviewStatusTone(sel.reviewStatus)" appearance="soft" size="sm">{{ sel.reviewStatus }}</sp-admin-badge>
             @if (sel.contextTags.length || sel.focusTags.length) {
@@ -263,6 +263,7 @@
           @case ('title') {
             <a [routerLink]="['/admin/skill-graph/nodes', row.id]" (click)="$event.stopPropagation()">{{ row.title }}</a>
           }
+          @case ('skill') { {{ row.skill || '— (container)' }} }
           @case ('subskill') { {{ row.subskill || '—' }} }
           @case ('tags') {
             @if (row.contextTags.length || row.focusTags.length) {

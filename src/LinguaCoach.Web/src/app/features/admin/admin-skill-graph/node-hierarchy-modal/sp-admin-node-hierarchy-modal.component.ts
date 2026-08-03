@@ -31,7 +31,7 @@ import {
         @if (item(); as n) {
           <div class="sp-admin-form-actions" style="margin-bottom:10px;">
             <sp-admin-badge [tone]="reviewStatusTone(n.reviewStatus)" appearance="soft" size="sm">{{ n.reviewStatus }}</sp-admin-badge>
-            <span class="sp-admin-text-muted">{{ n.cefrLevel }} · {{ n.skill }}{{ n.subskill ? ' / ' + n.subskill : '' }}</span>
+            <span class="sp-admin-text-muted">{{ n.cefrLevel }} · {{ n.skill || 'container (no single skill)' }}{{ n.subskill ? ' / ' + n.subskill : '' }}</span>
           </div>
 
           @if (n.parent; as parent) {

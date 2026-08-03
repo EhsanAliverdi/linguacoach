@@ -34,7 +34,7 @@ import {
       @if (item; as n) {
         <div class="sp-sgnd-row">
           <sp-admin-badge [tone]="reviewStatusTone(n.reviewStatus)" appearance="soft" size="sm">{{ n.reviewStatus }}</sp-admin-badge>
-          <span class="sp-sgnd-muted">{{ n.cefrLevel }} · {{ n.skill }}{{ n.subskill ? ' / ' + n.subskill : '' }}</span>
+          <span class="sp-sgnd-muted">{{ n.cefrLevel }} · {{ n.skill || 'container (no single skill)' }}{{ n.subskill ? ' / ' + n.subskill : '' }}</span>
         </div>
         <p class="sp-sgnd-key">{{ n.key }}</p>
         <p class="sp-sgnd-desc">{{ n.description }}</p>
