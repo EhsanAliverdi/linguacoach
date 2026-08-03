@@ -51,7 +51,7 @@
       "difficultyBand": 5,
       "parentKey": "writing.everyday_texts",
       "lessonBody": "In this lesson, you'll learn how to write a short, informal email inviting someone to do something — a genuinely useful everyday writing task.\n\nA simple structure for an invitation email:\n\n• Greeting: Hi [name],\n• The invitation: Would you like to come to...? / I'm having a... Would you like to join us?\n• The details: day, time, place\n• A closing line: Let me know! / Hope you can come!\n• Sign-off: See you soon, [your name]\n\nBy the end of this lesson, you'll be able to write a clear, friendly invitation email with all the necessary details.",
-      "examples": ["Hi Sam, Would you like to come to a party at my house on Saturday at 8:00? Let me know! See you soon, Alex", "Hi Noor, I'm having a small dinner on Friday. Would you like to join us? Hope you can come!"],
+      "examples": ["Hi Sam, Would you like to come to a party at my house on Saturday at 8:00? Let me know! See you soon, Alex", "Hi Noor, I'm having dinner on Friday. Would you like to come? Hope you can come!"],
       "commonMistakes": ["Don't forget to include all three key details — day, time, and place — or your friend won't know when or where to go.", "An informal invitation email should sound friendly and casual, not like a formal business letter."],
       "exercises": [
         {
@@ -82,7 +82,7 @@
       "difficultyBand": 5,
       "parentKey": "writing.everyday_texts",
       "lessonBody": "In this lesson, you'll learn how to write a short, personal blog-style post describing what you did yesterday — practicing the simple past in a real writing format.\n\nA simple structure:\n\n• Start with a general statement: Yesterday was a busy/quiet/great day.\n• Describe your day in time order: In the morning, I... In the afternoon, I... In the evening, I...\n• Use time-order words: first, then, after that, finally\n• End with a short opinion: It was a good day! / I was very tired by the evening.\n\nBy the end of this lesson, you'll be able to write a clear, well-organized short post describing a day using the simple past.",
-      "examples": ["Yesterday was a busy day. In the morning, I went to work. In the afternoon, I had a meeting. In the evening, I cooked dinner and watched TV. It was a good day!", "First, I got up early. Then, I had breakfast. After that, I went for a run."],
+      "examples": ["Yesterday was a busy day. In the morning, I went to work. In the afternoon, I had a class. In the evening, I cooked dinner and watched TV. It was a good day!", "First, I got up at seven. Then, I had breakfast. After that, I went for a run."],
       "commonMistakes": ["Don't switch tenses randomly — a post about yesterday should stay in the simple past throughout.", "Don't just list actions without time-order words (first, then, after that) — they help the reader follow the sequence."],
       "exercises": [
         {

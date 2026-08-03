@@ -109,9 +109,9 @@
       "cefrLevel": "A1",
       "difficultyBand": 1,
       "parentKey": "vocabulary.time_expressions",
-      "lessonBody": "In this lesson, you'll learn the seven days of the week — essential for making plans, talking about your schedule, and understanding when things happen.\n\nMonday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday\n\nOne important spelling rule: days of the week always start with a capital letter, even in the middle of a sentence.\n\nBy the end of this lesson, you'll be able to talk about your weekly routine and make plans for a specific day.",
-      "examples": ["My English class is on Monday.", "The weekend is Saturday and Sunday.", "See you on Friday!"],
-      "commonMistakes": ["Do not write days with a lowercase letter — 'monday' is wrong, write 'Monday'."],
+      "lessonBody": "In this lesson, you'll learn the seven days of the week, plus the words for parts of the day — essential for making plans, talking about your schedule, and understanding when things happen.\n\nDays: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday\n\nParts of the day: the morning, the afternoon, the evening, the night\n\nOne important spelling rule: days of the week always start with a capital letter, even in the middle of a sentence.\n\nBy the end of this lesson, you'll be able to talk about your weekly routine and say when, during the day, something happens.",
+      "examples": ["My English class is on Monday morning.", "The weekend is Saturday and Sunday.", "See you Friday evening!"],
+      "commonMistakes": ["Do not write days with a lowercase letter — 'monday' is wrong, write 'Monday'.", "Days of the week are capitalized, but parts of the day (morning, afternoon, evening, night) are not."],
       "exercises": [
         {
           "title": "Complete with the correct day",
@@ -133,6 +133,17 @@
             { "prompt": "After Friday comes ___.", "options": ["Thursday", "Saturday", "Sunday"], "correctIndex": 1 },
             { "prompt": "After Tuesday comes ___.", "options": ["Monday", "Thursday", "Wednesday"], "correctIndex": 2 },
             { "prompt": "After Saturday comes ___.", "options": ["Sunday", "Friday", "Monday"], "correctIndex": 0 }
+          ]
+        },
+        {
+          "title": "Choose the correct part of the day",
+          "instructions": "Choose the part of the day that matches each time.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "9:00 a.m. is in the ___.", "options": ["morning", "evening", "night"], "correctIndex": 0 },
+            { "prompt": "3:00 p.m. is in the ___.", "options": ["morning", "afternoon", "night"], "correctIndex": 1 },
+            { "prompt": "8:00 p.m. is in the ___.", "options": ["morning", "afternoon", "evening"], "correctIndex": 2 },
+            { "prompt": "11:00 p.m. is at ___.", "options": ["morning", "afternoon", "night"], "correctIndex": 2 }
           ]
         }
       ]
@@ -949,7 +960,7 @@
       "cefrLevel": "A1",
       "difficultyBand": 5,
       "parentKey": "vocabulary.hotels",
-      "lessonBody": "In this lesson, you'll learn words for common hotel facilities and bedroom items — useful for booking a room and describing what it has.\n\nHotel facilities: an elevator, a restaurant, wi-fi, a gift shop, a view, a swimming pool, a spa, restrooms, a kitchen, a gym, reception, a yard, a parking lot\n\nBedroom items: a bed, a pillow, a chair, a lamp, a light, a table, a window, the floor, the bathroom, a shower, a bathtub, a towel, a toilet, a closet, a remote control\n\nBy the end of this lesson, you'll be able to describe a hotel room and ask whether a hotel has a particular facility.",
+      "lessonBody": "In this lesson, you'll learn words for a hotel room and its facilities — useful for booking a room and describing what it has.\n\nHotel facilities: a room, an elevator, a restaurant, wi-fi, a gift shop, a view, a swimming pool, a spa, restrooms, a kitchen, a gym, reception, a yard, a parking lot\n\nBedroom items: a bed, a pillow, a chair, a lamp, a light, a table, a window, the floor, the bathroom, a shower, a bathtub, a towel, a toilet, a closet, a remote control\n\nBy the end of this lesson, you'll be able to describe a hotel room and ask whether a hotel has a particular facility.",
       "examples": ["Is there an elevator? Yes, there is.", "The room has a great view and a comfortable bed.", "There's a shower, but there isn't a bathtub."],
       "commonMistakes": ["'Elevator' is American English; 'lift' is the British equivalent — both mean the same thing.", "'View' refers to what you can see from a window, not the window itself."],
       "exercises": [

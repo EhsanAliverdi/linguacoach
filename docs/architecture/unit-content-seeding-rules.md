@@ -100,6 +100,30 @@ Concretely:
   curated seeding pipeline (`RichContentSeeder`) is the one path that always assigns it
   immediately, so every leaf produced by this process has exactly one Lesson in practice.
 
+## 5b. Content only uses what's already been taught (2026-08-04)
+
+A leaf's `LessonBody`, `Examples`, `CommonMistakes`, and every exercise question must only use
+vocabulary and grammar structures that a student has already met by that point in the sequence —
+never a word or structure from a later or sibling-but-not-yet-reached leaf, and never a word that
+appears nowhere in the taught vocabulary at all.
+
+- **Before writing a leaf's content**, build (or update) the cumulative list of everything taught
+  so far: every word listed in an earlier vocabulary leaf's word list, every fixed phrase from an
+  earlier functional-language leaf, and the grammar structures already covered by earlier grammar
+  leaves (per the prerequisite chain and file/lesson order, not alphabetical or domain order).
+- **Names, numbers already taught, and closed-class function words** (pronouns, articles,
+  prepositions, conjunctions, auxiliary verbs) don't need to appear in a vocabulary leaf first —
+  everything else (nouns, verbs, adjectives, adverbs) does.
+- **When a leaf needs a word that hasn't been taught yet**, either restructure the example to use
+  an already-taught word instead, or — if the word is genuinely necessary and reusable — add it to
+  that leaf's own vocabulary content first (or an earlier sibling leaf's), so it's taught before
+  it's assumed.
+- **This applies within a single unit too**, not just across units: a grammar leaf must not lean
+  on a vocabulary leaf that comes later in the same file's teaching order.
+- **Verify before marking a unit done**: re-read every new leaf's content once the whole unit is
+  drafted, checking it against the cumulative vocabulary list built through the end of that unit —
+  don't rely on the word "feeling" basic; confirm it was actually taught.
+
 ## 6. Prerequisites reflect real teaching order
 
 Prerequisite edges are authored explicitly based on genuine pedagogical sequencing (what must be
@@ -123,6 +147,8 @@ Before a unit is considered seeded:
 - [ ] Every cross-reference in those sections has been read and folded in (rule 4).
 - [ ] Every leaf has a lesson body, examples, common mistakes, and exercises matching the
       source's real exercise/question depth (rule 5).
+- [ ] Every word used in every leaf's content has already been taught by that point in the
+      sequence, or is a name/number-already-taught/closed-class function word (rule 5b).
 - [ ] Prerequisite edges have been authored for every real sequencing relationship, including
       ones to/from leaves introduced in earlier units (rule 6).
 - [ ] No node key, title, file name, or doc references the source material (rules 1–2).

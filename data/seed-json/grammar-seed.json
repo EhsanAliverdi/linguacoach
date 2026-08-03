@@ -31,7 +31,7 @@
       "cefrSource": "hand_authored",
       "routingEligible": true,
       "lessonBody": "In this lesson, you'll learn how to talk about yourself and one other person using the verb 'be' — the very first building block for introducing yourself in English.\n\nUse 'am' with 'I' and 'are' with 'you':\n\n• Full forms: I am / you are\n• Contractions: I'm / you're\n• Negative: I'm not / you aren't\n• Question: Am I...? / Are you...?\n• Short answers: Yes, I am. / No, I'm not. / Yes, you are. / No, you aren't.\n\nBy the end of this lesson, you'll be able to introduce yourself, say where you're from, and ask someone else simple questions about themselves.",
-      "examples": ["I am Diego. I'm a student.", "You are Sara. You're from Chicago.", "Am I in room 5? Yes, you are."],
+      "examples": ["I am Diego. I'm from Mexico.", "You are Sara. You're from Chicago.", "Am I Marco? No, I'm Diego."],
       "commonMistakes": ["Do not say 'I is' or 'you is' — use 'am' with I and 'are' with you.", "Do not say 'Yes, I am not' as a short answer — say 'No, I'm not.'"],
       "exercises": [
         {
@@ -40,8 +40,8 @@
           "kind": "text",
           "questions": [
             { "prompt": "Hi. ___ Marco.", "answer": "I'm" },
-            { "prompt": "Hello. ___ my new manager.", "answer": "You're" },
-            { "prompt": "___ in office 4.", "answer": "You're" },
+            { "prompt": "Hello. ___ Sara.", "answer": "You're" },
+            { "prompt": "___ from Tokyo.", "answer": "You're" },
             { "prompt": "___ Priya. Nice to meet you.", "answer": "I'm" }
           ]
         },
@@ -51,8 +51,8 @@
           "kind": "text",
           "questions": [
             { "prompt": "___ Tomas. I'm Felix.", "answer": "I'm not" },
-            { "prompt": "___ in room 9. You're in room 6.", "answer": "You aren't" },
-            { "prompt": "___ ready yet, sorry.", "answer": "I'm not" }
+            { "prompt": "___ from Peru. You're from Chile.", "answer": "You aren't" },
+            { "prompt": "___ Elena. I'm Ana.", "answer": "I'm not" }
           ]
         },
         {
@@ -61,7 +61,7 @@
           "kind": "text",
           "questions": [
             { "prompt": "You're Elena. → ___?", "answer": "Are you Elena" },
-            { "prompt": "I'm in room 2. → ___?", "answer": "Am I in room 2" },
+            { "prompt": "I'm Marco. → ___?", "answer": "Am I Marco" },
             { "prompt": "You're Mr. Park. → ___?", "answer": "Are you Mr. Park" }
           ]
         },
@@ -71,7 +71,7 @@
           "kind": "text",
           "questions": [
             { "prompt": "A: Hello. ___ you Nadia? B: Yes, I ___.", "answer": "Are; am" },
-            { "prompt": "A: ___ you in my class? B: No, I ___ not.", "answer": "Are; am" },
+            { "prompt": "A: ___ you from Brazil? B: No, I ___ not.", "answer": "Are; am" },
             { "prompt": "A: ___ your name Leo? B: No, I ___ not. I'm Sam.", "answer": "Is; am" },
             { "prompt": "A: Hi, ___ Ana. B: Nice to meet you, Ana.", "answer": "I'm" }
           ]
@@ -89,7 +89,7 @@
       "cefrSource": "hand_authored",
       "routingEligible": true,
       "lessonBody": "In this lesson, you'll learn how to talk about other people and things — not just yourself — using 'he,' 'she,' and 'it.' This builds directly on what you already know about 'I' and 'you.'\n\nUse 'is' with 'he,' 'she,' and 'it':\n\n• Full forms: he is / she is / it is\n• Contractions: he's / she's / it's\n• Negative: he isn't / she isn't / it isn't\n• Question: Is he...? / Is she...? / Is it...?\n• Short answers: Yes, he is. / No, she isn't.\n\nBy the end of this lesson, you'll be able to describe a third person — a friend, a colleague, a place — the same way you already describe yourself.",
-      "examples": ["He is a doctor. He's from Peru.", "She is my sister. She's a teacher.", "It is a big city. It's in Brazil."],
+      "examples": ["He is Marco. He's from Peru.", "She is Sara. She's from Chile.", "It is Lima. It's in Peru."],
       "commonMistakes": ["Do not say 'he are' or 'she are' — use 'is' with he/she/it.", "Do not forget the apostrophe in contractions: 'hes' is wrong, 'he's' is correct."],
       "exercises": [
         {
@@ -118,8 +118,8 @@
           "instructions": "Choose the correct verb form to complete each sentence.",
           "kind": "choice",
           "questions": [
-            { "prompt": "She ___ a nurse.", "options": ["am", "is", "are"], "correctIndex": 1 },
-            { "prompt": "It ___ a small apartment.", "options": ["is", "am", "are"], "correctIndex": 0 },
+            { "prompt": "She ___ Ana.", "options": ["am", "is", "are"], "correctIndex": 1 },
+            { "prompt": "It ___ in Brazil.", "options": ["is", "am", "are"], "correctIndex": 0 },
             { "prompt": "He ___ not from Spain.", "options": ["am", "is", "are"], "correctIndex": 1 }
           ]
         }
@@ -136,7 +136,7 @@
       "cefrSource": "hand_authored",
       "routingEligible": true,
       "lessonBody": "In this lesson, you'll learn how to talk about groups of people — including yourself as part of a group — using 'we,' 'you' (more than one person), and 'they.' Now that you can use 'be' for one person at a time, this extends the same idea to more than one.\n\nUse 'are' with 'we,' 'you' (plural), and 'they':\n\n• Full forms: we are / you are / they are\n• Contractions: we're / you're / they're\n• Negative: we aren't / you aren't / they aren't\n• Question: Are we...? / Are you...? / Are they...?\n\nBy the end of this lesson, you'll be able to talk about your team, your class, or a group of friends as a group, not just one person at a time.",
-      "examples": ["We are colleagues. We're from the same office.", "You are students. You're in room 6.", "They are tourists. They're from Canada."],
+      "examples": ["We are Marco and Sara. We're from Peru.", "You are Ana and Leo. You're from Chile.", "They are Tom and Lily. They're from Canada."],
       "commonMistakes": ["Remember 'you' can be singular or plural, but the verb form is always 'are'.", "Do not say 'they is' — always 'they are' or 'they're'."],
       "exercises": [
         {
@@ -144,10 +144,10 @@
           "instructions": "Complete each sentence with we're, you're, or they're.",
           "kind": "text",
           "questions": [
-            { "prompt": "___ colleagues. (we)", "answer": "We're" },
-            { "prompt": "___ late for the meeting. (they)", "answer": "They're" },
-            { "prompt": "___ both in room 8. (you, plural)", "answer": "You're" },
-            { "prompt": "___ from the same city. (we)", "answer": "We're" }
+            { "prompt": "___ from Peru. (we)", "answer": "We're" },
+            { "prompt": "___ from Canada. (they)", "answer": "They're" },
+            { "prompt": "___ both from Chile. (you, plural)", "answer": "You're" },
+            { "prompt": "___ from Mexico. (we)", "answer": "We're" }
           ]
         },
         {
@@ -155,9 +155,9 @@
           "instructions": "Complete the questions and short answers.",
           "kind": "text",
           "questions": [
-            { "prompt": "___ you tourists? Yes, we ___.", "answer": "Are; are" },
+            { "prompt": "___ you from Peru? Yes, we ___.", "answer": "Are; are" },
             { "prompt": "___ they from Canada? No, they ___.", "answer": "Are; aren't" },
-            { "prompt": "___ we late? Yes, you ___.", "answer": "Are; are" }
+            { "prompt": "___ we from Mexico? Yes, you ___.", "answer": "Are; are" }
           ]
         }
       ]
@@ -210,7 +210,7 @@
       "cefrSource": "hand_authored",
       "routingEligible": true,
       "lessonBody": "In this lesson, you'll learn how to talk about one thing versus more than one thing, and how to choose between 'a' and 'an' — two small words you'll use constantly.\n\nThere are three plural spelling patterns:\n\n• Most nouns just add -s: a pencil → two pencils, a key → three keys\n• Nouns ending in ch, sh, s, ss, or x add -es: a class → two classes, a watch → two watches\n• Nouns ending in a consonant + y change y to i and add -es: a country → two countries\n\nUse 'a' before a consonant sound and 'an' before a vowel sound (a, e, i, o, u):\n\n• a book, a phone, a wallet\n• an umbrella, an ID card, an orange\n\nBy the end of this lesson, you'll be able to say whether you have one thing or several, and choose 'a' or 'an' correctly every time.",
-      "examples": ["I have a pencil and two pens.", "She has an umbrella and three keys.", "It's a photo, not an album."],
+      "examples": ["I have a pencil and two pens.", "She has an umbrella and three keys.", "It's a photo, not an ID card."],
       "commonMistakes": ["Don't forget the -s on plural nouns: 'two pencil' is wrong, 'two pencils' is correct.", "Choose 'a'/'an' by the sound, not the spelling: it's 'an hour' (vowel sound) but 'a university' (consonant sound).", "Don't just add -s to words ending in ch/sh/s/x or consonant+y: 'watchs' and 'countrys' are wrong — say 'watches' and 'countries'."],
       "exercises": [
         {
@@ -222,7 +222,7 @@
             { "prompt": "___ umbrella", "options": ["a", "an"], "correctIndex": 1 },
             { "prompt": "___ ID card", "options": ["a", "an"], "correctIndex": 1 },
             { "prompt": "___ wallet", "options": ["a", "an"], "correctIndex": 0 },
-            { "prompt": "___ orange", "options": ["a", "an"], "correctIndex": 1 }
+            { "prompt": "___ notebook", "options": ["a", "an"], "correctIndex": 0 }
           ]
         },
         {
@@ -298,17 +298,17 @@
       "routingEligible": true,
       "lessonBody": "In this lesson, you'll learn how to say who something belongs to — a key skill for talking about your family, friends, and belongings.\n\nPossessive adjectives go before a noun:\n\n• I → my, you → your, he → his, she → her, it → its, we → our, you (plural) → your, they → their\n\nFor a person's name, add 's:\n\n• Sara's brother, Tom's sister, my parents' house (plural noun ending in -s: add just an apostrophe)\n\nBy the end of this lesson, you'll be able to talk about your own family and belongings, and ask who things belong to.",
       "examples": ["This is my brother. His name is Leo.", "That's Maria's daughter.", "Is this your phone or her phone?"],
-      "commonMistakes": ["'It's' means 'it is'; the possessive form is 'its' with no apostrophe — 'The dog is in its bed.'", "Don't say 'the brother of Sara' as your default — 'Sara's brother' is the natural everyday form."],
+      "commonMistakes": ["'It's' means 'it is'; the possessive form is 'its' with no apostrophe — 'The bag is nice. Its color is blue.'", "Don't say 'the brother of Sara' as your default — 'Sara's brother' is the natural everyday form."],
       "exercises": [
         {
           "title": "Complete with the correct possessive adjective",
           "instructions": "Complete each sentence with my, your, his, her, its, our, or their.",
           "kind": "text",
           "questions": [
-            { "prompt": "This is Leo. ___ sister is a doctor. (he)", "answer": "His" },
-            { "prompt": "We have a cat. ___ name is Tom. (it)", "answer": "Its" },
+            { "prompt": "This is Leo. ___ sister is from Peru. (he)", "answer": "His" },
+            { "prompt": "We have a phone. ___ color is blue. (it)", "answer": "Its" },
             { "prompt": "Hi, I'm Priya. This is ___ husband, Raj. (I)", "answer": "my" },
-            { "prompt": "That's Sara and Tom's house. ___ house is big. (they)", "answer": "Their" }
+            { "prompt": "That's Sara and Tom's bag. ___ bag is big. (they)", "answer": "Their" }
           ]
         },
         {
@@ -334,16 +334,16 @@
       "cefrSource": "hand_authored",
       "routingEligible": true,
       "lessonBody": "In this lesson, you'll learn where to put an adjective in a sentence and how adjectives behave differently from nouns in English.\n\nAn adjective goes before the noun it describes:\n\n• a small car (NOT a car small)\n• an expensive watch\n\nAdjectives never take a plural -s, even when the noun is plural:\n\n• good cars (NOT goods cars)\n• blue keys (NOT blues keys)\n\nAn adjective can also come after the verb 'be':\n\n• The car is fast. It's very expensive.\n\nBy the end of this lesson, you'll be able to describe things correctly, in the right word order, whether you're describing one thing or several.",
-      "examples": ["It's a beautiful city.", "They're good cars.", "This bag is cheap, but that one is expensive."],
-      "commonMistakes": ["Don't put the adjective after the noun: 'a car small' is wrong.", "Don't add -s to an adjective: 'goods cars' is wrong — say 'good cars'."],
+      "examples": ["It's a beautiful photo.", "They're good books.", "This bag is cheap, but that one is expensive."],
+      "commonMistakes": ["Don't put the adjective after the noun: 'a watch small' is wrong.", "Don't add -s to an adjective: 'goods watches' is wrong — say 'good watches'."],
       "exercises": [
         {
           "title": "Choose the correct sentence",
           "instructions": "Choose the sentence with the correct word order.",
           "kind": "choice",
           "questions": [
-            { "prompt": "Which is correct?", "options": ["It's a car beautiful.", "It's a beautiful car."], "correctIndex": 1 },
-            { "prompt": "Which is correct?", "options": ["They're goods cars.", "They're good cars."], "correctIndex": 1 },
+            { "prompt": "Which is correct?", "options": ["It's a photo beautiful.", "It's a beautiful photo."], "correctIndex": 1 },
+            { "prompt": "Which is correct?", "options": ["They're goods watches.", "They're good watches."], "correctIndex": 1 },
             { "prompt": "Which is correct?", "options": ["This watch is expensive.", "This watch expensive is."], "correctIndex": 0 }
           ]
         },
@@ -352,9 +352,9 @@
           "instructions": "Put the words in the correct order to make a sentence.",
           "kind": "text",
           "questions": [
-            { "prompt": "car / small / a / it's", "answer": "It's a small car" },
+            { "prompt": "watch / small / a / it's", "answer": "It's a small watch" },
             { "prompt": "expensive / very / this / is / watch", "answer": "This watch is very expensive" },
-            { "prompt": "cars / are / cheap / they", "answer": "They are cheap cars" }
+            { "prompt": "watches / are / cheap / they", "answer": "They are cheap watches" }
           ]
         }
       ]
@@ -381,7 +381,7 @@
             { "prompt": "I ___ breakfast at a café. (have)", "answer": "have" },
             { "prompt": "We ___ a lot of fruit. (eat)", "answer": "eat" },
             { "prompt": "They ___ tea every morning. (drink)", "answer": "drink" },
-            { "prompt": "You ___ a healthy breakfast. (have)", "answer": "have" }
+            { "prompt": "You ___ a big breakfast. (have)", "answer": "have" }
           ]
         },
         {
@@ -407,7 +407,7 @@
       "cefrSource": "hand_authored",
       "routingEligible": true,
       "lessonBody": "In this lesson, you'll learn how to ask yes/no questions and give short answers about habits and routines — building directly on the affirmative and negative forms you already know.\n\nUse Do + subject + base verb:\n\n• Do you live in London?\n• Do they have a car?\n\nShort answers use do/don't, not a repeat of the full verb:\n\n• Yes, I do. / No, I don't.\n• Yes, they do. / No, they don't.\n\nBy the end of this lesson, you'll be able to ask someone about their daily routines and habits, and answer the same questions naturally.",
-      "examples": ["Do you live near here? Yes, I do.", "Do they work for a British company? No, they don't.", "Do we have time for coffee? Yes, we do."],
+      "examples": ["Do you live near here? Yes, I do.", "Do they live in Peru? No, they don't.", "Do we have time for coffee? Yes, we do."],
       "commonMistakes": ["Don't forget 'Do' at the start of the question: 'You live in London?' should be 'Do you live in London?'", "Short answers don't repeat the main verb: 'Yes, I live' is wrong — say 'Yes, I do'."],
       "exercises": [
         {
@@ -415,9 +415,9 @@
           "instructions": "Turn each statement into a yes/no question.",
           "kind": "text",
           "questions": [
-            { "prompt": "You live in a big house. → ___?", "answer": "Do you live in a big house" },
+            { "prompt": "You live in Peru. → ___?", "answer": "Do you live in Peru" },
             { "prompt": "They have two children. → ___?", "answer": "Do they have two children" },
-            { "prompt": "We work for the same company. → ___?", "answer": "Do we work for the same company" }
+            { "prompt": "We work in Peru. → ___?", "answer": "Do we work in Peru" }
           ]
         },
         {
@@ -426,8 +426,8 @@
           "kind": "text",
           "questions": [
             { "prompt": "Do you live near here? Yes, I ___.", "answer": "do" },
-            { "prompt": "Do they watch a lot of TV? No, they ___.", "answer": "don't" },
-            { "prompt": "Do we need a taxi? No, we ___.", "answer": "don't" }
+            { "prompt": "Do they eat a lot of fish? No, they ___.", "answer": "don't" },
+            { "prompt": "Do we need coffee? No, we ___.", "answer": "don't" }
           ]
         }
       ]
@@ -473,9 +473,9 @@
           "kind": "text",
           "questions": [
             { "prompt": "She ___ CNN every morning. (watch)", "answer": "watches" },
-            { "prompt": "He ___ history at the university. (study)", "answer": "studies" },
-            { "prompt": "The movie ___ at 8:00. (finish)", "answer": "finishes" },
-            { "prompt": "She ___ to the gym on Saturdays. (go)", "answer": "goes" }
+            { "prompt": "He ___ Spanish at school. (study)", "answer": "studies" },
+            { "prompt": "The class ___ at 8:00. (finish)", "answer": "finishes" },
+            { "prompt": "She ___ to school on Saturdays. (go)", "answer": "goes" }
           ]
         }
       ]
@@ -491,7 +491,7 @@
       "cefrSource": "hand_authored",
       "routingEligible": true,
       "lessonBody": "In this lesson, you'll learn how to say how often you do something — not just what you do, but how regularly.\n\nCommon adverbs of frequency, from most to least often:\n\nalways, usually, sometimes, never\n\nThe adverb goes before the main verb, but after the verb 'be':\n\n• I always get up at 7:00.\n• I never drink coffee.\n• She is usually tired in the morning.\n\nBy the end of this lesson, you'll be able to describe your routines and habits with more precision — not just 'I do X' but 'I always/usually/sometimes/never do X.'",
-      "examples": ["I always get up early on weekdays.", "He never eats breakfast.", "We're usually busy on Mondays."],
+      "examples": ["I always get up at seven in the morning.", "He never eats breakfast.", "We're usually tired on Mondays."],
       "commonMistakes": ["Don't put the adverb before 'be': 'I always am tired' is wrong — say 'I am always tired.'", "Don't put the adverb after the main verb: 'I get up always at 7:00' is wrong — say 'I always get up at 7:00.'", "'Never' already makes a sentence negative, so it goes with an affirmative verb: 'He doesn't never eat meat' is wrong — say 'He never eats meat.'"],
       "exercises": [
         {
@@ -509,7 +509,7 @@
           "instructions": "Choose the sentence with the adverb in the correct position.",
           "kind": "choice",
           "questions": [
-            { "prompt": "Which is correct?", "options": ["I always am busy on Fridays.", "I am always busy on Fridays."], "correctIndex": 1 },
+            { "prompt": "Which is correct?", "options": ["I always am tired on Fridays.", "I am always tired on Fridays."], "correctIndex": 1 },
             { "prompt": "Which is correct?", "options": ["He usually finishes work at 6:00.", "He finishes usually work at 6:00."], "correctIndex": 0 },
             { "prompt": "Which is correct?", "options": ["They never eat meat.", "They eat never meat."], "correctIndex": 0 }
           ]
@@ -527,7 +527,7 @@
       "cefrSource": "hand_authored",
       "routingEligible": true,
       "lessonBody": "In this lesson, you'll practice building correct questions from scratch, combining be-questions and do/does-questions — a skill for holding a real two-way conversation, not just answering.\n\nRemember the two patterns:\n\n• be-questions: (question word) + be + subject — Are you tired? What's your favorite day?\n• simple-present questions: (question word) + do/does + subject + base verb — What do you do on Saturday? Does she work on Sunday?\n\nMixing these up is the most common word-order mistake at this level — check whether the sentence needs 'be' or 'do/does' before you build it.\n\nBy the end of this lesson, you'll be able to build both types of questions correctly, even when a question word is involved.",
-      "examples": ["What do you usually do on Saturday?", "Are you tired on Sunday evening?", "What's your favorite part of the weekend?"],
+      "examples": ["What do you usually do on Saturday?", "Are you tired on Sunday evening?", "What time do you usually have lunch?"],
       "commonMistakes": ["Don't mix 'be' and 'do' in the same question: 'Do you are tired?' is wrong — say 'Are you tired?'", "Don't forget 'do/does' with a simple-present question: 'What you do on Saturday?' is wrong — say 'What do you do on Saturday?'"],
       "exercises": [
         {
@@ -545,9 +545,9 @@
           "instructions": "Choose the question with the correct word order.",
           "kind": "choice",
           "questions": [
-            { "prompt": "Which is correct?", "options": ["What's your favorite part of the weekend?", "What your favorite part of the weekend is?"], "correctIndex": 0 },
+            { "prompt": "Which is correct?", "options": ["What time do you have lunch?", "What time you do have lunch?"], "correctIndex": 0 },
             { "prompt": "Which is correct?", "options": ["Where do you have lunch?", "Where you do have lunch?"], "correctIndex": 0 },
-            { "prompt": "Which is correct?", "options": ["Is she usually busy?", "Does she is usually busy?"], "correctIndex": 0 }
+            { "prompt": "Which is correct?", "options": ["Is she usually tired?", "Does she is usually tired?"], "correctIndex": 0 }
           ]
         }
       ]
@@ -582,9 +582,9 @@
           "instructions": "Complete each imperative sentence with the correct base verb form.",
           "kind": "text",
           "questions": [
-            { "prompt": "___ quiet, please. (be)", "answer": "Be" },
-            { "prompt": "Please ___ down. (sit)", "answer": "sit" },
-            { "prompt": "Don't ___! It's OK. (worry)", "answer": "worry" }
+            { "prompt": "___ your book, please. (open)", "answer": "Open" },
+            { "prompt": "Please ___ to the teacher. (listen)", "answer": "listen" },
+            { "prompt": "___ at the board. (look)", "answer": "Look" }
           ]
         }
       ]
@@ -600,7 +600,7 @@
       "cefrSource": "hand_authored",
       "routingEligible": true,
       "lessonBody": "In this lesson, you'll learn 'can' and 'can't' — used for both ability (what you're able to do) and permission (what's allowed) — two of the most useful words in everyday English.\n\ncan/can't + base verb, the same for every subject:\n\n• I can drive. You can't park here. She can speak French.\n\nQuestions and short answers:\n\n• Can you come on Monday? Yes, I can. / No, I can't.\n\nBy the end of this lesson, you'll be able to talk about what you're able to do, ask permission, and understand signs and rules that use can/can't.",
-      "examples": ["Can I park here? No, you can't.", "She can practice online.", "Can you come at 10:00? Yes, I can."],
+      "examples": ["Can I park here? No, you can't.", "She can speak Spanish.", "Can you come at 10:00? Yes, I can."],
       "commonMistakes": ["Don't add -s for he/she/it: 'she cans drive' is wrong — say 'she can drive'.", "Don't use 'to' after can: 'I can to swim' is wrong — say 'I can swim'."],
       "exercises": [
         {
@@ -609,7 +609,7 @@
           "kind": "text",
           "questions": [
             { "prompt": "You ___ park here. (not allowed)", "answer": "can't" },
-            { "prompt": "She ___ speak three languages. (ability)", "answer": "can" },
+            { "prompt": "She ___ speak Spanish and English. (ability)", "answer": "can" },
             { "prompt": "___ you come on Monday at 8:30? (question)", "answer": "Can" },
             { "prompt": "I'm sorry, I ___ help you right now. (not able)", "answer": "can't" }
           ]
@@ -637,7 +637,7 @@
       "cefrSource": "hand_authored",
       "routingEligible": true,
       "lessonBody": "In this lesson, you'll learn how to say how much you like or dislike an activity — not just a thing, but something you do.\n\nAfter like, love, and hate, use verb + -ing when talking about an activity:\n\n• I love cooking. I like reading. I hate cleaning.\n\nSpelling rules for the -ing form:\n\n• Most verbs just add -ing: read → reading\n• Verbs ending in a silent e drop the e: drive → driving\n• Verbs ending in one vowel + one consonant double the consonant: swim → swimming, shop → shopping\n\nFrom most positive to most negative: love → like → don't like → hate.\n\nUse don't/doesn't with like: I don't like camping. She doesn't like sports.\n\nBy the end of this lesson, you'll be able to talk about activities you enjoy and don't enjoy, with the right level of feeling.",
-      "examples": ["I love playing the piano.", "He doesn't like traveling.", "We hate waiting in line."],
+      "examples": ["I love playing the piano.", "He doesn't like traveling.", "We hate cleaning."],
       "commonMistakes": ["Use the base verb + -ing, not the infinitive, after these verbs in casual descriptions: 'I love to cook' is also correct, but 'I love cooking' is the more common everyday pattern taught here.", "Don't forget don't/doesn't with 'like': 'She not likes it' is wrong — say 'She doesn't like it'.", "Don't forget the spelling change: 'swiming' and 'driveing' are wrong — say 'swimming' and 'driving'."],
       "exercises": [
         {
@@ -683,9 +683,9 @@
       "cefrConfidence": "curated",
       "cefrSource": "hand_authored",
       "routingEligible": true,
-      "lessonBody": "In this lesson, you'll learn a second present tense — the present continuous — used for things happening right now, at this exact moment.\n\nForm: am/is/are + verb + -ing\n\n• I'm making dinner. She's doing her homework. They're reading.\n\nNegative and question:\n\n• I'm not working today. Is he sleeping? What are they doing?\n\nBy the end of this lesson, you'll be able to describe what's happening right now, for yourself and for other people.",
-      "examples": ["I'm staying in a hotel this week.", "She's doing her homework right now.", "What are they doing? They're watching a movie."],
-      "commonMistakes": ["Don't forget am/is/are — 'I working' is wrong — say 'I'm working'.", "Don't drop the -ing ending: 'She's do her homework' is wrong — say 'She's doing her homework'."],
+      "lessonBody": "In this lesson, you'll learn a second present tense — the present continuous — used for things happening right now, at this exact moment.\n\nForm: am/is/are + verb + -ing\n\n• I'm making dinner. She's eating breakfast. They're reading.\n\nNegative and question:\n\n• I'm not working today. Is he sleeping? What are they doing?\n\nBy the end of this lesson, you'll be able to describe what's happening right now, for yourself and for other people.",
+      "examples": ["I'm staying with my family this week.", "She's eating breakfast right now.", "What are they doing? They're watching a movie."],
+      "commonMistakes": ["Don't forget am/is/are — 'I working' is wrong — say 'I'm working'.", "Don't drop the -ing ending: 'She's eat breakfast' is wrong — say 'She's eating breakfast'."],
       "exercises": [
         {
           "title": "Complete with the present continuous",
@@ -693,7 +693,7 @@
           "kind": "text",
           "questions": [
             { "prompt": "I ___ dinner right now. (make)", "answer": "'m making" },
-            { "prompt": "She ___ her homework. (do)", "answer": "'s doing" },
+            { "prompt": "She ___ her breakfast. (eat)", "answer": "'s eating" },
             { "prompt": "They ___ a movie. (watch)", "answer": "'re watching" },
             { "prompt": "___ you ___ now? (work)", "answer": "Are; working" }
           ]
@@ -721,8 +721,8 @@
       "cefrSource": "hand_authored",
       "routingEligible": true,
       "lessonBody": "In this lesson, you'll learn how to choose between the two present tenses you now know — simple present and present continuous — a common source of confusion once you know both.\n\nUse the simple present for habits, routines, and things that are generally true:\n\n• He usually works in an office. She wears a suit every day.\n\nUse the present continuous for something happening right now or a temporary situation:\n\n• Today he's working in a hotel. Today she's wearing jeans.\n\nWords like 'usually' and 'every day' signal simple present; 'right now' and 'today' signal present continuous.\n\nBy the end of this lesson, you'll be able to choose the correct present tense depending on whether you mean a habit or something happening now.",
-      "examples": ["He usually works in an office, but today he's working from home.", "She usually wears a suit, but today she's wearing jeans.", "I usually walk to work, but today I'm taking the bus."],
-      "commonMistakes": ["Don't use the present continuous for a general habit: 'I'm working in an office' (as a permanent job description) is less natural than 'I work in an office'.", "Don't use the simple present for something happening right now: 'I work on the report now' is wrong — say 'I'm working on the report now'."],
+      "examples": ["He usually works in an office, but today he's working from home.", "She usually wears a suit, but today she's wearing jeans.", "I usually walk to work, but today I'm driving."],
+      "commonMistakes": ["Don't use the present continuous for a general habit: 'I'm working in an office' (as a permanent job description) is less natural than 'I work in an office'.", "Don't use the simple present for something happening right now: 'I watch a movie now' is wrong — say 'I'm watching a movie now'."],
       "exercises": [
         {
           "title": "Choose simple present or present continuous",
@@ -757,18 +757,18 @@
       "cefrSource": "hand_authored",
       "routingEligible": true,
       "lessonBody": "In this lesson, you'll learn how to say what exists or is present in a place — a room, a hotel, a city — without naming who owns it or where exactly it is yet.\n\nUse there's/there is + a singular noun, and there are + some + a plural noun:\n\n• There's a great view. There are some nice cafés nearby.\n\nNegative and question use any, not some:\n\n• There isn't a bathtub. Is there wi-fi? Are there any stores?\n\nBy the end of this lesson, you'll be able to describe what a place has and doesn't have, and ask whether something is available.",
-      "examples": ["There's a room on the third floor.", "There are two restaurants in the hotel.", "Is there wi-fi? Yes, there is. Are there any stores? No, there aren't."],
-      "commonMistakes": ["Use 'any', not 'some', in questions and negatives: 'There aren't some stores' is wrong — say 'There aren't any stores'.", "Match singular/plural correctly: 'There's two restaurants' is wrong — say 'There are two restaurants'."],
+      "examples": ["There's a room on the third floor.", "There are two restaurants in the hotel.", "Is there wi-fi? Yes, there is. Are there any elevators? No, there aren't."],
+      "commonMistakes": ["Use 'any', not 'some', in questions and negatives: 'There aren't some elevators' is wrong — say 'There aren't any elevators'.", "Match singular/plural correctly: 'There's two restaurants' is wrong — say 'There are two restaurants'."],
       "exercises": [
         {
           "title": "Complete with there's, there are, there isn't, or there aren't",
           "instructions": "Complete each sentence about the hotel.",
           "kind": "text",
           "questions": [
-            { "prompt": "___ a great view of the lake. (positive)", "answer": "There's" },
+            { "prompt": "___ a great view of the mountains. (positive)", "answer": "There's" },
             { "prompt": "___ two restaurants in the hotel. (positive, plural)", "answer": "There are" },
             { "prompt": "___ a bathtub, only a shower. (negative)", "answer": "there isn't" },
-            { "prompt": "___ any stores in the hotel. (negative, plural)", "answer": "There aren't" }
+            { "prompt": "___ any elevators in the hotel. (negative, plural)", "answer": "There aren't" }
           ]
         },
         {
@@ -777,7 +777,7 @@
           "kind": "choice",
           "questions": [
             { "prompt": "Which is correct?", "options": ["Is there wi-fi?", "There is wi-fi?", "Is wi-fi there?"], "correctIndex": 0 },
-            { "prompt": "Which is correct?", "options": ["Are there some stores?", "Are there any stores?"], "correctIndex": 1 },
+            { "prompt": "Which is correct?", "options": ["Are there some elevators?", "Are there any elevators?"], "correctIndex": 1 },
             { "prompt": "Which is correct?", "options": ["There's an elevator?", "Is there an elevator?"], "correctIndex": 1 }
           ]
         }
@@ -794,7 +794,7 @@
       "cefrSource": "hand_authored",
       "routingEligible": true,
       "lessonBody": "In this lesson, you'll learn the past tense of 'be' — your first step into talking about the past, and the foundation every other simple past form builds on.\n\nWas/were forms:\n\n• I/he/she/it was — you/we/they were\n\nNegative: wasn't/weren't. Question: Was/Were + subject?\n\n• Where were you at seven o'clock? I was at home. Were you alone? No, I wasn't.\n\nThere is/there are also has a past form: there was (singular) and there were (plural).\n\n• There was a party at the school last night.\n\nCommon past time expressions: this morning, yesterday, last night, last week, last month, last year.\n\nBy the end of this lesson, you'll be able to say where you and others were at a specific past time, and ask the same about someone else.",
-      "examples": ["I was at home last night.", "They weren't at the party.", "Were you at work yesterday? Yes, I was."],
+      "examples": ["I was at home last night.", "They weren't at school.", "Were you at work yesterday? Yes, I was."],
       "commonMistakes": ["Use 'was' with I/he/she/it, and 'were' with you/we/they — don't mix them up: 'I were' is wrong.", "Don't add 'did' to a be-question: 'Did you were at home?' is wrong — say 'Were you at home?'"],
       "exercises": [
         {
@@ -803,8 +803,8 @@
           "kind": "text",
           "questions": [
             { "prompt": "I ___ at home at seven o'clock. (positive)", "answer": "was" },
-            { "prompt": "They ___ at the meeting. They were at lunch. (negative)", "answer": "weren't" },
-            { "prompt": "___ you alone last night?", "answer": "Were" },
+            { "prompt": "They ___ at school. They were at home. (negative)", "answer": "weren't" },
+            { "prompt": "___ you tired last night?", "answer": "Were" },
             { "prompt": "She ___ a teacher ten years ago. (positive)", "answer": "was" }
           ]
         },
@@ -823,9 +823,9 @@
           "instructions": "Complete each sentence with the correct past form of there is/there are.",
           "kind": "text",
           "questions": [
-            { "prompt": "___ a party at the school last night. (singular)", "answer": "There was" },
-            { "prompt": "___ two hundred people at the concert. (plural)", "answer": "There were" },
-            { "prompt": "___ a big meeting last week, but I wasn't there. (singular)", "answer": "There was" }
+            { "prompt": "___ a big class at the school last night. (singular)", "answer": "There was" },
+            { "prompt": "___ two hundred students at the school. (plural)", "answer": "There were" },
+            { "prompt": "___ a big class last week, but I wasn't there. (singular)", "answer": "There was" }
           ]
         }
       ]
@@ -849,7 +849,7 @@
           "instructions": "Complete each sentence with the correct simple past form.",
           "kind": "text",
           "questions": [
-            { "prompt": "We ___ our flights early. (book)", "answer": "booked" },
+            { "prompt": "We ___ our flights at 6:00. (book)", "answer": "booked" },
             { "prompt": "They ___ their friends to the party. (invite)", "answer": "invited" },
             { "prompt": "She ___ seven suitcases. (pack)", "answer": "packed" },
             { "prompt": "We ___ in North Carolina at 6:00. (arrive)", "answer": "arrived" }
@@ -860,7 +860,7 @@
           "instructions": "Complete each negative sentence or question.",
           "kind": "text",
           "questions": [
-            { "prompt": "We ___ a car. We took the bus. (negative, rent)", "answer": "didn't rent" },
+            { "prompt": "We ___ a car. We took a taxi. (negative, rent)", "answer": "didn't rent" },
             { "prompt": "___ you ___ your bags yesterday? (question, pack)", "answer": "Did; pack" },
             { "prompt": "They ___ want to leave. (negative, want)", "answer": "didn't" }
           ]
@@ -871,9 +871,9 @@
           "kind": "text",
           "questions": [
             { "prompt": "She ___ Spanish at the university. (study)", "answer": "studied" },
-            { "prompt": "The bus ___ at every stop. (stop)", "answer": "stopped" },
+            { "prompt": "The taxi ___ at every stop. (stop)", "answer": "stopped" },
             { "prompt": "He ___ the red car to the blue one. (prefer)", "answer": "preferred" },
-            { "prompt": "The baby ___ all night. (cry)", "answer": "cried" }
+            { "prompt": "She ___ during the movie. (cry)", "answer": "cried" }
           ]
         }
       ]
@@ -889,7 +889,7 @@
       "cefrSource": "hand_authored",
       "routingEligible": true,
       "lessonBody": "In this lesson, you'll learn the past forms of four extremely common irregular verbs — they don't follow the -ed pattern, so their past forms must be learned individually.\n\n• get → got, go → went, have → had, do → did\n\nNegative and question still use didn't/did + the base form, just like regular verbs:\n\n• I didn't go to school today. Did you have breakfast? Yes, I did.\n\nBy the end of this lesson, you'll be able to describe your day using these four very frequent irregular verbs correctly in the past.",
-      "examples": ["I got up early and got a taxi.", "We went to the museum and had lunch there.", "I did my homework, but I didn't do the housework."],
+      "examples": ["I got up at 6:00 and got a taxi.", "We went to school and had lunch there.", "I did my homework, but I didn't do the housework."],
       "commonMistakes": ["Don't say 'goed', 'getted', 'haved', or 'doed' — these verbs are irregular: went, got, had, did.", "The base form returns after didn't/did: 'I didn't went' is wrong — say 'I didn't go'."],
       "exercises": [
         {
@@ -897,8 +897,8 @@
           "instructions": "Complete each sentence with the correct past form of get, go, have, or do.",
           "kind": "text",
           "questions": [
-            { "prompt": "I ___ an early flight yesterday. (get)", "answer": "got" },
-            { "prompt": "We ___ to the museum in the morning. (go)", "answer": "went" },
+            { "prompt": "I ___ a flight at 6:00 yesterday. (get)", "answer": "got" },
+            { "prompt": "We ___ to school in the morning. (go)", "answer": "went" },
             { "prompt": "She ___ lunch in the café. (have)", "answer": "had" },
             { "prompt": "I ___ my homework last night. (do)", "answer": "did" }
           ]
@@ -926,7 +926,7 @@
       "cefrSource": "hand_authored",
       "routingEligible": true,
       "lessonBody": "In this lesson, you'll learn eight more common irregular past forms, building on 'get,' 'go,' 'have,' and 'do' — with practice choosing correctly between regular and irregular verbs together.\n\nMore irregular past forms:\n\n• buy → bought, leave → left, say → said, see → saw, send → sent, sit → sat, tell → told, write → wrote\n\nThere's no shortcut for irregular verbs — they simply need to be memorized, one at a time, through practice.\n\nBy the end of this lesson, you'll be able to use these eight verbs correctly in the past, alongside regular verbs, in real sentences about your own experiences.",
-      "examples": ["I bought a new jacket and saw a movie.", "She sat next to me and told me her name.", "I left my phone at home and sent an email instead."],
+      "examples": ["I bought a new book and saw a movie.", "She sat next to me and told me her name.", "I left my phone at home and sent an email instead."],
       "commonMistakes": ["Don't regularize irregular verbs: 'buyed', 'seed', 'sitted', and 'writed' are all wrong — the correct forms are bought, saw, sat, wrote.", "'Said' is pronounced /sɛd/, not like 'paid' — it's an irregular pronunciation as well as an irregular spelling."],
       "exercises": [
         {

@@ -556,3 +556,85 @@ the app's seed content, not just inferred from in-lesson snippets.
 
 **Next recommended action**: none pending. The reference-bank verification work requested across
 this and §16 is complete.
+
+## 18. Addendum (2026-08-04) — level-appropriateness audit: content must only use already-taught
+vocabulary/grammar
+
+User feedback: content across this whole project did not consistently respect the student's
+level at each point in the sequence — examples, common mistakes, and exercises sometimes used
+vocabulary or grammar structures the student couldn't have learned yet (or that were never taught
+at all), since content was authored per-leaf without cross-checking against what earlier leaves
+in the teaching sequence had actually introduced.
+
+**Rule change**: added rule 5b to `docs/architecture/unit-content-seeding-rules.md` — every
+leaf's `LessonBody`, `Examples`, `CommonMistakes`, and exercises must only use vocabulary/grammar
+already taught by that point in the sequence (names, already-taught numbers, and closed-class
+function words are exempt); before writing new content, build the cumulative taught-vocabulary
+list in real teaching order, not domain or alphabetical order. Added a matching checklist item to
+rule 8. This is now compulsory for all future unit processing.
+
+**Audit method for the existing 103 leaves**: computed a teaching-order sequence via topological
+sort over the prerequisite graph (grouped by `difficultyBand` as a tiebreaker), then built a
+heuristic script that walks that order and flags any content word in a leaf's examples/common-
+mistakes/exercises that hadn't appeared in an earlier vocabulary/functional-language/pronunciation
+leaf's own content (these three domains are correctly "self-introducing" — a vocabulary leaf's own
+example sentences are how a word gets taught in the first place). Grammar, reading, writing, and
+listening leaves are treated strictly: they must reuse already-taught words, not introduce new
+ones. The script's output was a candidate list, not a verdict — many flags were meta-language
+(grammatical terms like "possessive," "imperative," "percentage" used to explain a rule, not
+vocabulary the student must produce) or tokenization artifacts (quoted wrong-example text); each
+candidate was manually reviewed and only genuine violations were fixed.
+
+**What was found and fixed**:
+- **The very first grammar leaf a student ever sees** (`grammar.verb_be.singular_i_you`) used
+  "manager," "student," "office," "class," "ready," and "email" — none taught yet, some never
+  taught anywhere. Rewrote its examples/exercises to use only names and already-established
+  patterns.
+- **A dozen more grammar leaves** across Files 1-12 had the same problem at smaller scale:
+  untaught jobs (doctor, nurse, teacher used before the jobs vocabulary leaf), untaught places
+  (city, apartment, house, museum, gym), untaught objects (dog, cat, jacket, suitcase used before
+  their vocabulary leaf), and untaught abstract words (healthy, favorite, busy, early, quiet,
+  meeting, party, homework used before or without ever being taught). Each was replaced with an
+  already-taught word or restructured to avoid needing one.
+- **Two backwards prerequisite edges** were found and flipped: `vocabulary.everyday_objects.
+  small_things` and `vocabulary.everyday_objects.souvenirs` were set as depending on the grammar
+  leaves that actually use their words as examples (singular/plural nouns, this/that/these/those)
+  — backwards, since the grammar leaves needed the vocabulary first. Also flipped `vocabulary.
+  clothes.clothing_items` relative to `grammar.present_continuous.vs_simple_present` for the same
+  reason.
+- **Two reading/listening leaves were substantially rewritten** because their entire scenario
+  relied on untaught vocabulary: the first reading leaf's café dialogue used "vacation,"
+  "conference," "town," and "school" before any of that existed — rewritten around an
+  introduction + feelings scenario. The first listening leaf described a school (with "student,"
+  "teacher," "class," "kitchen," "yard") before any school vocabulary was taught — rewritten
+  around a family description using already-known family/number vocabulary.
+- **Two later reading leaves were also too advanced for the level regardless of sequencing** — a
+  "weekend habits" article used "researchers," "predictable," "stressed," "boring/bored/exciting,"
+  and a "family move abroad" article used "abroad," "public transportation," "national parks,"
+  and "local market." Both were simplified to plain, concrete sentences using only vocabulary
+  already established elsewhere in the seed set, while keeping each leaf's actual reading-skill
+  focus (percentages; correcting false statements) intact.
+- **A genuine vocabulary gap**: "morning," "afternoon," "evening," and "night" were used
+  pervasively across dozens of leaves but were never formally taught anywhere. Added them to
+  `vocabulary.time_expressions.days_of_week` (already the earliest sensible home for them) with a
+  new practice exercise, and added "a room" to `vocabulary.hotels.hotel_facilities` for the same
+  reason (used constantly, never explicitly taught).
+
+**Deliberately not changed**: instructional/explanatory prose in `LessonBody` (e.g., "In this
+lesson, you'll learn...") is exempt from this constraint — it's the medium of instruction, not
+target-language content the student must produce, the same way exercise instructions like
+"Choose the correct answer" don't need to be pre-taught. Grammatical terminology used to explain
+a rule (possessive, imperative, infinitive) falls in the same category. A few very common,
+low-stakes words (bus, café, ago) were left as reasonable exceptions given their transparency and
+ubiquity, rather than triggering further rewrites.
+
+**Re-seed**: full `TRUNCATE` + re-run of all domain seeders + prerequisites. Node/leaf/container
+counts unchanged (145/42/103), edges unchanged in count (61, two direction flips), Exercises:
+229 → 230 (+1, the new part-of-the-day exercise). All three backend test suites green (UnitTests
+2594, IntegrationTests 1418, ArchitectureTests 30). API container restarted and confirmed healthy.
+
+**Final verdict**: the systemic level-appropriateness problem is fixed for the existing content,
+and rule 5b makes it a compulsory, checked step for everything built from here on.
+
+**Next recommended action**: none pending. Future unit-processing sessions must build the
+cumulative vocabulary list per rule 5b before authoring new leaf content.

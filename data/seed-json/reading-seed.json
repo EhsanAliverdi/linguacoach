@@ -14,8 +14,8 @@
       "cefrLevel": "A1",
       "difficultyBand": 2,
       "parentKey": "reading.everyday_situations",
-      "lessonBody": "In this lesson, you'll practice a real reading strategy: getting the general idea of a conversation first, then going back to find specific details — rather than trying to understand every single word on the first read.\n\nRead the conversation below once, quickly, just to get the general situation. Then read it again to answer the questions.\n\nJordan: Excuse me, is this seat free?\nPriya: Yes, it is! Please, sit down.\nJordan: Thanks. Are you here on vacation?\nPriya: No, we aren't. We're here for work. But today's a free day for us.\nJordan: Oh nice! Are you from around here?\nPriya: No, we're from Chicago. We're here for a conference.\nJordan: Have a great day!\nPriya: Thanks, you too!\n\nBy the end of this lesson, you'll be able to read a short everyday conversation and pull out the key facts, even if you don't understand every word.",
-      "examples": ["Reading for gist means reading quickly for the general idea — who is speaking, and about what.", "Reading for detail means going back to find a specific answer, like a name or a reason."],
+      "lessonBody": "In this lesson, you'll practice a real reading strategy: getting the general idea of a conversation first, then going back to find specific details — rather than trying to understand every single word on the first read.\n\nRead the conversation below once, quickly, just to get the general situation. Then read it again to answer the questions.\n\nJordan: Excuse me, are you Sara?\nPriya: No, I'm not. I'm Priya.\nJordan: Oh, sorry! Nice to meet you.\nPriya: Nice to meet you, too.\nJordan: Are you from around here?\nPriya: No, I'm not. I'm from Chicago.\nJordan: Are you hungry?\nPriya: Yes, I am.\nJordan: Goodbye!\nPriya: Goodbye!\n\nBy the end of this lesson, you'll be able to read a short everyday conversation and pull out the key facts, even if you don't understand every word.",
+      "examples": ["Reading for gist means reading quickly for the general idea — who is speaking, and about what.", "Reading for detail means going back to find a specific answer, like a name or a place."],
       "commonMistakes": ["Don't stop at every unknown word on the first read — keep going and get the general idea first.", "Don't guess an answer without checking the text again — reading for detail means finding the exact information."],
       "exercises": [
         {
@@ -23,10 +23,9 @@
           "instructions": "Read the conversation again and write short answers.",
           "kind": "text",
           "questions": [
-            { "prompt": "Is Priya on vacation?", "answer": "No" },
-            { "prompt": "Why is Priya in town?", "answer": "for work / a conference" },
-            { "prompt": "Is today a work day for Priya?", "answer": "No" },
-            { "prompt": "Where is Priya from?", "answer": "Chicago" }
+            { "prompt": "Is Priya Sara?", "answer": "No" },
+            { "prompt": "Where is Priya from?", "answer": "Chicago" },
+            { "prompt": "Is Priya hungry?", "answer": "Yes" }
           ]
         },
         {
@@ -34,9 +33,9 @@
           "instructions": "Choose the answer that matches the conversation.",
           "kind": "choice",
           "questions": [
-            { "prompt": "Priya is in town for...", "options": ["vacation", "work", "school"], "correctIndex": 1 },
             { "prompt": "Priya is from...", "options": ["around here", "Chicago", "she doesn't say"], "correctIndex": 1 },
-            { "prompt": "Today is...", "options": ["a work day for Priya", "a free day for Priya", "Jordan's day off"], "correctIndex": 1 }
+            { "prompt": "At first, Jordan thinks Priya is...", "options": ["Sara", "Priya", "from Chicago"], "correctIndex": 0 },
+            { "prompt": "Priya is...", "options": ["hungry", "tired", "cold"], "correctIndex": 0 }
           ]
         }
       ]
@@ -47,7 +46,7 @@
       "cefrLevel": "A1",
       "difficultyBand": 4,
       "parentKey": "reading.everyday_situations",
-      "lessonBody": "In this lesson, you'll practice reading a short informational article that includes percentages — a common feature of everyday articles about surveys, studies, and habits.\n\nRead the article below once for the general idea, then read it again to fill in the missing percentages and answer the questions.\n\nMost People Have a Weekend Routine\n\nA new survey asked two thousand people about their weekends. The results show that 72% of people do very similar things every Saturday and Sunday. Of these people, 58% say they usually relax and watch a show at home. 35% say they usually do housework, and only 15% say they usually try something new every weekend.\n\nResearchers say a predictable weekend routine can help people feel less stressed after a busy work week. But a few people in the survey said they prefer a different plan every weekend, because routine feels boring to them.\n\nBy the end of this lesson, you'll be able to read a short survey-style article, understand percentages in context, and answer comprehension questions about it.",
+      "lessonBody": "In this lesson, you'll practice reading a short informational article that includes percentages — a common feature of everyday articles about surveys and habits.\n\nRead the article below once for the general idea, then read it again to answer the questions.\n\nMost People Relax on the Weekend\n\nA new survey asked two thousand people about their weekends. 72% of people usually do the same things every Saturday and Sunday. Of these people, 58% usually stay home and watch TV. 35% usually do housework. Only 15% usually try something new every weekend.\n\nBy the end of this lesson, you'll be able to read a short survey-style article, understand percentages in context, and answer comprehension questions about it.",
       "examples": ["'% = percent' — 72% means seventy-two out of every hundred people.", "'Of these people' refers back to a group already mentioned, not everyone in the survey."],
       "commonMistakes": ["Don't confuse the percentage of all survey respondents with the percentage of a smaller group mentioned afterward ('of these people') — read carefully to see which group a percentage refers to.", "Don't skip the numbers when reading quickly — in a survey article, the percentages usually carry the most important information."],
       "exercises": [
@@ -58,7 +57,7 @@
           "questions": [
             { "prompt": "How many people were in the survey?", "answer": "two thousand" },
             { "prompt": "What percentage of people do similar things every weekend?", "answer": "72%" },
-            { "prompt": "What percentage usually relax and watch a show at home?", "answer": "58%" }
+            { "prompt": "What percentage usually stay home and watch TV?", "answer": "58%" }
           ]
         },
         {
@@ -66,9 +65,9 @@
           "instructions": "Choose the answer that matches the article.",
           "kind": "choice",
           "questions": [
-            { "prompt": "According to the article, a predictable weekend routine can...", "options": ["help people feel less stressed", "make people feel more stressed", "make people feel bored"], "correctIndex": 0 },
+            { "prompt": "What percentage usually do housework?", "options": ["58%", "35%", "15%"], "correctIndex": 1 },
             { "prompt": "What percentage usually try something new every weekend?", "options": ["58%", "35%", "15%"], "correctIndex": 2 },
-            { "prompt": "Some people in the survey said routine feels...", "options": ["exciting", "boring", "relaxing"], "correctIndex": 1 }
+            { "prompt": "How many people were in the survey?", "options": ["two hundred", "two thousand", "twenty thousand"], "correctIndex": 1 }
           ]
         }
       ]
@@ -79,7 +78,7 @@
       "cefrLevel": "A1",
       "difficultyBand": 5,
       "parentKey": "reading.everyday_situations",
-      "lessonBody": "In this lesson, you'll practice a valuable reading strategy: figuring out what a word or phrase means by looking at the words and sentences around it, instead of stopping to look it up.\n\nRead the text messages below once for the general idea, then read them again to work out what the highlighted ideas mean.\n\nMia: Hi! I'm just leaving the house now.\nLucas: Great, see you at the entrance in ten minutes.\nMia: I'm on my bike, so I might be a few minutes late — there's a lot of traffic near the bridge.\nLucas: No problem, I'll wait for you outside.\nMia: I'm arriving now! I'm wearing a red jacket. Can you see me?\nLucas: Yes! I'm walking toward you.\n\nBy the end of this lesson, you'll be able to guess the meaning of an unfamiliar word or phrase from its context, without needing a dictionary for every new word.",
+      "lessonBody": "In this lesson, you'll practice a valuable reading strategy: figuring out what a word or phrase means by looking at the words and sentences around it, instead of stopping to look it up.\n\nRead the text messages below once for the general idea, then read them again to work out what the highlighted ideas mean.\n\nMia: Hi! I'm just leaving now.\nLucas: Great, see you at the corner in ten minutes.\nMia: I'm on my bike, so I might be a few minutes late — there's a lot of traffic near the school.\nLucas: No problem, I'll wait for you outside.\nMia: I'm arriving now! I'm wearing a red jacket. Can you see me?\nLucas: Yes! I'm walking toward you.\n\nBy the end of this lesson, you'll be able to guess the meaning of an unfamiliar word or phrase from its context, without needing a dictionary for every new word.",
       "examples": ["'A lot of traffic' — the surrounding sentence about being late tells you this means many cars, causing a delay.", "'Walking toward you' — the context (someone arriving and asking to be seen) tells you this means moving in that person's direction."],
       "commonMistakes": ["Don't stop reading at the first unfamiliar word — read the whole sentence, and often the next one, before guessing its meaning.", "Don't guess a word's meaning from only one word nearby — use the whole surrounding sentence for the best clue."],
       "exercises": [
@@ -88,7 +87,7 @@
           "instructions": "Read the messages again and find a word or phrase that matches each meaning.",
           "kind": "text",
           "questions": [
-            { "prompt": "The place where you wait to go inside: ___", "answer": "the entrance" },
+            { "prompt": "The place where two streets meet: ___", "answer": "the corner" },
             { "prompt": "A lot of cars, causing delays: a lot of ___", "answer": "traffic" },
             { "prompt": "To move in someone's direction: to walk ___ someone", "answer": "toward" }
           ]
@@ -98,7 +97,7 @@
           "instructions": "Read the messages again and answer each question.",
           "kind": "choice",
           "questions": [
-            { "prompt": "Why might Mia be a few minutes late?", "options": ["Traffic near the bridge", "She's still at home", "She doesn't have a bike"], "correctIndex": 0 },
+            { "prompt": "Why might Mia be a few minutes late?", "options": ["Traffic near the school", "She's still at home", "She doesn't have a bike"], "correctIndex": 0 },
             { "prompt": "How does Lucas find Mia when she arrives?", "options": ["She tells him what she's wearing", "She calls him", "He already knows what she looks like"], "correctIndex": 0 }
           ]
         }
@@ -110,8 +109,8 @@
       "cefrLevel": "A1",
       "difficultyBand": 5,
       "parentKey": "reading.everyday_situations",
-      "lessonBody": "In this lesson, you'll practice a more demanding reading skill: not just deciding if a statement is true or false, but going back to the text to correct it using the real information.\n\nRead the text below, then read the false statements and rewrite each one so it's true.\n\nA family's move abroad\n\nRosa and her husband Tomas moved to Canada for one year for Tomas's job. At first, life there was difficult — they missed their friends and the food from home, and they needed to buy a car, since public transportation was limited where they lived. But they soon started to enjoy it. Their new house was near a lake, and their daughter loved her new school, especially her art teacher. On weekends, they visited national parks and tried new foods at the local market.\n\nBy the end of this lesson, you'll be able to identify incorrect information in a text and correct it using details from the reading, not just guess true or false.",
-      "examples": ["False: 'They moved to Canada permanently.' Correction: 'They moved to Canada for one year.'", "False: 'Their daughter didn't like her new school.' Correction: 'Their daughter loved her new school.'"],
+      "lessonBody": "In this lesson, you'll practice a more demanding reading skill: not just deciding if a statement is true or false, but going back to the text to correct it using the real information.\n\nRead the text below, then read the false statements and rewrite each one so it's true.\n\nA Family's Move\n\nRosa and her husband Tomas moved to Canada for one year for Tomas's job. At first, they were tired and a little cold, and they didn't see their family. But they soon started to like it. Their daughter loved her new school and her teacher. On weekends, they visited their friends and tried new food.\n\nBy the end of this lesson, you'll be able to identify incorrect information in a text and correct it using details from the reading, not just guess true or false.",
+      "examples": ["False: 'They moved to Canada forever.' Correction: 'They moved to Canada for one year.'", "False: 'Their daughter didn't like her new school.' Correction: 'Their daughter loved her new school.'"],
       "commonMistakes": ["Don't just mark a statement false — go back to the text and rewrite it with the correct information.", "Make sure your correction uses information actually stated in the text, not a guess."],
       "exercises": [
         {
@@ -120,8 +119,8 @@
           "kind": "text",
           "questions": [
             { "prompt": "Rosa and Tomas moved to Canada forever.", "answer": "Rosa and Tomas moved to Canada for one year" },
-            { "prompt": "Their new house was near a school.", "answer": "Their new house was near a lake" },
-            { "prompt": "Public transportation was excellent where they lived.", "answer": "Public transportation was limited where they lived" }
+            { "prompt": "Their daughter didn't like her new school.", "answer": "Their daughter loved her new school" },
+            { "prompt": "They were hot when they arrived.", "answer": "They were cold when they arrived" }
           ]
         },
         {
@@ -129,9 +128,9 @@
           "instructions": "Choose the answer that matches the text.",
           "kind": "choice",
           "questions": [
-            { "prompt": "Why did they move to Canada?", "options": ["Tomas's job", "Their daughter's school", "To visit national parks"], "correctIndex": 0 },
-            { "prompt": "What did their daughter especially like about school?", "options": ["Her art teacher", "The lake", "The local market"], "correctIndex": 0 },
-            { "prompt": "What did they do on weekends?", "options": ["Visited national parks and tried new foods", "Worked at the local market", "Stayed home"], "correctIndex": 0 }
+            { "prompt": "Why did they move to Canada?", "options": ["Tomas's job", "Their daughter's school", "To see friends"], "correctIndex": 0 },
+            { "prompt": "What did their daughter love about her new school?", "options": ["Her teacher", "The food", "The weekend"], "correctIndex": 0 },
+            { "prompt": "What did they do on weekends?", "options": ["Visited friends and tried new food", "Worked", "Stayed home"], "correctIndex": 0 }
           ]
         }
       ]
@@ -142,18 +141,18 @@
       "cefrLevel": "A1",
       "difficultyBand": 5,
       "parentKey": "reading.everyday_situations",
-      "lessonBody": "In this lesson, you'll practice reading a short narrative story — a different text type from a conversation or an article, told step by step in the past tense.\n\nRead the story below, then answer the questions.\n\nA Meeting on a Bus\n\nWhen the bus stopped, I looked out the window and saw a man waiting at the bus stop. He had a big brown dog with him. The bus was full, so when he got on, he sat down next to me. \"Is it OK if my dog sits here too?\" he asked. \"Of course,\" I said. The dog's name was Biscuit. We talked about dogs for the whole trip. When the bus arrived at my stop, he said, \"It was nice talking to you. Maybe we'll see each other again!\" I smiled and said goodbye.\n\nBy the end of this lesson, you'll be able to follow a simple narrative story in the past tense and answer questions about what happened, in what order.",
+      "lessonBody": "In this lesson, you'll practice reading a short narrative story — a different text type from a conversation or an article, told step by step in the past tense.\n\nRead the story below, then answer the questions.\n\nA Meeting on a Bus\n\nWhen the bus stopped, I looked out the window and saw a man waiting at the bus stop. He had a big suitcase with him. The bus was full, so when he got on, he sat down next to me. \"Is this seat OK?\" he asked. \"Of course,\" I said. His name was Marco. We talked about our jobs for the whole trip. When the bus arrived at my stop, he said, \"It was nice talking to you. Maybe we'll see each other again!\" I smiled and said goodbye.\n\nBy the end of this lesson, you'll be able to follow a simple narrative story in the past tense and answer questions about what happened, in what order.",
       "examples": ["A narrative story is usually told in time order: first this happened, then that happened.", "Look for past tense verbs (looked, saw, asked, said) to follow the sequence of events."],
-      "commonMistakes": ["Don't confuse who is speaking in a story with dialogue — check who 'I' and 'he' refer to in each line.", "Don't skip small details like a name (Biscuit) — they're often used again later in comprehension questions."],
+      "commonMistakes": ["Don't confuse who is speaking in a story with dialogue — check who 'I' and 'he' refer to in each line.", "Don't skip small details like a name (Marco) — they're often used again later in comprehension questions."],
       "exercises": [
         {
           "title": "Answer the questions",
           "instructions": "Read the story again and answer each question.",
           "kind": "text",
           "questions": [
-            { "prompt": "What was the dog's name?", "answer": "Biscuit" },
+            { "prompt": "What was the man's name?", "answer": "Marco" },
             { "prompt": "Where did the man sit?", "answer": "next to the narrator / next to me" },
-            { "prompt": "What did they talk about?", "answer": "dogs" }
+            { "prompt": "What did they talk about?", "answer": "jobs" }
           ]
         },
         {
@@ -162,7 +161,7 @@
           "kind": "choice",
           "questions": [
             { "prompt": "Which happened first?", "options": ["The man got on the bus.", "They said goodbye."], "correctIndex": 0 },
-            { "prompt": "Which happened first?", "options": ["He asked if his dog could sit there.", "The bus arrived at my stop."], "correctIndex": 0 }
+            { "prompt": "Which happened first?", "options": ["He asked if the seat was OK.", "The bus arrived at my stop."], "correctIndex": 0 }
           ]
         }
       ]
