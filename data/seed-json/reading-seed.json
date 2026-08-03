@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "versionNotes": [
+    "2026-08-04 — first curated Reading-comprehension seed file (a genuinely new domain; the legacy CEFR-J-CSV-driven 'reading' CLI path is untouched and unrelated).",
+    "Every leaf's lessonBody/examples/exercises/questions — including the sample dialogue used for comprehension practice — are newly authored, not copied from any external material."
+  ],
+  "containers": [
+    { "key": "reading.everyday_situations", "title": "Everyday situations", "cefrLevel": "A1" }
+  ],
+  "leaves": [
+    {
+      "key": "reading.everyday_situations.short_conversations",
+      "title": "Reading a short conversation for key information",
+      "cefrLevel": "A1",
+      "difficultyBand": 2,
+      "parentKey": "reading.everyday_situations",
+      "lessonBody": "In this lesson, you'll practice a real reading strategy: getting the general idea of a conversation first, then going back to find specific details — rather than trying to understand every single word on the first read.\n\nRead the conversation below once, quickly, just to get the general situation. Then read it again to answer the questions.\n\nJordan: Excuse me, is this seat free?\nPriya: Yes, it is! Please, sit down.\nJordan: Thanks. Are you here on vacation?\nPriya: No, we aren't. We're here for work. But today's a free day for us.\nJordan: Oh nice! Are you from around here?\nPriya: No, we're from Chicago. We're here for a conference.\nJordan: Have a great day!\nPriya: Thanks, you too!\n\nBy the end of this lesson, you'll be able to read a short everyday conversation and pull out the key facts, even if you don't understand every word.",
+      "examples": ["Reading for gist means reading quickly for the general idea — who is speaking, and about what.", "Reading for detail means going back to find a specific answer, like a name or a reason."],
+      "commonMistakes": ["Don't stop at every unknown word on the first read — keep going and get the general idea first.", "Don't guess an answer without checking the text again — reading for detail means finding the exact information."],
+      "exercises": [
+        {
+          "title": "Answer the questions",
+          "instructions": "Read the conversation again and write short answers.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "Is Priya on vacation?", "answer": "No" },
+            { "prompt": "Why is Priya in town?", "answer": "for work / a conference" },
+            { "prompt": "Is today a work day for Priya?", "answer": "No" },
+            { "prompt": "Where is Priya from?", "answer": "Chicago" }
+          ]
+        },
+        {
+          "title": "Choose the correct answer",
+          "instructions": "Choose the answer that matches the conversation.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Priya is in town for...", "options": ["vacation", "work", "school"], "correctIndex": 1 },
+            { "prompt": "Priya is from...", "options": ["around here", "Chicago", "she doesn't say"], "correctIndex": 1 },
+            { "prompt": "Today is...", "options": ["a work day for Priya", "a free day for Priya", "Jordan's day off"], "correctIndex": 1 }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -85,12 +85,15 @@ public static class Program
             "vocabulary" => await SeedVocabularyAsync(db, seedFilePath),
             "pronunciation" => await SeedPronunciationAsync(db, seedFilePath),
             "functional-language" => await SeedFunctionalLanguageAsync(db, seedFilePath),
+            "reading-comprehension" => await SeedReadingComprehensionAsync(db, seedFilePath),
+            "writing" => await SeedWritingAsync(db, seedFilePath),
+            "listening-comprehension" => await SeedListeningComprehensionAsync(db, seedFilePath),
             "cefr-scales" => await SeedCefrScalesAsync(db, seedFilePath),
             "speaking" => await SeedSpeakingAsync(seeder, db, seedFilePath),
             "listening" => await SeedListeningAsync(seeder, sp, db, seedFilePath),
             "reading" => await SeedReadingAsync(seeder, db, seedFilePath),
             "prerequisites" => await SeedPrerequisitesAsync(db, seedFilePath),
-            _ => Fail($"Unknown domain '{domain}' — expected 'grammar', 'vocabulary', 'pronunciation', 'functional-language', 'cefr-scales', 'speaking', 'listening', 'reading', or 'prerequisites'."),
+            _ => Fail($"Unknown domain '{domain}' — expected 'grammar', 'vocabulary', 'pronunciation', 'functional-language', 'reading-comprehension', 'writing', 'listening-comprehension', 'cefr-scales', 'speaking', 'listening', 'reading', or 'prerequisites'."),
         };
     }
 
@@ -202,6 +205,78 @@ public static class Program
         }
 
         Console.WriteLine($"Functional-language seeding complete. {file.Leaves.Count} leaves processed.");
+        return 0;
+    }
+
+    private static async Task<int> SeedReadingComprehensionAsync(LinguaCoachDbContext db, string path)
+    {
+        var file = JsonSerializer.Deserialize<ReadingSeedFile>(await File.ReadAllTextAsync(path), JsonOptions)
+            ?? throw new InvalidOperationException("Empty/invalid reading seed file.");
+
+        // Containers are skill-less — see the grammar seeder's comment above.
+        var containerIds = await UpsertContainersAsync(db, file.Containers.Select(c =>
+            (c.Key, c.Title, c.CefrLevel, DifficultyBand: 1, Skill: (string?)null, c.ParentKey, Description: (string?)null)));
+
+        foreach (var leaf in file.Leaves)
+        {
+            var parentId = leaf.ParentKey is not null && containerIds.TryGetValue(leaf.ParentKey, out var pid) ? pid : (Guid?)null;
+            var leafId = await UpsertLeafAsync(db, leaf.Key, leaf.Title, leaf.CefrLevel, leaf.DifficultyBand,
+                CurriculumSkillConstants.Reading, parentId, description: leaf.LessonBody, subskill: leaf.Subskill);
+
+            await RichContentSeeder.SeedLeafAsync(db, leafId, leaf.Title, leaf.CefrLevel, CurriculumSkillConstants.Reading,
+                leaf.Subskill, leaf.DifficultyBand, leaf.LessonBody, leaf.Examples, leaf.CommonMistakes, leaf.Exercises, leaf.ImageUrl);
+            Console.WriteLine($"  Reading leaf '{leaf.Key}': {leaf.Exercises.Count} exercise(s) seeded.");
+        }
+
+        Console.WriteLine($"Reading seeding complete. {file.Leaves.Count} leaves processed.");
+        return 0;
+    }
+
+    private static async Task<int> SeedWritingAsync(LinguaCoachDbContext db, string path)
+    {
+        var file = JsonSerializer.Deserialize<WritingSeedFile>(await File.ReadAllTextAsync(path), JsonOptions)
+            ?? throw new InvalidOperationException("Empty/invalid writing seed file.");
+
+        // Containers are skill-less — see the grammar seeder's comment above.
+        var containerIds = await UpsertContainersAsync(db, file.Containers.Select(c =>
+            (c.Key, c.Title, c.CefrLevel, DifficultyBand: 1, Skill: (string?)null, c.ParentKey, Description: (string?)null)));
+
+        foreach (var leaf in file.Leaves)
+        {
+            var parentId = leaf.ParentKey is not null && containerIds.TryGetValue(leaf.ParentKey, out var pid) ? pid : (Guid?)null;
+            var leafId = await UpsertLeafAsync(db, leaf.Key, leaf.Title, leaf.CefrLevel, leaf.DifficultyBand,
+                CurriculumSkillConstants.Writing, parentId, description: leaf.LessonBody, subskill: leaf.Subskill);
+
+            await RichContentSeeder.SeedLeafAsync(db, leafId, leaf.Title, leaf.CefrLevel, CurriculumSkillConstants.Writing,
+                leaf.Subskill, leaf.DifficultyBand, leaf.LessonBody, leaf.Examples, leaf.CommonMistakes, leaf.Exercises, leaf.ImageUrl);
+            Console.WriteLine($"  Writing leaf '{leaf.Key}': {leaf.Exercises.Count} exercise(s) seeded.");
+        }
+
+        Console.WriteLine($"Writing seeding complete. {file.Leaves.Count} leaves processed.");
+        return 0;
+    }
+
+    private static async Task<int> SeedListeningComprehensionAsync(LinguaCoachDbContext db, string path)
+    {
+        var file = JsonSerializer.Deserialize<ListeningComprehensionSeedFile>(await File.ReadAllTextAsync(path), JsonOptions)
+            ?? throw new InvalidOperationException("Empty/invalid listening-comprehension seed file.");
+
+        // Containers are skill-less — see the grammar seeder's comment above.
+        var containerIds = await UpsertContainersAsync(db, file.Containers.Select(c =>
+            (c.Key, c.Title, c.CefrLevel, DifficultyBand: 1, Skill: (string?)null, c.ParentKey, Description: (string?)null)));
+
+        foreach (var leaf in file.Leaves)
+        {
+            var parentId = leaf.ParentKey is not null && containerIds.TryGetValue(leaf.ParentKey, out var pid) ? pid : (Guid?)null;
+            var leafId = await UpsertLeafAsync(db, leaf.Key, leaf.Title, leaf.CefrLevel, leaf.DifficultyBand,
+                CurriculumSkillConstants.Listening, parentId, description: leaf.LessonBody, subskill: leaf.Subskill);
+
+            await RichContentSeeder.SeedLeafAsync(db, leafId, leaf.Title, leaf.CefrLevel, CurriculumSkillConstants.Listening,
+                leaf.Subskill, leaf.DifficultyBand, leaf.LessonBody, leaf.Examples, leaf.CommonMistakes, leaf.Exercises, leaf.ImageUrl);
+            Console.WriteLine($"  Listening-comprehension leaf '{leaf.Key}': {leaf.Exercises.Count} exercise(s) seeded.");
+        }
+
+        Console.WriteLine($"Listening-comprehension seeding complete. {file.Leaves.Count} leaves processed.");
         return 0;
     }
 
@@ -834,6 +909,38 @@ public sealed record PronunciationSeedLeaf(
 public sealed record FunctionalLanguageSeedFile(int Version, List<FunctionalLanguageSeedContainer> Containers, List<FunctionalLanguageSeedLeaf> Leaves, List<string>? VersionNotes = null);
 public sealed record FunctionalLanguageSeedContainer(string Key, string Title, string CefrLevel, string? ParentKey = null);
 public sealed record FunctionalLanguageSeedLeaf(
+    string Key, string Title, string CefrLevel, int DifficultyBand, string? ParentKey,
+    string LessonBody, List<string>? Examples, List<string>? CommonMistakes, List<SeedExercise> Exercises,
+    string? Subskill = null, string? ImageUrl = null);
+
+/// <summary>2026-08-04 — curated Reading-comprehension content, same shape/rationale as
+/// Pronunciation/FunctionalLanguage above. CLI domain keyword is "reading-comprehension," not
+/// "reading" — that name is already taken by the legacy CEFR-J-CSV-driven <c>SeedReadingAsync</c>
+/// path, untouched and unrelated to this curated pipeline.</summary>
+public sealed record ReadingSeedFile(int Version, List<ReadingSeedContainer> Containers, List<ReadingSeedLeaf> Leaves, List<string>? VersionNotes = null);
+public sealed record ReadingSeedContainer(string Key, string Title, string CefrLevel, string? ParentKey = null);
+public sealed record ReadingSeedLeaf(
+    string Key, string Title, string CefrLevel, int DifficultyBand, string? ParentKey,
+    string LessonBody, List<string>? Examples, List<string>? CommonMistakes, List<SeedExercise> Exercises,
+    string? Subskill = null, string? ImageUrl = null);
+
+/// <summary>2026-08-04 — curated Writing content, same shape/rationale as the domains above. No
+/// prior "writing" CLI domain exists, so no naming collision.</summary>
+public sealed record WritingSeedFile(int Version, List<WritingSeedContainer> Containers, List<WritingSeedLeaf> Leaves, List<string>? VersionNotes = null);
+public sealed record WritingSeedContainer(string Key, string Title, string CefrLevel, string? ParentKey = null);
+public sealed record WritingSeedLeaf(
+    string Key, string Title, string CefrLevel, int DifficultyBand, string? ParentKey,
+    string LessonBody, List<string>? Examples, List<string>? CommonMistakes, List<SeedExercise> Exercises,
+    string? Subskill = null, string? ImageUrl = null);
+
+/// <summary>2026-08-04 — curated Listening-comprehension content (text-transcript based — no
+/// audio/video is ever bundled, per the seeding rules' copyright exclusion). CLI domain keyword
+/// is "listening-comprehension," not "listening" — that name is already taken by the legacy
+/// CEFR-J-CSV-driven <c>SeedListeningAsync</c> path (which also does real TTS audio generation,
+/// untouched and unrelated to this curated pipeline).</summary>
+public sealed record ListeningComprehensionSeedFile(int Version, List<ListeningComprehensionSeedContainer> Containers, List<ListeningComprehensionSeedLeaf> Leaves, List<string>? VersionNotes = null);
+public sealed record ListeningComprehensionSeedContainer(string Key, string Title, string CefrLevel, string? ParentKey = null);
+public sealed record ListeningComprehensionSeedLeaf(
     string Key, string Title, string CefrLevel, int DifficultyBand, string? ParentKey,
     string LessonBody, List<string>? Examples, List<string>? CommonMistakes, List<SeedExercise> Exercises,
     string? Subskill = null, string? ImageUrl = null);

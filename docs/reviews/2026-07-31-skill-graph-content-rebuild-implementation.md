@@ -141,3 +141,48 @@ Ready for review against the checklist in section 8 before extending further.
 
 Review the checklist gaps in §8 and decide whether the combined comprehension sections warrant
 their own listening/reading leaves before this content set is considered complete.
+
+---
+
+## 11. Addendum (2026-08-04) — remaining lesson-blocks closed, §8 gaps resolved
+
+Following §10, the grammar/vocabulary/pronunciation/functional-language content built in this
+pass already covered every lesson-block's headline grammar/vocabulary/pronunciation point (all
+5 lesson-blocks worth of source material, not just one) — that was not obvious from §5 alone
+since content was organized by skill-domain file rather than lesson-by-lesson. An explicit
+lesson-by-lesson audit against the seeding-rules checklist found exactly four genuine gaps —
+sections that teach something new, not just extra practice of an already-covered point — and
+closed them:
+
+- **A pronunciation leaf for number-pair stress** (`pronunciation.beginner_sounds.
+  number_stress_pairs`) — distinguishing pairs like 13/30 by stress, not segmental sound, genuinely
+  distinct from the three existing sound-based pronunciation leaves.
+- **A new Reading domain** (`reading-seed.json`, CLI keyword `reading-comprehension` — distinct
+  from the legacy CSV-driven `reading` keyword to avoid collision) — one leaf, reading a short
+  original dialogue for gist then detail.
+- **A new Writing domain** (`writing-seed.json`, CLI keyword `writing`) — one leaf, formatting
+  rules for a personal-information form (name capitalization, phone/email format).
+- **A new Listening domain** (`listening-seed.json`, CLI keyword `listening-comprehension` —
+  distinct from the legacy `listening` keyword, which also does real TTS audio generation) — one
+  leaf, comprehension of a short spoken description, delivered as a text transcript (no audio/
+  video bundled, per the copyright exclusion rule).
+
+**Resolved without new leaves** (rule 3's "same teaching point, not new content" exception,
+applied deliberately rather than by omission):
+- A lesson-block's own listening/speaking practice of an already-taught grammar/pronunciation
+  point (no new teaching content, just more practice) — left as-is, not duplicated into a new
+  leaf.
+- Cross-referenced paired-speaking/information-gap activities (further practice of already-taught
+  vocabulary/grammar) — judged as additional practice of existing content, not a new teachable
+  point requiring its own leaf.
+
+4 new cross-skill prerequisite edges added (10 total now), each justified by a genuine content
+dependency (e.g. the personal-information writing leaf requires already knowing numbers 11–100
+to format a phone number).
+
+**Final state**: 35 `SkillGraphNode` rows (12 skill-less containers, 23 leaves spanning grammar,
+vocabulary, pronunciation, speaking, reading, writing, and listening), 23 `Module`/`Lesson` pairs
+(each leaf has exactly one Lesson, verified), 42 `Exercise` rows, 10 prerequisite edges. All three
+backend test suites green (UnitTests 2594, IntegrationTests 1417, ArchitectureTests 30). Every
+lesson-block from the two source units (1A, 1B, the Practical-English episode, 2A, 2B) now has
+its full teaching content represented in the graph.

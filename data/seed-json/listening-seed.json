@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "versionNotes": [
+    "2026-08-04 — first curated Listening-comprehension seed file (a genuinely new domain; the legacy CEFR-J-CSV-driven 'listening' CLI path, which also does real TTS audio generation, is untouched and unrelated).",
+    "Text-transcript based, not audio/video — no audio or video files are bundled with this content, per the seeding rules' copyright exclusion. The transcript below stands in for spoken audio the same way a listening script would.",
+    "Every leaf's lessonBody/examples/exercises/questions — including the transcript used for comprehension practice — are newly authored, not copied from any external material."
+  ],
+  "containers": [
+    { "key": "listening.everyday_situations", "title": "Everyday situations", "cefrLevel": "A1" }
+  ],
+  "leaves": [
+    {
+      "key": "listening.everyday_situations.understanding_a_description",
+      "title": "Understanding a short spoken description",
+      "cefrLevel": "A1",
+      "difficultyBand": 2,
+      "parentKey": "listening.everyday_situations",
+      "lessonBody": "In this lesson, you'll practice listening for both the general idea and specific facts in a short spoken description — a common real-life listening task, like hearing someone describe a place they know.\n\nRead the transcript below as if you were listening to someone describe their school, then answer the questions about it.\n\n\"Our school is small, with about 200 students. My class has only eight students, so the teacher knows everyone well. We're in a small building with a kitchen and a yard. Most classes are in the morning, and some students study in the afternoon too.\"\n\nWhen you listen (or read a transcript) for the first time, focus on the general picture — is it a big or small school? When you listen again, focus on the exact numbers and details.\n\nBy the end of this lesson, you'll be able to understand a short spoken description and answer both general and detail questions about it.",
+      "examples": ["General question: Is the school big or small?", "Detail question: How many students are in the class?"],
+      "commonMistakes": ["Don't try to write down every word — focus on the general picture first, then listen again for details.", "Don't confuse similar-sounding numbers (thirteen/thirty) — this connects to what you practiced in the number pronunciation lesson."],
+      "exercises": [
+        {
+          "title": "Answer the questions",
+          "instructions": "Based on the description, answer each question.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "How many students are in the whole school?", "answer": "200" },
+            { "prompt": "How many students are in the class?", "answer": "8" },
+            { "prompt": "What does the building have, besides classrooms?", "answer": "a kitchen and a yard" }
+          ]
+        },
+        {
+          "title": "Choose the correct answer",
+          "instructions": "Choose the answer that matches the description.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Is the school big or small?", "options": ["Big", "Small"], "correctIndex": 1 },
+            { "prompt": "When are most classes?", "options": ["Morning", "Afternoon", "Evening"], "correctIndex": 0 },
+            { "prompt": "Does the teacher know the students well?", "options": ["Yes", "No", "It doesn't say"], "correctIndex": 0 }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -76,6 +76,39 @@
           ]
         }
       ]
+    },
+    {
+      "key": "pronunciation.beginner_sounds.number_stress_pairs",
+      "title": "Understanding number word pairs (13 vs. 30)",
+      "cefrLevel": "A1",
+      "difficultyBand": 2,
+      "parentKey": "pronunciation.beginner_sounds",
+      "lessonBody": "In this lesson, you'll learn to hear and say the difference between number pairs like 13 and 30 — a mix-up that can genuinely confuse a price, an age, or an address if you get it wrong.\n\nThe rule is about stress, not spelling:\n\n• Teen numbers (13, 14, 15...) are stressed on the second part: thir-TEEN, four-TEEN\n• Tens numbers (30, 40, 50...) are stressed on the first part: THIR-ty, FOR-ty\n\nThis stress difference is the main way native speakers tell these numbers apart in fast speech — the sounds themselves are very similar.\n\nBy the end of this lesson, you'll be able to hear and say number pairs like 13/30, 14/40, and 15/50 without confusing them.",
+      "examples": ["thirTEEN (13) vs. THIRty (30)", "fourTEEN (14) vs. FORty (40)", "fifTEEN (15) vs. FIFty (50)"],
+      "commonMistakes": ["Don't rely on the ending sound alone — in fast speech, 13 and 30 can sound similar unless you listen for the stress.", "Saying a stressed 'thirTEEN' as 'THIRteen' makes it sound like 30 to a native listener."],
+      "exercises": [
+        {
+          "title": "Choose the correct number",
+          "instructions": "Choose the number that matches the stress pattern shown in capital letters.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "thir-TEEN (stress on the second part)", "options": ["13", "30"], "correctIndex": 0 },
+            { "prompt": "FOR-ty (stress on the first part)", "options": ["14", "40"], "correctIndex": 1 },
+            { "prompt": "fif-TEEN (stress on the second part)", "options": ["15", "50"], "correctIndex": 0 },
+            { "prompt": "SIX-ty (stress on the first part)", "options": ["16", "60"], "correctIndex": 1 }
+          ]
+        },
+        {
+          "title": "Choose the correct stress pattern",
+          "instructions": "Choose which part of the number is stressed.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "17 (seventeen)", "options": ["SEVEN-teen", "seven-TEEN"], "correctIndex": 1 },
+            { "prompt": "80 (eighty)", "options": ["EIGH-ty", "eigh-TY"], "correctIndex": 0 },
+            { "prompt": "19 (nineteen)", "options": ["NINE-teen", "nine-TEEN"], "correctIndex": 1 }
+          ]
+        }
+      ]
     }
   ]
 }

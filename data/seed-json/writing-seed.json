@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "versionNotes": [
+    "2026-08-04 — first curated Writing seed file (a genuinely new domain).",
+    "Every leaf's lessonBody/examples/exercises/questions are newly authored."
+  ],
+  "containers": [
+    { "key": "writing.forms", "title": "Forms and personal information", "cefrLevel": "A1" }
+  ],
+  "leaves": [
+    {
+      "key": "writing.forms.personal_information",
+      "title": "Completing a personal information form",
+      "cefrLevel": "A1",
+      "difficultyBand": 1,
+      "parentKey": "writing.forms",
+      "lessonBody": "In this lesson, you'll practice writing the kind of personal information you're asked for constantly — on a form, an online account, or a booking — first name, last name, phone number, and email address.\n\nA few formatting rules that matter for forms:\n\n• First name and last name are always capitalized: Maria Santos, not maria santos.\n• Phone numbers are usually written in groups, e.g. 415-555-0132.\n• Email addresses are always lowercase and have no spaces: maria.santos@email.com.\n\nBy the end of this lesson, you'll be able to fill out a simple personal information form correctly and confidently.",
+      "examples": ["First name: Maria — Last name: Santos", "Phone: 415-555-0132", "Email: maria.santos@email.com"],
+      "commonMistakes": ["Don't write your name in all lowercase or all capitals on a form — use a capital letter only at the start of each name.", "Don't add spaces inside an email address or phone number."],
+      "exercises": [
+        {
+          "title": "Complete the form fields",
+          "instructions": "Write the correctly formatted answer for each form field.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "Write your first name with correct capitalization: (e.g. answer for 'liam')", "answer": "Liam" },
+            { "prompt": "Write this phone number correctly grouped: 4155550132", "answer": "415-555-0132" },
+            { "prompt": "Write this email address correctly: LIAM.CHEN@EMAIL.COM", "answer": "liam.chen@email.com" }
+          ]
+        },
+        {
+          "title": "Choose the correctly formatted answer",
+          "instructions": "Choose the version that is correctly formatted for a form.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which name is correctly capitalized?", "options": ["sara Ahmed", "Sara Ahmed", "SARA ahmed"], "correctIndex": 1 },
+            { "prompt": "Which email address is correctly formatted?", "options": ["Sara.Ahmed@Email.com", "sara.ahmed@email.com", "sara ahmed@email.com"], "correctIndex": 1 },
+            { "prompt": "Which phone number is correctly grouped?", "options": ["6125550199", "612-555-0199", "6125-550-199"], "correctIndex": 1 }
+          ]
+        }
+      ]
+    }
+  ]
+}
