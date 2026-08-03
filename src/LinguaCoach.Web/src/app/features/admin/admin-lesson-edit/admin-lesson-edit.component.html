@@ -29,6 +29,12 @@
         <sp-admin-form-field label="Usage notes">
           <sp-admin-textarea [(ngModel)]="usageNotes" />
         </sp-admin-form-field>
+        <sp-admin-form-field label="Image URL" hint="A real, rights-cleared image URL (e.g. flags for a countries lesson, a labeled classroom photo). Leave blank if none is available yet.">
+          <sp-admin-input [(ngModel)]="imageUrl" name="imageUrl" placeholder="https://…" />
+        </sp-admin-form-field>
+        @if (imageUrl.trim()) {
+          <img [src]="imageUrl.trim()" alt="Lesson image preview" style="max-width:320px;border-radius:12px;display:block" />
+        }
         <sp-admin-form-field label="CEFR level">
           <sp-admin-input [(ngModel)]="cefrLevel" name="cefrLevel" placeholder="e.g. A1" />
         </sp-admin-form-field>

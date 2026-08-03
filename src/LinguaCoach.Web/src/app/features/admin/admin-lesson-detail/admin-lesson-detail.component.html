@@ -68,6 +68,11 @@
         </sp-admin-form-field>
         <sp-admin-form-field label="Title"><strong>{{ d.title }}</strong></sp-admin-form-field>
         <sp-admin-form-field label="Body"><pre>{{ d.body }}</pre></sp-admin-form-field>
+        @if (d.imageUrl) {
+          <sp-admin-form-field label="Image">
+            <img [src]="d.imageUrl" alt="Lesson image" style="max-width:320px;border-radius:12px;display:block" />
+          </sp-admin-form-field>
+        }
 
         @if (examplesFor(d).length > 0) {
           <sp-admin-form-field label="Examples">

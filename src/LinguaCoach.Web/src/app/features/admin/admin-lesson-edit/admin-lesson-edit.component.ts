@@ -71,6 +71,7 @@ export class AdminLessonEditComponent implements OnInit {
   focusTagsDraft = '';
   difficultyBand: number | null = null;
   estimatedMinutes: number | null = null;
+  imageUrl = '';
 
   constructor(
     private lessonSvc: AdminLessonService,
@@ -103,6 +104,7 @@ export class AdminLessonEditComponent implements OnInit {
         this.focusTagsDraft = parseJsonArray(item.focusTagsJson).join(', ');
         this.difficultyBand = item.difficultyBand;
         this.estimatedMinutes = item.estimatedMinutes;
+        this.imageUrl = item.imageUrl ?? '';
       },
       error: err => { this.loading.set(false); this.error.set(err.error?.error ?? 'Could not load this Lesson for editing.'); },
     });
@@ -141,6 +143,7 @@ export class AdminLessonEditComponent implements OnInit {
       focusTags: this.parseTags(this.focusTagsDraft),
       difficultyBand: this.difficultyBand,
       estimatedMinutes: this.estimatedMinutes,
+      imageUrl: this.imageUrl.trim() || null,
     }).subscribe({
       next: updated => {
         this.saving.set(false);

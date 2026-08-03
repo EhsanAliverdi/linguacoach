@@ -71,7 +71,34 @@ public sealed class Lesson : BaseEntity
     /// immediately, so every leaf it creates has exactly one Lesson in practice.</summary>
     public Guid? SkillGraphNodeId { get; private set; }
 
+    /// <summary>2026-08-04 — an optional supporting image for this Lesson (e.g. country flags for
+    /// a vocabulary set, a classroom photo) — a real teaching unit is not text-only. A storage key
+    /// or absolute URL (resolved the same way <see cref="Storage.IFileStorageService"/>'s other
+    /// consumers do); rendering is the student preview's concern, not this entity's.</summary>
+    public string? ImageUrl { get; private set; }
+
     private Lesson() { }
+
+    /// <summary>Sets or clears this Lesson's supporting image. Own mutator (not folded into
+    /// <see cref="UpdateDraft"/>) so admin/AI flows that don't know about images yet can keep
+    /// calling UpdateDraft without silently wiping out an already-set image. Same
+    /// approved-blocks-editing policy as UpdateDraft: reject first to reopen editing.</summary>
+    public void SetImageUrl(string? imageUrl)
+    {
+        if (ReviewStatus == AdminReviewStatus.Approved)
+            throw new InvalidOperationException(
+                $"Cannot edit Lesson '{Title}': it is already approved. Reject it first to reopen editing.");
+
+        ImageUrl = string.IsNullOrWhiteSpace(imageUrl) ? null : imageUrl.Trim();
+
+        if (ReviewStatus == AdminReviewStatus.Rejected)
+        {
+            ReviewStatus = AdminReviewStatus.PendingReview;
+            RejectionReason = null;
+        }
+
+        UpdatedAtUtc = DateTime.UtcNow;
+    }
 
     /// <summary>Links this Lesson to the leaf it explains. One-way and set-once by convention —
     /// throws if already assigned to a *different* leaf (re-assigning to the same leaf is a
@@ -105,13 +132,15 @@ public sealed class Lesson : BaseEntity
         int? estimatedMinutes = null,
         string? generationProvider = null,
         string? generationModel = null,
-        Guid? createdByUserId = null)
+        Guid? createdByUserId = null,
+        string? imageUrl = null)
     {
         ValidateAuthorableFields(title, body, cefrLevel, difficultyBand, estimatedMinutes);
 
         Title = title.Trim();
         Body = body.Trim();
         SourceMode = sourceMode;
+        ImageUrl = string.IsNullOrWhiteSpace(imageUrl) ? null : imageUrl.Trim();
         CefrLevel = cefrLevel?.Trim().ToUpperInvariant();
         Skill = skill?.Trim();
         Subskill = subskill?.Trim();

@@ -24,7 +24,8 @@ public sealed class AdminCreateLessonHandler : IAdminCreateLessonHandler
                 ToJsonArray(command.ContextTags), ToJsonArray(command.FocusTags),
                 ToJsonArray(command.Examples), ToJsonArray(command.CommonMistakes),
                 command.UsageNotes, command.DifficultyBand, command.EstimatedMinutes,
-                generationProvider: null, generationModel: null, createdByUserId: command.CreatedByUserId);
+                generationProvider: null, generationModel: null, createdByUserId: command.CreatedByUserId,
+                imageUrl: command.ImageUrl);
         }
         catch (ArgumentException ex)
         {
@@ -64,6 +65,7 @@ public sealed class AdminUpdateLessonHandler : IAdminUpdateLessonHandler
                 command.CefrLevel, command.Skill, command.Subskill,
                 ToJsonArray(command.ContextTags), ToJsonArray(command.FocusTags),
                 command.DifficultyBand, command.EstimatedMinutes);
+            item.SetImageUrl(command.ImageUrl);
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {

@@ -59,6 +59,27 @@ reflect the complete teaching point, not just the shorter in-lesson excerpt.
   depth (a section with several sub-exercises becomes a leaf with several `Exercise` rows, not
   one generic auto-composed exercise).
 
+## 4a. Lesson body reads like a real teaching unit, not a fact dump (2026-08-04)
+
+A Lesson's `Body` is what a student actually reads. A single sentence cramming a comma-separated
+list of facts ("Common country names in English, always written with a capital letter: Brazil,
+Canada, China...") is not acceptable — it does not teach, it just states. Every Lesson body must:
+
+- **Open with a framing sentence** that tells the student what they're about to learn and why it
+  matters ("In this lesson, you'll learn... — useful for..."). Never start directly with the raw
+  content.
+- **Present the core content in a structured, readable way** — short paragraphs and bullet-style
+  lines (`\n\n` between sections, `•` for lists), not one dense run-on sentence. `Lesson.Body` is
+  plain text rendered with `white-space:pre-wrap`/`<pre>` on both the admin and student views, so
+  real line breaks render correctly — use them.
+- **Close with a concrete "by the end of this lesson" statement** connecting the content back to
+  something the student can actually do.
+- **Include a supporting image when the topic is visual/concrete** (`Lesson.ImageUrl` — e.g.
+  country flags for a countries lesson, a labeled classroom photo for classroom vocabulary).
+  Only set this with a real, rights-cleared image URL — never fabricate or guess a URL. When no
+  suitable image is available yet, leave it null rather than guessing; it's a content-curation
+  gap to close later, not a reason to block the rest of the lesson.
+
 ## 5a. Leaf ↔ Lesson ↔ Module (2026-08-03)
 
 A leaf is what a student must master before moving to the next node — it is the mastery gate.

@@ -63,6 +63,10 @@ function parseJsonStringArray(json: string | null | undefined): string[] {
 
       <h2 style="font-size:18px;font-weight:800;color:var(--sp-ink);letter-spacing:-.01em;margin:0">{{ lesson.title }}</h2>
 
+      @if (lesson.imageUrl) {
+        <img [src]="lesson.imageUrl" alt="" style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;display:block" />
+      }
+
       <div class="sp-card" style="padding:18px">
         <p style="font-size:14.5px;color:var(--sp-text);line-height:1.65;white-space:pre-wrap">{{ lesson.body }}</p>
       </div>

@@ -17,7 +17,7 @@
       "cefrLevel": "A1",
       "difficultyBand": 1,
       "parentKey": "vocabulary.numbers",
-      "lessonBody": "The numbers zero to ten in English: zero, one, two, three, four, five, six, seven, eight, nine, ten.",
+      "lessonBody": "In this lesson, you'll learn to count from zero to ten in English — one of the very first things you'll use in everyday situations like giving your age, a room number, or how many people are in your group.\n\nThe numbers zero to ten:\n\nzero, one, two, three, four, five, six, seven, eight, nine, ten\n\nPractice saying these out loud, not just reading them — you'll use them in real conversations far more than you'll write them.",
       "examples": ["I have two brothers.", "Room number seven.", "Table for four, please."],
       "commonMistakes": ["Do not confuse 'four' (4) and 'for'.", "Do not confuse 'six' and 'sixty' — they sound different."],
       "exercises": [
@@ -59,7 +59,7 @@
       "cefrLevel": "A1",
       "difficultyBand": 2,
       "parentKey": "vocabulary.numbers",
-      "lessonBody": "Numbers eleven to twenty have their own words (eleven, twelve, thirteen...). From twenty on, numbers combine a tens word (twenty, thirty, forty...) with a ones word (twenty-one, thirty-five). Phone numbers are read digit by digit, e.g. 608-5713 = six oh eight, five seven one three.",
+      "lessonBody": "In this lesson, you'll build on the numbers 0–10 you already know and extend them up to 100 — plus learn how phone numbers are actually said out loud, which works differently from counting.\n\nNumbers eleven to twenty have their own words (eleven, twelve, thirteen...). From twenty on, numbers combine a tens word (twenty, thirty, forty...) with a ones word (twenty-one, thirty-five).\n\nPhone numbers are read digit by digit, not as a whole number — e.g. 608-5713 is said as \"six oh eight, five seven one three,\" not \"six hundred and eight thousand...\"\n\nBy the end of this lesson, you'll be able to say your age, a price, or your phone number with confidence.",
       "examples": ["I'm twenty-five years old.", "My phone number is six one two, five five five, oh two oh six.", "There are thirty students in the class."],
       "commonMistakes": ["Don't confuse 'thirteen' (13) and 'thirty' (30) — the stress is different.", "Phone numbers are read one digit at a time, not as a whole number."],
       "exercises": [
@@ -95,7 +95,7 @@
       "cefrLevel": "A1",
       "difficultyBand": 1,
       "parentKey": "vocabulary.time_expressions",
-      "lessonBody": "The seven days of the week: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday. Days of the week always start with a capital letter.",
+      "lessonBody": "In this lesson, you'll learn the seven days of the week — essential for making plans, talking about your schedule, and understanding when things happen.\n\nMonday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday\n\nOne important spelling rule: days of the week always start with a capital letter, even in the middle of a sentence.\n\nBy the end of this lesson, you'll be able to talk about your weekly routine and make plans for a specific day.",
       "examples": ["My English class is on Monday.", "The weekend is Saturday and Sunday.", "See you on Friday!"],
       "commonMistakes": ["Do not write days with a lowercase letter — 'monday' is wrong, write 'Monday'."],
       "exercises": [
@@ -129,7 +129,7 @@
       "cefrLevel": "A1",
       "difficultyBand": 1,
       "parentKey": "vocabulary.countries_and_nationalities",
-      "lessonBody": "Common country names in English, always written with a capital letter: Brazil, Canada, China, Egypt, Japan, Mexico, Peru, Spain, Turkey, the United Kingdom, the United States, Vietnam.",
+      "lessonBody": "In this lesson, you'll learn the names of common countries in English — useful whenever you talk about where you're from, where you've traveled, or where someone else is from.\n\nCommon country names:\n\nBrazil, Canada, China, Egypt, Japan, Mexico, Peru, Spain, Turkey, the United Kingdom, the United States, Vietnam\n\nCountry names always start with a capital letter, and two of them — the United Kingdom and the United States — always need 'the' in front.\n\nBy the end of this lesson, you'll be able to say where you and other people are from.",
       "examples": ["I'm from Mexico.", "She's from Japan.", "They're from the United States."],
       "commonMistakes": ["Country names always start with a capital letter.", "'the United States' and 'the United Kingdom' both need 'the' before them."],
       "exercises": [
@@ -152,7 +152,7 @@
       "cefrLevel": "A1",
       "difficultyBand": 1,
       "parentKey": "vocabulary.countries_and_nationalities",
-      "lessonBody": "Nationality words are adjectives formed from country names, e.g. Brazil → Brazilian, Japan → Japanese, Canada → Canadian. The stress is usually on the same syllable as the country name, but not always — Japan → Japanese moves the stress.",
+      "lessonBody": "In this lesson, you'll learn how to turn the country names you already know into nationality words — how you describe a person's nationality, not just the place they're from.\n\nNationality words are adjectives formed from country names:\n\nBrazil → Brazilian, Japan → Japanese, Canada → Canadian\n\nThe stress is usually on the same syllable as the country name, but not always — Japan → Japanese moves the stress, and the endings aren't always the same pattern (-ian, -ese, -ish).\n\nBy the end of this lesson, you'll be able to describe someone's nationality correctly, not just name their country.",
       "examples": ["She's Brazilian.", "He's Japanese.", "They're Canadian."],
       "commonMistakes": ["Nationality words are always capitalized, like country names.", "Some nationality endings are irregular: Japan → Japanese (not 'Japanian'), not a simple '+n' or '+ian' pattern for every country."],
       "exercises": [
@@ -185,7 +185,7 @@
       "cefrLevel": "A1",
       "difficultyBand": 1,
       "parentKey": "vocabulary.classroom",
-      "lessonBody": "Common classroom objects: a board, a door, a window, a chair, a table, a laptop, a dictionary, a pen, a bag, a piece of paper.",
+      "lessonBody": "In this lesson, you'll learn the names of everyday objects in a classroom — useful for following instructions, asking for something, and talking about what's around you in class.\n\nCommon classroom objects:\n\na board, a door, a window, a chair, a table, a laptop, a dictionary, a pen, a bag, a piece of paper\n\nRemember: use 'a' before a consonant sound (a board, a chair) and 'an' before a vowel sound (an umbrella, an ID card).\n\nBy the end of this lesson, you'll be able to name and ask about everyday objects in your classroom.",
       "examples": ["Look at the board, please.", "Open your dictionary to page ten.", "Is this your bag?"],
       "commonMistakes": ["'a' is used before consonant sounds (a board, a chair); 'an' before vowel sounds (an umbrella)."],
       "exercises": [

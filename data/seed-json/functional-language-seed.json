@@ -17,7 +17,7 @@
       "difficultyBand": 1,
       "parentKey": "functional_language.meeting_people",
       "subskill": "speaking.roleplay",
-      "lessonBody": "Short, everyday spoken exchanges combine several functions at once — ordering something, introducing yourself, and clarifying a name that wasn't heard clearly. Listen for the key words (the item ordered, the name given) even when the exchange has several speakers. Common clarification phrases: 'Sorry, what was that?', 'Did you say...?', 'No, it's [name], not [name].'",
+      "lessonBody": "In this lesson, you'll practice understanding and taking part in short, everyday spoken exchanges — the kind of quick back-and-forth you'll hear constantly in real life, like ordering something or being introduced to someone.\n\nThese short exchanges often combine several functions at once — ordering something, introducing yourself, and clarifying a name that wasn't heard clearly. Listen for the key words (the item ordered, the name given) even when several people are speaking.\n\nCommon clarification phrases:\n\n• Sorry, what was that?\n• Did you say...?\n• No, it's [name], not [name].\n\nBy the end of this lesson, you'll be able to follow a short real-life exchange and jump in naturally, including asking for clarification when you don't catch something.",
       "examples": [
         "A: A coffee, please. B: What's your name? A: Marco. B: Marco, coffee's ready!",
         "A: Are you Elena? B: No, I'm not. I'm Farah. A: Oh sorry! B: No problem.",
@@ -53,7 +53,7 @@
       "cefrLevel": "A1",
       "difficultyBand": 1,
       "parentKey": "functional_language.classroom_management",
-      "lessonBody": "Common instructions a teacher gives in class: 'Open your books.', 'Close your books.', 'Stand up, please.', 'Sit down, please.', 'Look at the board, please.', 'Go to page...' Common phrases a student uses: 'How do you spell it?', 'Sorry, can you repeat that, please?', 'I don't understand.', 'I don't know.'",
+      "lessonBody": "In this lesson, you'll learn the everyday phrases used in an English classroom — so you can follow what your teacher asks and respond naturally when you're unsure about something.\n\nCommon instructions a teacher gives:\n\n• Open your books. / Close your books.\n• Stand up, please. / Sit down, please.\n• Look at the board, please.\n• Go to page...\n\nCommon phrases a student uses:\n\n• How do you spell it?\n• Sorry, can you repeat that, please?\n• I don't understand.\n• I don't know.\n\nBy the end of this lesson, you'll be able to follow classroom instructions and speak up when you need something repeated or explained.",
       "examples": ["Teacher: Open your books to page five, please.", "Student: Sorry, can you repeat that, please?", "Teacher: Stand up, please."],
       "commonMistakes": ["'Sorry?' alone is a polite, common way to ask someone to repeat something — you don't always need a full sentence.", "'I don't know' answers a question you can't answer; 'I don't understand' means the instruction itself was unclear — they aren't interchangeable."],
       "exercises": [
@@ -85,7 +85,7 @@
       "cefrLevel": "A1",
       "difficultyBand": 1,
       "parentKey": "functional_language.meeting_people",
-      "lessonBody": "Fixed phrases for introducing yourself and meeting someone new: 'Hi, I'm...', 'What's your name?', 'Nice to meet you.'",
+      "lessonBody": "In this lesson, you'll learn the fixed phrases English speakers use every time they meet someone new — the very first words in almost any new conversation.\n\nKey phrases:\n\n• Hi, I'm...\n• What's your name?\n• Nice to meet you.\n\nThese phrases are fixed — native speakers use them almost word-for-word every time, so learning them exactly will make you sound natural right away.\n\nBy the end of this lesson, you'll be able to introduce yourself confidently and respond naturally when someone introduces themselves to you.",
       "examples": ["A: Hi, I'm Priya. B: Hi, I'm Marco. Nice to meet you.", "A: What's your name? B: I'm Felix."],
       "commonMistakes": ["Don't answer 'What's your name?' with just a name — a full response like 'I'm Felix' is more natural in this context."],
       "exercises": [
@@ -108,7 +108,7 @@
       "cefrLevel": "A1",
       "difficultyBand": 1,
       "parentKey": "functional_language.meeting_people",
-      "lessonBody": "Fixed phrases for ending a conversation: 'Goodbye' / 'Bye', 'See you tomorrow.', 'See you on Monday.'",
+      "lessonBody": "In this lesson, you'll learn how to end a conversation naturally in English — just as important as knowing how to start one.\n\nKey phrases:\n\n• Goodbye / Bye\n• See you tomorrow.\n• See you on Monday.\n\nThese phrases are fixed and very common — using them naturally at the end of a conversation makes you sound comfortable and fluent, not just correct.\n\nBy the end of this lesson, you'll be able to end a conversation smoothly and mention when you'll see the person again.",
       "examples": ["A: Bye! See you tomorrow. B: Bye!", "A: See you on Friday. B: OK, see you then."],
       "commonMistakes": ["'Goodbye' and 'Bye' both work, but don't mix them with 'Hello' at the end of a conversation."],
       "exercises": [
@@ -130,7 +130,7 @@
       "cefrLevel": "A1",
       "difficultyBand": 1,
       "parentKey": "functional_language.everyday_transactions",
-      "lessonBody": "Fixed phrases for asking about spelling: 'How do you spell that?', 'Can you spell your last name, please?' Answers are given letter by letter, e.g. 'W-A-L-K-E-R.'",
+      "lessonBody": "In this lesson, you'll learn how to ask someone to spell a word or name, and how to spell your own name out loud — something you'll need constantly for forms, bookings, and phone calls.\n\nKey phrases:\n\n• How do you spell that?\n• Can you spell your last name, please?\n\nAnswers are given letter by letter, e.g. \"W-A-L-K-E-R\" — never as a whole word.\n\nBy the end of this lesson, you'll be able to spell your own name clearly and ask someone else to spell theirs.",
       "examples": ["A: How do you spell your last name? B: It's W-A-L-K-E-R.", "A: Sorry, can you spell that, please? B: Sure, it's M-A-R-C-O."],
       "commonMistakes": ["Say letters one at a time when spelling, not as a whole word.", "'How do you spell it?' is more natural than 'What is the spelling?' in everyday speech."],
       "exercises": [
@@ -152,7 +152,7 @@
       "cefrLevel": "A1",
       "difficultyBand": 2,
       "parentKey": "functional_language.everyday_transactions",
-      "lessonBody": "Fixed phrases for common service situations: 'I have a reservation.', 'A table for two, please.', 'Can I have the check, please?' Staff often reply with 'Sure,' 'Right this way,' or 'Just a moment.'",
+      "lessonBody": "In this lesson, you'll learn the fixed phrases used for common service situations, like checking into a hotel or being seated at a restaurant — practical, real-world English you'll use while traveling or eating out.\n\nKey phrases:\n\n• I have a reservation.\n• A table for two, please.\n• Can I have the check, please?\n\nStaff often reply with short, fixed phrases too, like \"Sure,\" \"Right this way,\" or \"Just a moment.\"\n\nBy the end of this lesson, you'll be able to check into a hotel and order a table at a restaurant with confidence.",
       "examples": ["A: I have a reservation. My name's Aliyah Reed. B: Let me check... Yes, you're in room 214.", "A: A table for two, please. B: Right this way."],
       "commonMistakes": ["'I have a reservation' is more natural than 'I reserved' when checking in.", "'A table for two, please' doesn't need a full sentence like 'I want a table for two.'"],
       "exercises": [

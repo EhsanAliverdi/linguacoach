@@ -86,7 +86,8 @@ public sealed class AdminLessonController : ControllerBase
             var result = await _createHandler.HandleAsync(new CreateLessonCommand(
                 body.Title, body.Body, body.CefrLevel, body.Skill, body.Subskill,
                 body.ContextTags, body.FocusTags, body.Examples, body.CommonMistakes,
-                body.UsageNotes, body.DifficultyBand, body.EstimatedMinutes, body.Links, GetCurrentUserId()), ct);
+                body.UsageNotes, body.DifficultyBand, body.EstimatedMinutes, body.Links, GetCurrentUserId(),
+                body.ImageUrl), ct);
             return Ok(result);
         }
         catch (LessonValidationException ex)
@@ -144,7 +145,7 @@ public sealed class AdminLessonController : ControllerBase
             var result = await _updateHandler.HandleAsync(new UpdateLessonCommand(
                 id, body.Title, body.Body, body.Examples, body.CommonMistakes, body.UsageNotes,
                 body.CefrLevel, body.Skill, body.Subskill, body.ContextTags, body.FocusTags,
-                body.DifficultyBand, body.EstimatedMinutes), ct);
+                body.DifficultyBand, body.EstimatedMinutes, body.ImageUrl), ct);
             return Ok(result);
         }
         catch (LessonValidationException ex)
@@ -270,7 +271,7 @@ public sealed class AdminLessonController : ControllerBase
         IReadOnlyList<string>? ContextTags = null, IReadOnlyList<string>? FocusTags = null,
         IReadOnlyList<string>? Examples = null, IReadOnlyList<string>? CommonMistakes = null,
         string? UsageNotes = null, int? DifficultyBand = null, int? EstimatedMinutes = null,
-        IReadOnlyList<LessonResourceLinkInput>? Links = null
+        IReadOnlyList<LessonResourceLinkInput>? Links = null, string? ImageUrl = null
     );
 
     public sealed record GenerateLessonFromResourcesRequestBody(
@@ -285,7 +286,7 @@ public sealed class AdminLessonController : ControllerBase
         string Title, string Body, IReadOnlyList<string>? Examples = null, IReadOnlyList<string>? CommonMistakes = null,
         string? UsageNotes = null, string? CefrLevel = null, string? Skill = null, string? Subskill = null,
         IReadOnlyList<string>? ContextTags = null, IReadOnlyList<string>? FocusTags = null,
-        int? DifficultyBand = null, int? EstimatedMinutes = null
+        int? DifficultyBand = null, int? EstimatedMinutes = null, string? ImageUrl = null
     );
 
     public sealed record ApproveLessonRequestBody(string? Notes = null);

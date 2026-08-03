@@ -43,6 +43,7 @@ internal sealed class LessonConfiguration : IEntityTypeConfiguration<Lesson>
         builder.Property(e => e.ReviewNotes).HasColumnName("review_notes");
         builder.Property(e => e.IsArchived).HasColumnName("is_archived").IsRequired().HasDefaultValue(false);
         builder.Property(e => e.SkillGraphNodeId).HasColumnName("skill_graph_node_id");
+        builder.Property(e => e.ImageUrl).HasColumnName("image_url");
 
         builder.HasIndex(e => e.ReviewStatus).HasDatabaseName("ix_lessons_review_status");
         builder.HasIndex(e => e.CefrLevel).HasDatabaseName("ix_lessons_cefr_level");
