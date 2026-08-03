@@ -5,6 +5,7 @@
     ← Back to Lessons
   </sp-admin-button>
   @if (item()) {
+    <sp-admin-button variant="neutral" appearance="outline" (clicked)="openStudentPreview()">View as Student</sp-admin-button>
     <sp-admin-button variant="primary" appearance="outline" (clicked)="goToEdit()">Edit</sp-admin-button>
   }
 </sp-admin-page-header>
@@ -195,4 +196,11 @@
     </sp-admin-button>
   </div>
 
+</sp-admin-modal>
+
+<!-- ── View as Student: renders this Lesson with the exact markup/classes a real student sees ── -->
+<sp-admin-modal [open]="studentPreviewOpen()" title="View as Student" subtitle="Exactly what a student sees for this Lesson." size="lg" (closed)="closeStudentPreview()">
+  @if (item()) {
+    <app-lesson-student-preview [lesson]="item()!" />
+  }
 </sp-admin-modal>

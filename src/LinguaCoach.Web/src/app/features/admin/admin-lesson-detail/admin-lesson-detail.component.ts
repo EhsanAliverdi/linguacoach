@@ -8,6 +8,7 @@ import { AdminService } from '../../../core/services/admin.service';
 import { LessonDto } from '../../../core/models/admin-lesson.models';
 import { ExerciseTypeDefinition } from '../../../core/models/admin.models';
 import { DiagnosticIssue } from '../../../core/models/admin-repair.models';
+import { SpLessonStudentPreviewComponent } from './lesson-student-preview/sp-lesson-student-preview.component';
 import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
@@ -69,6 +70,7 @@ interface ExerciseTypeCount {
     SpAdminPageHeaderComponent,
     SpAdminSectionCardComponent,
     SpAdminTextareaComponent,
+    SpLessonStudentPreviewComponent,
   ],
   templateUrl: './admin-lesson-detail.component.html',
 })
@@ -85,6 +87,11 @@ export class AdminLessonDetailComponent implements OnInit {
   archiving = signal(false);
 
   moduleReviewRoute = signal<string | null>(null);
+
+  // ── "View as Student" — renders this Lesson with the exact markup a student sees ───────────
+  studentPreviewOpen = signal(false);
+  openStudentPreview(): void { this.studentPreviewOpen.set(true); }
+  closeStudentPreview(): void { this.studentPreviewOpen.set(false); }
 
   // ── Phase K8 — "Fix with AI" repair ──────────────────────────────────────
   issues = signal<DiagnosticIssue[]>([]);
