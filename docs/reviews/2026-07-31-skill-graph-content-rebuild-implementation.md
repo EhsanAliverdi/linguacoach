@@ -186,3 +186,44 @@ vocabulary, pronunciation, speaking, reading, writing, and listening), 23 `Modul
 backend test suites green (UnitTests 2594, IntegrationTests 1417, ArchitectureTests 30). Every
 lesson-block from the two source units (1A, 1B, the Practical-English episode, 2A, 2B) now has
 its full teaching content represented in the graph.
+
+## 12. Addendum (2026-08-03) — quality re-review of all 23 lesson bodies
+
+Requested follow-up: re-read every lesson body/exercise across all 7 active seed files and
+verify each genuinely meets the "proper teaching unit" bar (framing sentence, structured
+content, closing outcome statement — rule 4a) and has adequate practice depth, not just correct
+prose.
+
+**Structure/prose check (rule 4a)**: all 23 lessons already followed the framing → structured
+content → closing template correctly. No rewrites needed here.
+
+**Depth check**: found a real inconsistency — 7 of the 23 leaves had only 1 exercise (or
+noticeably fewer questions) while sibling leaves in the same container had 2, with no
+pedagogical reason for the gap. Fixed by adding one exercise to each:
+
+- `vocabulary.countries_and_nationalities.countries` — was 1 exercise/4 questions vs. its
+  sibling `nationalities` at 2/7. Added a "choose the correctly written country name" choice
+  exercise (capitalization, "the" usage) — now 2 exercises/7 questions.
+- `pronunciation.beginner_sounds.h_ai_i`, `.i_ou_s_sh`, `.dz_tsh_sh` — each had only 1 exercise
+  while their sibling `number_stress_pairs` had 2. Added a "find the odd one out" choice
+  exercise to each, using only words already introduced in that leaf's own examples — now all
+  4 pronunciation leaves have 2 exercises each.
+- `functional_language.meeting_people.introducing_yourself`, `.saying_goodbye`,
+  `functional_language.everyday_transactions.spelling_and_alphabet` — each had only 1 exercise
+  while their siblings had 2. Added a second exercise to each (a text-completion or choice
+  exercise reinforcing the same fixed phrases) — now all 6 functional-language leaves have 2
+  exercises each.
+
+No content was found to be factually wrong, off-topic, or in violation of the no-book-reference/
+no-verbatim-text rules — this pass was purely a depth-parity fix, not a rewrite.
+
+**Re-seed**: `TRUNCATE` + full re-run of all 7 domain seeders + prerequisites, in the
+established order. Final counts: 35 nodes (12 containers / 23 leaves), 23 Lessons, **49**
+Exercises (was 42 — +7 from this pass), 10 prerequisite edges. All three backend test suites
+green (UnitTests 2594, IntegrationTests 1418, ArchitectureTests 30). API container restarted and
+confirmed healthy.
+
+**Final verdict**: content quality bar is now consistently met across all 23 leaves, including
+practice depth. No further action needed unless new gaps are found in a future audit.
+
+**Next recommended action**: none pending from this pass; resume normal feature work.

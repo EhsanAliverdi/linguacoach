@@ -143,6 +143,16 @@
             { "prompt": "Toronto is in ___.", "answer": "Canada" },
             { "prompt": "Madrid is in ___.", "answer": "Spain" }
           ]
+        },
+        {
+          "title": "Choose the correctly written country name",
+          "instructions": "Choose the correctly formatted version for a sentence.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which is correct?", "options": ["brazil", "Brazil", "BRAZIL"], "correctIndex": 1 },
+            { "prompt": "Which sentence is correct?", "options": ["I'm from the United States.", "I'm from The United States.", "I'm from united States."], "correctIndex": 0 },
+            { "prompt": "Which country name needs 'the' in front of it?", "options": ["Brazil", "the United Kingdom", "Japan"], "correctIndex": 1 }
+          ]
         }
       ]
     },

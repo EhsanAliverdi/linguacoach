@@ -99,6 +99,16 @@
             { "prompt": "A: Hello, I'm Mr. Cho. B: ___", "options": ["Hi, I'm Elena.", "Bye.", "OK."], "correctIndex": 0 },
             { "prompt": "A: What's your name? B: ___", "options": ["Goodbye.", "I'm Nadia.", "Thank you."], "correctIndex": 1 }
           ]
+        },
+        {
+          "title": "Complete the introduction",
+          "instructions": "Complete each introduction exchange with the missing word.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "A: Hi, ___ Noor. B: Hi, I'm Kenji.", "answer": "I'm" },
+            { "prompt": "A: ___ your name? B: I'm Lucia.", "answer": "What's" },
+            { "prompt": "A: Hi, I'm Noor. B: Hi, I'm Ken. ___ to meet you.", "answer": "Nice" }
+          ]
         }
       ]
     },
@@ -121,6 +131,16 @@
             { "prompt": "A: See you on ___. (the day after Sunday)", "answer": "Monday" },
             { "prompt": "A: ___! B: Goodbye, have a nice day.", "answer": "Bye" }
           ]
+        },
+        {
+          "title": "Choose the best response",
+          "instructions": "Choose the most natural way to end each conversation.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "A: Bye! See you tomorrow. B: ___", "options": ["Bye!", "Nice to meet you.", "How do you spell that?"], "correctIndex": 0 },
+            { "prompt": "A: I need to go now. B: ___", "options": ["Goodbye, have a nice day.", "What's your name?", "A table for two, please."], "correctIndex": 0 },
+            { "prompt": "A: See you on Monday. B: ___", "options": ["OK, see you then.", "I have a reservation.", "Sorry, what was that?"], "correctIndex": 0 }
+          ]
         }
       ]
     },
@@ -142,6 +162,16 @@
             { "prompt": "A: How do you spell your last name? B: ___", "options": ["It's F-E-R-N-A-N-D-E-Z.", "Yes, please.", "I don't know."], "correctIndex": 0 },
             { "prompt": "A: Sorry, can you spell that, please? B: ___", "options": ["Sure, it's B-A-K-E-R.", "See you later.", "Nice to meet you."], "correctIndex": 0 },
             { "prompt": "A: ___? B: It's spelled S-M-I-T-H.", "options": ["How do you spell that?", "Where are you from?", "How old are you?"], "correctIndex": 0 }
+          ]
+        },
+        {
+          "title": "Spell it out",
+          "instructions": "Spell each word or name letter by letter, separated by hyphens.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "Spell the name 'Kim' letter by letter.", "answer": "K-I-M" },
+            { "prompt": "Spell the word 'yes' letter by letter.", "answer": "Y-E-S" },
+            { "prompt": "Complete: 'Can you ___ your last name, please?'", "answer": "spell" }
           ]
         }
       ]

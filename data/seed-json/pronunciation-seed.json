@@ -29,6 +29,16 @@
             { "prompt": "Which word starts with the same sound as 'hand'?", "options": ["and", "happy", "eight"], "correctIndex": 1 },
             { "prompt": "Which word has the same vowel sound as 'nice'?", "options": ["please", "like", "we"], "correctIndex": 1 }
           ]
+        },
+        {
+          "title": "Find the odd one out",
+          "instructions": "Choose the word that does NOT share the target sound with the others.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which word does NOT have the /aɪ/ sound?", "options": ["my", "like", "we"], "correctIndex": 2 },
+            { "prompt": "Which word does NOT start with the /h/ sound?", "options": ["hat", "happy", "at"], "correctIndex": 2 },
+            { "prompt": "Which word has the /i/ sound?", "options": ["nice", "we", "my"], "correctIndex": 1 }
+          ]
         }
       ]
     },
@@ -52,6 +62,16 @@
             { "prompt": "Which word starts with the same sound as 'say'?", "options": ["she", "city", "go"], "correctIndex": 1 },
             { "prompt": "Which word starts with the same sound as 'she'?", "options": ["say", "sit", "English"], "correctIndex": 2 }
           ]
+        },
+        {
+          "title": "Find the odd one out",
+          "instructions": "Choose the word that does NOT share the target sound with the others.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which word does NOT have the /oʊ/ sound?", "options": ["go", "home", "sit"], "correctIndex": 2 },
+            { "prompt": "Which word does NOT start with the /ʃ/ sound?", "options": ["she", "English", "say"], "correctIndex": 2 },
+            { "prompt": "Which word has the /ɪ/ sound?", "options": ["go", "sit", "say"], "correctIndex": 1 }
+          ]
         }
       ]
     },
@@ -73,6 +93,16 @@
             { "prompt": "Which word starts with the same sound as 'job'?", "options": ["chair", "giant", "shoe"], "correctIndex": 1 },
             { "prompt": "Which word starts with the same sound as 'chair'?", "options": ["cheese", "job", "shoe"], "correctIndex": 0 },
             { "prompt": "Which word starts with the same sound as 'shoe'?", "options": ["chair", "job", "wish"], "correctIndex": 2 }
+          ]
+        },
+        {
+          "title": "Find the odd one out",
+          "instructions": "Choose the word that does NOT share the target sound with the others.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which word does NOT have the /dʒ/ sound?", "options": ["job", "giant", "chair"], "correctIndex": 2 },
+            { "prompt": "Which word has the /tʃ/ sound?", "options": ["watch", "job", "shoe"], "correctIndex": 0 },
+            { "prompt": "Which word starts with the /ʃ/ sound?", "options": ["chair", "job", "shoe"], "correctIndex": 2 }
           ]
         }
       ]
