@@ -1,6 +1,6 @@
 ---
 status: active
-lastUpdated: 2026-07-31
+lastUpdated: 2026-08-04
 owner: architecture
 ---
 
@@ -46,6 +46,24 @@ section's real content — the fuller rule table, the extra practice items, the 
 list — is read and incorporated into the corresponding node's lesson body and exercises. A
 cross-reference is a signal that the in-lesson snippet is incomplete on its own; the node must
 reflect the complete teaching point, not just the shorter in-lesson excerpt.
+
+## 4b. Reference/bank pages are read in full, not reconstructed from memory (2026-08-04)
+
+Many source books have dedicated reference sections beyond the numbered lessons — a grammar
+reference bank, a vocabulary reference bank, paired-practice/communication pages. Rule 4 requires
+folding these in when a lesson cross-references them; this rule requires actually opening and
+reading each one, not reconstructing its likely content from the in-lesson snippet plus general
+ELT knowledge. Reconstructing from memory reliably misses real content — a past pass on this
+project inferred vocabulary and grammar-rule word lists instead of reading the source's actual
+reference pages, and a follow-up audit that opened every page found real gaps (missing words,
+missing spelling rules) on the majority of leaves checked. Before a unit is marked done:
+
+- **Open and read every Vocabulary Bank / Grammar Bank / Communication (or equivalent) page** for
+  that unit's lessons, not just the in-lesson excerpt.
+- **Cross-check each leaf's word list or rule set against the actual reference page**, word for
+  word / rule for rule, and add anything missing.
+- Treat a reference page as the ground truth for what "complete" means for that leaf — a
+  plausible-sounding word list is not the same as a verified-complete one.
 
 ## 5. Container/leaf shape
 
@@ -120,6 +138,24 @@ appears nowhere in the taught vocabulary at all.
   it's assumed.
 - **This applies within a single unit too**, not just across units: a grammar leaf must not lean
   on a vocabulary leaf that comes later in the same file's teaching order.
+- **Vocabulary, functional-language, and pronunciation leaves are self-introducing** — their own
+  lesson body and examples are how a word gets taught in the first place, so a leaf in one of
+  these three domains may freely use its own new words in its own content. **Grammar, reading,
+  writing, and listening leaves are application-only** — they must never introduce a brand-new
+  content word; they only reuse words already taught by an earlier vocabulary/functional-
+  language/pronunciation leaf (or, rarely, by an earlier grammar leaf's own worked examples).
+- **When a grammar leaf's examples are deliberately built around a specific vocabulary leaf's
+  words** (e.g. a possessives lesson practiced through family vocabulary), add an explicit
+  prerequisite edge so that vocabulary leaf precedes the grammar leaf — don't rely on
+  `difficultyBand` alone to get the order right, since two leaves can share a band.
+- **Two narrow exemptions**, both because they aren't target-language content the student must
+  produce: (1) metalinguistic/grammatical terminology used to *explain* a rule in `LessonBody` or
+  `CommonMistakes` (e.g. "possessive," "imperative," "percentage") — this is the medium of
+  instruction, the same way exercise instructions like "Choose the correct answer" don't need
+  pre-teaching; (2) a word used purely to illustrate a spelling/grammar pattern inside a quoted
+  wrong-vs-right example (e.g. "'watchs' is wrong — say 'watches'" to illustrate a plural
+  spelling rule) — the point is the pattern, not the word itself. Don't stretch these exemptions
+  to cover a word that also appears as ordinary sentence content elsewhere in the same leaf.
 - **Verify before marking a unit done**: re-read every new leaf's content once the whole unit is
   drafted, checking it against the cumulative vocabulary list built through the end of that unit —
   don't rely on the word "feeling" basic; confirm it was actually taught.
@@ -145,6 +181,9 @@ Before a unit is considered seeded:
 
 - [ ] Every numbered section of every lesson in the unit maps to a leaf (rule 3).
 - [ ] Every cross-reference in those sections has been read and folded in (rule 4).
+- [ ] Every Vocabulary Bank / Grammar Bank / Communication (or equivalent) reference page for the
+      unit has actually been opened and read, and cross-checked word-for-word / rule-for-rule
+      against the matching leaf — not reconstructed from memory or the in-lesson snippet (rule 4b).
 - [ ] Every leaf has a lesson body, examples, common mistakes, and exercises matching the
       source's real exercise/question depth (rule 5).
 - [ ] Every word used in every leaf's content has already been taught by that point in the
