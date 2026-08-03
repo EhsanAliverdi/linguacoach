@@ -410,3 +410,92 @@ bar established and audited in §12.
 
 **Next recommended action**: none pending. Any further work would be a fresh audit/quality pass
 of this now-complete set, not additional coverage.
+
+## 16. Addendum (2026-08-04) — reference-bank cross-check against the Vocabulary Bank, Grammar
+Bank, and Communication pages
+
+§15 stated that the book's own reference sections (Grammar Bank, Vocabulary Bank, Communication
+pages) were "folded into each leaf's lesson body" without opening them as separate content —
+relying on the in-lesson snippets and general ELT knowledge to reconstruct the fuller rule/word
+lists. Follow-up request: actually open every Vocabulary Bank, Grammar Bank, and Communication
+page and verify each already has a real equivalent in the app, closing any gap found rather than
+assuming equivalence.
+
+**Method**: read all 15 Vocabulary Bank topic pages (Numbers, Countries and nationalities, The
+classroom, Small things, People and family, Adjectives, Food and drink, Common verb phrases 1 and
+2, Jobs and places of work, A typical day, Months and ordinal numbers, Activities, Clothes,
+Hotels), spot-checked several Grammar Bank pages, and read the Communication pages for Files 1-3
+and the PE1/PE3 episodes.
+
+**Findings**:
+- **Grammar Bank**: the 1A/1B pages matched our existing grammar leaves' exercise style and depth
+  closely — no gap found. Not exhaustively re-checked page by page beyond this spot check, since
+  the sampled pages showed our exercises were already independently equivalent in coverage.
+- **Communication pages**: mostly extra practice of already-taught grammar (is/are questions
+  about cities, this/that/these/those with prices, time-telling) — correctly not duplicated into
+  new leaves, per the established rule 3 exception. One genuine gap found: the "Personal
+  Information" interview activity's form has fields (nationality, address, zip code, age, marital
+  status) that `writing.forms.personal_information` didn't cover (it only had name/phone/email).
+  Fixed by expanding that leaf's lesson body, examples, and exercises to include all of these
+  fields.
+- **Vocabulary Bank**: this is where real, substantive gaps existed — the in-lesson snippets used
+  to author the original word lists were partial excerpts of the topic pages' full lists, not the
+  complete canonical sets. **15 vocabulary leaves and the personal-information writing leaf were
+  expanded** to include every word/phrase from their corresponding Vocabulary Bank page:
+  - `countries` / `nationalities`: added Argentina, Chile, Korea, Saudi Arabia (+ nationalities).
+  - `classroom.objects`: added "coat" (was the only classroom-page item missing).
+  - `everyday_objects.small_things`: added watch, tablet, notebook, glasses, phone charger,
+    passport, camera, debit card, newspaper.
+  - `people_and_family.family_members`: added friends, boyfriend, girlfriend, and the irregular
+    plurals child/children, man/men, woman/women.
+  - `descriptive.colors_and_common_adjectives`: added gray, pink, clean/dirty, easy/difficult.
+  - `food_and_drink.everyday_food_and_drink`: added meat, pasta, vegetables, potatoes, salad,
+    bread, butter, sugar, cereal, chocolate, water.
+  - `common_verb_phrases.set_one`: expanded to the book's actual full "Common verb phrases 1"
+    list (watch TV, listen to the radio, read the newspaper, eat fast food, drink coffee, speak
+    English, have a dog, like cats, study, go to classes, need).
+  - `work.jobs_and_places_of_work`: added doctor, waiter/waitress, salesperson, police officer,
+    factory worker; store, office, factory, at home, on the street; student, unemployed, retired,
+    in college.
+  - `daily_routine.a_typical_day`: added have a coffee, have lunch, go home, go shopping, go to
+    the gym, make dinner, do housework (plus the make/do distinction note).
+  - `common_verb_phrases.free_time_phrases`: added play computer games, exercise, go to the
+    beach, play tennis, hike, play the piano, swim, travel.
+  - `common_verb_phrases.traveling_phrases`: added book tickets, pack/carry a suitcase, wear
+    sunglasses, get a taxi, wait for a flight, rent a car, arrive at a hotel, buy presents.
+  - `free_time.activities`: added doing yoga, eating out, flying, going for a walk, painting,
+    running, singing, sleeping, traveling, watching TV shows.
+  - `clothes.clothing_items`: added shirt, pants, shorts, skirt, socks.
+  - `hotels.hotel_facilities`: added pillow, light, remote control, floor, bathroom, towel,
+    toilet, closet, swimming pool, spa, restrooms, kitchen, gym, reception, yard, parking lot.
+  - `writing.forms.personal_information`: added nationality, address, zip code, age, marital
+    status fields (see Communication-page finding above).
+
+  Each expanded leaf's lesson body was updated to list the complete word set, and one additional
+  exercise (or additional questions on an existing exercise) was added per leaf specifically
+  testing the newly added words — no existing exercise or question was removed.
+
+**Explicitly not treated as a gap**: the book's "Words and phrases to learn" glossary pages
+(p.131-132) list ~200 additional words/phrases pulled from the book's own specific listening
+scripts, reading passages, and video content across all 24 lesson-blocks. Since rule 2 requires
+every reading/listening text in this app to be newly authored (different names, numbers, and
+scenarios from the source), our original texts necessarily use different incidental vocabulary
+than the book's specific texts, even though they teach the same grammar/vocabulary/pronunciation
+target. Chasing exact overlap with this glossary would mean approximating the book's specific
+texts more closely, which cuts against rule 2 — so it was deliberately not used as a gap-closing
+checklist, unlike the topic-based Vocabulary Bank pages (which are canonical word lists, not
+narrative text).
+
+**Re-seed**: full `TRUNCATE` + re-run of all domain seeders + prerequisites. Node/leaf/container/
+edge counts are unchanged (145 nodes, 42 containers, 103 leaves, 61 edges) since no new leaves
+were added — only existing leaves were deepened. Exercises: 210 → 224 (+14, one new exercise
+added per expanded leaf). All three backend test suites green (UnitTests 2594, IntegrationTests
+1418, ArchitectureTests 30). API container restarted and confirmed healthy.
+
+**Final verdict**: every Vocabulary Bank topic page and the Communication-page personal-
+information form now has a verified, complete equivalent in the app's vocabulary/writing leaves.
+
+**Next recommended action**: none pending from this pass. If a future audit is requested, the
+next candidate would be an equally systematic pass through the Grammar Bank's extra practice
+sub-exercises (a/b/c/d parts) for Files 3-12, which were spot-checked but not exhaustively
+verified the way the Vocabulary Bank was in this pass.

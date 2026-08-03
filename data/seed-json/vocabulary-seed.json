@@ -143,7 +143,7 @@
       "cefrLevel": "A1",
       "difficultyBand": 1,
       "parentKey": "vocabulary.countries_and_nationalities",
-      "lessonBody": "In this lesson, you'll learn the names of common countries in English — useful whenever you talk about where you're from, where you've traveled, or where someone else is from.\n\nCommon country names:\n\nBrazil, Canada, China, Egypt, Japan, Mexico, Peru, Spain, Turkey, the United Kingdom, the United States, Vietnam\n\nCountry names always start with a capital letter, and two of them — the United Kingdom and the United States — always need 'the' in front.\n\nBy the end of this lesson, you'll be able to say where you and other people are from.",
+      "lessonBody": "In this lesson, you'll learn the names of common countries in English — useful whenever you talk about where you're from, where you've traveled, or where someone else is from.\n\nCommon country names:\n\nArgentina, Brazil, Canada, Chile, China, Egypt, Japan, Korea, Mexico, Peru, Saudi Arabia, Spain, Turkey, the United Kingdom, the United States, Vietnam\n\nCountry names always start with a capital letter, and two of them — the United Kingdom and the United States — always need 'the' in front.\n\nBy the end of this lesson, you'll be able to say where you and other people are from.",
       "examples": ["I'm from Mexico.", "She's from Japan.", "They're from the United States."],
       "commonMistakes": ["Country names always start with a capital letter.", "'the United States' and 'the United Kingdom' both need 'the' before them."],
       "exercises": [
@@ -167,6 +167,17 @@
             { "prompt": "Which sentence is correct?", "options": ["I'm from the United States.", "I'm from The United States.", "I'm from united States."], "correctIndex": 0 },
             { "prompt": "Which country name needs 'the' in front of it?", "options": ["Brazil", "the United Kingdom", "Japan"], "correctIndex": 1 }
           ]
+        },
+        {
+          "title": "Complete with more countries",
+          "instructions": "Complete each sentence with the correct country name.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "Buenos Aires is in ___.", "answer": "Argentina" },
+            { "prompt": "Santiago is in ___.", "answer": "Chile" },
+            { "prompt": "Seoul is in ___.", "answer": "Korea" },
+            { "prompt": "Riyadh is in ___.", "answer": "Saudi Arabia" }
+          ]
         }
       ]
     },
@@ -176,7 +187,7 @@
       "cefrLevel": "A1",
       "difficultyBand": 1,
       "parentKey": "vocabulary.countries_and_nationalities",
-      "lessonBody": "In this lesson, you'll learn how to turn the country names you already know into nationality words — how you describe a person's nationality, not just the place they're from.\n\nNationality words are adjectives formed from country names:\n\nBrazil → Brazilian, Japan → Japanese, Canada → Canadian\n\nThe stress is usually on the same syllable as the country name, but not always — Japan → Japanese moves the stress, and the endings aren't always the same pattern (-ian, -ese, -ish).\n\nBy the end of this lesson, you'll be able to describe someone's nationality correctly, not just name their country.",
+      "lessonBody": "In this lesson, you'll learn how to turn the country names you already know into nationality words — how you describe a person's nationality, not just the place they're from.\n\nNationality words are adjectives formed from country names:\n\nArgentina → Argentinian, Brazil → Brazilian, Chile → Chilean, Japan → Japanese, Canada → Canadian, Korea → Korean, Saudi Arabia → Saudi\n\nThe stress is usually on the same syllable as the country name, but not always — Japan → Japanese moves the stress, and the endings aren't always the same pattern (-ian, -ese, -ish).\n\nBy the end of this lesson, you'll be able to describe someone's nationality correctly, not just name their country.",
       "examples": ["She's Brazilian.", "He's Japanese.", "They're Canadian."],
       "commonMistakes": ["Nationality words are always capitalized, like country names.", "Some nationality endings are irregular: Japan → Japanese (not 'Japanian'), not a simple '+n' or '+ian' pattern for every country."],
       "exercises": [
@@ -200,6 +211,17 @@
             { "prompt": "Spain", "options": ["Spainish", "Spanish", "Spaniard"], "correctIndex": 1 },
             { "prompt": "China", "options": ["Chinan", "Chinaish", "Chinese"], "correctIndex": 2 }
           ]
+        },
+        {
+          "title": "Complete with more nationalities",
+          "instructions": "Complete each sentence with the nationality that matches the country.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "She's from Argentina. She's ___.", "answer": "Argentinian" },
+            { "prompt": "He's from Chile. He's ___.", "answer": "Chilean" },
+            { "prompt": "They're from Korea. They're ___.", "answer": "Korean" },
+            { "prompt": "I'm from Saudi Arabia. I'm ___.", "answer": "Saudi" }
+          ]
         }
       ]
     },
@@ -209,7 +231,7 @@
       "cefrLevel": "A1",
       "difficultyBand": 1,
       "parentKey": "vocabulary.classroom",
-      "lessonBody": "In this lesson, you'll learn the names of everyday objects in a classroom — useful for following instructions, asking for something, and talking about what's around you in class.\n\nCommon classroom objects:\n\na board, a door, a window, a chair, a table, a laptop, a dictionary, a pen, a bag, a piece of paper\n\nRemember: use 'a' before a consonant sound (a board, a chair) and 'an' before a vowel sound (an umbrella, an ID card).\n\nBy the end of this lesson, you'll be able to name and ask about everyday objects in your classroom.",
+      "lessonBody": "In this lesson, you'll learn the names of everyday objects in a classroom — useful for following instructions, asking for something, and talking about what's around you in class.\n\nCommon classroom objects:\n\na board, a door, a window, a chair, a coat, a table, a laptop, a dictionary, a pen, a bag, a piece of paper\n\nRemember: use 'a' before a consonant sound (a board, a chair) and 'an' before a vowel sound (an umbrella, an ID card).\n\nBy the end of this lesson, you'll be able to name and ask about everyday objects in your classroom.",
       "examples": ["Look at the board, please.", "Open your dictionary to page ten.", "Is this your bag?"],
       "commonMistakes": ["'a' is used before consonant sounds (a board, a chair); 'an' before vowel sounds (an umbrella)."],
       "exercises": [
@@ -242,8 +264,8 @@
       "cefrLevel": "A1",
       "difficultyBand": 2,
       "parentKey": "vocabulary.everyday_objects",
-      "lessonBody": "In this lesson, you'll learn the words for small things people carry every day — useful when you're describing what's in your bag or reporting something lost.\n\nCommon small things:\n\nkeys, a wallet, a change purse, a credit card, an ID card, a phone, a pen, a pencil, a photo, a book, an umbrella\n\nBy the end of this lesson, you'll be able to name and ask about small everyday items, and say what's in your bag or pocket.",
-      "examples": ["I have a phone, keys, and a wallet in my bag.", "Is this your umbrella?", "I don't have my ID card with me."],
+      "lessonBody": "In this lesson, you'll learn the words for small things people carry every day — useful when you're describing what's in your bag or reporting something lost.\n\nCommon small things:\n\nkeys, a wallet, a change purse, a credit card, a debit card, an ID card, a passport, a phone, a phone charger, a watch, a tablet, a notebook, a pen, a pencil, a photo, a book, glasses, a camera, a newspaper, an umbrella\n\nBy the end of this lesson, you'll be able to name and ask about small everyday items, and say what's in your bag or pocket.",
+      "examples": ["I have a phone, keys, and a wallet in my bag.", "Is this your umbrella?", "I don't have my ID card or passport with me."],
       "commonMistakes": ["'Wallet' and 'change purse' are different — a wallet holds cards and bills, a change purse holds coins.", "Don't confuse 'ID card' with 'credit card' — one proves who you are, the other is for paying."],
       "exercises": [
         {
@@ -265,6 +287,18 @@
             { "prompt": "I keep my coins in a ___.", "answer": "change purse" },
             { "prompt": "My cards and bills are in my ___.", "answer": "wallet" },
             { "prompt": "I write with a ___.", "answer": "pen" }
+          ]
+        },
+        {
+          "title": "Choose the correct object",
+          "instructions": "Choose the object that matches each description.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "You use this to take pictures.", "options": ["a camera", "a notebook", "a debit card"], "correctIndex": 0 },
+            { "prompt": "You need this document to travel to another country.", "options": ["a passport", "a watch", "a newspaper"], "correctIndex": 0 },
+            { "prompt": "You use this to charge your phone.", "options": ["a phone charger", "glasses", "a tablet"], "correctIndex": 0 },
+            { "prompt": "You wear these to see better.", "options": ["glasses", "a watch", "a notebook"], "correctIndex": 0 },
+            { "prompt": "You check the time on this.", "options": ["a watch", "a tablet", "a newspaper"], "correctIndex": 0 }
           ]
         }
       ]
@@ -308,9 +342,9 @@
       "cefrLevel": "A1",
       "difficultyBand": 2,
       "parentKey": "vocabulary.people_and_family",
-      "lessonBody": "In this lesson, you'll learn the words for family members and general people words — essential for introducing your family and describing people around you.\n\nGeneral people words: a man, a woman, a boy, a girl\n\nFamily words:\n\nhusband, wife, mother, father, son, daughter, brother, sister, grandmother, grandfather, grandparents\n\nBy the end of this lesson, you'll be able to introduce your immediate family and describe the people in a photo.",
+      "lessonBody": "In this lesson, you'll learn the words for family members and general people words — essential for introducing your family and describing people around you.\n\nGeneral people words: a man, a woman, a boy, a girl, children, friends, a boyfriend, a girlfriend\n\nFamily words:\n\nhusband, wife, mother, father, son, daughter, brother, sister, grandmother, grandfather, grandparents\n\nSome plurals are irregular: a child → children, a man → men, a woman → women, a person → people.\n\nBy the end of this lesson, you'll be able to introduce your immediate family and describe the people in a photo.",
       "examples": ["This is my husband, Mark. These are our children.", "Her name's Emma, and his name's Oliver.", "My grandparents live in Peru."],
-      "commonMistakes": ["'Parent' is singular (one mother or father); 'parents' is the pair — don't say 'my parent' when you mean both.", "'Grandparents' already means both grandmother and grandfather together — you don't need to say both words."],
+      "commonMistakes": ["'Parent' is singular (one mother or father); 'parents' is the pair — don't say 'my parent' when you mean both.", "'Grandparents' already means both grandmother and grandfather together — you don't need to say both words.", "Don't say 'mans' or 'womans' — the plurals are irregular: men, women."],
       "exercises": [
         {
           "title": "Choose the correct family word",
@@ -332,6 +366,17 @@
             { "prompt": "These are my ___. They live with my mother and father. (both grandparents together)", "answer": "grandparents" },
             { "prompt": "My ___ is ten years old. She's my parents' daughter. (female sibling)", "answer": "sister" }
           ]
+        },
+        {
+          "title": "Complete with the correct plural",
+          "instructions": "Complete each sentence with the correct irregular plural.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "One child, two ___.", "answer": "children" },
+            { "prompt": "One man, two ___.", "answer": "men" },
+            { "prompt": "One woman, two ___.", "answer": "women" },
+            { "prompt": "This is my ___. We've been dating for a year. (male partner)", "answer": "boyfriend" }
+          ]
         }
       ]
     },
@@ -341,7 +386,7 @@
       "cefrLevel": "A1",
       "difficultyBand": 2,
       "parentKey": "vocabulary.descriptive",
-      "lessonBody": "In this lesson, you'll learn colors and common opposite-pair adjectives — words you'll use constantly to describe cars, clothes, houses, and everyday objects.\n\nColors: red, blue, green, yellow, black, white, brown, orange\n\nCommon adjective pairs:\n\n• big / small\n• cheap / expensive\n• new / old\n• long / short\n• fast / slow\n• good / bad\n• beautiful / ugly\n\nBy the end of this lesson, you'll be able to describe an object's color and give a simple opinion about it.",
+      "lessonBody": "In this lesson, you'll learn colors and common opposite-pair adjectives — words you'll use constantly to describe cars, clothes, houses, and everyday objects.\n\nColors: red, blue, green, yellow, black, white, brown, orange, gray, pink\n\nCommon adjective pairs:\n\n• big / small\n• cheap / expensive\n• new / old\n• long / short\n• fast / slow\n• good / bad\n• beautiful / ugly\n• clean / dirty\n• easy / difficult\n\nBy the end of this lesson, you'll be able to describe an object's color and give a simple opinion about it.",
       "examples": ["It's a small blue car.", "This watch is expensive, but it's beautiful.", "Their old house is very big."],
       "commonMistakes": ["Colors and adjectives go before the noun, in the same position: 'a red small bag' should usually be 'a small red bag' (size before color is more natural).", "Don't confuse 'cheap' (low price) with 'bad' — a cheap thing can still be good."],
       "exercises": [
@@ -365,6 +410,17 @@
             { "prompt": "The sun and bananas are ___.", "answer": "yellow" },
             { "prompt": "A sports car is usually ___, not slow.", "answer": "fast" }
           ]
+        },
+        {
+          "title": "Choose the correct word",
+          "instructions": "Choose the color or adjective that matches each description.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "The color of clouds and snow, and elephants are usually...", "options": ["gray", "pink", "brown"], "correctIndex": 0 },
+            { "prompt": "A shirt just out of the wash is...", "options": ["dirty", "clean", "old"], "correctIndex": 1 },
+            { "prompt": "A problem that's simple to solve is...", "options": ["difficult", "easy", "expensive"], "correctIndex": 1 },
+            { "prompt": "Opposite of 'easy'?", "options": ["difficult", "clean", "cheap"], "correctIndex": 0 }
+          ]
         }
       ]
     },
@@ -374,7 +430,7 @@
       "cefrLevel": "A1",
       "difficultyBand": 3,
       "parentKey": "vocabulary.food_and_drink",
-      "lessonBody": "In this lesson, you'll learn common food and drink words — the vocabulary you need to talk about meals, especially breakfast.\n\nFood: a croissant, fruit, yogurt, eggs, cheese, a sandwich, rice, fish\n\nDrink: coffee, tea, juice, milk\n\nBy the end of this lesson, you'll be able to say what you typically eat and drink for breakfast, lunch, or dinner.",
+      "lessonBody": "In this lesson, you'll learn common food and drink words — the vocabulary you need to talk about meals, especially breakfast.\n\nFood: a croissant, fruit, yogurt, eggs, cheese, a sandwich, rice, fish, meat, pasta, vegetables, potatoes, salad, bread, butter, sugar, cereal, chocolate\n\nDrink: coffee, tea, juice, milk, water\n\nBy the end of this lesson, you'll be able to say what you typically eat and drink for breakfast, lunch, or dinner.",
       "examples": ["I have a croissant and coffee for breakfast.", "We have fruit and yogurt every morning.", "They have rice and fish for dinner."],
       "commonMistakes": ["'Fruit' is usually uncountable in everyday speech — say 'some fruit', not 'a fruit', when talking generally.", "'A coffee' (a cup of coffee) is fine when ordering, but 'coffee' alone is the general uncountable word for the drink."],
       "exercises": [
@@ -398,6 +454,18 @@
             { "prompt": "We have ___ and rice for dinner. (from the sea)", "answer": "fish" },
             { "prompt": "She has ___ on her toast. (dairy, often yellow)", "answer": "cheese" }
           ]
+        },
+        {
+          "title": "Choose the correct food word",
+          "instructions": "Choose the word that matches each description.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Cows, pigs, and chickens are sources of this.", "options": ["meat", "bread", "sugar"], "correctIndex": 0 },
+            { "prompt": "Carrots, onions, and tomatoes are all types of this.", "options": ["vegetables", "pasta", "chocolate"], "correctIndex": 0 },
+            { "prompt": "This spreads on bread and is made from milk.", "options": ["butter", "sugar", "salad"], "correctIndex": 0 },
+            { "prompt": "You drink this — it has no color or taste.", "options": ["water", "bread", "meat"], "correctIndex": 0 },
+            { "prompt": "A mix of lettuce, tomatoes, and other raw vegetables.", "options": ["salad", "cereal", "potatoes"], "correctIndex": 0 }
+          ]
         }
       ]
     },
@@ -407,7 +475,7 @@
       "cefrLevel": "A1",
       "difficultyBand": 3,
       "parentKey": "vocabulary.common_verb_phrases",
-      "lessonBody": "In this lesson, you'll learn common verb + object combinations that native speakers use constantly to talk about their lives — where they live, what they do, and what they want.\n\nCommon combinations:\n\n• love + something (I love her books.)\n• live + in a place (I live in London.)\n• work + for a company (I work for a British company.)\n• want + something (I want a coffee.)\n• have + something (I have two sons.)\n\nBy the end of this lesson, you'll be able to build simple, natural sentences about your life using these five common verbs.",
+      "lessonBody": "In this lesson, you'll learn common verb + object combinations that native speakers use constantly to talk about their lives — where they live, what they do, and what they want.\n\nCommon combinations:\n\n• love + something (I love her books.)\n• live + in a place (I live in London.)\n• work + for a company (I work for a British company.)\n• want + something (I want a coffee.)\n• have + something (I have two sons. I have a dog.)\n• watch TV, listen to the radio, read the newspaper\n• eat fast food, drink coffee\n• speak English, study Spanish\n• like cats, need a new car\n• go to English classes\n\nBy the end of this lesson, you'll be able to build simple, natural sentences about your everyday life and habits using these common verbs.",
       "examples": ["I love this city.", "She lives in a small apartment.", "We work for the same company."],
       "commonMistakes": ["'Live in' needs 'in' before a place: 'I live London' is wrong — say 'I live in London'.", "'Work for' needs 'for' before a company: 'I work a company' is wrong — say 'I work for a company'."],
       "exercises": [
@@ -429,6 +497,18 @@
             { "prompt": "I ___ two sons and a daughter.", "answer": "have" },
             { "prompt": "We ___ in a big city.", "answer": "live" },
             { "prompt": "I really ___ a coffee right now.", "answer": "want" }
+          ]
+        },
+        {
+          "title": "Choose the correct verb phrase",
+          "instructions": "Choose the phrase that best completes each sentence.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "In the evening, I usually ___ TV.", "options": ["watch", "listen", "read"], "correctIndex": 0 },
+            { "prompt": "In the car, I like to ___ to the radio.", "options": ["watch", "listen", "read"], "correctIndex": 1 },
+            { "prompt": "Every morning, I ___ the newspaper.", "options": ["watch", "listen", "read"], "correctIndex": 2 },
+            { "prompt": "I don't have a cat, but I ___ them.", "options": ["like", "have", "need"], "correctIndex": 0 },
+            { "prompt": "I go to English ___ twice a week.", "options": ["classes", "newspaper", "radio"], "correctIndex": 0 }
           ]
         }
       ]
@@ -505,7 +585,7 @@
       "cefrLevel": "A1",
       "difficultyBand": 4,
       "parentKey": "vocabulary.work",
-      "lessonBody": "In this lesson, you'll learn common job titles and the places people work — useful for talking about your own job or asking someone about theirs.\n\nAsking about a job:\n\n• What do you do? Where do you work?\n\nCommon jobs and workplaces:\n\n• a taxi driver (drives a taxi)\n• a teacher (works at a school)\n• a receptionist (works at an office or hotel)\n• a journalist (works for a newspaper)\n• a nurse (works at a hospital)\n\nBy the end of this lesson, you'll be able to ask and answer questions about someone's job and where they work.",
+      "lessonBody": "In this lesson, you'll learn common job titles and the places people work — useful for talking about your own job or asking someone about theirs.\n\nAsking about a job:\n\n• What do you do? Where do you work?\n\nCommon jobs:\n\na taxi driver, a teacher, a doctor, a nurse, a receptionist, a journalist, a waiter/waitress, a salesperson, a police officer, a factory worker\n\nCommon workplaces: a hospital, a store, a restaurant, an office, a school, a factory, at home, on the street\n\nOther ways to answer 'What do you do?': I'm a student. I'm in college. I'm unemployed. I'm retired.\n\nBy the end of this lesson, you'll be able to ask and answer questions about someone's job and where they work.",
       "examples": ["What does she do? She's a journalist. She works for a newspaper.", "He's a nurse. He works at a hospital.", "I'm a teacher. I work at a school."],
       "commonMistakes": ["'Work for' is used with a company or organization; 'work at' is used with a place: 'She works for a newspaper' but 'She works at an office'.", "Don't confuse the job (a teacher) with the workplace (a school) — they answer different questions: 'What do you do?' vs. 'Where do you work?'"],
       "exercises": [
@@ -529,6 +609,18 @@
             { "prompt": "A: Where do you ___? B: I work at a hospital.", "answer": "work" },
             { "prompt": "She's a journalist. She works ___ a newspaper.", "answer": "for" }
           ]
+        },
+        {
+          "title": "Choose the correct job or status",
+          "instructions": "Choose the word or phrase that matches each description.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Someone who brings food to your table at a restaurant.", "options": ["a waiter", "a salesperson", "a factory worker"], "correctIndex": 0 },
+            { "prompt": "Someone who examines patients and treats illness.", "options": ["a doctor", "a receptionist", "a salesperson"], "correctIndex": 0 },
+            { "prompt": "Someone who doesn't currently have a job.", "options": ["unemployed", "retired", "a student"], "correctIndex": 0 },
+            { "prompt": "Someone who has stopped working after a long career.", "options": ["retired", "unemployed", "in college"], "correctIndex": 0 },
+            { "prompt": "A place where products are manufactured.", "options": ["a factory", "an office", "a store"], "correctIndex": 0 }
+          ]
         }
       ]
     },
@@ -538,7 +630,7 @@
       "cefrLevel": "A1",
       "difficultyBand": 4,
       "parentKey": "vocabulary.daily_routine",
-      "lessonBody": "In this lesson, you'll learn common verb phrases for describing your daily routine, from waking up to going to bed.\n\nA typical day:\n\nget up, take a shower/bath, have breakfast, go to work/school, finish work, have dinner, watch TV, go to bed\n\nBy the end of this lesson, you'll be able to describe your own typical day, step by step, from morning to night.",
+      "lessonBody": "In this lesson, you'll learn common verb phrases for describing your daily routine, from waking up to going to bed.\n\nA typical day:\n\nget up, take a shower/bath, have breakfast, go to work/school, have a coffee, have lunch, finish work, go home, go shopping, go to the gym, make dinner, have dinner, do housework, watch TV, go to bed\n\nRemember: make dinner/coffee, but do housework/homework. Also: go to the gym, go to the movies, go to work/school/bed, but go home (no 'to' or 'the').\n\nBy the end of this lesson, you'll be able to describe your own typical day, step by step, from morning to night.",
       "examples": ["I get up at 7:00 and take a shower.", "She finishes work at 6:00 and has dinner at 8:00.", "We watch TV before we go to bed."],
       "commonMistakes": ["'Get up' means leaving your bed; 'wake up' means stopping sleeping — you can wake up and stay in bed a while before you get up.", "Use 'have' with breakfast/dinner: 'I eat breakfast' is understandable but 'I have breakfast' is the more natural everyday phrase taught here."],
       "exercises": [
@@ -561,6 +653,18 @@
             { "prompt": "She ___ a shower before breakfast. (washes)", "answer": "takes" },
             { "prompt": "We ___ to bed at eleven. (end the day)", "answer": "go" }
           ]
+        },
+        {
+          "title": "Choose make or do",
+          "instructions": "Choose the correct verb for each routine phrase.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "___ dinner", "options": ["make", "do"], "correctIndex": 0 },
+            { "prompt": "___ housework", "options": ["make", "do"], "correctIndex": 1 },
+            { "prompt": "___ coffee", "options": ["make", "do"], "correctIndex": 0 },
+            { "prompt": "After work, I like to ___ shopping.", "options": ["go", "make"], "correctIndex": 0 },
+            { "prompt": "In the evening, I sometimes ___ to the gym.", "options": ["go", "do"], "correctIndex": 0 }
+          ]
         }
       ]
     },
@@ -570,7 +674,7 @@
       "cefrLevel": "A1",
       "difficultyBand": 4,
       "parentKey": "vocabulary.common_verb_phrases",
-      "lessonBody": "In this lesson, you'll learn common verb phrases for talking about what you do with your free time, especially on weekends.\n\nFree-time verb phrases:\n\n• go out (for dinner or a movie)\n• meet friends\n• stay home\n• play sports / watch sports\n• do housework\n• relax\n\nBy the end of this lesson, you'll be able to describe your typical weekend and what you usually do with your free time.",
+      "lessonBody": "In this lesson, you'll learn common verb phrases for talking about what you do with your free time, especially on weekends.\n\nFree-time verb phrases:\n\n• go out (for dinner or a movie) / stay home\n• meet friends\n• play sports / watch sports\n• play tennis / play the piano\n• do housework / relax\n• go to the beach\n• exercise / hike / swim\n• play computer games\n• travel\n\nBy the end of this lesson, you'll be able to describe your typical weekend and what you usually do with your free time.",
       "examples": ["We usually go out for dinner on Saturday.", "I sometimes meet friends after work.", "On Sunday, I like to stay home and relax."],
       "commonMistakes": ["'Go out' needs no object — don't say 'go out the restaurant'; say 'go out for dinner' or 'go out to a restaurant'.", "'Play sports' is for active participation; 'watch sports' is for watching — they're not interchangeable."],
       "exercises": [
@@ -592,6 +696,17 @@
             { "prompt": "I usually ___ friends on Friday evening. (see socially)", "answer": "meet" },
             { "prompt": "On a quiet Sunday, I like to ___ home and read.", "answer": "stay" },
             { "prompt": "After a long week, I just want to ___.", "answer": "relax" }
+          ]
+        },
+        {
+          "title": "Choose the correct activity phrase",
+          "instructions": "Choose the phrase that matches each description.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Moving your body to stay fit, like at a gym.", "options": ["exercise", "relax", "travel"], "correctIndex": 0 },
+            { "prompt": "Walking a long way in the mountains.", "options": ["hike", "swim", "play tennis"], "correctIndex": 0 },
+            { "prompt": "Going to visit other countries or cities.", "options": ["travel", "exercise", "do housework"], "correctIndex": 0 },
+            { "prompt": "Playing video games on a computer or console.", "options": ["play computer games", "play tennis", "play the piano"], "correctIndex": 0 }
           ]
         }
       ]
@@ -700,7 +815,7 @@
       "cefrLevel": "A1",
       "difficultyBand": 4,
       "parentKey": "vocabulary.free_time",
-      "lessonBody": "In this lesson, you'll learn common activity words — used with like/love/hate to talk about what you enjoy doing in your free time.\n\nCommon activities:\n\nreading, swimming, cooking, playing the piano, bike riding, buying clothes, camping, walking in the mountains, watching movies, shopping\n\nBy the end of this lesson, you'll be able to name common leisure activities and talk about your own hobbies.",
+      "lessonBody": "In this lesson, you'll learn common activity words — used with like/love/hate to talk about what you enjoy doing in your free time.\n\nCommon activities:\n\nreading, swimming, cooking, playing the piano, bike riding, buying clothes, camping, walking in the mountains, watching movies, shopping, doing yoga, eating out, flying, going for a walk, painting, running, singing, sleeping, traveling, watching TV shows\n\nBy the end of this lesson, you'll be able to name common leisure activities and talk about your own hobbies.",
       "examples": ["I love reading and cooking.", "She likes bike riding and camping.", "He hates shopping."],
       "commonMistakes": ["Activity words after like/love/hate use the -ing form: 'I love swim' is wrong — say 'I love swimming'.", "'Play the piano' needs 'the'; many sports (play soccer) do not — these patterns must be learned individually."],
       "exercises": [
@@ -724,6 +839,18 @@
             { "prompt": "She likes ___ clothes at the mall. (buy)", "answer": "buying" },
             { "prompt": "We go ___ in the mountains every summer. (camp)", "answer": "camping" }
           ]
+        },
+        {
+          "title": "Choose the matching activity",
+          "instructions": "Choose the activity that matches each description.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "A calm exercise with stretching and breathing poses.", "options": ["doing yoga", "running", "flying"], "correctIndex": 0 },
+            { "prompt": "Going to a restaurant instead of cooking at home.", "options": ["eating out", "shopping", "sleeping"], "correctIndex": 0 },
+            { "prompt": "Traveling somewhere by plane.", "options": ["flying", "singing", "painting"], "correctIndex": 0 },
+            { "prompt": "Creating a picture with a brush and colors.", "options": ["painting", "running", "singing"], "correctIndex": 0 },
+            { "prompt": "Using your voice to make music.", "options": ["singing", "sleeping", "painting"], "correctIndex": 0 }
+          ]
         }
       ]
     },
@@ -733,7 +860,7 @@
       "cefrLevel": "A1",
       "difficultyBand": 5,
       "parentKey": "vocabulary.common_verb_phrases",
-      "lessonBody": "In this lesson, you'll learn verb phrases for describing what you and other people are doing while traveling or getting somewhere.\n\nTraveling phrases:\n\n• stay in a hotel\n• call someone\n• leave the house\n• ride a bike\n• walk toward/wait outside a place\n• arrive somewhere\n• be stuck in traffic\n\nBy the end of this lesson, you'll be able to describe your own movements and a friend's while traveling or on the way somewhere.",
+      "lessonBody": "In this lesson, you'll learn verb phrases for describing what you and other people are doing while traveling or getting somewhere.\n\nTraveling phrases:\n\n• stay in a hotel\n• call someone / call home\n• leave the house\n• ride a bike\n• walk toward/wait outside a place\n• arrive somewhere / arrive at a hotel\n• be stuck in traffic\n• book tickets\n• pack/carry a suitcase\n• wear sunglasses\n• get a taxi\n• wait for a flight\n• rent a car\n• buy presents\n\nBy the end of this lesson, you'll be able to describe your own movements and a friend's while traveling or on the way somewhere.",
       "examples": ["I'm staying in a hotel this week.", "Sorry, we're stuck in traffic. There in five minutes.", "I'm just leaving the house now."],
       "commonMistakes": ["'Stay in a hotel' uses 'in', not 'at' — 'stay at a hotel' is also heard, but 'in' is the pattern taught here.", "'Stuck in traffic' means unable to move because of too many cars — don't confuse it with simply 'in a car'."],
       "exercises": [
@@ -756,6 +883,18 @@
             { "prompt": "I'm ___ outside the box office. Can you see me?", "answer": "waiting" },
             { "prompt": "We're ___ at the airport now.", "answer": "arriving" }
           ]
+        },
+        {
+          "title": "Choose the correct travel phrase",
+          "instructions": "Choose the phrase that best completes each sentence.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Before the trip, we need to ___ our flights online.", "options": ["book", "wear", "rent"], "correctIndex": 0 },
+            { "prompt": "It's sunny, so I always ___ when I travel.", "options": ["wear sunglasses", "pack a suitcase", "get a taxi"], "correctIndex": 0 },
+            { "prompt": "At the airport, we need to ___ to the gate.", "options": ["get a taxi", "wait for a flight", "buy presents"], "correctIndex": 1 },
+            { "prompt": "Since we don't have a car here, we're going to ___ one.", "options": ["rent", "pack", "book"], "correctIndex": 0 },
+            { "prompt": "Before I go home, I want to ___ for my family.", "options": ["buy presents", "carry a suitcase", "call home"], "correctIndex": 0 }
+          ]
         }
       ]
     },
@@ -765,7 +904,7 @@
       "cefrLevel": "A1",
       "difficultyBand": 5,
       "parentKey": "vocabulary.clothes",
-      "lessonBody": "In this lesson, you'll learn common clothing words — useful for describing what you or someone else is wearing.\n\nCommon clothes:\n\na hat, a jacket, jeans, a suit, a T-shirt, a cap, a coat, a dress, shoes, sneakers, a sweater\n\nBy the end of this lesson, you'll be able to describe what you and other people are wearing, in detail.",
+      "lessonBody": "In this lesson, you'll learn common clothing words — useful for describing what you or someone else is wearing.\n\nCommon clothes:\n\na sweater, a T-shirt, a shirt, pants, jeans, shorts, a suit, a dress, a skirt, a coat, a jacket, socks, sneakers, shoes, a hat, a cap\n\nBy the end of this lesson, you'll be able to describe what you and other people are wearing, in detail.",
       "examples": ["I'm wearing a T-shirt and jeans today.", "She's wearing a black jacket and a dress.", "He usually wears a suit to work."],
       "commonMistakes": ["'Jeans' and 'sneakers' are always plural — say 'these jeans', not 'this jeans'.", "'Wear' describes having clothes on your body; don't confuse it with 'carry' or 'have'."],
       "exercises": [
@@ -789,6 +928,18 @@
             { "prompt": "It's cold outside — put on a ___.", "answer": "coat" },
             { "prompt": "She's wearing a black leather ___ over her shirt.", "answer": "jacket" }
           ]
+        },
+        {
+          "title": "Choose the correct clothing word",
+          "instructions": "Choose the word that matches each description.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "A short skirt-like piece worn by women, below the waist.", "options": ["a skirt", "a shirt", "socks"], "correctIndex": 0 },
+            { "prompt": "Short pants worn in warm weather.", "options": ["shorts", "pants", "a suit"], "correctIndex": 0 },
+            { "prompt": "A top with a collar and buttons, worn for work or formal occasions.", "options": ["a shirt", "a sweater", "socks"], "correctIndex": 0 },
+            { "prompt": "You wear these inside your shoes, on your feet.", "options": ["socks", "shorts", "a skirt"], "correctIndex": 0 },
+            { "prompt": "General word for what you wear on your legs, from waist to ankle.", "options": ["pants", "a dress", "a cap"], "correctIndex": 0 }
+          ]
         }
       ]
     },
@@ -798,7 +949,7 @@
       "cefrLevel": "A1",
       "difficultyBand": 5,
       "parentKey": "vocabulary.hotels",
-      "lessonBody": "In this lesson, you'll learn words for common hotel facilities and bedroom items — useful for booking a room and describing what it has.\n\nHotel facilities: an elevator, a restaurant, wi-fi, a gift shop, a view\n\nBedroom items: a bed, a chair, a lamp, a table, a window, a shower, a bathtub\n\nBy the end of this lesson, you'll be able to describe a hotel room and ask whether a hotel has a particular facility.",
+      "lessonBody": "In this lesson, you'll learn words for common hotel facilities and bedroom items — useful for booking a room and describing what it has.\n\nHotel facilities: an elevator, a restaurant, wi-fi, a gift shop, a view, a swimming pool, a spa, restrooms, a kitchen, a gym, reception, a yard, a parking lot\n\nBedroom items: a bed, a pillow, a chair, a lamp, a light, a table, a window, the floor, the bathroom, a shower, a bathtub, a towel, a toilet, a closet, a remote control\n\nBy the end of this lesson, you'll be able to describe a hotel room and ask whether a hotel has a particular facility.",
       "examples": ["Is there an elevator? Yes, there is.", "The room has a great view and a comfortable bed.", "There's a shower, but there isn't a bathtub."],
       "commonMistakes": ["'Elevator' is American English; 'lift' is the British equivalent — both mean the same thing.", "'View' refers to what you can see from a window, not the window itself."],
       "exercises": [
@@ -820,6 +971,19 @@
             { "prompt": "There's a great ___ of the lake from the window.", "answer": "view" },
             { "prompt": "The remote control is on the ___ next to the bed.", "answer": "table" },
             { "prompt": "There isn't a bathtub, only a ___.", "answer": "shower" }
+          ]
+        },
+        {
+          "title": "Choose the correct hotel word",
+          "instructions": "Choose the word that matches each description.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "You put your head on this in bed.", "options": ["a pillow", "a towel", "a closet"], "correctIndex": 0 },
+            { "prompt": "You dry yourself with this after a shower.", "options": ["a towel", "a pillow", "a light"], "correctIndex": 0 },
+            { "prompt": "You hang your clothes in this.", "options": ["a closet", "a toilet", "the floor"], "correctIndex": 0 },
+            { "prompt": "Where hotel guests check in when they arrive.", "options": ["reception", "the gym", "the yard"], "correctIndex": 0 },
+            { "prompt": "Where hotel guests can swim.", "options": ["a swimming pool", "a spa", "restrooms"], "correctIndex": 0 },
+            { "prompt": "Where hotel guests can park their car.", "options": ["a parking lot", "a kitchen", "the floor"], "correctIndex": 0 }
           ]
         }
       ]
