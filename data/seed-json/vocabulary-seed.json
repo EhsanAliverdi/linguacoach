@@ -18,7 +18,11 @@
     { "key": "vocabulary.work", "title": "Work", "cefrLevel": "A1" },
     { "key": "vocabulary.daily_routine", "title": "Daily routine", "cefrLevel": "A1" },
     { "key": "vocabulary.entertainment", "title": "Entertainment", "cefrLevel": "A1" },
-    { "key": "vocabulary.free_time", "title": "Free time", "cefrLevel": "A1" }
+    { "key": "vocabulary.free_time", "title": "Free time", "cefrLevel": "A1" },
+    { "key": "vocabulary.clothes", "title": "Clothes", "cefrLevel": "A1" },
+    { "key": "vocabulary.hotels", "title": "Hotels", "cefrLevel": "A1" },
+    { "key": "vocabulary.spatial_prepositions", "title": "Spatial prepositions", "cefrLevel": "A1" },
+    { "key": "vocabulary.places_in_town", "title": "Places in town", "cefrLevel": "A1" }
   ],
   "leaves": [
     {
@@ -719,6 +723,298 @@
             { "prompt": "I love ___ books in bed at night. (read)", "answer": "reading" },
             { "prompt": "She likes ___ clothes at the mall. (buy)", "answer": "buying" },
             { "prompt": "We go ___ in the mountains every summer. (camp)", "answer": "camping" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "vocabulary.common_verb_phrases.traveling_phrases",
+      "title": "Common verb phrases 4: traveling",
+      "cefrLevel": "A1",
+      "difficultyBand": 5,
+      "parentKey": "vocabulary.common_verb_phrases",
+      "lessonBody": "In this lesson, you'll learn verb phrases for describing what you and other people are doing while traveling or getting somewhere.\n\nTraveling phrases:\n\n• stay in a hotel\n• call someone\n• leave the house\n• ride a bike\n• walk toward/wait outside a place\n• arrive somewhere\n• be stuck in traffic\n\nBy the end of this lesson, you'll be able to describe your own movements and a friend's while traveling or on the way somewhere.",
+      "examples": ["I'm staying in a hotel this week.", "Sorry, we're stuck in traffic. There in five minutes.", "I'm just leaving the house now."],
+      "commonMistakes": ["'Stay in a hotel' uses 'in', not 'at' — 'stay at a hotel' is also heard, but 'in' is the pattern taught here.", "'Stuck in traffic' means unable to move because of too many cars — don't confuse it with simply 'in a car'."],
+      "exercises": [
+        {
+          "title": "Choose the correct phrase",
+          "instructions": "Choose the phrase that best completes each sentence.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "I'm on vacation. I'm ___ in a nice hotel.", "options": ["staying", "calling", "arriving"], "correctIndex": 0 },
+            { "prompt": "Sorry we're late, we're ___ in traffic.", "options": ["staying", "stuck", "walking"], "correctIndex": 1 },
+            { "prompt": "I'm just ___ the house now. See you soon.", "options": ["leaving", "riding", "waiting"], "correctIndex": 0 }
+          ]
+        },
+        {
+          "title": "Complete the sentence",
+          "instructions": "Complete each sentence with a traveling verb phrase.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "I'm ___ my bike to the movie theater. (using a bike)", "answer": "riding" },
+            { "prompt": "I'm ___ outside the box office. Can you see me?", "answer": "waiting" },
+            { "prompt": "We're ___ at the airport now.", "answer": "arriving" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "vocabulary.clothes.clothing_items",
+      "title": "Clothes",
+      "cefrLevel": "A1",
+      "difficultyBand": 5,
+      "parentKey": "vocabulary.clothes",
+      "lessonBody": "In this lesson, you'll learn common clothing words — useful for describing what you or someone else is wearing.\n\nCommon clothes:\n\na hat, a jacket, jeans, a suit, a T-shirt, a cap, a coat, a dress, shoes, sneakers, a sweater\n\nBy the end of this lesson, you'll be able to describe what you and other people are wearing, in detail.",
+      "examples": ["I'm wearing a T-shirt and jeans today.", "She's wearing a black jacket and a dress.", "He usually wears a suit to work."],
+      "commonMistakes": ["'Jeans' and 'sneakers' are always plural — say 'these jeans', not 'this jeans'.", "'Wear' describes having clothes on your body; don't confuse it with 'carry' or 'have'."],
+      "exercises": [
+        {
+          "title": "Choose the correct clothing word",
+          "instructions": "Choose the word that matches each description.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Formal clothing for the office, jacket and pants together", "options": ["a suit", "a T-shirt", "sneakers"], "correctIndex": 0 },
+            { "prompt": "You wear this on your head to keep the sun off", "options": ["a hat", "a coat", "jeans"], "correctIndex": 0 },
+            { "prompt": "Casual blue pants made of denim", "options": ["a dress", "jeans", "a sweater"], "correctIndex": 1 },
+            { "prompt": "Warm outerwear you wear in cold weather", "options": ["a coat", "a T-shirt", "shoes"], "correctIndex": 0 }
+          ]
+        },
+        {
+          "title": "Complete the description",
+          "instructions": "Complete each sentence with a clothing word.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "Today I'm wearing a red ___ and blue jeans. (simple top)", "answer": "T-shirt" },
+            { "prompt": "It's cold outside — put on a ___.", "answer": "coat" },
+            { "prompt": "She's wearing a black leather ___ over her shirt.", "answer": "jacket" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "vocabulary.hotels.hotel_facilities",
+      "title": "Hotel facilities",
+      "cefrLevel": "A1",
+      "difficultyBand": 5,
+      "parentKey": "vocabulary.hotels",
+      "lessonBody": "In this lesson, you'll learn words for common hotel facilities and bedroom items — useful for booking a room and describing what it has.\n\nHotel facilities: an elevator, a restaurant, wi-fi, a gift shop, a view\n\nBedroom items: a bed, a chair, a lamp, a table, a window, a shower, a bathtub\n\nBy the end of this lesson, you'll be able to describe a hotel room and ask whether a hotel has a particular facility.",
+      "examples": ["Is there an elevator? Yes, there is.", "The room has a great view and a comfortable bed.", "There's a shower, but there isn't a bathtub."],
+      "commonMistakes": ["'Elevator' is American English; 'lift' is the British equivalent — both mean the same thing.", "'View' refers to what you can see from a window, not the window itself."],
+      "exercises": [
+        {
+          "title": "Choose the correct facility",
+          "instructions": "Choose the word that matches each description.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "You use this to go up to a high floor without stairs.", "options": ["an elevator", "a gift shop", "a view"], "correctIndex": 0 },
+            { "prompt": "You use this internet connection with your phone or laptop.", "options": ["a restaurant", "wi-fi", "a lamp"], "correctIndex": 1 },
+            { "prompt": "You wash yourself standing up in this.", "options": ["a bathtub", "a shower", "a bed"], "correctIndex": 1 }
+          ]
+        },
+        {
+          "title": "Complete the description",
+          "instructions": "Complete each sentence with a hotel or bedroom word.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "There's a great ___ of the lake from the window.", "answer": "view" },
+            { "prompt": "The remote control is on the ___ next to the bed.", "answer": "table" },
+            { "prompt": "There isn't a bathtub, only a ___.", "answer": "shower" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "vocabulary.spatial_prepositions.in_on_under",
+      "title": "In, on, and under",
+      "cefrLevel": "A1",
+      "difficultyBand": 5,
+      "parentKey": "vocabulary.spatial_prepositions",
+      "lessonBody": "In this lesson, you'll learn three simple prepositions for describing exactly where something is in relation to an object.\n\n• in — inside something (in the suitcase)\n• on — on top of the surface of something (on the table)\n• under — below something (under the bed)\n\nBy the end of this lesson, you'll be able to say exactly where something is when you can't find it, or describe where an object is placed.",
+      "examples": ["The remote control is on the table.", "Your keys are under the bed.", "Your phone is in your bag."],
+      "commonMistakes": ["'On' means touching the top surface; 'in' means inside — don't say 'on the suitcase' when you mean 'in the suitcase'.", "'Under' means below, not next to — don't confuse it with 'next to'."],
+      "exercises": [
+        {
+          "title": "Choose in, on, or under",
+          "instructions": "Choose the correct preposition for each picture description.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "A ball inside a box", "options": ["in", "on", "under"], "correctIndex": 0 },
+            { "prompt": "A ball on top of a box", "options": ["in", "on", "under"], "correctIndex": 1 },
+            { "prompt": "A ball below a box", "options": ["in", "on", "under"], "correctIndex": 2 }
+          ]
+        },
+        {
+          "title": "Complete the sentence",
+          "instructions": "Complete each sentence with in, on, or under.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "Where's the remote control? It's ___ the table.", "answer": "on" },
+            { "prompt": "Your shoes are ___ the bed.", "answer": "under" },
+            { "prompt": "Your passport is ___ your bag.", "answer": "in" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "vocabulary.spatial_prepositions.in_on_at_time_and_place",
+      "title": "In, on, and at for time and place",
+      "cefrLevel": "A1",
+      "difficultyBand": 5,
+      "parentKey": "vocabulary.spatial_prepositions",
+      "lessonBody": "In this lesson, you'll learn how to use in, on, and at for saying where you were — a different use from the physical in/on/under you already know.\n\n• in — an enclosed place or space: in the kitchen, in bed, in New York, in a car\n• on — a form of transportation you can walk around in: on a bus, on a train, on a plane, on a boat\n• at — a specific point or activity: at home, at work, at a meeting, at a restaurant\n\nBy the end of this lesson, you'll be able to say exactly where you were at a specific time, using the correct preposition.",
+      "examples": ["I was at home at seven o'clock.", "She was on a train to New York.", "They were in a meeting all morning."],
+      "commonMistakes": ["Use 'on' for buses, trains, and planes, but 'in' for a car: 'in a bus' is wrong — say 'on a bus', but 'in a car' is correct.", "'At work' and 'at home' don't need 'the' — 'at the work' is wrong."],
+      "exercises": [
+        {
+          "title": "Choose in, on, or at",
+          "instructions": "Choose the correct preposition for each place.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "___ home", "options": ["in", "on", "at"], "correctIndex": 2 },
+            { "prompt": "___ a train", "options": ["in", "on", "at"], "correctIndex": 1 },
+            { "prompt": "___ the kitchen", "options": ["in", "on", "at"], "correctIndex": 0 },
+            { "prompt": "___ a meeting", "options": ["in", "on", "at"], "correctIndex": 2 }
+          ]
+        },
+        {
+          "title": "Complete the sentence",
+          "instructions": "Complete each sentence with in, on, or at.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "Where were you yesterday? I was ___ work.", "answer": "at" },
+            { "prompt": "She was ___ a plane to Chicago.", "answer": "on" },
+            { "prompt": "The children were ___ bed by 9:00.", "answer": "in" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "vocabulary.common_verb_phrases.regular_verbs_life_changes",
+      "title": "Common verb phrases 5: making a big change",
+      "cefrLevel": "A1",
+      "difficultyBand": 5,
+      "parentKey": "vocabulary.common_verb_phrases",
+      "lessonBody": "In this lesson, you'll learn verb phrases for describing the steps involved in a big life change, like moving to a new country.\n\nCommon phrases:\n\n• rent a house/apartment\n• book a flight\n• invite friends (to say goodbye)\n• pack a suitcase\n• decide to do something\n• offer someone a job\n\nBy the end of this lesson, you'll be able to describe the steps of a big life change, like a move, step by step.",
+      "examples": ["We rented a house near the university.", "They offered her a great job abroad.", "We decided to move, so we booked our flights."],
+      "commonMistakes": ["'Rent' means to pay to use something temporarily; don't confuse it with 'buy', which means to own it permanently.", "'Decide to' is followed by the base verb with 'to': 'decide going' is wrong — say 'decide to go'."],
+      "exercises": [
+        {
+          "title": "Choose the correct verb phrase",
+          "instructions": "Choose the phrase that best completes each sentence.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "We don't own our house, we ___ it.", "options": ["rent", "book", "pack"], "correctIndex": 0 },
+            { "prompt": "Before a flight, you need to ___ your suitcase.", "options": ["invite", "pack", "offer"], "correctIndex": 1 },
+            { "prompt": "The university ___ her a job in the US.", "options": ["offered", "packed", "rented"], "correctIndex": 0 }
+          ]
+        },
+        {
+          "title": "Complete the sentence",
+          "instructions": "Complete each sentence with a verb phrase from the lesson.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "We ___ our friends to a restaurant to say goodbye. (ask to come)", "answer": "invited" },
+            { "prompt": "We finally ___ to move abroad. (made the choice)", "answer": "decided" },
+            { "prompt": "We ___ our flights online. (reserved)", "answer": "booked" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "vocabulary.common_verb_phrases.get_go_have_do_phrases",
+      "title": "Common verb phrases 6: get, go, have, do",
+      "cefrLevel": "A1",
+      "difficultyBand": 5,
+      "parentKey": "vocabulary.common_verb_phrases",
+      "lessonBody": "In this lesson, you'll learn everyday verb phrases built around four very common verbs — get, go, have, and do — used constantly to describe your day.\n\n• get: get up early, get a taxi, get a coffee\n• go: go to bed, go to school, go out\n• have: have breakfast, have dinner, have a nice day\n• do: do homework, do housework, do yoga\n\nBy the end of this lesson, you'll be able to describe your whole day using these common verb + noun combinations.",
+      "examples": ["I got up early and had breakfast.", "She did her homework before dinner.", "We went out for the evening."],
+      "commonMistakes": ["Don't mix up the verbs: 'do a taxi' or 'have homework done' are wrong patterns — each noun pairs with a specific verb (get a taxi, do homework).", "'Go to bed' and 'go to school' need 'to'; 'go out' does not — these patterns must be learned individually."],
+      "exercises": [
+        {
+          "title": "Match the verb to the phrase",
+          "instructions": "Choose the correct verb to complete each phrase.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "___ a taxi", "options": ["get", "have", "do"], "correctIndex": 0 },
+            { "prompt": "___ homework", "options": ["get", "go", "do"], "correctIndex": 2 },
+            { "prompt": "___ breakfast", "options": ["do", "have", "go"], "correctIndex": 1 },
+            { "prompt": "___ to bed", "options": ["get", "go", "have"], "correctIndex": 1 }
+          ]
+        },
+        {
+          "title": "Complete the sentence",
+          "instructions": "Complete each sentence with get, go, have, or do.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "I usually ___ up at 6:30. (leave bed)", "answer": "get" },
+            { "prompt": "We ___ housework on Saturday mornings.", "answer": "do" },
+            { "prompt": "They ___ out for dinner on Fridays.", "answer": "go" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "vocabulary.spatial_prepositions.location_and_directions",
+      "title": "Location words for giving directions",
+      "cefrLevel": "A1",
+      "difficultyBand": 5,
+      "parentKey": "vocabulary.spatial_prepositions",
+      "lessonBody": "In this lesson, you'll learn location words used specifically for describing where a building is in relation to another one — key vocabulary for giving and understanding directions.\n\nLocation words:\n\n• next to (right beside)\n• across from (on the opposite side)\n• between (with one thing on each side)\n• on the corner (where two streets meet)\n• on the left / on the right\n\nBy the end of this lesson, you'll be able to describe exactly where a building is on a street or map.",
+      "examples": ["The bank is next to the gym.", "The hotel is across from the park.", "The school is between the church and the park."],
+      "commonMistakes": ["'Between' needs two things: 'between the bank' alone is incomplete — say 'between the bank and the gym'.", "Don't confuse 'next to' (touching/beside) with 'across from' (on the opposite side, with a street between them)."],
+      "exercises": [
+        {
+          "title": "Choose the correct location word",
+          "instructions": "Choose the word that matches each description.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "The bank is right beside the gym.", "options": ["next to", "across from", "between"], "correctIndex": 0 },
+            { "prompt": "The hotel is on the opposite side of the street from the park.", "options": ["next to", "across from", "on the corner"], "correctIndex": 1 },
+            { "prompt": "The church has the park on one side and the school on the other.", "options": ["next to", "across from", "between"], "correctIndex": 2 }
+          ]
+        },
+        {
+          "title": "Complete the description",
+          "instructions": "Complete each sentence with a location word.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "The store is on the ___ of Main Street and King Street. (where two streets meet)", "answer": "corner" },
+            { "prompt": "The bank is ___ the gym. (right beside)", "answer": "next to" },
+            { "prompt": "Turn left, and the hotel is on your ___.", "answer": "left" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "vocabulary.places_in_town.common_places",
+      "title": "Common places in town",
+      "cefrLevel": "A1",
+      "difficultyBand": 5,
+      "parentKey": "vocabulary.places_in_town",
+      "lessonBody": "In this lesson, you'll learn the words for common places you'll find in a town or city — essential for understanding a map or giving directions.\n\nCommon places:\n\na bank, a hospital, a train station, a parking lot, a gym, a factory, a restaurant, a movie theater, a supermarket, a bookstore, a park, a school, a hotel\n\nBy the end of this lesson, you'll be able to name common places in a town and understand a simple map.",
+      "examples": ["Is there a bank near here?", "The hospital is next to the train station.", "I need to go to the supermarket and the bookstore."],
+      "commonMistakes": ["'Movie theater' is American English; 'cinema' is the British equivalent.", "Don't confuse 'a park' (green space) with 'a parking lot' (for cars) — they're unrelated despite the similar spelling."],
+      "exercises": [
+        {
+          "title": "Choose the correct place",
+          "instructions": "Choose the place that matches each description.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "You go here if you're sick or hurt.", "options": ["a hospital", "a bookstore", "a gym"], "correctIndex": 0 },
+            { "prompt": "You go here to watch a movie.", "options": ["a movie theater", "a factory", "a bank"], "correctIndex": 0 },
+            { "prompt": "You go here to buy food for the week.", "options": ["a supermarket", "a park", "a gym"], "correctIndex": 0 },
+            { "prompt": "You go here to catch a train.", "options": ["a train station", "a factory", "a hotel"], "correctIndex": 0 }
+          ]
+        },
+        {
+          "title": "Complete the sentence",
+          "instructions": "Complete each sentence with a place word.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "I need to take out money. Is there a ___ near here?", "answer": "bank" },
+            { "prompt": "We're going to the ___ to buy some books.", "answer": "bookstore" },
+            { "prompt": "The children are playing in the ___.", "answer": "park" }
           ]
         }
       ]

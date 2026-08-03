@@ -40,6 +40,37 @@
           ]
         }
       ]
+    },
+    {
+      "key": "listening.everyday_situations.completing_information_from_a_conversation",
+      "title": "Completing information from a conversation",
+      "cefrLevel": "A1",
+      "difficultyBand": 5,
+      "parentKey": "listening.everyday_situations",
+      "lessonBody": "In this lesson, you'll practice a common real-life listening task: filling in missing information — like a name, address, or job — while following a conversation, similar to taking notes during a phone call or interview.\n\nRead the transcript below as if you were listening to an interview, then complete the missing information.\n\nOfficer: What's the person's name?\nWitness: His name is Daniel Cole.\nOfficer: And his job?\nWitness: He's an electrician.\nOfficer: Where does he live?\nWitness: On Baker Street, I think — near the old cinema.\nOfficer: What time did you see him?\nWitness: About six o'clock in the evening.\n\nWhen completing information from a conversation, listen for the answer immediately after the question — the key information is usually a short phrase right after it's asked.\n\nBy the end of this lesson, you'll be able to pick out and note down specific pieces of information as you follow a conversation.",
+      "examples": ["Question: 'What's his job?' Answer (right after): 'He's an electrician.'", "Question: 'What time?' Answer: 'About six o'clock.'"],
+      "commonMistakes": ["Don't wait too long after a question to note the answer — in real speech, the key information often comes immediately.", "Watch for hedging words like 'I think' — they signal the speaker isn't fully certain, which can matter for accuracy."],
+      "exercises": [
+        {
+          "title": "Complete the information",
+          "instructions": "Based on the conversation, complete each piece of information.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "Name: ___", "answer": "Daniel Cole" },
+            { "prompt": "Job: ___", "answer": "electrician" },
+            { "prompt": "Time seen: ___", "answer": "six o'clock" }
+          ]
+        },
+        {
+          "title": "Choose the correct answer",
+          "instructions": "Choose the answer that matches the conversation.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Where does the witness think Daniel lives?", "options": ["On Baker Street", "On Main Street", "She doesn't say"], "correctIndex": 0 },
+            { "prompt": "How certain is the witness about the address?", "options": ["Completely certain", "Not fully certain (says 'I think')", "She doesn't know at all"], "correctIndex": 1 }
+          ]
+        }
+      ]
     }
   ]
 }

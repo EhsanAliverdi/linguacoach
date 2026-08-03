@@ -14,7 +14,10 @@
     { "key": "grammar.question_word_order", "title": "Question word order", "cefrLevel": "A1", "difficultyBand": 4, "nodeType": "topic" },
     { "key": "grammar.imperatives_and_object_pronouns", "title": "Imperatives and object pronouns", "cefrLevel": "A1", "difficultyBand": 4, "nodeType": "topic" },
     { "key": "grammar.modals", "title": "Modal verbs", "cefrLevel": "A1", "difficultyBand": 4, "nodeType": "topic" },
-    { "key": "grammar.liking_verbs", "title": "Liking verbs", "cefrLevel": "A1", "difficultyBand": 4, "nodeType": "topic" }
+    { "key": "grammar.liking_verbs", "title": "Liking verbs", "cefrLevel": "A1", "difficultyBand": 4, "nodeType": "topic" },
+    { "key": "grammar.present_continuous", "title": "Present continuous", "cefrLevel": "A1", "difficultyBand": 5, "nodeType": "topic" },
+    { "key": "grammar.existential_there", "title": "There is / there are", "cefrLevel": "A1", "difficultyBand": 5, "nodeType": "topic" },
+    { "key": "grammar.simple_past", "title": "Simple past", "cefrLevel": "A1", "difficultyBand": 5, "nodeType": "topic" }
   ],
   "leaves": [
     {
@@ -633,6 +636,264 @@
             { "prompt": "Strongest positive feeling", "options": ["love", "like", "hate"], "correctIndex": 0 },
             { "prompt": "Strongest negative feeling", "options": ["like", "don't like", "hate"], "correctIndex": 2 },
             { "prompt": "Mild positive feeling", "options": ["love", "like", "hate"], "correctIndex": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "grammar.present_continuous.forms_and_uses",
+      "title": "Present continuous",
+      "cefrLevel": "A1",
+      "difficultyBand": 5,
+      "parentKey": "grammar.present_continuous",
+      "nodeType": "skill",
+      "cefrConfidence": "curated",
+      "cefrSource": "hand_authored",
+      "routingEligible": true,
+      "lessonBody": "In this lesson, you'll learn a second present tense — the present continuous — used for things happening right now, at this exact moment.\n\nForm: am/is/are + verb + -ing\n\n• I'm making dinner. She's doing her homework. They're reading.\n\nNegative and question:\n\n• I'm not working today. Is he sleeping? What are they doing?\n\nBy the end of this lesson, you'll be able to describe what's happening right now, for yourself and for other people.",
+      "examples": ["I'm staying in a hotel this week.", "She's doing her homework right now.", "What are they doing? They're watching a movie."],
+      "commonMistakes": ["Don't forget am/is/are — 'I working' is wrong — say 'I'm working'.", "Don't drop the -ing ending: 'She's do her homework' is wrong — say 'She's doing her homework'."],
+      "exercises": [
+        {
+          "title": "Complete with the present continuous",
+          "instructions": "Complete each sentence with the present continuous form of the verb.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "I ___ dinner right now. (make)", "answer": "'m making" },
+            { "prompt": "She ___ her homework. (do)", "answer": "'s doing" },
+            { "prompt": "They ___ a movie. (watch)", "answer": "'re watching" },
+            { "prompt": "___ you ___ now? (work)", "answer": "Are; working" }
+          ]
+        },
+        {
+          "title": "Choose the correct sentence",
+          "instructions": "Choose the sentence in the correct present continuous form.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which is correct?", "options": ["I'm reading a book.", "I reading a book.", "I am read a book."], "correctIndex": 0 },
+            { "prompt": "Which is correct?", "options": ["What you are doing?", "What are you doing?"], "correctIndex": 1 },
+            { "prompt": "Which is correct?", "options": ["She isn't work today.", "She isn't working today."], "correctIndex": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "grammar.present_continuous.vs_simple_present",
+      "title": "Present continuous or simple present?",
+      "cefrLevel": "A1",
+      "difficultyBand": 5,
+      "parentKey": "grammar.present_continuous",
+      "nodeType": "skill",
+      "cefrConfidence": "curated",
+      "cefrSource": "hand_authored",
+      "routingEligible": true,
+      "lessonBody": "In this lesson, you'll learn how to choose between the two present tenses you now know — simple present and present continuous — a common source of confusion once you know both.\n\nUse the simple present for habits, routines, and things that are generally true:\n\n• He usually works in an office. She wears a suit every day.\n\nUse the present continuous for something happening right now or a temporary situation:\n\n• Today he's working in a hotel. Today she's wearing jeans.\n\nWords like 'usually' and 'every day' signal simple present; 'right now' and 'today' signal present continuous.\n\nBy the end of this lesson, you'll be able to choose the correct present tense depending on whether you mean a habit or something happening now.",
+      "examples": ["He usually works in an office, but today he's working from home.", "She usually wears a suit, but today she's wearing jeans.", "I usually walk to work, but today I'm taking the bus."],
+      "commonMistakes": ["Don't use the present continuous for a general habit: 'I'm working in an office' (as a permanent job description) is less natural than 'I work in an office'.", "Don't use the simple present for something happening right now: 'I work on the report now' is wrong — say 'I'm working on the report now'."],
+      "exercises": [
+        {
+          "title": "Choose simple present or present continuous",
+          "instructions": "Choose the correct tense for each sentence.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "He usually ___ a suit, but today he ___ jeans.", "options": ["wears / is wearing", "is wearing / wears", "wears / wears"], "correctIndex": 0 },
+            { "prompt": "I ___ in an office. It's my job.", "options": ["work", "am working"], "correctIndex": 0 },
+            { "prompt": "Look! It ___ outside.", "options": ["rains", "is raining"], "correctIndex": 1 }
+          ]
+        },
+        {
+          "title": "Complete the sentence",
+          "instructions": "Complete each sentence with the correct present tense.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "She usually ___ to the office. Today she ___ at home. (work)", "answer": "works; is working" },
+            { "prompt": "I usually ___ breakfast at home, but today I ___ breakfast at a café. (have)", "answer": "have; 'm having" },
+            { "prompt": "Right now, they ___ dinner. (make)", "answer": "'re making" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "grammar.existential_there.there_is_there_are",
+      "title": "There's a... / there are some...",
+      "cefrLevel": "A1",
+      "difficultyBand": 5,
+      "parentKey": "grammar.existential_there",
+      "nodeType": "skill",
+      "cefrConfidence": "curated",
+      "cefrSource": "hand_authored",
+      "routingEligible": true,
+      "lessonBody": "In this lesson, you'll learn how to say what exists or is present in a place — a room, a hotel, a city — without naming who owns it or where exactly it is yet.\n\nUse there's/there is + a singular noun, and there are + some + a plural noun:\n\n• There's a great view. There are some nice cafés nearby.\n\nNegative and question use any, not some:\n\n• There isn't a bathtub. Is there wi-fi? Are there any stores?\n\nBy the end of this lesson, you'll be able to describe what a place has and doesn't have, and ask whether something is available.",
+      "examples": ["There's a room on the third floor.", "There are two restaurants in the hotel.", "Is there wi-fi? Yes, there is. Are there any stores? No, there aren't."],
+      "commonMistakes": ["Use 'any', not 'some', in questions and negatives: 'There aren't some stores' is wrong — say 'There aren't any stores'.", "Match singular/plural correctly: 'There's two restaurants' is wrong — say 'There are two restaurants'."],
+      "exercises": [
+        {
+          "title": "Complete with there's, there are, there isn't, or there aren't",
+          "instructions": "Complete each sentence about the hotel.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "___ a great view of the lake. (positive)", "answer": "There's" },
+            { "prompt": "___ two restaurants in the hotel. (positive, plural)", "answer": "There are" },
+            { "prompt": "___ a bathtub, only a shower. (negative)", "answer": "there isn't" },
+            { "prompt": "___ any stores in the hotel. (negative, plural)", "answer": "There aren't" }
+          ]
+        },
+        {
+          "title": "Choose the correct question",
+          "instructions": "Choose the correctly formed question.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which is correct?", "options": ["Is there wi-fi?", "There is wi-fi?", "Is wi-fi there?"], "correctIndex": 0 },
+            { "prompt": "Which is correct?", "options": ["Are there some stores?", "Are there any stores?"], "correctIndex": 1 },
+            { "prompt": "Which is correct?", "options": ["There's an elevator?", "Is there an elevator?"], "correctIndex": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "grammar.simple_past.be",
+      "title": "Simple past: be",
+      "cefrLevel": "A1",
+      "difficultyBand": 5,
+      "parentKey": "grammar.simple_past",
+      "nodeType": "skill",
+      "cefrConfidence": "curated",
+      "cefrSource": "hand_authored",
+      "routingEligible": true,
+      "lessonBody": "In this lesson, you'll learn the past tense of 'be' — your first step into talking about the past, and the foundation every other simple past form builds on.\n\nWas/were forms:\n\n• I/he/she/it was — you/we/they were\n\nNegative: wasn't/weren't. Question: Was/Were + subject?\n\n• Where were you at seven o'clock? I was at home. Were you alone? No, I wasn't.\n\nBy the end of this lesson, you'll be able to say where you and others were at a specific past time, and ask the same about someone else.",
+      "examples": ["I was at home last night.", "They weren't at the party.", "Were you at work yesterday? Yes, I was."],
+      "commonMistakes": ["Use 'was' with I/he/she/it, and 'were' with you/we/they — don't mix them up: 'I were' is wrong.", "Don't add 'did' to a be-question: 'Did you were at home?' is wrong — say 'Were you at home?'"],
+      "exercises": [
+        {
+          "title": "Complete with was, were, wasn't, or weren't",
+          "instructions": "Complete each sentence with the correct simple past form of be.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "I ___ at home at seven o'clock. (positive)", "answer": "was" },
+            { "prompt": "They ___ at the meeting. They were at lunch. (negative)", "answer": "weren't" },
+            { "prompt": "___ you alone last night?", "answer": "Were" },
+            { "prompt": "She ___ a teacher ten years ago. (positive)", "answer": "was" }
+          ]
+        },
+        {
+          "title": "Choose the correct form",
+          "instructions": "Choose the correct past form of be.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Where ___ you yesterday?", "options": ["was", "were"], "correctIndex": 1 },
+            { "prompt": "He ___ at work all day.", "options": ["was", "were"], "correctIndex": 0 },
+            { "prompt": "___ they at home? No, they weren't.", "options": ["Was", "Were"], "correctIndex": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "grammar.simple_past.regular_verbs",
+      "title": "Simple past: regular verbs",
+      "cefrLevel": "A1",
+      "difficultyBand": 5,
+      "parentKey": "grammar.simple_past",
+      "nodeType": "skill",
+      "cefrConfidence": "curated",
+      "cefrSource": "hand_authored",
+      "routingEligible": true,
+      "lessonBody": "In this lesson, you'll learn how to talk about completed actions in the past using regular verbs — most English verbs follow this same simple pattern.\n\nAffirmative: add -ed (or -d if the verb already ends in e):\n\n• book → booked, arrive → arrived, invite → invited\n\nSome verbs double the final consonant: stop → stopped.\n\nNegative and question use didn't/did + the base verb, for every subject:\n\n• We didn't rent a car. Did they arrive on time? Yes, they did.\n\nBy the end of this lesson, you'll be able to describe completed past actions and events using regular verbs correctly.",
+      "examples": ["We rented a house near the university.", "They didn't invite everyone.", "Did you pack your suitcase? Yes, I did."],
+      "commonMistakes": ["Don't forget -ed in the affirmative: 'We rent a house last year' is wrong — say 'We rented a house last year'.", "Don't add -ed after didn't/did: 'We didn't arrived' is wrong — say 'We didn't arrive'."],
+      "exercises": [
+        {
+          "title": "Complete with the simple past",
+          "instructions": "Complete each sentence with the correct simple past form.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "We ___ our flights early. (book)", "answer": "booked" },
+            { "prompt": "They ___ their friends to the party. (invite)", "answer": "invited" },
+            { "prompt": "She ___ seven suitcases. (pack)", "answer": "packed" },
+            { "prompt": "We ___ in North Carolina at 6:00. (arrive)", "answer": "arrived" }
+          ]
+        },
+        {
+          "title": "Make the negative and question",
+          "instructions": "Complete each negative sentence or question.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "We ___ a car. We took the bus. (negative, rent)", "answer": "didn't rent" },
+            { "prompt": "___ you ___ your bags yesterday? (question, pack)", "answer": "Did; pack" },
+            { "prompt": "They ___ want to leave. (negative, want)", "answer": "didn't" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "grammar.simple_past.irregular_verbs_get_go_have_do",
+      "title": "Simple past irregular verbs: get, go, have, do",
+      "cefrLevel": "A1",
+      "difficultyBand": 5,
+      "parentKey": "grammar.simple_past",
+      "nodeType": "skill",
+      "cefrConfidence": "curated",
+      "cefrSource": "hand_authored",
+      "routingEligible": true,
+      "lessonBody": "In this lesson, you'll learn the past forms of four extremely common irregular verbs — they don't follow the -ed pattern, so their past forms must be learned individually.\n\n• get → got, go → went, have → had, do → did\n\nNegative and question still use didn't/did + the base form, just like regular verbs:\n\n• I didn't go to school today. Did you have breakfast? Yes, I did.\n\nBy the end of this lesson, you'll be able to describe your day using these four very frequent irregular verbs correctly in the past.",
+      "examples": ["I got up early and got a taxi.", "We went to the museum and had lunch there.", "I did my homework, but I didn't do the housework."],
+      "commonMistakes": ["Don't say 'goed', 'getted', 'haved', or 'doed' — these verbs are irregular: went, got, had, did.", "The base form returns after didn't/did: 'I didn't went' is wrong — say 'I didn't go'."],
+      "exercises": [
+        {
+          "title": "Complete with the past form",
+          "instructions": "Complete each sentence with the correct past form of get, go, have, or do.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "I ___ an early flight yesterday. (get)", "answer": "got" },
+            { "prompt": "We ___ to the museum in the morning. (go)", "answer": "went" },
+            { "prompt": "She ___ lunch in the café. (have)", "answer": "had" },
+            { "prompt": "I ___ my homework last night. (do)", "answer": "did" }
+          ]
+        },
+        {
+          "title": "Make the negative and question",
+          "instructions": "Complete each negative sentence or question.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "I ___ to school today. I stayed home. (negative, go)", "answer": "didn't go" },
+            { "prompt": "___ you ___ a good day? (question, have)", "answer": "Did; have" },
+            { "prompt": "She ___ her homework. She forgot. (negative, do)", "answer": "didn't do" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "grammar.simple_past.regular_and_irregular_review",
+      "title": "Simple past: more irregular verbs",
+      "cefrLevel": "A1",
+      "difficultyBand": 5,
+      "parentKey": "grammar.simple_past",
+      "nodeType": "skill",
+      "cefrConfidence": "curated",
+      "cefrSource": "hand_authored",
+      "routingEligible": true,
+      "lessonBody": "In this lesson, you'll learn eight more common irregular past forms, building on 'get,' 'go,' 'have,' and 'do' — with practice choosing correctly between regular and irregular verbs together.\n\nMore irregular past forms:\n\n• buy → bought, leave → left, say → said, see → saw, send → sent, sit → sat, tell → told, write → wrote\n\nThere's no shortcut for irregular verbs — they simply need to be memorized, one at a time, through practice.\n\nBy the end of this lesson, you'll be able to use these eight verbs correctly in the past, alongside regular verbs, in real sentences about your own experiences.",
+      "examples": ["I bought a new jacket and saw a movie.", "She sat next to me and told me her name.", "I left my phone at home and sent an email instead."],
+      "commonMistakes": ["Don't regularize irregular verbs: 'buyed', 'seed', 'sitted', and 'writed' are all wrong — the correct forms are bought, saw, sat, wrote.", "'Said' is pronounced /sɛd/, not like 'paid' — it's an irregular pronunciation as well as an irregular spelling."],
+      "exercises": [
+        {
+          "title": "Complete with the correct past form",
+          "instructions": "Complete each sentence with the correct past form of the verb.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "I ___ a new jacket yesterday. (buy)", "answer": "bought" },
+            { "prompt": "She ___ down next to me on the train. (sit)", "answer": "sat" },
+            { "prompt": "He ___ me his name. (tell)", "answer": "told" },
+            { "prompt": "I ___ a great movie last night. (see)", "answer": "saw" }
+          ]
+        },
+        {
+          "title": "Choose the correct past form",
+          "instructions": "Choose the correct past tense form of the verb.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "I ___ my house at 8:00. (leave)", "options": ["leaved", "left"], "correctIndex": 1 },
+            { "prompt": "She ___ a long letter. (write)", "options": ["writed", "wrote"], "correctIndex": 1 },
+            { "prompt": "I ___ an email this morning. (send)", "options": ["sended", "sent"], "correctIndex": 1 }
           ]
         }
       ]

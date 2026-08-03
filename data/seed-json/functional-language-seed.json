@@ -8,7 +8,9 @@
     { "key": "functional_language.meeting_people", "title": "Meeting people", "cefrLevel": "A1" },
     { "key": "functional_language.everyday_transactions", "title": "Everyday transactions", "cefrLevel": "A1" },
     { "key": "functional_language.classroom_management", "title": "Classroom management language", "cefrLevel": "A1" },
-    { "key": "functional_language.time_and_arrangements", "title": "Time and arrangements", "cefrLevel": "A1" }
+    { "key": "functional_language.time_and_arrangements", "title": "Time and arrangements", "cefrLevel": "A1" },
+    { "key": "functional_language.invitations_and_offers", "title": "Invitations and offers", "cefrLevel": "A1" },
+    { "key": "functional_language.directions", "title": "Directions", "cefrLevel": "A1" }
   ],
   "leaves": [
     {
@@ -365,6 +367,132 @@
             { "prompt": "A: Is this Jenny? B: ___", "options": ["Yes. Who's this?", "A table for two.", "See you tomorrow."], "correctIndex": 0 },
             { "prompt": "A: We need to talk about your trip to London. B: ___", "options": ["Of course.", "It's blue.", "How much is it?"], "correctIndex": 0 },
             { "prompt": "A: Call me on Monday at work. B: ___", "options": ["Talk to you then.", "I don't know.", "Nice to meet you."], "correctIndex": 0 }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "functional_language.invitations_and_offers.offering_food_and_drink",
+      "title": "Offering food and drink",
+      "cefrLevel": "A1",
+      "difficultyBand": 5,
+      "parentKey": "functional_language.invitations_and_offers",
+      "lessonBody": "In this lesson, you'll learn the fixed phrases for offering someone food or drink, and for saying what you'd like.\n\nOffering:\n\n• Would you like a burger? / Would you like a coffee?\n• How about a sandwich?\n\nAccepting or declining:\n\n• Yes, please. / No, thanks.\n\nSaying what you'd like:\n\n• I'd like a coffee, please. (I'd like = I would like)\n\nBy the end of this lesson, you'll be able to offer someone food or drink, and say clearly what you'd like yourself.",
+      "examples": ["Would you like a coffee? Yes, please.", "How about a sandwich? No, thanks, I'm not hungry.", "I'd like a burger and a soda, please."],
+      "commonMistakes": ["'Would you like' is much more polite than 'Do you want' for offering — use it especially with people you don't know well.", "'I'd like' is followed by a noun, not a full sentence: 'I'd like I have a coffee' is wrong — say 'I'd like a coffee'."],
+      "exercises": [
+        {
+          "title": "Choose the best response",
+          "instructions": "Choose the most natural response to complete each exchange.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "A: Would you like a coffee? B: ___", "options": ["Yes, please.", "I'm sorry.", "See you then."], "correctIndex": 0 },
+            { "prompt": "A: How about a sandwich? B: ___", "options": ["No, thanks.", "Turn left.", "Nice to meet you."], "correctIndex": 0 },
+            { "prompt": "Server: What would you like? You: ___", "options": ["I'd like a burger, please.", "I am a burger.", "You have a burger."], "correctIndex": 0 }
+          ]
+        },
+        {
+          "title": "Complete the exchange",
+          "instructions": "Complete each offer exchange.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "A: ___ you like a coffee? B: Yes, please.", "answer": "Would" },
+            { "prompt": "A: How ___ a sandwich? B: Yeah, great.", "answer": "about" },
+            { "prompt": "I'd ___ a burger and a soda, please.", "answer": "like" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "functional_language.invitations_and_offers.inviting_and_responding",
+      "title": "Inviting someone and responding",
+      "cefrLevel": "A1",
+      "difficultyBand": 5,
+      "parentKey": "functional_language.invitations_and_offers",
+      "lessonBody": "In this lesson, you'll learn how to invite someone to do something, and how to accept or politely decline an invitation.\n\nInviting:\n\n• Would you like to come to the match with me?\n• Would you like to come to a party at my house?\n\nAccepting:\n\n• Yeah, I'd love to. Thanks.\n\nDeclining politely:\n\n• Sorry, I can't. I'm busy on Saturday night.\n\nArranging details:\n\n• Let's meet at half past three. See you there.\n\nBy the end of this lesson, you'll be able to invite someone to an event, respond to an invitation, and arrange a time and place to meet.",
+      "examples": ["Would you like to come to the movies? Yeah, I'd love to.", "Would you like to come to a party? Sorry, I can't. I'm busy.", "Let's meet at the entrance at 8:00. See you there."],
+      "commonMistakes": ["'Would you like to' + base verb, not '-ing': 'Would you like coming' is wrong — say 'Would you like to come'.", "'I'd love to' is a complete, natural response — you don't need to add 'come' again: 'I'd love to come' is also fine, but 'I'd love to' alone is very common."],
+      "exercises": [
+        {
+          "title": "Complete the invitation",
+          "instructions": "Complete each line of the invitation exchange.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "A: ___ you like to come to the match? B: Yeah, I'd love to.", "answer": "Would" },
+            { "prompt": "A: Would you like to come to a party? B: Sorry, I ___. I'm busy.", "answer": "can't" },
+            { "prompt": "Let's ___ at half past three. See you there.", "answer": "meet" }
+          ]
+        },
+        {
+          "title": "Choose the best response",
+          "instructions": "Choose the most natural response to complete each exchange.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "A: Would you like to come to a party at my house? B: ___", "options": ["Yes, I'd love to. Thanks!", "It's blue.", "How much is it?"], "correctIndex": 0 },
+            { "prompt": "A: Would you like to come to the movies on Friday? B: ___", "options": ["Sorry, I can't. I'm busy on Friday.", "A table for two.", "Nice to meet you."], "correctIndex": 0 },
+            { "prompt": "A: Great! Let's meet at 8:00. B: ___", "options": ["See you there.", "I don't know.", "Turn left."], "correctIndex": 0 }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "functional_language.directions.asking_for_directions",
+      "title": "Asking for directions politely",
+      "cefrLevel": "A1",
+      "difficultyBand": 5,
+      "parentKey": "functional_language.directions",
+      "lessonBody": "In this lesson, you'll learn how to politely stop a stranger and ask for directions to a place, and how to react if what you're looking for doesn't work.\n\nAsking:\n\n• Excuse me, is there a bank near here?\n• Sorry, where is that?\n\nWhen something isn't working:\n\n• Excuse me, this cash machine isn't working.\n\nResponding to help:\n\n• Thanks very much. / Thank you.\n\nBy the end of this lesson, you'll be able to politely ask a stranger for directions to a place you need, and thank them properly.",
+      "examples": ["Excuse me, is there a bank near here?", "Sorry, where is that?", "Thanks very much for your help."],
+      "commonMistakes": ["Always start with 'Excuse me' when approaching a stranger — starting directly with the question can sound abrupt.", "'Thanks very much' is warmer than a plain 'Thanks' — use it when someone has really helped you."],
+      "exercises": [
+        {
+          "title": "Complete the request",
+          "instructions": "Complete each line of the direction-asking exchange.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "___ me, is there a bank near here? (polite opener)", "answer": "Excuse" },
+            { "prompt": "Sorry, ___ is that? (asking for location)", "answer": "where" },
+            { "prompt": "Excuse me, this cash machine ___ working. (not functioning)", "answer": "isn't" }
+          ]
+        },
+        {
+          "title": "Choose the best response",
+          "instructions": "Choose the most natural response to complete each exchange.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "A: Excuse me, is there a cash machine near here? B: ___", "options": ["Yes, there's one at Barclays Bank.", "A table for two.", "Nice to meet you."], "correctIndex": 0 },
+            { "prompt": "A: Thanks very much. B: ___", "options": ["You're welcome.", "How much is it?", "See you there."], "correctIndex": 0 }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "functional_language.directions.giving_directions",
+      "title": "Giving directions",
+      "cefrLevel": "A1",
+      "difficultyBand": 5,
+      "parentKey": "functional_language.directions",
+      "lessonBody": "In this lesson, you'll learn the fixed phrases for giving someone directions to a place — turning your location vocabulary into clear step-by-step instructions.\n\nGiving directions:\n\n• Turn left. / Turn right. / Go straight ahead.\n• Turn left when you leave the station.\n• Go straight for a bit, then turn right.\n\nDescribing the final location:\n\n• It's on the corner of King Street and East Road.\n• It's on the right.\n\nBy the end of this lesson, you'll be able to give someone clear, step-by-step directions to a nearby place.",
+      "examples": ["Turn left, and it's on the right.", "Go straight ahead, then turn right at the bank.", "It's on the corner of Main Street and King Street."],
+      "commonMistakes": ["'Straight ahead' (American English) and 'straight on' (British English) mean the same thing.", "Give directions as a clear sequence of short steps — don't combine too many turns into one long sentence."],
+      "exercises": [
+        {
+          "title": "Put the directions in order",
+          "instructions": "Put the direction words in a logical order for reaching a destination.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "left / go / then / straight / turn / on the right / and it's", "answer": "Go straight then turn left and it's on the right" },
+            { "prompt": "the corner / it's / on / of King Street and East Road", "answer": "It's on the corner of King Street and East Road" }
+          ]
+        },
+        {
+          "title": "Choose the correct direction",
+          "instructions": "Choose the phrase that matches the direction described.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Continue in the same direction, no turns", "options": ["Go straight ahead", "Turn left", "Turn right"], "correctIndex": 0 },
+            { "prompt": "Where two streets meet", "options": ["next to", "on the corner", "between"], "correctIndex": 1 },
+            { "prompt": "A: Excuse me, is there a bank near here? B: ___", "options": ["Yes, turn left and it's on the right.", "It's blue.", "See you there."], "correctIndex": 0 }
           ]
         }
       ]

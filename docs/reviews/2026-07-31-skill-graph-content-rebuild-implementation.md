@@ -339,3 +339,74 @@ the same quality bar established in §12.
 
 **Next recommended action**: none pending; further lesson-blocks can continue the same way when
 requested.
+
+## 15. Addendum (2026-08-04) — Files 9-12 built; source material fully covered
+
+Following the same compulsory process, the final four lesson-blocks of the source book were read
+and built out: a present-continuous/clothes lesson-block, a hotels/simple-past-be lesson-block
+(plus an inviting/offering practical-English episode), a simple-past-regular/irregular
+lesson-block (plus a directions practical-English episode), and a final simple-past review
+lesson-block. This completes every lesson-block in the source material end to end.
+
+**New containers (10)**: 3 grammar (`grammar.present_continuous`, `grammar.existential_there`,
+`grammar.simple_past`), 4 vocabulary (`vocabulary.clothes`, `vocabulary.hotels`,
+`vocabulary.spatial_prepositions`, `vocabulary.places_in_town`), 2 functional-language
+(`functional_language.invitations_and_offers`, `functional_language.directions`), 1 writing
+(`writing.everyday_texts`).
+
+**New leaves (33)**, each with a full lesson body, 2 original exercises, and examples/common
+mistakes:
+
+- Grammar (7): present continuous forms, present continuous vs. simple present, there's a/there
+  are some, simple past of be, simple past regular verbs, simple past irregular verbs
+  (get/go/have/do), eight more irregular past forms (buy/leave/say/see/send/sit/tell/write).
+- Vocabulary (9): traveling phrases, clothes, hotel facilities, in/on/under, in/on/at for time
+  and place, life-change verb phrases, get/go/have/do verb phrases, location/direction words,
+  common places in town.
+- Pronunciation (7): rhythm in present-continuous questions, /ər/ and other vowel sounds, the
+  /ɪr/ vs. /ɛr/ spelling ambiguity, was/were stress, regular past -ed endings
+  (/d//t//ɪd/ — the same three-way pattern as plural -s, now applied to a new suffix), vowel
+  sounds in irregular past forms, polite intonation for requests.
+- Functional language (4): offering food and drink, inviting and responding, asking for
+  directions, giving directions.
+- Reading (3): finding word meaning from context, correcting false information in a text,
+  reading a short narrative story.
+- Writing (2): an invitation email, a blog post about yesterday.
+- Listening (1): completing missing information from a conversation transcript.
+
+**Resolved without a new leaf** (rule 3's exception): the final lesson-block's own content is a
+pure review board game (dice-and-squares format covering only already-taught simple past
+material) with no new teaching point — not duplicated into a leaf, the same judgment applied to
+every other pure-review section across this project. Several "sentence rhythm" pronunciation
+sections with no new sound were folded into their grammar leaf's own practice rather than given
+a redundant leaf, except where the rhythm was tied to a genuinely new practice context (e.g.
+present-continuous questions, polite request intonation) — consistent with the precedent set in
+§11 and §14.
+
+**25 new prerequisite edges** (61 total now), continuing the same vocab-before-grammar and
+grammar-before-its-extension patterns established throughout this project — e.g. hotel
+vocabulary before there's-a/there-are-some; the simple past of be chained directly onto the
+existing verb-be question mastery; each new irregular-verb leaf chained onto the previous one.
+
+**Re-seed**: full `TRUNCATE` + re-run of all domain seeders + prerequisites, in the established
+order. Final counts: 145 `SkillGraphNode` rows (42 skill-less containers, 103 leaves), 103
+Lessons (every leaf has exactly one, verified via `lessons_without_leaf = 0`), 210 Exercises, 61
+prerequisite edges. All three backend test suites green (UnitTests 2594, IntegrationTests 1418,
+ArchitectureTests 30). API container restarted and confirmed healthy.
+
+**Scope note**: this covers every lesson-block (grammar/vocabulary/pronunciation/speaking/
+reading/writing/listening point) in the source book's main unit sequence. Reference-only sections
+(the book's own grammar reference tables, vocabulary reference lists, and communication/
+information-gap pages) were not opened as separate content — their content was already folded
+into the relevant leaf's lesson body per rule 4 wherever a lesson referenced them, using
+originally-authored explanations of the same grammar/vocabulary point rather than copying the
+reference page. No audio or video files were used or bundled at any point, per the copyright
+exclusion rule — every listening/video-listening section was either represented as an original
+text transcript, or (where it was pure extra practice of an already-taught point) folded into an
+existing leaf rather than treated as new content.
+
+**Final verdict**: the entire source book is now represented in the skill graph, at the quality
+bar established and audited in §12.
+
+**Next recommended action**: none pending. Any further work would be a fresh audit/quality pass
+of this now-complete set, not additional coverage.

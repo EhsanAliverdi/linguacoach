@@ -595,6 +595,229 @@
           ]
         }
       ]
+    },
+    {
+      "key": "pronunciation.beginner_sounds.rhythm_with_present_continuous",
+      "title": "Sentence rhythm with present continuous questions",
+      "cefrLevel": "A1",
+      "difficultyBand": 5,
+      "parentKey": "pronunciation.beginner_sounds",
+      "lessonBody": "In this lesson, you'll practice sentence rhythm in present continuous questions and answers — a very common everyday pattern for checking in on someone.\n\nStress falls on the question word and the main verb (the -ing word):\n\n• What are you DOing? I'm MAking DINner.\n• Are the children DOing their HOMEwork? No, they AREN'T. They're WATCHing TV.\n\nSmall words (are, you, their) stay light and quick.\n\nBy the end of this lesson, you'll be able to ask and answer 'what are you doing' style questions with natural, confident rhythm.",
+      "examples": ["What are you doing? I'm making dinner.", "Are they watching TV? Yes, they are.", "What's your mother doing? She's helping me."],
+      "commonMistakes": ["Don't stress 'are' and 'you' as heavily as 'doing' — the content word (the -ing verb) carries the main stress.", "Don't flatten the rhythm by stressing every syllable equally — this makes the question sound unnatural."],
+      "exercises": [
+        {
+          "title": "Choose the stressed word",
+          "instructions": "Choose the word that should be stressed most strongly.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "What are you doing?", "options": ["What", "are", "doing"], "correctIndex": 2 },
+            { "prompt": "I'm making dinner.", "options": ["I'm", "making", "dinner"], "correctIndex": 2 },
+            { "prompt": "Are the children doing their homework?", "options": ["Are", "doing", "the"], "correctIndex": 1 }
+          ]
+        },
+        {
+          "title": "Complete the exchange",
+          "instructions": "Complete each exchange about what's happening now.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "A: What are you ___? B: I'm making dinner.", "answer": "doing" },
+            { "prompt": "A: Are they watching TV? B: Yes, they ___.", "answer": "are" },
+            { "prompt": "A: What's she doing? B: She's ___ her homework.", "answer": "doing" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "pronunciation.beginner_sounds.er_vowel_sounds",
+      "title": "Sound /ər/ and other vowel sounds",
+      "cefrLevel": "A1",
+      "difficultyBand": 5,
+      "parentKey": "pronunciation.beginner_sounds",
+      "lessonBody": "In this lesson, you'll practice /ər/, a very common vowel sound in English spelled several different ways, plus a quick review of vowel sounds you already know.\n\n/ər/ as in 'bird': shirt, skirt, T-shirt, serve, work\n\nMany different spellings (ir, or, er, ear) can all produce this same /ər/ sound — that's why it's worth practicing as a group.\n\nBy the end of this lesson, you'll be able to produce /ər/ correctly in common clothing and work-related words.",
+      "examples": ["She's wearing a shirt and skirt.", "He works hard every day.", "The waiters serve breakfast at 7:00."],
+      "commonMistakes": ["Don't pronounce the 'r' strongly in British-style /ər/ — in most varieties it's a soft, central vowel sound, not a hard 'er' sound.", "Different spellings (ir, or, er) can all make the same /ər/ sound — don't assume the spelling tells you the sound."],
+      "exercises": [
+        {
+          "title": "Choose the word with /ər/",
+          "instructions": "Choose the word that contains the /ər/ sound.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which word has /ər/?", "options": ["shirt", "shoe", "shop"], "correctIndex": 0 },
+            { "prompt": "Which word has /ər/?", "options": ["work", "walk", "want"], "correctIndex": 0 },
+            { "prompt": "Which word has /ər/?", "options": ["serve", "save", "solve"], "correctIndex": 0 }
+          ]
+        },
+        {
+          "title": "Complete the sentence",
+          "instructions": "Complete each sentence with a word containing /ər/.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "She's wearing a blue ___ and a black jacket. (top with buttons)", "answer": "shirt" },
+            { "prompt": "He ___ at a hotel downtown. (has a job)", "answer": "works" },
+            { "prompt": "The waiters ___ breakfast every morning. (bring food to customers)", "answer": "serve" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "pronunciation.beginner_sounds.ir_er_spelling_ambiguity",
+      "title": "Sounds /ɪr/ and /ɛr/: same spelling, different sound",
+      "cefrLevel": "A1",
+      "difficultyBand": 5,
+      "parentKey": "pronunciation.beginner_sounds",
+      "lessonBody": "In this lesson, you'll practice two sounds that share the same spelling patterns but sound completely different — a common source of confusion when reading unfamiliar words.\n\n• /ɪr/ as in 'ear' — near, here, dear, hear\n• /ɛr/ as in 'chair' — wear, there, their, where\n\nThe letters 'ere' and 'ear' can be pronounced either way — you can't always predict the sound from the spelling alone, so these words need to be learned individually.\n\nBy the end of this lesson, you'll be able to correctly pronounce common words with these tricky spelling patterns.",
+      "examples": ["Come here, near the window.", "Wear your coat — it's cold there.", "I hear a noise near the door."],
+      "commonMistakes": ["Don't assume 'ere' is always pronounced the same way — 'here' (/ɪr/) and 'there' (/ɛr/) look similar but sound different.", "Don't assume 'ear' is always the same — 'hear' (/ɪr/) and 'wear' (/ɛr/) also differ."],
+      "exercises": [
+        {
+          "title": "Choose the correct sound",
+          "instructions": "Choose whether each word has the /ɪr/ or /ɛr/ sound.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "here", "options": ["/ɪr/", "/ɛr/"], "correctIndex": 0 },
+            { "prompt": "wear", "options": ["/ɪr/", "/ɛr/"], "correctIndex": 1 },
+            { "prompt": "near", "options": ["/ɪr/", "/ɛr/"], "correctIndex": 0 },
+            { "prompt": "their", "options": ["/ɪr/", "/ɛr/"], "correctIndex": 1 }
+          ]
+        },
+        {
+          "title": "Find the odd one out",
+          "instructions": "Choose the word with a different sound from the other two.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which word sounds different?", "options": ["hear", "dear", "where"], "correctIndex": 2 },
+            { "prompt": "Which word sounds different?", "options": ["wear", "there", "here"], "correctIndex": 2 }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "pronunciation.beginner_sounds.was_were_stress",
+      "title": "Was and were: sentence rhythm",
+      "cefrLevel": "A1",
+      "difficultyBand": 5,
+      "parentKey": "pronunciation.beginner_sounds",
+      "lessonBody": "In this lesson, you'll learn how 'was' and 'were' change pronunciation depending on whether they're stressed — similar to the pattern you already learned for can/can't.\n\n• Unstressed, in a statement: 'I was at home' — 'was' is quick and light, /wəz/.\n• Stressed, in a short answer or for emphasis: 'Yes, I WAS.' — full, clear vowel, /wʌz/.\n\nThe same applies to 'were': light in a statement, clear and stressed in a short answer.\n\nBy the end of this lesson, you'll be able to hear and produce the difference between light and stressed was/were in natural speech.",
+      "examples": ["I was at home. (light)", "Yes, I was! (stressed)", "Were you there all morning? No, we weren't."],
+      "commonMistakes": ["Don't stress 'was'/'were' as strongly in a plain statement as you would in a short answer — this makes speech sound unnatural.", "In short answers, 'was'/'were' IS stressed and clear — don't reduce it there."],
+      "exercises": [
+        {
+          "title": "Choose light or stressed",
+          "instructions": "Choose whether 'was' should be light or stressed in each sentence.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "I was at home yesterday.", "options": ["light", "stressed"], "correctIndex": 0 },
+            { "prompt": "Were you there? Yes, I was.", "options": ["light", "stressed"], "correctIndex": 1 },
+            { "prompt": "She was in a café with friends.", "options": ["light", "stressed"], "correctIndex": 0 }
+          ]
+        },
+        {
+          "title": "Complete the exchange",
+          "instructions": "Complete each exchange with was or were.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "A: Were you at work? B: Yes, I ___.", "answer": "was" },
+            { "prompt": "A: Was she at home? B: No, she ___.", "answer": "wasn't" },
+            { "prompt": "We ___ there for an hour.", "answer": "were" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "pronunciation.beginner_sounds.regular_past_endings",
+      "title": "Regular simple past endings: /d/, /t/, /ɪd/",
+      "cefrLevel": "A1",
+      "difficultyBand": 5,
+      "parentKey": "pronunciation.beginner_sounds",
+      "lessonBody": "In this lesson, you'll learn that the regular past tense -ed ending, just like the -s ending, has three different pronunciations depending on the sound before it.\n\n• /d/ after voiced sounds — arrived, played, rented is an exception (see below)\n• /t/ after voiceless sounds — booked, packed, looked\n• /ɪd/ after a /t/ or /d/ sound — rented, invited, wanted\n\nThis is the exact same three-way pattern you already learned for plural/third-person -s, just applied to a different ending.\n\nBy the end of this lesson, you'll be able to pronounce regular past tense verbs with the correct ending sound.",
+      "examples": ["arrived /d/, booked /t/, rented /ɪd/", "played /d/, packed /t/, invited /ɪd/", "looked /t/, wanted /ɪd/, stayed /d/"],
+      "commonMistakes": ["Don't pronounce every -ed the same way — 'booked' ends in /t/, not /d/ or an extra syllable.", "Only verbs already ending in a /t/ or /d/ sound get an extra syllable: 'rented' has two syllables, but 'booked' has only one."],
+      "exercises": [
+        {
+          "title": "Choose the correct ending sound",
+          "instructions": "Choose the sound the -ed ending makes in each verb.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "booked", "options": ["/d/", "/t/", "/ɪd/"], "correctIndex": 1 },
+            { "prompt": "arrived", "options": ["/d/", "/t/", "/ɪd/"], "correctIndex": 0 },
+            { "prompt": "rented", "options": ["/d/", "/t/", "/ɪd/"], "correctIndex": 2 },
+            { "prompt": "played", "options": ["/d/", "/t/", "/ɪd/"], "correctIndex": 0 }
+          ]
+        },
+        {
+          "title": "Find the odd one out",
+          "instructions": "Choose the verb whose -ed ending sounds different from the other two.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which word's -ed sounds different?", "options": ["packed", "looked", "arrived"], "correctIndex": 2 },
+            { "prompt": "Which word's -ed sounds different?", "options": ["invited", "wanted", "stayed"], "correctIndex": 2 }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "pronunciation.beginner_sounds.irregular_past_forms",
+      "title": "Vowel sounds in irregular past forms",
+      "cefrLevel": "A1",
+      "difficultyBand": 5,
+      "parentKey": "pronunciation.beginner_sounds",
+      "lessonBody": "In this lesson, you'll practice the vowel sounds in common irregular past tense forms — since these don't follow the -ed pattern, their pronunciation must be learned individually, word by word.\n\nCompare these vowel sounds across common irregular past forms: got, went, had, did, bought, saw, sat, wrote, said, left, sent, told\n\nSome of these look like they might rhyme but don't (e.g. 'said' does not rhyme with 'paid'), and some that look different actually share a vowel sound (e.g. 'saw' and 'bought' share a similar rounded vowel).\n\nBy the end of this lesson, you'll be able to pronounce common irregular past forms confidently, without guessing from spelling alone.",
+      "examples": ["I bought a jacket and saw a movie.", "She said her name and sat down.", "He went home and had dinner."],
+      "commonMistakes": ["Don't assume 'said' rhymes with 'paid' — it's pronounced like 'said' /sɛd/, an irregular pronunciation.", "Don't guess a vowel sound from spelling alone with irregular verbs — each one may need to be learned individually."],
+      "exercises": [
+        {
+          "title": "Choose the matching sound",
+          "instructions": "Choose the word with the same vowel sound as the word shown.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which word has the same vowel sound as 'saw'?", "options": ["bought", "sat", "went"], "correctIndex": 0 },
+            { "prompt": "Which word has the same vowel sound as 'said'?", "options": ["paid", "left", "went"], "correctIndex": 1 },
+            { "prompt": "Which word has the same vowel sound as 'got'?", "options": ["sat", "wrote", "bought"], "correctIndex": 0 }
+          ]
+        },
+        {
+          "title": "Find the odd one out",
+          "instructions": "Choose the word with a different vowel sound from the other two.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which word sounds different?", "options": ["said", "left", "went"], "correctIndex": 0 },
+            { "prompt": "Which word sounds different?", "options": ["saw", "bought", "sat"], "correctIndex": 2 }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "pronunciation.beginner_sounds.polite_intonation_for_requests",
+      "title": "Sentence rhythm and polite intonation for requests",
+      "cefrLevel": "A1",
+      "difficultyBand": 5,
+      "parentKey": "pronunciation.beginner_sounds",
+      "lessonBody": "In this lesson, you'll practice the polite, rising intonation used when asking a stranger for help — as important to sounding polite as the words themselves.\n\nWhen asking for directions or help from a stranger, use:\n\n• a slightly rising, gentle intonation on 'Excuse me'\n• stress on the key content word: Is there a BANK near here?\n• a warm, sincere tone on 'Thank you' / 'Thanks very much'\n\nA flat, falling tone on 'Excuse me' can sound abrupt or rude, even if the words are correct.\n\nBy the end of this lesson, you'll be able to ask a stranger for directions or help in a way that sounds genuinely polite, not just grammatically correct.",
+      "examples": ["Excuse me, is there a bank near here?", "Thanks very much!", "Excuse me, this cash machine isn't working."],
+      "commonMistakes": ["A flat or falling tone on 'Excuse me' can sound rude — use a gentle rising tone instead.", "Don't stress every word equally in the request — the key content word (bank, cash machine) should stand out most."],
+      "exercises": [
+        {
+          "title": "Choose the stressed word",
+          "instructions": "Choose the word that should be stressed most strongly in each polite request.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Is there a bank near here?", "options": ["Is", "there", "bank"], "correctIndex": 2 },
+            { "prompt": "Excuse me, can you help me?", "options": ["Excuse", "me", "help"], "correctIndex": 2 },
+            { "prompt": "Thanks very much!", "options": ["Thanks", "very", "much"], "correctIndex": 0 }
+          ]
+        },
+        {
+          "title": "Complete the polite request",
+          "instructions": "Complete each polite request or response.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "___ me, is there a cash machine near here? (polite opener)", "answer": "Excuse" },
+            { "prompt": "Thanks very much. You're ___.", "answer": "welcome" },
+            { "prompt": "Excuse me, this cash machine ___ working.", "answer": "isn't" }
+          ]
+        }
+      ]
     }
   ]
 }

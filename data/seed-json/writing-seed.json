@@ -5,7 +5,8 @@
     "Every leaf's lessonBody/examples/exercises/questions are newly authored."
   ],
   "containers": [
-    { "key": "writing.forms", "title": "Forms and personal information", "cefrLevel": "A1" }
+    { "key": "writing.forms", "title": "Forms and personal information", "cefrLevel": "A1" },
+    { "key": "writing.everyday_texts", "title": "Everyday texts", "cefrLevel": "A1" }
   ],
   "leaves": [
     {
@@ -36,6 +37,68 @@
             { "prompt": "Which name is correctly capitalized?", "options": ["sara Ahmed", "Sara Ahmed", "SARA ahmed"], "correctIndex": 1 },
             { "prompt": "Which email address is correctly formatted?", "options": ["Sara.Ahmed@Email.com", "sara.ahmed@email.com", "sara ahmed@email.com"], "correctIndex": 1 },
             { "prompt": "Which phone number is correctly grouped?", "options": ["6125550199", "612-555-0199", "6125-550-199"], "correctIndex": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "writing.everyday_texts.invitation_email",
+      "title": "Writing an invitation email",
+      "cefrLevel": "A1",
+      "difficultyBand": 5,
+      "parentKey": "writing.everyday_texts",
+      "lessonBody": "In this lesson, you'll learn how to write a short, informal email inviting someone to do something — a genuinely useful everyday writing task.\n\nA simple structure for an invitation email:\n\n• Greeting: Hi [name],\n• The invitation: Would you like to come to...? / I'm having a... Would you like to join us?\n• The details: day, time, place\n• A closing line: Let me know! / Hope you can come!\n• Sign-off: See you soon, [your name]\n\nBy the end of this lesson, you'll be able to write a clear, friendly invitation email with all the necessary details.",
+      "examples": ["Hi Sam, Would you like to come to a party at my house on Saturday at 8:00? Let me know! See you soon, Alex", "Hi Noor, I'm having a small dinner on Friday. Would you like to join us? Hope you can come!"],
+      "commonMistakes": ["Don't forget to include all three key details — day, time, and place — or your friend won't know when or where to go.", "An informal invitation email should sound friendly and casual, not like a formal business letter."],
+      "exercises": [
+        {
+          "title": "Complete the invitation email",
+          "instructions": "Complete each missing part of the invitation email.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "___ Sam, (greeting)", "answer": "Hi" },
+            { "prompt": "Would you like to ___ to a party on Saturday? (verb)", "answer": "come" },
+            { "prompt": "___ know if you can come! (closing request)", "answer": "Let me" }
+          ]
+        },
+        {
+          "title": "Choose the missing detail",
+          "instructions": "Choose which key detail is missing from each invitation.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "'Would you like to come to my party?' is missing...", "options": ["a greeting, day, time, and place", "just a sign-off"], "correctIndex": 0 },
+            { "prompt": "An invitation email should always include...", "options": ["day, time, and place", "only the time"], "correctIndex": 0 }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "writing.everyday_texts.blog_post_about_yesterday",
+      "title": "Writing a short blog post about yesterday",
+      "cefrLevel": "A1",
+      "difficultyBand": 5,
+      "parentKey": "writing.everyday_texts",
+      "lessonBody": "In this lesson, you'll learn how to write a short, personal blog-style post describing what you did yesterday — practicing the simple past in a real writing format.\n\nA simple structure:\n\n• Start with a general statement: Yesterday was a busy/quiet/great day.\n• Describe your day in time order: In the morning, I... In the afternoon, I... In the evening, I...\n• Use time-order words: first, then, after that, finally\n• End with a short opinion: It was a good day! / I was very tired by the evening.\n\nBy the end of this lesson, you'll be able to write a clear, well-organized short post describing a day using the simple past.",
+      "examples": ["Yesterday was a busy day. In the morning, I went to work. In the afternoon, I had a meeting. In the evening, I cooked dinner and watched TV. It was a good day!", "First, I got up early. Then, I had breakfast. After that, I went for a run."],
+      "commonMistakes": ["Don't switch tenses randomly — a post about yesterday should stay in the simple past throughout.", "Don't just list actions without time-order words (first, then, after that) — they help the reader follow the sequence."],
+      "exercises": [
+        {
+          "title": "Complete the blog post",
+          "instructions": "Complete each missing part of the blog post about yesterday.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "___, I went to work. (in the morning)", "answer": "In the morning" },
+            { "prompt": "I got up, ___ I had breakfast. (next)", "answer": "then" },
+            { "prompt": "It ___ a great day! (simple past of be)", "answer": "was" }
+          ]
+        },
+        {
+          "title": "Put the events in time order",
+          "instructions": "Choose which event should come first in a blog post about yesterday.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which comes first?", "options": ["In the morning, I had breakfast.", "In the evening, I went to bed."], "correctIndex": 0 },
+            { "prompt": "Which comes first?", "options": ["First, I got up.", "Finally, I went to sleep."], "correctIndex": 0 }
           ]
         }
       ]
