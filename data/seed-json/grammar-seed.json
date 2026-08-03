@@ -5,7 +5,11 @@
     "Every leaf's lessonBody/examples/exercises/questions are newly authored — no source text is copied from any external material."
   ],
   "containers": [
-    { "key": "grammar.verb_be", "title": "Verb be", "cefrLevel": "A1", "difficultyBand": 1, "nodeType": "topic" }
+    { "key": "grammar.verb_be", "title": "Verb be", "cefrLevel": "A1", "difficultyBand": 1, "nodeType": "topic" },
+    { "key": "grammar.nouns_and_determiners", "title": "Nouns and determiners", "cefrLevel": "A1", "difficultyBand": 2, "nodeType": "topic" },
+    { "key": "grammar.possessives", "title": "Possessives", "cefrLevel": "A1", "difficultyBand": 3, "nodeType": "topic" },
+    { "key": "grammar.adjectives", "title": "Adjectives", "cefrLevel": "A1", "difficultyBand": 3, "nodeType": "topic" },
+    { "key": "grammar.simple_present", "title": "Simple present", "cefrLevel": "A1", "difficultyBand": 3, "nodeType": "topic" }
   ],
   "leaves": [
     {
@@ -183,6 +187,228 @@
             { "prompt": "Which is correct?", "options": ["Where you are from?", "Where are you from?", "Are where you from?"], "correctIndex": 1 },
             { "prompt": "Which is correct?", "options": ["How old is he?", "How's old he?", "How old he is?"], "correctIndex": 0 },
             { "prompt": "Which is correct?", "options": ["What's your name?", "What your name is?", "Your name what is?"], "correctIndex": 0 }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "grammar.nouns_and_determiners.singular_plural_nouns",
+      "title": "Singular and plural nouns, a and an",
+      "cefrLevel": "A1",
+      "difficultyBand": 2,
+      "parentKey": "grammar.nouns_and_determiners",
+      "nodeType": "skill",
+      "cefrConfidence": "curated",
+      "cefrSource": "hand_authored",
+      "routingEligible": true,
+      "lessonBody": "In this lesson, you'll learn how to talk about one thing versus more than one thing, and how to choose between 'a' and 'an' — two small words you'll use constantly.\n\nMost nouns add -s for the plural:\n\n• a pencil → two pencils\n• a key → three keys\n\nUse 'a' before a consonant sound and 'an' before a vowel sound (a, e, i, o, u):\n\n• a book, a phone, a wallet\n• an umbrella, an ID card, an orange\n\nBy the end of this lesson, you'll be able to say whether you have one thing or several, and choose 'a' or 'an' correctly every time.",
+      "examples": ["I have a pencil and two pens.", "She has an umbrella and three keys.", "It's a photo, not an album."],
+      "commonMistakes": ["Don't forget the -s on plural nouns: 'two pencil' is wrong, 'two pencils' is correct.", "Choose 'a'/'an' by the sound, not the spelling: it's 'an hour' (vowel sound) but 'a university' (consonant sound)."],
+      "exercises": [
+        {
+          "title": "Choose a or an",
+          "instructions": "Choose the correct article for each word.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "___ pencil", "options": ["a", "an"], "correctIndex": 0 },
+            { "prompt": "___ umbrella", "options": ["a", "an"], "correctIndex": 1 },
+            { "prompt": "___ ID card", "options": ["a", "an"], "correctIndex": 1 },
+            { "prompt": "___ wallet", "options": ["a", "an"], "correctIndex": 0 },
+            { "prompt": "___ orange", "options": ["a", "an"], "correctIndex": 1 }
+          ]
+        },
+        {
+          "title": "Write the plural",
+          "instructions": "Write the plural form of each noun.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "a key → two ___", "answer": "keys" },
+            { "prompt": "a phone → three ___", "answer": "phones" },
+            { "prompt": "a photo → four ___", "answer": "photos" },
+            { "prompt": "a wallet → two ___", "answer": "wallets" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "grammar.nouns_and_determiners.this_that_these_those",
+      "title": "This, that, these, and those",
+      "cefrLevel": "A1",
+      "difficultyBand": 2,
+      "parentKey": "grammar.nouns_and_determiners",
+      "nodeType": "skill",
+      "cefrConfidence": "curated",
+      "cefrSource": "hand_authored",
+      "routingEligible": true,
+      "lessonBody": "In this lesson, you'll learn how to point to things and say whether they're close to you or farther away — essential for shopping, showing photos, or describing what's around you.\n\nThe choice depends on two things: how many, and how close.\n\n• this (singular, near you) — This is my bag.\n• that (singular, farther away) — That is your bag.\n• these (plural, near you) — These are my keys.\n• those (plural, farther away) — Those are your keys.\n\nBy the end of this lesson, you'll be able to point out one or more things nearby or across the room and ask what they are.",
+      "examples": ["This is my phone. That is your phone.", "These are new shoes. Those are old shoes.", "What's this? It's a key chain."],
+      "commonMistakes": ["Don't use 'this'/'that' with plural nouns — say 'these keys', not 'this keys'.", "'These'/'those' need a plural verb: 'These are nice', not 'These is nice'."],
+      "exercises": [
+        {
+          "title": "Choose this, that, these, or those",
+          "instructions": "Choose the correct word for each sentence.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "(holding a mug) ___ is my mug.", "options": ["This", "These"], "correctIndex": 0 },
+            { "prompt": "(pointing across the room) ___ are your keys.", "options": ["These", "Those"], "correctIndex": 1 },
+            { "prompt": "(holding two postcards) ___ are for you.", "options": ["This", "These"], "correctIndex": 1 },
+            { "prompt": "(pointing at a distant cap) ___ is a nice cap.", "options": ["This", "That"], "correctIndex": 1 }
+          ]
+        },
+        {
+          "title": "Complete the exchange",
+          "instructions": "Complete each short exchange with this, that, these, or those.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "A: What are ___ (pointing at nearby sunglasses)? B: They're sunglasses.", "answer": "these" },
+            { "prompt": "A: How much is ___ (pointing at a far-away mug)? B: It's $8.", "answer": "that" },
+            { "prompt": "A: Is ___ (in your hand) your postcard? B: Yes, it is.", "answer": "this" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "grammar.possessives.possessive_adjectives_and_s",
+      "title": "Possessive adjectives and possessive 's",
+      "cefrLevel": "A1",
+      "difficultyBand": 3,
+      "parentKey": "grammar.possessives",
+      "nodeType": "skill",
+      "cefrConfidence": "curated",
+      "cefrSource": "hand_authored",
+      "routingEligible": true,
+      "lessonBody": "In this lesson, you'll learn how to say who something belongs to — a key skill for talking about your family, friends, and belongings.\n\nPossessive adjectives go before a noun:\n\n• I → my, you → your, he → his, she → her, it → its, we → our, you (plural) → your, they → their\n\nFor a person's name, add 's:\n\n• Sara's brother, Tom's sister, my parents' house (plural noun ending in -s: add just an apostrophe)\n\nBy the end of this lesson, you'll be able to talk about your own family and belongings, and ask who things belong to.",
+      "examples": ["This is my brother. His name is Leo.", "That's Maria's daughter.", "Is this your phone or her phone?"],
+      "commonMistakes": ["'It's' means 'it is'; the possessive form is 'its' with no apostrophe — 'The dog is in its bed.'", "Don't say 'the brother of Sara' as your default — 'Sara's brother' is the natural everyday form."],
+      "exercises": [
+        {
+          "title": "Complete with the correct possessive adjective",
+          "instructions": "Complete each sentence with my, your, his, her, its, our, or their.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "This is Leo. ___ sister is a doctor. (he)", "answer": "His" },
+            { "prompt": "We have a cat. ___ name is Tom. (it)", "answer": "Its" },
+            { "prompt": "Hi, I'm Priya. This is ___ husband, Raj. (I)", "answer": "my" },
+            { "prompt": "That's Sara and Tom's house. ___ house is big. (they)", "answer": "Their" }
+          ]
+        },
+        {
+          "title": "Add the possessive 's",
+          "instructions": "Rewrite each phrase using possessive 's.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "the brother of Sara → ___", "answer": "Sara's brother" },
+            { "prompt": "the daughter of Marco → ___", "answer": "Marco's daughter" },
+            { "prompt": "the phone number of my mother → ___", "answer": "my mother's phone number" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "grammar.adjectives.word_order_and_form",
+      "title": "Adjectives: word order and form",
+      "cefrLevel": "A1",
+      "difficultyBand": 3,
+      "parentKey": "grammar.adjectives",
+      "nodeType": "skill",
+      "cefrConfidence": "curated",
+      "cefrSource": "hand_authored",
+      "routingEligible": true,
+      "lessonBody": "In this lesson, you'll learn where to put an adjective in a sentence and how adjectives behave differently from nouns in English.\n\nAn adjective goes before the noun it describes:\n\n• a small car (NOT a car small)\n• an expensive watch\n\nAdjectives never take a plural -s, even when the noun is plural:\n\n• good cars (NOT goods cars)\n• blue keys (NOT blues keys)\n\nAn adjective can also come after the verb 'be':\n\n• The car is fast. It's very expensive.\n\nBy the end of this lesson, you'll be able to describe things correctly, in the right word order, whether you're describing one thing or several.",
+      "examples": ["It's a beautiful city.", "They're good cars.", "This bag is cheap, but that one is expensive."],
+      "commonMistakes": ["Don't put the adjective after the noun: 'a car small' is wrong.", "Don't add -s to an adjective: 'goods cars' is wrong — say 'good cars'."],
+      "exercises": [
+        {
+          "title": "Choose the correct sentence",
+          "instructions": "Choose the sentence with the correct word order.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which is correct?", "options": ["It's a car beautiful.", "It's a beautiful car."], "correctIndex": 1 },
+            { "prompt": "Which is correct?", "options": ["They're goods cars.", "They're good cars."], "correctIndex": 1 },
+            { "prompt": "Which is correct?", "options": ["This watch is expensive.", "This watch expensive is."], "correctIndex": 0 }
+          ]
+        },
+        {
+          "title": "Put the words in order",
+          "instructions": "Put the words in the correct order to make a sentence.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "car / small / a / it's", "answer": "It's a small car" },
+            { "prompt": "expensive / very / this / is / watch", "answer": "This watch is very expensive" },
+            { "prompt": "cars / are / cheap / they", "answer": "They are cheap cars" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "grammar.simple_present.affirmative_negative_i_you_we_they",
+      "title": "Simple present — affirmative and negative: I, you, we, they",
+      "cefrLevel": "A1",
+      "difficultyBand": 3,
+      "parentKey": "grammar.simple_present",
+      "nodeType": "skill",
+      "cefrConfidence": "curated",
+      "cefrSource": "hand_authored",
+      "routingEligible": true,
+      "lessonBody": "In this lesson, you'll learn how to talk about habits, routines, and things that are generally true — like what you usually eat or drink — using the simple present.\n\nWith I, you, we, and they, use the base form of the verb:\n\n• I have breakfast at home.\n• We eat a lot of fruit.\n\nFor the negative, use don't + base form:\n\n• I don't drink coffee.\n• They don't eat meat.\n\nBy the end of this lesson, you'll be able to say what you usually do and don't do, especially around everyday habits like eating and drinking.",
+      "examples": ["I have coffee every morning.", "We don't eat breakfast at work.", "They drink a lot of tea."],
+      "commonMistakes": ["Don't add -s to the verb with I/you/we/they: 'I haves' is wrong — say 'I have'.", "Use 'don't', not 'not', for the negative: 'I not like fish' is wrong — say 'I don't like fish'."],
+      "exercises": [
+        {
+          "title": "Complete with the affirmative form",
+          "instructions": "Complete each sentence with the correct affirmative simple present form.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "I ___ breakfast at a café. (have)", "answer": "have" },
+            { "prompt": "We ___ a lot of fruit. (eat)", "answer": "eat" },
+            { "prompt": "They ___ tea every morning. (drink)", "answer": "drink" },
+            { "prompt": "You ___ a healthy breakfast. (have)", "answer": "have" }
+          ]
+        },
+        {
+          "title": "Complete with the negative form",
+          "instructions": "Complete each sentence with don't + the base verb.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "I ___ coffee in the morning. (drink)", "answer": "don't drink" },
+            { "prompt": "We ___ breakfast on weekends. (have)", "answer": "don't have" },
+            { "prompt": "They ___ meat. (eat)", "answer": "don't eat" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "grammar.simple_present.questions_i_you_we_they",
+      "title": "Simple present — questions: I, you, we, they",
+      "cefrLevel": "A1",
+      "difficultyBand": 3,
+      "parentKey": "grammar.simple_present",
+      "nodeType": "skill",
+      "cefrConfidence": "curated",
+      "cefrSource": "hand_authored",
+      "routingEligible": true,
+      "lessonBody": "In this lesson, you'll learn how to ask yes/no questions and give short answers about habits and routines — building directly on the affirmative and negative forms you already know.\n\nUse Do + subject + base verb:\n\n• Do you live in London?\n• Do they have a car?\n\nShort answers use do/don't, not a repeat of the full verb:\n\n• Yes, I do. / No, I don't.\n• Yes, they do. / No, they don't.\n\nBy the end of this lesson, you'll be able to ask someone about their daily routines and habits, and answer the same questions naturally.",
+      "examples": ["Do you live near here? Yes, I do.", "Do they work for a British company? No, they don't.", "Do we have time for coffee? Yes, we do."],
+      "commonMistakes": ["Don't forget 'Do' at the start of the question: 'You live in London?' should be 'Do you live in London?'", "Short answers don't repeat the main verb: 'Yes, I live' is wrong — say 'Yes, I do'."],
+      "exercises": [
+        {
+          "title": "Make the question",
+          "instructions": "Turn each statement into a yes/no question.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "You live in a big house. → ___?", "answer": "Do you live in a big house" },
+            { "prompt": "They have two children. → ___?", "answer": "Do they have two children" },
+            { "prompt": "We work for the same company. → ___?", "answer": "Do we work for the same company" }
+          ]
+        },
+        {
+          "title": "Complete the short answer",
+          "instructions": "Complete each short answer.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "Do you live near here? Yes, I ___.", "answer": "do" },
+            { "prompt": "Do they watch a lot of TV? No, they ___.", "answer": "don't" },
+            { "prompt": "Do we need a taxi? No, we ___.", "answer": "don't" }
           ]
         }
       ]

@@ -227,3 +227,60 @@ confirmed healthy.
 practice depth. No further action needed unless new gaps are found in a future audit.
 
 **Next recommended action**: none pending from this pass; resume normal feature work.
+
+## 13. Addendum (2026-08-03) — Files 3-5 built, extending coverage past the original two files
+
+Following the same compulsory process (`docs/architecture/unit-content-seeding-rules.md`), three
+more source-material lesson-blocks were read and built out in full: a nouns/determiners
+lesson-block, a possessives/description lesson-block, and a simple-present lesson-block, each
+following the source's own A-lesson / B-lesson / Practical-English-episode structure. No book
+references, unit numbers, or scenario names were carried into any node key, title, or file name
+— only the underlying grammar/vocabulary/pronunciation/functional-language points and their
+teaching order.
+
+**New containers (11)**: 4 grammar (`grammar.nouns_and_determiners`, `grammar.possessives`,
+`grammar.adjectives`, `grammar.simple_present`), 6 vocabulary (`vocabulary.everyday_objects`,
+`vocabulary.people_and_family`, `vocabulary.descriptive`, `vocabulary.food_and_drink`,
+`vocabulary.common_verb_phrases`, `vocabulary.time_and_feelings`), 1 functional-language
+(`functional_language.time_and_arrangements`). No new pronunciation container was needed — all 8
+new pronunciation leaves fold into the existing `pronunciation.beginner_sounds` container, since
+they're still beginner-level discrete sounds.
+
+**New leaves (25)**, each with a full lesson body (framing/structure/closing per rule 4a), 2
+original exercises, and examples/common mistakes:
+
+- Grammar (6): singular/plural nouns + a/an, this/that/these/those, possessive adjectives +
+  possessive 's, adjective word order and form, simple present affirmative/negative (I/you/we/
+  they), simple present questions (I/you/we/they).
+- Vocabulary (8): small everyday objects, souvenirs, family members, colors and common
+  adjectives, everyday food and drink, common verb phrases (love/live/work/want/have +
+  object), telling the time, saying how you feel.
+- Pronunciation (8): plural -s endings (/s//z//ɪz/), voiced /ð/ + sentence rhythm, /ʊr//s//k/ +
+  the letter-c rule, /ʌ//æ//ə/, /ɑr//ɔr/ + linking, /dʒ/ vs /g/ (the letter-g/j rule), /w//v/ +
+  linking, /ɑ/ + silent consonants.
+- Functional language (3): understanding and asking about prices, ordering food and drink,
+  asking and telling the time (including apologizing for lateness).
+
+**Resolved without new leaves** (rule 3's "same teaching point, not new content" exception): a
+review-and-check section between two of the source lesson-blocks (pure revision, no new teaching
+point) — not duplicated into a leaf, consistent with how earlier review sections were handled.
+
+**13 new prerequisite edges** (23 total now), each a genuine dependency: e.g. this/that/these/
+those requires singular/plural nouns first (the demonstrative choice depends on that
+distinction); souvenirs vocabulary requires this/that/these/those (the shopping dialogue is built
+on them); simple-present questions require simple-present affirmative/negative first; telling the
+time requires numbers 11-100 (time expressions reuse those number words).
+
+**Re-seed**: full `TRUNCATE` + re-run of all domain seeders (grammar, vocabulary, pronunciation,
+functional-language, reading-comprehension, writing, listening-comprehension) + prerequisites, in
+the established order. Final counts: 71 `SkillGraphNode` rows (23 skill-less containers, 48
+leaves), 48 Lessons (every leaf has exactly one, verified via
+`lessons_without_leaf = 0`), 99 Exercises, 23 prerequisite edges. All three backend test suites
+green (UnitTests 2594, IntegrationTests 1418, ArchitectureTests 30). API container restarted and
+confirmed healthy.
+
+**Final verdict**: content now covers the source material's first five lesson-blocks in full
+(the original two plus these three), at the same quality bar established and verified in §12.
+
+**Next recommended action**: none pending; further lesson-blocks can be added the same way when
+requested.

@@ -139,6 +139,261 @@
           ]
         }
       ]
+    },
+    {
+      "key": "pronunciation.beginner_sounds.z_s_plural_endings",
+      "title": "Plural endings: /z/, /s/, and /ɪz/",
+      "cefrLevel": "A1",
+      "difficultyBand": 2,
+      "parentKey": "pronunciation.beginner_sounds",
+      "lessonBody": "In this lesson, you'll learn that the plural -s ending isn't always pronounced the same way — it changes depending on the sound before it.\n\n• /s/ after voiceless sounds — books, coats, tablets\n• /z/ after voiced sounds — bags, phones, keys, pens\n• /ɪz/ after 's', 'z', 'sh', 'ch' sounds — watches, glasses, pieces, change purses\n\nThis pattern also applies to the verb -s ending (he lives /z/, he watches /ɪz/), not just plural nouns.\n\nBy the end of this lesson, you'll be able to hear and produce the right plural ending sound automatically.",
+      "examples": ["books /s/, bags /z/, watches /ɪz/", "phones /z/, pens /z/, glasses /ɪz/", "coats /s/, tablets /s/, change purses /ɪz/"],
+      "commonMistakes": ["Don't pronounce every plural -s the same way — 'bags' ends in /z/, not /s/.", "Words already ending in an s/z/sh/ch sound need an extra syllable: 'watches' has two syllables, not one."],
+      "exercises": [
+        {
+          "title": "Choose the correct ending sound",
+          "instructions": "Choose the sound that the plural -s makes in each word.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "books", "options": ["/s/", "/z/", "/ɪz/"], "correctIndex": 0 },
+            { "prompt": "bags", "options": ["/s/", "/z/", "/ɪz/"], "correctIndex": 1 },
+            { "prompt": "watches", "options": ["/s/", "/z/", "/ɪz/"], "correctIndex": 2 },
+            { "prompt": "pens", "options": ["/s/", "/z/", "/ɪz/"], "correctIndex": 1 }
+          ]
+        },
+        {
+          "title": "Find the odd one out",
+          "instructions": "Choose the word whose plural -s sound is different from the other two.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which word's -s sounds different?", "options": ["books", "coats", "phones"], "correctIndex": 2 },
+            { "prompt": "Which word's -s sounds different?", "options": ["glasses", "keys", "bags"], "correctIndex": 0 },
+            { "prompt": "Which word's -s sounds different?", "options": ["tablets", "pieces", "books"], "correctIndex": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "pronunciation.beginner_sounds.voiced_th_and_rhythm",
+      "title": "Sound /ð/ and sentence rhythm",
+      "cefrLevel": "A1",
+      "difficultyBand": 2,
+      "parentKey": "pronunciation.beginner_sounds",
+      "lessonBody": "In this lesson, you'll practice the voiced 'th' sound /ð/ — one of the most common sounds in English function words — and start noticing English sentence rhythm.\n\n/ð/ appears in very frequent short words:\n\nthis, that, these, those, the, they, mother\n\nEnglish sentences have a natural rhythm where the important words (nouns, verbs) are stressed and small words like 'this'/'the' are said quickly and lightly.\n\nBy the end of this lesson, you'll be able to produce /ð/ correctly and start copying natural English sentence rhythm.",
+      "examples": ["this, that, these, those — all start with /ð/", "The mother and they are both common /ð/ words.", "How much are these key chains?"],
+      "commonMistakes": ["Don't pronounce /ð/ like /d/ or /z/ — the tongue should lightly touch the back of the top teeth.", "Don't stress small words like 'the' or 'this' as heavily as the main noun in a sentence — that breaks the natural rhythm."],
+      "exercises": [
+        {
+          "title": "Choose the word with /ð/",
+          "instructions": "Choose the word that contains the /ð/ sound.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which word has /ð/?", "options": ["think", "this", "sun"], "correctIndex": 1 },
+            { "prompt": "Which word has /ð/?", "options": ["mother", "money", "map"], "correctIndex": 0 },
+            { "prompt": "Which word has /ð/?", "options": ["they", "day", "toy"], "correctIndex": 0 }
+          ]
+        },
+        {
+          "title": "Complete the question",
+          "instructions": "Complete each question with this, that, these, or those.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "How much is ___ mug? (near you)", "answer": "this" },
+            { "prompt": "How much are ___ key chains? (near you, plural)", "answer": "these" },
+            { "prompt": "How much is ___ cap? (far away)", "answer": "that" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "pronunciation.beginner_sounds.ur_s_k",
+      "title": "Sounds /ʊr/, /s/, and /k/",
+      "cefrLevel": "A1",
+      "difficultyBand": 2,
+      "parentKey": "pronunciation.beginner_sounds",
+      "lessonBody": "In this lesson, you'll practice three sounds that come up constantly in words about money, travel, and price — plus a spelling rule that tells you how to pronounce the letter 'c'.\n\n• /ʊr/ as in 'tourist' — euro, Europe, sure, tour\n• /s/ as in 'snake' — cent, city, pence, price\n• /k/ as in 'key' — coffee, Canada, credit card\n\nThe letter 'c' rule:\n\n• c = /s/ before e, i, and y — e.g., cent, city\n• c = /k/ before other letters — e.g., coffee\n\nBy the end of this lesson, you'll be able to pronounce price- and travel-related words correctly, and predict how an unfamiliar word with 'c' is pronounced.",
+      "examples": ["A tourist visits Europe and needs euros.", "The price is thirty cents.", "Can I pay by credit card?"],
+      "commonMistakes": ["Don't pronounce 'c' as /k/ before e/i/y — 'city' is /s/, not /k/.", "'Sure' and 'tour' both use /ʊr/, even though they're spelled differently."],
+      "exercises": [
+        {
+          "title": "Choose the correct sound for c",
+          "instructions": "Choose whether 'c' is pronounced /s/ or /k/ in each word.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "cent", "options": ["/s/", "/k/"], "correctIndex": 0 },
+            { "prompt": "coffee", "options": ["/s/", "/k/"], "correctIndex": 1 },
+            { "prompt": "city", "options": ["/s/", "/k/"], "correctIndex": 0 },
+            { "prompt": "Canada", "options": ["/s/", "/k/"], "correctIndex": 1 }
+          ]
+        },
+        {
+          "title": "Find the odd one out",
+          "instructions": "Choose the word that does NOT have the /ʊr/ sound.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which word does NOT have /ʊr/?", "options": ["tourist", "sure", "city"], "correctIndex": 2 },
+            { "prompt": "Which word does NOT have /ʊr/?", "options": ["tour", "coffee", "euro"], "correctIndex": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "pronunciation.beginner_sounds.uh_ae_schwa",
+      "title": "Sounds /ʌ/, /æ/, and /ə/",
+      "cefrLevel": "A1",
+      "difficultyBand": 3,
+      "parentKey": "pronunciation.beginner_sounds",
+      "lessonBody": "In this lesson, you'll practice three vowel sounds that are extremely common in everyday family and people words.\n\n• /ʌ/ as in 'up' — husband, Sunday, son, mother, brother\n• /æ/ as in 'cat' — man, family, bag, thanks, that\n• /ə/ as in 'computer' — woman, children, welcome, parent\n\n/ə/ (schwa) is the most common vowel sound in English — it appears in syllables that aren't stressed, like the 'o' in 'welcome' or the 'a' in 'woman'.\n\nBy the end of this lesson, you'll be able to hear and produce these three vowel sounds correctly in common family and people words.",
+      "examples": ["My husband's brother is my mother's son.", "The man and woman are my grandparents.", "Welcome! This is my family."],
+      "commonMistakes": ["Don't confuse /ʌ/ (husband, son) with /æ/ (man, family) — they are different mouth shapes.", "Unstressed syllables usually reduce to /ə/, even if the spelling suggests a different vowel — 'woman' does not rhyme with 'man'."],
+      "exercises": [
+        {
+          "title": "Choose the matching sound",
+          "instructions": "Choose the word with the same vowel sound as the word shown.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which word has the same vowel sound as 'up'?", "options": ["son", "man", "woman"], "correctIndex": 0 },
+            { "prompt": "Which word has the same vowel sound as 'cat'?", "options": ["family", "mother", "welcome"], "correctIndex": 0 },
+            { "prompt": "Which word has the schwa sound in its last syllable?", "options": ["children", "brother", "bag"], "correctIndex": 0 }
+          ]
+        },
+        {
+          "title": "Find the odd one out",
+          "instructions": "Choose the word with a different vowel sound from the other two.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which word sounds different?", "options": ["husband", "mother", "family"], "correctIndex": 2 },
+            { "prompt": "Which word sounds different?", "options": ["thanks", "that", "brother"], "correctIndex": 2 }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "pronunciation.beginner_sounds.ar_or_linking",
+      "title": "Sounds /ɑr/ and /ɔr/, and linking",
+      "cefrLevel": "A1",
+      "difficultyBand": 3,
+      "parentKey": "pronunciation.beginner_sounds",
+      "lessonBody": "In this lesson, you'll practice two r-colored vowel sounds that are easy to confuse, plus how English speakers link words together in fast speech.\n\n• /ɑr/ as in 'car' — large, park, are, tomorrow\n• /ɔr/ as in 'horse' — short, sport, orange, door\n\nLinking: when a word ends in a consonant and the next word starts with a vowel sound, speakers often join them smoothly, e.g. 'a big‿umbrella', 'an old‿man', 'an expensive‿watch'.\n\nBy the end of this lesson, you'll be able to tell /ɑr/ and /ɔr/ apart and link words together more naturally when speaking.",
+      "examples": ["It's a large, expensive car.", "The short sport is popular here.", "This is a big umbrella and an old man's coat."],
+      "commonMistakes": ["Don't confuse /ɑr/ (car, park) with /ɔr/ (short, door) — they use different mouth shapes.", "Don't pause between a consonant and the next word's vowel sound — link them smoothly instead of saying each word separately."],
+      "exercises": [
+        {
+          "title": "Choose the matching sound",
+          "instructions": "Choose the word with the same vowel sound as the word shown.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which word has the same sound as 'car'?", "options": ["large", "short", "door"], "correctIndex": 0 },
+            { "prompt": "Which word has the same sound as 'horse'?", "options": ["park", "sport", "are"], "correctIndex": 1 },
+            { "prompt": "Which word has the same sound as 'car'?", "options": ["orange", "tomorrow", "door"], "correctIndex": 1 }
+          ]
+        },
+        {
+          "title": "Choose the linked phrase",
+          "instructions": "Choose the phrase where the words link smoothly (consonant + vowel sound).",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which phrase links smoothly?", "options": ["an old man", "a new car", "a big park"], "correctIndex": 0 },
+            { "prompt": "Which phrase links smoothly?", "options": ["a short trip", "an expensive watch", "a big bag"], "correctIndex": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "pronunciation.beginner_sounds.g_and_j_letter_sounds",
+      "title": "Sounds /dʒ/ and /g/",
+      "cefrLevel": "A1",
+      "difficultyBand": 3,
+      "parentKey": "pronunciation.beginner_sounds",
+      "lessonBody": "In this lesson, you'll learn how the letters 'g' and 'j' relate to sound in English — a common source of confusion since the same letter can be pronounced two different ways.\n\n• /dʒ/ as in 'jazz' — juice, vegetables, orange\n• /g/ as in 'girl' — sugar, yogurt, eggs\n\nThe letter j is always /dʒ/. The letter g is sometimes /g/ (sugar) and sometimes /dʒ/ (orange) — especially before the letter 'e'.\n\nBy the end of this lesson, you'll be able to predict and produce the correct sound for words spelled with 'g' or 'j'.",
+      "examples": ["I like orange juice and vegetables.", "She has eggs and yogurt with sugar.", "Jazz music is popular here."],
+      "commonMistakes": ["Don't assume 'g' is always /g/ — before 'e', it's often /dʒ/, as in 'orange' and 'vegetables'.", "The letter 'j' is always /dʒ/, with no exceptions in common words."],
+      "exercises": [
+        {
+          "title": "Choose the correct sound for g",
+          "instructions": "Choose whether 'g' is pronounced /g/ or /dʒ/ in each word.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "sugar", "options": ["/g/", "/dʒ/"], "correctIndex": 0 },
+            { "prompt": "vegetables", "options": ["/g/", "/dʒ/"], "correctIndex": 1 },
+            { "prompt": "eggs", "options": ["/g/", "/dʒ/"], "correctIndex": 0 },
+            { "prompt": "orange", "options": ["/g/", "/dʒ/"], "correctIndex": 1 }
+          ]
+        },
+        {
+          "title": "Find the odd one out",
+          "instructions": "Choose the word whose 'g' or 'j' sound is different from the other two.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which word sounds different?", "options": ["juice", "orange", "yogurt"], "correctIndex": 2 },
+            { "prompt": "Which word sounds different?", "options": ["girl", "sugar", "vegetables"], "correctIndex": 2 }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "pronunciation.beginner_sounds.w_v_linking",
+      "title": "Sounds /w/ and /v/, sentence rhythm and linking",
+      "cefrLevel": "A1",
+      "difficultyBand": 3,
+      "parentKey": "pronunciation.beginner_sounds",
+      "lessonBody": "In this lesson, you'll practice two consonant sounds that are easy to confuse for many learners, plus more practice linking words smoothly in a sentence.\n\n• /w/ as in 'witch' — want, work, when, where\n• /v/ as in 'vase' — very, have, live, TV\n\nFor /w/, round your lips; for /v/, touch your top teeth to your bottom lip — they use completely different mouth positions even though they can sound similar to some learners.\n\nLinking still matters here: 'live‿in a house', 'have‿a big family' — join the consonant to the next vowel sound smoothly.\n\nBy the end of this lesson, you'll be able to tell /w/ and /v/ apart and link them naturally into full sentences.",
+      "examples": ["I live in a very big house.", "Do you want to watch TV?", "We work in the same office."],
+      "commonMistakes": ["Don't substitute /v/ for /w/ or vice versa — 'want' and 'vant' are different sounds to a native listener.", "Remember to link 'have a' and 'live in' smoothly rather than pausing between the words."],
+      "exercises": [
+        {
+          "title": "Choose the matching sound",
+          "instructions": "Choose the word with the same starting sound as the word shown.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which word starts with the same sound as 'want'?", "options": ["very", "work", "vase"], "correctIndex": 1 },
+            { "prompt": "Which word starts with the same sound as 'very'?", "options": ["work", "when", "live"], "correctIndex": 2 },
+            { "prompt": "Which word has the same sound as 'have'?", "options": ["TV", "where", "want"], "correctIndex": 0 }
+          ]
+        },
+        {
+          "title": "Complete the sentence",
+          "instructions": "Complete each sentence with a word from the lesson.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "I ___ in a small apartment. (reside)", "answer": "live" },
+            { "prompt": "Do you ___ a big family? (possess)", "answer": "have" },
+            { "prompt": "___ do you work? (question word)", "answer": "Where" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "pronunciation.beginner_sounds.a_silent_consonants",
+      "title": "Sound /ɑ/ and silent consonants",
+      "cefrLevel": "A1",
+      "difficultyBand": 3,
+      "parentKey": "pronunciation.beginner_sounds",
+      "lessonBody": "In this lesson, you'll practice the /ɑ/ vowel sound and learn about silent letters — letters that are written but not pronounced, which can trip up even careful readers.\n\n/ɑ/ appears in common words like: what, Oxford, sorry, coffee\n\nSome English words have a silent letter, e.g. in 'where', the 'h' is silent: /wɛr/. Other common examples: 'know' (silent k), 'listen' (silent t), 'half' (silent l), 'Wednesday' (silent d), 'write' (silent w).\n\nBy the end of this lesson, you'll be able to produce the /ɑ/ sound correctly and recognize common silent letters instead of pronouncing every letter you see.",
+      "examples": ["What time is it? I'm sorry, I don't know.", "Half past four on Wednesday.", "Listen and write the answer."],
+      "commonMistakes": ["Don't pronounce the 'h' in 'where' — it's silent: /wɛr/, not /hwɛr/.", "Don't pronounce the 'w' in 'write' or the 'k' in 'know' — both are silent letters."],
+      "exercises": [
+        {
+          "title": "Choose the silent letter",
+          "instructions": "Choose the letter that is silent in each word.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "where", "options": ["w", "h", "r"], "correctIndex": 1 },
+            { "prompt": "know", "options": ["k", "n", "w"], "correctIndex": 0 },
+            { "prompt": "listen", "options": ["l", "s", "t"], "correctIndex": 2 },
+            { "prompt": "Wednesday", "options": ["W", "d", "s"], "correctIndex": 1 }
+          ]
+        },
+        {
+          "title": "Find the word with /ɑ/",
+          "instructions": "Choose the word that has the /ɑ/ sound.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Which word has /ɑ/?", "options": ["what", "write", "know"], "correctIndex": 0 },
+            { "prompt": "Which word has /ɑ/?", "options": ["listen", "sorry", "half"], "correctIndex": 1 }
+          ]
+        }
+      ]
     }
   ]
 }

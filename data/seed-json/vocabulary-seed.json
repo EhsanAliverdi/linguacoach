@@ -8,7 +8,13 @@
     { "key": "vocabulary.numbers", "title": "Numbers", "cefrLevel": "A1" },
     { "key": "vocabulary.time_expressions", "title": "Time expressions", "cefrLevel": "A1" },
     { "key": "vocabulary.countries_and_nationalities", "title": "Countries and nationalities", "cefrLevel": "A1" },
-    { "key": "vocabulary.classroom", "title": "Classroom language", "cefrLevel": "A1" }
+    { "key": "vocabulary.classroom", "title": "Classroom language", "cefrLevel": "A1" },
+    { "key": "vocabulary.everyday_objects", "title": "Everyday objects", "cefrLevel": "A1" },
+    { "key": "vocabulary.people_and_family", "title": "People and family", "cefrLevel": "A1" },
+    { "key": "vocabulary.descriptive", "title": "Descriptive words", "cefrLevel": "A1" },
+    { "key": "vocabulary.food_and_drink", "title": "Food and drink", "cefrLevel": "A1" },
+    { "key": "vocabulary.common_verb_phrases", "title": "Common verb phrases", "cefrLevel": "A1" },
+    { "key": "vocabulary.time_and_feelings", "title": "Time and feelings", "cefrLevel": "A1" }
   ],
   "leaves": [
     {
@@ -218,6 +224,269 @@
             { "prompt": "You write on this at the front of the room.", "options": ["a chair", "a board", "a bag"], "correctIndex": 1 },
             { "prompt": "You carry your books in this.", "options": ["a bag", "a window", "a table"], "correctIndex": 0 },
             { "prompt": "You look words up in this.", "options": ["a chair", "a dictionary", "a door"], "correctIndex": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "vocabulary.everyday_objects.small_things",
+      "title": "Small things you carry every day",
+      "cefrLevel": "A1",
+      "difficultyBand": 2,
+      "parentKey": "vocabulary.everyday_objects",
+      "lessonBody": "In this lesson, you'll learn the words for small things people carry every day — useful when you're describing what's in your bag or reporting something lost.\n\nCommon small things:\n\nkeys, a wallet, a change purse, a credit card, an ID card, a phone, a pen, a pencil, a photo, a book, an umbrella\n\nBy the end of this lesson, you'll be able to name and ask about small everyday items, and say what's in your bag or pocket.",
+      "examples": ["I have a phone, keys, and a wallet in my bag.", "Is this your umbrella?", "I don't have my ID card with me."],
+      "commonMistakes": ["'Wallet' and 'change purse' are different — a wallet holds cards and bills, a change purse holds coins.", "Don't confuse 'ID card' with 'credit card' — one proves who you are, the other is for paying."],
+      "exercises": [
+        {
+          "title": "Match the description to the object",
+          "instructions": "Choose the object that matches each description.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "You use this to open your front door.", "options": ["a key", "a photo", "a pen"], "correctIndex": 0 },
+            { "prompt": "You use this to pay in a store.", "options": ["an ID card", "a credit card", "an umbrella"], "correctIndex": 1 },
+            { "prompt": "You use this when it's raining.", "options": ["a wallet", "an umbrella", "a pencil"], "correctIndex": 1 },
+            { "prompt": "This shows who you are.", "options": ["an ID card", "a change purse", "a book"], "correctIndex": 0 }
+          ]
+        },
+        {
+          "title": "Complete the list",
+          "instructions": "Complete each sentence with the correct small-things word.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "I keep my coins in a ___.", "answer": "change purse" },
+            { "prompt": "My cards and bills are in my ___.", "answer": "wallet" },
+            { "prompt": "I write with a ___.", "answer": "pen" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "vocabulary.everyday_objects.souvenirs",
+      "title": "Souvenirs",
+      "cefrLevel": "A1",
+      "difficultyBand": 2,
+      "parentKey": "vocabulary.everyday_objects",
+      "lessonBody": "In this lesson, you'll learn the words for common souvenirs — small gifts and mementos people buy while traveling, useful for shopping and gift-giving conversations.\n\nCommon souvenirs:\n\na cap, a map, a postcard, a key chain, a mug, sunglasses, a toy, a T-shirt\n\nBy the end of this lesson, you'll be able to name typical souvenirs and talk about what you'd buy as a gift or keepsake.",
+      "examples": ["I bought a mug and two postcards.", "This key chain is a nice souvenir.", "Are these sunglasses a gift?"],
+      "commonMistakes": ["'Sunglasses' is always plural — say 'these sunglasses', not 'this sunglasses'.", "'Souvenir' means a keepsake from a trip — it's not the same as 'gift' in general, though souvenirs are often given as gifts."],
+      "exercises": [
+        {
+          "title": "Choose the correct souvenir",
+          "instructions": "Choose the word that matches each description.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "You wear this on your head.", "options": ["a cap", "a mug", "a postcard"], "correctIndex": 0 },
+            { "prompt": "You drink coffee from this.", "options": ["a T-shirt", "a mug", "a map"], "correctIndex": 1 },
+            { "prompt": "You send this by mail with a photo on it.", "options": ["a postcard", "a key chain", "sunglasses"], "correctIndex": 0 },
+            { "prompt": "You use this to find your way around a city.", "options": ["a map", "a toy", "a cap"], "correctIndex": 0 }
+          ]
+        },
+        {
+          "title": "Complete the sentence",
+          "instructions": "Complete each sentence with a souvenir word.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "I wear these when it's sunny: ___.", "answer": "sunglasses" },
+            { "prompt": "My daughter wants a ___ from the toy store.", "answer": "toy" },
+            { "prompt": "This ___ has the city name printed on it.", "answer": "T-shirt" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "vocabulary.people_and_family.family_members",
+      "title": "People and family members",
+      "cefrLevel": "A1",
+      "difficultyBand": 2,
+      "parentKey": "vocabulary.people_and_family",
+      "lessonBody": "In this lesson, you'll learn the words for family members and general people words — essential for introducing your family and describing people around you.\n\nGeneral people words: a man, a woman, a boy, a girl\n\nFamily words:\n\nhusband, wife, mother, father, son, daughter, brother, sister, grandmother, grandfather, grandparents\n\nBy the end of this lesson, you'll be able to introduce your immediate family and describe the people in a photo.",
+      "examples": ["This is my husband, Mark. These are our children.", "Her name's Emma, and his name's Oliver.", "My grandparents live in Peru."],
+      "commonMistakes": ["'Parent' is singular (one mother or father); 'parents' is the pair — don't say 'my parent' when you mean both.", "'Grandparents' already means both grandmother and grandfather together — you don't need to say both words."],
+      "exercises": [
+        {
+          "title": "Choose the correct family word",
+          "instructions": "Choose the word that matches each description.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Your mother's mother is your ___.", "options": ["grandmother", "sister", "daughter"], "correctIndex": 0 },
+            { "prompt": "Your father's son (not you) is your ___.", "options": ["husband", "brother", "grandfather"], "correctIndex": 1 },
+            { "prompt": "A married man is someone's ___.", "options": ["husband", "boy", "son"], "correctIndex": 0 },
+            { "prompt": "A young female child is a ___.", "options": ["woman", "girl", "wife"], "correctIndex": 1 }
+          ]
+        },
+        {
+          "title": "Complete the introduction",
+          "instructions": "Complete each introduction with the correct family word.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "This is my ___. We got married last year. (male spouse)", "answer": "husband" },
+            { "prompt": "These are my ___. They live with my mother and father. (both grandparents together)", "answer": "grandparents" },
+            { "prompt": "My ___ is ten years old. She's my parents' daughter. (female sibling)", "answer": "sister" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "vocabulary.descriptive.colors_and_common_adjectives",
+      "title": "Colors and common adjectives",
+      "cefrLevel": "A1",
+      "difficultyBand": 2,
+      "parentKey": "vocabulary.descriptive",
+      "lessonBody": "In this lesson, you'll learn colors and common opposite-pair adjectives — words you'll use constantly to describe cars, clothes, houses, and everyday objects.\n\nColors: red, blue, green, yellow, black, white, brown, orange\n\nCommon adjective pairs:\n\n• big / small\n• cheap / expensive\n• new / old\n• long / short\n• fast / slow\n• good / bad\n• beautiful / ugly\n\nBy the end of this lesson, you'll be able to describe an object's color and give a simple opinion about it.",
+      "examples": ["It's a small blue car.", "This watch is expensive, but it's beautiful.", "Their old house is very big."],
+      "commonMistakes": ["Colors and adjectives go before the noun, in the same position: 'a red small bag' should usually be 'a small red bag' (size before color is more natural).", "Don't confuse 'cheap' (low price) with 'bad' — a cheap thing can still be good."],
+      "exercises": [
+        {
+          "title": "Choose the opposite",
+          "instructions": "Choose the word with the opposite meaning.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Opposite of 'big'?", "options": ["small", "fast", "cheap"], "correctIndex": 0 },
+            { "prompt": "Opposite of 'expensive'?", "options": ["ugly", "cheap", "old"], "correctIndex": 1 },
+            { "prompt": "Opposite of 'old'?", "options": ["new", "slow", "good"], "correctIndex": 0 },
+            { "prompt": "Opposite of 'fast'?", "options": ["short", "slow", "bad"], "correctIndex": 1 }
+          ]
+        },
+        {
+          "title": "Describe the object",
+          "instructions": "Complete each sentence with a color or adjective from the lesson.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "Grass is usually ___.", "answer": "green" },
+            { "prompt": "The sun and bananas are ___.", "answer": "yellow" },
+            { "prompt": "A sports car is usually ___, not slow.", "answer": "fast" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "vocabulary.food_and_drink.everyday_food_and_drink",
+      "title": "Everyday food and drink",
+      "cefrLevel": "A1",
+      "difficultyBand": 3,
+      "parentKey": "vocabulary.food_and_drink",
+      "lessonBody": "In this lesson, you'll learn common food and drink words — the vocabulary you need to talk about meals, especially breakfast.\n\nFood: a croissant, fruit, yogurt, eggs, cheese, a sandwich, rice, fish\n\nDrink: coffee, tea, juice, milk\n\nBy the end of this lesson, you'll be able to say what you typically eat and drink for breakfast, lunch, or dinner.",
+      "examples": ["I have a croissant and coffee for breakfast.", "We have fruit and yogurt every morning.", "They have rice and fish for dinner."],
+      "commonMistakes": ["'Fruit' is usually uncountable in everyday speech — say 'some fruit', not 'a fruit', when talking generally.", "'A coffee' (a cup of coffee) is fine when ordering, but 'coffee' alone is the general uncountable word for the drink."],
+      "exercises": [
+        {
+          "title": "Choose food or drink",
+          "instructions": "Choose whether each word is usually a food or a drink.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "yogurt", "options": ["food", "drink"], "correctIndex": 0 },
+            { "prompt": "juice", "options": ["food", "drink"], "correctIndex": 1 },
+            { "prompt": "eggs", "options": ["food", "drink"], "correctIndex": 0 },
+            { "prompt": "tea", "options": ["food", "drink"], "correctIndex": 1 }
+          ]
+        },
+        {
+          "title": "Complete the breakfast",
+          "instructions": "Complete each sentence with a food or drink word.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "I have a ___ and coffee at the café. (a bakery item)", "answer": "croissant" },
+            { "prompt": "We have ___ and rice for dinner. (from the sea)", "answer": "fish" },
+            { "prompt": "She has ___ on her toast. (dairy, often yellow)", "answer": "cheese" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "vocabulary.common_verb_phrases.set_one",
+      "title": "Common verb phrases 1",
+      "cefrLevel": "A1",
+      "difficultyBand": 3,
+      "parentKey": "vocabulary.common_verb_phrases",
+      "lessonBody": "In this lesson, you'll learn common verb + object combinations that native speakers use constantly to talk about their lives — where they live, what they do, and what they want.\n\nCommon combinations:\n\n• love + something (I love her books.)\n• live + in a place (I live in London.)\n• work + for a company (I work for a British company.)\n• want + something (I want a coffee.)\n• have + something (I have two sons.)\n\nBy the end of this lesson, you'll be able to build simple, natural sentences about your life using these five common verbs.",
+      "examples": ["I love this city.", "She lives in a small apartment.", "We work for the same company."],
+      "commonMistakes": ["'Live in' needs 'in' before a place: 'I live London' is wrong — say 'I live in London'.", "'Work for' needs 'for' before a company: 'I work a company' is wrong — say 'I work for a company'."],
+      "exercises": [
+        {
+          "title": "Match the verb to its object",
+          "instructions": "Choose the phrase that correctly completes each verb.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "I live ___ a small town.", "options": ["in", "for", "of"], "correctIndex": 0 },
+            { "prompt": "She works ___ a large company.", "options": ["in", "for", "at home"], "correctIndex": 1 },
+            { "prompt": "I love ___ books.", "options": ["her", "for her", "of her"], "correctIndex": 0 }
+          ]
+        },
+        {
+          "title": "Complete the sentence",
+          "instructions": "Complete each sentence with love, live, work, want, or have.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "I ___ two sons and a daughter.", "answer": "have" },
+            { "prompt": "We ___ in a big city.", "answer": "live" },
+            { "prompt": "I really ___ a coffee right now.", "answer": "want" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "vocabulary.time_and_feelings.telling_the_time",
+      "title": "Telling the time",
+      "cefrLevel": "A1",
+      "difficultyBand": 3,
+      "parentKey": "vocabulary.time_and_feelings",
+      "lessonBody": "In this lesson, you'll learn how to say clock times in English — a skill you'll use constantly for meetings, trains, and appointments.\n\nFor times on the hour and up to the half hour, count minutes after the hour:\n\n• 3:00 — three o'clock\n• 3:05 — five after three\n• 3:15 — (a) quarter after three\n• 3:30 — three-thirty (or half past three)\n\nAfter the half hour, count minutes to the next hour:\n\n• 3:45 — (a) quarter to four\n• 3:55 — five to four\n\nYou can also just say the numbers directly: 7:15 = seven fifteen. Note: American English usually says '(nine)-thirty'; British English often says 'half past (nine)'.\n\nBy the end of this lesson, you'll be able to say and understand clock times in everyday conversation.",
+      "examples": ["It's a quarter after three.", "It's twenty to four.", "The meeting is at seven forty-seven."],
+      "commonMistakes": ["After the half hour, count minutes 'to' the next hour, not 'after' the current one: 3:50 is 'ten to four', not 'fifty after three'.", "'Half past three' and 'three-thirty' mean exactly the same time — they're not two different times."],
+      "exercises": [
+        {
+          "title": "Choose the correct time",
+          "instructions": "Choose the correct way to say each time.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "3:15", "options": ["a quarter after three", "a quarter to three"], "correctIndex": 0 },
+            { "prompt": "3:45", "options": ["a quarter after four", "a quarter to four"], "correctIndex": 1 },
+            { "prompt": "3:30", "options": ["three-thirty", "thirty to three"], "correctIndex": 0 },
+            { "prompt": "3:55", "options": ["five to four", "five after four"], "correctIndex": 0 }
+          ]
+        },
+        {
+          "title": "Write the time",
+          "instructions": "Write each clock time in words.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "3:00", "answer": "three o'clock" },
+            { "prompt": "3:10", "answer": "ten after three" },
+            { "prompt": "3:40", "answer": "twenty to four" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "vocabulary.time_and_feelings.saying_how_you_feel",
+      "title": "Saying how you feel",
+      "cefrLevel": "A1",
+      "difficultyBand": 2,
+      "parentKey": "vocabulary.time_and_feelings",
+      "lessonBody": "In this lesson, you'll learn simple words for describing how you feel physically — useful for everyday small talk and for explaining what you need.\n\nCommon feelings:\n\ntired, cold, hungry, hot, thirsty\n\nUse 'I'm' + feeling word: I'm tired. I'm hungry.\n\nBy the end of this lesson, you'll be able to say how you feel and understand when someone tells you how they feel.",
+      "examples": ["I'm really tired. Time for bed.", "I'm hungry. Time for lunch.", "I'm thirsty. I need a glass of water."],
+      "commonMistakes": ["Don't say 'I have hungry' — say 'I'm hungry' (feelings use 'be', not 'have', in English).", "'Cold' and 'hot' can describe both people and weather/objects — context tells you which."],
+      "exercises": [
+        {
+          "title": "Match the feeling to the situation",
+          "instructions": "Choose the feeling that matches each situation.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "You haven't eaten since breakfast. You're ___.", "options": ["hungry", "cold", "tired"], "correctIndex": 0 },
+            { "prompt": "It's 41 degrees outside. You're ___.", "options": ["hot", "cold", "thirsty"], "correctIndex": 1 },
+            { "prompt": "You need a glass of water. You're ___.", "options": ["thirsty", "tired", "hot"], "correctIndex": 0 },
+            { "prompt": "It's late and you want to sleep. You're ___.", "options": ["tired", "hungry", "cold"], "correctIndex": 0 }
+          ]
+        },
+        {
+          "title": "Complete the sentence",
+          "instructions": "Complete each sentence with a feeling word.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "It's 95 degrees! I'm so ___.", "answer": "hot" },
+            { "prompt": "I need a glass of water. I'm ___.", "answer": "thirsty" },
+            { "prompt": "It's time for lunch. I'm ___.", "answer": "hungry" }
           ]
         }
       ]

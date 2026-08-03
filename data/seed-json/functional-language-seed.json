@@ -7,7 +7,8 @@
   "containers": [
     { "key": "functional_language.meeting_people", "title": "Meeting people", "cefrLevel": "A1" },
     { "key": "functional_language.everyday_transactions", "title": "Everyday transactions", "cefrLevel": "A1" },
-    { "key": "functional_language.classroom_management", "title": "Classroom management language", "cefrLevel": "A1" }
+    { "key": "functional_language.classroom_management", "title": "Classroom management language", "cefrLevel": "A1" },
+    { "key": "functional_language.time_and_arrangements", "title": "Time and arrangements", "cefrLevel": "A1" }
   ],
   "leaves": [
     {
@@ -203,6 +204,103 @@
           "questions": [
             { "prompt": "A: Good evening, do you have a reservation? B: ___", "options": ["Yes, under the name Reed.", "See you tomorrow.", "How do you spell that?"], "correctIndex": 0 },
             { "prompt": "A: How many people? B: ___", "options": ["A table for four, please.", "I'm from Canada.", "Nice to meet you."], "correctIndex": 0 }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "functional_language.everyday_transactions.understanding_prices",
+      "title": "Understanding and asking about prices",
+      "cefrLevel": "A1",
+      "difficultyBand": 2,
+      "parentKey": "functional_language.everyday_transactions",
+      "lessonBody": "In this lesson, you'll learn how to read and say prices in different currencies, and how to ask how much something costs — a skill you'll need in almost any store or market.\n\nSaying prices:\n\n• £12.75 — twelve pounds seventy-five\n• €15.99 — fifteen euros ninety-nine\n• $50.19 — fifty dollars and nineteen cents\n• 60p / 60 cents — sixty pence / sixty cents\n\nAsking the price:\n\n• How much is it? (one thing)\n• How much are they/these/those? (more than one thing)\n\nBy the end of this lesson, you'll be able to ask the price of something and understand the answer, in pounds, euros, or dollars.",
+      "examples": ["How much is this mug? It's twelve dollars fifty.", "How much are these key chains? They're eight euros twenty.", "That's five pounds thirty-five, please."],
+      "commonMistakes": ["Use 'is' for one thing and 'are' for more than one: 'How much are this?' is wrong — say 'How much is this?'", "Don't drop the currency word when speaking: say 'twelve dollars fifty', not just 'twelve fifty', unless the currency is already clear from context."],
+      "exercises": [
+        {
+          "title": "Match the price to the words",
+          "instructions": "Choose the correct way to say each price.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "$13.25", "options": ["thirteen dollars and twenty-five cents", "thirty dollars and thirteen cents"], "correctIndex": 0 },
+            { "prompt": "£5.35", "options": ["five pounds fifty-three", "five pounds thirty-five"], "correctIndex": 1 },
+            { "prompt": "€3.20", "options": ["three euros twenty", "thirty-two euros"], "correctIndex": 0 },
+            { "prompt": "£1.50", "options": ["one pound fifty", "fifteen pounds"], "correctIndex": 0 }
+          ]
+        },
+        {
+          "title": "Complete the exchange",
+          "instructions": "Complete each exchange about prices.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "A: How much ___ this postcard? B: It's a dollar fifty.", "answer": "is" },
+            { "prompt": "A: How much ___ those sunglasses? B: They're twenty dollars.", "answer": "are" },
+            { "prompt": "A: How ___ is the mug? B: It's eight dollars.", "answer": "much" }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "functional_language.everyday_transactions.ordering_food",
+      "title": "Ordering food and drink",
+      "cefrLevel": "A1",
+      "difficultyBand": 2,
+      "parentKey": "functional_language.everyday_transactions",
+      "lessonBody": "In this lesson, you'll learn the fixed phrases used to order food and drink at a counter or café — practical language you'll use whenever you buy lunch or a snack.\n\nOrdering:\n\n• Can I have a [item], please?\n• And a [drink], please.\n\nServer follow-up questions and typical answers:\n\n• Anything else? — No, thanks. / And a coffee, please.\n• Ice and lemon? — Yes, please. / No, thanks.\n• How much is it? — That's [price].\n\nWhen you're handed your order, the server often says 'Here you are' or 'Here you go'; you can respond 'Thanks'.\n\nBy the end of this lesson, you'll be able to order food and a drink, answer follow-up questions, and pay with confidence.",
+      "examples": ["Can I have a cheese sandwich, please? And a coffee, please.", "Anything else? No, thanks. How much is it?", "Here you are. Thanks!"],
+      "commonMistakes": ["'Can I have...?' is more natural than 'I want...' when ordering politely.", "Answer 'Anything else?' with 'No, thanks' or a new item — not just 'No'."],
+      "exercises": [
+        {
+          "title": "Complete the order",
+          "instructions": "Complete each line of the ordering exchange.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "___ I have a tuna sandwich, please?", "answer": "Can" },
+            { "prompt": "Server: Anything else? You: ___, thanks.", "answer": "No" },
+            { "prompt": "Server: Here you ___. You: Thanks!", "answer": "are" }
+          ]
+        },
+        {
+          "title": "Choose the best response",
+          "instructions": "Choose the most natural response to complete each exchange.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "Server: Anything else? You: ___", "options": ["And a Coke, please.", "How do you spell that?", "See you tomorrow."], "correctIndex": 0 },
+            { "prompt": "Server: Ice and lemon? You: ___", "options": ["No, thanks.", "A table for two.", "Nice to meet you."], "correctIndex": 0 },
+            { "prompt": "You: Thanks. How much is it? Server: ___", "options": ["Seven dollars fifty.", "Right this way.", "I have a reservation."], "correctIndex": 0 }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "functional_language.time_and_arrangements.asking_the_time",
+      "title": "Asking and telling the time",
+      "cefrLevel": "A1",
+      "difficultyBand": 3,
+      "parentKey": "functional_language.time_and_arrangements",
+      "lessonBody": "In this lesson, you'll learn the fixed phrases for asking and telling the time in conversation, plus how to react politely when you're late for something.\n\nAsking and telling the time:\n\n• What time is it? — It's a quarter to eight.\n• What time's your train/meeting? — At seven forty-seven.\n\nTalking about lateness:\n\n• You need to hurry! You only have two minutes.\n• I'm sorry I'm late. / I'm really sorry.\n• Don't worry.\n• You're an hour late.\n\nBy the end of this lesson, you'll be able to ask what time it is, tell someone the time, and apologize naturally if you're running late.",
+      "examples": ["Excuse me, what time is it? It's eleven o'clock.", "You need to hurry! Your train leaves in two minutes.", "I'm really sorry I'm late. — Don't worry."],
+      "commonMistakes": ["'What time is it?' asks for the current time; 'What time's your train?' asks about a scheduled time — don't mix them up.", "'Don't worry' is the natural response to an apology — 'no problem' is fine too, but don't say 'don't sorry'."],
+      "exercises": [
+        {
+          "title": "Complete the exchange",
+          "instructions": "Complete each short exchange about time.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "A: Excuse me, what ___ is it? B: It's a quarter to eight.", "answer": "time" },
+            { "prompt": "A: I'm really sorry I'm late. B: Don't ___.", "answer": "worry" },
+            { "prompt": "A: You need to ___! You only have two minutes. B: Thanks!", "answer": "hurry" }
+          ]
+        },
+        {
+          "title": "Choose the best response",
+          "instructions": "Choose the most natural response to complete each exchange.",
+          "kind": "choice",
+          "questions": [
+            { "prompt": "A: What time is it? B: ___", "options": ["It's eleven o'clock.", "It's in London.", "It's my brother."], "correctIndex": 0 },
+            { "prompt": "A: I'm sorry, you're an hour late! B: ___", "options": ["I'm really sorry.", "How much is it?", "Nice to meet you."], "correctIndex": 0 },
+            { "prompt": "A: What time's your meeting? B: ___", "options": ["At nine-thirty.", "It's blue.", "Two, please."], "correctIndex": 0 }
           ]
         }
       ]
