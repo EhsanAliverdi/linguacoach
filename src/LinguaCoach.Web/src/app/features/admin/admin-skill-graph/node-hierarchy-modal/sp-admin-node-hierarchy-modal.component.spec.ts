@@ -12,7 +12,7 @@ const NODE: SkillGraphNodeDetail = {
   contextTags: [], focusTags: [], linkedModuleCount: 0,
   parentNodeId: null, childCount: 2,
   descriptionForAi: null, reviewedByUserId: null, approvedAtUtc: null, rejectedAtUtc: null,
-  prerequisites: [], dependents: [], linkedModules: [],
+  prerequisites: [], dependents: [], linkedModules: [], lesson: null,
   cefrConfidence: 'Unknown', cefrSource: null, nodeType: null, routingEligible: false,
   parent: null,
   children: [

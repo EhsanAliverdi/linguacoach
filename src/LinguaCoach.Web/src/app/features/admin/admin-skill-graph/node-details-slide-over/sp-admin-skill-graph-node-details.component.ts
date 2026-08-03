@@ -92,6 +92,15 @@ import {
           }
         </div>
 
+        <div class="sp-sgnd-section">
+          <div class="sp-sgnd-section-title">Lesson</div>
+          @if (n.lesson) {
+            <div>{{ n.lesson.title }} — {{ n.lesson.exerciseCount }} exercise{{ n.lesson.exerciseCount === 1 ? '' : 's' }} ({{ n.lesson.reviewStatus }})</div>
+          } @else {
+            <div>No Lesson is assigned to this leaf yet.</div>
+          }
+        </div>
+
         @if (n.linkedModules.length > 0) {
           <div class="sp-sgnd-section">
             <div class="sp-sgnd-section-title">Linked modules ({{ n.linkedModules.length }})</div>

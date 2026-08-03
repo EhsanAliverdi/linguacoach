@@ -211,6 +211,53 @@ public sealed class AdminSkillGraphEndpointTests : IClassFixture<ApiTestFactory>
         Assert.Contains(linkedModules, m => m.GetProperty("id").GetGuid() == moduleId);
     }
 
+    /// <summary>2026-08-04 — the node detail page only ever showed Linked Modules, even though a
+    /// leaf's real teaching content lives on its own Lesson (Lesson.AssignToLeaf) + that Lesson's
+    /// Exercises.</summary>
+    [Fact]
+    public async Task GetNode_WithAssignedLesson_ReturnsLessonWithExerciseCount()
+    {
+        var node = await SeedNodeAsync($"grammar.detail_lesson_{Guid.NewGuid():N}.a1");
+        Guid lessonId;
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
+            var lesson = new Lesson($"Lesson {Guid.NewGuid():N}", "Body.", LessonSourceMode.Manual, cefrLevel: "A1", skill: "grammar");
+            db.Lessons.Add(lesson);
+            await db.SaveChangesAsync();
+            lesson.AssignToLeaf(node.Id);
+            await db.SaveChangesAsync();
+            lessonId = lesson.Id;
+
+            var exercise = new Exercise(
+                "Exercise 1", "Do the thing.", "gap_fill", ExerciseRendererType.Formio, ExerciseSourceMode.Manual,
+                cefrLevel: "A1", skill: "grammar", lessonId: lessonId);
+            db.Exercises.Add(exercise);
+            await db.SaveChangesAsync();
+        }
+
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.GetAsync($"/api/admin/skill-graph/nodes/{node.Id}");
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        var lesson2 = body.GetProperty("lesson");
+        Assert.Equal(lessonId, lesson2.GetProperty("id").GetGuid());
+        Assert.Equal(1, lesson2.GetProperty("exerciseCount").GetInt32());
+    }
+
+    [Fact]
+    public async Task GetNode_WithNoAssignedLesson_ReturnsNullLesson()
+    {
+        var node = await SeedNodeAsync($"grammar.detail_no_lesson_{Guid.NewGuid():N}.a1");
+        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
+        var client = ClientWithToken(_factory, adminToken);
+
+        var resp = await client.GetAsync($"/api/admin/skill-graph/nodes/{node.Id}");
+        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(JsonValueKind.Null, body.GetProperty("lesson").ValueKind);
+    }
+
     [Fact]
     public async Task BatchApprove_MarksNodesApproved()
     {

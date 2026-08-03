@@ -372,6 +372,20 @@ public sealed class AdminSkillGraphController : ControllerBase
             .Join(_db.Modules.AsNoTracking(), l => l.ModuleId, m => m.Id, (l, m) => new { m.Id, m.Title })
             .ToListAsync(ct);
 
+        // 2026-08-04 — this leaf's own canonical Lesson (Lesson.AssignToLeaf), previously invisible
+        // on the node detail page: it only ever showed Linked Modules, even though a leaf's real
+        // teaching content lives on its Lesson + that Lesson's Exercises, not on Module directly.
+        var lessonRow = await _db.Lessons.AsNoTracking()
+            .Where(l => l.SkillGraphNodeId == id)
+            .Select(l => new { l.Id, l.Title, l.Body, l.ReviewStatus })
+            .FirstOrDefaultAsync(ct);
+        object? lesson = null;
+        if (lessonRow is not null)
+        {
+            var exerciseCount = await _db.Exercises.AsNoTracking().CountAsync(e => e.LessonId == lessonRow.Id, ct);
+            lesson = new { lessonRow.Id, lessonRow.Title, lessonRow.Body, lessonRow.ReviewStatus, exerciseCount };
+        }
+
         // Container/leaf hierarchy (2026-07-24) — this node's own container (if it's a leaf) and
         // its direct children (if it's a container), so the node detail view can render/navigate
         // the hierarchy without a separate call.
@@ -396,6 +410,7 @@ public sealed class AdminSkillGraphController : ControllerBase
             prerequisites,
             dependents,
             linkedModules,
+            lesson,
             node.ParentNodeId,
             parent,
             children,

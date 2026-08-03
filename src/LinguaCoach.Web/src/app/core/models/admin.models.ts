@@ -1594,6 +1594,14 @@ export interface SkillGraphNodePrerequisiteRef {
   title: string;
 }
 
+export interface SkillGraphNodeLessonRef {
+  id: string;
+  title: string;
+  body: string;
+  reviewStatus: string;
+  exerciseCount: number;
+}
+
 export interface SkillGraphNodeDetail extends SkillGraphNodeListItem {
   descriptionForAi: string | null;
   reviewedByUserId: string | null;
@@ -1604,6 +1612,9 @@ export interface SkillGraphNodeDetail extends SkillGraphNodeListItem {
   dependents: SkillGraphNodePrerequisiteRef[];
   // Content-coverage merge (2026-07-23) — real Modules linked to this node.
   linkedModules: SkillGraphLinkedModuleRef[];
+  // 2026-08-04 — this leaf's own canonical Lesson (Lesson.AssignToLeaf). Null for containers and
+  // for any leaf that hasn't been assigned one yet (see content-coverage's hasLesson audit).
+  lesson: SkillGraphNodeLessonRef | null;
   // Container/leaf hierarchy (2026-07-27).
   parent: SkillGraphNodePrerequisiteRef | null;
   children: (SkillGraphNodePrerequisiteRef & { reviewStatus: string })[];

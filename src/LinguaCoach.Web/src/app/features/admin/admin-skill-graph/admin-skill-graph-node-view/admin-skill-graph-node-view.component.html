@@ -93,6 +93,18 @@
       }
     </sp-admin-section-card>
 
+    <sp-admin-section-card title="Lesson">
+      @if (n.lesson) {
+        <p class="sp-admin-section-sub">
+          <a [routerLink]="['/admin/lesson-library', n.lesson.id]">{{ n.lesson.title }}</a>
+          — {{ n.lesson.exerciseCount }} exercise{{ n.lesson.exerciseCount === 1 ? '' : 's' }}
+          ({{ n.lesson.reviewStatus }})
+        </p>
+      } @else {
+        <p class="sp-admin-section-sub">No Lesson is assigned to this leaf yet.</p>
+      }
+    </sp-admin-section-card>
+
     <sp-admin-section-card title="Linked Modules ({{ n.linkedModules.length }})">
       @if (n.linkedModules.length > 0) {
         <ul class="sp-admin-simple-list">
