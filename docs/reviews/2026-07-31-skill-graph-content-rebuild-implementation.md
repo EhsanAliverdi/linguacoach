@@ -499,3 +499,60 @@ information form now has a verified, complete equivalent in the app's vocabulary
 next candidate would be an equally systematic pass through the Grammar Bank's extra practice
 sub-exercises (a/b/c/d parts) for Files 3-12, which were spot-checked but not exhaustively
 verified the way the Vocabulary Bank was in this pass.
+
+## 17. Addendum (2026-08-04) — Grammar Bank cross-check, all 24 pages
+
+Follow-up to §16: read all 24 Grammar Bank pages (Files 1-12, two pages per file) in full,
+comparing each rule box and spelling-rule table against the corresponding grammar leaf, rather
+than relying on the in-lesson snippets and general ELT knowledge used originally.
+
+**Method**: for each file's Grammar Bank pages, compared every rule box, example table, and
+"spelling rules" panel against the matching leaf's `lessonBody`, `commonMistakes`, and exercises.
+
+**Findings — 6 genuine gaps found and fixed** (all missing spelling-rule detail the Grammar Bank
+states explicitly but our leaf had only partially captured):
+
+- `grammar.nouns_and_determiners.singular_plural_nouns`: the Grammar Bank gives three plural
+  spelling patterns (add -s; add -es after ch/sh/s/ss/x; consonant+y → -ies), but the leaf only
+  had the basic -s rule. Added the other two patterns plus a practice exercise.
+- `grammar.simple_present.third_person_he_she_it`: same three-way spelling-rule gap for the
+  third-person -s/-es ending, plus the Grammar Bank's explicit callout that have/do/go are
+  irregular (has/does/goes) — the leaf only mentioned "have → has". Added the full spelling rules
+  and the do/go irregulars, plus a practice exercise.
+- `grammar.liking_verbs.like_love_hate_ing`: the Grammar Bank's "-ing form" spelling table (drop
+  silent e; double the final consonant for one-vowel-one-consonant verbs) wasn't in the leaf at
+  all. Added the rules, a common mistake, and a practice exercise.
+- `grammar.simple_past.be`: the Grammar Bank notes that there is/there are has its own past form
+  (there was/there were) and lists the standard past time expressions (this morning, yesterday,
+  last night, last week, last month, last year) — neither was in the leaf. Added both, plus a
+  practice exercise for there was/there were.
+- `grammar.simple_past.regular_verbs`: the Grammar Bank's regular-past spelling table has four
+  patterns (add -ed; add -d after e; consonant+y → -ied; double the final consonant), but the
+  leaf only had two (add -ed, add -d, double consonant) and was missing the consonant+y → -ied
+  pattern entirely. Added it plus a practice exercise.
+- `grammar.adverbs_of_frequency.always_usually_sometimes_never`: the Grammar Bank explicitly
+  warns that 'never' takes an affirmative verb, not doesn't ('He never eats meat' NOT 'He doesn't
+  never eat meat') — this rule wasn't stated in the leaf's common mistakes, though an exercise
+  question already implicitly tested it. Added the explicit rule.
+
+**Not treated as gaps**: Files 1, 2, 5, 7, 9, and 12's Grammar Bank pages matched the existing
+leaves' rules and exercise style closely on review — no missing rule content found. File 4's
+Grammar Bank includes a minor possessive-'s pronunciation detail (/s/ vs. /ɪz/ after names ending
+in s, e.g. "Carlos's") that belongs more naturally to the pronunciation domain than a grammar
+leaf's rule content; left as a minor, non-blocking note rather than a fix, since it doesn't
+change any grammar rule taught.
+
+**Re-seed**: full `TRUNCATE` + re-run of all domain seeders + prerequisites. Node/leaf/container/
+edge counts unchanged (145/42/103/61) since no new leaves were added. Exercises: 224 → 229 (+5,
+one new exercise added to 5 of the 6 fixed leaves; the adverbs-of-frequency fix only needed a
+`commonMistakes` addition since an exercise already implicitly tested the rule). All three
+backend test suites green (UnitTests 2594, IntegrationTests 1418, ArchitectureTests 30). API
+container restarted and confirmed healthy.
+
+**Final verdict**: every Grammar Bank rule box and spelling-rule table across all 12 files now
+has a verified, complete equivalent in the corresponding grammar leaf. Combined with §16, the
+Vocabulary Bank, Grammar Bank, and Communication-page content are now all cross-checked against
+the app's seed content, not just inferred from in-lesson snippets.
+
+**Next recommended action**: none pending. The reference-bank verification work requested across
+this and §16 is complete.

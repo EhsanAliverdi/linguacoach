@@ -209,9 +209,9 @@
       "cefrConfidence": "curated",
       "cefrSource": "hand_authored",
       "routingEligible": true,
-      "lessonBody": "In this lesson, you'll learn how to talk about one thing versus more than one thing, and how to choose between 'a' and 'an' — two small words you'll use constantly.\n\nMost nouns add -s for the plural:\n\n• a pencil → two pencils\n• a key → three keys\n\nUse 'a' before a consonant sound and 'an' before a vowel sound (a, e, i, o, u):\n\n• a book, a phone, a wallet\n• an umbrella, an ID card, an orange\n\nBy the end of this lesson, you'll be able to say whether you have one thing or several, and choose 'a' or 'an' correctly every time.",
+      "lessonBody": "In this lesson, you'll learn how to talk about one thing versus more than one thing, and how to choose between 'a' and 'an' — two small words you'll use constantly.\n\nThere are three plural spelling patterns:\n\n• Most nouns just add -s: a pencil → two pencils, a key → three keys\n• Nouns ending in ch, sh, s, ss, or x add -es: a class → two classes, a watch → two watches\n• Nouns ending in a consonant + y change y to i and add -es: a country → two countries\n\nUse 'a' before a consonant sound and 'an' before a vowel sound (a, e, i, o, u):\n\n• a book, a phone, a wallet\n• an umbrella, an ID card, an orange\n\nBy the end of this lesson, you'll be able to say whether you have one thing or several, and choose 'a' or 'an' correctly every time.",
       "examples": ["I have a pencil and two pens.", "She has an umbrella and three keys.", "It's a photo, not an album."],
-      "commonMistakes": ["Don't forget the -s on plural nouns: 'two pencil' is wrong, 'two pencils' is correct.", "Choose 'a'/'an' by the sound, not the spelling: it's 'an hour' (vowel sound) but 'a university' (consonant sound)."],
+      "commonMistakes": ["Don't forget the -s on plural nouns: 'two pencil' is wrong, 'two pencils' is correct.", "Choose 'a'/'an' by the sound, not the spelling: it's 'an hour' (vowel sound) but 'a university' (consonant sound).", "Don't just add -s to words ending in ch/sh/s/x or consonant+y: 'watchs' and 'countrys' are wrong — say 'watches' and 'countries'."],
       "exercises": [
         {
           "title": "Choose a or an",
@@ -234,6 +234,17 @@
             { "prompt": "a phone → three ___", "answer": "phones" },
             { "prompt": "a photo → four ___", "answer": "photos" },
             { "prompt": "a wallet → two ___", "answer": "wallets" }
+          ]
+        },
+        {
+          "title": "Write the plural — spelling rules",
+          "instructions": "Write the plural form, paying attention to the spelling rule.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "a watch → two ___", "answer": "watches" },
+            { "prompt": "a class → two ___", "answer": "classes" },
+            { "prompt": "a country → three ___", "answer": "countries" },
+            { "prompt": "a dictionary → two ___", "answer": "dictionaries" }
           ]
         }
       ]
@@ -431,9 +442,9 @@
       "cefrConfidence": "curated",
       "cefrSource": "hand_authored",
       "routingEligible": true,
-      "lessonBody": "In this lesson, you'll learn how the simple present changes when you talk about one other person or thing — he, she, or it — instead of yourself or a group.\n\nWith he, she, and it, add -s (or -es) to the verb:\n\n• I work → she works\n• I teach → he teaches\n• I have → she has (irregular)\n\nFor the negative and question, use doesn't/does instead of don't/do, and the main verb goes back to its base form:\n\n• She doesn't wear glasses. (NOT she doesn't wears)\n• What does he do? Where does she work?\n\nBy the end of this lesson, you'll be able to describe someone else's job, habits, and routine correctly in the third person.",
+      "lessonBody": "In this lesson, you'll learn how the simple present changes when you talk about one other person or thing — he, she, or it — instead of yourself or a group.\n\nWith he, she, and it, add -s to most verbs, following the same spelling rules as plural nouns:\n\n• work → works (add -s)\n• watch → watches, finish → finishes (add -es after ch, sh, s, ss, x)\n• study → studies (consonant + y → -ies)\n\nThree common verbs are irregular in this form: have → has, do → does, go → goes.\n\nFor the negative and question, use doesn't/does instead of don't/do, and the main verb goes back to its base form:\n\n• She doesn't wear glasses. (NOT she doesn't wears)\n• What does he do? Where does she work?\n\nBy the end of this lesson, you'll be able to describe someone else's job, habits, and routine correctly in the third person.",
       "examples": ["She works for a newspaper.", "He doesn't wear glasses now.", "What does she do? She's a teacher."],
-      "commonMistakes": ["Don't forget the -s on the verb with he/she/it: 'she work' is wrong — say 'she works'.", "Don't add -s twice: 'she doesn't works' is wrong — say 'she doesn't work'."],
+      "commonMistakes": ["Don't forget the -s on the verb with he/she/it: 'she work' is wrong — say 'she works'.", "Don't add -s twice: 'she doesn't works' is wrong — say 'she doesn't work'.", "have/do/go are irregular: 'she haves', 'he dos', and 'it gos' are all wrong — say 'has', 'does', 'goes'."],
       "exercises": [
         {
           "title": "Complete with the third-person form",
@@ -455,6 +466,17 @@
             { "prompt": "___ he work at a school? (question)", "answer": "Does" },
             { "prompt": "What ___ she do? (question)", "answer": "does" }
           ]
+        },
+        {
+          "title": "Practice the spelling rules",
+          "instructions": "Complete each sentence with the correct third-person form.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "She ___ CNN every morning. (watch)", "answer": "watches" },
+            { "prompt": "He ___ history at the university. (study)", "answer": "studies" },
+            { "prompt": "The movie ___ at 8:00. (finish)", "answer": "finishes" },
+            { "prompt": "She ___ to the gym on Saturdays. (go)", "answer": "goes" }
+          ]
         }
       ]
     },
@@ -470,7 +492,7 @@
       "routingEligible": true,
       "lessonBody": "In this lesson, you'll learn how to say how often you do something — not just what you do, but how regularly.\n\nCommon adverbs of frequency, from most to least often:\n\nalways, usually, sometimes, never\n\nThe adverb goes before the main verb, but after the verb 'be':\n\n• I always get up at 7:00.\n• I never drink coffee.\n• She is usually tired in the morning.\n\nBy the end of this lesson, you'll be able to describe your routines and habits with more precision — not just 'I do X' but 'I always/usually/sometimes/never do X.'",
       "examples": ["I always get up early on weekdays.", "He never eats breakfast.", "We're usually busy on Mondays."],
-      "commonMistakes": ["Don't put the adverb before 'be': 'I always am tired' is wrong — say 'I am always tired.'", "Don't put the adverb after the main verb: 'I get up always at 7:00' is wrong — say 'I always get up at 7:00.'"],
+      "commonMistakes": ["Don't put the adverb before 'be': 'I always am tired' is wrong — say 'I am always tired.'", "Don't put the adverb after the main verb: 'I get up always at 7:00' is wrong — say 'I always get up at 7:00.'", "'Never' already makes a sentence negative, so it goes with an affirmative verb: 'He doesn't never eat meat' is wrong — say 'He never eats meat.'"],
       "exercises": [
         {
           "title": "Put the adverb in the right place",
@@ -614,9 +636,9 @@
       "cefrConfidence": "curated",
       "cefrSource": "hand_authored",
       "routingEligible": true,
-      "lessonBody": "In this lesson, you'll learn how to say how much you like or dislike an activity — not just a thing, but something you do.\n\nAfter like, love, and hate, use verb + -ing when talking about an activity:\n\n• I love cooking. I like reading. I hate cleaning.\n\nFrom most positive to most negative: love → like → don't like → hate.\n\nUse don't/doesn't with like: I don't like camping. She doesn't like sports.\n\nBy the end of this lesson, you'll be able to talk about activities you enjoy and don't enjoy, with the right level of feeling.",
+      "lessonBody": "In this lesson, you'll learn how to say how much you like or dislike an activity — not just a thing, but something you do.\n\nAfter like, love, and hate, use verb + -ing when talking about an activity:\n\n• I love cooking. I like reading. I hate cleaning.\n\nSpelling rules for the -ing form:\n\n• Most verbs just add -ing: read → reading\n• Verbs ending in a silent e drop the e: drive → driving\n• Verbs ending in one vowel + one consonant double the consonant: swim → swimming, shop → shopping\n\nFrom most positive to most negative: love → like → don't like → hate.\n\nUse don't/doesn't with like: I don't like camping. She doesn't like sports.\n\nBy the end of this lesson, you'll be able to talk about activities you enjoy and don't enjoy, with the right level of feeling.",
       "examples": ["I love playing the piano.", "He doesn't like traveling.", "We hate waiting in line."],
-      "commonMistakes": ["Use the base verb + -ing, not the infinitive, after these verbs in casual descriptions: 'I love to cook' is also correct, but 'I love cooking' is the more common everyday pattern taught here.", "Don't forget don't/doesn't with 'like': 'She not likes it' is wrong — say 'She doesn't like it'."],
+      "commonMistakes": ["Use the base verb + -ing, not the infinitive, after these verbs in casual descriptions: 'I love to cook' is also correct, but 'I love cooking' is the more common everyday pattern taught here.", "Don't forget don't/doesn't with 'like': 'She not likes it' is wrong — say 'She doesn't like it'.", "Don't forget the spelling change: 'swiming' and 'driveing' are wrong — say 'swimming' and 'driving'."],
       "exercises": [
         {
           "title": "Complete with the -ing form",
@@ -636,6 +658,17 @@
             { "prompt": "Strongest positive feeling", "options": ["love", "like", "hate"], "correctIndex": 0 },
             { "prompt": "Strongest negative feeling", "options": ["like", "don't like", "hate"], "correctIndex": 2 },
             { "prompt": "Mild positive feeling", "options": ["love", "like", "hate"], "correctIndex": 1 }
+          ]
+        },
+        {
+          "title": "Write the -ing form",
+          "instructions": "Write the correct -ing form of each verb, following the spelling rules.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "drive → ___", "answer": "driving" },
+            { "prompt": "shop → ___", "answer": "shopping" },
+            { "prompt": "write → ___", "answer": "writing" },
+            { "prompt": "run → ___", "answer": "running" }
           ]
         }
       ]
@@ -760,7 +793,7 @@
       "cefrConfidence": "curated",
       "cefrSource": "hand_authored",
       "routingEligible": true,
-      "lessonBody": "In this lesson, you'll learn the past tense of 'be' — your first step into talking about the past, and the foundation every other simple past form builds on.\n\nWas/were forms:\n\n• I/he/she/it was — you/we/they were\n\nNegative: wasn't/weren't. Question: Was/Were + subject?\n\n• Where were you at seven o'clock? I was at home. Were you alone? No, I wasn't.\n\nBy the end of this lesson, you'll be able to say where you and others were at a specific past time, and ask the same about someone else.",
+      "lessonBody": "In this lesson, you'll learn the past tense of 'be' — your first step into talking about the past, and the foundation every other simple past form builds on.\n\nWas/were forms:\n\n• I/he/she/it was — you/we/they were\n\nNegative: wasn't/weren't. Question: Was/Were + subject?\n\n• Where were you at seven o'clock? I was at home. Were you alone? No, I wasn't.\n\nThere is/there are also has a past form: there was (singular) and there were (plural).\n\n• There was a party at the school last night.\n\nCommon past time expressions: this morning, yesterday, last night, last week, last month, last year.\n\nBy the end of this lesson, you'll be able to say where you and others were at a specific past time, and ask the same about someone else.",
       "examples": ["I was at home last night.", "They weren't at the party.", "Were you at work yesterday? Yes, I was."],
       "commonMistakes": ["Use 'was' with I/he/she/it, and 'were' with you/we/they — don't mix them up: 'I were' is wrong.", "Don't add 'did' to a be-question: 'Did you were at home?' is wrong — say 'Were you at home?'"],
       "exercises": [
@@ -784,6 +817,16 @@
             { "prompt": "He ___ at work all day.", "options": ["was", "were"], "correctIndex": 0 },
             { "prompt": "___ they at home? No, they weren't.", "options": ["Was", "Were"], "correctIndex": 1 }
           ]
+        },
+        {
+          "title": "Complete with there was or there were",
+          "instructions": "Complete each sentence with the correct past form of there is/there are.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "___ a party at the school last night. (singular)", "answer": "There was" },
+            { "prompt": "___ two hundred people at the concert. (plural)", "answer": "There were" },
+            { "prompt": "___ a big meeting last week, but I wasn't there. (singular)", "answer": "There was" }
+          ]
         }
       ]
     },
@@ -797,9 +840,9 @@
       "cefrConfidence": "curated",
       "cefrSource": "hand_authored",
       "routingEligible": true,
-      "lessonBody": "In this lesson, you'll learn how to talk about completed actions in the past using regular verbs — most English verbs follow this same simple pattern.\n\nAffirmative: add -ed (or -d if the verb already ends in e):\n\n• book → booked, arrive → arrived, invite → invited\n\nSome verbs double the final consonant: stop → stopped.\n\nNegative and question use didn't/did + the base verb, for every subject:\n\n• We didn't rent a car. Did they arrive on time? Yes, they did.\n\nBy the end of this lesson, you'll be able to describe completed past actions and events using regular verbs correctly.",
+      "lessonBody": "In this lesson, you'll learn how to talk about completed actions in the past using regular verbs — most English verbs follow this same simple pattern.\n\nFour spelling patterns:\n\n• Most verbs add -ed: work → worked, finish → finished\n• Verbs ending in e add -d: live → lived, arrive → arrived\n• Verbs ending in a consonant + y change y to i and add -ed: study → studied, cry → cried\n• Verbs ending consonant-vowel-consonant double the final consonant: stop → stopped, prefer → preferred\n\nNegative and question use didn't/did + the base verb, for every subject:\n\n• We didn't rent a car. Did they arrive on time? Yes, they did.\n\nBy the end of this lesson, you'll be able to describe completed past actions and events using regular verbs correctly.",
       "examples": ["We rented a house near the university.", "They didn't invite everyone.", "Did you pack your suitcase? Yes, I did."],
-      "commonMistakes": ["Don't forget -ed in the affirmative: 'We rent a house last year' is wrong — say 'We rented a house last year'.", "Don't add -ed after didn't/did: 'We didn't arrived' is wrong — say 'We didn't arrive'."],
+      "commonMistakes": ["Don't forget -ed in the affirmative: 'We rent a house last year' is wrong — say 'We rented a house last year'.", "Don't add -ed after didn't/did: 'We didn't arrived' is wrong — say 'We didn't arrive'.", "Don't just add -ed to a consonant+y verb: 'studyed' and 'cryed' are wrong — say 'studied' and 'cried'."],
       "exercises": [
         {
           "title": "Complete with the simple past",
@@ -820,6 +863,17 @@
             { "prompt": "We ___ a car. We took the bus. (negative, rent)", "answer": "didn't rent" },
             { "prompt": "___ you ___ your bags yesterday? (question, pack)", "answer": "Did; pack" },
             { "prompt": "They ___ want to leave. (negative, want)", "answer": "didn't" }
+          ]
+        },
+        {
+          "title": "Practice the spelling rules",
+          "instructions": "Complete each sentence with the correct simple past form.",
+          "kind": "text",
+          "questions": [
+            { "prompt": "She ___ Spanish at the university. (study)", "answer": "studied" },
+            { "prompt": "The bus ___ at every stop. (stop)", "answer": "stopped" },
+            { "prompt": "He ___ the red car to the blue one. (prefer)", "answer": "preferred" },
+            { "prompt": "The baby ___ all night. (cry)", "answer": "cried" }
           ]
         }
       ]
