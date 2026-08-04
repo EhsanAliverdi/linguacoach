@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { AdminLessonService } from '../../../core/services/admin-lesson.service';
 import { AdminExerciseService } from '../../../core/services/admin-exercise.service';
 import { AdminService } from '../../../core/services/admin.service';
@@ -13,6 +14,7 @@ import {
   SpAdminAlertComponent,
   SpAdminBadgeComponent,
   SpAdminButtonComponent,
+  SpAdminCardComponent,
   SpAdminErrorStateComponent,
   SpAdminFormFieldComponent,
   SpAdminLoadingStateComponent,
@@ -20,7 +22,7 @@ import {
   SpAdminNumberInputComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
-  SpAdminSectionCardComponent,
+  SpAdminSectionHeaderComponent,
   SpAdminTextareaComponent,
 } from '../../../design-system/admin';
 
@@ -61,6 +63,7 @@ interface ExerciseTypeCount {
     SpAdminAlertComponent,
     SpAdminBadgeComponent,
     SpAdminButtonComponent,
+    SpAdminCardComponent,
     SpAdminErrorStateComponent,
     SpAdminFormFieldComponent,
     SpAdminLoadingStateComponent,
@@ -68,7 +71,7 @@ interface ExerciseTypeCount {
     SpAdminNumberInputComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
-    SpAdminSectionCardComponent,
+    SpAdminSectionHeaderComponent,
     SpAdminTextareaComponent,
     SpLessonStudentPreviewComponent,
   ],
@@ -105,6 +108,7 @@ export class AdminLessonDetailComponent implements OnInit {
     private adminSvc: AdminService,
     private route: ActivatedRoute,
     private router: Router,
+    private sanitizer: DomSanitizer,
   ) {}
 
   ngOnInit(): void {
@@ -152,6 +156,12 @@ export class AdminLessonDetailComponent implements OnInit {
   commonMistakesFor(item: LessonDto): string[] { return parseJsonArray(item.commonMistakesJson); }
   contextTagsFor(item: LessonDto): string[] { return parseJsonArray(item.contextTagsJson); }
   focusTagsFor(item: LessonDto): string[] { return parseJsonArray(item.focusTagsJson); }
+
+  /** Body/UsageNotes/Examples/CommonMistakes are rich-text HTML, sanitized server-side on every
+   *  save (see LessonHtmlSanitizer) — safe to render as trusted HTML here. */
+  trustHtml(html: string | null | undefined): SafeHtml {
+    return this.sanitizer.bypassSecurityTrustHtml(html ?? '');
+  }
 
   statusTone(status: string): 'success' | 'neutral' | 'danger' | 'warning' {
     if (status === 'Approved') return 'success';

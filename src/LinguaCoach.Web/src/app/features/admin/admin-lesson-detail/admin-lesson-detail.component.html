@@ -40,70 +40,114 @@
     @if (repairError()) { <sp-admin-alert variant="error">{{ repairError() }}</sp-admin-alert> }
 
     @if (issues().length > 0) {
-      <sp-admin-section-card title="Issues">
-        <ul>
-          @for (issue of issues(); track issue.code) {
-            <li>
-              {{ issue.message }}
-              @if (!issue.autoFixable) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">manual fix needed</sp-admin-badge> }
-            </li>
+      <sp-admin-card padding="none" variant="bordered" [hasHeader]="true" [headerDivider]="true">
+        <sp-admin-section-header slot="header" title="Issues" [count]="issues().length" />
+        <div style="padding: 20px;">
+          <ul>
+            @for (issue of issues(); track issue.code) {
+              <li>
+                {{ issue.message }}
+                @if (!issue.autoFixable) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">manual fix needed</sp-admin-badge> }
+              </li>
+            }
+          </ul>
+          @if (autoFixableIssues.length > 0) {
+            <sp-admin-button variant="primary" appearance="outline" [disabled]="repairing()" (clicked)="fixWithAi()">
+              {{ repairing() ? 'Fixing…' : 'Fix with AI' }}
+            </sp-admin-button>
           }
-        </ul>
-        @if (autoFixableIssues.length > 0) {
-          <sp-admin-button variant="primary" appearance="outline" [disabled]="repairing()" (clicked)="fixWithAi()">
-            {{ repairing() ? 'Fixing…' : 'Fix with AI' }}
-          </sp-admin-button>
-        }
-      </sp-admin-section-card>
+        </div>
+      </sp-admin-card>
     }
 
-    <sp-admin-section-card title="Details">
-      <div class="sp-admin-form-stack">
-        <sp-admin-form-field label="Status">
-          <sp-admin-badge [tone]="statusTone(d.reviewStatus)">{{ d.reviewStatus }}</sp-admin-badge>
-        </sp-admin-form-field>
-        <sp-admin-form-field label="Source">
-          <sp-admin-badge tone="neutral">{{ d.sourceMode }}</sp-admin-badge>
-          @if (d.generationProvider) { <span class="sp-admin-text-muted"> · {{ d.generationProvider }} ({{ d.generationModel }})</span> }
-        </sp-admin-form-field>
-        <sp-admin-form-field label="Title"><strong>{{ d.title }}</strong></sp-admin-form-field>
-        <sp-admin-form-field label="Body"><pre>{{ d.body }}</pre></sp-admin-form-field>
-        @if (d.imageUrl) {
-          <sp-admin-form-field label="Image">
-            <img [src]="d.imageUrl" alt="Lesson image" style="max-width:320px;border-radius:12px;display:block" />
-          </sp-admin-form-field>
-        }
+    <sp-admin-card padding="none" variant="bordered" [hasHeader]="true" [headerDivider]="true">
+      <sp-admin-section-header slot="header" title="Classification" description="Admin metadata — never shown to the student." />
+      <div style="padding: 20px;" class="sp-admin-form-stack">
+        <div class="sp-admin-form-row--3col">
+          <sp-admin-form-field label="CEFR level">{{ d.cefrLevel ?? '—' }}</sp-admin-form-field>
+          <sp-admin-form-field label="Skill">{{ d.skill ?? '—' }}</sp-admin-form-field>
+          <sp-admin-form-field label="Subskill">{{ d.subskill ?? '—' }}</sp-admin-form-field>
+        </div>
+        <div class="sp-admin-form-row">
+          @if (contextTagsFor(d).length > 0) {
+            <sp-admin-form-field label="Context tags">
+              @for (tag of contextTagsFor(d); track tag) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
+            </sp-admin-form-field>
+          }
+          @if (focusTagsFor(d).length > 0) {
+            <sp-admin-form-field label="Focus tags">
+              @for (tag of focusTagsFor(d); track tag) { <sp-admin-badge tone="purple" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
+            </sp-admin-form-field>
+          }
+        </div>
+        <div class="sp-admin-form-row">
+          <sp-admin-form-field label="Difficulty band">{{ d.difficultyBand ?? '—' }}</sp-admin-form-field>
+          @if (d.estimatedMinutes !== null) { <sp-admin-form-field label="Estimated minutes">{{ d.estimatedMinutes }}</sp-admin-form-field> }
+        </div>
+      </div>
+    </sp-admin-card>
 
+    <sp-admin-card padding="none" variant="bordered" [hasHeader]="true" [headerDivider]="true">
+      <sp-admin-section-header slot="header" title="Title" description="What the student sees." />
+      <div style="padding: 20px;">
+        <strong>{{ d.title }}</strong>
+      </div>
+    </sp-admin-card>
+
+    <sp-admin-card padding="none" variant="bordered" [hasHeader]="true" [headerDivider]="true">
+      <sp-admin-section-header slot="header" title="Body" />
+      <div style="padding: 20px;">
+        <div [innerHTML]="trustHtml(d.body)"></div>
+      </div>
+    </sp-admin-card>
+
+    <sp-admin-card padding="none" variant="bordered" [hasHeader]="true" [headerDivider]="true">
+      <sp-admin-section-header slot="header" title="Examples" [count]="examplesFor(d).length" />
+      <div style="padding: 20px;">
         @if (examplesFor(d).length > 0) {
-          <sp-admin-form-field label="Examples">
-            <ul>
-              @for (e of examplesFor(d); track e) { <li>{{ e }}</li> }
-            </ul>
-          </sp-admin-form-field>
+          <ul>
+            @for (e of examplesFor(d); track $index) { <li [innerHTML]="trustHtml(e)"></li> }
+          </ul>
+        } @else {
+          <p class="sp-admin-hint">No examples.</p>
         }
-        @if (commonMistakesFor(d).length > 0) {
-          <sp-admin-form-field label="Common mistakes">
-            <ul>
-              @for (m of commonMistakesFor(d); track m) { <li>{{ m }}</li> }
-            </ul>
-          </sp-admin-form-field>
-        }
-        @if (d.usageNotes) { <sp-admin-form-field label="Usage notes">{{ d.usageNotes }}</sp-admin-form-field> }
+      </div>
+    </sp-admin-card>
 
-        <sp-admin-form-field label="CEFR level">{{ d.cefrLevel ?? '—' }}</sp-admin-form-field>
-        <sp-admin-form-field label="Skill / subskill">{{ d.skill ?? '—' }} @if (d.subskill) { / {{ d.subskill }} }</sp-admin-form-field>
-        @if (contextTagsFor(d).length > 0) {
-          <sp-admin-form-field label="Context tags">
-            @for (tag of contextTagsFor(d); track tag) { <sp-admin-badge tone="neutral" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
-          </sp-admin-form-field>
+    <sp-admin-card padding="none" variant="bordered" [hasHeader]="true" [headerDivider]="true">
+      <sp-admin-section-header slot="header" title="Common mistakes" [count]="commonMistakesFor(d).length" />
+      <div style="padding: 20px;">
+        @if (commonMistakesFor(d).length > 0) {
+          <ul>
+            @for (m of commonMistakesFor(d); track $index) { <li [innerHTML]="trustHtml(m)"></li> }
+          </ul>
+        } @else {
+          <p class="sp-admin-hint">No common mistakes.</p>
         }
-        @if (focusTagsFor(d).length > 0) {
-          <sp-admin-form-field label="Focus tags">
-            @for (tag of focusTagsFor(d); track tag) { <sp-admin-badge tone="purple" appearance="outline" size="sm">{{ tag }}</sp-admin-badge> }
+      </div>
+    </sp-admin-card>
+
+    @if (d.usageNotes) {
+      <sp-admin-card padding="none" variant="bordered" [hasHeader]="true" [headerDivider]="true">
+        <sp-admin-section-header slot="header" title="Usage notes" />
+        <div style="padding: 20px;">
+          <div [innerHTML]="trustHtml(d.usageNotes)"></div>
+        </div>
+      </sp-admin-card>
+    }
+
+    <sp-admin-card padding="none" variant="bordered" [hasHeader]="true" [headerDivider]="true">
+      <sp-admin-section-header slot="header" title="Review & status" />
+      <div style="padding: 20px;" class="sp-admin-form-stack">
+        <div class="sp-admin-form-row">
+          <sp-admin-form-field label="Status">
+            <sp-admin-badge [tone]="statusTone(d.reviewStatus)">{{ d.reviewStatus }}</sp-admin-badge>
           </sp-admin-form-field>
-        }
-        <sp-admin-form-field label="Difficulty band">{{ d.difficultyBand ?? '—' }}</sp-admin-form-field>
-        @if (d.estimatedMinutes !== null) { <sp-admin-form-field label="Estimated minutes">{{ d.estimatedMinutes }}</sp-admin-form-field> }
+          <sp-admin-form-field label="Source">
+            <sp-admin-badge tone="neutral">{{ d.sourceMode }}</sp-admin-badge>
+            @if (d.generationProvider) { <span class="sp-admin-text-muted"> · {{ d.generationProvider }} ({{ d.generationModel }})</span> }
+          </sp-admin-form-field>
+        </div>
 
         <sp-admin-form-field label="Linked resources" [hint]="d.links.length === 0 ? 'No linked resources' : ''">
           @for (link of d.links; track link.linkId) {
@@ -127,38 +171,41 @@
           </sp-admin-form-field>
         }
       </div>
-    </sp-admin-section-card>
+    </sp-admin-card>
 
-    <sp-admin-section-card title="Actions">
-      <p class="sp-admin-hint" style="margin-bottom:0.5rem;">
-        A Module linking this Lesson to its Exercises is created (or extended) automatically every
-        time you generate Exercises — there is no separate "Generate Module" step.
-      </p>
-      <div class="sp-admin-form-actions" style="flex-wrap:wrap;">
-        @if (d.reviewStatus !== 'Approved') {
-          <sp-admin-button variant="primary" [disabled]="approving()" (clicked)="approveSelected()">
-            {{ approving() ? 'Approving…' : 'Approve' }}
+    <sp-admin-card padding="none" variant="bordered" [hasHeader]="true" [headerDivider]="true">
+      <sp-admin-section-header slot="header" title="Actions" />
+      <div style="padding: 20px;">
+        <p class="sp-admin-hint" style="margin-bottom:0.5rem;">
+          A Module linking this Lesson to its Exercises is created (or extended) automatically every
+          time you generate Exercises — there is no separate "Generate Module" step.
+        </p>
+        <div class="sp-admin-form-actions" style="flex-wrap:wrap;">
+          @if (d.reviewStatus !== 'Approved') {
+            <sp-admin-button variant="primary" [disabled]="approving()" (clicked)="approveSelected()">
+              {{ approving() ? 'Approving…' : 'Approve' }}
+            </sp-admin-button>
+          }
+          @if (d.reviewStatus !== 'Rejected') {
+            <sp-admin-button variant="danger" appearance="outline" [disabled]="rejecting()" (clicked)="rejectSelected()">
+              {{ rejecting() ? 'Rejecting…' : 'Reject' }}
+            </sp-admin-button>
+          }
+          <sp-admin-button variant="primary" appearance="outline" (clicked)="openGenerate()">
+            Generate Exercises
           </sp-admin-button>
-        }
-        @if (d.reviewStatus !== 'Rejected') {
-          <sp-admin-button variant="danger" appearance="outline" [disabled]="rejecting()" (clicked)="rejectSelected()">
-            {{ rejecting() ? 'Rejecting…' : 'Reject' }}
-          </sp-admin-button>
-        }
-        <sp-admin-button variant="primary" appearance="outline" (clicked)="openGenerate()">
-          Generate Exercises
-        </sp-admin-button>
-        @if (d.isArchived) {
-          <sp-admin-button variant="neutral" appearance="outline" [disabled]="archiving()" (clicked)="restoreItem()">
-            {{ archiving() ? 'Working…' : 'Restore' }}
-          </sp-admin-button>
-        } @else {
-          <sp-admin-button variant="danger" appearance="outline" [disabled]="archiving()" (clicked)="deleteItem()">
-            {{ archiving() ? 'Working…' : 'Delete' }}
-          </sp-admin-button>
-        }
+          @if (d.isArchived) {
+            <sp-admin-button variant="neutral" appearance="outline" [disabled]="archiving()" (clicked)="restoreItem()">
+              {{ archiving() ? 'Working…' : 'Restore' }}
+            </sp-admin-button>
+          } @else {
+            <sp-admin-button variant="danger" appearance="outline" [disabled]="archiving()" (clicked)="deleteItem()">
+              {{ archiving() ? 'Working…' : 'Delete' }}
+            </sp-admin-button>
+          }
+        </div>
       </div>
-    </sp-admin-section-card>
+    </sp-admin-card>
 
   }
 

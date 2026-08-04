@@ -548,6 +548,9 @@ public static class DependencyInjection
         // Phase K8 — "diagnose then AI-repair" for a Lesson missing core teaching content.
         services.AddScoped<LinguaCoach.Application.Lessons.ILessonRepairService,
             LinguaCoach.Infrastructure.Lessons.LessonRepairService>();
+        // Rich-text rebuild — image/audio/video upload+serving for the admin Lesson editor.
+        services.AddScoped<LinguaCoach.Application.Lessons.ILessonMediaService,
+            LinguaCoach.Infrastructure.Lessons.LessonMediaService>();
 
         // Phase H4 — Activity foundation (reviewable, editable practice task designs generated
         // from published Resource Bank rows or a Lesson).
@@ -679,9 +682,7 @@ public static class DependencyInjection
         // Phase 4.6 — authenticated audio access for a published Listening Resource Bank item.
         services.AddScoped<LinguaCoach.Application.ResourceImport.IResourceBankMediaService,
             LinguaCoach.Infrastructure.ResourceImport.ResourceBankMediaService>();
-        // Adaptive Curriculum Sprint 1 — skill graph AI drafting + deterministic validation.
-        services.AddScoped<LinguaCoach.Application.SkillGraph.ISkillGraphDraftingService,
-            LinguaCoach.Infrastructure.SkillGraph.SkillGraphDraftingService>();
+        // Adaptive Curriculum Sprint 1 — deterministic skill graph validation.
         services.AddScoped<LinguaCoach.Application.SkillGraph.ISkillGraphValidationService,
             LinguaCoach.Infrastructure.SkillGraph.SkillGraphValidationService>();
         // Adaptive Curriculum Sprint 2 — Module-to-skill-graph-node AI re-tagging.

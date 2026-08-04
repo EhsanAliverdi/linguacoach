@@ -45,8 +45,7 @@ public sealed record LessonDto(
     DateTime CreatedAt,
     DateTime UpdatedAtUtc,
     IReadOnlyList<LessonResourceLinkDto> Links,
-    bool IsArchived = false,
-    string? ImageUrl = null
+    bool IsArchived = false
 );
 
 public sealed record ListLessonsQuery(
@@ -97,8 +96,7 @@ public sealed record CreateLessonCommand(
     int? DifficultyBand,
     int? EstimatedMinutes,
     IReadOnlyList<LessonResourceLinkInput>? Links,
-    Guid? CreatedByUserId,
-    string? ImageUrl = null
+    Guid? CreatedByUserId
 );
 
 public interface IAdminCreateLessonHandler
@@ -119,8 +117,7 @@ public sealed record UpdateLessonCommand(
     IReadOnlyList<string>? ContextTags,
     IReadOnlyList<string>? FocusTags,
     int? DifficultyBand,
-    int? EstimatedMinutes,
-    string? ImageUrl = null
+    int? EstimatedMinutes
 );
 
 public interface IAdminUpdateLessonHandler

@@ -63,6 +63,10 @@ services:
       FileStorage__Provider: "${FILE_STORAGE_PROVIDER:-Local}"
       FileStorage__LocalBasePath: "${FILE_STORAGE_LOCAL_BASE_PATH:-/app/audio-data}"
       FileStorage__Minio__Endpoint: "${MINIO_ENDPOINT:-minio:9000}"
+      # Host the *browser* can reach for presigned URLs (e.g. lesson-media image/audio/video
+      # embeds) — distinct from the internal Docker-network endpoint above, which the browser
+      # cannot resolve. Matches the minio service's host port mapping (9010:9000) below.
+      FileStorage__Minio__PublicEndpoint: "${MINIO_PUBLIC_ENDPOINT:-localhost:9010}"
       FileStorage__Minio__AccessKey: "${MINIO_ACCESS_KEY:-speakpath}"
       FileStorage__Minio__SecretKey: "${MINIO_SECRET_KEY:-speakpath-dev-secret}"
       FileStorage__Minio__BucketName: "${MINIO_BUCKET_NAME:-speakpath-audio}"

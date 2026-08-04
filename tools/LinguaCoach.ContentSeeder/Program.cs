@@ -144,7 +144,7 @@ public static class Program
                 subskill: leaf.Subskill);
 
             await RichContentSeeder.SeedLeafAsync(db, leafId, leaf.Title, leaf.CefrLevel, CurriculumSkillConstants.Grammar,
-                leaf.Subskill, leaf.DifficultyBand, leaf.LessonBody, leaf.Examples, leaf.CommonMistakes, leaf.Exercises, leaf.ImageUrl);
+                leaf.Subskill, leaf.DifficultyBand, leaf.LessonBody, leaf.Examples, leaf.CommonMistakes, leaf.Exercises);
             Console.WriteLine($"  Grammar leaf '{leaf.Key}': {leaf.Exercises.Count} exercise(s) seeded.");
         }
 
@@ -168,7 +168,7 @@ public static class Program
                 CurriculumSkillConstants.Vocabulary, parentId, description: leaf.LessonBody);
 
             await RichContentSeeder.SeedLeafAsync(db, leafId, leaf.Title, leaf.CefrLevel, CurriculumSkillConstants.Vocabulary,
-                leaf.Subskill, leaf.DifficultyBand, leaf.LessonBody, leaf.Examples, leaf.CommonMistakes, leaf.Exercises, leaf.ImageUrl);
+                leaf.Subskill, leaf.DifficultyBand, leaf.LessonBody, leaf.Examples, leaf.CommonMistakes, leaf.Exercises);
             Console.WriteLine($"  Vocabulary leaf '{leaf.Key}': {leaf.Exercises.Count} exercise(s) seeded.");
         }
 
@@ -192,7 +192,7 @@ public static class Program
                 CurriculumSkillConstants.Pronunciation, parentId, description: leaf.LessonBody);
 
             await RichContentSeeder.SeedLeafAsync(db, leafId, leaf.Title, leaf.CefrLevel, CurriculumSkillConstants.Pronunciation,
-                subskill: null, leaf.DifficultyBand, leaf.LessonBody, leaf.Examples, leaf.CommonMistakes, leaf.Exercises, leaf.ImageUrl);
+                subskill: null, leaf.DifficultyBand, leaf.LessonBody, leaf.Examples, leaf.CommonMistakes, leaf.Exercises);
             Console.WriteLine($"  Pronunciation leaf '{leaf.Key}': {leaf.Exercises.Count} exercise(s) seeded.");
         }
 
@@ -218,7 +218,7 @@ public static class Program
 
             await RichContentSeeder.SeedLeafAsync(db, leafId, leaf.Title, leaf.CefrLevel, CurriculumSkillConstants.Speaking,
                 resolvedSubskill, leaf.DifficultyBand, leaf.LessonBody, leaf.Examples,
-                leaf.CommonMistakes, leaf.Exercises, leaf.ImageUrl);
+                leaf.CommonMistakes, leaf.Exercises);
             Console.WriteLine($"  Functional-language leaf '{leaf.Key}': {leaf.Exercises.Count} exercise(s) seeded.");
         }
 
@@ -242,7 +242,7 @@ public static class Program
                 CurriculumSkillConstants.Reading, parentId, description: leaf.LessonBody, subskill: leaf.Subskill);
 
             await RichContentSeeder.SeedLeafAsync(db, leafId, leaf.Title, leaf.CefrLevel, CurriculumSkillConstants.Reading,
-                leaf.Subskill, leaf.DifficultyBand, leaf.LessonBody, leaf.Examples, leaf.CommonMistakes, leaf.Exercises, leaf.ImageUrl);
+                leaf.Subskill, leaf.DifficultyBand, leaf.LessonBody, leaf.Examples, leaf.CommonMistakes, leaf.Exercises);
             Console.WriteLine($"  Reading leaf '{leaf.Key}': {leaf.Exercises.Count} exercise(s) seeded.");
         }
 
@@ -266,7 +266,7 @@ public static class Program
                 CurriculumSkillConstants.Writing, parentId, description: leaf.LessonBody, subskill: leaf.Subskill);
 
             await RichContentSeeder.SeedLeafAsync(db, leafId, leaf.Title, leaf.CefrLevel, CurriculumSkillConstants.Writing,
-                leaf.Subskill, leaf.DifficultyBand, leaf.LessonBody, leaf.Examples, leaf.CommonMistakes, leaf.Exercises, leaf.ImageUrl);
+                leaf.Subskill, leaf.DifficultyBand, leaf.LessonBody, leaf.Examples, leaf.CommonMistakes, leaf.Exercises);
             Console.WriteLine($"  Writing leaf '{leaf.Key}': {leaf.Exercises.Count} exercise(s) seeded.");
         }
 
@@ -290,7 +290,7 @@ public static class Program
                 CurriculumSkillConstants.Listening, parentId, description: leaf.LessonBody, subskill: leaf.Subskill);
 
             await RichContentSeeder.SeedLeafAsync(db, leafId, leaf.Title, leaf.CefrLevel, CurriculumSkillConstants.Listening,
-                leaf.Subskill, leaf.DifficultyBand, leaf.LessonBody, leaf.Examples, leaf.CommonMistakes, leaf.Exercises, leaf.ImageUrl);
+                leaf.Subskill, leaf.DifficultyBand, leaf.LessonBody, leaf.Examples, leaf.CommonMistakes, leaf.Exercises);
             Console.WriteLine($"  Listening-comprehension leaf '{leaf.Key}': {leaf.Exercises.Count} exercise(s) seeded.");
         }
 
@@ -901,8 +901,7 @@ public sealed record GrammarSeedLeaf(
     string Key, string Title, string CefrLevel, int DifficultyBand, string? ParentKey,
     string LessonBody, List<string>? Examples, List<string>? CommonMistakes, List<SeedExercise> Exercises,
     string? Description = null, string? Subskill = null,
-    string? CefrConfidence = null, string? CefrSource = null, string? NodeType = null, bool RoutingEligible = false,
-    string? ImageUrl = null);
+    string? CefrConfidence = null, string? CefrSource = null, string? NodeType = null, bool RoutingEligible = false);
 
 public sealed record VocabularySeedFile(int Version, List<VocabularySeedContainer> Containers, List<VocabularySeedLeaf> Leaves, List<string>? VersionNotes = null);
 public sealed record VocabularySeedContainer(string Key, string Title, string CefrLevel, string? ParentKey = null);
@@ -912,14 +911,13 @@ public sealed record VocabularySeedContainer(string Key, string Title, string Ce
 public sealed record VocabularySeedLeaf(
     string Key, string Title, string CefrLevel, int DifficultyBand, string? ParentKey,
     string LessonBody, List<string>? Examples, List<string>? CommonMistakes, List<SeedExercise> Exercises,
-    string? Subskill = null, string? ImageUrl = null);
+    string? Subskill = null);
 
 public sealed record PronunciationSeedFile(int Version, List<PronunciationSeedContainer> Containers, List<PronunciationSeedLeaf> Leaves, List<string>? VersionNotes = null);
 public sealed record PronunciationSeedContainer(string Key, string Title, string CefrLevel, string? ParentKey = null);
 public sealed record PronunciationSeedLeaf(
     string Key, string Title, string CefrLevel, int DifficultyBand, string? ParentKey,
-    string LessonBody, List<string>? Examples, List<string>? CommonMistakes, List<SeedExercise> Exercises,
-    string? ImageUrl = null);
+    string LessonBody, List<string>? Examples, List<string>? CommonMistakes, List<SeedExercise> Exercises);
 
 /// <summary>Fixed/functional social-language items ("introducing yourself," "spelling and the
 /// alphabet") — classified under Speaking (2026-07-31 container/leaf redesign), not Vocabulary.
@@ -929,7 +927,7 @@ public sealed record FunctionalLanguageSeedContainer(string Key, string Title, s
 public sealed record FunctionalLanguageSeedLeaf(
     string Key, string Title, string CefrLevel, int DifficultyBand, string? ParentKey,
     string LessonBody, List<string>? Examples, List<string>? CommonMistakes, List<SeedExercise> Exercises,
-    string? Subskill = null, string? ImageUrl = null);
+    string? Subskill = null);
 
 /// <summary>2026-08-04 — curated Reading-comprehension content, same shape/rationale as
 /// Pronunciation/FunctionalLanguage above. CLI domain keyword is "reading-comprehension," not
@@ -940,7 +938,7 @@ public sealed record ReadingSeedContainer(string Key, string Title, string CefrL
 public sealed record ReadingSeedLeaf(
     string Key, string Title, string CefrLevel, int DifficultyBand, string? ParentKey,
     string LessonBody, List<string>? Examples, List<string>? CommonMistakes, List<SeedExercise> Exercises,
-    string? Subskill = null, string? ImageUrl = null);
+    string? Subskill = null);
 
 /// <summary>2026-08-04 — curated Writing content, same shape/rationale as the domains above. No
 /// prior "writing" CLI domain exists, so no naming collision.</summary>
@@ -949,7 +947,7 @@ public sealed record WritingSeedContainer(string Key, string Title, string CefrL
 public sealed record WritingSeedLeaf(
     string Key, string Title, string CefrLevel, int DifficultyBand, string? ParentKey,
     string LessonBody, List<string>? Examples, List<string>? CommonMistakes, List<SeedExercise> Exercises,
-    string? Subskill = null, string? ImageUrl = null);
+    string? Subskill = null);
 
 /// <summary>2026-08-04 — curated Listening-comprehension content (text-transcript based — no
 /// audio/video is ever bundled, per the seeding rules' copyright exclusion). CLI domain keyword
@@ -961,7 +959,7 @@ public sealed record ListeningComprehensionSeedContainer(string Key, string Titl
 public sealed record ListeningComprehensionSeedLeaf(
     string Key, string Title, string CefrLevel, int DifficultyBand, string? ParentKey,
     string LessonBody, List<string>? Examples, List<string>? CommonMistakes, List<SeedExercise> Exercises,
-    string? Subskill = null, string? ImageUrl = null);
+    string? Subskill = null);
 
 public sealed record CefrScalesSeedFile(List<CefrScaleSeedContainer> Containers, List<CefrScaleSeedLeaf> Leaves);
 public sealed record CefrScaleSeedContainer(string Key, string Title, string CefrLevel, string Skill);

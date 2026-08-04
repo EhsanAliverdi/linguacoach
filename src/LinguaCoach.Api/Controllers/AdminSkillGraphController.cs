@@ -47,7 +47,6 @@ public sealed class AdminSkillGraphController : ControllerBase
     private const double VocabularyCategoryMatchThreshold = 0.5;
 
     private readonly LinguaCoachDbContext _db;
-    private readonly ISkillGraphDraftingService _drafting;
     private readonly ISkillGraphValidationService _validation;
     private readonly IModuleSkillGraphTaggingService _tagging;
     private readonly ISkillGraphNodeRepairService _repair;
@@ -59,14 +58,13 @@ public sealed class AdminSkillGraphController : ControllerBase
     private readonly IVocabularyCategorizationService _vocabularyCategorization;
 
     public AdminSkillGraphController(
-        LinguaCoachDbContext db, ISkillGraphDraftingService drafting, ISkillGraphValidationService validation,
+        LinguaCoachDbContext db, ISkillGraphValidationService validation,
         IModuleSkillGraphTaggingService tagging, ISkillGraphNodeRepairService repair,
         INodeGraphPlacementSuggestionService placementSuggestions, IGraphChangeSuggestionService changeSuggestions,
         INearDuplicateConfirmationService nearDuplicateConfirmation, ICefrJGrammarImportService cefrJImport,
         IVocabularyImportService vocabularyImport, IVocabularyCategorizationService vocabularyCategorization)
     {
         _db = db;
-        _drafting = drafting;
         _validation = validation;
         _tagging = tagging;
         _repair = repair;
@@ -1160,147 +1158,6 @@ public sealed class AdminSkillGraphController : ControllerBase
         return string.IsNullOrEmpty(slug) ? "item" : slug;
     }
 
-    // Rebuild Phase 2 (2026-07-23) — bounds how many other-combination titles are offered to the AI
-    // as cross-link prerequisite candidates, mirroring MaxExistingTitles' bounded-call discipline.
-    private const int MaxCrossLinkCandidates = 40;
-
-    /// <summary>Triggers one bounded AI-drafting call for a single CEFR level x skill combination,
-    /// persists every proposal as a PendingReview node, then resolves PrerequisiteTitles into real
-    /// edges. Rebuild Phase 2 (2026-07-23) — an edge can now resolve against three sources: (a)
-    /// another node in this same batch, (b) an existing node for the same CEFR/skill, or (c) an
-    /// approved node from a DIFFERENT CEFR level (same skill) or a DIFFERENT skill (same CEFR
-    /// level) — the "cross-link candidates" the AI was given. Previously only (a)/(b) were possible,
-    /// which is the confirmed root cause of the 2026-07-23 audit's isolated-category-islands
-    /// finding: no code path could ever create a cross-Skill or cross-CEFR-level edge. Every
-    /// resulting edge set — regardless of source — is still validated against the FULL active graph
-    /// (not just this batch) before being applied; edges that would introduce a cycle are dropped
-    /// and reported, never silently applied.</summary>
-    [HttpPost("draft")]
-    public async Task<IActionResult> Draft([FromBody] DraftSkillGraphRequest request, CancellationToken ct)
-    {
-        if (!CefrLevelConstants.IsValid(request.CefrLevel))
-            return BadRequest(new { error = $"Invalid CEFR level '{request.CefrLevel}'." });
-        if (!CurriculumSkillConstants.IsValid(request.Skill))
-            return BadRequest(new { error = $"Invalid skill '{request.Skill}'." });
-
-        var cefrLevel = request.CefrLevel.ToUpperInvariant();
-        var skill = request.Skill.ToLowerInvariant();
-
-        var existingTitles = await _db.SkillGraphNodes.AsNoTracking()
-            .Where(n => n.CefrLevel == cefrLevel && n.Skill == skill)
-            .Select(n => n.Title)
-            .ToListAsync(ct);
-
-        // Rebuild Phase 2 — real, already-approved nodes from other CEFR levels of this same skill,
-        // or other skills at this same CEFR level: exactly the two cross-link shapes the audit's
-        // examples named (grammar A1 → speaking A1; grammar A1 → grammar A2). Container/leaf
-        // hierarchy (2026-07-24) — excludes nodes with children, so AI drafting can never propose
-        // an edge onto/from a container.
-        var crossLinkNodes = await _db.SkillGraphNodes.AsNoTracking()
-            .Where(n => n.ReviewStatus == AdminReviewStatus.Approved && n.IsActive
-                && ((n.Skill == skill && n.CefrLevel != cefrLevel) || (n.CefrLevel == cefrLevel && n.Skill != skill))
-                && !_db.SkillGraphNodes.Any(c => c.ParentNodeId == n.Id))
-            .OrderBy(n => n.CefrLevel).ThenBy(n => n.Skill)
-            .Take(MaxCrossLinkCandidates)
-            .Select(n => new { n.Id, n.Title })
-            .ToListAsync(ct);
-
-        var draft = await _drafting.ProposeBatchAsync(
-            new SkillGraphDraftRequest(request.CefrLevel, request.Skill, existingTitles,
-                crossLinkNodes.Select(n => n.Title).ToList()),
-            ct);
-
-        if (!draft.Success)
-            return Ok(new { queued = false, createdCount = 0, error = draft.ErrorMessage });
-
-        if (draft.Nodes.Count == 0)
-            return Ok(new { queued = true, createdCount = 0, error = (string?)null });
-
-        // Persist nodes first (title → entity), so PrerequisiteTitles can resolve against both the
-        // fresh batch and pre-existing nodes for this CEFR/skill in one lookup.
-        var existingByTitle = await _db.SkillGraphNodes
-            .Where(n => n.CefrLevel == cefrLevel && n.Skill == skill)
-            .ToDictionaryAsync(n => n.Title, StringComparer.OrdinalIgnoreCase, ct);
-
-        var created = new List<SkillGraphNode>();
-        var byTitle = new Dictionary<string, SkillGraphNode>(existingByTitle, StringComparer.OrdinalIgnoreCase);
-
-        foreach (var proposal in draft.Nodes)
-        {
-            if (byTitle.ContainsKey(proposal.Title)) continue; // already exists (or duplicate within batch)
-
-            var key = BuildKey(request.CefrLevel, request.Skill, proposal.Title);
-            if (await _db.SkillGraphNodes.AnyAsync(n => n.Key == key, ct)) continue;
-
-            var node = new SkillGraphNode(
-                key, proposal.Title, proposal.Description, proposal.CefrLevel, proposal.Skill,
-                proposal.Subskill, proposal.DifficultyBand, proposal.DescriptionForAi,
-                contextTagsJson: proposal.ContextTags.Count > 0 ? JsonSerializer.Serialize(proposal.ContextTags) : null);
-            _db.SkillGraphNodes.Add(node);
-            created.Add(node);
-            byTitle[proposal.Title] = node;
-        }
-
-        await _db.SaveChangesAsync(ct); // assigns Ids before edge resolution
-
-        // Rebuild Phase 2 — only titles actually offered to the AI as cross-link candidates may
-        // resolve into a cross-combination edge (never an arbitrary title match elsewhere in the
-        // graph) — same "only from the given candidate list" discipline ModuleSkillGraphTaggingService
-        // already uses for Module-to-node matches.
-        var crossLinkById = await _db.SkillGraphNodes.AsNoTracking()
-            .Where(n => crossLinkNodes.Select(c => c.Id).Contains(n.Id))
-            .ToDictionaryAsync(n => n.Id, ct);
-        foreach (var candidate in crossLinkNodes)
-        {
-            if (byTitle.ContainsKey(candidate.Title)) continue; // same-combo title takes priority on collision
-            if (crossLinkById.TryGetValue(candidate.Id, out var crossLinkNode))
-                byTitle[candidate.Title] = crossLinkNode;
-        }
-
-        // Resolve prerequisite titles → edges, validate for cycles.
-        var candidateEdges = new List<(SkillGraphNode Node, SkillGraphNode Prerequisite)>();
-        foreach (var proposal in draft.Nodes)
-        {
-            if (!byTitle.TryGetValue(proposal.Title, out var node)) continue;
-            foreach (var prereqTitle in proposal.PrerequisiteTitles)
-            {
-                if (byTitle.TryGetValue(prereqTitle, out var prereqNode) && prereqNode.Id != node.Id)
-                    candidateEdges.Add((node, prereqNode));
-            }
-        }
-
-        // Rebuild Phase 2 — validate against the FULL active graph (every node/edge), not just this
-        // batch's own candidate set: a cross-combination edge could close a cycle through a node
-        // this batch never touched directly, which a batch-scoped validation could miss.
-        var allNodeSummaries = await _db.SkillGraphNodes.AsNoTracking()
-            .Select(n => new SkillGraphNodeSummary(n.Id, n.Key)).ToListAsync(ct);
-        var existingEdges = await _db.SkillGraphPrerequisiteEdges.AsNoTracking()
-            .Select(e => new SkillGraphEdgeSummary(e.NodeId, e.PrerequisiteNodeId))
-            .ToListAsync(ct);
-
-        var droppedEdgeCount = 0;
-        foreach (var (node, prereq) in candidateEdges)
-        {
-            if (existingEdges.Any(e => e.NodeId == node.Id && e.PrerequisiteNodeId == prereq.Id)) continue; // already linked
-
-            var trialEdges = existingEdges.Append(new SkillGraphEdgeSummary(node.Id, prereq.Id)).ToList();
-            var validation = _validation.Validate(allNodeSummaries, trialEdges);
-
-            if (!validation.IsValid)
-            {
-                droppedEdgeCount++;
-                continue; // would introduce a cycle — drop, never applied
-            }
-
-            _db.SkillGraphPrerequisiteEdges.Add(new SkillGraphPrerequisiteEdge(node.Id, prereq.Id));
-            existingEdges.Add(new SkillGraphEdgeSummary(node.Id, prereq.Id));
-        }
-
-        await _db.SaveChangesAsync(ct);
-
-        return Ok(new { queued = true, createdCount = created.Count, droppedEdgeCount, error = (string?)null });
-    }
-
     [HttpPost("nodes/batch/approve")]
     public async Task<IActionResult> BatchApprove([FromBody] BatchSkillGraphIdsRequest request, CancellationToken ct)
     {
@@ -1810,7 +1667,6 @@ public sealed class AdminSkillGraphController : ControllerBase
     }
 }
 
-public sealed record DraftSkillGraphRequest(string CefrLevel, string Skill);
 public sealed record BatchSkillGraphIdsRequest(List<Guid> Ids);
 public sealed record BatchSkillGraphRejectRequest(List<Guid> Ids, string Reason, bool Confirm = false);
 

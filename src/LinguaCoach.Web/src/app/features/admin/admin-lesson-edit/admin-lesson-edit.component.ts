@@ -2,21 +2,26 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Observable } from 'rxjs';
 import { AdminLessonService } from '../../../core/services/admin-lesson.service';
 import { LessonDto } from '../../../core/models/admin-lesson.models';
 import {
   SpAdminAlertComponent,
   SpAdminButtonComponent,
+  SpAdminCardComponent,
   SpAdminErrorStateComponent,
   SpAdminFormFieldComponent,
   SpAdminInputComponent,
   SpAdminLoadingStateComponent,
+  SpAdminModalComponent,
   SpAdminNumberInputComponent,
   SpAdminPageBodyComponent,
   SpAdminPageHeaderComponent,
-  SpAdminSectionCardComponent,
-  SpAdminTextareaComponent,
+  SpAdminRichTextComponent,
+  SpAdminRichTextUploadResult,
+  SpAdminSectionHeaderComponent,
 } from '../../../design-system/admin';
+import { SpLessonStudentPreviewComponent } from '../admin-lesson-detail/lesson-student-preview/sp-lesson-student-preview.component';
 
 function parseJsonArray(json: string | null | undefined): string[] {
   if (!json) return [];
@@ -40,15 +45,18 @@ function parseJsonArray(json: string | null | undefined): string[] {
     FormsModule,
     SpAdminAlertComponent,
     SpAdminButtonComponent,
+    SpAdminCardComponent,
     SpAdminErrorStateComponent,
     SpAdminFormFieldComponent,
     SpAdminInputComponent,
     SpAdminLoadingStateComponent,
+    SpAdminModalComponent,
     SpAdminNumberInputComponent,
     SpAdminPageBodyComponent,
     SpAdminPageHeaderComponent,
-    SpAdminSectionCardComponent,
-    SpAdminTextareaComponent,
+    SpAdminRichTextComponent,
+    SpAdminSectionHeaderComponent,
+    SpLessonStudentPreviewComponent,
   ],
   templateUrl: './admin-lesson-edit.component.html',
 })
@@ -61,8 +69,8 @@ export class AdminLessonEditComponent implements OnInit {
 
   title = '';
   body = '';
-  examplesDraft = '';
-  commonMistakesDraft = '';
+  examples: string[] = [];
+  commonMistakes: string[] = [];
   usageNotes = '';
   cefrLevel = '';
   skill = '';
@@ -71,7 +79,29 @@ export class AdminLessonEditComponent implements OnInit {
   focusTagsDraft = '';
   difficultyBand: number | null = null;
   estimatedMinutes: number | null = null;
-  imageUrl = '';
+
+  readonly uploadMedia = (file: File): Observable<SpAdminRichTextUploadResult> => this.lessonSvc.uploadMedia(file);
+
+  // ── "View as Student" — previews the live, unsaved draft (not just the last-saved item) ─────
+  studentPreviewOpen = signal(false);
+  openStudentPreview(): void { this.studentPreviewOpen.set(true); }
+  closeStudentPreview(): void { this.studentPreviewOpen.set(false); }
+
+  get previewLesson(): LessonDto | null {
+    if (!this.item) return null;
+    return {
+      ...this.item,
+      title: this.title,
+      body: this.body,
+      examplesJson: JSON.stringify(this.examples),
+      commonMistakesJson: JSON.stringify(this.commonMistakes),
+      usageNotes: this.usageNotes || null,
+      cefrLevel: this.cefrLevel || null,
+      skill: this.skill || null,
+      subskill: this.subskill || null,
+      difficultyBand: this.difficultyBand,
+    };
+  }
 
   constructor(
     private lessonSvc: AdminLessonService,
@@ -94,8 +124,8 @@ export class AdminLessonEditComponent implements OnInit {
         this.item = item;
         this.title = item.title;
         this.body = item.body;
-        this.examplesDraft = parseJsonArray(item.examplesJson).join('\n');
-        this.commonMistakesDraft = parseJsonArray(item.commonMistakesJson).join('\n');
+        this.examples = parseJsonArray(item.examplesJson);
+        this.commonMistakes = parseJsonArray(item.commonMistakesJson);
         this.usageNotes = item.usageNotes ?? '';
         this.cefrLevel = item.cefrLevel ?? '';
         this.skill = item.skill ?? '';
@@ -104,7 +134,6 @@ export class AdminLessonEditComponent implements OnInit {
         this.focusTagsDraft = parseJsonArray(item.focusTagsJson).join(', ');
         this.difficultyBand = item.difficultyBand;
         this.estimatedMinutes = item.estimatedMinutes;
-        this.imageUrl = item.imageUrl ?? '';
       },
       error: err => { this.loading.set(false); this.error.set(err.error?.error ?? 'Could not load this Lesson for editing.'); },
     });
@@ -114,17 +143,24 @@ export class AdminLessonEditComponent implements OnInit {
     this.router.navigateByUrl(`/admin/lesson-library/${this.itemId}`);
   }
 
-  private parseLines(raw: string): string[] {
-    return raw.split('\n').map(t => t.trim()).filter(t => t.length > 0);
-  }
-
   private parseTags(raw: string): string[] {
     return raw.split(',').map(t => t.trim()).filter(t => t.length > 0);
   }
 
+  addExample(): void { this.examples = [...this.examples, '']; }
+  removeExample(index: number): void { this.examples = this.examples.filter((_, i) => i !== index); }
+
+  addCommonMistake(): void { this.commonMistakes = [...this.commonMistakes, '']; }
+  removeCommonMistake(index: number): void { this.commonMistakes = this.commonMistakes.filter((_, i) => i !== index); }
+
+  private nonEmptyHtml(items: string[]): string[] {
+    return items.filter(html => html.replace(/<[^>]*>/g, '').trim().length > 0);
+  }
+
   save(): void {
     if (!this.item) return;
-    if (!this.title.trim() || !this.body.trim()) {
+    const plainBody = this.body.replace(/<[^>]*>/g, '').trim();
+    if (!this.title.trim() || !plainBody) {
       this.error.set('Title and Body are required.');
       return;
     }
@@ -132,9 +168,9 @@ export class AdminLessonEditComponent implements OnInit {
     this.error.set('');
     this.lessonSvc.update(this.item.id, {
       title: this.title.trim(),
-      body: this.body.trim(),
-      examples: this.parseLines(this.examplesDraft),
-      commonMistakes: this.parseLines(this.commonMistakesDraft),
+      body: this.body,
+      examples: this.nonEmptyHtml(this.examples),
+      commonMistakes: this.nonEmptyHtml(this.commonMistakes),
       usageNotes: this.usageNotes.trim() || null,
       cefrLevel: this.cefrLevel.trim() || null,
       skill: this.skill.trim() || null,
@@ -143,7 +179,6 @@ export class AdminLessonEditComponent implements OnInit {
       focusTags: this.parseTags(this.focusTagsDraft),
       difficultyBand: this.difficultyBand,
       estimatedMinutes: this.estimatedMinutes,
-      imageUrl: this.imageUrl.trim() || null,
     }).subscribe({
       next: updated => {
         this.saving.set(false);

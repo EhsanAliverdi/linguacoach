@@ -36,62 +36,6 @@ public static class SkillGraphValidationCodes
     public const string PrereqCircular = "prereq_circular";
 }
 
-/// <summary>Sprint 1 — AI-drafts skill-graph nodes + prerequisite edges from the CEFR/skill/subskill
-/// taxonomy and existing bank content. Advisory only: every proposed node's CEFR level/skill/
-/// subskill is validated against the real recognized-value constants before being trusted (an AI
-/// hallucination is dropped, never applied) — mirrors
-/// <c>ResourceImportColumnMappingService</c>/<c>ResourceCandidateAnalysisService</c>'s convention.
-/// Never throws; degrades to a failure result on any AI/parse error so an admin-triggered draft run
-/// is never a hard failure.</summary>
-public interface ISkillGraphDraftingService
-{
-    Task<SkillGraphDraftResult> ProposeBatchAsync(SkillGraphDraftRequest request, CancellationToken ct = default);
-}
-
-/// <summary>Bounds one AI-drafting call to a single CEFR level x skill combination — keeps each
-/// call small/bounded per AGENTS.md, and lets an admin re-run just the combinations that need more
-/// nodes rather than one unbounded whole-graph call.</summary>
-public sealed record SkillGraphDraftRequest(
-    string CefrLevel,
-    string Skill,
-    /// <summary>Existing node titles/keys already approved or pending for this CEFR/skill
-    /// combination, so the AI doesn't propose near-duplicates.</summary>
-    IReadOnlyList<string> ExistingNodeTitles,
-    /// <summary>Phase 2 of the 2026-07-23 rebuild plan — real, already-approved node titles from
-    /// OTHER CEFR levels (same skill) and OTHER skills (same CEFR level), so a proposed node can
-    /// name one as a prerequisite via <see cref="SkillGraphNodeDraftProposal.PrerequisiteTitles"/>.
-    /// Without this, drafting could structurally never produce a cross-Skill or cross-CEFR-level
-    /// edge — the confirmed root cause of the 2026-07-23 audit's "isolated category islands"
-    /// finding. Only titles given here (or in <see cref="ExistingNodeTitles"/>, or another node in
-    /// the same proposed batch) are ever resolved into a real edge by the caller — an AI-invented
-    /// title outside these three sources is dropped, never applied.</summary>
-    IReadOnlyList<string> CrossLinkCandidateTitles = null!)
-{
-    public IReadOnlyList<string> CrossLinkCandidateTitles { get; init; } = CrossLinkCandidateTitles ?? [];
-}
-
-public sealed record SkillGraphDraftResult(
-    bool Success,
-    IReadOnlyList<SkillGraphNodeDraftProposal> Nodes,
-    string? ErrorMessage);
-
-/// <summary>One AI-proposed node. <c>PrerequisiteTitles</c> references other proposed nodes by
-/// title within the same batch (resolved to real Guids only after the batch is persisted) — the AI
-/// never invents a prerequisite reference outside its own proposed batch or the existing-titles
-/// list it was given.</summary>
-public sealed record SkillGraphNodeDraftProposal(
-    string Title,
-    string Description,
-    string CefrLevel,
-    string Skill,
-    string? Subskill,
-    int DifficultyBand,
-    string? DescriptionForAi,
-    IReadOnlyList<string> PrerequisiteTitles,
-    // Sprint 14.1 — validated against CurriculumContextTagConstants.All before ever being trusted,
-    // same policy as Subskill above.
-    IReadOnlyList<string> ContextTags);
-
 /// <summary>Sprint 2 — AI-proposes which approved <c>SkillGraphNode</c>s an existing
 /// <c>Module</c> covers. Advisory only: every proposed node key is validated against the real
 /// candidate list given in the request before being trusted — an AI-hallucinated key is dropped,

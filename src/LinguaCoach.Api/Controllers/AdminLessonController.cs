@@ -27,6 +27,7 @@ public sealed class AdminLessonController : ControllerBase
     private readonly IGenerateLessonFromResourcesWithAiHandler _generateWithAiHandler;
     private readonly ILessonArchiveHandler _archiveHandler;
     private readonly ILessonRepairService _repairService;
+    private readonly ILessonMediaService _mediaService;
 
     public AdminLessonController(
         IAdminLessonListQuery listQuery,
@@ -38,7 +39,8 @@ public sealed class AdminLessonController : ControllerBase
         IGenerateLessonFromResourcesHandler generateHandler,
         IGenerateLessonFromResourcesWithAiHandler generateWithAiHandler,
         ILessonArchiveHandler archiveHandler,
-        ILessonRepairService repairService)
+        ILessonRepairService repairService,
+        ILessonMediaService mediaService)
     {
         _listQuery = listQuery;
         _getQuery = getQuery;
@@ -50,6 +52,7 @@ public sealed class AdminLessonController : ControllerBase
         _generateWithAiHandler = generateWithAiHandler;
         _archiveHandler = archiveHandler;
         _repairService = repairService;
+        _mediaService = mediaService;
     }
 
     // GET api/admin/lessons?page=&pageSize=&status=&cefrLevel=&skill=&subskill=&contextTag=&
@@ -86,8 +89,7 @@ public sealed class AdminLessonController : ControllerBase
             var result = await _createHandler.HandleAsync(new CreateLessonCommand(
                 body.Title, body.Body, body.CefrLevel, body.Skill, body.Subskill,
                 body.ContextTags, body.FocusTags, body.Examples, body.CommonMistakes,
-                body.UsageNotes, body.DifficultyBand, body.EstimatedMinutes, body.Links, GetCurrentUserId(),
-                body.ImageUrl), ct);
+                body.UsageNotes, body.DifficultyBand, body.EstimatedMinutes, body.Links, GetCurrentUserId()), ct);
             return Ok(result);
         }
         catch (LessonValidationException ex)
@@ -145,13 +147,37 @@ public sealed class AdminLessonController : ControllerBase
             var result = await _updateHandler.HandleAsync(new UpdateLessonCommand(
                 id, body.Title, body.Body, body.Examples, body.CommonMistakes, body.UsageNotes,
                 body.CefrLevel, body.Skill, body.Subskill, body.ContextTags, body.FocusTags,
-                body.DifficultyBand, body.EstimatedMinutes, body.ImageUrl), ct);
+                body.DifficultyBand, body.EstimatedMinutes), ct);
             return Ok(result);
         }
         catch (LessonValidationException ex)
         {
             return BadRequest(new { error = ex.Message });
         }
+    }
+
+    // POST api/admin/lessons/media  (multipart/form-data, field name "file")
+    // Uploads an image/audio/video file for embedding in a Lesson's rich-text fields (Body,
+    // UsageNotes, Examples, CommonMistakes). Returns a stable serving URL — never the raw
+    // storage-provider URL, since that gets embedded permanently in saved HTML.
+    [HttpPost("media")]
+    [RequestSizeLimit(150 * 1024 * 1024)] // matches LessonMediaService's video ceiling
+    public async Task<IActionResult> UploadMedia(IFormFile file, CancellationToken ct)
+    {
+        if (file is null || file.Length == 0)
+            return BadRequest(new { error = "A file is required." });
+
+        var mimeType = file.ContentType?.Split(';')[0].Trim() ?? string.Empty;
+        if (!_mediaService.IsAllowedMimeType(mimeType))
+            return BadRequest(new { error = $"Media type '{mimeType}' is not supported." });
+
+        var maxBytes = _mediaService.GetMaxBytes(mimeType);
+        if (file.Length > maxBytes)
+            return BadRequest(new { error = $"File is too large. Maximum size is {maxBytes / (1024 * 1024)} MB." });
+
+        await using var stream = file.OpenReadStream();
+        var result = await _mediaService.UploadAsync(stream, mimeType, GetCurrentUserId(), ct);
+        return Ok(result);
     }
 
     // POST api/admin/lessons/{id}/approve  { notes? }
@@ -271,7 +297,7 @@ public sealed class AdminLessonController : ControllerBase
         IReadOnlyList<string>? ContextTags = null, IReadOnlyList<string>? FocusTags = null,
         IReadOnlyList<string>? Examples = null, IReadOnlyList<string>? CommonMistakes = null,
         string? UsageNotes = null, int? DifficultyBand = null, int? EstimatedMinutes = null,
-        IReadOnlyList<LessonResourceLinkInput>? Links = null, string? ImageUrl = null
+        IReadOnlyList<LessonResourceLinkInput>? Links = null
     );
 
     public sealed record GenerateLessonFromResourcesRequestBody(
@@ -286,7 +312,7 @@ public sealed class AdminLessonController : ControllerBase
         string Title, string Body, IReadOnlyList<string>? Examples = null, IReadOnlyList<string>? CommonMistakes = null,
         string? UsageNotes = null, string? CefrLevel = null, string? Skill = null, string? Subskill = null,
         IReadOnlyList<string>? ContextTags = null, IReadOnlyList<string>? FocusTags = null,
-        int? DifficultyBand = null, int? EstimatedMinutes = null, string? ImageUrl = null
+        int? DifficultyBand = null, int? EstimatedMinutes = null
     );
 
     public sealed record ApproveLessonRequestBody(string? Notes = null);

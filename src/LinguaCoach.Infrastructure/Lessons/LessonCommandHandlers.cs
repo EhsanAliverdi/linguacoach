@@ -19,13 +19,14 @@ public sealed class AdminCreateLessonHandler : IAdminCreateLessonHandler
         try
         {
             item = new Lesson(
-                command.Title, command.Body, LessonSourceMode.Manual,
+                command.Title, LessonHtmlSanitizer.Sanitize(command.Body), LessonSourceMode.Manual,
                 command.CefrLevel, command.Skill, command.Subskill,
                 ToJsonArray(command.ContextTags), ToJsonArray(command.FocusTags),
-                ToJsonArray(command.Examples), ToJsonArray(command.CommonMistakes),
-                command.UsageNotes, command.DifficultyBand, command.EstimatedMinutes,
-                generationProvider: null, generationModel: null, createdByUserId: command.CreatedByUserId,
-                imageUrl: command.ImageUrl);
+                ToJsonArray(LessonHtmlSanitizer.SanitizeAll(command.Examples)),
+                ToJsonArray(LessonHtmlSanitizer.SanitizeAll(command.CommonMistakes)),
+                command.UsageNotes is null ? null : LessonHtmlSanitizer.Sanitize(command.UsageNotes),
+                command.DifficultyBand, command.EstimatedMinutes,
+                generationProvider: null, generationModel: null, createdByUserId: command.CreatedByUserId);
         }
         catch (ArgumentException ex)
         {
@@ -60,12 +61,13 @@ public sealed class AdminUpdateLessonHandler : IAdminUpdateLessonHandler
         try
         {
             item.UpdateDraft(
-                command.Title, command.Body,
-                ToJsonArray(command.Examples), ToJsonArray(command.CommonMistakes), command.UsageNotes,
+                command.Title, LessonHtmlSanitizer.Sanitize(command.Body),
+                ToJsonArray(LessonHtmlSanitizer.SanitizeAll(command.Examples)),
+                ToJsonArray(LessonHtmlSanitizer.SanitizeAll(command.CommonMistakes)),
+                command.UsageNotes is null ? null : LessonHtmlSanitizer.Sanitize(command.UsageNotes),
                 command.CefrLevel, command.Skill, command.Subskill,
                 ToJsonArray(command.ContextTags), ToJsonArray(command.FocusTags),
                 command.DifficultyBand, command.EstimatedMinutes);
-            item.SetImageUrl(command.ImageUrl);
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {

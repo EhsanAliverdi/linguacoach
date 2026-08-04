@@ -171,14 +171,14 @@
         @if (p.lesson; as lesson) {
           <sp-admin-form-field label="Learn">
             <h4>{{ lesson.title }}</h4>
-            <p>{{ lesson.body }}</p>
+            <div [innerHTML]="trustHtml(lesson.body)"></div>
             @if (lesson.examples.length > 0) {
               <p class="sp-admin-text-muted"><strong>Examples:</strong></p>
               <ul>
-                @for (ex of lesson.examples; track ex) { <li>{{ ex }}</li> }
+                @for (ex of lesson.examples; track $index) { <li [innerHTML]="trustHtml(ex)"></li> }
               </ul>
             }
-            @if (lesson.usageNotes) { <p class="sp-admin-text-muted">{{ lesson.usageNotes }}</p> }
+            @if (lesson.usageNotes) { <div class="sp-admin-text-muted" [innerHTML]="trustHtml(lesson.usageNotes)"></div> }
           </sp-admin-form-field>
         }
 

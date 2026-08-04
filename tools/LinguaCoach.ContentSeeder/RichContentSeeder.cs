@@ -20,7 +20,7 @@ public static class RichContentSeeder
     public static async Task<Guid> SeedLeafAsync(
         LinguaCoachDbContext db, Guid leafId, string title, string cefrLevel, string skill, string? subskill,
         int difficultyBand, string lessonBody, List<string>? examples, List<string>? commonMistakes,
-        List<SeedExercise> exercises, string? imageUrl = null)
+        List<SeedExercise> exercises)
     {
         var lesson = new Lesson(
             title: title,
@@ -31,8 +31,7 @@ public static class RichContentSeeder
             subskill: subskill,
             examplesJson: JsonSerializer.Serialize(examples ?? []),
             commonMistakesJson: JsonSerializer.Serialize(commonMistakes ?? []),
-            difficultyBand: difficultyBand,
-            imageUrl: imageUrl);
+            difficultyBand: difficultyBand);
         db.Lessons.Add(lesson);
         await db.SaveChangesAsync();
         lesson.AssignToLeaf(leafId);

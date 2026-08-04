@@ -1730,13 +1730,6 @@ export interface AddSkillGraphPrerequisiteResponse {
   suggestions: GraphChangeSuggestion[];
 }
 
-export interface SkillGraphDraftResponse {
-  queued: boolean;
-  createdCount: number;
-  droppedEdgeCount?: number;
-  error: string | null;
-}
-
 export interface SkillGraphBatchActionResponse {
   requestedCount: number;
   succeeded: number;

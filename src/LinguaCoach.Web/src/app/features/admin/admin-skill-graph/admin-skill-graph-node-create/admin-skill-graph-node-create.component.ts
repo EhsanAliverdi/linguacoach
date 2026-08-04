@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AdminApiService } from '../../../../core/services/admin.api.service';
 import { SkillGraphNodeListItem, SkillGraphTaxonomy } from '../../../../core/models/admin.models';
 import {
@@ -164,12 +164,21 @@ export class AdminSkillGraphNodeCreateComponent implements OnInit {
   constructor(
     private api: AdminApiService,
     private router: Router,
+    private route: ActivatedRoute,
     private location: Location,
   ) {}
 
   ngOnInit(): void {
     this.api.getSkillGraphTaxonomy().subscribe({ next: t => this.taxonomy.set(t), error: () => {} });
     this.loadNodesForPicker();
+
+    // Prefills from the coverage heatmap's "gap cell" click on the Skill Graph list page — lets an
+    // admin jump straight into creating a node for that CEFR level/skill combination.
+    const params = this.route.snapshot.queryParamMap;
+    const cefrLevel = params.get('cefrLevel');
+    const skill = params.get('skill');
+    if (cefrLevel) this.cefrLevel = cefrLevel;
+    if (skill) this.skill = skill;
   }
 
   private parseTagsDraft(raw: string): string[] {

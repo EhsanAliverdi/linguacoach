@@ -42,9 +42,12 @@ export interface LessonDto {
   updatedAtUtc: string;
   links: LessonResourceLinkDto[];
   isArchived: boolean;
-  // 2026-08-04 — an optional supporting image for this Lesson (e.g. country flags, a classroom
-  // photo). A real teaching unit is not text-only.
-  imageUrl: string | null;
+}
+
+export interface LessonMediaUploadResult {
+  storageKey: string;
+  url: string;
+  mimeType: string;
 }
 
 export interface LessonListResult {
@@ -72,7 +75,6 @@ export interface CreateLessonRequestBody {
   difficultyBand?: number | null;
   estimatedMinutes?: number | null;
   links?: LessonResourceLinkInput[] | null;
-  imageUrl?: string | null;
 }
 
 export interface UpdateLessonRequestBody {
@@ -88,7 +90,6 @@ export interface UpdateLessonRequestBody {
   focusTags?: string[] | null;
   difficultyBand?: number | null;
   estimatedMinutes?: number | null;
-  imageUrl?: string | null;
 }
 
 export interface GenerateLessonFromResourcesRequestBody {

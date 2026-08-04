@@ -3272,10 +3272,6 @@ namespace LinguaCoach.Persistence.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("generation_provider");
 
-                    b.Property<string>("ImageUrl")
-                        .HasColumnType("text")
-                        .HasColumnName("image_url");
-
                     b.Property<bool>("IsArchived")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")

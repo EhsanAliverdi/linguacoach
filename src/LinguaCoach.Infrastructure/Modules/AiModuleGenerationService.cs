@@ -72,7 +72,7 @@ public sealed class AiModuleGenerationService : IGenerateModuleFromResourceWithA
         var variables = new Dictionary<string, string>
         {
             ["lessonTitle"] = lesson.Title,
-            ["lessonBody"] = Truncate(lesson.Body),
+            ["lessonBody"] = Truncate(HtmlTextExtractor.ToPlainText(lesson.Body)),
             ["exerciseTitle"] = activity.Title,
             ["exerciseInstructions"] = Truncate(activity.Instructions),
             ["activityType"] = activity.ActivityType,

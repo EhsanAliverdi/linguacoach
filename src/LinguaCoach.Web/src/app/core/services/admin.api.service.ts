@@ -16,7 +16,7 @@ import {
   AdminTodayPlanModulePreview, AdminPracticeGymModulePreview,
   AdminDeliveryHealth,
   SkillGraphTaxonomy, SkillGraphNodeListResponse, SkillGraphNodeDetail,
-  SkillGraphDraftResponse, SkillGraphBatchActionResponse, SkillGraphBatchRejectResponse, SkillGraphBatchRejectResult, SkillGraphCoverageResponse,
+  SkillGraphBatchActionResponse, SkillGraphBatchRejectResponse, SkillGraphBatchRejectResult, SkillGraphCoverageResponse,
   SkillGraphRetagResponse, SkillGraphContentCoverageResponse, SkillGraphResponse,
   CreateSkillGraphNodeRequest, CreateSkillGraphNodeResponse, UpdateSkillGraphNodeRequest, SkillGraphIsolatedNodesResponse,
   AssignSkillGraphParentRequest, AssignSkillGraphParentResponse,
@@ -226,9 +226,6 @@ export class AdminApiService {
   }
   getSkillGraphNode(id: string): Observable<SkillGraphNodeDetail> {
     return this.http.get<SkillGraphNodeDetail>(`${this.api}/skill-graph/nodes/${id}`);
-  }
-  draftSkillGraph(cefrLevel: string, skill: string): Observable<SkillGraphDraftResponse> {
-    return this.http.post<SkillGraphDraftResponse>(`${this.api}/skill-graph/draft`, { cefrLevel, skill });
   }
   batchApproveSkillGraphNodes(ids: string[]): Observable<SkillGraphBatchActionResponse> {
     return this.http.post<SkillGraphBatchActionResponse>(`${this.api}/skill-graph/nodes/batch/approve`, { ids });

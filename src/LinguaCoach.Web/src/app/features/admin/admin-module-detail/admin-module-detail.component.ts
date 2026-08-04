@@ -2,6 +2,7 @@ import { Component, OnInit, ViewChild, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { AdminModuleService } from '../../../core/services/admin-module.service';
 import {
   ModuleDto,
@@ -90,7 +91,14 @@ export class AdminModuleDetailComponent implements OnInit {
     private moduleSvc: AdminModuleService,
     private route: ActivatedRoute,
     private router: Router,
+    private sanitizer: DomSanitizer,
   ) {}
+
+  /** Lesson Body/Examples/UsageNotes are rich-text HTML, sanitized server-side on every save (see
+   *  LessonHtmlSanitizer) — safe to render as trusted HTML here. */
+  trustHtml(html: string | null | undefined): SafeHtml {
+    return this.sanitizer.bypassSecurityTrustHtml(html ?? '');
+  }
 
   ngOnInit(): void {
     this.itemId = this.route.snapshot.paramMap.get('id') ?? '';

@@ -34,28 +34,6 @@
     }
   </sp-admin-card>
 
-  <!-- Draft trigger -->
-  <sp-admin-card title="Draft nodes">
-    <sp-admin-help-icon slot="actions" key="admin.skillGraph.draftNodes" title="Draft nodes" />
-    <div class="sp-admin-form-grid" style="display:flex; gap:12px; align-items:flex-end;">
-      <sp-admin-form-field label="CEFR level">
-        <sp-admin-select [options]="cefrLevelOptions()" [(ngModel)]="draftCefrLevel" placeholder="Select level" />
-      </sp-admin-form-field>
-      <sp-admin-form-field label="Skill">
-        <sp-admin-select [options]="skillOptions()" [(ngModel)]="draftSkill" placeholder="Select skill" />
-      </sp-admin-form-field>
-      <sp-admin-button variant="primary" size="sm" [disabled]="draftPending()" (clicked)="runDraft()">
-        {{ draftPending() ? 'Drafting…' : 'Draft now' }}
-      </sp-admin-button>
-    </div>
-    @if (draftStatus()) {
-      <sp-admin-alert variant="success">{{ draftStatus() }}</sp-admin-alert>
-    }
-    @if (draftError()) {
-      <sp-admin-alert variant="error">{{ draftError() }}</sp-admin-alert>
-    }
-  </sp-admin-card>
-
   <!-- Phase 6.3e — a reconnect accepted below can itself trigger 6.3a's inline redundant-edge
        check; the full "Graph audit" (on-demand run + near-duplicate detection) moved to the
        dedicated audit page above, but this stays here since it's tied directly to the Reconnect
@@ -233,7 +211,7 @@
       (nodeExpand)="onTtNodeExpand($event)"
       [selectable]="true" [selection]="ttSelection()" (selectionChange)="onTtSelectionChange($event)"
       [hasActions]="true"
-      emptyMessage="No nodes match the current filters. Draft some above."
+      emptyMessage="No nodes match the current filters. Create one above."
       [paginationPage]="currentPageForFooter()" [paginationTotalPages]="ttTotalPages()"
       [paginationLabel]="ttTotalRecords() + ' node(s).'"
       (paginationPageChange)="onNodesPageChange($event)"

@@ -331,13 +331,18 @@ public sealed class ActivityGenerationService : IGenerateActivityFromLessonHandl
     {
         // No "is Body empty" guard here — Lesson's own constructor already guarantees a
         // non-whitespace Body (ValidateAuthorableFields), so that state can't occur.
+        // Rich-text rebuild — Body is now real HTML (already sanitized server-side on every save,
+        // see LessonHtmlSanitizer), authored via the admin rich-text editor's own <p>/<ul>/<img>
+        // structure. It must be embedded as-is, not HtmlEncode-wrapped in an extra <p> — that would
+        // both double-escape existing markup (showing literal tags to the student) and nest <p>
+        // inside <p> for multi-paragraph Body content.
         var lessonBody = lesson.Body.Trim();
         var instructions = "Reflect on what you just learned in this Lesson.";
         var formSchemaJson = JsonSerializer.Serialize(new
         {
             components = new object[]
             {
-                new { type = "content", key = "lesson", html = $"<p>{System.Net.WebUtility.HtmlEncode(lessonBody)}</p>" },
+                new { type = "content", key = "lesson", html = lessonBody },
                 new { type = "textarea", key = "answer", label = "What was the key takeaway for you, and how will you use it?", input = true },
             }
         });

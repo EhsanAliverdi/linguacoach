@@ -407,6 +407,27 @@ public sealed class ActivityGenerationServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Lesson_reflection_embeds_rich_text_Body_as_real_html_not_html_encoded()
+    {
+        // Rich-text rebuild — Body is now sanitized HTML from the admin editor (e.g. "<p><strong>x</strong></p>"),
+        // not plain text. It must be embedded verbatim so it renders for the student, not shown as
+        // literal escaped tags via a double HtmlEncode.
+        var lesson = new Lesson("Present Perfect", "<p><strong>Used</strong> for past actions.</p>", LessonSourceMode.Manual);
+        _db.Lessons.Add(lesson);
+        await _db.SaveChangesAsync();
+
+        var result = await _sut.HandleAsync(new GenerateActivityFromLessonRequest(lesson.Id, RequestedActivityType: "lesson_reflection"));
+
+        // .NET's default JsonSerializer escapes '<'/'>' as </> within the JSON string
+        // (harmless — JSON.parse round-trips it back to the literal character); what actually
+        // matters is that after parsing, the html value is real markup, not HTML-entity-encoded
+        // text like "&lt;strong&gt;" (which is what the old WebUtility.HtmlEncode call produced).
+        using var doc = JsonDocument.Parse(result.Activity.FormSchemaJson);
+        var html = doc.RootElement.GetProperty("components")[0].GetProperty("html").GetString();
+        html.Should().Be("<p><strong>Used</strong> for past actions.</p>");
+    }
+
+    [Fact]
     public async Task Lesson_reflection_does_not_require_linked_resources()
     {
         // Unlike every other activity type, lesson_reflection must succeed even when the Lesson

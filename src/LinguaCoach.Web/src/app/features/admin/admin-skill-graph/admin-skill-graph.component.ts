@@ -248,15 +248,13 @@ export class AdminSkillGraphComponent implements OnInit {
 
   onHeatmapCellClick(cell: SpAdminHeatmapCell): void {
     const entry = this.coverage().find(e => e.cefrLevel === cell.rowKey && e.skill === cell.columnKey);
-    if (entry) this.draftForGap(entry);
+    if (!entry) return;
+    // Jumps into manual node creation pre-filled for this gap's CEFR level/skill combination —
+    // replaces the old AI "draft nodes" batch-generation trigger (removed).
+    this.router.navigate(['/admin/skill-graph/nodes/create'], {
+      queryParams: { cefrLevel: entry.cefrLevel, skill: entry.skill },
+    });
   }
-
-  // ── Draft trigger ────────────────────────────────────────────────────────
-  draftCefrLevel = '';
-  draftSkill = '';
-  draftPending = signal(false);
-  draftStatus = signal('');
-  draftError = signal('');
 
   // ── Content coverage (Sprint 2, expanded Sprint 14.2, merged into Nodes 2026-07-23) ───────
   // The separate "Content coverage" table/slide-over was deleted — it showed almost the same
@@ -578,40 +576,6 @@ export class AdminSkillGraphComponent implements OnInit {
   onNodesSearchChange(value: string): void {
     this.filterSearch.set(value);
     this.onFilterChange();
-  }
-
-  runDraft(): void {
-    if (!this.draftCefrLevel || !this.draftSkill) {
-      this.draftError.set('Choose a CEFR level and skill.');
-      return;
-    }
-    this.draftPending.set(true);
-    this.draftStatus.set('');
-    this.draftError.set('');
-    this.api.draftSkillGraph(this.draftCefrLevel, this.draftSkill).subscribe({
-      next: r => {
-        this.draftPending.set(false);
-        if (!r.queued) {
-          this.draftError.set(r.error ?? 'Drafting failed.');
-          return;
-        }
-        this.draftStatus.set(
-          `Drafted ${r.createdCount} node(s)` +
-          (r.droppedEdgeCount ? `, dropped ${r.droppedEdgeCount} edge(s) that would cycle` : '') + '.');
-        this.loadNodes(this.currentPage());
-        this.loadCoverage();
-      },
-      error: err => {
-        this.draftPending.set(false);
-        this.draftError.set(err?.error?.error ?? 'Drafting failed.');
-      },
-    });
-  }
-
-  draftForGap(entry: SkillGraphCoverageEntry): void {
-    this.draftCefrLevel = entry.cefrLevel;
-    this.draftSkill = entry.skill;
-    this.runDraft();
   }
 
   clearSelection(): void {

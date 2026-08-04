@@ -2392,87 +2392,21 @@ public sealed class AdminSkillGraphEndpointTests : IClassFixture<ApiTestFactory>
     }
 }
 
-/// <summary>Draft-endpoint tests specifically — uses <see cref="ActivityTestFactory"/>'s
+/// <summary>Retag-modules AI-endpoint tests — uses <see cref="ActivityTestFactory"/>'s
 /// FakeAiProvider so no real AI provider is ever called (matches CLAUDE.md's "tests use fake/mock
 /// providers, never real AI" rule; a plain ApiTestFactory would resolve a real, unconfigured
 /// provider for this seeded prompt and either hang or make a real network call).</summary>
-public sealed class AdminSkillGraphDraftEndpointTests : IClassFixture<ActivityTestFactory>
+public sealed class AdminSkillGraphRetagModulesEndpointTests : IClassFixture<ActivityTestFactory>
 {
     private readonly ActivityTestFactory _factory;
 
-    public AdminSkillGraphDraftEndpointTests(ActivityTestFactory factory) => _factory = factory;
+    public AdminSkillGraphRetagModulesEndpointTests(ActivityTestFactory factory) => _factory = factory;
 
     private static HttpClient ClientWithToken(ActivityTestFactory factory, string token)
     {
         var client = factory.CreateClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return client;
-    }
-
-    [Fact]
-    public async Task Draft_InvalidCefrLevel_ReturnsBadRequest()
-    {
-        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
-        var client = ClientWithToken(_factory, adminToken);
-
-        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/draft", new { cefrLevel = "Z9", skill = "grammar" });
-        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
-    }
-
-    // ── Rebuild Phase 2 (2026-07-23) — cross-link candidate query must not throw ──────────────
-
-    [Fact]
-    public async Task Draft_WithRealCrossSkillAndCrossLevelNodesInDb_QueriesCrossLinkCandidatesWithoutThrowing()
-    {
-        // Regression test for the new cross-link candidate query (same skill/other CEFR level OR
-        // same CEFR level/other skill) — this exact shape of EF query previously hit a real SQLite
-        // translation failure elsewhere in this session (GetIsolatedNodes' SelectMany), so this
-        // asserts the Draft endpoint still returns 200 (graceful degradation via FakeAiProvider's
-        // unrelated response shape) rather than a 500 from an untranslatable query.
-        var suffix = Guid.NewGuid().ToString("N");
-        using (var scope = _factory.Services.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<LinguaCoachDbContext>();
-            var sameSkillOtherLevel = new SkillGraphNode($"grammar.crosslink_{suffix}.a2", "T1", "D", "A2", "grammar");
-            sameSkillOtherLevel.Approve(null);
-            var sameLevelOtherSkill = new SkillGraphNode($"speaking.crosslink_{suffix}.a1", "T2", "D", "A1", "speaking");
-            sameLevelOtherSkill.Approve(null);
-            db.SkillGraphNodes.AddRange(sameSkillOtherLevel, sameLevelOtherSkill);
-            await db.SaveChangesAsync();
-        }
-
-        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
-        var client = ClientWithToken(_factory, adminToken);
-
-        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/draft", new { cefrLevel = "A1", skill = "grammar" });
-        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
-    }
-
-    [Fact]
-    public async Task Draft_ValidRequest_NeverThrowsEvenWhenAiResponseDoesNotMatchExpectedShape()
-    {
-        // FakeAiProvider returns a fixed, unrelated (module-generation) JSON shape — the drafting
-        // service must degrade gracefully (200 OK, queued=false, error message set) rather than the
-        // request failing with a 500, matching the AI-draft-then-validate convention's "never
-        // throws" guarantee.
-        var adminToken = await _factory.CreateAdminAndGetTokenAsync();
-        var client = ClientWithToken(_factory, adminToken);
-
-        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/draft", new { cefrLevel = "A1", skill = "grammar" });
-        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
-
-        var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.False(body.GetProperty("queued").GetBoolean());
-    }
-
-    [Fact]
-    public async Task NonAdmin_rejected_for_draft_endpoint()
-    {
-        var (token, _) = await _factory.CreateStudentAndGetTokenAsync($"sg_draft_nonadmin_{Guid.NewGuid():N}@test.com");
-        var client = ClientWithToken(_factory, token);
-
-        var resp = await client.PostAsJsonAsync("/api/admin/skill-graph/draft", new { cefrLevel = "A1", skill = "grammar" });
-        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
     }
 
     // ── Sprint 2: retag-modules ──────────────────────────────────────────────────────────────────

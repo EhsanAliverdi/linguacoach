@@ -1,5 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { LessonDto } from '../../../../core/models/admin-lesson.models';
 
 interface SkillBadge {
@@ -63,20 +64,16 @@ function parseJsonStringArray(json: string | null | undefined): string[] {
 
       <h2 style="font-size:18px;font-weight:800;color:var(--sp-ink);letter-spacing:-.01em;margin:0">{{ lesson.title }}</h2>
 
-      @if (lesson.imageUrl) {
-        <img [src]="lesson.imageUrl" alt="" style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;display:block" />
-      }
-
       <div class="sp-card" style="padding:18px">
-        <p style="font-size:14.5px;color:var(--sp-text);line-height:1.65;white-space:pre-wrap">{{ lesson.body }}</p>
+        <div style="font-size:14.5px;color:var(--sp-text);line-height:1.65" [innerHTML]="trustHtml(lesson.body)"></div>
       </div>
 
       @if (examples().length > 0) {
         <div style="display:flex;flex-direction:column;gap:8px">
           <p style="font-size:12px;font-weight:700;color:var(--sp-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">Examples</p>
-          @for (example of examples(); track example) {
+          @for (example of examples(); track $index) {
             <div class="sp-card" style="padding:14px;border-left:3px solid var(--sp-listening,#0369a1)">
-              <div style="font-size:14px;color:var(--sp-ink)">{{ example }}</div>
+              <div style="font-size:14px;color:var(--sp-ink)" [innerHTML]="trustHtml(example)"></div>
             </div>
           }
         </div>
@@ -85,7 +82,7 @@ function parseJsonStringArray(json: string | null | undefined): string[] {
       @if (lesson.usageNotes) {
         <div style="display:flex;align-items:flex-start;gap:10px;padding:12px 16px;background:var(--sp-canvas2);border-radius:12px">
           <svg style="flex-shrink:0;margin-top:2px" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-          <p style="font-size:13px;color:var(--sp-text);line-height:1.6;margin:0"><strong>Usage:</strong> {{ lesson.usageNotes }}</p>
+          <div style="font-size:13px;color:var(--sp-text);line-height:1.6"><strong>Usage:</strong> <span [innerHTML]="trustHtml(lesson.usageNotes)"></span></div>
         </div>
       }
 
@@ -93,8 +90,8 @@ function parseJsonStringArray(json: string | null | undefined): string[] {
         <div class="sp-alert-info" style="font-size:13px">
           <strong>Watch out for:</strong>
           <ul style="margin:6px 0 0;padding-left:18px">
-            @for (mistake of commonMistakes(); track mistake) {
-              <li>{{ mistake }}</li>
+            @for (mistake of commonMistakes(); track $index) {
+              <li [innerHTML]="trustHtml(mistake)"></li>
             }
           </ul>
         </div>
@@ -107,6 +104,8 @@ function parseJsonStringArray(json: string | null | undefined): string[] {
 export class SpLessonStudentPreviewComponent {
   @Input({ required: true }) lesson!: LessonDto;
 
+  constructor(private sanitizer: DomSanitizer) {}
+
   get badge(): SkillBadge {
     const key = (this.lesson.skill ?? '').trim().toLowerCase();
     return SKILL_BADGES[key] ?? DEFAULT_BADGE;
@@ -118,5 +117,11 @@ export class SpLessonStudentPreviewComponent {
 
   commonMistakes(): string[] {
     return parseJsonStringArray(this.lesson.commonMistakesJson);
+  }
+
+  /** Body/UsageNotes/Examples/CommonMistakes are rich-text HTML, sanitized server-side on every
+   *  save (see LessonHtmlSanitizer) — safe to render as trusted HTML here. */
+  trustHtml(html: string | null | undefined): SafeHtml {
+    return this.sanitizer.bypassSecurityTrustHtml(html ?? '');
   }
 }

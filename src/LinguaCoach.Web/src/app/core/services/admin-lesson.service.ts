@@ -11,6 +11,7 @@ import {
   GenerateLessonFromResourcesResult,
   LessonArchiveResult,
   LessonRepairResult,
+  LessonMediaUploadResult,
 } from '../models/admin-lesson.models';
 import { DiagnosticIssue, IssuesSummary, BulkRepairResult, RepairableItemSummary } from '../models/admin-repair.models';
 
@@ -93,5 +94,13 @@ export class AdminLessonService {
 
   listWithIssues(): Observable<RepairableItemSummary[]> {
     return this.http.get<RepairableItemSummary[]>(`${this.base}/with-issues`);
+  }
+
+  /** Uploads an image/audio/video file for embedding into a Lesson's rich-text fields (Body,
+   *  Usage Notes, Examples, Common Mistakes) or as the cover image. */
+  uploadMedia(file: File): Observable<LessonMediaUploadResult> {
+    const form = new FormData();
+    form.append('file', file, file.name);
+    return this.http.post<LessonMediaUploadResult>(`${this.base}/media`, form);
   }
 }

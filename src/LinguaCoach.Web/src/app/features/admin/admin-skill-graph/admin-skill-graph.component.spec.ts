@@ -8,7 +8,6 @@ import {
   SkillGraphTaxonomy,
   SkillGraphNodeListResponse,
   SkillGraphCoverageResponse,
-  SkillGraphDraftResponse,
   SkillGraphBatchActionResponse,
   SkillGraphBatchRejectResponse,
   SkillGraphBatchRejectConfirmationRequired,
@@ -52,8 +51,6 @@ function makeApi(overrides: Partial<Record<string, unknown>> = {}) {
     getSkillGraphTaxonomy: jasmine.createSpy('getSkillGraphTaxonomy').and.returnValue(of(TAXONOMY)),
     getSkillGraphNodes: jasmine.createSpy('getSkillGraphNodes').and.returnValue(of(NODES)),
     getSkillGraphCoverage: jasmine.createSpy('getSkillGraphCoverage').and.returnValue(of(COVERAGE)),
-    draftSkillGraph: jasmine.createSpy('draftSkillGraph').and.returnValue(
-      of<SkillGraphDraftResponse>({ queued: true, createdCount: 3, droppedEdgeCount: 0, error: null })),
     batchApproveSkillGraphNodes: jasmine.createSpy('batchApproveSkillGraphNodes').and.returnValue(
       of<SkillGraphBatchActionResponse>({ requestedCount: 1, succeeded: 1, failed: 0, limitReached: false })),
     batchRejectSkillGraphNodes: jasmine.createSpy('batchRejectSkillGraphNodes').and.returnValue(
@@ -108,33 +105,14 @@ describe('AdminSkillGraphComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('have zero approved nodes');
   });
 
-  it('runDraft requires both cefrLevel and skill', async () => {
+  it('onHeatmapCellClick navigates to node creation prefilled with the gap CEFR level/skill', async () => {
     await setup();
-    component.draftCefrLevel = '';
-    component.draftSkill = '';
-    component.runDraft();
-    expect(component.draftError()).toBeTruthy();
-    expect(api.draftSkillGraph).not.toHaveBeenCalled();
-  });
-
-  it('runDraft calls the API and reports the result', async () => {
-    await setup();
-    component.draftCefrLevel = 'A1';
-    component.draftSkill = 'grammar';
-    component.runDraft();
-    expect(api.draftSkillGraph).toHaveBeenCalledWith('A1', 'grammar');
-    expect(component.draftStatus()).toContain('Drafted 3 node(s)');
-  });
-
-  it('shows the draft error message when drafting fails', async () => {
-    await setup({
-      draftSkillGraph: jasmine.createSpy('draftSkillGraph').and.returnValue(
-        of<SkillGraphDraftResponse>({ queued: false, createdCount: 0, error: 'AI provider unavailable' })),
-    });
-    component.draftCefrLevel = 'A1';
-    component.draftSkill = 'grammar';
-    component.runDraft();
-    expect(component.draftError()).toBe('AI provider unavailable');
+    const router = TestBed.inject(Router);
+    const navigateSpy = spyOn(router, 'navigate');
+    component.onHeatmapCellClick({ rowKey: 'A1', columnKey: 'grammar', value: 0, clickable: true });
+    expect(navigateSpy).toHaveBeenCalledWith(
+      ['/admin/skill-graph/nodes/create'],
+      { queryParams: { cefrLevel: 'A1', skill: 'grammar' } });
   });
 
   it('selectedIds tracks selected node ids', async () => {

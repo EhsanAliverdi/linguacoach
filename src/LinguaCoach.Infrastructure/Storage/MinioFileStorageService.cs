@@ -19,6 +19,7 @@ namespace LinguaCoach.Infrastructure.Storage;
 public sealed class MinioFileStorageService : IFileStorageService
 {
     private readonly IMinioClient _minio;
+    private readonly IMinioClient _minioPublic;
     private readonly string _bucketName;
     private readonly int _defaultSignedUrlExpiryMinutes;
     private readonly ILogger<MinioFileStorageService> _logger;
@@ -29,6 +30,14 @@ public sealed class MinioFileStorageService : IFileStorageService
         var endpoint = configuration["FileStorage:Minio:Endpoint"]
             ?? Environment.GetEnvironmentVariable("MINIO_ENDPOINT")
             ?? "localhost:9000";
+        // Rich-text rebuild — a presigned URL generated against the internal Docker-network
+        // hostname (e.g. "minio:9000") is only ever reachable from inside that network; the
+        // browser that actually loads the URL needs the host-mapped port instead. Defaults to
+        // `endpoint` unchanged when unset, so single-host setups (bare `docker run`, real prod S3
+        // behind one public hostname) keep today's behavior.
+        var publicEndpoint = configuration["FileStorage:Minio:PublicEndpoint"]
+            ?? Environment.GetEnvironmentVariable("MINIO_PUBLIC_ENDPOINT")
+            ?? endpoint;
         var accessKey = configuration["FileStorage:Minio:AccessKey"]
             ?? Environment.GetEnvironmentVariable("MINIO_ACCESS_KEY")
             ?? string.Empty;
@@ -41,6 +50,9 @@ public sealed class MinioFileStorageService : IFileStorageService
         var useSsl = bool.TryParse(
             configuration["FileStorage:Minio:UseSSL"] ?? Environment.GetEnvironmentVariable("MINIO_USE_SSL"),
             out var ssl) && ssl;
+        var publicUseSsl = bool.TryParse(
+            configuration["FileStorage:Minio:PublicUseSSL"] ?? Environment.GetEnvironmentVariable("MINIO_PUBLIC_USE_SSL"),
+            out var publicSsl) ? publicSsl : useSsl;
         _defaultSignedUrlExpiryMinutes = int.TryParse(
             configuration["FileStorage:Minio:SignedUrlExpiryMinutes"] ?? Environment.GetEnvironmentVariable("MINIO_SIGNED_URL_EXPIRY_MINUTES"),
             out var expiry) ? expiry : 10;
@@ -50,6 +62,17 @@ public sealed class MinioFileStorageService : IFileStorageService
             .WithCredentials(accessKey, secretKey)
             .WithSSL(useSsl)
             .Build();
+
+        // Presigned URL generation is pure local signature computation (no network call to
+        // `publicEndpoint` happens at signing time) — only the host string baked into the
+        // resulting URL differs, which is exactly what a browser-facing client needs.
+        _minioPublic = publicEndpoint == endpoint && publicUseSsl == useSsl
+            ? _minio
+            : new MinioClient()
+                .WithEndpoint(publicEndpoint)
+                .WithCredentials(accessKey, secretKey)
+                .WithSSL(publicUseSsl)
+                .Build();
     }
 
     public async Task<string> SaveAsync(string key, Stream content, string contentType, CancellationToken cancellationToken = default, long? knownSizeBytes = null)
@@ -162,7 +185,7 @@ public sealed class MinioFileStorageService : IFileStorageService
             .WithObject(key)
             .WithExpiry(expirySeconds);
 
-        var url = await _minio.PresignedGetObjectAsync(args);
+        var url = await _minioPublic.PresignedGetObjectAsync(args);
         var expiresAt = DateTimeOffset.UtcNow.AddSeconds(expirySeconds);
         return new SignedUrlResult(url, expiresAt);
     }
@@ -181,7 +204,7 @@ public sealed class MinioFileStorageService : IFileStorageService
             .WithObject(key)
             .WithExpiry(expirySeconds);
 
-        var url = await _minio.PresignedPutObjectAsync(args);
+        var url = await _minioPublic.PresignedPutObjectAsync(args);
         var expiresAt = DateTimeOffset.UtcNow.AddSeconds(expirySeconds);
         return new SignedUrlResult(url, expiresAt);
     }
